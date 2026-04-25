@@ -1,0 +1,89 @@
+name: synaptixfit
+description: "SynaptixFit — Aplicación Integral de Bienestar para Estudiantes Universitarios"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Estado global
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.3.5
+
+  # Routing declarativo
+  go_router: ^14.3.0
+
+  # Backend / Supabase
+  supabase_flutter: ^2.8.4
+
+  # Persistencia local (offline-first)
+  hive_flutter: ^1.1.0
+
+  # Tipografía
+  google_fonts: ^6.2.1
+  google_sign_in: ^6.2.2
+
+  # Imágenes con caché
+  cached_network_image: ^3.4.1
+
+  # Video (ejercicios de R2)
+  video_player: ^2.9.2
+
+  # Animaciones premium
+  flutter_animate: ^4.5.0
+
+  # Animación confetti / Lottie
+  lottie: ^3.1.2
+
+  # HTTP client
+  dio: ^5.7.0
+
+  # Internacionalización
+  intl: ^0.19.0
+
+  # Shimmer skeleton loader
+  shimmer: ^3.0.0
+
+  # Íconos
+  cupertino_icons: ^1.0.8
+
+  # URL launcher
+  url_launcher: ^6.3.1
+
+  # Imagen de perfil / avatar
+  image_picker: ^1.1.2
+
+  # Drag and drop para reordenar
+  reorderable_grid_view: ^2.2.8
+  flutter_dotenv: ^6.0.0
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.4.3
+
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  image_path: "assets/images/logo.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+    - assets/images/
+    - assets/animations/
+    - assets/fonts/

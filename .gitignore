@@ -1,0 +1,44 @@
+# =============================
+# Seguridad: secretos y credenciales
+# =============================
+.env
+.env.*
+!.env.example
+!.env.sample
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.sample
+
+# Credenciales OAuth / Google
+**/client_secret_*.json
+google-services.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist
+
+# Llaves y certificados privados
+*.p12
+*.jks
+*.keystore
+*.pem
+*.key
+
+# Variables locales de Cloudflare Workers
+cloudflare/**/.dev.vars
+cloudflare/**/.secrets*
+
+# =============================
+# Entornos locales (no publicar)
+# =============================
+.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# =============================
+# Artefactos locales frecuentes
+# =============================
+app/.dart_tool/
+app/build/
+app/.flutter-plugins-dependencies
