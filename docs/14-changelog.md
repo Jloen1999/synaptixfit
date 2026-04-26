@@ -5,6 +5,19 @@
 
 ---
 
+## [2.5.25] — 26-04-2026
+
+### Inicio orientado a creación
+- La barra superior de inicio ahora muestra el logo en el lado izquierdo y elimina el título textual de la app.
+- El botón flotante de añadir se transformó en un menú de creación con accesos directos a:
+	- Nueva rutina
+	- Reto simple
+	- Reto complejo
+	- Plan de estudio semanal
+- Se mantuvo la lógica alineada con las rutas y flujos de creación ya disponibles en la aplicación.
+
+---
+
 ## [2.5.24] — 25-04-2026
 
 ### Seguridad de repositorio

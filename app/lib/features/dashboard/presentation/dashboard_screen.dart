@@ -10,13 +10,55 @@ import '../application/dashboard_provider.dart';
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
+  static const _opcionesCreacion = <_OpcionCreacionDashboard>[
+    _OpcionCreacionDashboard(
+      titulo: 'Nueva rutina',
+      descripcion: 'Diseña y guarda tu rutina de entrenamiento.',
+      icono: Icons.fitness_center_rounded,
+      ruta: '/bienestar/constructor-rutina',
+    ),
+    _OpcionCreacionDashboard(
+      titulo: 'Reto simple',
+      descripcion: 'Crea un reto rapido con un objetivo principal.',
+      icono: Icons.flag_rounded,
+      ruta: '/retos/simple',
+    ),
+    _OpcionCreacionDashboard(
+      titulo: 'Reto complejo',
+      descripcion: 'Configura hitos y progreso detallado del reto.',
+      icono: Icons.emoji_events_rounded,
+      ruta: '/retos/complejo',
+    ),
+    _OpcionCreacionDashboard(
+      titulo: 'Plan de estudio',
+      descripcion: 'Organiza tu semana academica y prioridades.',
+      icono: Icons.school_rounded,
+      ruta: '/plan-semanal',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(dashboardProvider);
     return FeatureScaffold(
-      title: 'SynaptixFit',
+      title: '',
+      centerTitle: false,
+      appBarLeading: Padding(
+        padding: const EdgeInsets.only(left: 12),
+        child: Image.asset(
+          'assets/images/logo.png',
+          width: 36,
+          height: 36,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => const Icon(
+            Icons.fitness_center_rounded,
+            size: 24,
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/bienestar/constructor-rutina'),
+        onPressed: () => _mostrarMenuCreacion(context),
+        tooltip: 'Crear',
         child: const Icon(Icons.add),
       ),
       child: data.when(
@@ -180,6 +222,67 @@ class DashboardScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _mostrarMenuCreacion(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Crear en SynaptixFit',
+                  style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Accesos directos a los flujos de creacion mas importantes.',
+                  style: Theme.of(sheetContext).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                ..._opcionesCreacion.map(
+                  (opcion) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      child: Icon(opcion.icono),
+                    ),
+                    title: Text(opcion.titulo),
+                    subtitle: Text(opcion.descripcion),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      context.go(opcion.ruta);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _OpcionCreacionDashboard {
+  const _OpcionCreacionDashboard({
+    required this.titulo,
+    required this.descripcion,
+    required this.icono,
+    required this.ruta,
+  });
+
+  final String titulo;
+  final String descripcion;
+  final IconData icono;
+  final String ruta;
 }
 
 // ---------------------------------------------------------------------------

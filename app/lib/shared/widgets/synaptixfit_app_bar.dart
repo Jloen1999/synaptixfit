@@ -18,6 +18,8 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.showBackButton = true,
     this.backPath,
+    this.leading,
+    this.centerTitle = true,
     super.key,
   });
 
@@ -25,13 +27,15 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool showBackButton;
   final String? backPath;
+  final Widget? leading;
+  final bool centerTitle;
 
   @override
   Widget build(BuildContext context) {
     final canGoBack = context.canPop() || backPath != null;
     return AppBar(
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      centerTitle: true,
+      centerTitle: centerTitle,
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: showBackButton && canGoBack
@@ -40,7 +44,7 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
                 handleSynaptixBackNavigation(context, backPath: backPath);
               },
             )
-          : null,
+          : leading,
       actions: actions,
       backgroundColor: Colors.transparent,
     );
