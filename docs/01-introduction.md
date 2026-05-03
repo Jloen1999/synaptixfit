@@ -1,32 +1,57 @@
 # 01 - Introducción
 
 **Proyecto:** SynaptixFit — Aplicación Integral de Bienestar para Estudiantes Universitarios  
-**Versión del documento:** 1.0  
-**Fecha:** 19-04-2026  
+**Versión del documento:** 1.1  
+**Fecha:** 03-05-2026  
 **Estado:** ✅ LISTO PARA DESARROLLO
 
 ---
 
-## 1. Contexto y Visión General
+## 1. Anteproyecto del Trabajo de Fin de Grado
 
-SynaptixFit es una aplicación móvil multiplataforma (Flutter) diseñada para ayudar a estudiantes universitarios (18-30 años) a equilibrar su carga académica con sus objetivos de bienestar físico. La aplicación integra en una sola experiencia:
+### 1.1 Título provisional
 
-- 📚 **Planificación académica** con detección automática de conflictos horarios.
-- 💪 **Gestión de rutinas de entrenamiento** con catálogo de ejercicios propio (Supabase + Cloudflare R2), alimentado por ExerciseDB (AscendAPI) mediante ingesta desde Kaggle.
-- 🎯 **Sistema de retos** simples y complejos con gamificación (XP, rachas, insignias).
-- 🤖 **Notificaciones adaptativas** basadas en prioridad y contexto.
-- 👥 **Red social de logros** entre pares con control granular de privacidad.
+**Diseño y desarrollo de una aplicación multiplataforma de apoyo al estudiante para la organización académica y la promoción de hábitos saludables.**
 
-### 1.1 Problema que resuelve
+### 1.2 Temática del trabajo
 
-Las aplicaciones existentes obligan al estudiante a fragmentar su rutina entre apps de estudio, hábitos y comunidad. SynaptixFit unifica estos flujos en un solo ecosistema, reduciendo la fricción y aumentando la constancia semanal.
+El presente trabajo se enmarca en el ámbito de la Ingeniería del Software aplicada al entorno educativo. En particular, se abordan aspectos relacionados con el análisis de requisitos, el diseño de la arquitectura software, el desarrollo de aplicaciones multiplataforma y la validación funcional de una solución digital centrada en el usuario.
 
-### 1.2 Propuesta de valor diferencial
+### 1.3 Resumen
 
-1. **Vertical universitario:** Diseñado específicamente para el contexto académico (asignaturas, evaluaciones, calendario semanal).
-2. **Integración académico-deportiva:** Detección automática de conflictos entre bloques de estudio y sesiones de entrenamiento.
-3. **Privacidad granular:** Visibilidad configurable por recurso (público, solo amigos, privado).
-4. **Gamificación no punitiva:** Incentiva la constancia sin penalizar el incumplimiento.
+El objetivo de este Trabajo de Fin de Grado es el planteamiento, diseño e implementación de un prototipo funcional —Producto Mínimo Viable (MVP)— de una aplicación multiplataforma orientada a ayudar al estudiante universitario en la gestión de su planificación académica y en la adopción de hábitos saludables.
+
+El proyecto aborda las distintas fases del ciclo de vida del software: desde el análisis de necesidades del usuario y la especificación de requisitos funcionales y no funcionales, hasta el diseño técnico de la solución y el desarrollo de las funcionalidades principales del sistema. El proceso sigue un enfoque incremental, priorizando un alcance realista y viable dentro de las limitaciones temporales propias de un TFG.
+
+Asimismo, se llevará a cabo una evaluación del prototipo mediante pruebas funcionales y de usabilidad, con el fin de verificar el correcto comportamiento del sistema y su adecuación a los objetivos planteados. Las funcionalidades adicionales o de carácter avanzado se considerarán como posibles líneas de trabajo futuro.
+
+### 1.4 Problema que se pretende resolver
+
+Los estudiantes universitarios se enfrentan a diario a una doble exigencia: mantener un rendimiento académico constante mientras cuidan de su bienestar físico y mental. Sin embargo, las herramientas disponibles actualmente —aplicaciones de calendario académico, apps de seguimiento deportivo, gestores de hábitos y plataformas de comunidad— operan de forma aislada, obligando al estudiante a fragmentar su rutina entre múltiples aplicaciones que no se comunican entre sí. Esta dispersión genera fricción, reduce la constancia y dificulta la creación de una rutina semanal equilibrada.
+
+SynaptixFit nace para resolver esta fragmentación, ofreciendo un ecosistema unificado donde el estudiante puede planificar sus horarios académicos, organizar sus sesiones de entrenamiento, establecer retos personales gamificados y compartir sus logros con compañeros, todo desde una única aplicación y con un control granular de su privacidad.
+
+### 1.5 Impacto potencial del sistema
+
+La unificación de los ámbitos académico y de bienestar en una sola plataforma tiene el potencial de generar un impacto significativo en varios niveles:
+
+- **Para el estudiante:** reducción de la carga cognitiva asociada a la gestión de múltiples herramientas, aumento de la constancia semanal gracias a la gamificación no punitiva, y mejora del equilibrio entre estudio, actividad física y descanso.
+- **Para la comunidad universitaria:** fomento de una red de apoyo entre pares donde los logros académicos y deportivos se comparten y celebran, contribuyendo a un entorno más saludable y motivador.
+- **Como contribución académica:** el proyecto demuestra la viabilidad de integrar tecnologías modernas —Flutter multiplataforma, Supabase como backend gestionado, Cloudflare R2 para multimedia, y Realtime para sincronización en vivo— en una arquitectura que puede servir como referencia para futuros desarrollos en el ámbito edTech.
+
+### 1.6 Funcionalidades principales
+
+El MVP de SynaptixFit integra las siguientes funcionalidades, organizadas en cinco módulos:
+
+1. **Planificación académica:** gestión de asignaturas con horarios semanales, detección automática de conflictos entre bloques de estudio y sesiones de entrenamiento, y perfil académico personalizado con seguimiento de carga semanal y nivel de estrés.
+2. **Bienestar y entrenamiento:** catálogo de ejercicios con terminología anatómica profesional (más de 1.300 ejercicios con GIFs animados), constructor de rutinas personalizadas con selección de series, repeticiones y descansos, y registro de sesiones completadas con cálculo de calorías y XP.
+3. **Retos gamificados:** creación de retos simples (meta única) y complejos (con hitos ponderados), sistema de progreso con barras visuales y cálculo automático de avance, y recompensas mediante experiencia (XP), niveles y rachas.
+4. **Red social de logros:** muro de actividad donde los estudiantes comparten sus sesiones completadas y retos finalizados, sistema de me gusta y comentarios, y control de visibilidad por recurso (público, solo amigos, privado).
+5. **Notificaciones adaptativas:** centro de avisos categorizados por prioridad (crítica, recomendada, informativa), alertas de conflicto horario y fatiga, y preferencias de entrega configurables por franja horaria y límite diario.
+
+### 1.7 Observaciones y alcance
+
+El alcance definitivo del proyecto podrá ajustarse durante el desarrollo en coordinación con el tutor académico, manteniendo como prioridad la correcta aplicación de una metodología de desarrollo software y la validación de un núcleo funcional estable. Las funcionalidades avanzadas (integración con IA para recomendaciones personalizadas, notificaciones push nativas y sincronización offline completa) se consideran líneas de trabajo futuro.
 
 ---
 
