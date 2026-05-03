@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.0  
-**Fecha:** 19-04-2026  
+**Versión:** 1.1  
+**Fecha:** 03-05-2026  
 **Referencia:** [03-architecture.md](03-architecture.md) (secciones 8.2 y 8.3)
 
 ---
@@ -100,7 +100,7 @@ SynaptixFit utiliza un backend gestionado (Supabase) con la siguiente división:
 |-----------|-------|
 | **Entrada** | `version`, `lote`, `dry_run` (bool), `dataset_path` |
 | **Salida** | `resumen_importacion`, `errores_mapeo` |
-| **Validaciones** | Integridad referencial (`exercises`, `muscles`, `equipments`, `bodyParts`), deduplicación por `id_fuente_origen` (o `id_wger` legado), licencia admitida |
+| **Validaciones** | Integridad referencial (`exercises`, `muscles`, `equipments`, `bodyParts`), deduplicación por `exercise_db_id`, licencia admitida |
 | **Fuente** | Dataset oficial ExerciseDB (AscendAPI) distribuido via Kaggle |
 
 ---
@@ -132,14 +132,28 @@ Incrementa XP del usuario y sube de nivel si alcanza el umbral (1000 × nivel ac
 
 ## 4. Canales Realtime (Supabase)
 
+Todas las tablas del catálogo de ejercicios tienen Supabase Realtime activado mediante `ALTER PUBLICATION supabase_realtime ADD TABLE`. El frontend Flutter consume estos eventos vía `.stream()` desde el provider `ejerciciosProvider`.
+
+| Canal / Tabla | Eventos | Uso en frontend |
+|---------------|---------|-----------------|
+| `ejercicios` | INSERT, UPDATE, DELETE | Refresco automático del explorador y detalle de ejercicios |
+| `partes_cuerpo` | INSERT, UPDATE, DELETE | Sincronización de catálogo de partes del cuerpo |
+| `musculos` | INSERT, UPDATE, DELETE | Sincronización de catálogo de músculos |
+| `equipamientos` | INSERT, UPDATE, DELETE | Sincronización de catálogo de equipamientos |
+| `ejercicio_musculo_objetivo` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M en vivo |
+| `ejercicio_musculo_secundario` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M en vivo |
+| `ejercicio_parte_cuerpo` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M en vivo |
+| `ejercicio_equipamiento` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M en vivo |
+
+**Canales definidos en la arquitectura original (pendientes de activación en frontend):**
+
 | Canal | Evento | Tabla | Uso |
 |-------|--------|-------|-----|
 | `canal_muro` | INSERT | `actividades_sociales` | Refresco del feed social |
 | `canal_retos_usuario` | UPDATE | `retos`, `hitos_de_reto` | Progreso en tiempo real |
 | `canal_amistades` | UPDATE | `amistades` | Solicitudes, aceptaciones, bloqueos |
 | `canal_notificaciones_usuario` | INSERT | `notificaciones` | Centro de avisos |
-| `canal_bienestar_usuario` | UPDATE | `plan_entrenamiento_semanal`, `sesiones_rutina` | Adherencia semanal |
-| `canal_catalogo_ejercicios` | UPDATE | `ejercicios`, `rutina_ejercicios` | Actualizaciones del catálogo |
+| `canal_bienestar_usuario` | UPDATE | `plan_entrenamiento_semanal` | Adherencia semanal |
 
 ---
 

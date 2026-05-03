@@ -1,8 +1,8 @@
 # 05 - Especificación de API
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.0  
-**Fecha:** 19-04-2026  
+**Versión:** 1.1  
+**Fecha:** 03-05-2026  
 **Referencia:** [03-architecture.md](03-architecture.md) (sección 8)
 
 ---
@@ -228,8 +228,10 @@ GET /plan-semanal/integrado/{usuarioId}/{inicioSemana}
 
 ### 5.1 Buscar ejercicios
 
+El catálogo de ejercicios está normalizado en 3FN con tablas maestras (`partes_cuerpo`, `musculos`, `equipamientos`) y relaciones N:M. El frontend consulta la vista `v_ejercicios_completos` que pre-calcula los arrays de catálogos.
+
 ```
-GET /ejercicios/buscar?busqueda={texto}&grupos_musculares[]={grupo}&equipamientos[]={equipo}&dificultades[]={nivel}&pagina={n}&tamanio={n}
+GET /v_ejercicios_completos?select=*&nombre=ilike.%{texto}%&dificultad=eq.{nivel}&limit={n}&offset={m}
 ```
 
 **Response (200):**
@@ -238,11 +240,14 @@ GET /ejercicios/buscar?busqueda={texto}&grupos_musculares[]={grupo}&equipamiento
   "ejercicios": [
     {
       "id": "uuid",
-      "nombre": "Press de banca",
-      "grupo_muscular": "pecho",
-      "equipamiento": "barra",
+      "exercise_db_id": "0001",
+      "nombre": "Press de banca con barra",
+      "url_gif": "https://r2.dev/ejercicios/360/0001.gif",
       "dificultad": "medio",
-      "url_miniatura": "https://r2.dev/exercises/uuid-thumb.webp"
+      "partes_cuerpo": ["Pecho"],
+      "musculos_objetivo": ["Pectoral mayor"],
+      "musculos_secundarios": ["Deltoides anterior", "Tríceps braquial"],
+      "equipamientos": ["Barra", "Banco plano"]
     }
   ],
   "total": 142,
@@ -250,29 +255,49 @@ GET /ejercicios/buscar?busqueda={texto}&grupos_musculares[]={grupo}&equipamiento
 }
 ```
 
+**Filtros por catálogo:** Se consultan las tablas de relación N:M para filtrar:
+```
+GET /ejercicio_musculo_objetivo?select=ejercicio_id&musculo_id=eq.{id}
+GET /ejercicio_parte_cuerpo?select=ejercicio_id&parte_cuerpo_id=eq.{id}
+GET /ejercicio_equipamiento?select=ejercicio_id&equipamiento_id=eq.{id}
+```
+
+**Catálogos disponibles:**
+```
+GET /partes_cuerpo?select=id,nombre
+GET /musculos?select=id,nombre
+GET /equipamientos?select=id,nombre
+```
+
 ### 5.2 Obtener detalle de ejercicio
 
 ```
-GET /ejercicios/{ejercicioId}
+GET /v_ejercicios_completos?id=eq.{ejercicioId}&limit=1
 ```
 
 **Response (200):**
 ```json
 {
   "id": "uuid",
-  "nombre": "Press de banca",
-  "grupo_muscular": "pecho",
-  "equipamiento": "barra",
+  "exercise_db_id": "0001",
+  "nombre": "Press de banca con barra",
+  "url_gif": "https://r2.dev/ejercicios/360/0001.gif",
   "dificultad": "medio",
-  "descripcion": "Ejercicio compuesto para tren superior...",
-  "instrucciones": ["Acuéstate en el banco...", "Agarra la barra..."],
-  "url_video": "https://r2.dev/exercises/uuid.mp4",
-  "url_imagen": "https://r2.dev/exercises/uuid.webp",
-  "descripcion_respaldo": "Si no puedes ver el video...",
-  "variantes": [
-    { "nombre": "Press inclinado", "descripcion": "Variante para fibras superiores" }
-  ]
+  "descripcion": "Ejercicio compuesto para tren superior. Trabaja principalmente el pectoral mayor...",
+  "instrucciones": [
+    "Acuéstate en el banco plano con los pies apoyados en el suelo.",
+    "Agarra la barra con un ancho ligeramente mayor que los hombros.",
+    "Baja la barra controladamente hasta el pecho.",
+    "Empuja la barra hacia arriba extendiendo los codos."
+  ],
+  "partes_cuerpo": ["Pecho"],
+  "musculos_objetivo": ["Pectoral mayor"],
+  "musculos_secundarios": ["Deltoides anterior", "Tríceps braquial"],
+  "equipamientos": ["Barra", "Banco plano"]
 }
+```
+
+**Nota:** La vista `v_ejercicios_completos` ya incluye los arrays de catálogos pre-calculados desde las tablas de relación N:M. No se requieren consultas adicionales para obtener músculos, partes del cuerpo o equipamientos.
 ```
 
 ### 5.3 Crear rutina

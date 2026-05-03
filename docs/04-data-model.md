@@ -1,13 +1,13 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 1.0  
-**Estado:** DISEÑO DE DATOS  
-**Fecha:** 19-04-2026  
+**Versión:** 2.0  
+**Estado:** VIGENTE  
+**Fecha:** 03-05-2026  
 **Propósito:** Definición completa de tablas, relaciones, RLS y políticas Supabase
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
-- `ejercicios` corresponde a la lista y el detalle de ejercicios.
+- `ejercicios`, `partes_cuerpo`, `musculos`, `equipamientos`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_parte_cuerpo`, `ejercicio_equipamiento` y `v_ejercicios_completos` corresponden al catálogo de ejercicios normalizado (3NF con relaciones N:M).
 - `rutinas` y `seleccion_de_ejercicios` corresponden a la solicitud y guardado de rutinas.
 - `sesiones_registradas` corresponde a la sesión completada, el tablero principal y el detalle de reto.
 - `retos`, `hitos_de_reto` y `progreso_de_reto` corresponden a los modelos funcionales de retos.
@@ -15,7 +15,9 @@
 - `horarios_academicos` y `asignaturas` corresponden al horario académico y la asignatura.
 - `perfil_academico_usuario` modela el contexto académico base del estudiante para personalización.
 - `carga_academica_semanal` modela la carga real/percibida para ajustar entrenamiento y retos.
-- `actividades_sociales` e `interacciones_sociales` correspon den a la actividad social y el elemento del muro social.
+- `perfil_bienestar_usuario`, `historial_peso` y `plan_entrenamiento_semanal` modelan los datos de bienestar físico del usuario.
+- `actividades_sociales`, `interacciones_sociales` y `amistades` corresponden a la actividad social y la red de contactos.
+- `preferencias_notificacion` modela la configuración de entrega de notificaciones por usuario.
 
 ---
 
@@ -31,18 +33,34 @@ erDiagram
   USUARIOS ||--o{ NOTIFICACIONES : recibe
   USUARIOS ||--o{ ACTIVIDADES_SOCIALES : genera
   USUARIOS ||--o{ INTERACCIONES_SOCIALES : realiza
-    
+  USUARIOS ||--o{ PERFIL_BIENESTAR_USUARIO : tiene
+  USUARIOS ||--o{ HISTORIAL_PESO : registra
+  USUARIOS ||--o{ PLAN_ENTRENAMIENTO_SEMANAL : planifica
+  USUARIOS ||--o{ PERFIL_ACADEMICO_USUARIO : tiene
+  USUARIOS ||--o{ CARGA_ACADEMICA_SEMANAL : reporta
+  USUARIOS ||--o{ PREFERENCIAS_NOTIFICACION : configura
+  USUARIOS ||--o{ AMISTADES : solicita
+
   EJERCICIOS ||--o{ SELECCION_DE_EJERCICIOS : incluye
-  SELECCION_DE_EJERCICIOS ||--o{ RUTINAS : pertenece_a
-  SELECCION_DE_EJERCICIOS ||--o{ SESIONES_REGISTRADAS : registra
-    
+  EJERCICIOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : tiene
+  EJERCICIOS ||--o{ EJERCICIO_MUSCULO_SECUNDARIO : activa
+  EJERCICIOS ||--o{ EJERCICIO_PARTE_CUERPO : pertenece_a
+  EJERCICIOS ||--o{ EJERCICIO_EQUIPAMIENTO : usa
+
+  MUSCULOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : es_objetivo_en
+  MUSCULOS ||--o{ EJERCICIO_MUSCULO_SECUNDARIO : es_secundario_en
+  PARTES_CUERPO ||--o{ EJERCICIO_PARTE_CUERPO : contiene
+  EQUIPAMIENTOS ||--o{ EJERCICIO_EQUIPAMIENTO : se_usa_en
+
+  SELECCION_DE_EJERCICIOS }o--|| RUTINAS : pertenece_a
+
   RUTINAS ||--o{ SESIONES_REGISTRADAS : genera
-    
+
   RETOS ||--o{ HITOS_DE_RETO : contiene
   HITOS_DE_RETO ||--o{ PROGRESO_DE_RETO : rastrea
-    
+
   ASIGNATURAS ||--o{ HORARIOS_ACADEMICOS : "programado en"
-    
+
   USUARIOS {
         uuid id PK
         string email UK
@@ -54,19 +72,52 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     EJERCICIOS {
         uuid id PK
-        string nombre UK
-        string grupo_muscular
-        string equipamiento
+        string exercise_db_id UK
+        string nombre
+        string url_gif
+        text[] instrucciones
         string dificultad
-        text description
-        text instructions
-        string url_video
-        string url_imagen
-        string descripcion_respaldo
-        timestamp created_at
+        text descripcion
+        timestamp creado_en
+        timestamp actualizado_en
+    }
+
+    MUSCULOS {
+        int id PK
+        string nombre UK
+    }
+
+    PARTES_CUERPO {
+        int id PK
+        string nombre UK
+    }
+
+    EQUIPAMIENTOS {
+        int id PK
+        string nombre UK
+    }
+
+    EJERCICIO_MUSCULO_OBJETIVO {
+        uuid ejercicio_id FK
+        int musculo_id FK
+    }
+
+    EJERCICIO_MUSCULO_SECUNDARIO {
+        uuid ejercicio_id FK
+        int musculo_id FK
+    }
+
+    EJERCICIO_PARTE_CUERPO {
+        uuid ejercicio_id FK
+        int parte_cuerpo_id FK
+    }
+
+    EJERCICIO_EQUIPAMIENTO {
+        uuid ejercicio_id FK
+        int equipamiento_id FK
     }
     
     RUTINAS {
@@ -230,55 +281,158 @@ CREATE POLICY "usuarios_actualizar" ON usuarios
 
 ---
 
-### 2.2 EJERCICIOS (catalogo de ejercicios interno)
+### 2.2 CATÁLOGO DE EJERCICIOS (modelo normalizado 3NF)
 
-Fuente adoptada para seeding: ExerciseDB (AscendAPI) via Kaggle.
+Fuente adoptada para seeding: ExerciseDB (AscendAPI) via Kaggle, traducido al español con terminología anatómica profesional.
+
+#### 2.2.1 Tablas de catálogo (datos maestros)
+
+```sql
+CREATE TABLE partes_cuerpo (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL UNIQUE,
+  creado_en TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE musculos (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL UNIQUE,
+  creado_en TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE equipamientos (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL UNIQUE,
+  creado_en TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**Políticas RLS — catálogos (lectura pública):**
+```sql
+CREATE POLICY partes_cuerpo_select ON partes_cuerpo FOR SELECT USING (true);
+CREATE POLICY musculos_select ON musculos FOR SELECT USING (true);
+CREATE POLICY equipamientos_select ON equipamientos FOR SELECT USING (true);
+```
+
+#### 2.2.2 Tabla de ejercicios (cabecera)
 
 ```sql
 CREATE TABLE ejercicios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  exercise_db_id TEXT UNIQUE,
   nombre TEXT NOT NULL,
-  grupo_muscular TEXT NOT NULL,
-  equipamiento TEXT,
-  dificultad TEXT DEFAULT 'medio',
+  url_gif TEXT,
+  instrucciones TEXT[] NOT NULL DEFAULT '{}',
+  dificultad TEXT NOT NULL DEFAULT 'medio',
   descripcion TEXT,
-  instrucciones TEXT,
-  url_video TEXT,  -- URL firmada de R2
-  url_imagen TEXT,  -- URL firmada de R2
-  descripcion_respaldo TEXT,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   
-  -- Metadato de origen externo (campo legado; pendiente renombre a id_exercisedb)
-  id_wger INT UNIQUE,
-  creado_en TIMESTAMP DEFAULT now(),
-  actualizado_en TIMESTAMP DEFAULT now(),
-  
-  CONSTRAINT nombre_length CHECK (char_length(nombre) >= 3),
-  CONSTRAINT valid_muscle_group CHECK (grupo_muscular IN (
-    'pecho', 'espalda', 'hombros', 'brazos', 'antebrazos', 
-    'abdomen', 'oblicuos', 'espalda_baja', 'glúteos', 'cuádriceps', 
-    'isquiotibiales', 'pantorrillas', 'múltiple'
-  )),
-  CONSTRAINT valid_equipment CHECK (equipamiento IN (
-    'mancerna', 'barra', 'polea', 'máquina', 'peso_corporal', 
-    'banda_elástica', 'kettlebell', 'medicina_ball'
-  )),
-  CONSTRAINT valid_difficulty CHECK (dificultad IN ('fácil', 'medio', 'difícil'))
+  CONSTRAINT ck_ejercicios_nombre_len CHECK (char_length(nombre) >= 2),
+  CONSTRAINT ck_ejercicios_dificultad CHECK (dificultad IN ('facil', 'medio', 'dificil'))
 );
 
-CREATE INDEX idx_ejercicios_grupo_muscular ON ejercicios(grupo_muscular);
-CREATE INDEX idx_ejercicios_equipamiento ON ejercicios(equipamiento);
+CREATE INDEX idx_ejercicios_exercise_db_id ON ejercicios(exercise_db_id);
 CREATE INDEX idx_ejercicios_dificultad ON ejercicios(dificultad);
-CREATE INDEX idx_ejercicios_id_wger ON ejercicios(id_wger);
-CREATE FULL_TEXT_SEARCH INDEX idx_ejercicios_fts ON ejercicios USING GIN(
-  to_tsvector('spanish', nombre || ' ' || descripcion)
+CREATE INDEX idx_ejercicios_fts ON ejercicios USING GIN(
+  to_tsvector('spanish', nombre || ' ' || coalesce(descripcion, ''))
 );
 ```
 
-**Políticas RLS:**
+**Diferencia clave con v1:** Los músculos, partes del cuerpo y equipamientos ya no son columnas `TEXT` o ENUM con valores fijos. Ahora son entidades en tablas de catálogo independientes, vinculadas mediante relaciones N:M. Esto permite usar terminología anatómica profesional sin restricciones de `CHECK`, facilita la traducción y permite evolución del catálogo sin migraciones.
+
+#### 2.2.3 Tablas de relación N:M
+
 ```sql
--- Seleccionar: Todos pueden leer ejercicios
-CREATE POLICY "ejercicios_seleccionar" ON ejercicios
-  FOR SELECT USING (true);
+CREATE TABLE ejercicio_musculo_objetivo (
+  ejercicio_id UUID REFERENCES ejercicios(id) ON DELETE CASCADE,
+  musculo_id INT REFERENCES musculos(id) ON DELETE CASCADE,
+  PRIMARY KEY (ejercicio_id, musculo_id)
+);
+
+CREATE TABLE ejercicio_musculo_secundario (
+  ejercicio_id UUID REFERENCES ejercicios(id) ON DELETE CASCADE,
+  musculo_id INT REFERENCES musculos(id) ON DELETE CASCADE,
+  PRIMARY KEY (ejercicio_id, musculo_id)
+);
+
+CREATE TABLE ejercicio_parte_cuerpo (
+  ejercicio_id UUID REFERENCES ejercicios(id) ON DELETE CASCADE,
+  parte_cuerpo_id INT REFERENCES partes_cuerpo(id) ON DELETE CASCADE,
+  PRIMARY KEY (ejercicio_id, parte_cuerpo_id)
+);
+
+CREATE TABLE ejercicio_equipamiento (
+  ejercicio_id UUID REFERENCES ejercicios(id) ON DELETE CASCADE,
+  equipamiento_id INT REFERENCES equipamientos(id) ON DELETE CASCADE,
+  PRIMARY KEY (ejercicio_id, equipamiento_id)
+);
+```
+
+**Índices para JOINs rápidos:**
+```sql
+CREATE INDEX idx_emo_musculo ON ejercicio_musculo_objetivo(musculo_id);
+CREATE INDEX idx_ems_musculo ON ejercicio_musculo_secundario(musculo_id);
+CREATE INDEX idx_epc_parte ON ejercicio_parte_cuerpo(parte_cuerpo_id);
+CREATE INDEX idx_ee_equip ON ejercicio_equipamiento(equipamiento_id);
+```
+
+**Políticas RLS — tablas de relación (lectura pública):**
+```sql
+CREATE POLICY emo_select ON ejercicio_musculo_objetivo FOR SELECT USING (true);
+CREATE POLICY ems_select ON ejercicio_musculo_secundario FOR SELECT USING (true);
+CREATE POLICY epc_select ON ejercicio_parte_cuerpo FOR SELECT USING (true);
+CREATE POLICY ee_select ON ejercicio_equipamiento FOR SELECT USING (true);
+```
+
+#### 2.2.4 Vista denormalizada para consultas rápidas
+
+Para evitar múltiples JOINs en el frontend, se expone una vista que pre-calculada los arrays de catálogos:
+
+```sql
+CREATE VIEW v_ejercicios_completos AS
+SELECT
+  e.id, e.exercise_db_id, e.nombre, e.url_gif, e.instrucciones,
+  e.dificultad, e.descripcion, e.creado_en, e.actualizado_en,
+  coalesce((SELECT array_agg(DISTINCT pc.nombre)
+    FROM ejercicio_parte_cuerpo epc JOIN partes_cuerpo pc ON pc.id = epc.parte_cuerpo_id
+    WHERE epc.ejercicio_id = e.id), '{}') AS partes_cuerpo,
+  coalesce((SELECT array_agg(DISTINCT mt.nombre)
+    FROM ejercicio_musculo_objetivo emo JOIN musculos mt ON mt.id = emo.musculo_id
+    WHERE emo.ejercicio_id = e.id), '{}') AS musculos_objetivo,
+  coalesce((SELECT array_agg(DISTINCT ms.nombre)
+    FROM ejercicio_musculo_secundario ems JOIN musculos ms ON ms.id = ems.musculo_id
+    WHERE ems.ejercicio_id = e.id), '{}') AS musculos_secundarios,
+  coalesce((SELECT array_agg(DISTINCT eq.nombre)
+    FROM ejercicio_equipamiento ee JOIN equipamientos eq ON eq.id = ee.equipamiento_id
+    WHERE ee.ejercicio_id = e.id), '{}') AS equipamientos
+FROM ejercicios e;
+```
+
+El frontend consulta esta vista para obtener el ejercicio completo con todos sus catálogos en una sola consulta, manteniendo la integridad referencial en el backend.
+
+#### 2.2.5 Realtime habilitado
+
+Todas las tablas del catálogo de ejercicios tienen Supabase Realtime activado para sincronización automática con el frontend:
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE ejercicios;
+ALTER PUBLICATION supabase_realtime ADD TABLE partes_cuerpo;
+ALTER PUBLICATION supabase_realtime ADD TABLE musculos;
+ALTER PUBLICATION supabase_realtime ADD TABLE equipamientos;
+ALTER PUBLICATION supabase_realtime ADD TABLE ejercicio_musculo_objetivo;
+ALTER PUBLICATION supabase_realtime ADD TABLE ejercicio_musculo_secundario;
+ALTER PUBLICATION supabase_realtime ADD TABLE ejercicio_parte_cuerpo;
+ALTER PUBLICATION supabase_realtime ADD TABLE ejercicio_equipamiento;
+```
+
+#### 2.2.6 Permisos PostgREST
+
+```sql
+GRANT SELECT ON partes_cuerpo, musculos, equipamientos, ejercicios,
+  ejercicio_musculo_objetivo, ejercicio_musculo_secundario,
+  ejercicio_parte_cuerpo, ejercicio_equipamiento, v_ejercicios_completos
+  TO anon, authenticated;
 ```
 
 ---
@@ -908,21 +1062,33 @@ $$ LANGUAGE plpgsql;
 
 | Tabla | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
-| **usuarios** | Propio + público | - | Propio | - |
+| **usuarios** | Propio + público | Propio | Propio | - |
+| **partes_cuerpo** | Todos | - | - | - |
+| **musculos** | Todos | - | - | - |
+| **equipamientos** | Todos | - | - | - |
 | **ejercicios** | Todos | - | - | - |
+| **ejercicio_musculo_objetivo** | Todos | - | - | - |
+| **ejercicio_musculo_secundario** | Todos | - | - | - |
+| **ejercicio_parte_cuerpo** | Todos | - | - | - |
+| **ejercicio_equipamiento** | Todos | - | - | - |
 | **rutinas** | Propio + visibilidad | Propio | Propio | Propio |
 | **seleccion_de_ejercicios** | Hereda | Hereda | Hereda | Hereda |
-| **sesiones_registradas** | Propio + público | Propio (5min) | Propio (5min) | Propio (5min) |
+| **sesiones_registradas** | Propio + público | Propio | Propio | Propio |
 | **retos** | Propio + visibilidad | Propio | Propio | Propio |
 | **hitos_de_reto** | Hereda | Hereda | Hereda | Hereda |
-| **progreso_de_reto** | Propio + público | Propio | - | - |
-| **notificaciones** | Propio | Admin | Propio | - |
+| **progreso_de_reto** | Propio + público | Propio | Propio | Propio |
+| **notificaciones** | Propio | Admin | Propio | Propio |
 | **horarios_academicos** | Propio | Propio | Propio | Propio |
 | **asignaturas** | Propio | Propio | Propio | Propio |
 | **perfil_academico_usuario** | Propio | Propio | Propio | Propio |
 | **carga_academica_semanal** | Propio | Propio | Propio | Propio |
+| **perfil_bienestar_usuario** | Propio | Propio | Propio | - |
+| **historial_peso** | Propio | Propio | - | - |
+| **plan_entrenamiento_semanal** | Propio | Propio | Propio | Propio |
 | **actividades_sociales** | Propio + público | Propio | - | - |
 | **interacciones_sociales** | Propio + público | Propio | - | Propio |
+| **amistades** | Propio | Propio | Propio | Propio |
+| **preferencias_notificacion** | Propio | Propio | Propio | - |
 
 ---
 
@@ -935,9 +1101,10 @@ CREATE INDEX idx_sesiones_registradas_usuario_tiempo ON sesiones_registradas(usu
 CREATE INDEX idx_retos_usuario_activos ON retos(usuario_id, esta_completado, fecha_fin DESC);
 
 -- Búsquedas de ejercicios (Explorador)
-CREATE INDEX idx_ejercicios_grupo_dificultad ON ejercicios(grupo_muscular, dificultad);
+CREATE INDEX idx_ejercicios_exercise_db_id ON ejercicios(exercise_db_id);
+CREATE INDEX idx_ejercicios_dificultad ON ejercicios(dificultad);
 CREATE FULL_TEXT_SEARCH INDEX idx_ejercicios_busqueda ON ejercicios USING GIN(
-  to_tsvector('spanish', name || ' ' || description || ' ' || instructions)
+  to_tsvector('spanish', nombre || ' ' || coalesce(descripcion, ''))
 );
 
 -- Notificaciones adaptativas
@@ -946,63 +1113,31 @@ CREATE INDEX idx_notificaciones_usuario_no_leidas ON notificaciones(usuario_id, 
 
 ---
 
-## 6. Sincronizacion de ejercicios desde ExerciseDB (Kaggle)
+## 6. Sincronización de ejercicios desde ExerciseDB (Kaggle)
 
-Estado actual: pipeline de sincronizacion activo con proveedor aprobado.
+Estado actual: pipeline de sincronización activo con proveedor aprobado.
 
-### Edge Function objetivo: `sincronizar_ejercicios_desde_exercisedb`
+El script `supabase/seed_ejercicios.py` implementa la ingesta completa:
+1. **Limpieza:** Elimina registros existentes de las 8 tablas de ejercicios respetando dependencias FK.
+2. **Catálogos:** Inserta o actualiza `partes_cuerpo`, `musculos` y `equipamientos` desde los JSON traducidos (`synaptix_bodyParts_es.json`, `synaptix_muscles_es.json`, `synaptix_equipments_es.json`).
+3. **Ejercicios:** Inserta cada ejercicio con `exercise_db_id`, `nombre`, `url_gif` (construida desde R2), `instrucciones` y `descripcion`.
+4. **Relaciones N:M:** Vincula cada ejercicio con sus músculos objetivo, músculos secundarios, partes del cuerpo y equipamientos mediante las 4 tablas de relación.
 
-```sql
-CREATE FUNCTION sincronizar_ejercicios_desde_exercisedb()
-RETURNS TABLE(
-  cantidad_insertada INT,
-  cantidad_actualizada INT,
-  status TEXT
-) AS $$
-DECLARE
-  v_insertado INT := 0;
-  v_actualizado INT := 0;
-BEGIN
-  -- Esta funcion sera llamada desde Edge Function en Node.js
-  -- tras validar el dataset oficial de Kaggle (ExerciseDB / AscendAPI)
-  -- Estructura minima esperada: exercises.json + catalogos auxiliares
-  
-  INSERT INTO ejercicios (name, grupo_muscular, equipamiento, dificultad, description, id_wger)
-  SELECT 
-    json->'name',
-    json->'muscle_group',
-    json->'equipment',
-    json->'difficulty',
-    json->'description',
-    (json->'id')::INT
-  FROM (
-    SELECT jsonb_array_elements(response) as json
-    FROM exercisedb_kaggle_sync_response
-  ) tmp
-  ON CONFLICT (id_wger) DO UPDATE
-  SET 
-    name = EXCLUDED.name,
-    description = EXCLUDED.description,
-    updated_at = now()
-  RETURNING 1 INTO v_actualizado;
-  
-  RETURN QUERY SELECT v_insertado, v_actualizado, 'success';
-END;
-$$ LANGUAGE plpgsql;
-```
+Los GIFs se alojan en Cloudflare R2 bajo `ejercicios/360/{exercise_db_id}.gif` (resolución 360x360).
 
 ---
 
 ## 7. Próximas Fases
 
 - [ ] Particionamiento de sesiones_registradas por usuario (optimizar consultas grandes)
-- [ ] Materialized views para estadísticas (dashboard pre-calculado)
+- [x] Materialized views para estadísticas (v_ejercicios_completos implementada)
 - [ ] Audit table para cambios críticos (HIPAA compliance futuro)
 - [ ] Backup automático diario a Cloudflare R2
+- [x] Catálogo de ejercicios normalizado con terminología anatómica profesional
 
 ---
 
-**Documento compilado:** 19-04-2026  
+**Documento compilado:** 03-05-2026  
 **Referencia:** RFC v2.5 - Arquitectura de datos  
 **Validador:** Tech Lead + DBA
 

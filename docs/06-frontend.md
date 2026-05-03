@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.0  
-**Fecha:** 19-04-2026  
+**Versión:** 1.1  
+**Fecha:** 03-05-2026  
 **Referencia:** [01-introduction.md](01-introduction.md) (Design System), [02-requirements.md](02-requirements.md) (Casos de Uso)
 
 ---
@@ -305,21 +305,23 @@ class MetricasDiarias {
 
 ### 10.4 Explorar Ejercicios
 
-**Objetivo:** Buscar y filtrar ejercicios del catalogo interno de SynaptixFit.
+**Objetivo:** Buscar y filtrar ejercicios del catálogo normalizado de SynaptixFit con terminología anatómica profesional.
 
 **Componentes:**
-- Barra de búsqueda (autocompletado, mín. 2 chars).
-- Chips de filtro: Grupo muscular (multi-selección), equipamiento, dificultad.
-- Vista lista/cuadrícula: Tarjeta con foto, nombre, grupo, equipo.
+- Barra de búsqueda (autocompletado, mín. 2 chars, búsqueda full-text en español).
+- Chips de filtro: Parte del cuerpo, músculo objetivo, equipamiento (desde tablas de catálogo).
+- Vista lista/cuadrícula: Tarjeta con GIF animado, nombre, músculo principal, equipamiento.
 - Badge: Número de resultados.
+- Streaming en tiempo real: `ejerciciosProvider` usa `supabase.from('ejercicios').stream()` para reflejar cambios en vivo (inserciones, actualizaciones, eliminaciones).
 
 **Modelo de datos:**
 ```dart
 class FiltroEjercicio {
   final String? busqueda;
-  final List<String>? gruposMusculares;
-  final List<String>? equipamientos;
-  final List<String>? dificultades;
+  final int? parteCuerpoId;    // ID de catálogo
+  final int? musculoId;         // ID de catálogo
+  final int? equipamientoId;    // ID de catálogo
+  final String? dificultad;
   final int pagina;
   final int tamanioPagina;
 }
@@ -327,14 +329,21 @@ class FiltroEjercicio {
 class TarjetaEjercicio {
   final String id;
   final String nombre;
-  final String grupoMuscular;
-  final String? equipamiento;
+  final String? urlGif;
   final String dificultad;
-  final String? urlMultimedia;
+  final String? musculoPrincipal;     // Primer músculo objetivo
+  final String? equipamientoPrincipal; // Primer equipamiento
+  final String? parteCuerpoPrincipal;  // Primera parte del cuerpo
+}
+
+class CatalogosEjercicios {
+  final List<ParteCuerpoDb> partesCuerpo;
+  final List<MusculoDb> musculos;
+  final List<EquipamientoDb> equipamientos;
 }
 ```
 
-**Integraciones:** `GET /ejercicios/buscar` (paginado) · Caché 1 hora · URLs R2 firmadas.
+**Integraciones:** `GET /v_ejercicios_completos` (vista denormalizada) · Caché 1 hora · URLs R2 para GIFs · Realtime via `.stream()`.
 
 **Validaciones:** Búsqueda ≥ 2 chars · Máx. 50 por página.
 
@@ -342,34 +351,35 @@ class TarjetaEjercicio {
 
 ### 10.5 Detalle de Ejercicio
 
-**Objetivo:** Vista completa con multimedia, instrucciones y opción de agregar a rutina.
+**Objetivo:** Vista completa con GIF animado, metadatos anatómicos, instrucciones y opción de agregar a rutina.
 
 **Componentes:**
-- Reproductor de video/imagen (R2, patrón fallback).
-- Tarjeta de instrucciones (lista numerada).
-- Selectores numéricos: Series (1-10), repeticiones (1-100), descanso (30-180s).
+- Visor de GIF animado desde R2 (URL pública, patrón fallback).
+- Chips de metadatos: Parte del cuerpo, músculos objetivo, músculos secundarios, equipamiento, dificultad.
+- Tarjeta de instrucciones (lista numerada desde `instrucciones TEXT[]`).
+- Selectores numéricos: Series (1-10), repeticiones (1-100), descanso (30-300s).
 - Botón: "Agregar a rutina".
-- Tabs: Instrucciones, variantes, notas.
+- Tabs: Instrucciones, Información general.
 
 **Patrón Fallback Multimedia:**
-1. Intentar video/GIF desde R2 (URL firmada).
-2. Si falla → mostrar imagen estática.
+1. Intentar GIF desde R2 (`url_gif`).
+2. Si falla → mostrar placeholder con ícono de ejercicio.
 3. Si falla → mostrar descripción textual + instrucciones.
 
 **Modelo de datos:**
 ```dart
 class DetalleEjercicio {
   final String id;
+  final String? exerciseDbId;
   final String nombre;
-  final String grupoMuscular;
-  final String? equipamiento;
-  final String dificultad;
-  final String descripcion;
+  final String? urlGif;
   final List<String> instrucciones;
-  final String? urlVideo;
-  final String? urlImagen;
-  final String? descripcionRespaldo;
-  final List<VarianteEjercicio> variantes;
+  final String dificultad;
+  final String? descripcion;
+  final List<String> partesCuerpo;          // Desde catálogo N:M
+  final List<String> musculosObjetivo;      // Desde catálogo N:M
+  final List<String> musculosSecundarios;   // Desde catálogo N:M
+  final List<String> equipamientos;         // Desde catálogo N:M
 }
 ```
 

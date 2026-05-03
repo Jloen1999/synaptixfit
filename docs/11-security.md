@@ -1,8 +1,8 @@
 # 11 - Seguridad
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.0  
-**Fecha:** 19-04-2026  
+**Versión:** 1.1  
+**Fecha:** 03-05-2026  
 **Referencia:** [03-architecture.md](03-architecture.md) (sección 7), [04-data-model.md](04-data-model.md) (RLS)
 
 ---
@@ -75,20 +75,32 @@ flowchart TD
 | Tabla | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
 | `usuarios` | Propio + públicos | — | Solo propio | — |
+| `partes_cuerpo` | Todos (catálogo público) | — | — | — |
+| `musculos` | Todos (catálogo público) | — | — | — |
+| `equipamientos` | Todos (catálogo público) | — | — | — |
 | `ejercicios` | Todos (catálogo público) | — | — | — |
+| `ejercicio_musculo_objetivo` | Todos (catálogo público) | — | — | — |
+| `ejercicio_musculo_secundario` | Todos (catálogo público) | — | — | — |
+| `ejercicio_parte_cuerpo` | Todos (catálogo público) | — | — | — |
+| `ejercicio_equipamiento` | Todos (catálogo público) | — | — | — |
 | `rutinas` | Propio + según visibilidad | Solo propio | Solo propio | Solo propio |
 | `seleccion_de_ejercicios` | Hereda de `rutinas` | Hereda | Hereda | Hereda |
-| `sesiones_rutina` | Propio + públicos | Solo propio | Propio (5 min) | Propio (5 min) |
+| `sesiones_registradas` | Propio + públicos | Solo propio | Propio | Propio |
 | `retos` | Propio + según visibilidad | Solo propio | Solo propio | Solo propio |
 | `hitos_de_reto` | Hereda de `retos` | Hereda | Hereda | Hereda |
-| `progreso_de_reto` | Propio + públicos | Solo propio | — | — |
-| `notificaciones` | Solo propio | Funciones admin | Solo propio | — |
+| `progreso_de_reto` | Propio + públicos | Solo propio | Solo propio | Solo propio |
+| `notificaciones` | Solo propio | Funciones admin | Solo propio | Solo propio |
 | `horarios_academicos` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `asignaturas` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `perfil_academico_usuario` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `carga_academica_semanal` | Solo propio | Solo propio | Solo propio | Solo propio |
+| `perfil_bienestar_usuario` | Solo propio | Solo propio | Solo propio | — |
+| `historial_peso` | Solo propio | Solo propio | — | — |
+| `plan_entrenamiento_semanal` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `actividades_sociales` | Propio + públicos | Solo propio | — | — |
 | `interacciones_sociales` | Según visibilidad de actividad | Autenticado | — | Solo propio |
+| `amistades` | Solo propio | Solo propio | Solo propio | Solo propio |
+| `preferencias_notificacion` | Solo propio | Solo propio | Solo propio | — |
 
 ---
 

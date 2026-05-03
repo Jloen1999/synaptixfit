@@ -5,6 +5,47 @@
 
 ---
 
+## [2.5.28] — 03-05-2026
+
+### Realtime activado en catálogo de ejercicios
+- Se habilitó Supabase Realtime en las 8 tablas del catálogo de ejercicios: `ejercicios`, `partes_cuerpo`, `musculos`, `equipamientos`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_parte_cuerpo` y `ejercicio_equipamiento`.
+- Se actualizó [app/lib/features/bienestar/application/ejercicios_provider.dart](app/lib/features/bienestar/application/ejercicios_provider.dart) para usar `.stream()` y reflejar cambios en vivo en la UI.
+- Migración: [supabase/migrations/20260501_0008_enable_realtime_ejercicios.sql](supabase/migrations/20260501_0008_enable_realtime_ejercicios.sql).
+
+---
+
+## [2.5.27] — 22-04-2026
+
+### Catálogo de ejercicios poblado con terminología anatómica profesional
+- Se ejecutó `supabase/seed_ejercicios.py` con los JSON traducidos al español (`synaptix_bodyParts_es.json`, `synaptix_muscles_es.json`, `synaptix_equipments_es.json`, `synaptix_exercises_es.json`).
+- Los nombres de músculos, partes del cuerpo y equipamientos usan terminología anatómica profesional (ej. "Pectoral mayor" en lugar de "pecho", "Deltoides anterior" en lugar de "hombros").
+- Los GIFs se referencian desde Cloudflare R2 en resolución 360x360.
+
+---
+
+## [2.5.26] — 22-04-2026
+
+### Modelo normalizado de ejercicios (ExerciseDB v2)
+- Se reemplazó la tabla plana `ejercicios` (con columnas `grupo_muscular TEXT`, `equipamiento TEXT` y ENUMs fijos) por un modelo 3NF completo:
+	- 3 tablas de catálogo: `partes_cuerpo`, `musculos`, `equipamientos`.
+	- 4 tablas de relación N:M: `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_parte_cuerpo`, `ejercicio_equipamiento`.
+	- Vista denormalizada `v_ejercicios_completos` para consultas rápidas desde el frontend.
+- Campo `exercise_db_id TEXT UNIQUE` reemplaza al obsoleto `id_wger INT`.
+- Campo `url_gif TEXT` unifica `url_video` y `url_imagen`.
+- Campo `instrucciones TEXT[]` reemplaza `instrucciones TEXT`.
+- Se eliminaron `descripcion_respaldo`, `url_video`, `url_imagen`, `id_wger`.
+- Se actualizó `EjercicioDb` en [app/lib/shared/models/db_models.dart](app/lib/shared/models/db_models.dart) con propiedades derivadas (`musculoPrincipal`, `equipamientoPrincipal`, `parteCuerpoPrincipal`).
+- Se añadieron modelos de catálogo en [app/lib/shared/models/catalogo_models.dart](app/lib/shared/models/catalogo_models.dart) (`ParteCuerpoDb`, `MusculoDb`, `EquipamientoDb`, `CatalogosEjercicios`).
+- Migración: [supabase/migrations/20260422_0006_ejercicios_v2_normalizado.sql](supabase/migrations/20260422_0006_ejercicios_v2_normalizado.sql).
+
+### Actualización de UI de ejercicios
+- `ExploradorEjerciciosScreen` ahora filtra por catálogos N:M (parte del cuerpo, músculo, equipamiento) usando las tablas de relación.
+- `DetalleEjercicioScreen` muestra chips de metadatos anatómicos (músculos objetivo, músculos secundarios, partes del cuerpo, equipamientos) y renderiza el GIF animado desde `url_gif`.
+- `ExerciseCard` muestra `musculoPrincipal` y `equipamientoPrincipal` desde las propiedades derivadas del modelo.
+- Se actualizó `EjerciciosRepository` para consultar `v_ejercicios_completos` y las tablas de catálogo y relación N:M.
+
+---
+
 ## [2.5.25] — 26-04-2026
 
 ### Inicio orientado a creación

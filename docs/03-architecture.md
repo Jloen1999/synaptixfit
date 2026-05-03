@@ -51,12 +51,12 @@ Este RFC no implementa logica final. Fija cimientos para desarrollo con foco en 
   - `muscles.json`
   - `equipments.json`
   - `bodyParts.json`
-  - `gifs_180x180/` (resolucion abierta recomendada para MVP)
+  - `gifs_360x360/` (resolucion utilizada en el pipeline actual)
 
 #### 2.4.2 Cargar a infraestructura propia
 1. Traducir JSON fuente al espanol para campos funcionales del cliente (nombre, listas catalogo e instrucciones).
-2. Normalizar JSON traducido al esquema interno de Supabase.
-2. Subir multimedia de `gifs_180x180/` a bucket R2.
+2. Normalizar JSON traducido al esquema interno de Supabase (modelo 3NF con catálogos y relaciones N:M).
+3. Subir multimedia de `gifs_360x360/` a bucket R2.
 3. Persistir en Supabase metadatos y referencias (`r2_object_key` / URL firmada).
 
 #### 2.4.3 Nota historica de decision
@@ -305,28 +305,46 @@ erDiagram
 
 5. ejercicios
 - id (uuid)
-- id_fuente_origen (en esquema actual existe `id_wger` como campo legado)
+- exercise_db_id (text unique, identificador del dataset ExerciseDB)
 - nombre
-- objetivo (fuerza, resistencia, movilidad, mixto)
-- grupo_muscular_principal
-- equipamiento
-- nivel (inicial, intermedio, avanzado)
-- instrucciones
-- fuente_dataset
-- licencia_dataset
-- version_dataset
-- activo (bool)
+- url_gif (URL pública en Cloudflare R2)
+- instrucciones (text[])
+- dificultad (facil, medio, dificil)
+- descripcion
+- creado_en
 - actualizado_en
 
-6. ejercicios_multimedia
-- id (uuid)
-- ejercicio_id
-- tipo (gif, mp4, jpg)
-- r2_object_key
-- checksum (nullable)
-- tamano_bytes (nullable)
-- es_principal (bool)
-- actualizado_en
+5.1 partes_cuerpo (catálogo)
+- id (serial)
+- nombre (text unique, terminología anatómica profesional)
+
+5.2 musculos (catálogo)
+- id (serial)
+- nombre (text unique, terminología anatómica profesional)
+
+5.3 equipamientos (catálogo)
+- id (serial)
+- nombre (text unique)
+
+5.4 ejercicio_musculo_objetivo (N:M)
+- ejercicio_id (uuid FK → ejercicios)
+- musculo_id (int FK → musculos)
+
+5.5 ejercicio_musculo_secundario (N:M)
+- ejercicio_id (uuid FK → ejercicios)
+- musculo_id (int FK → musculos)
+
+5.6 ejercicio_parte_cuerpo (N:M)
+- ejercicio_id (uuid FK → ejercicios)
+- parte_cuerpo_id (int FK → partes_cuerpo)
+
+5.7 ejercicio_equipamiento (N:M)
+- ejercicio_id (uuid FK → ejercicios)
+- equipamiento_id (int FK → equipamientos)
+
+5.8 v_ejercicios_completos (vista denormalizada)
+- Incluye todos los campos de ejercicios más arrays pre-calculados:
+  partes_cuerpo, musculos_objetivo, musculos_secundarios, equipamientos
 
 7. rutina_ejercicios
 - id (uuid)
@@ -649,9 +667,10 @@ Nota: se prioriza supabase_flutter sobre PostgREST directo, con Edge Functions p
 - evento: update en plan_entrenamiento_semanal y sesiones_rutina
 - uso: refresco de recomendacion y adherencia semanal
 
-6. canal_catalogo_ejercicios
-- evento: update en ejercicios y rutina_ejercicios
-- uso: refresco de explorador/ficha cuando haya cambios de catalogo
+6. canal_catalogo_ejercicios (ACTIVO)
+- tablas con realtime habilitado: ejercicios, partes_cuerpo, musculos, equipamientos, ejercicio_musculo_objetivo, ejercicio_musculo_secundario, ejercicio_parte_cuerpo, ejercicio_equipamiento
+- uso: refresco del explorador y detalle de ejercicios en tiempo real
+- implementacion: `ejerciciosProvider` en Flutter usa `supabase.from('ejercicios').stream()`
 
 ## 9. Navegacion y mapa de pantallas
 
