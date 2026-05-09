@@ -5,6 +5,40 @@
 
 ---
 
+## [2.7.0] — 09-05-2026
+
+### Módulo académico — Completado (RF-ACA-06/07/08)
+- **Gestión de asignaturas (`gestion_asignaturas_screen.dart`):** Reescrita con búsqueda en catálogo en tiempo real, sin creación manual. Detalle con modal bottom sheet que consulta datos del catálogo (créditos, curso, semestre, carácter). Edición de campos propios. Tabs Activas/Archivadas. Highlight animado para nuevas asignaturas (fade azul 3s).
+- **Configuración académica (`configuracion_academica_screen.dart`):** Selector universidad → carrera. Loading dialog con `ValueNotifier` + contador "X de Y procesadas". Persiste carrera en `usuario_carreras`. Prevención de duplicados. FAB flotante para cargar.
+- **Apuntes (`apuntes_screen.dart`):** Editor Markdown con vista previa, asignación de asignatura, visibilidad, nota rápida. Fix: `GoRouterState.of(context)` movido de `initState` a `build()`.
+- **Perfil:** Sección "Mis carreras" rediseñada: universidad + nombre de carrera.
+
+### Retos — Mejoras completas
+- **Barra de progreso:** Esquema intuitivo gris (0%) → azul (>0%) → naranja (≥30%) → verde (≥70%).
+- **Auto-completado** al 100% con `ref.listen`. Botón "Desmarcar" para deshacer.
+- **Filtro Simple/Complejo:** Badge visual verde/púrpura en cards. Filtro en las 3 pestañas.
+- **Marcar desde lista:** Botón `check_circle_outline` en cada reto propio.
+- **Hitos → Tareas:** Renombrado. Peso como "X% del total". Label explicativo del cálculo.
+- **Fix:** Retos simples sin hito por defecto. `tieneHitos: false` filtro correcto.
+
+### Correcciones de bugs
+- Error `dependOnInheritedWidgetOfExactType` en apuntes (`initState`)
+- Overflow dropdown Asignatura en apuntes (+75px) → `isExpanded: true`
+- `AsyncData` sin `when` en retos → refactorizado a `AsyncValue` + callback
+- Filtrado de completados que no aplicaba tipo ni búsqueda
+- Overflow dropdowns en configuración académica
+
+### Proveedores, modelos y BD
+- **Nuevos providers:** `asignaturas_provider.dart`, `catalogo_provider.dart`, `apuntes_provider.dart`, `planes_estudio_provider.dart`, `usuario_carreras_provider.dart`, `bienestar_semanal_provider.dart`, `sesion_provider.dart`
+- **`CatalogoCarreraDb`:** Campo `universidadNombre` del join
+- **`RetoResumen`:** Campo `tieneHitos` vía batch query
+- **Migraciones:** 6 nuevas desde `0008` hasta `0013` (catálogo académico, apuntes, usuario_carreras, realtime)
+
+### Rutas nuevas
+- `/academico/asignaturas`, `/academico/configuracion`, `/academico/apuntes`, `/retos/simple`, `/retos/complejo`, `/retos/:id`
+
+---
+
 ## [2.6.1] — 05-05-2026
 
 ### Fixes y mejoras de UX

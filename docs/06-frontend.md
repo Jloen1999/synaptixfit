@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.1  
-**Fecha:** 03-05-2026  
+**Versión:** 2.7  
+**Fecha:** 09-05-2026  
 **Referencia:** [01-introduction.md](01-introduction.md) (Design System), [02-requirements.md](02-requirements.md) (Casos de Uso)
 
 ---
@@ -17,8 +17,14 @@ flowchart LR
     Home --> Social["👥 Social<br/>Muro de Logros"]
     Home --> Profile["👤 Perfil<br/>Datos Personales"]
     
-    Academic --> AcademicPlan["Plan Académico<br/>Semanal"]
+    Academic --> AcademicPlan["Plan Académico<br/>Configuración"]
     Academic --> DayDetail["Detalle Día"]
+    Academic --> GestionAsignaturas["Gestión de<br/>Asignaturas"]
+    Academic --> AcademicConfig["Configuración<br/>Académica"]
+    GestionAsignaturas --> AsignaturaDetail["Detalle Asignatura<br/>(Bottom Sheet)"]
+    AcademicConfig --> CarreraAsignaturas["Carga Masiva<br/>Asignaturas"]
+    Academic --> Apuntes["Apuntes<br/>Markdown"]
+    Apuntes --> ApunteEditor["Editor<br/>Markdown"]
     
     Wellness --> ExerciseExplorer["Explorador de<br/>Ejercicios"]
     ExerciseExplorer --> ExerciseDetail["Detalle de<br/>Ejercicio"]
@@ -47,6 +53,26 @@ Tab 4: 👤 Perfil (Perfil de Usuario)
 
 **Diseño:** Glassmorphism (80% opacidad + 20px backdrop blur). Tab activo con color verde secundario y punto indicador de 4px.
 
+### Rutas principales (GoRouter)
+
+| Ruta | Pantalla | Descripción |
+|------|----------|-------------|
+| `/dashboard` | `DashboardScreen` | Inicio con KPIs y acceso rápido |
+| `/academico` | `PlanAcademicoScreen` | Plan académico semanal |
+| `/academico/asignaturas` | `GestionAsignaturasScreen` | Búsqueda y gestión de asignaturas |
+| `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera |
+| `/academico/apuntes` | `ApuntesScreen` | Editor Markdown + explorador |
+| `/retos` | `RetosScreen` | Retos activos/explorar/completados |
+| `/retos/simple` | `CrearRetoSimpleScreen` | Crear reto simple |
+| `/retos/complejo` | `CrearRetoComplejoScreen` | Crear reto con tareas |
+| `/retos/:id` | `DetalleRetoScreen` | Detalle y progreso |
+| `/bienestar` | `ExploradorEjerciciosScreen` | Catálogo de ejercicios |
+| `/bienestar/rutina` | `ConstructorRutinaScreen` | Constructor de rutina |
+| `/bienestar/sesion` | `SesionCompletadaScreen` | Registro de sesión |
+| `/social` | `MuroSocialScreen` | Muro de logros |
+| `/perfil` | `PerfilScreen` | Perfil + carreras + ajustes |
+| `/notificaciones` | `NotificacionesScreen` | Centro de notificaciones |
+
 ---
 
 ## 3. Gestión de Estado (Riverpod)
@@ -69,6 +95,31 @@ final proveedorNotificaciones = StreamProvider((ref) {
 - `FutureProvider` para datos que se cargan una vez con refresh manual.
 - `StreamProvider` para datos en tiempo real (Supabase Realtime).
 - `StateNotifier` para estados con lógica de cambio compleja (filtros, constructor de rutina).
+- `FutureProvider.family` para detalle de entidades (reto, ejercicio, apunte).
+- `FutureProvider.autoDispose` para pantallas que no necesitan persistencia.
+
+### Proveedores del módulo académico
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `asignaturasActivasProvider` | `AutoDisposeFutureProvider` | Asignaturas activas del usuario |
+| `asignaturasArchivadasProvider` | `AutoDisposeFutureProvider` | Asignaturas archivadas |
+| `universidadesProvider` | `AutoDisposeFutureProvider` | Catálogo de universidades |
+| `carrerasPorUniversidadProvider` | `Family` | Carreras filtradas por universidad |
+| `catalogoAsignaturasPorCarreraProvider` | `Family` | Asignaturas del catálogo por carrera |
+| `usuarioCarrerasProvider` | `AutoDisposeFutureProvider` | Carreras del usuario (M:N) |
+| `carrerasUsuarioConNombreProvider` | `Family` | Carreras con nombre y universidad resuelta |
+| `apunteDetalleProvider` | `Family` | Detalle de un apunte |
+| `apuntesPublicosProvider` | `FutureProvider` | Apuntes públicos para explorar |
+| `planesUsuarioProvider` | `FutureProvider` | Planes de estudio del usuario |
+
+### Proveedores del módulo de retos
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `retosProvider` | `FutureProvider` | Retos activos del usuario con `tieneHitos` vía batch query |
+| `retosPublicosProvider` | `AutoDisposeFutureProvider` | Retos públicos para explorar y clonar |
+| `retoDetalleProvider` | `Family` | Detalle completo de un reto (tareas, progreso, metadatos) |
 
 ---
 
