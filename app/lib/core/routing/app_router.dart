@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/academico/presentation/configuracion_academica_screen.dart';
+import '../../features/academico/presentation/apuntes_screen.dart';
+import '../../features/academico/presentation/gestion_asignaturas_screen.dart';
 import '../../features/academico/presentation/plan_academico_screen.dart';
 import '../../features/academico/presentation/plan_semanal_screen.dart';
 import '../../features/auth/presentation/acceso_screen.dart';
@@ -102,6 +105,22 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/plan-semanal',
       builder: (context, state) => const PlanSemanalScreen(),
+    ),
+    GoRoute(
+      path: '/academico/asignaturas',
+      builder: (context, state) => const GestionAsignaturasScreen(),
+    ),
+    GoRoute(
+      path: '/academico/apuntes',
+      builder: (context, state) => const ApuntesScreen(),
+    ),
+    GoRoute(
+      path: '/academico/configuracion',
+      builder: (context, state) => const ConfiguracionAcademicaScreen(),
+    ),
+    GoRoute(
+      path: '/academico/apuntes/editor',
+      builder: (context, state) => const ApuntesEditorScreen(),
     ),
     GoRoute(
       path: '/notificaciones',

@@ -1,0 +1,986 @@
+[
+  {
+    "exerciseId": "2ORFMoR",
+    "name": "Elevación de gemelos en máquina Hack",
+    "gifUrl": "2ORFMoR.gif",
+    "targetMuscles": [
+      "gemelos"
+    ],
+    "bodyParts": [
+      "piernas (parte inferior)"
+    ],
+    "equipments": [
+      "máquina hack"
+    ],
+    "secondaryMuscles": [
+      "isquiotibiales",
+      "glúteos"
+    ],
+    "instructions": [
+      "Paso 1: Ajusta la máquina Hack cargando los discos adecuados según tu nivel.",
+      "Paso 2: Colócate bajo las almohadillas apoyando únicamente el metatarso (la punta de los pies) en la base de la plataforma, dejando los talones suspendidos por fuera.",
+      "Paso 3: Sujétate de los agarres de seguridad y libera el freno de la máquina.",
+      "Paso 4: Realiza la fase concéntrica elevando los talones mediante una contracción máxima de los gemelos.",
+      "Paso 5: Mantén la contracción isométrica durante un segundo en la parte más alta y desciende controladamente los talones hasta sentir un estiramiento profundo en el tríceps sural.",
+      "Paso 6: Repite hasta completar el volumen de repeticiones pautado."
+    ]
+  },
+  {
+    "exerciseId": "2Qh2J1e",
+    "name": "Prensa de piernas a 45°",
+    "gifUrl": "2Qh2J1e.gif",
+    "targetMuscles": [
+      "glúteos"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "prensa de piernas"
+    ],
+    "secondaryMuscles": [
+      "cuádriceps",
+      "isquiotibiales",
+      "gemelos"
+    ],
+    "instructions": [
+      "Paso 1: Reclina el respaldo de la prensa de piernas a un ángulo donde tu cadera no se despegue del asiento en la fase más profunda.",
+      "Paso 2: Siéntate apoyando firmemente la zona lumbar y coloca los pies en la plataforma superior separados a la anchura de los hombros (postura estándar).",
+      "Paso 3: Desbloquea los seguros laterales de la plataforma.",
+      "Paso 4: Ejecuta la fase excéntrica flexionando las rodillas de forma controlada hasta que formen un ángulo de 90 grados, o hasta donde tu movilidad de cadera lo permita sin curvar la espalda.",
+      "Paso 5: Empuja con toda la planta del pie (priorizando el empuje desde los talones) para extender las piernas de vuelta a la posición inicial, evitando bloquear las rodillas por completo.",
+      "Paso 6: Repite el patrón de movimiento asegurando una técnica estricta."
+    ]
+  },
+  {
+    "exerciseId": "3eGE2JC",
+    "name": "Elevación frontal con mancuernas",
+    "gifUrl": "3eGE2JC.gif",
+    "targetMuscles": [
+      "deltoides"
+    ],
+    "bodyParts": [
+      "hombros"
+    ],
+    "equipments": [
+      "mancuernas"
+    ],
+    "secondaryMuscles": [
+      "bíceps",
+      "trapecios"
+    ],
+    "instructions": [
+      "Paso 1: De pie, con los pies separados a la anchura de los hombros y el core activado, sujeta una mancuerna en cada mano con agarre prono descansando sobre los muslos.",
+      "Paso 2: Manteniendo una levísima flexión en los codos, ejecuta una elevación frontal liderada por los hombros hasta que las mancuernas superen ligeramente la línea de la clavícula.",
+      "Paso 3: Sostén la máxima contracción del deltoides anterior durante un segundo.",
+      "Paso 4: Resiste el peso bajando las mancuernas de manera controlada y repite."
+    ]
+  },
+  {
+    "exerciseId": "3tAXPQ6",
+    "name": "Curl de muñeca inverso con mancuernas sobre banco",
+    "gifUrl": "3tAXPQ6.gif",
+    "targetMuscles": [
+      "antebrazos"
+    ],
+    "bodyParts": [
+      "antebrazos"
+    ],
+    "equipments": [
+      "mancuernas"
+    ],
+    "secondaryMuscles": [
+      "bíceps",
+      "braquial"
+    ],
+    "instructions": [
+      "Paso 1: Siéntate en un banco sosteniendo un par de mancuernas en agarre prono (palmas hacia el suelo).",
+      "Paso 2: Apoya la longitud de los antebrazos sobre el banco o sobre tus propios muslos, dejando que las muñecas sobresalgan en el aire.",
+      "Paso 3: Permite que el peso fuerce la flexión de la muñeca hacia abajo (estiramiento).",
+      "Paso 4: Contrae los músculos extensores del antebrazo levantando los nudillos en dirección a ti.",
+      "Paso 5: Haz una pausa arriba y desciende gradualmente."
+    ]
+  },
+  {
+    "exerciseId": "3TZduzM",
+    "name": "Press de banca inclinado con barra",
+    "gifUrl": "3TZduzM.gif",
+    "targetMuscles": [
+      "pectorales"
+    ],
+    "bodyParts": [
+      "pecho"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "hombros",
+      "tríceps"
+    ],
+    "instructions": [
+      "Paso 1: Posiciona un banco con un ángulo de inclinación de entre 30 y 45 grados bajo los soportes.",
+      "Paso 2: Acuéstate realizando una retracción escapular (juntando los omóplatos contra el banco) para proteger la articulación del hombro y activar mejor el pectoral mayor.",
+      "Paso 3: Sujeta la barra con agarre prono, dejando una distancia ligeramente superior al ancho de tus hombros.",
+      "Paso 4: Desciende la barra controladamente hacia la parte alta del tórax (cerca de la clavícula), asegurando que los codos formen un ángulo de aproximadamente 45 a 60 grados respecto al torso.",
+      "Paso 5: Empuja verticalmente de forma explosiva hasta extender los brazos y repite."
+    ]
+  },
+  {
+    "exerciseId": "3XFdb1Z",
+    "name": "Curl de bíceps isométrico en polea y sentadilla",
+    "gifUrl": "3XFdb1Z.gif",
+    "targetMuscles": [
+      "bíceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "polea"
+    ],
+    "secondaryMuscles": [
+      "antebrazos"
+    ],
+    "instructions": [
+      "Paso 1: Ancla una barra recta a la posición más baja de una estación de poleas.",
+      "Paso 2: Sujeta el accesorio con un agarre supino (palmas hacia arriba) y adopta una postura profunda de sentadilla isométrica, manteniendo el pecho erguido y el abdomen firme.",
+      "Paso 3: Estabiliza los codos contra la cara interna de las rodillas o los muslos (funcionando como un banco Scott natural).",
+      "Paso 4: Ejecuta un curl de bíceps aislando por completo la contracción del brazo, llevando la barra hacia los hombros.",
+      "Paso 5: Desciende el peso resistiendo la tracción de la polea y repite mientras mantienes la sentadilla."
+    ]
+  },
+  {
+    "exerciseId": "4dF3maG",
+    "name": "Curl martillo en banco Scott a una mano",
+    "gifUrl": "4dF3maG.gif",
+    "targetMuscles": [
+      "bíceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "mancuerna"
+    ],
+    "secondaryMuscles": [
+      "antebrazos"
+    ],
+    "instructions": [
+      "Paso 1: Ajusta la altura del asiento del banco Scott para que la axila repose cómodamente sobre el borde superior del cojín.",
+      "Paso 2: Apoya firmemente el tríceps y el codo en la almohadilla inclinada, sosteniendo una mancuerna con agarre neutro (como un martillo).",
+      "Paso 3: Flexiona el brazo aislando el músculo braquial y el bíceps, subiendo la mancuerna hacia el hombro frontal.",
+      "Paso 4: Aprieta el músculo en la cima del recorrido y realiza la bajada lenta hasta estirar el brazo por completo sin que el codo pierda contacto con el acolchado."
+    ]
+  },
+  {
+    "exerciseId": "4dUn2iv",
+    "name": "Curl de bíceps de pie con barra (agarre cerrado)",
+    "gifUrl": "4dUn2iv.gif",
+    "targetMuscles": [
+      "bíceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "antebrazos"
+    ],
+    "instructions": [
+      "Paso 1: De pie, mantén la espalda totalmente recta y sujeta una barra (preferiblemente EZ para menor impacto en las muñecas) con un agarre supino más estrecho que la anchura de tus hombros.",
+      "Paso 2: Bloquea los codos pegándolos a las costillas para aislar la cabeza larga del bíceps.",
+      "Paso 3: Eleva la barra en un movimiento de semicírculo concéntrico sin balancear la espalda baja.",
+      "Paso 4: Contrae en la parte alta y controla activamente el descenso hasta rozar los muslos."
+    ]
+  },
+  {
+    "exerciseId": "5bpPTHv",
+    "name": "Sentadilla Pistol con pesa rusa",
+    "gifUrl": "5bpPTHv.gif",
+    "targetMuscles": [
+      "glúteos"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "pesa rusa"
+    ],
+    "secondaryMuscles": [
+      "cuádriceps",
+      "isquiotibiales",
+      "gemelos"
+    ],
+    "instructions": [
+      "Paso 1: De pie, abraza una pesa rusa por los cuernos (agarre en copa) manteniéndola apretada contra el esternón para estabilizar el centro de gravedad.",
+      "Paso 2: Levanta una pierna estirándola por completo hacia el frente, quedando en equilibrio sobre la pierna contraria.",
+      "Paso 3: Flexiona la rodilla y cadera de la pierna de apoyo descendiendo en una sentadilla a una sola pierna lo más profundo que tu movilidad de tobillo te permita.",
+      "Paso 4: Evita que el talón de la pierna activa se levante del suelo y utiliza toda la potencia de tus cuádriceps y glúteos para presionar y volver a levantarte.",
+      "Paso 5: Alterna las piernas al finalizar las repeticiones pautadas."
+    ]
+  },
+  {
+    "exerciseId": "05Cf2v8",
+    "name": "Fondos imposibles",
+    "gifUrl": "05Cf2v8.gif",
+    "targetMuscles": [
+      "tríceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "peso corporal"
+    ],
+    "secondaryMuscles": [
+      "pecho",
+      "hombros"
+    ],
+    "instructions": [
+      "Paso 1: Posiciónate entre las barras paralelas sosteniendo el peso íntegro de tu cuerpo con los brazos estirados.",
+      "Paso 2: Retrae las escápulas y cruza las piernas atrás para mayor compacidad del core.",
+      "Paso 3: Mantén el torso lo más erguido y vertical posible (para maximizar la implicación de los tríceps sobre la del pecho) e inicia la bajada controlando la caída con la flexión de los codos hacia atrás.",
+      "Paso 4: Detén el descenso cuando la porción superior del brazo quede en paralelo con el suelo.",
+      "Paso 5: Empuja agresivamente contra las barras para bloquear los brazos arriba nuevamente."
+    ]
+  },
+  {
+    "exerciseId": "5uFK1xr",
+    "name": "Extensión de tríceps sobre la cabeza con barra (Press Francés sentado)",
+    "gifUrl": "5uFK1xr.gif",
+    "targetMuscles": [
+      "tríceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "hombros"
+    ],
+    "instructions": [
+      "Paso 1: Siéntate en un banco con respaldo corto que ofrezca un buen apoyo lumbar.",
+      "Paso 2: Sujeta una barra recta o EZ con agarre prono y presiónala directamente por encima de tu coronilla con los codos bloqueados.",
+      "Paso 3: Manteniendo los húmeros (parte alta de los brazos) apuntando siempre hacia el techo, flexiona los codos dejando caer la barra controladamente por detrás de la nuca.",
+      "Paso 4: Siente el estiramiento profundo de la cabeza larga del tríceps y, a continuación, extiende los antebrazos para proyectar la barra de nuevo a la cumbre."
+    ]
+  },
+  {
+    "exerciseId": "5v7KYld",
+    "name": "Press de banca inclinado en máquina Smith",
+    "gifUrl": "5v7KYld.gif",
+    "targetMuscles": [
+      "pectorales"
+    ],
+    "bodyParts": [
+      "pecho"
+    ],
+    "equipments": [
+      "máquina smith"
+    ],
+    "secondaryMuscles": [
+      "hombros",
+      "tríceps"
+    ],
+    "instructions": [
+      "Paso 1: Ubica un banco reclinado (30-45 grados) bajo los raíles guiados de la máquina Smith, asegurando que la barra descienda justo a la altura clavicular o parte superior del pectoral.",
+      "Paso 2: Recuéstate, planta los pies en el suelo y toma la barra con un agarre simétrico y firme.",
+      "Paso 3: Desbloquea el mecanismo girando la muñeca e inicia el descenso pausado mientras la máquina guía el recorrido vertical perfecto.",
+      "Paso 4: Toca ligeramente el tórax y presiona con potencia para completar la repetición."
+    ]
+  },
+  {
+    "exerciseId": "6bOA1Oi",
+    "name": "Flexión lateral con lastre sobre fitball",
+    "gifUrl": "6bOA1Oi.gif",
+    "targetMuscles": [
+      "abdomen"
+    ],
+    "bodyParts": [
+      "cintura"
+    ],
+    "equipments": [
+      "lastre"
+    ],
+    "secondaryMuscles": [
+      "oblicuos",
+      "zona lumbar"
+    ],
+    "instructions": [
+      "Paso 1: Apoya el costado de la cadera contra la curvatura del fitball, afirmando los pies lateralmente contra el piso o una pared para generar tracción.",
+      "Paso 2: Sostén un lastre (disco o mancuerna) abrazado al pecho o apoyado en la nuca.",
+      "Paso 3: Deja caer tu torso lateralmente acompañando la curva de la pelota para estirar el abdomen oblicuo.",
+      "Paso 4: Flexiona el tronco hacia arriba lateralmente utilizando la pared abdominal hasta alcanzar la contracción máxima y repite."
+    ]
+  },
+  {
+    "exerciseId": "6cKQC5E",
+    "name": "Remo al mentón a una mano con mancuerna",
+    "gifUrl": "6cKQC5E.gif",
+    "targetMuscles": [
+      "deltoides"
+    ],
+    "bodyParts": [
+      "hombros"
+    ],
+    "equipments": [
+      "mancuerna"
+    ],
+    "secondaryMuscles": [
+      "trapecios",
+      "bíceps"
+    ],
+    "instructions": [
+      "Paso 1: De pie, con postura neutra, deja colgando la mancuerna de manera relajada frente al muslo.",
+      "Paso 2: Ejecuta la elevación vertical tirando primero desde el hombro y haciendo que el codo apunte siempre por encima de la línea de la muñeca (como si estuvieras tirando del arranque de una cortadora de césped verticalmente).",
+      "Paso 3: Eleva la carga hasta el nivel de la barbilla sin encoger excesivamente los trapecios de forma compensatoria.",
+      "Paso 4: Baja lentamente manteniendo el dominio de la carga en todo el recorrido."
+    ]
+  },
+  {
+    "exerciseId": "6HiHHe0",
+    "name": "Elevación de gemelos de pie con barra (Balanceo de tobillo)",
+    "gifUrl": "6HiHHe0.gif",
+    "targetMuscles": [
+      "gemelos"
+    ],
+    "bodyParts": [
+      "piernas (parte inferior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "isquiotibiales",
+      "cuádriceps"
+    ],
+    "instructions": [
+      "Paso 1: Carga la barra sobre la porción carnosa de los trapecios (como en una sentadilla tradicional) estando de pie sobre una superficie firme.",
+      "Paso 2: Ejecuta una elevación plantar (ponte de puntillas) reclutando con intensidad el músculo gastrocnemio.",
+      "Paso 3: Sostén un instante la tensión pico arriba.",
+      "Paso 4: En el retorno excéntrico, permite un ligero balanceo cediendo el peso de regreso sobre la planta del pie completa."
+    ]
+  },
+  {
+    "exerciseId": "6kSxYnw",
+    "name": "Curl de muñeca con barra",
+    "gifUrl": "6kSxYnw.gif",
+    "targetMuscles": [
+      "antebrazos"
+    ],
+    "bodyParts": [
+      "antebrazos"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "bíceps",
+      "braquial"
+    ],
+    "instructions": [
+      "Paso 1: Siéntate apoyando ambos antebrazos paralelos sobre los cuádriceps, de forma que las muñecas tengan libertad de rotación en el vacío más allá de las rodillas.",
+      "Paso 2: Sostén la barra usando un agarre supino (palmas recibiendo el techo).",
+      "Paso 3: Deja descender la barra rodando ligeramente sobre la primera falange de los dedos abriendo el agarre.",
+      "Paso 4: Cierra la mano contrayendo y rota en flexión palmar la muñeca apretando los antebrazos intensamente.",
+      "Paso 5: Regresa elongando los tendones con el peso bajo control."
+    ]
+  },
+  {
+    "exerciseId": "6MfS53i",
+    "name": "Extensión de tríceps tumbado a una mano (Rompecráneos)",
+    "gifUrl": "6MfS53i.gif",
+    "targetMuscles": [
+      "tríceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "mancuerna"
+    ],
+    "secondaryMuscles": [
+      "hombros"
+    ],
+    "instructions": [
+      "Paso 1: Posicionado bocarriba en el banco plano, levanta una mancuerna apuntando directo al cielo en agarre neutro.",
+      "Paso 2: Usa la mano libre para sostener levemente el tríceps del brazo en acción, promoviendo la inmovilidad del mismo.",
+      "Paso 3: Realiza una flexión excéntrica aproximando la mancuerna de lado hacia tu sien o frente.",
+      "Paso 4: Detente antes de tocar la cara y ejecuta la extensión forzando al tríceps a bloquear la articulación del codo en el techo."
+    ]
+  },
+  {
+    "exerciseId": "6sMAmNv",
+    "name": "Curl araña inverso con mancuernas",
+    "gifUrl": "6sMAmNv.gif",
+    "targetMuscles": [
+      "bíceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "mancuernas"
+    ],
+    "secondaryMuscles": [
+      "antebrazos"
+    ],
+    "instructions": [
+      "Paso 1: Ubícate frente al respaldo inclinado de un banco (a 45 grados) apoyando tu pecho y abdomen boca abajo (configuración de Spider Curl).",
+      "Paso 2: Deja caer tus brazos a plomo hacia el suelo sosteniendo mancuernas en agarre prono o neutro inverso.",
+      "Paso 3: Eleva ambos pesos flexionando los codos contra la gravedad. Al carecer de cualquier inercia corporal, el esfuerzo aislará brutalmente los bíceps braquiales.",
+      "Paso 4: Exprime la musculatura al llegar arriba y realiza el recorrido opuesto al inhalar."
+    ]
+  },
+  {
+    "exerciseId": "6sYyrRX",
+    "name": "Torsión de tronco tumbado con rodillas flexionadas",
+    "gifUrl": "6sYyrRX.gif",
+    "targetMuscles": [
+      "glúteos"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "peso corporal"
+    ],
+    "secondaryMuscles": [
+      "oblicuos",
+      "flexores de la cadera"
+    ],
+    "instructions": [
+      "Paso 1: Tumbado en el suelo o colchoneta de espaldas, forma una T con tus brazos estabilizadores, y eleva los pies agrupando las rodillas dobladas hacia el ombligo.",
+      "Paso 2: Deja oscilar pausadamente tus piernas fusionadas cayendo sobre un lateral hasta casi palpar el suelo (logrando estiramiento rotacional del oblicuo).",
+      "Paso 3: Involucra tu musculatura del core y los oblícuos internos/externos para acarrear el peso del tren inferior de vuelta al centro del eje.",
+      "Paso 4: Replícalo consecutivamente cediendo hacia la dirección anatómica contraria."
+    ]
+  },
+  {
+    "exerciseId": "7F1DVzn",
+    "name": "Jalón frontal en máquina convergente",
+    "gifUrl": "7F1DVzn.gif",
+    "targetMuscles": [
+      "dorsales"
+    ],
+    "bodyParts": [
+      "espalda"
+    ],
+    "equipments": [
+      "máquina convergente"
+    ],
+    "secondaryMuscles": [
+      "bíceps",
+      "romboides",
+      "deltoides posteriores"
+    ],
+    "instructions": [
+      "Paso 1: Acomódate ajustando el tope acolchado a las rodillas para amarrar la estructura inferior y evitar que tu cuerpo se eleve.",
+      "Paso 2: Alcanza los pivotes o empuñaduras de la máquina usando una asimetría abierta en el agarre prono.",
+      "Paso 3: Impulsa el pecho hacia fuera y acciona el descenso bajando la resistencia no con las manos, sino intentando meter los codos hacia tus caderas.",
+      "Paso 4: Junta los omóplatos poderosamente traccionando la carga hasta el pecho superior.",
+      "Paso 5: Resiste pacientemente a la máquina mientras los cables/palancas ascienden y estiran las aletas dorsales."
+    ]
+  },
+  {
+    "exerciseId": "7I6LNUG",
+    "name": "Remo sentado en máquina convergente",
+    "gifUrl": "7I6LNUG.gif",
+    "targetMuscles": [
+      "espalda alta"
+    ],
+    "bodyParts": [
+      "espalda"
+    ],
+    "equipments": [
+      "máquina convergente"
+    ],
+    "secondaryMuscles": [
+      "bíceps",
+      "antebrazos"
+    ],
+    "instructions": [
+      "Paso 1: Adapta el peto torácico delantero para que los brazos logren una extensión máxima al rozar las palancas en la fase inicial.",
+      "Paso 2: Agarra los brazos convergentes del aparato, y estabiliza tu respiración hundiendo el pecho en el tope frontal para neutralizar el empuje de la zona lumbar.",
+      "Paso 3: Fricciona los dorsales retrocediendo los codos y uniéndolos mentalmente a tus costillas por la parte trasera (Remo).",
+      "Paso 4: Compacta la espalda media en la máxima incursión y cede posteriormente para completar el recorrido funcional."
+    ]
+  },
+  {
+    "exerciseId": "7inpWch",
+    "name": "Curl de concentración de pie con mancuerna",
+    "gifUrl": "7inpWch.gif",
+    "targetMuscles": [
+      "bíceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "mancuerna"
+    ],
+    "secondaryMuscles": [
+      "antebrazos"
+    ],
+    "instructions": [
+      "Paso 1: Colócate semi-inclinado o de pie (con las piernas formando una base ancha), dejando pendular en vilo un brazo cargado con mancuerna, mientras usas el brazo adyacente amarrado al muslo de contrapeso.",
+      "Paso 2: Fija con precisión robótica el ángulo de tu húmero activo manteniéndolo inmóvil como una columna al piso.",
+      "Paso 3: Concentra toda la energía neural en accionar los picos del bíceps para enrollar el peso arriba sin alterar el eje central.",
+      "Paso 4: Maximiza la retención sangüínea de la congestión y baja exhalando sin prisas."
+    ]
+  },
+  {
+    "exerciseId": "7saC5zz",
+    "name": "Cruces en polea declinados",
+    "gifUrl": "7saC5zz.gif",
+    "targetMuscles": [
+      "pectorales"
+    ],
+    "bodyParts": [
+      "pecho"
+    ],
+    "equipments": [
+      "polea"
+    ],
+    "secondaryMuscles": [
+      "hombros",
+      "tríceps"
+    ],
+    "instructions": [
+      "Paso 1: Fija los anclajes de ambos carretes de poleas en las ranuras más altas del cable cruzado.",
+      "Paso 2: Da un paso al frente para pretensar los cables posicionándote como en un Cristo, abriendo el pecho.",
+      "Paso 3: Desliza parabólicamente los agarres en arco apuntando hacia tus rodillas frontales, buscando entrecruzar las manos delante de tu cintura.",
+      "Paso 4: Este declive aísla primariamente la región inferior clavicular pectoral. Aprieta y abre lentamente."
+    ]
+  },
+  {
+    "exerciseId": "7zdxRTl",
+    "name": "Prensa vertical en máquina Smith",
+    "gifUrl": "7zdxRTl.gif",
+    "targetMuscles": [
+      "glúteos"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "máquina smith"
+    ],
+    "secondaryMuscles": [
+      "cuádriceps",
+      "isquiotibiales",
+      "gemelos"
+    ],
+    "instructions": [
+      "Paso 1: Tumbado de espaldas bajo el pórtico de la máquina Smith, asienta las plantas de los pies sobre la barra transversal rotatoria.",
+      "Paso 2: Destraba la traba de seguridad con la suela del calzado, asumiendo la carga perimetral en la flexión vertical.",
+      "Paso 3: Impulsa perpendicularmente a 90 grados elevando la barra al techo con el vigor puro del cuádriceps y vastos femorales.",
+      "Paso 4: Contén en la altitud sin que la rodilla cruja por exceso de bloqueo óseo y desciende asumiendo el lastre hacia tu ombligo."
+    ]
+  },
+  {
+    "exerciseId": "8eqjhOl",
+    "name": "Press de banca inclinado con mancuernas (agarre neutro)",
+    "gifUrl": "8eqjhOl.gif",
+    "targetMuscles": [
+      "tríceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "mancuerna"
+    ],
+    "secondaryMuscles": [
+      "pecho",
+      "hombros"
+    ],
+    "instructions": [
+      "Paso 1: Gradúa el respaldo entre los 30 y 45 grados de pendiente y afiánzate recostado sosteniendo mancuernas gemelas paralelas entre sí (agarre neutro).",
+      "Paso 2: Presiona la trayectoria alineando los codos estrechamente cerca de los dorsales para que el énfasis de tracción recaiga en el tríceps y hazas anteriores.",
+      "Paso 3: Lanza la masa hacia la vertical con brío, extendiendo articulaciones y pausa contrayendo tríceps y deltoides frontal.",
+      "Paso 4: Cede la excéntrica hundiendo las mancuernas paralelo a tu pecho."
+    ]
+  },
+  {
+    "exerciseId": "8K0w2yA",
+    "name": "Elevación de rodillas colgado con impulso excéntrico",
+    "gifUrl": "8K0w2yA.gif",
+    "targetMuscles": [
+      "abdomen"
+    ],
+    "bodyParts": [
+      "cintura"
+    ],
+    "equipments": [
+      "peso corporal"
+    ],
+    "secondaryMuscles": [
+      "flexores de la cadera",
+      "zona lumbar"
+    ],
+    "instructions": [
+      "Paso 1: Suspéndete en cuelgue inactivo desde una barra para dominadas aguantando con tensión latente en la faja abdominal.",
+      "Paso 2: Engrana y asciende con agresividad agrupando ambas rótulas unidas escalando hasta topar contra el pecho superior.",
+      "Paso 3: Proyecta bruscamente y arroja como látigo las extremidades de forma reactiva al suelo, exigiendo el freno excéntrico máximo en la banda infraumbilical.",
+      "Paso 4: Amortigua la violenta bajada aprovechando el vaivén elástico del estiramiento muscular consecuente para disparar la subida próxima."
+    ]
+  },
+  {
+    "exerciseId": "8oYqOt9",
+    "name": "Curl de bíceps sentado en polea baja",
+    "gifUrl": "8oYqOt9.gif",
+    "targetMuscles": [
+      "bíceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "polea"
+    ],
+    "secondaryMuscles": [
+      "antebrazos"
+    ],
+    "instructions": [
+      "Paso 1: Reposa en banca o en el suelo anclado frontalmente al raíl inferior del mecanismo de cable tensor. Sujeta el agarre horizontal.",
+      "Paso 2: Cimenta tu tronco como un pilar inamovible resguardando el hombro con pasividad biomecánica.",
+      "Paso 3: Combate el rodillo de cable realizando una flexión en los codos contrayendo de modo pleno y ardiendo el braquial.",
+      "Paso 4: Prolonga el espasmo isotónico por un segundo al colisionar con la cota mayor de compresión y descomprime suave al extender."
+    ]
+  },
+  {
+    "exerciseId": "8ozhUIZ",
+    "name": "Elevación de gemelos de pie con barra",
+    "gifUrl": "8ozhUIZ.gif",
+    "targetMuscles": [
+      "gemelos"
+    ],
+    "bodyParts": [
+      "piernas (parte inferior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "isquiotibiales",
+      "glúteos"
+    ],
+    "instructions": [
+      "Paso 1: Soporta en equilibrio olímpico una barra afianzada sólidamente cruzando los trapecios de la espalda alta.",
+      "Paso 2: Genera la contracción detonante impulsando tu propio peso de modo focal desde la almohadilla carnosa del pie y los dedos, izando vertical el esqueleto.",
+      "Paso 3: Preserva la magnitud tensional estabilizándote de puntillas una fracción atemporal.",
+      "Paso 4: Desvanece la fuerza hasta posar pasivamente y lograr en el sóleo un elástico y largo estirón reestructurador."
+    ]
+  },
+  {
+    "exerciseId": "8urJS9b",
+    "name": "Hiperextensión lumbar con lastre en fitball",
+    "gifUrl": "8urJS9b.gif",
+    "targetMuscles": [
+      "columna"
+    ],
+    "bodyParts": [
+      "espalda"
+    ],
+    "equipments": [
+      "lastre"
+    ],
+    "secondaryMuscles": [
+      "glúteos",
+      "isquiotibiales"
+    ],
+    "instructions": [
+      "Paso 1: Fija en balanza pélvica tu área púbica montada recostada cabalgando la bóveda de la pelota, bloqueando contra una tarima los tobillos posteriores para abolir desplazamientos indeseados.",
+      "Paso 2: Emplaza adosado a la coronilla o pecho superior el peso elegido para lastrar (disco/mancuerna).",
+      "Paso 3: Contrae con vigor sacro el canal lumbar para eregir el busto quebrado inferiormente transformándolo a ras horizontal estricto sin curvar o lesionar la zona hiperextendida.",
+      "Paso 4: Aguanta a pulso la estática en la cumbre antes de hundir laxamente pero con protección el busto ciñéndose a la ronda del fitball."
+    ]
+  },
+  {
+    "exerciseId": "8xUv4J7",
+    "name": "Encogimientos abdominales en polea (Crunch en polea)",
+    "gifUrl": "8xUv4J7.gif",
+    "targetMuscles": [
+      "abdomen"
+    ],
+    "bodyParts": [
+      "cintura"
+    ],
+    "equipments": [
+      "polea"
+    ],
+    "secondaryMuscles": [
+      "oblicuos"
+    ],
+    "instructions": [
+      "Paso 1: Híncate genuflexionado u arrodillado con el lomo dirigido hacia las regletas de la estructura de poleas superiores.",
+      "Paso 2: Pinza la soga accesoria entrelazándola próxima al cráneo sin jalar desde los brazos ni trapecios.",
+      "Paso 3: Ejecuta un Crunch (encogimiento visceral) arrastrando por motor del transverso absólico toda la tensión de las planchas de plomo hacia hundir la cara a las cuencas de las rótulas.",
+      "Paso 4: En este acortamiento del recto halla máxima dureza, mantén, y revierte dosificando lentamente re-expandiendo el tórax pero no el abdomen interno."
+    ]
+  },
+  {
+    "exerciseId": "9RmdLft",
+    "name": "Peso muerto rumano con barra",
+    "gifUrl": "9RmdLft.gif",
+    "targetMuscles": [
+      "isquiotibiales"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "glúteos",
+      "zona lumbar"
+    ],
+    "instructions": [
+      "Paso 1: Colócate de pie con los pies separados a la anchura de las caderas, sosteniendo una barra frente a los muslos con un agarre prono.",
+      "Paso 2: Mantén la columna en posición neutra, saca pecho y realiza una bisagra de cadera (hip hinge), desplazando los glúteos hacia atrás mientras desciendes la barra pegada a las piernas.",
+      "Paso 3: Continúa la fase excéntrica de manera controlada hasta sentir un estiramiento profundo en los isquiotibiales, manteniendo en todo momento una ligera y estática flexión de rodillas.",
+      "Paso 4: Inicia la fase concéntrica contrayendo fuertemente los glúteos y los isquiotibiales para extender la cadera y volver a la posición erguida.",
+      "Paso 5: Evita la hiperextensión lumbar en la parte superior del bloqueo. Repite hasta completar el número de repeticiones deseado."
+    ]
+  },
+  {
+    "exerciseId": "9PullUp",
+    "name": "Dominadas con agarre prono",
+    "gifUrl": "9PullUp.gif",
+    "targetMuscles": [
+      "dorsal ancho"
+    ],
+    "bodyParts": [
+      "espalda"
+    ],
+    "equipments": [
+      "peso corporal"
+    ],
+    "secondaryMuscles": [
+      "bíceps",
+      "trapecios",
+      "romboides",
+      "redondo mayor"
+    ],
+    "instructions": [
+      "Paso 1: Suspéndete de una barra de dominadas utilizando un agarre prono (palmas hacia adelante) ligeramente más ancho que la anchura de los hombros.",
+      "Paso 2: Inicia el movimiento activando la escápula mediante una depresión y retracción escapular (junta y desciende los omóplatos).",
+      "Paso 3: Realiza la fase concéntrica traccionando tu cuerpo hacia arriba, dirigiendo los codos hacia el suelo y ligeramente hacia atrás, hasta que la barbilla supere el nivel de la barra.",
+      "Paso 4: Haz una pausa de un segundo logrando la máxima contracción del dorsal ancho y la musculatura de la espalda alta.",
+      "Paso 5: Desciende de manera controlada (fase excéntrica) hasta la extensión completa de los brazos sin perder por completo la tensión en los hombros. Repite."
+    ]
+  },
+  {
+    "exerciseId": "9FrSqut",
+    "name": "Sentadilla frontal con barra",
+    "gifUrl": "9FrSqut.gif",
+    "targetMuscles": [
+      "cuádriceps"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "glúteos",
+      "core",
+      "espalda alta"
+    ],
+    "instructions": [
+      "Paso 1: Apoya la barra sobre los deltoides anteriores y la clavícula, utilizando un agarre olímpico (dedos bajo la barra) o un agarre cruzado, manteniendo los codos paralelos al suelo.",
+      "Paso 2: Posiciona los pies a la anchura de los hombros con las puntas ligeramente rotadas hacia afuera.",
+      "Paso 3: Activa el core transversalmente, inhala y desciende flexionando simultáneamente rodillas y caderas, manteniendo el torso lo más vertical posible.",
+      "Paso 4: Alcanza la profundidad máxima permitida por tu movilidad (idealmente rompiendo el paralelo), asegurando que los codos no caigan hacia abajo.",
+      "Paso 5: En la fase concéntrica, empuja explosivamente contra el suelo utilizando la fuerza de los cuádriceps y exhala al acercarte a la posición erguida."
+    ]
+  },
+  {
+    "exerciseId": "9HpThrt",
+    "name": "Empuje de cadera con barra (Hip Thrust)",
+    "gifUrl": "9HpThrt.gif",
+    "targetMuscles": [
+      "glúteos"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "isquiotibiales",
+      "core"
+    ],
+    "instructions": [
+      "Paso 1: Siéntate en el suelo apoyando la parte inferior de las escápulas (omóplatos) contra el borde de un banco plano. Coloca una barra con una almohadilla sobre el pliegue de tu cadera.",
+      "Paso 2: Planta los pies firmemente en el suelo a una distancia que permita formar un ángulo de 90 grados en tus rodillas cuando la cadera esté completamente extendida.",
+      "Paso 3: Mantén el mentón ligeramente pegado al pecho y la mirada hacia el frente para evitar la hiperextensión cervical y lumbar.",
+      "Paso 4: Empuja a través de los talones y extiende las caderas verticalmente contrayendo fuertemente los glúteos en la parte superior.",
+      "Paso 5: Realiza una retención isométrica de un segundo en el punto de máxima contracción y desciende la cadera controladamente. Repite."
+    ]
+  },
+  {
+    "exerciseId": "9LatRse",
+    "name": "Elevaciones laterales con mancuernas",
+    "gifUrl": "9LatRse.gif",
+    "targetMuscles": [
+      "deltoides"
+    ],
+    "bodyParts": [
+      "hombros"
+    ],
+    "equipments": [
+      "mancuernas"
+    ],
+    "secondaryMuscles": [
+      "trapecios",
+      "supraespinoso"
+    ],
+    "instructions": [
+      "Paso 1: Colócate de pie, con el core contraído, sosteniendo un par de mancuernas a los lados del cuerpo con un agarre neutro.",
+      "Paso 2: Inclina el torso muy levemente hacia adelante e impón una minúscula flexión en los codos (aproximadamente 15 grados) para aliviar la tensión articular.",
+      "Paso 3: Eleva los brazos lateralmente liderando el movimiento con los codos y el dedo meñique ligeramente hacia arriba (rotación interna leve), hasta que las mancuernas alcancen la altura de los hombros.",
+      "Paso 4: Haz una pausa para maximizar la tensión en la cabeza lateral del deltoides.",
+      "Paso 5: Realiza la fase excéntrica resistiendo el peso al bajar de forma lenta y controlada hasta la posición inicial."
+    ]
+  },
+  {
+    "exerciseId": "9MilPrs",
+    "name": "Press militar de pie con barra (Overhead Press)",
+    "gifUrl": "9MilPrs.gif",
+    "targetMuscles": [
+      "hombros"
+    ],
+    "bodyParts": [
+      "hombros"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "tríceps",
+      "pecho superior",
+      "core",
+      "tríceps"
+    ],
+    "instructions": [
+      "Paso 1: Saca la barra de un soporte a la altura de las clavículas, sujetándola con un agarre prono ligeramente más amplio que la anchura de los hombros.",
+      "Paso 2: Posiciona los codos ligeramente por delante de la barra. Contrae firmemente los glúteos y el abdomen para estabilizar la columna y evitar el balanceo lumbar.",
+      "Paso 3: Presiona la barra verticalmente en línea recta por delante de tu rostro. A medida que la barra supera la cabeza, empuja tu torso ligeramente hacia adelante debajo de la barra.",
+      "Paso 4: Bloquea los codos en la parte superior, garantizando la extensión completa de los brazos con los hombros activados.",
+      "Paso 5: Desciende la barra controladamente de vuelta a la zona clavicular para iniciar la siguiente repetición."
+    ]
+  },
+  {
+    "exerciseId": "9BntRow",
+    "name": "Remo inclinado con barra (agarre prono)",
+    "gifUrl": "9BntRow.gif",
+    "targetMuscles": [
+      "dorsal ancho"
+    ],
+    "bodyParts": [
+      "espalda"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "romboides",
+      "trapecios",
+      "bíceps",
+      "zona lumbar"
+    ],
+    "instructions": [
+      "Paso 1: Sujeta una barra con agarre prono a la anchura de los hombros. Flexiona ligeramente las rodillas y realiza una bisagra de cadera profunda hasta que tu torso quede casi paralelo al suelo.",
+      "Paso 2: Mantén la columna rígida en posición neutra y deja que la barra cuelgue directamente por debajo de tus hombros con los brazos extendidos.",
+      "Paso 3: Tracciona la barra hacia la parte inferior del abdomen o el ombligo, manteniendo los codos en un ángulo cerrado de 45 grados respecto al torso.",
+      "Paso 4: Aprieta fuertemente las escápulas en la fase final de la tracción.",
+      "Paso 5: Extiende los brazos de forma controlada hasta el punto de máximo estiramiento dorsal sin perder la rigidez del core."
+    ]
+  },
+  {
+    "exerciseId": "9BulgSq",
+    "name": "Sentadilla dividida búlgara con mancuernas",
+    "gifUrl": "9BulgSq.gif",
+    "targetMuscles": [
+      "cuádriceps"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "mancuernas"
+    ],
+    "secondaryMuscles": [
+      "glúteos",
+      "isquiotibiales",
+      "estabilizadores de tobillo"
+    ],
+    "instructions": [
+      "Paso 1: Colócate de espaldas a un banco y apoya el empeine de un pie sobre él, mientras mantienes el pie contrario firme en el suelo, adelantado a una distancia prudente.",
+      "Paso 2: Sujeta una mancuerna en cada mano, mantén el torso erguido y el core estable.",
+      "Paso 3: Desciende controladamente flexionando la rodilla de la pierna delantera hasta que el muslo quede paralelo al suelo o la rodilla trasera casi roce la superficie.",
+      "Paso 4: Para un mayor enfoque en el cuádriceps, mantén el torso recto. Si deseas mayor énfasis en el glúteo, inclina ligeramente el torso hacia adelante.",
+      "Paso 5: Empuja verticalmente a través del pie delantero para retornar a la extensión inicial. Completa las repeticiones y cambia de pierna."
+    ]
+  },
+  {
+    "exerciseId": "9FcePul",
+    "name": "Tracción facial en polea alta (Face Pull)",
+    "gifUrl": "9FcePul.gif",
+    "targetMuscles": [
+      "deltoides posteriores"
+    ],
+    "bodyParts": [
+      "hombros"
+    ],
+    "equipments": [
+      "polea"
+    ],
+    "secondaryMuscles": [
+      "manguito rotador",
+      "trapecios",
+      "redondo menor"
+    ],
+    "instructions": [
+      "Paso 1: Ajusta una polea a la altura del rostro o ligeramente por encima y engancha un accesorio de cuerda.",
+      "Paso 2: Sujeta la cuerda con un agarre prono o neutro y da un par de pasos hacia atrás para tensar el cable, adoptando una base sólida con los pies.",
+      "Paso 3: Tracciona la cuerda hacia tu rostro, separando las manos y llevando los codos hacia atrás y hacia afuera al mismo tiempo que aplicas una rotación externa de hombros (como si fueras a hacer una pose de doble bíceps).",
+      "Paso 4: Haz una pausa contrayendo fuertemente la parte posterior de los hombros y la espalda alta.",
+      "Paso 5: Retorna el cable de forma controlada resistiendo la tensión hasta que los brazos queden extendidos. Repite."
+    ]
+  },
+  {
+    "exerciseId": "9LegCrl",
+    "name": "Curl femoral tumbado en máquina",
+    "gifUrl": "9LegCrl.gif",
+    "targetMuscles": [
+      "isquiotibiales"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "máquina de curl"
+    ],
+    "secondaryMuscles": [
+      "gemelos"
+    ],
+    "instructions": [
+      "Paso 1: Túmbate bocabajo en la máquina de curl femoral, asegurando que las rodillas queden alineadas con el eje de rotación de la máquina.",
+      "Paso 2: Ajusta el rodillo para que descanse justo por encima de los talones (en la zona inferior de los gemelos).",
+      "Paso 3: Sujétate de los manerales delanteros para anclar el torso al banco y evitar la elevación de la cadera.",
+      "Paso 4: Flexiona las rodillas aplicando fuerza para llevar los talones hacia los glúteos de manera fluida y explosiva.",
+      "Paso 5: Sostén la contracción durante un segundo en el tope del movimiento y posteriormente desciende el peso de manera excéntrica lenta y controlada. Repite."
+    ]
+  }
+]

@@ -1,8 +1,8 @@
 # 02 - Requisitos del Producto (SRS)
 
-Version: 2.5
-Estado: PROPOSED
-Fecha: 19-04-2026
+Version: 2.8
+Estado: IN_PROGRESS (Hitos 1-7 implementados)
+Fecha: 05-05-2026
 Referencia cruzada: docs/03-architecture-rfc.md
 
 ## 1. Resumen Ejecutivo

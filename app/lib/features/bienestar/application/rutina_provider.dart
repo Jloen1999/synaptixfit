@@ -123,6 +123,59 @@ class RutinaNotifier extends StateNotifier<RutinaState> {
     }
     state = RutinaState(rutinaId: state.rutinaId, items: normalized);
   }
+
+  Future<String?> guardarRutina({String nombre = 'Mi rutina'}) async {
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return null;
+
+    if (state.items.isEmpty) return null;
+
+    try {
+      String rutinaId = state.rutinaId;
+
+      if (rutinaId.isEmpty) {
+        final rutinaData = await client
+            .from('rutinas')
+            .insert({
+              'usuario_id': user.id,
+              'nombre': nombre,
+              'cantidad_ejercicios': state.items.length,
+            })
+            .select('id')
+            .single();
+        rutinaId = rutinaData['id'] as String;
+      } else {
+        await client.from('rutinas').update({
+          'cantidad_ejercicios': state.items.length,
+        }).eq('id', rutinaId);
+      }
+
+      // Eliminar selecciones previas y reinsertar
+      await client
+          .from('seleccion_de_ejercicios')
+          .delete()
+          .eq('rutina_id', rutinaId);
+
+      if (state.items.isNotEmpty) {
+        final rows = state.items.map((item) => {
+          'rutina_id': rutinaId,
+          'ejercicio_id': item.ejercicioId,
+          'series': item.series,
+          'repeticiones': item.repeticiones,
+          'segundos_descanso': item.segundosDescanso,
+          'indice_orden': item.indiceOrden,
+        }).toList();
+
+        await client.from('seleccion_de_ejercicios').insert(rows);
+      }
+
+      state = RutinaState(rutinaId: rutinaId, items: state.items);
+      return rutinaId;
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
 final rutinaProvider = StateNotifierProvider<RutinaNotifier, RutinaState>((ref) {

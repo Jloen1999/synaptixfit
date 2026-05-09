@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
@@ -11,6 +12,18 @@ class PlanAcademicoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return FeatureScaffold(
       title: 'Plan Académico Semanal',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.article_outlined),
+          tooltip: 'Apuntes',
+          onPressed: () => context.push('/academico/apuntes'),
+        ),
+        IconButton(
+          icon: const Icon(Icons.school_outlined),
+          tooltip: 'Gestionar asignaturas',
+          onPressed: () => context.push('/academico/asignaturas'),
+        ),
+      ],
       child: FutureBuilder<List<_BloqueHorario>>(
         future: _cargarHorarios(),
         builder: (context, snapshot) {

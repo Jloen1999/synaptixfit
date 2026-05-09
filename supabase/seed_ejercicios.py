@@ -10,7 +10,7 @@ Uso:
      - CLOUDFLARE_R2_BASE_URL (opcional, default usa endpoint del bucket)
   3. Ejecutar: python seed_ejercicios.py
 
-Nota: Este script es IDEMPOTENTE (puede ejecutarse múltiples veces sin duplicar datos).
+Nota: Este script ELIMINA todos los registros existentes antes de insertar (no es idempotente, es destructivo).
 """
 
 import json
@@ -78,7 +78,47 @@ def load_json(filename: str) -> list:
 
 def build_gif_url(exercise_db_id: str) -> str:
     """Construye la URL pública del GIF en Cloudflare R2."""
-    return f"{R2_BASE_URL}/{R2_BUCKET}/ejercicios/{GIF_RESOLUTION}/{exercise_db_id}.gif"
+    return f"{R2_BASE_URL}/ejercicios/{GIF_RESOLUTION}/{exercise_db_id}.gif"
+
+
+def limpiar_tablas_ejercicios(supabase: Client) -> None:
+    """Elimina todos los registros de ejercicios, catálogos y relaciones N:M.
+    El orden respeta las dependencias FK para evitar errores."""
+    tablas_relaciones = [
+        "ejercicio_musculo_objetivo",
+        "ejercicio_musculo_secundario",
+        "ejercicio_parte_cuerpo",
+        "ejercicio_equipamiento",
+    ]
+    tablas_principales = [
+        "ejercicios",
+        "partes_cuerpo",
+        "musculos",
+        "equipamientos",
+    ]
+
+    print("🧹 Paso 0: Limpiando tablas de ejercicios existentes...")
+
+    for tabla in tablas_relaciones:
+        try:
+            # Delete all rows: Supabase REST requires a filter, so use a dummy condition
+            supabase.table(tabla).delete().neq("ejercicio_id", "00000000-0000-0000-0000-000000000000").execute()
+            print(f"   🗑️  {tabla}: registros eliminados")
+        except Exception as e:
+            print(f"   ⚠️  {tabla}: {e}")
+
+    for tabla in tablas_principales:
+        try:
+            # Para ejercicios se usa exercise_db_id, para catálogos un id > 0
+            columna = "exercise_db_id" if tabla == "ejercicios" else "id"
+            valor_dummy = "00000000-0000-0000-0000-000000000000" if tabla == "ejercicios" else -1
+            supabase.table(tabla).delete().neq(columna, valor_dummy).execute()
+            print(f"   🗑️  {tabla}: registros eliminados")
+        except Exception as e:
+            print(f"   ⚠️  {tabla}: {e}")
+
+    print("   ✅ Limpieza completada")
+    print()
 
 
 def upsert_catalogo(supabase: Client, tabla: str, items: list[dict]) -> dict[str, int]:
@@ -233,7 +273,7 @@ def main():
     print("🏋️ SynaptixFit - Seed de Ejercicios (ExerciseDB español)")
     print("=" * 60)
     print(f"📡 Supabase: {SUPABASE_URL}")
-    print(f"☁️  R2 Base:  {R2_BASE_URL}/{R2_BUCKET}/ejercicios/{GIF_RESOLUTION}/")
+    print(f"☁️  R2 Base:  {R2_BASE_URL}/ejercicios/{GIF_RESOLUTION}/")
     print()
 
     # Conectar a Supabase
@@ -243,16 +283,19 @@ def main():
 
     # Cargar datos JSON
     print("📂 Cargando archivos JSON...")
-    partes_cuerpo = load_json("synaptix_partesCuerpo_es.json")
-    musculos = load_json("synaptix_musculos_es.json")
-    equipamientos = load_json("synaptix_equipamientos_es.json")
-    ejercicios = load_json("synaptix_exercisedb_es.json")
+    partes_cuerpo = load_json("synaptix_bodyParts_es.json")
+    musculos = load_json("synaptix_muscles_es.json")
+    equipamientos = load_json("synaptix_equipments_es.json")
+    ejercicios = load_json("synaptix_exercises_es.json")
 
     print(f"   Partes del cuerpo: {len(partes_cuerpo)}")
     print(f"   Músculos: {len(musculos)}")
     print(f"   Equipamientos: {len(equipamientos)}")
     print(f"   Ejercicios: {len(ejercicios)}")
     print()
+
+    # Paso 0: Limpiar tablas existentes
+    limpiar_tablas_ejercicios(supabase)
 
     # Paso 1: Poblar catálogos
     print("📋 Paso 1: Insertando catálogos...")

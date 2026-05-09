@@ -1,5 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../core/design_system/sv_colors.dart';
+import '../../core/design_system/sv_shadows.dart';
+import '../../core/design_system/sv_shapes.dart';
 
 class KpiCard extends StatefulWidget {
   const KpiCard({
@@ -9,6 +12,7 @@ class KpiCard extends StatefulWidget {
     this.subtitle,
     this.progress,
     this.gradientColors,
+    this.accentColor,
     super.key,
   });
 
@@ -16,12 +20,9 @@ class KpiCard extends StatefulWidget {
   final String value;
   final String? subtitle;
   final IconData icon;
-
-  /// Valor entre 0.0 y 1.0 para mostrar un anillo de progreso animado.
   final double? progress;
-
-  /// Colores opcionales para el gradiente de fondo del card.
   final List<Color>? gradientColors;
+  final Color? accentColor;
 
   @override
   State<KpiCard> createState() => _KpiCardState();
@@ -36,7 +37,7 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
     super.initState();
     _animCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1000),
     );
     _progressAnim = Tween<double>(
       begin: 0,
@@ -44,7 +45,9 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic));
 
     if (widget.progress != null) {
-      _animCtrl.forward();
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) _animCtrl.forward();
+      });
     }
   }
 
@@ -55,8 +58,7 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
       _progressAnim = Tween<double>(
         begin: _progressAnim.value,
         end: widget.progress!,
-      ).animate(
-          CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic));
+      ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutCubic));
       _animCtrl
         ..reset()
         ..forward();
@@ -72,109 +74,112 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final accent = widget.accentColor ?? theme.colorScheme.primary;
     final gradientStart = widget.gradientColors?.first ??
-        theme.colorScheme.primary.withValues(alpha: 0.08);
+        accent.withValues(alpha: 0.08);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [theme.colorScheme.surface, gradientStart],
-          ),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Ícono con anillo de progreso opcional
-            if (widget.progress != null)
-              AnimatedBuilder(
-                animation: _progressAnim,
-                builder: (context, _) => SizedBox(
-                  width: 52,
-                  height: 52,
-                  child: CustomPaint(
-                    painter: _ProgressRingPainter(
-                      progress: _progressAnim.value.clamp(0.0, 1.0),
-                      color: theme.colorScheme.primary,
-                      trackColor: theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.3),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        widget.icon,
-                        size: 22,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            else
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color:
-                      theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  widget.icon,
-                  size: 22,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    widget.title,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.value,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  if (widget.subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.subtitle!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: SVShapes.large16,
+        boxShadow: SVShadows.ambientCard,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.surface,
+            gradientStart,
           ],
         ),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        children: [
+          if (widget.progress != null)
+            AnimatedBuilder(
+              animation: _progressAnim,
+              builder: (context, _) => SizedBox(
+                width: 56,
+                height: 56,
+                child: CustomPaint(
+                  painter: _ProgressRingPainter(
+                    progress: _progressAnim.value.clamp(0.0, 1.0),
+                    color: accent,
+                    trackColor:
+                        theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withValues(alpha: 0.12),
+                      ),
+                      child: Icon(widget.icon, size: 18, color: accent),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(widget.icon, size: 22, color: accent),
+            ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  widget.title,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    letterSpacing: 0.6,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.value,
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                    height: 1.1,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                if (widget.subtitle != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    widget.subtitle!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: SVColors.onSurfaceMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Painter para el anillo de progreso circular
 class _ProgressRingPainter extends CustomPainter {
   const _ProgressRingPainter({
     required this.progress,
@@ -189,10 +194,9 @@ class _ProgressRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (math.min(size.width, size.height) - 6) / 2;
-    const strokeWidth = 3.5;
+    final radius = (math.min(size.width, size.height) - 4) / 2;
+    const strokeWidth = 4.0;
 
-    // Track
     canvas.drawCircle(
       center,
       radius,
@@ -202,7 +206,6 @@ class _ProgressRingPainter extends CustomPainter {
         ..strokeWidth = strokeWidth,
     );
 
-    // Progress arc
     if (progress > 0) {
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),

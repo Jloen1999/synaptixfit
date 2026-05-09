@@ -1249,6 +1249,16 @@ drop policy if exists plan_entrenamiento_delete on public.plan_entrenamiento_sem
 create policy plan_entrenamiento_delete on public.plan_entrenamiento_semanal
 for delete using (auth.uid() = usuario_id);
 
+-- Habilita realtime en las tablas de ejercicios para sincronización en vivo
+alter publication supabase_realtime add table ejercicios;
+alter publication supabase_realtime add table partes_cuerpo;
+alter publication supabase_realtime add table musculos;
+alter publication supabase_realtime add table equipamientos;
+alter publication supabase_realtime add table ejercicio_musculo_objetivo;
+alter publication supabase_realtime add table ejercicio_musculo_secundario;
+alter publication supabase_realtime add table ejercicio_parte_cuerpo;
+alter publication supabase_realtime add table ejercicio_equipamiento;
+
 -- permisos base para PostgREST (evita 42501 tras reset de schema)
 grant usage on schema public to anon, authenticated, service_role;
 grant select on all tables in schema public to anon;

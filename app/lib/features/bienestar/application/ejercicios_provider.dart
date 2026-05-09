@@ -14,19 +14,33 @@ final ejerciciosRepositoryProvider = Provider<EjerciciosRepository>((ref) {
 });
 
 // ---------------------------------------------------------------------------
-// Provider de ejercicios (lista completa)
+// Provider de ejercicios con sincronización en tiempo real (StreamProvider)
+// Escucha cambios en la tabla ejercicios y re-emite la vista completa.
 // ---------------------------------------------------------------------------
 
-final ejerciciosProvider = FutureProvider<List<EjercicioDb>>((ref) async {
+final ejerciciosProvider = StreamProvider<List<EjercicioDb>>((ref) async* {
   final repo = ref.read(ejerciciosRepositoryProvider);
-  return repo.fetchAll();
+  final client = Supabase.instance.client;
+
+  // Carga inicial
+  yield await repo.fetchAll();
+
+  // Escucha cambios en tiempo real usando el stream de la tabla base.
+  // Cuando se detecta un INSERT/UPDATE/DELETE se re-consulta la vista
+  // denormalizada para obtener los datos frescos.
+  final cambios = client.from('ejercicios').stream(primaryKey: ['id']);
+
+  await for (final _ in cambios) {
+    yield await repo.fetchAll();
+  }
 });
 
 // ---------------------------------------------------------------------------
 // Provider de catálogos (partes del cuerpo, músculos, equipamientos)
 // ---------------------------------------------------------------------------
 
-final catalogosProvider = FutureProvider<CatalogosEjercicios>((ref) async {
+final catalogosProvider =
+    FutureProvider.autoDispose<CatalogosEjercicios>((ref) async {
   final repo = ref.read(ejerciciosRepositoryProvider);
   return repo.fetchCatalogos();
 });
@@ -36,7 +50,7 @@ final catalogosProvider = FutureProvider<CatalogosEjercicios>((ref) async {
 // ---------------------------------------------------------------------------
 
 final ejercicioDetalleProvider =
-    FutureProvider.family<EjercicioDb?, String>((ref, id) async {
+    FutureProvider.autoDispose.family<EjercicioDb?, String>((ref, id) async {
   final repo = ref.read(ejerciciosRepositoryProvider);
   return repo.fetchById(id);
 });
@@ -46,7 +60,8 @@ final ejercicioDetalleProvider =
 // ---------------------------------------------------------------------------
 
 final ejerciciosPorParteCuerpoProvider =
-    FutureProvider.family<List<EjercicioDb>, String>((ref, parte) async {
+    FutureProvider.autoDispose.family<List<EjercicioDb>, String>(
+        (ref, parte) async {
   final repo = ref.read(ejerciciosRepositoryProvider);
   return repo.fetchByParteCuerpo(parte);
 });
@@ -56,7 +71,8 @@ final ejerciciosPorParteCuerpoProvider =
 // ---------------------------------------------------------------------------
 
 final busquedaEjerciciosProvider =
-    FutureProvider.family<List<EjercicioDb>, String>((ref, query) async {
+    FutureProvider.autoDispose.family<List<EjercicioDb>, String>(
+        (ref, query) async {
   final repo = ref.read(ejerciciosRepositoryProvider);
   return repo.buscar(query);
 });

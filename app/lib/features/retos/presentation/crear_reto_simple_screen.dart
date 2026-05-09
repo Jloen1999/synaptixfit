@@ -101,15 +101,6 @@ class _CrearRetoSimpleScreenState extends ConsumerState<CrearRetoSimpleScreen> {
 
       final retoId = retoMap['id'] as String;
 
-      await client.from('hitos_de_reto').insert({
-        'reto_id': retoId,
-        'titulo': 'Completar objetivo principal',
-        'porcentaje_peso': 100,
-        'indice_orden': 1,
-        'progreso_actual': 0,
-        'esta_completado': false,
-      });
-
       ref.invalidate(retosProvider);
 
       if (!mounted) return;

@@ -6,6 +6,25 @@ import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/sv_primary_button.dart';
 import '../application/rutina_provider.dart';
 
+Future<void> _guardarRutina(WidgetRef ref, BuildContext context) async {
+  final notifier = ref.read(rutinaProvider.notifier);
+  final scaffold = ScaffoldMessenger.of(context);
+
+  final result = await notifier.guardarRutina();
+  if (result != null && context.mounted) {
+    scaffold.showSnackBar(
+      const SnackBar(content: Text('Rutina guardada correctamente')),
+    );
+  } else if (context.mounted) {
+    scaffold.showSnackBar(
+      const SnackBar(
+        content: Text('Error al guardar la rutina'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
 class ConstructorRutinaScreen extends ConsumerWidget {
   const ConstructorRutinaScreen({super.key});
 
@@ -53,20 +72,16 @@ class ConstructorRutinaScreen extends ConsumerWidget {
                       Expanded(
                         child: SVPrimaryButton(
                           label: 'Guardar rutina',
-                          onPressed: state.items.length < 3
+                          onPressed: state.items.isEmpty
                               ? null
-                              : () =>
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content:
-                                            Text('Rutina guardada (mock)')),
-                                  ),
+                              : () => _guardarRutina(ref, context),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => context.go('/bienestar/ejercicios'),
+                          onPressed: () =>
+                              context.push('/bienestar/ejercicios'),
                           child: const Text('Agregar más ejercicios'),
                         ),
                       ),
@@ -78,16 +93,13 @@ class ConstructorRutinaScreen extends ConsumerWidget {
                   children: [
                     SVPrimaryButton(
                       label: 'Guardar rutina',
-                      onPressed: state.items.length < 3
+                      onPressed: state.items.isEmpty
                           ? null
-                          : () => ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Rutina guardada (mock)')),
-                              ),
+                          : () => _guardarRutina(ref, context),
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton(
-                      onPressed: () => context.go('/bienestar/ejercicios'),
+                      onPressed: () => context.push('/bienestar/ejercicios'),
                       child: const Text('Agregar más ejercicios'),
                     ),
                   ],

@@ -269,37 +269,19 @@ class PerfilFisico {
 
 ### 10.3 Dashboard
 
-**Objetivo:** Resumen personalizado con KPIs y retos activos.
+**Objetivo:** Resumen personalizado con KPIs, bienestar y retos activos.
 
 **Componentes:**
-- Tarjeta principal: Saludo + racha + próximo objetivo.
-- Tarjetas KPI: Calorías (anillo), sesiones (contador), horas estudio (gráfico línea).
-- Lista: Retos activos con barra de progreso.
-- Botón flotante: "+" para crear rutina.
+- Tarjeta de saludo con gradiente, avatar, nombre, nivel, barra XP y racha.
+- KPIs: calorías hoy, sesiones completadas, horas de estudio.
+- Resumen de bienestar si el perfil está configurado.
+- Lista de retos activos con barra de progreso.
+- FAB "+" con BottomSheet de creación: Nueva rutina, Reto simple, Reto complejo, Plan semanal, Nuevo apunte (5 opciones, navegación con `push`).
 - Navegación inferior: 5 pestañas.
 
-**Modelo de datos:**
-```dart
-class DatosTablero {
-  final Usuario usuario;
-  final int rachaActual;
-  final DateTime proximoObjetivo;
-  final MetricasDiarias metricasDeHoy;
-  final List<VistaPreviaReto> retosActivos;
-  final List<NotificacionAdaptativa> notificacionesUrgentes;
-}
-
-class MetricasDiarias {
-  final double caloriasQuemadas;
-  final int sesionesCompletadas;
-  final double horasEstudiadas;
-  final double nivelFatigaRPE; // 1-10
-}
-```
-
-**Integraciones:** `GET /usuarios/{id}/tablero` · Caché 5 min · Realtime para notificaciones urgentes.
-
-**Estados:** ⏳ Skeleton cards (3s) · Vacío: "Crea un reto para empezar" · Fatiga crítica: alerta roja RPE.
+**Ruta:** `/dashboard` (ShellRoute)  
+**Archivo:** [app/lib/features/dashboard/presentation/dashboard_screen.dart](app/lib/features/dashboard/presentation/dashboard_screen.dart)  
+**Provider:** [dashboard_provider.dart](app/lib/features/dashboard/application/dashboard_provider.dart)
 
 ---
 
@@ -414,53 +396,83 @@ class ConstructorRutina {
 
 ---
 
-### 10.7 Sesión Completada
+### 10.7 Sesiones de Entrenamiento
 
-**Objetivo:** Confirmación post-entrenamiento con resumen y recompensas.
+**Objetivo:** Listado de sesiones completadas y registro de nuevas sesiones.
 
 **Componentes:**
-- Hero Animation: Contador de calorías.
-- Lista: Ejercicios completados con series × reps y calorías.
-- Tarjeta: Insignias desbloqueadas.
-- Tarjeta: XP ganada + nivel actual.
-- Botones: Compartir, Inicio, Nueva rutina.
+- Lista de sesiones con tarjeta por sesión: nombre de rutina, duración, RPE, calorías, XP.
+- FAB "Registrar sesión" (visible si el usuario tiene rutinas guardadas).
+- Diálogo de registro: selector de rutina, slider de duración (5-120 min), slider de esfuerzo percibido RPE (1-10).
+- Cálculo automático de calorías estimadas en tiempo real.
+- Pull-to-refresh para ver nuevas sesiones.
 
-**Integraciones:** `POST /sesiones/registro`.
-
-**Estados:** Celebración: confetti (1-2s) · Nivel aumentó: toast "¡Subiste a nivel X!" · Logros: modal por insignia.
+**Ruta:** `/bienestar/sesion-completada`  
+**Archivo:** [app/lib/features/bienestar/presentation/sesion_completada_screen.dart](app/lib/features/bienestar/presentation/sesion_completada_screen.dart)  
+**Provider:** `sesionesProvider`, `rutinasUsuarioProvider`, `registrarSesion()` en [sesion_provider.dart](app/lib/features/bienestar/application/sesion_provider.dart)
 
 ---
 
 ### 10.8 Plan Académico Semanal
 
-**Objetivo:** Vista semanal con detección de conflictos y sugerencias IA.
+**Objetivo:** Vista del horario semanal con detección de conflictos.
 
 **Componentes:**
-- WeekView: Cuadrícula hora/día.
-- TimeBlock: Tarjeta por bloque (asignatura, hora, aula).
-- AlertBanner: "Conflicto detectado: Estudio solapado con entreno".
-- Tarjeta Sugerencias: "La IA sugiere mover Cálculo 1 hora antes".
-- Botones: "Aceptar sugerencia", "Descartar".
+- Listado de bloques (horarios) agrupados por asignatura.
+- ConflictBanner: aviso visual si hay solapamientos.
+- Acceso rápido a **Apuntes** y **Gestionar Asignaturas** desde AppBar.
 
-**Integraciones:** `GET /horario-academico/{id}/semana/{inicio}` · Edge Function para detección · Sugerencias IA.
-
-**Validaciones:** Bloque ≥ 30 min · Máx. 8h estudio/día · Horario 06:00-23:00.
+**Ruta:** `/academico`  
+**Archivo:** [app/lib/features/academico/presentation/plan_academico_screen.dart](app/lib/features/academico/presentation/plan_academico_screen.dart)
 
 ---
 
-### 10.9 Plan Semanal Integrado
+### 10.8.1 Gestionar Asignaturas
 
-**Objetivo:** Vista holística: bloques académicos + entrenamientos + retos.
+**Objetivo:** CRUD de asignaturas con archivado suave (soft delete).
 
 **Componentes:**
-- MultiLayerWeekView: 3 capas de color (Azul=Estudio, Verde=Deporte, Naranja=Retos).
-- Tarjeta diaria: Horas estudio, calorías, progreso retos.
-- Legend: Código de colores.
-- Detalle: Panel modal por día.
+- Tabs Activas / Archivadas.
+- Diálogo de formulario: nombre, código, docente, descripción.
+- PopupMenu por asignatura: Editar, Archivar/Desarchivar, Eliminar.
+- Catálogo: vinculación opcional a `catalogo_asignaturas`.
 
-**Integraciones:** `GET /plan-semanal/integrado/{id}/{inicio}`.
+**Ruta:** `/academico/asignaturas`  
+**Archivo:** [app/lib/features/academico/presentation/gestion_asignaturas_screen.dart](app/lib/features/academico/presentation/gestion_asignaturas_screen.dart)  
+**Provider:** `asignaturasActivasProvider`, `asignaturasArchivadasProvider`, CRUD en [asignaturas_provider.dart](app/lib/features/academico/application/asignaturas_provider.dart)
 
-**Estados:** Vacío: "Planifica tu semana" · Sobrecarga: alerta si >10h estudio + >5h deporte/día.
+---
+
+### 10.8.2 Apuntes (Markdown)
+
+**Objetivo:** CRUD de apuntes con contenido Markdown y vista previa.
+
+**Componentes:**
+- Pestañas "Mis apuntes" / "Explorar" (SegmentedButton).
+  - **Mis apuntes:** lista con cards, FAB para crear, al tocar abre editor.
+  - **Explorar:** apuntes públicos y de amigos (RLS filtra automáticamente), muestra nombre del autor.
+- Editor full-screen: campos título, asignatura opcional, visibilidad, nota rápida.
+- Editor Markdown multilínea con toggle **Vista previa** renderizada con `flutter_markdown`.
+- Visibilidad chips (privado / público / solo_amigos).
+
+**Rutas:** `/academico/apuntes`, `/academico/apuntes/editor`  
+**Archivos:** [apuntes_screen.dart](app/lib/features/academico/presentation/apuntes_screen.dart), [apuntes_editor_screen.dart](app/lib/features/academico/presentation/apuntes_screen.dart) (mismo archivo, widgets separados)  
+**Provider:** `apuntesProvider`, `apuntesPublicosProvider` con DTO `ApuntePublicoDto`, CRUD en [apuntes_provider.dart](app/lib/features/academico/application/apuntes_provider.dart)
+
+---
+
+### 10.8.3 Planes de Estudio Semanales (Académico + Bienestar)
+
+**Objetivo:** Planificación semanal unificada con dos vistas: planes académicos y tablero de bienestar.
+
+**Componentes:**
+- SegmentedButton "Académico" / "Bienestar" en la parte superior.
+- **Pestaña Académico:** Listado de planes expandibles con rango de fechas y badge de visibilidad. Crear plan, añadir/eliminar bloques con asignatura, hora, prioridad.
+- **Pestaña Bienestar:** Anillo de progreso circular con % de cumplimiento semanal, indicadores planificado vs completado, tarjeta de plan activo (intensidad, duración, estado), tendencia vs semana anterior con flecha, sugerencia contextual en tarjeta destacada.
+
+**Ruta:** `/plan-semanal`  
+**Archivo:** [app/lib/features/academico/presentation/plan_semanal_screen.dart](app/lib/features/academico/presentation/plan_semanal_screen.dart)  
+**Providers:** `planesEstudioProvider`, `bloquesPorPlanProvider`, `bienestarSemanalProvider`
 
 ---
 

@@ -5,6 +5,69 @@
 
 ---
 
+## [2.6.1] — 05-05-2026
+
+### Fixes y mejoras de UX
+- **Fix overflow Dashboard:** Se eliminó `Flexible` del título "Crear en SynaptixFit", se añadió `SingleChildScrollView` al BottomSheet completo para evitar desbordamiento vertical en pantallas pequeñas.
+- **Navegación corregida:** Cambio `context.go` → `context.push` en menú de creación del Dashboard, explorador de ejercicios y constructor de rutina. El usuario ahora puede volver atrás correctamente.
+- **Menú de creación ampliado:** Añadida opción "Nuevo apunte" en el FAB del Dashboard (5 opciones). Lenguaje simplificado y directo en todas las descripciones.
+- **TabController:** Añadido listener en gestión de asignaturas para refrescar al cambiar de pestaña.
+- **Modelo AsignaturaDb:** Añadido campo `catalogoAsignaturaId` en constructor, fromMap, toMap y copyWith.
+
+### Hito 6: RF-BIE-06 — Registrar sesión completada
+- Provider `sesion_provider.dart` con `registrarSesion()` y providers `sesionesProvider`, `rutinasUsuarioProvider`.
+- Pantalla `sesion_completada_screen.dart` reescrita: ahora usa Riverpod, añade FAB "Registrar sesión", diálogo con selector de rutina, slider de duración (5-120 min) y RPE (1-10).
+- Cálculo automático de calorías: `duración × RPE × 0.8`.
+- Cada sesión muestra tarjeta con nombre de rutina, duración, RPE, calorías y XP.
+
+### Hito 7: RF-BIE-10 — Tablero semanal de bienestar
+- Provider `bienestar_semanal_provider.dart` con DTO `BienestarSemanalDto`: sesiones planificadas vs completadas, cumplimiento %, tendencia, sugerencia.
+- `plan_semanal_screen.dart` ahora tiene pestañas "Académico" / "Bienestar" (SegmentedButton).
+- Tablero de bienestar: anillo de progreso circular, indicadores planificado/completado, tarjeta de plan activo (intensidad, duración, estado), tendencia vs semana anterior, sugerencia contextual.
+- La pestaña "Académico" mantiene los planes de estudio y bloques existentes.
+
+---
+
+## [2.6.0] — 05-05-2026
+
+### Implementación del módulo académico (MUST)
+- **Hito 1 — RF-ACA-06: CRUD Asignaturas**
+  - Migration `20260504_0009`: columnas `docente` y `archivado` en `asignaturas`.
+  - Pantalla `gestion_asignaturas_screen.dart` con tabs Activas/Archivadas, crear/editar/archivar/eliminar.
+  - Provider `asignaturas_provider.dart` con CRUD Supabase.
+  - Ruta `/academico/asignaturas`, botón en AppBar de Plan Académico.
+  - Seed script `supabase/seed_asignaturas.py` para poblar desde `grados.json`.
+
+- **Hito 2 — RF-ACA-01/02: Catálogo académico + Planes de estudio**
+  - Migration `20260504_0010`: tablas `catalogo_universidades`, `catalogo_carreras`, `catalogo_asignaturas` (catálogo público desde `grados.json`, solo lectura RLS).
+  - Migration `20260504_0011`: tabla `planes_estudio` (visibilidad con RLS), columnas `plan_estudio_id` y `prioridad` en `horarios_academicos`.
+  - Nuevos modelos: `PlanEstudioDb`, `CatalogoUniversidadDb`, `CatalogoCarreraDb`, `CatalogoAsignaturaDb`.
+  - Providers `catalogo_provider.dart` y `planes_estudio_provider.dart`.
+  - `plan_semanal_screen.dart` reescrito con planes expandibles, crear plan con selector de fechas y visibilidad, añadir/eliminar bloques con asignatura/hora/prioridad.
+  - Seed script `supabase/seed_catalogo.py` (175 KB, UTF-8).
+
+- **Hito 3 — RF-ACA-03: CRUD Apuntes Markdown**
+  - Migration `20260505_0012`: tabla `apuntes` (titulo, contenido markdown, visibilidad, `es_nota_rapida`, FK opcional a `asignaturas`, RLS).
+  - Dependencia `flutter_markdown: ^0.7.4` en `pubspec.yaml`.
+  - Modelo `ApunteDb` con `copyWith`.
+  - Pantalla `apuntes_screen.dart` con pestañas "Mis apuntes"/"Explorar", lista con cards y FAB.
+  - Editor `apuntes_editor_screen.dart` con editor Markdown, toggle preview renderizado, visibilidad, vincular asignatura.
+  - Rutas `/academico/apuntes`, `/academico/apuntes/editor`.
+
+- **Hito 4 — RF-ACA-04/05: Visibilidad y control de acceso**
+  - RLS completa en `planes_estudio` y `apuntes` para visibilidad público/solo_amigos/privado.
+  - Provider `apuntesPublicosProvider` con join a `usuarios(nombre_completo)`, filtrado automático por RLS.
+  - Explorador público de apuntes con nombre del autor.
+  - Visibilidad chips en todas las cards de lista.
+
+### Fix de encoding en seed_catalogo.py
+- El script ahora escribe directamente a archivo con UTF-8 en lugar de stdout, evitando corrupción de caracteres acentuados en Windows.
+
+### SQL consolidado para despliegue manual
+- Archivo `migraciones_pendientes.sql` en raíz con las 4 migraciones nuevas para ejecutar en Supabase SQL Editor.
+
+---
+
 ## [2.5.28] — 03-05-2026
 
 ### Realtime activado en catálogo de ejercicios

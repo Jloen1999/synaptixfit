@@ -7,6 +7,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/kpi_card.dart';
+import '../../academico/application/usuario_carreras_provider.dart';
 
 class PerfilScreen extends ConsumerWidget {
   const PerfilScreen({super.key});
@@ -667,6 +668,8 @@ class _AjustesTab extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
+        _CarrerasCard(),
+        const SizedBox(height: 16),
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -728,4 +731,114 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _TabBarDelegate oldDelegate) =>
       tabBar != oldDelegate.tabBar;
+}
+
+class _CarrerasCard extends ConsumerWidget {
+  const _CarrerasCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final carrerasAsync = ref.watch(usuarioCarrerasProvider);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context)
+              .colorScheme
+              .outlineVariant
+              .withValues(alpha: 0.5),
+        ),
+      ),
+      child: carrerasAsync.when(
+        data: (carreras) {
+          final nombresAsync = carreras.isNotEmpty
+              ? ref.watch(carrerasUsuarioConNombreProvider(carreras))
+              : null;
+          return Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.school_rounded),
+                title: const Text('Mis carreras'),
+                subtitle: carreras.isEmpty
+                    ? const Text('Sin carreras configuradas')
+                    : null,
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () =>
+                    context.push('/academico/configuracion'),
+              ),
+              if (nombresAsync != null)
+                nombresAsync.whenOrNull(
+                  data: (cats) => Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Column(
+                      children: cats
+                          .map((c) => Padding(
+                                padding:
+                                    const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer
+                                            .withValues(alpha: 0.5),
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                          Icons.school_outlined,
+                                          size: 18),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(c.nombre,
+                                              style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight:
+                                                      FontWeight.w600)),
+                                          if (c.universidadNombre !=
+                                              null)
+                                            Text(
+                                                c.universidadNombre!,
+                                                style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Theme.of(
+                                                            context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                  ),
+                ) ?? const SizedBox.shrink(),
+            ],
+          );
+        },
+        loading: () => const ListTile(
+          leading: Icon(Icons.school_rounded),
+          title: Text('Mis carreras'),
+          subtitle: Text('Cargando...'),
+        ),
+        error: (_, __) => const ListTile(
+          leading: Icon(Icons.school_rounded),
+          title: Text('Mis carreras'),
+          subtitle: Text('Error'),
+        ),
+      ),
+    );
+  }
 }

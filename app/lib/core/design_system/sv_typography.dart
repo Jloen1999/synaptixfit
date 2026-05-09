@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SVTypography {
-  // Display & Headlines (Manrope)
+  // Display & Headlines — Manrope (geométrico, moderno, carácter)
   static TextStyle get displayLarge => GoogleFonts.manrope(
     fontSize: 57,
     fontWeight: FontWeight.bold,
@@ -49,35 +49,54 @@ class SVTypography {
     fontWeight: FontWeight.w600,
   );
 
-  // Body & Labels (Inter)
-  static TextStyle get bodyLarge => GoogleFonts.inter(
+  // Body & Labels — DM Sans (geométrico cálido, mejor legibilidad que Inter)
+  static TextStyle get bodyLarge => GoogleFonts.dmSans(
     fontSize: 16,
     fontWeight: FontWeight.w400,
+    letterSpacing: -0.1,
   );
 
-  static TextStyle get bodyMedium => GoogleFonts.inter(
+  static TextStyle get bodyMedium => GoogleFonts.dmSans(
     fontSize: 14,
     fontWeight: FontWeight.w400,
+    letterSpacing: -0.05,
   );
 
-  static TextStyle get bodySmall => GoogleFonts.inter(
+  static TextStyle get bodySmall => GoogleFonts.dmSans(
     fontSize: 12,
     fontWeight: FontWeight.w400,
   );
 
-  static TextStyle get labelLarge => GoogleFonts.inter(
+  static TextStyle get labelLarge => GoogleFonts.dmSans(
     fontSize: 14,
     fontWeight: FontWeight.w500,
+    letterSpacing: 0.1,
   );
 
-  static TextStyle get labelMedium => GoogleFonts.inter(
+  static TextStyle get labelMedium => GoogleFonts.dmSans(
     fontSize: 12,
     fontWeight: FontWeight.w500,
+    letterSpacing: 0.2,
   );
 
-  static TextStyle get labelSmall => GoogleFonts.inter(
+  static TextStyle get labelSmall => GoogleFonts.dmSans(
     fontSize: 11,
     fontWeight: FontWeight.w500,
+    letterSpacing: 0.3,
+  );
+
+  // Estilo para números grandes (KPIs)
+  static TextStyle get metricValue => GoogleFonts.dmSans(
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+    height: 1.1,
+  );
+
+  static TextStyle get metricUnit => GoogleFonts.dmSans(
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.3,
   );
 
   static TextTheme get textTheme => TextTheme(

@@ -1,0 +1,3372 @@
+[
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Informática en Ingeniería del Software",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TECNOLOGÍA DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "AMPLIACIÓN DE MATEMÁTICAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ELECTRÓNICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURA DE DATOS Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LOS COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Telemática en Telecomunicación",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE REDES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA Y EMPRESA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURAS DE DATOS Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE ELECTRÓNICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ciencia y Tecnología de los Alimentos",
+    "asignaturas": [
+      {
+        "nombre": "DIBUJO Y SISTEMAS DE REPRESENTACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE BIOLOGÍA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INFORMÁTICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "QUÍMICA GENERAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ANÁLISIS Y QUÍMICA AGRÍCOLA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA Y GESTIÓN DE EMPRESAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GEOMORFOLOGÍA Y CLIMATOLOGÍA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Lleida",
+    "carrera": "Grado en Ingeniería Informática",
+    "asignaturas": [
+      {
+        "nombre": "Programación 1",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Estructura de Computadores 1",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Lógica Computacional",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Álgebra",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Física",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Programación 2",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Estructura de Computadores 2",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Estadística y Optimización",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 9
+      },
+      {
+        "nombre": "Organización Empresarial",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 9
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad Tecnológica (UTEC)",
+    "carrera": "Ingeniería en Mecatrónica",
+    "asignaturas": [
+      {
+        "nombre": "Matemática 1",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 8
+      },
+      {
+        "nombre": "Química",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Introducción a la Mecatrónica",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 4
+      },
+      {
+        "nombre": "Matemática 2",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 8
+      },
+      {
+        "nombre": "Fundamentos Matemáticos con Informática",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Teoría de Circuitos 2",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Física 1 (Mecánica)",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7
+      },
+      {
+        "nombre": "Tecnologías de Materiales 1",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Dibujo Computarizado (CAD)",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 5
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad Politécnica de Cartagena",
+    "carrera": "Grado en Ingeniería Telemática",
+    "asignaturas": [
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ÁLGEBRA LINEAL Y MÉTODOS NUMERICOS",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CALCULO I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CALCULO II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS Y CIRCUITOS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GESTIÓN DE EMPRESAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE TELEMÁTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Informática en Ingeniería del Software",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TECNOLOGÍA DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "AMPLIACIÓN DE MATEMÁTICAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ELECTRÓNICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURA DE DATOS Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LOS COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Telemática en Telecomunicación",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE REDES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA Y EMPRESA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURAS DE DATOS Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE ELECTRÓNICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ciencia y Tecnología de los Alimentos",
+    "asignaturas": [
+      {
+        "nombre": "DIBUJO Y SISTEMAS DE REPRESENTACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE BIOLOGÍA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INFORMÁTICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "QUÍMICA GENERAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ANÁLISIS Y QUÍMICA AGRÍCOLA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA Y GESTIÓN DE EMPRESAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GEOMORFOLOGÍA Y CLIMATOLOGÍA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Lleida",
+    "carrera": "Grado en Ingeniería Informática",
+    "asignaturas": [
+      {
+        "nombre": "Programación 1",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Estructura de Computadores 1",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Lógica Computacional",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Álgebra",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Física",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Programación 2",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Estructura de Computadores 2",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Estadística y Optimización",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 9
+      },
+      {
+        "nombre": "Organización Empresarial",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 9
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad Tecnológica (UTEC)",
+    "carrera": "Ingeniería en Mecatrónica",
+    "asignaturas": [
+      {
+        "nombre": "Matemática 1",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 8
+      },
+      {
+        "nombre": "Química",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Introducción a la Mecatrónica",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 4
+      },
+      {
+        "nombre": "Matemática 2",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 8
+      },
+      {
+        "nombre": "Fundamentos Matemáticos con Informática",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Teoría de Circuitos 2",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Física 1 (Mecánica)",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7
+      },
+      {
+        "nombre": "Tecnologías de Materiales 1",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Dibujo Computarizado (CAD)",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 5
+      },
+      {
+        "nombre": "Electrónica Digital 1",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": 4
+      },
+      {
+        "nombre": "Inglés",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": 4
+      },
+      {
+        "nombre": "Tecnologías de Microprocesamiento",
+        "curso": 2,
+        "semestre": 4,
+        "caracter": "OBLIGATORIA",
+        "creditos": 4
+      },
+      {
+        "nombre": "Procesos Industriales",
+        "curso": 3,
+        "semestre": 6,
+        "caracter": "OBLIGATORIA",
+        "creditos": 5
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad Politécnica de Cartagena",
+    "carrera": "Grado en Ingeniería Telemática",
+    "asignaturas": [
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ÁLGEBRA LINEAL Y MÉTODOS NUMERICOS",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CALCULO I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CALCULO II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS Y CIRCUITOS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GESTIÓN DE EMPRESAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE TELEMÁTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en Matemáticas y Estadística",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE MATEMÁTICAS I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ÁLGEBRA LINEAL II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE MATEMÁTICAS II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA TOPOLOGÍA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ÁLGEBRA CONMUTATIVA",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ANÁLISIS MATEMÁTICO I",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GEOMETRÍA I",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INVESTIGACIÓN OPERATIVA",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MÉTODOS COMPUTACIONALES I",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ANÁLISIS MATEMÁTICO II",
+        "curso": 2,
+        "semestre": 4,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Química Industrial",
+    "asignaturas": [
+      {
+        "nombre": "Diseño de plantas de Proceso",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Petróleo y Refino",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Petroquímica",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Recursos Energéticos",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Combustibles y Biocombustibles",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Tratamiento de Aguas",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Gestión de Residuos y Control de la Contaminación del Aire",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Prácticas en Empresas",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Biología",
+    "asignaturas": [
+      {
+        "nombre": "Ampliación de Fisiología Animal",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Ampliación de Microbiología",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Biología del Desarrollo",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Genética Médica",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Manejo y Conservación de Plantas",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Neuroquímica",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Prácticas Externas",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Señalización y Respuestas en Plantas",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Técnicas Experimentales en Ecología",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Zoología Experimental",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en Comunicación Audiovisual e Información y Documentación",
+    "asignaturas": [
+      {
+        "nombre": "DIPLOMÁTICA Y PRODUCCIÓN DOCUMENTAL EN LAS INSTITUCIONES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INFORMACIÓN Y SOCIEDAD",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA ESTADÍSTICA DOCUMENTAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA TECNOLOGÍA DE LA INFORMACIÓN Y LA COMUNICACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TEORÍA DE LA COMUNICACIÓN Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DERECHO DE LA INFORMACIÓN Y LA COMUNICACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "EDICIÓN DIGITAL",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GESTIÓN Y ADMINISTRACIÓN EN EMPRESAS DE COMUNICACIÓN Y EN UNIDADES INFORMATIVAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HABILIDADES COMUNICATIVAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INGLÉS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en Periodismo y Comunicación Audiovisual",
+    "asignaturas": [
+      {
+        "nombre": "COMUNICACIÓN PUBLICITARIA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HISTORIA CONTEMPORÁNEA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INFORMACIÓN Y SOCIEDAD",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA TECNOLOGÍA DE LA INFORMACIÓN Y LA COMUNICACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDACCIÓN PERIODÍSTICA I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TEORÍA DE LA COMUNICACIÓN Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DERECHO DE LA INFORMACIÓN Y LA COMUNICACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GESTIÓN Y ADMINISTRACIÓN EN EMPRESAS DE COMUNICACIÓN Y EN UNIDADES INFORMATIVAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HABILIDADES COMUNICATIVAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INGLÉS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDACCIÓN PERIODÍSTICA II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Derecho",
+    "asignaturas": [
+      {
+        "nombre": "DERECHO CONSTITUCIONAL (1)",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DERECHO ROMANO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA POLÍTICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HISTORIA DEL DERECHO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN AL DERECHO PRIVADO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DERECHO ADMINISTRATIVO (1)",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DERECHO CONSTITUCIONAL (2)",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DERECHO E INSTITUCIONES DE LA UNIÓN EUROPEA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FILOSOFÍA Y SOCIOLOGÍA JURÍDICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TÉCNICAS DE BÚSQUEDA Y USO DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Mecánica (Rama Industrial)",
+    "asignaturas": [
+      {
+        "nombre": "FÍSICA I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INFORMÁTICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "QUÍMICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS DE REPRESENTACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "APLICACIONES INFORMÁTICAS PARA LA INGENIERÍA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DIRECCIÓN DE EMPRESAS I",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA APLICADA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Lleida",
+    "carrera": "Grado en Ingeniería Informática",
+    "asignaturas": [
+      {
+        "nombre": "Administración y Mantenimiento de Sistemas y Aplicaciones",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Aspectos Legales, Sociales y Profesionales",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 3
+      },
+      {
+        "nombre": "Ingeniería del Software",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Inteligencia Artificial",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Sistemas Concurrentes y Paralelos",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Ampliación de Bases de Datos y de Ingeniería del Software",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Proyecto Web",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Prácticas Tuteladas en Empresa",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 15
+      },
+      {
+        "nombre": "Trabajo de Fin de Grado",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "TRABAJO DE FIN DE GRADO",
+        "creditos": 15
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Civil - Hidrología",
+    "asignaturas": [
+      {
+        "nombre": "DIBUJO I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GEOLOGÍA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INFORMÁTICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS II",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA Y EMPRESA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS III",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MECÁNICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en Ingeniería Informática en Tecnologías de la Información e Ingeniería Telemática en Telecomunicación",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE REDES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA Y EMPRESA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURAS DE DATOS Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE ELECTRÓNICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ARQUITECTURA DE SISTEMAS",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ELECTRÓNICA DE COMUNICACIONES",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MEDIOS DE TRANSMISIÓN",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDES Y SERVICIOS",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS OPERATIVOS",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ENCAMINAMIENTO Y CONMUTACIÓN",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HABILIDADES COMUNICATIVAS",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PROGRAMACIÓN DE SISTEMAS EN TIEMPO REAL",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDES DE COMPUTADORES",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS ELECTRÓNICOS DIGITALES",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Periodismo",
+    "asignaturas": [
+      {
+        "nombre": "HISTORIA CONTEMPORÁNEA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INFORMACIÓN Y SOCIEDAD",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA TECNOLOGÍA DE LA INFORMACIÓN Y LA COMUNICACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDACCIÓN PERIODÍSTICA I",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TEORÍA DE LA COMUNICACIÓN Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DERECHO DE LA INFORMACIÓN Y LA COMUNICACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GESTIÓN Y ADMINISTRACIÓN EN EMPRESAS DE COMUNICACIÓN Y EN UNIDADES INFORMATIVAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HABILIDADES COMUNICATIVAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INGLÉS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDACCIÓN PERIODÍSTICA II",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad Politécnica de Cartagena",
+    "carrera": "Grado en Ingeniería Telemática",
+    "asignaturas": [
+      {
+        "nombre": "SISTEMAS LINEALES (1)",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "COMPONENTES Y DISPOSITIVOS ELECTRÓNICOS (1)",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDES Y SERVICIOS DE TELECOMUNICACIONES (1)",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CONMUTACIÓN (1)",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS DIGITALES BASADOS EN MICROPROCESADORES (1)",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS Y SERVICIOS DE TELECOMUNICACIÓN (1)",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CIRCUITOS Y FUNCIONES ELECTRÓNICAS (1)",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TEORÍA DE REDES DE TELECOMUNICACIONES (1)",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TEORÍA DE LA COMUNICACIÓN (1)",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS Y SERVICIOS DISTRIBUIDOS",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INSTRUMENTACIÓN TELEMÁTICA Y LABORATORIO DE REDES",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PROGRAMACIÓN PARA INGENIERÍA TELEMÁTICA",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TRANSMISIÓN DE DATOS",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INGENIERÍA DE PROTOCOLOS",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 4.5
+      },
+      {
+        "nombre": "REDES INALÁMBRICAS",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ONDAS ELECTROMAGNÉTICAS (1)",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDES DE BANDA ANCHA",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7.5
+      },
+      {
+        "nombre": "INGLÉS TÉCNICO",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 4.5
+      },
+      {
+        "nombre": "MODELADO Y SIMULACIÓN",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PLANIFICACIÓN Y GESTIÓN DE REDES",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7.5
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería de Sonido e Imagen en Telecomunicación",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA Y EMPRESA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "AMPLIACIÓN DEL CÁLCULO",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ANÁLISIS DE REDES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DISPOSITIVOS ELECTRÓNICOS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SEÑALES ALEATORIAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en Periodismo e Información y Documentación",
+    "asignaturas": [
+      {
+        "nombre": "EVALUACIÓN DE LA ACTIVIDAD CIENTÍFICA",
+        "curso": 6,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PERIODISMO Y REDES SOCIALES",
+        "curso": 6,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PLANIFICACIÓN, AUDITORÍA Y EVALUACIÓN DE UNIDADES DE INFORMACIÓN",
+        "curso": 6,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "POLÍTICAS Y SISTEMAS DE INFORMACIÓN",
+        "curso": 6,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad Tecnológica (UTEC)",
+    "carrera": "Ingeniería en Mecatrónica",
+    "asignaturas": [
+      {
+        "nombre": "Física 3 (Térmica y Fluidos)",
+        "curso": 3,
+        "semestre": 5,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7
+      },
+      {
+        "nombre": "Introducción a los Sistemas de Control",
+        "curso": 3,
+        "semestre": 5,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7
+      },
+      {
+        "nombre": "Legislación Laboral",
+        "curso": 3,
+        "semestre": 5,
+        "caracter": "OBLIGATORIA",
+        "creditos": 5
+      },
+      {
+        "nombre": "Procesos de Fabricación",
+        "curso": 3,
+        "semestre": 5,
+        "caracter": "OBLIGATORIA",
+        "creditos": 5
+      },
+      {
+        "nombre": "Anteproyecto de Tecnólogo",
+        "curso": 3,
+        "semestre": 5,
+        "caracter": "OBLIGATORIA",
+        "creditos": 5
+      },
+      {
+        "nombre": "Práctica Profesional Curricular",
+        "curso": 3,
+        "semestre": 5,
+        "caracter": "OBLIGATORIA",
+        "creditos": 8
+      },
+      {
+        "nombre": "Electrónica de Potencia",
+        "curso": 4,
+        "semestre": 7,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7
+      },
+      {
+        "nombre": "Materiales y Elementos de Máquinas 2",
+        "curso": 4,
+        "semestre": 7,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Gestión de Proyectos y Emprendimientos",
+        "curso": 4,
+        "semestre": 7,
+        "caracter": "OBLIGATORIA",
+        "creditos": 4
+      },
+      {
+        "nombre": "Sistemas Embebidos",
+        "curso": 4,
+        "semestre": 7,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Transferencia de Calor y Fluidos",
+        "curso": 4,
+        "semestre": 7,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Civil",
+    "asignaturas": [
+      {
+        "nombre": "ESTRUCTURAS I",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HIDRÁULICA E HIDROLOGÍA",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "QUÍMICA DE MATERIALES",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS ELÉCTRICOS DE POTENCIA",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TOPOGRAFÍA",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURAS II",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MAQUINARIA",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATERIALES",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TOPOGRAFÍA EN TRANSPORTES Y SERVICIOS URBANOS",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TRÁFICO",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en Comunicación Audiovisual e Información y Documentación",
+    "asignaturas": [
+      {
+        "nombre": "GUIÓN",
+        "curso": 5,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HISTORIA CONTEMPORÁNEA",
+        "curso": 5,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MONTAJE Y EDICIÓN DE VÍDEO Y AUDIO I",
+        "curso": 5,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "NARRATIVA AUDIOVISUAL II",
+        "curso": 5,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PRODUCCIÓN AUDIOVISUAL",
+        "curso": 5,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "COMUNICACIÓN AUDIOVISUAL Y PUBLICITARIA DIGITAL",
+        "curso": 5,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ÉTICA Y DEONTOLOGÍA DE LA COMUNICACIÓN AUDIOVISUAL",
+        "curso": 5,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HISTORIA, TEORÍA Y TÉCNICA DE LA FOTOGRAFÍA",
+        "curso": 5,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MONTAJE Y EDICIÓN DE VÍDEO Y AUDIO II",
+        "curso": 5,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PROGRAMACIÓN AUDIOVISUAL",
+        "curso": 5,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en Periodismo y Comunicación Audiovisual",
+    "asignaturas": [
+      {
+        "nombre": "DOCUMENTACIÓN INFORMATIVA",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GUIÓN",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MONTAJE Y EDICIÓN DE VÍDEO Y AUDIO I",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "NARRATIVA AUDIOVISUAL II",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PRODUCCIÓN AUDIOVISUAL",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "COMUNICACIÓN AUDIOVISUAL Y PUBLICITARIA DIGITAL",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ÉTICA Y DEONTOLOGÍA DE LA COMUNICACIÓN",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GABINETES DE COMUNICACIÓN",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "HISTORIA, TEORÍA Y TÉCNICA DE LA FOTOGRAFÍA",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MONTAJE Y EDICIÓN DE VÍDEO Y AUDIO II",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PROGRAMACIÓN AUDIOVISUAL",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CONTENIDOS DIGITALES I",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FOTOPERIODISMO",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INGLÉS PERIODÍSTICO I",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PERIODISMO ESPECIALIZADO I",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REALIZACIÓN EN RADIO",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CONTENIDOS DIGITALES II",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INGLÉS PERIODÍSTICO II",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PERIODISMO EN RADIO",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PERIODISMO EN TELEVISIÓN",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PERIODISMO ESPECIALIZADO II",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REALIZACIÓN EN TELEVISIÓN",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad Politécnica de Cartagena",
+    "carrera": "Grado en Ingeniería Telemática",
+    "asignaturas": [
+      {
+        "nombre": "MATERIALES PARA TECNOLOGÍAS DE LA INFORMACIÓN (1)",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GESTIÓN DE LA PRODUCCIÓN (1)",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DISEÑO ASISTIDO POR ORDENADOR",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A DATA SCIENCE",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA MODERNA (1)",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS CONCURRENTES",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "LABORATORIO DE INGENIERÍA DE SOFTWARE (1)",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "AMPLIACIÓN DE MÉTODOS NUMÉRICOS (1)",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DOMÓTICA E IOT (1)",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PRÁCTICAS EXTERNAS",
+        "curso": 4,
+        "semestre": null,
+        "caracter": "OPTATIVA",
+        "creditos": 12
+      },
+      {
+        "nombre": "COMUNICACIONES INDUSTRIALES",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DISEÑO DE SOCS SOBRE FPGAS (1)",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DISEÑO Y FABRICACIÓN DE CIRCUITOS ELECTRÓNICOS",
+        "curso": 4,
+        "semestre": 2,
+        "caracter": "OPTATIVA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en Matemáticas y Estadística",
+    "asignaturas": [
+      {
+        "nombre": "AMPLIACIÓN DE INVESTIGACIÓN OPERATIVA",
+        "curso": 3,
+        "semestre": 6,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Estadística",
+    "asignaturas": [
+      {
+        "nombre": "TRABAJO FIN DE GRADO",
+        "curso": 4,
+        "semestre": 8,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad Tecnológica (UTEC)",
+    "carrera": "Ingeniería en Mecatrónica",
+    "asignaturas": [
+      {
+        "nombre": "Programación 1",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Teoría de Circuitos 1",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Proyecto Integrador de Competencias 1",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Programación 2",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Electrónica Analógica Aplicada",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Seguridad Laboral y Salud Ocupacional",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Dinámica y Estática",
+        "curso": 2,
+        "semestre": 3,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Programación 3",
+        "curso": 2,
+        "semestre": 4,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Máquinas Eléctricas",
+        "curso": 3,
+        "semestre": 5,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Telemática Industrial",
+        "curso": 3,
+        "semestre": 5,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Hidráulica y Neumática",
+        "curso": 3,
+        "semestre": 6,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Matemática IV",
+        "curso": 4,
+        "semestre": 7,
+        "caracter": "OBLIGATORIA",
+        "creditos": 8
+      },
+      {
+        "nombre": "Probabilidad y Estadística",
+        "curso": 4,
+        "semestre": 8,
+        "caracter": "OBLIGATORIA",
+        "creditos": 5
+      },
+      {
+        "nombre": "Métodos Numéricos para Ingeniería",
+        "curso": 4,
+        "semestre": 8,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7
+      },
+      {
+        "nombre": "Procesamiento de Señales (A/D)",
+        "curso": 4,
+        "semestre": 8,
+        "caracter": "OBLIGATORIA",
+        "creditos": 7
+      },
+      {
+        "nombre": "Mantenimiento de Sistemas Automatizados",
+        "curso": 4,
+        "semestre": 8,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "Sistemas de Control Aplicado",
+        "curso": 4,
+        "semestre": 8,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Robótica Industrial",
+        "curso": 5,
+        "semestre": 9,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Manufactura Asistida por Computadora",
+        "curso": 5,
+        "semestre": 9,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Costos para Ingeniería",
+        "curso": 5,
+        "semestre": 9,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Proyecto Final de Grado 1",
+        "curso": 5,
+        "semestre": 9,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Gestión de Calidad",
+        "curso": 5,
+        "semestre": 10,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Gestión Ambiental",
+        "curso": 5,
+        "semestre": 10,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      },
+      {
+        "nombre": "Proyecto Final de Grado 2",
+        "curso": 5,
+        "semestre": 10,
+        "caracter": "OBLIGATORIA",
+        "creditos": null
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Informática en Tecnologías de la Información",
+    "asignaturas": []
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Grado en Ingeniería Informática en Ingeniería de Computadores",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FÍSICA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TECNOLOGÍA DE COMPUTADORES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "AMPLIACIÓN DE MATEMÁTICAS",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ELECTRÓNICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURA DE DATOS Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LOS COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ADMINISTRACIÓN Y ORGANIZACIÓN DE COMPUTADORES",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ANÁLISIS Y DISEÑO DE ALGORITMOS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "BASES DE DATOS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DESARROLLO DE PROGRAMAS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA Y EMPRESA",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "FORMACIÓN BÁSICA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURA DE COMPUTADORES",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE REDES Y COMUNICACIONES",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "GESTIÓN DE LAS ORGANIZACIONES",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTELIGENCIA ARTIFICIAL Y SISTEMAS INTELIGENTES",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PROGRAMACIÓN CONCURRENTE Y DISTRIBUIDA",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "AUDITORÍA Y LEGISLACIÓN INFORMÁTICA",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DISEÑO E INTERACCIÓN DE SISTEMAS DE INFORMACIÓN",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INGENIERÍA DE SOFTWARE",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "REDES DE ORDENADORES",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS OPERATIVOS",
+        "curso": 3,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ARQUITECTURA DE COMPUTADORES",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "BIOMETRÍA Y SEGURIDAD DE SISTEMAS",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "COMPUTACIÓN DISTRIBUIDA",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DISEÑO DE PROCESADORES",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DISEÑO DE SISTEMAS OPERATIVOS",
+        "curso": 3,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ARQUITECTURAS ESPECIALIZADAS",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ROBÓTICA",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SISTEMAS EN TIEMPO REAL",
+        "curso": 4,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "PROYECTO FIN DE GRADO",
+        "curso": 4,
+        "semestre": null,
+        "caracter": "TRABAJO DE FIN DE GRADO",
+        "creditos": 12
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en ADE e Ingeniería Informática en Ingeniería del Software",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA DE LA EMPRESA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MICROECONOMÍA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TECNOLOGÍA DE LOS COMPUTADORES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CONTABILIDAD FINANCIERA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURA DE DATOS Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LOS COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MACROECONOMÍA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SOCIOLOGÍA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ADMINISTRACIÓN DE LA EMPRESA",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ANÁLISIS Y DISEÑO DE ALGORITMOS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "BASES DE DATOS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CONTABILIDAD FINANCIERA II",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DESARROLLO DE PROGRAMAS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA E INTRODUCCIÓN A LA ECONOMETRÍA",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS DE LAS OPERACIONES FINANCIERAS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ADMINISTRACIÓN DE LA EMPRESA II",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "AMPLIACIÓN DE MATEMÁTICAS",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE REDES Y COMUNICACIONES",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  },
+  {
+    "universidad": "Universidad de Extremadura",
+    "carrera": "Doble Grado en ADE e Ingeniería Informática en Ingeniería de Computadores",
+    "asignaturas": [
+      {
+        "nombre": "ÁLGEBRA LINEAL",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CÁLCULO",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ECONOMÍA DE LA EMPRESA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LA PROGRAMACIÓN",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MICROECONOMÍA",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "TECNOLOGÍA DE LOS COMPUTADORES",
+        "curso": 1,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CONTABILIDAD FINANCIERA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTRUCTURA DE DATOS Y DE LA INFORMACIÓN",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "INTRODUCCIÓN A LOS COMPUTADORES",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MACROECONOMÍA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "SOCIOLOGÍA",
+        "curso": 1,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ADMINISTRACIÓN DE LA EMPRESA",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ANÁLISIS Y DISEÑO DE ALGORITMOS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "BASES DE DATOS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CONTABILIDAD FINANCIERA II",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "DESARROLLO DE PROGRAMAS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ESTADÍSTICA E INTRODUCCIÓN A LA ECONOMETRÍA",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS DE LAS OPERACIONES FINANCIERAS",
+        "curso": 2,
+        "semestre": 1,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "ADMINISTRACIÓN DE LA EMPRESA II",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "AMPLIACIÓN DE MATEMÁTICAS",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "CONTABILIDAD FINANCIERA III",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "FUNDAMENTOS DE REDES Y COMUNICACIONES",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      },
+      {
+        "nombre": "MATEMÁTICAS DE LAS OPERACIONES FINANCIERAS II",
+        "curso": 2,
+        "semestre": 2,
+        "caracter": "OBLIGATORIA",
+        "creditos": 6
+      }
+    ]
+  }
+]

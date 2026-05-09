@@ -3,13 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sv_colors.dart';
+import '../../../core/design_system/sv_shadows.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/sv_primary_button.dart';
 import '../application/ejercicios_provider.dart';
 
-/// Pantalla de detalle de un ejercicio.
-/// Muestra GIF animado, instrucciones paso a paso y metadatos.
 class DetalleEjercicioScreen extends ConsumerWidget {
   const DetalleEjercicioScreen({required this.id, super.key});
 
@@ -22,7 +21,7 @@ class DetalleEjercicioScreen extends ConsumerWidget {
     return ejercicioAsync.when(
       loading: () => const FeatureScaffold(
         title: 'Cargando...',
-        child: Center(child: SkeletonLoader()),
+        child: Center(child: SkeletonLoader(height: 200)),
       ),
       error: (error, _) => FeatureScaffold(
         title: 'Error',
@@ -43,34 +42,41 @@ class DetalleEjercicioScreen extends ConsumerWidget {
             backPath: '/bienestar/ejercicios',
             child: Column(
               children: [
-                // Hero: GIF animado
+                // GIF animado
                 _GifHero(urlGif: ejercicio.urlGif),
 
                 // Chips de metadatos
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 6,
                     children: [
                       ...ejercicio.musculosObjetivo.map(
                         (m) => _MetaChip(
-                            label: m,
-                            icon: Icons.sports_gymnastics,
-                            color: SVColors.primary),
+                          label: m,
+                          icon: Icons.sports_gymnastics_rounded,
+                          color: SVColors.primary,
+                        ),
                       ),
                       ...ejercicio.partesCuerpo.map(
                         (p) => _MetaChip(
-                            label: p,
-                            icon: Icons.accessibility_new,
-                            color: SVColors.secondary),
+                          label: p,
+                          icon: Icons.accessibility_new_rounded,
+                          color: SVColors.secondary,
+                        ),
                       ),
                       ...ejercicio.equipamientos.map(
                         (e) => _MetaChip(
-                            label: e,
-                            icon: Icons.hardware,
-                            color: SVColors.tertiary),
+                          label: e,
+                          icon: Icons.hardware_rounded,
+                          color: SVColors.tertiary,
+                        ),
+                      ),
+                      _MetaChip(
+                        label: ejercicio.dificultad,
+                        icon: Icons.speed_rounded,
+                        color: SVColors.accent,
                       ),
                     ],
                   ),
@@ -80,19 +86,16 @@ class DetalleEjercicioScreen extends ConsumerWidget {
                 const TabBar(
                   tabs: [
                     Tab(text: 'Instrucciones'),
-                    Tab(text: 'Info'),
+                    Tab(text: 'Información'),
                   ],
                 ),
                 Expanded(
                   child: TabBarView(
                     children: [
-                      // Tab 1: Instrucciones paso a paso
-                      _InstruccionesTab(instrucciones: ejercicio.instrucciones),
-
-                      // Tab 2: Información general
+                      _InstruccionesTab(
+                          instrucciones: ejercicio.instrucciones),
                       _InfoTab(
                         descripcion: ejercicio.descripcion,
-                        dificultad: ejercicio.dificultad,
                         musculosSecundarios: ejercicio.musculosSecundarios,
                         exerciseDbId: ejercicio.exerciseDbId,
                       ),
@@ -108,8 +111,9 @@ class DetalleEjercicioScreen extends ConsumerWidget {
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content:
-                              Text('${ejercicio.nombre} agregado a la rutina'),
+                          content: Text(
+                            '${ejercicio.nombre} agregado a la rutina',
+                          ),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
@@ -126,10 +130,8 @@ class DetalleEjercicioScreen extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Widgets privados
+// GIF Hero
 // ---------------------------------------------------------------------------
-
-/// Hero image: muestra el GIF animado del ejercicio.
 class _GifHero extends StatelessWidget {
   const _GifHero({this.urlGif});
   final String? urlGif;
@@ -144,8 +146,8 @@ class _GifHero extends StatelessWidget {
           height: size,
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: SVColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: SVShadows.ambientCard,
           ),
           clipBehavior: Clip.antiAlias,
           child: urlGif != null
@@ -154,35 +156,55 @@ class _GifHero extends StatelessWidget {
                   width: double.infinity,
                   height: size,
                   fit: BoxFit.contain,
-                  placeholder: (_, __) => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  errorWidget: (_, __, ___) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.broken_image,
-                            size: 48, color: SVColors.textSecondary),
-                        const SizedBox(height: 8),
-                        Text(
-                          'GIF no disponible',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                  placeholder: (_, __) => Container(
+                    color: SVColors.surfaceContainerHighest,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
                     ),
                   ),
+                  errorWidget: (_, __, ___) => _buildFallback(context),
                 )
-              : Center(
-                  child: Icon(Icons.fitness_center,
-                      size: 56, color: SVColors.textSecondary),
-                ),
+              : _buildFallback(context),
         );
       },
     );
   }
+
+  Widget _buildFallback(BuildContext context) {
+    return Container(
+      color: SVColors.surfaceContainerHighest,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Opacity(
+              opacity: 0.5,
+              child: SizedBox(
+                width: 80,
+                height: 80,
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Vista previa no disponible',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: SVColors.onSurfaceMuted,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-/// Chip de metadato con ícono y color.
+// ---------------------------------------------------------------------------
+// Chip de metadato
+// ---------------------------------------------------------------------------
 class _MetaChip extends StatelessWidget {
   const _MetaChip({
     required this.label,
@@ -196,21 +218,38 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      avatar: Icon(icon, size: 16, color: color),
-      label: Text(
-        label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withValues(alpha: 0.15),
+        ),
       ),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color.withValues(alpha: 0.8)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color.withValues(alpha: 0.85),
+              letterSpacing: 0.1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// Tab de instrucciones paso a paso.
+// ---------------------------------------------------------------------------
+// Tab: Instrucciones
+// ---------------------------------------------------------------------------
 class _InstruccionesTab extends StatelessWidget {
   const _InstruccionesTab({required this.instrucciones});
   final List<String> instrucciones;
@@ -219,137 +258,177 @@ class _InstruccionesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (instrucciones.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.all(16),
-        child: Text('Sin instrucciones disponibles.'),
+        padding: EdgeInsets.all(24),
+        child: Center(
+          child: Text('Sin instrucciones disponibles.'),
+        ),
       );
     }
 
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: instrucciones.length,
-      separatorBuilder: (_, __) => const Divider(height: 24),
+      separatorBuilder: (_, __) => const SizedBox(height: 1),
       itemBuilder: (context, index) {
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Número del paso
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: SVColors.primary.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: SVColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(
+                    color: SVColors.primary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
               ),
-              alignment: Alignment.center,
-              child: Text(
-                '${index + 1}',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: SVColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    _limpiarPrefijoPaso(instrucciones[index]),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          height: 1.5,
+                        ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            // Texto de la instrucción (limpiamos el prefijo "Paso: X")
-            Expanded(
-              child: Text(
-                _limpiarPrefijoPaso(instrucciones[index]),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
   }
 
-  /// Elimina el prefijo "Paso: N " o "Paso:N " del texto.
   String _limpiarPrefijoPaso(String texto) {
     return texto.replaceFirst(RegExp(r'^Paso:\s*\d+\s*'), '').trim();
   }
 }
 
-/// Tab con información general del ejercicio.
+// ---------------------------------------------------------------------------
+// Tab: Información general
+// ---------------------------------------------------------------------------
 class _InfoTab extends StatelessWidget {
   const _InfoTab({
     this.descripcion,
-    required this.dificultad,
     required this.musculosSecundarios,
     this.exerciseDbId,
   });
 
   final String? descripcion;
-  final String dificultad;
   final List<String> musculosSecundarios;
   final String? exerciseDbId;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         if (descripcion != null && descripcion!.isNotEmpty) ...[
-          Text('Descripción', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Text(descripcion!, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Descripción',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            descripcion!,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+          ),
+          const SizedBox(height: 24),
         ],
 
-        // Dificultad
-        _InfoRow(
-          icon: Icons.speed,
-          label: 'Dificultad',
-          value: _capitalize(dificultad),
-        ),
-        const SizedBox(height: 12),
-
-        // Músculos secundarios
         if (musculosSecundarios.isNotEmpty) ...[
-          _InfoRow(
-            icon: Icons.sports_gymnastics,
-            label: 'Músculos secundarios',
-            value: musculosSecundarios.map(_capitalize).join(', '),
+          _sectionTitle(context, 'Músculos secundarios'),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: musculosSecundarios.map(
+              (m) => Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: SVColors.primary.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _capitalize(m),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: SVColors.primary.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ).toList(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
         ],
 
-        // ID de ExerciseDB
         if (exerciseDbId != null) ...[
-          _InfoRow(
-            icon: Icons.tag,
-            label: 'ID ExerciseDB',
-            value: exerciseDbId!,
-          ),
+          _sectionTitle(context, 'Referencia'),
+          const SizedBox(height: 10),
+          _infoItem(context, Icons.tag_rounded, 'ExerciseDB ID', exerciseDbId!),
         ],
       ],
     );
   }
 
-  String _capitalize(String s) {
-    if (s.isEmpty) return s;
-    return s[0].toUpperCase() + s.substring(1);
+  Widget _sectionTitle(BuildContext context, String title) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 18,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+      ],
+    );
   }
-}
 
-/// Fila de información con ícono y texto.
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _infoItem(BuildContext context, IconData icon, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: SVColors.textSecondary),
-        const SizedBox(width: 8),
+        Icon(icon, size: 18, color: SVColors.onSurfaceMuted),
+        const SizedBox(width: 10),
         Expanded(
           child: RichText(
             text: TextSpan(
@@ -366,5 +445,10 @@ class _InfoRow extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
   }
 }

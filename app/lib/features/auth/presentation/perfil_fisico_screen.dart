@@ -263,7 +263,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
       await _bienestarRepository.marcarOnboardingCompletado();
 
       if (!mounted) return;
-      context.go('/dashboard');
+      context.go('/academico/configuracion');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
