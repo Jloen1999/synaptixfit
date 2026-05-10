@@ -38,8 +38,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                 ButtonSegment(value: 2, label: Text('Completados')),
               ],
               selected: {_tabIndex},
-              onSelectionChanged: (v) =>
-                  setState(() => _tabIndex = v.first),
+              onSelectionChanged: (v) => setState(() => _tabIndex = v.first),
             ),
           ),
           Padding(
@@ -58,7 +57,8 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
-              onChanged: (v) => setState(() => _busqueda = v.trim().toLowerCase()),
+              onChanged: (v) =>
+                  setState(() => _busqueda = v.trim().toLowerCase()),
             ),
           ),
           SingleChildScrollView(
@@ -75,29 +75,29 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                 _FiltroChip(
                   label: 'Fitness',
                   selected: _filtroTipo == 'fitness',
-                  onSelected: (_) => setState(
-                      () => _filtroTipo = _filtroTipo == 'fitness' ? null : 'fitness'),
+                  onSelected: (_) => setState(() => _filtroTipo =
+                      _filtroTipo == 'fitness' ? null : 'fitness'),
                 ),
                 const SizedBox(width: 6),
                 _FiltroChip(
                   label: 'Académico',
                   selected: _filtroTipo == 'academico',
-                  onSelected: (_) => setState(() =>
-                      _filtroTipo = _filtroTipo == 'academico' ? null : 'academico'),
+                  onSelected: (_) => setState(() => _filtroTipo =
+                      _filtroTipo == 'academico' ? null : 'academico'),
                 ),
                 const SizedBox(width: 12),
                 _FiltroChip(
                   label: 'Simple',
                   selected: _filtroComplejidad == 'simple',
-                  onSelected: (_) => setState(() =>
-                      _filtroComplejidad = _filtroComplejidad == 'simple' ? null : 'simple'),
+                  onSelected: (_) => setState(() => _filtroComplejidad =
+                      _filtroComplejidad == 'simple' ? null : 'simple'),
                 ),
                 const SizedBox(width: 6),
                 _FiltroChip(
                   label: 'Complejo',
                   selected: _filtroComplejidad == 'complejo',
-                  onSelected: (_) => setState(() =>
-                      _filtroComplejidad = _filtroComplejidad == 'complejo' ? null : 'complejo'),
+                  onSelected: (_) => setState(() => _filtroComplejidad =
+                      _filtroComplejidad == 'complejo' ? null : 'complejo'),
                 ),
               ],
             ),
@@ -156,8 +156,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
           final progresoMedio = total > 0
               ? (retos.fold<double>(0, (s, r) => s + r.progreso) / total)
               : 0.0;
-          final completados =
-              retos.where((r) => r.progreso >= 1.0).length;
+          final completados = retos.where((r) => r.progreso >= 1.0).length;
           return RefreshIndicator(
             onRefresh: onRefresh,
             child: ListView(
@@ -203,8 +202,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                               label: 'Listos'),
                           _MiniStat(
                               icon: Icons.trending_up,
-                              value:
-                                  '${(progresoMedio * 100).round()}%',
+                              value: '${(progresoMedio * 100).round()}%',
                               label: 'Progreso'),
                         ],
                       ),
@@ -218,34 +216,30 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                     child: EmptyState(
                       icon: Icons.search_off,
                       title: 'Sin resultados',
-                      message:
-                          'No hay retos que coincidan con los filtros.',
+                      message: 'No hay retos que coincidan con los filtros.',
                     ),
                   ),
                 ...filtrados.map((item) => _RetoCard(
                       item: item,
                       esExplorar: esExplorar,
                       onComplete: !esExplorar
-                          ? () => _confirmarCompletarDesdeLista(context, item.reto.id)
+                          ? () => _confirmarCompletarDesdeLista(
+                              context, item.reto.id)
                           : null,
                       onClone: esExplorar
                           ? () async {
                               final nuevoId =
-                                  await clonarReto(item.reto.id);
+                                  await clonarReto(item.reto.id, ref);
                               if (nuevoId != null && context.mounted) {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(
+                                ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                      content: Text(
-                                          'Reto clonado correctamente')),
+                                      content:
+                                          Text('Reto clonado correctamente')),
                                 );
-                                ref.invalidate(retosProvider);
-                                ref.invalidate(retosPublicosProvider);
                               }
                             }
                           : null,
-                      onTap: () =>
-                          context.push('/retos/${item.reto.id}'),
+                      onTap: () => context.push('/retos/${item.reto.id}'),
                     )),
               ],
             ),
@@ -279,18 +273,14 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
               .toList();
         }
         if (_filtroTipo != null) {
-          completadosInfo = completadosInfo
-              .where((c) => c.reto.tipo == _filtroTipo)
-              .toList();
+          completadosInfo =
+              completadosInfo.where((c) => c.reto.tipo == _filtroTipo).toList();
         }
         if (_filtroComplejidad == 'simple') {
-          completadosInfo = completadosInfo
-              .where((c) => !c.tieneHitos)
-              .toList();
+          completadosInfo =
+              completadosInfo.where((c) => !c.tieneHitos).toList();
         } else if (_filtroComplejidad == 'complejo') {
-          completadosInfo = completadosInfo
-              .where((c) => c.tieneHitos)
-              .toList();
+          completadosInfo = completadosInfo.where((c) => c.tieneHitos).toList();
         }
 
         if (completadosInfo.isEmpty) {
@@ -311,9 +301,8 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
           itemBuilder: (context, index) {
             final c = completadosInfo[index];
             final reto = c.reto;
-            final tipoColor = reto.tipo == 'fitness'
-                ? Colors.green
-                : Colors.blue;
+            final tipoColor =
+                reto.tipo == 'fitness' ? Colors.green : Colors.blue;
             final tipoIcono = reto.tipo == 'fitness'
                 ? Icons.fitness_center_rounded
                 : Icons.school_rounded;
@@ -351,8 +340,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
         .order('fecha_fin', ascending: false)
         .limit(20);
 
-    final retos =
-        (data as List).map((r) => RetoDb.fromMap(r)).toList();
+    final retos = (data as List).map((r) => RetoDb.fromMap(r)).toList();
 
     if (retos.isEmpty) return [];
 
@@ -382,8 +370,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
           .toList();
     }
     if (_filtroTipo != null) {
-      filtrados =
-          filtrados.where((r) => r.reto.tipo == _filtroTipo).toList();
+      filtrados = filtrados.where((r) => r.reto.tipo == _filtroTipo).toList();
     }
     if (_filtroComplejidad == 'simple') {
       filtrados = filtrados.where((r) => !r.tieneHitos).toList();
@@ -407,15 +394,32 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await completarReto(retoId);
-              ref.invalidate(retosProvider);
+              await completarReto(retoId, ref);
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Reto completado'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.emoji_events,
+                              color: Colors.amber, size: 20),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text('¡Reto completado!',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w700, fontSize: 14)),
+                          ),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF1B5E20),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.all(12),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
               }
             },
             child: const Text('Completar'),
@@ -426,7 +430,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
   }
 }
 
-class _RetoCard extends StatelessWidget {
+class _RetoCard extends ConsumerStatefulWidget {
   const _RetoCard({
     required this.item,
     required this.esExplorar,
@@ -442,25 +446,36 @@ class _RetoCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  ConsumerState<_RetoCard> createState() => _RetoCardState();
+}
+
+class _RetoCardState extends ConsumerState<_RetoCard> {
+  bool _expanded = false;
+  final Map<String, bool> _optimistas = {};
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     final reto = item.reto;
     final tipoIcono = reto.tipo == 'fitness'
         ? Icons.fitness_center_rounded
         : Icons.school_rounded;
-    final tipoColor =
-        reto.tipo == 'fitness' ? Colors.green : Colors.blue;
-    final diasRestantes =
-        reto.fechaFin.difference(DateTime.now()).inDays;
+    final tipoColor = reto.tipo == 'fitness' ? Colors.green : Colors.blue;
+    final diasRestantes = reto.fechaFin.difference(DateTime.now()).inDays;
     final textoDias = diasRestantes > 0
         ? '$diasRestantes d'
         : diasRestantes == 0
             ? 'Hoy'
             : 'Vencido';
+    final expandible = item.tieneHitos && !widget.esExplorar;
+
+    final tareasAsync =
+        _expanded ? ref.watch(tareasDeRetoProvider(reto.id)) : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -470,8 +485,8 @@ class _RetoCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: tipoColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
@@ -479,13 +494,10 @@ class _RetoCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(tipoIcono,
-                            size: 14, color: tipoColor),
+                        Icon(tipoIcono, size: 14, color: tipoColor),
                         const SizedBox(width: 4),
                         Text(
-                          reto.tipo == 'fitness'
-                              ? 'Fitness'
-                              : 'Académico',
+                          reto.tipo == 'fitness' ? 'Fitness' : 'Académico',
                           style: TextStyle(
                               fontSize: 11,
                               color: tipoColor,
@@ -493,71 +505,56 @@ class _RetoCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                   ),
-                   if (item.tieneHitos) ...[
-                     const SizedBox(width: 6),
-                     Container(
-                       padding: const EdgeInsets.symmetric(
-                           horizontal: 6, vertical: 2),
-                       decoration: BoxDecoration(
-                         color: Colors.deepPurple.withValues(alpha: 0.1),
-                         borderRadius: BorderRadius.circular(6),
-                       ),
-                       child: const Text('Complejo',
-                           style: TextStyle(
-                               fontSize: 10,
-                               color: Colors.deepPurple,
-                               fontWeight: FontWeight.w600)),
-                     ),
-                   ] else ...[
-                     const SizedBox(width: 6),
-                     Container(
-                       padding: const EdgeInsets.symmetric(
-                           horizontal: 6, vertical: 2),
-                       decoration: BoxDecoration(
-                         color: Colors.green.withValues(alpha: 0.1),
-                         borderRadius: BorderRadius.circular(6),
-                       ),
-                       child: const Text('Simple',
-                           style: TextStyle(
-                               fontSize: 10,
-                               color: Colors.green,
-                               fontWeight: FontWeight.w600)),
-                     ),
-                   ],
+                  ),
+                  if (item.tieneHitos) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('Complejo',
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.deepPurple,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ] else ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('Simple',
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ],
                   const Spacer(),
                   Text(textoDias,
                       style: TextStyle(
                         fontSize: 11,
-                        color: diasRestantes <= 3
-                            ? Colors.red
-                            : Colors.grey,
+                        color: diasRestantes <= 3 ? Colors.red : Colors.grey,
                         fontWeight: FontWeight.w500,
                       )),
-                   if (onClone != null) ...[
-                     const SizedBox(width: 4),
-                     InkWell(
-                       onTap: onClone,
-                       borderRadius: BorderRadius.circular(8),
-                       child: const Padding(
-                         padding: EdgeInsets.all(4),
-                         child: Icon(Icons.copy,
-                             size: 16, color: Colors.grey),
-                       ),
-                     ),
-                   ],
-                   if (onComplete != null) ...[
-                     const SizedBox(width: 4),
-                     InkWell(
-                       onTap: onComplete,
-                       borderRadius: BorderRadius.circular(8),
-                       child: const Padding(
-                         padding: EdgeInsets.all(4),
-                         child: Icon(Icons.check_circle_outline,
-                             size: 18, color: Colors.green),
-                       ),
-                     ),
-                   ],
+                  if (widget.onClone != null) ...[
+                    const SizedBox(width: 4),
+                    InkWell(
+                      onTap: widget.onClone,
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.copy, size: 16, color: Colors.grey),
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 8),
@@ -568,8 +565,7 @@ class _RetoCard extends StatelessWidget {
                       ?.copyWith(fontWeight: FontWeight.w600)),
               if (reto.meta.isNotEmpty) ...[
                 const SizedBox(height: 2),
-                Text(reto.meta,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(reto.meta, style: Theme.of(context).textTheme.bodySmall),
               ],
               const SizedBox(height: 8),
               ChallengeProgressBar(
@@ -578,6 +574,155 @@ class _RetoCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text('${(item.progreso * 100).round()}% completado',
                   style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              if (widget.onComplete != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    onTap: widget.onComplete,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check, size: 14, color: Colors.green),
+                          SizedBox(width: 4),
+                          Text('Completar',
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              // Tareas expandibles
+              if (expandible) ...[
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () => setState(() => _expanded = !_expanded),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _expanded ? 'Ocultar tareas' : 'Ver tareas',
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_expanded && tareasAsync != null)
+                  tareasAsync.when(
+                    data: (tareas) => Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Column(
+                        children: [
+                          ...tareas.map((t) {
+                            final completado = _optimistas.containsKey(t.id)
+                                ? _optimistas[t.id]!
+                                : t.estaCompletado;
+                            return InkWell(
+                              onTap: () async {
+                                final nuevoValor = !completado;
+                                setState(() => _optimistas[t.id] = nuevoValor);
+                                try {
+                                  await toggleTareaCompletada(
+                                      t.id, item.reto.id,
+                                      completada: nuevoValor, ref: ref);
+                                } catch (_) {
+                                  if (mounted) {
+                                    setState(() => _optimistas.remove(t.id));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Error al ${nuevoValor ? "completar" : "desmarcar"} tarea'),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 6),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      completado
+                                          ? Icons.check_circle
+                                          : Icons.radio_button_unchecked,
+                                      size: 18,
+                                      color: completado
+                                          ? Colors.green
+                                          : Colors.grey.shade400,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        t.titulo,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          decoration: completado
+                                              ? TextDecoration.lineThrough
+                                              : null,
+                                          color:
+                                              completado ? Colors.grey : null,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${t.porcentajePeso}%',
+                                      style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey.shade500),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 6),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: widget.onTap,
+                              icon: const Icon(Icons.open_in_new, size: 14),
+                              label: const Text('Ver detalle',
+                                  style: TextStyle(fontSize: 11)),
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                    error: (e, _) =>
+                        Text('Error: $e', style: const TextStyle(fontSize: 11)),
+                  ),
+              ],
             ],
           ),
         ),
@@ -638,8 +783,7 @@ class _MiniStat extends StatelessWidget {
                 .textTheme
                 .titleMedium
                 ?.copyWith(fontWeight: FontWeight.w700)),
-        Text(label,
-            style: Theme.of(context).textTheme.bodySmall),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }

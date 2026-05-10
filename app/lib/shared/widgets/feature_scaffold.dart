@@ -11,6 +11,7 @@ class FeatureScaffold extends StatelessWidget {
     this.backPath,
     this.appBarLeading,
     this.centerTitle = true,
+    this.hideAppBar = false,
     super.key,
   });
 
@@ -21,6 +22,7 @@ class FeatureScaffold extends StatelessWidget {
   final String? backPath;
   final Widget? appBarLeading;
   final bool centerTitle;
+  final bool hideAppBar;
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +39,10 @@ class FeatureScaffold extends StatelessWidget {
           backPath: backPath,
           leading: appBarLeading,
           centerTitle: centerTitle,
+          compact: hideAppBar,
         ),
         body: SafeArea(
+          top: hideAppBar,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isDesktop = constraints.maxWidth >= 1200;

@@ -1,8 +1,8 @@
 # 11 - Seguridad
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.1  
-**Fecha:** 03-05-2026  
+**Versión:** 1.2  
+**Fecha:** 10-05-2026  
 **Referencia:** [03-architecture.md](03-architecture.md) (sección 7), [04-data-model.md](04-data-model.md) (RLS)
 
 ---
@@ -92,6 +92,12 @@ flowchart TD
 | `notificaciones` | Solo propio | Funciones admin | Solo propio | Solo propio |
 | `horarios_academicos` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `asignaturas` | Solo propio | Solo propio | Solo propio | Solo propio |
+| `catalogo_universidades` | Todos (catálogo público) | — | — | — |
+| `catalogo_carreras` | Todos (catálogo público) | — | — | — |
+| `catalogo_asignaturas` | Todos (catálogo público) | — | — | — |
+| `usuario_carreras` | Solo propio | Solo propio | — | Solo propio |
+| `planes_estudio` | Propio + según visibilidad | Solo propio | Solo propio | Solo propio |
+| `apuntes` | Propio + según visibilidad | Solo propio | Solo propio | Solo propio |
 | `perfil_academico_usuario` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `carga_academica_semanal` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `perfil_bienestar_usuario` | Solo propio | Solo propio | Solo propio | — |
@@ -119,11 +125,23 @@ flowchart TD
 
 | Campo | Sensibilidad | Visibilidad por defecto |
 |-------|-------------|------------------------|
-| `carrera` | Media | `privado` |
+| `carrera` (en `usuario_carreras`) | Media | `privado` |
 | `semestre_actual` | Media | `privado` |
 | `creditos_semestre_actual` | Media | `privado` |
 | `nivel_estres` | Alta | `privado` |
 | `horas_sueno_promedio` | Alta | `privado` |
+| `contenido` (apuntes) | Media | `privado` (controlado por `visibilidad`) |
+| `es_nota_rapida` | Baja | `privado` |
+
+### 3.3 Datos del catálogo académico (públicos)
+
+| Tabla | Sensibilidad | Visibilidad |
+|-------|-------------|-------------|
+| `catalogo_universidades` | Pública | Todos (lectura) |
+| `catalogo_carreras` | Pública | Todos (lectura) |
+| `catalogo_asignaturas` | Pública | Todos (lectura) |
+
+Estos datos provienen de `grados.json` (datos educativos públicos) y no contienen información personal.
 
 ### 3.3 Reglas de negocio de privacidad
 
@@ -183,5 +201,5 @@ Eventos que deben quedar registrados (según sección 10.2 del SRS):
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Última revisión:** v1.0
+**Documento compilado:** 10-05-2026  
+**Última revisión:** v1.2

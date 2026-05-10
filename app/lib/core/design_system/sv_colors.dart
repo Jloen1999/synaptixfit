@@ -49,22 +49,22 @@ class SVColors {
   static const Color kpiRacha = Color(0xFFE8A838);
 
   static ColorScheme get colorScheme => ColorScheme.fromSeed(
-    seedColor: primary,
-    brightness: Brightness.light,
-  ).copyWith(
-    primary: primary,
-    onPrimary: onPrimary,
-    primaryContainer: primaryContainer,
-    secondary: secondary,
-    onSecondary: onSecondary,
-    secondaryContainer: secondaryContainer,
-    onSecondaryContainer: onSecondaryContainer,
-    tertiary: tertiary,
-    surface: surface,
-    error: error,
-    onError: onError,
-    onSurface: onSurface,
-    outline: outline,
-    outlineVariant: outlineVariant,
-  );
+        seedColor: primary,
+        brightness: Brightness.light,
+      ).copyWith(
+        primary: primary,
+        onPrimary: onPrimary,
+        primaryContainer: primaryContainer,
+        secondary: secondary,
+        onSecondary: onSecondary,
+        secondaryContainer: secondaryContainer,
+        onSecondaryContainer: onSecondaryContainer,
+        tertiary: tertiary,
+        surface: surface,
+        error: error,
+        onError: onError,
+        onSurface: onSurface,
+        outline: outline,
+        outlineVariant: outlineVariant,
+      );
 }

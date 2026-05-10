@@ -75,8 +75,8 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accent = widget.accentColor ?? theme.colorScheme.primary;
-    final gradientStart = widget.gradientColors?.first ??
-        accent.withValues(alpha: 0.08);
+    final gradientStart =
+        widget.gradientColors?.first ?? accent.withValues(alpha: 0.08);
 
     return Container(
       decoration: BoxDecoration(
@@ -108,8 +108,8 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
                   painter: _ProgressRingPainter(
                     progress: _progressAnim.value.clamp(0.0, 1.0),
                     color: accent,
-                    trackColor:
-                        theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                    trackColor: theme.colorScheme.outlineVariant
+                        .withValues(alpha: 0.25),
                   ),
                   child: Center(
                     child: Container(

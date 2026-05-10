@@ -6,6 +6,19 @@ import '../../../shared/models/db_models.dart';
 import '../infrastructure/ejercicios_repository.dart';
 
 // ---------------------------------------------------------------------------
+// DTO para filtro de ejercicios (cliente, sin red)
+// ---------------------------------------------------------------------------
+
+enum FiltroTipo { todos, parteCuerpo, musculo, equipamiento, busqueda }
+
+class FiltroEjercicios {
+  const FiltroEjercicios({this.tipo = FiltroTipo.todos, this.valor = ''});
+
+  final FiltroTipo tipo;
+  final String valor;
+}
+
+// ---------------------------------------------------------------------------
 // Provider del repositorio (singleton vía Riverpod)
 // ---------------------------------------------------------------------------
 
@@ -14,35 +27,53 @@ final ejerciciosRepositoryProvider = Provider<EjerciciosRepository>((ref) {
 });
 
 // ---------------------------------------------------------------------------
-// Provider de ejercicios con sincronización en tiempo real (StreamProvider)
-// Escucha cambios en la tabla ejercicios y re-emite la vista completa.
+// Capa 1 — Carga única (cache permanente, sin red en filtros)
 // ---------------------------------------------------------------------------
 
-final ejerciciosProvider = StreamProvider<List<EjercicioDb>>((ref) async* {
+final ejerciciosProvider = FutureProvider<List<EjercicioDb>>((ref) async {
   final repo = ref.read(ejerciciosRepositoryProvider);
-  final client = Supabase.instance.client;
+  return repo.fetchAll();
+});
 
-  // Carga inicial
-  yield await repo.fetchAll();
-
-  // Escucha cambios en tiempo real usando el stream de la tabla base.
-  // Cuando se detecta un INSERT/UPDATE/DELETE se re-consulta la vista
-  // denormalizada para obtener los datos frescos.
-  final cambios = client.from('ejercicios').stream(primaryKey: ['id']);
-
-  await for (final _ in cambios) {
-    yield await repo.fetchAll();
-  }
+final catalogosProvider = FutureProvider<CatalogosEjercicios>((ref) async {
+  final repo = ref.read(ejerciciosRepositoryProvider);
+  return repo.fetchCatalogos();
 });
 
 // ---------------------------------------------------------------------------
-// Provider de catálogos (partes del cuerpo, músculos, equipamientos)
+// Capa 2 — Filtrado en memoria (< 1ms, cero red)
 // ---------------------------------------------------------------------------
 
-final catalogosProvider =
-    FutureProvider.autoDispose<CatalogosEjercicios>((ref) async {
-  final repo = ref.read(ejerciciosRepositoryProvider);
-  return repo.fetchCatalogos();
+final ejerciciosFiltradosProvider =
+    Provider.family<List<EjercicioDb>, FiltroEjercicios>((ref, filtro) {
+  final todos = ref.watch(ejerciciosProvider).valueOrNull ?? [];
+  if (filtro.tipo == FiltroTipo.todos) return todos;
+
+  final q = filtro.valor.toLowerCase();
+  switch (filtro.tipo) {
+    case FiltroTipo.parteCuerpo:
+      return todos
+          .where((e) => e.partesCuerpo.any((p) => p.toLowerCase() == q))
+          .toList();
+    case FiltroTipo.musculo:
+      return todos
+          .where((e) =>
+              e.musculosObjetivo.any((m) => m.toLowerCase() == q) ||
+              e.musculosSecundarios.any((m) => m.toLowerCase() == q))
+          .toList();
+    case FiltroTipo.equipamiento:
+      return todos
+          .where((e) => e.equipamientos.any((eq) => eq.toLowerCase() == q))
+          .toList();
+    case FiltroTipo.busqueda:
+      return todos
+          .where((e) =>
+              e.nombre.toLowerCase().contains(q) ||
+              (e.descripcion?.toLowerCase().contains(q) ?? false))
+          .toList();
+    default:
+      return todos;
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -53,26 +84,4 @@ final ejercicioDetalleProvider =
     FutureProvider.autoDispose.family<EjercicioDb?, String>((ref, id) async {
   final repo = ref.read(ejerciciosRepositoryProvider);
   return repo.fetchById(id);
-});
-
-// ---------------------------------------------------------------------------
-// Provider de ejercicios filtrados por parte del cuerpo
-// ---------------------------------------------------------------------------
-
-final ejerciciosPorParteCuerpoProvider =
-    FutureProvider.autoDispose.family<List<EjercicioDb>, String>(
-        (ref, parte) async {
-  final repo = ref.read(ejerciciosRepositoryProvider);
-  return repo.fetchByParteCuerpo(parte);
-});
-
-// ---------------------------------------------------------------------------
-// Provider de búsqueda de ejercicios
-// ---------------------------------------------------------------------------
-
-final busquedaEjerciciosProvider =
-    FutureProvider.autoDispose.family<List<EjercicioDb>, String>(
-        (ref, query) async {
-  final repo = ref.read(ejerciciosRepositoryProvider);
-  return repo.buscar(query);
 });

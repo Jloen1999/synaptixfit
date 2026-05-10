@@ -5,6 +5,83 @@
 
 ---
 
+## [2.8.0] — 10-05-2026
+
+### Sistema de rutinas periodizadas (RF-BIE-COMPLETO)
+- **Migración 0015:** Tablas `semanas_rutina`, `dias_rutina`, `series_sesion`. Columnas `duracion_semanas`, `objetivo`, `estado` en `rutinas`. Columna `dia_id` y `peso_kg` en `seleccion_de_ejercicios`. Columnas `dia_id`, `tipo` en `sesiones_registradas`. RLS completa. Drop de constraints antiguos que impedían periodización.
+- **Modelos nuevos:** `SemanaRutinaDb`, `DiaRutinaDb`, `SerieSesionDb`. Actualizados `RutinaDb`, `SeleccionEjercicioDb`, `SesionRegistradaDb`.
+- **Providers:** `semanasDeRutinaProvider`, `diasDeSemanaProvider`, `ejerciciosDeDiaProvider`, `agregarDiaASemana()`, `crearRutinaCompleta()`, `iniciarSesion()`, `finalizarSesion()`, `registrarSerie()`, `eliminarRutina()`, `actualizarEjercicioDia()`, `agregarEjercicioADia()`, `quitarEjercicioDeDia()`. Eliminado `rutinasUsuarioProvider` duplicado de `sesion_provider.dart`.
+
+### Pantalla de detalle de rutina (`RutinaDetalleScreen`)
+- **Selector de semanas** interactivo con badge de ejercicios por semana.
+- **Lista de días** por semana con estado (pendiente/en_progreso/completado). Botón "Iniciar" para comenzar sesión.
+- **Edición inline de ejercicios:** series (±), repeticiones (±), descanso (±) y peso (kg, opcional). Botón "Guardar" persiste cambios.
+- **Añadir ejercicio** a un día existente desde buscador de catálogo.
+- **Añadir día** a una semana existente. **Sustituir ejercicio** (long-press).
+- **Cards de días completados** con fondo verde, borde destacado y badge "Completado".
+- **Eliminar rutina** con confirmación. Navegación: `/bienestar/rutina/:id`.
+
+### Entrenamiento en vivo (`LiveSessionScreen`)
+- **Cronómetro de sesión** automático al iniciar.
+- **Check por serie** — al marcar completada, inicia automáticamente el cronómetro de descanso.
+- **Descanso:** cuenta atrás con botones `+15s` / `-15s` / `Saltar`. El contador finaliza automáticamente al llegar a 0.
+- **Edición inline de peso/reps** por serie durante el entreno.
+- **Diálogo de finalización** con slider RPE (1-10) y selector "Solo hoy" / "Para siempre" (persistir cambios en rutina).
+- **Registro por ejercicio:** tabla `series_sesion` guarda cada serie ejecutada con reps/peso real.
+- **Navegación post-sesión** vuelve al detalle de la rutina para continuar con el siguiente día.
+- Ruta: `/bienestar/rutina/sesion`.
+
+### Creación de rutinas — Refactor completo (`CrearRutinaScreen`)
+- **Paso 1 — Metadatos:** nombre, descripción, objetivo (ChoiceChips: fuerza/resistencia/hipertrofia/movilidad), visibilidad, semanas y días por defecto.
+- **Paso 2 — Estructura:** selector de semanas con añadir/eliminar semanas. Por cada día: añadir/eliminar ejercicios del catálogo con steppers de series/reps/descanso y campo de peso (kg).
+- **Añadir/eliminar semanas** dinámicamente (cada semana puede tener distinto número de días).
+- **Añadir/eliminar días** por semana. **Campo de peso opcional** en cada ejercicio.
+- **Steppers compactos** para evitar overflow en móviles.
+- **Paso 3 — Revisión:** nombre editable, resumen de semanas/días/ejercicios, crear rutina.
+- Navegación post-creación: `/bienestar/rutina/:id` (nueva rutina creada).
+
+### Optimizaciones de rendimiento
+- **IndexedStack en ShellRoute** (`StatefulShellRoute.indexedStack`) — los 5 tabs se mantienen vivos, sin re-fetch al navegar.
+- **Dashboard queries paralelizadas** con `Future.wait<Object?>`. Eliminado N+1 RPC: dashboard reutiliza `retosProvider` (progreso calculado en batch).
+- **Optimistic UI en toggle de tareas** — checkbox cambia instantáneamente. `toggleTareaCompletada` pasó de 2 queries a 1 (UPDATE directo, retoId desde caller).
+- **`autoDispose` eliminado** de `rutinasComunidadProvider`, `rutinasUsuarioProvider`, `bloquesPorPlanProvider`, `carrerasUsuarioConNombreProvider`.
+- **Compact retos cards** en dashboard: sin descripción, botón "Completar" a la izquierda, badges Simple/Complejo pre-cargados.
+
+### Dashboard — Mejoras de UI
+- **Avatar en card de bienvenida** con glow verde, muestra `NetworkImage` o inicial, clickable a `/perfil`.
+- **AppBar compacta** (`hideAppBar: true`): sin espacio vacío innecesario.
+- **Margen superior** usa `MediaQuery.padding.top + 8` para respetar barra de estado.
+- **Retos activos** con tareas expandibles y botón "Completar" con confirmación.
+
+### Correcciones
+- Fix: orden de rutas GoRouter — `/bienestar/rutina/sesion` antes de `/bienestar/rutina/:id` (evitaba capturar "sesion" como UUID).
+- Fix: constraint `UNIQUE(rutina_id, indice_orden)` dropeado para permitir periodización.
+- Fix: constraint `UNIQUE(rutina_id, ejercicio_id, indice_orden)` dropeado.
+- Fix: `rutinaId` pasado correctamente por route extras a `LiveSessionScreen`.
+- Fix: `FilledButton.tonalIcon` en lugar de `.tonal.icon`.
+- Fix: `const` removido de `EdgeInsets` con valores dinámicos en Paso 2.
+
+### Eliminado
+- `constructor_rutina_screen.dart` y `configurar_rutina_screen.dart` (reemplazados por `RutinaDetalleScreen` y nuevo flujo de creación).
+- Routes obsoletas: `/bienestar/constructor-rutina`, `/bienestar/configurar-rutina`.
+
+### Git
+- Añadidas carpetas de GIFs y `Gym Workout/` a `.gitignore`. GIFs removidos del tracking (`git rm --cached`).
+
+---
+
+## [2.7.1] — 10-05-2026
+
+### Sincronización de documentación
+- **04-data-model.md (v2.1):** Añadidas tablas `catalogo_universidades`, `catalogo_carreras`, `catalogo_asignaturas`, `usuario_carreras`, `planes_estudio`, `apuntes` con SQL, RLS y ER. Actualizada definición de `asignaturas` con `docente`, `archivado` y `catalogo_asignatura_id`. Documentada `mv_ejercicios_completos` (vista materializada con triggers de refresco). Actualizada matriz RLS.
+- **11-security.md (v1.2):** Añadidas las 6 nuevas tablas a la matriz RLS. Añadida clasificación de sensibilidad para datos del catálogo académico (públicos) y apuntes.
+- **07-backend.md (v1.2):** Añadida tabla completa de las 14 migraciones. Documentada vista materializada `mv_ejercicios_completos`. Actualizada numeración de secciones.
+- **03-architecture.md (v2.6):** Sincronizado ER conceptual con nombres reales de tablas (`hitos_de_reto`, `seleccion_de_ejercicios`, `sesiones_registradas`, `actividades_sociales`, `interacciones_sociales`). Añadidas tablas de catálogo académico, `usuario_carreras` y `planes_estudio`. Corregidos nombres de campos obsoletos (`nombre_mostrar` → `nombre_completo`, `propietario_id` → `usuario_id`, etc.).
+- **06-frontend.md (v2.7):** Añadidas rutas faltantes (`/bienestar/explorador`, `/bienestar/ejercicio/:id`, `/bienestar/nueva-rutina`, `/bienestar/configurar-rutina`, `/plan-semanal`, `/academico/apuntes/editor`). Actualizada sección de Perfil con "Mis carreras". Actualizada ruta de bienestar principal a `RutinasComunidadScreen`.
+- **14-changelog.md:** Documentada sincronización actual.
+
+---
+
 ## [2.7.0] — 09-05-2026
 
 ### Módulo académico — Completado (RF-ACA-06/07/08)

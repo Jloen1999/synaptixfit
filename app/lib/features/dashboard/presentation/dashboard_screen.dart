@@ -6,7 +6,10 @@ import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/kpi_card.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/challenge_progress_bar.dart';
+import '../../../shared/models/db_models.dart';
 import '../../../core/design_system/sv_colors.dart';
+import '../../retos/application/retos_provider.dart';
 import '../application/dashboard_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -17,7 +20,7 @@ class DashboardScreen extends ConsumerWidget {
       titulo: 'Nueva rutina',
       descripcion: 'Diseña tu rutina de ejercicios.',
       icono: Icons.fitness_center_rounded,
-      ruta: '/bienestar/constructor-rutina',
+      ruta: '/bienestar/nueva-rutina',
     ),
     _OpcionCreacionDashboard(
       titulo: 'Reto simple',
@@ -48,27 +51,11 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(dashboardProvider);
+
     return FeatureScaffold(
       title: '',
       centerTitle: false,
-      appBarLeading: Padding(
-        padding: const EdgeInsets.only(left: 12),
-        child: Image.asset(
-          'assets/images/logo.png',
-          width: 36,
-          height: 36,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => const Icon(
-            Icons.fitness_center_rounded,
-            size: 24,
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _mostrarMenuCreacion(context),
-        tooltip: 'Crear',
-        child: const Icon(Icons.add),
-      ),
+      hideAppBar: true,
       child: data.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(16),
@@ -95,7 +82,8 @@ class DashboardScreen extends ConsumerWidget {
               message: esErrorRed
                   ? 'No se pudo conectar con el servidor. Comprueba tu conexión a internet.'
                   : 'No se pudo cargar el dashboard.',
-              icon: esErrorRed ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
+              icon:
+                  esErrorRed ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
               action: TextButton(
                 onPressed: () => ref.invalidate(dashboardProvider),
                 child: const Text('Reintentar'),
@@ -103,74 +91,70 @@ class DashboardScreen extends ConsumerWidget {
             ),
           );
         },
-        data: (value) => LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 760;
-            final isVeryWide = constraints.maxWidth >= 1040;
+        data: (value) {
+          final topPadding = MediaQuery.of(context).padding.top + 8;
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 760;
+              final isVeryWide = constraints.maxWidth >= 1040;
 
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              children: [
-                _SaludoCard(data: value),
-                const SizedBox(height: 18),
-
-                // KPIs — lista vertical o grid según ancho
-                if (!isWide)
-                  ..._buildKpiColumn(value)
-                else
-                  _buildKpiGrid(value, isVeryWide),
-
-                const SizedBox(height: 20),
-
-                // Bienestar
-                if (value.perfilBienestar != null) ...[
-                  _BienestarResumenCard(perfil: value.perfilBienestar!),
+              return ListView(
+                padding: EdgeInsets.fromLTRB(16, topPadding, 16, 24),
+                children: [
+                  _SaludoCard(data: value),
+                  const SizedBox(height: 18),
+                  if (!isWide)
+                    ..._buildKpiColumn(value)
+                  else
+                    _buildKpiGrid(value, isVeryWide),
                   const SizedBox(height: 20),
+                  if (value.perfilBienestar != null) ...[
+                    _BienestarResumenCard(perfil: value.perfilBienestar!),
+                    const SizedBox(height: 20),
+                  ],
+                  _buildRetosSection(context, value),
                 ],
-
-                // Retos activos
-                _buildRetosSection(context, value),
-              ],
-            );
-          },
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }
 
   List<Widget> _buildKpiColumn(dynamic value) => [
-    KpiCard(
-      title: 'Calorías hoy',
-      value: '${value.calorias}',
-      subtitle: 'Meta: 800 kcal',
-      icon: Icons.local_fire_department_rounded,
-      progress: (value.calorias / 800).clamp(0.0, 1.0),
-      accentColor: SVColors.kpiCalorias,
-    ),
-    const SizedBox(height: 10),
-    KpiCard(
-      title: 'Sesiones completadas',
-      value: '${value.sesiones}',
-      subtitle: value.planSemanal != null
-          ? '${value.sesionesRestantesSemana} restantes esta semana'
-          : null,
-      icon: Icons.fitness_center_rounded,
-      progress: value.planSemanal != null
-          ? (value.sesiones / value.planSemanal!.sesionesPlanificadas)
-              .clamp(0.0, 1.0)
-          : null,
-      accentColor: SVColors.kpiSesiones,
-    ),
-    const SizedBox(height: 10),
-    KpiCard(
-      title: 'Horas de estudio',
-      value: value.horasEstudio.toStringAsFixed(1),
-      subtitle: 'Meta: 6 h/día',
-      icon: Icons.school_rounded,
-      progress: (value.horasEstudio / 6).clamp(0.0, 1.0),
-      accentColor: SVColors.kpiEstudio,
-    ),
-  ];
+        KpiCard(
+          title: 'Calorías hoy',
+          value: '${value.calorias}',
+          subtitle: 'Meta: 800 kcal',
+          icon: Icons.local_fire_department_rounded,
+          progress: (value.calorias / 800).clamp(0.0, 1.0),
+          accentColor: SVColors.kpiCalorias,
+        ),
+        const SizedBox(height: 10),
+        KpiCard(
+          title: 'Sesiones completadas',
+          value: '${value.sesiones}',
+          subtitle: value.planSemanal != null
+              ? '${value.sesionesRestantesSemana} restantes esta semana'
+              : null,
+          icon: Icons.fitness_center_rounded,
+          progress: value.planSemanal != null
+              ? (value.sesiones / value.planSemanal!.sesionesPlanificadas)
+                  .clamp(0.0, 1.0)
+              : null,
+          accentColor: SVColors.kpiSesiones,
+        ),
+        const SizedBox(height: 10),
+        KpiCard(
+          title: 'Horas de estudio',
+          value: value.horasEstudio.toStringAsFixed(1),
+          subtitle: 'Meta: 6 h/día',
+          icon: Icons.school_rounded,
+          progress: (value.horasEstudio / 6).clamp(0.0, 1.0),
+          accentColor: SVColors.kpiEstudio,
+        ),
+      ];
 
   Widget _buildKpiGrid(dynamic value, bool isVeryWide) {
     return GridView.count(
@@ -288,6 +272,8 @@ class DashboardScreen extends ConsumerWidget {
               child: _RetoActivoCard(
                 reto: reto,
                 progreso: value.progresoReto(reto.id),
+                tieneHitos: value.tieneHitosReto(reto.id),
+                onTap: () => context.push('/retos/${reto.id}'),
               ),
             ),
           ),
@@ -412,7 +398,10 @@ class _SaludoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nombre = data.usuario.nombreCompleto.split(' ').first;
+    final usuario = data.usuario;
+    final nombre = usuario.nombreCompleto.split(' ').first;
+    final tieneAvatar =
+        usuario.urlAvatar != null && usuario.urlAvatar!.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(22),
@@ -437,24 +426,38 @@ class _SaludoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    nombre.isNotEmpty ? nombre[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
+              GestureDetector(
+                onTap: () => context.push('/perfil'),
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 2,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF72FE8F).withValues(alpha: 0.4),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: tieneAvatar
+                        ? Image.network(
+                            usuario.urlAvatar!,
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _avatarFallback(
+                                nombre, Colors.white.withValues(alpha: 0.18)),
+                          )
+                        : _avatarFallback(
+                            nombre, Colors.white.withValues(alpha: 0.18)),
                   ),
                 ),
               ),
@@ -475,7 +478,7 @@ class _SaludoCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Nivel ${data.usuario.nivel} · ${data.usuario.xpTotal} XP',
+                      'Nivel ${usuario.nivel} · ${usuario.xpTotal} XP',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.65),
                         fontSize: 13,
@@ -486,7 +489,8 @@ class _SaludoCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8A838).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(24),
@@ -602,6 +606,21 @@ class _SaludoCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _avatarFallback(String nombre, Color bgColor) {
+    return Container(
+      color: bgColor,
+      alignment: Alignment.center,
+      child: Text(
+        nombre.isNotEmpty ? nombre[0].toUpperCase() : '?',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -691,14 +710,14 @@ class _BienestarResumenCard extends StatelessWidget {
   }
 
   String _objetivoLabel(String objetivo) => switch (objetivo) {
-    'fitness_general' => 'Fitness',
-    'perder_peso' => 'Perder peso',
-    'ganar_masa' => 'Masa muscular',
-    'fuerza' => 'Fuerza',
-    'resistencia' => 'Resistencia',
-    'movilidad' => 'Movilidad',
-    _ => objetivo,
-  };
+        'fitness_general' => 'Fitness',
+        'perder_peso' => 'Perder peso',
+        'ganar_masa' => 'Masa muscular',
+        'fuerza' => 'Fuerza',
+        'resistencia' => 'Resistencia',
+        'movilidad' => 'Movilidad',
+        _ => objetivo,
+      };
 }
 
 class _BienestarChip extends StatelessWidget {
@@ -766,126 +785,334 @@ class _BienestarChip extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Tarjeta de reto activo mejorada
+// Tarjeta de reto activo mejorada con tareas expandibles y botón confirmar
 // ---------------------------------------------------------------------------
-class _RetoActivoCard extends StatelessWidget {
-  const _RetoActivoCard({required this.reto, required this.progreso});
+class _RetoActivoCard extends ConsumerStatefulWidget {
+  const _RetoActivoCard({
+    required this.reto,
+    required this.progreso,
+    required this.tieneHitos,
+    this.onTap,
+  });
 
-  final dynamic reto;
+  final RetoDb reto;
   final double progreso;
+  final bool tieneHitos;
+  final VoidCallback? onTap;
+
+  @override
+  ConsumerState<_RetoActivoCard> createState() => _RetoActivoCardState();
+}
+
+class _RetoActivoCardState extends ConsumerState<_RetoActivoCard> {
+  bool _expanded = false;
+  bool _confirmando = false;
+  final Map<String, bool> _optimistas = {};
 
   @override
   Widget build(BuildContext context) {
+    final reto = widget.reto;
     final theme = Theme.of(context);
     final esFitness = reto.tipo == 'fitness';
-    final color = esFitness ? theme.colorScheme.primary : const Color(0xFF7B1FA2);
+    final color =
+        esFitness ? theme.colorScheme.primary : const Color(0xFF7B1FA2);
     final diasRestantes = reto.fechaFin.difference(DateTime.now()).inDays;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+    final expandible = widget.tieneHitos;
+    final tareasAsync =
+        _expanded ? ref.watch(tareasDeRetoProvider(reto.id)) : null;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        color: theme.colorScheme.surfaceContainerLowest,
-        border: Border.all(
+        side: BorderSide(
           color: color.withValues(alpha: 0.15),
         ),
       ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: progreso.clamp(0.0, 1.0),
-                  strokeWidth: 5,
-                  strokeCap: StrokeCap.round,
-                  backgroundColor: color.withValues(alpha: 0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                ),
-                Text(
-                  '${(progreso * 100).round()}%',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: color,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        esFitness ? '💪 Fitness' : '📚 Académico',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 10,
-                        ),
+      color: theme.colorScheme.surfaceContainerLowest,
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row: tipo badge + complejidad + días restantes
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      esFitness ? '💪 Fitness' : '📚 Académico',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 9,
                       ),
                     ),
-                    const Spacer(),
-                    if (diasRestantes > 0)
-                      Text(
-                        '$diasRestantes días restantes',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: SVColors.onSurfaceMuted,
-                          fontSize: 11,
+                  ),
+                  const SizedBox(width: 4),
+                  widget.tieneHitos
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.deepPurple.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: const Text('Complejo',
+                              style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.deepPurple,
+                                  fontWeight: FontWeight.w600)),
+                        )
+                      : Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: const Text('Simple',
+                              style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w600)),
                         ),
-                      )
-                    else
-                      Text(
-                        'Finaliza hoy',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: SVColors.error,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 11,
-                        ),
+                  const Spacer(),
+                  Icon(Icons.schedule_rounded,
+                      size: 11, color: SVColors.onSurfaceMuted),
+                  const SizedBox(width: 2),
+                  Text(
+                    diasRestantes > 0
+                        ? '$diasRestantes d'
+                        : diasRestantes == 0
+                            ? 'Hoy'
+                            : 'Vencido',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: diasRestantes <= 3
+                          ? SVColors.error
+                          : SVColors.onSurfaceMuted,
+                      fontWeight: diasRestantes <= 3 ? FontWeight.w600 : null,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              // Titulo
+              Text(
+                reto.titulo,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                  fontSize: 13,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              // Barra de progreso + Completar a la izquierda
+              Row(
+                children: [
+                  // Botón Completar a la izquierda
+                  InkWell(
+                    onTap: _confirmando ? null : () => _confirmarCompletar(),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  reto.titulo,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
+                      child: _confirmando
+                          ? const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check,
+                                    size: 12, color: Colors.green),
+                                SizedBox(width: 3),
+                                Text('Completar',
+                                    style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progreso.clamp(0.0, 1.0),
-                    minHeight: 6,
-                    backgroundColor: color.withValues(alpha: 0.08),
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ChallengeProgressBar(progress: widget.progreso),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${(widget.progreso * 100).round()}%',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              // Tareas expandibles
+              if (expandible) ...[
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () => setState(() => _expanded = !_expanded),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _expanded ? 'Ocultar tareas' : 'Ver tareas',
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
                   ),
                 ),
+                if (_expanded && tareasAsync != null)
+                  tareasAsync.when(
+                    data: (tareas) => Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Column(
+                        children: [
+                          ...tareas.map((t) {
+                            final completado = _optimistas.containsKey(t.id)
+                                ? _optimistas[t.id]!
+                                : t.estaCompletado;
+                            return InkWell(
+                              onTap: () async {
+                                final nuevoValor = !completado;
+                                setState(() => _optimistas[t.id] = nuevoValor);
+                                try {
+                                  await toggleTareaCompletada(
+                                    t.id,
+                                    widget.reto.id,
+                                    completada: nuevoValor,
+                                    ref: ref,
+                                  );
+                                } catch (_) {
+                                  if (mounted) {
+                                    setState(() => _optimistas.remove(t.id));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Error al ${nuevoValor ? "completar" : "desmarcar"} tarea'),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 6),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      completado
+                                          ? Icons.check_circle
+                                          : Icons.radio_button_unchecked,
+                                      size: 18,
+                                      color: completado
+                                          ? Colors.green
+                                          : Colors.grey.shade400,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        t.titulo,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          decoration: completado
+                                              ? TextDecoration.lineThrough
+                                              : null,
+                                          color:
+                                              completado ? Colors.grey : null,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${t.porcentajePeso}%',
+                                      style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey.shade500),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                    error: (e, _) =>
+                        Text('Error: $e', style: const TextStyle(fontSize: 11)),
+                  ),
               ],
-            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmarCompletar() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Completar reto'),
+        content: Text('¿Marcar "${widget.reto.titulo}" como completado?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sí, completar'),
           ),
         ],
       ),
     );
+
+    if (confirmed == true && mounted) {
+      setState(() => _confirmando = true);
+      try {
+        await completarReto(widget.reto.id, ref);
+      } finally {
+        if (mounted) setState(() => _confirmando = false);
+      }
+    }
   }
 }

@@ -175,6 +175,9 @@ class RutinaDb {
     this.descripcion,
     required this.visibilidad,
     required this.cantidadEjercicios,
+    required this.duracionSemanas,
+    required this.objetivo,
+    required this.estado,
     required this.creadoEn,
     required this.actualizadoEn,
   });
@@ -185,6 +188,9 @@ class RutinaDb {
   final String? descripcion;
   final String visibilidad;
   final int cantidadEjercicios;
+  final int duracionSemanas;
+  final String objetivo;
+  final String estado;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
@@ -196,6 +202,9 @@ class RutinaDb {
       descripcion: map['descripcion'] as String?,
       visibilidad: (map['visibilidad'] as String?) ?? 'private',
       cantidadEjercicios: _parseInt(map['cantidad_ejercicios']),
+      duracionSemanas: _parseInt(map['duracion_semanas'], fallback: 1),
+      objetivo: (map['objetivo'] as String?) ?? 'fuerza',
+      estado: (map['estado'] as String?) ?? 'activo',
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
     );
@@ -209,6 +218,9 @@ class RutinaDb {
       'descripcion': descripcion,
       'visibilidad': visibilidad,
       'cantidad_ejercicios': cantidadEjercicios,
+      'duracion_semanas': duracionSemanas,
+      'objetivo': objetivo,
+      'estado': estado,
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -224,6 +236,8 @@ class SeleccionEjercicioDb {
     required this.repeticiones,
     required this.segundosDescanso,
     required this.indiceOrden,
+    this.diaId,
+    this.pesoKg,
   });
 
   final String id;
@@ -233,6 +247,8 @@ class SeleccionEjercicioDb {
   final int repeticiones;
   final int segundosDescanso;
   final int indiceOrden;
+  final String? diaId;
+  final double? pesoKg;
 
   factory SeleccionEjercicioDb.fromMap(Map<String, dynamic> map) {
     return SeleccionEjercicioDb(
@@ -243,6 +259,8 @@ class SeleccionEjercicioDb {
       repeticiones: _parseInt(map['repeticiones'], fallback: 10),
       segundosDescanso: _parseInt(map['segundos_descanso'], fallback: 90),
       indiceOrden: _parseInt(map['indice_orden'], fallback: 1),
+      diaId: map['dia_id'] as String?,
+      pesoKg: map['peso_kg'] != null ? _parseDouble(map['peso_kg']) : null,
     );
   }
 
@@ -255,6 +273,8 @@ class SeleccionEjercicioDb {
       'repeticiones': repeticiones,
       'segundos_descanso': segundosDescanso,
       'indice_orden': indiceOrden,
+      if (diaId != null) 'dia_id': diaId,
+      if (pesoKg != null) 'peso_kg': pesoKg,
     };
   }
 }
@@ -269,6 +289,8 @@ class SesionRegistradaDb {
     required this.rpe,
     required this.completadaEn,
     required this.creadoEn,
+    this.diaId,
+    required this.tipo,
   });
 
   final String id;
@@ -279,6 +301,8 @@ class SesionRegistradaDb {
   final int rpe;
   final DateTime completadaEn;
   final DateTime creadoEn;
+  final String? diaId;
+  final String tipo;
 
   factory SesionRegistradaDb.fromMap(Map<String, dynamic> map) {
     return SesionRegistradaDb(
@@ -290,6 +314,8 @@ class SesionRegistradaDb {
       rpe: _parseInt(map['rpe']),
       completadaEn: _parseDateTime(map['completada_en']),
       creadoEn: _parseDateTime(map['creado_en']),
+      diaId: map['dia_id'] as String?,
+      tipo: (map['tipo'] as String?) ?? 'libre',
     );
   }
 
@@ -303,6 +329,8 @@ class SesionRegistradaDb {
       'rpe': rpe,
       'completada_en': completadaEn.toIso8601String(),
       'creado_en': creadoEn.toIso8601String(),
+      if (diaId != null) 'dia_id': diaId,
+      'tipo': tipo,
     };
   }
 }
@@ -784,10 +812,12 @@ class PerfilBienestarDb {
       alturaCm: _parseDouble(map['altura_cm'], fallback: 170),
       imc: _parseDouble(map['imc'], fallback: 24.2),
       nivelActividad: (map['nivel_actividad'] as String?) ?? 'sedentario',
-      objetivoPrincipal: (map['objetivo_principal'] as String?) ?? 'fitness_general',
+      objetivoPrincipal:
+          (map['objetivo_principal'] as String?) ?? 'fitness_general',
       objetivos: _parseStringList(map['objetivos']),
       equipamientoDisponible: _parseStringList(map['equipamiento_disponible']),
-      diasDisponiblesSemana: _parseInt(map['dias_disponibles_semana'], fallback: 3),
+      diasDisponiblesSemana:
+          _parseInt(map['dias_disponibles_semana'], fallback: 3),
       minutosPorSesion: _parseInt(map['minutos_por_sesion'], fallback: 45),
       onboardingCompletado: _parseBool(map['onboarding_completado']),
       creadoEn: _parseDateTime(map['creado_en']),
@@ -841,8 +871,10 @@ class PerfilBienestarDb {
       nivelActividad: nivelActividad ?? this.nivelActividad,
       objetivoPrincipal: objetivoPrincipal ?? this.objetivoPrincipal,
       objetivos: objetivos ?? this.objetivos,
-      equipamientoDisponible: equipamientoDisponible ?? this.equipamientoDisponible,
-      diasDisponiblesSemana: diasDisponiblesSemana ?? this.diasDisponiblesSemana,
+      equipamientoDisponible:
+          equipamientoDisponible ?? this.equipamientoDisponible,
+      diasDisponiblesSemana:
+          diasDisponiblesSemana ?? this.diasDisponiblesSemana,
       minutosPorSesion: minutosPorSesion ?? this.minutosPorSesion,
       onboardingCompletado: onboardingCompletado ?? this.onboardingCompletado,
       creadoEn: creadoEn,
@@ -927,9 +959,11 @@ class PlanEntrenamientoSemanalDb {
       id: map['id'] as String,
       usuarioId: map['usuario_id'] as String,
       semanaInicio: _parseDateTime(map['semana_inicio']),
-      sesionesPlanificadas: _parseInt(map['sesiones_planificadas'], fallback: 3),
+      sesionesPlanificadas:
+          _parseInt(map['sesiones_planificadas'], fallback: 3),
       intensidad: (map['intensidad'] as String?) ?? 'moderada',
-      duracionMinPorSesion: _parseInt(map['duracion_min_por_sesion'], fallback: 45),
+      duracionMinPorSesion:
+          _parseInt(map['duracion_min_por_sesion'], fallback: 45),
       estado: (map['estado'] as String?) ?? 'activo',
       notas: map['notas'] as String?,
       creadoEn: _parseDateTime(map['creado_en']),
@@ -1217,7 +1251,8 @@ class CatalogoCarreraDb {
       if (univData is Map<String, dynamic>) {
         univNombre = univData['nombre'] as String?;
       } else if (univData is List && univData.isNotEmpty) {
-        univNombre = (univData.first as Map<String, dynamic>)['nombre'] as String?;
+        univNombre =
+            (univData.first as Map<String, dynamic>)['nombre'] as String?;
       }
     }
     return CatalogoCarreraDb(
@@ -1283,6 +1318,141 @@ List<String> _parseStringList(dynamic value) {
     return trimmed.split(',').map((e) => e.trim()).toList();
   }
   return [];
+}
+
+// ---------------------------------------------------------------------------
+// Modelos de periodización de rutinas
+// ---------------------------------------------------------------------------
+
+class SemanaRutinaDb {
+  const SemanaRutinaDb({
+    required this.id,
+    required this.rutinaId,
+    required this.numeroSemana,
+    required this.nombre,
+    required this.estado,
+    required this.creadoEn,
+  });
+
+  final String id;
+  final String rutinaId;
+  final int numeroSemana;
+  final String nombre;
+  final String estado;
+  final DateTime creadoEn;
+
+  factory SemanaRutinaDb.fromMap(Map<String, dynamic> map) {
+    return SemanaRutinaDb(
+      id: map['id'] as String,
+      rutinaId: map['rutina_id'] as String,
+      numeroSemana: _parseInt(map['numero_semana'], fallback: 1),
+      nombre: (map['nombre'] as String?) ?? '',
+      estado: (map['estado'] as String?) ?? 'pendiente',
+      creadoEn: _parseDateTime(map['creado_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'rutina_id': rutinaId,
+      'numero_semana': numeroSemana,
+      'nombre': nombre,
+      'estado': estado,
+      'creado_en': creadoEn.toIso8601String(),
+    };
+  }
+}
+
+class DiaRutinaDb {
+  const DiaRutinaDb({
+    required this.id,
+    required this.semanaId,
+    required this.numeroDia,
+    required this.nombre,
+    required this.estado,
+    required this.creadoEn,
+  });
+
+  final String id;
+  final String semanaId;
+  final int numeroDia;
+  final String nombre;
+  final String estado;
+  final DateTime creadoEn;
+
+  factory DiaRutinaDb.fromMap(Map<String, dynamic> map) {
+    return DiaRutinaDb(
+      id: map['id'] as String,
+      semanaId: map['semana_id'] as String,
+      numeroDia: _parseInt(map['numero_dia'], fallback: 1),
+      nombre: (map['nombre'] as String?) ?? '',
+      estado: (map['estado'] as String?) ?? 'pendiente',
+      creadoEn: _parseDateTime(map['creado_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'semana_id': semanaId,
+      'numero_dia': numeroDia,
+      'nombre': nombre,
+      'estado': estado,
+      'creado_en': creadoEn.toIso8601String(),
+    };
+  }
+}
+
+class SerieSesionDb {
+  const SerieSesionDb({
+    required this.id,
+    required this.sesionId,
+    this.seleccionId,
+    required this.numeroSerie,
+    this.repeticionesRealizadas,
+    this.pesoKg,
+    required this.completada,
+    required this.creadoEn,
+  });
+
+  final String id;
+  final String sesionId;
+  final String? seleccionId;
+  final int numeroSerie;
+  final int? repeticionesRealizadas;
+  final double? pesoKg;
+  final bool completada;
+  final DateTime creadoEn;
+
+  factory SerieSesionDb.fromMap(Map<String, dynamic> map) {
+    return SerieSesionDb(
+      id: map['id'] as String,
+      sesionId: map['sesion_id'] as String,
+      seleccionId: map['seleccion_id'] as String?,
+      numeroSerie: _parseInt(map['numero_serie'], fallback: 1),
+      repeticionesRealizadas: map['repeticiones_realizadas'] != null
+          ? _parseInt(map['repeticiones_realizadas'])
+          : null,
+      pesoKg: map['peso_kg'] != null ? _parseDouble(map['peso_kg']) : null,
+      completada: _parseBool(map['completada']),
+      creadoEn: _parseDateTime(map['creado_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'sesion_id': sesionId,
+      if (seleccionId != null) 'seleccion_id': seleccionId,
+      'numero_serie': numeroSerie,
+      if (repeticionesRealizadas != null)
+        'repeticiones_realizadas': repeticionesRealizadas,
+      if (pesoKg != null) 'peso_kg': pesoKg,
+      'completada': completada,
+      'creado_en': creadoEn.toIso8601String(),
+    };
+  }
 }
 
 class UsuarioCarreraDb {

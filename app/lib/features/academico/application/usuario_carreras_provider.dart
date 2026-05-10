@@ -5,7 +5,7 @@ import '../../../shared/models/db_models.dart';
 import 'asignaturas_provider.dart';
 
 final usuarioCarrerasProvider =
-    FutureProvider.autoDispose<List<UsuarioCarreraDb>>((ref) async {
+    FutureProvider<List<UsuarioCarreraDb>>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];
@@ -20,8 +20,8 @@ final usuarioCarrerasProvider =
 });
 
 /// Carreras del usuario con el nombre de la carrera resuelto.
-final carrerasUsuarioConNombreProvider = FutureProvider.autoDispose
-    .family<List<CatalogoCarreraDb>, List<UsuarioCarreraDb>>(
+final carrerasUsuarioConNombreProvider =
+    FutureProvider.family<List<CatalogoCarreraDb>, List<UsuarioCarreraDb>>(
         (ref, usuarioCarreras) async {
   final client = Supabase.instance.client;
   final result = <CatalogoCarreraDb>[];

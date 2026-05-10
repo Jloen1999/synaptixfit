@@ -765,66 +765,62 @@ class _CarrerasCard extends ConsumerWidget {
                     ? const Text('Sin carreras configuradas')
                     : null,
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () =>
-                    context.push('/academico/configuracion'),
+                onTap: () => context.push('/academico/configuracion'),
               ),
               if (nombresAsync != null)
                 nombresAsync.whenOrNull(
-                  data: (cats) => Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Column(
-                      children: cats
-                          .map((c) => Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 8),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primaryContainer
-                                            .withValues(alpha: 0.5),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                          Icons.school_outlined,
-                                          size: 18),
+                      data: (cats) => Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: Column(
+                          children: cats
+                              .map((c) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 36,
+                                          height: 36,
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer
+                                                .withValues(alpha: 0.5),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                              Icons.school_outlined,
+                                              size: 18),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(c.nombre,
+                                                  style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600)),
+                                              if (c.universidadNombre != null)
+                                                Text(c.universidadNombre!,
+                                                    style: TextStyle(
+                                                        fontSize: 11,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(c.nombre,
-                                              style: const TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight:
-                                                      FontWeight.w600)),
-                                          if (c.universidadNombre !=
-                                              null)
-                                            Text(
-                                                c.universidadNombre!,
-                                                style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: Theme.of(
-                                                            context)
-                                                        .colorScheme
-                                                        .onSurfaceVariant)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                ) ?? const SizedBox.shrink(),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    ) ??
+                    const SizedBox.shrink(),
             ],
           );
         },

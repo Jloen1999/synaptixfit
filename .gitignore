@@ -42,3 +42,12 @@ cloudflare/**/.secrets*
 app/.dart_tool/
 app/build/
 app/.flutter-plugins-dependencies
+
+# =============================
+# Archivos multimedia de ejercicios (pesados, no versionar)
+# =============================
+exercisedb/gifs_360x360/
+exercisedb/gifs_720x720/
+exercisedb/gifs_180x180/
+exercisedb/gifs_1080x1080/
+Gym Workout/

@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit  
-**Versión:** 2.7  
-**Fecha:** 09-05-2026  
+**Versión:** 2.8  
+**Fecha:** 10-05-2026  
 **Referencia:** [01-introduction.md](01-introduction.md) (Design System), [02-requirements.md](02-requirements.md) (Casos de Uso)
 
 ---
@@ -62,13 +62,20 @@ Tab 4: 👤 Perfil (Perfil de Usuario)
 | `/academico/asignaturas` | `GestionAsignaturasScreen` | Búsqueda y gestión de asignaturas |
 | `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera |
 | `/academico/apuntes` | `ApuntesScreen` | Editor Markdown + explorador |
+| `/academico/apuntes/editor` | `ApuntesEditorScreen` | Editor Markdown a pantalla completa |
+| `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera + carga masiva |
 | `/retos` | `RetosScreen` | Retos activos/explorar/completados |
 | `/retos/simple` | `CrearRetoSimpleScreen` | Crear reto simple |
 | `/retos/complejo` | `CrearRetoComplejoScreen` | Crear reto con tareas |
 | `/retos/:id` | `DetalleRetoScreen` | Detalle y progreso |
-| `/bienestar` | `ExploradorEjerciciosScreen` | Catálogo de ejercicios |
-| `/bienestar/rutina` | `ConstructorRutinaScreen` | Constructor de rutina |
-| `/bienestar/sesion` | `SesionCompletadaScreen` | Registro de sesión |
+| `/bienestar` | `RutinasComunidadScreen` | Comunidad y mis rutinas |
+| `/bienestar/nueva-rutina` | `NuevaRutinaScreen` | Crear rutina (3 pasos) |
+| `/bienestar/explorador` | `ExploradorEjerciciosScreen` | Catálogo de ejercicios |
+| `/bienestar/ejercicio/:id` | `DetalleEjercicioScreen` | Detalle de ejercicio |
+| `/bienestar/rutina/:id` | `RutinaDetalleScreen` | Gestión: semanas, días, ejercicios |
+| `/bienestar/rutina/sesion` | `LiveSessionScreen` | Entrenamiento en vivo con cronómetro |
+| `/bienestar/sesion-completada` | `SesionCompletadaScreen` | Historial de sesiones |
+| `/plan-semanal` | `PlanSemanalScreen` | Plan semanal (académico + bienestar) |
 | `/social` | `MuroSocialScreen` | Muro de logros |
 | `/perfil` | `PerfilScreen` | Perfil + carreras + ajustes |
 | `/notificaciones` | `NotificacionesScreen` | Centro de notificaciones |
@@ -618,17 +625,21 @@ class ConstructorRutina {
 
 ### 10.15 Perfil de Usuario
 
-**Objetivo:** Datos personales, historial, logros, configuración.
+**Objetivo:** Datos personales, historial, logros, configuración y carreras vinculadas.
 
 **Componentes:**
 - Header: Avatar (toque para cambiar), nombre, correo.
 - Fila de estadísticas: Nivel, XP, racha.
+- Sección "Mis carreras": Universidad + nombre de carrera (desde `usuario_carreras` con join a `catalogo_carreras` y `catalogo_universidades`).
 - Tabs: Historial, Logros, Configuración.
 - Tarjeta de sesión: Fecha, rutina, duración, calorías.
 - Cuadrícula de insignias.
 - Lista de ajustes: switches, dropdowns, "Cerrar sesión".
 
-**Integraciones:** `GET /usuarios/{id}/perfil` · `PATCH /usuarios/{id}/perfil` · `POST /usuarios/{id}/avatar`.
+**Integraciones:** `GET /usuarios/{id}/perfil` · `PATCH /usuarios/{id}/perfil` · `POST /usuarios/{id}/avatar`.  
+**Ruta:** `/perfil`  
+**Archivo:** [app/lib/features/perfil/presentation/perfil_screen.dart](app/lib/features/perfil/presentation/perfil_screen.dart)  
+**Providers:** `usuarioCarrerasProvider`, `carrerasUsuarioConNombreProvider`
 
 **Validaciones:** Nombre 2-50 chars · Avatar JPG/PNG, máx. 2 MB.
 
@@ -676,6 +687,6 @@ El Plan Académico detecta solapamientos entre estudio y entrenamiento con funci
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Última revisión:** v1.0  
+**Documento compilado:** 10-05-2026  
+**Última revisión:** v2.7  
 **Referencia:** Alineado con SRS v2.5, RFC v2.5 y Design System Synapse Velocity

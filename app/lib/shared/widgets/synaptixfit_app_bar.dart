@@ -20,6 +20,7 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.backPath,
     this.leading,
     this.centerTitle = true,
+    this.compact = false,
     super.key,
   });
 
@@ -29,9 +30,11 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? backPath;
   final Widget? leading;
   final bool centerTitle;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    if (compact) return const SizedBox.shrink();
     final canGoBack = context.canPop() || backPath != null;
     return AppBar(
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -51,5 +54,6 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize =>
+      compact ? Size.zero : const Size.fromHeight(kToolbarHeight);
 }

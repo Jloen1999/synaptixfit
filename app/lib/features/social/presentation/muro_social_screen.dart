@@ -92,12 +92,10 @@ class _MuroSocialScreenState extends State<MuroSocialScreen> {
             .toList();
         break;
       case 'semana':
-        final inicioSemana =
-            ahora.subtract(Duration(days: ahora.weekday - 1));
+        final inicioSemana = ahora.subtract(Duration(days: ahora.weekday - 1));
         lista = lista
-            .where((a) => a.creadoEn.isAfter(
-                DateTime(inicioSemana.year, inicioSemana.month,
-                    inicioSemana.day)))
+            .where((a) => a.creadoEn.isAfter(DateTime(
+                inicioSemana.year, inicioSemana.month, inicioSemana.day)))
             .toList();
         break;
       case 'mes':
@@ -277,7 +275,8 @@ class _FiltroChip extends StatelessWidget {
           border: seleccionado
               ? null
               : Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  color:
+                      theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
         ),
         child: Text(
           label,

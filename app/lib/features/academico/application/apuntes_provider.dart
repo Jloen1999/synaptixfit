@@ -3,8 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
 
-final apuntesProvider =
-    FutureProvider.autoDispose<List<ApunteDb>>((ref) async {
+final apuntesProvider = FutureProvider<List<ApunteDb>>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];
@@ -28,7 +27,7 @@ class ApuntePublicoDto {
 /// Apuntes visibles por el usuario actual que NO son propios.
 /// RLS de Supabase filtra automáticamente: solo publico + solo_amigos.
 final apuntesPublicosProvider =
-    FutureProvider.autoDispose<List<ApuntePublicoDto>>((ref) async {
+    FutureProvider<List<ApuntePublicoDto>>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];
@@ -52,8 +51,7 @@ final apuntesPublicosProvider =
 final apunteDetalleProvider =
     FutureProvider.autoDispose.family<ApunteDb?, String>((ref, id) async {
   final client = Supabase.instance.client;
-  final data =
-      await client.from('apuntes').select().eq('id', id).maybeSingle();
+  final data = await client.from('apuntes').select().eq('id', id).maybeSingle();
   if (data == null) return null;
   return ApunteDb.fromMap(data);
 });
@@ -96,19 +94,22 @@ Future<void> actualizarApunte({
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
 
-  await client.from('apuntes').update({
-    'titulo': titulo,
-    'contenido': contenido,
-    'asignatura_id': asignaturaId,
-    'visibilidad': visibilidad,
-    if (esNotaRapida != null) 'es_nota_rapida': esNotaRapida,
-    'actualizado_en': DateTime.now().toIso8601String(),
-  }).eq('id', id).eq('usuario_id', user!.id);
+  await client
+      .from('apuntes')
+      .update({
+        'titulo': titulo,
+        'contenido': contenido,
+        'asignatura_id': asignaturaId,
+        'visibilidad': visibilidad,
+        if (esNotaRapida != null) 'es_nota_rapida': esNotaRapida,
+        'actualizado_en': DateTime.now().toIso8601String(),
+      })
+      .eq('id', id)
+      .eq('usuario_id', user!.id);
 }
 
 Future<void> eliminarApunte(String id) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
-  await client.from('apuntes').delete().eq('id', id).eq(
-      'usuario_id', user!.id);
+  await client.from('apuntes').delete().eq('id', id).eq('usuario_id', user!.id);
 }

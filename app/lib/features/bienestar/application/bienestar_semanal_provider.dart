@@ -30,14 +30,16 @@ class BienestarSemanalDto {
   String get proximaAccion {
     if (plan == null) return 'Define un plan de entrenamiento desde tu perfil.';
     if (cumplimiento >= 1.0) return '¡Objetivo cumplido! Mantén el ritmo.';
-    if (cumplimiento >= 0.7) return 'Vas bien. Intenta completar las sesiones pendientes.';
-    if (cumplimiento >= 0.4) return 'Recupera el ritmo. Programa sesiones más cortas si es necesario.';
+    if (cumplimiento >= 0.7)
+      return 'Vas bien. Intenta completar las sesiones pendientes.';
+    if (cumplimiento >= 0.4)
+      return 'Recupera el ritmo. Programa sesiones más cortas si es necesario.';
     return 'Revisa tu plan. Quizás necesitas ajustar la carga semanal.';
   }
 }
 
 final bienestarSemanalProvider =
-    FutureProvider.autoDispose<BienestarSemanalDto>((ref) async {
+    FutureProvider<BienestarSemanalDto>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) {
@@ -54,54 +56,54 @@ final bienestarSemanalProvider =
   final now = DateTime.now();
   final lunesEstaSemana = now.subtract(Duration(days: now.weekday - 1));
   final lunesSemanaAnterior = lunesEstaSemana.subtract(const Duration(days: 7));
-
-  // Plan de esta semana
-  final planData = await client
-      .from('plan_entrenamiento_semanal')
-      .select()
-      .eq('usuario_id', user.id)
-      .eq('semana_inicio', lunesEstaSemana.toIso8601String().split('T')[0])
-      .maybeSingle();
-
-  final plan = planData != null
-      ? PlanEntrenamientoSemanalDb.fromMap(planData)
-      : null;
-  final sesionesPlanificadas = plan?.sesionesPlanificadas ?? 0;
-
-  // Sesiones completadas esta semana
   final inicioSemana = lunesEstaSemana.toIso8601String();
-  final sesionesData = await client
-      .from('sesiones_registradas')
-      .select('id')
-      .eq('usuario_id', user.id)
-      .gte('completada_en', inicioSemana)
-      .lt('completada_en',
-          lunesEstaSemana.add(const Duration(days: 7)).toIso8601String());
 
-  final sesionesCompletadas = (sesionesData as List).length;
+  // Ejecutar 4 queries en paralelo (son independientes)
+  final results = await Future.wait<dynamic>([
+    client
+        .from('plan_entrenamiento_semanal')
+        .select()
+        .eq('usuario_id', user.id)
+        .eq('semana_inicio', lunesEstaSemana.toIso8601String().split('T')[0])
+        .maybeSingle(),
+    client
+        .from('sesiones_registradas')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .gte('completada_en', inicioSemana)
+        .lt('completada_en',
+            lunesEstaSemana.add(const Duration(days: 7)).toIso8601String()),
+    client
+        .from('sesiones_registradas')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .gte('completada_en', lunesSemanaAnterior.toIso8601String())
+        .lt('completada_en', lunesEstaSemana.toIso8601String()),
+    client
+        .from('plan_entrenamiento_semanal')
+        .select('sesiones_planificadas')
+        .eq('usuario_id', user.id)
+        .eq('semana_inicio',
+            lunesSemanaAnterior.toIso8601String().split('T')[0])
+        .maybeSingle(),
+  ]);
+
+  final planData = results[0];
+  final sesionesActualSemana = results[1] as List;
+  final sesionesAnteriorSemana = results[2] as List;
+  final planAnteriorData = results[3];
+
+  final plan =
+      planData != null ? PlanEntrenamientoSemanalDb.fromMap(planData) : null;
+  final sesionesPlanificadas = plan?.sesionesPlanificadas ?? 0;
+  final sesionesCompletadas = sesionesActualSemana.length;
 
   final cumplimiento = sesionesPlanificadas > 0
       ? (sesionesCompletadas / sesionesPlanificadas).clamp(0.0, 1.0)
       : 0.0;
 
-  // Cumplimiento semana anterior
-  final sesionesDataAnterior = await client
-      .from('sesiones_registradas')
-      .select('id')
-      .eq('usuario_id', user.id)
-      .gte('completada_en', lunesSemanaAnterior.toIso8601String())
-      .lt('completada_en', lunesEstaSemana.toIso8601String());
-
-  final planAnteriorData = await client
-      .from('plan_entrenamiento_semanal')
-      .select('sesiones_planificadas')
-      .eq('usuario_id', user.id)
-      .eq('semana_inicio', lunesSemanaAnterior.toIso8601String().split('T')[0])
-      .maybeSingle();
-
-  final sesionesAnterior = (sesionesDataAnterior as List).length;
-  final planAnterior =
-      planAnteriorData?['sesiones_planificadas'] as int? ?? 0;
+  final sesionesAnterior = sesionesAnteriorSemana.length;
+  final planAnterior = planAnteriorData?['sesiones_planificadas'] as int? ?? 0;
   final cumplimientoAnterior = planAnterior > 0
       ? (sesionesAnterior / planAnterior).clamp(0.0, 1.0)
       : 0.0;
@@ -109,7 +111,8 @@ final bienestarSemanalProvider =
   // Sugerencia
   String sugerencia;
   if (plan == null) {
-    sugerencia = 'Completa tu perfil de bienestar para recibir un plan semanal.';
+    sugerencia =
+        'Completa tu perfil de bienestar para recibir un plan semanal.';
   } else if (cumplimiento >= 1.0) {
     sugerencia = '¡Semana completada! Buen trabajo.';
   } else {

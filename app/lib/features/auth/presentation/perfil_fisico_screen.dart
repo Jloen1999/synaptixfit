@@ -44,14 +44,46 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
   List<String> _sugerenciasIa = const [];
 
   static const _equipamientoOpciones = [
-    {'valor': 'peso_corporal', 'label': 'Peso corporal', 'icono': Icons.accessibility_new_rounded},
-    {'valor': 'mancuerna', 'label': 'Mancuernas', 'icono': Icons.fitness_center_rounded},
-    {'valor': 'barra', 'label': 'Barra', 'icono': Icons.sports_gymnastics_rounded},
-    {'valor': 'banda_elastica', 'label': 'Bandas elásticas', 'icono': Icons.cable_rounded},
-    {'valor': 'kettlebell', 'label': 'Kettlebell', 'icono': Icons.sports_martial_arts_rounded},
-    {'valor': 'polea', 'label': 'Polea / Cable', 'icono': Icons.settings_input_component_rounded},
-    {'valor': 'maquina', 'label': 'Máquinas', 'icono': Icons.precision_manufacturing_rounded},
-    {'valor': 'medicina_ball', 'label': 'Balón medicinal', 'icono': Icons.sports_baseball_rounded},
+    {
+      'valor': 'peso_corporal',
+      'label': 'Peso corporal',
+      'icono': Icons.accessibility_new_rounded
+    },
+    {
+      'valor': 'mancuerna',
+      'label': 'Mancuernas',
+      'icono': Icons.fitness_center_rounded
+    },
+    {
+      'valor': 'barra',
+      'label': 'Barra',
+      'icono': Icons.sports_gymnastics_rounded
+    },
+    {
+      'valor': 'banda_elastica',
+      'label': 'Bandas elásticas',
+      'icono': Icons.cable_rounded
+    },
+    {
+      'valor': 'kettlebell',
+      'label': 'Kettlebell',
+      'icono': Icons.sports_martial_arts_rounded
+    },
+    {
+      'valor': 'polea',
+      'label': 'Polea / Cable',
+      'icono': Icons.settings_input_component_rounded
+    },
+    {
+      'valor': 'maquina',
+      'label': 'Máquinas',
+      'icono': Icons.precision_manufacturing_rounded
+    },
+    {
+      'valor': 'medicina_ball',
+      'label': 'Balón medicinal',
+      'icono': Icons.sports_baseball_rounded
+    },
   ];
 
   static const _objetivosOpciones = [
@@ -243,9 +275,10 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
 
     try {
       final objetivo = _objetivoPrincipal ?? _objetivoCtrl.text;
-      final objetivoFinal = _objetivosOpciones.any((o) => o['valor'] == objetivo)
-          ? objetivo
-          : 'fitness_general';
+      final objetivoFinal =
+          _objetivosOpciones.any((o) => o['valor'] == objetivo)
+              ? objetivo
+              : 'fitness_general';
 
       await _bienestarRepository.guardarPerfilBienestar(
         edad: int.parse(_edadCtrl.text),
@@ -340,7 +373,10 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                       : 'Guardar y seguir',
                               onPressed:
                                   _guardando ? null : details.onStepContinue,
-                            ).animate().fade(duration: 220.ms).slideY(begin: 0.08),
+                            )
+                                .animate()
+                                .fade(duration: 220.ms)
+                                .slideY(begin: 0.08),
                           ),
                         );
                       },
@@ -348,8 +384,9 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                         // --- PASO 0: Datos demográficos ---
                         Step(
                           isActive: _step >= 0,
-                          state:
-                              _step > 0 ? StepState.complete : StepState.indexed,
+                          state: _step > 0
+                              ? StepState.complete
+                              : StepState.indexed,
                           title: const Text('Datos demográficos'),
                           content: _SeccionPaso(
                             children: [
@@ -546,8 +583,9 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                     selected: seleccionado,
                                     onSelected: (selected) {
                                       setState(() {
-                                        _objetivoPrincipal =
-                                            selected ? opt['valor'] as String : null;
+                                        _objetivoPrincipal = selected
+                                            ? opt['valor'] as String
+                                            : null;
                                         if (selected) {
                                           _objetivoCtrl.text =
                                               opt['label'] as String;
@@ -631,8 +669,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                               if (_cargandoSugerencias)
                                 const Padding(
                                   padding: EdgeInsets.only(bottom: 12),
-                                  child:
-                                      LinearProgressIndicator(minHeight: 3),
+                                  child: LinearProgressIndicator(minHeight: 3),
                                 ),
                               if (_sugerenciasIa.isNotEmpty &&
                                   _mostrarSugerencias)
@@ -645,8 +682,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                         .map(
                                           (item) => ActionChip(
                                             avatar: const Icon(
-                                                Icons
-                                                    .tips_and_updates_outlined,
+                                                Icons.tips_and_updates_outlined,
                                                 size: 18),
                                             label: Text(item),
                                             onPressed: () {
@@ -663,8 +699,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                 controller: _objetivoCtrl,
                                 decoration: _decoracionCampo(
                                   'O escribe tu objetivo libre',
-                                  prefixIcon:
-                                      const Icon(Icons.flag_rounded),
+                                  prefixIcon: const Icon(Icons.flag_rounded),
                                 ),
                               ),
                             ],
@@ -711,8 +746,8 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                       divisions: 6,
                                       label: '$_diasDisponibles',
                                       onChanged: (v) {
-                                        setState(() =>
-                                            _diasDisponibles = v.round());
+                                        setState(
+                                            () => _diasDisponibles = v.round());
                                       },
                                     ),
                                   ),
@@ -770,12 +805,10 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
-                                children:
-                                    _equipamientoOpciones.map((opt) {
+                                children: _equipamientoOpciones.map((opt) {
                                   final valor = opt['valor'] as String;
                                   final seleccionado =
-                                      _equipamientoSeleccionado
-                                          .contains(valor);
+                                      _equipamientoSeleccionado.contains(valor);
                                   return FilterChip(
                                     avatar: Icon(opt['icono'] as IconData,
                                         size: 18),
@@ -784,8 +817,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                     onSelected: (selected) {
                                       setState(() {
                                         if (selected) {
-                                          _equipamientoSeleccionado
-                                              .add(valor);
+                                          _equipamientoSeleccionado.add(valor);
                                         } else {
                                           _equipamientoSeleccionado
                                               .remove(valor);

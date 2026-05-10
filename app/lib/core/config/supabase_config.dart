@@ -19,7 +19,8 @@ class SupabaseConfig {
       return;
     }
 
-    await Supabase.initialize(url: EnvConfig.supabaseUrl, anonKey: EnvConfig.supabaseAnonKey);
+    await Supabase.initialize(
+        url: EnvConfig.supabaseUrl, anonKey: EnvConfig.supabaseAnonKey);
     _initialized = true;
   }
 }

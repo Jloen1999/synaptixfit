@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/models/db_models.dart';
 
 final asignaturasActivasProvider =
-    FutureProvider.autoDispose<List<AsignaturaDb>>((ref) async {
+    FutureProvider<List<AsignaturaDb>>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];
@@ -20,7 +20,7 @@ final asignaturasActivasProvider =
 });
 
 final asignaturasArchivadasProvider =
-    FutureProvider.autoDispose<List<AsignaturaDb>>((ref) async {
+    FutureProvider<List<AsignaturaDb>>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];

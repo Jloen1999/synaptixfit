@@ -39,7 +39,7 @@ class DetalleEjercicioScreen extends ConsumerWidget {
           length: 2,
           child: FeatureScaffold(
             title: ejercicio.nombre,
-            backPath: '/bienestar/ejercicios',
+            backPath: '/bienestar/explorador',
             child: Column(
               children: [
                 // GIF animado
@@ -92,8 +92,7 @@ class DetalleEjercicioScreen extends ConsumerWidget {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      _InstruccionesTab(
-                          instrucciones: ejercicio.instrucciones),
+                      _InstruccionesTab(instrucciones: ejercicio.instrucciones),
                       _InfoTab(
                         descripcion: ejercicio.descripcion,
                         musculosSecundarios: ejercicio.musculosSecundarios,
@@ -364,34 +363,34 @@ class _InfoTab extends StatelessWidget {
           ),
           const SizedBox(height: 24),
         ],
-
         if (musculosSecundarios.isNotEmpty) ...[
           _sectionTitle(context, 'Músculos secundarios'),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 6,
-            children: musculosSecundarios.map(
-              (m) => Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: SVColors.primary.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _capitalize(m),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: SVColors.primary.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
+            children: musculosSecundarios
+                .map(
+                  (m) => Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: SVColors.primary.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _capitalize(m),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: SVColors.primary.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ).toList(),
+                )
+                .toList(),
           ),
           const SizedBox(height: 24),
         ],
-
         if (exerciseDbId != null) ...[
           _sectionTitle(context, 'Referencia'),
           const SizedBox(height: 10),
@@ -423,7 +422,8 @@ class _InfoTab extends StatelessWidget {
     );
   }
 
-  Widget _infoItem(BuildContext context, IconData icon, String label, String value) {
+  Widget _infoItem(
+      BuildContext context, IconData icon, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

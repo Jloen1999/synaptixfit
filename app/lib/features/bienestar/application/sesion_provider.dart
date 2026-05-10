@@ -3,8 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
 
-final sesionesProvider =
-    FutureProvider.autoDispose<List<SesionRegistradaDb>>((ref) async {
+final sesionesProvider = FutureProvider<List<SesionRegistradaDb>>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];
@@ -19,19 +18,17 @@ final sesionesProvider =
   return data.map((e) => SesionRegistradaDb.fromMap(e)).toList();
 });
 
-final rutinasUsuarioProvider =
-    FutureProvider.autoDispose<List<RutinaDb>>((ref) async {
+final seriesDeSesionProvider =
+    FutureProvider.family<List<SerieSesionDb>, String>((ref, sesionId) async {
   final client = Supabase.instance.client;
-  final user = client.auth.currentUser;
-  if (user == null) return [];
-
   final data = await client
-      .from('rutinas')
-      .select()
-      .eq('usuario_id', user.id)
-      .order('creado_en', ascending: false);
-
-  return data.map((e) => RutinaDb.fromMap(e)).toList();
+      .from('series_sesion')
+      .select('*')
+      .eq('sesion_id', sesionId)
+      .order('numero_serie', ascending: true);
+  return (data as List)
+      .map((s) => SerieSesionDb.fromMap(s as Map<String, dynamic>))
+      .toList();
 });
 
 Future<SesionRegistradaDb?> registrarSesion({

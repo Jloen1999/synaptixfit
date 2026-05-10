@@ -8,10 +8,13 @@ import '../../features/academico/presentation/plan_academico_screen.dart';
 import '../../features/academico/presentation/plan_semanal_screen.dart';
 import '../../features/auth/presentation/acceso_screen.dart';
 import '../../features/auth/presentation/perfil_fisico_screen.dart';
-import '../../features/bienestar/presentation/constructor_rutina_screen.dart';
 import '../../features/bienestar/presentation/detalle_ejercicio_screen.dart';
 import '../../features/bienestar/presentation/explorador_ejercicios_screen.dart';
+import '../../features/bienestar/presentation/nueva_rutina_screen.dart';
+import '../../features/bienestar/presentation/rutina_detalle_screen.dart';
+import '../../features/bienestar/presentation/rutinas_comunidad_screen.dart';
 import '../../features/bienestar/presentation/sesion_completada_screen.dart';
+import '../../features/bienestar/presentation/sesion_en_vivo_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/notificaciones/presentation/notificaciones_screen.dart';
 import '../../features/perfil/presentation/perfil_screen.dart';
@@ -43,36 +46,42 @@ final GoRouter appRouter = GoRouter(
       path: '/onboarding',
       builder: (context, state) => const PerfilFisicoScreen(),
     ),
-    ShellRoute(
-      builder: (context, state, child) {
-        return SynaptixShellRoute(location: state.uri.path, child: child);
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        return SynaptixShellRoute(navigationShell: navigationShell);
       },
-      routes: [
-        GoRoute(
-          path: '/dashboard',
-          builder: (context, state) => const DashboardScreen(),
-        ),
-        GoRoute(
-          path: '/academico',
-          builder: (context, state) => const PlanAcademicoScreen(),
-        ),
-        GoRoute(
-          path: '/retos',
-          builder: (context, state) => const RetosScreen(),
-        ),
-        GoRoute(
-          path: '/social',
-          builder: (context, state) => const MuroSocialScreen(),
-        ),
-        GoRoute(
-          path: '/perfil',
-          builder: (context, state) => const PerfilScreen(),
-        ),
+      branches: [
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/dashboard',
+            builder: (context, state) => const DashboardScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/academico',
+            builder: (context, state) => const PlanAcademicoScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/bienestar',
+            builder: (context, state) => const RutinasComunidadScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/retos',
+            builder: (context, state) => const RetosScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/social',
+            builder: (context, state) => const MuroSocialScreen(),
+          ),
+        ]),
       ],
-    ),
-    GoRoute(
-      path: '/bienestar/ejercicios',
-      builder: (context, state) => const ExploradorEjerciciosScreen(),
     ),
     GoRoute(
       path: '/bienestar/ejercicio/:id',
@@ -81,12 +90,22 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/bienestar/constructor-rutina',
-      builder: (context, state) => const ConstructorRutinaScreen(),
-    ),
-    GoRoute(
       path: '/bienestar/sesion-completada',
       builder: (context, state) => const SesionCompletadaScreen(),
+    ),
+    GoRoute(
+      path: '/bienestar/rutina/sesion',
+      builder: (context, state) => const LiveSessionScreen(),
+    ),
+    GoRoute(
+      path: '/bienestar/rutina/:id',
+      builder: (context, state) => RutinaDetalleScreen(
+        rutinaId: state.pathParameters['id'] ?? 'sin-id',
+      ),
+    ),
+    GoRoute(
+      path: '/bienestar/nueva-rutina',
+      builder: (context, state) => const NuevaRutinaScreen(),
     ),
     GoRoute(
       path: '/retos/simple',

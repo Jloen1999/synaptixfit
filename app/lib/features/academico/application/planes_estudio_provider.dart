@@ -3,8 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
 
-final planesEstudioProvider =
-    FutureProvider.autoDispose<List<PlanEstudioDb>>((ref) async {
+final planesEstudioProvider = FutureProvider<List<PlanEstudioDb>>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];
@@ -18,8 +17,9 @@ final planesEstudioProvider =
   return data.map((e) => PlanEstudioDb.fromMap(e)).toList();
 });
 
-final bloquesPorPlanProvider = FutureProvider.autoDispose
-    .family<List<HorarioAcademicoDb>, String>((ref, planId) async {
+final bloquesPorPlanProvider =
+    FutureProvider.family<List<HorarioAcademicoDb>, String>(
+        (ref, planId) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];
@@ -62,8 +62,11 @@ Future<PlanEstudioDb?> crearPlanEstudio({
 Future<void> eliminarPlanEstudio(String id) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
-  await client.from('planes_estudio').delete().eq('id', id).eq(
-      'usuario_id', user!.id);
+  await client
+      .from('planes_estudio')
+      .delete()
+      .eq('id', id)
+      .eq('usuario_id', user!.id);
 }
 
 Future<HorarioAcademicoDb?> crearBloqueEstudio({

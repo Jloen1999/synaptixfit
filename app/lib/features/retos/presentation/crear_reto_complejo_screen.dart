@@ -22,7 +22,7 @@ class _CrearRetoComplejoScreenState
   final _metaController = TextEditingController();
 
   String _tipo = 'fitness';
-  String _visibilidad = 'privado';
+  String _visibilidad = 'private';
   DateTime _fechaInicio = DateTime.now();
   DateTime _fechaFin = DateTime.now().add(const Duration(days: 30));
   bool _guardando = false;
@@ -58,8 +58,7 @@ class _CrearRetoComplejoScreenState
 
     setState(() {
       if (inicio) {
-        _fechaInicio =
-            DateTime(seleccion.year, seleccion.month, seleccion.day);
+        _fechaInicio = DateTime(seleccion.year, seleccion.month, seleccion.day);
         if (!_fechaFin.isAfter(_fechaInicio)) {
           _fechaFin = _fechaInicio.add(const Duration(days: 1));
         }
@@ -198,8 +197,9 @@ class _CrearRetoComplejoScreenState
                 labelText: 'Título del reto',
                 hintText: 'ej: Preparar 5 exámenes',
               ),
-              validator: (v) =>
-                  (v == null || v.trim().length < 3) ? 'Mínimo 3 caracteres' : null,
+              validator: (v) => (v == null || v.trim().length < 3)
+                  ? 'Mínimo 3 caracteres'
+                  : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -208,8 +208,9 @@ class _CrearRetoComplejoScreenState
                 labelText: 'Meta',
                 hintText: 'ej: Estudiar 50 horas',
               ),
-              validator: (v) =>
-                  (v == null || v.trim().length < 2) ? 'Describe la meta' : null,
+              validator: (v) => (v == null || v.trim().length < 2)
+                  ? 'Describe la meta'
+                  : null,
             ),
             const SizedBox(height: 12),
             Row(
@@ -219,9 +220,10 @@ class _CrearRetoComplejoScreenState
                     value: _tipo,
                     decoration: const InputDecoration(labelText: 'Tipo'),
                     items: const [
-                      DropdownMenuItem(value: 'fitness', child: Text('Fitness')),
                       DropdownMenuItem(
-                          value: 'academico', child: Text('Académico')),
+                          value: 'fitness', child: Text('Fitness')),
+                      DropdownMenuItem(
+                          value: 'academic', child: Text('Académico')),
                     ],
                     onChanged: (v) => setState(() => _tipo = v!),
                   ),
@@ -232,10 +234,11 @@ class _CrearRetoComplejoScreenState
                     value: _visibilidad,
                     decoration: const InputDecoration(labelText: 'Visibilidad'),
                     items: const [
-                      DropdownMenuItem(value: 'privado', child: Text('Privado')),
-                      DropdownMenuItem(value: 'publico', child: Text('Público')),
                       DropdownMenuItem(
-                          value: 'solo_amigos', child: Text('Solo amigos')),
+                          value: 'private', child: Text('Privado')),
+                      DropdownMenuItem(value: 'public', child: Text('Público')),
+                      DropdownMenuItem(
+                          value: 'friends', child: Text('Solo amigos')),
                     ],
                     onChanged: (v) => setState(() => _visibilidad = v!),
                   ),
@@ -265,8 +268,7 @@ class _CrearRetoComplejoScreenState
             const SizedBox(height: 20),
             Row(
               children: [
-                Text('Tareas',
-                    style: Theme.of(context).textTheme.titleSmall),
+                Text('Tareas', style: Theme.of(context).textTheme.titleSmall),
                 const Spacer(),
                 TextButton.icon(
                   icon: const Icon(Icons.add, size: 18),
@@ -299,8 +301,7 @@ class _CrearRetoComplejoScreenState
                       decoration: InputDecoration(
                         hintText: 'Tarea ${index + 1}',
                         border: InputBorder.none,
-                        errorText:
-                            t.titulo.isEmpty ? 'Título requerido' : null,
+                        errorText: t.titulo.isEmpty ? 'Título requerido' : null,
                       ),
                     ),
                     trailing: IconButton(

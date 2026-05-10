@@ -60,14 +60,17 @@ class SVTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: SVColors.surfaceContainerLowest,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: SVShapes.standard12,
-          borderSide: BorderSide(color: SVColors.outlineVariant.withValues(alpha: 0.6)),
+          borderSide:
+              BorderSide(color: SVColors.outlineVariant.withValues(alpha: 0.6)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: SVShapes.standard12,
-          borderSide: BorderSide(color: SVColors.outlineVariant.withValues(alpha: 0.6)),
+          borderSide:
+              BorderSide(color: SVColors.outlineVariant.withValues(alpha: 0.6)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: SVShapes.standard12,
@@ -81,7 +84,8 @@ class SVTheme {
           borderRadius: SVShapes.standard12,
           borderSide: const BorderSide(color: SVColors.error, width: 2),
         ),
-        hintStyle: SVTypography.bodyMedium.copyWith(color: SVColors.onSurfaceMuted),
+        hintStyle:
+            SVTypography.bodyMedium.copyWith(color: SVColors.onSurfaceMuted),
       ),
 
       // Cards — fondo blanco, sombra sutil, bordes redondeados
@@ -125,7 +129,8 @@ class SVTheme {
         labelColor: SVColors.primary,
         unselectedLabelColor: SVColors.onSurfaceVariant,
         indicatorColor: SVColors.secondary,
-        labelStyle: SVTypography.labelLarge.copyWith(fontWeight: FontWeight.w600),
+        labelStyle:
+            SVTypography.labelLarge.copyWith(fontWeight: FontWeight.w600),
         unselectedLabelStyle: SVTypography.labelLarge,
         indicatorSize: TabBarIndicatorSize.label,
         dividerColor: Colors.transparent,

@@ -5,6 +5,7 @@ import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../application/sesion_provider.dart';
+import '../application/rutina_provider.dart';
 
 class SesionCompletadaScreen extends ConsumerWidget {
   const SesionCompletadaScreen({super.key});
@@ -77,8 +78,8 @@ class SesionCompletadaScreen extends ConsumerWidget {
                   value: rutinaId,
                   decoration: const InputDecoration(labelText: 'Rutina'),
                   items: rutinas
-                      .map((r) => DropdownMenuItem(
-                          value: r.id, child: Text(r.nombre)))
+                      .map((r) =>
+                          DropdownMenuItem(value: r.id, child: Text(r.nombre)))
                       .toList(),
                   onChanged: (v) => setDialogState(() => rutinaId = v),
                 ),
@@ -91,8 +92,7 @@ class SesionCompletadaScreen extends ConsumerWidget {
                   max: 120,
                   divisions: 23,
                   label: '${duracion.round()} min',
-                  onChanged: (v) =>
-                      setDialogState(() => duracion = v),
+                  onChanged: (v) => setDialogState(() => duracion = v),
                 ),
                 const SizedBox(height: 8),
                 Text('Esfuerzo percibido (RPE): $rpe/10',
@@ -170,8 +170,7 @@ class _SesionCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(nombreRutina,
-                          style:
-                              Theme.of(context).textTheme.titleSmall),
+                          style: Theme.of(context).textTheme.titleSmall),
                       Text(
                         '${sesion.duracionMinutos} min · RPE ${sesion.rpe} · ${sesion.caloriasQuemadas.round()} kcal',
                         style: Theme.of(context).textTheme.bodySmall,

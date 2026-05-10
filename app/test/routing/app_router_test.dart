@@ -19,7 +19,8 @@ void main() {
     expect(find.text('Iniciar sesión'), findsOneWidget);
   });
 
-  testWidgets('Flujo login mock redirige a onboarding', (WidgetTester tester) async {
+  testWidgets('Flujo login mock redirige a onboarding',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: SynaptixFitApp()));
     appRouter.go('/');
     await tester.pumpAndSettle();

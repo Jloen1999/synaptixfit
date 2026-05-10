@@ -62,13 +62,13 @@ class SVShadows {
 
   // Sombra de color — para acentos (logros, XP)
   static List<BoxShadow> colored(Color color) => [
-    BoxShadow(
-      color: color.withValues(alpha: 0.2),
-      offset: const Offset(0, 6),
-      blurRadius: 16,
-      spreadRadius: -2,
-    ),
-  ];
+        BoxShadow(
+          color: color.withValues(alpha: 0.2),
+          offset: const Offset(0, 6),
+          blurRadius: 16,
+          spreadRadius: -2,
+        ),
+      ];
 
   // Sombra para glass
   static final List<BoxShadow> glass = [

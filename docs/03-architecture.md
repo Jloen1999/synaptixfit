@@ -1,8 +1,8 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 2.5  
+**Versión:** 2.6  
 **Estado:** APROBADO  
-**Fecha:** 19-04-2026  
+**Fecha:** 10-05-2026  
 **Autor:** Arquitectura  
 **Referencia:** [02-requirements.md](02-requirements.md) (SRS v2.5)
 
@@ -211,26 +211,27 @@ synaptixfit/
 - plan_entrenamiento_semanal
 - ejercicios
 - ejercicios_multimedia
-- rutina_ejercicios
+- seleccion_de_ejercicios
 - asignaturas
 - evaluaciones_asignatura
 - calificaciones_evaluacion
 - planes_estudio
-- bloques_estudio
+- horarios_academicos
 - apuntes
-- notas_rapidas
+- catalogo_universidades
+- catalogo_carreras
+- catalogo_asignaturas
+- usuario_carreras
 - retos
 - rutinas
-- sesiones_rutina
-- publicaciones_muro
-- me_gusta_publicacion
+- sesiones_registradas
+- actividades_sociales
+- interacciones_sociales
 - preferencias_notificacion
 
 ### 6.2 Tablas previstas por crecimiento (Fase 2)
-- hitos_reto
 - dependencias_hito
-- comentarios_publicacion
-- recomendaciones_carga (materializada o vista logica)
+- recomendaciones_carga (materializada o vista lógica)
 
 ### 6.3 ER conceptual (actualizado)
 
@@ -239,46 +240,46 @@ erDiagram
   USUARIOS ||--|| PERFIL_BIENESTAR_USUARIO : configura
   USUARIOS ||--o{ PLAN_ENTRENAMIENTO_SEMANAL : recibe
   EJERCICIOS ||--o{ EJERCICIOS_MULTIMEDIA : contiene
-  RUTINAS ||--o{ RUTINA_EJERCICIOS : compone
-  EJERCICIOS ||--o{ RUTINA_EJERCICIOS : referencia
+  RUTINAS ||--o{ SELECCION_DE_EJERCICIOS : compone
+  EJERCICIOS ||--o{ SELECCION_DE_EJERCICIOS : referencia
     USUARIOS ||--o{ PLANES_ESTUDIO : posee
-    PLANES_ESTUDIO ||--|{ BLOQUES_ESTUDIO : contiene
+    PLANES_ESTUDIO ||--|{ HORARIOS_ACADEMICOS : contiene
   USUARIOS ||--o{ ASIGNATURAS : gestiona
   ASIGNATURAS ||--o{ EVALUACIONES_ASIGNATURA : contiene
   EVALUACIONES_ASIGNATURA ||--o{ CALIFICACIONES_EVALUACION : registra
     USUARIOS ||--o{ APUNTES : redacta
-  USUARIOS ||--o{ NOTAS_RAPIDAS : captura
-    USUARIOS ||--o{ RETOS : crea
-    RETOS ||--o{ HITOS_RETO : descompone
-    HITOS_RETO ||--o{ DEPENDENCIAS_HITO : depende
+  USUARIOS ||--o{ RETOS : crea
+    RETOS ||--o{ HITOS_DE_RETO : descompone
     USUARIOS ||--o{ RUTINAS : crea
-    RUTINAS ||--o{ SESIONES_RUTINA : registra
-    USUARIOS ||--o{ PUBLICACIONES_MURO : publica
-    PUBLICACIONES_MURO ||--o{ ME_GUSTA_PUBLICACION : recibe
-    PUBLICACIONES_MURO ||--o{ COMENTARIOS_PUBLICACION : recibe
+    RUTINAS ||--o{ SESIONES_REGISTRADAS : registra
+    USUARIOS ||--o{ ACTIVIDADES_SOCIALES : publica
+    ACTIVIDADES_SOCIALES ||--o{ INTERACCIONES_SOCIALES : recibe
     USUARIOS ||--o{ AMISTADES : relaciona
     USUARIOS ||--|| PREFERENCIAS_NOTIFICACION : configura
+    USUARIOS ||--o{ USUARIO_CARRERAS : vincula
+    CATALOGO_UNIVERSIDADES ||--o{ CATALOGO_CARRERAS : ofrece
+    CATALOGO_CARRERAS ||--o{ CATALOGO_ASIGNATURAS : contiene
+    CATALOGO_CARRERAS ||--o{ USUARIO_CARRERAS : asociada_a
+    CATALOGO_ASIGNATURAS ||--o{ ASIGNATURAS : "referencia de catálogo"
 ```
 
 ### 6.4 Campos clave por tabla (extracto)
 
 1. usuarios
 - id (uuid, referencia auth.users.id)
-- nombre_mostrar
-- correo
-- carrera
-- biografia
-- avatar_url
-- perfil_visibilidad (publico, solo_amigos, privado)
-- meta_semanal_horas
-- autopost_logros_habilitado (bool)
+- email
+- nombre_completo
+- url_avatar
+- nivel
+- xp_total
+- racha_actual
 - creado_en
 - actualizado_en
 
 2. amistades
 - id (uuid)
 - solicitante_id
-- destinatario_id
+- receptor_id
 - estado (pendiente, aceptada, rechazada, bloqueada)
 - creado_en
 - actualizado_en
@@ -342,29 +343,69 @@ erDiagram
 - ejercicio_id (uuid FK → ejercicios)
 - equipamiento_id (int FK → equipamientos)
 
-5.8 v_ejercicios_completos (vista denormalizada)
-- Incluye todos los campos de ejercicios más arrays pre-calculados:
+5.8 v_ejercicios_completos (vista wrapper de materializada)
+- Wrapper sobre `mv_ejercicios_completos` que pre-calcula arrays:
   partes_cuerpo, musculos_objetivo, musculos_secundarios, equipamientos
 
-7. rutina_ejercicios
+6. catalogo_universidades (catálogo público, solo lectura)
+- id (uuid)
+- nombre (text unique)
+- creado_en
+
+6.1 catalogo_carreras (catálogo público, solo lectura)
+- id (uuid)
+- universidad_id (FK)
+- nombre
+- creado_en
+
+6.2 catalogo_asignaturas (catálogo público, solo lectura)
+- id (uuid)
+- carrera_id (FK)
+- nombre
+- curso
+- semestre
+- caracter
+- creditos
+- creado_en
+
+6.3 usuario_carreras (M:N)
+- id (uuid)
+- usuario_id (FK)
+- carrera_id (FK)
+- creado_en
+
+6.4 planes_estudio
+- id (uuid)
+- usuario_id (FK)
+- nombre
+- semana_inicio
+- semana_fin
+- visibilidad
+- creado_en
+- actualizado_en
+
+7. seleccion_de_ejercicios
 - id (uuid)
 - rutina_id
 - ejercicio_id
-- orden
-- series (nullable)
-- repeticiones (nullable)
-- duracion_seg (nullable)
-- descanso_seg (nullable)
-- observaciones (nullable)
+- series
+- repeticiones
+- segundos_descanso
+- indice_orden
 - creado_en
 
 8. asignaturas
 - id (uuid)
-- propietario_id
+- usuario_id
 - nombre
 - codigo
 - docente
-- estado (activa, archivada)
+- archivado
+- catalogo_asignatura_id (FK opcional)
+- dificultad_percibida
+- creditos
+- prioridad
+- proxima_evaluacion
 - creado_en
 - actualizado_en
 
@@ -389,68 +430,63 @@ erDiagram
 
 11. retos
 - id (uuid)
-- propietario_id
+- usuario_id
 - titulo
-- descripcion
-- tipo (simple, complejo)
-- valor_objetivo
-- valor_progreso
-- unidad
-- vence_en
-- reto_origen_id
+- tipo (fitness, academic)
+- meta
 - visibilidad (publico, privado, solo_amigos)
-- estado (borrador, activo, pausado, completado, vencido, cancelado)
+- esta_completado
+- fecha_inicio
+- fecha_fin
 - creado_en
 - actualizado_en
 
-12. hitos_reto (fase 2)
+12. hitos_de_reto
 - id (uuid)
 - reto_id
 - titulo
-- descripcion
-- orden
-- valor_objetivo
-- valor_progreso
-- inicia_en
-- vence_en
-- estado (pendiente, activo, completado, bloqueado)
-- creado_en
+- porcentaje_peso
+- indice_orden
+- progreso_actual
+- esta_completado
 
-13. dependencias_hito (fase 2)
+13. progreso_de_reto
 - id (uuid)
+- reto_id
 - hito_id
-- depende_de_hito_id
-- creado_en
+- usuario_id
+- cantidad_completada
+- registrado_en
 
-14. notas_rapidas
+14. apuntes (reemplaza notas_rapidas)
 - id (uuid)
-- propietario_id
+- usuario_id
 - asignatura_id (nullable)
-- contenido
-- creada_en
-- actualizada_en
-
-15. rutinas
-- id (uuid)
-- propietario_id
 - titulo
-- objetivo (fuerza, resistencia, movilidad, mixto)
-- nivel_exigencia (baja, media, alta)
-- duracion_estimada_min
-- requiere_equipamiento (bool)
-- estado (activa, pausada, archivada)
+- contenido (Markdown)
+- visibilidad (publico, privado, solo_amigos)
+- es_nota_rapida (bool)
 - creado_en
 - actualizado_en
 
-16. sesiones_rutina
+15. rutinas
 - id (uuid)
-- rutina_id
 - usuario_id
-- fecha_sesion
-- duracion_real_min
-- esfuerzo_percibido (1-10)
-- fatiga_reportada (baja, media, alta)
-- completada (bool)
+- nombre
+- descripcion
+- visibilidad
+- cantidad_ejercicios
+- creado_en
+- actualizado_en
+
+16. sesiones_registradas
+- id (uuid)
+- usuario_id
+- rutina_id
+- duracion_minutos
+- calorias_quemadas
+- rpe (1-10)
+- completada_en
 - creado_en
 
 17. preferencias_notificacion

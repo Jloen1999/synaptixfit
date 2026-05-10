@@ -64,13 +64,11 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
                 ButtonSegment(value: 1, label: Text('Bienestar')),
               ],
               selected: {_tabIndex},
-              onSelectionChanged: (v) =>
-                  setState(() => _tabIndex = v.first),
+              onSelectionChanged: (v) => setState(() => _tabIndex = v.first),
             ),
           ),
           Expanded(
-            child:
-                _tabIndex == 0 ? _buildAcademico() : _buildBienestar(),
+            child: _tabIndex == 0 ? _buildAcademico() : _buildBienestar(),
           ),
         ],
       ),
@@ -80,44 +78,44 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
   Widget _buildAcademico() {
     final planesAsync = ref.watch(planesEstudioProvider);
     return planesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error: $err')),
-        data: (planes) {
-          if (planes.isEmpty) {
-            return EmptyState(
-              icon: Icons.calendar_today_outlined,
-              title: 'Sin planes de estudio',
-              message:
-                  'Crea tu primer plan semanal para organizar tus bloques de estudio.',
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(planesEstudioProvider);
-              return ref.read(planesEstudioProvider.future);
-            },
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 80),
-              itemCount: planes.length,
-              itemBuilder: (context, index) {
-                final plan = planes[index];
-                final expandido = _planExpandidoId == plan.id;
-                return _PlanCard(
-                  plan: plan,
-                  expandido: expandido,
-                  onToggleExpand: () {
-                    setState(() {
-                      _planExpandidoId = expandido ? null : plan.id;
-                    });
-                  },
-                  onEliminar: () => _confirmarEliminarPlan(plan),
-                  onCrearBloque: () => _mostrarDialogoCrearBloque(plan),
-                );
-              },
-            ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Error: $err')),
+      data: (planes) {
+        if (planes.isEmpty) {
+          return EmptyState(
+            icon: Icons.calendar_today_outlined,
+            title: 'Sin planes de estudio',
+            message:
+                'Crea tu primer plan semanal para organizar tus bloques de estudio.',
           );
-        },
-      );
+        }
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(planesEstudioProvider);
+            return ref.read(planesEstudioProvider.future);
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.only(bottom: 80),
+            itemCount: planes.length,
+            itemBuilder: (context, index) {
+              final plan = planes[index];
+              final expandido = _planExpandidoId == plan.id;
+              return _PlanCard(
+                plan: plan,
+                expandido: expandido,
+                onToggleExpand: () {
+                  setState(() {
+                    _planExpandidoId = expandido ? null : plan.id;
+                  });
+                },
+                onEliminar: () => _confirmarEliminarPlan(plan),
+                onCrearBloque: () => _mostrarDialogoCrearBloque(plan),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildBienestar() {
@@ -171,8 +169,8 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
                                 strokeWidth: 10,
                                 backgroundColor:
                                     colorCumplimiento.withValues(alpha: 0.15),
-                                valueColor: AlwaysStoppedAnimation(
-                                    colorCumplimiento),
+                                valueColor:
+                                    AlwaysStoppedAnimation(colorCumplimiento),
                               ),
                             ),
                             Text(
@@ -282,8 +280,7 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
                           const SizedBox(width: 8),
                           Text(
                             dto.tendencia,
-                            style:
-                                Theme.of(context).textTheme.bodyLarge,
+                            style: Theme.of(context).textTheme.bodyLarge,
                           ),
                           const Spacer(),
                           Text(
@@ -329,7 +326,8 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
   }
 
   void _mostrarDialogoCrearPlan() {
-    _nombreCtrl.text = 'Plan ${DateFormat('dd/MM', 'es').format(_semanaInicio)}';
+    _nombreCtrl.text =
+        'Plan ${DateFormat('dd/MM', 'es').format(_semanaInicio)}';
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -353,7 +351,8 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
                       child: _DateField(
                         label: 'Inicio',
                         date: _semanaInicio,
-                        onChanged: (d) => setDialogState(() => _semanaInicio = d),
+                        onChanged: (d) =>
+                            setDialogState(() => _semanaInicio = d),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -371,13 +370,10 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
                   value: _visibilidad,
                   decoration: const InputDecoration(labelText: 'Visibilidad'),
                   items: const [
+                    DropdownMenuItem(value: 'privado', child: Text('Privado')),
+                    DropdownMenuItem(value: 'publico', child: Text('Público')),
                     DropdownMenuItem(
-                        value: 'privado', child: Text('Privado')),
-                    DropdownMenuItem(
-                        value: 'publico', child: Text('Público')),
-                    DropdownMenuItem(
-                        value: 'solo_amigos',
-                        child: Text('Solo amigos')),
+                        value: 'solo_amigos', child: Text('Solo amigos')),
                   ],
                   onChanged: (v) => setDialogState(() => _visibilidad = v!),
                 ),
@@ -411,8 +407,8 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
 
   void _mostrarDialogoCrearBloque(PlanEstudioDb plan) {
     String? asignaturaId;
-    final horaInicioCtrl = TextEditingController(
-        text: DateFormat('HH:mm').format(DateTime.now()));
+    final horaInicioCtrl =
+        TextEditingController(text: DateFormat('HH:mm').format(DateTime.now()));
     final horaFinCtrl = TextEditingController(
         text: DateFormat('HH:mm')
             .format(DateTime.now().add(const Duration(hours: 1, minutes: 30))));
@@ -478,8 +474,8 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  decoration: const InputDecoration(
-                      labelText: 'Ubicación (opcional)'),
+                  decoration:
+                      const InputDecoration(labelText: 'Ubicación (opcional)'),
                   onChanged: (v) => ubicacion = v,
                 ),
               ],
@@ -503,9 +499,12 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
                     plan.semanaInicio.day,
                     hi.hour,
                     hi.minute);
-                final fin = DateTime(plan.semanaInicio.year,
-                    plan.semanaInicio.month, plan.semanaInicio.day,
-                    hf.hour, hf.minute);
+                final fin = DateTime(
+                    plan.semanaInicio.year,
+                    plan.semanaInicio.month,
+                    plan.semanaInicio.day,
+                    hf.hour,
+                    hf.minute);
 
                 await crearBloqueEstudio(
                   asignaturaId: asignaturaId!,
@@ -601,9 +600,7 @@ class _PlanCard extends ConsumerWidget {
                 _VisibilidadBadge(visibilidad: plan.visibilidad),
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: Icon(expandido
-                      ? Icons.expand_less
-                      : Icons.expand_more),
+                  icon: Icon(expandido ? Icons.expand_less : Icons.expand_more),
                   onPressed: onToggleExpand,
                 ),
               ],
@@ -740,8 +737,7 @@ class _BloqueTile extends ConsumerWidget {
                       const Text('...', style: TextStyle(fontSize: 12)),
                   error: (_, __) => const Text('?'),
                 ),
-                Text(hora,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(hora, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),

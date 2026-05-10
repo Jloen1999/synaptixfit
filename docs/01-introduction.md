@@ -1,8 +1,8 @@
 # 01 - Introducción
 
 **Proyecto:** SynaptixFit — Aplicación Integral de Bienestar para Estudiantes Universitarios  
-**Versión del documento:** 1.1  
-**Fecha:** 03-05-2026  
+**Versión del documento:** 1.2  
+**Fecha:** 10-05-2026  
 **Estado:** ✅ LISTO PARA DESARROLLO
 
 ---

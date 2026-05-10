@@ -1,13 +1,13 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 2.0  
+**Versión:** 2.2  
 **Estado:** VIGENTE  
-**Fecha:** 03-05-2026  
+**Fecha:** 10-05-2026  
 **Propósito:** Definición completa de tablas, relaciones, RLS y políticas Supabase
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
-- `ejercicios`, `partes_cuerpo`, `musculos`, `equipamientos`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_parte_cuerpo`, `ejercicio_equipamiento` y `v_ejercicios_completos` corresponden al catálogo de ejercicios normalizado (3NF con relaciones N:M).
+- `ejercicios`, `partes_cuerpo`, `musculos`, `equipamientos`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_parte_cuerpo`, `ejercicio_equipamiento` y `mv_ejercicios_completos` corresponden al catálogo de ejercicios normalizado (3NF con relaciones N:M, vista materializada).
 - `rutinas` y `seleccion_de_ejercicios` corresponden a la solicitud y guardado de rutinas.
 - `sesiones_registradas` corresponde a la sesión completada, el tablero principal y el detalle de reto.
 - `retos`, `hitos_de_reto` y `progreso_de_reto` corresponden a los modelos funcionales de retos.
@@ -15,6 +15,9 @@
 - `horarios_academicos` y `asignaturas` corresponden al horario académico y la asignatura.
 - `perfil_academico_usuario` modela el contexto académico base del estudiante para personalización.
 - `carga_academica_semanal` modela la carga real/percibida para ajustar entrenamiento y retos.
+- `catalogo_universidades`, `catalogo_carreras` y `catalogo_asignaturas` corresponden al catálogo académico público (solo lectura, alimentado desde `grados.json`).
+- `planes_estudio` y `usuario_carreras` corresponden a la planificación semanal y la vinculación de carreras al perfil del usuario.
+- `apuntes` corresponde al CRUD de apuntes Markdown con visibilidad.
 - `perfil_bienestar_usuario`, `historial_peso` y `plan_entrenamiento_semanal` modelan los datos de bienestar físico del usuario.
 - `actividades_sociales`, `interacciones_sociales` y `amistades` corresponden a la actividad social y la red de contactos.
 - `preferencias_notificacion` modela la configuración de entrega de notificaciones por usuario.
@@ -36,30 +39,41 @@ erDiagram
   USUARIOS ||--o{ PERFIL_BIENESTAR_USUARIO : tiene
   USUARIOS ||--o{ HISTORIAL_PESO : registra
   USUARIOS ||--o{ PLAN_ENTRENAMIENTO_SEMANAL : planifica
-  USUARIOS ||--o{ PERFIL_ACADEMICO_USUARIO : tiene
-  USUARIOS ||--o{ CARGA_ACADEMICA_SEMANAL : reporta
-  USUARIOS ||--o{ PREFERENCIAS_NOTIFICACION : configura
-  USUARIOS ||--o{ AMISTADES : solicita
+   USUARIOS ||--o{ PERFIL_ACADEMICO_USUARIO : tiene
+   USUARIOS ||--o{ CARGA_ACADEMICA_SEMANAL : reporta
+   USUARIOS ||--o{ PREFERENCIAS_NOTIFICACION : configura
+   USUARIOS ||--o{ AMISTADES : solicita
+   USUARIOS ||--o{ APUNTES : redacta
+   USUARIOS ||--o{ PLANES_ESTUDIO : planifica
+   USUARIOS ||--o{ USUARIO_CARRERAS : vincula
 
-  EJERCICIOS ||--o{ SELECCION_DE_EJERCICIOS : incluye
-  EJERCICIOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : tiene
-  EJERCICIOS ||--o{ EJERCICIO_MUSCULO_SECUNDARIO : activa
-  EJERCICIOS ||--o{ EJERCICIO_PARTE_CUERPO : pertenece_a
-  EJERCICIOS ||--o{ EJERCICIO_EQUIPAMIENTO : usa
+   EJERCICIOS ||--o{ SELECCION_DE_EJERCICIOS : incluye
+   EJERCICIOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : tiene
+   EJERCICIOS ||--o{ EJERCICIO_MUSCULO_SECUNDARIO : activa
+   EJERCICIOS ||--o{ EJERCICIO_PARTE_CUERPO : pertenece_a
+   EJERCICIOS ||--o{ EJERCICIO_EQUIPAMIENTO : usa
 
-  MUSCULOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : es_objetivo_en
-  MUSCULOS ||--o{ EJERCICIO_MUSCULO_SECUNDARIO : es_secundario_en
-  PARTES_CUERPO ||--o{ EJERCICIO_PARTE_CUERPO : contiene
-  EQUIPAMIENTOS ||--o{ EJERCICIO_EQUIPAMIENTO : se_usa_en
+   MUSCULOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : es_objetivo_en
+   MUSCULOS ||--o{ EJERCICIO_MUSCULO_SECUNDARIO : es_secundario_en
+   PARTES_CUERPO ||--o{ EJERCICIO_PARTE_CUERPO : contiene
+   EQUIPAMIENTOS ||--o{ EJERCICIO_EQUIPAMIENTO : se_usa_en
 
-  SELECCION_DE_EJERCICIOS }o--|| RUTINAS : pertenece_a
+   SELECCION_DE_EJERCICIOS }o--|| RUTINAS : pertenece_a
 
-  RUTINAS ||--o{ SESIONES_REGISTRADAS : genera
+   RUTINAS ||--o{ SESIONES_REGISTRADAS : genera
 
-  RETOS ||--o{ HITOS_DE_RETO : contiene
-  HITOS_DE_RETO ||--o{ PROGRESO_DE_RETO : rastrea
+   RETOS ||--o{ HITOS_DE_RETO : contiene
+   HITOS_DE_RETO ||--o{ PROGRESO_DE_RETO : rastrea
 
-  ASIGNATURAS ||--o{ HORARIOS_ACADEMICOS : "programado en"
+   ASIGNATURAS ||--o{ HORARIOS_ACADEMICOS : "programado en"
+   ASIGNATURAS ||--o{ APUNTES : clasifica
+
+   CATALOGO_UNIVERSIDADES ||--o{ CATALOGO_CARRERAS : ofrece
+   CATALOGO_CARRERAS ||--o{ CATALOGO_ASIGNATURAS : contiene
+   CATALOGO_CARRERAS ||--o{ USUARIO_CARRERAS : asociada_a
+   CATALOGO_ASIGNATURAS ||--o{ ASIGNATURAS : "referencia de catálogo"
+
+   PLANES_ESTUDIO ||--o{ HORARIOS_ACADEMICOS : agrupa
 
   USUARIOS {
         uuid id PK
@@ -207,14 +221,88 @@ erDiagram
         timestamp created_at
     }
     
-    ASIGNATURAS {
-        uuid id PK
-        uuid usuario_id FK
-        string name
-        string code
-        text description
-        timestamp created_at
-    }
+     ASIGNATURAS {
+         uuid id PK
+         uuid usuario_id FK
+         string name
+         string code
+         text description
+         uuid catalogo_asignatura_id FK
+         string docente
+         boolean archivado
+         int dificultad_percibida
+         int creditos
+         string prioridad
+         timestamp proxima_evaluacion
+         timestamp created_at
+     }
+     
+     APUNTES {
+         uuid id PK
+         uuid usuario_id FK
+         uuid asignatura_id FK
+         string titulo
+         text contenido
+         string visibilidad
+         boolean es_nota_rapida
+         timestamp creado_en
+         timestamp actualizado_en
+     }
+     
+     PLANES_ESTUDIO {
+         uuid id PK
+         uuid usuario_id FK
+         string nombre
+         date semana_inicio
+         date semana_fin
+         string visibilidad
+         timestamp creado_en
+         timestamp actualizado_en
+     }
+     
+     CATALOGO_UNIVERSIDADES {
+         uuid id PK
+         string nombre UK
+         timestamp creado_en
+     }
+     
+     CATALOGO_CARRERAS {
+         uuid id PK
+         uuid universidad_id FK
+         string nombre
+         timestamp creado_en
+     }
+     
+     CATALOGO_ASIGNATURAS {
+         uuid id PK
+         uuid carrera_id FK
+         string nombre
+         int curso
+         int semestre
+         string caracter
+         numeric creditos
+         timestamp creado_en
+     }
+     
+     USUARIO_CARRERAS {
+         uuid id PK
+         uuid usuario_id FK
+         uuid carrera_id FK
+         timestamp creado_en
+     }
+     
+     HORARIOS_ACADEMICOS {
+         uuid id PK
+         uuid usuario_id FK
+         uuid asignatura_id FK
+         uuid plan_estudio_id FK
+         string prioridad
+         timestamp hora_inicio
+         timestamp hora_fin
+         string location
+         boolean tiene_conflicto
+         timestamp created_at
+     }
     
     ACTIVIDADES_SOCIALES {
         uuid id PK
@@ -385,31 +473,64 @@ CREATE POLICY epc_select ON ejercicio_parte_cuerpo FOR SELECT USING (true);
 CREATE POLICY ee_select ON ejercicio_equipamiento FOR SELECT USING (true);
 ```
 
-#### 2.2.4 Vista denormalizada para consultas rápidas
+#### 2.2.4 Vista materializada para consultas rápidas
 
-Para evitar múltiples JOINs en el frontend, se expone una vista que pre-calculada los arrays de catálogos:
+Para evitar múltiples JOINs en el frontend, se expone una **vista materializada** que pre-calcula los arrays de catálogos. Esta vista reemplaza la versión original (`v_ejercicios_completos`) que usaba subqueries correlacionadas y degradaba el rendimiento en catálogos grandes.
+
+La vista materializada `mv_ejercicios_completos` usa `LEFT JOIN LATERAL` para construir los arrays de catálogos en una sola pasada. Se expone mediante una vista wrapper `v_ejercicios_completos` que preserva compatibilidad hacia atrás.
 
 ```sql
-CREATE VIEW v_ejercicios_completos AS
+CREATE MATERIALIZED VIEW mv_ejercicios_completos AS
 SELECT
   e.id, e.exercise_db_id, e.nombre, e.url_gif, e.instrucciones,
   e.dificultad, e.descripcion, e.creado_en, e.actualizado_en,
-  coalesce((SELECT array_agg(DISTINCT pc.nombre)
-    FROM ejercicio_parte_cuerpo epc JOIN partes_cuerpo pc ON pc.id = epc.parte_cuerpo_id
-    WHERE epc.ejercicio_id = e.id), '{}') AS partes_cuerpo,
-  coalesce((SELECT array_agg(DISTINCT mt.nombre)
-    FROM ejercicio_musculo_objetivo emo JOIN musculos mt ON mt.id = emo.musculo_id
-    WHERE emo.ejercicio_id = e.id), '{}') AS musculos_objetivo,
-  coalesce((SELECT array_agg(DISTINCT ms.nombre)
-    FROM ejercicio_musculo_secundario ems JOIN musculos ms ON ms.id = ems.musculo_id
-    WHERE ems.ejercicio_id = e.id), '{}') AS musculos_secundarios,
-  coalesce((SELECT array_agg(DISTINCT eq.nombre)
-    FROM ejercicio_equipamiento ee JOIN equipamientos eq ON eq.id = ee.equipamiento_id
-    WHERE ee.ejercicio_id = e.id), '{}') AS equipamientos
-FROM ejercicios e;
+  coalesce(pc.partes_cuerpo, '{}')       AS partes_cuerpo,
+  coalesce(mt.musculos_objetivo, '{}')    AS musculos_objetivo,
+  coalesce(ms.musculos_secundarios, '{}') AS musculos_secundarios,
+  coalesce(eq.equipamientos, '{}')        AS equipamientos
+FROM ejercicios e
+LEFT JOIN LATERAL (
+  SELECT array_agg(DISTINCT pc2.nombre ORDER BY pc2.nombre)
+  FROM ejercicio_parte_cuerpo epc JOIN partes_cuerpo pc2 ON pc2.id = epc.parte_cuerpo_id
+  WHERE epc.ejercicio_id = e.id
+) pc ON true
+LEFT JOIN LATERAL (
+  SELECT array_agg(DISTINCT mt2.nombre ORDER BY mt2.nombre)
+  FROM ejercicio_musculo_objetivo emo JOIN musculos mt2 ON mt2.id = emo.musculo_id
+  WHERE emo.ejercicio_id = e.id
+) mt ON true
+LEFT JOIN LATERAL (
+  SELECT array_agg(DISTINCT ms2.nombre ORDER BY ms2.nombre)
+  FROM ejercicio_musculo_secundario ems JOIN musculos ms2 ON ms2.id = ems.musculo_id
+  WHERE ems.ejercicio_id = e.id
+) ms ON true
+LEFT JOIN LATERAL (
+  SELECT array_agg(DISTINCT eq2.nombre ORDER BY eq2.nombre)
+  FROM ejercicio_equipamiento ee JOIN equipamientos eq2 ON eq2.id = ee.equipamiento_id
+  WHERE ee.ejercicio_id = e.id
+) eq ON true;
 ```
 
-El frontend consulta esta vista para obtener el ejercicio completo con todos sus catálogos en una sola consulta, manteniendo la integridad referencial en el backend.
+**Vista wrapper para compatibilidad:**
+```sql
+CREATE VIEW v_ejercicios_completos AS SELECT * FROM mv_ejercicios_completos;
+```
+
+**Refresco automático mediante triggers:** Se han creado triggers sobre las 5 tablas base (`ejercicios`, `ejercicio_parte_cuerpo`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_equipamiento`) que ejecutan `REFRESH MATERIALIZED VIEW CONCURRENTLY` ante cualquier INSERT, UPDATE o DELETE.
+
+**Índices sobre la materializada:**
+```sql
+CREATE UNIQUE INDEX idx_mv_ejercicios_id ON mv_ejercicios_completos (id);
+CREATE INDEX idx_mv_ejercicios_nombre ON mv_ejercicios_completos (nombre);
+CREATE INDEX idx_mv_ejercicios_partes_gin ON mv_ejercicios_completos USING GIN (partes_cuerpo);
+CREATE INDEX idx_mv_ejercicios_musc_obj_gin ON mv_ejercicios_completos USING GIN (musculos_objetivo);
+CREATE INDEX idx_mv_ejercicios_musc_sec_gin ON mv_ejercicios_completos USING GIN (musculos_secundarios);
+CREATE INDEX idx_mv_ejercicios_equip_gin ON mv_ejercicios_completos USING GIN (equipamientos);
+CREATE INDEX idx_mv_ejercicios_fts ON mv_ejercicios_completos
+  USING GIN (to_tsvector('spanish', coalesce(nombre,'') || ' ' || coalesce(descripcion,'')));
+```
+
+El frontend consulta `v_ejercicios_completos` para obtener el ejercicio completo con todos sus catálogos en una sola consulta, manteniendo la integridad referencial en el backend.
 
 #### 2.2.5 Realtime habilitado
 
@@ -447,6 +568,11 @@ CREATE TABLE rutinas (
   descripcion TEXT,
   visibilidad TEXT DEFAULT 'private',
   cantidad_ejercicios INT DEFAULT 0,
+  duracion_semanas INT NOT NULL DEFAULT 1,
+  objetivo TEXT NOT NULL DEFAULT 'fuerza'
+    CHECK (objetivo IN ('fuerza', 'resistencia', 'hipertrofia', 'movilidad', 'mixto')),
+  estado TEXT NOT NULL DEFAULT 'activo'
+    CHECK (estado IN ('activo', 'pausado', 'completado', 'archivado')),
   
   creado_en TIMESTAMP DEFAULT now(),
   actualizado_en TIMESTAMP DEFAULT now(),
@@ -519,6 +645,112 @@ CREATE POLICY "seleccion_de_ejercicios_modificar" ON seleccion_de_ejercicios
 
 ---
 
+### 2.4.1 SEMANAS_RUTINA (periodización — semanas de entrenamiento)
+
+```sql
+CREATE TABLE semanas_rutina (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  rutina_id UUID NOT NULL REFERENCES rutinas(id) ON DELETE CASCADE,
+  numero_semana INT NOT NULL,
+  nombre TEXT NOT NULL DEFAULT '',
+  estado TEXT NOT NULL DEFAULT 'pendiente'
+    CHECK (estado IN ('pendiente', 'en_progreso', 'completada')),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(rutina_id, numero_semana)
+);
+
+CREATE INDEX idx_semanas_rutina ON semanas_rutina(rutina_id);
+```
+
+### 2.4.2 DIAS_RUTINA (días de entrenamiento dentro de una semana)
+
+```sql
+CREATE TABLE dias_rutina (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  semana_id UUID NOT NULL REFERENCES semanas_rutina(id) ON DELETE CASCADE,
+  numero_dia INT NOT NULL,
+  nombre TEXT NOT NULL DEFAULT '',
+  estado TEXT NOT NULL DEFAULT 'pendiente'
+    CHECK (estado IN ('pendiente', 'en_progreso', 'completado')),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(semana_id, numero_dia)
+);
+
+CREATE INDEX idx_dias_semana ON dias_rutina(semana_id);
+```
+
+**Modificación de `seleccion_de_ejercicios` para vincular a día:**
+
+```sql
+ALTER TABLE seleccion_de_ejercicios
+  ADD COLUMN dia_id UUID REFERENCES dias_rutina(id) ON DELETE CASCADE,
+  ADD COLUMN peso_kg DOUBLE PRECISION;
+
+CREATE INDEX idx_seleccion_dia ON seleccion_de_ejercicios(dia_id);
+```
+
+**Drop de constraints antiguos incompatibles con periodización:**
+```sql
+-- UNIQUE(rutina_id, indice_orden) y UNIQUE(rutina_id, ejercicio_id, indice_orden)
+-- impedían que mismo ejercicio/índice apareciera en distintos días de la misma rutina
+ALTER TABLE seleccion_de_ejercicios DROP CONSTRAINT IF EXISTS ...;
+```
+
+**Nuevo índice único:** mismo ejercicio no se repite en el mismo día y orden, pero SÍ puede estar en días distintos sin conflicto:
+```sql
+CREATE UNIQUE INDEX idx_seleccion_dia_ej_orden
+  ON seleccion_de_ejercicios (rutina_id, COALESCE(dia_id, id), ejercicio_id, indice_orden);
+```
+
+### 2.4.3 SERIES_SESION (registro real de series ejecutadas por sesión)
+
+```sql
+CREATE TABLE series_sesion (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sesion_id UUID NOT NULL REFERENCES sesiones_registradas(id) ON DELETE CASCADE,
+  seleccion_id UUID REFERENCES seleccion_de_ejercicios(id) ON DELETE SET NULL,
+  numero_serie INT NOT NULL,
+  repeticiones_realizadas INT,
+  peso_kg DOUBLE PRECISION,
+  completada BOOLEAN NOT NULL DEFAULT false,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_series_sesion ON series_sesion(sesion_id);
+```
+
+**Políticas RLS — periodización (herencia del propietario vía rutina/sesión):**
+```sql
+-- semanas_rutina
+CREATE POLICY semanas_select ON semanas_rutina FOR SELECT USING (
+  EXISTS(SELECT 1 FROM rutinas r WHERE r.id = rutina_id AND (
+    r.visibilidad != 'private' OR r.usuario_id = auth.uid()))
+);
+CREATE POLICY semanas_modificar ON semanas_rutina FOR ALL USING (
+  EXISTS(SELECT 1 FROM rutinas r WHERE r.id = rutina_id AND r.usuario_id = auth.uid())
+);
+
+-- dias_rutina (hereda vía semana → rutina)
+CREATE POLICY dias_select ON dias_rutina FOR SELECT USING (
+  EXISTS(SELECT 1 FROM semanas_rutina s JOIN rutinas r ON r.id = s.rutina_id
+    WHERE s.id = semana_id AND (r.visibilidad != 'private' OR r.usuario_id = auth.uid()))
+);
+CREATE POLICY dias_modificar ON dias_rutina FOR ALL USING (
+  EXISTS(SELECT 1 FROM semanas_rutina s JOIN rutinas r ON r.id = s.rutina_id
+    WHERE s.id = semana_id AND r.usuario_id = auth.uid())
+);
+
+-- series_sesion (hereda vía sesión)
+CREATE POLICY series_select ON series_sesion FOR SELECT USING (
+  EXISTS(SELECT 1 FROM sesiones_registradas s WHERE s.id = sesion_id AND s.usuario_id = auth.uid())
+);
+CREATE POLICY series_modificar ON series_sesion FOR ALL USING (
+  EXISTS(SELECT 1 FROM sesiones_registradas s WHERE s.id = sesion_id AND s.usuario_id = auth.uid())
+);
+```
+
+---
+
 ### 2.5 SESIONES REGISTRADAS (sesiones completadas)
 
 ```sql
@@ -526,9 +758,12 @@ CREATE TABLE sesiones_registradas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   rutina_id UUID NOT NULL REFERENCES rutinas(id) ON DELETE SET NULL,
+  dia_id UUID REFERENCES dias_rutina(id) ON DELETE SET NULL,
   duracion_minutos INT NOT NULL,
   calorias_quemadas DOUBLE PRECISION,
-  rpe INT CHECK (rpe BETWEEN 1 AND 10), -- Escala de esfuerzo percibido
+  rpe INT CHECK (rpe BETWEEN 1 AND 10),
+  tipo TEXT NOT NULL DEFAULT 'libre'
+    CHECK (tipo IN ('libre', 'rutina', 'semanal')),
   
   completada_en TIMESTAMP NOT NULL,
   creado_en TIMESTAMP DEFAULT now(),
@@ -539,6 +774,7 @@ CREATE TABLE sesiones_registradas (
 CREATE INDEX idx_sesiones_registradas_usuario_id ON sesiones_registradas(usuario_id);
 CREATE INDEX idx_sesiones_registradas_completada_en ON sesiones_registradas(completada_en);
 CREATE INDEX idx_sesiones_registradas_rutina_id ON sesiones_registradas(rutina_id);
+CREATE INDEX idx_sesiones_dia ON sesiones_registradas(dia_id);
 ```
 
 **Políticas RLS:**
@@ -765,6 +1001,9 @@ CREATE TABLE asignaturas (
   nombre TEXT NOT NULL,
   codigo TEXT,
   descripcion TEXT,
+  catalogo_asignatura_id UUID REFERENCES catalogo_asignaturas(id) ON DELETE SET NULL,
+  docente TEXT,
+  archivado BOOLEAN NOT NULL DEFAULT false,
   dificultad_percibida INT NOT NULL DEFAULT 3,
   creditos INT NOT NULL DEFAULT 3,
   prioridad TEXT NOT NULL DEFAULT 'media',
@@ -780,6 +1019,7 @@ CREATE TABLE asignaturas (
 
 CREATE INDEX idx_asignaturas_usuario_id ON asignaturas(usuario_id);
 CREATE INDEX idx_asignaturas_proxima_evaluacion ON asignaturas(proxima_evaluacion);
+CREATE INDEX idx_asignaturas_archivado ON asignaturas(archivado);
 ```
 
 **Políticas RLS:**
@@ -791,7 +1031,188 @@ CREATE POLICY "asignaturas_todo" ON asignaturas
 
 ---
 
-### 2.11.1 PERFIL_ACADEMICO_USUARIO (contexto académico base)
+### 2.11.1 CATÁLOGO ACADÉMICO (catálogo público, solo lectura)
+
+Tablas pobladas desde `grados.json` mediante `supabase/seed_catalogo.py`. Proveen el catálogo de universidades, carreras y asignaturas predefinidas que los usuarios pueden consultar y vincular.
+
+#### 2.11.1.1 catalogo_universidades
+
+```sql
+CREATE TABLE catalogo_universidades (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL UNIQUE,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+#### 2.11.1.2 catalogo_carreras
+
+```sql
+CREATE TABLE catalogo_carreras (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  universidad_id UUID NOT NULL REFERENCES catalogo_universidades(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(universidad_id, nombre)
+);
+
+CREATE INDEX idx_catalogo_carreras_univ ON catalogo_carreras(universidad_id);
+```
+
+#### 2.11.1.3 catalogo_asignaturas
+
+```sql
+CREATE TABLE catalogo_asignaturas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  carrera_id UUID NOT NULL REFERENCES catalogo_carreras(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  curso INT,
+  semestre INT,
+  caracter TEXT,
+  creditos NUMERIC(4,1),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(carrera_id, nombre)
+);
+
+CREATE INDEX idx_catalogo_asignaturas_carrera ON catalogo_asignaturas(carrera_id);
+```
+
+**Políticas RLS — catálogo académico (lectura pública):**
+```sql
+CREATE POLICY catalogo_universidades_select ON catalogo_universidades FOR SELECT USING (true);
+CREATE POLICY catalogo_carreras_select ON catalogo_carreras FOR SELECT USING (true);
+CREATE POLICY catalogo_asignaturas_select ON catalogo_asignaturas FOR SELECT USING (true);
+```
+
+---
+
+### 2.11.2 USUARIO_CARRERAS (M:N — vinculación usuario ↔ carrera)
+
+```sql
+CREATE TABLE usuario_carreras (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  carrera_id UUID NOT NULL REFERENCES catalogo_carreras(id) ON DELETE CASCADE,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(usuario_id, carrera_id)
+);
+
+CREATE INDEX idx_usuario_carreras_usuario ON usuario_carreras(usuario_id);
+```
+
+**Políticas RLS:**
+```sql
+CREATE POLICY usuario_carreras_select ON usuario_carreras FOR SELECT USING (usuario_id = auth.uid());
+CREATE POLICY usuario_carreras_insert ON usuario_carreras FOR INSERT WITH CHECK (usuario_id = auth.uid());
+CREATE POLICY usuario_carreras_delete ON usuario_carreras FOR DELETE USING (usuario_id = auth.uid());
+```
+
+---
+
+### 2.11.3 PLANES_ESTUDIO (planes de estudio semanales)
+
+```sql
+CREATE TABLE planes_estudio (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  semana_inicio DATE NOT NULL,
+  semana_fin DATE NOT NULL,
+  visibilidad TEXT NOT NULL DEFAULT 'privado'
+    CHECK (visibilidad IN ('publico', 'privado', 'solo_amigos')),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT ck_planes_fechas CHECK (semana_fin >= semana_inicio),
+  CONSTRAINT ck_planes_nombre_len CHECK (char_length(nombre) >= 2)
+);
+
+CREATE INDEX idx_planes_estudio_usuario ON planes_estudio(usuario_id);
+CREATE INDEX idx_planes_estudio_semana ON planes_estudio(semana_inicio, semana_fin);
+```
+
+**Nota:** Los `horarios_academicos` se vinculan a un plan mediante `plan_estudio_id` (FK opcional) y usan el campo `prioridad` para ordenar bloques dentro del plan.
+
+```sql
+ALTER TABLE horarios_academicos
+  ADD COLUMN plan_estudio_id UUID REFERENCES planes_estudio(id) ON DELETE SET NULL,
+  ADD COLUMN prioridad TEXT NOT NULL DEFAULT 'media'
+    CHECK (prioridad IN ('alta', 'media', 'baja'));
+```
+
+**Políticas RLS — planes_estudio:**
+```sql
+CREATE POLICY planes_estudio_select ON planes_estudio
+  FOR SELECT USING (
+    visibilidad = 'publico'
+    OR usuario_id = auth.uid()
+    OR (visibilidad = 'solo_amigos' AND EXISTS(
+      SELECT 1 FROM amistades
+      WHERE ((solicitante_id = auth.uid() AND receptor_id = usuario_id)
+         OR (receptor_id = auth.uid() AND solicitante_id = usuario_id))
+        AND estado = 'aceptado'
+    ))
+  );
+
+CREATE POLICY planes_estudio_insert ON planes_estudio
+  FOR INSERT WITH CHECK (usuario_id = auth.uid());
+
+CREATE POLICY planes_estudio_update ON planes_estudio
+  FOR UPDATE USING (usuario_id = auth.uid());
+
+CREATE POLICY planes_estudio_delete ON planes_estudio
+  FOR DELETE USING (usuario_id = auth.uid());
+```
+
+---
+
+### 2.11.4 APUNTES (notas Markdown con visibilidad)
+
+```sql
+CREATE TABLE apuntes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  asignatura_id UUID REFERENCES asignaturas(id) ON DELETE SET NULL,
+  titulo TEXT NOT NULL,
+  contenido TEXT NOT NULL DEFAULT '',
+  visibilidad TEXT NOT NULL DEFAULT 'privado'
+    CHECK (visibilidad IN ('publico', 'privado', 'solo_amigos')),
+  es_nota_rapida BOOLEAN NOT NULL DEFAULT false,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT ck_apuntes_titulo_len CHECK (char_length(titulo) >= 1)
+);
+
+CREATE INDEX idx_apuntes_usuario ON apuntes(usuario_id);
+CREATE INDEX idx_apuntes_asignatura ON apuntes(asignatura_id);
+```
+
+**Políticas RLS — apuntes:**
+```sql
+CREATE POLICY apuntes_select ON apuntes
+  FOR SELECT USING (
+    visibilidad = 'publico'
+    OR usuario_id = auth.uid()
+    OR (visibilidad = 'solo_amigos' AND EXISTS(
+      SELECT 1 FROM amistades
+      WHERE ((solicitante_id = auth.uid() AND receptor_id = usuario_id)
+         OR (receptor_id = auth.uid() AND solicitante_id = usuario_id))
+        AND estado = 'aceptado'
+    ))
+  );
+
+CREATE POLICY apuntes_insert ON apuntes
+  FOR INSERT WITH CHECK (usuario_id = auth.uid());
+
+CREATE POLICY apuntes_update ON apuntes
+  FOR UPDATE USING (usuario_id = auth.uid());
+
+CREATE POLICY apuntes_delete ON apuntes
+  FOR DELETE USING (usuario_id = auth.uid());
+```
+
+---
+
+### 2.11.5 PERFIL_ACADEMICO_USUARIO (contexto académico base)
 
 ```sql
 CREATE TABLE perfil_academico_usuario (
@@ -827,7 +1248,7 @@ CREATE POLICY "perfil_academico_todo" ON perfil_academico_usuario
 
 ---
 
-### 2.11.2 CARGA_ACADEMICA_SEMANAL (carga y estrés por semana)
+### 2.11.6 CARGA_ACADEMICA_SEMANAL (carga y estrés por semana)
 
 ```sql
 CREATE TABLE carga_academica_semanal (
@@ -1072,6 +1493,9 @@ $$ LANGUAGE plpgsql;
 | **ejercicio_parte_cuerpo** | Todos | - | - | - |
 | **ejercicio_equipamiento** | Todos | - | - | - |
 | **rutinas** | Propio + visibilidad | Propio | Propio | Propio |
+| **semanas_rutina** | Hereda de rutinas | Propio | Propio | Propio |
+| **dias_rutina** | Hereda de rutinas | Propio | Propio | Propio |
+| **series_sesion** | Hereda de sesiones | Propio | Propio | Propio |
 | **seleccion_de_ejercicios** | Hereda | Hereda | Hereda | Hereda |
 | **sesiones_registradas** | Propio + público | Propio | Propio | Propio |
 | **retos** | Propio + visibilidad | Propio | Propio | Propio |
@@ -1080,6 +1504,12 @@ $$ LANGUAGE plpgsql;
 | **notificaciones** | Propio | Admin | Propio | Propio |
 | **horarios_academicos** | Propio | Propio | Propio | Propio |
 | **asignaturas** | Propio | Propio | Propio | Propio |
+| **catalogo_universidades** | Todos | — | — | — |
+| **catalogo_carreras** | Todos | — | — | — |
+| **catalogo_asignaturas** | Todos | — | — | — |
+| **usuario_carreras** | Propio | Propio | — | Propio |
+| **planes_estudio** | Propio + visibilidad | Propio | Propio | Propio |
+| **apuntes** | Propio + visibilidad | Propio | Propio | Propio |
 | **perfil_academico_usuario** | Propio | Propio | Propio | Propio |
 | **carga_academica_semanal** | Propio | Propio | Propio | Propio |
 | **perfil_bienestar_usuario** | Propio | Propio | Propio | - |
@@ -1130,14 +1560,14 @@ Los GIFs se alojan en Cloudflare R2 bajo `ejercicios/360/{exercise_db_id}.gif` (
 ## 7. Próximas Fases
 
 - [ ] Particionamiento de sesiones_registradas por usuario (optimizar consultas grandes)
-- [x] Materialized views para estadísticas (v_ejercicios_completos implementada)
-- [ ] Audit table para cambios críticos (HIPAA compliance futuro)
-- [ ] Backup automático diario a Cloudflare R2
+- [x] Materialized views para estadísticas (`mv_ejercicios_completos` implementada con triggers de refresco automático)
 - [x] Catálogo de ejercicios normalizado con terminología anatómica profesional
+- [x] Catálogo académico (universidades, carreras, asignaturas) poblado desde grados.json
+- [ ] Audit table para cambios críticos (HIPAA compliance futuro)
 
 ---
 
-**Documento compilado:** 03-05-2026  
+**Documento compilado:** 10-05-2026  
 **Referencia:** RFC v2.5 - Arquitectura de datos  
 **Validador:** Tech Lead + DBA
 

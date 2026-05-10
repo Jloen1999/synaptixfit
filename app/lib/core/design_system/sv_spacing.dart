@@ -6,7 +6,7 @@ class SVSpacing {
   static const double l = 24.0;
   static const double xl = 32.0;
   static const double xxl = 48.0;
-  
+
   // Padding por defecto
   static const double pagePadding = m;
 }

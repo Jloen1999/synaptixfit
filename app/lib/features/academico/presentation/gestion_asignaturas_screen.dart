@@ -50,12 +50,10 @@ class _GestionAsignaturasScreenState
   Widget build(BuildContext context) {
     if (!_extraLeido) {
       _extraLeido = true;
-      final extra =
-          GoRouterState.of(context).extra as Map<String, dynamic>?;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
       if (extra != null && extra.containsKey('nuevasIds')) {
-        _nuevasIds = (extra['nuevasIds'] as List)
-            .map((e) => e.toString())
-            .toSet();
+        _nuevasIds =
+            (extra['nuevasIds'] as List).map((e) => e.toString()).toSet();
         Future.delayed(const Duration(seconds: 4), () {
           if (mounted) setState(() => _nuevasIds = {});
         });
@@ -93,7 +91,8 @@ class _GestionAsignaturasScreenState
                         onEdit: _mostrarDialogoEditar,
                         onArchive: (a) => _confirmarArchivar(a, true),
                         onDelete: _confirmarEliminar,
-                        emptyLabel: 'Busca y añade asignaturas desde el catálogo.',
+                        emptyLabel:
+                            'Busca y añade asignaturas desde el catálogo.',
                         nuevasIds: _nuevasIds,
                       ),
                       _ListaAsignaturas(
@@ -239,8 +238,8 @@ class _GestionAsignaturasScreenState
 
   Future<void> _agregarDesdeCatalogo(CatalogoAsignaturaDb a) async {
     final activas = ref.read(asignaturasActivasProvider).valueOrNull ?? [];
-    final existe = activas
-        .any((ea) => ea.nombre.toLowerCase() == a.nombre.toLowerCase());
+    final existe =
+        activas.any((ea) => ea.nombre.toLowerCase() == a.nombre.toLowerCase());
     if (existe) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -292,8 +291,7 @@ class _GestionAsignaturasScreenState
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title:
-            Text('${archivar ? "Archivar" : "Desarchivar"} asignatura'),
+        title: Text('${archivar ? "Archivar" : "Desarchivar"} asignatura'),
         content: Text('¿$accion «${a.nombre}»? '
             '${archivar ? "No se eliminará el historial." : ""}'),
         actions: [
@@ -356,7 +354,7 @@ class _ListaAsignaturas extends ConsumerWidget {
     required this.nuevasIds,
   });
 
-  final AutoDisposeFutureProvider<List<AsignaturaDb>> provider;
+  final FutureProvider<List<AsignaturaDb>> provider;
   final void Function(AsignaturaDb) onEdit;
   final void Function(AsignaturaDb) onArchive;
   final void Function(AsignaturaDb) onDelete;
@@ -423,9 +421,8 @@ class _AsignaturaTile extends StatelessWidget {
     final esArchivada = asignatura.archivado;
     return TweenAnimationBuilder<Color?>(
       tween: ColorTween(
-        begin: esNueva
-            ? Colors.blue.withValues(alpha: 0.12)
-            : Colors.transparent,
+        begin:
+            esNueva ? Colors.blue.withValues(alpha: 0.12) : Colors.transparent,
         end: Colors.transparent,
       ),
       duration: const Duration(seconds: 3),
@@ -443,45 +440,45 @@ class _AsignaturaTile extends StatelessWidget {
       child: Card(
         margin: EdgeInsets.zero,
         child: ListTile(
-        onTap: () => _mostrarDetalle(context),
-        leading: Icon(
-          esArchivada ? Icons.archive_outlined : Icons.book_outlined,
-          color: esArchivada ? Colors.grey : null,
-        ),
-        title: Text(
-          asignatura.nombre,
-          style: TextStyle(
-            decoration: esArchivada ? TextDecoration.lineThrough : null,
+          onTap: () => _mostrarDetalle(context),
+          leading: Icon(
+            esArchivada ? Icons.archive_outlined : Icons.book_outlined,
             color: esArchivada ? Colors.grey : null,
           ),
-        ),
-        subtitle: _buildSubtitle(),
-        isThreeLine: _hasSubtitle().$1 || _hasSubtitle().$2,
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            switch (value) {
-              case 'edit':
-                onEdit();
-              case 'archive':
-                onArchive();
-              case 'delete':
-                onDelete();
-            }
-          },
-          itemBuilder: (_) => [
-            const PopupMenuItem(value: 'edit', child: Text('Editar')),
-            PopupMenuItem(
-              value: 'archive',
-              child: Text(esArchivada ? 'Desarchivar' : 'Archivar'),
+          title: Text(
+            asignatura.nombre,
+            style: TextStyle(
+              decoration: esArchivada ? TextDecoration.lineThrough : null,
+              color: esArchivada ? Colors.grey : null,
             ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Text('Eliminar', style: TextStyle(color: Colors.red)),
-            ),
-          ],
+          ),
+          subtitle: _buildSubtitle(),
+          isThreeLine: _hasSubtitle().$1 || _hasSubtitle().$2,
+          trailing: PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'edit':
+                  onEdit();
+                case 'archive':
+                  onArchive();
+                case 'delete':
+                  onDelete();
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'edit', child: Text('Editar')),
+              PopupMenuItem(
+                value: 'archive',
+                child: Text(esArchivada ? 'Desarchivar' : 'Archivar'),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text('Eliminar', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -540,23 +537,20 @@ class _AsignaturaTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           a.nombre,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                decoration: a.archivado
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    decoration: a.archivado
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   if (a.codigo?.isNotEmpty ?? false) ...[
-                    _buildDetailRow(
-                        Icons.tag, 'Código', a.codigo!),
+                    _buildDetailRow(Icons.tag, 'Código', a.codigo!),
                     const SizedBox(height: 8),
                   ],
                   if (a.docente?.isNotEmpty ?? false) ...[
@@ -566,31 +560,31 @@ class _AsignaturaTile extends StatelessWidget {
                   ],
                   if (catalogo != null) ...[
                     if (catalogo.curso != null) ...[
-                      _buildDetailRow(Icons.school, 'Curso',
-                          '${catalogo.curso}º'),
+                      _buildDetailRow(
+                          Icons.school, 'Curso', '${catalogo.curso}º'),
                       const SizedBox(height: 8),
                     ],
                     if (catalogo.semestre != null) ...[
-                      _buildDetailRow(Icons.calendar_month,
-                          'Semestre', '${catalogo.semestre}'),
+                      _buildDetailRow(Icons.calendar_month, 'Semestre',
+                          '${catalogo.semestre}'),
                       const SizedBox(height: 8),
                     ],
                     if (catalogo.caracter != null &&
                         catalogo.caracter!.isNotEmpty) ...[
-                      _buildDetailRow(Icons.label_outline, 'Carácter',
-                          catalogo.caracter!),
+                      _buildDetailRow(
+                          Icons.label_outline, 'Carácter', catalogo.caracter!),
                       const SizedBox(height: 8),
                     ],
                     if (catalogo.creditos != null) ...[
-                      _buildDetailRow(Icons.stars, 'Créditos',
-                          '${catalogo.creditos} ECTS'),
+                      _buildDetailRow(
+                          Icons.stars, 'Créditos', '${catalogo.creditos} ECTS'),
                       const SizedBox(height: 8),
                     ],
                   ],
                   if (catalogo == null &&
                       (a.descripcion?.isNotEmpty ?? false)) ...[
-                    _buildDetailRow(Icons.description_outlined,
-                        'Descripción', a.descripcion!),
+                    _buildDetailRow(Icons.description_outlined, 'Descripción',
+                        a.descripcion!),
                     const SizedBox(height: 8),
                   ],
                   _buildDetailRow(Icons.calendar_today, 'Creada',
@@ -619,8 +613,7 @@ class _AsignaturaTile extends StatelessWidget {
     );
   }
 
-  static Widget _buildDetailRow(
-      IconData icon, String label, String value) {
+  static Widget _buildDetailRow(IconData icon, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -628,9 +621,7 @@ class _AsignaturaTile extends StatelessWidget {
         const SizedBox(width: 8),
         Text('$label: ',
             style: const TextStyle(
-                fontSize: 13,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500)),
+                fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
         Expanded(
           child: Text(value, style: const TextStyle(fontSize: 13)),
         ),
@@ -687,8 +678,7 @@ class _AsignaturaEditDialog extends ConsumerStatefulWidget {
       _AsignaturaEditDialogState();
 }
 
-class _AsignaturaEditDialogState
-    extends ConsumerState<_AsignaturaEditDialog> {
+class _AsignaturaEditDialogState extends ConsumerState<_AsignaturaEditDialog> {
   late final _nombreCtrl = TextEditingController(
     text: widget.asignatura.nombre,
   );
@@ -728,15 +718,12 @@ class _AsignaturaEditDialogState
     await actualizarAsignatura(
       id: widget.asignatura.id,
       nombre: nombre,
-      codigo: _codigoCtrl.text.trim().isEmpty
-          ? null
-          : _codigoCtrl.text.trim(),
+      codigo: _codigoCtrl.text.trim().isEmpty ? null : _codigoCtrl.text.trim(),
       descripcion: _descripcionCtrl.text.trim().isEmpty
           ? null
           : _descripcionCtrl.text.trim(),
-      docente: _docenteCtrl.text.trim().isEmpty
-          ? null
-          : _docenteCtrl.text.trim(),
+      docente:
+          _docenteCtrl.text.trim().isEmpty ? null : _docenteCtrl.text.trim(),
     );
 
     if (mounted) Navigator.pop(context);

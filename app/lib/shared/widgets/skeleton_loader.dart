@@ -35,9 +35,8 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (_, child) {
-        final opacity = 0.3 + 0.3 * (_ctrl.value * 2 < 1
-            ? _ctrl.value * 2
-            : 2 - _ctrl.value * 2);
+        final opacity = 0.3 +
+            0.3 * (_ctrl.value * 2 < 1 ? _ctrl.value * 2 : 2 - _ctrl.value * 2);
         return Container(
           height: widget.height,
           decoration: BoxDecoration(

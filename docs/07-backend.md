@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.1  
-**Fecha:** 03-05-2026  
+**Versión:** 1.3  
+**Fecha:** 10-05-2026  
 **Referencia:** [03-architecture.md](03-architecture.md) (secciones 8.2 y 8.3)
 
 ---
@@ -157,7 +157,44 @@ Todas las tablas del catálogo de ejercicios tienen Supabase Realtime activado m
 
 ---
 
-## 5. Repositorios de Dominio
+## 4. Migraciones (Historial Completo)
+
+Todas las migraciones se encuentran en `supabase/migrations/` y se aplican en orden numérico con `supabase db push`.
+
+| # | Archivo | Descripción |
+|---|---------|-------------|
+| 0001 | `20260419_0001_init_schema.sql` | Esquema inicial: tablas core, índices, funciones y RLS |
+| 0002 | `20260421_0002_add_rls_bienestar.sql` | RLS para tablas de bienestar |
+| 0003 | `20260421_0003_restore_table_grants_after_schema_reset.sql` | Restauración de permisos tras reset |
+| 0004 | `20260421_0004_backfill_usuarios_and_restore_auth_trigger.sql` | Trigger `auth.users → public.usuarios` y backfill |
+| 0005 | `20260421_0005_add_academic_profile_and_weekly_load.sql` | `perfil_academico_usuario` y `carga_academica_semanal` |
+| 0006 | `20260422_0006_ejercicios_v2_normalizado.sql` | Modelo 3NF de ejercicios (catálogos + relaciones N:M) |
+| 0007 | `20260422_0007_seed_estudiantes.sql` | Seed de usuarios de prueba |
+| 0008 | `20260501_0008_enable_realtime_ejercicios.sql` | Realtime en las 8 tablas del catálogo de ejercicios |
+| 0009 | `20260504_0009_add_docente_archivado_asignaturas.sql` | Campos `docente` y `archivado` en `asignaturas` |
+| 0010 | `20260504_0010_catalogo_academico.sql` | Tablas `catalogo_universidades`, `catalogo_carreras`, `catalogo_asignaturas` + RLS pública |
+| 0011 | `20260504_0011_planes_estudio.sql` | Tabla `planes_estudio`, columnas `plan_estudio_id` y `prioridad` en `horarios_academicos` |
+| 0012 | `20260505_0012_apuntes.sql` | Tabla `apuntes` (Markdown, visibilidad, nota rápida) + RLS |
+| 0013 | `20260506_0013_usuario_carreras.sql` | Tabla `usuario_carreras` (M:N usuario ↔ carrera) |
+| 0014 | `20260509_0014_performance_indexes.sql` | Vista materializada `mv_ejercicios_completos`, índices GIN, triggers de refresco automático |
+| 0015 | `20260510_0015_rutinas_periodizacion.sql` | Tablas `semanas_rutina`, `dias_rutina`, `series_sesion` + columnas en `rutinas`, `seleccion_de_ejercicios`, `sesiones_registradas`. Drop constraints antiguos. RLS periodización. |
+
+---
+
+## 5. Vista Materializada de Ejercicios
+
+Para optimizar el rendimiento del catálogo de ejercicios (~1000 registros con múltiples JOINs), se implementó una vista materializada:
+
+- **`mv_ejercicios_completos`**: Pre-calcula arrays de `partes_cuerpo`, `musculos_objetivo`, `musculos_secundarios` y `equipamientos` usando `LEFT JOIN LATERAL`.
+- **Wrapper `v_ejercicios_completos`**: Vista normal que redirige a la materializada, preservando compatibilidad con el código existente.
+- **Triggers de refresco**: 5 triggers (`ejercicios`, `ejercicio_parte_cuerpo`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_equipamiento`) ejecutan `REFRESH MATERIALIZED VIEW CONCURRENTLY` ante cualquier cambio.
+- **Índices GIN**: Sobre los 4 arrays de catálogo + índice FTS para búsqueda en español.
+
+El frontend consulta `v_ejercicios_completos` (que internamente lee de `mv_ejercicios_completos`) para obtener ejercicios completos en una sola consulta sin subqueries correlacionadas.
+
+---
+
+## 6. Repositorios de Dominio
 
 Contratos de la capa de infraestructura que conectan Flutter con el backend:
 
@@ -175,9 +212,9 @@ Contratos de la capa de infraestructura que conectan Flutter con el backend:
 
 ---
 
-## 6. Cloudflare Workers
+## 7. Cloudflare Workers
 
-### 6.1 `firmar_url_r2`
+### 7.1 `firmar_url_r2`
 
 Genera URLs firmadas con expiración temporal para acceso controlado a multimedia en R2.
 
@@ -190,13 +227,13 @@ Salida: url_firmada, expira_en
 
 ---
 
-## 7. Autenticación (Google y Correo/Contraseña)
+## 8. Autenticación (Google y Correo/Contraseña)
 
 SynaptixFit utiliza **Supabase Auth** para gestionar de forma robusta la identidad de los usuarios, combinando **Google (SSO + People API)** y **Correo/Contraseña**.
 
 Una particularidad del flujo es que **la contraseña de correo no se exige en el primer contacto**. Para minimizar la fricción en la entrada, se prioriza el inicio de sesión OAuth o acceso sin contraseña (Magic Link/OTP), y el usuario **establece su contraseña más adelante desde la Configuración del Perfil**.
 
-### 7.1 Flujos de Autenticación
+### 8.1 Flujos de Autenticación
 
 **A. Flujo con Google (Google People API)**
 1. El usuario selecciona "Iniciar sesión con Google" en la aplicación móvil o web.
@@ -212,7 +249,7 @@ Una particularidad del flujo es que **la contraseña de correo no se exige en el
 4. **Configuración de Contraseña:** Una vez autenticado, el usuario se dirige a la vista de **Perfil > Configuración** donde establece una contraseña permanente llamando a `supabase.auth.updateUser({ password: '...' })`.
 5. En futuros inicios de sesión, el usuario podrá usar directamente el formulario de "Correo y Contraseña" sin requerir revisión del correo electrónico.
 
-### 7.2 Requisitos del Backend
+### 8.2 Requisitos del Backend
 Para que este flujo funcione, el administrador debe:
 * Configurar el proyecto en **Google Cloud Console**.
 * Habilitar la **Google People API**.
@@ -222,5 +259,5 @@ Para que este flujo funcione, el administrador debe:
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Última revisión:** v1.0
+**Documento compilado:** 10-05-2026  
+**Última revisión:** v1.2

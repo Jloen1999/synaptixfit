@@ -116,8 +116,7 @@ class _ApuntesScreenState extends ConsumerState<ApuntesScreen> {
           return const EmptyState(
             icon: Icons.public_outlined,
             title: 'Sin apuntes públicos',
-            message:
-                'No hay apuntes públicos o de amigos disponibles.',
+            message: 'No hay apuntes públicos o de amigos disponibles.',
           );
         }
         return RefreshIndicator(
@@ -187,10 +186,9 @@ class _ApunteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final preview =
-        apunte.contenido.length > 120
-            ? '${apunte.contenido.substring(0, 120)}...'
-            : apunte.contenido;
+    final preview = apunte.contenido.length > 120
+        ? '${apunte.contenido.substring(0, 120)}...'
+        : apunte.contenido;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -198,7 +196,8 @@ class _ApunteCard extends StatelessWidget {
         leading: Icon(
           apunte.esNotaRapida ? Icons.push_pin : Icons.article_outlined,
         ),
-        title: Text(apunte.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title:
+            Text(apunte.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -234,7 +233,8 @@ class _ApuntePublicoCard extends StatelessWidget {
         leading: Icon(
           apunte.esNotaRapida ? Icons.push_pin : Icons.article_outlined,
         ),
-        title: Text(apunte.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title:
+            Text(apunte.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -354,8 +354,9 @@ class _ApuntesEditorScreenState extends ConsumerState<ApuntesEditorScreen> {
       backPath: '/academico/apuntes',
       actions: [
         IconButton(
-          icon: Icon(
-              _mostrandoPreview ? Icons.edit_outlined : Icons.visibility_outlined),
+          icon: Icon(_mostrandoPreview
+              ? Icons.edit_outlined
+              : Icons.visibility_outlined),
           tooltip: _mostrandoPreview ? 'Editar' : 'Vista previa',
           onPressed: () =>
               setState(() => _mostrandoPreview = !_mostrandoPreview),
@@ -389,11 +390,14 @@ class _ApuntesEditorScreenState extends ConsumerState<ApuntesEditorScreen> {
           data: (asigs) => DropdownButtonFormField<String>(
             value: _asignaturaId,
             isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Asignatura (opcional)'),
+            decoration:
+                const InputDecoration(labelText: 'Asignatura (opcional)'),
             items: [
-              const DropdownMenuItem(value: null, child: Text('Sin asignatura')),
+              const DropdownMenuItem(
+                  value: null, child: Text('Sin asignatura')),
               ...asigs.map((a) => DropdownMenuItem(
-                  value: a.id, child: Text(a.nombre, overflow: TextOverflow.ellipsis))),
+                  value: a.id,
+                  child: Text(a.nombre, overflow: TextOverflow.ellipsis))),
             ],
             onChanged: (v) => setState(() => _asignaturaId = v),
           ),
@@ -435,7 +439,8 @@ class _ApuntesEditorScreenState extends ConsumerState<ApuntesEditorScreen> {
           controller: _contenidoCtrl,
           maxLines: 20,
           decoration: const InputDecoration(
-            hintText: '# Título\n\nTexto del apunte.\n\n- Item 1\n- Item 2\n\n**Negrita** *Itálica*',
+            hintText:
+                '# Título\n\nTexto del apunte.\n\n- Item 1\n- Item 2\n\n**Negrita** *Itálica*',
             border: OutlineInputBorder(),
             alignLabelWithHint: true,
           ),

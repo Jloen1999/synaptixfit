@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env_config.dart';
 import '../../../shared/models/db_models.dart';
+import '../../retos/application/retos_provider.dart';
 
 class DashboardData {
   const DashboardData({
@@ -13,11 +14,13 @@ class DashboardData {
     required this.retosActivos,
     required this.notificacionesNoLeidas,
     required this.progresosRetos,
+    required this.retosTienenHitos,
     this.perfilBienestar,
     this.planSemanal,
   });
 
   final Map<String, double> progresosRetos;
+  final Map<String, bool> retosTienenHitos;
 
   final UsuarioDb usuario;
   final int calorias;
@@ -29,12 +32,10 @@ class DashboardData {
   final PlanEntrenamientoSemanalDb? planSemanal;
 
   int get racha => usuario.rachaActual;
-
   int get xpParaSiguienteNivel => 1000 * usuario.nivel;
-
   double get xpProgreso => usuario.xpTotal / xpParaSiguienteNivel;
-
   double progresoReto(String retoId) => progresosRetos[retoId] ?? 0.0;
+  bool tieneHitosReto(String retoId) => retosTienenHitos[retoId] ?? false;
 
   int get sesionesRestantesSemana {
     if (planSemanal == null) return 0;
@@ -53,9 +54,66 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
     throw Exception('Sesión no activa');
   }
 
-  // Obtener usuario de la BD
-  final usuarioMap =
-      await client.from('usuarios').select().eq('id', user.id).maybeSingle();
+  final now = DateTime.now();
+  final hoyInicio = DateTime(now.year, now.month, now.day).toIso8601String();
+  final hoyFin =
+      DateTime(now.year, now.month, now.day, 23, 59, 59).toIso8601String();
+
+  // Queries en paralelo con tipado explícito
+  final (
+    usuarioFuture,
+    sesionesFuture,
+    notifFuture,
+    perfilFuture,
+    planFuture,
+    horariosFuture,
+  ) = (
+    client.from('usuarios').select().eq('id', user.id).maybeSingle(),
+    client
+        .from('sesiones_registradas')
+        .select()
+        .eq('usuario_id', user.id)
+        .gte('completada_en', hoyInicio),
+    client
+        .from('notificaciones')
+        .select()
+        .eq('usuario_id', user.id)
+        .eq('esta_leida', false)
+        .order('creado_en', ascending: false),
+    client
+        .from('perfil_bienestar_usuario')
+        .select()
+        .eq('usuario_id', user.id)
+        .maybeSingle(),
+    client
+        .from('plan_entrenamiento_semanal')
+        .select()
+        .eq('usuario_id', user.id)
+        .eq('estado', 'activo')
+        .maybeSingle(),
+    client
+        .from('horarios_academicos')
+        .select()
+        .eq('usuario_id', user.id)
+        .gte('hora_inicio', hoyInicio)
+        .lte('hora_inicio', hoyFin),
+  );
+
+  final results = await Future.wait<Object?>([
+    usuarioFuture,
+    sesionesFuture,
+    notifFuture,
+    perfilFuture,
+    planFuture,
+    horariosFuture,
+  ]);
+
+  final usuarioMap = results[0] as Map<String, dynamic>?;
+  final sesionesHoy = results[1] as List<dynamic>;
+  final notifData = results[2] as List<dynamic>;
+  final perfilMap = results[3] as Map<String, dynamic>?;
+  final planMap = results[4] as Map<String, dynamic>?;
+  final horariosHoy = results[5] as List<dynamic>;
 
   final usuario = usuarioMap != null
       ? UsuarioDb.fromMap(usuarioMap)
@@ -72,102 +130,47 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
           actualizadoEn: DateTime.now(),
         );
 
-  // Sesiones de hoy
-  final now = DateTime.now();
-  final hoyInicio = DateTime(now.year, now.month, now.day).toIso8601String();
-  final sesionesHoy = await client
-      .from('sesiones_registradas')
-      .select()
-      .eq('usuario_id', user.id)
-      .gte('completada_en', hoyInicio);
-
-  final caloriasHoy = (sesionesHoy as List).fold<int>(
+  final caloriasHoy = sesionesHoy.fold<int>(
     0,
     (total, s) => total + ((s['calorias_quemadas'] ?? 0) as num).round(),
   );
 
-  // Retos activos
-  final retosData = await client
-      .from('retos')
-      .select()
-      .eq('usuario_id', user.id)
-      .eq('esta_completado', false)
-      .order('fecha_fin', ascending: true);
-
-  final retos = (retosData as List)
-      .map((r) => RetoDb.fromMap(r as Map<String, dynamic>))
-      .toList();
-
-  // Notificaciones no leídas
-  final notifData = await client
-      .from('notificaciones')
-      .select()
-      .eq('usuario_id', user.id)
-      .eq('esta_leida', false)
-      .order('creado_en', ascending: false);
-
-  final notificaciones = (notifData as List)
+  final notificaciones = notifData
       .map((n) => NotificacionDb.fromMap(n as Map<String, dynamic>))
       .toList();
-
-  // Perfil bienestar
-  final perfilMap = await client
-      .from('perfil_bienestar_usuario')
-      .select()
-      .eq('usuario_id', user.id)
-      .maybeSingle();
 
   final perfil =
       perfilMap != null ? PerfilBienestarDb.fromMap(perfilMap) : null;
 
-  // Plan semanal
-  final planMap = await client
-      .from('plan_entrenamiento_semanal')
-      .select()
-      .eq('usuario_id', user.id)
-      .eq('estado', 'activo')
-      .maybeSingle();
-
   final plan =
       planMap != null ? PlanEntrenamientoSemanalDb.fromMap(planMap) : null;
 
-  // Horas de estudio de hoy
-  final hoyFin =
-      DateTime(now.year, now.month, now.day, 23, 59, 59).toIso8601String();
-  final horariosHoy = await client
-      .from('horarios_academicos')
-      .select()
-      .eq('usuario_id', user.id)
-      .gte('hora_inicio', hoyInicio)
-      .lte('hora_inicio', hoyFin);
-
   double horasEstudioCalculadas = 0;
-  for (final horario in horariosHoy as List) {
+  for (final horario in horariosHoy) {
     final inicio = DateTime.parse(horario['hora_inicio'].toString());
     final fin = DateTime.parse(horario['hora_fin'].toString());
     horasEstudioCalculadas += fin.difference(inicio).inMinutes / 60.0;
   }
 
-  // Progreso de los retos activos
-  final Map<String, double> progresos = {};
-  for (final reto in retos) {
-    try {
-      final progressResult = await client
-          .rpc('calcular_progreso_de_reto', params: {'p_reto_id': reto.id});
-      progresos[reto.id] = (progressResult as num?)?.toDouble() ?? 0.0;
-    } catch (_) {
-      progresos[reto.id] = 0.0;
-    }
+  // Retos: reutiliza retosProvider (batch único, sin N+1 RPC)
+  final retosResumen = await ref.watch(retosProvider.future);
+  final retos = retosResumen.map((r) => r.reto).toList();
+  final progresos = <String, double>{};
+  final tienenHitos = <String, bool>{};
+  for (final r in retosResumen) {
+    progresos[r.reto.id] = r.progreso;
+    tienenHitos[r.reto.id] = r.tieneHitos;
   }
 
   return DashboardData(
     usuario: usuario,
     calorias: caloriasHoy,
-    sesiones: (sesionesHoy as List).length,
+    sesiones: sesionesHoy.length,
     horasEstudio: horasEstudioCalculadas,
     retosActivos: retos,
     notificacionesNoLeidas: notificaciones,
     progresosRetos: progresos,
+    retosTienenHitos: tienenHitos,
     perfilBienestar: perfil,
     planSemanal: plan,
   );

@@ -24,9 +24,7 @@ class DetalleRetoScreen extends ConsumerWidget {
           data.progresoGeneral >= 1.0 &&
           !data.reto.estaCompletado &&
           _esPropio(data.reto.usuarioId)) {
-        completarReto(id).then((_) {
-          ref.invalidate(retoDetalleProvider(id));
-          ref.invalidate(retosProvider);
+        completarReto(id, ref).then((_) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -83,9 +81,7 @@ class DetalleRetoScreen extends ConsumerWidget {
                         if (esPropio)
                           TextButton(
                             onPressed: () async {
-                              await descompletarReto(id);
-                              ref.invalidate(retoDetalleProvider(id));
-                              ref.invalidate(retosProvider);
+                              await descompletarReto(id, ref);
                             },
                             child: const Text('Desmarcar'),
                           ),
@@ -100,14 +96,6 @@ class DetalleRetoScreen extends ConsumerWidget {
                 ChallengeProgressBar(
                     progress: detalle.progresoGeneral,
                     label: 'Progreso general'),
-                const SizedBox(height: 2),
-                Text(
-                  'Calculado como Σ (importancia% × avance%) de cada tarea',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 11,
-                      ),
-                ),
               ] else ...[
                 const SizedBox(height: 4),
                 Row(
@@ -159,19 +147,28 @@ class DetalleRetoScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text('Tareas', style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
+                if (esPropio && !completado)
+                  _TareasOrdenables(
+                    hitos: detalle.hitos,
+                    retoId: id,
+                    onToggle: (hitoId, completada) async {
+                      await toggleTareaCompletada(hitoId, id,
+                          completada: completada, ref: ref);
+                    },
+                    onReorder: (ids) async {
+                      await reordenarTareas(id, ids, ref: ref);
+                    },
+                  )
+                else
+                  ...detalle.hitos.map((hito) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _TareaControl(
+                          hito: hito,
+                          editable: false,
+                          onToggle: (_) {},
+                        ),
+                      )),
               ],
-              ...detalle.hitos.map((hito) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _TareaControl(
-                      hito: hito,
-                      editable: esPropio && !completado,
-                      onProgressChanged: (v) async {
-                        await actualizarProgresoHito(hito.id, v);
-                        ref.invalidate(retoDetalleProvider(id));
-                        ref.invalidate(retosProvider);
-                      },
-                    ),
-                  )),
               if (!esPropio)
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
@@ -197,10 +194,8 @@ class DetalleRetoScreen extends ConsumerWidget {
     final tipoIcono = reto.tipo == 'fitness'
         ? Icons.fitness_center_rounded
         : Icons.school_rounded;
-    final tipoColor =
-        reto.tipo == 'fitness' ? Colors.green : Colors.blue;
-    final tipoLabel =
-        reto.tipo == 'fitness' ? 'Fitness' : 'Académico';
+    final tipoColor = reto.tipo == 'fitness' ? Colors.green : Colors.blue;
+    final tipoLabel = reto.tipo == 'fitness' ? 'Fitness' : 'Académico';
 
     return Card(
       child: Padding(
@@ -217,8 +212,8 @@ class DetalleRetoScreen extends ConsumerWidget {
                         fontWeight: FontWeight.w600, color: tipoColor)),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: reto.visibilidad == 'publico'
                         ? Colors.orange.withValues(alpha: 0.12)
@@ -275,8 +270,8 @@ class DetalleRetoScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Completar reto'),
-        content:
-            const Text('¿Marcar este reto como completado? No se podrá editar después.'),
+        content: const Text(
+            '¿Marcar este reto como completado? No se podrá editar después.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -285,9 +280,7 @@ class DetalleRetoScreen extends ConsumerWidget {
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await completarReto(id);
-              ref.invalidate(retoDetalleProvider(id));
-              ref.invalidate(retosProvider);
+              await completarReto(id, ref);
             },
             child: const Text('Completar'),
           ),
@@ -297,14 +290,93 @@ class DetalleRetoScreen extends ConsumerWidget {
   }
 
   void _clonar(BuildContext context, WidgetRef ref) async {
-    final nuevoId = await clonarReto(id);
+    final nuevoId = await clonarReto(id, ref);
     if (nuevoId != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Reto clonado correctamente')),
       );
-      ref.invalidate(retosProvider);
       context.go('/retos/$nuevoId');
     }
+  }
+}
+
+class _TareasOrdenables extends StatefulWidget {
+  const _TareasOrdenables({
+    required this.hitos,
+    required this.retoId,
+    required this.onToggle,
+    required this.onReorder,
+  });
+
+  final List<HitoRetoDb> hitos;
+  final String retoId;
+  final Future<void> Function(String hitoId, bool completada) onToggle;
+  final Future<void> Function(List<String> idsOrdenados) onReorder;
+
+  @override
+  State<_TareasOrdenables> createState() => _TareasOrdenablesState();
+}
+
+class _TareasOrdenablesState extends State<_TareasOrdenables> {
+  late List<HitoRetoDb> _locales;
+  bool _reordenando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _locales = List.from(widget.hitos);
+  }
+
+  @override
+  void didUpdateWidget(covariant _TareasOrdenables oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_reordenando && oldWidget.hitos != widget.hitos) {
+      _locales = List.from(widget.hitos);
+    }
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      _reordenando = true;
+      if (newIndex > oldIndex) newIndex--;
+      final item = _locales.removeAt(oldIndex);
+      _locales.insert(newIndex, item);
+    });
+
+    widget.onReorder(_locales.map((h) => h.id).toList()).then((_) {
+      if (mounted) setState(() => _reordenando = false);
+    }).catchError((_) {
+      if (mounted) {
+        setState(() {
+          _reordenando = false;
+          _locales = List.from(widget.hitos);
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _locales.length,
+      onReorder: _onReorder,
+      itemBuilder: (context, index) {
+        final hito = _locales[index];
+        return Padding(
+          key: ValueKey(hito.id),
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _TareaControl(
+            hito: hito,
+            editable: true,
+            onToggle: (completada) {
+              widget.onToggle(hito.id, completada);
+            },
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -312,93 +384,55 @@ class _TareaControl extends StatelessWidget {
   const _TareaControl({
     required this.hito,
     required this.editable,
-    required this.onProgressChanged,
+    required this.onToggle,
   });
 
   final HitoRetoDb hito;
   final bool editable;
-  final ValueChanged<double> onProgressChanged;
+  final ValueChanged<bool> onToggle;
 
   @override
   Widget build(BuildContext context) {
-    final tareaProgress =
-        (hito.progresoActual / 100).clamp(0.0, 1.0);
-    final tareaColor = tareaProgress >= 0.7
-        ? Colors.green
-        : tareaProgress >= 0.3
-            ? Colors.orange
-            : tareaProgress > 0
-                ? Colors.blue
-                : Colors.grey.shade400;
-
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(hito.titulo,
-                      style: Theme.of(context).textTheme.labelLarge),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.blueGrey.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text('${hito.porcentajePeso}% del total',
-                      style: const TextStyle(
-                          fontSize: 10, color: Colors.blueGrey)),
-                ),
-                if (hito.estaCompletado)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Icon(Icons.check_circle,
-                        size: 18, color: Colors.green),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: tareaProgress,
-                      minHeight: 6,
-                      backgroundColor:
-                          tareaColor.withValues(alpha: 0.12),
-                      valueColor:
-                          AlwaysStoppedAnimation(tareaColor),
-                    ),
+      child: InkWell(
+        onTap: editable ? () => onToggle(!hito.estaCompletado) : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                hito.estaCompletado
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                size: 22,
+                color:
+                    hito.estaCompletado ? Colors.green : Colors.grey.shade400,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  hito.titulo,
+                  style: TextStyle(
+                    fontSize: 14,
+                    decoration:
+                        hito.estaCompletado ? TextDecoration.lineThrough : null,
+                    color: hito.estaCompletado ? Colors.grey : null,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Text(
-                    '${hito.progresoActual}%',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: tareaColor)),
-              ],
-            ),
-            if (editable) ...[
-              const SizedBox(height: 8),
-              Slider(
-                value: hito.progresoActual.toDouble(),
-                min: 0,
-                max: 100,
-                divisions: 10,
-                label: '${hito.progresoActual}%',
-                onChanged: onProgressChanged,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text('${hito.porcentajePeso}% del total',
+                    style:
+                        const TextStyle(fontSize: 10, color: Colors.blueGrey)),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -426,8 +460,7 @@ class _MetadataItem extends StatelessWidget {
         Text('$label: ',
             style: const TextStyle(fontSize: 11, color: Colors.grey)),
         Text(value,
-            style: const TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w500)),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
       ],
     );
   }

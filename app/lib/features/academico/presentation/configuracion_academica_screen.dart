@@ -59,17 +59,16 @@ class _ConfiguracionAcademicaScreenState
 
           // Universidad
           universidadesAsync.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('Error: $e'),
             data: (universidades) => DropdownButtonFormField<String>(
               value: _universidadId,
               isExpanded: true,
-              decoration:
-                  const InputDecoration(labelText: 'Universidad'),
+              decoration: const InputDecoration(labelText: 'Universidad'),
               items: universidades
                   .map((u) => DropdownMenuItem(
-                      value: u.id, child: Text(u.nombre, overflow: TextOverflow.ellipsis)))
+                      value: u.id,
+                      child: Text(u.nombre, overflow: TextOverflow.ellipsis)))
                   .toList(),
               onChanged: (v) => setState(() {
                 _universidadId = v;
@@ -96,10 +95,8 @@ class _ConfiguracionAcademicaScreenState
                 return DropdownButtonFormField<String>(
                   value: _carreraId,
                   isExpanded: true,
-                  decoration:
-                      const InputDecoration(labelText: 'Carrera'),
-                  items: carreras
-                      .map((c) {
+                  decoration: const InputDecoration(labelText: 'Carrera'),
+                  items: carreras.map((c) {
                     final yaAgregada = carrerasAgregadasIds.contains(c.id);
                     return DropdownMenuItem(
                         value: c.id,
@@ -120,8 +117,7 @@ class _ConfiguracionAcademicaScreenState
                           ],
                         ));
                   }).toList(),
-                  onChanged: (v) =>
-                      setState(() => _carreraId = v),
+                  onChanged: (v) => setState(() => _carreraId = v),
                 );
               },
             ),
@@ -134,41 +130,40 @@ class _ConfiguracionAcademicaScreenState
             const SizedBox(height: 8),
             if (asignaturasAsync != null)
               asignaturasAsync.when(
-              loading: () => const Center(
-                  child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              )),
-              error: (e, _) => Text('Error: $e'),
-              data: (asignaturas) {
-                if (asignaturas.isEmpty) {
-                  return const Text(
-                      'No hay asignaturas registradas para esta carrera.');
-                }
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      children: asignaturas
-                          .map((a) => ListTile(
-                                dense: true,
-                                leading:
-                                    const Icon(Icons.book_outlined, size: 20),
-                                title: Text(a.nombre,
-                                    style:
-                                        const TextStyle(fontSize: 14)),
-                                subtitle: a.caracter != null
-                                    ? Text('${a.caracter} · ${a.creditos ?? 0} ECTS',
-                                        style:
-                                            const TextStyle(fontSize: 11))
-                                    : null,
-                              ))
-                          .toList(),
+                loading: () => const Center(
+                    child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                )),
+                error: (e, _) => Text('Error: $e'),
+                data: (asignaturas) {
+                  if (asignaturas.isEmpty) {
+                    return const Text(
+                        'No hay asignaturas registradas para esta carrera.');
+                  }
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        children: asignaturas
+                            .map((a) => ListTile(
+                                  dense: true,
+                                  leading:
+                                      const Icon(Icons.book_outlined, size: 20),
+                                  title: Text(a.nombre,
+                                      style: const TextStyle(fontSize: 14)),
+                                  subtitle: a.caracter != null
+                                      ? Text(
+                                          '${a.caracter} · ${a.creditos ?? 0} ECTS',
+                                          style: const TextStyle(fontSize: 11))
+                                      : null,
+                                ))
+                            .toList(),
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
           ],
 
           if (_carreraId == null) ...[
@@ -188,16 +183,14 @@ class _ConfiguracionAcademicaScreenState
     if (_carreraId == null) return;
 
     // Verificar si la carrera ya está añadida
-    final carrerasUsuario =
-        ref.read(usuarioCarrerasProvider).valueOrNull ?? [];
-    final yaAgregada = carrerasUsuario
-        .any((uc) => uc.carreraId == _carreraId);
+    final carrerasUsuario = ref.read(usuarioCarrerasProvider).valueOrNull ?? [];
+    final yaAgregada = carrerasUsuario.any((uc) => uc.carreraId == _carreraId);
     if (yaAgregada) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-                'Esta carrera ya la tienes añadida con sus asignaturas.'),
+            content:
+                Text('Esta carrera ya la tienes añadida con sus asignaturas.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -211,8 +204,7 @@ class _ConfiguracionAcademicaScreenState
 
     if (asignaturas.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('No hay asignaturas para cargar.')),
+        const SnackBar(content: Text('No hay asignaturas para cargar.')),
       );
       return;
     }
@@ -245,8 +237,8 @@ class _ConfiguracionAcademicaScreenState
                     Text('$proc de $total procesadas'),
                     const SizedBox(height: 4),
                     Text('$anadidas añadidas',
-                        style: const TextStyle(
-                            fontSize: 13, color: Colors.green)),
+                        style:
+                            const TextStyle(fontSize: 13, color: Colors.green)),
                   ],
                 ),
               );
@@ -293,15 +285,13 @@ class _ConfiguracionAcademicaScreenState
       Navigator.of(context).pop();
       ref.invalidate(asignaturasActivasProvider);
       ref.invalidate(asignaturasArchivadasProvider);
-      context.go('/academico/asignaturas',
-          extra: {'nuevasIds': nuevasIds});
+      context.go('/academico/asignaturas', extra: {'nuevasIds': nuevasIds});
     }
   }
 
   Future<bool> _existeAsignatura(String nombre) async {
-    final asignaturas =
-        ref.read(asignaturasActivasProvider).valueOrNull ?? [];
-    return asignaturas.any(
-        (a) => a.nombre.toLowerCase() == nombre.toLowerCase());
+    final asignaturas = ref.read(asignaturasActivasProvider).valueOrNull ?? [];
+    return asignaturas
+        .any((a) => a.nombre.toLowerCase() == nombre.toLowerCase());
   }
 }
