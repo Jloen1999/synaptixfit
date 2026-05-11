@@ -5,7 +5,216 @@
 
 ---
 
-## [2.8.0] — 10-05-2026
+## [3.1.0] — 11-05-2026
+
+### Rediseño completo de la pantalla de Perfil (`PerfilScreen`)
+
+**Hero Header atlético:**
+- Fondo con gradiente oscuro de 3 tonos navy: `#0A1628` → `#152238` → `#0D1B2A`.
+- Avatar circular de 88px con anillo de gradiente verde (`#72FE8G` → `#006E2D`) y sombra glow (`boxShadow` con opacidad 25%).
+- `Image.network` con `loadingBuilder` (muestra inicial durante carga) y `errorBuilder` (fallback a inicial estilizada: texto verde sobre fondo `#1A2A40`).
+- Nombre editable con icono `Icons.edit` → diálogo → `BienestarRepository.actualizarNombre()`.
+- Badge de nivel con `Icons.stars_rounded` verde. Barra de progreso XP: `xpTotal / (1000 × nivel)`, color `#72FE8G`.
+- Mini stats rápidos: racha (🔥), días/semana (📅), minutos/sesión (⏱).
+
+**3 pestañas con `DefaultTabController` + `NestedScrollView`:**
+
+1. **Estadísticas** — Grid 2×2 + fila completa de tarjetas glass:
+   - XP Total (verde `#72FE8G`), Sesiones (azul `#60A5FA`), Retos (dorado `#E8A838`), Calorías (naranja `#FF6B35`), Racha (violeta `#A78BFA`).
+   - Valores numéricos grandes (28px, `FontWeight.w800`, `letterSpacing: -1`) con colores semánticos.
+   - Tarjetas con `BorderRadius.circular(16)`, fondos semitransparentes (`alpha: 0.06`) y bordes sutiles (`alpha: 0.12`).
+
+2. **Bienestar** — 3 secciones:
+   - **Perfil físico (9 campos):** peso (30-250 kg), altura (120-230 cm), IMC (solo lectura, calculado), sexo (radio buttons), edad (1-120), objetivo principal (6 opciones en radio buttons), nivel de actividad (4 opciones), días/semana (1-7), minutos/sesión (10-180). Todos editables con diálogos individuales (numérico, selector radio, o multi-chip). Valores 0 o nulos muestran `'—'`.
+   - **Equipamiento:** chips `Wrap` con `FilterChip` multi-selección de 8 opciones. Botón "Configurar equipamiento".
+   - **Evolución de peso:** últimos 5 registros desde `historial_peso`.
+
+3. **Ajustes:**
+   - Notificaciones: navega a `/notificaciones` (ruta real, ya no es placeholder).
+   - Visibilidad del perfil y Modo silencio: placeholders.
+   - Carreras universitarias (`_CarrerasCard`): muestra count + botón gestionar.
+   - Botón "Cerrar sesión" con estilo rojo (`#EF4444`).
+
+**Arquitectura de datos:**
+- DTO interno `_PerfilData`: agrupa `UsuarioDb`, `PerfilBienestarDb`, `sesiones` (COUNT), `logros` (COUNT retos completados), `caloriasAcumuladas` (SUM), `historial` (List<HistorialPesoDb>), `preferencias` (PrefsNotificacionDb).
+- Tras cada edición: `_onPerfilActualizado()` invalida `perfilBienestarProvider` + `dashboardProvider` + recarga `_cargar()`.
+- `_TabBarDelegate` (`SliverPersistentHeaderDelegate`) fija el `TabBar` al hacer scroll.
+
+---
+
+## [3.0.0] — 11-05-2026
+
+### IA — Servicio de Recomendación con Gemini Flash (`RecomendacionIaService`)
+
+**Arquitectura del servicio** (`app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart`, 867 líneas):
+- Integración con Gemini Flash API (`gemini-flash-latest`) vía `dio` como HTTP client. No se usa SDK de Google.
+- Configuración: `GEMINI_API_KEY` en `.env` → `EnvConfig.geminiApiKey`. Si no existe, métodos retornan error descriptivo sin crashear.
+- Timeout: 15 segundos.
+
+**Métodos implementados:**
+1. `generarRecomendacionRutina(perfil, ejercicios, historial?, estadoDiario?)` → `RecomendacionRutinaResult`
+   - Construye prompt de 7 secciones: contexto del usuario, reglas de seguridad IMC, reglas de equipamiento, historial deportivo, reglas por objetivo, periodización, formato JSON.
+   - Filtra catálogo por equipamiento antes de enviar al prompt (`_ejercicioUsaEquipamiento` con mapeo de equivalencias mancuerna↔mancuernas, banda_elastica↔banda de resistencia, etc.).
+   - Rellena automáticamente: nombre, descripción, objetivo, duración y estructura semana×día con ejercicios.
+   - Usado desde botón "Recomendar rutina con IA" en Paso 1 de `NuevaRutinaScreen`.
+
+2. `generarEstructuraCompleta(perfil, ejercicios, rutinaConfig, historial?, estadoDiario?)` → `RecomendacionRutinaResult`
+   - Para rutinas ya configuradas por el usuario. Recibe nombre, desc, objetivo, semanas, días/semana.
+   - Prompt incluye: catálogo completo como JSON, reglas de periodización detalladas por semana, reglas de programación por objetivo, datos de sobrecarga progresiva si hay historial, obligación de alternar grupos musculares.
+   - Usado desde botón "Recomendar ejercicios" en Paso 1 (rellena TODA la estructura).
+
+3. `generarRecomendacionEjercicios(perfil, ejercicios, nombreRutina, objetivo, diaNum, yaAgregados, historial?, estadoDiario?)` → `RecomendacionEjerciciosResult`
+   - Añade 3-6 ejercicios a un día sin repetir los ya agregados.
+   - Respuesta: array JSON (no objeto).
+   - Usado desde botón "Sugerir ejercicios con IA" por cada día en Paso 2.
+
+4. `generarProgresionEjercicio(perfil, nombreEjercicio, objetivo, historialEjercicio, rpeUltimaSesion)` → `EjercicioRecomendado?`
+   - Analiza historial real (peso, reps, RPE) de sesiones previas.
+   - Reglas de progresión en prompt: RPE<7 → +5-10% peso o +1-2 reps; RPE 7-8 → +2.5-5%; RPE 8.5-9.5 → mantener; RPE=10 → NO subir.
+   - Modulación por objetivo: fuerza prioriza peso, ganar_masa equilibrio, perder_peso mantiene peso y sube reps.
+
+**DTOs creados:**
+- `EjercicioRecomendado`: `ejercicioId`, `series`, `repeticiones`, `segundosDescanso`, `pesoKg?`
+- `RecomendacionRutinaResult`: `nombre`, `descripcion`, `objetivo`, `duracionSemanas`, `estructura` (Map<int, Map<int, List<EjercicioRecomendado>>>), `error?`
+- `RecomendacionEjerciciosResult`: `ejercicios`, `error?`
+- `HistorialSesionDto`: `totalSesionesCompletadas`, `rpePromedio`, `volumenSemanalEstimado`, `ejerciciosRecientes`, `diasCompletadosUltimaSemana`, `semanasConsecutivasEntrenando`, `requiereDescarga`
+- `EjericicioRecienteDto`: `nombreEjercicio`, `pesoPromedio`, `repsPromedio`, `rpePromedio`, `ultimaFecha`
+
+**Prompt Engineering — Helpers privados:**
+- `_reglasSeguridadIMC(imc, edad)`: Restricciones ACSM. IMC>30→bajo impacto, IMC<18.5→evitar déficit, edad>50→fortalecimiento articular, edad<18→priorizar técnica.
+- `_reglasPeriodizacion(duracionSemanas, historial)`: Adaptación→Carga→Pico→Descarga. Si `requiereDescarga`, semana 1 es descarga.
+- `_reglasPorObjetivo(objetivo)`: 6 estrategias: fuerza (3-6 reps, 120-180s), hipertrofia (8-12 reps, 60-90s), resistencia (15-25 reps, 30-45s), perder_peso (15-20 reps, 45-60s, circuito), movilidad (rango completo, peso corporal), fitness_general (10-12 reps, 60-90s).
+- `_formatearEstadoDiario(estado)`: Traduce fatiga a reglas IA. Fatiga>50→reducir 30%, zonas dolor→sustituir, energía≤2→movilidad, sueño≤2→evitar peso muerto/squat.
+- `_formatearHistorial(historial)`: Datos de sesiones para contexto IA.
+- `_formatearProgresion(historial)`: Últimos 5 ejercicios con peso/reps/RPE para sobrecarga.
+- `_callGemini(apiKey, prompt)`: POST a `generativelanguage.googleapis.com`. Extrae de `candidates[0].content.parts[0].text`.
+- `_extraerJson(raw)`: 3 estrategias: regex bloques ```json```, búsqueda primer `{`/`[` hasta último cierre, fallback Exception.
+- `_parseError(e)`: Clasifica DioException (400/401/403→API key, otros→conexión), FormatException→JSON malformado, genérico→truncado 100 chars.
+
+### Sistema de Check-in Diario de Fatiga
+
+**Migración 0016** (`20260511_0016_estado_diario.sql`):
+- Tabla `estado_diario_usuario`: `calidad_sueno` (1-5), `nivel_estres` (1-5), `nivel_energia` (1-5), `dolor_muscular` (1-5), `zonas_dolor` (TEXT[]), `listo_para_entrenar` (BOOLEAN), `notas` (TEXT nullable).
+- UNIQUE `(usuario_id, fecha)` — un solo check-in por día.
+- Índice `(usuario_id, fecha DESC)` para consulta rápida del check-in de hoy.
+- RLS: solo propietario (SELECT, INSERT, UPDATE).
+
+**Modelo `EstadoDiarioDb`** (`db_models.dart:903-972`):
+- `puntuacionFatiga` (0-100): `(6-sueño)×5 + (estrés-1)×5 + (6-energía)×4 + (dolor-1)×7`
+- `requiereAdaptacion`: `puntuacionFatiga > 50`
+- Pesos justificados: dolor (×7, mayor impacto en rendimiento), sueño (×5, factor #1 recuperación), estrés (×5, cortisol), energía (×4, SNC).
+- `listoParaEntrenar`: `calidadSueno > 1 OR nivelEnergia > 2`
+
+**Diálogo `_CheckInDialog`** en `sesion_en_vivo_screen.dart:626-633`:
+- 4 sliders con labels y emojis indicadores (1-5).
+- Zonas de dolor (chips multi-select): visibles solo si `dolorMuscular >= 3`.
+- 6 zonas: piernas, espalda, hombros, brazos, pecho, core.
+- Botones: "Empezar" (guarda y continúa) / "Omitir" (solo continúa sin datos).
+- `barrierDismissible: false` — no se cierra tocando fuera.
+
+**Persistencia — `guardarEstadoDiario()`** (`rutina_provider.dart:840-868`):
+- UPSERT en `estado_diario_usuario` con `onConflict: 'usuario_id,fecha'`.
+- Invalida `estadoDiarioHoyProvider` → la UI y la IA ven los datos actualizados.
+
+**Indicador de fatiga en UI:**
+- Si `estadoDiarioHoyProvider` devuelve `requiereAdaptacion == true` → banner naranja en `RutinaDetalleScreen`:
+  "⚠️ Hoy tu cuerpo necesita un entrenamiento más ligero."
+- La IA recibe esta información en cada prompt y ajusta volumen/intensidad.
+
+### Periodización Inteligente Automática
+
+**Migración 0017** (`20260511_0017_periodizacion_tipo_semana.sql`):
+- Columna `tipo_semana` en `semanas_rutina` con CHECK: `adaptacion`, `carga`, `pico`, `descarga`.
+- Índice `(rutina_id, numero_semana, tipo_semana)` para consultas rápidas.
+
+**Modelo `SemanaRutinaDb`** (`db_models.dart:1476-1522`):
+- `tipoSemana` (String) con getters: `esDescarga`, `esAdaptacion`, `esPico`.
+
+**Algoritmo `_calcularTipoSemana()`** (`rutina_provider.dart:875-881`):
+- Tabla de decisión determinista: 1 semana→carga, semana 1→adaptacion, sem 3 de 3→pico, última de 4+→descarga, resto→carga.
+- Se ejecuta en `crearRutinaCompleta()` al insertar cada semana.
+
+**Detección de necesidad de descarga — `estadoPeriodizacionProvider`** (`rutina_provider.dart:886-972`):
+- Analiza `sesiones_registradas` de últimas 3 semanas (RPE, duración).
+- Calcula RPE promedio de todas las sesiones.
+- Agrupa volumen por semana (suma de minutos).
+- Detecta volumen decreciente (3 semanas consecutivas bajando).
+- Cruza con check-in diario (`estado_diario_usuario` de hoy).
+- `necesitaDescarga = TRUE` si: (RPE>8 + 3+ semanas + volumen decreciente) O (fatiga diaria > 50).
+- DTO `PeriodizacionEstado`: `necesitaDescarga`, `rpePromedioReciente`, `volumenDecreciente`, `semanasConsecutivas`, `puntuacionFatigaDiaria`.
+
+**Badges visuales en `RutinaDetalleScreen`:**
+- Selector horizontal de semanas con chips coloreados:
+  - Adaptación: azul, "Adapt" — 70% volumen, técnica
+  - Carga: verde, "Carga" — 85-90% volumen, progresión
+  - Pico: naranja, "Pico" — máxima intensidad
+  - Descarga: teal, "Desc" — 60% volumen, recuperación
+
+### Perfil de Usuario — Bienestar Editable
+
+**Pestaña Bienestar en `PerfilScreen`:**
+- **Sexo:** dropdown (masculino, femenino, prefiero_no_decirlo) → `actualizarPerfilParcial({'sexo': valor})`
+- **Edad:** diálogo numérico (15-80 años) → `actualizarPerfilParcial({'edad': valor})`
+- **Objetivo principal:** ChoiceChips (fitness_general, perder_peso, ganar_masa, fuerza, resistencia, movilidad) → `actualizarPerfilParcial({'objetivo_principal': valor})`
+- **Nombre:** diálogo con TextField en header → `actualizarNombre(valor)` → UPDATE `usuarios.nombre_completo`
+
+**Métodos en `BienestarRepository`** (`auth/infrastructure/bienestar_repository.dart:180-202`):
+- `actualizarNombre(nombreCompleto)`: UPDATE `public.usuarios` SET `nombre_completo`
+- `actualizarPerfilParcial(data)`: UPDATE `perfil_bienestar_usuario` SET campos parciales
+
+### Nuevos Providers Riverpod (en `rutina_provider.dart`)
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `perfilBienestarProvider` | `FutureProvider<PerfilBienestarDb?>` | Perfil físico desde `BienestarRepository` |
+| `estadoDiarioHoyProvider` | `FutureProvider<EstadoDiarioDb?>` | Check-in de hoy desde `estado_diario_usuario` WHERE fecha=today |
+| `historialSesionUsuarioProvider` | `FutureProvider<HistorialSesionDto?>` | Historial 4 semanas: sesiones (30), RPE, volumen, ejercicios recientes (JOIN series_sesion→seleccion→ejercicios) |
+| `estadoPeriodizacionProvider` | `FutureProvider<PeriodizacionEstado>` | Detección de descarga: RPE>8 + 3+ semanas + volumen decreciente OR fatiga>50 |
+| `tiempoDiaProvider` | `FutureProvider.family<int, String>` | Duración de última sesión de un día |
+| `semanasDeRutinaProvider` | `FutureProvider.family` | Semanas con tipo_semana |
+| `diasDeSemanaProvider` | `FutureProvider.family` | Días de una semana con estado |
+| `ejerciciosDeDiaProvider` | `FutureProvider.family` | Ejercicios de un día con series/reps/peso |
+
+### Barra de Progreso de Rutina (`RutinaDetalleScreen`)
+
+- **Cálculo:** días completados / días totales → barra lineal con porcentaje.
+- **Tiempo acumulado:** suma de `tiempoDiaProvider` para todos los días de la rutina.
+- **Bloqueo de día sin ejercicios:** botón "Iniciar" deshabilitado + SnackBar "Este día no tiene ejercicios".
+- **Invalidación:** al añadir/quitar ejercicios → `ejerciciosDeDiaProvider(diaId)` invalidado. Barra de progreso se refresca automáticamente.
+
+### Mejoras en `RutinaDetalleScreen`
+
+- **Header enriquecido:** nombre, badge de objetivo (color), badge de estado, duración, barra de progreso %, "X/Y días", tiempo total acumulado.
+- **Badge de tipo de semana** en selector horizontal (color + abreviatura).
+- **Icono de check (✓)** en semanas completadas.
+- **Validación pre-inicio:** día sin ejercicios → botón bloqueado + SnackBar.
+- **Añadir día** a semana existente. **Sustituir ejercicio** (long-press).
+- **Cards de días completados** con fondo verde y borde destacado.
+
+### Correcciones
+
+- Fix: `FilledButton.tonalIcon` en lugar de `.tonal.icon` en varias pantallas.
+- Fix: Orden de rutas GoRouter — `/bienestar/rutina/sesion` antes de `/bienestar/rutina/:id` (evita capturar "sesion" como UUID).
+- Fix: Invalidación de providers al añadir/quitar ejercicios desde detalle (día completado vuelve a pendiente).
+- Fix: `const` removido de `EdgeInsets` con valores dinámicos.
+
+### Documentación — Reescritura Profesional Completa
+
+Se reescribieron 6 documentos del estándar de 14 puntos con nivel profesional exhaustivo:
+
+- `02-requirements.md` (v3.0): **+5 requisitos funcionales** (RF-BIE-13 a RF-BIE-21), **+2 casos de uso** (CU-20: creación con IA, CU-21: check-in diario), **+5 reglas de negocio** (RB-21 a RB-25), **+2 requisitos de integración** (RI-11, RI-12), **+6 historias de usuario** (HU-33 a HU-38). Matriz de trazabilidad ampliada. Nuevos riesgos y mitigaciones para IA.
+
+- `03-architecture.md` (v3.0): **Diagramas Mermaid de secuencia**: flujo completo de recomendación IA (9 pasos), flujo de check-in + sesión en vivo, flujo de periodización. Documentación exhaustiva de cada método del servicio IA con parámetros, prompt engineering, reglas de seguridad, parsing JSON. Justificación de decisión Gemini Flash vs alternativas. Justificación de IA en cliente vs Edge Function. Catálogo completo de 30+ providers Riverpod.
+
+- `04-data-model.md` (v2.3 → se mantiene): Ya contenía documentación exhaustiva de las 27 tablas con SQL, RLS, índices y vistas materializadas. Actualizada versión y fecha.
+
+- `06-frontend.md` (v3.0): **Catálogo completo de 30+ providers** con tipo, propósito, fuente de datos e invalidaciones. **Diagrama de flujo** para creación de rutina con IA (3 pasos). Documentación detallada de `NuevaRutinaScreen`, `RutinaDetalleScreen` (header, progreso, periodización), `LiveSessionScreen` (check-in, series, descanso, finalización), `PerfilScreen` (bienestar editable). Matriz de errores de IA y su manejo en UI. Cobertura de casos de uso v3.0.
+
+- `07-backend.md` (v2.0): **Documentación exhaustiva del servicio IA**: arquitectura, los 4 métodos con flujos de ejecución, prompt engineering (7 secciones del prompt), helpers privados con tablas de reglas, mecanismo de parsing JSON robusto (3 estrategias), manejo de errores clasificado. **Sistema de check-in**: SQL completo, RLS, fórmula de fatiga justificada, lógica de persistencia. **Periodización**: algoritmo determinista con tabla de decisión, detección automática de descarga con pseudocódigo. **Historial de sesiones**: consultas SQL equivalentes. Historial completo de 17 migraciones.
+
+- `14-changelog.md` (v3.0.0): **Entrada [3.0.0] reescrita** con nivel de detalle de release notes profesional: arquitectura del servicio IA, 4 métodos documentados, DTOs, prompt engineering, helpers, sistema de check-in (migración, modelo, diálogo, persistencia), periodización (migración, algoritmo, badges, detección automática), perfil editable, 8 nuevos providers, barra de progreso, correcciones, y resumen de reescritura de documentación.
+
+---
 
 ### Sistema de rutinas periodizadas (RF-BIE-COMPLETO)
 - **Migración 0015:** Tablas `semanas_rutina`, `dias_rutina`, `series_sesion`. Columnas `duracion_semanas`, `objetivo`, `estado` en `rutinas`. Columna `dia_id` y `peso_kg` en `seleccion_de_ejercicios`. Columnas `dia_id`, `tipo` en `sesiones_registradas`. RLS completa. Drop de constraints antiguos que impedían periodización.

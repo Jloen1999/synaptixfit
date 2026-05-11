@@ -175,4 +175,29 @@ class BienestarRepository {
 
     return resultado.map((e) => HistorialPesoDb.fromMap(e)).toList();
   }
+
+  // ---------------------------------------------------------------------------
+  // actualizarNombre — UPDATE public.usuarios.nombre_completo
+  // ---------------------------------------------------------------------------
+  Future<void> actualizarNombre(String nombreCompleto) async {
+    if (!EnvConfig.hasSupabase) return;
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client.from('usuarios').update({
+      'nombre_completo': nombreCompleto,
+    }).eq('id', userId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // actualizarPerfilParcial — UPDATE parcial de perfil_bienestar_usuario
+  // ---------------------------------------------------------------------------
+  Future<void> actualizarPerfilParcial(Map<String, dynamic> data) async {
+    if (!EnvConfig.hasSupabase) return;
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client
+        .from('perfil_bienestar_usuario')
+        .update(data)
+        .eq('usuario_id', userId);
+  }
 }

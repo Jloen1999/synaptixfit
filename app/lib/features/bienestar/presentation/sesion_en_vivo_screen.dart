@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../core/design_system/sv_colors.dart';
 import '../application/rutina_provider.dart';
@@ -215,10 +216,33 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
 
   // ---------------------------------------------------------------------------
 
+  Future<void> _mostrarCheckIn() async {
+    final result = await showDialog<_CheckInResult>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const _CheckInDialog(),
+    );
+    if (result != null && mounted) {
+      await guardarEstadoDiario(
+        calidadSueno: result.sueno,
+        nivelEstres: result.estres,
+        nivelEnergia: result.energia,
+        dolorMuscular: result.dolor,
+        zonasDolor: result.zonasDolor,
+        listoParaEntrenar: result.sueno > 1 || result.energia > 2,
+        ref: ref,
+      );
+      _iniciarSesion();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (!_sesionIniciada) {
+      final estadoAsync = ref.watch(estadoDiarioHoyProvider);
       return FeatureScaffold(
           title: 'Entrenamiento',
           backPath: '/bienestar',
@@ -229,9 +253,31 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
             const SizedBox(height: 16),
             const Text('¿Listo para entrenar?',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            estadoAsync.when(
+              data: (estado) {
+                if (estado != null && estado.requiereAdaptacion) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Hoy tu cuerpo necesita un entrenamiento más ligero. '
+                      'La IA adaptará los ejercicios a tu estado.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange.shade700,
+                          fontStyle: FontStyle.italic),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
             const SizedBox(height: 24),
             FilledButton.icon(
-                onPressed: _iniciarSesion,
+                onPressed: _mostrarCheckIn,
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: const Text('Empezar entrenamiento')),
           ])));
@@ -559,4 +605,158 @@ class _EjercicioLiveCard extends StatelessWidget {
           child: Text(label,
               style: TextStyle(
                   fontSize: 10, color: c, fontWeight: FontWeight.w600))));
+}
+
+// =============================================================================
+// Check-in diario
+// =============================================================================
+
+class _CheckInResult {
+  const _CheckInResult({
+    required this.sueno,
+    required this.estres,
+    required this.energia,
+    required this.dolor,
+    required this.zonasDolor,
+  });
+  final int sueno, estres, energia, dolor;
+  final List<String> zonasDolor;
+}
+
+class _CheckInDialog extends StatefulWidget {
+  const _CheckInDialog();
+
+  @override
+  State<_CheckInDialog> createState() => _CheckInDialogState();
+}
+
+class _CheckInDialogState extends State<_CheckInDialog> {
+  int _sueno = 3, _estres = 3, _energia = 3, _dolor = 1;
+  final _zonas = <String>{};
+
+  static const _opcionesZonas = [
+    "piernas",
+    "espalda",
+    "hombros",
+    "brazos",
+    "pecho",
+    "core",
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.wb_sunny_rounded, size: 22, color: Colors.orange),
+          SizedBox(width: 8),
+          Text("Como te sientes hoy?"),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Antes de entrenar, cuentanos tu estado.",
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 20),
+            _slider("Calidad del sueno", _sueno, (v) => _sueno = v,
+                labels: const [
+                  "Muy mal",
+                  "Mal",
+                  "Regular",
+                  "Bien",
+                  "Excelente"
+                ]),
+            const SizedBox(height: 16),
+            _slider("Nivel de estres", _estres, (v) => _estres = v,
+                labels: const [
+                  "Muy bajo",
+                  "Bajo",
+                  "Moderado",
+                  "Alto",
+                  "Muy alto"
+                ]),
+            const SizedBox(height: 16),
+            _slider("Nivel de energia", _energia, (v) => _energia = v,
+                labels: const ["Agotado", "Bajo", "Normal", "Alto", "Pleno"]),
+            const SizedBox(height: 16),
+            _slider("Dolor / Agujetas", _dolor, (v) => _dolor = v,
+                labels: const [
+                  "Ninguno",
+                  "Leve",
+                  "Moderado",
+                  "Fuerte",
+                  "Intenso"
+                ]),
+            if (_dolor >= 3) ...[
+              const SizedBox(height: 16),
+              const Text("Donde sientes dolor?",
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: _opcionesZonas.map((z) {
+                  final selected = _zonas.contains(z);
+                  return FilterChip(
+                    label: Text(z[0].toUpperCase() + z.substring(1),
+                        style: const TextStyle(fontSize: 11)),
+                    selected: selected,
+                    onSelected: (v) =>
+                        setState(() => v ? _zonas.add(z) : _zonas.remove(z)),
+                    visualDensity: VisualDensity.compact,
+                  );
+                }).toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Omitir")),
+        FilledButton(
+            onPressed: () => Navigator.pop(
+                context,
+                _CheckInResult(
+                  sueno: _sueno,
+                  estres: _estres,
+                  energia: _energia,
+                  dolor: _dolor,
+                  zonasDolor: _zonas.toList(),
+                )),
+            child: const Text("Empezar")),
+      ],
+    );
+  }
+
+  Widget _slider(String label, int value, void Function(int) onChange,
+      {required List<String> labels}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            Text(labels[value - 1],
+                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+        Slider(
+          value: value.toDouble(),
+          min: 1,
+          max: 5,
+          divisions: 4,
+          label: labels[value - 1],
+          onChanged: (v) => setState(() => onChange(v.round())),
+        ),
+      ],
+    );
+  }
 }

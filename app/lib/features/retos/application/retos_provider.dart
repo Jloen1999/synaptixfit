@@ -159,6 +159,10 @@ Future<void> completarReto(String retoId, WidgetRef ref) async {
   await client.from('retos').update({
     'esta_completado': true,
   }).eq('id', retoId);
+  await client.from('hitos_de_reto').update({
+    'progreso_actual': 100,
+    'esta_completado': true,
+  }).eq('reto_id', retoId);
   _invalidarRetos(ref, retoId: retoId);
 }
 

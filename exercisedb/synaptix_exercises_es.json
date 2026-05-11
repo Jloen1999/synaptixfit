@@ -982,5 +982,399 @@
       "Paso 4: Flexiona las rodillas aplicando fuerza para llevar los talones hacia los glúteos de manera fluida y explosiva.",
       "Paso 5: Sostén la contracción durante un segundo en el tope del movimiento y posteriormente desciende el peso de manera excéntrica lenta y controlada. Repite."
     ]
+  },
+  {
+    "exerciseId": "1bcUrlB",
+    "name": "Curl de bíceps con barra",
+    "gifUrl": "01502df8-593c-42d0-86ae-7cbd48d8741a.mp4",
+    "targetMuscles": [
+      "bíceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "antebrazos",
+      "braquial"
+    ],
+    "instructions": [
+      "Paso 1: De pie con los pies separados a la anchura de los hombros, sujeta la barra con agarre supino a la anchura de los hombros y los brazos completamente extendidos.",
+      "Paso 2: Mantén los codos fijados firmemente contra las costillas y activa la musculatura del core para estabilizar el tronco.",
+      "Paso 3: Flexiona los codos llevando la barra hacia los hombros mediante una contracción concéntrica del bíceps braquial, evitando cualquier balanceo del torso.",
+      "Paso 4: Mantén la contracción isométrica en el punto de máxima flexión durante un segundo, apretando intensamente el vientre muscular del bíceps.",
+      "Paso 5: Desciende la barra de forma controlada durante la fase excéntrica hasta alcanzar la extensión completa de los codos.",
+      "Paso 6: Repite el movimiento manteniendo los codos anclados a los costados durante toda la serie."
+    ]
+  },
+  {
+    "exerciseId": "1bncPrs",
+    "name": "Press de banca plano con barra",
+    "gifUrl": "00fc7fe1-cabf-4739-a6d7-f39d78252747.mp4",
+    "targetMuscles": [
+      "pectorales"
+    ],
+    "bodyParts": [
+      "pecho"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "tríceps",
+      "hombros"
+    ],
+    "instructions": [
+      "Paso 1: Acuéstate en un banco plano realizando retracción escapular y apoyando firmemente la planta de ambos pies en el suelo para generar una base estable.",
+      "Paso 2: Sujeta la barra con agarre prono a una anchura ligeramente superior a la de los hombros y descárgala del soporte con los brazos extendidos.",
+      "Paso 3: Desciende la barra controladamente hacia la parte inferior del esternón, manteniendo los codos en un ángulo de aproximadamente 45 grados respecto al torso.",
+      "Paso 4: Impulsa la barra verticalmente mediante una contracción potente del pectoral mayor y el tríceps braquial, exhalando durante la fase concéntrica.",
+      "Paso 5: Extiende los brazos sin llegar al bloqueo articular completo para preservar la tensión muscular en los pectorales.",
+      "Paso 6: Repite el movimiento manteniendo la posición escapular estable y el puente torácico durante toda la serie."
+    ]
+  },
+  {
+    "exerciseId": "1chFlyM",
+    "name": "Aperturas en máquina contractora (Peck Deck)",
+    "gifUrl": "046e072a-a8ab-4afb-a42d-ef32c5e256e2.mp4",
+    "targetMuscles": [
+      "pectorales"
+    ],
+    "bodyParts": [
+      "pecho"
+    ],
+    "equipments": [
+      "máquina contractora"
+    ],
+    "secondaryMuscles": [
+      "deltoides",
+      "bíceps"
+    ],
+    "instructions": [
+      "Paso 1: Siéntate en la máquina contractora ajustando la altura del asiento para que los codos queden alineados horizontalmente con la articulación glenohumeral.",
+      "Paso 2: Apoya los antebrazos contra las almohadillas acolchadas y sujeta los agarres frontales manteniendo los codos en un ángulo de 90 grados.",
+      "Paso 3: Realiza una aducción horizontal de los brazos uniendo las almohadillas frente al pecho mediante una contracción concéntrica del pectoral mayor.",
+      "Paso 4: Mantén la contracción isométrica durante un segundo en el punto de máxima aproximación, sintiendo la congestión en las fibras esternales del pectoral.",
+      "Paso 5: Controla la fase excéntrica abriendo los brazos lentamente hasta sentir un estiramiento profundo en la caja torácica anterior.",
+      "Paso 6: Repite sin permitir que las pesas toquen la pila entre repeticiones, preservando la tensión continua en los pectorales."
+    ]
+  },
+  {
+    "exerciseId": "1dedLft",
+    "name": "Peso muerto convencional con barra",
+    "gifUrl": "032a5926-7f81-4e94-ab1d-87e2540e67f3.mp4",
+    "targetMuscles": [
+      "columna"
+    ],
+    "bodyParts": [
+      "espalda"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "glúteos",
+      "isquiotibiales",
+      "trapecios"
+    ],
+    "instructions": [
+      "Paso 1: Colócate con los pies separados a la anchura de las caderas y las tibias prácticamente en contacto con la barra cargada en el suelo.",
+      "Paso 2: Realiza una bisagra de cadera flexionando las rodillas y desciende para sujetar la barra con agarre prono mixto o doble prono a la anchura de los hombros.",
+      "Paso 3: Activa la musculatura del core mediante la maniobra de Valsalva, retrae las escápulas y posiciona la columna vertebral en alineación neutra.",
+      "Paso 4: Inicia el levantamiento empujando contra el suelo con los talones y extendiendo simultáneamente las articulaciones de la cadera y las rodillas.",
+      "Paso 5: Bloquea el movimiento en la posición erguida contrayendo los glúteos y manteniendo la lordosis lumbar fisiológica sin realizar hiperextensión.",
+      "Paso 6: Desciende la barra de forma controlada realizando la bisagra de cadera inversa, manteniendo la barra próxima al cuerpo durante todo el descenso."
+    ]
+  },
+  {
+    "exerciseId": "1dcBenc",
+    "name": "Press de banca declinado con barra",
+    "gifUrl": "0605d5c0-529d-4c55-b8b7-dfeee1c08b83.mp4",
+    "targetMuscles": [
+      "pectorales"
+    ],
+    "bodyParts": [
+      "pecho"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "tríceps",
+      "hombros"
+    ],
+    "instructions": [
+      "Paso 1: Fija los tobillos en los soportes del banco declinado y acuéstate con la cabeza situada en la parte más baja de la plataforma.",
+      "Paso 2: Sujeta la barra con agarre prono a una anchura ligeramente superior a los hombros y descárgala del soporte con los brazos extendidos.",
+      "Paso 3: Desciende la barra controladamente hacia la porción inferior del esternón, enfatizando el trabajo de las fibras esternales e inferiores del pectoral mayor.",
+      "Paso 4: Impulsa la barra verticalmente contrayendo la porción inferior del pecho y los tríceps braquiales, manteniendo las escápulas retraídas contra el banco.",
+      "Paso 5: Evita el bloqueo completo de los codos en la posición superior para mantener la tensión mecánica constante en el músculo objetivo.",
+      "Paso 6: Repite con un ritmo controlado, prestando especial atención a la fase excéntrica para maximizar el estímulo hipertrófico."
+    ]
+  },
+  {
+    "exerciseId": "1hmCurl",
+    "name": "Curl martillo con mancuernas",
+    "gifUrl": "11405bb0-a4a5-4ada-bcf6-8642e0450862.mp4",
+    "targetMuscles": [
+      "bíceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "mancuernas"
+    ],
+    "secondaryMuscles": [
+      "antebrazos",
+      "braquial"
+    ],
+    "instructions": [
+      "Paso 1: De pie, con los pies separados a la anchura de los hombros y el core activado, sujeta una mancuerna en cada mano con agarre neutro.",
+      "Paso 2: Mantén los codos adheridos a las costillas y los hombros estabilizados, evitando cualquier movimiento compensatorio del tronco.",
+      "Paso 3: Flexiona los codos simultáneamente llevando las mancuernas hacia los hombros, preservando el agarre neutro durante todo el arco de movimiento.",
+      "Paso 4: Contrae intensamente el bíceps braquial y el músculo braquial en la fase concéntrica, notando la congestión localizada en el vientre muscular.",
+      "Paso 5: Mantén un segundo la contracción isométrica en la cima del recorrido concéntrico.",
+      "Paso 6: Desciende las mancuernas de manera controlada durante la fase excéntrica hasta la extensión completa de los codos y repite."
+    ]
+  },
+  {
+    "exerciseId": "1ltPuld",
+    "name": "Jalón al pecho en polea alta",
+    "gifUrl": "031ea99d-e6e0-46d2-ad1f-e12de8ed568d.mp4",
+    "targetMuscles": [
+      "dorsal ancho"
+    ],
+    "bodyParts": [
+      "espalda"
+    ],
+    "equipments": [
+      "polea"
+    ],
+    "secondaryMuscles": [
+      "bíceps",
+      "romboides",
+      "deltoides posteriores"
+    ],
+    "instructions": [
+      "Paso 1: Siéntate en la estación de polea alta ajustando las almohadillas de sujeción para inmovilizar los muslos y evitar la elevación del cuerpo durante la tracción.",
+      "Paso 2: Sujeta la barra con agarre prono amplio, superando la anchura biacromial, y mantén los brazos completamente extendidos sobre la cabeza.",
+      "Paso 3: Inclina ligeramente el torso hacia atrás manteniendo el pecho proyectado hacia afuera, la columna vertebral en posición neutra y la mirada al frente.",
+      "Paso 4: Tracciona la barra hacia la parte superior del pecho llevando los codos hacia abajo y hacia atrás, activando intensamente el dorsal ancho.",
+      "Paso 5: Junta las escápulas en el punto de máxima contracción y mantén la tensión isométrica durante un segundo, sintiendo la compresión de la musculatura dorsal.",
+      "Paso 6: Controla la fase excéntrica permitiendo que la barra ascienda lentamente hasta la extensión completa de los brazos, sintiendo el estiramiento del dorsal ancho."
+    ]
+  },
+  {
+    "exerciseId": "1lgExtn",
+    "name": "Extensión de piernas en máquina",
+    "gifUrl": "03a20790-5e29-492c-854f-af4845c8dec4.mp4",
+    "targetMuscles": [
+      "cuádriceps"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "máquina de extensión"
+    ],
+    "secondaryMuscles": [],
+    "instructions": [
+      "Paso 1: Siéntate en la máquina de extensión de piernas ajustando el respaldo para que el eje de rotación de la máquina quede perfectamente alineado con la articulación de la rodilla.",
+      "Paso 2: Coloca el rodillo acolchado sobre la cara anterior de los tobillos, justo en la unión tibioperonea distal, y sujeta firmemente los agarres laterales.",
+      "Paso 3: Mantén la espalda completamente apoyada contra el respaldo y las caderas en contacto con el asiento durante todo el movimiento.",
+      "Paso 4: Extiende las piernas mediante una contracción concéntrica aislada del cuádriceps femoral hasta alcanzar la extensión articular completa controlada.",
+      "Paso 5: Mantén la contracción isométrica durante un segundo en el pico de extensión, activando específicamente el vasto medial del cuádriceps.",
+      "Paso 6: Desciende el peso de forma controlada durante la fase excéntrica sin permitir que las placas toquen la pila de pesas entre repeticiones."
+    ]
+  },
+  {
+    "exerciseId": "1lgRais",
+    "name": "Elevación de piernas colgado en barra",
+    "gifUrl": "12594c07-8574-42e4-87b7-3a26dd2883e0.mp4",
+    "targetMuscles": [
+      "abdomen"
+    ],
+    "bodyParts": [
+      "cintura"
+    ],
+    "equipments": [
+      "peso corporal"
+    ],
+    "secondaryMuscles": [
+      "flexores de la cadera",
+      "oblicuos"
+    ],
+    "instructions": [
+      "Paso 1: Suspéndete de una barra de dominadas con agarre prono a la anchura de los hombros, dejando que las piernas cuelguen completamente extendidas y unidas.",
+      "Paso 2: Activa la musculatura profunda del core contrayendo el transverso del abdomen y estabilizando la cintura escapular mediante una leve depresión de los omóplatos.",
+      "Paso 3: Eleva las piernas extendidas hacia el frente mediante una flexión de cadera controlada, evitando cualquier balanceo pendular del tronco.",
+      "Paso 4: Continúa la elevación hasta que las piernas alcancen un ángulo de 90 grados respecto al torso, o hasta el límite que tu flexibilidad isquiotibial permita sin comprometer la técnica.",
+      "Paso 5: Mantén un segundo la contracción isométrica del recto abdominal en la posición más alta del recorrido.",
+      "Paso 6: Desciende las piernas lentamente controlando la fase excéntrica y evitando la hiperextensión lumbar al llegar al punto más bajo. Repite."
+    ]
+  },
+  {
+    "exerciseId": "1plankX",
+    "name": "Plancha abdominal isométrica",
+    "gifUrl": "02679c82-8cd6-4c76-8a57-a59f68c00e4d.mp4",
+    "targetMuscles": [
+      "abdomen"
+    ],
+    "bodyParts": [
+      "cintura"
+    ],
+    "equipments": [
+      "peso corporal"
+    ],
+    "secondaryMuscles": [
+      "oblicuos",
+      "zona lumbar",
+      "hombros"
+    ],
+    "instructions": [
+      "Paso 1: Colócate en decúbito prono sobre una superficie firme, apoyando los antebrazos en el suelo con los codos alineados verticalmente bajo la articulación glenohumeral.",
+      "Paso 2: Apoya las puntas de los pies separadas a la anchura de las caderas y eleva el cuerpo formando una línea perfectamente recta desde los talones hasta la coronilla.",
+      "Paso 3: Contrae el recto abdominal y el transverso del abdomen, manteniendo la pelvis en posición neutra sin anteversión ni retroversión pélvica.",
+      "Paso 4: Activa los glúteos y el cuádriceps femoral para estabilizar la cadena cinética posterior y evitar el colapso de la cadera.",
+      "Paso 5: Respira de forma controlada y diafragmática mientras mantienes la posición isométrica durante el tiempo prescrito sin comprometer la alineación corporal.",
+      "Paso 6: Finaliza la serie descendiendo el cuerpo de manera controlada hasta apoyar las rodillas en el suelo."
+    ]
+  },
+  {
+    "exerciseId": "1pshUpX",
+    "name": "Flexiones de brazos en suelo",
+    "gifUrl": "03dc159f-52c7-423d-8515-ced72e1ea74a.mp4",
+    "targetMuscles": [
+      "pectorales"
+    ],
+    "bodyParts": [
+      "pecho"
+    ],
+    "equipments": [
+      "peso corporal"
+    ],
+    "secondaryMuscles": [
+      "tríceps",
+      "hombros",
+      "core"
+    ],
+    "instructions": [
+      "Paso 1: Colócate en posición de plancha alta con las manos apoyadas en el suelo a una anchura ligeramente superior a la biacromial y los dedos orientados hacia adelante.",
+      "Paso 2: Mantén el cuerpo en perfecta alineación desde los talones hasta la cabeza, formando un bloque rígido mediante la activación del core y los glúteos.",
+      "Paso 3: Desciende el torso flexionando los codos en un ángulo de aproximadamente 45 grados respecto al tronco, evitando la abducción excesiva de los hombros.",
+      "Paso 4: Baja hasta que el pecho casi entre en contacto con el suelo, manteniendo la tensión mecánica constante en la musculatura pectoral.",
+      "Paso 5: Empuja contra el suelo extendiendo los codos mediante una contracción coordinada del pectoral mayor y el tríceps braquial, exhalando durante la fase concéntrica.",
+      "Paso 6: Repite el ciclo manteniendo la rigidez corporal y evitando la hiperextensión o el hundimiento de la zona lumbar durante toda la serie."
+    ]
+  },
+  {
+    "exerciseId": "1rsTwst",
+    "name": "Torsión rusa en suelo",
+    "gifUrl": "0b18766d-82b7-4099-87ed-cc2a7cb10b0c.mp4",
+    "targetMuscles": [
+      "abdomen"
+    ],
+    "bodyParts": [
+      "cintura"
+    ],
+    "equipments": [
+      "peso corporal"
+    ],
+    "secondaryMuscles": [
+      "oblicuos",
+      "flexores de la cadera"
+    ],
+    "instructions": [
+      "Paso 1: Siéntate en el suelo con las rodillas flexionadas y los talones apoyados, inclinando el torso hacia atrás hasta formar un ángulo de aproximadamente 45 grados con el suelo.",
+      "Paso 2: Eleva los pies despegándolos del suelo para incrementar la activación del core y une las palmas de las manos frente al esternón.",
+      "Paso 3: Rota el tronco hacia el flanco derecho llevando los brazos en bloque solidario, contrayendo intensamente los músculos oblicuo externo e interno del lado contralateral.",
+      "Paso 4: Regresa al centro con control y rota hacia el flanco izquierdo replicando el mismo patrón biomecánico de rotación torácica.",
+      "Paso 5: Mantén la pelvis orientada al frente y estabilizada durante toda la torsión, aislando el movimiento rotacional en la columna torácica y no en la lumbar.",
+      "Paso 6: Continúa alternando los lados de forma rítmica y controlada hasta completar el volumen de repeticiones prescrito para cada lado."
+    ]
+  },
+  {
+    "exerciseId": "1squatB",
+    "name": "Sentadilla con barra (Sentadilla trasera)",
+    "gifUrl": "02ab9b9c-3340-4d1b-b391-706c6bc5d27c.mp4",
+    "targetMuscles": [
+      "cuádriceps"
+    ],
+    "bodyParts": [
+      "piernas (parte superior)"
+    ],
+    "equipments": [
+      "barra"
+    ],
+    "secondaryMuscles": [
+      "glúteos",
+      "isquiotibiales",
+      "core",
+      "zona lumbar"
+    ],
+    "instructions": [
+      "Paso 1: Posiciona la barra sobre la porción carnosa del músculo trapecio en la espalda alta y sujétala con un agarre prono firme a una anchura cómoda que permita la retracción escapular.",
+      "Paso 2: Sal del soporte dando uno o dos pasos hacia atrás y separa los pies a la anchura de los hombros con las puntas ligeramente rotadas hacia afuera.",
+      "Paso 3: Activa el core mediante presión intraabdominal e inicia el descenso flexionando simultáneamente las articulaciones de la rodilla y la cadera, manteniendo el torso erguido.",
+      "Paso 4: Desciende hasta que las caderas sobrepasen el plano paralelo de las rodillas, manteniendo los talones en pleno contacto con el suelo y las rodillas alineadas con las puntas de los pies.",
+      "Paso 5: Impulsa el ascenso mediante una extensión potente y coordinada de las articulaciones de la cadera y la rodilla, exhalando al superar el punto de máxima resistencia mecánica.",
+      "Paso 6: Bloquea la posición erguida sin hiperextender las rodillas y repite la secuencia completa con una técnica estricta durante todas las repeticiones."
+    ]
+  },
+  {
+    "exerciseId": "1tbRowX",
+    "name": "Remo en barra T con apoyo pectoral",
+    "gifUrl": "1633dbf1-3439-42c4-87b9-62f6e6b02c8f.mp4",
+    "targetMuscles": [
+      "dorsal ancho"
+    ],
+    "bodyParts": [
+      "espalda"
+    ],
+    "equipments": [
+      "barra en T"
+    ],
+    "secondaryMuscles": [
+      "romboides",
+      "trapecios",
+      "bíceps",
+      "deltoides posteriores"
+    ],
+    "instructions": [
+      "Paso 1: Carga los discos en un extremo de la barra olímpica y colócate a horcajadas sobre ella con el extremo cargado situado entre ambas piernas.",
+      "Paso 2: Flexiona ligeramente las rodillas e inclina el torso hacia adelante realizando una bisagra de cadera, preservando la columna vertebral en alineación neutra durante todo el ejercicio.",
+      "Paso 3: Sujeta el agarre en V con ambas manos y deja que la barra cuelgue con los brazos completamente extendidos, sintiendo la tracción inicial en los dorsales.",
+      "Paso 4: Tracciona la barra hacia el pecho llevando los codos hacia atrás y hacia arriba, juntando las escápulas en el punto máximo del recorrido concéntrico.",
+      "Paso 5: Mantén la contracción isométrica durante un segundo en la posición de máxima aducción escapular, sintiendo la activación profunda de dorsales, romboides y trapecios.",
+      "Paso 6: Controla la fase excéntrica descendiendo la carga lentamente hasta estirar por completo la cadena cinética dorsal sin perder la tensión escapular."
+    ]
+  },
+  {
+    "exerciseId": "1trPshD",
+    "name": "Extensión de tríceps en polea alta",
+    "gifUrl": "01bc7752-0735-42d5-b165-276c5ab78982.mp4",
+    "targetMuscles": [
+      "tríceps"
+    ],
+    "bodyParts": [
+      "brazos (parte superior)"
+    ],
+    "equipments": [
+      "polea"
+    ],
+    "secondaryMuscles": [
+      "antebrazos"
+    ],
+    "instructions": [
+      "Paso 1: Colócate frente a la polea alta con el accesorio de barra recta o cuerda enganchado y ajusta la polea a una altura ligeramente superior a la de tu cabeza.",
+      "Paso 2: Sujeta el accesorio con agarre prono y posiciona los codos firmemente contra las paredes laterales del torso, manteniendo los húmeros perpendiculares al suelo.",
+      "Paso 3: Inclina muy ligeramente el torso hacia adelante manteniendo la columna vertebral en posición neutra, las rodillas blandas y el core activado para estabilizar el tronco.",
+      "Paso 4: Extiende los codos empujando el accesorio hacia el suelo mediante una contracción concéntrica aislada del tríceps braquial, sin desplazar los codos de su posición.",
+      "Paso 5: Bloquea los codos en la posición más baja del recorrido, contrayendo intensamente las tres cabezas del tríceps durante un segundo en el pico de máxima activación.",
+      "Paso 6: Controla la fase excéntrica permitiendo que el cable ascienda lentamente hasta la flexión completa de los codos, resistiendo la tracción de la polea durante todo el retorno."
+    ]
   }
 ]

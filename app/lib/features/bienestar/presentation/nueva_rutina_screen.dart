@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/config/env_config.dart';
+import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
+import '../application/ejercicios_provider.dart';
 import '../application/rutina_provider.dart';
+import '../infrastructure/recomendacion_ia_service.dart';
 
 // DTO local para el plan de ejercicios durante la creación
 class _EjercicioPlan {
@@ -61,6 +65,9 @@ class NuevaRutinaScreen extends ConsumerStatefulWidget {
 class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   int _paso = 0;
   bool _creando = false;
+  bool _loadingIA = false;
+  bool _rutinaRecomendada = false;
+  bool _ejerciciosRecomendados = false;
 
   final _nombreCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
@@ -72,10 +79,35 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   int _semanaActiva = 0;
   final Map<int, Map<int, List<_EjercicioPlan>>> _estructura = {};
 
+  static const _todosObjetivos = [
+    'fitness_general',
+    'perder_peso',
+    'ganar_masa',
+    'fuerza',
+    'resistencia',
+    'movilidad',
+  ];
+
   @override
   void initState() {
     super.initState();
     _inicializarEstructura();
+    _cargarObjetivoPerfil();
+  }
+
+  Future<void> _cargarObjetivoPerfil() async {
+    final perfil = await ref.read(perfilBienestarProvider.future);
+    if (perfil != null && mounted) {
+      setState(() => _objetivo = perfil.objetivoPrincipal);
+    }
+  }
+
+  String _formatearObjetivo(String o) {
+    return o
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
   }
 
   void _inicializarEstructura() {
@@ -147,13 +179,21 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          children: ['fuerza', 'resistencia', 'hipertrofia', 'movilidad']
+          children: _todosObjetivos
               .map((o) => ChoiceChip(
-                    label: Text(o[0].toUpperCase() + o.substring(1)),
+                    label: Text(_formatearObjetivo(o)),
                     selected: _objetivo == o,
                     onSelected: (_) => setState(() => _objetivo = o),
                   ))
               .toList(),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            'Puedes cambiar tu objetivo principal desde tu perfil en la pantalla de inicio.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: Colors.grey, fontStyle: FontStyle.italic),
+          ),
         ),
         const SizedBox(height: 16),
         SegmentedButton<String>(
@@ -215,6 +255,44 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
               icon: const Icon(Icons.add_circle_outline)),
         ]),
         const SizedBox(height: 28),
+        if (EnvConfig.hasGeminiApiKey) ...[
+          OutlinedButton.icon(
+            onPressed: _loadingIA ? null : _recomendarRutina,
+            icon: _loadingIA
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.auto_awesome, size: 18),
+            label: Text(_loadingIA
+                ? 'Generando recomendación...'
+                : _rutinaRecomendada
+                    ? 'Cambiar rutina con IA'
+                    : 'Recomendar rutina con IA'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(44),
+            ),
+          ),
+          if (_rutinaRecomendada) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _loadingIA ? null : _recomendarEjercicios,
+              icon: _loadingIA
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.fitness_center, size: 18),
+              label: Text(_loadingIA
+                  ? 'Generando ejercicios...'
+                  : 'Recomendar ejercicios'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+        ],
         FilledButton.icon(
           onPressed: () {
             if (_nombreCtrl.text.trim().length < 3) {
@@ -344,6 +422,13 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                     () => _estructura[semanaActual]![diaNum]!.removeAt(idx)),
                 onEjercicioUpdated: (idx, e) => setState(
                     () => _estructura[semanaActual]![diaNum]![idx] = e),
+                onSugerirEjerciciosIA: EnvConfig.hasGeminiApiKey
+                    ? () => _sugerirEjerciciosIA(semanaActual, diaNum)
+                    : null,
+                labelSugerirIA: _ejerciciosRecomendados
+                    ? 'Sugerir otros ejercicios'
+                    : 'Sugerir ejercicios con IA',
+                loadingIA: _loadingIA,
               );
             },
           ),
@@ -523,6 +608,310 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         ]),
       );
 
+  Future<void> _recomendarRutina() async {
+    setState(() => _loadingIA = true);
+    try {
+      final perfil = await ref.read(perfilBienestarProvider.future);
+
+      if (perfil == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Completa tu perfil de bienestar para recibir recomendaciones')),
+          );
+        }
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      final apiKey = EnvConfig.geminiApiKey;
+      if (apiKey.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Configura GEMINI_API_KEY en el archivo .env')),
+          );
+        }
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      final ejercicios = await ref.read(ejerciciosProvider.future);
+      final historial = await ref.read(historialSesionUsuarioProvider.future);
+      final estadoDiario = await ref.read(estadoDiarioHoyProvider.future);
+
+      final servicio = RecomendacionIaService();
+      final resultado = await servicio.generarRecomendacionRutina(
+        apiKey: apiKey,
+        perfil: perfil,
+        ejerciciosDisponibles: ejercicios,
+        historial: historial,
+        estadoDiario: estadoDiario,
+      );
+      if (!mounted) return;
+
+      if (resultado.tieneError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultado.error!)),
+        );
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      // Solo autocompletar metadatos, NO ejercicios
+      _nombreCtrl.text = resultado.nombre;
+      _descCtrl.text = resultado.descripcion;
+      _objetivo = resultado.objetivo;
+      _duracionSemanas = resultado.duracionSemanas.clamp(1, 12);
+
+      final semanaKeys = resultado.estructura.keys.toList()..sort();
+      if (semanaKeys.isNotEmpty) {
+        _diasPorSemana =
+            resultado.estructura[semanaKeys.first]!.length.clamp(1, 7);
+      }
+
+      setState(() {
+        _loadingIA = false;
+        _rutinaRecomendada = true;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  '¡Rutina recomendada! Configúrala a tu gusto y luego recomienda los ejercicios.'),
+              duration: Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingIA = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al generar recomendación: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _recomendarEjercicios() async {
+    setState(() => _loadingIA = true);
+    try {
+      final perfil = await ref.read(perfilBienestarProvider.future);
+      final ejercicios = await ref.read(ejerciciosProvider.future);
+      final historial = await ref.read(historialSesionUsuarioProvider.future);
+      final estadoDiario = await ref.read(estadoDiarioHoyProvider.future);
+
+      if (perfil == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Completa tu perfil de bienestar para recibir recomendaciones')),
+          );
+        }
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      final apiKey = EnvConfig.geminiApiKey;
+      if (apiKey.isEmpty) {
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      // Siempre llama a la IA con la configuración ACTUAL de la rutina
+      final servicio = RecomendacionIaService();
+      final resultado = await servicio.generarEstructuraCompleta(
+        apiKey: apiKey,
+        perfil: perfil,
+        ejerciciosDisponibles: ejercicios,
+        nombreRutina: _nombreCtrl.text.isNotEmpty ? _nombreCtrl.text : 'Rutina',
+        descripcionRutina: _descCtrl.text,
+        objetivoRutina: _objetivo,
+        duracionSemanas: _duracionSemanas,
+        diasPorSemana: _diasPorSemana,
+        historial: historial,
+        estadoDiario: estadoDiario,
+      );
+
+      if (!mounted) return;
+
+      if (resultado.tieneError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultado.error!)),
+        );
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      if (resultado.estructura.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('La IA no generó ejercicios. Intenta de nuevo.')),
+        );
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      _llenarEstructuraDesdeRecomendacion(resultado.estructura, ejercicios);
+
+      setState(() {
+        _loadingIA = false;
+        _ejerciciosRecomendados = true;
+        _paso = 1;
+      });
+
+      if (mounted) {
+        final totalEj = resultado.estructura.values.fold<int>(
+            0,
+            (t, dias) =>
+                t + dias.values.fold<int>(0, (t2, ej) => t2 + ej.length));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  '¡$totalEj ejercicios añadidos en ${resultado.estructura.length} semanas! Revisa y ajusta.'),
+              duration: const Duration(seconds: 2)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingIA = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al recomendar ejercicios: $e')),
+        );
+      }
+    }
+  }
+
+  void _llenarEstructuraDesdeRecomendacion(
+      Map<int, Map<int, List<EjercicioRecomendado>>> estructura,
+      List<EjercicioDb> ejercicios) {
+    _estructura.clear();
+    for (final s in estructura.entries) {
+      _estructura[s.key] = {};
+      for (final d in s.value.entries) {
+        _estructura[s.key]![d.key] = d.value
+            .map((e) => _EjercicioPlan(
+                  ejercicioId: e.ejercicioId,
+                  nombre: ejercicios
+                          .cast<EjercicioDb?>()
+                          .firstWhere(
+                              (ex) =>
+                                  (ex?.exerciseDbId ?? ex?.id) == e.ejercicioId,
+                              orElse: () => null)
+                          ?.nombre ??
+                      'Ejercicio recomendado',
+                  series: e.series,
+                  repeticiones: e.repeticiones,
+                  segundosDescanso: e.segundosDescanso,
+                  pesoKg: e.pesoKg,
+                ))
+            .toList();
+      }
+    }
+  }
+
+  Future<void> _sugerirEjerciciosIA(int semana, int dia) async {
+    setState(() => _loadingIA = true);
+    try {
+      final perfil = await ref.read(perfilBienestarProvider.future);
+      final ejercicios = await ref.read(ejerciciosProvider.future);
+      final historial = await ref.read(historialSesionUsuarioProvider.future);
+      final estadoDiario = await ref.read(estadoDiarioHoyProvider.future);
+
+      if (perfil == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Completa tu perfil de bienestar para recibir sugerencias')),
+          );
+        }
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      final apiKey = EnvConfig.geminiApiKey;
+      if (apiKey.isEmpty) {
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      final ejerciciosActuales =
+          _estructura[semana]![dia]!.map((e) => e.ejercicioId).toList();
+
+      final servicio = RecomendacionIaService();
+      final resultado = await servicio.generarRecomendacionEjercicios(
+        apiKey: apiKey,
+        perfil: perfil,
+        ejerciciosDisponibles: ejercicios,
+        nombreRutina: _nombreCtrl.text.isNotEmpty
+            ? _nombreCtrl.text
+            : 'Rutina personalizada',
+        objetivoRutina: _objetivo,
+        diaNum: dia,
+        ejerciciosYaAgregados: ejerciciosActuales,
+        historial: historial,
+        estadoDiario: estadoDiario,
+      );
+
+      if (!mounted) return;
+
+      if (resultado.tieneError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resultado.error!)),
+        );
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      if (resultado.ejercicios.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('No se encontraron ejercicios para recomendar')),
+        );
+        setState(() => _loadingIA = false);
+        return;
+      }
+
+      for (final rec in resultado.ejercicios) {
+        final nombre = ejercicios
+                .cast<EjercicioDb?>()
+                .firstWhere(
+                    (ex) => (ex?.exerciseDbId ?? ex?.id) == rec.ejercicioId,
+                    orElse: () => null)
+                ?.nombre ??
+            'Ejercicio sugerido';
+        _estructura[semana]![dia]!.add(_EjercicioPlan(
+          ejercicioId: rec.ejercicioId,
+          nombre: nombre,
+          series: rec.series,
+          repeticiones: rec.repeticiones,
+          segundosDescanso: rec.segundosDescanso,
+          pesoKg: rec.pesoKg,
+        ));
+      }
+
+      setState(() => _loadingIA = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  '${resultado.ejercicios.length} ejercicios sugeridos añadidos al Día $dia')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingIA = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al sugerir ejercicios: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _crearRutina() async {
     setState(() => _creando = true);
     try {
@@ -564,7 +953,10 @@ class _DiaEditorCard extends StatefulWidget {
       required this.onDelete,
       required this.onEjercicioAdded,
       required this.onEjercicioRemoved,
-      required this.onEjercicioUpdated});
+      required this.onEjercicioUpdated,
+      this.onSugerirEjerciciosIA,
+      this.labelSugerirIA = 'Sugerir ejercicios con IA',
+      this.loadingIA = false});
   final int semanaNum, diaNum;
   final List<_EjercicioPlan> ejercicios;
   final bool canDelete;
@@ -572,6 +964,9 @@ class _DiaEditorCard extends StatefulWidget {
   final void Function(_EjercicioPlan) onEjercicioAdded;
   final void Function(int) onEjercicioRemoved;
   final void Function(int, _EjercicioPlan) onEjercicioUpdated;
+  final VoidCallback? onSugerirEjerciciosIA;
+  final String labelSugerirIA;
+  final bool loadingIA;
   @override
   State<_DiaEditorCard> createState() => _DiaEditorCardState();
 }
@@ -630,6 +1025,19 @@ class _DiaEditorCardState extends State<_DiaEditorCard> {
                         widget.onEjercicioUpdated(entry.key, nuevo))),
           ],
           const SizedBox(height: 8),
+          if (widget.onSugerirEjerciciosIA != null)
+            TextButton.icon(
+                onPressed:
+                    widget.loadingIA ? null : widget.onSugerirEjerciciosIA,
+                icon: widget.loadingIA
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.auto_awesome, size: 14),
+                label: Text(
+                    widget.loadingIA ? 'Sugiriendo...' : widget.labelSugerirIA,
+                    style: const TextStyle(fontSize: 11))),
           TextButton.icon(
               onPressed: () => _mostrarBuscador(context),
               icon: const Icon(Icons.add, size: 16),
@@ -704,11 +1112,21 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
       child: Row(children: [
         Expanded(
             flex: 2,
-            child: Text(widget.ejercicio.nombre,
-                style:
-                    const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis)),
+            child: InkWell(
+                onTap: () => context.push(
+                    '/bienestar/ejercicio/${widget.ejercicio.ejercicioId}'),
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(widget.ejercicio.nombre,
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Colors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ))),
         _s(_series, 1, 10, (v) => _emit(s: v)),
         const Text('×', style: TextStyle(fontSize: 10, color: Colors.grey)),
         _s(_reps, 1, 50, (v) => _emit(r: v)),
@@ -834,12 +1252,21 @@ class _BuscadorEjerciciosSheetState extends State<_BuscadorEjerciciosSheet> {
           itemCount: snap.data!.length,
           itemBuilder: (context, i) {
             final e = snap.data![i];
+            final eId = e['id'] as String;
+            final eNombre = e['nombre'] as String;
             return ListTile(
                 dense: true,
-                title: Text(e['nombre'] as String,
-                    style: const TextStyle(fontSize: 13)),
+                title: Text(eNombre, style: const TextStyle(fontSize: 13)),
+                trailing: IconButton(
+                  icon: const Icon(Icons.info_outline, size: 20),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    context.push('/bienestar/ejercicio/$eId');
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
                 onTap: () {
-                  widget.onSelected(e['id'] as String, e['nombre'] as String);
+                  widget.onSelected(eId, eNombre);
                   Navigator.pop(context);
                 });
           },

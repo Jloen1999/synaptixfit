@@ -1,263 +1,507 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
-**Proyecto:** SynaptixFit  
-**Versión:** 1.3  
-**Fecha:** 10-05-2026  
-**Referencia:** [03-architecture.md](03-architecture.md) (secciones 8.2 y 8.3)
+**Proyecto:** SynaptixFit
+**Versión:** 2.0
+**Fecha:** 11-05-2026
+**Referencia:** [03-architecture.md](03-architecture.md), [04-data-model.md](04-data-model.md)
 
 ---
 
 ## 1. Arquitectura Backend
 
-SynaptixFit utiliza un backend gestionado (Supabase) con la siguiente división:
+SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realtime + Edge Functions), con Cloudflare R2 para almacenamiento multimedia y Google Gemini Flash como motor de IA generativa.
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL | Almacén relacional + RLS |
-| Autenticación | Supabase Auth | JWT, registro, login, proveedores sociales |
-| Tiempo real | Supabase Realtime | WebSocket para actualizaciones en vivo |
-| Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible |
-| Almacenamiento | Cloudflare R2 | Multimedia de ejercicios (videos, imágenes) |
-| Acceso multimedia | Cloudflare Workers | Generación de URLs firmadas para R2 |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 27 tablas, RLS, vistas materializadas |
+| Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
+| Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
+| Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
+| Almacenamiento multimedia | Cloudflare R2 | GIFs de ejercicios (~1300 archivos, resolución 360x360) |
+| Proxy multimedia | Cloudflare Worker `synaptixfit-r2-proxy` | CORS + acceso público a bucket R2 |
+| **IA generativa** | **Gemini Flash API (Google)** | **Recomendación de rutinas, ejercicios y progresión** |
+| **IA — HTTP client** | **Dio (Flutter)** | **Peticiones directas a `generativelanguage.googleapis.com`** |
 
----
+### 1.1 ¿Por qué la IA se ejecuta en cliente y no en Edge Function?
 
-## 2. Edge Functions
+| Decisión | Razón |
+|----------|-------|
+| IA en cliente (adoptado) | Menor latencia (sin doble salto), sin coste de Edge Function, response directa al UI |
+| IA en Edge Function | API key nunca sale del backend, pero añade latencia de red extra |
 
-### 2.1 `clonar_reto_publico`
+Para MVP/TFG, la simplicidad y latencia del enfoque cliente-side son preferibles. La API key de Gemini tiene scope limitado (solo generación de texto) y viaja sobre HTTPS. Para producción futura, se recomienda mover a Edge Function con rate limiting.
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Entrada** | `reto_id` |
-| **Salida** | `nuevo_reto_id` |
-| **Validaciones** | Visibilidad pública, ownership, prevención de duplicado |
-| **Lógica** | Copia el reto y sus hitos al perfil del usuario autenticado |
+## 2. Migraciones — Historial Completo
 
-### 2.2 `publicar_logro`
+Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`.
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Entrada** | `tipo`, `referencia_id`, `mensaje` (opcional) |
-| **Salida** | `publicacion_id` |
-| **Validaciones** | Evento válido, ownership, preferencia `autopost_logros_habilitado` |
-| **Lógica** | Crea entrada en `actividades_sociales` si el usuario tiene autopost activo |
+| # | Archivo | Fecha | Descripción |
+|---|---------|-------|-------------|
+| 0001 | `20260419_0001_init_schema.sql` | 19-04-2026 | Esquema inicial: tablas core, índices, funciones y RLS |
+| 0002 | `20260421_0002_add_rls_bienestar.sql` | 21-04-2026 | RLS para tablas de bienestar |
+| 0003 | `20260421_0003_restore_table_grants*.sql` | 21-04-2026 | Restauración de permisos PostgREST tras reset de schema |
+| 0004 | `20260421_0004_backfill_usuarios*.sql` | 21-04-2026 | Trigger `auth.users → public.usuarios` + backfill |
+| 0005 | `20260421_0005_add_academic_profile*.sql` | 21-04-2026 | `perfil_academico_usuario` y `carga_academica_semanal` |
+| 0006 | `20260422_0006_ejercicios_v2_normalizado.sql` | 22-04-2026 | Modelo 3NF de ejercicios (8 tablas: catálogos + N:M + vista) |
+| 0007 | `20260422_0007_seed_estudiantes.sql` | 22-04-2026 | Seed de usuarios de prueba |
+| 0008 | `20260501_0008_enable_realtime_ejercicios.sql` | 01-05-2026 | Realtime en las 8 tablas del catálogo de ejercicios |
+| 0009 | `20260504_0009_add_docente_archivado_asignaturas.sql` | 04-05-2026 | Campos `docente` y `archivado` en `asignaturas` |
+| 0010 | `20260504_0010_catalogo_academico.sql` | 04-05-2026 | Tablas `catalogo_universidades`, `catalogo_carreras`, `catalogo_asignaturas` + RLS pública |
+| 0011 | `20260504_0011_planes_estudio.sql` | 04-05-2026 | Tabla `planes_estudio`, columnas `plan_estudio_id` y `prioridad` en `horarios_academicos` |
+| 0012 | `20260505_0012_apuntes.sql` | 05-05-2026 | Tabla `apuntes` (Markdown, visibilidad, nota rápida) + RLS |
+| 0013 | `20260506_0013_usuario_carreras.sql` | 06-05-2026 | Tabla `usuario_carreras` (M:N usuario ↔ carrera) |
+| 0014 | `20260509_0014_performance_indexes.sql` | 09-05-2026 | Vista materializada `mv_ejercicios_completos`, índices GIN, triggers de refresco automático |
+| 0015 | `20260510_0015_rutinas_periodizacion.sql` | 10-05-2026 | Tablas `semanas_rutina`, `dias_rutina`, `series_sesion`. Columnas `duracion_semanas`, `objetivo`, `estado` en `rutinas`. Columna `dia_id` y `peso_kg` en `seleccion_de_ejercicios`. Columnas `dia_id`, `tipo` en `sesiones_registradas`. RLS completa. Drop de constraints antiguos que impedían periodización (UNIQUE por rutina_id sin dia_id). |
+| 0016 | `20260511_0016_estado_diario.sql` | 11-05-2026 | Tabla `estado_diario_usuario` (check-in diario de fatiga). RLS: solo propietario. |
+| 0017 | `20260511_0017_periodizacion_tipo_semana.sql` | 11-05-2026 | Columna `tipo_semana` en `semanas_rutina` con CHECK (`adaptacion`, `carga`, `pico`, `descarga`). Índice `(rutina_id, numero_semana, tipo_semana)`. |
 
-### 2.3 `validar_reto_complejo`
+## 3. Servicio de IA — `RecomendacionIaService`
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Entrada** | `reto`, `hitos[]`, `dependencias[]` |
-| **Salida** | `valido` (bool), `errores[]` |
-| **Validaciones** | Sin dependencias cíclicas, fechas coherentes, suma de pesos |
+**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (867 líneas)
 
-**Regla de cálculo de importancia por orden (server-side):**
-- El usuario no define pesos manuales.
-- La importancia de cada hito se calcula automáticamente según su posición.
-- Fórmula para `n` hitos y posición `i` (1 = primer hito):
-  ```
-  importancia(i) = (n - i + 1) / (n × (n + 1) / 2)
-  ```
-- Al reordenar hitos, se recalcula el avance global del reto.
+**Modelo:** Gemini Flash (`gemini-flash-latest`) vía REST API.
+**Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`
+**Autenticación:** `X-goog-api-key` header (API key desde `.env`)
+**Timeout:** 15 segundos (configurado en `Dio`)
 
-### 2.4 `recomendar_plan_entrenamiento`
+### 3.1 Configuración
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Entrada** | `usuario_id`, `semana` |
-| **Salida** | `sesiones_recomendadas`, `carga_objetivo_min`, `intensidad`, `sugerencias[]` |
-| **Validaciones** | Perfil de bienestar completo, disponibilidad mínima, límites de seguridad |
-| **Lógica** | Calcula la recomendación semanal basándose en el perfil físico, disponibilidad y adherencia reciente |
+```dart
+// EnvConfig (app/lib/core/config/env_config.dart)
+static String get geminiApiKey => dotenv.get('GEMINI_API_KEY', fallback: '');
 
-### 2.5 `recalcular_plan_bienestar`
+// Uso en el servicio
+final apiKey = EnvConfig.geminiApiKey;
+if (apiKey.trim().isEmpty) {
+  return RecomendacionRutinaResult(..., error: 'Falta GEMINI_API_KEY...');
+}
+```
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Entrada** | `usuario_id`, `semana`, `metricas_adherencia` |
-| **Salida** | `plan_ajustado` |
-| **Validaciones** | Conservar al menos un día de descanso, ajuste progresivo de carga |
-| **Lógica** | Si la adherencia baja de umbral o se reporta fatiga alta, reduce intensidad y frecuencia |
+### 3.2 Métodos del Servicio
 
-### 2.6 `recordatorios_programados` (cron)
+#### 3.2.1 `generarRecomendacionRutina()`
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Entrada** | Ninguna (cron automático) |
-| **Salida** | `metricas_envio` |
-| **Validaciones** | Respeta franja de silencio, límite diario, prioridad por urgencia |
-| **Lógica** | Evalúa las preferencias de cada usuario y genera notificaciones según la cola programada |
+**Propósito:** Generar metadatos de una rutina (nombre, descripción, objetivo, duración, estructura semana×día con ejercicios) basándose en el perfil completo del usuario.
 
-### 2.7 `resolver_media_r2_ejercicio`
+**Parámetros:**
+```dart
+Future<RecomendacionRutinaResult> generarRecomendacionRutina({
+  required String apiKey,                    // GEMINI_API_KEY
+  required PerfilBienestarDb perfil,         // Datos antropométricos + objetivo + equipamiento
+  required List<EjercicioDb> ejerciciosDisponibles,  // Catálogo completo (se filtra por equipamiento)
+  HistorialSesionDto? historial,             // Historial de sesiones (opcional)
+  EstadoDiarioDb? estadoDiario,              // Check-in de hoy (opcional)
+})
+```
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Entrada** | `ejercicio_id` |
-| **Salida** | `url_firmada`, `expira_en` |
-| **Validaciones** | Objeto existente en R2, permisos de lectura del usuario |
+**Flujo de ejecución:**
 
-### 2.8 `importar_catalogo_exercisedb`
+```
+1. Validar apiKey → si vacía, retornar error
+2. Filtrar ejerciciosDisponibles por equipamiento compatible (_ejercicioUsaEquipamiento)
+3. Si no hay ejercicios compatibles → retornar error con equipamiento listado
+4. Construir prompt con 7 secciones:
+   a. CONTEXTO DEL USUARIO (perfil completo + IMC + categoría IMC)
+   b. REGLAS DE SEGURIDAD SEGÚN BIOMETRÍA (_reglasSeguridadIMC)
+   c. REGLAS DE EQUIPAMIENTO (solo equipamiento declarado)
+   d. HISTORIAL DEPORTIVO (_formatearHistorial)
+   e. REGLAS DE RECOMENDACIÓN SEGÚN OBJETIVO (reps, descanso, tipo ejercicios)
+   f. PERIODIZACIÓN (reglas de tipo de semana)
+   g. FORMATO JSON ESPERADO
+5. Enviar prompt a Gemini vía _callGemini()
+6. Extraer JSON de la respuesta (_extraerJson)
+7. Parsear estructura: semanas → días → ejercicios → List<EjercicioRecomendado>
+8. Retornar RecomendacionRutinaResult con nombre, desc, objetivo, duración, estructura
+```
 
-| Propiedad | Valor |
-|-----------|-------|
-| **Entrada** | `version`, `lote`, `dry_run` (bool), `dataset_path` |
-| **Salida** | `resumen_importacion`, `errores_mapeo` |
-| **Validaciones** | Integridad referencial (`exercises`, `muscles`, `equipments`, `bodyParts`), deduplicación por `exercise_db_id`, licencia admitida |
-| **Fuente** | Dataset oficial ExerciseDB (AscendAPI) distribuido via Kaggle |
+**Prompt Engineering — Secciones clave:**
 
----
+- **System prompt implícito:** "Eres un entrenador personal profesional con amplia experiencia en prescripción de ejercicio."
+- **Constraint:** "Responde ÚNICAMENTE con un JSON válido. No uses Markdown ni bloques de código."
+- **Biometría:** Se incluye edad, sexo, peso, altura, IMC con 1 decimal y categoría (Normal, Sobrepeso, Obesidad, Bajo peso).
+- **Equipamiento:** "SOLO puedes recomendar ejercicios que usen el equipamiento listado arriba."
+- **Estructura esperada:** `{"nombre": "...", "descripcion": "...", "objetivo": "...", "duracionSemanas": N, "estructura": {"1": {"1": [{...}]}}}`
 
-## 3. Stored Procedures (PostgreSQL)
+#### 3.2.2 `generarEstructuraCompleta()`
 
-### 3.1 `detectar_conflictos_de_horario`
+**Propósito:** Generar la estructura completa de ejercicios (semanas × días × ejercicios) para una rutina ya configurada por el usuario.
 
-Detecta solapamientos entre bloques de estudio y sesiones de entrenamiento en una semana dada.
+**Diferencias clave con `generarRecomendacionRutina()`:**
 
-**Parámetros:** `p_usuario_id UUID`, `p_inicio_semana DATE`  
-**Retorno:** Tabla con `id_conflicto`, `id_bloque_estudio`, `id_sesion_entrenamiento`, `mensaje_conflicto`
+| Aspecto | `generarRecomendacionRutina` | `generarEstructuraCompleta` |
+|---------|---------------------------|---------------------------|
+| Metadatos de rutina | Los genera la IA | Vienen del usuario (ya configurados) |
+| Catálogo | Filtrado pero no enviado completo al prompt | Enviado como JSON embebido (exerciseId + nombre + músculos + equipamiento) |
+| Periodización | Genérica ("la app asigna automáticamente") | Específica por semana con volúmenes exactos |
+| Sobrecarga progresiva | No incluida (no hay ejercicios previos) | Incluida si hay historial (_formatearProgresion) |
+| Alternancia muscular | "Los días deben alternar grupos musculares" | Obligatorio: "No repitas el mismo grupo muscular en días consecutivos" |
 
-### 3.2 `calcular_progreso_de_reto`
+**Uso en UI:** Botón "Recomendar ejercicios" en Paso 1 (visible tras haber usado "Recomendar rutina con IA").
 
-Calcula el progreso global de un reto (simple o complejo con ponderación por pesos de hitos).
+#### 3.2.3 `generarRecomendacionEjercicios()`
 
-**Parámetros:** `p_reto_id UUID`  
-**Retorno:** `DOUBLE PRECISION` (0.0 a 1.0)
+**Propósito:** Sugerir 3-6 ejercicios adicionales para un día específico, sin repetir los ya agregados.
 
-### 3.3 `otorgar_xp`
+**Cuándo se usa:** Botón "Sugerir ejercicios con IA" en cada día del Paso 2 de creación de rutina.
 
-Incrementa XP del usuario y sube de nivel si alcanza el umbral (1000 × nivel actual).
+**Particularidades:**
+- El catálogo se envía COMPLETO como JSON en el prompt (limitado a ejercicios del equipamiento)
+- Los `ejerciciosYaAgregados` (lista de IDs) se pasan como lista de exclusión en el prompt
+- La respuesta es un **array JSON** (no objeto): `[{exerciseId, series, reps, ...}]`
+- Mínimo 3, máximo 6 ejercicios
 
-**Parámetros:** `p_usuario_id UUID`, `p_cantidad_xp INT`  
-**Retorno:** Tabla con `nuevo_nivel`, `nueva_xp`, `sube_nivel`
+#### 3.2.4 `generarProgresionEjercicio()`
 
----
+**Propósito:** Analizar el historial real de un ejercicio específico y sugerir la siguiente progresión de carga (peso, reps, series).
 
-## 4. Canales Realtime (Supabase)
+**Datos de entrada:**
+- `historialEjercicio`: Lista de `EjericicioRecienteDto` (peso promedio, reps promedio, RPE, fecha) de sesiones previas
+- `rpeUltimaSesion`: RPE reportado en la última sesión (1-10)
 
-Todas las tablas del catálogo de ejercicios tienen Supabase Realtime activado mediante `ALTER PUBLICATION supabase_realtime ADD TABLE`. El frontend Flutter consume estos eventos vía `.stream()` desde el provider `ejerciciosProvider`.
+**Reglas de progresión (en el prompt):**
 
-| Canal / Tabla | Eventos | Uso en frontend |
+| RPE | Acción | Objetivo fuerza | Objetivo ganar_masa | Objetivo perder_peso |
+|-----|--------|-----------------|--------------------|--------------------|
+| < 7 | Subir peso 5-10% o +1-2 reps | Priorizar peso | Equilibrio peso/reps | Mantener peso, subir reps |
+| 7-8 | Subir peso 2.5-5% | Subir peso | Subir peso o reps | Mantener |
+| 8.5-9.5 | Mantener peso y reps | Mantener | Mantener | Mantener |
+| = 10 | NO subir (fallo) | No subir | No subir | No subir |
+
+**Retorno:** `EjercicioRecomendado?` (null si no hay historial o falla la API)
+
+### 3.3 Helpers de Prompt Engineering
+
+#### `_ejercicioUsaEquipamiento()`
+Filtro de compatibilidad entre el equipamiento del ejercicio y el del usuario. `peso_corporal` siempre es compatible. Incluye mapeo de equivalencias:
+- `mancuerna` ↔ `mancuernas`
+- `banda_elastica` ↔ `banda de resistencia`
+- `kettlebell` ↔ `pesa rusa`
+- `polea` ↔ `polea`
+- `maquina` ↔ contiene `máquina`
+
+#### `_reglasSeguridadIMC(imc, edad)`
+Genera restricciones condicionales basadas en guías ACSM:
+
+| Condición | Reglas generadas |
+|-----------|-----------------|
+| IMC > 30 | Evitar saltos pliométricos, carrera. Priorizar bajo impacto articular. Evitar carga lumbar excesiva. |
+| IMC 25-30 | Moderar ejercicios de alto impacto. Buena técnica ante todo. |
+| IMC < 18.5 | Evitar déficit calórico extremo. Priorizar ganancia de masa muscular. |
+| Edad > 50 | Priorizar fortalecimiento articular y equilibrio. Evitar 1RM. Rangos 8-15 reps. Calentamiento articular 5-10 min. |
+| Edad < 18 | Priorizar técnica sobre carga. Evitar pesos máximos. Énfasis en peso corporal. |
+
+#### `_reglasPeriodizacion(duracionSemanas, historial)`
+Genera la estructura de periodización lineal modificada:
+
+| Duración | Estructura |
+|----------|-----------|
+| 1 semana | Sin periodización (carga) |
+| 2 semanas | Adaptación (80%) → Carga (85%) |
+| 3 semanas | Adaptación → Carga → Pico |
+| 4+ semanas | Adaptación → Carga × (N-2) → Descarga (60%) |
+
+**Caso especial:** Si `historial.requiereDescarga == true`, la semana 1 es DESCARGA ACTIVA y la estructura se desplaza (Descarga → Adaptación → Carga → Carga).
+
+#### `_formatearEstadoDiario(estado)`
+Traduce el check-in diario a reglas concretas para la IA:
+
+| Condición | Instrucción a la IA |
+|-----------|-------------------|
+| `requiereAdaptacion` (fatiga > 50) | Reducir volumen un 30%. |
+| `zonasDolor` no vacío | "SUSTITUIR ejercicios que trabajen: [zonas]. Buscar alternativas de otros grupos musculares." |
+| `nivelEnergia <= 2` | "Priorizar movilidad y ejercicios de baja intensidad." |
+| `calidadSueno <= 2` | "Evitar ejercicios de alta demanda neuromuscular (peso muerto, squat máximo)." |
+
+### 3.4 Mecanismo de Parsing JSON Robusto
+
+**`_extraerJson(String raw)`** implementa 3 estrategias en cascada:
+
+1. **Regex para bloques de código Markdown:** Busca `` ```json ... ``` `` o `` ``` ... ``` `` y extrae el contenido interno.
+2. **Búsqueda de delimitadores:** Encuentra el primer `{` o `[` y el último `}` o `]` correspondiente, extrayendo el substring.
+3. **Fallback:** Si no encuentra delimitadores, lanza `Exception('No se encontró JSON en la respuesta de Gemini')`.
+
+Esto es necesario porque Gemini a veces envuelve el JSON en bloques de código Markdown a pesar de las instrucciones en contrario.
+
+### 3.5 Manejo de Errores de IA
+
+**`_parseError(Object e)`** clasifica los errores:
+
+| Tipo de error | Mensaje al usuario |
+|--------------|-------------------|
+| `DioException` con status 400/401/403 | "Error de autenticación con Gemini. Revisa GEMINI_API_KEY." |
+| `DioException` (otros) | "No se pudo conectar con Gemini en este momento." |
+| `FormatException` | "Gemini generó una respuesta con formato no válido. Inténtalo de nuevo." |
+| Otros | "Error inesperado: {primeros 100 caracteres}" |
+
+## 4. Sistema de Check-in Diario
+
+### 4.1 Tabla `estado_diario_usuario` (Migración 0016)
+
+```sql
+CREATE TABLE estado_diario_usuario (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  fecha DATE NOT NULL DEFAULT current_date,
+  calidad_sueno INT CHECK (calidad_sueno BETWEEN 1 AND 5),
+  nivel_estres INT CHECK (nivel_estres BETWEEN 1 AND 5),
+  nivel_energia INT CHECK (nivel_energia BETWEEN 1 AND 5),
+  dolor_muscular INT CHECK (dolor_muscular BETWEEN 1 AND 5),
+  zonas_dolor TEXT[] DEFAULT '{}',
+  listo_para_entrenar BOOLEAN DEFAULT true,
+  notas TEXT,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(usuario_id, fecha)
+);
+
+CREATE INDEX idx_estado_diario_usuario_fecha
+  ON estado_diario_usuario (usuario_id, fecha DESC);
+```
+
+### 4.2 Políticas RLS
+
+```sql
+-- Solo el propietario puede leer su check-in
+CREATE POLICY estado_diario_select ON estado_diario_usuario
+  FOR SELECT USING (auth.uid() = usuario_id);
+
+-- Solo el propietario puede insertar/actualizar
+CREATE POLICY estado_diario_insert ON estado_diario_usuario
+  FOR INSERT WITH CHECK (auth.uid() = usuario_id);
+
+CREATE POLICY estado_diario_update ON estado_diario_usuario
+  FOR UPDATE USING (auth.uid() = usuario_id);
+```
+
+### 4.3 Lógica de Negocio (Cliente Dart)
+
+**Puntuación de fatiga compuesta (0-100):**
+
+```dart
+int get puntuacionFatiga {
+  final suenoInv = (6 - calidadSueno) * 5;    // 0-25  (sueño malo = alto)
+  final estres = (nivelEstres - 1) * 5;       // 0-20  (estrés alto = alto)
+  final energiaInv = (6 - nivelEnergia) * 4;  // 0-20  (energía baja = alto)
+  final dolor = (dolorMuscular - 1) * 7;      // 0-28  (dolor alto = alto)
+  return (suenoInv + estres + energiaInv + dolor).clamp(0, 100);
+}
+```
+
+**Umbral de adaptación:** `puntuacionFatiga > 50` → `requiereAdaptacion = true`
+
+**Justificación de pesos:** El dolor muscular recibe el mayor peso (×7) porque es la señal más directa de recuperación incompleta. El sueño (×5) es el segundo factor más importante según literatura deportiva. La energía (×4) y el estrés (×5) completan el perfil.
+
+**`listoParaEntrenar`:** Auto-calculado como `calidadSueno > 1 OR nivelEnergia > 2`. Solo se marca como NO listo si AMBOS indicadores están en niveles críticos.
+
+### 4.4 Persistencia — `guardarEstadoDiario()`
+
+```dart
+Future<void> guardarEstadoDiario({
+  required int calidadSueno,
+  required int nivelEstres,
+  required int nivelEnergia,
+  required int dolorMuscular,
+  required List<String> zonasDolor,
+  required bool listoParaEntrenar,
+  String? notas,
+  required WidgetRef ref,
+}) async {
+  final hoy = DateTime.now().toIso8601String().substring(0, 10);
+  await client.from('estado_diario_usuario').upsert({
+    'usuario_id': user.id,
+    'fecha': hoy,
+    'calidad_sueno': calidadSueno,
+    'nivel_estres': nivelEstres,
+    'nivel_energia': nivelEnergia,
+    'dolor_muscular': dolorMuscular,
+    'zonas_dolor': zonasDolor,
+    'listo_para_entrenar': listoParaEntrenar,
+    if (notas != null) 'notas': notas,
+  }, onConflict: 'usuario_id,fecha');
+
+  ref.invalidate(estadoDiarioHoyProvider);
+}
+```
+
+**Comportamiento:** Un solo registro por usuario y día. Si el usuario ya hizo check-in hoy, se actualiza (upsert). Esto permite correcciones antes de iniciar la sesión.
+
+## 5. Sistema de Periodización Inteligente
+
+### 5.1 Tabla `semanas_rutina` con `tipo_semana` (Migración 0017)
+
+```sql
+ALTER TABLE semanas_rutina
+  ADD COLUMN tipo_semana TEXT NOT NULL DEFAULT 'carga'
+  CHECK (tipo_semana IN ('adaptacion', 'carga', 'pico', 'descarga'));
+
+CREATE INDEX idx_semanas_rutina_tipo
+  ON semanas_rutina(rutina_id, numero_semana, tipo_semana);
+```
+
+### 5.2 Algoritmo de Asignación — `_calcularTipoSemana()`
+
+```dart
+String _calcularTipoSemana(int semanaNum, int totalSemanas) {
+  if (totalSemanas <= 1) return 'carga';
+  if (semanaNum == 1) return 'adaptacion';
+  if (semanaNum == totalSemanas && totalSemanas >= 4) return 'descarga';
+  if (semanaNum == totalSemanas && totalSemanas >= 3) return 'pico';
+  return 'carga';
+}
+```
+
+**Tabla de decisión completa:**
+
+| Total Semanas | Sem 1 | Sem 2 | Sem 3 | Sem 4 | Sem 5+ |
+|---------------|-------|-------|-------|-------|--------|
+| 1 | carga | — | — | — | — |
+| 2 | adaptacion | carga | — | — | — |
+| 3 | adaptacion | carga | pico | — | — |
+| 4 | adaptacion | carga | carga | descarga | — |
+| 5+ | adaptacion | carga | carga | carga | ... descarga |
+
+### 5.3 Detección Automática de Necesidad de Descarga
+
+**Provider:** `estadoPeriodizacionProvider`
+
+**Algoritmo:**
+
+```
+ENTRADA: usuario_id
+SALIDA: PeriodizacionEstado
+
+1. Consultar sesiones_registradas (últimas 3 semanas)
+   - Campos: rpe, duracion_minutos, completada_en, rutina_id
+   
+2. Calcular RPE promedio de todas las sesiones
+   - rpePromedio = SUM(rpe) / COUNT(rpe)
+
+3. Agrupar volumen por semana (suma de duracion_minutos)
+   - volumenPorSemana[inicioSemana] += duracion_minutos
+
+4. Detectar volumen decreciente (3 semanas consecutivas)
+   - volumenDecreciente = V[n] < V[n-1] AND V[n-1] < V[n-2]
+
+5. Consultar estado_diario_usuario (hoy)
+   - puntuacionFatigaDiaria = EstadoDiarioDb.puntuacionFatiga
+
+6. Determinar necesidad de descarga:
+   necesitaDescarga = (
+     rpePromedio > 8.0 AND semanasConsecutivas >= 3 AND volumenDecreciente
+   ) OR (
+     puntuacionFatigaDiaria > 50
+   )
+```
+
+**DTO `PeriodizacionEstado`:**
+
+```dart
+class PeriodizacionEstado {
+  final bool necesitaDescarga;         // TRUE si se recomienda descarga
+  final double rpePromedioReciente;    // RPE promedio últimas 3 semanas
+  final bool volumenDecreciente;       // TRUE si volumen bajando 3 semanas
+  final int semanasConsecutivas;       // Semanas seguidas con sesiones
+  final int puntuacionFatigaDiaria;    // Puntuación del check-in de hoy (0-100)
+}
+```
+
+**Consumo en UI:**
+- `RutinaDetalleScreen` lee `estadoPeriodizacionProvider`
+- Si `necesitaDescarga == true` → banner naranja: "Tu cuerpo muestra signos de fatiga. Considera una semana de descarga."
+- `NuevaRutinaScreen` pasa este dato a `generarRecomendacionRutina()` → si `necesitaDescarga`, la primera semana sugerida es de descarga
+
+## 6. Proveedor de Historial de Sesiones
+
+### 6.1 `historialSesionUsuarioProvider`
+
+**Propósito:** Proporcionar a la IA un perfil completo del historial de entrenamiento del usuario.
+
+**Consulta SQL equivalente:**
+
+```sql
+-- 1. Sesiones recientes (últimas 30)
+SELECT id, rpe, completada_en
+FROM sesiones_registradas
+WHERE usuario_id = $userId
+ORDER BY completada_en DESC
+LIMIT 30;
+
+-- 2. Series de las últimas 4 sesiones (JOIN triple)
+SELECT ss.peso_kg, ss.repeticiones_realizadas,
+       se.ejercicio_id, ej.nombre
+FROM series_sesion ss
+JOIN seleccion_de_ejercicios se ON ss.seleccion_id = se.id
+JOIN ejercicios ej ON se.ejercicio_id = ej.id
+WHERE ss.sesion_id IN ($ultimas4SesionesIds)
+ORDER BY ss.creado_en DESC;
+```
+
+**Campos calculados en Dart (no en BD):**
+- `rpePromedio`: Media aritmética de todos los RPE
+- `volumenSemanalEstimado`: Suma de (peso × reps) de ejercicios recientes
+- `semanasConsecutivasEntrenando`: Conteo de semanas con al menos 1 sesión
+- `ejerciciosRecientes`: Agrupados por nombre de ejercicio con promedios de peso/reps
+
+## 7. Repositorios de Dominio
+
+Contratos de la capa de infraestructura:
+
+| # | Repositorio | Archivo | Métodos principales |
+|---|-------------|---------|-------------------|
+| 1 | `BienestarRepository` | `auth/infrastructure/bienestar_repository.dart` | `obtenerPerfilBienestar()`, `guardarPerfilBienestar()`, `actualizarPerfilParcial()`, `actualizarNombre()`, `obtenerHistorialPeso()` |
+| 2 | `EjerciciosRepository` | `bienestar/infrastructure/ejercicios_repository.dart` | `obtenerEjercicios()`, `obtenerEjercicioPorId()`, `obtenerCatalogos()`, `buscarEjercicios()` |
+| 3 | `RecomendacionIaService` | `bienestar/infrastructure/recomendacion_ia_service.dart` | `generarRecomendacionRutina()`, `generarEstructuraCompleta()`, `generarRecomendacionEjercicios()`, `generarProgresionEjercicio()` |
+| 4 | `AuthRepository` | `auth/infrastructure/auth_repository.dart` | `signInWithGoogle()`, `signInWithEmail()`, `signUp()`, `signOut()` |
+| 5 | `RepositorioPlanesEstudio` | `academico/` | `crearPlan()`, `actualizarPlan()`, `eliminarPlan()`, `listarPlanesVisibles()` |
+| 6 | `RepositorioApuntes` | `academico/` | `crearApunte()`, `actualizarApunte()`, `eliminarApunte()`, `listarApuntesVisibles()` |
+| 7 | `RepositorioRetos` | `retos/` | `crearRetoSimple()`, `crearRetoComplejo()`, `actualizarProgreso()`, `clonarRetoPublico()` |
+| 8 | `RepositorioMuro` | `social/` | `listarMuro()`, `darMeGusta()`, `quitarMeGusta()` |
+
+## 8. Vista Materializada de Ejercicios
+
+**Tabla:** `mv_ejercicios_completos` (materializada)
+**Wrapper:** `v_ejercicios_completos` (vista normal → redirige a materializada)
+
+**Propósito:** Pre-calcular los arrays de catálogos (partes_cuerpo, musculos_objetivo, musculos_secundarios, equipamientos) para cada ejercicio, evitando múltiples JOINs en cada consulta del frontend.
+
+**Triggers de refresco automático:** 5 triggers sobre las tablas base (`ejercicios`, `ejercicio_parte_cuerpo`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_equipamiento`) ejecutan `REFRESH MATERIALIZED VIEW CONCURRENTLY mv_ejercicios_completos` ante cualquier INSERT, UPDATE o DELETE.
+
+**Índices GIN:** Sobre los 4 arrays (`partes_cuerpo`, `musculos_objetivo`, `musculos_secundarios`, `equipamientos`) + índice FTS para búsqueda en español.
+
+**Consulta típica del frontend:**
+```dart
+final data = await supabase
+  .from('v_ejercicios_completos')
+  .select('*')
+  .ilike('nombre', '%press%')
+  .eq('dificultad', 'medio')
+  .limit(20);
+```
+
+## 9. Realtime — Canales Activos
+
+| Canal / Tabla | Eventos | Uso en Frontend |
 |---------------|---------|-----------------|
-| `ejercicios` | INSERT, UPDATE, DELETE | Refresco automático del explorador y detalle de ejercicios |
-| `partes_cuerpo` | INSERT, UPDATE, DELETE | Sincronización de catálogo de partes del cuerpo |
-| `musculos` | INSERT, UPDATE, DELETE | Sincronización de catálogo de músculos |
-| `equipamientos` | INSERT, UPDATE, DELETE | Sincronización de catálogo de equipamientos |
-| `ejercicio_musculo_objetivo` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M en vivo |
-| `ejercicio_musculo_secundario` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M en vivo |
-| `ejercicio_parte_cuerpo` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M en vivo |
-| `ejercicio_equipamiento` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M en vivo |
+| `ejercicios` | INSERT, UPDATE, DELETE | `ejerciciosProvider` usa `.stream()` para refresco en vivo del explorador |
+| `partes_cuerpo` | INSERT, UPDATE, DELETE | Sincronización de catálogo |
+| `musculos` | INSERT, UPDATE, DELETE | Sincronización de catálogo |
+| `equipamientos` | INSERT, UPDATE, DELETE | Sincronización de catálogo |
+| `ejercicio_musculo_objetivo` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M |
+| `ejercicio_musculo_secundario` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M |
+| `ejercicio_parte_cuerpo` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M |
+| `ejercicio_equipamiento` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M |
 
-**Canales definidos en la arquitectura original (pendientes de activación en frontend):**
+## 10. Cloudflare Worker — Proxy R2
 
-| Canal | Evento | Tabla | Uso |
-|-------|--------|-------|-----|
-| `canal_muro` | INSERT | `actividades_sociales` | Refresco del feed social |
-| `canal_retos_usuario` | UPDATE | `retos`, `hitos_de_reto` | Progreso en tiempo real |
-| `canal_amistades` | UPDATE | `amistades` | Solicitudes, aceptaciones, bloqueos |
-| `canal_notificaciones_usuario` | INSERT | `notificaciones` | Centro de avisos |
-| `canal_bienestar_usuario` | UPDATE | `plan_entrenamiento_semanal` | Adherencia semanal |
+**Archivo:** `cloudflare/synaptixfit-r2-proxy/worker.js`
 
----
+**Propósito:** Servir archivos multimedia de ejercicios desde el bucket R2 con CORS configurado.
 
-## 4. Migraciones (Historial Completo)
-
-Todas las migraciones se encuentran en `supabase/migrations/` y se aplican en orden numérico con `supabase db push`.
-
-| # | Archivo | Descripción |
-|---|---------|-------------|
-| 0001 | `20260419_0001_init_schema.sql` | Esquema inicial: tablas core, índices, funciones y RLS |
-| 0002 | `20260421_0002_add_rls_bienestar.sql` | RLS para tablas de bienestar |
-| 0003 | `20260421_0003_restore_table_grants_after_schema_reset.sql` | Restauración de permisos tras reset |
-| 0004 | `20260421_0004_backfill_usuarios_and_restore_auth_trigger.sql` | Trigger `auth.users → public.usuarios` y backfill |
-| 0005 | `20260421_0005_add_academic_profile_and_weekly_load.sql` | `perfil_academico_usuario` y `carga_academica_semanal` |
-| 0006 | `20260422_0006_ejercicios_v2_normalizado.sql` | Modelo 3NF de ejercicios (catálogos + relaciones N:M) |
-| 0007 | `20260422_0007_seed_estudiantes.sql` | Seed de usuarios de prueba |
-| 0008 | `20260501_0008_enable_realtime_ejercicios.sql` | Realtime en las 8 tablas del catálogo de ejercicios |
-| 0009 | `20260504_0009_add_docente_archivado_asignaturas.sql` | Campos `docente` y `archivado` en `asignaturas` |
-| 0010 | `20260504_0010_catalogo_academico.sql` | Tablas `catalogo_universidades`, `catalogo_carreras`, `catalogo_asignaturas` + RLS pública |
-| 0011 | `20260504_0011_planes_estudio.sql` | Tabla `planes_estudio`, columnas `plan_estudio_id` y `prioridad` en `horarios_academicos` |
-| 0012 | `20260505_0012_apuntes.sql` | Tabla `apuntes` (Markdown, visibilidad, nota rápida) + RLS |
-| 0013 | `20260506_0013_usuario_carreras.sql` | Tabla `usuario_carreras` (M:N usuario ↔ carrera) |
-| 0014 | `20260509_0014_performance_indexes.sql` | Vista materializada `mv_ejercicios_completos`, índices GIN, triggers de refresco automático |
-| 0015 | `20260510_0015_rutinas_periodizacion.sql` | Tablas `semanas_rutina`, `dias_rutina`, `series_sesion` + columnas en `rutinas`, `seleccion_de_ejercicios`, `sesiones_registradas`. Drop constraints antiguos. RLS periodización. |
+**Comportamiento:**
+- Las URLs de GIFs se construyen como `https://pub-XXX.r2.dev/ejercicios/360/{exercise_db_id}.gif`
+- El worker aplica headers CORS para permitir acceso desde cualquier origen
+- Sin autenticación (acceso público de solo lectura)
 
 ---
 
-## 5. Vista Materializada de Ejercicios
-
-Para optimizar el rendimiento del catálogo de ejercicios (~1000 registros con múltiples JOINs), se implementó una vista materializada:
-
-- **`mv_ejercicios_completos`**: Pre-calcula arrays de `partes_cuerpo`, `musculos_objetivo`, `musculos_secundarios` y `equipamientos` usando `LEFT JOIN LATERAL`.
-- **Wrapper `v_ejercicios_completos`**: Vista normal que redirige a la materializada, preservando compatibilidad con el código existente.
-- **Triggers de refresco**: 5 triggers (`ejercicios`, `ejercicio_parte_cuerpo`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_equipamiento`) ejecutan `REFRESH MATERIALIZED VIEW CONCURRENTLY` ante cualquier cambio.
-- **Índices GIN**: Sobre los 4 arrays de catálogo + índice FTS para búsqueda en español.
-
-El frontend consulta `v_ejercicios_completos` (que internamente lee de `mv_ejercicios_completos`) para obtener ejercicios completos en una sola consulta sin subqueries correlacionadas.
-
----
-
-## 6. Repositorios de Dominio
-
-Contratos de la capa de infraestructura que conectan Flutter con el backend:
-
-| # | Repositorio | Métodos principales |
-|---|-------------|-------------------|
-| 1 | `RepositorioPlanesEstudio` | `crearPlan`, `actualizarPlan`, `eliminarPlan`, `listarPlanesVisibles` |
-| 2 | `RepositorioApuntes` | `crearApunte`, `actualizarApunte`, `eliminarApunte`, `listarApuntesVisibles` |
-| 3 | `RepositorioAcademico` | `crearAsignatura`, `archivarAsignatura`, `crearEvaluacion`, `registrarCalificacion`, `listarAsignaturasConProgreso` |
-| 4 | `RepositorioRetos` | `crearRetoSimple`, `crearRetoComplejo`, `reordenarHitos`, `actualizarProgreso`, `pausar`, `reprogramar`, `completar`, `clonarPublico` |
-| 5 | `RepositorioBienestar` | `guardarPerfil`, `generarPlanSemanal`, `confirmarPlan`, `recalcularPlan`, `crearRutina`, `listarCatalogo`, `seleccionarEjercicios`, `completarRutina` |
-| 6 | `RepositorioMuro` | `listarMuro`, `darMeGusta`, `quitarMeGusta` |
-| 7 | `RepositorioNotificaciones` | `actualizarPreferencias`, `obtenerPreferencias`, `previsualizarPlanEnvio` |
-| 8 | `RepositorioAnalitica` | `obtenerResumenSemanal`, `detectarSobrecarga`, `sugerirAjustes` |
-| 9 | `RepositorioSincronizacion` | `encolarOperacionLocal`, `sincronizarPendientes`, `resolverConflicto` |
-
----
-
-## 7. Cloudflare Workers
-
-### 7.1 `firmar_url_r2`
-
-Genera URLs firmadas con expiración temporal para acceso controlado a multimedia en R2.
-
-```
-Entrada: r2_object_key, duracion_segundos (default: 3600)
-Salida: url_firmada, expira_en
-```
-
-**Configuración:** `wrangler.toml` en `backend/cloudflare/workers/firmar_url_r2/`.
-
----
-
-## 8. Autenticación (Google y Correo/Contraseña)
-
-SynaptixFit utiliza **Supabase Auth** para gestionar de forma robusta la identidad de los usuarios, combinando **Google (SSO + People API)** y **Correo/Contraseña**.
-
-Una particularidad del flujo es que **la contraseña de correo no se exige en el primer contacto**. Para minimizar la fricción en la entrada, se prioriza el inicio de sesión OAuth o acceso sin contraseña (Magic Link/OTP), y el usuario **establece su contraseña más adelante desde la Configuración del Perfil**.
-
-### 8.1 Flujos de Autenticación
-
-**A. Flujo con Google (Google People API)**
-1. El usuario selecciona "Iniciar sesión con Google" en la aplicación móvil o web.
-2. La aplicación cliente inicia el flujo OAuth usando el SDK de Supabase (`supabase.auth.signInWithOAuth`).
-3. Google solicita los permisos definidos (por defecto `email`, `profile`, `openid` y `https://www.googleapis.com/auth/contacts.readonly`).
-4. Tras la autorización, Supabase verifica el JWT y crea o enlaza el usuario en `auth.users`.
-5. Los metadatos de Google (`user_metadata`) alimentan el perfil inicial.
-
-**B. Flujo con Correo y Establecimiento de Contraseña en Perfil**
-1. El usuario elige ingresar o registrarse con su correo electrónico.
-2. Supabase envía un código de verificación (OTP) o un enlace mágico (Magic Link) al correo.
-3. Al hacer clic o introducir el código, se completa la autenticación principal.
-4. **Configuración de Contraseña:** Una vez autenticado, el usuario se dirige a la vista de **Perfil > Configuración** donde establece una contraseña permanente llamando a `supabase.auth.updateUser({ password: '...' })`.
-5. En futuros inicios de sesión, el usuario podrá usar directamente el formulario de "Correo y Contraseña" sin requerir revisión del correo electrónico.
-
-### 8.2 Requisitos del Backend
-Para que este flujo funcione, el administrador debe:
-* Configurar el proyecto en **Google Cloud Console**.
-* Habilitar la **Google People API**.
-* Configurar en **Supabase Dashboard** las credenciales de OAuth obtenidas (Client ID y Client Secret).
-
-*(Para pasos de configuración detallada, referirse al documento `08-installation.md`).*
-
----
-
-**Documento compilado:** 10-05-2026  
-**Última revisión:** v1.2
+**Documento compilado:** 11-05-2026
+**Última revisión:** v2.0

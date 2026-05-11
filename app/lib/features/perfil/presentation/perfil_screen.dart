@@ -8,76 +8,102 @@ import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/kpi_card.dart';
 import '../../academico/application/usuario_carreras_provider.dart';
+import '../../bienestar/application/rutina_provider.dart';
+import '../../dashboard/application/dashboard_provider.dart';
+import '../../auth/infrastructure/bienestar_repository.dart';
 
-class PerfilScreen extends ConsumerWidget {
+class PerfilScreen extends ConsumerStatefulWidget {
   const PerfilScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<_PerfilData>(
-      future: _cargarPerfil(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const FeatureScaffold(
-            title: 'Perfil',
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
+  ConsumerState<PerfilScreen> createState() => _PerfilScreenState();
+}
 
-        final data = snapshot.data;
-        if (data == null) {
-          return const FeatureScaffold(
-            title: 'Perfil',
-            child: Center(child: Text('No se pudo cargar el perfil.')),
-          );
-        }
+class _PerfilScreenState extends ConsumerState<PerfilScreen> {
+  _PerfilData? _data;
+  bool _loading = true;
 
-        final usuario = data.usuario;
-        final perfil = data.perfil;
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
 
-        return FeatureScaffold(
-          title: 'Perfil',
-          child: DefaultTabController(
-            length: 3,
-            child: NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                SliverToBoxAdapter(
-                  child: _HeroHeader(usuario: usuario, perfil: perfil),
-                ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _TabBarDelegate(
-                    TabBar(
-                      tabs: const [
-                        Tab(text: 'Estadísticas'),
-                        Tab(text: 'Bienestar'),
-                        Tab(text: 'Ajustes'),
-                      ],
-                      labelStyle:
-                          Theme.of(context).textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                      indicatorSize: TabBarIndicatorSize.label,
-                    ),
-                  ),
-                ),
-              ],
-              body: TabBarView(
-                children: [
-                  _EstadisticasTab(
-                    usuario: usuario,
-                    sesiones: data.sesiones,
-                    logros: data.logros,
-                    caloriasAcumuladas: data.caloriasAcumuladas,
-                  ),
-                  _BienestarTab(perfil: perfil, historial: data.historial),
-                  _AjustesTab(usuario: usuario, prefs: data.preferencias),
-                ],
+  Future<void> _cargar() async {
+    setState(() => _loading = true);
+    try {
+      _data = await _cargarPerfil();
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
+  }
+
+  void _onPerfilActualizado() {
+    ref.invalidate(perfilBienestarProvider);
+    ref.invalidate(dashboardProvider);
+    _cargar();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || _data == null) {
+      return const FeatureScaffold(
+        title: '',
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    final data = _data!;
+    final usuario = data.usuario;
+    final perfil = data.perfil;
+
+    return FeatureScaffold(
+      title: '',
+      child: DefaultTabController(
+        length: 3,
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverToBoxAdapter(
+              child: _HeroHeader(
+                usuario: usuario,
+                perfil: perfil,
+                onNombreChanged: _onPerfilActualizado,
               ),
             ),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarDelegate(
+                TabBar(
+                  tabs: const [
+                    Tab(text: 'Estadísticas'),
+                    Tab(text: 'Bienestar'),
+                    Tab(text: 'Ajustes'),
+                  ],
+                  labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                  indicatorSize: TabBarIndicatorSize.label,
+                ),
+              ),
+            ),
+          ],
+          body: TabBarView(
+            children: [
+              _EstadisticasTab(
+                usuario: usuario,
+                sesiones: data.sesiones,
+                logros: data.logros,
+                caloriasAcumuladas: data.caloriasAcumuladas,
+              ),
+              _BienestarTab(
+                perfil: perfil,
+                historial: data.historial,
+                onPerfilChanged: _onPerfilActualizado,
+              ),
+              _AjustesTab(usuario: usuario, prefs: data.preferencias),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -88,14 +114,12 @@ class PerfilScreen extends ConsumerWidget {
 
     final usuarioMap =
         await client.from('usuarios').select().eq('id', user.id).maybeSingle();
-
     final usuario = usuarioMap != null
         ? UsuarioDb.fromMap(usuarioMap)
         : UsuarioDb(
             id: user.id,
             email: user.email ?? '',
-            nombreCompleto:
-                user.userMetadata?['full_name']?.toString() ?? 'Usuario',
+            nombreCompleto: user.userMetadata?['full_name']?.toString() ?? '—',
             urlAvatar: user.userMetadata?['avatar_url']?.toString(),
             nivel: 1,
             xpTotal: 0,
@@ -116,14 +140,14 @@ class PerfilScreen extends ConsumerWidget {
             id: '',
             usuarioId: user.id,
             edad: 0,
-            sexo: '',
+            sexo: 'prefiero_no_decirlo',
             pesoKg: 0,
             alturaCm: 0,
             imc: 0,
-            nivelActividad: '',
-            objetivoPrincipal: '',
-            objetivos: [],
-            equipamientoDisponible: [],
+            nivelActividad: 'sedentario',
+            objetivoPrincipal: 'fitness_general',
+            objetivos: const [],
+            equipamientoDisponible: const [],
             diasDisponiblesSemana: 0,
             minutosPorSesion: 0,
             onboardingCompletado: false,
@@ -133,44 +157,49 @@ class PerfilScreen extends ConsumerWidget {
 
     final sesionesData = await client
         .from('sesiones_registradas')
-        .select()
+        .select('id')
         .eq('usuario_id', user.id);
-    final sesiones = (sesionesData as List).length;
-    final calorias = (sesionesData as List).fold<int>(
-      0,
-      (t, s) => t + ((s['calorias_quemadas'] ?? 0) as num).round(),
-    );
 
-    final retosData = await client
+    final caloriasData = await client
+        .from('sesiones_registradas')
+        .select('calorias_quemadas')
+        .eq('usuario_id', user.id);
+
+    final sesiones = (sesionesData as List).length;
+    final caloriasAcumuladas = (caloriasData as List?)
+            ?.fold<double>(
+                0,
+                (sum, s) =>
+                    sum + ((s['calorias_quemadas'] as num?)?.toDouble() ?? 0))
+            .round() ??
+        0;
+
+    final logrosList = await client
         .from('retos')
         .select('id')
         .eq('usuario_id', user.id)
         .eq('esta_completado', true);
-    final logros = (retosData as List).length;
+    final logros = (logrosList as List).length;
 
     final historialData = await client
         .from('historial_peso')
         .select()
         .eq('usuario_id', user.id)
         .order('registrado_en', ascending: false);
-    final historialPeso = (historialData as List)
-        .map((h) => HistorialPesoDb.fromMap(h as Map<String, dynamic>))
-        .toList();
+    final historial =
+        historialData.map((e) => HistorialPesoDb.fromMap(e)).toList();
 
-    final prefsMap = await client
+    final prefsData = await client
         .from('preferencias_notificacion')
         .select()
         .eq('usuario_id', user.id)
         .maybeSingle();
-
-    final preferencias = prefsMap != null
-        ? PreferenciasNotificacionDb.fromMap(prefsMap)
+    final preferencias = prefsData != null
+        ? PreferenciasNotificacionDb.fromMap(prefsData)
         : PreferenciasNotificacionDb(
             id: '',
-            usuarioId: user.id,
-            categoriasActivas: ['conflict', 'milestone', 'social'],
-            horaSilencioInicio: '23:00',
-            horaSilencioFin: '07:00',
+            usuarioId: '',
+            categoriasActivas: const [],
             limiteDiario: 10,
             modoActual: 'normal',
             creadoEn: DateTime.now(),
@@ -182,14 +211,24 @@ class PerfilScreen extends ConsumerWidget {
       perfil: perfil,
       sesiones: sesiones,
       logros: logros,
-      caloriasAcumuladas: calorias,
-      historial: historialPeso,
+      caloriasAcumuladas: caloriasAcumuladas,
+      historial: historial,
       preferencias: preferencias,
     );
   }
 }
 
 class _PerfilData {
+  const _PerfilData({
+    required this.usuario,
+    required this.perfil,
+    required this.sesiones,
+    required this.logros,
+    required this.caloriasAcumuladas,
+    required this.historial,
+    required this.preferencias,
+  });
+
   final UsuarioDb usuario;
   final PerfilBienestarDb perfil;
   final int sesiones;
@@ -197,107 +236,152 @@ class _PerfilData {
   final int caloriasAcumuladas;
   final List<HistorialPesoDb> historial;
   final PreferenciasNotificacionDb preferencias;
-  _PerfilData(
-      {required this.usuario,
-      required this.perfil,
-      required this.sesiones,
-      required this.logros,
-      required this.caloriasAcumuladas,
-      required this.historial,
-      required this.preferencias});
 }
 
-// ---------------------------------------------------------------------------
-// Hero Header con avatar prominente, nombre, nivel y barra XP
-// ---------------------------------------------------------------------------
-class _HeroHeader extends StatelessWidget {
-  const _HeroHeader({required this.usuario, required this.perfil});
+// =============================================================================
+// HERO HEADER — Modern athletic dashboard
+// =============================================================================
+class _HeroHeader extends StatefulWidget {
+  const _HeroHeader({
+    required this.usuario,
+    required this.perfil,
+    this.onNombreChanged,
+  });
 
   final UsuarioDb usuario;
   final PerfilBienestarDb perfil;
+  final VoidCallback? onNombreChanged;
 
+  @override
+  State<_HeroHeader> createState() => _HeroHeaderState();
+}
+
+class _HeroHeaderState extends State<_HeroHeader> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final nombre = usuario.nombreCompleto;
-    final initial = nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
-    final xpMax = 1000 * usuario.nivel;
-    final xpProgreso = (usuario.xpTotal / xpMax).clamp(0.0, 1.0);
+    final nombre = widget.usuario.nombreCompleto;
+    final initial =
+        nombre.isNotEmpty && nombre != '—' ? nombre[0].toUpperCase() : '?';
+    final xpMax = 1000 * widget.usuario.nivel;
+    final xpProgreso =
+        xpMax > 0 ? (widget.usuario.xpTotal / xpMax).clamp(0.0, 1.0) : 0.0;
+    final tieneAvatar = widget.usuario.urlAvatar != null &&
+        widget.usuario.urlAvatar!.isNotEmpty;
 
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            theme.colorScheme.primary,
-            theme.colorScheme.primary.withValues(alpha: 0.85),
-          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0A1628), Color(0xFF152238), Color(0xFF0D1B2A)],
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
       child: Column(
         children: [
-          // Avatar
+          // Avatar — gradient border ring
           Container(
-            width: 80,
-            height: 80,
+            width: 88,
+            height: 88,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3),
-                width: 2,
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF72FE8F), Color(0xFF006E2D)],
               ),
-            ),
-            child: Center(
-              child: Text(
-                initial,
-                style: theme.textTheme.headlineLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF72FE8F).withValues(alpha: 0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
                 ),
+              ],
+            ),
+            padding: const EdgeInsets.all(3),
+            child: ClipOval(
+              child: Container(
+                color: const Color(0xFF1A2A40),
+                child: tieneAvatar
+                    ? Image.network(
+                        widget.usuario.urlAvatar!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return _avatarInitial(initial, 24);
+                        },
+                        errorBuilder: (context, error, stackTrace) =>
+                            _avatarInitial(initial, 24),
+                      )
+                    : _avatarInitial(initial, 24),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            nombre,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            usuario.email,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 13,
             ),
           ),
           const SizedBox(height: 16),
-          // Nivel + XP Bar
+          // Name row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  nombre,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 6),
+              InkWell(
+                onTap: () => _editarNombre(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child:
+                      const Icon(Icons.edit, size: 14, color: Colors.white54),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            widget.usuario.email,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 20),
+          // XP Level badge + bar
           Row(
             children: [
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.stars_rounded,
                         size: 16, color: Color(0xFF72FE8F)),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Text(
-                      'Nivel ${usuario.nivel}',
+                      'Nivel ${widget.usuario.nivel}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -307,25 +391,25 @@ class _HeroHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '${usuario.xpTotal} / $xpMax XP',
+                      '${widget.usuario.xpTotal} / $xpMax XP',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 11,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(3),
                       child: LinearProgressIndicator(
                         value: xpProgreso,
                         minHeight: 5,
-                        backgroundColor: Colors.white.withValues(alpha: 0.15),
+                        backgroundColor: Colors.white.withValues(alpha: 0.1),
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           Color(0xFF72FE8F),
                         ),
@@ -336,56 +420,90 @@ class _HeroHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Racha y días
+          const SizedBox(height: 16),
+          // Quick stats row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _MiniStat(icon: '🔥', label: '${usuario.rachaActual} racha'),
-              const SizedBox(width: 20),
-              _MiniStat(
-                  icon: '📅',
-                  label: '${perfil.diasDisponiblesSemana} días/sem'),
-              const SizedBox(width: 20),
-              _MiniStat(
-                  icon: '⏱️', label: '${perfil.minutosPorSesion} min/ses'),
+              _miniStat('🔥', '${widget.usuario.rachaActual}', 'racha'),
+              const SizedBox(width: 24),
+              _miniStat(
+                  '📅', '${widget.perfil.diasDisponiblesSemana}', 'días/sem'),
+              const SizedBox(width: 24),
+              _miniStat('⏱', '${widget.perfil.minutosPorSesion}', 'min/ses'),
             ],
           ),
         ],
       ),
     );
   }
-}
 
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.icon, required this.label});
-
-  final String icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 14)),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
+  Widget _avatarInitial(String initial, double size) {
+    return Container(
+      color: const Color(0xFF1A2A40),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: TextStyle(
+          color: const Color(0xFF72FE8F),
+          fontSize: size,
+          fontWeight: FontWeight.w700,
         ),
+      ),
+    );
+  }
+
+  Widget _miniStat(String emoji, String value, String label) {
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 18)),
+        const SizedBox(height: 2),
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700)),
+        Text(label,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.45), fontSize: 10)),
       ],
     );
   }
+
+  Future<void> _editarNombre(BuildContext context) async {
+    final repo = const BienestarRepository();
+    final ctrl = TextEditingController(text: widget.usuario.nombreCompleto);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Editar nombre'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(hintText: 'Nombre completo'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Guardar')),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty && mounted) {
+      await repo.actualizarNombre(result);
+      widget.onNombreChanged?.call();
+    }
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Tab: Estadísticas
-// ---------------------------------------------------------------------------
+// =============================================================================
+// TAB 1: Estadísticas — Metric grid with glass cards
+// =============================================================================
 class _EstadisticasTab extends StatelessWidget {
   const _EstadisticasTab({
     required this.usuario,
@@ -402,218 +520,582 @@ class _EstadisticasTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
-        KpiCard(
-          title: 'XP total',
-          value: '${usuario.xpTotal}',
-          icon: Icons.stars_rounded,
-          subtitle: 'Nivel ${usuario.nivel}',
-          progress: (usuario.xpTotal / (1000 * usuario.nivel)).clamp(0.0, 1.0),
-        ),
-        const SizedBox(height: 10),
-        KpiCard(
-          title: 'Sesiones registradas',
-          value: '$sesiones',
-          icon: Icons.fitness_center_rounded,
-        ),
-        const SizedBox(height: 10),
-        KpiCard(
-          title: 'Retos completados',
-          value: '$logros',
-          icon: Icons.emoji_events_rounded,
-          gradientColors: [
-            const Color(0xFFE65100).withValues(alpha: 0.10),
-            const Color(0xFFE65100).withValues(alpha: 0.03),
+        Row(
+          children: [
+            Expanded(
+              child: _metricCard(
+                '${usuario.xpTotal}',
+                'XP Total',
+                subtitle: 'Nivel ${usuario.nivel}',
+                color: const Color(0xFF72FE8F),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _metricCard(
+                '$sesiones',
+                'Sesiones',
+                color: const Color(0xFF60A5FA),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 10),
-        KpiCard(
-          title: 'Calorías acumuladas',
-          value: '$caloriasAcumuladas kcal',
-          icon: Icons.local_fire_department_rounded,
-          gradientColors: [
-            const Color(0xFFFF6B35).withValues(alpha: 0.10),
-            const Color(0xFFFF6B35).withValues(alpha: 0.03),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _metricCard(
+                '$logros',
+                'Retos',
+                color: const Color(0xFFE8A838),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _metricCard(
+                '$caloriasAcumuladas',
+                'Calorías',
+                color: const Color(0xFFFF6B35),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 10),
-        KpiCard(
-          title: 'Racha actual',
-          value: '${usuario.rachaActual} días',
-          icon: Icons.whatshot_rounded,
+        const SizedBox(height: 12),
+        _metricCard(
+          '${usuario.rachaActual}',
+          'Racha actual',
+          subtitle: 'días consecutivos',
+          color: const Color(0xFFA78BFA),
         ),
       ],
     );
   }
-}
 
-// ---------------------------------------------------------------------------
-// Tab: Bienestar
-// ---------------------------------------------------------------------------
-class _BienestarTab extends StatelessWidget {
-  const _BienestarTab({required this.perfil, required this.historial});
-
-  final PerfilBienestarDb perfil;
-  final List<HistorialPesoDb> historial;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return ListView(
+  Widget _metricCard(
+    String value,
+    String label, {
+    String? subtitle,
+    required Color color,
+  }) {
+    return Container(
       padding: const EdgeInsets.all(16),
-      children: [
-        // Perfil físico actual
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Perfil físico actual',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _DatoRow(label: 'Peso', valor: '${perfil.pesoKg} kg'),
-                _DatoRow(label: 'Altura', valor: '${perfil.alturaCm} cm'),
-                _DatoRow(
-                    label: 'IMC',
-                    valor:
-                        '${perfil.imc.toStringAsFixed(1)} (${perfil.imcCategoria})'),
-                _DatoRow(label: 'Edad', valor: '${perfil.edad} años'),
-                _DatoRow(
-                    label: 'Actividad',
-                    valor: perfil.nivelActividad.toUpperCase()),
-                _DatoRow(label: 'Objetivo', valor: perfil.objetivoPrincipal),
-              ],
-            ),
-          ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withValues(alpha: 0.12),
         ),
-        const SizedBox(height: 16),
-        // Historial de peso simplificado
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Evolución de peso',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (historial.isEmpty)
-                  const Text('Sin registros aún')
-                else
-                  ...historial.map((h) => _DatoRow(
-                        label: _formatFecha(h.registradoEn),
-                        valor: '${h.pesoKg} kg (IMC ${h.imc})',
-                      )),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Equipamiento
-        if (perfil.equipamientoDisponible.isNotEmpty)
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Equipamiento disponible',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: perfil.equipamientoDisponible
-                        .map((e) => Chip(
-                              label: Text(e.replaceAll('_', ' ')),
-                              avatar:
-                                  const Icon(Icons.fitness_center, size: 16),
-                            ))
-                        .toList(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  String _formatFecha(DateTime fecha) {
-    return '${fecha.day}/${fecha.month}/${fecha.year}';
-  }
-}
-
-class _DatoRow extends StatelessWidget {
-  const _DatoRow({required this.label, required this.valor});
-
-  final String label;
-  final String valor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            value,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: color,
+              letterSpacing: -1,
+            ),
           ),
+          const SizedBox(height: 4),
           Text(
-            valor,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF94A3B8),
+            ),
           ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Tab: Ajustes
-// ---------------------------------------------------------------------------
+// =============================================================================
+// TAB 2: Bienestar — All onboarding fields editable
+// =============================================================================
+class _BienestarTab extends StatefulWidget {
+  const _BienestarTab({
+    required this.perfil,
+    required this.historial,
+    this.onPerfilChanged,
+  });
+
+  final PerfilBienestarDb perfil;
+  final List<HistorialPesoDb> historial;
+  final VoidCallback? onPerfilChanged;
+
+  @override
+  State<_BienestarTab> createState() => _BienestarTabState();
+}
+
+class _BienestarTabState extends State<_BienestarTab> {
+  static const _objetivos = [
+    'fitness_general',
+    'perder_peso',
+    'ganar_masa',
+    'fuerza',
+    'resistencia',
+    'movilidad',
+  ];
+  static const _nivelesActividad = [
+    'sedentario',
+    'ligero',
+    'moderado',
+    'alto',
+  ];
+  static const _opcionesSexo = [
+    'masculino',
+    'femenino',
+    'prefiero_no_decirlo',
+  ];
+  static const _equipamientoOpciones = [
+    'peso_corporal',
+    'mancuernas',
+    'barra',
+    'banda_elastica',
+    'kettlebell',
+    'polea',
+    'maquina',
+    'medicina_ball',
+  ];
+
+  final _repo = const BienestarRepository();
+
+  String _fmt(String o) => o
+      .replaceAll('_', ' ')
+      .split(' ')
+      .map((w) => w[0].toUpperCase() + w.substring(1))
+      .join(' ');
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.perfil;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      children: [
+        _sectionCard('Perfil físico', [
+          _editRow(
+              'Peso',
+              _pesoStr(p.pesoKg),
+              () => _editarNumero('Peso (kg)', p.pesoKg, 30, 250,
+                  (v) => _guardar({'peso_kg': v, 'altura_cm': p.alturaCm}))),
+          _editRow(
+              'Altura',
+              _alturaStr(p.alturaCm),
+              () => _editarNumero('Altura (cm)', p.alturaCm, 120, 230,
+                  (v) => _guardar({'altura_cm': v, 'peso_kg': p.pesoKg}))),
+          _readRow(
+              'IMC',
+              p.imc > 0
+                  ? '${p.imc.toStringAsFixed(1)} · ${p.imcCategoria}'
+                  : '—'),
+          _editRow('Sexo', p.sexo == 'prefiero_no_decirlo' ? '—' : _fmt(p.sexo),
+              _editarSexo),
+          _editRow('Edad', p.edad > 0 ? '${p.edad} años' : '—', _editarEdad),
+          _editRow('Objetivo', _fmt(p.objetivoPrincipal), _editarObjetivo),
+          _editRow(
+              'Actividad',
+              p.nivelActividad.isNotEmpty ? _fmt(p.nivelActividad) : '—',
+              _editarNivelActividad),
+          _editRow(
+              'Días/semana',
+              p.diasDisponiblesSemana > 0 ? '${p.diasDisponiblesSemana}' : '—',
+              _editarDias),
+          _editRow(
+              'Min/sesión',
+              p.minutosPorSesion > 0 ? '${p.minutosPorSesion}' : '—',
+              _editarMinutos),
+        ]),
+        const SizedBox(height: 16),
+        _sectionCard('Equipamiento', [
+          if (p.equipamientoDisponible.isEmpty)
+            const _RowText('Sin equipamiento configurado', isSub: true)
+          else ...[
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: p.equipamientoDisponible
+                  .map((e) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color:
+                              const Color(0xFF006E2D).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _fmt(e),
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF006E2D)),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _editarEquipamiento,
+              icon: const Icon(Icons.edit, size: 14),
+              label: const Text('Configurar equipamiento',
+                  style: TextStyle(fontSize: 12)),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 16),
+        _sectionCard('Evolución de peso', [
+          if (widget.historial.isEmpty)
+            const _RowText('Sin registros aún', isSub: true)
+          else
+            ...widget.historial.take(5).map((h) => _readRow(
+                  '${h.registradoEn.day}/${h.registradoEn.month}/${h.registradoEn.year}',
+                  '${h.pesoKg} kg · IMC ${h.imc}',
+                )),
+        ]),
+      ],
+    );
+  }
+
+  Widget _sectionCard(String title, List<Widget> children) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border:
+            Border.all(color: const Color(0xFF1E293B).withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFE2E8F0))),
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _editRow(String label, String value, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            children: [
+              Expanded(
+                  child: Text(label,
+                      style: const TextStyle(
+                          fontSize: 13, color: Color(0xFF94A3B8)))),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 6),
+              const Icon(Icons.edit, size: 13, color: Color(0xFF64748B)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _readRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          Expanded(
+              child: Text(label,
+                  style:
+                      const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)))),
+          Text(value,
+              style:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  String _pesoStr(double kg) => kg > 0 ? '${kg.toStringAsFixed(1)} kg' : '—';
+  String _alturaStr(double cm) => cm > 0 ? '${cm.toStringAsFixed(0)} cm' : '—';
+
+  Future<void> _guardar(Map<String, dynamic> data) async {
+    await _repo.actualizarPerfilParcial(data);
+    widget.onPerfilChanged?.call();
+  }
+
+  Future<void> _editarNumero(String title, double current, int min, int max,
+      void Function(double) onSave) async {
+    final ctrl = TextEditingController(
+        text: current > 0 ? current.toStringAsFixed(1) : '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          autofocus: true,
+          decoration: InputDecoration(hintText: '$min–$max'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Guardar')),
+        ],
+      ),
+    );
+    final val = double.tryParse(result ?? '');
+    if (val != null && val >= min && val <= max && mounted) {
+      onSave(val);
+    }
+  }
+
+  void _editarSexo() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Sexo'),
+        children: _opcionesSexo
+            .map((s) => SimpleDialogOption(
+                  onPressed: () => Navigator.pop(ctx, s),
+                  child: Row(children: [
+                    Icon(
+                        widget.perfil.sexo == s
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 18),
+                    const SizedBox(width: 12),
+                    Text(s == 'prefiero_no_decirlo'
+                        ? 'Prefiero no decirlo'
+                        : _fmt(s)),
+                  ]),
+                ))
+            .toList(),
+      ),
+    );
+    if (result != null && mounted) {
+      await _guardar({'sexo': result});
+    }
+  }
+
+  void _editarEdad() async {
+    final ctrl = TextEditingController(
+        text: widget.perfil.edad > 0 ? '${widget.perfil.edad}' : '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edad'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Años'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Guardar')),
+        ],
+      ),
+    );
+    final edad = int.tryParse(result ?? '');
+    if (edad != null && edad > 0 && edad < 120 && mounted) {
+      await _guardar({'edad': edad});
+    }
+  }
+
+  void _editarObjetivo() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Objetivo deportivo'),
+        children: _objetivos
+            .map((o) => SimpleDialogOption(
+                  onPressed: () => Navigator.pop(ctx, o),
+                  child: Row(children: [
+                    Icon(
+                        widget.perfil.objetivoPrincipal == o
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 18),
+                    const SizedBox(width: 12),
+                    Text(_fmt(o)),
+                  ]),
+                ))
+            .toList(),
+      ),
+    );
+    if (result != null && mounted) {
+      await _guardar({'objetivo_principal': result});
+    }
+  }
+
+  void _editarNivelActividad() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Nivel de actividad'),
+        children: _nivelesActividad
+            .map((n) => SimpleDialogOption(
+                  onPressed: () => Navigator.pop(ctx, n),
+                  child: Row(children: [
+                    Icon(
+                        widget.perfil.nivelActividad == n
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 18),
+                    const SizedBox(width: 12),
+                    Text(_fmt(n)),
+                  ]),
+                ))
+            .toList(),
+      ),
+    );
+    if (result != null && mounted) {
+      await _guardar({'nivel_actividad': result});
+    }
+  }
+
+  void _editarDias() async {
+    final ctrl = TextEditingController(
+        text: widget.perfil.diasDisponiblesSemana > 0
+            ? '${widget.perfil.diasDisponiblesSemana}'
+            : '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Días por semana'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '1–7'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Guardar')),
+        ],
+      ),
+    );
+    final val = int.tryParse(result ?? '');
+    if (val != null && val >= 1 && val <= 7 && mounted) {
+      await _guardar({'dias_disponibles_semana': val});
+    }
+  }
+
+  void _editarMinutos() async {
+    final ctrl = TextEditingController(
+        text: widget.perfil.minutosPorSesion > 0
+            ? '${widget.perfil.minutosPorSesion}'
+            : '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Minutos por sesión'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '10–180'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Guardar')),
+        ],
+      ),
+    );
+    final val = int.tryParse(result ?? '');
+    if (val != null && val >= 10 && val <= 180 && mounted) {
+      await _guardar({'minutos_por_sesion': val});
+    }
+  }
+
+  void _editarEquipamiento() async {
+    final seleccionados =
+        Set<String>.from(widget.perfil.equipamientoDisponible);
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setD) => AlertDialog(
+          title: const Text('Equipamiento disponible'),
+          content: SingleChildScrollView(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: _equipamientoOpciones
+                  .map((e) => FilterChip(
+                        label:
+                            Text(_fmt(e), style: const TextStyle(fontSize: 12)),
+                        selected: seleccionados.contains(e),
+                        onSelected: (v) => setD(() =>
+                            v ? seleccionados.add(e) : seleccionados.remove(e)),
+                      ))
+                  .toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar')),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _guardar({'equipamiento_disponible': seleccionados.toList()});
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// TAB 3: Ajustes
+// =============================================================================
 class _AjustesTab extends ConsumerWidget {
   const _AjustesTab({required this.usuario, required this.prefs});
 
@@ -622,46 +1104,55 @@ class _AjustesTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-            ),
+            border: Border.all(
+                color: const Color(0xFF1E293B).withValues(alpha: 0.6)),
           ),
           child: Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.visibility_rounded),
-                title: const Text('Visibilidad del perfil'),
-                subtitle: const Text('Privado'),
-                trailing: const Icon(Icons.chevron_right_rounded),
+                leading: const Icon(Icons.visibility_rounded,
+                    color: Color(0xFF94A3B8)),
+                title: const Text('Visibilidad del perfil',
+                    style: TextStyle(fontSize: 13)),
+                subtitle: const Text(
+                    'Privado · Solo tus amigos pueden ver tus rutinas',
+                    style: TextStyle(fontSize: 11)),
+                trailing: const Icon(Icons.chevron_right_rounded,
+                    color: Color(0xFF64748B)),
                 onTap: () {},
               ),
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
               ListTile(
-                leading: const Icon(Icons.notifications_rounded),
-                title: const Text('Notificaciones'),
+                leading: const Icon(Icons.notifications_rounded,
+                    color: Color(0xFF94A3B8)),
+                title: const Text('Notificaciones',
+                    style: TextStyle(fontSize: 13)),
                 subtitle: Text(
-                  'Modo: ${prefs.modoActual} · Límite: ${prefs.limiteDiario}/día',
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {},
+                    'Modo: ${prefs.modoActual} · ${prefs.limiteDiario}/día',
+                    style: const TextStyle(fontSize: 11)),
+                trailing: const Icon(Icons.chevron_right_rounded,
+                    color: Color(0xFF64748B)),
+                onTap: () => context.push('/notificaciones'),
               ),
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
               ListTile(
-                leading: const Icon(Icons.dark_mode_rounded),
-                title: const Text('Modo silencio'),
+                leading: const Icon(Icons.dark_mode_rounded,
+                    color: Color(0xFF94A3B8)),
+                title:
+                    const Text('Modo silencio', style: TextStyle(fontSize: 13)),
                 subtitle: Text(
-                  '${prefs.horaSilencioInicio ?? '--'} a ${prefs.horaSilencioFin ?? '--'}',
+                  '${prefs.horaSilencioInicio ?? '—'} a ${prefs.horaSilencioFin ?? '—'}',
+                  style: const TextStyle(fontSize: 11),
                 ),
-                trailing: const Icon(Icons.chevron_right_rounded),
+                trailing: const Icon(Icons.chevron_right_rounded,
+                    color: Color(0xFF64748B)),
                 onTap: () {},
               ),
             ],
@@ -669,22 +1160,11 @@ class _AjustesTab extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         _CarrerasCard(),
-        const SizedBox(height: 16),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: theme.colorScheme.error.withValues(alpha: 0.2),
-            ),
-          ),
-          child: ListTile(
-            leading: Icon(Icons.logout_rounded, color: theme.colorScheme.error),
-            title: Text(
-              'Cerrar sesión',
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-            onTap: () async {
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () async {
               try {
                 await ref.read(authControllerProvider.notifier).logout();
                 if (!context.mounted) return;
@@ -692,12 +1172,18 @@ class _AjustesTab extends ConsumerWidget {
               } catch (_) {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('No se pudo cerrar la sesión.'),
-                  ),
+                  const SnackBar(content: Text('No se pudo cerrar la sesión.')),
                 );
               }
             },
+            icon: const Icon(Icons.logout_rounded,
+                size: 18, color: Color(0xFFEF4444)),
+            label: const Text('Cerrar sesión',
+                style: TextStyle(color: Color(0xFFEF4444))),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(44),
+              side: const BorderSide(color: Color(0xFF3B1C1C)),
+            ),
           ),
         ),
       ],
@@ -705,21 +1191,34 @@ class _AjustesTab extends ConsumerWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Delegate para tab bar persistente en NestedScrollView
-// ---------------------------------------------------------------------------
+// =============================================================================
+// Helpers
+// =============================================================================
+
+class _RowText extends StatelessWidget {
+  const _RowText(this.text, {this.isSub = false});
+  final String text;
+  final bool isSub;
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text(text,
+          style: TextStyle(
+              fontSize: 13, color: isSub ? const Color(0xFF64748B) : null)),
+    );
+  }
+}
+
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   const _TabBarDelegate(this.tabBar);
-
   final TabBar tabBar;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: Theme.of(context).colorScheme.surface,
-      child: tabBar,
-    );
+        color: Theme.of(context).scaffoldBackgroundColor, child: tabBar);
   }
 
   @override
@@ -729,112 +1228,50 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => tabBar.preferredSize.height;
 
   @override
-  bool shouldRebuild(covariant _TabBarDelegate oldDelegate) =>
-      tabBar != oldDelegate.tabBar;
+  bool shouldRebuild(covariant _TabBarDelegate old) => old.tabBar != tabBar;
 }
 
 class _CarrerasCard extends ConsumerWidget {
-  const _CarrerasCard();
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final carrerasAsync = ref.watch(usuarioCarrerasProvider);
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Theme.of(context)
-              .colorScheme
-              .outlineVariant
-              .withValues(alpha: 0.5),
-        ),
-      ),
-      child: carrerasAsync.when(
-        data: (carreras) {
-          final nombresAsync = carreras.isNotEmpty
-              ? ref.watch(carrerasUsuarioConNombreProvider(carreras))
-              : null;
-          return Column(
+    return carrerasAsync.when(
+      data: (carreras) {
+        if (carreras.isEmpty) return const SizedBox.shrink();
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: const Color(0xFF1E293B).withValues(alpha: 0.6)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ListTile(
-                leading: const Icon(Icons.school_rounded),
-                title: const Text('Mis carreras'),
-                subtitle: carreras.isEmpty
-                    ? const Text('Sin carreras configuradas')
-                    : null,
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/academico/configuracion'),
+              const Text('Carreras universitarias',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text(
+                  '${carreras.length} carrera${carreras.length != 1 ? 's' : ''} registrada${carreras.length != 1 ? 's' : ''}',
+                  style:
+                      const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/academico/configuracion'),
+                  icon: const Icon(Icons.settings, size: 14),
+                  label: const Text('Gestionar carreras',
+                      style: TextStyle(fontSize: 12)),
+                ),
               ),
-              if (nombresAsync != null)
-                nombresAsync.whenOrNull(
-                      data: (cats) => Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                        child: Column(
-                          children: cats
-                              .map((c) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 36,
-                                          height: 36,
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primaryContainer
-                                                .withValues(alpha: 0.5),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(
-                                              Icons.school_outlined,
-                                              size: 18),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(c.nombre,
-                                                  style: const TextStyle(
-                                                      fontSize: 13,
-                                                      fontWeight:
-                                                          FontWeight.w600)),
-                                              if (c.universidadNombre != null)
-                                                Text(c.universidadNombre!,
-                                                    style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurfaceVariant)),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ) ??
-                    const SizedBox.shrink(),
             ],
-          );
-        },
-        loading: () => const ListTile(
-          leading: Icon(Icons.school_rounded),
-          title: Text('Mis carreras'),
-          subtitle: Text('Cargando...'),
-        ),
-        error: (_, __) => const ListTile(
-          leading: Icon(Icons.school_rounded),
-          title: Text('Mis carreras'),
-          subtitle: Text('Error'),
-        ),
-      ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

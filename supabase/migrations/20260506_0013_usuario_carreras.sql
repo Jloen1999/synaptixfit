@@ -14,11 +14,14 @@ create index if not exists idx_usuario_carreras_usuario on public.usuario_carrer
 
 alter table public.usuario_carreras enable row level security;
 
+drop policy if exists usuario_carreras_select on public.usuario_carreras;
 create policy usuario_carreras_select on public.usuario_carreras
   for select using (usuario_id = auth.uid());
 
+drop policy if exists usuario_carreras_insert on public.usuario_carreras;
 create policy usuario_carreras_insert on public.usuario_carreras
   for insert with check (usuario_id = auth.uid());
 
+drop policy if exists usuario_carreras_delete on public.usuario_carreras;
 create policy usuario_carreras_delete on public.usuario_carreras
   for delete using (usuario_id = auth.uid());

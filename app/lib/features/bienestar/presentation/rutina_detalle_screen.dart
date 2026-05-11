@@ -21,8 +21,6 @@ class RutinaDetalleScreen extends ConsumerStatefulWidget {
 
 class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
   int _semanaSeleccionada = 0;
-  String? _semanaExpandidaId;
-  final Map<String, bool> _diasExpandidos = {};
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +58,7 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
 
           return Column(
             children: [
-              _buildHeader(theme),
+              _buildHeader(theme, semanas),
               const SizedBox(height: 8),
               _buildSemanaSelector(semanas, theme),
               const SizedBox(height: 12),
@@ -74,7 +72,7 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
     );
   }
 
-  Widget _buildHeader(ThemeData theme) {
+  Widget _buildHeader(ThemeData theme, List<SemanaRutinaDb> semanas) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: FutureBuilder<Map<String, dynamic>?>(
@@ -87,55 +85,100 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
           if (!snap.hasData || snap.data == null)
             return const SizedBox.shrink();
           final r = snap.data!;
-          final semanasCompletadas = ref
-                  .watch(semanasDeRutinaProvider(widget.rutinaId))
-                  .valueOrNull
-                  ?.where((s) => s.estado == 'completada')
-                  .length ??
-              0;
-          final totalSemanas = r['duracion_semanas'] as int? ?? 1;
-          final progreso =
-              totalSemanas > 0 ? semanasCompletadas / totalSemanas : 0.0;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(r['nombre'] as String? ?? 'Rutina',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800, letterSpacing: -0.5)),
-              const SizedBox(height: 4),
-              Row(
+          return FutureBuilder<List<Map<String, dynamic>>>(
+            future: Supabase.instance.client
+                .from('sesiones_registradas')
+                .select('duracion_minutos, dia_id, completada_en')
+                .eq('rutina_id', widget.rutinaId)
+                .order('completada_en', ascending: false),
+            builder: (context, sesionSnap) {
+              final sesiones =
+                  sesionSnap.data ?? const <Map<String, dynamic>>[];
+              final minutosTotales = sesiones.fold<int>(
+                  0,
+                  (sum, s) =>
+                      sum + ((s['duracion_minutos'] as num?)?.toInt() ?? 0));
+
+              final diasCompletados = semanas.fold<int>(
+                0,
+                (sum, sem) =>
+                    sum +
+                    (ref
+                            .watch(diasDeSemanaProvider(sem.id))
+                            .valueOrNull
+                            ?.where((d) => d.estado == 'completado')
+                            .length ??
+                        0),
+              );
+
+              final totalSemanas = r['duracion_semanas'] as int? ?? 1;
+              final totalDiasEstimado = totalSemanas *
+                  (diasCompletados > 0 ? (diasCompletados).clamp(1, 7) : 3);
+              final progreso = totalDiasEstimado > 0
+                  ? (diasCompletados / totalDiasEstimado).clamp(0.0, 1.0)
+                  : 0.0;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _ObjetivoBadge(
-                      objetivo: r['objetivo'] as String? ?? 'fuerza'),
-                  const SizedBox(width: 8),
-                  Text('$totalSemanas semanas',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: SVColors.onSurfaceMuted)),
-                  const SizedBox(width: 8),
-                  _EstadoBadge(estado: r['estado'] as String? ?? 'activo'),
+                  Text(r['nombre'] as String? ?? 'Rutina',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      _ObjetivoBadge(
+                          objetivo: r['objetivo'] as String? ?? 'fuerza'),
+                      const SizedBox(width: 8),
+                      Text('$totalSemanas semanas',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: SVColors.onSurfaceMuted)),
+                      const SizedBox(width: 8),
+                      _EstadoBadge(estado: r['estado'] as String? ?? 'activo'),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progreso,
+                      minHeight: 6,
+                      backgroundColor:
+                          theme.colorScheme.primary.withValues(alpha: 0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.colorScheme.primary),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                          '${(progreso * 100).round()}% completado · ${diasCompletados} días',
+                          style: const TextStyle(
+                              fontSize: 10, color: Colors.grey)),
+                      const Spacer(),
+                      Text(_formatearMinutos(minutosTotales),
+                          style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ],
-              ),
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progreso.clamp(0.0, 1.0),
-                  minHeight: 6,
-                  backgroundColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.1),
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text('${(progreso * 100).round()}% completado',
-                  style: const TextStyle(fontSize: 10, color: Colors.grey)),
-            ],
+              );
+            },
           );
         },
       ),
     );
+  }
+
+  String _formatearMinutos(int mins) {
+    final h = mins ~/ 60;
+    final m = mins % 60;
+    if (h > 0) return '${h}h ${m}m total';
+    return '${m}m total';
   }
 
   Widget _buildSemanaSelector(List<SemanaRutinaDb> semanas, ThemeData theme) {
@@ -149,6 +192,19 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
         itemBuilder: (context, i) {
           final s = semanas[i];
           final completada = s.estado == 'completada';
+          final tipo = s.tipoSemana;
+          final tipoColor = switch (tipo) {
+            'adaptacion' => Colors.blue.shade700,
+            'pico' => Colors.orange.shade700,
+            'descarga' => Colors.teal.shade700,
+            _ => Colors.green.shade700,
+          };
+          final tipoLabel = switch (tipo) {
+            'adaptacion' => 'Adapt',
+            'pico' => 'Pico',
+            'descarga' => 'Desc',
+            _ => '',
+          };
           return ChoiceChip(
             label: Row(
               mainAxisSize: MainAxisSize.min,
@@ -160,6 +216,22 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
                         Icon(Icons.check_circle, size: 14, color: Colors.green),
                   ),
                 Text('Sem ${s.numeroSemana}'),
+                if (tipoLabel.isNotEmpty) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: tipoColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(tipoLabel,
+                        style: TextStyle(
+                            fontSize: 8,
+                            color: tipoColor,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ],
               ],
             ),
             selected: _semanaSeleccionada == i,
@@ -258,6 +330,9 @@ class _DiaCard extends ConsumerWidget {
     final ejerciciosAsync = ref.watch(ejerciciosDeDiaProvider(dia.id));
     final completado = dia.estado == 'completado';
 
+    // Fetch session time for completed day
+    final tiempoDia = ref.watch(tiempoDiaProvider(dia.id));
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 10),
@@ -297,10 +372,26 @@ class _DiaCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    dia.nombre.isNotEmpty ? dia.nombre : 'Día ${dia.numeroDia}',
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        dia.nombre.isNotEmpty
+                            ? dia.nombre
+                            : 'Día ${dia.numeroDia}',
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      tiempoDia.when(
+                        data: (mins) => mins > 0
+                            ? Text('${mins}min',
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.grey.shade600))
+                            : const SizedBox.shrink(),
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
                 ),
                 if (completado)
@@ -318,24 +409,54 @@ class _DiaCard extends ConsumerWidget {
                             fontWeight: FontWeight.w600)),
                   )
                 else
-                  TextButton.icon(
-                    onPressed: () => context.push(
-                      '/bienestar/rutina/sesion',
-                      extra: {
-                        'rutinaId': rutinaId,
-                        'diaId': dia.id,
-                        'semanaId': dia.semanaId,
-                      },
-                    ),
-                    icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                    label: const Text('Iniciar',
-                        style: TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.w600)),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      backgroundColor:
-                          theme.colorScheme.primary.withValues(alpha: 0.08),
-                    ),
+                  FutureBuilder<int?>(
+                    future: _contarEjerciciosDelDia(),
+                    builder: (context, snap) {
+                      final count = snap.data ?? 0;
+                      if (count == 0 &&
+                          snap.connectionState == ConnectionState.done) {
+                        return TextButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Este día no tiene ejercicios. Añade al menos uno antes de iniciar.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                          label: const Text('Iniciar',
+                              style: TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.w600)),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            disabledBackgroundColor:
+                                Colors.grey.withValues(alpha: 0.08),
+                            disabledForegroundColor: Colors.grey,
+                          ),
+                        );
+                      }
+                      return TextButton.icon(
+                        onPressed: () => context.push(
+                          '/bienestar/rutina/sesion',
+                          extra: {
+                            'rutinaId': rutinaId,
+                            'diaId': dia.id,
+                            'semanaId': dia.semanaId,
+                          },
+                        ),
+                        icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                        label: const Text('Iniciar',
+                            style: TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.w600)),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor:
+                              theme.colorScheme.primary.withValues(alpha: 0.08),
+                        ),
+                      );
+                    },
                   ),
               ],
             ),
@@ -390,6 +511,14 @@ class _DiaCard extends ConsumerWidget {
     );
   }
 
+  Future<int?> _contarEjerciciosDelDia() async {
+    final data = await Supabase.instance.client
+        .from('seleccion_de_ejercicios')
+        .select('id')
+        .eq('dia_id', dia.id);
+    return (data as List).length;
+  }
+
   void _mostrarBuscador(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
@@ -405,8 +534,19 @@ class _DiaCard extends ConsumerWidget {
             repeticiones: 10,
             segundosDescanso: 90,
             ref: ref);
+        _invalidarDiaSiCompletado(ref);
       }),
     );
+  }
+
+  void _invalidarDiaSiCompletado(WidgetRef ref) {
+    if (dia.estado == 'completado') {
+      final client = Supabase.instance.client;
+      client
+          .from('dias_rutina')
+          .update({'estado': 'pendiente'}).eq('id', dia.id);
+      ref.invalidate(diasDeSemanaProvider(dia.semanaId));
+    }
   }
 }
 
@@ -451,7 +591,25 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
         },
         widget.diaId,
         ref);
+    _invalidarDiaSiCompletado();
     setState(() => _editando = false);
+  }
+
+  void _invalidarDiaSiCompletado() {
+    final client = Supabase.instance.client;
+    client
+        .from('dias_rutina')
+        .select('estado')
+        .eq('id', widget.diaId)
+        .maybeSingle()
+        .then((row) {
+      if (row != null && row['estado'] == 'completado') {
+        client
+            .from('dias_rutina')
+            .update({'estado': 'pendiente'}).eq('id', widget.diaId);
+        ref.invalidate(diasDeSemanaProvider);
+      }
+    });
   }
 
   @override
@@ -502,8 +660,10 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                   IconButton(
                       icon: const Icon(Icons.delete_outline,
                           size: 18, color: Colors.red),
-                      onPressed: () =>
-                          quitarEjercicioDeDia(e.id, widget.diaId, ref),
+                      onPressed: () {
+                        quitarEjercicioDeDia(e.id, widget.diaId, ref);
+                        _invalidarDiaSiCompletado();
+                      },
                       visualDensity: VisualDensity.compact),
                 ]),
               ),

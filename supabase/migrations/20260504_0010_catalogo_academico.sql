@@ -41,11 +41,14 @@ alter table public.catalogo_universidades enable row level security;
 alter table public.catalogo_carreras enable row level security;
 alter table public.catalogo_asignaturas enable row level security;
 
+drop policy if exists catalogo_universidades_select on public.catalogo_universidades;
 create policy catalogo_universidades_select on public.catalogo_universidades
   for select using (true);
 
+drop policy if exists catalogo_carreras_select on public.catalogo_carreras;
 create policy catalogo_carreras_select on public.catalogo_carreras
   for select using (true);
 
+drop policy if exists catalogo_asignaturas_select on public.catalogo_asignaturas;
 create policy catalogo_asignaturas_select on public.catalogo_asignaturas
   for select using (true);

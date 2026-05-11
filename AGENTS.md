@@ -49,9 +49,9 @@ supabase db push                 # deploy migrations to linked project
 ## Architecture at a glance
 - **`app/lib/main.dart`** — entry point, loads `.env`, initializes Supabase, wraps in ProviderScope
 - **`app/lib/core/routing/app_router.dart`** — GoRouter with shell route + bottom nav (5 tabs)
-- **`app/lib/shared/models/db_models.dart`** — all DB model classes (~1210 lines)
+- **`app/lib/shared/models/db_models.dart`** — all DB model classes (~1645 lines)
 - **`app/lib/core/config/env_config.dart`** — reads Supabase URL/anonKey, Google OAuth, Gemini, R2 from `.env`
-- **`supabase/migrations/`** — 12 migration files, 27 tables + RLS, apply in order
+- **`supabase/migrations/`** — 17 migration files, 27 tables + RLS, apply in order
 - **`docs/`** — 14-file documentation structure (01 through 14), kept in sync with code
 - **`migraciones_pendientes.sql`** — consolidated SQL for manual deployment when CLI not linked
 

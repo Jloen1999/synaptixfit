@@ -34,6 +34,7 @@ create index if not exists idx_horarios_plan on public.horarios_academicos (plan
 -- RLS: planes_estudio
 alter table public.planes_estudio enable row level security;
 
+drop policy if exists planes_estudio_select on public.planes_estudio;
 create policy planes_estudio_select on public.planes_estudio
   for select
   using (
@@ -50,11 +51,14 @@ create policy planes_estudio_select on public.planes_estudio
     )
   );
 
+drop policy if exists planes_estudio_insert on public.planes_estudio;
 create policy planes_estudio_insert on public.planes_estudio
   for insert with check (usuario_id = auth.uid());
 
+drop policy if exists planes_estudio_update on public.planes_estudio;
 create policy planes_estudio_update on public.planes_estudio
   for update using (usuario_id = auth.uid());
 
+drop policy if exists planes_estudio_delete on public.planes_estudio;
 create policy planes_estudio_delete on public.planes_estudio
   for delete using (usuario_id = auth.uid());

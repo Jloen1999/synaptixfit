@@ -6,6 +6,7 @@ import '../../features/academico/presentation/apuntes_screen.dart';
 import '../../features/academico/presentation/gestion_asignaturas_screen.dart';
 import '../../features/academico/presentation/plan_academico_screen.dart';
 import '../../features/academico/presentation/plan_semanal_screen.dart';
+import '../../features/academico/presentation/crear_plan_semanal_screen.dart';
 import '../../features/auth/presentation/acceso_screen.dart';
 import '../../features/auth/presentation/perfil_fisico_screen.dart';
 import '../../features/bienestar/presentation/detalle_ejercicio_screen.dart';
@@ -126,6 +127,10 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PlanSemanalScreen(),
     ),
     GoRoute(
+      path: '/plan-semanal/crear',
+      builder: (context, state) => const CrearPlanSemanalScreen(),
+    ),
+    GoRoute(
       path: '/academico/asignaturas',
       builder: (context, state) => const GestionAsignaturasScreen(),
     ),
@@ -144,6 +149,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/notificaciones',
       builder: (context, state) => const NotificacionesScreen(),
+    ),
+    GoRoute(
+      path: '/perfil',
+      builder: (context, state) => const PerfilScreen(),
     ),
   ],
   errorBuilder: (context, state) {

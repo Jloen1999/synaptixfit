@@ -5,6 +5,16 @@ import '../../../core/config/env_config.dart';
 import '../../../shared/models/db_models.dart';
 import '../../retos/application/retos_provider.dart';
 
+class RutinaActivaDashboard {
+  const RutinaActivaDashboard({
+    required this.rutina,
+    required this.ejerciciosCount,
+  });
+
+  final RutinaDb rutina;
+  final int ejerciciosCount;
+}
+
 class DashboardData {
   const DashboardData({
     required this.usuario,
@@ -17,6 +27,7 @@ class DashboardData {
     required this.retosTienenHitos,
     this.perfilBienestar,
     this.planSemanal,
+    this.rutinasActivas = const [],
   });
 
   final Map<String, double> progresosRetos;
@@ -30,6 +41,7 @@ class DashboardData {
   final List<NotificacionDb> notificacionesNoLeidas;
   final PerfilBienestarDb? perfilBienestar;
   final PlanEntrenamientoSemanalDb? planSemanal;
+  final List<RutinaActivaDashboard> rutinasActivas;
 
   int get racha => usuario.rachaActual;
   int get xpParaSiguienteNivel => 1000 * usuario.nivel;
@@ -67,6 +79,7 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
     perfilFuture,
     planFuture,
     horariosFuture,
+    rutinasFuture,
   ) = (
     client.from('usuarios').select().eq('id', user.id).maybeSingle(),
     client
@@ -97,6 +110,13 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
         .eq('usuario_id', user.id)
         .gte('hora_inicio', hoyInicio)
         .lte('hora_inicio', hoyFin),
+    client
+        .from('rutinas')
+        .select('*')
+        .eq('usuario_id', user.id)
+        .eq('estado', 'activo')
+        .order('creado_en', ascending: false)
+        .limit(10),
   );
 
   final results = await Future.wait<Object?>([
@@ -106,6 +126,7 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
     perfilFuture,
     planFuture,
     horariosFuture,
+    rutinasFuture,
   ]);
 
   final usuarioMap = results[0] as Map<String, dynamic>?;
@@ -114,6 +135,7 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
   final perfilMap = results[3] as Map<String, dynamic>?;
   final planMap = results[4] as Map<String, dynamic>?;
   final horariosHoy = results[5] as List<dynamic>;
+  final rutinasData = results[6] as List<dynamic>;
 
   final usuario = usuarioMap != null
       ? UsuarioDb.fromMap(usuarioMap)
@@ -162,6 +184,14 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
     tienenHitos[r.reto.id] = r.tieneHitos;
   }
 
+  // Rutinas activas del usuario
+  final rutinasActivas = rutinasData.map((r) {
+    final map = r as Map<String, dynamic>;
+    final rutina = RutinaDb.fromMap(map);
+    final count = (map['cantidad_ejercicios'] as num?)?.toInt() ?? 0;
+    return RutinaActivaDashboard(rutina: rutina, ejerciciosCount: count);
+  }).toList();
+
   return DashboardData(
     usuario: usuario,
     calorias: caloriasHoy,
@@ -173,5 +203,6 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
     retosTienenHitos: tienenHitos,
     perfilBienestar: perfil,
     planSemanal: plan,
+    rutinasActivas: rutinasActivas,
   );
 });

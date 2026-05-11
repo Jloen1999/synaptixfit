@@ -1,692 +1,484 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
-**Proyecto:** SynaptixFit  
-**Versión:** 2.8  
-**Fecha:** 10-05-2026  
-**Referencia:** [01-introduction.md](01-introduction.md) (Design System), [02-requirements.md](02-requirements.md) (Casos de Uso)
+**Proyecto:** SynaptixFit
+**Versión:** 3.0
+**Fecha:** 11-05-2026
+**Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md)
 
 ---
 
-## 1. Arquitectura de Información (MVP)
+## 1. Arquitectura de Información (MVP v3.0)
 
 ```mermaid
 flowchart LR
-    Home["🏠 Home<br/>Dashboard"] --> Academic["📚 Académico<br/>Plan Semanal"]
+    Home["🏠 Inicio<br/>Dashboard"] --> Academic["📚 Académico<br/>Plan Semanal"]
     Home --> Challenges["🎯 Retos<br/>Crear/Listar"]
-    Home --> Wellness["💪 Bienestar<br/>Rutinas/Ejercicios"]
+    Home --> Wellness["💪 Bienestar<br/>Rutinas/Ejercicios/IA"]
     Home --> Social["👥 Social<br/>Muro de Logros"]
-    Home --> Profile["👤 Perfil<br/>Datos Personales"]
-    
-    Academic --> AcademicPlan["Plan Académico<br/>Configuración"]
-    Academic --> DayDetail["Detalle Día"]
-    Academic --> GestionAsignaturas["Gestión de<br/>Asignaturas"]
-    Academic --> AcademicConfig["Configuración<br/>Académica"]
-    GestionAsignaturas --> AsignaturaDetail["Detalle Asignatura<br/>(Bottom Sheet)"]
-    AcademicConfig --> CarreraAsignaturas["Carga Masiva<br/>Asignaturas"]
-    Academic --> Apuntes["Apuntes<br/>Markdown"]
-    Apuntes --> ApunteEditor["Editor<br/>Markdown"]
-    
-    Wellness --> ExerciseExplorer["Explorador de<br/>Ejercicios"]
-    ExerciseExplorer --> ExerciseDetail["Detalle de<br/>Ejercicio"]
-    ExerciseDetail --> RoutineBuilder["Constructor de<br/>Rutina"]
-    RoutineBuilder --> SessionComplete["Sesión<br/>Completada"]
-    
-    Challenges --> SimpleChallenge["Crear Reto<br/>Simple"]
-    Challenges --> ComplexChallenge["Crear Reto<br/>Complejo"]
-    SimpleChallenge --> ChallengeDetail["Detalle de Reto<br/>y Progreso"]
-    ComplexChallenge --> ChallengeDetail
-    
-    Home --> Notifications["🔔 Notificaciones<br/>Adaptativas"]
+    Home --> Profile["👤 Perfil<br/>Datos + Bienestar"]
+
+    Wellness --> RoutineList["Mis Rutinas<br/>+ Comunidad"]
+    RoutineList --> NewRoutine["Nueva Rutina<br/>3 pasos + IA"]
+    RoutineList --> RoutineDetail["Detalle Rutina<br/>Semanas/Días/Ejercicios"]
+    RoutineDetail --> LiveSession["Sesión en Vivo<br/>Cronómetro + Series"]
+    LiveSession --> CheckIn["Check-in Diario<br/>Fatiga + Adaptación"]
+    Wellness --> ExerciseExplorer["Explorador<br/>Ejercicios"]
+    ExerciseExplorer --> ExerciseDetail["Detalle<br/>Ejercicio"]
 ```
 
----
+## 2. Navegación (GoRouter — ShellRoute)
 
-## 2. Navegación (Bottom Nav — 5 Tabs)
-
-```
-Tab 0: 🏠 Inicio (Dashboard)
-Tab 1: 📚 Académico (Plan Semanal / Plan Académico)
-Tab 2: 🎯 Retos (Crear / Listar)
-Tab 3: 👥 Social (Muro Social)
-Tab 4: 👤 Perfil (Perfil de Usuario)
-```
-
-**Diseño:** Glassmorphism (80% opacidad + 20px backdrop blur). Tab activo con color verde secundario y punto indicador de 4px.
-
-### Rutas principales (GoRouter)
+**Diseño:** Bottom Navigation Bar con 5 tabs, glassmorphism (80% opacidad + 20px backdrop blur). Tab activo con color verde secundario y punto indicador de 4px. Avatar del usuario en el tab central de Perfil.
 
 | Ruta | Pantalla | Descripción |
 |------|----------|-------------|
-| `/dashboard` | `DashboardScreen` | Inicio con KPIs y acceso rápido |
-| `/academico` | `PlanAcademicoScreen` | Plan académico semanal |
+| `/dashboard` | `DashboardScreen` | Inicio con KPIs, retos activos, acceso rápido |
+| `/academico` | `PlanAcademicoScreen` | Plan académico semanal con horarios |
 | `/academico/asignaturas` | `GestionAsignaturasScreen` | Búsqueda y gestión de asignaturas |
-| `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera |
+| `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera + carga masiva |
 | `/academico/apuntes` | `ApuntesScreen` | Editor Markdown + explorador |
 | `/academico/apuntes/editor` | `ApuntesEditorScreen` | Editor Markdown a pantalla completa |
-| `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera + carga masiva |
 | `/retos` | `RetosScreen` | Retos activos/explorar/completados |
 | `/retos/simple` | `CrearRetoSimpleScreen` | Crear reto simple |
-| `/retos/complejo` | `CrearRetoComplejoScreen` | Crear reto con tareas |
+| `/retos/complejo` | `CrearRetoComplejoScreen` | Crear reto con hitos |
 | `/retos/:id` | `DetalleRetoScreen` | Detalle y progreso |
 | `/bienestar` | `RutinasComunidadScreen` | Comunidad y mis rutinas |
-| `/bienestar/nueva-rutina` | `NuevaRutinaScreen` | Crear rutina (3 pasos) |
-| `/bienestar/explorador` | `ExploradorEjerciciosScreen` | Catálogo de ejercicios |
+| `/bienestar/nueva-rutina` | `NuevaRutinaScreen` | **Crear rutina con IA (3 pasos)** |
+| `/bienestar/explorador` | `ExploradorEjerciciosScreen` | Catálogo de ejercicios (~1300) |
 | `/bienestar/ejercicio/:id` | `DetalleEjercicioScreen` | Detalle de ejercicio |
-| `/bienestar/rutina/:id` | `RutinaDetalleScreen` | Gestión: semanas, días, ejercicios |
-| `/bienestar/rutina/sesion` | `LiveSessionScreen` | Entrenamiento en vivo con cronómetro |
+| `/bienestar/rutina/:id` | `RutinaDetalleScreen` | **Gestión: semanas, días, ejercicios, progreso, periodización** |
+| `/bienestar/rutina/sesion` | `LiveSessionScreen` | **Entrenamiento en vivo + check-in diario** |
 | `/bienestar/sesion-completada` | `SesionCompletadaScreen` | Historial de sesiones |
-| `/plan-semanal` | `PlanSemanalScreen` | Plan semanal (académico + bienestar) |
-| `/social` | `MuroSocialScreen` | Muro de logros |
-| `/perfil` | `PerfilScreen` | Perfil + carreras + ajustes |
+| `/perfil` | `PerfilScreen` | Perfil + bienestar editable + carreras + ajustes |
 | `/notificaciones` | `NotificacionesScreen` | Centro de notificaciones |
 
----
+**Nota importante:** La ruta `/bienestar/rutina/sesion` debe estar definida ANTES de `/bienestar/rutina/:id` en GoRouter para evitar que "sesion" sea capturado como parámetro `:id`.
 
-## 3. Gestión de Estado (Riverpod)
+## 3. Gestión de Estado (Riverpod) — Catálogo Completo
 
-```dart
-// Proveedores principales
-final proveedorUsuario = FutureProvider((ref) => obtenerPerfilUsuario());
+### 3.1 Estrategia General
 
-final proveedorTablero = FutureProvider((ref) {
-  final usuario = ref.watch(proveedorUsuario);
-  return obtenerDatosTablero(usuario.id);
-});
+| Provider Type | Uso | Ciclo de vida |
+|--------------|-----|---------------|
+| `FutureProvider` | Datos que se cargan una vez con refresh manual | Persiste mientras el provider tenga listeners |
+| `FutureProvider.family` | Detalle de entidades por ID | Cacheado por parámetro |
+| `StreamProvider` | Datos en tiempo real (Supabase Realtime) | Suscripción WebSocket activa mientras haya listeners |
+| `StateNotifierProvider` | Estados con lógica de cambio compleja | Persiste en memoria |
+| `FutureProvider.autoDispose` | Datos de pantallas que no necesitan persistencia | Se destruye al salir de la pantalla |
 
-final proveedorNotificaciones = StreamProvider((ref) {
-  return supabase.suscribirseANotificaciones();
-});
-```
+**Decisión de `autoDispose`:** Los providers de rutinas, comunidad, bloques y carreras NO usan `autoDispose` porque se consultan desde múltiples pantallas y mantenerlos en memoria evita re-fetching costoso al navegar entre tabs (gracias al `IndexedStack` del `StatefulShellRoute`).
 
-**Estrategia:**
-- `FutureProvider` para datos que se cargan una vez con refresh manual.
-- `StreamProvider` para datos en tiempo real (Supabase Realtime).
-- `StateNotifier` para estados con lógica de cambio compleja (filtros, constructor de rutina).
-- `FutureProvider.family` para detalle de entidades (reto, ejercicio, apunte).
-- `FutureProvider.autoDispose` para pantallas que no necesitan persistencia.
+### 3.2 Proveedores del Módulo de Bienestar (IA + Periodización)
 
-### Proveedores del módulo académico
+| Provider | Tipo | Propósito | Fuente Supabase |
+|----------|------|-----------|-----------------|
+| `perfilBienestarProvider` | `FutureProvider<PerfilBienestarDb?>` | Perfil físico: antropometría, objetivo, equipamiento, disponibilidad | `perfil_bienestar_usuario` → `BienestarRepository.obtenerPerfilBienestar()` |
+| `estadoDiarioHoyProvider` | `FutureProvider<EstadoDiarioDb?>` | Check-in diario de hoy (o null si no se ha hecho) | `estado_diario_usuario` WHERE `usuario_id` AND `fecha = today` |
+| `historialSesionUsuarioProvider` | `FutureProvider<HistorialSesionDto?>` | Historial agregado de 4 semanas: RPE promedio, volumen, ejercicios recientes, semanas consecutivas | `sesiones_registradas` (30 últimas) + `series_sesion` (JOIN con `seleccion_de_ejercicios` → `ejercicios`) |
+| `estadoPeriodizacionProvider` | `FutureProvider<PeriodizacionEstado>` | Detección de necesidad de descarga: RPE>8 + 3+ semanas + volumen decreciente O fatiga>50 | `sesiones_registradas` (3 semanas) + `estado_diario_usuario` (hoy) |
+| `semanasDeRutinaProvider` | `FutureProvider.family<List<SemanaRutinaDb>, String>` | Semanas de una rutina con `tipo_semana` | `semanas_rutina` WHERE `rutina_id` |
+| `diasDeSemanaProvider` | `FutureProvider.family<List<DiaRutinaDb>, String>` | Días de entrenamiento de una semana | `dias_rutina` WHERE `semana_id` |
+| `ejerciciosDeDiaProvider` | `FutureProvider.family<List<SeleccionEjercicioDb>, String>` | Ejercicios de un día con series/reps/peso | `seleccion_de_ejercicios` WHERE `dia_id` |
+| `tiempoDiaProvider` | `FutureProvider.family<int, String>` | Duración registrada de un día (última sesión) | `sesiones_registradas` WHERE `dia_id` (última) |
+| `rutinasUsuarioProvider` | `FutureProvider<List<RutinaDb>>` | Rutinas del usuario autenticado | `rutinas` WHERE `usuario_id` |
+| `rutinasComunidadProvider` | `FutureProvider<List<RutinaComunidadDto>>` | Rutinas públicas de la comunidad con nombre del autor | `rutinas` WHERE `visibilidad='public'` JOIN `usuarios` |
+
+### 3.3 Proveedores del Módulo de Ejercicios
+
+| Provider | Tipo | Propósito | Fuente |
+|----------|------|-----------|--------|
+| `ejerciciosProvider` | `StreamProvider<List<EjercicioDb>>` | Catálogo completo en tiempo real | `supabase.from('ejercicios').stream()` (Realtime) |
+| `catalogosProvider` | `FutureProvider<CatalogosEjercicios>` | Datos maestros: partes_cuerpo, musculos, equipamientos | `partes_cuerpo`, `musculos`, `equipamientos` |
+| `ejercicioDetalleProvider` | `FutureProvider.family<EjercicioDb?, String>` | Detalle completo de un ejercicio (incluye instrucciones) | `v_ejercicios_completos` WHERE `id` |
+| `ejerciciosFiltradosProvider` | `Family` (lógica en provider) | Búsqueda con filtros por grupo muscular, equipamiento, parte del cuerpo, dificultad, texto | `v_ejercicios_completos` con filtros |
+
+### 3.4 Proveedores del Dashboard
 
 | Provider | Tipo | Propósito |
 |----------|------|-----------|
-| `asignaturasActivasProvider` | `AutoDisposeFutureProvider` | Asignaturas activas del usuario |
-| `asignaturasArchivadasProvider` | `AutoDisposeFutureProvider` | Asignaturas archivadas |
-| `universidadesProvider` | `AutoDisposeFutureProvider` | Catálogo de universidades |
-| `carrerasPorUniversidadProvider` | `Family` | Carreras filtradas por universidad |
-| `catalogoAsignaturasPorCarreraProvider` | `Family` | Asignaturas del catálogo por carrera |
-| `usuarioCarrerasProvider` | `AutoDisposeFutureProvider` | Carreras del usuario (M:N) |
-| `carrerasUsuarioConNombreProvider` | `Family` | Carreras con nombre y universidad resuelta |
-| `apunteDetalleProvider` | `Family` | Detalle de un apunte |
-| `apuntesPublicosProvider` | `FutureProvider` | Apuntes públicos para explorar |
-| `planesUsuarioProvider` | `FutureProvider` | Planes de estudio del usuario |
+| `proveedorUsuario` | `FutureProvider<UsuarioDb>` | Perfil del usuario autenticado |
+| `proveedorTablero` | `FutureProvider` | Datos agregados del dashboard (KPIs, retos, racha) |
+| `retosProvider` | `FutureProvider<List<RetoResumen>>` | Retos activos del usuario con `tieneHitos` vía batch query |
+| `sesionesProvider` | `FutureProvider` | Sesiones recientes del usuario |
 
-### Proveedores del módulo de retos
+### 3.5 Funciones de Mutación (en `rutina_provider.dart`)
+
+| Función | Operación SQL | Invalidaciones |
+|---------|--------------|----------------|
+| `crearRutinaCompleta({nombre, objetivo, visibilidad, duracionSemanas, estructura, ref})` | INSERT `rutinas` + `semanas_rutina` (con `tipo_semana`) + `dias_rutina` + `seleccion_de_ejercicios` | `rutinasUsuarioProvider` |
+| `eliminarRutina(rutinaId, ref)` | DELETE `rutinas` (CASCADE) | `rutinasUsuarioProvider` |
+| `clonarRutina(rutinaId, ref)` | INSERT `rutinas` (copia como privada) + `seleccion_de_ejercicios` | `rutinasUsuarioProvider` |
+| `iniciarSesion({rutinaId, diaId, ref})` | INSERT `sesiones_registradas` + UPDATE `dias_rutina.estado='en_progreso'` | `diasDeSemanaProvider` |
+| `finalizarSesion({sesionId, diaId, duracionSegundos, rpe, ref})` | UPDATE `sesiones_registradas` (duración, RPE, calorías) + UPDATE `dias_rutina.estado='completado'` | `diasDeSemanaProvider` |
+| `registrarSerie({sesionId, seleccionId, numeroSerie, reps, peso})` | INSERT `series_sesion` | — |
+| `guardarEstadoDiario({sueño, estrés, energía, dolor, zonas, listo, ref})` | UPSERT `estado_diario_usuario` ON CONFLICT (`usuario_id`, `fecha`) | `estadoDiarioHoyProvider` |
+| `agregarEjercicioADia({rutinaId, diaId, ejercicioId, series, reps, descanso, ref})` | INSERT `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` |
+| `quitarEjercicioDeDia(seleccionId, diaId, ref)` | DELETE `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` |
+| `actualizarEjercicioDia(seleccionId, patch, diaId, ref)` | UPDATE `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` |
+| `agregarDiaASemana(semanaId, numeroDia, ref)` | INSERT `dias_rutina` | `diasDeSemanaProvider(semanaId)` |
+
+### 3.6 Proveedores del Módulo de Perfil
 
 | Provider | Tipo | Propósito |
 |----------|------|-----------|
-| `retosProvider` | `FutureProvider` | Retos activos del usuario con `tieneHitos` vía batch query |
-| `retosPublicosProvider` | `AutoDisposeFutureProvider` | Retos públicos para explorar y clonar |
-| `retoDetalleProvider` | `Family` | Detalle completo de un reto (tareas, progreso, metadatos) |
+| `usuarioCarrerasProvider` | `FutureProvider` | Carreras vinculadas del usuario (M:N) |
+| `carrerasUsuarioConNombreProvider` | `Family` | Carreras con nombre de universidad resuelto vía JOIN |
 
----
+## 4. Pantalla: Nueva Rutina con IA (`NuevaRutinaScreen`)
 
-## 4. Manejo Offline
+**Archivo:** `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart`
+**Ruta:** `/bienestar/nueva-rutina`
 
-- **Caché local:** Hive / Sembast para persistir ejercicios, rutinas y retos.
-- **Sincronización:** Al reconectar, se envían operaciones pendientes.
-- **Indicador visual:** Banner "Sin conexión" cuando no hay red.
-
----
-
-## 5. Manejo de Errores
-
-| Código HTTP | Acción del cliente |
-|-------------|-------------------|
-| `400` | Toast con mensaje específico del campo |
-| `401` | Redirigir a pantalla de login |
-| `500` | Retry automático con backoff exponencial |
-| Network timeout | Mostrar banner "Sin conexión" |
-
----
-
-## 6. Métricas de Rendimiento
-
-| Pantalla | Objetivo |
-|----------|---------|
-| Dashboard | < 2s carga inicial |
-| Explorador de Ejercicios | < 3s lista con filtros |
-| Detalle de Ejercicio | < 1.5s carga multimedia R2 |
-| Constructor de Rutina | Sin latencia en reorder |
-| Interacciones generales | < 300ms |
-
----
-
-## 7. Cobertura de Casos de Uso (MVP)
-
-| CU ID | Nombre | Pantallas Asociadas | Estado |
-|-------|--------|---------------------|--------|
-| CU-01 | Registro y autenticación | Bienvenida | ✅ Base |
-| CU-02 | Configurar perfil físico | Perfil Físico y Bienestar Inicial | ✅ Completo |
-| CU-03 | Ver resumen personal | Dashboard | ✅ Completo |
-| CU-04 | Planificar semana académica | Plan Académico Semanal | ✅ Completo |
-| CU-05 | Ver plan integrado | Plan Semanal | ✅ Completo |
-| CU-06 | Crear rutina personal | Explorador, Detalle, Constructor, Sesión | ✅ Completo |
-| CU-07 | Registrar sesión completada | Sesión Completada | ✅ Completo |
-| CU-10 | Crear reto simple | Crear Reto Simple, Detalle de Reto | ✅ Completo |
-| CU-11 | Crear reto complejo | Crear Reto Complejo, Detalle de Reto | ✅ Completo |
-| CU-12 | Completar reto | Detalle de Reto y Progreso | ✅ Completo |
-| CU-13 | Gestionar perfil | Perfil | ✅ Base |
-| CU-14 | Ver muro social | Muro Social | ✅ Base |
-| CU-17 | Recomendación adaptativa | Centro de Notificaciones, Plan Académico | ✅ Completo |
-| CU-19 | Seleccionar ejercicios | Explorador, Detalle, Constructor | ✅ Completo |
-
----
-
-## 8. Inventario de Pantallas Stitch (15 pantallas)
-
-| # | Pantalla | Prioridad | CU/RF Vinculado |
-|---|---------|-----------|----------------|
-| 1 | SynaptixFit — Bienvenida (ES) | P0 | CU-01 |
-| 2 | Perfil Físico y Bienestar Inicial (ES) | P0 | CU-02 |
-| 3 | Dashboard (ES) | P0 | CU-03 |
-| 4 | Explorar Ejercicios (ES) | P0 | RF-BIE-11, CU-19 |
-| 5 | Detalle de Ejercicio (ES) | P0 | RF-BIE-12, CU-19 |
-| 6 | Constructor de Rutina (ES) | P0 | CU-06, CU-19 |
-| 7 | Sesión Completada (ES) | P1 | CU-07 |
-| 8 | Plan Académico Semanal (ES) | P1 | CU-04, CU-06 |
-| 9 | Plan Semanal (ES) | P1 | CU-05 |
-| 10 | Crear Reto Simple (ES) | P1 | CU-10 |
-| 11 | Crear Reto Complejo (ES) | P1 | CU-11 |
-| 12 | Detalle de Reto y Progreso (ES) | P1 | CU-10, CU-11, CU-12 |
-| 13 | Centro de Notificaciones Adaptativas (ES) | P1 | CU-17, RF-Not-01 |
-| 14 | Muro Social (ES) | P1 | CU-14 |
-| 15 | Perfil (ES) | P1 | CU-13 |
-
----
-
-## 9. Flujos UX Prioritarios
-
-### 9.1 Flujo de Ejercicios (CU-19)
+### 4.1 Flujo de 3 Pasos
 
 ```mermaid
 flowchart TD
-    A["📱 Abrir Explorador<br/>de Ejercicios"] --> B["🔍 Aplicar filtros<br/>Grupo muscular<br/>Equipamiento<br/>Dificultad"]
-    B --> C{¿Hay<br/>resultados?}
-    
-    C -->|Sí| D["📄 Ver lista de<br/>ejercicios"]
-    D --> E["👀 Seleccionar<br/>ejercicio"]
-    E --> F["📸 Ver Detalle<br/>+ multimedia<br/>+ instrucciones"]
-    F --> G["✅ Agregar a<br/>rutina"]
-    G --> H["⚙️ Ajustar<br/>series/reps"]
-    H --> I["🔄 ¿Agregar otro?"]
-    I -->|Sí| E
-    I -->|No| J["💾 Guardar rutina"]
-    
-    C -->|No| K["⚠️ Sin resultados<br/>Mostrar sugerencias"]
-    K --> L["🔄 Limpiar/ajustar<br/>filtros"]
-    L --> B
-    
-    F --> M{¿Media en R2?}
-    M -->|Sí| N["✅ Render video/gif"]
-    M -->|No| O["📝 Fallback: descripción<br/>textual"]
-    N --> G
-    O --> G
+    Start["Usuario accede a Nueva Rutina"] --> Paso1["PASO 1: Metadatos"]
+
+    Paso1 --> BotonIA1{"¿Pulsa 'Recomendar\nrutina con IA'?"}
+    BotonIA1 -->|Sí| IA1["Llama a generarRecomendacionRutina()\nRellena: nombre, desc, objetivo, duración"]
+    BotonIA1 -->|No| Manual1["Rellena manualmente:\nnombre, descripción, objetivo\nvisibilidad, semanas, días/sem"]
+
+    IA1 --> BotonIA2{"¿Pulsa 'Recomendar\nejercicios'?"}
+    Manual1 --> BotonIA2
+
+    BotonIA2 -->|Sí| IA2["Llama a generarEstructuraCompleta()\nRellena TODA la estructura\n(semanas × días × ejercicios)"]
+    BotonIA2 -->|No| Paso2["PASO 2: Estructura"]
+
+    IA2 --> Paso2
+
+    Paso2 --> Semanas["Selector de semanas\n(añadir/eliminar)"]
+    Semanas --> Dias["Por cada semana: lista de días\n(añadir/eliminar)"]
+    Dias --> BotonIA3{"¿Pulsa 'Sugerir ejercicios\ncon IA' en un día?"}
+    BotonIA3 -->|Sí| IA3["Llama a generarRecomendacionEjercicios()\nAñade 3-6 ejercicios sin repetir"]
+    BotonIA3 -->|No| Manual3["Añade ejercicios manualmente\ndesde el catálogo"]
+
+    IA3 --> Paso3
+    Manual3 --> Paso3
+
+    Paso3["PASO 3: Revisión"] --> Review["Resumen: semanas, días,\nejercicios totales"]
+    Review --> Create["Crear Rutina\nllama a crearRutinaCompleta()"]
+    Create --> Navigate["Navega a /bienestar/rutina/:id"]
 ```
 
-### 9.2 Flujo de Retos (CU-10/CU-11)
+### 4.2 Datos de Entrada al Prompt IA
+
+Los siguientes datos se recopilan antes de cada llamada a la IA:
+
+| Dato | Provider/Origen | Uso en el prompt |
+|------|----------------|------------------|
+| Edad, sexo, peso, altura, IMC | `perfilBienestarProvider` | Reglas de seguridad biométrica |
+| Objetivo principal | `perfilBienestarProvider` | Reglas de programación (reps, descanso, tipo de ejercicios) |
+| Nivel de actividad | `perfilBienestarProvider` | Intensidad base de la rutina |
+| Equipamiento disponible | `perfilBienestarProvider` | Filtro de compatibilidad (solo se envían ejercicios del equipamiento) |
+| Días disponibles / semana | `perfilBienestarProvider` | Número de días en la estructura |
+| Minutos por sesión | `perfilBienestarProvider` | Volumen total por día |
+| Historial de sesiones | `historialSesionUsuarioProvider` | RPE promedio, volumen, ejercicios recientes, semanas consecutivas |
+| Estado diario (hoy) | `estadoDiarioHoyProvider` | Sueño, estrés, energía, dolor, zonas → adaptación |
+| Catálogo de ejercicios | `ejerciciosProvider` | Filtrado por equipamiento, enviado como JSON al prompt |
+| Ejercicios ya agregados | Estado local del formulario | Lista de exclusión para no repetir |
+
+### 4.3 Manejo de Errores de IA
+
+| Escenario | Comportamiento |
+|-----------|---------------|
+| `GEMINI_API_KEY` no configurada | Error descriptivo: "Falta GEMINI_API_KEY en el archivo .env". El formulario sigue funcionando en modo manual. |
+| Sin ejercicios compatibles con equipamiento | Error: "No hay ejercicios compatibles con tu equipamiento (peso_corporal, mancuerna)." |
+| Gemini no responde (timeout 15s) | Error: "No se pudo conectar con Gemini en este momento." |
+| Gemini responde con JSON malformado | `_extraerJson()` intenta 3 estrategias de parsing. Si falla: "Gemini generó una respuesta con formato no válido." |
+| Gemini responde con array/objeto vacío | Error específico: "Gemini no generó ejercicios válidos." |
+
+## 5. Pantalla: Detalle de Rutina (`RutinaDetalleScreen`)
+
+**Archivo:** `app/lib/features/bienestar/presentation/rutina_detalle_screen.dart`
+**Ruta:** `/bienestar/rutina/:id`
+
+### 5.1 Componentes del Header
+
+| Elemento | Fuente de datos | Descripción |
+|----------|----------------|-------------|
+| Nombre de rutina | `RutinaDb.nombre` | Título principal |
+| Badge de objetivo | `RutinaDb.objetivo` | Chip coloreado: fuerza (rojo), resistencia (azul), hipertrofia (púrpura), movilidad (teal), mixto (gris) |
+| Badge de estado | `RutinaDb.estado` | Chip: activo (verde), pausado (ámbar), completado (azul) |
+| Duración | `RutinaDb.duracionSemanas` | "4 semanas" |
+| Barra de progreso | Cálculo: días completados / días totales | Barra lineal con porcentaje |
+| Días completados | Suma de días con `estado='completado'` | "8/16 días" |
+| Tiempo total | Suma de `tiempoDiaProvider` para todos los días | "3h 25min acumulados" |
+
+### 5.2 Selector de Semanas con Periodización
+
+```
+[Sem 1 Adapt] [Sem 2 Carga] [Sem 3 Carga] [Sem 4 Desc]
+    ████          ████         ████          ████
+```
+
+Cada chip de semana muestra:
+- **Número de semana** (1, 2, 3, 4...)
+- **Tipo de semana** con badge coloreado: Adapt (azul), Carga (verde), Pico (naranja), Desc (teal)
+- **Icono de check** (✓) si la semana está completada
+- **Indicador de ejercicios**: "5 ejercicios" o conteo de días
+
+### 5.3 Lista de Días
+
+Cada día muestra:
+- **Número y nombre** ("Día 1", "Día 2 - Pierna"...)
+- **Estado:** pendiente (gris), en_progreso (ámbar), completado (verde con fondo)
+- **Ejercicios:** lista con nombre, series × reps, peso (kg), descanso
+- **Edición inline:** botones ± para series/reps/descanso, campo de peso
+- **Botón "Iniciar"** → navega a `LiveSessionScreen` (bloqueado si no hay ejercicios)
+- **Botón "Añadir ejercicio"** → abre buscador de catálogo
+- **Long-press en ejercicio** → opción de sustituir
+
+### 5.4 Validación Pre-Inicio
+
+```dart
+// En RutinaDetalleScreen, antes de navegar a sesión en vivo:
+if (ejerciciosDelDia.isEmpty) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Este día no tiene ejercicios. Añade al menos uno.')),
+  );
+  return; // No navega
+}
+// Si tiene ejercicios → muestra _CheckInDialog → inicia sesión
+```
+
+### 5.5 Bloqueo de Día sin Ejercicios
+
+- El botón "Iniciar" se muestra deshabilitado (gris) si `ejerciciosDeDiaProvider` devuelve lista vacía
+- Tooltip: "Añade ejercicios a este día antes de empezar"
+
+### 5.6 Invalidación al Modificar Ejercicios
+
+Cuando se añade, quita o edita un ejercicio de un día completado:
+1. `ejerciciosDeDiaProvider(diaId)` se invalida → UI se refresca
+2. El estado del día NO cambia automáticamente (solo cambia al finalizar/iniciar sesión)
+3. Pero la barra de progreso SÍ se actualiza (porque `diasDeSemanaProvider` se refresca)
+
+## 6. Pantalla: Sesión en Vivo (`LiveSessionScreen`)
+
+**Archivo:** `app/lib/features/bienestar/presentation/sesion_en_vivo_screen.dart`
+**Ruta:** `/bienestar/rutina/sesion`
+
+### 6.1 Check-in Diario (Pre-Sesión)
 
 ```mermaid
 flowchart TD
-    A["🎯 Crear Reto"] --> B{¿Tipo?}
-    B -->|Simple| C["📋 Formulario simple<br/>Título, tipo, objetivo<br/>fecha, visibilidad"]
-    B -->|Complejo| D["📋 Formulario avanzado<br/>Hitos, pesos<br/>criterios, colaboradores"]
-    
-    C --> E["👀 Vista previa<br/>y validación"]
-    D --> F["✅ Validar suma<br/>de pesos = 100%"]
-    
-    E --> G["📤 Publicar reto"]
-    F --> G
-    
-    G --> H["✨ Reto creado"]
-    H --> I["📌 Detalle de reto<br/>Progreso, hitos<br/>Actividad social"]
-    I --> J["📈 Registrar avance"]
-    J --> K["🏆 Completar hito?"]
-    K -->|Sí| L["✅ Hito completado"]
-    L --> M["🎁 Mostrar recompensa"]
-    M --> N{¿Reto<br/>finalizado?}
-    N -->|Sí| O["🏅 Reto completado<br/>+ logro compartido"]
-    N -->|No| J
+    A["Usuario pulsa 'Empezar entrenamiento'"] --> B{"¿Día tiene ejercicios?"}
+    B -->|No| C["SnackBar: 'Este día no tiene ejercicios'"]
+    B -->|Sí| D["Muestra _CheckInDialog"]
+
+    D --> E["4 Sliders (1-5):\n• Calidad del sueño\n• Nivel de estrés\n• Nivel de energía\n• Dolor muscular"]
+
+    E --> F{"¿Dolor ≥ 3?"}
+    F -->|Sí| G["Muestra chips de zonas:\npiernas, espalda, hombros,\nbrazos, pecho, core"]
+    F -->|No| H["Solo sliders"]
+
+    G --> I{"¿Pulsa?"}
+    H --> I
+
+    I -->|"Empezar"| J["calcula listoParaEntrenar\n= sueño > 1 OR energía > 2"]
+    I -->|"Omitir"| K["Inicia sesión sin check-in"]
+
+    J --> L["guardarEstadoDiario()\nUPSERT estado_diario_usuario"]
+    L --> M["invalida estadoDiarioHoyProvider"]
+    M --> N["iniciarSesion()\nINSERT sesiones_registradas\nUPDATE dias_rutina → en_progreso"]
+
+    K --> N
+    N --> O["Navega a LiveSessionScreen"]
 ```
 
----
+### 6.2 Funcionalidad Durante la Sesión
 
-## 10. Especificaciones por Pantalla
+| Componente | Comportamiento |
+|------------|---------------|
+| **Cronómetro** | Se inicia automáticamente al entrar. Muestra `HH:MM:SS` en AppBar. |
+| **Lista de ejercicios** | Cada ejercicio muestra sus series como filas con: checkbox circular, campo de peso (kg) editable, campo de reps editable. |
+| **Check de serie** | Al marcar completada → `registrarSerie()` + inicia cronómetro de descanso (90s). |
+| **Cronómetro de descanso** | Cuenta atrás visible. Botones: `+15s`, `-15s`, `Saltar`. Al llegar a 0, desaparece automáticamente. |
+| **Edición de peso/reps** | Campos editables inline durante la sesión. Se guardan en `series_sesion`. |
 
-### 10.1 Bienvenida (Login/Registro)
+### 6.3 Diálogo de Finalización
 
-**Objetivo:** Pantalla de acceso a la aplicación.
+Al pulsar "Finalizar sesión":
+1. Muestra duración total en formato legible (ej: "45 min 30 s")
+2. **Slider RPE** (1-10): Rate of Perceived Exertion
+3. **ChoiceChips de persistencia:**
+   - "Solo hoy": los cambios de peso/reps NO se guardan en `seleccion_de_ejercicios` (solo en `series_sesion`)
+   - "Para siempre": los cambios de peso/reps SÍ se actualizan en `seleccion_de_ejercicios` para futuras sesiones
+4. Al confirmar → `finalizarSesion()` actualiza `sesiones_registradas` (duración, RPE, calorías) y marca el día como `completado`
+5. Navegación de vuelta a `RutinaDetalleScreen`
 
-**Flujo UX:**
-```
-Registro → Datos básicos → Enviar OTP → Verificar → Perfil Físico
-```
+### 6.4 Indicador de Fatiga
 
-**Componentes:**
-- Logo SynaptixFit prominente.
-- Campos: email, contraseña.
-- Botón: Iniciar sesión / Crear cuenta.
-- Enlace: Términos y condiciones (webview).
+En `RutinaDetalleScreen`, antes de pulsar "Empezar entrenamiento":
+- Si `estadoDiarioHoyProvider` devuelve `requiereAdaptacion == true` → banner naranja:
+  > ⚠️ Hoy tu cuerpo necesita un entrenamiento más ligero. La IA adaptará las recomendaciones.
 
-**Integraciones servidor:**
-- `POST /auth/login` → JWT + usuario.
-- `POST /auth/registro` → JWT + `requiere_onboarding: true`.
+## 7. Pantalla: Perfil de Usuario (`PerfilScreen`)
 
-**Estados especiales:**
-- ⏳ Carga: Indicador centrado (2-3s).
-- ❌ Error: Notificación roja (correo no existe, contraseña incorrecta).
-- ✅ Validación: Email RFC 5322, contraseña ≥8 chars, ≥1 mayúscula, ≥1 número.
+**Archivo:** `app/lib/features/perfil/presentation/perfil_screen.dart` (~1277 líneas)
+**Ruta:** `/perfil`
 
----
+Estructura: `NestedScrollView` con `DefaultTabController(length: 3)` — 3 pestañas bajo un Hero Header común.
 
-### 10.2 Perfil Físico y Bienestar Inicial (Onboarding)
+### 7.1 Hero Header (`_HeroHeader`)
 
-**Objetivo:** Recolectar antropometría y bienestar para calibrar recomendaciones.
+Widget `SliverToBoxAdapter` al inicio del `NestedScrollView`, con diseño atlético moderno:
 
-**Flujo UX:**
-```
-Pantalla 1: Datos demográficos (edad, sexo, ciudad) → Pantalla 2
-Pantalla 2: Peso + Altura → Calcular IMC → Mostrar → Pantalla 3
-Pantalla 3: Nivel de actividad actual + objetivos → Guardar → Dashboard
-```
+| Elemento | Descripción |
+|----------|-------------|
+| **Fondo** | `LinearGradient` de 3 tonos navy: `#0A1628` → `#152238` → `#0D1B2A` |
+| **Avatar** | `Container` 88px circular con anillo de gradiente verde (`#72FE8G` → `#006E2D`) y `boxShadow` glow. Contenido: `ClipOval` con `Image.network` (carga progresiva con `loadingBuilder`) y fallback a inicial estilizada (`_avatarInitial()`: texto verde sobre fondo `#1A2A40`) |
+| **Nombre** | `Text` blanco 22px `FontWeight.w800`, `maxLines: 1`. Icono `Icons.edit` a la derecha con `InkWell` → diálogo `_editarNombre()` → `BienestarRepository.actualizarNombre()` → invalida `perfilBienestarProvider` + `dashboardProvider` |
+| **Email** | Texto con opacidad 50%, 13px |
+| **Badge de nivel** | Chip con `Icons.stars_rounded` verde + "Nivel X". Barra XP: `LinearProgressIndicator` con progreso `xpTotal / (1000 × nivel)`, color `#72FE8G` |
+| **Mini stats** | Fila: racha (🔥), días/semana (📅), minutos/sesión (⏱) — emoji 18px + valor blanco 15px bold + label 10px gris |
 
-**Componentes:**
-- Picker: Edad (slider 15-60), sexo (radio), ciudad (dropdown con búsqueda).
-- TextField: Peso (kg), altura (cm).
-- Slider: Nivel de actividad (sedentario → muy activo).
-- Chips: Objetivos (perder peso, ganar masa, fitness general, fuerza, resistencia).
-- Tarjeta: Resumen IMC con color (azul=normal, naranja=sobrepeso, rojo=obeso).
+Datos del header: `UsuarioDb` (nombre, email, nivel, xpTotal, rachaActual, urlAvatar) + `PerfilBienestarDb` (diasDisponiblesSemana, minutosPorSesion).
 
-**Modelo de datos:**
-```dart
-class PerfilFisico {
-  final String usuarioId;
-  final int edad;
-  final String sexo; // 'M', 'F', 'Otro'
-  final String ciudad;
-  final double pesoKg;
-  final double alturaCm;
-  final String nivelActividad; // 'sedentario', 'ligero', 'moderado', 'intenso'
-  final List<String> objetivos; // ['peso', 'masa', 'fuerza', ...]
-  final DateTime creadoEn;
-}
-```
+### 7.2 Pestaña 1 — Estadísticas (`_EstadisticasTab`)
 
-**Validaciones:** Peso: 30-200 kg · Altura: 140-220 cm · Edad: 15-80 años.
+`ListView` con grid de 2 columnas de tarjetas de métricas (glass cards):
 
----
+| Métrica | Valor | Color | Subtítulo |
+|---------|-------|-------|-----------|
+| **XP Total** | `usuario.xpTotal` | `#72FE8G` (verde) | "Nivel X" |
+| **Sesiones** | `sesiones` (COUNT desde `sesiones_registradas`) | `#60A5FA` (azul) | — |
+| **Retos** | `logros` (COUNT retos completados) | `#E8A838` (dorado) | — |
+| **Calorías** | `caloriasAcumuladas` (SUM `calorias_quemadas`) | `#FF6B35` (naranja) | — |
+| **Racha actual** | `usuario.rachaActual` | `#A78BFA` (violeta) | "días consecutivos" |
 
-### 10.3 Dashboard
+Estilo de tarjeta `_metricCard()`:
+- `BorderRadius.circular(16)`, padding 16px
+- Fondo: `color.withValues(alpha: 0.06)`, borde: `color.withValues(alpha: 0.12)`
+- Valor numérico: `fontSize: 28`, `FontWeight.w800`, color semántico, `letterSpacing: -1`
+- Label: 13px, `FontWeight.w600`, color `#94A3B8`. Subtítulo opcional: 11px, `#64748B`
 
-**Objetivo:** Resumen personalizado con KPIs, bienestar y retos activos.
+### 7.3 Pestaña 2 — Bienestar (`_BienestarTab`)
 
-**Componentes:**
-- Tarjeta de saludo con gradiente, avatar, nombre, nivel, barra XP y racha.
-- KPIs: calorías hoy, sesiones completadas, horas de estudio.
-- Resumen de bienestar si el perfil está configurado.
-- Lista de retos activos con barra de progreso.
-- FAB "+" con BottomSheet de creación: Nueva rutina, Reto simple, Reto complejo, Plan semanal, Nuevo apunte (5 opciones, navegación con `push`).
-- Navegación inferior: 5 pestañas.
+`ListView` con 3 secciones en cards. **Todos los campos del onboarding ahora son editables desde el perfil.**
 
-**Ruta:** `/dashboard` (ShellRoute)  
-**Archivo:** [app/lib/features/dashboard/presentation/dashboard_screen.dart](app/lib/features/dashboard/presentation/dashboard_screen.dart)  
-**Provider:** [dashboard_provider.dart](app/lib/features/dashboard/application/dashboard_provider.dart)
+#### 7.3.1 Perfil físico (9 campos editables)
 
----
+| Campo | Widget de edición | Rango | Persistencia |
+|-------|-------------------|-------|-------------|
+| **Peso (kg)** | `AlertDialog` con `TextField` numérico decimal | 30–250 kg | `_guardar({'peso_kg': v, 'altura_cm': p.alturaCm})` |
+| **Altura (cm)** | `AlertDialog` con `TextField` numérico decimal | 120–230 cm | `_guardar({'altura_cm': v, 'peso_kg': p.pesoKg})` |
+| **IMC** | Solo lectura | Calculado automáticamente | `p.imc.toStringAsFixed(1) · p.imcCategoria` |
+| **Sexo** | `SimpleDialog` con radio buttons | `masculino`, `femenino`, `prefiero_no_decirlo` | `_guardar({'sexo': result})` |
+| **Edad** | `AlertDialog` con `TextField` numérico entero | 1–120 años | `_guardar({'edad': edad})` |
+| **Objetivo principal** | `SimpleDialog` con radio buttons | `fitness_general`, `perder_peso`, `ganar_masa`, `fuerza`, `resistencia`, `movilidad` | `_guardar({'objetivo_principal': result})` |
+| **Nivel de actividad** | `SimpleDialog` con radio buttons | `sedentario`, `ligero`, `moderado`, `alto` | `_guardar({'nivel_actividad': result})` |
+| **Días/semana** | `AlertDialog` con `TextField` numérico entero | 1–7 | `_guardar({'dias_disponibles_semana': val})` |
+| **Minutos/sesión** | `AlertDialog` con `TextField` numérico entero | 10–180 | `_guardar({'minutos_por_sesion': val})` |
 
-### 10.4 Explorar Ejercicios
+Todos los valores muestran `'—'` si son 0 o no existen. Cada fila editable muestra `Icons.edit` a la derecha con `InkWell`.
 
-**Objetivo:** Buscar y filtrar ejercicios del catálogo normalizado de SynaptixFit con terminología anatómica profesional.
+#### 7.3.2 Equipamiento
 
-**Componentes:**
-- Barra de búsqueda (autocompletado, mín. 2 chars, búsqueda full-text en español).
-- Chips de filtro: Parte del cuerpo, músculo objetivo, equipamiento (desde tablas de catálogo).
-- Vista lista/cuadrícula: Tarjeta con GIF animado, nombre, músculo principal, equipamiento.
-- Badge: Número de resultados.
-- Streaming en tiempo real: `ejerciciosProvider` usa `supabase.from('ejercicios').stream()` para reflejar cambios en vivo (inserciones, actualizaciones, eliminaciones).
+- Muestra chips configurados con `Wrap` (fondo `#006E2D` al 8%, texto verde oscuro 12px bold)
+- Si no hay equipamiento: texto "Sin equipamiento configurado"
+- Botón `OutlinedButton.icon` "Configurar equipamiento" → `_editarEquipamiento()`: diálogo con `StatefulBuilder` + `FilterChip` multi-selección de 8 opciones: `peso_corporal`, `mancuernas`, `barra`, `banda_elastica`, `kettlebell`, `polea`, `maquina`, `medicina_ball`
 
-**Modelo de datos:**
-```dart
-class FiltroEjercicio {
-  final String? busqueda;
-  final int? parteCuerpoId;    // ID de catálogo
-  final int? musculoId;         // ID de catálogo
-  final int? equipamientoId;    // ID de catálogo
-  final String? dificultad;
-  final int pagina;
-  final int tamanioPagina;
-}
+#### 7.3.3 Evolución de peso
 
-class TarjetaEjercicio {
-  final String id;
-  final String nombre;
-  final String? urlGif;
-  final String dificultad;
-  final String? musculoPrincipal;     // Primer músculo objetivo
-  final String? equipamientoPrincipal; // Primer equipamiento
-  final String? parteCuerpoPrincipal;  // Primera parte del cuerpo
-}
+- Lista de últimos 5 registros desde `historial_peso` (orden `registrado_en DESC`)
+- Formato: `día/mes/año` → `X kg · IMC Y`
+- Si vacío: "Sin registros aún"
 
-class CatalogosEjercicios {
-  final List<ParteCuerpoDb> partesCuerpo;
-  final List<MusculoDb> musculos;
-  final List<EquipamientoDb> equipamientos;
-}
-```
+### 7.4 Pestaña 3 — Ajustes (`_AjustesTab`)
 
-**Integraciones:** `GET /v_ejercicios_completos` (vista denormalizada) · Caché 1 hora · URLs R2 para GIFs · Realtime via `.stream()`.
+`ConsumerWidget` con `ListView`:
 
-**Validaciones:** Búsqueda ≥ 2 chars · Máx. 50 por página.
+| Elemento | Descripción | Acción |
+|----------|-------------|--------|
+| **Visibilidad del perfil** | `ListTile` con icono `visibility_rounded`. Subtítulo: "Privado · Solo tus amigos pueden ver tus rutinas" | `onTap: () {}` (placeholder) |
+| **Notificaciones** | `ListTile` con icono `notifications_rounded`. Subtítulo: "Modo: X · Y/día" desde `PrefsNotificacionDb` | `context.push('/notificaciones')` |
+| **Modo silencio** | `ListTile` con icono `dark_mode_rounded`. Subtítulo: horario desde `PrefsNotificacionDb` | `onTap: () {}` (placeholder) |
+| **Carreras universitarias** | `_CarrerasCard` (`ConsumerWidget`): muestra count + botón "Gestionar carreras" → `/academico/configuracion`. Se oculta si `usuarioCarrerasProvider` está vacío | `context.push('/academico/configuracion')` |
+| **Cerrar sesión** | `OutlinedButton.icon` rojo (`#EF4444`) con borde `#3B1C1C`, altura 44px | `authController.logout()` → `context.go('/acceso')` |
 
----
+### 7.5 Flujo de carga y datos
 
-### 10.5 Detalle de Ejercicio
-
-**Objetivo:** Vista completa con GIF animado, metadatos anatómicos, instrucciones y opción de agregar a rutina.
-
-**Componentes:**
-- Visor de GIF animado desde R2 (URL pública, patrón fallback).
-- Chips de metadatos: Parte del cuerpo, músculos objetivo, músculos secundarios, equipamiento, dificultad.
-- Tarjeta de instrucciones (lista numerada desde `instrucciones TEXT[]`).
-- Selectores numéricos: Series (1-10), repeticiones (1-100), descanso (30-300s).
-- Botón: "Agregar a rutina".
-- Tabs: Instrucciones, Información general.
-
-**Patrón Fallback Multimedia:**
-1. Intentar GIF desde R2 (`url_gif`).
-2. Si falla → mostrar placeholder con ícono de ejercicio.
-3. Si falla → mostrar descripción textual + instrucciones.
-
-**Modelo de datos:**
-```dart
-class DetalleEjercicio {
-  final String id;
-  final String? exerciseDbId;
-  final String nombre;
-  final String? urlGif;
-  final List<String> instrucciones;
-  final String dificultad;
-  final String? descripcion;
-  final List<String> partesCuerpo;          // Desde catálogo N:M
-  final List<String> musculosObjetivo;      // Desde catálogo N:M
-  final List<String> musculosSecundarios;   // Desde catálogo N:M
-  final List<String> equipamientos;         // Desde catálogo N:M
-}
+```mermaid
+flowchart TD
+    A["initState() → _cargar()"] --> B["Supabase: usuarios, perfil_bienestar_usuario"]
+    B --> C["Supabase: sesiones_registradas (COUNT + SUM calorías)"]
+    C --> D["Supabase: retos completados (COUNT)"]
+    D --> E["Supabase: historial_peso (últimos)"]
+    E --> F["Supabase: preferencias_notificacion"]
+    F --> G["Construye _PerfilData"]
+    G --> H["setState → build() con 3 tabs"]
 ```
 
----
+- `_PerfilData` es un DTO interno que agrupa: `UsuarioDb`, `PerfilBienestarDb`, `sesiones`, `logros`, `caloriasAcumuladas`, `historial`, `preferencias`
+- Tras cada edición en Bienestar: `_onPerfilActualizado()` → invalida `perfilBienestarProvider` + `dashboardProvider` + recarga `_cargar()`
+- `BienestarRepository.actualizarPerfilParcial(data)` persiste los cambios parciales en `perfil_bienestar_usuario`
 
-### 10.6 Constructor de Rutina
+### 7.6 Sincronización
 
-**Objetivo:** Ensamblar rutina: agregar ejercicios, reordenar, ajustar, guardar.
+- `perfilBienestarProvider` se invalida manualmente tras cada edición (`ref.invalidate(perfilBienestarProvider)`)
+- Avatar: `Image.network` con `loadingBuilder` (muestra inicial durante carga) y `errorBuilder` (fallback a inicial estilizada)
+- El nombre se lee de `usuarios.nombre_completo` (tabla pública), no de `perfil_bienestar_usuario`
+- `_TabBarDelegate` (`SliverPersistentHeaderDelegate`) mantiene el `TabBar` fijado al hacer scroll
 
-**Componentes:**
-- Lista de ejercicios con series/reps editables.
-- Lista reordenable (drag-and-drop, P1+).
-- Tarjeta por ejercicio: nombre, grupo, series×reps, botón eliminar.
-- FAB: "Agregar ejercicio".
-- Panel inferior: Nombre + descripción + visibilidad.
+## 8. Componentes Reutilizables
 
-**Modelo de datos:**
-```dart
-class ConstructorRutina {
-  final List<SeleccionEjercicio> ejercicios;
-  final String? nombre;
-  final String? descripcion;
-  final String visibilidad; // 'privado', 'solo_amigos', 'publico'
-}
-```
+| Componente | Descripción | Uso |
+|-----------|-------------|-----|
+| `BottomNavBar` | 5 tabs con glassmorphism, avatar en Perfil | ShellRoute |
+| `KpiCard` | Anillo, contador, gráfico | Dashboard |
+| `ExerciseCard` | GIF, nombre, grupo muscular, equipamiento | Explorador, Constructor |
+| `ChallengeProgressBar` | Lineal, circular | Dashboard, Detalle de Reto |
+| `MilestoneCard` | Título, peso, progreso | Crear Reto Complejo, Detalle |
+| `NotificationCard` | Ícono, prioridad, acción rápida | Centro de Notificaciones |
+| `FeedCard` | Avatar, logro, interacciones | Muro Social |
+| `SkeletonLoader` | Shimmer effect | Todas las pantallas con carga |
+| `EmptyState` | Ilustración + mensaje | Todos los estados vacíos |
+| `SemanaBadge` | Chip coloreado con tipo de semana | RutinaDetalleScreen |
+| `FatigaBanner` | Banner naranja de advertencia | Pre-sesión |
 
-**Integraciones:** `POST /rutinas` → `RespuestaGuardadoRutina`.
+## 9. Manejo de Errores
 
-**Validaciones:** Mín. 3 ejercicios · Nombre 3-50 chars · Series 1-10, reps 1-100.
+| Código/Situación | Acción del Cliente |
+|------------------|-------------------|
+| HTTP 400 | Toast con mensaje específico del campo |
+| HTTP 401 | Redirigir a pantalla de login |
+| HTTP 500 | Retry automático con backoff exponencial |
+| Network timeout | Banner "Sin conexión" |
+| `GEMINI_API_KEY` no configurada | Error inline en formulario, creación manual habilitada |
+| Gemini timeout (15s) | Toast: "No se pudo conectar con Gemini. Inténtalo de nuevo." |
+| Gemini JSON malformado | Toast: "Gemini generó una respuesta con formato no válido." |
+| Sin ejercicios compatibles | Error inline con lista de equipamiento del usuario |
 
-**Estados:** Vacío: "Agrega ejercicios" · < 3: botón Guardar deshabilitado · Guardando: modal (2-5s).
+## 10. Métricas de Rendimiento
 
----
+| Pantalla | Objetivo | Notas |
+|----------|---------|-------|
+| Dashboard | < 2s carga inicial | `Future.wait` paraleliza queries |
+| Explorador de Ejercicios | < 3s con filtros | Vista materializada `mv_ejercicios_completos` |
+| Detalle de Ejercicio | < 1.5s carga GIF R2 | URL pública de R2, sin firma |
+| Recomendación IA | < 8s por prompt | Gemini Flash ~2-3s + parsing |
+| Interacciones locales | < 300ms | Sin llamadas de red |
 
-### 10.7 Sesiones de Entrenamiento
+## 11. Cobertura de Casos de Uso (v3.0)
 
-**Objetivo:** Listado de sesiones completadas y registro de nuevas sesiones.
-
-**Componentes:**
-- Lista de sesiones con tarjeta por sesión: nombre de rutina, duración, RPE, calorías, XP.
-- FAB "Registrar sesión" (visible si el usuario tiene rutinas guardadas).
-- Diálogo de registro: selector de rutina, slider de duración (5-120 min), slider de esfuerzo percibido RPE (1-10).
-- Cálculo automático de calorías estimadas en tiempo real.
-- Pull-to-refresh para ver nuevas sesiones.
-
-**Ruta:** `/bienestar/sesion-completada`  
-**Archivo:** [app/lib/features/bienestar/presentation/sesion_completada_screen.dart](app/lib/features/bienestar/presentation/sesion_completada_screen.dart)  
-**Provider:** `sesionesProvider`, `rutinasUsuarioProvider`, `registrarSesion()` en [sesion_provider.dart](app/lib/features/bienestar/application/sesion_provider.dart)
-
----
-
-### 10.8 Plan Académico Semanal
-
-**Objetivo:** Vista del horario semanal con detección de conflictos.
-
-**Componentes:**
-- Listado de bloques (horarios) agrupados por asignatura.
-- ConflictBanner: aviso visual si hay solapamientos.
-- Acceso rápido a **Apuntes** y **Gestionar Asignaturas** desde AppBar.
-
-**Ruta:** `/academico`  
-**Archivo:** [app/lib/features/academico/presentation/plan_academico_screen.dart](app/lib/features/academico/presentation/plan_academico_screen.dart)
-
----
-
-### 10.8.1 Gestionar Asignaturas
-
-**Objetivo:** CRUD de asignaturas con archivado suave (soft delete).
-
-**Componentes:**
-- Tabs Activas / Archivadas.
-- Diálogo de formulario: nombre, código, docente, descripción.
-- PopupMenu por asignatura: Editar, Archivar/Desarchivar, Eliminar.
-- Catálogo: vinculación opcional a `catalogo_asignaturas`.
-
-**Ruta:** `/academico/asignaturas`  
-**Archivo:** [app/lib/features/academico/presentation/gestion_asignaturas_screen.dart](app/lib/features/academico/presentation/gestion_asignaturas_screen.dart)  
-**Provider:** `asignaturasActivasProvider`, `asignaturasArchivadasProvider`, CRUD en [asignaturas_provider.dart](app/lib/features/academico/application/asignaturas_provider.dart)
+| CU ID | Nombre | Pantallas | Estado |
+|-------|--------|-----------|--------|
+| CU-01 | Registro y autenticación | Bienvenida, Acceso | ✅ |
+| CU-02 | Configurar perfil físico | Perfil Físico, Onboarding | ✅ |
+| CU-03 | Dashboard | Dashboard | ✅ |
+| CU-04 | Planificar semana académica | Plan Académico Semanal | ✅ |
+| CU-06 | Crear rutina personal | Explorador, Constructor, NuevaRutinaScreen | ✅ |
+| CU-07 | Registrar sesión completada | LiveSessionScreen, Sesión Completada | ✅ |
+| CU-10 | Crear reto simple | Crear Reto Simple | ✅ |
+| CU-11 | Crear reto complejo | Crear Reto Complejo | ✅ |
+| CU-19 | Buscar y seleccionar ejercicios | Explorador, Detalle, Constructor | ✅ |
+| **CU-20** | **Crear rutina con recomendación IA** | **NuevaRutinaScreen (3 pasos + IA)** | ✅ |
+| **CU-21** | **Check-in diario antes de entrenar** | **RutinaDetalleScreen → _CheckInDialog → LiveSessionScreen** | ✅ |
 
 ---
 
-### 10.8.2 Apuntes (Markdown)
-
-**Objetivo:** CRUD de apuntes con contenido Markdown y vista previa.
-
-**Componentes:**
-- Pestañas "Mis apuntes" / "Explorar" (SegmentedButton).
-  - **Mis apuntes:** lista con cards, FAB para crear, al tocar abre editor.
-  - **Explorar:** apuntes públicos y de amigos (RLS filtra automáticamente), muestra nombre del autor.
-- Editor full-screen: campos título, asignatura opcional, visibilidad, nota rápida.
-- Editor Markdown multilínea con toggle **Vista previa** renderizada con `flutter_markdown`.
-- Visibilidad chips (privado / público / solo_amigos).
-
-**Rutas:** `/academico/apuntes`, `/academico/apuntes/editor`  
-**Archivos:** [apuntes_screen.dart](app/lib/features/academico/presentation/apuntes_screen.dart), [apuntes_editor_screen.dart](app/lib/features/academico/presentation/apuntes_screen.dart) (mismo archivo, widgets separados)  
-**Provider:** `apuntesProvider`, `apuntesPublicosProvider` con DTO `ApuntePublicoDto`, CRUD en [apuntes_provider.dart](app/lib/features/academico/application/apuntes_provider.dart)
-
----
-
-### 10.8.3 Planes de Estudio Semanales (Académico + Bienestar)
-
-**Objetivo:** Planificación semanal unificada con dos vistas: planes académicos y tablero de bienestar.
-
-**Componentes:**
-- SegmentedButton "Académico" / "Bienestar" en la parte superior.
-- **Pestaña Académico:** Listado de planes expandibles con rango de fechas y badge de visibilidad. Crear plan, añadir/eliminar bloques con asignatura, hora, prioridad.
-- **Pestaña Bienestar:** Anillo de progreso circular con % de cumplimiento semanal, indicadores planificado vs completado, tarjeta de plan activo (intensidad, duración, estado), tendencia vs semana anterior con flecha, sugerencia contextual en tarjeta destacada.
-
-**Ruta:** `/plan-semanal`  
-**Archivo:** [app/lib/features/academico/presentation/plan_semanal_screen.dart](app/lib/features/academico/presentation/plan_semanal_screen.dart)  
-**Providers:** `planesEstudioProvider`, `bloquesPorPlanProvider`, `bienestarSemanalProvider`
-
----
-
-### 10.10 Crear Reto Simple
-
-**Objetivo:** Formulario para retos sin hitos.
-
-**Componentes:**
-- TextField: Título (máx. 50).
-- RadioGroup: Tipo (fitness/académico).
-- TextField: Meta (ej: "50 km en bici").
-- DatePicker: Inicio, fin.
-- RadioGroup: Visibilidad.
-- Tarjeta: Vista previa en vivo.
-- Botones: Vista previa, Publicar, Cancelar.
-
-**Integraciones:** `POST /retos/simple`.
-
-**Validaciones:** Título 5-50 chars · Meta 5-100 chars · Duración 1-365 días · Fin > inicio.
-
----
-
-### 10.11 Crear Reto Complejo
-
-**Objetivo:** Formulario avanzado con hitos y pesos porcentuales.
-
-**Componentes:**
-- Formulario base (igual que simple).
-- Lista reordenable de hitos.
-- Tarjeta por hito: Título, peso %, botón eliminar.
-- Chip de suma dinámica (rojo si <100%, verde si =100%).
-- Botón: "Agregar hito" (máx. 10).
-- ProgressIndicator: Barra visual de suma.
-
-**Integraciones:** `POST /retos/complejo` · Validación servidor: suma = 100%.
-
-**Validaciones:** Título 5-50 chars · Hitos 2-10 · Peso por hito 5-50% · Suma exactamente 100%.
-
----
-
-### 10.12 Detalle de Reto y Progreso
-
-**Objetivo:** Vista de progreso, hitos, actividad social y registro de avance.
-
-**Componentes:**
-- Encabezado: Título + imagen + barra de progreso general.
-- Tarjeta por hito: Barra progreso, peso %.
-- Botón: "Registrar avance" → modal con hito y cantidad.
-- Indicador de progreso: Anillos concéntricos.
-- Feed de actividad: Comentarios y me gusta.
-- FAB: "Compartir" (si progreso = 100%).
-
-**Integraciones:** `GET /retos/{id}` · `POST /retos/{id}/progreso` · Realtime para actualizaciones.
-
-**Validaciones:** Avance 0-100% por hito · No permitir retroceso.
-
-**Estados:** Completado: confetti + insignia + "Compartir" · Vencido: banner rojo.
-
----
-
-### 10.13 Centro de Notificaciones Adaptativas
-
-**Objetivo:** Hub de notificaciones categorizadas por prioridad.
-
-**Componentes:**
-- Tabs: Crítica, Recomendada, Informativa.
-- Tarjeta: Ícono + título + descripción + acción rápida.
-- Acciones deslizables: Marcar leída, archivar, actuar.
-- Badge: Contador de no leídas por tab.
-- Botón: "Marcar todo como leído".
-
-**Integraciones:** `GET /notificaciones?prioridad={p}` · `PATCH /notificaciones/{id}` · Realtime.
-
----
-
-### 10.14 Muro Social
-
-**Objetivo:** Feed de logros entre pares.
-
-**Componentes:**
-- Tarjeta de feed: Avatar, nombre, logro, ícono, timestamp.
-- Fila de interacción: 👍 Me gusta + 💬 Comentar.
-- Panel de comentarios: Modal (máx. 5 iniciales, "Ver más").
-- Filtros: Hoy, semana, mes.
-- FAB: "Compartir logro".
-
-**Integraciones:** `GET /muro?periodo={p}` · `POST /muro/{id}/me-gusta` · `POST /muro/{id}/comentario` · Realtime.
-
-**Validaciones:** Comentario 1-200 chars.
-
----
-
-### 10.15 Perfil de Usuario
-
-**Objetivo:** Datos personales, historial, logros, configuración y carreras vinculadas.
-
-**Componentes:**
-- Header: Avatar (toque para cambiar), nombre, correo.
-- Fila de estadísticas: Nivel, XP, racha.
-- Sección "Mis carreras": Universidad + nombre de carrera (desde `usuario_carreras` con join a `catalogo_carreras` y `catalogo_universidades`).
-- Tabs: Historial, Logros, Configuración.
-- Tarjeta de sesión: Fecha, rutina, duración, calorías.
-- Cuadrícula de insignias.
-- Lista de ajustes: switches, dropdowns, "Cerrar sesión".
-
-**Integraciones:** `GET /usuarios/{id}/perfil` · `PATCH /usuarios/{id}/perfil` · `POST /usuarios/{id}/avatar`.  
-**Ruta:** `/perfil`  
-**Archivo:** [app/lib/features/perfil/presentation/perfil_screen.dart](app/lib/features/perfil/presentation/perfil_screen.dart)  
-**Providers:** `usuarioCarrerasProvider`, `carrerasUsuarioConNombreProvider`
-
-**Validaciones:** Nombre 2-50 chars · Avatar JPG/PNG, máx. 2 MB.
-
----
-
-## 11. Componentes Reutilizables
-
-| Componente | Uso en pantallas |
-|-----------|-----------------|
-| `BottomNavBar` (5 tabs, glassmorphism) | Todas las pantallas principales |
-| `KpiCard` (anillo, contador, gráfico) | Dashboard |
-| `ExerciseCard` (foto, nombre, grupo) | Explorador, Constructor |
-| `ChallengeProgressBar` (lineal, circular) | Dashboard, Detalle de Reto |
-| `MilestoneCard` (título, peso, progreso) | Crear Reto Complejo, Detalle de Reto |
-| `NotificationCard` (ícono, prioridad, acción) | Centro de Notificaciones |
-| `FeedCard` (avatar, logro, interacciones) | Muro Social |
-| `SkeletonLoader` (shimmer effect) | Todas las pantallas con carga |
-| `EmptyState` (ilustración + mensaje) | Todas las pantallas con estados vacíos |
-
----
-
-## 12. Decisiones de Diseño Notables
-
-### 12.1 Adaptación Inteligente (CU-17)
-Las notificaciones se agrupan por prioridad con acciones rápidas sin abandonar el contexto. Incluyen: conflictos horarios, alertas de fatiga, sugerencias IA, hitos próximos y actividad social.
-
-### 12.2 Fallback Multimedia (patrón en capas)
-El Detalle de Ejercicio implementa fallback progresivo: video → imagen → texto.
-
-### 12.3 Validación de Hitos
-El Crear Reto Complejo valida que la suma = 100% con feedback inline dinámico.
-
-### 12.4 Detección de Conflictos
-El Plan Académico detecta solapamientos entre estudio y entrenamiento con función SQL server-side.
-
----
-
-## 13. Plan de Mejoras Post-MVP (Fase 2)
-
-- [ ] Skeleton states en Explorador de Ejercicios.
-- [ ] Estados vacíos con ilustraciones personalizadas.
-- [ ] Pantalla "Mis Retos" con filtros avanzados.
-- [ ] Microinteracciones drag-and-drop en Constructor.
-- [ ] Integración batch de actualización de ejercicios.
-
----
-
-**Documento compilado:** 10-05-2026  
-**Última revisión:** v2.7  
-**Referencia:** Alineado con SRS v2.5, RFC v2.5 y Design System Synapse Velocity
+**Documento compilado:** 11-05-2026
+**Última revisión:** v3.0
+**Referencia:** Alineado con SRS v3.0, Arquitectura v3.0

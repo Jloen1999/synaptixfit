@@ -1,105 +1,106 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 2.6  
-**Estado:** APROBADO  
-**Fecha:** 10-05-2026  
-**Autor:** Arquitectura  
-**Referencia:** [02-requirements.md](02-requirements.md) (SRS v2.5)
+**Versión:** 3.0
+**Estado:** APROBADO
+**Fecha:** 11-05-2026
+**Autor:** Arquitectura
+**Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.0)
 
 ## 1. Objetivo
-Definir la arquitectura base para SynaptixFit (Flutter movil/web + backend gestionado), alineada con los casos de uso CU-01 a CU-19:
-1. Estructura de carpetas y modulos.
-2. Modelo de datos y permisos.
+
+Definir la arquitectura completa de SynaptixFit (Flutter móvil/web + Supabase + Gemini IA), cubriendo:
+1. Estructura de carpetas y módulos.
+2. Modelo de datos y permisos (RLS).
 3. Contratos de servicios.
-4. Estrategia tecnica por fases (MVP y crecimiento).
+4. Arquitectura del servicio de IA (Gemini Flash).
+5. Sistema de check-in diario y periodización.
+6. Estrategia técnica por fases (MVP → Crecimiento).
 
-Este RFC no implementa logica final. Fija cimientos para desarrollo con foco en seguridad, escalabilidad gradual y viabilidad para TFG.
-
-## 2. Decisiones de arquitectura
+## 2. Decisiones de Arquitectura
 
 ### 2.1 Stack principal
-- Auth: Supabase Auth.
-- Datos: Supabase Postgres.
-- Realtime: Supabase Realtime.
-- Orquestacion sensible: Supabase Edge Functions.
-- Archivos: Cloudflare R2.
-- Estado app: Riverpod.
-- Persistencia local para offline-first: capa local (SQLite/Isar) desacoplada por repositorio.
 
-### 2.2 Justificacion
-1. Menor tiempo de salida para TFG con backend gestionado.
-2. Modelo relacional robusto para trazabilidad y permisos.
-3. Seguridad por RLS y politicas de acceso por visibilidad.
-4. Soporte a flujos nuevos del SRS: perfil extendido, asignaturas con evaluaciones/calificaciones, retos complejos, bienestar con recomendacion adaptativa de entrenamiento, seleccion de ejercicios para rutinas, notificaciones adaptativas y sincronizacion offline.
-5. Separacion de responsabilidades de datos: metadatos de ejercicios en Supabase y archivos multimedia en Cloudflare R2.
+| Capa | Tecnología | Justificación |
+|------|-----------|---------------|
+| **Frontend** | Flutter 3.x (Dart) + Riverpod + GoRouter | Multiplataforma, estado reactivo, routing declarativo |
+| **Base de datos** | Supabase PostgreSQL 15 | Relacional, RLS nativo, Realtime |
+| **Autenticación** | Supabase Auth (Google OAuth + Email) | JWT, refresh tokens, proveedores sociales |
+| **Tiempo real** | Supabase Realtime (WebSocket) | Sincronización en vivo de catálogo y sesiones |
+| **IA generativa** | Gemini Flash API (REST) | Cliente-side vía `dio`, sin SDK de Google |
+| **Almacenamiento** | Cloudflare R2 + Worker de proxy | Multimedia de ejercicios, URLs públicas |
+| **Persistencia local** | Hive | Caché offline, cola de sincronización |
 
-### 2.3 Decision de proveedor para catalogo de ejercicios
-1. Proveedor fuente adoptado: ExerciseDB (AscendAPI), distribuido en Kaggle.
-2. El repositorio `exercisedb-api` en GitHub se considera soporte de documentacion y licencia, no fuente principal de datos pesados.
-3. Principio operativo vigente: el cliente Flutter no consumira APIs externas en runtime para pantallas core; los metadatos viviran en Supabase y la multimedia en Cloudflare R2.
-4. Resultado esperado: Flutter consulta solo infraestructura propia (Supabase + R2), con refresco batch controlado del dataset.
+### 2.2 ¿Por qué Gemini Flash y no otra IA?
 
-### 2.4 Plan operativo de ingesta ExerciseDB (Kaggle -> Supabase + Cloudflare R2)
-1. Objetivo de arquitectura: extraer, normalizar y alojar catalogo en infraestructura propia para eliminar dependencia runtime de terceros.
-2. Estado de ejecucion: pipeline activo con proveedor aprobado.
+| Criterio | Gemini Flash | OpenAI GPT-4o | Anthropic Claude |
+|----------|-------------|---------------|-----------------|
+| Latencia típica | ~2-3s | ~3-5s | ~4-6s |
+| Capa gratuita | 15 RPM gratis | Pay-as-you-go | Pay-as-you-go |
+| Calidad JSON | Buena con prompt engineering | Excelente | Buena |
+| Disponibilidad | Global (Google Cloud) | Global | Global |
 
-#### 2.4.1 Obtener dataset oficial desde Kaggle
-1. Buscar en Kaggle el dataset oficial de AscendAPI: Fitness Exercises Dataset (ExerciseDB).
-2. Descargar el paquete completo (ZIP).
-3. Verificar estructura minima requerida para SynaptixFit:
-  - `exercises.json`
-  - `muscles.json`
-  - `equipments.json`
-  - `bodyParts.json`
-  - `gifs_360x360/` (resolucion utilizada en el pipeline actual)
+**Decisión:** Gemini Flash por su baja latencia (crítica para UX interactiva en entrenamiento) y capa gratuita generosa, adecuada para un TFG/MVP.
 
-#### 2.4.2 Cargar a infraestructura propia
-1. Traducir JSON fuente al espanol para campos funcionales del cliente (nombre, listas catalogo e instrucciones).
-2. Normalizar JSON traducido al esquema interno de Supabase (modelo 3NF con catálogos y relaciones N:M).
-3. Subir multimedia de `gifs_360x360/` a bucket R2.
-3. Persistir en Supabase metadatos y referencias (`r2_object_key` / URL firmada).
+### 2.3 ¿Por qué IA en cliente y no en Edge Function?
 
-#### 2.4.3 Nota historica de decision
-1. wger (Docker y API REST) queda documentado como alternativa descartada temporalmente por incidencias operativas y calidad de datos/multimedia insuficiente para MVP.
+| Opción | Ventaja | Desventaja |
+|--------|---------|------------|
+| **Cliente Flutter** (adoptado) | Sin latencia extra de red, sin coste de Edge Function, respuesta directa al UI | API key viaja en requests (mitigado: HTTPS) |
+| **Edge Function Supabase** | API key nunca sale del backend | Doble latencia (cliente→Edge→Gemini→Edge→cliente), coste adicional |
 
-## 3. Arquitectura de alto nivel
+**Decisión:** IA en cliente con `dio`. La API key de Gemini tiene scope limitado (solo generación de texto) y viaja sobre HTTPS. Para producción futura, se puede mover a Edge Function.
 
-```mermaid
-flowchart LR
-    U[Usuario Estudiante] --> A[Flutter App Android iOS Web]
-    A --> LS[Store Local Offline Queue Cache]
-
-    subgraph Plataforma
-      SA[Supabase Auth]
-      DB[Supabase Postgres]
-      RT[Supabase Realtime]
-      EF[Supabase Edge Functions]
-      R2[Cloudflare R2]
-      PUSH[Push Provider FCM APNs WebPush]
-    end
-
-    A --> SA
-    A --> DB
-    A --> RT
-    A --> EF
-    A --> R2
-    LS --> A
-    A --> LS
-    EF --> DB
-    EF --> PUSH
-```
-
-## 4. Arquitectura logica por modulos
+## 3. Arquitectura de Alto Nivel
 
 ```mermaid
 flowchart TB
-    subgraph App Flutter
-      UI[Presentation]
-      ST[State Riverpod]
-      APP[Application Use Cases]
-      DOM[Domain Entities Rules]
-      INF[Infrastructure Repos Data Sources]
-      LOC[Local Sync Layer]
+    subgraph Cliente["Cliente Flutter"]
+        UI["Pantallas Flutter"]
+        RV["Riverpod (Estado)"]
+        RP["Repositorios"]
+        subgraph Servicios["Servicios"]
+            IA["RecomendacionIaService\n(Gemini Flash API)"]
+            SB["Supabase Client\n(supabase_flutter)"]
+        end
+        Hive["Hive (Caché local)"]
+    end
+
+    subgraph Nube["Infraestructura Cloud"]
+        subgraph Supabase["Supabase"]
+            Auth["Auth (JWT)"]
+            PG["PostgreSQL 15\n(27 tablas + RLS)"]
+            RT["Realtime (WebSocket)"]
+            EF["Edge Functions\n(Deno)"]
+        end
+        subgraph Google["Google Cloud"]
+            Gemini["Gemini Flash API\n(generativelanguage.googleapis.com)"]
+        end
+        subgraph CF["Cloudflare"]
+            R2["R2 Storage\n(Multimedia ejercicios)"]
+            WK["Worker\n(firmar_url_r2)"]
+        end
+    end
+
+    UI --> RV
+    RV --> RP
+    RP --> Servicios
+    IA --> Gemini
+    SB --> Supabase
+    Hive --> SB
+    RT --> SB
+```
+
+## 4. Arquitectura Lógica por Módulos
+
+```mermaid
+flowchart TB
+    subgraph App["App Flutter"]
+        UI["Presentation\n(Screens, Widgets, Dialogs)"]
+        ST["State (Riverpod)\n(Providers, Notifiers)"]
+        APP["Application\n(Casos de uso, Orquestación)"]
+        DOM["Domain\n(Modelos, DTOs, Reglas)"]
+        INF["Infrastructure\n(Repositorios, DataSources, IA Service)"]
+        LOC["Local Sync Layer\n(Hive)"]
     end
 
     UI --> ST
@@ -107,702 +108,582 @@ flowchart TB
     APP --> DOM
     APP --> INF
     INF --> LOC
-    INF --> SP[(Supabase Postgres Realtime)]
-    INF --> AU[(Supabase Auth)]
-    INF --> ED[(Edge Functions)]
-    INF --> CF[(Cloudflare R2)]
+    INF --> SP["Supabase\n(PostgreSQL + Realtime + Auth)"]
+    INF --> GM["Gemini Flash API"]
+    INF --> CF["Cloudflare R2"]
 ```
 
-## 5. Estructura de carpetas propuesta
+## 5. Estructura de Carpetas
 
-```text
+```
 synaptixfit/
-  docs/
-    02-requirements.md
-    03-architecture-rfc.md
-
-  app/
-    lib/
-      core/
-        errors/
-        utils/
-        config/
-        routing/
-        design_system/
-        sync/
-      shared/
-        widgets/
-        services/
-        models/
-      features/
-        auth/
-          presentation/
-          application/
-          domain/
-          infrastructure/
-        academico/
-          presentation/
-          application/
-          domain/
-          infrastructure/
-        retos/
-          presentation/
-          application/
-          domain/
-          infrastructure/
-        bienestar/
-          presentation/
-          application/
-          domain/
-          infrastructure/
-        social/
-          presentation/
-          application/
-          domain/
-          infrastructure/
-        notificaciones/
-          presentation/
-          application/
-          domain/
-          infrastructure/
-        analitica/
-          presentation/
-          application/
-          domain/
-          infrastructure/
-      main.dart
-    test/
-    integration_test/
-
-  backend/
-    data_pipeline/
-      catalogo_ejercicios/
-        raw/
-        transformed/
-        scripts/
-          descargar_exercisedb_kaggle.py
-          upload_media_r2.py
-          transform_exercisedb_to_synaptixfit.py
-          import_exercisedb_supabase.py
-    supabase/
-      migrations/
-      policies/
-      functions/
-        clonar_reto_publico/
-        publicar_logro/
-        validar_reto_complejo/
-        recomendaciones_carga/
-        recomendar_plan_entrenamiento/
-        recalcular_plan_bienestar/
-        recordatorios_programados/
-      config.toml
-    cloudflare/
-      workers/
-        firmar_url_r2/
-      wrangler.toml
+├── docs/                          # 14 archivos de documentación
+├── app/
+│   └── lib/
+│       ├── core/                  # Errores, utils, config, routing, design system, sync
+│       │   ├── config/
+│       │   │   └── env_config.dart        # Lectura de .env (Supabase, Gemini, R2, Google)
+│       │   └── routing/
+│       │       ├── app_router.dart         # GoRouter con 20+ rutas
+│       │       └── shell_route.dart        # StatefulShellRoute (5 tabs)
+│       ├── shared/
+│       │   ├── models/
+│       │   │   └── db_models.dart          # 25+ modelos (1645 líneas)
+│       │   └── widgets/
+│       ├── features/
+│       │   ├── auth/                       # Login, registro, onboarding
+│       │   │   └── infrastructure/
+│       │   │       ├── auth_repository.dart
+│       │   │       └── bienestar_repository.dart  # CRUD perfil bienestar
+│       │   ├── academico/                  # Planes, asignaturas, apuntes
+│       │   ├── retos/                      # Retos simples y complejos
+│       │   ├── bienestar/
+│       │   │   ├── infrastructure/
+│       │   │   │   ├── recomendacion_ia_service.dart  # ★ Servicio IA (867 líneas)
+│       │   │   │   └── ejercicios_repository.dart
+│       │   │   └── application/
+│       │   │       ├── rutina_provider.dart         # ★ 30+ providers y funciones
+│       │   │       ├── ejercicios_provider.dart
+│       │   │       └── sesion_provider.dart
+│       │   ├── social/                     # Muro, likes, comentarios
+│       │   ├── notificaciones/             # Centro de notificaciones
+│       │   ├── dashboard/                  # Dashboard principal
+│       │   └── perfil/                     # Perfil de usuario
+│       └── main.dart                       # Entry point, ProviderScope, Supabase.init
+├── supabase/
+│   ├── migrations/                         # 17 migraciones SQL
+│   ├── seed_ejercicios.py                  # Seeding del catálogo ExerciseDB
+│   └── seed_catalogo.py                    # Seeding del catálogo académico
+├── cloudflare/
+│   └── synaptixfit-r2-proxy/
+│       └── worker.js                       # Proxy R2 con CORS
+└── migraciones_pendientes.sql              # SQL consolidado para deploy manual
 ```
 
-## 6. Modelo de datos relacional
+## 6. Servicio de IA — Arquitectura en Profundidad
 
-### 6.1 Tablas principales (MVP)
-- usuarios
-- amistades
-- perfil_bienestar_usuario
-- plan_entrenamiento_semanal
-- ejercicios
-- ejercicios_multimedia
-- seleccion_de_ejercicios
-- asignaturas
-- evaluaciones_asignatura
-- calificaciones_evaluacion
-- planes_estudio
-- horarios_academicos
-- apuntes
-- catalogo_universidades
-- catalogo_carreras
-- catalogo_asignaturas
-- usuario_carreras
-- retos
-- rutinas
-- sesiones_registradas
-- actividades_sociales
-- interacciones_sociales
-- preferencias_notificacion
-
-### 6.2 Tablas previstas por crecimiento (Fase 2)
-- dependencias_hito
-- recomendaciones_carga (materializada o vista lógica)
-
-### 6.3 ER conceptual (actualizado)
+### 6.1 Diagrama de Secuencia: Recomendación de Rutina Completa
 
 ```mermaid
-erDiagram
-  USUARIOS ||--|| PERFIL_BIENESTAR_USUARIO : configura
-  USUARIOS ||--o{ PLAN_ENTRENAMIENTO_SEMANAL : recibe
-  EJERCICIOS ||--o{ EJERCICIOS_MULTIMEDIA : contiene
-  RUTINAS ||--o{ SELECCION_DE_EJERCICIOS : compone
-  EJERCICIOS ||--o{ SELECCION_DE_EJERCICIOS : referencia
-    USUARIOS ||--o{ PLANES_ESTUDIO : posee
-    PLANES_ESTUDIO ||--|{ HORARIOS_ACADEMICOS : contiene
-  USUARIOS ||--o{ ASIGNATURAS : gestiona
-  ASIGNATURAS ||--o{ EVALUACIONES_ASIGNATURA : contiene
-  EVALUACIONES_ASIGNATURA ||--o{ CALIFICACIONES_EVALUACION : registra
-    USUARIOS ||--o{ APUNTES : redacta
-  USUARIOS ||--o{ RETOS : crea
-    RETOS ||--o{ HITOS_DE_RETO : descompone
-    USUARIOS ||--o{ RUTINAS : crea
-    RUTINAS ||--o{ SESIONES_REGISTRADAS : registra
-    USUARIOS ||--o{ ACTIVIDADES_SOCIALES : publica
-    ACTIVIDADES_SOCIALES ||--o{ INTERACCIONES_SOCIALES : recibe
-    USUARIOS ||--o{ AMISTADES : relaciona
-    USUARIOS ||--|| PREFERENCIAS_NOTIFICACION : configura
-    USUARIOS ||--o{ USUARIO_CARRERAS : vincula
-    CATALOGO_UNIVERSIDADES ||--o{ CATALOGO_CARRERAS : ofrece
-    CATALOGO_CARRERAS ||--o{ CATALOGO_ASIGNATURAS : contiene
-    CATALOGO_CARRERAS ||--o{ USUARIO_CARRERAS : asociada_a
-    CATALOGO_ASIGNATURAS ||--o{ ASIGNATURAS : "referencia de catálogo"
+sequenceDiagram
+    actor User as Usuario
+    participant UI as NuevaRutinaScreen
+    participant Prov as Riverpod Providers
+    participant IA as RecomendacionIaService
+    participant Gemini as Gemini Flash API
+    participant SB as Supabase
+
+    User->>UI: Pulsa "Recomendar rutina con IA"
+    UI->>Prov: Lee perfilBienestarProvider
+    Prov->>SB: SELECT perfil_bienestar_usuario
+    SB-->>Prov: PerfilBienestarDb
+
+    UI->>Prov: Lee historialSesionUsuarioProvider
+    Prov->>SB: SELECT sesiones_registradas<br/>(últimas 4 semanas)
+    SB-->>Prov: HistorialSesionDto
+
+    UI->>Prov: Lee estadoDiarioHoyProvider
+    Prov->>SB: SELECT estado_diario_usuario<br/>WHERE fecha = today
+    SB-->>Prov: EstadoDiarioDb? (o null)
+
+    UI->>Prov: Lee ejerciciosProvider
+    Prov->>SB: SELECT v_ejercicios_completos
+    SB-->>Prov: List<EjercicioDb>
+
+    UI->>IA: generarRecomendacionRutina(perfil, ejercicios, historial, estadoDiario)
+
+    rect rgb(40, 60, 120)
+        Note over IA: Construcción del prompt
+
+        IA->>IA: 1. Filtrar ejercicios por equipamiento<br/>(_ejercicioUsaEquipamiento)
+        IA->>IA: 2. Formatear historial<br/>(_formatearHistorial)
+        IA->>IA: 3. Formatear estado diario<br/>(_formatearEstadoDiario)
+        IA->>IA: 4. Generar reglas de seguridad IMC<br/>(_reglasSeguridadIMC)
+        IA->>IA: 5. Construir prompt con:<br/>- Perfil completo<br/>- Catálogo filtrado<br/>- Reglas de seguridad<br/>- Reglas de periodización<br/>- Formato JSON esperado
+    end
+
+    IA->>Gemini: POST /v1beta/models/gemini-flash-latest:generateContent
+    Note over Gemini: Body: {contents: [{parts: [{text: prompt}]}]}<br/>Headers: X-goog-api-key
+    Gemini-->>IA: Response (JSON con candidates[0].content.parts[0].text)
+
+    rect rgb(40, 100, 60)
+        Note over IA: Parsing de respuesta
+
+        IA->>IA: 6. Extraer texto del candidate
+        IA->>IA: 7. _extraerJson():<br/>- Buscar ```json ... ```<br/>- Buscar primer { o [<br/>- Extraer substring válido
+        IA->>IA: 8. _parseMapa(): json.decode()
+        IA->>IA: 9. _parseEstructura():<br/>Iterar semanas→días→ejercicios<br/>Crear List<EjercicioRecomendado>
+    end
+
+    IA-->>UI: RecomendacionRutinaResult<br/>(nombre, desc, objetivo, estructura)
+
+    UI->>UI: Rellenar campos del formulario:<br/>- Nombre de rutina<br/>- Descripción<br/>- Objetivo (ChoiceChip)<br/>- Duración (semanas)<br/>- Estructura (semanas × días)
+
+    User->>UI: Revisa y ajusta
+    User->>UI: Pulsa "Recomendar ejercicios"
+    UI->>IA: generarEstructuraCompleta(perfil, ejercicios, rutinaConfig)
+
+    Note over IA: Prompt con:<br/>- Reglas de periodización por semana<br/>- Catálogo de ejercicios<br/>- Reglas de seguridad<br/>- Alternancia de grupos musculares<br/>- Sobrecarga progresiva si hay historial
+
+    IA->>Gemini: POST generateContent
+    Gemini-->>IA: Estructura semanas×días×ejercicios
+    IA-->>UI: RecomendacionRutinaResult (estructura completa)
+    UI->>UI: Rellenar Paso 2 con ejercicios por día
 ```
 
-### 6.4 Campos clave por tabla (extracto)
+### 6.2 Diagrama de Secuencia: Check-in Diario y Sesión en Vivo
 
-1. usuarios
-- id (uuid, referencia auth.users.id)
-- email
-- nombre_completo
-- url_avatar
-- nivel
-- xp_total
-- racha_actual
-- creado_en
-- actualizado_en
+```mermaid
+sequenceDiagram
+    actor User as Usuario
+    participant Det as RutinaDetalleScreen
+    participant Dialog as _CheckInDialog
+    participant Prov as rutina_provider.dart
+    participant SB as Supabase
+    participant Live as LiveSessionScreen
 
-2. amistades
-- id (uuid)
-- solicitante_id
-- receptor_id
-- estado (pendiente, aceptada, rechazada, bloqueada)
-- creado_en
-- actualizado_en
+    User->>Det: Pulsa "Empezar entrenamiento"
+    Det->>Det: Verifica que el día tiene ejercicios
+    alt Día sin ejercicios
+        Det-->>User: SnackBar: "Este día no tiene ejercicios"
+    else Día con ejercicios
+        Det->>Dialog: Muestra _CheckInDialog
 
-3. perfil_bienestar_usuario
-- id (uuid)
-- usuario_id
-- peso_kg
-- altura_cm
-- nivel_condicion (inicial, intermedio, avanzado)
-- limitaciones_fisicas (texto, nullable)
-- actualizado_en
+        Note over Dialog: 4 sliders (1-5):<br/>- Calidad del sueño<br/>- Nivel de estrés<br/>- Nivel de energía<br/>- Dolor muscular
 
-4. plan_entrenamiento_semanal
-- id (uuid)
-- usuario_id
-- semana_inicio
-- sesiones_recomendadas
-- carga_objetivo_min
-- nivel_intensidad (baja, media, alta)
-- estado (propuesto, confirmado, ajustado)
-- generado_por (sistema, usuario)
-- actualizado_en
+        User->>Dialog: Ajusta sliders
+        alt Dolor ≥ 3
+            Dialog->>Dialog: Muestra chips de zonas de dolor
+            User->>Dialog: Selecciona zonas (piernas, espalda, etc.)
+        end
 
-5. ejercicios
-- id (uuid)
-- exercise_db_id (text unique, identificador del dataset ExerciseDB)
-- nombre
-- url_gif (URL pública en Cloudflare R2)
-- instrucciones (text[])
-- dificultad (facil, medio, dificil)
-- descripcion
-- creado_en
-- actualizado_en
+        alt Pulsa "Empezar"
+            User->>Dialog: Confirma check-in
 
-5.1 partes_cuerpo (catálogo)
-- id (serial)
-- nombre (text unique, terminología anatómica profesional)
+            Dialog->>Dialog: Calcula listoParaEntrenar<br/>= sueño > 1 OR energía > 2
 
-5.2 musculos (catálogo)
-- id (serial)
-- nombre (text unique, terminología anatómica profesional)
+            Dialog->>Prov: guardarEstadoDiario(sueño, estrés, energía, dolor, zonas)
+            Prov->>SB: UPSERT estado_diario_usuario<br/>ON CONFLICT (usuario_id, fecha)
+            SB-->>Prov: OK
+            Prov->>Prov: ref.invalidate(estadoDiarioHoyProvider)
 
-5.3 equipamientos (catálogo)
-- id (serial)
-- nombre (text unique)
+            Dialog->>Prov: iniciarSesion(rutinaId, diaId)
+            Prov->>SB: INSERT sesiones_registradas<br/>(tipo='rutina', duracion_min=1, rpe=5)
+            SB-->>Prov: sesionId
+            Prov->>SB: UPDATE dias_rutina SET estado='en_progreso'
+            SB-->>Prov: OK
 
-5.4 ejercicio_musculo_objetivo (N:M)
-- ejercicio_id (uuid FK → ejercicios)
-- musculo_id (int FK → musculos)
+            Dialog-->>Det: Sesión iniciada (sesionId)
+            Det->>Live: Navega a LiveSessionScreen
+        else Pulsa "Omitir"
+            User->>Dialog: Omite check-in
+            Dialog->>Prov: iniciarSesion(rutinaId, diaId)
+            Prov->>SB: INSERT sesiones_registradas
+            SB-->>Prov: sesionId
+            Dialog-->>Det: Sesión iniciada sin check-in
+            Det->>Live: Navega a LiveSessionScreen
+        end
+    end
 
-5.5 ejercicio_musculo_secundario (N:M)
-- ejercicio_id (uuid FK → ejercicios)
-- musculo_id (int FK → musculos)
+    Note over Live: Sesión en vivo:<br/>- Cronómetro automático<br/>- Check de series con peso/reps<br/>- Cronómetro de descanso (90s)<br/>- +15s / -15s / Saltar<br/>- Diálogo de finalización con RPE
 
-5.6 ejercicio_parte_cuerpo (N:M)
-- ejercicio_id (uuid FK → ejercicios)
-- parte_cuerpo_id (int FK → partes_cuerpo)
+    User->>Live: Finaliza sesión
+    Live->>Prov: finalizarSesion(sesionId, duracion, rpe)
+    Prov->>SB: UPDATE sesiones_registradas<br/>(duracion_minutos, rpe, calorias_quemadas)
+    Prov->>SB: UPDATE dias_rutina SET estado='completado'
+    SB-->>Prov: OK
 
-5.7 ejercicio_equipamiento (N:M)
-- ejercicio_id (uuid FK → ejercicios)
-- equipamiento_id (int FK → equipamientos)
+    Live->>Det: Vuelve a RutinaDetalleScreen
+    Det->>Prov: Refresca progreso (días completados / total)
+```
 
-5.8 v_ejercicios_completos (vista wrapper de materializada)
-- Wrapper sobre `mv_ejercicios_completos` que pre-calcula arrays:
-  partes_cuerpo, musculos_objetivo, musculos_secundarios, equipamientos
-
-6. catalogo_universidades (catálogo público, solo lectura)
-- id (uuid)
-- nombre (text unique)
-- creado_en
-
-6.1 catalogo_carreras (catálogo público, solo lectura)
-- id (uuid)
-- universidad_id (FK)
-- nombre
-- creado_en
-
-6.2 catalogo_asignaturas (catálogo público, solo lectura)
-- id (uuid)
-- carrera_id (FK)
-- nombre
-- curso
-- semestre
-- caracter
-- creditos
-- creado_en
-
-6.3 usuario_carreras (M:N)
-- id (uuid)
-- usuario_id (FK)
-- carrera_id (FK)
-- creado_en
-
-6.4 planes_estudio
-- id (uuid)
-- usuario_id (FK)
-- nombre
-- semana_inicio
-- semana_fin
-- visibilidad
-- creado_en
-- actualizado_en
-
-7. seleccion_de_ejercicios
-- id (uuid)
-- rutina_id
-- ejercicio_id
-- series
-- repeticiones
-- segundos_descanso
-- indice_orden
-- creado_en
-
-8. asignaturas
-- id (uuid)
-- usuario_id
-- nombre
-- codigo
-- docente
-- archivado
-- catalogo_asignatura_id (FK opcional)
-- dificultad_percibida
-- creditos
-- prioridad
-- proxima_evaluacion
-- creado_en
-- actualizado_en
-
-9. evaluaciones_asignatura
-- id (uuid)
-- asignatura_id
-- tipo (examen, practica, entrega, otro)
-- titulo
-- fecha_programada
-- nota_objetivo
-- creado_en
-- actualizado_en
-
-10. calificaciones_evaluacion
-- id (uuid)
-- evaluacion_id
-- valor
-- escala_min
-- escala_max
-- registrada_en
-- observaciones
-
-11. retos
-- id (uuid)
-- usuario_id
-- titulo
-- tipo (fitness, academic)
-- meta
-- visibilidad (publico, privado, solo_amigos)
-- esta_completado
-- fecha_inicio
-- fecha_fin
-- creado_en
-- actualizado_en
-
-12. hitos_de_reto
-- id (uuid)
-- reto_id
-- titulo
-- porcentaje_peso
-- indice_orden
-- progreso_actual
-- esta_completado
-
-13. progreso_de_reto
-- id (uuid)
-- reto_id
-- hito_id
-- usuario_id
-- cantidad_completada
-- registrado_en
-
-14. apuntes (reemplaza notas_rapidas)
-- id (uuid)
-- usuario_id
-- asignatura_id (nullable)
-- titulo
-- contenido (Markdown)
-- visibilidad (publico, privado, solo_amigos)
-- es_nota_rapida (bool)
-- creado_en
-- actualizado_en
-
-15. rutinas
-- id (uuid)
-- usuario_id
-- nombre
-- descripcion
-- visibilidad
-- cantidad_ejercicios
-- creado_en
-- actualizado_en
-
-16. sesiones_registradas
-- id (uuid)
-- usuario_id
-- rutina_id
-- duracion_minutos
-- calorias_quemadas
-- rpe (1-10)
-- completada_en
-- creado_en
-
-17. preferencias_notificacion
-- usuario_id
-- recordatorio_estudio
-- recordatorio_retos
-- recordatorio_bienestar
-- recordatorio_social
-- franja_silencio_inicio
-- franja_silencio_fin
-- limite_diario_envios
-- modo_examenes_habilitado
-- actualizado_en
-
-### 6.5 Estrategia de almacenamiento del catalogo de ejercicios
-1. Supabase almacena metadatos relacionales del catalogo (tabla ejercicios) y composicion de rutinas (rutina_ejercicios).
-2. Cloudflare R2 almacena objetos multimedia de ejercicios (gif/mp4/jpg).
-3. La app consume multimedia mediante URL firmada o mecanismo equivalente de acceso controlado.
-4. El seeding actualiza metadatos y referencias de objetos sin acoplar el cliente a APIs externas en runtime.
-
-### 6.6 Pipeline de ingesta ExerciseDB -> SynaptixFit (estado actual)
-1. Estado: activo con proveedor aprobado (ExerciseDB via Kaggle).
-2. Regla vigente: se ejecuta ingesta batch sobre copia local del dataset, sin llamadas runtime desde Flutter al proveedor externo.
-3. Flujo operativo:
-  - descargar ZIP oficial desde Kaggle,
-  - traducir dataset con scripts locales de preprocesado,
-  - transformar `exercises.json` + catalogos auxiliares,
-  - cargar `gifs_180x180/` a R2,
-  - importar metadatos a Supabase,
-  - validar en Flutter con lote piloto antes de carga masiva.
-
-## 7. Permisos y RLS
-
-Visibilidad soportada: publico | privado | solo_amigos.
+### 6.3 Diagrama de Flujo: Periodización Inteligente
 
 ```mermaid
 flowchart TD
-    R[Recurso con visibilidad] --> P1{es propietario?}
-    P1 -- si --> ALLOW0[lectura y escritura]
-    P1 -- no --> P2{relacion bloqueada?}
-    P2 -- si --> DENYB[denegar]
-    P2 -- no --> P3{publico?}
-    P3 -- si --> ALLOW1[permitir lectura]
-    P3 -- no --> P4{solo_amigos y amistad aceptada?}
-    P4 -- si --> ALLOW2[permitir lectura]
-    P4 -- no --> DENY[denegar]
+    A["crearRutinaCompleta()"] --> B{"¿Total semanas?"}
+
+    B -->|"1 semana"| C1["tipo = 'carga'"]
+    B -->|"2 semanas"| C2["Sem 1: 'adaptacion'\nSem 2: 'carga'"]
+    B -->|"3 semanas"| C3["Sem 1: 'adaptacion'\nSem 2: 'carga'\nSem 3: 'pico'"]
+    B -->|"4+ semanas"| C4["Sem 1: 'adaptacion'\nSem 2-N: 'carga'\nSem N: 'descarga'"]
+
+    C1 --> D["INSERT semanas_rutina\ncon tipo_semana"]
+
+    D --> E["UI: Badge de tipo\n(azul=adapt, verde=carga,\nnaranja=pico, teal=desc)"]
+
+    F["estadoPeriodizacionProvider\n(se ejecuta periódicamente)"] --> G["Consulta sesiones_registradas\n(últimas 3 semanas)"]
+
+    G --> H{"¿RPE promedio > 8.0\n+ 3+ semanas\n+ volumen decreciente?"}
+
+    H -->|Sí| I["necesitaDescarga = true"]
+    H -->|No| J{"¿Puntuación fatiga\ndiaria > 50?"}
+    J -->|Sí| I
+    J -->|No| K["necesitaDescarga = false"]
+
+    I --> L["UI: Banner 'Tu cuerpo\nnecesita descanso'"]
+    K --> M["Sin alerta"]
 ```
 
-Reglas clave:
-1. Solo propietario puede editar o borrar recursos propios.
-2. publico permite lectura autenticada.
-3. solo_amigos requiere amistad aceptada.
-4. estado bloqueada en amistades anula visibilidad cruzada.
-5. me gusta solo permitido si la publicacion es visible.
-6. autopost de logros respeta preferencia del usuario.
+## 7. Modelo de Datos Relacional (Resumen)
 
-## 8. Contratos de servicios
-
-Nota: se prioriza supabase_flutter sobre PostgREST directo, con Edge Functions para validaciones criticas.
-
-### 8.1 Repositorios de dominio
-1. RepositorioPlanesEstudio
-- crearPlan(input)
-- actualizarPlan(planId, patch)
-- eliminarPlan(planId)
-- listarPlanesVisibles(filtros)
-
-2. RepositorioApuntes
-- crearApunte(input)
-- actualizarApunte(apunteId, patch)
-- eliminarApunte(apunteId)
-- listarApuntesVisibles(filtros)
-
-3. RepositorioAcademico
-- crearAsignatura(input)
-- actualizarAsignatura(asignaturaId, patch)
-- archivarAsignatura(asignaturaId)
-- crearEvaluacion(input)
-- actualizarEvaluacion(evaluacionId, patch)
-- registrarCalificacion(input)
-- listarAsignaturasConProgreso(filtros)
-- listarEvaluacionesPorCalendario(rango)
-
-4. RepositorioRetos
-- crearRetoSimple(input)
-- crearRetoComplejo(input, hitos)
-- reordenarHitos(retoId, nuevoOrden)
-- actualizarProgresoReto(retoId, progreso)
-- actualizarProgresoHito(hitoId, progreso)
-- pausarReto(retoId)
-- reprogramarReto(retoId, patchFechas)
-- completarReto(retoId)
-- clonarRetoPublico(retoId)
-- listarRetosVisibles(filtros)
-
-5. RepositorioBienestar
-- guardarPerfilBienestar(input)
-- obtenerPerfilBienestar(usuarioId)
-- generarPlanSemanalRecomendado(usuarioId, semana)
-- confirmarPlanSemanal(planId)
-- recalcularPlanPorAdherencia(usuarioId, semana)
-- crearRutina(input)
-- listarCatalogoEjercicios(filtros, pagina)
-- obtenerFichaEjercicio(ejercicioId)
-- seleccionarEjerciciosParaRutina(rutinaId, ejerciciosOrdenados)
-- reemplazarEjercicioEnRutina(rutinaId, ejercicioOrigenId, ejercicioNuevoId)
-- obtenerUrlMediaEjercicio(ejercicioId)
-- ejecutarPilotoCatalogoEjercicios(limite)
-- completarRutina(rutinaId, sesionInput)
-- listarRutinasVisibles(filtros)
-
-6. RepositorioMuro
-- listarMuro(pagina, tamanoPagina)
-- darMeGusta(publicacionId)
-- quitarMeGusta(publicacionId)
-
-7. RepositorioNotificaciones
-- actualizarPreferencias(input)
-- obtenerPreferencias(usuarioId)
-- previsualizarPlanEnvio(dia)
-
-8. RepositorioAnalitica
-- obtenerResumenSemanal(usuarioId, semana)
-- detectarSobrecarga(usuarioId, semana)
-- sugerirAjustes(usuarioId, semana)
-
-9. RepositorioSincronizacion
-- encolarOperacionLocal(operacion)
-- sincronizarPendientes()
-- resolverConflicto(conflictoId, estrategia)
-
-### 8.2 RPC y Edge Functions sugeridas
-1. rpc_clonar_reto_publico
-- input: reto_id
-- output: nuevo_reto_id
-- validaciones: visibilidad publico, ownership, duplicado opcional
-
-2. fn_publicar_logro
-- input: tipo, referencia_id, mensaje?
-- output: publicacion_id
-- validaciones: evento valido, ownership, preferencia autopost
-
-3. fn_validar_reto_complejo
-- input: reto, hitos, dependencias
-- output: valido(bool), errores[]
-
-3.1 Regla de calculo de importancia por orden (server-side)
-- El usuario no define pesos manuales.
-- La importancia de cada hito se calcula automaticamente por el orden actual.
-- Formula recomendada para n hitos y posicion i (1 = primer hito):
-  importancia(i) = (n - i + 1) / (n * (n + 1) / 2)
-- Al reordenar hitos, se recalcula el avance global del reto.
-
-4. fn_recomendaciones_carga
-- input: usuario_id, ventana
-- output: sugerencias[]
-
-4.1 fn_recomendar_plan_entrenamiento
-- input: usuario_id, semana
-- output: sesiones_recomendadas, carga_objetivo_min, intensidad, sugerencias[]
-- validaciones: perfil_bienestar completo, disponibilidad minima, limites de seguridad
-
-4.2 fn_recalcular_plan_bienestar
-- input: usuario_id, semana, metricas_adherencia
-- output: plan_ajustado
-- validaciones: conservacion de dia de descanso, ajuste progresivo de carga
-
-4.3 fn_sincronizar_catalogo_ejercicios
-- input: fuente, version
-- output: ejercicios_insertados, ejercicios_actualizados
-- validaciones: licencia admitida, esquema valido, deduplicacion por clave natural
-
-4.3.1 Fuente recomendada para MVP
-- fuente por defecto: `exercisedb_kaggle`
-- estrategia: sincronizacion batch desde dataset local validado para evitar dependencia de API publica en runtime
-
-4.4 fn_resolver_media_r2_ejercicio
-- input: ejercicio_id
-- output: url_firmada, expira_en
-- validaciones: objeto existente en R2, permisos de lectura del usuario
-
-4.5 fn_importar_catalogo_exercisedb
-- input: version, lote, dry_run
-- output: resumen_importacion, errores_mapeo
-- validaciones: integridad referencial entre ejercicios, multimedia, musculos y equipamiento
-
-5. fn_recordatorios_programados (cron)
-- input: none
-- output: metricas_envio
-- validaciones: franja_silencio, limite_diario, prioridad por urgencia
-
-6. rpc_puede_acceder_recurso
-- input: tipo_recurso, recurso_id, usuario_id
-- output: permitido(bool), motivo
-
-### 8.3 Realtime (canales)
-1. canal_muro
-- evento: insert en publicaciones_muro
-- uso: refresco de feed
-
-2. canal_retos_usuario
-- evento: update en retos y hitos_reto
-- uso: progreso en tiempo real
-
-3. canal_amistades
-- evento: update en amistades
-- uso: solicitudes, aceptaciones, bloqueos
-
-4. canal_notificaciones_usuario
-- evento: eventos de recordatorios programados
-- uso: refresco de centro de avisos
-
-5. canal_bienestar_usuario
-- evento: update en plan_entrenamiento_semanal y sesiones_rutina
-- uso: refresco de recomendacion y adherencia semanal
-
-6. canal_catalogo_ejercicios (ACTIVO)
-- tablas con realtime habilitado: ejercicios, partes_cuerpo, musculos, equipamientos, ejercicio_musculo_objetivo, ejercicio_musculo_secundario, ejercicio_parte_cuerpo, ejercicio_equipamiento
-- uso: refresco del explorador y detalle de ejercicios en tiempo real
-- implementacion: `ejerciciosProvider` en Flutter usa `supabase.from('ejercicios').stream()`
-
-## 9. Navegacion y mapa de pantallas
+Ver [04-data-model.md](04-data-model.md) para el esquema SQL completo con RLS. A continuación el ER conceptual actualizado:
 
 ```mermaid
-flowchart LR
-    Splash --> Auth
-    Auth --> Home
-    Home --> Academico
-    Home --> Asignaturas
-    Home --> Retos
-    Home --> Bienestar
-    Home --> Social
-    Home --> Analitica
-    Home --> Perfil
+erDiagram
+    USUARIOS ||--|| PERFIL_BIENESTAR_USUARIO : tiene
+    USUARIOS ||--o{ ESTADO_DIARIO_USUARIO : registra
+    USUARIOS ||--o{ RUTINAS : crea
+    USUARIOS ||--o{ SESIONES_REGISTRADAS : completa
 
-    Academico --> DetallePlan
-    Academico --> DetalleApunte
-    Asignaturas --> DetalleAsignatura
-    DetalleAsignatura --> Evaluaciones
-    Evaluaciones --> DetalleEvaluacion
-    DetalleEvaluacion --> Calificaciones
+    RUTINAS ||--o{ SEMANAS_RUTINA : periodiza
+    SEMANAS_RUTINA ||--o{ DIAS_RUTINA : contiene
+    DIAS_RUTINA ||--o{ SELECCION_DE_EJERCICIOS : agrupa
+    EJERCICIOS ||--o{ SELECCION_DE_EJERCICIOS : referencia
 
-    Retos --> DetalleReto
-    Retos --> CrearReto
-    Retos --> CrearRetoComplejo
-    DetalleReto --> DetalleHito
+    SESIONES_REGISTRADAS ||--o{ SERIES_SESION : desglosa
+    SELECCION_DE_EJERCICIOS ||--o{ SERIES_SESION : referencia
 
-    Bienestar --> PerfilBienestar
-    Bienestar --> PlanSemanalEntreno
-    Bienestar --> ExploradorEjercicios
-    ExploradorEjercicios --> FichaEjercicio
-    Bienestar --> DetalleRutina
-    FichaEjercicio --> DetalleRutina
-    PlanSemanalEntreno --> DetalleRutina
-    Social --> DetallePublicacion
+    EJERCICIOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : tiene
+    EJERCICIOS ||--o{ EJERCICIO_MUSCULO_SECUNDARIO : activa
+    EJERCICIOS ||--o{ EJERCICIO_PARTE_CUERPO : pertenece
+    EJERCICIOS ||--o{ EJERCICIO_EQUIPAMIENTO : usa
 
-    Perfil --> ConfigNotificaciones
-    Perfil --> Privacidad
-    Perfil --> EditarPerfil
-    Home --> ResolverConflictoSync
+    MUSCULOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : objetivo
+    MUSCULOS ||--o{ EJERCICIO_MUSCULO_SECUNDARIO : secundario
+    PARTES_CUERPO ||--o{ EJERCICIO_PARTE_CUERPO : contiene
+    EQUIPAMIENTOS ||--o{ EJERCICIO_EQUIPAMIENTO : se_usa
 ```
 
-## 10. Estrategia tecnica por fases
+## 8. Servicio de IA — `RecomendacionIaService`
 
-1. Sprint 1 (MVP)
-- Base Flutter + Supabase Auth + Perfil.
-- Estructura clean architecture, Riverpod y routing.
+**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (867 líneas)
 
-2. Sprint 2 (MVP)
-- Modulo academico: asignaturas, planes, bloques, apuntes y notas rapidas.
-- RLS de visibilidad y amistades.
+### 8.1 DTOs (Data Transfer Objects)
 
-3. Sprint 3 (MVP)
-- Evaluaciones y calificaciones por asignatura.
-- Retos simples, clonacion y estados.
-- Perfil de bienestar, recomendacion semanal de entrenamiento, piloto de catalogo de ejercicios (10-20 ejercicios), seleccion de ejercicios por rutina, rutinas y sesiones completadas.
+| DTO | Propósito | Campos clave |
+|-----|-----------|-------------|
+| `EjercicioRecomendado` | Un ejercicio con sus parámetros sugeridos | `ejercicioId`, `series`, `repeticiones`, `segundosDescanso`, `pesoKg?` |
+| `RecomendacionRutinaResult` | Resultado de recomendación de metadatos o estructura | `nombre`, `descripcion`, `objetivo`, `duracionSemanas`, `estructura` (Map<semana, Map<día, List<EjercicioRecomendado>>>), `error?` |
+| `RecomendacionEjerciciosResult` | Resultado de sugerencia de ejercicios para un día | `ejercicios` (List<EjercicioRecomendado>), `error?` |
+| `HistorialSesionDto` | Historial agregado de sesiones para contexto IA | `totalSesionesCompletadas`, `rpePromedio`, `volumenSemanalEstimado`, `ejerciciosRecientes`, `diasCompletadosUltimaSemana`, `semanasConsecutivasEntrenando`, `requiereDescarga` |
+| `EjericicioRecienteDto` | Datos de un ejercicio del historial | `nombreEjercicio`, `pesoPromedio`, `repsPromedio`, `rpePromedio`, `ultimaFecha` |
 
-4. Sprint 4 (MVP)
-- Carga y entrega de multimedia de ejercicios en R2 (con acceso firmado).
-- Ingesta completa del catalogo ExerciseDB (AscendAPI via Kaggle) tras piloto validado.
-- Feed, me gusta, notificaciones base.
-- Preferencias de aviso y autopost.
-- Hardening de seguridad y observabilidad.
+### 8.2 Métodos del Servicio
 
-5. Sprint 5 (post-MVP, Fase 2)
-- Retos complejos por hitos y dependencias.
-- Analitica de sobrecarga y recomendaciones avanzadas (academicas y bienestar).
-- Sincronizacion offline avanzada con resolucion de conflictos.
+#### `generarRecomendacionRutina()`
+**Propósito:** Generar metadatos de una rutina (nombre, descripción, objetivo, duración, estructura semana×día) basados en el perfil, historial y estado diario.
 
-## 11. Riesgos tecnicos y decisiones abiertas
+**Parámetros:**
+- `apiKey`: Clave de Gemini desde `.env`
+- `perfil`: `PerfilBienestarDb` — datos antropométricos, objetivo, equipamiento, disponibilidad
+- `ejerciciosDisponibles`: Catálogo completo de ejercicios (se filtra por equipamiento)
+- `historial`: `HistorialSesionDto?` — historial de sesiones (opcional)
+- `estadoDiario`: `EstadoDiarioDb?` — check-in del día (opcional)
 
-### 11.1 Riesgos
-1. Complejidad RLS combinando visibilidad, amistad y bloqueo.
-2. Coste de consultas en feed con reglas de acceso.
-3. Sincronizacion offline con conflictos en recursos sensibles.
-4. Riesgo de sobre-notificacion si no se aplica priorizacion.
-5. Inconsistencias de progreso academico si no se valida escala de calificaciones.
-6. Riesgo de recomendaciones de entrenamiento poco realistas sin datos fisicos actualizados.
-7. Riesgo de privacidad por manejo de datos fisicos sensibles.
-8. Riesgo de desalineacion entre metadatos en Supabase y objetos multimedia en R2.
-9. Riesgo de incumplimiento de licencias al importar dataset de ejercicios.
-10. Riesgo operativo al usar pipelines dependientes de tooling externo no estandarizado entre equipos.
+**Flujo interno:**
+1. Valida que `apiKey` no esté vacía → retorna error descriptivo
+2. Filtra ejercicios por equipamiento compatible (`_ejercicioUsaEquipamiento`)
+3. Si no hay ejercicios compatibles → retorna error con el equipamiento listado
+4. Construye prompt con: perfil, historial formateado, estado diario, reglas de seguridad IMC, reglas de periodización, formato JSON esperado
+5. Llama a `_callGemini()` → extrae JSON → parsea estructura
+6. Si falla → retorna `RecomendacionRutinaResult` con `error`
 
-### 11.2 Decisiones abiertas
-1. Alcance exacto de lectura publica (solo autenticados vs anonimo).
-2. Entrada de comentarios en MVP o Fase 2.
-3. Estrategia de resolucion por defecto en conflictos (ultima escritura gana vs resolucion manual segun entidad).
-4. Politica final de recomendaciones de carga (solo sugerir vs autoaplicar).
-5. Definicion de proveedor push unico o mixto por plataforma.
-6. Politica de expiracion/retencion historica para datos de bienestar y sesiones.
-7. Politica de expiracion para URL firmadas de R2 por tipo de cliente (movil/web).
-8. Cadencia de refresco del dataset de ejercicios (manual, semanal o mensual).
-9. Politica de versionado y actualizacion incremental del dataset ExerciseDB (diff por version y rollback de lote).
+**Estructura del prompt:** Ver sección 6.1 del código fuente. Incluye secciones: CONTEXTO DEL USUARIO, REGLAS DE SEGURIDAD, REGLAS DE EQUIPAMIENTO, HISTORIAL DEPORTIVO, REGLAS DE RECOMENDACIÓN SEGÚN OBJETIVO, PERIODIZACIÓN, FORMATO JSON ESPERADO.
 
-## 12. Criterio de aprobacion RFC
-Aprobar este RFC habilita:
-1. Definir esquema fisico SQL final (indices, constraints, politicas RLS).
-2. Crear backlog tecnico por historias y casos de uso CU-01..CU-19.
-3. Implementar base MVP y roadmap de Fase 2 sin rehacer arquitectura.
+#### `generarEstructuraCompleta()`
+**Propósito:** Generar la estructura completa de ejercicios (semanas × días × ejercicios) para una rutina ya configurada.
+
+**Diferencias con `generarRecomendacionRutina()`:**
+- Recibe la rutina ya configurada (nombre, descripción, objetivo, semanas, días/semana)
+- El prompt incluye reglas de periodización detalladas por semana (`_reglasPeriodizacion`)
+- Incluye reglas de programación por objetivo (`_reglasPorObjetivo`)
+- Incluye datos de sobrecarga progresiva si hay historial (`_formatearProgresion`)
+- La respuesta solo incluye el campo `estructura` (no metadatos)
+- Obliga a alternar grupos musculares entre días consecutivos
+
+#### `generarRecomendacionEjercicios()`
+**Propósito:** Sugerir 3-6 ejercicios adicionales para un día específico, sin repetir los ya agregados.
+
+**Cuándo se usa:** En el Paso 2 de creación de rutina, por cada día, el botón "Sugerir ejercicios con IA".
+
+**Particularidades:**
+- El catálogo se filtra excluyendo `ejerciciosYaAgregados` (por `exerciseDbId`)
+- El prompt incluye el catálogo filtrado completo como JSON embebido
+- La respuesta es un array JSON, no un objeto con estructura
+- Si la respuesta está vacía o no tiene ejercicios válidos → error
+
+#### `generarProgresionEjercicio()`
+**Propósito:** Sugerir la siguiente progresión de carga (peso/reps) para un ejercicio, basada en historial real.
+
+**Reglas de progresión implementadas en el prompt:**
+
+| RPE Última Sesión | Acción Recomendada |
+|-------------------|-------------------|
+| < 7 | Subir peso 5-10% o +1-2 reps (músculo infra-desafiado) |
+| 7 - 8 | Subir peso 2.5-5% o mantener reps (zona óptima) |
+| 8.5 - 9.5 | Mantener peso y reps (progresión sostenida) |
+| = 10 (fallo) | **NO subir peso** en la próxima sesión |
+
+**Modulación por objetivo:**
+- `fuerza` → priorizar subir peso sobre reps
+- `ganar_masa` → equilibrio peso/reps, rango 8-12
+- `perder_peso` → mantener o bajar ligeramente peso, subir reps
+- `resistencia` → mantener peso, subir reps
+
+### 8.3 Helpers Privados
+
+| Método | Propósito | Detalle |
+|--------|-----------|---------|
+| `_ejercicioUsaEquipamiento()` | Filtro de compatibilidad | Compara equipamiento del ejercicio con el del usuario. `peso_corporal` siempre es compatible. Incluye mapeo de equivalencias (mancuerna↔mancuernas, banda_elastica↔banda de resistencia, kettlebell↔pesa rusa) |
+| `_reglasSeguridadIMC()` | Restricciones por biometría | Genera reglas condicionales: IMC>30→bajo impacto, IMC<18.5→evitar déficit, edad>50→fortalecimiento articular, edad<18→priorizar técnica |
+| `_reglasPeriodizacion()` | Estructura de periodización | Para 4+ semanas: adaptación→carga→carga→descarga. Si `historial.requiereDescarga`, semana 1 es descarga. Para 2-3 semanas: adaptación→carga(+pico) |
+| `_reglasPorObjetivo()` | Reglas de programación | Devuelve texto con reps, descanso, tipo de ejercicios según objetivo (fuerza/hipertrofia/resistencia/perder_peso/movilidad/fitness_general) |
+| `_formatearHistorial()` | Contexto de historial | Formatea `HistorialSesionDto` a texto para el prompt. Incluye alerta si `requiereDescarga` |
+| `_formatearEstadoDiario()` | Traducción fatiga→reglas | Convierte `EstadoDiarioDb` a instrucciones para IA: fatiga>50→reducir 30%, zonas dolor→sustituir, energía≤2→movilidad, sueño≤2→evitar peso muerto/squat máximo |
+| `_formatearProgresion()` | Datos de sobrecarga | Lista los últimos 5 ejercicios con peso/reps/RPE para que la IA aplique progresión lógica |
+| `_callGemini()` | Llamada HTTP a Gemini | POST a `generativelanguage.googleapis.com` con `X-goog-api-key`. Extrae texto de `candidates[0].content.parts[0].text` |
+| `_extraerJson()` | Parsing robusto de JSON | 3 estrategias: (1) regex para bloques ```json...```, (2) búsqueda de primer `{` o `[`, (3) substring hasta último cierre. Previene fallos por Markdown espurio |
+| `_parseError()` | Clasificación de errores | DioException 400/401/403→error de API key, otros→error de conexión. FormatException→JSON malformado. Genérico→mensaje truncado a 100 chars |
+
+## 9. Sistema de Check-in Diario
+
+### 9.1 Modelo `EstadoDiarioDb`
+
+```dart
+class EstadoDiarioDb {
+  final int calidadSueno;    // 1 (muy mal) a 5 (excelente)
+  final int nivelEstres;     // 1 (muy bajo) a 5 (muy alto)
+  final int nivelEnergia;    // 1 (agotado) a 5 (pleno)
+  final int dolorMuscular;   // 1 (ninguno) a 5 (intenso)
+  final List<String> zonasDolor;  // ['piernas', 'espalda', 'hombros', ...]
+  final bool listoParaEntrenar;   // sueño > 1 OR energía > 2
+
+  // Puntuación compuesta 0-100 (mayor = peor estado)
+  int get puntuacionFatiga {
+    final suenoInv = (6 - calidadSueno) * 5;    // 0-25
+    final estres = (nivelEstres - 1) * 5;       // 0-20
+    final energiaInv = (6 - nivelEnergia) * 4;  // 0-20
+    final dolor = (dolorMuscular - 1) * 7;      // 0-28
+    return (suenoInv + estres + energiaInv + dolor).clamp(0, 100);
+  }
+
+  bool get requiereAdaptacion => puntuacionFatiga > 50;
+}
+```
+
+### 9.2 Fórmula de Fatiga — Justificación
+
+La fórmula pondera los 4 indicadores según su impacto en el rendimiento deportivo:
+
+| Indicador | Peso | Rango | Justificación |
+|-----------|------|-------|---------------|
+| Sueño (invertido) | ×5 | 0-25 | El sueño es el factor #1 de recuperación (literatura: impacto directo en testosterona, cortisol, síntesis proteica) |
+| Estrés | ×5 | 0-20 | Estrés elevado = cortisol alto = catabolismo. Afecta recuperación y motivación |
+| Energía (invertido) | ×4 | 0-20 | Baja energía = sistema nervioso central fatigado. Riesgo de lesión por falta de concentración |
+| Dolor muscular | ×7 | 0-28 | Mayor peso porque el dolor es la señal más directa de que el músculo no se ha recuperado. DOMS severo contraindica entrenamiento intenso |
+
+**Umbral de adaptación (>50):** Seleccionado para que se active cuando al menos 2 indicadores están en valores malos (ej: sueño=2 + estrés=4 = 50 puntos) o 1 indicador está muy mal (dolor=5 = 28 puntos → necesita otros 22 de los demás).
+
+### 9.3 Diálogo `_CheckInDialog`
+
+Implementado como `StatefulWidget` dentro de `sesion_en_vivo_screen.dart`:
+
+```dart
+// Estructura del diálogo:
+// - 4 Sliders con labels y emojis indicadores
+// - Chips de zonas de dolor (visibles si dolorMuscular >= 3)
+// - Botones: "Empezar" (guarda y continúa) / "Omitir" (solo continúa)
+
+showDialog(
+  context: context,
+  barrierDismissible: false,
+  builder: (ctx) => const _CheckInDialog(),
+).then((_) async {
+  // Si el usuario pulsó "Empezar", se ejecuta guardarEstadoDiario()
+  // Luego iniciarSesion() y navegación a LiveSessionScreen
+});
+```
+
+**Zonas de dolor disponibles:** piernas, espalda, hombros, brazos, pecho, core.
+
+**Indicador visual de fatiga:** Si `estadoDiarioHoyProvider` devuelve `requiereAdaptacion == true`, se muestra un banner naranja en `RutinaDetalleScreen` antes de iniciar la sesión: "Hoy tu cuerpo necesita un entrenamiento más ligero."
+
+### 9.4 Integración con IA — `_formatearEstadoDiario()`
+
+La IA recibe el estado diario traducido a reglas concretas:
+
+```
+ESTADO FISICO DE HOY (Check-in diario):
+- Calidad del sueño: 2/5
+- Nivel de estrés: 4/5
+- Nivel de energía: 2/5
+- Dolor muscular: 3/5
+- Zonas con dolor: piernas, espalda
+- Puntuación de fatiga: 67/100 (mayor = peor)
+- ALERTA: El usuario necesita adaptación hoy. Reducir volumen un 30%.
+  Evitar ejercicios en zonas con dolor.
+- SUSTITUIR ejercicios que trabajen: piernas, espalda.
+- Energía muy baja: priorizar movilidad y ejercicios de baja intensidad.
+- Sueño deficiente: evitar ejercicios de alta demanda neuromuscular
+  (peso muerto, squat máximo).
+```
+
+## 10. Sistema de Periodización Inteligente
+
+### 10.1 Algoritmo `_calcularTipoSemana()`
+
+```dart
+String _calcularTipoSemana(int semanaNum, int totalSemanas) {
+  if (totalSemanas <= 1) return 'carga';           // Rutina de 1 semana
+  if (semanaNum == 1) return 'adaptacion';          // Primera semana siempre adaptación
+  if (semanaNum == totalSemanas && totalSemanas >= 4) return 'descarga';  // Última de 4+ → descarga
+  if (semanaNum == totalSemanas && totalSemanas >= 3) return 'pico';      // Última de 3 → pico
+  return 'carga';                                   // Semanas intermedias → carga
+}
+```
+
+**Tabla de decisión:**
+
+| Total Semanas | Sem 1 | Sem 2 | Sem 3 | Sem 4 | Sem 5+ |
+|---------------|-------|-------|-------|-------|--------|
+| 1 | carga | — | — | — | — |
+| 2 | adaptacion | carga | — | — | — |
+| 3 | adaptacion | carga | pico | — | — |
+| 4 | adaptacion | carga | carga | descarga | — |
+| 5 | adaptacion | carga | carga | carga | descarga |
+
+### 10.2 Detección de Necesidad de Descarga (`estadoPeriodizacionProvider`)
+
+Algoritmo que se ejecuta periódicamente para detectar signos de sobre-entrenamiento:
+
+```
+1. Consultar sesiones_registradas de las últimas 3 semanas
+2. Calcular RPE promedio de todas las sesiones
+3. Agrupar volumen por semana (suma de duración en minutos)
+4. Detectar si el volumen es decreciente (3 semanas consecutivas bajando)
+5. Consultar check-in diario de hoy (estado_diario_usuario)
+6. Calcular puntuación de fatiga diaria
+
+necesitaDescarga = true SI:
+  (RPE > 8.0 AND semanas ≥ 3 AND volumen decreciente)
+  OR
+  (puntuacionFatigaDiaria > 50)
+```
+
+**DTO `PeriodizacionEstado`:**
+
+```dart
+class PeriodizacionEstado {
+  final bool necesitaDescarga;         // ¿Recomendar descarga?
+  final double rpePromedioReciente;    // RPE promedio últimas 3 semanas
+  final bool volumenDecreciente;       // ¿Volumen bajando 3 semanas?
+  final int semanasConsecutivas;       // Semanas seguidas entrenando
+  final int puntuacionFatigaDiaria;    // Puntuación del check-in de hoy
+}
+```
+
+### 10.3 Badges Visuales en UI
+
+En `RutinaDetalleScreen`, el selector horizontal de semanas muestra badges coloreados:
+
+| Tipo | Color | Texto | Significado |
+|------|-------|-------|-------------|
+| `adaptacion` | Azul | "Adapt" | 70% volumen, énfasis en técnica |
+| `carga` | Verde | "Carga" | 85-90% volumen, progresión |
+| `pico` | Naranja | "Pico" | Máxima intensidad, volumen completo |
+| `descarga` | Teal | "Desc" | 60% volumen, recuperación activa |
+
+## 11. Barra de Progreso de Rutina
+
+### 11.1 Cálculo
+
+En `RutinaDetalleScreen`:
+
+```dart
+// Días completados / días totales
+final diasCompletados = dias.where((d) => d.estado == 'completado').length;
+final diasTotales = dias.length;
+final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
+
+// Tiempo acumulado: suma de duración de sesiones para los días de esta rutina
+// vía tiempoDiaProvider(diaId)
+```
+
+### 11.2 Invalidaciones
+
+- Al marcar un día como completado → `diasDeSemanaProvider` se invalida
+- Al añadir/quitar ejercicios de un día → `ejerciciosDeDiaProvider(diaId)` se invalida
+- Si un día tenía ejercicios y se vacía → el estado vuelve a `pendiente`
+- Si un día no tiene ejercicios → botón "Iniciar" bloqueado con SnackBar
+
+## 12. Proveedores Riverpod — Catálogo Completo
+
+### 12.1 Módulo de Bienestar (IA + Periodización)
+
+| Provider | Tipo | Propósito | Fuente de datos | Invalidación |
+|----------|------|-----------|----------------|-------------|
+| `perfilBienestarProvider` | `FutureProvider<PerfilBienestarDb?>` | Perfil físico del usuario | `BienestarRepository.obtenerPerfilBienestar()` → `perfil_bienestar_usuario` | Manual al editar perfil |
+| `estadoDiarioHoyProvider` | `FutureProvider<EstadoDiarioDb?>` | Check-in del día actual | `estado_diario_usuario` WHERE fecha = today | `guardarEstadoDiario()` |
+| `historialSesionUsuarioProvider` | `FutureProvider<HistorialSesionDto?>` | Historial agregado (4 semanas) | `sesiones_registradas` + `series_sesion` (JOIN) | Al completar sesión |
+| `estadoPeriodizacionProvider` | `FutureProvider<PeriodizacionEstado>` | Detección de necesidad de descarga | `sesiones_registradas` (3 semanas) + `estado_diario_usuario` | Al completar sesión |
+| `semanasDeRutinaProvider` | `FutureProvider.family<List<SemanaRutinaDb>, String>` | Semanas de una rutina | `semanas_rutina` WHERE rutina_id | Al crear/modificar semanas |
+| `diasDeSemanaProvider` | `FutureProvider.family<List<DiaRutinaDb>, String>` | Días de una semana | `dias_rutina` WHERE semana_id | Al añadir día o cambiar estado |
+| `ejerciciosDeDiaProvider` | `FutureProvider.family<List<SeleccionEjercicioDb>, String>` | Ejercicios de un día | `seleccion_de_ejercicios` WHERE dia_id | Al añadir/quitar/editar ejercicios |
+| `tiempoDiaProvider` | `FutureProvider.family<int, String>` | Duración de última sesión del día | `sesiones_registradas` WHERE dia_id (última) | Al finalizar sesión |
+| `rutinasComunidadProvider` | `FutureProvider<List<RutinaComunidadDto>>` | Rutinas públicas de la comunidad | `rutinas` WHERE visibilidad='public' + JOIN `usuarios` | Manual |
+| `rutinasUsuarioProvider` | `FutureProvider<List<RutinaDb>>` | Rutinas del usuario | `rutinas` WHERE usuario_id | Al crear/eliminar/clonar rutina |
+
+### 12.2 Funciones de Mutación (en `rutina_provider.dart`)
+
+| Función | Operación | Tablas afectadas |
+|---------|-----------|-----------------|
+| `crearRutinaCompleta()` | INSERT | `rutinas` + `semanas_rutina` + `dias_rutina` + `seleccion_de_ejercicios` |
+| `eliminarRutina()` | DELETE (CASCADE) | `rutinas` → cascada a semanas, días, ejercicios |
+| `clonarRutina()` | INSERT (copia) | `rutinas` + `seleccion_de_ejercicios` (como privada) |
+| `iniciarSesion()` | INSERT + UPDATE | `sesiones_registradas` + `dias_rutina.estado` |
+| `finalizarSesion()` | UPDATE | `sesiones_registradas` (duración, RPE, calorías) + `dias_rutina.estado` |
+| `registrarSerie()` | INSERT | `series_sesion` |
+| `guardarEstadoDiario()` | UPSERT | `estado_diario_usuario` ON CONFLICT (usuario_id, fecha) |
+| `agregarEjercicioADia()` | INSERT | `seleccion_de_ejercicios` |
+| `quitarEjercicioDeDia()` | DELETE | `seleccion_de_ejercicios` |
+| `actualizarEjercicioDia()` | UPDATE | `seleccion_de_ejercicios` |
+| `agregarDiaASemana()` | INSERT | `dias_rutina` |
+| `actualizarEstadoSemana()` | UPDATE | `semanas_rutina.estado` |
+| `actualizarEstadoDia()` | UPDATE | `dias_rutina.estado` |
+
+### 12.3 Módulo de Ejercicios (Catálogo)
+
+| Provider | Tipo | Propósito | Fuente |
+|----------|------|-----------|--------|
+| `ejerciciosProvider` | `StreamProvider<List<EjercicioDb>>` | Catálogo en tiempo real | `supabase.from('ejercicios').stream()` (Realtime) |
+| `catalogosProvider` | `FutureProvider<CatalogosEjercicios>` | Listas de catálogo | `partes_cuerpo`, `musculos`, `equipamientos` |
+| `ejerciciosFiltradosProvider` | `Family` | Búsqueda con filtros | `v_ejercicios_completos` con query params |
+| `ejercicioDetalleProvider` | `FutureProvider.family<DetalleEjercicio?, String>` | Detalle de un ejercicio | `v_ejercicios_completos` WHERE id |
+
+## 13. Estrategia Técnica por Fases
+
+| Sprint | Alcance | Estado |
+|--------|---------|--------|
+| Sprint 1 | Base Flutter + Supabase Auth + Perfil + Clean Architecture | ✅ |
+| Sprint 2 | Módulo académico (asignaturas, planes, bloques, apuntes) + RLS visibilidad | ✅ |
+| Sprint 3 | Evaluaciones, calificaciones, retos, perfil bienestar, catálogo ejercicios, rutinas, sesiones | ✅ |
+| Sprint 4 | Multimedia R2, ingesta completa ExerciseDB, feed social, notificaciones, hardening | ✅ |
+| **Sprint 5** | **IA (Gemini), periodización, check-in diario, sobrecarga progresiva, perfil editable** | ✅ |
+| Sprint 6 | Retos complejos con dependencias, analítica avanzada, sincronización offline | 🔜 |
+
+## 14. Riesgos Técnicos y Mitigaciones
+
+| Riesgo | Impacto | Mitigación |
+|--------|---------|-----------|
+| API de Gemini no disponible | Alto — bloquea recomendaciones IA | Creación manual de rutinas siempre funciona. Timeout de 15s con Dio. |
+| JSON malformado de Gemini | Medio — error en parsing | `_extraerJson()` con 3 estrategias de extracción. Error genérico sin crashear. |
+| Fatiga mal calibrada sin check-in | Bajo — IA menos precisa | Check-in opcional. Sin datos, IA usa solo historial de sesiones. |
+| Periodización mal aplicada | Medio — rutina inadecuada | Algoritmo determinista (`_calcularTipoSemana`). El usuario puede crear rutinas sin IA. |
+| Coste de API en producción | Bajo (MVP) | Gemini Flash capa gratuita: 15 RPM. Prompts minimalistas (solo IDs). |
+
+---
+
+**Documento compilado:** 11-05-2026
+**Versión:** 3.0
+**Clasificación:** PÚBLICO — Equipo jloen

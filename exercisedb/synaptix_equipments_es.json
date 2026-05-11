@@ -28,5 +28,8 @@
   { "name": "equipo asistido" },
   { "name": "máquina convergente" },
   { "name": "polea" },
-  { "name": "peso corporal" }
+  { "name": "peso corporal" },
+  { "name": "máquina contractora" },
+  { "name": "máquina de extensión" },
+  { "name": "barra en T" }
 ]

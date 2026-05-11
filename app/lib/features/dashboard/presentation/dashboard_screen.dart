@@ -38,7 +38,7 @@ class DashboardScreen extends ConsumerWidget {
       titulo: 'Plan semanal de estudio',
       descripcion: 'Organiza tu semana y horarios.',
       icono: Icons.school_rounded,
-      ruta: '/plan-semanal',
+      ruta: '/plan-semanal/crear',
     ),
     _OpcionCreacionDashboard(
       titulo: 'Nuevo apunte',
@@ -113,6 +113,8 @@ class DashboardScreen extends ConsumerWidget {
                     const SizedBox(height: 20),
                   ],
                   _buildRetosSection(context, value),
+                  const SizedBox(height: 28),
+                  _buildRutinasSection(context, value),
                 ],
               );
             },
@@ -274,6 +276,84 @@ class DashboardScreen extends ConsumerWidget {
                 progreso: value.progresoReto(reto.id),
                 tieneHitos: value.tieneHitosReto(reto.id),
                 onTap: () => context.push('/retos/${reto.id}'),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRutinasSection(BuildContext context, dynamic value) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 18,
+              decoration: BoxDecoration(
+                color: const Color(0xFF00ACC1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Rutinas activas',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
+            ),
+            const Spacer(),
+            if (value.rutinasActivas.isNotEmpty)
+              Text(
+                '${value.rutinasActivas.length}',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: SVColors.onSurfaceMuted,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (value.rutinasActivas.isEmpty)
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.fitness_center_rounded,
+                    color: SVColors.onSurfaceMuted.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'No tienes rutinas activas. ¡Crea una!',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: SVColors.onSurfaceMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ...value.rutinasActivas.map(
+            (rutina) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _RutinaActivaCard(
+                rutina: rutina,
+                onTap: () =>
+                    context.push('/bienestar/rutina/${rutina.rutina.id}'),
               ),
             ),
           ),
@@ -1114,5 +1194,139 @@ class _RetoActivoCardState extends ConsumerState<_RetoActivoCard> {
         if (mounted) setState(() => _confirmando = false);
       }
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tarjeta de rutina activa
+// ---------------------------------------------------------------------------
+class _RutinaActivaCard extends StatelessWidget {
+  const _RutinaActivaCard({required this.rutina, this.onTap});
+
+  final RutinaActivaDashboard rutina;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final r = rutina.rutina;
+
+    final objetivoIcono = switch (r.objetivo) {
+      'fuerza' => Icons.fitness_center_rounded,
+      'resistencia' => Icons.timer_rounded,
+      'hipertrofia' => Icons.trending_up_rounded,
+      'flexibilidad' => Icons.self_improvement_rounded,
+      _ => Icons.fitness_center_rounded,
+    };
+
+    final objetivoEtiqueta = switch (r.objetivo) {
+      'fuerza' => 'Fuerza',
+      'resistencia' => 'Resistencia',
+      'hipertrofia' => 'Hipertrofia',
+      'flexibilidad' => 'Flexibilidad',
+      _ => r.objetivo,
+    };
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: const Color(0xFF00ACC1).withValues(alpha: 0.15),
+        ),
+      ),
+      color: theme.colorScheme.surfaceContainerLowest,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00ACC1).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(objetivoIcono,
+                            size: 10, color: const Color(0xFF00ACC1)),
+                        const SizedBox(width: 3),
+                        Text(
+                          objetivoEtiqueta,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFF00ACC1),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: SVColors.onSurfaceMuted.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      '${rutina.ejerciciosCount} ejercicios',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: SVColors.onSurfaceMuted,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 9,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: SVColors.onSurfaceMuted.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      '${r.duracionSemanas} sem',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: SVColors.onSurfaceMuted,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 9,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 12,
+                    color: SVColors.onSurfaceMuted,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                r.nombre,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                  fontSize: 13,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

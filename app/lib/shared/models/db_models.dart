@@ -628,6 +628,9 @@ class HorarioAcademicoDb {
     this.planEstudioId,
     required this.prioridad,
     required this.creadoEn,
+    this.tipoActividad = 'estudio',
+    this.rutinaId,
+    this.temas,
   });
 
   final String id;
@@ -640,6 +643,9 @@ class HorarioAcademicoDb {
   final String? planEstudioId;
   final String prioridad;
   final DateTime creadoEn;
+  final String tipoActividad;
+  final String? rutinaId;
+  final String? temas;
 
   factory HorarioAcademicoDb.fromMap(Map<String, dynamic> map) {
     return HorarioAcademicoDb(
@@ -653,6 +659,9 @@ class HorarioAcademicoDb {
       planEstudioId: map['plan_estudio_id'] as String?,
       prioridad: (map['prioridad'] as String?) ?? 'media',
       creadoEn: _parseDateTime(map['creado_en']),
+      tipoActividad: (map['tipo_actividad'] as String?) ?? 'estudio',
+      rutinaId: map['rutina_id'] as String?,
+      temas: map['temas'] as String?,
     );
   }
 
@@ -668,6 +677,9 @@ class HorarioAcademicoDb {
       'plan_estudio_id': planEstudioId,
       'prioridad': prioridad,
       'creado_en': creadoEn.toIso8601String(),
+      'tipo_actividad': tipoActividad,
+      if (rutinaId != null) 'rutina_id': rutinaId,
+      if (temas != null) 'temas': temas,
     };
   }
 }
@@ -858,12 +870,14 @@ class PerfilBienestarDb {
     int? diasDisponiblesSemana,
     int? minutosPorSesion,
     bool? onboardingCompletado,
+    int? edad,
+    String? sexo,
   }) {
     return PerfilBienestarDb(
       id: id,
       usuarioId: usuarioId,
-      edad: edad,
-      sexo: sexo,
+      edad: edad ?? this.edad,
+      sexo: sexo ?? this.sexo,
       ciudad: ciudad,
       pesoKg: pesoKg ?? this.pesoKg,
       alturaCm: alturaCm ?? this.alturaCm,
@@ -880,6 +894,80 @@ class PerfilBienestarDb {
       creadoEn: creadoEn,
       actualizadoEn: DateTime.now(),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 14b) estado_diario_usuario — check-in diario de fatiga
+// ---------------------------------------------------------------------------
+class EstadoDiarioDb {
+  const EstadoDiarioDb({
+    required this.id,
+    required this.usuarioId,
+    required this.fecha,
+    required this.calidadSueno,
+    required this.nivelEstres,
+    required this.nivelEnergia,
+    required this.dolorMuscular,
+    required this.zonasDolor,
+    required this.listoParaEntrenar,
+    this.notas,
+    required this.creadoEn,
+  });
+
+  final String id;
+  final String usuarioId;
+  final DateTime fecha;
+  final int calidadSueno;
+  final int nivelEstres;
+  final int nivelEnergia;
+  final int dolorMuscular;
+  final List<String> zonasDolor;
+  final bool listoParaEntrenar;
+  final String? notas;
+  final DateTime creadoEn;
+
+  /// Puntuación compuesta de fatiga (0-100, mayor = peor estado).
+  int get puntuacionFatiga {
+    final suenoInv = (6 - calidadSueno) * 5; // 0-25
+    final estres = (nivelEstres - 1) * 5; // 0-20
+    final energiaInv = (6 - nivelEnergia) * 4; // 0-20
+    final dolor = (dolorMuscular - 1) * 7; // 0-28
+    return (suenoInv + estres + energiaInv + dolor).clamp(0, 100);
+  }
+
+  bool get requiereAdaptacion => puntuacionFatiga > 50;
+
+  factory EstadoDiarioDb.fromMap(Map<String, dynamic> map) {
+    return EstadoDiarioDb(
+      id: map['id'] as String,
+      usuarioId: map['usuario_id'] as String,
+      fecha: _parseDateTime(map['fecha']),
+      calidadSueno: _parseInt(map['calidad_sueno'], fallback: 3),
+      nivelEstres: _parseInt(map['nivel_estres'], fallback: 3),
+      nivelEnergia: _parseInt(map['nivel_energia'], fallback: 3),
+      dolorMuscular: _parseInt(map['dolor_muscular'], fallback: 1),
+      zonasDolor: _parseStringList(map['zonas_dolor']),
+      listoParaEntrenar: _parseBool(map['listo_para_entrenar'], fallback: true),
+      notas: map['notas'] as String?,
+      creadoEn: _parseDateTime(map['creado_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'usuario_id': usuarioId,
+      'fecha': fecha.toIso8601String(),
+      'calidad_sueno': calidadSueno,
+      'nivel_estres': nivelEstres,
+      'nivel_energia': nivelEnergia,
+      'dolor_muscular': dolorMuscular,
+      'zonas_dolor': zonasDolor,
+      'listo_para_entrenar': listoParaEntrenar,
+      'notas': notas,
+      'creado_en': creadoEn.toIso8601String(),
+    };
   }
 }
 
@@ -1134,6 +1222,67 @@ class PlanEstudioDb {
   }
 }
 
+/// Entrega, examen o presentación pendiente del usuario.
+class EntregaExamenDb {
+  const EntregaExamenDb({
+    required this.id,
+    required this.usuarioId,
+    this.asignaturaId,
+    required this.titulo,
+    required this.tipo,
+    required this.fechaLimite,
+    required this.dificultad,
+    required this.estaCompletado,
+    this.planEstudioId,
+    required this.creadoEn,
+    required this.actualizadoEn,
+  });
+
+  final String id;
+  final String usuarioId;
+  final String? asignaturaId;
+  final String titulo;
+  final String tipo;
+  final DateTime fechaLimite;
+  final String dificultad;
+  final bool estaCompletado;
+  final String? planEstudioId;
+  final DateTime creadoEn;
+  final DateTime actualizadoEn;
+
+  factory EntregaExamenDb.fromMap(Map<String, dynamic> map) {
+    return EntregaExamenDb(
+      id: map['id'] as String,
+      usuarioId: map['usuario_id'] as String,
+      asignaturaId: map['asignatura_id'] as String?,
+      titulo: map['titulo'] as String,
+      tipo: (map['tipo'] as String?) ?? 'otro',
+      fechaLimite: _parseDateTime(map['fecha_limite']),
+      dificultad: (map['dificultad'] as String?) ?? 'media',
+      estaCompletado: _parseBool(map['esta_completado']),
+      planEstudioId: map['plan_estudio_id'] as String?,
+      creadoEn: _parseDateTime(map['creado_en']),
+      actualizadoEn: _parseDateTime(map['actualizado_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'usuario_id': usuarioId,
+      if (asignaturaId != null) 'asignatura_id': asignaturaId,
+      'titulo': titulo,
+      'tipo': tipo,
+      'fecha_limite': fechaLimite.toIso8601String(),
+      'dificultad': dificultad,
+      'esta_completado': estaCompletado,
+      if (planEstudioId != null) 'plan_estudio_id': planEstudioId,
+      'creado_en': creadoEn.toIso8601String(),
+      'actualizado_en': actualizadoEn.toIso8601String(),
+    };
+  }
+}
+
 /// Apunte o nota rápida con contenido Markdown.
 class ApunteDb {
   const ApunteDb({
@@ -1332,6 +1481,7 @@ class SemanaRutinaDb {
     required this.nombre,
     required this.estado,
     required this.creadoEn,
+    this.tipoSemana = 'carga',
   });
 
   final String id;
@@ -1340,6 +1490,11 @@ class SemanaRutinaDb {
   final String nombre;
   final String estado;
   final DateTime creadoEn;
+  final String tipoSemana;
+
+  bool get esDescarga => tipoSemana == 'descarga';
+  bool get esAdaptacion => tipoSemana == 'adaptacion';
+  bool get esPico => tipoSemana == 'pico';
 
   factory SemanaRutinaDb.fromMap(Map<String, dynamic> map) {
     return SemanaRutinaDb(
@@ -1349,6 +1504,7 @@ class SemanaRutinaDb {
       nombre: (map['nombre'] as String?) ?? '',
       estado: (map['estado'] as String?) ?? 'pendiente',
       creadoEn: _parseDateTime(map['creado_en']),
+      tipoSemana: (map['tipo_semana'] as String?) ?? 'carga',
     );
   }
 
@@ -1359,6 +1515,7 @@ class SemanaRutinaDb {
       'numero_semana': numeroSemana,
       'nombre': nombre,
       'estado': estado,
+      'tipo_semana': tipoSemana,
       'creado_en': creadoEn.toIso8601String(),
     };
   }

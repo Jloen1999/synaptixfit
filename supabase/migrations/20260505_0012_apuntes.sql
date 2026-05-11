@@ -23,6 +23,7 @@ create index if not exists idx_apuntes_asignatura on public.apuntes (asignatura_
 -- RLS: apuntes
 alter table public.apuntes enable row level security;
 
+drop policy if exists apuntes_select on public.apuntes;
 create policy apuntes_select on public.apuntes
   for select
   using (
@@ -40,11 +41,14 @@ create policy apuntes_select on public.apuntes
     )
   );
 
+drop policy if exists apuntes_insert on public.apuntes;
 create policy apuntes_insert on public.apuntes
   for insert with check (usuario_id = auth.uid());
 
+drop policy if exists apuntes_update on public.apuntes;
 create policy apuntes_update on public.apuntes
   for update using (usuario_id = auth.uid());
 
+drop policy if exists apuntes_delete on public.apuntes;
 create policy apuntes_delete on public.apuntes
   for delete using (usuario_id = auth.uid());

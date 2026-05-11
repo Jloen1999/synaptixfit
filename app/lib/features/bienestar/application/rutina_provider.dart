@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
+import '../../auth/infrastructure/bienestar_repository.dart';
+import '../infrastructure/recomendacion_ia_service.dart';
 
 class ItemRutina {
   const ItemRutina({
@@ -463,13 +465,16 @@ Future<String> crearRutinaCompleta({
   final rutinaId = rutinaData['id'] as String;
 
   int totalEjercicios = 0;
+  final totalSemanas = estructura.keys.length;
   for (final semanaNum in estructura.keys) {
+    final tipo = _calcularTipoSemana(semanaNum, totalSemanas);
     final semanaData = await client
         .from('semanas_rutina')
         .insert({
           'rutina_id': rutinaId,
           'numero_semana': semanaNum,
           'nombre': 'Semana $semanaNum',
+          'tipo_semana': tipo,
         })
         .select('id')
         .single();
@@ -617,8 +622,8 @@ Future<String> iniciarSesion({
         'rutina_id': rutinaId,
         'dia_id': diaId,
         'tipo': 'rutina',
-        'duracion_minutos': 0,
-        'calorias_quemadas': 0,
+        'duracion_minutos': 1,
+        'calorias_quemadas': 1.0,
         'rpe': 5,
         'completada_en': DateTime.now().toIso8601String(),
       })
@@ -637,7 +642,7 @@ Future<void> finalizarSesion({
   required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
-  final duracionMin = (duracionSegundos / 60).round();
+  final duracionMin = (duracionSegundos / 60).round().clamp(1, 99999);
   final calorias = (duracionMin * rpe * 0.8).roundToDouble();
 
   await client.from('sesiones_registradas').update({
@@ -682,4 +687,302 @@ class EjercicioInput {
   final int repeticiones;
   final int segundosDescanso;
   final double? pesoKg;
+}
+
+final perfilBienestarProvider = FutureProvider<PerfilBienestarDb?>((ref) async {
+  return const BienestarRepository().obtenerPerfilBienestar();
+});
+
+final tiempoDiaProvider =
+    FutureProvider.family<int, String>((ref, diaId) async {
+  final client = Supabase.instance.client;
+  final data = await client
+      .from('sesiones_registradas')
+      .select('duracion_minutos')
+      .eq('dia_id', diaId)
+      .order('completada_en', ascending: false)
+      .limit(1);
+  if (data is List && data.isNotEmpty) {
+    return (data.first['duracion_minutos'] as num?)?.toInt() ?? 0;
+  }
+  return 0;
+});
+
+final historialSesionUsuarioProvider =
+    FutureProvider<HistorialSesionDto?>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return null;
+
+  // Sesiones completadas recientes (ultimas 4 semanas)
+  final sesionesData = await client
+      .from('sesiones_registradas')
+      .select('id, rpe, completada_en')
+      .eq('usuario_id', user.id)
+      .order('completada_en', ascending: false)
+      .limit(30);
+
+  final sesionesList = sesionesData as List?;
+  if (sesionesList == null || sesionesList.isEmpty) return null;
+
+  final sesiones = sesionesList.cast<Map<String, dynamic>>();
+
+  // RPE promedio
+  final rpes = sesiones
+      .map((s) => (s['rpe'] as num?)?.toDouble())
+      .whereType<double>()
+      .toList();
+  final rpePromedio =
+      rpes.isNotEmpty ? rpes.reduce((a, b) => a + b) / rpes.length : 0.0;
+
+  // Sesiones de las ultimas 4 semanas
+  final hace4Semanas = DateTime.now().subtract(const Duration(days: 28));
+  final sesionesRecientes = sesiones.where((s) {
+    final fecha = DateTime.tryParse(s['completada_en'] as String? ?? '');
+    return fecha != null && fecha.isAfter(hace4Semanas);
+  }).toList();
+
+  // Semanas consecutivas entrenando
+  int semanasConsecutivas = 0;
+  DateTime? semanaAnterior;
+  for (final s in sesionesRecientes) {
+    final fecha = DateTime.tryParse(s['completada_en'] as String? ?? '');
+    if (fecha == null) continue;
+    final inicioSemana = fecha.subtract(Duration(days: fecha.weekday - 1));
+    final key =
+        DateTime(inicioSemana.year, inicioSemana.month, inicioSemana.day);
+    if (semanaAnterior == null || key.difference(semanaAnterior).inDays <= 7) {
+      if (semanaAnterior != key) semanasConsecutivas++;
+      semanaAnterior = key;
+    } else {
+      break;
+    }
+  }
+
+  // Ejercicios recientes (de las ultimas 4 sesiones)
+  final sesionesRecientesIds =
+      sesionesRecientes.take(4).map((s) => s['id'] as String).toList();
+  List<EjericicioRecienteDto> ejerciciosRecientes = [];
+  if (sesionesRecientesIds.isNotEmpty) {
+    final seriesData = await client
+        .from('series_sesion')
+        .select('seleccion_id, peso_kg, repeticiones_realizadas, '
+            'seleccion_de_ejercicios!inner(ejercicio_id, ejercicios!inner(nombre))')
+        .inFilter('sesion_id', sesionesRecientesIds)
+        .order('creado_en', ascending: false);
+
+    final seriesRaw = seriesData as List?;
+    if (seriesRaw == null) return null;
+    final Map<String, List<Map<String, dynamic>>> porEjercicio = {};
+    for (final serie in seriesRaw.cast<Map<String, dynamic>>()) {
+      final sel = serie['seleccion_de_ejercicios'];
+      if (sel == null) continue;
+      final ej = sel['ejercicios'];
+      if (ej == null) continue;
+      final nombre = ej['nombre'] as String? ?? 'Desconocido';
+      porEjercicio.putIfAbsent(nombre, () => []).add(serie);
+    }
+    for (final entry in porEjercicio.entries) {
+      final pesos = entry.value
+          .map((s) => (s['peso_kg'] as num?)?.toDouble())
+          .whereType<double>()
+          .toList();
+      final reps = entry.value
+          .map((s) => (s['repeticiones_realizadas'] as num?)?.toInt())
+          .whereType<int>()
+          .toList();
+      if (pesos.isEmpty || reps.isEmpty) continue;
+      ejerciciosRecientes.add(EjericicioRecienteDto(
+        nombreEjercicio: entry.key,
+        pesoPromedio: pesos.reduce((a, b) => a + b) / pesos.length,
+        repsPromedio: (reps.reduce((a, b) => a + b) / reps.length).round(),
+        rpePromedio: rpePromedio,
+        ultimaFecha: DateTime.now(),
+      ));
+    }
+  }
+
+  // Volumen semanal estimado
+  final volumenEstimado = ejerciciosRecientes.fold<int>(
+      0, (sum, e) => sum + (e.pesoPromedio * e.repsPromedio).round());
+
+  return HistorialSesionDto(
+    totalSesionesCompletadas: sesiones.length,
+    rpePromedio: rpePromedio,
+    volumenSemanalEstimado: volumenEstimado,
+    ejerciciosRecientes: ejerciciosRecientes,
+    diasCompletadosUltimaSemana: sesionesRecientes.length,
+    semanasConsecutivasEntrenando: semanasConsecutivas,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Estado diario — check-in de fatiga
+// ---------------------------------------------------------------------------
+
+final estadoDiarioHoyProvider = FutureProvider<EstadoDiarioDb?>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return null;
+
+  final hoy = DateTime.now().toIso8601String().substring(0, 10);
+  final data = await client
+      .from('estado_diario_usuario')
+      .select()
+      .eq('usuario_id', user.id)
+      .eq('fecha', hoy)
+      .maybeSingle();
+
+  if (data == null) return null;
+  return EstadoDiarioDb.fromMap(data);
+});
+
+Future<void> guardarEstadoDiario({
+  required int calidadSueno,
+  required int nivelEstres,
+  required int nivelEnergia,
+  required int dolorMuscular,
+  required List<String> zonasDolor,
+  required bool listoParaEntrenar,
+  String? notas,
+  required WidgetRef ref,
+}) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return;
+
+  final hoy = DateTime.now().toIso8601String().substring(0, 10);
+  await client.from('estado_diario_usuario').upsert({
+    'usuario_id': user.id,
+    'fecha': hoy,
+    'calidad_sueno': calidadSueno,
+    'nivel_estres': nivelEstres,
+    'nivel_energia': nivelEnergia,
+    'dolor_muscular': dolorMuscular,
+    'zonas_dolor': zonasDolor,
+    'listo_para_entrenar': listoParaEntrenar,
+    if (notas != null) 'notas': notas,
+  }, onConflict: 'usuario_id,fecha');
+
+  ref.invalidate(estadoDiarioHoyProvider);
+}
+
+/// Determina el tipo de semana según periodización:
+/// - 1 semana: carga única
+/// - 2 semanas: adaptación → carga
+/// - 3 semanas: adaptación → carga → pico
+/// - 4+ semanas: adaptación → carga → carga → descarga (y repite)
+String _calcularTipoSemana(int semanaNum, int totalSemanas) {
+  if (totalSemanas <= 1) return 'carga';
+  if (semanaNum == 1) return 'adaptacion';
+  if (semanaNum == totalSemanas && totalSemanas >= 4) return 'descarga';
+  if (semanaNum == totalSemanas && totalSemanas >= 3) return 'pico';
+  return 'carga';
+}
+
+/// Detecta si el usuario necesita una semana de descarga automática.
+/// Criterios: RPE > 8.0 sostenido 3+ semanas, volumen decreciente,
+/// o puntuación de fatiga diaria > 50.
+final estadoPeriodizacionProvider =
+    FutureProvider<PeriodizacionEstado>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return const PeriodizacionEstado();
+
+  final hace3Semanas =
+      DateTime.now().subtract(const Duration(days: 21)).toIso8601String();
+  final sesionesData = await client
+      .from('sesiones_registradas')
+      .select('rpe, duracion_minutos, completada_en, rutina_id')
+      .eq('usuario_id', user.id)
+      .gte('completada_en', hace3Semanas)
+      .order('completada_en', ascending: false);
+
+  if (sesionesData is! List || sesionesData.isEmpty) {
+    return const PeriodizacionEstado();
+  }
+
+  final sesiones = sesionesData.cast<Map<String, dynamic>>();
+  final rpes = sesiones
+      .map((s) => (s['rpe'] as num?)?.toDouble())
+      .whereType<double>()
+      .toList();
+  final rpePromedio =
+      rpes.isNotEmpty ? rpes.reduce((a, b) => a + b) / rpes.length : 0.0;
+
+  final Map<String, int> volumenPorSemana = {};
+  for (final s in sesiones) {
+    final fecha = DateTime.tryParse(s['completada_en'] as String? ?? '');
+    if (fecha == null) continue;
+    final inicioSemana = fecha.subtract(Duration(days: fecha.weekday - 1));
+    final key =
+        '${inicioSemana.year}-${inicioSemana.month}-${inicioSemana.day}';
+    volumenPorSemana[key] = (volumenPorSemana[key] ?? 0) +
+        ((s['duracion_minutos'] as num?)?.toInt() ?? 0);
+  }
+
+  final volumenes = volumenPorSemana.values.toList();
+  bool volumenDecreciente = false;
+  if (volumenes.length >= 3) {
+    volumenDecreciente =
+        volumenes[volumenes.length - 1] < volumenes[volumenes.length - 2] &&
+            volumenes[volumenes.length - 2] < volumenes[volumenes.length - 3];
+  }
+
+  int semanasConsecutivas = 0;
+  DateTime? semanaAnterior;
+  for (final s in sesiones) {
+    final fecha = DateTime.tryParse(s['completada_en'] as String? ?? '');
+    if (fecha == null) continue;
+    final inicioSemana = fecha.subtract(Duration(days: fecha.weekday - 1));
+    final key =
+        DateTime(inicioSemana.year, inicioSemana.month, inicioSemana.day);
+    if (semanaAnterior == null || key.difference(semanaAnterior).inDays <= 7) {
+      if (semanaAnterior != key) semanasConsecutivas++;
+      semanaAnterior = key;
+    } else {
+      break;
+    }
+  }
+
+  final hoy = DateTime.now().toIso8601String().substring(0, 10);
+  final estadoDiarioMap = await client
+      .from('estado_diario_usuario')
+      .select('calidad_sueno, nivel_estres, nivel_energia, dolor_muscular')
+      .eq('usuario_id', user.id)
+      .eq('fecha', hoy)
+      .maybeSingle();
+  int puntuacionFatigaDiaria = 0;
+  if (estadoDiarioMap != null) {
+    final ed = EstadoDiarioDb.fromMap(estadoDiarioMap);
+    puntuacionFatigaDiaria = ed.puntuacionFatiga;
+  }
+
+  final necesitaDescarga =
+      (rpePromedio > 8.0 && semanasConsecutivas >= 3 && volumenDecreciente) ||
+          puntuacionFatigaDiaria > 50;
+
+  return PeriodizacionEstado(
+    necesitaDescarga: necesitaDescarga,
+    rpePromedioReciente: rpePromedio,
+    volumenDecreciente: volumenDecreciente,
+    semanasConsecutivas: semanasConsecutivas,
+    puntuacionFatigaDiaria: puntuacionFatigaDiaria,
+  );
+});
+
+class PeriodizacionEstado {
+  const PeriodizacionEstado({
+    this.necesitaDescarga = false,
+    this.rpePromedioReciente = 0.0,
+    this.volumenDecreciente = false,
+    this.semanasConsecutivas = 0,
+    this.puntuacionFatigaDiaria = 0,
+  });
+
+  final bool necesitaDescarga;
+  final double rpePromedioReciente;
+  final bool volumenDecreciente;
+  final int semanasConsecutivas;
+  final int puntuacionFatigaDiaria;
 }

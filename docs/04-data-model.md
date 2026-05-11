@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 2.2  
+**Versión:** 3.0  
 **Estado:** VIGENTE  
-**Fecha:** 10-05-2026  
-**Propósito:** Definición completa de tablas, relaciones, RLS y políticas Supabase
+**Fecha:** 11-05-2026  
+**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas materializadas y políticas Supabase. Incluye modelo normalizado 3FN del catálogo de ejercicios, sistema de periodización (semanas/días/series), check-in diario de fatiga, y catálogo académico.
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -655,12 +655,23 @@ CREATE TABLE semanas_rutina (
   nombre TEXT NOT NULL DEFAULT '',
   estado TEXT NOT NULL DEFAULT 'pendiente'
     CHECK (estado IN ('pendiente', 'en_progreso', 'completada')),
+  tipo_semana TEXT NOT NULL DEFAULT 'carga'
+    CHECK (tipo_semana IN ('adaptacion', 'carga', 'pico', 'descarga')),
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(rutina_id, numero_semana)
 );
 
 CREATE INDEX idx_semanas_rutina ON semanas_rutina(rutina_id);
+CREATE INDEX idx_semanas_rutina_tipo ON semanas_rutina(rutina_id, numero_semana, tipo_semana);
 ```
+
+**`tipo_semana`** permite periodización inteligente automática:
+- `adaptacion`: Semana 1, 70% volumen, énfasis en técnica.
+- `carga`: Semanas intermedias, 85-90% volumen, progresión.
+- `pico`: Semanas finales de rutinas de 3 semanas, máxima intensidad.
+- `descarga`: Última semana de rutinas de 4+ semanas, 60% volumen, recuperación activa.
+
+El servicio IA (`RecomendacionIaService`) sugiere ejercicios coherentes con el tipo de semana. La función `_calcularTipoSemana` en `rutina_provider.dart` asigna automáticamente el tipo al crear la rutina.
 
 ### 2.4.2 DIAS_RUTINA (días de entrenamiento dentro de una semana)
 
@@ -798,6 +809,63 @@ CREATE POLICY "sesiones_registradas_modificar" ON sesiones_registradas
     created_at > now() - INTERVAL '5 minutes'
   );
 ```
+
+---
+
+### 2.5.1 ESTADO_DIARIO_USUARIO (check-in diario de fatiga)
+
+```sql
+CREATE TABLE estado_diario_usuario (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  fecha DATE NOT NULL DEFAULT current_date,
+  calidad_sueno INT CHECK (calidad_sueno BETWEEN 1 AND 5),
+  nivel_estres INT CHECK (nivel_estres BETWEEN 1 AND 5),
+  nivel_energia INT CHECK (nivel_energia BETWEEN 1 AND 5),
+  dolor_muscular INT CHECK (dolor_muscular BETWEEN 1 AND 5),
+  zonas_dolor TEXT[] DEFAULT '{}',
+  listo_para_entrenar BOOLEAN DEFAULT true,
+  notas TEXT,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(usuario_id, fecha)
+);
+
+CREATE INDEX idx_estado_diario_usuario_fecha
+  ON estado_diario_usuario (usuario_id, fecha DESC);
+```
+
+**Políticas RLS:**
+```sql
+CREATE POLICY estado_diario_select ON estado_diario_usuario
+  FOR SELECT USING (auth.uid() = usuario_id);
+CREATE POLICY estado_diario_insert ON estado_diario_usuario
+  FOR INSERT WITH CHECK (auth.uid() = usuario_id);
+CREATE POLICY estado_diario_update ON estado_diario_usuario
+  FOR UPDATE USING (auth.uid() = usuario_id);
+```
+
+**Modelo Dart `EstadoDiarioDb`:**
+```dart
+class EstadoDiarioDb {
+  final String id;
+  final String usuarioId;
+  final DateTime fecha;
+  final int calidadSueno;    // 1-5
+  final int nivelEstres;     // 1-5
+  final int nivelEnergia;    // 1-5
+  final int dolorMuscular;   // 1-5
+  final List<String> zonasDolor;
+  final bool listoParaEntrenar;
+  final String? notas;
+
+  int get puntuacionFatiga;  // 0-100 compuesto: sueñoInv + estrés + energíaInv + dolor
+  bool get requiereAdaptacion => puntuacionFatiga > 50;
+}
+```
+
+La puntuación de fatiga se calcula como: `(6-sueño)×5 + (estrés-1)×5 + (6-energía)×4 + (dolor-1)×7`, limitado a 0-100. Valores > 50 activan `requiereAdaptacion`, indicando al servicio IA que reduzca volumen un 30% y evite ejercicios en zonas con dolor.
+
+Se persiste mediante `guardarEstadoDiario()` (upsert por `usuario_id + fecha`) desde el check-in antes de cada sesión en vivo.
 
 ---
 
@@ -1515,6 +1583,7 @@ $$ LANGUAGE plpgsql;
 | **perfil_bienestar_usuario** | Propio | Propio | Propio | - |
 | **historial_peso** | Propio | Propio | - | - |
 | **plan_entrenamiento_semanal** | Propio | Propio | Propio | Propio |
+| **estado_diario_usuario** | Propio | Propio | Propio | - |
 | **actividades_sociales** | Propio + público | Propio | - | - |
 | **interacciones_sociales** | Propio + público | Propio | - | Propio |
 | **amistades** | Propio | Propio | Propio | Propio |
@@ -1567,7 +1636,8 @@ Los GIFs se alojan en Cloudflare R2 bajo `ejercicios/360/{exercise_db_id}.gif` (
 
 ---
 
-**Documento compilado:** 10-05-2026  
-**Referencia:** RFC v2.5 - Arquitectura de datos  
+**Documento compilado:** 11-05-2026
+**Versión:** 3.0
+**Referencia:** RFC v3.0 - Arquitectura de datos
 **Validador:** Tech Lead + DBA
 
