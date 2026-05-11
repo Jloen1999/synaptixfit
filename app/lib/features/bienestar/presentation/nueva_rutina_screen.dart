@@ -791,23 +791,20 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     for (final s in estructura.entries) {
       _estructura[s.key] = {};
       for (final d in s.value.entries) {
-        _estructura[s.key]![d.key] = d.value
-            .map((e) => _EjercicioPlan(
-                  ejercicioId: e.ejercicioId,
-                  nombre: ejercicios
-                          .cast<EjercicioDb?>()
-                          .firstWhere(
-                              (ex) =>
-                                  (ex?.exerciseDbId ?? ex?.id) == e.ejercicioId,
-                              orElse: () => null)
-                          ?.nombre ??
-                      'Ejercicio recomendado',
-                  series: e.series,
-                  repeticiones: e.repeticiones,
-                  segundosDescanso: e.segundosDescanso,
-                  pesoKg: e.pesoKg,
-                ))
-            .toList();
+        _estructura[s.key]![d.key] = d.value.map((e) {
+          final match = ejercicios.cast<EjercicioDb?>().firstWhere(
+                (ex) => (ex?.exerciseDbId ?? ex?.id) == e.ejercicioId,
+                orElse: () => null,
+              );
+          return _EjercicioPlan(
+            ejercicioId: match?.id ?? e.ejercicioId,
+            nombre: match?.nombre ?? 'Ejercicio recomendado',
+            series: e.series,
+            repeticiones: e.repeticiones,
+            segundosDescanso: e.segundosDescanso,
+            pesoKg: e.pesoKg,
+          );
+        }).toList();
       }
     }
   }
@@ -875,24 +872,25 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         return;
       }
 
+      // Si es "Sugerir otros" (viene de ejercicios recomendados), limpiar el día
+      if (_ejerciciosRecomendados) {
+        _estructura[semana]![dia]!.clear();
+      }
+
       for (final rec in resultado.ejercicios) {
-        final nombre = ejercicios
-                .cast<EjercicioDb?>()
-                .firstWhere(
-                    (ex) => (ex?.exerciseDbId ?? ex?.id) == rec.ejercicioId,
-                    orElse: () => null)
-                ?.nombre ??
-            'Ejercicio sugerido';
+        final match = ejercicios.cast<EjercicioDb?>().firstWhere(
+              (ex) => (ex?.exerciseDbId ?? ex?.id) == rec.ejercicioId,
+              orElse: () => null,
+            );
         _estructura[semana]![dia]!.add(_EjercicioPlan(
-          ejercicioId: rec.ejercicioId,
-          nombre: nombre,
+          ejercicioId: match?.id ?? rec.ejercicioId,
+          nombre: match?.nombre ?? 'Ejercicio sugerido',
           series: rec.series,
           repeticiones: rec.repeticiones,
           segundosDescanso: rec.segundosDescanso,
           pesoKg: rec.pesoKg,
         ));
       }
-
       setState(() => _loadingIA = false);
 
       if (mounted) {
