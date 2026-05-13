@@ -19,6 +19,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   late final String _diaId;
   late final String _semanaId;
   late final String _rutinaId;
+  bool _paramsCargados = false;
 
   Timer? _cronometro;
   int _segundosTotales = 0;
@@ -35,6 +36,9 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   String? _sesionId;
   bool _sesionIniciada = false;
   bool _finalizando = false;
+  bool _checkInMostrado = false;
+  bool _mostrarOverlayCheckIn = false;
+  bool _seriesReducidas = false;
 
   @override
   void initState() => super.initState();
@@ -42,11 +46,13 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_paramsCargados) return;
     final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
     if (extra != null) {
       _diaId = extra['diaId'] as String;
       _semanaId = extra['semanaId'] as String;
       _rutinaId = extra['rutinaId'] as String;
+      _paramsCargados = true;
     }
   }
 
@@ -112,6 +118,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
         }
       });
     });
+    if (!_checkInMostrado) _lanzarCheckInOverlay();
   }
 
   void _saltarDescanso() {
@@ -144,7 +151,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.w700))),
                   const SizedBox(height: 16),
-                  Text('RPE: $selectedRpe',
+                  Text('Esfuerzo: $selectedRpe/10',
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   Slider(
                       value: selectedRpe.toDouble(),
@@ -198,6 +205,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
       await finalizarSesion(
           sesionId: _sesionId!,
           diaId: _diaId,
+          rutinaId: _rutinaId,
           duracionSegundos: _segundosTotales,
           rpe: result.rpe,
           ref: ref);
@@ -216,24 +224,19 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
 
   // ---------------------------------------------------------------------------
 
-  Future<void> _mostrarCheckIn() async {
-    final result = await showDialog<_CheckInResult>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const _CheckInDialog(),
-    );
-    if (result != null && mounted) {
-      await guardarEstadoDiario(
-        calidadSueno: result.sueno,
-        nivelEstres: result.estres,
-        nivelEnergia: result.energia,
-        dolorMuscular: result.dolor,
-        zonasDolor: result.zonasDolor,
-        listoParaEntrenar: result.sueno > 1 || result.energia > 2,
-        ref: ref,
-      );
-      _iniciarSesion();
-    }
+  void _lanzarCheckInOverlay() {
+    if (_checkInMostrado || _mostrarOverlayCheckIn) return;
+    _checkInMostrado = true;
+
+    // Verificar antes de mostrar el overlay
+    ref.read(estadoDiarioHoyProvider.future).then((estadoHoy) {
+      if (estadoHoy != null) return; // Ya hay check-in, no molestar
+      if (!mounted) return;
+      setState(() => _mostrarOverlayCheckIn = true);
+    }).catchError((_) {
+      // Si falla la consulta, mostrar igual para no perder la oportunidad
+      if (mounted) setState(() => _mostrarOverlayCheckIn = true);
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -242,7 +245,6 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (!_sesionIniciada) {
-      final estadoAsync = ref.watch(estadoDiarioHoyProvider);
       return FeatureScaffold(
           title: 'Entrenamiento',
           backPath: '/bienestar',
@@ -253,31 +255,9 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
             const SizedBox(height: 16),
             const Text('¿Listo para entrenar?',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            estadoAsync.when(
-              data: (estado) {
-                if (estado != null && estado.requiereAdaptacion) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      'Hoy tu cuerpo necesita un entrenamiento más ligero. '
-                      'La IA adaptará los ejercicios a tu estado.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange.shade700,
-                          fontStyle: FontStyle.italic),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
             const SizedBox(height: 24),
             FilledButton.icon(
-                onPressed: _mostrarCheckIn,
+                onPressed: _iniciarSesion,
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: const Text('Empezar entrenamiento')),
           ])));
@@ -285,58 +265,109 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
     return FeatureScaffold(
         title: '',
         backPath: '/bienestar',
-        child: Column(children: [
-          Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: theme.colorScheme.surfaceContainerLowest,
-              child: Row(children: [
-                const Icon(Icons.timer_rounded, size: 18, color: Colors.grey),
-                const SizedBox(width: 6),
-                Text(_formatoTiempo(_segundosTotales),
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-                const Spacer(),
-                if (_descansoActivoEjercicioId != null) ...[
-                  Text('Descanso ${_formatoTiempo(_descansoRestante)}',
-                      style: TextStyle(
-                          color: Colors.orange.shade700,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13)),
-                  const SizedBox(width: 8),
-                  _btn('Saltar', Colors.orange, _saltarDescanso),
-                ],
-              ])),
-          Expanded(
-              child: _EjerciciosList(
-                  diaId: _diaId,
-                  seriesLocales: _seriesLocales,
-                  pesoCtrl: _pesoCtrl,
-                  repsCtrl: _repsCtrl,
-                  descansoActivoEjercicioId: _descansoActivoEjercicioId,
-                  descansoActivoSerie: _descansoActivoSerie,
-                  descansoRestante: _descansoRestante,
-                  onMarcarSerie: _marcarSerie,
-                  onSaltarDescanso: _saltarDescanso,
-                  onAjustarDescanso: _ajustarDescanso)),
-          SafeArea(
-              child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _finalizando ? null : _finalizarSesion,
-                        style: FilledButton.styleFrom(
-                            backgroundColor: Colors.red.shade700),
-                        child: _finalizando
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Text('🛑 Finalizar entrenamiento',
-                                style: TextStyle(fontWeight: FontWeight.w700)),
-                      )))),
+        child: Stack(children: [
+          Column(children: [
+            Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color: theme.colorScheme.surfaceContainerLowest,
+                child: Row(children: [
+                  const Icon(Icons.timer_rounded, size: 18, color: Colors.grey),
+                  const SizedBox(width: 6),
+                  Text(_formatoTiempo(_segundosTotales),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  if (_descansoActivoEjercicioId != null) ...[
+                    Text('Descanso ${_formatoTiempo(_descansoRestante)}',
+                        style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13)),
+                    const SizedBox(width: 8),
+                    _btn('Saltar', Colors.orange, _saltarDescanso),
+                  ],
+                ])),
+            Expanded(
+                child: _EjerciciosList(
+                    diaId: _diaId,
+                    seriesLocales: _seriesLocales,
+                    pesoCtrl: _pesoCtrl,
+                    repsCtrl: _repsCtrl,
+                    descansoActivoEjercicioId: _descansoActivoEjercicioId,
+                    descansoActivoSerie: _descansoActivoSerie,
+                    descansoRestante: _descansoRestante,
+                    onMarcarSerie: _marcarSerie,
+                    onSaltarDescanso: _saltarDescanso,
+                    onAjustarDescanso: _ajustarDescanso)),
+            SafeArea(
+                child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _finalizando ? null : _finalizarSesion,
+                          style: FilledButton.styleFrom(
+                              backgroundColor: Colors.red.shade700),
+                          child: _finalizando
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white))
+                              : const Text('🛑 Finalizar entrenamiento',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w700)),
+                        )))),
+          ]),
+          if (_mostrarOverlayCheckIn)
+            _CheckInOverlay(
+              onGuardado: (r) {
+                _mostrarOverlayCheckIn = false;
+                setState(() {});
+                _mostrarSugerenciasAdaptacion(r);
+              },
+              onOmitir: () => setState(() => _mostrarOverlayCheckIn = false),
+            ),
         ]));
+  }
+
+  void _mostrarSugerenciasAdaptacion(_CheckInResult r) {
+    final sugerencias = <_SugerenciaAdaptacion>[];
+    final fatiga = (6 - r.sueno) * 5 +
+        (r.estres - 1) * 5 +
+        (6 - r.energia) * 4 +
+        (r.dolor - 1) * 7;
+
+    if (fatiga > 50) {
+      sugerencias.add(_SugerenciaAdaptacion(
+        icon: Icons.fitness_center_rounded,
+        titulo: 'Reducir 1 serie por ejercicio',
+        descripcion: 'Fatiga alta detectada.',
+        aplicar: () => setState(() => _seriesReducidas = true),
+      ));
+    }
+    if (r.dolor >= 3 && r.zonasDolor.isNotEmpty) {
+      sugerencias.add(_SugerenciaAdaptacion(
+        icon: Icons.healing_rounded,
+        titulo: 'Evitar ejercicios de zonas con dolor',
+        descripcion: r.zonasDolor.join(', '),
+        aplicar: () => setState(() {}),
+      ));
+    }
+    if (r.energia <= 2) {
+      sugerencias.add(_SugerenciaAdaptacion(
+        icon: Icons.battery_0_bar_rounded,
+        titulo: 'Reducir intensidad general',
+        descripcion: 'Hoy es día de mantener.',
+        aplicar: () => setState(() => _seriesReducidas = true),
+      ));
+    }
+    if (sugerencias.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => _AdaptacionDialog(sugerencias: sugerencias),
+    );
   }
 
   Widget _btn(String label, Color c, VoidCallback onTap) => InkWell(
@@ -350,6 +381,230 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
           child: Text(label,
               style: TextStyle(
                   fontSize: 10, color: c, fontWeight: FontWeight.w600))));
+}
+
+// =============================================================================
+// Overlay de check-in embebido
+// =============================================================================
+
+class _CheckInOverlay extends ConsumerStatefulWidget {
+  const _CheckInOverlay({required this.onGuardado, required this.onOmitir});
+  final void Function(_CheckInResult) onGuardado;
+  final VoidCallback onOmitir;
+  @override
+  ConsumerState<_CheckInOverlay> createState() => _CheckInOverlayState();
+}
+
+class _CheckInOverlayState extends ConsumerState<_CheckInOverlay> {
+  int _sueno = 3, _estres = 3, _energia = 3, _dolor = 1;
+  final _zonas = <String>{};
+
+  Future<void> _guardar() async {
+    final r = _CheckInResult(
+      sueno: _sueno,
+      estres: _estres,
+      energia: _energia,
+      dolor: _dolor,
+      zonasDolor: _zonas.toList(),
+    );
+    await guardarEstadoDiario(
+      calidadSueno: _sueno,
+      nivelEstres: _estres,
+      nivelEnergia: _energia,
+      dolorMuscular: _dolor,
+      zonasDolor: _zonas.toList(),
+      listoParaEntrenar: _sueno > 1 || _energia > 2,
+      ref: ref,
+    );
+    if (mounted) widget.onGuardado(r);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      color: Colors.black54,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Como te sientes hoy?",
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                const Text("Responde durante el descanso.",
+                    style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 20),
+                _s("Calidad del sueno", _sueno, (v) => _sueno = v,
+                    const ["Muy mal", "Mal", "Regular", "Bien", "Excelente"]),
+                _s("Nivel de estres", _estres, (v) => _estres = v,
+                    const ["Muy bajo", "Bajo", "Moderado", "Alto", "Muy alto"]),
+                _s("Nivel de energia", _energia, (v) => _energia = v,
+                    const ["Agotado", "Bajo", "Normal", "Alto", "Pleno"]),
+                _s("Dolor / Agujetas", _dolor, (v) => _dolor = v,
+                    const ["Ninguno", "Leve", "Moderado", "Fuerte", "Intenso"]),
+                if (_dolor >= 3) ...[
+                  const SizedBox(height: 12),
+                  const Text("Donde sientes dolor?",
+                      style:
+                          TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        "piernas",
+                        "espalda",
+                        "hombros",
+                        "brazos",
+                        "pecho",
+                        "core",
+                      ]
+                          .map((z) => FilterChip(
+                                label: Text(z[0].toUpperCase() + z.substring(1),
+                                    style: const TextStyle(fontSize: 11)),
+                                selected: _zonas.contains(z),
+                                onSelected: (v) => setState(() {
+                                  v ? _zonas.add(z) : _zonas.remove(z);
+                                }),
+                                visualDensity: VisualDensity.compact,
+                              ))
+                          .toList()),
+                ],
+                const SizedBox(height: 20),
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  TextButton(
+                      onPressed: widget.onOmitir, child: const Text("Omitir")),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                      onPressed: _guardar, child: const Text("Guardar")),
+                ]),
+              ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _s(
+      String label, int v, void Function(int) onChange, List<String> labels) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(label,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(labels[v - 1],
+            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ]),
+      Slider(
+          value: v.toDouble(),
+          min: 1,
+          max: 5,
+          divisions: 4,
+          label: labels[v - 1],
+          onChanged: (val) => setState(() => onChange(val.round()))),
+    ]);
+  }
+}
+
+// =============================================================================
+// Sugerencia de adaptación
+// =============================================================================
+
+class _SugerenciaAdaptacion {
+  const _SugerenciaAdaptacion(
+      {required this.icon,
+      required this.titulo,
+      required this.descripcion,
+      required this.aplicar});
+  final IconData icon;
+  final String titulo;
+  final String descripcion;
+  final VoidCallback aplicar;
+}
+
+class _AdaptacionDialog extends StatefulWidget {
+  const _AdaptacionDialog({required this.sugerencias});
+  final List<_SugerenciaAdaptacion> sugerencias;
+  @override
+  State<_AdaptacionDialog> createState() => _AdaptacionDialogState();
+}
+
+class _AdaptacionDialogState extends State<_AdaptacionDialog> {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: const Row(children: [
+        Icon(Icons.auto_awesome, size: 22, color: Color(0xFF006E2D)),
+        SizedBox(width: 8),
+        Expanded(child: Text('SynaptixFit AI')),
+      ]),
+      content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Basado en cómo te sientes, te sugiero:',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontStyle: FontStyle.italic)),
+            const SizedBox(height: 12),
+            ...widget.sugerencias.map((s) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: theme.colorScheme.outlineVariant
+                              .withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(s.icon,
+                              size: 18, color: theme.colorScheme.primary),
+                          const SizedBox(width: 10),
+                          Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                Text(s.titulo,
+                                    style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 2),
+                                Text(s.descripcion,
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600)),
+                              ])),
+                        ]),
+                  ),
+                )),
+          ]),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Ignorar')),
+        FilledButton(
+            onPressed: () {
+              for (final s in widget.sugerencias) {
+                s.aplicar();
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Aplicar')),
+      ],
+    );
+  }
 }
 
 // =============================================================================

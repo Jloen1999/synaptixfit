@@ -21,6 +21,8 @@ class RutinaDetalleScreen extends ConsumerStatefulWidget {
 
 class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
   int _semanaSeleccionada = 0;
+  bool _celebracionMostrada = false;
+  bool _completando = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,11 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
       title: '',
       backPath: '/bienestar',
       actions: [
+        IconButton(
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          tooltip: 'Editar rutina',
+          onPressed: () => _editarRutina(),
+        ),
         IconButton(
           icon: const Icon(Icons.delete_outline, size: 20),
           tooltip: 'Eliminar rutina',
@@ -56,6 +63,15 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
           }
           final semanaActual = semanas[_semanaSeleccionada];
 
+          // Comprobar si la rutina está completamente terminada
+          final todasCompletadas =
+              semanas.every((s) => s.estado == 'completada');
+          if (todasCompletadas && !_celebracionMostrada) {
+            _celebracionMostrada = true;
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _mostrarCelebracion());
+          }
+
           return Column(
             children: [
               _buildHeader(theme, semanas),
@@ -65,6 +81,7 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
               Expanded(
                   child: _DiasList(
                       semanaId: semanaActual.id, rutinaId: widget.rutinaId)),
+              if (todasCompletadas) _buildBotonCompletarRutina(theme),
             ],
           );
         },
@@ -113,10 +130,13 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
               );
 
               final totalSemanas = r['duracion_semanas'] as int? ?? 1;
-              final totalDiasEstimado = totalSemanas *
-                  (diasCompletados > 0 ? (diasCompletados).clamp(1, 7) : 3);
-              final progreso = totalDiasEstimado > 0
-                  ? (diasCompletados / totalDiasEstimado).clamp(0.0, 1.0)
+              final totalDias = semanas.fold<int>(0, (sum, sem) {
+                final dias =
+                    ref.watch(diasDeSemanaProvider(sem.id)).valueOrNull;
+                return sum + (dias?.length ?? 0);
+              });
+              final progreso = totalDias > 0
+                  ? (diasCompletados / totalDias).clamp(0.0, 1.0)
                   : 0.0;
 
               return Column(
@@ -200,9 +220,9 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
             _ => Colors.green.shade700,
           };
           final tipoLabel = switch (tipo) {
-            'adaptacion' => 'Adapt',
-            'pico' => 'Pico',
-            'descarga' => 'Desc',
+            'adaptacion' => 'Preparación',
+            'pico' => 'Intensidad',
+            'descarga' => 'Recuperación',
             _ => '',
           };
           return ChoiceChip(
@@ -240,6 +260,153 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
         },
       ),
     );
+  }
+
+  void _mostrarCelebracion() {
+    showDialog(
+      context: context,
+      builder: (ctx) => const _CelebracionDialog(),
+    );
+  }
+
+  Widget _buildBotonCompletarRutina(ThemeData theme) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _completando ? null : _completarRutina,
+            icon: _completando
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.emoji_events_rounded),
+            label: Text(_completando ? 'Completando...' : 'Completar rutina'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF006E2D),
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(48),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _completarRutina() async {
+    setState(() => _completando = true);
+    try {
+      await Supabase.instance.client
+          .from('rutinas')
+          .update({'estado': 'completado'}).eq('id', widget.rutinaId);
+      if (mounted) {
+        setState(() => _completando = false);
+        ref.invalidate(rutinasUsuarioProvider);
+        ref.invalidate(semanasDeRutinaProvider(widget.rutinaId));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _completando = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al completar: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _editarRutina() async {
+    final client = Supabase.instance.client;
+    final data = await client
+        .from('rutinas')
+        .select('nombre, descripcion, visibilidad, objetivo')
+        .eq('id', widget.rutinaId)
+        .maybeSingle();
+    if (data == null) return;
+
+    final nombreCtrl =
+        TextEditingController(text: data['nombre'] as String? ?? '');
+    final descCtrl =
+        TextEditingController(text: data['descripcion'] as String? ?? '');
+    String visibilidad = data['visibilidad'] as String? ?? 'private';
+    String objetivo = data['objetivo'] as String? ?? 'fuerza';
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setD) => AlertDialog(
+          title: const Text('Editar rutina'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nombreCtrl,
+                  decoration: const InputDecoration(labelText: 'Nombre'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Descripción'),
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'private', label: Text('Privada')),
+                    ButtonSegment(value: 'friends', label: Text('Amigos')),
+                    ButtonSegment(value: 'public', label: Text('Pública')),
+                  ],
+                  selected: {visibilidad},
+                  onSelectionChanged: (v) => setD(() => visibilidad = v.first),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: objetivo,
+                  decoration: const InputDecoration(labelText: 'Objetivo'),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'fitness_general',
+                        child: Text('Fitness general')),
+                    DropdownMenuItem(
+                        value: 'perder_peso', child: Text('Perder peso')),
+                    DropdownMenuItem(
+                        value: 'ganar_masa', child: Text('Ganar masa')),
+                    DropdownMenuItem(value: 'fuerza', child: Text('Fuerza')),
+                    DropdownMenuItem(
+                        value: 'resistencia', child: Text('Resistencia')),
+                    DropdownMenuItem(
+                        value: 'movilidad', child: Text('Movilidad')),
+                    DropdownMenuItem(value: 'mixto', child: Text('Mixto')),
+                  ],
+                  onChanged: (v) => setD(() => objetivo = v!),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Guardar')),
+          ],
+        ),
+      ),
+    );
+    if (ok == true && mounted) {
+      await client.from('rutinas').update({
+        'nombre': nombreCtrl.text.trim(),
+        'descripcion': descCtrl.text.trim(),
+        'visibilidad': visibilidad,
+        'objetivo': objetivo,
+      }).eq('id', widget.rutinaId);
+      ref.invalidate(rutinasUsuarioProvider);
+      if (mounted) setState(() {});
+    }
   }
 
   Future<void> _confirmarEliminar() async {
@@ -310,7 +477,8 @@ class _DiasList extends ConsumerWidget {
                         style: TextStyle(fontSize: 12))),
               );
             }
-            return _DiaCard(dia: dias[i], rutinaId: rutinaId);
+            return _DiaCard(
+                key: ValueKey(dias[i].id), dia: dias[i], rutinaId: rutinaId);
           },
         );
       },
@@ -318,23 +486,32 @@ class _DiasList extends ConsumerWidget {
   }
 }
 
-class _DiaCard extends ConsumerWidget {
-  const _DiaCard({required this.dia, required this.rutinaId});
+class _DiaCard extends ConsumerStatefulWidget {
+  const _DiaCard({required this.dia, required this.rutinaId, super.key});
 
   final DiaRutinaDb dia;
   final String rutinaId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final ejerciciosAsync = ref.watch(ejerciciosDeDiaProvider(dia.id));
-    final completado = dia.estado == 'completado';
+  ConsumerState<_DiaCard> createState() => _DiaCardState();
+}
 
-    // Fetch session time for completed day
-    final tiempoDia = ref.watch(tiempoDiaProvider(dia.id));
+class _DiaCardState extends ConsumerState<_DiaCard> {
+  bool _expandido = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ejerciciosAsync = ref.watch(ejerciciosDeDiaProvider(widget.dia.id));
+    final completado = widget.dia.estado == 'completado';
+
+    final tiempoDia = ref.watch(tiempoDiaProvider(widget.dia.id));
+
+    final tieneEjercicios =
+        ejerciciosAsync.whenOrNull(data: (e) => e.isNotEmpty) ?? false;
 
     return Card(
-      elevation: 0,
+      elevation: completado ? 0 : 0,
       margin: const EdgeInsets.only(bottom: 10),
       color: completado ? Colors.green.withValues(alpha: 0.04) : null,
       shape: RoundedRectangleBorder(
@@ -342,172 +519,273 @@ class _DiaCard extends ConsumerWidget {
         side: BorderSide(
           color: completado
               ? Colors.green.withValues(alpha: 0.5)
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              : _expandido
+                  ? theme.colorScheme.primary.withValues(alpha: 0.35)
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: completado
-                        ? Colors.green.withValues(alpha: 0.15)
-                        : theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    completado
-                        ? Icons.check_circle
-                        : Icons.fitness_center_rounded,
-                    size: 16,
-                    color:
-                        completado ? Colors.green : theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        dia.nombre.isNotEmpty
-                            ? dia.nombre
-                            : 'Día ${dia.numeroDia}',
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      tiempoDia.when(
-                        data: (mins) => mins > 0
-                            ? Text('${mins}min',
-                                style: TextStyle(
-                                    fontSize: 10, color: Colors.grey.shade600))
-                            : const SizedBox.shrink(),
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-                ),
-                if (completado)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text('Completado',
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.green,
-                            fontWeight: FontWeight.w600)),
-                  )
-                else
-                  FutureBuilder<int?>(
-                    future: _contarEjerciciosDelDia(),
-                    builder: (context, snap) {
-                      final count = snap.data ?? 0;
-                      if (count == 0 &&
-                          snap.connectionState == ConnectionState.done) {
-                        return TextButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'Este día no tiene ejercicios. Añade al menos uno antes de iniciar.'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                          label: const Text('Iniciar',
-                              style: TextStyle(
-                                  fontSize: 11, fontWeight: FontWeight.w600)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: tieneEjercicios
+            ? () => setState(() => _expandido = !_expandido)
+            : null,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(theme, completado, tiempoDia, tieneEjercicios),
+              if (_expandido && tieneEjercicios) ...[
+                const SizedBox(height: 10),
+                ejerciciosAsync.when(
+                  data: (ejercicios) {
+                    return Column(
+                      children: [
+                        ...ejercicios.asMap().entries.map((entry) {
+                          return _EjercicioRow(
+                            index: entry.key + 1,
+                            ejercicio: entry.value,
+                            diaId: widget.dia.id,
+                            semanaId: widget.dia.semanaId,
+                            rutinaId: widget.rutinaId,
+                          );
+                        }),
+                        const SizedBox(height: 4),
+                        TextButton.icon(
+                          onPressed: () => _mostrarBuscador(context, ref),
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Añadir ejercicio',
+                              style: TextStyle(fontSize: 11)),
                           style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            disabledBackgroundColor:
-                                Colors.grey.withValues(alpha: 0.08),
-                            disabledForegroundColor: Colors.grey,
-                          ),
-                        );
-                      }
-                      return TextButton.icon(
-                        onPressed: () => context.push(
-                          '/bienestar/rutina/sesion',
-                          extra: {
-                            'rutinaId': rutinaId,
-                            'diaId': dia.id,
-                            'semanaId': dia.semanaId,
-                          },
+                              visualDensity: VisualDensity.compact),
                         ),
-                        icon: const Icon(Icons.play_arrow_rounded, size: 16),
-                        label: const Text('Iniciar',
-                            style: TextStyle(
-                                fontSize: 11, fontWeight: FontWeight.w600)),
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor:
-                              theme.colorScheme.primary.withValues(alpha: 0.08),
-                        ),
-                      );
-                    },
+                      ],
+                    );
+                  },
+                  loading: () => const Padding(
+                    padding: EdgeInsets.only(left: 42),
+                    child: SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2)),
                   ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ejerciciosAsync.when(
-              data: (ejercicios) {
-                return Column(
-                  children: [
-                    if (ejercicios.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 42),
-                        child: Text('Sin ejercicios aún.',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: SVColors.onSurfaceMuted)),
-                      )
-                    else
-                      ...ejercicios.asMap().entries.map((entry) {
-                        final idx = entry.key;
-                        final e = entry.value;
-                        return _EjercicioRow(
-                          index: idx + 1,
-                          ejercicio: e,
-                          diaId: dia.id,
-                          rutinaId: rutinaId,
-                        );
-                      }),
-                    const SizedBox(height: 4),
-                    TextButton.icon(
-                      onPressed: () => _mostrarBuscador(context, ref),
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Añadir ejercicio',
-                          style: TextStyle(fontSize: 11)),
-                      style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact),
-                    ),
-                  ],
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.only(left: 42),
-                child: SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
-              error: (e, _) => Text('Error: $e',
-                  style: const TextStyle(fontSize: 11, color: Colors.red)),
-            ),
-          ],
+                  error: (e, _) => Text('Error: $e',
+                      style: const TextStyle(fontSize: 11, color: Colors.red)),
+                ),
+              ] else if (!_expandido && tieneEjercicios)
+                ejerciciosAsync.when(
+                  data: (ejercicios) => _buildPreview(theme, ejercicios),
+                  loading: () => const SizedBox.shrink(),
+                  error: (e, _) => const SizedBox.shrink(),
+                )
+              else if (!tieneEjercicios)
+                ejerciciosAsync.when(
+                  data: (_) => Padding(
+                    padding: const EdgeInsets.only(left: 42, top: 4),
+                    child: Text('Sin ejercicios aún.',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: SVColors.onSurfaceMuted)),
+                  ),
+                  loading: () => const SizedBox.shrink(),
+                  error: (e, _) => const SizedBox.shrink(),
+                ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(ThemeData theme, bool completado,
+      AsyncValue<int> tiempoDia, bool tieneEjercicios) {
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: completado
+                ? Colors.green.withValues(alpha: 0.15)
+                : theme.colorScheme.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            completado ? Icons.check_circle : Icons.fitness_center_rounded,
+            size: 16,
+            color: completado ? Colors.green : theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.dia.nombre.isNotEmpty
+                          ? widget.dia.nombre
+                          : 'Día ${widget.dia.numeroDia}',
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  if (tieneEjercicios)
+                    AnimatedRotation(
+                      turns: _expandido ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(Icons.keyboard_arrow_down_rounded,
+                          size: 20, color: Colors.grey.shade500),
+                    ),
+                ],
+              ),
+              tiempoDia.when(
+                data: (mins) => mins > 0
+                    ? Text('${mins}min',
+                        style: TextStyle(
+                            fontSize: 10, color: Colors.grey.shade600))
+                    : const SizedBox.shrink(),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
+        if (completado)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text('Completado',
+                style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.green,
+                    fontWeight: FontWeight.w600)),
+          )
+        else
+          FutureBuilder<int?>(
+            future: _contarEjerciciosDelDia(),
+            builder: (context, snap) {
+              final count = snap.data ?? 0;
+              if (count == 0 && snap.connectionState == ConnectionState.done) {
+                return TextButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Este día no tiene ejercicios. Añade al menos uno antes de iniciar.'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                  label: const Text('Iniciar',
+                      style:
+                          TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    disabledBackgroundColor:
+                        Colors.grey.withValues(alpha: 0.08),
+                    disabledForegroundColor: Colors.grey,
+                  ),
+                );
+              }
+              return TextButton.icon(
+                onPressed: () => context.push(
+                  '/bienestar/rutina/sesion',
+                  extra: {
+                    'rutinaId': widget.rutinaId,
+                    'diaId': widget.dia.id,
+                    'semanaId': widget.dia.semanaId,
+                  },
+                ),
+                icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                label: const Text('Iniciar',
+                    style:
+                        TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.08),
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPreview(ThemeData theme, List<SeleccionEjercicioDb> ejercicios) {
+    final count = ejercicios.length;
+    final preview = ejercicios.take(3).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        ...preview.asMap().entries.map((entry) {
+          final e = entry.value;
+          return FutureBuilder<Map<String, dynamic>?>(
+            future: Supabase.instance.client
+                .from('ejercicios')
+                .select('nombre')
+                .eq('id', e.ejercicioId)
+                .maybeSingle(),
+            builder: (context, snap) {
+              final nombre = snap.data?['nombre'] as String? ?? 'Ejercicio';
+              return Padding(
+                padding: const EdgeInsets.only(left: 42, bottom: 2),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        nombre,
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade700),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${e.series}×${e.repeticiones}',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.w500),
+                    ),
+                    if (e.pesoKg != null && e.pesoKg! > 0)
+                      Text(
+                        ' · ${e.pesoKg!.toStringAsFixed(e.pesoKg! == e.pesoKg!.roundToDouble() ? 0 : 1)} kg',
+                        style: TextStyle(
+                            fontSize: 10, color: Colors.grey.shade400),
+                      ),
+                  ],
+                ),
+              );
+            },
+          );
+        }),
+        if (count > 3)
+          Padding(
+            padding: const EdgeInsets.only(left: 56, top: 2),
+            child: Text('+ ${count - 3} ejercicios más',
+                style: TextStyle(
+                    fontSize: 10,
+                    color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600)),
+          ),
+      ],
     );
   }
 
@@ -515,7 +793,7 @@ class _DiaCard extends ConsumerWidget {
     final data = await Supabase.instance.client
         .from('seleccion_de_ejercicios')
         .select('id')
-        .eq('dia_id', dia.id);
+        .eq('dia_id', widget.dia.id);
     return (data as List).length;
   }
 
@@ -527,8 +805,8 @@ class _DiaCard extends ConsumerWidget {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => _BuscadorEjerciciosSheet(onSelected: (id, nombre) {
         agregarEjercicioADia(
-            rutinaId: rutinaId,
-            diaId: dia.id,
+            rutinaId: widget.rutinaId,
+            diaId: widget.dia.id,
             ejercicioId: id,
             series: 3,
             repeticiones: 10,
@@ -540,12 +818,13 @@ class _DiaCard extends ConsumerWidget {
   }
 
   void _invalidarDiaSiCompletado(WidgetRef ref) {
-    if (dia.estado == 'completado') {
+    if (widget.dia.estado == 'completado') {
       final client = Supabase.instance.client;
       client
           .from('dias_rutina')
-          .update({'estado': 'pendiente'}).eq('id', dia.id);
-      ref.invalidate(diasDeSemanaProvider(dia.semanaId));
+          .update({'estado': 'pendiente'}).eq('id', widget.dia.id);
+      ref.invalidate(diasDeSemanaProvider(widget.dia.semanaId));
+      ref.invalidate(semanasDeRutinaProvider(widget.rutinaId));
     }
   }
 }
@@ -555,11 +834,13 @@ class _EjercicioRow extends ConsumerStatefulWidget {
       {required this.index,
       required this.ejercicio,
       required this.diaId,
+      required this.semanaId,
       required this.rutinaId});
 
   final int index;
   final SeleccionEjercicioDb ejercicio;
   final String diaId;
+  final String semanaId;
   final String rutinaId;
 
   @override
@@ -607,7 +888,10 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
         client
             .from('dias_rutina')
             .update({'estado': 'pendiente'}).eq('id', widget.diaId);
-        ref.invalidate(diasDeSemanaProvider);
+        ref.invalidate(diasDeSemanaProvider(widget.semanaId));
+        ref.invalidate(semanasDeRutinaProvider(widget.rutinaId));
+        ref.invalidate(ejerciciosDeDiaProvider(widget.diaId));
+        ref.invalidate(nombresEjerciciosProvider(widget.diaId));
       }
     });
   }
@@ -616,104 +900,107 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final e = widget.ejercicio;
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: Supabase.instance.client
-          .from('ejercicios')
-          .select('nombre')
-          .eq('id', e.ejercicioId)
-          .maybeSingle(),
-      builder: (context, snap) {
-        final nombre = snap.data?['nombre'] as String? ?? 'Ejercicio';
-        return Column(
-          children: [
-            InkWell(
-              onLongPress: () => _sustituirEjercicio(context, nombre),
-              onTap: () => setState(() => _editando = !_editando),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(children: [
-                  CircleAvatar(
-                      radius: 12,
-                      backgroundColor:
-                          theme.colorScheme.primary.withValues(alpha: 0.08),
-                      child: Text('${widget.index}',
-                          style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.primary))),
-                  const SizedBox(width: 10),
-                  Expanded(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        Text(nombre,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                        Text(
-                            '${_editando ? _series : e.series}×${_editando ? _reps : e.repeticiones} · ${_editando ? _descanso : e.segundosDescanso}s descanso${(_editando ? _peso : e.pesoKg) != null ? ' · ${(_editando ? _peso : e.pesoKg)!.toStringAsFixed(1)} kg' : ''}',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: SVColors.onSurfaceMuted)),
-                      ])),
-                  IconButton(
-                      icon: const Icon(Icons.delete_outline,
-                          size: 18, color: Colors.red),
-                      onPressed: () {
-                        quitarEjercicioDeDia(e.id, widget.diaId, ref);
-                        _invalidarDiaSiCompletado();
-                      },
-                      visualDensity: VisualDensity.compact),
-                ]),
-              ),
-            ),
-            if (_editando)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8, left: 48),
-                child: Row(children: [
-                  _paramChip('Series', _series,
-                      (v) => setState(() => _series = v.clamp(1, 10))),
-                  const Text(' × ', style: TextStyle(fontSize: 12)),
-                  _paramChip('Reps', _reps,
-                      (v) => setState(() => _reps = v.clamp(1, 50))),
-                  const Text(' · ',
-                      style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  _paramChip('Desc', _descanso,
-                      (v) => setState(() => _descanso = v.clamp(15, 600)),
-                      sufijo: 's'),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                      width: 60,
-                      child: TextField(
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 11),
-                        controller: TextEditingController(
-                            text: _peso?.toStringAsFixed(1) ?? ''),
-                        decoration: const InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 6),
-                            border: OutlineInputBorder(),
-                            hintText: 'kg'),
-                        onChanged: (v) =>
-                            setState(() => _peso = double.tryParse(v)),
-                        onSubmitted: (_) => _guardarCambios(),
-                      )),
-                  const SizedBox(width: 8),
-                  TextButton(
-                      onPressed: _guardarCambios,
-                      child:
-                          const Text('Guardar', style: TextStyle(fontSize: 11)),
-                      style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero)),
-                ]),
-              ),
-          ],
-        );
-      },
+    final nombresAsync = ref.watch(nombresEjerciciosProvider(widget.diaId));
+    final nombre = nombresAsync.valueOrNull?[e.ejercicioId];
+    return Column(
+      children: [
+        InkWell(
+          onLongPress: () => _sustituirEjercicio(context, nombre ?? ''),
+          onTap: () => setState(() => _editando = !_editando),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(children: [
+              CircleAvatar(
+                  radius: 12,
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.08),
+                  child: Text('${widget.index}',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.primary))),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    GestureDetector(
+                      onTap: nombre != null
+                          ? () => context
+                              .push('/bienestar/ejercicio/${e.ejercicioId}')
+                          : null,
+                      behavior: HitTestBehavior.opaque,
+                      child: Text(nombre ?? '',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              decoration: nombre != null
+                                  ? TextDecoration.underline
+                                  : null,
+                              decorationColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.3)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    Text(
+                        '${_editando ? _series : e.series}×${_editando ? _reps : e.repeticiones} · ${_editando ? _descanso : e.segundosDescanso}s descanso${(_editando ? _peso : e.pesoKg) != null ? ' · ${(_editando ? _peso : e.pesoKg)!.toStringAsFixed(1)} kg' : ''}',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: SVColors.onSurfaceMuted)),
+                  ])),
+              IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      size: 18, color: Colors.red),
+                  onPressed: () {
+                    quitarEjercicioDeDia(e.id, widget.diaId, ref);
+                    _invalidarDiaSiCompletado();
+                  },
+                  visualDensity: VisualDensity.compact),
+            ]),
+          ),
+        ),
+        if (_editando)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, left: 48),
+            child: Row(children: [
+              _paramChip('Series', _series,
+                  (v) => setState(() => _series = v.clamp(1, 10))),
+              const Text(' × ', style: TextStyle(fontSize: 12)),
+              _paramChip(
+                  'Reps', _reps, (v) => setState(() => _reps = v.clamp(1, 50))),
+              const Text(' · ',
+                  style: TextStyle(fontSize: 12, color: Colors.grey)),
+              _paramChip('Desc', _descanso,
+                  (v) => setState(() => _descanso = v.clamp(15, 600)),
+                  sufijo: 's'),
+              const SizedBox(width: 8),
+              SizedBox(
+                  width: 60,
+                  child: TextField(
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 11),
+                    controller: TextEditingController(
+                        text: _peso?.toStringAsFixed(1) ?? ''),
+                    decoration: const InputDecoration(
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        border: OutlineInputBorder(),
+                        hintText: 'kg'),
+                    onChanged: (v) =>
+                        setState(() => _peso = double.tryParse(v)),
+                    onSubmitted: (_) => _guardarCambios(),
+                  )),
+              const SizedBox(width: 8),
+              TextButton(
+                  onPressed: _guardarCambios,
+                  child: const Text('Guardar', style: TextStyle(fontSize: 11)),
+                  style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero)),
+            ]),
+          ),
+      ],
     );
   }
 
@@ -996,6 +1283,96 @@ class _EstadoBadge extends StatelessWidget {
       child: Text(label,
           style: TextStyle(
               fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+// =============================================================================
+// Diálogo de celebración al completar la rutina
+// =============================================================================
+
+class _CelebracionDialog extends StatefulWidget {
+  const _CelebracionDialog();
+
+  @override
+  State<_CelebracionDialog> createState() => _CelebracionDialogState();
+}
+
+class _CelebracionDialogState extends State<_CelebracionDialog>
+    with SingleTickerProviderStateMixin {
+  late final _anim = AnimationController(
+    duration: const Duration(milliseconds: 800),
+    vsync: this,
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _anim.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
+            animation: _anim,
+            builder: (context, child) => Transform.scale(
+              scale: 1.0 + (_anim.value * 0.08),
+              child: child,
+            ),
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.emoji_events_rounded,
+                  size: 44, color: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text('¡Rutina completada!',
+              style: theme.textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Text(
+              'Has terminado todas las semanas.\nTu dedicación es impresionante.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 13, color: Colors.grey.shade600, height: 1.4)),
+          const SizedBox(height: 20),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const Icon(Icons.local_fire_department,
+                size: 20, color: Colors.orange),
+            const SizedBox(width: 4),
+            Text('¡Sigue así!',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.orange.shade700)),
+          ]),
+        ],
+      ),
+      actions: [
+        FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('¡Gracias!')),
+      ],
     );
   }
 }

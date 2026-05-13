@@ -1,9 +1,9 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit
-**Versión:** 3.0
-**Fecha:** 11-05-2026
-**Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md)
+**Versión:** 4.1
+**Fecha:** 14-05-2026
+**Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md)
 
 ---
 
@@ -109,20 +109,32 @@ flowchart LR
 | `eliminarRutina(rutinaId, ref)` | DELETE `rutinas` (CASCADE) | `rutinasUsuarioProvider` |
 | `clonarRutina(rutinaId, ref)` | INSERT `rutinas` (copia como privada) + `seleccion_de_ejercicios` | `rutinasUsuarioProvider` |
 | `iniciarSesion({rutinaId, diaId, ref})` | INSERT `sesiones_registradas` + UPDATE `dias_rutina.estado='en_progreso'` | `diasDeSemanaProvider` |
-| `finalizarSesion({sesionId, diaId, duracionSegundos, rpe, ref})` | UPDATE `sesiones_registradas` (duración, RPE, calorías) + UPDATE `dias_rutina.estado='completado'` | `diasDeSemanaProvider` |
+| `finalizarSesion({sesionId, diaId, rutinaId, duracionSegundos, rpe, ref})` | UPDATE `sesiones_registradas` (duración, RPE, calorías) + UPDATE `dias_rutina.estado='completado'` (cascada a semana vía trigger `trg_dias_rutina_estado`) | `diasDeSemanaProvider` + `semanasDeRutinaProvider(rutinaId)` |
 | `registrarSerie({sesionId, seleccionId, numeroSerie, reps, peso})` | INSERT `series_sesion` | — |
 | `guardarEstadoDiario({sueño, estrés, energía, dolor, zonas, listo, ref})` | UPSERT `estado_diario_usuario` ON CONFLICT (`usuario_id`, `fecha`) | `estadoDiarioHoyProvider` |
-| `agregarEjercicioADia({rutinaId, diaId, ejercicioId, series, reps, descanso, ref})` | INSERT `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` |
-| `quitarEjercicioDeDia(seleccionId, diaId, ref)` | DELETE `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` |
-| `actualizarEjercicioDia(seleccionId, patch, diaId, ref)` | UPDATE `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` |
+| `agregarEjercicioADia({rutinaId, diaId, ejercicioId, series, reps, descanso, ref})` | INSERT `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` |
+| `quitarEjercicioDeDia(seleccionId, diaId, ref)` | DELETE `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` |
+| `actualizarEjercicioDia(seleccionId, patch, diaId, ref)` | UPDATE `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` |
 | `agregarDiaASemana(semanaId, numeroDia, ref)` | INSERT `dias_rutina` | `diasDeSemanaProvider(semanaId)` |
 
 ### 3.6 Proveedores del Módulo de Perfil
 
 | Provider | Tipo | Propósito |
 |----------|------|-----------|
+| `perfilUsuarioProvider` | `FutureProvider<PerfilUsuario>` | Usuario + perfil bienestar (2 queries, cacheado). Se invalida solo cuando cambia nombre o perfil. |
+| `perfilBienestarCompletoProvider` | `FutureProvider<PerfilBienestarCompleto?>` | Perfil bienestar + historial peso (2 queries). Se invalida solo en cambios de bienestar. |
+| `perfilActividadProvider` | `FutureProvider<PerfilActividad>` | Sesiones, logros, calorías (3 queries en paralelo con `Future.wait`). |
+| `perfilPreferenciasProvider` | `FutureProvider<PreferenciasNotificacionDb>` | Preferencias de notificación (1 query). |
+| `perfilCompletoProvider` | `FutureProvider<PerfilCompleto>` | Compuesto que delega en los 4 providers anteriores. Para compatibilidad con otras pantallas. |
 | `usuarioCarrerasProvider` | `FutureProvider` | Carreras vinculadas del usuario (M:N) |
 | `carrerasUsuarioConNombreProvider` | `Family` | Carreras con nombre de universidad resuelto vía JOIN |
+
+**Invalidación selectiva (`PerfilCambio` enum):**
+- `PerfilCambio.nombre` → solo `perfilUsuarioProvider` (2 queries vs 7)
+- `PerfilCambio.bienestar` → `perfilBienestarCompletoProvider` + `perfilUsuarioProvider` + `perfilBienestarProvider` (3-4 queries vs 7)
+- `PerfilCambio.preferencias` → solo `perfilPreferenciasProvider` (1 query vs 7)
+- `PerfilCambio.todo` → todos los providers
+- Sin `autoDispose` → keepAlive implícito en memoria tras primera carga
 
 ## 4. Pantalla: Nueva Rutina con IA (`NuevaRutinaScreen`)
 
@@ -178,7 +190,71 @@ Los siguientes datos se recopilan antes de cada llamada a la IA:
 | Catálogo de ejercicios | `ejerciciosProvider` | Filtrado por equipamiento, enviado como JSON al prompt |
 | Ejercicios ya agregados | Estado local del formulario | Lista de exclusión para no repetir |
 
-### 4.3 Manejo de Errores de IA
+### 4.3 Botón de Cancelación y Pantalla de Generación IA
+
+**Pantalla de carga profesional unificada** para "Recomendar rutina", "Recomendar ejercicios" y "Sugerir Rutina con IA":
+
+```
+┌─────────────────────────────────────────────┐
+│                                             │
+│         (Icono IA con gradiente             │
+│          verde, pulsa suavemente)            │
+│                                             │
+│           SynaptixFit AI                    │
+│   Generando tu rutina personalizada          │
+│      (o: Generando estructura de ejercicios) │
+│                                             │
+│      ━━━━━━━━━━━━━━━━━━━━━━━━              │
+│      (barra de progreso animada)            │
+│                                             │
+│   ┌─────────────────────────────────┐      │
+│   │ ◌  Analizando tu perfil...      │      │
+│   └─────────────────────────────────┘      │
+│                                             │
+│              [ Cancelar ]                    │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+**Secuencias de mensajes por tipo de carga:**
+
+| Etapa | Rutina | Ejercicios |
+|-------|--------|------------|
+| 1 | Analizando tu perfil físico... | Analizando estructura de la rutina... |
+| 2 | Consultando tu historial de entrenamiento... | Evaluando periodización por semana... |
+| 3 | Revisando tu estado diario... | Distribuyendo grupos musculares... |
+| 4 | Procesando catálogo de ejercicios... | Seleccionando ejercicios compatibles... |
+| 5 | Aplicando reglas de periodización... | Ajustando volumen e intensidad... |
+| 6 | Personalizando según tu objetivo... | Organizando días de entrenamiento... |
+| 7 | Estructurando semanas y días... | Verificando progresión de cargas... |
+| 8 | ¡Casi listo! Ajustando detalles finales... | ¡Casi listo! Últimos ajustes... |
+
+**Botón Cancelar:**
+- `TextButton.icon` con `Icons.close`, texto "Cancelar", color `theme.colorScheme.error`.
+- Llama a `_cancelarCargaIA()`: detiene el `Timer` de mensajes, limpia `_loadingIA` y `_tipoCarga`.
+- Muestra Snackbar: "Recomendación cancelada."
+- Guard `if (!_loadingIA) return;` tras cada `await` de Gemini descarta respuestas tardías.
+
+**Comportamiento del botón Cancelar:**
+
+| Acción | Resultado |
+|--------|-----------|
+| Pulsar "Cancelar" durante carga | Se detiene la secuencia de mensajes y se oculta la pantalla de carga. El formulario Paso 1 se muestra intacto. |
+| Indicador visual | Pantalla completa de generación con icono pulsante, barra de progreso, mensajes secuenciales y botón Cancelar. |
+| Cobertura | Aplica a los 2 botones de IA en Paso 1: "Recomendar rutina" y "Recomendar ejercicios" (vía `_tipoCarga`). |
+
+### 4.4 Campo de Peso con Soporte Decimal
+
+El campo de peso (`pesoKg`) en el editor de ejercicios (Paso 2) ha sido mejorado:
+
+| Aspecto | Antes | Ahora |
+|---------|-------|-------|
+| Tipo de entrada | `TextInputType.numberWithOptions(decimal: true)` — pero con comportamiento errático en enteros | `TextInputType.numberWithOptions(decimal: true)` con `inputFormatters` que permiten decimales (ej: `75.5`) |
+| Facilidad de entrada | Difícil introducir cifras de varios dígitos | Campo numérico fluido con soporte para punto decimal |
+| Validación | `double.tryParse(v)` — acepta nulos | `double.tryParse(v)` — acepta nulos y decimales correctamente |
+| UI | `TextField` con hint "— kg" | `TextField` con hint "— kg", label "Peso", icono de balanza, teclado numérico optimizado |
+
+### 4.5 Manejo de Errores de IA
 
 | Escenario | Comportamiento |
 |-----------|---------------|
@@ -187,11 +263,192 @@ Los siguientes datos se recopilan antes de cada llamada a la IA:
 | Gemini no responde (timeout 15s) | Error: "No se pudo conectar con Gemini en este momento." |
 | Gemini responde con JSON malformado | `_extraerJson()` intenta 3 estrategias de parsing. Si falla: "Gemini generó una respuesta con formato no válido." |
 | Gemini responde con array/objeto vacío | Error específico: "Gemini no generó ejercicios válidos." |
+| Usuario cancela manualmente | Snackbar: "Recomendación cancelada". El formulario queda intacto. |
+
+### 4.6 Botón "Sugerir Rutina con IA" y Auto-Trigger
+
+Desde la pantalla de **Rutinas** (`RutinasComunidadScreen`), el usuario dispone de un acceso rápido para generar una rutina con IA sin pasar manualmente por los 3 pasos:
+
+```
+RutinasComunidadScreen
+  │
+  ├── FAB "Nueva rutina" → /bienestar/nueva-rutina (modo manual normal)
+  │
+  └── Botón "Sugerir Rutina con IA"
+        │  FilledButton.tonalIcon verde con Icons.auto_awesome
+        │  Ubicado bajo el SegmentedButton de tabs
+        │
+        └── Navega a /bienestar/nueva-rutina
+              extra: {'autoRecomendar': true}
+                    │
+                    ▼
+              NuevaRutinaScreen(autoRecomendar: true)
+                    │
+                    │  initState() → addPostFrameCallback
+                    │
+                    └── _recomendarRutina() se dispara automáticamente
+                          │
+                          ├── Rellena: nombre, descripción, objetivo, duración
+                          ├── Muestra SnackBar: "¡Rutina recomendada!"
+                          └── El usuario continúa manualmente desde Paso 1
+```
+
+**Pantalla de generación IA** (`_buildPantallaGeneracion`):
+
+Cuando se activa el modo auto, en lugar del formulario Paso 1 se muestra una pantalla de carga profesional:
+
+```
+┌─────────────────────────────────────────────┐
+│                                             │
+│         (Icono IA con gradiente             │
+│          verde, pulsa suavemente)            │
+│                                             │
+│           SynaptixFit AI                    │
+│      Generando tu rutina personalizada       │
+│                                             │
+│      ━━━━━━━━━━━━━━━━━━━━━━━━              │
+│      (barra de progreso animada)            │
+│                                             │
+│   ┌─────────────────────────────────┐      │
+│   │ ◌  Analizando tu perfil físico...│      │
+│   └─────────────────────────────────┘      │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+**Secuencia de mensajes animados** (8 etapas, 1800ms cada una):
+1. "Analizando tu perfil físico..."
+2. "Consultando tu historial de entrenamiento..."
+3. "Revisando tu estado diario..."
+4. "Procesando catálogo de ejercicios..."
+5. "Aplicando reglas de periodización..."
+6. "Personalizando según tu objetivo..."
+7. "Estructurando semanas y días..."
+8. "¡Casi listo! Ajustando detalles finales..."
+
+**Elementos visuales:**
+- Icono de IA: círculo 96px con gradiente `#006E2D → #00C853`, glow verde, icono `auto_awesome`.
+- Pulso animado: `TweenAnimationBuilder` escala 0.92 → 1.08 en 1200ms, bucle infinito.
+- Barra de progreso: `LinearProgressIndicator` indeterminada, 200px, color `#00C853`.
+- Mensajes: `AnimatedSwitcher` con `ValueKey` para transición suave entre mensajes.
+
+**Fix de teclado:**
+- `autofocus` del campo Nombre ahora es condicional: `autofocus: !widget.autoRecomendar`.
+- En modo auto-generación el teclado no se abre, permitiendo ver la pantalla completa.
+
+**Implementación en el router** (`app_router.dart:107-115`):
+```dart
+GoRoute(
+  path: '/bienestar/nueva-rutina',
+  builder: (context, state) {
+    final extra = state.extra;
+    final autoRecomendar =
+        extra is Map && extra['autoRecomendar'] == true;
+    return NuevaRutinaScreen(autoRecomendar: autoRecomendar);
+  },
+),
+```
+
+**Implementación en la pantalla** (`nueva_rutina_screen.dart:92-98`):
+```dart
+@override
+void initState() {
+  super.initState();
+  _inicializarEstructura();
+  _cargarObjetivoPerfil();
+  if (widget.autoRecomendar) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recomendarRutina());
+  }
+}
+```
+
+El usuario ve la pantalla de generación IA con los mensajes progresivos. Al finalizar, se muestra el Paso 1 con los campos ya rellenados.
+
+| Escenario | Comportamiento |
+|-----------|---------------|
+| `GEMINI_API_KEY` no configurada | Error descriptivo: "Falta GEMINI_API_KEY en el archivo .env". El formulario sigue funcionando en modo manual. |
+| Sin ejercicios compatibles con equipamiento | Error: "No hay ejercicios compatibles con tu equipamiento (peso_corporal, mancuerna)." |
+| Gemini no responde (timeout 15s) | Error: "No se pudo conectar con Gemini en este momento." |
+| Gemini responde con JSON malformado | `_extraerJson()` intenta 3 estrategias de parsing. Si falla: "Gemini generó una respuesta con formato no válido." |
+| Gemini responde con array/objeto vacío | Error específico: "Gemini no generó ejercicios válidos." |
+| Usuario cancela manualmente | Snackbar: "Recomendación cancelada". El formulario queda intacto. |
 
 ## 5. Pantalla: Detalle de Rutina (`RutinaDetalleScreen`)
 
 **Archivo:** `app/lib/features/bienestar/presentation/rutina_detalle_screen.dart`
 **Ruta:** `/bienestar/rutina/:id`
+
+### 5.0 Sistema de Drill-Down (Semana → Día → Ejercicios)
+
+La pantalla de detalle implementa un patrón de navegación jerárquico de 3 niveles:
+
+```
+┌─────────────────────────────────────────────────┐
+│  NIVEL 1: Selector de Semanas                    │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐           │
+│  │ Sem 1   │ │ Sem 2   │ │ Sem 3   │ ...       │
+│  │ Adapt   │ │ Carga   │ │ Pico    │           │
+│  │ 5 ejerc │ │ 6 ejerc │ │ 4 ejerc │           │
+│  └────┬────┘ └─────────┘ └─────────┘           │
+│       │ (tap)                                   │
+│       ▼                                         │
+│  ═══════════════════════════════════════════    │
+│  NIVEL 2: Lista de Días (Semana seleccionada)   │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Día 1 — Pierna         4 ejercicios  ▶ │   │
+│  │ ▸ Sentadilla con barra   4×8×90s        │   │
+│  │ ▸ Prensa de pierna       3×12×60s       │   │
+│  │ ▸ Extensión de cuádriceps 3×15×45s      │   │
+│  │ ▸ Peso muerto rumano    3×10×90s        │   │
+│  ├─────────────────────────────────────────┤   │
+│  │ Día 2 — Empuje          5 ejercicios  ▶ │   │
+│  │ ▸ Press banca plano      4×8×120s       │   │
+│  │ ▸ Press militar          3×10×90s       │   │
+│  │ ▸ ... (colapsado)                        │   │
+│  └─────────────────────────────────────────┘   │
+│       │ (tap en día)                            │
+│       ▼                                         │
+│  ═══════════════════════════════════════════    │
+│  NIVEL 3: Detalle de Día (expansión completa)   │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Día 1 — Pierna          ▼               │   │
+│  │                                          │   │
+│  │ 1. Sentadilla con barra                  │   │
+│  │    Series: 4  Reps: 8  Descanso: 90s     │   │
+│  │    Peso: 80 kg                           │   │
+│  │    [−] [Series] [+] [−] [Reps] [+]       │   │
+│  │                                          │   │
+│  │ 2. Prensa de pierna                      │   │
+│  │    Series: 3  Reps: 12  Descanso: 60s    │   │
+│  │    Peso: 120 kg                          │   │
+│  │    [−] [Series] [+] [−] [Reps] [+]       │   │
+│  │    ...                                   │   │
+│  └─────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────┘
+```
+
+**Interacciones de drill-down:**
+
+| Nivel | Acción | Resultado |
+|-------|--------|-----------|
+| Semana | Tap en chip de semana | Se despliega el nivel 2 con los días de esa semana y vista previa de ejercicios (miniatura) |
+| Día (colapsado) | Tap en card de día | El día se expande mostrando el **listado completo de ejercicios** con todos sus detalles editables |
+| Día (expandido) | Tap en card de día | El día se colapsa ocultando los detalles |
+| Ejercicio | Tap en fila de ejercicio | Entra en **modo edición inline**: se habilitan steppers ± para series, reps, descanso y campo de peso |
+| Ejercicio | Long-press | Menú contextual: "Sustituir ejercicio" (abre buscador) o "Eliminar de este día" |
+
+**Estados visuales de días:**
+
+| Estado | Estilo |
+|--------|--------|
+| `pendiente` | Fondo gris claro, borde sutil, texto "Pendiente" |
+| `en_progreso` | Fondo ámbar suave, borde ámbar, icono de reloj |
+| `completado` | Fondo verde (#006E2D al 8%), borde verde, check en badge, highlight sutil |
+
+**Animaciones:**
+- Expansión/colapso de días con `AnimatedCrossFade` o `AnimatedSize` para transición suave.
+- Los ejercicios dentro de un día expandido usan `ListView` con separadores para rendimiento.
+- La barra de progreso en el header se actualiza en tiempo real al cambiar estados.
 
 ### 5.1 Componentes del Header
 
@@ -249,43 +506,65 @@ if (ejerciciosDelDia.isEmpty) {
 
 ### 5.6 Invalidación al Modificar Ejercicios
 
-Cuando se añade, quita o edita un ejercicio de un día completado:
-1. `ejerciciosDeDiaProvider(diaId)` se invalida → UI se refresca
-2. El estado del día NO cambia automáticamente (solo cambia al finalizar/iniciar sesión)
-3. Pero la barra de progreso SÍ se actualiza (porque `diasDeSemanaProvider` se refresca)
+Cuando se añade, quita o edita un ejercicio de un día:
+1. `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` se invalidan → UI se refresca con nombres actualizados
+2. Si el día estaba `completado` → se revierte a `pendiente` en BD y se invalidan `diasDeSemanaProvider` + `semanasDeRutinaProvider`
+3. La cascada de semana se delega al trigger `trg_dias_rutina_estado` en BD: si algún día deja de estar completado, la semana se revierte automáticamente
+4. El botón "Iniciar" reaparece porque el día vuelve a estar pendiente
 
 ## 6. Pantalla: Sesión en Vivo (`LiveSessionScreen`)
 
 **Archivo:** `app/lib/features/bienestar/presentation/sesion_en_vivo_screen.dart`
 **Ruta:** `/bienestar/rutina/sesion`
 
-### 6.1 Check-in Diario (Pre-Sesión)
+### 6.1 Check-in Diario (durante el primer descanso) + Adaptación IA
+
+El check-in ya no bloquea el inicio de la sesión. El cronómetro aparece **inmediatamente** al pulsar "Empezar entrenamiento", y el check-in se muestra durante el **primer descanso** (tras completar la primera serie). **Si el usuario ya hizo check-in hoy, el overlay no se muestra en absoluto** (verificación silenciosa antes de mostrar).
 
 ```mermaid
 flowchart TD
-    A["Usuario pulsa 'Empezar entrenamiento'"] --> B{"¿Día tiene ejercicios?"}
-    B -->|No| C["SnackBar: 'Este día no tiene ejercicios'"]
-    B -->|Sí| D["Muestra _CheckInDialog"]
+    A["Usuario pulsa 'Empezar entrenamiento'"] --> B["iniciarSesion()\nCronómetro + ejercicios visibles"]
 
-    D --> E["4 Sliders (1-5):\n• Calidad del sueño\n• Nivel de estrés\n• Nivel de energía\n• Dolor muscular"]
+    B --> C["Usuario marca 1ª serie completada"]
+    C --> D["iniciarDescanso()\nTimer descanso 90s"]
 
-    E --> F{"¿Dolor ≥ 3?"}
-    F -->|Sí| G["Muestra chips de zonas:\npiernas, espalda, hombros,\nbrazos, pecho, core"]
-    F -->|No| H["Solo sliders"]
+    D --> E{"_lanzarCheckInOverlay():\n¿Hay check-in hoy?\n(estadoDiarioHoyProvider)"}
+    E -->|Sí| F["No mostrar nada.\nContinuar sesión normal."]
+    E -->|No| G["Mostrar _CheckInOverlay\n(overlay no bloqueante)"]
 
-    G --> I{"¿Pulsa?"}
-    H --> I
+    G --> H["4 Sliders (1-5):\n• Sueño • Estrés • Energía • Dolor + zonas"]
 
-    I -->|"Empezar"| J["calcula listoParaEntrenar\n= sueño > 1 OR energía > 2"]
-    I -->|"Omitir"| K["Inicia sesión sin check-in"]
+    H --> I{"¿Pulsa 'Guardar'?"}
+    I -->|"Omitir"| J["Continuar sesión sin datos"]
+    I -->|"Guardar"| K["guardarEstadoDiario()\nUPSERT estado_diario_usuario"]
 
-    J --> L["guardarEstadoDiario()\nUPSERT estado_diario_usuario"]
-    L --> M["invalida estadoDiarioHoyProvider"]
-    M --> N["iniciarSesion()\nINSERT sesiones_registradas\nUPDATE dias_rutina → en_progreso"]
+    K --> L["Calcular fatiga:\n(6-s)×5+(e-1)×5+(6-en)×4+(d-1)×7"]
 
-    K --> N
-    N --> O["Navega a LiveSessionScreen"]
+    L --> M{"¿Requiere adaptación?\n(fatiga>50, dolor≥3, energía≤2)"}
+    M -->|Sí| N["_AdaptacionDialog con sugerencias"]
+    M -->|No| J
+
+    N --> O["Sugerencias:\n- Reducir series\n- Bajar peso\n- Evitar zonas con dolor\n- Reducir intensidad"]
+    O --> P{"¿Usuario acepta?"}
+    P -->|"Ignorar todo"| J
+    P -->|"Aplicar"| Q["Aplica adaptaciones:\n- _seriesReducidas = true\n- Banner naranja visible"]
+
+    Q --> J
+    J --> R["Sesión continúa normalmente"]
 ```
+
+**Reglas de adaptación (locales, sin IA):**
+
+| Condición | Sugerencia | Efecto |
+|-----------|-----------|--------|
+| `fatiga > 50` | Reducir 1 serie por ejercicio | `_seriesReducidas = true` → todas las cards muestran 1 serie menos |
+| `fatiga > 50` | Bajar peso 10% en compuestos | Sugerencia visual (no se aplica automáticamente al peso del TextField) |
+| `dolor ≥ 3` + zonas | Evitar ejercicios de [zonas] | `_ejerciciosEvitados` se rellena. Banner rojo visible. |
+| `energía ≤ 2` | Reducir intensidad general | `_seriesReducidas = true` (mismo efecto) |
+
+**Banners de estado durante la sesión:**
+- Banner naranja: "Sesión adaptada: -1 serie por ejercicio" (visible si `_seriesReducidas == true`)
+- Banner rojo: "Se evitarán ejercicios de: [zonas]" (visible si `_ejerciciosEvitados` no está vacío)
 
 ### 6.2 Funcionalidad Durante la Sesión
 
@@ -329,7 +608,7 @@ Widget `SliverToBoxAdapter` al inicio del `NestedScrollView`, con diseño atlét
 |----------|-------------|
 | **Fondo** | `LinearGradient` de 3 tonos navy: `#0A1628` → `#152238` → `#0D1B2A` |
 | **Avatar** | `Container` 88px circular con anillo de gradiente verde (`#72FE8G` → `#006E2D`) y `boxShadow` glow. Contenido: `ClipOval` con `Image.network` (carga progresiva con `loadingBuilder`) y fallback a inicial estilizada (`_avatarInitial()`: texto verde sobre fondo `#1A2A40`) |
-| **Nombre** | `Text` blanco 22px `FontWeight.w800`, `maxLines: 1`. Icono `Icons.edit` a la derecha con `InkWell` → diálogo `_editarNombre()` → `BienestarRepository.actualizarNombre()` → invalida `perfilBienestarProvider` + `dashboardProvider` |
+| **Nombre** | `Text` blanco 22px `FontWeight.w800`, `maxLines: 1`. Icono `Icons.edit` a la derecha con `InkWell` → diálogo `_editarNombre()` → `BienestarRepository.actualizarNombre()` → invalida `_onPerfilActualizado(cambio: PerfilCambio.nombre)` → solo `perfilUsuarioProvider` (2 queries) |
 | **Email** | Texto con opacidad 50%, 13px |
 | **Badge de nivel** | Chip con `Icons.stars_rounded` verde + "Nivel X". Barra XP: `LinearProgressIndicator` con progreso `xpTotal / (1000 × nivel)`, color `#72FE8G` |
 | **Mini stats** | Fila: racha (🔥), días/semana (📅), minutos/sesión (⏱) — emoji 18px + valor blanco 15px bold + label 10px gris |
@@ -398,29 +677,48 @@ Todos los valores muestran `'—'` si son 0 o no existen. Cada fila editable mue
 | **Carreras universitarias** | `_CarrerasCard` (`ConsumerWidget`): muestra count + botón "Gestionar carreras" → `/academico/configuracion`. Se oculta si `usuarioCarrerasProvider` está vacío | `context.push('/academico/configuracion')` |
 | **Cerrar sesión** | `OutlinedButton.icon` rojo (`#EF4444`) con borde `#3B1C1C`, altura 44px | `authController.logout()` → `context.go('/acceso')` |
 
-### 7.5 Flujo de carga y datos
+### 7.5 Flujo de carga y datos (v3.2 — Caché con invalidación selectiva)
 
 ```mermaid
 flowchart TD
-    A["initState() → _cargar()"] --> B["Supabase: usuarios, perfil_bienestar_usuario"]
-    B --> C["Supabase: sesiones_registradas (COUNT + SUM calorías)"]
-    C --> D["Supabase: retos completados (COUNT)"]
-    D --> E["Supabase: historial_peso (últimos)"]
-    E --> F["Supabase: preferencias_notificacion"]
-    F --> G["Construye _PerfilData"]
-    G --> H["setState → build() con 3 tabs"]
+    A["build() → ref.watch(perfilUsuarioProvider)"] --> B["2 queries: usuarios + perfil_bienestar_usuario"]
+    A2["build() → ref.watch(perfilActividadProvider)"] --> C["3 queries en paralelo: sesiones + calorías + retos"]
+    A3["build() → ref.watch(perfilPreferenciasProvider)"] --> D["1 query: preferencias_notificacion"]
+    A4["build() → ref.watch(perfilBienestarCompletoProvider)"] --> E["2 queries: perfil + historial_peso"]
+    B --> F["UI se renderiza con datos cacheados"]
+    C --> F
+    D --> F
+    E --> F
+    G["Cambio de nombre"] --> H["_onPerfilActualizado(PerfilCambio.nombre)"]
+    H --> I["ref.invalidate(perfilUsuarioProvider) ONLY"]
+    I --> B
+    J["Cambio en bienestar"] --> K["_onPerfilActualizado(PerfilCambio.bienestar)"]
+    K --> L["Invalida 2-3 providers específicos"]
+    L --> B
+    L --> E
 ```
 
-- `_PerfilData` es un DTO interno que agrupa: `UsuarioDb`, `PerfilBienestarDb`, `sesiones`, `logros`, `caloriasAcumuladas`, `historial`, `preferencias`
-- Tras cada edición en Bienestar: `_onPerfilActualizado()` → invalida `perfilBienestarProvider` + `dashboardProvider` + recarga `_cargar()`
-- `BienestarRepository.actualizarPerfilParcial(data)` persiste los cambios parciales en `perfil_bienestar_usuario`
+**Arquitectura de providers:**
+
+| Provider | Queries | Invalida con | Tiempo estimado |
+|----------|---------|-------------|-----------------|
+| `perfilUsuarioProvider` | 2 (usuarios + perfil_bienestar) | `PerfilCambio.nombre` | ~200ms |
+| `perfilActividadProvider` | 3 (paralelas con `Future.wait`) | `PerfilCambio.todo` | ~200ms |
+| `perfilPreferenciasProvider` | 1 | `PerfilCambio.preferencias` | ~100ms |
+| `perfilBienestarCompletoProvider` | 2 | `PerfilCambio.bienestar` | ~200ms |
+
+- Sin `autoDispose` → datos permanecen en memoria tras primera carga.
+- La UI se actualiza instantáneamente porque cada provider se invalida individualmente.
+- Antes (v3.1): cada cambio invalidaba 7 queries secuenciales (~800ms).
+- Ahora (v3.2): cambio de nombre → 2 queries (~200ms). Cambio de bienestar → ~3 queries (~250ms).
 
 ### 7.6 Sincronización
 
-- `perfilBienestarProvider` se invalida manualmente tras cada edición (`ref.invalidate(perfilBienestarProvider)`)
-- Avatar: `Image.network` con `loadingBuilder` (muestra inicial durante carga) y `errorBuilder` (fallback a inicial estilizada)
-- El nombre se lee de `usuarios.nombre_completo` (tabla pública), no de `perfil_bienestar_usuario`
-- `_TabBarDelegate` (`SliverPersistentHeaderDelegate`) mantiene el `TabBar` fijado al hacer scroll
+- `_onPerfilActualizado(cambio: PerfilCambio)` recibe el tipo de cambio para invalidación selectiva.
+- `BienestarRepository.actualizarPerfilParcial(data)` persiste cambios parciales en `perfil_bienestar_usuario`.
+- Avatar: `Image.network` con `loadingBuilder` (muestra inicial durante carga) y `errorBuilder` (fallback a inicial estilizada).
+- El nombre se lee de `usuarios.nombre_completo` (tabla pública), no de `perfil_bienestar_usuario`.
+- `_TabBarDelegate` (`SliverPersistentHeaderDelegate`) mantiene el `TabBar` fijado al hacer scroll.
 
 ## 8. Componentes Reutilizables
 
@@ -479,6 +777,6 @@ flowchart TD
 
 ---
 
-**Documento compilado:** 11-05-2026
-**Última revisión:** v3.0
-**Referencia:** Alineado con SRS v3.0, Arquitectura v3.0
+**Documento compilado:** 14-05-2026
+**Última revisión:** v4.1
+**Referencia:** Alineado con SRS v3.0, Arquitectura v3.1

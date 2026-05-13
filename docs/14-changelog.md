@@ -1,7 +1,223 @@
 # 14 - Historial de Cambios (Changelog)
 
-**Proyecto:** SynaptixFit  
+**Proyecto:** SynaptixFit
 **Formato:** [Versionado Semántico](https://semver.org/lang/es/)
+
+---
+
+## [3.4.0] — 14-05-2026
+
+### Trigger de cascada días → semanas + fixes de UI reactiva
+
+**Migración 0020 — Trigger `trg_dias_rutina_estado`:**
+- Nuevo trigger PostgreSQL que mantiene `semanas_rutina.estado` sincronizado con el estado de sus días.
+- Si todos los días están `'completado'` → semana `'completada'`. Si algún día no → semana `'pendiente'`.
+- Dispara en `INSERT`, `UPDATE OF estado` y `DELETE` sobre `dias_rutina`.
+- Elimina la lógica de cascada manual que estaba duplicada en el cliente (20 líneas en `finalizarSesion()`).
+
+**Fix: botón "Completar rutina" ahora aparece correctamente:**
+- `finalizarSesion()` ahora recibe `rutinaId` como parámetro obligatorio.
+- Tras marcar el día como `'completado'`, se invalidan `diasDeSemanaProvider` + `semanasDeRutinaProvider(rutinaId)`.
+- El trigger de BD actualiza la semana, y la UI lo refleja inmediatamente.
+
+**Fix: día se revierte a pendiente al modificar ejercicios:**
+- Ambas versiones de `_invalidarDiaSiCompletado()` (en `_DiaCardState` y `_EjercicioRowState`) ahora invalidan `semanasDeRutinaProvider` para refrescar el selector de semanas.
+- La cascada de revertir semana se delega al trigger de BD.
+- Se añadió invalidación de `ejerciciosDeDiaProvider` + `nombresEjerciciosProvider` en la versión de `_EjercicioRowState`.
+
+**Fix: carga reactiva de ejercicios con nombres actualizados:**
+- `agregarEjercicioADia()`, `quitarEjercicioDeDia()`, `actualizarEjercicioDia()` ahora también invalidan `nombresEjerciciosProvider(diaId)`.
+- Los nombres de ejercicios se refrescan instantáneamente al añadir/quitar/editar.
+
+**Fix: eliminado mensaje molesto "Ya has hecho check-in hoy":**
+- `_lanzarCheckInOverlay()` ahora consulta `estadoDiarioHoyProvider` antes de mostrar el overlay.
+- Si ya existe check-in hoy, el overlay no se muestra en absoluto (antes aparecía brevemente con el mensaje y se auto-cerraba).
+- Eliminada la lógica `_yaExisteCheckIn`, `_verificar()` y el mensaje del widget `_CheckInOverlay`.
+
+### Documentación actualizada
+- `04-data-model.md`: Documentado trigger `trg_dias_rutina_estado` con SQL completo.
+- `03-architecture.md`: Diagrama de secuencia actualizado con `rutinaId`, trigger y nuevas invalidaciones. Sección 9.3 actualizada al flujo overlay actual.
+- `06-frontend.md`: Tabla de funciones actualizada con `rutinaId`, invalidaciones de `nombresEjerciciosProvider` y flujo de check-in corregido.
+- `14-changelog.md`: Esta entrada.
+
+---
+
+## [3.3.0] — 13-05-2026
+
+### Opción B refinada: Check-in durante el primer descanso + adaptación IA
+
+**Nuevo flujo de sesión en vivo (`sesion_en_vivo_screen.dart`):**
+- Al pulsar "Iniciar" → el cronómetro y la lista de ejercicios aparecen **inmediatamente** (antes: diálogo de check-in bloqueante antes de empezar).
+- El check-in diario se muestra durante el **primer periodo de descanso** (tras completar la primera serie), como overlay no bloqueante. El descanso sigue corriendo.
+- Si ya existe un check-in para hoy (`estadoDiarioHoyProvider` != null), no se vuelve a preguntar.
+
+**Diagrama de flujo:**
+```
+RutinaDetalleScreen → "Iniciar"
+  → LiveSessionScreen (cronómetro visible de inmediato)
+  → Usuario empieza 1er ejercicio
+  → Completa 1ª serie → descanso 90s
+      → Overlay "¿Cómo te sientes?" (no bloquea descanso)
+      → Si adaptación necesaria → diálogo SynaptixFit AI con sugerencias
+  → Sesión continúa con ajustes aplicados
+```
+
+**Sistema de adaptación post-check-in (reglas locales, sin IA):**
+- Fórmula de fatiga: `(6-sueño)×5 + (estrés-1)×5 + (6-energía)×4 + (dolor-1)×7`
+- **Fatiga > 50:** sugerencia "Reducir 1 serie por ejercicio" + "Bajar peso 10% en compuestos"
+- **Dolor ≥ 3 + zonas:** sugerencia "Evitar ejercicios de [zona1, zona2]"
+- **Energía ≤ 2:** sugerencia "Reducir intensidad general"
+- Cada sugerencia es seleccionable individualmente en el diálogo de adaptación.
+
+**Widget `_AdaptacionDialog`:**
+- Lista de sugerencias con iconos semánticos (fitness_center, healing, battery, monitor_weight)
+- Cada sugerencia es tappeable para seleccionar/deseleccionar
+- Botones: "Ignorar todo", "Aplicar todos", "Aplicar solo este"
+- Las sugerencias seleccionadas se aplican vía callbacks (`VoidCallback aplicar`)
+
+**Banners visuales durante la sesión adaptada:**
+- Banner naranja: "Sesión adaptada: -1 serie por ejercicio"
+- Banner rojo: "Se evitarán ejercicios de: [zonas]"
+
+**Fix overflow en `_CheckInDialog`:** `Text` envuelto en `Expanded` en el title row.
+
+### Resto de features 3.3.0
+
+(Ver entrada anterior completa con todos los features)
+
+### Botón para cancelar recomendación IA
+
+- Los 3 botones de IA en `NuevaRutinaScreen` ahora muestran botón **"Cancelar"** durante la carga.
+- Se descarta la petición HTTP en curso mediante `CancelToken` de `dio`.
+- Snackbar "Recomendación cancelada". Formulario intacto para edición manual.
+
+### Campo de peso con soporte decimal corregido
+
+- `TextField` de peso (`pesoKg`) en Paso 2 ahora acepta correctamente valores decimales (ej: `75.5` kg).
+- Teclado numérico con `TextInputType.numberWithOptions(decimal: true)` e `inputFormatters`.
+- Label "Peso", hint "— kg", icono de balanza.
+
+### Vista detallada con drill-down en "Revisa tu rutina"
+
+**Nuevo sistema expand/colapsar en `RutinaDetalleScreen`:**
+- `_DiaCard` convertido a `ConsumerStatefulWidget` con estado local `_expandido`.
+- **Colapsado:** vista previa compacta con hasta 3 ejercicios (nombre, series×reps, peso). "+ N ejercicios más" si hay más de 3.
+- **Expandido:** listado completo de ejercicios con controles de edición inline.
+- Flecha animada con `AnimatedRotation` (0° → 180°). Borde de la card cambia de color al expandirse.
+- Los nombres de ejercicios en preview cargados vía `FutureBuilder` desde tabla `ejercicios`.
+
+### Botón "Sugerir Rutina con IA" en pantalla Rutinas
+
+**Nuevo botón en `RutinasComunidadScreen`:**
+- `FilledButton.tonalIcon` verde con icono `Icons.auto_awesome`, texto "Sugerir Rutina con IA".
+- Navega a `NuevaRutinaScreen` con `extra: {'autoRecomendar': true}`.
+
+**Auto-trigger implementado en `NuevaRutinaScreen`:**
+- Nuevo parámetro `autoRecomendar` (bool, default false) en constructor.
+- `initState`: si `autoRecomendar == true`, llama `_recomendarRutina()` vía `addPostFrameCallback`.
+- Router actualizado: la ruta lee `state.extra` y pasa `autoRecomendar`.
+
+### Robustecemos la generación IA contra fallos
+
+**Dio con timeouts (`recomendacion_ia_service.dart`):**
+- Cliente HTTP de Gemini ahora tiene `connectTimeout: 15s`, `receiveTimeout: 60s`, `sendTimeout: 15s`.
+- Antes: `Dio()` sin timeouts → llamadas podían colgar indefinidamente o fallar en ciertas redes.
+
+**Timeout de 45s en las 3 llamadas a Gemini:**
+- Los métodos ahora envuelven `await servicio.generar*()` con `.timeout(Duration(seconds: 45))`.
+- Mensajes diferenciados: "La IA tardó demasiado en responder" (TimeoutException) vs "Verifica tu conexión" (error genérico).
+
+**Inyección de dependencias fresca (invalida providers antes de cada llamada):**
+- Los 3 métodos de IA (`_recomendarRutina`, `_recomendarEjercicios`, `_sugerirEjerciciosIA`) ahora invalidan los 4 providers (`perfilBienestar`, `ejercicios`, `historialSesion`, `estadoDiario`) antes de leerlos. Así se evita cualquier error cacheado de ejecuciones previas.
+
+**Carga en paralelo unificada en los 3 métodos:**
+- `_sugerirEjerciciosIA` ahora también usa `Future.wait` + `_obtenerOConTimeout` (antes eran 4 `await` secuenciales).
+- Los 3 métodos comparten el mismo patrón: invalidar → parallel fetch → timeout 20s → guard cancel.
+
+**Timer blindado contra doble disparo:**
+- `_iniciarSecuenciaMensajes()` ahora cancela el timer previo (`_timerMensajes?.cancel()`) antes de crear uno nuevo. Evita timers huérfanos si se llama dos veces seguidas.
+
+### Pantalla profesional de sugerencia de ejercicios por día
+
+**Nuevo `_buildPantallaGeneracionEjerciciosDia` en Paso 2:**
+- Se muestra cuando el usuario pulsa "Sugerir ejercicios con IA" en un día del editor (Paso 2).
+- Estética diferenciada: icono con gradiente violeta (`#7C3AED → #A78BFA`), glow violeta, icono `fitness_center`.
+- Pulso animado más rápido (900ms, 0.93→1.07).
+- Badge "Personalizando ejercicios" con borde violeta.
+- Barra de progreso color `#A78BFA`.
+- 8 mensajes secuenciales específicos para sugerencia de ejercicios por día: "Analizando ejercicios del día..." → "Identificando grupos musculares..." → "Buscando ejercicios complementarios..." → "Seleccionando según tu equipamiento..." → "Ajustando series y repeticiones..." → "Optimizando tiempos de descanso..." → "Verificando balance muscular..." → "¡Casi listo! Últimos ajustes..."
+- Botón Cancelar disponible (mismo comportamiento que en Paso 1).
+
+**`_buildPaso2` ahora muestra la pantalla de carga:**
+- Si `_loadingIA == true`, Paso 2 muestra `_buildPantallaGeneracionEjerciciosDia` en lugar del editor.
+
+- `autofocus` en campo Nombre ahora es condicional: `autofocus: !widget.autoRecomendar`.
+- Cuando se pulsa "Sugerir Rutina con IA", el teclado no se abre, permitiendo ver la pantalla completa.
+
+### Pantalla de generación IA profesional
+
+**Pantalla de carga unificada para rutina y ejercicios (`_buildPantallaGeneracion`):**
+- Se muestra siempre que `_loadingIA == true` (ya no solo en modo autoRecomendar). Cubre tanto "Recomendar rutina con IA", "Recomendar ejercicios" como el botón "Sugerir Rutina con IA".
+- Icono de IA con gradiente verde y glow, pulsando suavemente (`TweenAnimationBuilder` 0.92→1.08).
+- Barra de progreso indeterminada estilizada (200px, color `#00C853`).
+- Subtítulo dinámico: "Generando tu rutina personalizada" vs "Generando estructura de ejercicios".
+
+**Secuencias de mensajes por tipo de carga:**
+- **Rutina** (8 etapas): perfil → historial → estado diario → catálogo → periodización → objetivo → semanas → ¡casi listo!
+- **Ejercicios** (8 etapas): estructura → periodización → grupos musculares → ejercicios compatibles → volumen → días → progresión → ¡últimos ajustes!
+
+**Botón Cancelar:**
+- `TextButton.icon` rojo al final de la pantalla de carga.
+- Llama a `_cancelarCargaIA()`: detiene el timer, limpia `_loadingIA` / `_tipoCarga`, muestra Snackbar "Recomendación cancelada".
+- Guard `if (!_loadingIA) return;` en ambos métodos de recomendación tras el await de Gemini, para descartar respuestas tardías si el usuario canceló.
+
+### Documentación actualizada
+- `06-frontend.md` (v3.3): Sección 5.0 drill-down, 4.3 cancelación IA, 4.4 campo decimal, 4.6 auto-trigger.
+- `15-ia-recomendacion-sistema.md` (v3.3): Sección 4.0 vía rápida, 12.1 cancelación manual.
+- `12-user-guide.md` (v3.3): Flujo real 3 pasos + IA, navegación drill-down, vía rápida.
+- `14-changelog.md`: Esta entrada.
+
+---
+
+## [3.2.0] — 12-05-2026
+
+### Sistema de recomendación IA: series dinámicas y descripciones inteligentes
+
+**Series personalizadas por ejercicio (`recomendacion_ia_service.dart`):**
+- Las series ya no son fijas (3). Ahora la IA las personaliza según:
+  - Objetivo: fuerza 3-5, ganar_masa 3-4, perder_peso 2-3, resistencia 2-3, movilidad 2-3.
+  - Minutos/sesión: <30→2-3, 30-45→2-4, 45-90→3-5, >90→4-5.
+  - Tipo de ejercicio: compuestos +1 serie, aislados -1 serie.
+  - Fatiga diaria: puntuación > 50 reduce 1 serie.
+  - Semana de periodización: adaptación 2-3, carga 3-4, pico 4-5, descarga 2.
+- Añadido `$estadoTxt` al Prompt #2 (se calculaba pero no se usaba).
+
+**Descripciones sin números hardcodeados:**
+- Nuevas reglas en Prompt #1: la IA NO incluye números concretos (días, semanas, sesiones) en la descripción.
+- La descripción se centra en la filosofía de entrenamiento (enfoque, metodología, tipo de ejercicios).
+- La descripción permanece válida aunque el usuario modifique semanas/días manualmente.
+
+### Pantalla de perfil con sincronización en tiempo real optimizada
+
+**Nuevo provider cacheado con invalidación selectiva (`perfil/application/perfil_provider.dart`):**
+- `perfilUsuarioProvider` — usuario + perfil bienestar (2 queries, cacheado).
+- `perfilBienestarCompletoProvider` — perfil + historial peso (2 queries).
+- `perfilActividadProvider` — sesiones, logros, calorías (3 queries en paralelo).
+- `perfilPreferenciasProvider` — preferencias de notificación (1 query).
+- `perfilCompletoProvider` — compuesto para compatibilidad con otras pantallas.
+- Enum `PerfilCambio` (nombre, bienestar, preferencias, todo) para invalidar solo lo necesario.
+- Sin `autoDispose` → keepAlive implícito en memoria.
+- Al cambiar nombre: solo 2 queries vs 7 anteriores. Al cambiar bienestar: solo 3 queries.
+
+**Refactor de `perfil_screen.dart`:**
+- Eliminada carga manual en `initState()` con 7 consultas Supabase secuenciales.
+- Eliminadas: `_loading`, `_data`, `_cargar()`, `_cargarPerfil()`, clase `_PerfilData`.
+- `build()` usa `ref.watch()` sobre providers individuales.
+- `_onPerfilActualizado` recibe `PerfilCambio` para invalidación dirigida.
+
+### Nueva documentación
+
+- `docs/15-ia-recomendacion-sistema.md` — Documentación completa del sistema de recomendación IA (17 secciones, 10 diagramas Mermaid/ASCII, 12 tablas de datos, 24 referencias a código).
 
 ---
 

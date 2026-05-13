@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 3.0  
-**Estado:** VIGENTE  
-**Fecha:** 11-05-2026  
-**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas materializadas y políticas Supabase. Incluye modelo normalizado 3FN del catálogo de ejercicios, sistema de periodización (semanas/días/series), check-in diario de fatiga, y catálogo académico.
+**Versión:** 3.1
+**Estado:** VIGENTE
+**Fecha:** 14-05-2026
+**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas materializadas, triggers y políticas Supabase. Incluye trigger de cascada días→semanas.
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -689,6 +689,36 @@ CREATE TABLE dias_rutina (
 
 CREATE INDEX idx_dias_semana ON dias_rutina(semana_id);
 ```
+
+**Trigger de cascada `dias_rutina → semanas_rutina`** (migración `20260514_0020`):
+
+El trigger `trg_dias_rutina_estado` mantiene `semanas_rutina.estado` sincronizado automáticamente con el estado de sus días. Se dispara en `INSERT`, `UPDATE OF estado` y `DELETE` sobre `dias_rutina`:
+
+```sql
+CREATE OR REPLACE FUNCTION public.actualizar_estado_semana()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_semana_id uuid;
+BEGIN
+  v_semana_id := COALESCE(NEW.semana_id, OLD.semana_id);
+  UPDATE public.semanas_rutina
+  SET estado = CASE
+    WHEN (SELECT bool_and(estado = 'completado')
+          FROM public.dias_rutina WHERE semana_id = v_semana_id)
+    THEN 'completada'
+    ELSE 'pendiente'
+  END
+  WHERE id = v_semana_id;
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER trg_dias_rutina_estado
+  AFTER INSERT OR UPDATE OF estado OR DELETE ON public.dias_rutina
+  FOR EACH ROW EXECUTE FUNCTION public.actualizar_estado_semana();
+```
+
+Esto elimina la necesidad de lógica de cascada manual en el cliente: cualquier cambio de estado en `dias_rutina` actualiza automáticamente la semana padre.
 
 **Modificación de `seleccion_de_ejercicios` para vincular a día:**
 

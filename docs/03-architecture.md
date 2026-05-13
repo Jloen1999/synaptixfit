@@ -1,8 +1,8 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 3.0
+**Versión:** 3.1
 **Estado:** APROBADO
-**Fecha:** 11-05-2026
+**Fecha:** 14-05-2026
 **Autor:** Arquitectura
 **Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.0)
 
@@ -288,10 +288,12 @@ sequenceDiagram
     Note over Live: Sesión en vivo:<br/>- Cronómetro automático<br/>- Check de series con peso/reps<br/>- Cronómetro de descanso (90s)<br/>- +15s / -15s / Saltar<br/>- Diálogo de finalización con RPE
 
     User->>Live: Finaliza sesión
-    Live->>Prov: finalizarSesion(sesionId, duracion, rpe)
+    Live->>Prov: finalizarSesion(sesionId, diaId, rutinaId, duracion, rpe)
     Prov->>SB: UPDATE sesiones_registradas<br/>(duracion_minutos, rpe, calorias_quemadas)
     Prov->>SB: UPDATE dias_rutina SET estado='completado'
+    Note over SB: Trigger trg_dias_rutina_estado:<br/>si todos los días 'completado' → semana 'completada'
     SB-->>Prov: OK
+    Prov->>Prov: ref.invalidate(diasDeSemanaProvider)<br/>ref.invalidate(semanasDeRutinaProvider)
 
     Live->>Det: Vuelve a RutinaDetalleScreen
     Det->>Prov: Refresca progreso (días completados / total)
@@ -485,27 +487,22 @@ La fórmula pondera los 4 indicadores según su impacto en el rendimiento deport
 
 **Umbral de adaptación (>50):** Seleccionado para que se active cuando al menos 2 indicadores están en valores malos (ej: sueño=2 + estrés=4 = 50 puntos) o 1 indicador está muy mal (dolor=5 = 28 puntos → necesita otros 22 de los demás).
 
-### 9.3 Diálogo `_CheckInDialog`
+### 9.3 Overlay `_CheckInOverlay` (durante el primer descanso)
 
-Implementado como `StatefulWidget` dentro de `sesion_en_vivo_screen.dart`:
+Implementado como `_CheckInOverlay` dentro de `sesion_en_vivo_screen.dart`. Ya no es un diálogo bloqueante antes de empezar: el cronómetro arranca inmediatamente y el check-in se muestra como overlay no bloqueante durante el primer descanso:
 
 ```dart
-// Estructura del diálogo:
-// - 4 Sliders con labels y emojis indicadores
-// - Chips de zonas de dolor (visibles si dolorMuscular >= 3)
-// - Botones: "Empezar" (guarda y continúa) / "Omitir" (solo continúa)
-
-showDialog(
-  context: context,
-  barrierDismissible: false,
-  builder: (ctx) => const _CheckInDialog(),
-).then((_) async {
-  // Si el usuario pulsó "Empezar", se ejecuta guardarEstadoDiario()
-  // Luego iniciarSesion() y navegación a LiveSessionScreen
-});
+// Flujo actual:
+// 1. Usuario pulsa "Iniciar" → cronómetro visible de inmediato
+// 2. Usuario completa 1ª serie → inicia descanso 90s
+// 3. _lanzarCheckInOverlay() consulta estadoDiarioHoyProvider:
+//    - Si ya existe check-in hoy → no muestra nada (silencio)
+//    - Si no existe → muestra overlay con 4 sliders
+// 4. Overlay: 4 sliders (1-5) + zonas de dolor si dolor>=3
+// 5. Botones: "Guardar" (persiste) / "Omitir" (solo continúa)
 ```
 
-**Zonas de dolor disponibles:** piernas, espalda, hombros, brazos, pecho, core.
+**Importante (v3.4):** El overlay ya no muestra el mensaje "Ya has hecho check-in hoy". En su lugar, la verificación se hace antes de mostrar el overlay: si `estadoDiarioHoyProvider` devuelve un registro, el overlay simplemente no se muestra. Esto evita interrumpir al usuario innecesariamente.
 
 **Indicador visual de fatiga:** Si `estadoDiarioHoyProvider` devuelve `requiereAdaptacion == true`, se muestra un banner naranja en `RutinaDetalleScreen` antes de iniciar la sesión: "Hoy tu cuerpo necesita un entrenamiento más ligero."
 
@@ -610,10 +607,10 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 // vía tiempoDiaProvider(diaId)
 ```
 
-### 11.2 Invalidaciones
+### 11.2 Invalidaciones y Cascada
 
-- Al marcar un día como completado → `diasDeSemanaProvider` se invalida
-- Al añadir/quitar ejercicios de un día → `ejerciciosDeDiaProvider(diaId)` se invalida
+- Al marcar un día como completado → `diasDeSemanaProvider` + `semanasDeRutinaProvider(rutinaId)` se invalidan. El trigger `trg_dias_rutina_estado` en BD actualiza la semana automáticamente.
+- Al añadir/quitar/editar ejercicios de un día → `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` se invalidan. Si el día estaba completado, se revierte a `pendiente` y el trigger de BD revierte la semana.
 - Si un día tenía ejercicios y se vacía → el estado vuelve a `pendiente`
 - Si un día no tiene ejercicios → botón "Iniciar" bloqueado con SnackBar
 
@@ -630,6 +627,7 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 | `semanasDeRutinaProvider` | `FutureProvider.family<List<SemanaRutinaDb>, String>` | Semanas de una rutina | `semanas_rutina` WHERE rutina_id | Al crear/modificar semanas |
 | `diasDeSemanaProvider` | `FutureProvider.family<List<DiaRutinaDb>, String>` | Días de una semana | `dias_rutina` WHERE semana_id | Al añadir día o cambiar estado |
 | `ejerciciosDeDiaProvider` | `FutureProvider.family<List<SeleccionEjercicioDb>, String>` | Ejercicios de un día | `seleccion_de_ejercicios` WHERE dia_id | Al añadir/quitar/editar ejercicios |
+| `nombresEjerciciosProvider` | `FutureProvider.family<Map<String, String>, String>` | Nombres de ejercicios de un día (JOIN) | `seleccion_de_ejercicios` JOIN `ejercicios` WHERE dia_id | Al añadir/quitar/editar ejercicios |
 | `tiempoDiaProvider` | `FutureProvider.family<int, String>` | Duración de última sesión del día | `sesiones_registradas` WHERE dia_id (última) | Al finalizar sesión |
 | `rutinasComunidadProvider` | `FutureProvider<List<RutinaComunidadDto>>` | Rutinas públicas de la comunidad | `rutinas` WHERE visibilidad='public' + JOIN `usuarios` | Manual |
 | `rutinasUsuarioProvider` | `FutureProvider<List<RutinaDb>>` | Rutinas del usuario | `rutinas` WHERE usuario_id | Al crear/eliminar/clonar rutina |
@@ -642,7 +640,7 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 | `eliminarRutina()` | DELETE (CASCADE) | `rutinas` → cascada a semanas, días, ejercicios |
 | `clonarRutina()` | INSERT (copia) | `rutinas` + `seleccion_de_ejercicios` (como privada) |
 | `iniciarSesion()` | INSERT + UPDATE | `sesiones_registradas` + `dias_rutina.estado` |
-| `finalizarSesion()` | UPDATE | `sesiones_registradas` (duración, RPE, calorías) + `dias_rutina.estado` |
+| `finalizarSesion()` | UPDATE | `sesiones_registradas` (duración, RPE, calorías) + `dias_rutina.estado` (cascada a semana vía trigger) |
 | `registrarSerie()` | INSERT | `series_sesion` |
 | `guardarEstadoDiario()` | UPSERT | `estado_diario_usuario` ON CONFLICT (usuario_id, fecha) |
 | `agregarEjercicioADia()` | INSERT | `seleccion_de_ejercicios` |
@@ -684,6 +682,6 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 
 ---
 
-**Documento compilado:** 11-05-2026
-**Versión:** 3.0
+**Documento compilado:** 14-05-2026
+**Versión:** 3.1
 **Clasificación:** PÚBLICO — Equipo jloen

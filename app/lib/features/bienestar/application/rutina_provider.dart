@@ -432,6 +432,24 @@ final ejerciciosDeDiaProvider =
       .toList();
 });
 
+final nombresEjerciciosProvider =
+    FutureProvider.family<Map<String, String>, String>((ref, diaId) async {
+  final client = Supabase.instance.client;
+  final ejerciciosRaw = await client
+      .from('seleccion_de_ejercicios')
+      .select('ejercicio_id, ejercicios!inner(nombre)')
+      .eq('dia_id', diaId);
+  final map = <String, String>{};
+  for (final row in (ejerciciosRaw as List)) {
+    final ejId = row['ejercicio_id'] as String;
+    final ejData = row['ejercicios'] as Map<String, dynamic>?;
+    if (ejData != null) {
+      map[ejId] = ejData['nombre'] as String? ?? '';
+    }
+  }
+  return map;
+});
+
 // ---------------------------------------------------------------------------
 // CRUD — Rutinas con semanas, días y ejercicios
 // ---------------------------------------------------------------------------
@@ -449,6 +467,18 @@ Future<String> crearRutinaCompleta({
   final user = client.auth.currentUser;
   if (user == null) throw Exception('No autenticado');
 
+  const objetivosValidos = [
+    'fitness_general',
+    'perder_peso',
+    'ganar_masa',
+    'fuerza',
+    'resistencia',
+    'movilidad',
+    'mixto',
+  ];
+  final objetivoFinal =
+      objetivosValidos.contains(objetivo) ? objetivo : 'fuerza';
+
   final rutinaData = await client
       .from('rutinas')
       .insert({
@@ -456,7 +486,7 @@ Future<String> crearRutinaCompleta({
         'nombre': nombre,
         'descripcion': descripcion,
         'visibilidad': visibilidad,
-        'objetivo': objetivo,
+        'objetivo': objetivoFinal,
         'duracion_semanas': duracionSemanas,
         'cantidad_ejercicios': 0,
       })
@@ -567,6 +597,7 @@ Future<void> agregarEjercicioADia({
     if (pesoKg != null) 'peso_kg': pesoKg,
   });
   ref.invalidate(ejerciciosDeDiaProvider(diaId));
+  ref.invalidate(nombresEjerciciosProvider(diaId));
 }
 
 Future<void> quitarEjercicioDeDia(
@@ -574,6 +605,7 @@ Future<void> quitarEjercicioDeDia(
   final client = Supabase.instance.client;
   await client.from('seleccion_de_ejercicios').delete().eq('id', seleccionId);
   ref.invalidate(ejerciciosDeDiaProvider(diaId));
+  ref.invalidate(nombresEjerciciosProvider(diaId));
 }
 
 Future<void> actualizarEjercicioDia(String seleccionId,
@@ -584,6 +616,7 @@ Future<void> actualizarEjercicioDia(String seleccionId,
       .update(patch)
       .eq('id', seleccionId);
   ref.invalidate(ejerciciosDeDiaProvider(diaId));
+  ref.invalidate(nombresEjerciciosProvider(diaId));
 }
 
 Future<String> agregarDiaASemana(
@@ -637,6 +670,7 @@ Future<String> iniciarSesion({
 Future<void> finalizarSesion({
   required String sesionId,
   required String diaId,
+  required String rutinaId,
   required int duracionSegundos,
   required int rpe,
   required WidgetRef ref,
@@ -652,6 +686,11 @@ Future<void> finalizarSesion({
   }).eq('id', sesionId);
 
   await actualizarEstadoDia(diaId, 'completado', ref);
+
+  // El trigger actualizar_estado_semana() en BD actualiza la semana
+  // automáticamente cuando todos sus días están 'completado'.
+  ref.invalidate(diasDeSemanaProvider);
+  ref.invalidate(semanasDeRutinaProvider(rutinaId));
 }
 
 Future<void> registrarSerie({
