@@ -119,7 +119,7 @@ class EjerciciosRepository {
   Future<CatalogosEjercicios> fetchCatalogos() async {
     final results = await Future.wait([
       _client.from('partes_cuerpo').select('id,nombre').order('nombre'),
-      _client.from('musculos').select('id,nombre').order('nombre'),
+      _client.from('musculos').select('id,nombre,url_imagen').order('nombre'),
       _client.from('equipamientos').select('id,nombre').order('nombre'),
     ]);
 

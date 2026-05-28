@@ -63,7 +63,7 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 0024 | `20260528_0024_insertar_equipamientos.sql` | 28-05-2026 | Inserta 24 equipamientos desde `equipamientos.json` (con `fuente`). |
 | 0025 | `20260528_0025_insertar_partes_cuerpo.sql` | 28-05-2026 | Inserta 13 partes del cuerpo desde `partes_cuerpo.json`. |
 | 0026 | `20260528_0026_insertar_musculos.sql` | 28-05-2026 | Inserta 60 músculos desde `musculos.json`. |
-| 0027 | `20260528_0027_insertar_ejercicios.sql` | 28-05-2026 | Añade UNIQUE en `ejercicios.nombre` e inserta los 95 ejercicios desde `nuevos_ejercicios.json`. |
+| 0027 | `20260528_0027_insertar_ejercicios.sql` | 28-05-2026 | Añade UNIQUE en `ejercicios.nombre` e inserta los 89 ejercicios desde `nuevos_ejercicios.json` (ON CONFLICT DO NOTHING). |
 | 0028 | `20260528_0028_eliminar_exercise_db_id.sql` | 28-05-2026 | Elimina triggers y funcion de refresco de `mv_ejercicios_completos`, dropea la MV, elimina columna `exercise_db_id` de `ejercicios`, recrea `v_ejercicios_completos` sin el campo. |
 | 0029 | `20260529_0029_agregar_url_imagen_musculos.sql` | 29-05-2026 | Agrega columna `url_imagen` a `musculos` y la popula con las rutas R2 de los 51 PNGs ilustrativos. |
 | 0030 | `20260529_0030_eliminar_musculos_duplicados.sql` | 29-05-2026 | Remapea 9 músculos redundantes en tablas puente y los elimina: `abdominales→abdomen`, `deltoides anteriores→deltoides anterior`, `dorsales→dorsal ancho`, `glúteos→glúteo mayor`, `hombros→deltoides`, `parte interna del muslo→aductores`, `pectorales→pecho`, `tibiales→tibial anterior`, `tobillos→estabilizadores de tobillo`. |

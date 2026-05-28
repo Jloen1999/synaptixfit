@@ -35,22 +35,36 @@ class ParteCuerpoDb {
 
 /// Modelo para la tabla `musculos` (catálogo de músculos).
 class MusculoDb {
-  const MusculoDb({required this.id, required this.nombre});
+  const MusculoDb({required this.id, required this.nombre, this.urlImagen});
 
   final int id;
   final String nombre;
+  final String? urlImagen;
 
   factory MusculoDb.fromMap(Map<String, dynamic> map) {
     return MusculoDb(
       id: map['id'] as int,
       nombre: map['nombre'] as String,
+      urlImagen: map['url_imagen'] as String?,
     );
   }
 
-  Map<String, dynamic> toMap() => {'id': id, 'nombre': nombre};
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'nombre': nombre,
+    if (urlImagen != null) 'url_imagen': urlImagen,
+  };
+
+  MusculoDb copyWith({int? id, String? nombre, String? urlImagen}) {
+    return MusculoDb(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      urlImagen: urlImagen ?? this.urlImagen,
+    );
+  }
 
   @override
-  String toString() => 'MusculoDb(id: $id, nombre: $nombre)';
+  String toString() => 'MusculoDb(id: $id, nombre: $nombre, urlImagen: $urlImagen)';
 
   @override
   bool operator ==(Object other) =>
@@ -114,4 +128,13 @@ class CatalogosEjercicios {
   /// Retorna la lista de equipamientos única y ordenada alfabéticamente.
   List<String> get equipamientosNombres =>
       equipamientos.map((e) => e.nombre).toList()..sort();
+
+  /// Retorna la URL de la imagen R2 para un músculo por su nombre, o null.
+  String? urlImagenMusculo(String nombre) {
+    final match = musculos.cast<MusculoDb?>().firstWhere(
+      (m) => m!.nombre == nombre,
+      orElse: () => null,
+    );
+    return match?.urlImagen;
+  }
 }

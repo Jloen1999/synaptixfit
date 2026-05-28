@@ -60,4 +60,3 @@ update public.musculos
   when nombre = 'zona lumbar' then 'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/zona_lumbar.png'
   end
   where url_imagen is null;
-

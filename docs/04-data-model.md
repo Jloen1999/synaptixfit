@@ -3,7 +3,7 @@
 **Versión:** 3.8
 **Estado:** VIGENTE
 **Fecha:** 29-05-2026
-**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye trigger de cascada días→semanas. Catálogo actual: 95 ejercicios, 51 músculos, 13 partes del cuerpo, 24 equipamientos.
+**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye trigger de cascada días→semanas. Catálogo actual: 89 ejercicios, 51 músculos, 13 partes del cuerpo, 24 equipamientos.
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -1693,7 +1693,7 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 ### 6.1 Script unificado
 
 `supabase/seed_todo.py` reemplaza a los 3 scripts anteriores. Flujo:
-1. Lee `nuevos_ejercicios.json` (95 ejercicios, campo `fuente`), `musculos.json` (60), `partes_cuerpo.json` (13).
+1. Lee `nuevos_ejercicios.json` (89 ejercicios, campo `fuente`), `musculos.json` (51), `partes_cuerpo.json` (13).
 2. Extrae equipamientos de los ejercicios (~37).
 3. Upsert de catálogos (musculos, partes_cuerpo, equipamientos).
 4. Inserta ejercicios nuevos (dedup por nombre normalizado).

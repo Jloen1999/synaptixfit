@@ -7,7 +7,30 @@
 
 ## [3.8.0] — 29-05-2026
 
-### url_imagen para todos los músculos + ejercicio_db_id eliminado + catálogo limpiado
+### url_imagen para todos los músculos + exercise_db_id eliminado + catálogo limpiado
+
+**musculos.json con url_imagen completo (51/51):**
+- 12 músculos que faltaban ahora tienen `url_imagen` apuntando a R2.
+- Corregido `deltoides posteriores` que apuntaba a `deltoides.png` → ahora `deltoide_posterior.png`.
+
+**nuevos_ejercicios.json: 6 duplicados eliminados (95→89):**
+- `Zancadas con mancuernas`, `Circuito de descompresión y movilidad espinal`, `Extensión torácica pasiva`, `Circuito de ejercicios abdominales`, `Elevaciones de deltoides con mancuernas`, `Remo sentado en polea`.
+- 89 ejercicios únicos (56 demic + 21 exercisedb + 12 gym_workout).
+
+**Flutter sincronizado con BD:**
+- `MusculoDb`: añadido campo `urlImagen` + `copyWith`. `CatalogosEjercicios`: helper `urlImagenMusculo()`.
+- `ejercicios_repository.dart`: `fetchCatalogos` ahora consulta `url_imagen`.
+- Fix: `dashboard_screen.dart:277` — `tieneTareasReto` → `tieneHitosReto`.
+
+**Migración 0028 corregida:**
+- Orden: drop MV → drop view → drop column → recreate view (evita error de dependencia `exercise_db_id`).
+
+**Migraciones:** 0027 (89 ejercicios con ON CONFLICT), 0028 (orden corregido), 0029 (51 URLs), 0030 (9 músculos eliminados).
+
+**Documentación:** 04-data-model.md v3.8, 07-backend.md v2.6, 13-maintenance.md v1.4, 14-changelog.md entrada 3.8.0.
+
+---
+
 
 **musculos.json con url_imagen completo (51/51):**
 - 12 músculos que faltaban ahora tienen `url_imagen` apuntando a R2: cuádriceps, elevador de la escápula, estabilizadores de tobillo, extensores de muñeca, flexores de la cadera, flexores de muñeca, muñecas, serrato anterior, sistema cardiovascular, supraespinoso, sóleo, tensor de la fascia lata.

@@ -19,12 +19,12 @@ drop function if exists public.refrescar_mv_ejercicios();
 -- 3) Eliminar vista materializada
 drop materialized view if exists public.mv_ejercicios_completos;
 
--- 4) Eliminar columna exercise_db_id
+-- 4) Eliminar v_ejercicios_completos ANTES de dropear la columna
+drop view if exists public.v_ejercicios_completos cascade;
+
+-- 5) Eliminar columna exercise_db_id
 alter table public.ejercicios
   drop column if exists exercise_db_id;
-
--- 5) Recrear v_ejercicios_completos sin exercise_db_id
-drop view if exists public.v_ejercicios_completos cascade;
 
 create or replace view public.v_ejercicios_completos
 with (security_invoker = true)

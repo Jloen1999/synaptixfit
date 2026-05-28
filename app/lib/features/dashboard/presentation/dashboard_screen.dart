@@ -274,7 +274,7 @@ class DashboardScreen extends ConsumerWidget {
               child: _RetoActivoCard(
                 reto: reto,
                 progreso: value.progresoReto(reto.id),
-                tieneTareas: value.tieneTareasReto(reto.id),
+                tieneTareas: value.tieneHitosReto(reto.id),
                 onTap: () => context.push('/retos/${reto.id}'),
               ),
             ),

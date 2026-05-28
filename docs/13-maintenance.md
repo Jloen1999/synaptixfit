@@ -75,7 +75,7 @@ Nota de entorno en Windows:
 
 | Recurso | Cantidad |
 |---------|----------|
-| Ejercicios únicos | 95 (62 demic + 21 exercisedb + 12 gym_workout) |
+| Ejercicios únicos | 89 (56 demic + 21 exercisedb + 12 gym_workout) |
 | Partes del cuerpo | 13 |
 | Musculos | 51 (9 redundantes eliminados vía migración 0030) |
 | Equipamientos | 24 (extraídos de ejercicios) |
