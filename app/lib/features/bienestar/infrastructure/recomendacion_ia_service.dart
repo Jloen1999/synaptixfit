@@ -338,7 +338,7 @@ El pesoKg debe ser null a menos que haya historial claro del usuario.
               'nombre': e.nombre,
               'musculosObjetivo': e.musculosObjetivo,
               'equipamientos': e.equipamientos,
-              'finalidad': e.finalidad.name,
+              'finalidad': e.finalidad.map((f) => f.name).toList(),
             })
         .toList();
 
@@ -467,7 +467,7 @@ REGLAS SEGUN FINALIDAD DEL EJERCICIO (campo "finalidad" en el catalogo):
               'nombre': e.nombre,
               'musculosObjetivo': e.musculosObjetivo,
               'equipamientos': e.equipamientos,
-              'finalidad': e.finalidad.name,
+              'finalidad': e.finalidad.map((f) => f.name).toList(),
             })
         .toList();
 

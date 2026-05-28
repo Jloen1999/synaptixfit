@@ -94,16 +94,13 @@ class UsuarioDb {
 /// Clasifica los ejercicios según su finalidad de entrenamiento.
 /// Determina qué campos debe introducir el usuario y cómo la IA recomienda.
 enum FinalidadEjercicio {
-  /// Ejercicios de fuerza: requieren Peso (kg), Repeticiones y Series.
   fuerza,
-
-  /// Ejercicios de cardio: requieren Duración (min/seg) y Distancia opcional.
   cardio,
+  isometrico,
+  hipertrofia,
+  resistencia,
+  movilidad;
 
-  /// Ejercicios isométricos / estáticos: requieren Tiempo de sujeción.
-  isometrico;
-
-  /// Crea [FinalidadEjercicio] desde el valor almacenado en BD.
   static FinalidadEjercicio fromString(String value) {
     return FinalidadEjercicio.values.firstWhere(
       (e) => e.name == value,
@@ -111,7 +108,10 @@ enum FinalidadEjercicio {
     );
   }
 
-  /// Etiqueta legible en español para la UI.
+  static List<FinalidadEjercicio> fromStrings(List<String> values) {
+    return values.map((v) => fromString(v)).toList();
+  }
+
   String get etiqueta {
     switch (this) {
       case FinalidadEjercicio.fuerza:
@@ -119,19 +119,30 @@ enum FinalidadEjercicio {
       case FinalidadEjercicio.cardio:
         return 'Cardio';
       case FinalidadEjercicio.isometrico:
-        return 'Isométrico';
+        return 'Isometrico';
+      case FinalidadEjercicio.hipertrofia:
+        return 'Hipertrofia';
+      case FinalidadEjercicio.resistencia:
+        return 'Resistencia';
+      case FinalidadEjercicio.movilidad:
+        return 'Movilidad';
     }
   }
 
-  /// Icono representativo para la UI.
   String get icono {
     switch (this) {
       case FinalidadEjercicio.fuerza:
-        return '🏋️';
+        return '\u{1F3CB}';
       case FinalidadEjercicio.cardio:
-        return '🏃';
+        return '\u{1F3C3}';
       case FinalidadEjercicio.isometrico:
-        return '🧘';
+        return '\u{1F9D8}';
+      case FinalidadEjercicio.hipertrofia:
+        return '\u{1F4AA}';
+      case FinalidadEjercicio.resistencia:
+        return '\u{1F525}';
+      case FinalidadEjercicio.movilidad:
+        return '\u{1F938}';
     }
   }
 }
@@ -163,7 +174,7 @@ class EjercicioDb {
   final List<String> musculosObjetivo;
   final List<String> musculosSecundarios;
   final List<String> equipamientos;
-  final FinalidadEjercicio finalidad;
+  final List<FinalidadEjercicio> finalidad;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
@@ -179,6 +190,10 @@ class EjercicioDb {
   String get parteCuerpoPrincipal =>
       partesCuerpo.isNotEmpty ? partesCuerpo.first : 'General';
 
+  /// Primera finalidad como valor principal para compatibilidad.
+  FinalidadEjercicio get finalidadPrincipal =>
+      finalidad.isNotEmpty ? finalidad.first : FinalidadEjercicio.fuerza;
+
   factory EjercicioDb.fromMap(Map<String, dynamic> map) {
     return EjercicioDb(
       id: map['id'] as String,
@@ -191,8 +206,7 @@ class EjercicioDb {
       musculosObjetivo: _parseStringList(map['musculos_objetivo']),
       musculosSecundarios: _parseStringList(map['musculos_secundarios']),
       equipamientos: _parseStringList(map['equipamientos']),
-      finalidad: FinalidadEjercicio.fromString(
-          (map['finalidad'] as String?) ?? 'fuerza'),
+      finalidad: _parseFinalidad(map['finalidad']),
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
     );
@@ -206,7 +220,7 @@ class EjercicioDb {
       'instrucciones': instrucciones,
       'dificultad': dificultad,
       'descripcion': descripcion,
-      'finalidad': finalidad.name,
+      'finalidad': finalidad.map((f) => f.name).toList(),
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -1532,6 +1546,20 @@ List<String> _parseStringList(dynamic value) {
     return trimmed.split(',').map((e) => e.trim()).toList();
   }
   return [];
+}
+
+List<FinalidadEjercicio> _parseFinalidad(dynamic value) {
+  if (value is List) {
+    return FinalidadEjercicio.fromStrings(
+        value.map((e) => e.toString()).toList());
+  }
+  if (value is String) {
+    final trimmed = value.replaceAll(RegExp(r'^\{|\}$'), '');
+    if (trimmed.isEmpty) return [FinalidadEjercicio.fuerza];
+    return FinalidadEjercicio.fromStrings(
+        trimmed.split(',').map((e) => e.trim()).toList());
+  }
+  return [FinalidadEjercicio.fuerza];
 }
 
 // ---------------------------------------------------------------------------

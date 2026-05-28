@@ -91,11 +91,12 @@ class DetalleEjercicioScreen extends ConsumerWidget {
                     icon: Icons.speed_rounded,
                     color: SVColors.accent,
                   ),
-                  _MetaChip(
-                    label:
-                        '${ejercicio.finalidad.icono} ${ejercicio.finalidad.etiqueta}',
-                    icon: Icons.category_rounded,
-                    color: _finalidadColor(ejercicio.finalidad),
+                  ...ejercicio.finalidad.map(
+                    (f) => _MetaChip(
+                      label: '${f.icono} ${f.etiqueta}',
+                      icon: Icons.category_rounded,
+                      color: _finalidadColor(f),
+                    ),
                   ),
                 ],
               ),
@@ -149,6 +150,12 @@ Color _finalidadColor(FinalidadEjercicio f) {
       return Colors.teal;
     case FinalidadEjercicio.isometrico:
       return Colors.indigo;
+    case FinalidadEjercicio.hipertrofia:
+      return Colors.red;
+    case FinalidadEjercicio.resistencia:
+      return Colors.blue;
+    case FinalidadEjercicio.movilidad:
+      return Colors.green;
   }
 }
 

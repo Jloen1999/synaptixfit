@@ -978,8 +978,8 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
     final nombresAsync = ref.watch(nombresEjerciciosProvider(widget.diaId));
     final nombre = nombresAsync.valueOrNull?[e.ejercicioId];
     final ejercicioAsync = ref.watch(ejercicioDetalleProvider(e.ejercicioId));
-    final finalidad =
-        ejercicioAsync.valueOrNull?.finalidad ?? FinalidadEjercicio.fuerza;
+    final finalidad = ejercicioAsync.valueOrNull?.finalidadPrincipal ??
+        FinalidadEjercicio.fuerza;
     return Column(
       children: [
         InkWell(
@@ -1059,13 +1059,22 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
         final series = _editando ? _series : e.series;
         final desc = '${_editando ? _descanso : e.segundosDescanso}s';
         return '${series}×${tiempo}s · $desc descanso';
+      case FinalidadEjercicio.movilidad:
+        final tiempo2 =
+            (_editando ? _tiempoIsometrico : e.tiempoIsometricoSegundos) ?? 0;
+        final series2 = _editando ? _series : e.series;
+        final desc2 = '${_editando ? _descanso : e.segundosDescanso}s';
+        return '${series2}×${tiempo2}s · $desc2 descanso';
       case FinalidadEjercicio.fuerza:
+      case FinalidadEjercicio.hipertrofia:
+      case FinalidadEjercicio.resistencia:
         final series = _editando ? _series : e.series;
         final reps = _editando ? _reps : e.repeticiones;
         final desc = '${_editando ? _descanso : e.segundosDescanso}s';
         final peso = _editando ? _peso : e.pesoKg;
         final pesoTxt = peso != null ? ' · ${peso.toStringAsFixed(1)} kg' : '';
         return '${series}×${reps} · $desc descanso$pesoTxt';
+      case FinalidadEjercicio.movilidad:
     }
   }
 
@@ -1076,7 +1085,11 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
       case FinalidadEjercicio.isometrico:
         return _buildIsometricoEditFields();
       case FinalidadEjercicio.fuerza:
+      case FinalidadEjercicio.hipertrofia:
+      case FinalidadEjercicio.resistencia:
         return _buildFuerzaEditFields();
+      case FinalidadEjercicio.movilidad:
+        return _buildIsometricoEditFields();
     }
   }
 

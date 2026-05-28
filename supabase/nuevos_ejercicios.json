@@ -10,7 +10,9 @@
       "Para las elevaciones posteriores, inclina el torso hacia adelante y eleva los brazos hacia los lados enfocándote en la contracción de la parte superior."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros",
       "espalda"
@@ -40,7 +42,9 @@
       "Desciende controladamente y empuja desde los pies para volver a la posición inicial."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -61,7 +65,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Extensión de cuádriceps en máquina (Rotaciones de pie)",
+    "nombre_ejercicio": "Extensión de cuádriceps en máquina",
     "descripcion": "Ejercicio de extensión de piernas en máquina modificando la rotación de las puntas de los pies para enfatizar diferentes porciones del cuádriceps.",
     "instrucciones": [
       "Siéntate en la máquina de extensión con la espalda totalmente apoyada en el respaldo.",
@@ -70,7 +74,9 @@
       "Extiende las rodillas completamente de manera controlada y regresa a la posición inicial sin dejar caer las placas de peso."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -97,7 +103,9 @@
       "Controla la fase excéntrica al extender los brazos de regreso a la posición inicial."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "hombros",
       "espalda"
@@ -129,7 +137,9 @@
       "Mantén una flexión de cadera de 90 grados, formando una 'L' con tu cuerpo, y sostén la posición de forma isométrica."
     ],
     "dificultad": "avanzado",
-    "finalidad": "resistencia",
+    "finalidad": [
+      "resistencia"
+    ],
     "partes_cuerpo": [
       "cintura",
       "brazos (parte superior)"
@@ -150,7 +160,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Jalón al pecho en polea (Variaciones de agarre)",
+    "nombre_ejercicio": "Jalón al pecho en polea",
     "descripcion": "Diferentes variantes de agarre (ancho prono, estrecho supino y neutro) en el jalón al pecho para modificar la activación del dorsal ancho y la espalda alta.",
     "instrucciones": [
       "Siéntate en la máquina de jalón asegurando los muslos firmemente bajo los rodillos de soporte.",
@@ -159,7 +169,9 @@
       "Tira de la barra hacia la parte superior del pecho deprimiendo las escápulas, y luego extiende los brazos de manera controlada."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "espalda",
       "brazos (parte superior)"
@@ -190,7 +202,9 @@
       "Desciende la mancuerna de manera controlada hasta la extensión casi completa del brazo."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -221,7 +235,9 @@
       "Mantén el movimiento lento y controlado, evitando usar el impulso o levantar los codos del banco."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "antebrazos"
     ],
@@ -249,7 +265,9 @@
       "Contrae el abdomen y los cuádriceps para mantener la posición el tiempo estipulado sin usar las manos para apoyarte en los muslos."
     ],
     "dificultad": "principiante",
-    "finalidad": "resistencia",
+    "finalidad": [
+      "resistencia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "core"
@@ -279,7 +297,9 @@
       "Controla siempre la fase excéntrica del movimiento (el retorno) para maximizar la tensión muscular."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros",
       "espalda",
@@ -305,7 +325,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Sentadilla pesada con mancuerna (Variaciones de enfoque)",
+    "nombre_ejercicio": "Sentadilla con mancuerna",
     "descripcion": "Sentadilla utilizando una mancuerna central con alteraciones en la postura y el ángulo del torso para desplazar el estímulo principal entre cuádriceps, glúteos y aductores.",
     "instrucciones": [
       "Sostén una mancuerna de manera vertical (estilo goblet) con ambas manos.",
@@ -314,7 +334,9 @@
       "Para enfatizar la parte interna del muslo, separa las piernas más allá del ancho de los hombros (postura sumo) con las puntas de los pies orientadas hacia afuera antes de descender."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "piernas (parte inferior)"
@@ -337,7 +359,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Rutina de Core en Suelo (Crunches y Elevaciones de rodillas)",
+    "nombre_ejercicio": "Crunch con elevación de piernas",
     "descripcion": "Secuencia de ejercicios de peso corporal enfocada en la activación del abdomen y los oblicuos, realizando flexiones laterales y encogimientos invertidos.",
     "instrucciones": [
       "Acuéstate boca arriba sobre una esterilla con las manos detrás de la cabeza.",
@@ -346,7 +368,9 @@
       "Controla la respiración exhalando en la fase concéntrica y desciende de manera controlada."
     ],
     "dificultad": "principiante",
-    "finalidad": "resistencia",
+    "finalidad": [
+      "resistencia"
+    ],
     "partes_cuerpo": [
       "cintura",
       "core"
@@ -376,7 +400,9 @@
       "Desciende el peso de forma controlada hasta alcanzar la extensión casi completa del codo."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -404,7 +430,9 @@
       "Extiende los codos para volver a la posición inicial, apretando el tríceps al máximo en la parte alta."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -433,7 +461,9 @@
       "Baja la barra de manera controlada, asegurándote de no quebrar las muñecas durante la fase excéntrica."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "antebrazos",
       "brazos (parte superior)"
@@ -464,7 +494,9 @@
       "Empuja el suelo explosivamente para regresar a la posición de inicio, manteniendo la columna neutra."
     ],
     "dificultad": "avanzado",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "pecho",
       "brazos (parte superior)",
@@ -497,7 +529,9 @@
       "Empuja la barra de regreso hacia la posición inicial, describiendo una ligera curva hacia la línea de los hombros."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "pecho",
       "brazos (parte superior)",
@@ -527,7 +561,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Circuito de Tren Superior con Peso Libre",
+    "nombre_ejercicio": "Press de banca + remo con mancuernas",
     "descripcion": "Rutina metabólica y de hipertrofia compuesta por ejercicios multiplanares (Curl martillo, Pullover, Patada de tríceps, Elevaciones laterales y Remo) para un estímulo completo del tren superior.",
     "instrucciones": [
       "Curl Martillo: Realiza flexión de codos con agarre neutro para trabajar el braquiorradial.",
@@ -537,7 +571,9 @@
       "Remo con barra: Con el torso a 45 grados y espalda recta, retrae las escápulas tirando de la barra hacia el abdomen."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)",
       "hombros",
@@ -574,7 +610,9 @@
       "Desciende la barra controladamente hasta la altura de la barbilla o clavículas, y empuja hacia arriba sin hiper-extender los codos."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros",
       "brazos (parte superior)",
@@ -598,7 +636,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Prensa de Piernas (Variaciones de Posición de Pies)",
+    "nombre_ejercicio": "Prensa de piernas",
     "descripcion": "Ejercicio compuesto de empuje del tren inferior. El enfoque biomecánico ilustra cómo la modificación en la colocación de los pies en la plataforma altera el reclutamiento muscular entre cuádriceps, glúteos, isquiotibiales y aductores.",
     "instrucciones": [
       "Acomódate en la máquina de prensa apoyando completamente la espalda y la zona lumbar en el respaldo.",
@@ -608,7 +646,9 @@
       "Desbloquea el seguro y desciende controladamente hasta que las rodillas formen un ángulo de 90 grados; empuja de regreso sin llegar a bloquear completamente las rodillas."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -640,7 +680,9 @@
       "Extiende los brazos de forma controlada durante la fase excéntrica, permitiendo que las escápulas se prolonguen hacia adelante."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "espalda",
       "brazos (parte superior)"
@@ -673,7 +715,9 @@
       "Controla el ascenso del peso hasta lograr una extensión completa y un estiramiento profundo del dorsal."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "espalda",
       "brazos (parte superior)"
@@ -706,7 +750,9 @@
       "Empuja a través de los talones para volver a la posición inicial, contrayendo fuertemente los glúteos en la parte superior del movimiento."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "glúteos"
@@ -727,7 +773,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Sentadilla Sissy (Asistida)",
+    "nombre_ejercicio": "Sentadilla Sissy asistida",
     "descripcion": "Ejercicio de aislamiento para los cuádriceps que implica una flexión profunda de rodillas mientras el torso se inclina hacia atrás, minimizando la implicación de la cadera.",
     "instrucciones": [
       "Colócate de pie, separando las piernas al ancho de los hombros, y sujétate de un soporte firme con una o ambas manos para mantener el equilibrio.",
@@ -737,7 +783,9 @@
       "Empuja a través de la punta de los pies, extendiendo las rodillas para regresar a la posición inicial."
     ],
     "dificultad": "avanzado",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "piernas (parte inferior)"
@@ -758,7 +806,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Press Militar con Barra (Agarre Supino / Underhand)",
+    "nombre_ejercicio": "Press militar con barra agarre supino",
     "descripcion": "Variación del press de hombros utilizando un agarre supino (las palmas mirando hacia ti). Esta modificación biomecánica reduce la abducción del hombro, forzando a los codos a moverse en un plano más sagital (hacia adelante), lo que transfiere una gran parte del trabajo desde el deltoides lateral hacia el deltoides anterior y la porción clavicular del pectoral.",
     "instrucciones": [
       "Siéntate en un banco con respaldo o permanece de pie, manteniendo una postura firme.",
@@ -768,7 +816,9 @@
       "Desciende de forma controlada hasta la posición inicial."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros",
       "brazos (parte superior)",
@@ -800,7 +850,9 @@
       "Alterna el movimiento con la otra pierna de manera controlada."
     ],
     "dificultad": "principiante",
-    "finalidad": "movilidad",
+    "finalidad": [
+      "movilidad"
+    ],
     "partes_cuerpo": [
       "cintura",
       "piernas (parte superior)"
@@ -830,7 +882,9 @@
       "Desciende la barra lenta y controladamente detrás de la cabeza, pero NUNCA bajes más allá de la mitad de la oreja o la base del cráneo para evitar pinzamientos severos."
     ],
     "dificultad": "avanzado",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros",
       "espalda"
@@ -863,7 +917,9 @@
       "Empuja el suelo para volver a la posición inicial, manteniendo la tensión en el pecho y tríceps."
     ],
     "dificultad": "principiante",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "pecho",
       "brazos (parte superior)",
@@ -896,7 +952,9 @@
       "Desciende lentamente hasta la posición inicial."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros",
       "brazos (parte superior)"
@@ -918,7 +976,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Circuito de movilidad y corrección postural",
+    "nombre_ejercicio": "Movilidad de columna y cadera",
     "descripcion": "Rutina de 5 minutos diseñada para mejorar la postura corporal general. Combina dislocaciones de hombros, ángeles en la pared, estiramientos de flexores y activación de la cadena posterior.",
     "instrucciones": [
       "Realiza pasadas de hombro con un palo o banda (dislocaciones) de adelante hacia atrás para abrir la caja torácica.",
@@ -927,7 +985,9 @@
       "Acuéstate boca arriba y eleva la cadera contrayendo los glúteos (puente de glúteos tradicional y a una pierna)."
     ],
     "dificultad": "principiante",
-    "finalidad": "movilidad",
+    "finalidad": [
+      "movilidad"
+    ],
     "partes_cuerpo": [
       "espalda",
       "pecho",
@@ -964,7 +1024,9 @@
       "Regresa el peso estirando los brazos sin perder la tensión ni encorvar la zona lumbar."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "espalda",
       "brazos (parte superior)"
@@ -997,7 +1059,9 @@
       "Baja la barra de forma controlada hasta la extensión completa de los brazos sin permitir que los codos se desplacen hacia el frente."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -1020,7 +1084,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Variaciones de posición de pies en máquinas de pierna",
+    "nombre_ejercicio": "Prensa de piernas con pies altos",
     "descripcion": "Guía biomecánica que demuestra cómo alterar la posición de los pies en la Máquina Smith y la Prensa de piernas transfiere el esfuerzo principal entre los cuádriceps, glúteos e isquiotibiales, o aductores.",
     "instrucciones": [
       "Para enfatizar los glúteos y los isquiotibiales: coloca los pies más adelantados en la Máquina Smith, o en la posición superior de la plataforma en la Prensa de piernas.",
@@ -1029,7 +1093,9 @@
       "Realiza el patrón de sentadilla o empuje asegurando rango de movimiento y control excéntrico."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "piernas (parte inferior)"
@@ -1062,7 +1128,9 @@
       "Empuja con toda la planta del pie de manera uniforme para ascender a la posición inicial."
     ],
     "dificultad": "avanzado",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "espalda"
@@ -1097,7 +1165,9 @@
       "Baja el peso de forma lenta controlando la fase excéntrica."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -1127,7 +1197,9 @@
       "Empuja el suelo con fuerza para regresar a la posición inicial bloqueando los codos."
     ],
     "dificultad": "principiante",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "pecho",
       "brazos (parte superior)",
@@ -1162,7 +1234,9 @@
       "Para el deltoides posterior (pájaros): inclina el torso hacia adelante, apoyando el pecho cerca de las rodillas, y realiza las elevaciones hacia atrás y arriba."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros"
     ],
@@ -1185,7 +1259,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Circuito integral de core y abdomen",
+    "nombre_ejercicio": "Abdominales en suelo",
     "descripcion": "Rutina de calistenia sin equipo enfocada en fortalecer todas las regiones de la pared abdominal (superior, inferior y oblicuos) y el core general.",
     "instrucciones": [
       "Abdomen total: Realiza encogimientos sentados (seated crunches), apoyando las manos atrás y llevando las rodillas al pecho.",
@@ -1194,7 +1268,9 @@
       "Core: En posición de plancha invertida o cuadrupedia (bear hold), realiza patadas hacia atrás (kickbacks) seguidas de escaladores (mountain climbers)."
     ],
     "dificultad": "principiante",
-    "finalidad": "resistencia",
+    "finalidad": [
+      "resistencia"
+    ],
     "partes_cuerpo": [
       "cintura"
     ],
@@ -1215,7 +1291,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Peso muerto con barra (Rumano vs. Piernas Rígidas)",
+    "nombre_ejercicio": "Peso muerto rumano con barra",
     "descripcion": "Análisis biomecánico del peso muerto que demuestra cómo modificar el grado de flexión de las rodillas para transferir el estímulo principal entre los glúteos y los isquiotibiales.",
     "instrucciones": [
       "Para el Peso Muerto Rumano (énfasis en glúteos): Mantén una flexión de rodilla más pronunciada (entre 15 y 20 grados) mientras empujas las caderas hacia atrás al descender.",
@@ -1224,7 +1300,9 @@
       "Revierte el movimiento contrayendo la cadena posterior hasta extender la cadera por completo, sin hiperextender la zona lumbar en la parte alta."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "espalda"
@@ -1252,7 +1330,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Rutina de estiramiento correctivo (5 minutos)",
+    "nombre_ejercicio": "Estiramiento de cadena posterior",
     "descripcion": "Circuito de movilidad diseñado para compensar la postura cifótica resultante de largas jornadas de trabajo sedentario, promoviendo la extensión torácica y la apertura del complejo articular del hombro.",
     "instrucciones": [
       "Realiza ejercicios de movilidad torácica con banda o palo (dislocaciones de hombro) para abrir la caja torácica.",
@@ -1261,7 +1339,9 @@
       "Completa con variantes de puente de glúteo para activar la cadena posterior."
     ],
     "dificultad": "principiante",
-    "finalidad": "movilidad",
+    "finalidad": [
+      "movilidad"
+    ],
     "partes_cuerpo": [
       "cuello",
       "hombros",
@@ -1297,7 +1377,9 @@
       "Controla la fase excéntrica evitando que los hombros se proyecten hacia adelante."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "espalda",
       "brazos (parte superior)"
@@ -1328,7 +1410,9 @@
       "Evita el uso de inercia o balanceo del cuerpo para elevar la carga."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -1357,7 +1441,9 @@
       "Mantén la columna en posición neutra durante todo el rango de movimiento."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "piernas (parte inferior)"
@@ -1388,7 +1474,9 @@
       "Regresa a la posición de inicio empujando desde toda la planta del pie."
     ],
     "dificultad": "avanzado",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "espalda"
@@ -1419,7 +1507,9 @@
       "Empuja la plataforma sin bloquear completamente las rodillas en la parte superior."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -1439,7 +1529,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Circuito de ejercicios abdominales",
+    "nombre_ejercicio": "Plancha con toque de hombros",
     "descripcion": "Rutina de ejercicios de calistenia diseñada para trabajar de forma integral la musculatura abdominal (superior, inferior y core) sin necesidad de equipamiento.",
     "instrucciones": [
       "Realiza encogimientos sentados para trabajar la musculatura global del abdomen.",
@@ -1448,7 +1538,9 @@
       "Incorpora escaladores (mountain climbers) para desafiar el core y la estabilidad."
     ],
     "dificultad": "principiante",
-    "finalidad": "resistencia",
+    "finalidad": [
+      "resistencia"
+    ],
     "partes_cuerpo": [
       "cintura",
       "abdomen"
@@ -1479,7 +1571,9 @@
       "Controla el movimiento en ambas fases y evita el uso de impulso."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros"
     ],
@@ -1512,7 +1606,9 @@
       "Garantiza que la columna se mantenga en posición neutra durante todo el ejercicio."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "espalda"
@@ -1543,7 +1639,9 @@
       "Asegúrate de que la rodilla delantera esté estable y empuja firmemente con ese pie para regresar a la posición inicial."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "piernas (parte inferior)"
@@ -1565,7 +1663,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Circuito de descompresión y movilidad espinal",
+    "nombre_ejercicio": "Rotaciones de columna en suelo",
     "descripcion": "Rutina de tres pasos para aliviar la tensión en la espalda alta y baja. Incluye rotaciones torácicas y lumbares, y estiramientos pasivos de flexión de hombro para descomprimir la columna vertebral.",
     "instrucciones": [
       "Para la espalda alta: Siéntate en un banco, levanta un brazo, gira la palma, colócala sobre la rodilla opuesta y reclínate hacia atrás para estirar.",
@@ -1573,7 +1671,9 @@
       "Para descomprimir: Arrodíllate frente a un banco, apoya los codos apuntando hacia arriba, empuja las caderas hacia atrás y hunde el pecho para estirar hombros y dorsales."
     ],
     "dificultad": "principiante",
-    "finalidad": "movilidad",
+    "finalidad": [
+      "movilidad"
+    ],
     "partes_cuerpo": [
       "espalda",
       "hombros",
@@ -1607,7 +1707,9 @@
       "Extiende los brazos estirados por encima de la cabeza y respira profundamente, manteniendo la posición de 5 a 10 minutos."
     ],
     "dificultad": "principiante",
-    "finalidad": "movilidad",
+    "finalidad": [
+      "movilidad"
+    ],
     "partes_cuerpo": [
       "espalda",
       "pecho",
@@ -1641,7 +1743,9 @@
       "Extiende los brazos de forma controlada hasta la posición inicial sin dejar que la columna se encorve o los hombros colapsen."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "espalda",
       "brazos (parte superior)"
@@ -1665,7 +1769,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Curl de bíceps con mancuernas (Alterno vs Simultáneo)",
+    "nombre_ejercicio": "Curl alterno con mancuernas",
     "descripcion": "Variantes del curl de bíceps con mancuernas, demostrando cómo la ejecución unilateral o simultánea impacta en el reclutamiento de los estabilizadores del core y el esfuerzo general.",
     "instrucciones": [
       "Sujeta un par de mancuernas con los brazos extendidos.",
@@ -1674,7 +1778,9 @@
       "Mantén la parte superior de los brazos firme contra los costados y el torso estable durante todo el ejercicio."
     ],
     "dificultad": "principiante",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -1705,7 +1811,9 @@
       "Eleva una pierna y usa la otra para impulsarte suavemente, buscando el punto de equilibrio vertical."
     ],
     "dificultad": "avanzado",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "hombros",
       "brazos (parte superior)",
@@ -1739,7 +1847,9 @@
       "Asegúrate de rotar externamente los hombros en la parte final del movimiento, sintiendo la contracción en la parte posterior de los hombros."
     ],
     "dificultad": "intermedio",
-    "finalidad": "hipertrofia",
+    "finalidad": [
+      "hipertrofia"
+    ],
     "partes_cuerpo": [
       "hombros",
       "espalda"
@@ -1762,7 +1872,7 @@
   },
   {
     "fuente": "demic",
-    "nombre_ejercicio": "Circuito de glúteos con banda de resistencia",
+    "nombre_ejercicio": "Patada de glúteo con banda",
     "descripcion": "Serie de ejercicios de aislamiento en cuadrupedia para activar y fortalecer los glúteos desde todos los ángulos utilizando una banda elástica para añadir resistencia.",
     "instrucciones": [
       "Colócate en posición de cuadrupedia con una banda de resistencia por encima de las rodillas.",
@@ -1771,7 +1881,9 @@
       "Finaliza con abducciones de pierna extendida, elevando la pierna recta lateralmente y hacia arriba."
     ],
     "dificultad": "principiante",
-    "finalidad": "resistencia",
+    "finalidad": [
+      "resistencia"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)",
       "espalda"
@@ -1805,7 +1917,9 @@
       "Paso 6: Repite hasta completar el volumen de repeticiones pautado."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte inferior)"
     ],
@@ -1834,7 +1948,9 @@
       "Paso 6: Repite el patrón de movimiento asegurando una técnica estricta."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -1862,7 +1978,9 @@
       "Paso 4: Resiste el peso bajando las mancuernas de manera controlada y repite."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "hombros"
     ],
@@ -1890,7 +2008,9 @@
       "Paso 5: Haz una pausa arriba y desciende gradualmente."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "antebrazos",
       "brazos (parte superior)"
@@ -1920,7 +2040,9 @@
       "Paso 4: Aprieta el músculo en la cima del recorrido y realiza la bajada lenta hasta estirar el brazo por completo sin que el codo pierda contacto con el acolchado."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -1947,7 +2069,9 @@
       "Paso 5: Alterna las piernas al finalizar las repeticiones pautadas."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -1966,7 +2090,7 @@
   },
   {
     "fuente": "exercisedb",
-    "nombre_ejercicio": "Fondos imposibles",
+    "nombre_ejercicio": "Fondos en paralelas",
     "descripcion": "Ejercicio para tríceps. Zona: brazos (parte superior). Equipo: peso corporal.",
     "instrucciones": [
       "Paso 1: Posiciónate entre las barras paralelas sosteniendo el peso íntegro de tu cuerpo con los brazos estirados.",
@@ -1976,7 +2100,9 @@
       "Paso 5: Empuja agresivamente contra las barras para bloquear los brazos arriba nuevamente."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -2003,7 +2129,9 @@
       "Paso 4: Flexiona el tronco hacia arriba lateralmente utilizando la pared abdominal hasta alcanzar la contracción máxima y repite."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "cintura"
     ],
@@ -2030,7 +2158,9 @@
       "Paso 4: Baja lentamente manteniendo el dominio de la carga en todo el recorrido."
     ],
     "dificultad": "intermedio",
-    "finalidad": "cardio",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "hombros"
     ],
@@ -2048,7 +2178,7 @@
   },
   {
     "fuente": "exercisedb",
-    "nombre_ejercicio": "Elevación de gemelos de pie con barra (Balanceo de tobillo)",
+    "nombre_ejercicio": "Elevación de gemelos de pie con barra",
     "descripcion": "Ejercicio para gemelos. Zona: piernas (parte inferior). Equipo: barra.",
     "instrucciones": [
       "Paso 1: Carga la barra sobre la porción carnosa de los trapecios (como en una sentadilla tradicional) estando de pie sobre una superficie firme.",
@@ -2057,7 +2187,9 @@
       "Paso 4: En el retorno excéntrico, permite un ligero balanceo cediendo el peso de regreso sobre la planta del pie completa."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte inferior)"
     ],
@@ -2085,7 +2217,9 @@
       "Paso 4: Replícalo consecutivamente cediendo hacia la dirección anatómica contraria."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -2113,7 +2247,9 @@
       "Paso 5: Resiste pacientemente a la máquina mientras los cables/palancas ascienden y estiran las aletas dorsales."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "espalda"
     ],
@@ -2141,7 +2277,9 @@
       "Paso 4: Maximiza la retención sangüínea de la congestión y baja exhalando sin prisas."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -2167,7 +2305,9 @@
       "Paso 4: Contén en la altitud sin que la rodilla cruja por exceso de bloqueo óseo y desciende asumiendo el lastre hacia tu ombligo."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -2186,7 +2326,7 @@
   },
   {
     "fuente": "exercisedb",
-    "nombre_ejercicio": "Elevación de rodillas colgado con impulso excéntrico",
+    "nombre_ejercicio": "Elevación de rodillas colgado",
     "descripcion": "Ejercicio para abdomen. Zona: cintura. Equipo: peso corporal.",
     "instrucciones": [
       "Paso 1: Suspéndete en cuelgue inactivo desde una barra para dominadas aguantando con tensión latente en la faja abdominal.",
@@ -2195,7 +2335,9 @@
       "Paso 4: Amortigua la violenta bajada aprovechando el vaivén elástico del estiramiento muscular consecuente para disparar la subida próxima."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "cintura"
     ],
@@ -2222,7 +2364,9 @@
       "Paso 4: Aguanta a pulso la estática en la cumbre antes de hundir laxamente pero con protección el busto ciñéndose a la ronda del fitball."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "espalda"
     ],
@@ -2240,7 +2384,7 @@
   },
   {
     "fuente": "exercisedb",
-    "nombre_ejercicio": "Encogimientos abdominales en polea (Crunch en polea)",
+    "nombre_ejercicio": "Crunch en polea",
     "descripcion": "Ejercicio para abdomen. Zona: cintura. Equipo: polea.",
     "instrucciones": [
       "Paso 1: Híncate genuflexionado u arrodillado con el lomo dirigido hacia las regletas de la estructura de poleas superiores.",
@@ -2249,7 +2393,9 @@
       "Paso 4: En este acortamiento del recto halla máxima dureza, mantén, y revierte dosificando lentamente re-expandiendo el tórax pero no el abdomen interno."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "cintura"
     ],
@@ -2276,7 +2422,9 @@
       "Paso 5: Desciende de manera controlada (fase excéntrica) hasta la extensión completa de los brazos sin perder por completo la tensión en los hombros. Repite."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "espalda"
     ],
@@ -2298,7 +2446,7 @@
   },
   {
     "fuente": "exercisedb",
-    "nombre_ejercicio": "Empuje de cadera con barra (Hip Thrust)",
+    "nombre_ejercicio": "Hip Thrust con barra",
     "descripcion": "Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: barra.",
     "instrucciones": [
       "Paso 1: Siéntate en el suelo apoyando la parte inferior de las escápulas (omóplatos) contra el borde de un banco plano. Coloca una barra con una almohadilla sobre el pliegue de tu cadera.",
@@ -2308,7 +2456,9 @@
       "Paso 5: Realiza una retención isométrica de un segundo en el punto de máxima contracción y desciende la cadera controladamente. Repite."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -2336,7 +2486,9 @@
       "Paso 5: Empuja verticalmente a través del pie delantero para retornar a la extensión inicial. Completa las repeticiones y cambia de pierna."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -2365,7 +2517,9 @@
       "Paso 5: Sostén la contracción durante un segundo en el tope del movimiento y posteriormente desciende el peso de manera excéntrica lenta y controlada. Repite."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -2393,7 +2547,9 @@
       "Paso 6: Repite sin permitir que las pesas toquen la pila entre repeticiones, preservando la tensión continua en los pectorales."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "pecho"
     ],
@@ -2422,7 +2578,9 @@
       "Paso 6: Desciende las piernas lentamente controlando la fase excéntrica y evitando la hiperextensión lumbar al llegar al punto más bajo. Repite."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "cintura"
     ],
@@ -2451,7 +2609,9 @@
       "Paso 6: Finaliza la serie descendiendo el cuerpo de manera controlada hasta apoyar las rodillas en el suelo."
     ],
     "dificultad": "intermedio",
-    "finalidad": "isometrico",
+    "finalidad": [
+      "isometrico"
+    ],
     "partes_cuerpo": [
       "cintura"
     ],
@@ -2481,7 +2641,9 @@
       "Paso 6: Continúa alternando los lados de forma rítmica y controlada hasta completar el volumen de repeticiones prescrito para cada lado."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "cintura"
     ],
@@ -2510,7 +2672,9 @@
       "Paso 6: Controla la fase excéntrica descendiendo la carga lentamente hasta estirar por completo la cadena cinética dorsal sin perder la tensión escapular."
     ],
     "dificultad": "intermedio",
-    "finalidad": "cardio",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "espalda"
     ],
@@ -2541,7 +2705,9 @@
       "Paso 6: Controla la fase excéntrica permitiendo que el cable ascienda lentamente hasta la flexión completa de los codos, resistiendo la tracción de la polea durante todo el retorno."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -2562,7 +2728,9 @@
     "descripcion": "Ejercicio de tricep dips.",
     "instrucciones": [],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [],
     "musculos_objetivo": [],
     "musculos_secundarios": [],
@@ -2582,7 +2750,9 @@
       "Paso 6: Repite el movimiento manteniendo la posición escapular estable y el puente torácico durante toda la serie."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "pecho"
     ],
@@ -2611,7 +2781,9 @@
       "Paso 6: Desciende la barra de forma controlada realizando la bisagra de cadera inversa, manteniendo la barra próxima al cuerpo durante todo el descenso."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "espalda"
     ],
@@ -2641,7 +2813,9 @@
       "Paso 6: Repite con un ritmo controlado, prestando especial atención a la fase excéntrica para maximizar el estímulo hipertrófico."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "pecho"
     ],
@@ -2670,7 +2844,9 @@
       "Paso 6: Desciende las mancuernas de manera controlada durante la fase excéntrica hasta la extensión completa de los codos y repite."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "brazos (parte superior)"
     ],
@@ -2699,7 +2875,9 @@
       "Paso 6: Desciende el peso de forma controlada durante la fase excéntrica sin permitir que las placas toquen la pila de pesas entre repeticiones."
     ],
     "dificultad": "intermedio",
-    "finalidad": "fuerza",
+    "finalidad": [
+      "fuerza"
+    ],
     "partes_cuerpo": [
       "piernas (parte superior)"
     ],
@@ -2711,5 +2889,466 @@
       "máquina de extensión"
     ],
     "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/extension_de_piernas_en_maquina.mp4"
+  },
+  {
+    "nombre_ejercicio": "Burpees",
+    "descripcion": "Ejercicio compuesto de cuerpo completo: desde posicion de pie, bajas a plancha, haces flexión, recoges piernas y saltas explosivamente.",
+    "instrucciones": [
+      "De pie, baja a cuclillas y apoya las manos en el suelo.",
+      "Extiende las piernas hacia atras hasta posicion de plancha.",
+      "Haz una flexión de brazos (opcional).",
+      "Recoge las piernas hacia el pecho.",
+      "Salta explosivamente con los brazos hacia arriba.",
+      "Aterriza suavemente y repite."
+    ],
+    "dificultad": "intermedio",
+    "finalidad": [
+      "cardio",
+      "fuerza"
+    ],
+    "partes_cuerpo": [
+      "cuerpo completo"
+    ],
+    "musculos_objetivo": [
+      "core",
+      "cuádriceps",
+      "pecho"
+    ],
+    "musculos_secundarios": [
+      "deltoides",
+      "trapecios",
+      "gemelos"
+    ],
+    "equipamientos": [
+      "peso corporal"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/burpees.gif"
+  },
+  {
+    "nombre_ejercicio": "Saltos de tijera",
+    "descripcion": "Ejercicio cardiovascular clasico de calentamiento que consiste en saltar abriendo y cerrando piernas y brazos simultaneamente.",
+    "instrucciones": [
+      "De pie con los pies juntos y brazos a los lados.",
+      "Salta abriendo las piernas al ancho de hombros.",
+      "Simultaneamente, eleva los brazos por encima de la cabeza.",
+      "Vuelve a la posicion inicial con otro salto.",
+      "Mantén un ritmo constante y controlado."
+    ],
+    "dificultad": "principiante",
+    "finalidad": [
+      "cardio"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte inferior)",
+      "hombros"
+    ],
+    "musculos_objetivo": [
+      "gemelos",
+      "cuádriceps"
+    ],
+    "musculos_secundarios": [
+      "deltoides"
+    ],
+    "equipamientos": [
+      "peso corporal"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/saltos_de_tijera.gif"
+  },
+  {
+    "nombre_ejercicio": "Escaladores",
+    "descripcion": "Ejercicio de cardio y core en posicion de plancha donde alternas llevando las rodillas al pecho rapidamente.",
+    "instrucciones": [
+      "Colocate en posicion de plancha con las manos debajo de los hombros.",
+      "Mantén el core firme y la espalda recta.",
+      "Lleva una rodilla hacia el pecho de forma explosiva.",
+      "Alterna las piernas rapidamente como si estuvieras escalando.",
+      "Mantén la cadera baja durante todo el movimiento."
+    ],
+    "dificultad": "principiante",
+    "finalidad": [
+      "cardio",
+      "resistencia"
+    ],
+    "partes_cuerpo": [
+      "abdomen",
+      "piernas (parte superior)"
+    ],
+    "musculos_objetivo": [
+      "core",
+      "flexores de la cadera"
+    ],
+    "musculos_secundarios": [
+      "cuádriceps"
+    ],
+    "equipamientos": [
+      "peso corporal"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/mountain_climbers.gif"
+  },
+  {
+    "nombre_ejercicio": "Rodillas al pecho",
+    "descripcion": "Ejercicio de cardio que consiste en correr en el sitio elevando las rodillas lo mas alto posible.",
+    "instrucciones": [
+      "De pie, empieza a trotar en el sitio.",
+      "Eleva las rodillas hacia el pecho de forma alterna.",
+      "Mueve los brazos como si estuvieras corriendo.",
+      "Mantén la espalda recta y el core activado.",
+      "Aumenta progresivamente la velocidad."
+    ],
+    "dificultad": "principiante",
+    "finalidad": [
+      "cardio"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte superior)",
+      "cintura"
+    ],
+    "musculos_objetivo": [
+      "cuádriceps",
+      "flexores de la cadera"
+    ],
+    "musculos_secundarios": [
+      "core",
+      "gemelos"
+    ],
+    "equipamientos": [
+      "peso corporal"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/rodillas_al_pecho.gif"
+  },
+  {
+    "nombre_ejercicio": "Salto de comba",
+    "descripcion": "Ejercicio cardiovascular clasico utilizando una cuerda para saltar de forma continua.",
+    "instrucciones": [
+      "Sujeta los extremos de la cuerda con cada mano.",
+      "Coloca la cuerda detras de los talones.",
+      "Gira las muñecas para hacer pasar la cuerda por encima de la cabeza.",
+      "Salta ligeramente cuando la cuerda pase bajo tus pies.",
+      "Mantén un ritmo constante y aterriza sobre las puntas de los pies."
+    ],
+    "dificultad": "principiante",
+    "finalidad": [
+      "cardio"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte inferior)",
+      "antebrazos"
+    ],
+    "musculos_objetivo": [
+      "gemelos",
+      "cuádriceps"
+    ],
+    "musculos_secundarios": [
+      "flexores de muñeca",
+      "braquiorradial",
+      "estabilizadores de tobillo"
+    ],
+    "equipamientos": [
+      "cuerda"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/salto_de_comba.gif"
+  },
+  {
+    "nombre_ejercicio": "Sentadillas con salto",
+    "descripcion": "Sentadilla explosiva con salto vertical al final del movimiento para maximizar potencia y frecuencia cardiaca.",
+    "instrucciones": [
+      "De pie con los pies al ancho de hombros.",
+      "Baja a posicion de sentadilla manteniendo la espalda recta.",
+      "Desde la parte baja, salta explosivamente hacia arriba.",
+      "Extiende completamente las caderas y rodillas en el aire.",
+      "Aterriza suavemente con las rodillas flexionadas y vuelve a bajar."
+    ],
+    "dificultad": "intermedio",
+    "finalidad": [
+      "cardio",
+      "fuerza"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte superior)",
+      "piernas (parte inferior)"
+    ],
+    "musculos_objetivo": [
+      "cuádriceps",
+      "glúteo mayor"
+    ],
+    "musculos_secundarios": [
+      "gemelos",
+      "core",
+      "isquiotibiales"
+    ],
+    "equipamientos": [
+      "peso corporal"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/sentadillas_con_salto.gif"
+  },
+  {
+    "nombre_ejercicio": "Salto al cajon",
+    "descripcion": "Ejercicio pliometrico que consiste en saltar desde el suelo a un cajon elevado, desarrollando potencia explosiva.",
+    "instrucciones": [
+      "Colocate frente al cajon con los pies al ancho de hombros.",
+      "Flexiona ligeramente las rodillas y lleva los brazos hacia atras.",
+      "Salta explosivamente impulsandote con ambas piernas.",
+      "Aterriza suavemente sobre el cajon con las rodillas flexionadas.",
+      "Ponte de pie completamente sobre el cajon.",
+      "Baja del cajon caminando (no saltes hacia atras)."
+    ],
+    "dificultad": "intermedio",
+    "finalidad": [
+      "cardio",
+      "fuerza"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte superior)",
+      "piernas (parte inferior)"
+    ],
+    "musculos_objetivo": [
+      "cuádriceps",
+      "glúteo mayor"
+    ],
+    "musculos_secundarios": [
+      "gemelos",
+      "core"
+    ],
+    "equipamientos": [
+      "cajon pliometrico"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/salto_al_cajon.gif"
+  },
+  {
+    "nombre_ejercicio": "Boxeo de sombra",
+    "descripcion": "Ejercicio de cardio que simula un combate de boxeo lanzando golpes al aire, excelente para coordinacion y ritmo.",
+    "instrucciones": [
+      "Adopta la posicion de guardia: pies separados, pierna dominante atras.",
+      "Puños a la altura de la barbilla, codos pegados al cuerpo.",
+      "Lanza combinaciones de golpes al aire: jabs, directos, ganchos.",
+      "Muevete constantemente: desplazamientos laterales, esquivas.",
+      "Mantén el ritmo y la respiracion durante todo el ejercicio."
+    ],
+    "dificultad": "principiante",
+    "finalidad": [
+      "cardio"
+    ],
+    "partes_cuerpo": [
+      "hombros",
+      "brazos (parte superior)"
+    ],
+    "musculos_objetivo": [
+      "deltoides",
+      "bíceps",
+      "tríceps"
+    ],
+    "musculos_secundarios": [
+      "core",
+      "cuádriceps"
+    ],
+    "equipamientos": [
+      "peso corporal"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/boxeo_de_sombra.gif"
+  },
+  {
+    "nombre_ejercicio": "Zancadas con salto",
+    "descripcion": "Ejercicio pliometrico avanzado que combina zancadas alternas con salto explosivo entre cada repeticion.",
+    "instrucciones": [
+      "De pie, da un paso adelante con una pierna y baja a posicion de zancada.",
+      "Ambas rodillas deben formar angulos de 90 grados aproximadamente.",
+      "Desde la posicion baja, salta explosivamente hacia arriba.",
+      "En el aire, alterna las piernas para aterrizar con la pierna contraria adelantada.",
+      "Aterriza suavemente y encadena directamente con la siguiente zancada."
+    ],
+    "dificultad": "avanzado",
+    "finalidad": [
+      "cardio",
+      "fuerza"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte superior)",
+      "piernas (parte inferior)"
+    ],
+    "musculos_objetivo": [
+      "cuádriceps",
+      "glúteo mayor"
+    ],
+    "musculos_secundarios": [
+      "isquiotibiales",
+      "gemelos",
+      "core"
+    ],
+    "equipamientos": [
+      "peso corporal"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/zancadas_con_salto.gif"
+  },
+  {
+    "nombre_ejercicio": "Tijeras abdominales",
+    "descripcion": "Ejercicio de resistencia abdominal que consiste en alternar las piernas hacia arriba y hacia abajo en un movimiento de tijera.",
+    "instrucciones": [
+      "Tumbate boca arriba con las piernas extendidas.",
+      "Coloca las manos debajo de los gluteos para proteger la zona lumbar.",
+      "Eleva ligeramente las piernas del suelo.",
+      "Alterna el movimiento subiendo y bajando las piernas como unas tijeras.",
+      "Mantén la zona lumbar pegada al suelo durante todo el ejercicio."
+    ],
+    "dificultad": "principiante",
+    "finalidad": [
+      "cardio",
+      "resistencia"
+    ],
+    "partes_cuerpo": [
+      "abdomen",
+      "cintura"
+    ],
+    "musculos_objetivo": [
+      "abdomen",
+      "abdomen inferior",
+      "core"
+    ],
+    "musculos_secundarios": [
+      "flexores de la cadera"
+    ],
+    "equipamientos": [
+      "peso corporal"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/tijeras_abdominales.gif"
+  },
+  {
+    "nombre_ejercicio": "Esprints en cinta",
+    "descripcion": "Series de velocidad maxima en cinta de correr, alternando con periodos de recuperacion.",
+    "instrucciones": [
+      "Configura la cinta a una velocidad de sprint elevada.",
+      "Sujetate brevemente a los pasamanos para subirte con seguridad.",
+      "Suelta los pasamanos y corre a maxima velocidad durante 20-30 segundos.",
+      "Reduce la velocidad drasticamente o apoya los pies en los laterales para recuperar.",
+      "Repite el ciclo de sprint y recuperacion segun tu nivel."
+    ],
+    "dificultad": "intermedio",
+    "finalidad": [
+      "cardio"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte superior)",
+      "piernas (parte inferior)"
+    ],
+    "musculos_objetivo": [
+      "cuádriceps",
+      "isquiotibiales",
+      "sistema cardiovascular"
+    ],
+    "musculos_secundarios": [
+      "core",
+      "glúteo mayor"
+    ],
+    "equipamientos": [
+      "cinta de correr"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/sprints_en_cinta.gif"
+  },
+  {
+    "nombre_ejercicio": "Caminata en cinta",
+    "descripcion": "Ejercicio cardiovascular de baja intensidad caminando sobre cinta de correr, ideal para calentamiento o recuperacion activa.",
+    "instrucciones": [
+      "Sube a la cinta de correr y configura una velocidad de caminata.",
+      "Camina de forma natural manteniendo una postura erguida.",
+      "Balancea los brazos de forma natural.",
+      "Mantén un ritmo constante durante 20-60 minutos.",
+      "No te sujetes a los pasamanos para maximizar el trabajo postural."
+    ],
+    "dificultad": "principiante",
+    "finalidad": [
+      "cardio"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte inferior)",
+      "cintura"
+    ],
+    "musculos_objetivo": [
+      "sistema cardiovascular"
+    ],
+    "musculos_secundarios": [
+      "gemelos",
+      "cuádriceps"
+    ],
+    "equipamientos": [
+      "cinta de correr"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/caminata_en_cinta.gif"
+  },
+  {
+    "nombre_ejercicio": "Carrera en cinta",
+    "descripcion": "Ejercicio cardiovascular corriendo a ritmo moderado sobre cinta de correr para mejorar resistencia aerobica.",
+    "instrucciones": [
+      "Configura la cinta a una velocidad de carrera moderada.",
+      "Corre con una postura erguida y zancada natural.",
+      "Mantén los hombros relajados y la mirada al frente.",
+      "Respira de forma ritmica y controlada.",
+      "Corre durante 15-45 minutos segun tu nivel de condicion fisica."
+    ],
+    "dificultad": "principiante",
+    "finalidad": [
+      "cardio"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte superior)",
+      "piernas (parte inferior)"
+    ],
+    "musculos_objetivo": [
+      "sistema cardiovascular",
+      "cuádriceps"
+    ],
+    "musculos_secundarios": [
+      "isquiotibiales",
+      "gemelos"
+    ],
+    "equipamientos": [
+      "cinta de correr"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/carrera_en_cinta.gif"
+  },
+  {
+    "nombre_ejercicio": "Escaladora",
+    "descripcion": "Ejercicio cardiovascular en maquina de escaleras que simula el movimiento de subir escalones de forma continua, excelente para gluteos y piernas.",
+    "instrucciones": [
+      "Sube a la maquina de escaleras y selecciona un ritmo comodo.",
+      "Coloca las manos ligeramente sobre los pasamanos sin apoyar el peso.",
+      "Mantén la espalda recta y la mirada al frente.",
+      "Pisa los escalones de forma completa, sin apoyarte solo en las puntas.",
+      "Mantén un ritmo constante durante 10-30 minutos."
+    ],
+    "dificultad": "intermedio",
+    "finalidad": [
+      "cardio",
+      "resistencia"
+    ],
+    "partes_cuerpo": [
+      "piernas (parte superior)",
+      "piernas (parte inferior)"
+    ],
+    "musculos_objetivo": [
+      "cuádriceps",
+      "glúteo mayor",
+      "sistema cardiovascular"
+    ],
+    "musculos_secundarios": [
+      "isquiotibiales",
+      "gemelos"
+    ],
+    "equipamientos": [
+      "maquina de escaleras"
+    ],
+    "fuente": "synaptixfit",
+    "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/escaladora.gif"
   }
 ]

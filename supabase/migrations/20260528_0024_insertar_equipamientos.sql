@@ -26,6 +26,8 @@ values
   ('pesa rusa'),
   ('peso corporal'),
   ('polea'),
-  ('prensa de piernas')
+  ('prensa de piernas'),
+  ('cajon pliometrico'),
+  ('cinta de correr'),
+  ('maquina de escaleras')
 on conflict (nombre) do nothing;
-

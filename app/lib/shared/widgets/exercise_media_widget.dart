@@ -22,6 +22,19 @@ class ExerciseMediaWidget extends StatefulWidget {
   final BorderRadiusGeometry? borderRadius;
   final VoidCallback? onTap;
 
+  double get _height {
+    switch (size) {
+      case ExerciseMediaSize.mini:
+        return 48;
+      case ExerciseMediaSize.card:
+        return 72;
+      case ExerciseMediaSize.hero:
+        return 220;
+    }
+  }
+
+  double get _heroDesktopHeight => 280;
+
   @override
   State<ExerciseMediaWidget> createState() => _ExerciseMediaWidgetState();
 }
@@ -30,6 +43,7 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
   VideoPlayerController? _videoCtrl;
   bool _videoReady = false;
   bool _isVideo = false;
+  bool _isMuted = true;
 
   @override
   void initState() {
@@ -57,19 +71,21 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     _videoCtrl = null;
     _videoReady = false;
     _isVideo = false;
+    _isMuted = true;
   }
 
   void _prepare() {
     final url = widget.url;
     if (url == null || url.isEmpty) return;
 
-    if (url.endsWith('.mp4') && widget.size == ExerciseMediaSize.hero) {
+    if (url.endsWith('.mp4')) {
       _isVideo = true;
       _videoCtrl = VideoPlayerController.networkUrl(Uri.parse(url))
         ..initialize().then((_) {
           if (!mounted) return;
           setState(() => _videoReady = true);
           _videoCtrl!.setLooping(true);
+          _videoCtrl!.setVolume(0);
           _videoCtrl!.play();
         }).catchError((_) {
           if (!mounted) return;
@@ -78,28 +94,56 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     }
   }
 
+  void _toggleMute() {
+    if (_videoCtrl == null) return;
+    setState(() {
+      _isMuted = !_isMuted;
+      _videoCtrl!.setVolume(_isMuted ? 0 : 1.0);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final url = widget.url;
     final radius = widget.borderRadius ??
         BorderRadius.circular(widget.size == ExerciseMediaSize.mini ? 8 : 14);
+    final isHero = widget.size == ExerciseMediaSize.hero;
 
-    return ClipRRect(
-      borderRadius: radius,
-      child: GestureDetector(
-        onTap: () {
-          if (_isVideo && _videoReady && _videoCtrl != null) {
-            setState(() {
-              if (_videoCtrl!.value.isPlaying) {
-                _videoCtrl!.pause();
-              } else {
-                _videoCtrl!.play();
-              }
-            });
-          }
-          widget.onTap?.call();
+    Widget content = _buildContent(context, url, radius);
+
+    if (isHero && url != null) {
+      content = LayoutBuilder(
+        builder: (context, constraints) {
+          final h = constraints.maxWidth >= 900
+              ? widget._heroDesktopHeight
+              : widget._height;
+          return Container(
+            height: h,
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              boxShadow: [
+                BoxShadow(
+                  color: SVColors.primary.withValues(alpha: 0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: content,
+          );
         },
-        child: _buildContent(context, url, radius),
+      );
+    }
+
+    final w = widget._height;
+    return SizedBox(
+      width: isHero ? null : w,
+      height: isHero ? null : w,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: content,
       ),
     );
   }
@@ -110,11 +154,18 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
 
     if (_isVideo) {
       if (_videoReady && _videoCtrl != null) {
+        final isHero = widget.size == ExerciseMediaSize.hero;
         return Stack(
           alignment: Alignment.center,
           fit: StackFit.expand,
           children: [
             VideoPlayer(_videoCtrl!),
+            if (isHero)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _muteButton(),
+              ),
             if (!_videoCtrl!.value.isPlaying) _playButtonOverlay(),
           ],
         );
@@ -130,8 +181,28 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     );
   }
 
+  Widget _muteButton() {
+    return GestureDetector(
+      onTap: _toggleMute,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.55),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+          size: 18,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
   Widget _buildVideoPlaceholder(
       BuildContext context, BorderRadiusGeometry radius) {
+    final isHero = widget.size == ExerciseMediaSize.hero;
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -149,9 +220,9 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.videocam_rounded,
-                  size: widget.size == ExerciseMediaSize.hero ? 48 : 24,
+                  size: isHero ? 48 : 24,
                   color: Colors.white.withValues(alpha: 0.5)),
-              if (widget.size == ExerciseMediaSize.hero) ...[
+              if (isHero) ...[
                 const SizedBox(height: 12),
                 Text(
                   'Cargando video...',

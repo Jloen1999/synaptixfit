@@ -1358,7 +1358,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
           return _EjercicioPlan(
             ejercicioId: match?.id ?? e.ejercicioId,
             nombre: match?.nombre ?? 'Ejercicio recomendado',
-            finalidad: match?.finalidad ?? FinalidadEjercicio.fuerza,
+            finalidad: match?.finalidadPrincipal ?? FinalidadEjercicio.fuerza,
             urlGif: match?.urlGif,
             series: e.series,
             repeticiones: e.repeticiones,
@@ -1497,7 +1497,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         _estructura[semana]![dia]!.add(_EjercicioPlan(
           ejercicioId: match?.id ?? rec.ejercicioId,
           nombre: match?.nombre ?? 'Ejercicio sugerido',
-          finalidad: match?.finalidad ?? FinalidadEjercicio.fuerza,
+          finalidad: match?.finalidadPrincipal ?? FinalidadEjercicio.fuerza,
           urlGif: match?.urlGif,
           series: rec.series,
           repeticiones: rec.repeticiones,
@@ -1970,6 +1970,12 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
         chipColor = Colors.teal;
       case FinalidadEjercicio.isometrico:
         chipColor = Colors.indigo;
+      case FinalidadEjercicio.hipertrofia:
+        chipColor = Colors.red;
+      case FinalidadEjercicio.resistencia:
+        chipColor = Colors.blue;
+      case FinalidadEjercicio.movilidad:
+        chipColor = Colors.green;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -2000,6 +2006,11 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
       case FinalidadEjercicio.cardio:
         return _camposCardio(anchoPill, cs);
       case FinalidadEjercicio.isometrico:
+        return _camposIsometrico(anchoPill, cs);
+      case FinalidadEjercicio.hipertrofia:
+      case FinalidadEjercicio.resistencia:
+        return _camposFuerza(anchoPill, cs);
+      case FinalidadEjercicio.movilidad:
         return _camposIsometrico(anchoPill, cs);
     }
   }
