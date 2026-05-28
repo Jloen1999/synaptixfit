@@ -2,8 +2,17 @@
 -- Objetivo: Insertar los 89 ejercicios del catalogo unificado
 --           desde nuevos_ejercicios.json (sin duplicados).
 
--- Asegurar UNIQUE en nombre
-alter table public.ejercicios add constraint if not exists ejercicios_nombre_unique unique (nombre);
+-- Asegurar UNIQUE en nombre (DO block porque PG no soporta ADD CONSTRAINT IF NOT EXISTS)
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'ejercicios_nombre_unique'
+      and conrelid = 'public.ejercicios'::regclass
+  ) then
+    alter table public.ejercicios add constraint ejercicios_nombre_unique unique (nombre);
+  end if;
+end $$;
 
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (

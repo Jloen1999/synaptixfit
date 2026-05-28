@@ -1,6 +1,7 @@
 -- Migration: 0022_vista_ejercicios_security_invoker
 -- Objetivo: Cambiar v_ejercicios_completos de SECURITY DEFINER (default) a SECURITY INVOKER
 --           para que respete RLS del usuario que consulta, no del creador de la vista.
+-- NOTA: No incluye exercise_db_id (columna deprecada, eliminada en migracion 0028).
 
 drop view if exists public.v_ejercicios_completos cascade;
 
@@ -9,7 +10,6 @@ with (security_invoker = true)
 as
 select
   e.id,
-  e.exercise_db_id,
   e.nombre,
   e.url_gif,
   e.instrucciones,
@@ -19,28 +19,28 @@ select
   e.creado_en,
   e.actualizado_en,
   coalesce(
-    (select array_agg(distinct pc.nombre)
+    (select array_agg(distinct pc.nombre order by pc.nombre)
      from public.ejercicio_parte_cuerpo epc
      join public.partes_cuerpo pc on pc.id = epc.parte_cuerpo_id
      where epc.ejercicio_id = e.id),
     '{}'
   ) as partes_cuerpo,
   coalesce(
-    (select array_agg(distinct mt.nombre)
+    (select array_agg(distinct mt.nombre order by mt.nombre)
      from public.ejercicio_musculo_objetivo emo
      join public.musculos mt on mt.id = emo.musculo_id
      where emo.ejercicio_id = e.id),
     '{}'
   ) as musculos_objetivo,
   coalesce(
-    (select array_agg(distinct ms.nombre)
+    (select array_agg(distinct ms.nombre order by ms.nombre)
      from public.ejercicio_musculo_secundario ems
      join public.musculos ms on ms.id = ems.musculo_id
      where ems.ejercicio_id = e.id),
     '{}'
   ) as musculos_secundarios,
   coalesce(
-    (select array_agg(distinct eq.nombre)
+    (select array_agg(distinct eq.nombre order by eq.nombre)
      from public.ejercicio_equipamiento ee
      join public.equipamientos eq on eq.id = ee.equipamiento_id
      where ee.ejercicio_id = e.id),
