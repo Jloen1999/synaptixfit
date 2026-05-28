@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "stitch": {
+      "type": "remote",
+      "url": "https://stitch.googleapis.com/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer AQ.Ab8RN6J2f7aOxGD7bXY1I9gGIWi8hLRB_VrW6icmgFQqUWzG7A"
+      }
+    },
+    "notebooklm": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["notebooklm-mcp@latest"],
+      "enabled": true
+    }
+  }
+}

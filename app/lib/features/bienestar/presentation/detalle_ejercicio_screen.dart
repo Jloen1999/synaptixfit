@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sv_colors.dart';
 import '../../../core/design_system/sv_shadows.dart';
+import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/sv_primary_button.dart';
@@ -78,6 +79,12 @@ class DetalleEjercicioScreen extends ConsumerWidget {
                         icon: Icons.speed_rounded,
                         color: SVColors.accent,
                       ),
+                      _MetaChip(
+                        label:
+                            '${ejercicio.finalidad.icono} ${ejercicio.finalidad.etiqueta}',
+                        icon: Icons.category_rounded,
+                        color: _finalidadColor(ejercicio.finalidad),
+                      ),
                     ],
                   ),
                 ),
@@ -96,7 +103,6 @@ class DetalleEjercicioScreen extends ConsumerWidget {
                       _InfoTab(
                         descripcion: ejercicio.descripcion,
                         musculosSecundarios: ejercicio.musculosSecundarios,
-                        exerciseDbId: ejercicio.exerciseDbId,
                       ),
                     ],
                   ),
@@ -198,6 +204,20 @@ class _GifHero extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Color según finalidad del ejercicio
+// ---------------------------------------------------------------------------
+Color _finalidadColor(FinalidadEjercicio f) {
+  switch (f) {
+    case FinalidadEjercicio.fuerza:
+      return Colors.orange;
+    case FinalidadEjercicio.cardio:
+      return Colors.teal;
+    case FinalidadEjercicio.isometrico:
+      return Colors.indigo;
   }
 }
 
@@ -322,12 +342,10 @@ class _InfoTab extends StatelessWidget {
   const _InfoTab({
     this.descripcion,
     required this.musculosSecundarios,
-    this.exerciseDbId,
   });
 
   final String? descripcion;
   final List<String> musculosSecundarios;
-  final String? exerciseDbId;
 
   @override
   Widget build(BuildContext context) {
@@ -390,11 +408,6 @@ class _InfoTab extends StatelessWidget {
                 .toList(),
           ),
           const SizedBox(height: 24),
-        ],
-        if (exerciseDbId != null) ...[
-          _sectionTitle(context, 'Referencia'),
-          const SizedBox(height: 10),
-          _infoItem(context, Icons.tag_rounded, 'ExerciseDB ID', exerciseDbId!),
         ],
       ],
     );

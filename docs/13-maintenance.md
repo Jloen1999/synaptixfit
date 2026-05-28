@@ -1,8 +1,8 @@
 # 13 - Mantenimiento
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.0  
-**Fecha:** 19-04-2026  
+**Versión:** 1.3
+**Fecha:** 28-05-2026
 **Referencia:** [03-architecture.md](03-architecture.md) (sección 8.3), [04-data-model.md](04-data-model.md) (sección 6)
 
 ---
@@ -11,7 +11,7 @@
 
 ### 1.1 Estado actual
 
-1. Proveedor adoptado: **ExerciseDB (AscendAPI)** via Kaggle.
+1. Proveedor adoptado: **ExerciseDB (AscendAPI)** via Kaggle + **Demic** como fuente secundaria de ejercicios con video.
 2. Estado del pipeline: **activo** para ingesta batch hacia Supabase + Cloudflare R2.
 3. Fuente runtime de la app: datos internos (Supabase y R2), sin dependencia directa del proveedor externo durante uso normal.
 4. wger queda como opcion descartada temporalmente y documentada solo como historial tecnico.
@@ -54,10 +54,39 @@ El paquete descargado debe incluir, como minimo:
 5. Importar ejercicios y catalogos auxiliares a Supabase.
 6. Ejecutar validacion por lote piloto antes de carga completa.
 
+### 1.3a Flujo operativo vigente — Demic (ejercicios con video)
+
+1. Obtener los datos en formato JSON (`nuevos_ejercicios.json`) desde Demic.
+2. Descargar los videos MP4 por lote usando **Internet Download Manager**.
+3. Guardar los videos en `demic/nuevos_para_r2/` con nombres slugificados (lowercase, underscores, sin acentos).
+4. Generar `demic/nombres_videos.txt` con la lista maestra de slugs para subida a R2.
+5. Ejecutar `seed_nuevos_ejercicios.py` que:
+   - Sincroniza catálogos (partes_cuerpo, musculos, equipamientos) agregando solo lo nuevo.
+   - Inserta ejercicios nuevos detectando duplicados por `nombre` (case-insensitive).
+   - Restaura relaciones N:M incluso para ejercicios ya existentes (idempotente).
+6. Subir los videos a Cloudflare R2 bajo `ejercicios/videos/{slug}.mp4`.
+
 Nota de entorno en Windows:
-1. Si `pip` no esta disponible en PATH, instal ar dependencias con `python -m pip install supabase python-dotenv`.
+1. Si `pip` no esta disponible en PATH, instalar dependencias con `python -m pip install supabase python-dotenv`.
 2. Si el entorno usa el lanzador de Windows, tambien es valido `py -m pip install supabase python-dotenv`.
-3. El script `seed_ejercicios.py` busca automáticamente el archivo `.env` en `supabase/.env`, en la raíz del workspace y en `app/.env`.
+3. Los scripts `seed_ejercicios.py` y `seed_nuevos_ejercicios.py` buscan automáticamente el archivo `.env` en `supabase/.env`, en la raíz del workspace y en `app/.env`.
+
+### 1.3b Catálogo actual (28-05-2026) — Fuentes unificadas
+
+| Recurso | Cantidad |
+|---------|----------|
+| Ejercicios únicos | 95 (62 demic + 21 exercisedb + 12 gym_workout) |
+| Partes del cuerpo | 13 |
+| Musculos | 60 |
+| Equipamientos | ~37 (extraídos de ejercicios) |
+| Videos/GIFs para R2 | 107 (55 demic + 30 exercisedb + 22 gym_workout) |
+| Migraciones aplicadas | 21 |
+
+### 1.3c Script de seed unificado
+
+`supabase/seed_todo.py` reemplaza a los 3 scripts anteriores (`seed_ejercicios.py`, `seed_nuevos_ejercicios.py`, `seed_gym_workout.py`). Lee `nuevos_ejercicios.json` (campo `fuente`), `musculos.json` y `partes_cuerpo.json`. Flujo: upsert catálogos → insert ejercicios (dedup nombre) → upsert relaciones N:M.
+
+Archivos listos para R2 en `r2_staging/`: `demic/` (55), `exercisedb/` (30), `gym_workout/` (22).
 
 #### 1.3.1 Ejecucion real de traduccion (scripts usados)
 
@@ -98,11 +127,42 @@ Reglas de control:
 | Reproducibilidad | Proceso de importacion repetible entre equipos |
 | Trazabilidad | Version del dataset y fecha de ingesta registradas |
 
-### 1.5 Historial de decision (contexto)
+### 1.5 Historial de decision (contexto) y Manejo de Multimedia (GIFs)
 
 1. Antes de ExerciseDB se evaluo wger (Docker y API REST).
 2. wger se descarto temporalmente por incidencias operativas y cobertura/calidad de multimedia insuficiente para el objetivo UX.
 3. Las capturas historicas de esa evaluacion permanecen en `app/assets/images/documentacion/wger/` para auditoria tecnica.
+
+**El problema de los GIFs rotos en Bases de Datos Públicas:**
+Durante el desarrollo se evidenció que la visualización de GIFs es un obstáculo muy común al trabajar con bases de datos públicas de fitness. Dependiendo de la fuente exacta, hay tres razones principales por las que los enlaces a los GIFs aparecen rotos o no cargan:
+
+1. **Estrategia de monetización del autor (Kaggle):** En el dataset de *Fitness Exercises Dataset* de Kaggle, se incluye una columna `gifUrl`. Sin embargo, el creador advierte que estas URLs pueden no funcionar, ya que ofrece los datos en texto gratis pero vende el paquete de los 1,324 archivos GIF reales de forma externa.
+2. **Restricciones contra el almacenamiento / Caching (ExerciseDB):** Muchos datasets gratuitos extraen sus datos de ExerciseDB. Sin embargo, los términos de uso de ExerciseDB prohíben estrictamente el almacenamiento (caching) de sus GIFs. Sus enlaces están protegidos; si intentas cargar un enlace viejo o guardarlo en la BD sin realizar una petición fresca a su API, el servidor bloqueará el acceso con un error `404 Not Found`.
+3. **Uso de URLs Firmadas Temporalmente (FitGIF y YMove):** Proveedores de animaciones como FitGIF y Your Move utilizan URLs firmadas con caducidad (ej. 48 horas) para evitar el robo de ancho de banda. Pasado ese tiempo, el enlace dejará de mostrar la imagen.
+
+**Decisión adoptada:** Debido a esto, la aplicación almacena y sirve los recursos multimedia a través de una infraestructura propia (Supabase / R2 Proxy) para garantizar que los enlaces nunca expiren, que no haya problemas de caché o CORS, y que la UX sea fluida y constante sin depender del proveedor externo en tiempo de ejecución.
+
+### 1.6 Clasificación automática de finalidad (`_generar_finalidad()`)
+
+El script `seed_ejercicios.py` incluye la función `_generar_finalidad(ej: dict) -> str` que clasifica automáticamente cada ejercicio en una de las siguientes finalidades:
+
+| Finalidad | Criterios de detección |
+|-----------|----------------------|
+| `cardio` | Músculo objetivo `cardiovascular` en ExerciseDB, o parte del cuerpo `cardio`, o nombre contiene: correr, nadar, bicicleta, saltar, burpees, mountain climber, box jump, tuck jump, etc. (25+ palabras clave bilingües) |
+| `isometrico` | Nombre contiene: plancha, plank, isométrico, wall sit, puente estático, static hold, L-sit, hollow body, dead hang, sentadilla estática, etc. |
+| `fuerza` | Todo lo demás (default hasta la migración 0019) |
+| `hipertrofia`, `resistencia`, `movilidad` | Soporte de schema añadido en la migración 0019 |
+
+La función se invoca tanto al insertar ejercicios nuevos como al actualizar existentes (para migrar datos antiguos que no tenían el campo `finalidad`). Tras ejecutar `seed_ejercicios.py`, todos los ejercicios del catálogo tienen su `finalidad` correctamente asignada.
+
+### 1.7 Deprecación de `exercise_db_id`
+
+A partir de la migración 0020:
+- El campo `exercise_db_id` es nullable y ya no tiene constraint UNIQUE.
+- El índice `idx_ejercicios_exercise_db_id` fue eliminado.
+- La vista `v_ejercicios_completos` ya no expone `exercise_db_id`.
+- Los seed scripts ya no incluyen `exercise_db_id` en el payload de inserción.
+- El código Flutter eliminó toda dependencia del campo `exerciseDbId`.
 
 ---
 
@@ -204,5 +264,5 @@ Las Edge Functions usan el runtime de Supabase. No requieren actualización manu
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Última revisión:** v1.0
+**Documento compilado:** 28-05-2026  
+**Última revisión:** v1.2

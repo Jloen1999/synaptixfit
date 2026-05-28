@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit
-**Versión:** 4.1
-**Fecha:** 14-05-2026
+**Versión:** 4.2
+**Fecha:** 19-05-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md)
 
 ---
@@ -373,6 +373,18 @@ El usuario ve la pantalla de generación IA con los mensajes progresivos. Al fin
 | Gemini responde con array/objeto vacío | Error específico: "Gemini no generó ejercicios válidos." |
 | Usuario cancela manualmente | Snackbar: "Recomendación cancelada". El formulario queda intacto. |
 
+
+### 4.7 Progreso de Rutinas en "Mis rutinas" (RutinasComunidadScreen)
+
+En la pestaña "Mis rutinas" de la pantalla principal de bienestar (RutinasComunidadScreen), se presentará un resumen visual y creativo sobre el progreso del usuario.
+
+**Elementos UI/UX:**
+- **Tarjetas interactivas de rutinas:** Cada rutina activa mostrará una barra de progreso circular o lineal, destacando el porcentaje de completitud.
+- **Resumen rápido:** Estadísticas visibles de un vistazo, como "3/12 sesiones completadas", "Faltan 2 días para terminar la semana de carga", y el próximo hito.
+- **Incentivos visuales:** Se usarán códigos de colores para reflejar el estado actual (ej. verde para ritmo óptimo, naranja si se aproxima una semana de descarga).
+- **Llamada a la acción clara:** Botón prominente de "Continuar entrenamiento" en la rutina activa que lleva directamente a la siguiente sesión pendiente en RutinaDetalleScreen.
+
+
 ## 5. Pantalla: Detalle de Rutina (`RutinaDetalleScreen`)
 
 **Archivo:** `app/lib/features/bienestar/presentation/rutina_detalle_screen.dart`
@@ -735,6 +747,76 @@ flowchart TD
 | `EmptyState` | Ilustración + mensaje | Todos los estados vacíos |
 | `SemanaBadge` | Chip coloreado con tipo de semana | RutinaDetalleScreen |
 | `FatigaBanner` | Banner naranja de advertencia | Pre-sesión |
+| `FinalidadBadge` | Chip coloreado con finalidad del ejercicio (naranja=fuerza, teal=cardio, índigo=isométrico) | NuevaRutinaScreen, RutinaDetalleScreen |
+| `_MiniGifPreview` | Miniatura de GIF de ejercicio (42-48px). Tap abre diálogo a tamaño completo (280px). | Buscador de ejercicios, tarjeta de ejercicio compacta |
+
+### 8.1 Enum `FinalidadEjercicio`
+
+**Archivo:** `app/lib/shared/models/db_models.dart:96-137`
+
+```dart
+enum FinalidadEjercicio {
+  fuerza,      // Pesas, reps, descanso — naranja
+  cardio,      // Duración, distancia — teal
+  isometrico;  // Tiempo de sujeción — índigo
+
+  static FinalidadEjercicio fromString(String value);  // desde BD
+  String get etiqueta;  // 'Fuerza', 'Cardio', 'Isométrico'
+  String get icono;     // '🏋️', '🏃', '🧘'
+}
+```
+
+El enum se usa en:
+- `EjercicioDb.finalidad` — campo del modelo, leído desde la columna `finalidad` en BD
+- `_EjercicioCompacto._finalidadChip()` — badge de color + icono + etiqueta
+- `_EjercicioCompacto._buildCamposDinamicos()` — switch para renderizar campos específicos
+- `RecomendacionIaService` — prompts de IA incluyen reglas por finalidad
+
+### 8.2 Widget `_EjercicioCompacto` (Campos Dinámicos por Finalidad)
+
+**Archivo:** `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart:1748-2067`
+
+Cada tarjeta de ejercicio en el Paso 2 (Editor de estructura) ahora muestra campos diferentes según la `finalidad` del ejercicio, mediante un `switch` en `_buildCamposDinamicos()`:
+
+```
+┌─ Fuerza (naranja 🏋️) ──────────────────────────────┐
+│  [Series: 3] [Reps: 10]                            │
+│  [Descanso: 90s]   [Peso: — kg]                    │
+└────────────────────────────────────────────────────┘
+
+┌─ Cardio (teal 🏃) ─────────────────────────────────┐
+│  [Intervalos: 5]   [Duración: 5m 30s]              │
+│  [Distancia: — m]  [Descanso: 60s]                 │
+└────────────────────────────────────────────────────┘
+
+┌─ Isométrico (índigo 🧘) ───────────────────────────┐
+│  [Series: 3]  [Sujeción: 45s]                      │
+│  [Descanso: 60s]                                   │
+└────────────────────────────────────────────────────┘
+```
+
+**Campos por finalidad:**
+
+| Finalidad | Campos | Widget |
+|-----------|--------|--------|
+| `fuerza` | Series, Reps, Descanso, Peso(kg) | `_paramPill` steppers ± y `_pesoPill` (TextField decimal) |
+| `cardio` | Intervalos (=series), Duración, Distancia (opc), Descanso | `_paramPill`, `_duracionPill` (input libre tipo "5m 30s" → parseado a segundos), `_distanciaPill` |
+| `isometrico` | Series, Tiempo de sujeción (s), Descanso | `_paramPill`, `_tiempoIsometricoPill` (TextField numérico) |
+
+**Parser de duración libre (`_parseDuracion()`):** Acepta formatos como `"5m 30s"`, `"5:30"`, `"300"` (segundos puros), `"5 min"`, `"5m"`. Se almacena en segundos en `duracionSegundos`.
+
+### 8.3 Widget `_MiniGifPreview`
+
+**Archivo:** `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart:1544-1623`
+
+Muestra una miniatura del GIF del ejercicio con tamaño configurable:
+
+| Ubicación | Tamaño | Comportamiento |
+|-----------|--------|---------------|
+| Buscador de ejercicios (`_BuscadorEjerciciosSheet`) | 48px | Tap → diálogo 280px con GIF a tamaño completo |
+| Tarjeta de ejercicio compacta (`_EjercicioCompacto`) | 42px | Tap → mismo diálogo ampliado |
+
+Usa `CachedNetworkImage` con `placeholder` (icono de imagen) y `errorWidget` (icono de pesa). El diálogo de vista ampliada tiene fondo negro semitransparente, borde redondeado 20px, y botón de cierre en la esquina superior derecha.
 
 ## 9. Manejo de Errores
 
@@ -777,6 +859,6 @@ flowchart TD
 
 ---
 
-**Documento compilado:** 14-05-2026
-**Última revisión:** v4.1
+**Documento compilado:** 19-05-2026
+**Última revisión:** v4.2
 **Referencia:** Alineado con SRS v3.0, Arquitectura v3.1

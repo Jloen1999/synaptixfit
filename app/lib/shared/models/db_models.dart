@@ -91,10 +91,54 @@ class UsuarioDb {
   }
 }
 
+/// Clasifica los ejercicios según su finalidad de entrenamiento.
+/// Determina qué campos debe introducir el usuario y cómo la IA recomienda.
+enum FinalidadEjercicio {
+  /// Ejercicios de fuerza: requieren Peso (kg), Repeticiones y Series.
+  fuerza,
+
+  /// Ejercicios de cardio: requieren Duración (min/seg) y Distancia opcional.
+  cardio,
+
+  /// Ejercicios isométricos / estáticos: requieren Tiempo de sujeción.
+  isometrico;
+
+  /// Crea [FinalidadEjercicio] desde el valor almacenado en BD.
+  static FinalidadEjercicio fromString(String value) {
+    return FinalidadEjercicio.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => FinalidadEjercicio.fuerza,
+    );
+  }
+
+  /// Etiqueta legible en español para la UI.
+  String get etiqueta {
+    switch (this) {
+      case FinalidadEjercicio.fuerza:
+        return 'Fuerza';
+      case FinalidadEjercicio.cardio:
+        return 'Cardio';
+      case FinalidadEjercicio.isometrico:
+        return 'Isométrico';
+    }
+  }
+
+  /// Icono representativo para la UI.
+  String get icono {
+    switch (this) {
+      case FinalidadEjercicio.fuerza:
+        return '🏋️';
+      case FinalidadEjercicio.cardio:
+        return '🏃';
+      case FinalidadEjercicio.isometrico:
+        return '🧘';
+    }
+  }
+}
+
 class EjercicioDb {
   const EjercicioDb({
     required this.id,
-    this.exerciseDbId,
     required this.nombre,
     this.urlGif,
     required this.instrucciones,
@@ -104,12 +148,12 @@ class EjercicioDb {
     required this.musculosObjetivo,
     required this.musculosSecundarios,
     required this.equipamientos,
+    required this.finalidad,
     required this.creadoEn,
     required this.actualizadoEn,
   });
 
   final String id;
-  final String? exerciseDbId;
   final String nombre;
   final String? urlGif;
   final List<String> instrucciones;
@@ -119,6 +163,7 @@ class EjercicioDb {
   final List<String> musculosObjetivo;
   final List<String> musculosSecundarios;
   final List<String> equipamientos;
+  final FinalidadEjercicio finalidad;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
@@ -137,7 +182,6 @@ class EjercicioDb {
   factory EjercicioDb.fromMap(Map<String, dynamic> map) {
     return EjercicioDb(
       id: map['id'] as String,
-      exerciseDbId: map['exercise_db_id'] as String?,
       nombre: map['nombre'] as String,
       urlGif: map['url_gif'] as String?,
       instrucciones: _parseStringList(map['instrucciones']),
@@ -147,6 +191,8 @@ class EjercicioDb {
       musculosObjetivo: _parseStringList(map['musculos_objetivo']),
       musculosSecundarios: _parseStringList(map['musculos_secundarios']),
       equipamientos: _parseStringList(map['equipamientos']),
+      finalidad: FinalidadEjercicio.fromString(
+          (map['finalidad'] as String?) ?? 'fuerza'),
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
     );
@@ -155,12 +201,12 @@ class EjercicioDb {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'exercise_db_id': exerciseDbId,
       'nombre': nombre,
       'url_gif': urlGif,
       'instrucciones': instrucciones,
       'dificultad': dificultad,
       'descripcion': descripcion,
+      'finalidad': finalidad.name,
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -238,6 +284,9 @@ class SeleccionEjercicioDb {
     required this.indiceOrden,
     this.diaId,
     this.pesoKg,
+    this.duracionSegundos,
+    this.distanciaMetros,
+    this.tiempoIsometricoSegundos,
   });
 
   final String id;
@@ -249,6 +298,9 @@ class SeleccionEjercicioDb {
   final int indiceOrden;
   final String? diaId;
   final double? pesoKg;
+  final int? duracionSegundos;
+  final int? distanciaMetros;
+  final int? tiempoIsometricoSegundos;
 
   factory SeleccionEjercicioDb.fromMap(Map<String, dynamic> map) {
     return SeleccionEjercicioDb(
@@ -261,6 +313,15 @@ class SeleccionEjercicioDb {
       indiceOrden: _parseInt(map['indice_orden'], fallback: 1),
       diaId: map['dia_id'] as String?,
       pesoKg: map['peso_kg'] != null ? _parseDouble(map['peso_kg']) : null,
+      duracionSegundos: map['duracion_segundos'] != null
+          ? _parseInt(map['duracion_segundos'])
+          : null,
+      distanciaMetros: map['distancia_metros'] != null
+          ? _parseInt(map['distancia_metros'])
+          : null,
+      tiempoIsometricoSegundos: map['tiempo_isometrico_segundos'] != null
+          ? _parseInt(map['tiempo_isometrico_segundos'])
+          : null,
     );
   }
 
@@ -275,6 +336,10 @@ class SeleccionEjercicioDb {
       'indice_orden': indiceOrden,
       if (diaId != null) 'dia_id': diaId,
       if (pesoKg != null) 'peso_kg': pesoKg,
+      if (duracionSegundos != null) 'duracion_segundos': duracionSegundos,
+      if (distanciaMetros != null) 'distancia_metros': distanciaMetros,
+      if (tiempoIsometricoSegundos != null)
+        'tiempo_isometrico_segundos': tiempoIsometricoSegundos,
     };
   }
 }

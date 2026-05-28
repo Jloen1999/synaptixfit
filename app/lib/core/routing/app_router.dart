@@ -106,7 +106,11 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/bienestar/nueva-rutina',
-      builder: (context, state) => const NuevaRutinaScreen(),
+      builder: (context, state) {
+        final extra = state.extra;
+        final autoRecomendar = extra is Map && extra['autoRecomendar'] == true;
+        return NuevaRutinaScreen(autoRecomendar: autoRecomendar);
+      },
     ),
     GoRoute(
       path: '/retos/simple',

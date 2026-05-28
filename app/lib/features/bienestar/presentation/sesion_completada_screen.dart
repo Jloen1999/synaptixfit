@@ -95,7 +95,7 @@ class SesionCompletadaScreen extends ConsumerWidget {
                   onChanged: (v) => setDialogState(() => duracion = v),
                 ),
                 const SizedBox(height: 8),
-                Text('Esfuerzo percibido (RPE): $rpe/10',
+                Text('Esfuerzo: $rpe/10',
                     style: Theme.of(ctx).textTheme.bodyMedium),
                 Slider(
                   value: rpe.toDouble(),
@@ -172,7 +172,7 @@ class _SesionCard extends ConsumerWidget {
                       Text(nombreRutina,
                           style: Theme.of(context).textTheme.titleSmall),
                       Text(
-                        '${sesion.duracionMinutos} min · RPE ${sesion.rpe} · ${sesion.caloriasQuemadas.round()} kcal',
+                        '${sesion.duracionMinutos} min · Esfuerzo ${sesion.rpe} · ${sesion.caloriasQuemadas.round()} kcal',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],

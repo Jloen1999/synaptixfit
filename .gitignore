@@ -51,3 +51,20 @@ exercisedb/gifs_720x720/
 exercisedb/gifs_180x180/
 exercisedb/gifs_1080x1080/
 Gym Workout/
+
+# Archivos de video para staging de R2 (binarios grandes, no versionar)
+r2_staging/
+
+# Videos originales de Demic (binarios grandes, no versionar)
+demic/originales/
+demic/*.mp4
+demic/*.py
+
+# Archivos obsoletos archivados
+_archivo/
+
+# Asistente IA interno
+.aiassistant/
+
+# IDE
+.idea/

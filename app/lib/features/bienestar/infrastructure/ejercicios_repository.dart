@@ -12,8 +12,8 @@ import '../../../shared/models/db_models.dart';
 const _tamanoPagina = 50;
 
 /// Columnas mínimas necesarias del view para ahorrar ancho de banda.
-const _columnasEjercicio = 'id,exercise_db_id,nombre,url_gif,instrucciones,'
-    'dificultad,descripcion,partes_cuerpo,musculos_objetivo,'
+const _columnasEjercicio = 'id,nombre,url_gif,instrucciones,'
+    'dificultad,descripcion,finalidad,partes_cuerpo,musculos_objetivo,'
     'musculos_secundarios,equipamientos,creado_en,actualizado_en';
 
 class EjerciciosRepository {

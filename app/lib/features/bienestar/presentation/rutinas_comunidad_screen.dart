@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
+import '../../../shared/utils/string_utils.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/models/db_models.dart';
@@ -62,8 +64,7 @@ class _RutinasComunidadScreenState
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
               ),
-              onChanged: (v) =>
-                  setState(() => _busqueda = v.trim().toLowerCase()),
+              onChanged: (v) => setState(() => _busqueda = normalizeSearch(v)),
             ),
           ),
           const SizedBox(height: 4),
@@ -85,8 +86,7 @@ class _RutinasComunidadScreenState
                       final filtrados = _busqueda.isEmpty
                           ? r
                           : r
-                              .where((dto) => dto.rutina.nombre
-                                  .toLowerCase()
+                              .where((dto) => normalizeSearch(dto.rutina.nombre)
                                   .contains(_busqueda))
                               .toList();
                       return _buildListaComunidad(filtrados, userId);
@@ -100,8 +100,8 @@ class _RutinasComunidadScreenState
                       final filtrados = _busqueda.isEmpty
                           ? r
                           : r
-                              .where((rut) =>
-                                  rut.nombre.toLowerCase().contains(_busqueda))
+                              .where((rut) => normalizeSearch(rut.nombre)
+                                  .contains(_busqueda))
                               .toList();
                       return _buildListaMisRutinas(filtrados);
                     },
@@ -180,45 +180,198 @@ class _RutinasComunidadScreenState
       );
     }
 
+    final progresos = ref.watch(progresoRutinasProvider).valueOrNull ?? {};
+
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
       itemCount: rutinas.length,
       itemBuilder: (context, index) {
         final r = rutinas[index];
+        final theme = Theme.of(context);
+
+        final esActiva = r.estado == 'activo' || r.estado == 'pausado';
+        final prog = progresos[r.id] ??
+            const ProgresoRutinaDto(diasCompletados: 0, totalDias: 0);
+        final progress = prog.porcentaje;
+        final colorProgreso = progress >= 1.0
+            ? Colors.green
+            : (progress > 0.5 ? Colors.blue : Colors.orange);
+
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: r.visibilidad == 'private'
-                    ? Colors.grey.withValues(alpha: 0.12)
-                    : Theme.of(context)
-                        .colorScheme
-                        .primaryContainer
-                        .withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                r.visibilidad == 'private'
-                    ? Icons.lock_outlined
-                    : Icons.people_outline,
-                size: 18,
-                color: r.visibilidad == 'private'
-                    ? Colors.grey
-                    : Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            title: Text(r.nombre,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            subtitle: Text(
-              '${r.visibilidad == 'private' ? 'Privada' : 'Amigos'} · ${r.descripcion?.isNotEmpty == true ? r.descripcion! : '${r.cantidadEjercicios} ejercicios'}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            trailing: const Icon(Icons.chevron_right),
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: esActiva ? 2 : 0.5,
+          color: esActiva ? null : theme.colorScheme.surfaceContainerLow,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: esActiva
+                ? BorderSide(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    width: 1)
+                : BorderSide(
+                    color:
+                        theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    width: 1),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
             onTap: () => context.push('/bienestar/rutina/${r.id}'),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: !esActiva
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : (r.visibilidad == 'private'
+                                  ? Colors.grey.withValues(alpha: 0.12)
+                                  : theme.colorScheme.primaryContainer
+                                      .withValues(alpha: 0.4)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          !esActiva
+                              ? Icons.check_circle_outline
+                              : (r.visibilidad == 'private'
+                                  ? Icons.lock_outlined
+                                  : Icons.people_outline),
+                          size: 24,
+                          color: !esActiva
+                              ? Colors.green
+                              : (r.visibilidad == 'private'
+                                  ? Colors.grey
+                                  : theme.colorScheme.primary),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              r.nombre,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${r.visibilidad == 'private' ? 'Privada' : 'Amigos'} · ${r.cantidadEjercicios} ejercicios',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert),
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(value: 'editar', child: Text('Editar')),
+                          PopupMenuItem(
+                              value: 'eliminar', child: Text('Eliminar')),
+                        ],
+                        onSelected: (v) {
+                          if (v == 'eliminar') {
+                            _eliminarRutina(r);
+                          } else if (v == 'editar') {
+                            context.push('/bienestar/rutina/${r.id}');
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  if (r.descripcion?.isNotEmpty == true) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      r.descripcion!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      CircularPercentIndicator(
+                        radius: 20.0,
+                        lineWidth: 4.0,
+                        animation: true,
+                        percent: progress,
+                        center: Text(
+                          '${(progress * 100).toInt()}%',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 10.0),
+                        ),
+                        circularStrokeCap: CircularStrokeCap.round,
+                        progressColor: colorProgreso,
+                        backgroundColor:
+                            theme.colorScheme.surfaceContainerHighest,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              esActiva ? 'En progreso' : 'Completada',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: !esActiva ? Colors.green.shade700 : null,
+                              ),
+                            ),
+                            if (esActiva && progress > 0)
+                              Text(
+                                '${prog.diasCompletados} de ${prog.totalDias} días',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (esActiva) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () =>
+                            context.push('/bienestar/rutina/${r.id}'),
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: const Text('Continuar entrenamiento'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (!esActiva) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _clonarRutina(r),
+                        icon: const Icon(Icons.restart_alt_rounded),
+                        label: const Text('Reutilizar rutina'),
+                      ),
+                    ),
+                  ]
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -235,6 +388,37 @@ class _RutinasComunidadScreenState
       ),
       builder: (ctx) => _RutinaDetalleSheet(rutinaId: rutinaId, router: router),
     );
+  }
+
+  Future<void> _eliminarRutina(RutinaDb rutina) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar rutina'),
+        content: Text(
+            '¿Estás seguro de que quieres eliminar la rutina "${rutina.nombre}"?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await eliminarRutina(rutina.id, ref);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Rutina eliminada')),
+        );
+      }
+    }
   }
 
   Future<void> _clonarRutina(RutinaDb rutina) async {

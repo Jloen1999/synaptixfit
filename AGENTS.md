@@ -51,8 +51,10 @@ supabase db push                 # deploy migrations to linked project
 - **`app/lib/core/routing/app_router.dart`** — GoRouter with shell route + bottom nav (5 tabs)
 - **`app/lib/shared/models/db_models.dart`** — all DB model classes (~1645 lines)
 - **`app/lib/core/config/env_config.dart`** — reads Supabase URL/anonKey, Google OAuth, Gemini, R2 from `.env`
-- **`supabase/migrations/`** — 17 migration files, 27 tables + RLS, apply in order
-- **`docs/`** — 14-file documentation structure (01 through 14), kept in sync with code
+- **`app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart`** — 4 Gemini prompts for routine/exercise recommendations
+- **`app/lib/features/perfil/application/perfil_provider.dart`** — profile data cache with selective invalidation (PerfilCambio enum)
+- **`supabase/migrations/`** — 18 migration files, 27 tables + RLS, apply in order
+- **`docs/`** — 15-file documentation structure (01 through 15), kept in sync with code
 - **`migraciones_pendientes.sql`** — consolidated SQL for manual deployment when CLI not linked
 
 ## Database notes

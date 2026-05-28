@@ -1,8 +1,8 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 3.1
+**Versión:** 3.2
 **Estado:** APROBADO
-**Fecha:** 14-05-2026
+**Fecha:** 19-05-2026
 **Autor:** Arquitectura
 **Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.0)
 
@@ -151,7 +151,7 @@ synaptixfit/
 │       │   └── perfil/                     # Perfil de usuario
 │       └── main.dart                       # Entry point, ProviderScope, Supabase.init
 ├── supabase/
-│   ├── migrations/                         # 17 migraciones SQL
+│   ├── migrations/                         # 18 migraciones SQL
 │   ├── seed_ejercicios.py                  # Seeding del catálogo ExerciseDB
 │   └── seed_catalogo.py                    # Seeding del catálogo académico
 ├── cloudflare/
@@ -682,6 +682,6 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 
 ---
 
-**Documento compilado:** 14-05-2026
-**Versión:** 3.1
+**Documento compilado:** 19-05-2026
+**Versión:** 3.2
 **Clasificación:** PÚBLICO — Equipo jloen

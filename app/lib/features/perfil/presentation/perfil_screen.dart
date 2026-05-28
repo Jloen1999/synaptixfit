@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/presentation/auth_controller.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
-import '../../../shared/widgets/kpi_card.dart';
 import '../../academico/application/usuario_carreras_provider.dart';
 import '../../bienestar/application/rutina_provider.dart';
 import '../../dashboard/application/dashboard_provider.dart';
 import '../../auth/infrastructure/bienestar_repository.dart';
+import '../application/perfil_provider.dart';
 
 class PerfilScreen extends ConsumerStatefulWidget {
   const PerfilScreen({super.key});
@@ -20,41 +19,76 @@ class PerfilScreen extends ConsumerStatefulWidget {
 }
 
 class _PerfilScreenState extends ConsumerState<PerfilScreen> {
-  _PerfilData? _data;
-  bool _loading = true;
+  PerfilUsuario? _cachedUsuario;
+  PerfilActividad? _cachedActividad;
+  PreferenciasNotificacionDb? _cachedPrefs;
+  PerfilBienestarCompleto? _cachedBienestar;
 
-  @override
-  void initState() {
-    super.initState();
-    _cargar();
-  }
-
-  Future<void> _cargar() async {
-    setState(() => _loading = true);
-    try {
-      _data = await _cargarPerfil();
-    } catch (_) {}
-    if (mounted) setState(() => _loading = false);
-  }
-
-  void _onPerfilActualizado() {
-    ref.invalidate(perfilBienestarProvider);
+  void _onPerfilActualizado({PerfilCambio cambio = PerfilCambio.todo}) {
+    switch (cambio) {
+      case PerfilCambio.nombre:
+        ref.invalidate(perfilUsuarioProvider);
+      case PerfilCambio.bienestar:
+        ref.invalidate(perfilBienestarProvider);
+        ref.invalidate(perfilBienestarCompletoProvider);
+        ref.invalidate(perfilUsuarioProvider);
+      case PerfilCambio.preferencias:
+        ref.invalidate(perfilPreferenciasProvider);
+      case PerfilCambio.todo:
+        ref.invalidate(perfilBienestarProvider);
+        ref.invalidate(perfilUsuarioProvider);
+        ref.invalidate(perfilBienestarCompletoProvider);
+        ref.invalidate(perfilActividadProvider);
+        ref.invalidate(perfilPreferenciasProvider);
+    }
     ref.invalidate(dashboardProvider);
-    _cargar();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading || _data == null) {
+    final usuarioAsync = ref.watch(perfilUsuarioProvider);
+    final actividadAsync = ref.watch(perfilActividadProvider);
+    final preferenciasAsync = ref.watch(perfilPreferenciasProvider);
+
+    // Actualizar cachés cuando llegan datos nuevos.
+    if (usuarioAsync.hasValue) _cachedUsuario = usuarioAsync.value;
+    if (actividadAsync.hasValue) _cachedActividad = actividadAsync.value;
+    if (preferenciasAsync.hasValue) _cachedPrefs = preferenciasAsync.value;
+
+    // Solo mostrar loading en la primera carga (sin datos cacheados).
+    if (usuarioAsync.isLoading && _cachedUsuario == null) {
       return const FeatureScaffold(
         title: '',
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
 
-    final data = _data!;
-    final usuario = data.usuario;
-    final perfil = data.perfil;
+    final usuarioData = _cachedUsuario;
+    if (usuarioData == null) {
+      return const FeatureScaffold(
+        title: '',
+        child: Center(child: Text('Error al cargar perfil')),
+      );
+    }
+
+    final usuario = usuarioData.usuario;
+    final perfil = usuarioData.perfil;
+    final actividad = _cachedActividad ??
+        const PerfilActividad(sesiones: 0, logros: 0, caloriasAcumuladas: 0);
+    final preferencias = _cachedPrefs ??
+        PreferenciasNotificacionDb(
+          id: '',
+          usuarioId: '',
+          categoriasActivas: const [],
+          limiteDiario: 10,
+          modoActual: 'normal',
+          creadoEn: DateTime.now(),
+          actualizadoEn: DateTime.now(),
+        );
+
+    final bienestarAsync = ref.watch(perfilBienestarCompletoProvider);
+    if (bienestarAsync.hasValue) _cachedBienestar = bienestarAsync.value;
+    final historial = _cachedBienestar?.historial ?? <HistorialPesoDb>[];
 
     return FeatureScaffold(
       title: '',
@@ -66,7 +100,8 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
               child: _HeroHeader(
                 usuario: usuario,
                 perfil: perfil,
-                onNombreChanged: _onPerfilActualizado,
+                onNombreChanged: () =>
+                    _onPerfilActualizado(cambio: PerfilCambio.nombre),
               ),
             ),
             SliverPersistentHeader(
@@ -90,152 +125,23 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
             children: [
               _EstadisticasTab(
                 usuario: usuario,
-                sesiones: data.sesiones,
-                logros: data.logros,
-                caloriasAcumuladas: data.caloriasAcumuladas,
+                sesiones: actividad.sesiones,
+                logros: actividad.logros,
+                caloriasAcumuladas: actividad.caloriasAcumuladas,
               ),
               _BienestarTab(
                 perfil: perfil,
-                historial: data.historial,
-                onPerfilChanged: _onPerfilActualizado,
+                historial: historial,
+                onPerfilChanged: () =>
+                    _onPerfilActualizado(cambio: PerfilCambio.bienestar),
               ),
-              _AjustesTab(usuario: usuario, prefs: data.preferencias),
+              _AjustesTab(usuario: usuario, prefs: preferencias),
             ],
           ),
         ),
       ),
     );
   }
-
-  Future<_PerfilData> _cargarPerfil() async {
-    final client = Supabase.instance.client;
-    final user = client.auth.currentUser;
-    if (user == null) throw Exception('Sesión no activa');
-
-    final usuarioMap =
-        await client.from('usuarios').select().eq('id', user.id).maybeSingle();
-    final usuario = usuarioMap != null
-        ? UsuarioDb.fromMap(usuarioMap)
-        : UsuarioDb(
-            id: user.id,
-            email: user.email ?? '',
-            nombreCompleto: user.userMetadata?['full_name']?.toString() ?? '—',
-            urlAvatar: user.userMetadata?['avatar_url']?.toString(),
-            nivel: 1,
-            xpTotal: 0,
-            rachaActual: 0,
-            creadoEn: DateTime.now(),
-            actualizadoEn: DateTime.now(),
-          );
-
-    final perfilMap = await client
-        .from('perfil_bienestar_usuario')
-        .select()
-        .eq('usuario_id', user.id)
-        .maybeSingle();
-
-    final perfil = perfilMap != null
-        ? PerfilBienestarDb.fromMap(perfilMap)
-        : PerfilBienestarDb(
-            id: '',
-            usuarioId: user.id,
-            edad: 0,
-            sexo: 'prefiero_no_decirlo',
-            pesoKg: 0,
-            alturaCm: 0,
-            imc: 0,
-            nivelActividad: 'sedentario',
-            objetivoPrincipal: 'fitness_general',
-            objetivos: const [],
-            equipamientoDisponible: const [],
-            diasDisponiblesSemana: 0,
-            minutosPorSesion: 0,
-            onboardingCompletado: false,
-            creadoEn: DateTime.now(),
-            actualizadoEn: DateTime.now(),
-          );
-
-    final sesionesData = await client
-        .from('sesiones_registradas')
-        .select('id')
-        .eq('usuario_id', user.id);
-
-    final caloriasData = await client
-        .from('sesiones_registradas')
-        .select('calorias_quemadas')
-        .eq('usuario_id', user.id);
-
-    final sesiones = (sesionesData as List).length;
-    final caloriasAcumuladas = (caloriasData as List?)
-            ?.fold<double>(
-                0,
-                (sum, s) =>
-                    sum + ((s['calorias_quemadas'] as num?)?.toDouble() ?? 0))
-            .round() ??
-        0;
-
-    final logrosList = await client
-        .from('retos')
-        .select('id')
-        .eq('usuario_id', user.id)
-        .eq('esta_completado', true);
-    final logros = (logrosList as List).length;
-
-    final historialData = await client
-        .from('historial_peso')
-        .select()
-        .eq('usuario_id', user.id)
-        .order('registrado_en', ascending: false);
-    final historial =
-        historialData.map((e) => HistorialPesoDb.fromMap(e)).toList();
-
-    final prefsData = await client
-        .from('preferencias_notificacion')
-        .select()
-        .eq('usuario_id', user.id)
-        .maybeSingle();
-    final preferencias = prefsData != null
-        ? PreferenciasNotificacionDb.fromMap(prefsData)
-        : PreferenciasNotificacionDb(
-            id: '',
-            usuarioId: '',
-            categoriasActivas: const [],
-            limiteDiario: 10,
-            modoActual: 'normal',
-            creadoEn: DateTime.now(),
-            actualizadoEn: DateTime.now(),
-          );
-
-    return _PerfilData(
-      usuario: usuario,
-      perfil: perfil,
-      sesiones: sesiones,
-      logros: logros,
-      caloriasAcumuladas: caloriasAcumuladas,
-      historial: historial,
-      preferencias: preferencias,
-    );
-  }
-}
-
-class _PerfilData {
-  const _PerfilData({
-    required this.usuario,
-    required this.perfil,
-    required this.sesiones,
-    required this.logros,
-    required this.caloriasAcumuladas,
-    required this.historial,
-    required this.preferencias,
-  });
-
-  final UsuarioDb usuario;
-  final PerfilBienestarDb perfil;
-  final int sesiones;
-  final int logros;
-  final int caloriasAcumuladas;
-  final List<HistorialPesoDb> historial;
-  final PreferenciasNotificacionDb preferencias;
 }
 
 // =============================================================================

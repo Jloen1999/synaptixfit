@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design_system/sv_colors.dart';
+import '../../../shared/utils/string_utils.dart';
 import '../../../shared/models/catalogo_models.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/exercise_card.dart';
@@ -100,7 +101,7 @@ class _ExploradorEjerciciosScreenState
                       )
                     : null,
               ),
-              onChanged: (v) => setState(() => _busqueda = v.trim()),
+              onChanged: (v) => setState(() => _busqueda = normalizeSearch(v)),
             ),
           ),
 
@@ -150,12 +151,11 @@ class _ExploradorEjerciciosScreenState
   }
 
   Widget _buildSearchResults(List<EjercicioDb> items) {
-    final q = _busqueda.toLowerCase();
     final filtrados = items
         .where((e) =>
-            e.nombre.toLowerCase().contains(q) ||
-            e.musculoPrincipal.toLowerCase().contains(q) ||
-            e.equipamientoPrincipal.toLowerCase().contains(q))
+            normalizeSearch(e.nombre).contains(_busqueda) ||
+            normalizeSearch(e.musculoPrincipal).contains(_busqueda) ||
+            normalizeSearch(e.equipamientoPrincipal).contains(_busqueda))
         .toList();
 
     if (filtrados.isEmpty) {

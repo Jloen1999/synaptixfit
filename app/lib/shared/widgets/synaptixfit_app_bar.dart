@@ -18,6 +18,7 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.showBackButton = true,
     this.backPath,
+    this.onBack,
     this.leading,
     this.centerTitle = true,
     this.compact = false,
@@ -28,6 +29,7 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool showBackButton;
   final String? backPath;
+  final VoidCallback? onBack;
   final Widget? leading;
   final bool centerTitle;
   final bool compact;
@@ -35,7 +37,7 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     if (compact) return const SizedBox.shrink();
-    final canGoBack = context.canPop() || backPath != null;
+    final canGoBack = context.canPop() || backPath != null || onBack != null;
     return AppBar(
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       centerTitle: centerTitle,
@@ -43,9 +45,10 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
       scrolledUnderElevation: 0,
       leading: showBackButton && canGoBack
           ? BackButton(
-              onPressed: () {
-                handleSynaptixBackNavigation(context, backPath: backPath);
-              },
+              onPressed: onBack ??
+                  () {
+                    handleSynaptixBackNavigation(context, backPath: backPath);
+                  },
             )
           : leading,
       actions: actions,

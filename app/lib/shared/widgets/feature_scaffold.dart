@@ -9,6 +9,7 @@ class FeatureScaffold extends StatelessWidget {
     this.floatingActionButton,
     this.actions,
     this.backPath,
+    this.onBack,
     this.appBarLeading,
     this.centerTitle = true,
     this.hideAppBar = false,
@@ -20,6 +21,7 @@ class FeatureScaffold extends StatelessWidget {
   final Widget? floatingActionButton;
   final List<Widget>? actions;
   final String? backPath;
+  final VoidCallback? onBack;
   final Widget? appBarLeading;
   final bool centerTitle;
   final bool hideAppBar;
@@ -30,13 +32,18 @@ class FeatureScaffold extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        handleSynaptixBackNavigation(context, backPath: backPath);
+        if (onBack != null) {
+          onBack!();
+        } else {
+          handleSynaptixBackNavigation(context, backPath: backPath);
+        }
       },
       child: Scaffold(
         appBar: SynaptixFitAppBar(
           title: title,
           actions: actions,
           backPath: backPath,
+          onBack: onBack,
           leading: appBarLeading,
           centerTitle: centerTitle,
           compact: hideAppBar,

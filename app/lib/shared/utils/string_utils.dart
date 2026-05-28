@@ -1,0 +1,28 @@
+String normalizeSearch(String s) {
+  return s
+      .toLowerCase()
+      .replaceAll('á', 'a')
+      .replaceAll('é', 'e')
+      .replaceAll('í', 'i')
+      .replaceAll('ó', 'o')
+      .replaceAll('ú', 'u')
+      .replaceAll('à', 'a')
+      .replaceAll('è', 'e')
+      .replaceAll('ì', 'i')
+      .replaceAll('ò', 'o')
+      .replaceAll('ù', 'u')
+      .replaceAll('â', 'a')
+      .replaceAll('ê', 'e')
+      .replaceAll('î', 'i')
+      .replaceAll('ô', 'o')
+      .replaceAll('û', 'u')
+      .replaceAll('ä', 'a')
+      .replaceAll('ë', 'e')
+      .replaceAll('ï', 'i')
+      .replaceAll('ö', 'o')
+      .replaceAll('ü', 'u')
+      .replaceAll('ã', 'a')
+      .replaceAll('õ', 'o')
+      .replaceAll('ñ', 'n')
+      .replaceAll('ç', 'c');
+}

@@ -30,7 +30,7 @@ class DashboardScreen extends ConsumerWidget {
     ),
     _OpcionCreacionDashboard(
       titulo: 'Reto complejo',
-      descripcion: 'Reto con hitos y progreso.',
+      descripcion: 'Reto con tareas y progreso.',
       icono: Icons.emoji_events_rounded,
       ruta: '/retos/complejo',
     ),
@@ -274,7 +274,7 @@ class DashboardScreen extends ConsumerWidget {
               child: _RetoActivoCard(
                 reto: reto,
                 progreso: value.progresoReto(reto.id),
-                tieneHitos: value.tieneHitosReto(reto.id),
+                tieneTareas: value.tieneTareasReto(reto.id),
                 onTap: () => context.push('/retos/${reto.id}'),
               ),
             ),
@@ -871,13 +871,13 @@ class _RetoActivoCard extends ConsumerStatefulWidget {
   const _RetoActivoCard({
     required this.reto,
     required this.progreso,
-    required this.tieneHitos,
+    required this.tieneTareas,
     this.onTap,
   });
 
   final RetoDb reto;
   final double progreso;
-  final bool tieneHitos;
+  final bool tieneTareas;
   final VoidCallback? onTap;
 
   @override
@@ -898,7 +898,7 @@ class _RetoActivoCardState extends ConsumerState<_RetoActivoCard> {
         esFitness ? theme.colorScheme.primary : const Color(0xFF7B1FA2);
     final diasRestantes = reto.fechaFin.difference(DateTime.now()).inDays;
 
-    final expandible = widget.tieneHitos;
+    final expandible = widget.tieneTareas;
     final tareasAsync =
         _expanded ? ref.watch(tareasDeRetoProvider(reto.id)) : null;
 
@@ -939,7 +939,7 @@ class _RetoActivoCardState extends ConsumerState<_RetoActivoCard> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  widget.tieneHitos
+                  widget.tieneTareas
                       ? Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 5, vertical: 2),
@@ -967,7 +967,7 @@ class _RetoActivoCardState extends ConsumerState<_RetoActivoCard> {
                                   fontWeight: FontWeight.w600)),
                         ),
                   const Spacer(),
-                  Icon(Icons.schedule_rounded,
+                  const Icon(Icons.schedule_rounded,
                       size: 11, color: SVColors.onSurfaceMuted),
                   const SizedBox(width: 2),
                   Text(

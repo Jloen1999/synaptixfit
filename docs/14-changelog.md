@@ -5,7 +5,138 @@
 
 ---
 
-## [3.4.0] — 14-05-2026
+## [3.6.0] — 28-05-2026
+
+### Deprecación de `exercise_db_id` + ampliación de finalidad + nuevos ejercicios Demic
+
+**Migración 0019 (`20260527_0019_ampliar_finalidad.sql`):**
+- Amplía el CHECK de `finalidad` en `ejercicios` para aceptar: `hipertrofia`, `resistencia`, `movilidad`.
+- La UI y los prompts de IA quedan preparados para estas nuevas categorías.
+
+**Migración 0020 (`20260528_0020_deprecar_exercise_db_id.sql`):**
+- `exercise_db_id` pasa a nullable, eliminando UNIQUE y el índice `idx_ejercicios_exercise_db_id`.
+- `v_ejercicios_completos` recreada sin `exercise_db_id`.
+
+**Nuevos ejercicios desde Demic:**
+- 8 ejercicios nuevos insertados desde `supabase/nuevos_ejercicios.json`.
+- 2 músculos nuevos: glúteo medio, glúteo mayor.
+- 1 equipamiento nuevo: almohada.
+- Videos MP4 descargados por lote con Internet Download Manager, alojados en `demic/nuevos_para_r2/`.
+- Archivo `demic/nombres_videos.txt` con 56 slugs únicos para subida a R2.
+
+**Seed scripts actualizados:**
+- `seed_ejercicios.py` y `seed_gym_workout.py`: ya no incluyen `exercise_db_id` en el payload.
+- `seed_nuevos_ejercicios.py`: ahora restaura relaciones N:M incluso para ejercicios existentes usando upsert.
+
+**Refactorización Flutter — `exerciseDbId` eliminado:**
+- `EjercicioDb`: campo `exerciseDbId` eliminado del modelo, `fromMap` y `toMap`.
+- `ejercicios_repository.dart`: `exercise_db_id` removido de las queries.
+- `detalle_ejercicio_screen.dart`: sección "ExerciseDB ID" eliminada del widget `_InfoTab`.
+- `nueva_rutina_screen.dart`: matching por `ex?.id` en vez de `ex?.exerciseDbId ?? ex?.id`.
+- `recomendacion_ia_service.dart`: `e.id` directo en vez de `e.exerciseDbId ?? e.id`.
+
+**Documentación actualizada:**
+- `04-data-model.md`: v3.3 — schema actualizado (finalidad ampliada, exercise_db_id deprecado, vista recreada, catálogos expandidos).
+- `07-backend.md`: v2.2 — migraciones 0019 y 0020 agregadas al historial.
+- `13-maintenance.md`: v1.2 — flujo Demic documentado, catálogo actual (110 ejercicios, 13 partes, 60 músculos, 37 equipos, 56 slugs), sección de deprecación.
+- `14-changelog.md`: entrada 3.6.0 agregada.
+
+---
+
+## [3.7.0] — 28-05-2026
+
+### Reestructuración integral del catálogo de ejercicios
+
+**JSONs consolidados:**
+- `supabase/nuevos_ejercicios.json`: 95 ejercicios unificados con campo `fuente` (demic=62, exercisedb=21, gym_workout=12).
+- `supabase/musculos.json`: 60 músculos unificados.
+- `supabase/partes_cuerpo.json`: 13 partes del cuerpo unificadas.
+- `url_video` con ruta R2 según fuente: `ejercicios/{fuente}/{slug}.{ext}`.
+
+**Videos renombrados y organizados:**
+- `r2_staging/demic/`: 55 MP4s con slugs descriptivos.
+- `r2_staging/exercisedb/`: 30 GIFs renombrados de exerciseId a slug.
+- `r2_staging/gym_workout/`: 22 MP4s renombrados de UUID a slug.
+- 817 MP4s sobrantes de Gym Workout eliminados.
+- 5 ejercicios Gym Workout recuperados de deduplicación incorrecta.
+
+**Seed unificado:**
+- `supabase/seed_todo.py`: script único que reemplaza a seed_ejercicios.py, seed_nuevos_ejercicios.py, seed_gym_workout.py (ELIMINADOS).
+- Migración 0021: DELETE en orden FK para limpieza total antes de re-carga.
+
+**Reorganización de carpetas:**
+- `exercisedb/`: raw/, traducciones/, scripts/.
+- `demic/`: originales/ (403 videos fuente).
+- `r2_staging/`: staging centralizado para Cloudflare R2 (107 archivos).
+- `Gym Workout/`: eliminado (vacío).
+- `_archivo/`: archivos obsoletos (GIFs otras resoluciones, scripts temporales).
+
+**.gitignore actualizado:** r2_staging/, demic/originales/, demic/*.mp4, demic/*.py, _archivo/.
+
+**Documentación:** 04-data-model.md v3.4, 07-backend.md v2.2, 13-maintenance.md v1.3, 14-changelog.md entrada 3.7.0.
+
+---
+
+
+
+### Finalidad del ejercicio: campos dinámicos por tipo + GIF previews
+
+**Migración 0018 (`20260519_0018_finalidad_ejercicios.sql`):**
+- Nueva columna `finalidad` en `ejercicios`: `TEXT NOT NULL DEFAULT 'fuerza'` con CHECK (`fuerza`, `cardio`, `isometrico`).
+- Índice `idx_ejercicios_finalidad` para filtrado rápido por tipo.
+- Nuevas columnas en `seleccion_de_ejercicios`:
+  - `duracion_segundos INT` — duración del cardio en segundos.
+  - `distancia_metros INT` — distancia recorrida (opcional, solo cardio).
+  - `tiempo_isometrico_segundos INT` — tiempo de sujeción (solo isométrico).
+- Vista `v_ejercicios_completos` recreada como vista normal (no materializada) con subqueries, incluyendo el campo `finalidad`. Grants actualizados.
+
+**Enum `FinalidadEjercicio` (`db_models.dart:96-137`):**
+- Valores: `fuerza`, `cardio`, `isometrico`.
+- Métodos: `.fromString()` para deserializar desde BD, `.etiqueta` para UI en español, `.icono` con emoji representativo (🏋️ 🏃 🧘).
+- `EjercicioDb` ahora incluye campo `finalidad` (leído de `v_ejercicios_completos`).
+
+**Modelo `SeleccionEjercicioDb` actualizado (`db_models.dart:280-349`):**
+- Nuevos campos opcionales: `duracionSegundos`, `distanciaMetros`, `tiempoIsometricoSegundos`.
+- `fromMap()` y `toMap()` actualizados para incluir las nuevas columnas.
+
+**Widget `_EjercicioCompacto` con campos dinámicos (`nueva_rutina_screen.dart:1748-2067`):**
+- Switch statement en `_buildCamposDinamicos()` que renderiza campos específicos según finalidad:
+  - **Fuerza:** Series, Repeticiones, Descanso, Peso (kg) — grid 2×2 original.
+  - **Cardio:** Intervalos (=series), Duración (input libre tipo "5m 30s" → parseado a segundos), Distancia (metros, opcional), Descanso.
+  - **Isométrico:** Series, Tiempo de sujeción (segundos), Descanso.
+- `_finalidadChip()`: badge coloreado (naranja=fuerza, teal=cardio, índigo=isométrico) con icono + etiqueta.
+- `_parseDuracion()`: parser de texto libre que acepta formatos "5m 30s", "5:30", "300", "5 min".
+
+**Widget `_MiniGifPreview` (`nueva_rutina_screen.dart:1544-1623`):**
+- Miniatura de GIF con `CachedNetworkImage`, tamaño configurable (48px en buscador, 42px en tarjeta compacta).
+- Tap → diálogo de vista ampliada (280px, fondo negro semitransparente, botón de cierre).
+- Placeholder y error widget con iconos semánticos.
+
+**IA prompts actualizados con reglas de finalidad (`recomendacion_ia_service.dart`):**
+- Los 3 prompts principales incluyen sección `REGLAS SEGUN FINALIDAD DEL EJERCICIO`:
+  - `fuerza`: usa `series`, `repeticiones`, `segundosDescanso`, `pesoKg`.
+  - `cardio`: usa `duracionSegundos` (600-3600s), opcional `distanciaMetros`, `series`=intervalos. `repeticiones: 0`, `pesoKg: null`.
+  - `isometrico`: usa `tiempoIsometricoSegundos` (10-120s). `repeticiones: 0`, `pesoKg: null`.
+  - Prohibición de combinar campos de distintas finalidades en un mismo ejercicio.
+- Reglas específicas para cardio (intervalos 1-10, descanso 30-120s) e isométrico (series 2-4).
+- El catálogo de ejercicios enviado a Gemini ahora incluye el campo `finalidad`.
+
+**Seed script actualizado (`seed_ejercicios.py`):**
+- Nueva función `_generar_finalidad(ej: dict) -> str` con clasificación automática:
+  - **Cardio:** detecta por músculo `cardiovascular`, parte del cuerpo `cardio`, o 25+ palabras clave en nombre (bilingües: correr/running, nadar/swimming, saltar/jump, burpees, etc.).
+  - **Isométrico:** detecta por plancha/plank, isométrico/isometric, wall sit, puente estático, static hold, L-sit, hollow body, dead hang, sentadilla estática.
+  - **Fuerza:** default para todo lo demás.
+- El seeding ahora inserta el campo `finalidad` en ejercicios nuevos Y actualiza ejercicios existentes (migración de datos antiguos).
+
+### Documentación actualizada
+- `04-data-model.md` (v3.2): Columna `finalidad` en ER y SQL de `ejercicios`. Índice `idx_ejercicios_finalidad`. Nuevas columnas en `seleccion_de_ejercicios`. `finalidad` en vista `v_ejercicios_completos`. Nueva sección 2.2.7 documentando finalidad, columnas por tipo y clasificación automática.
+- `06-frontend.md` (v4.2): Sección 8.1 enum `FinalidadEjercicio`. Sección 8.2 widget `_EjercicioCompacto` con switch dinámico y tabla de campos por finalidad. Sección 8.3 widget `_MiniGifPreview` con diálogo ampliado. Componentes `FinalidadBadge` y `_MiniGifPreview` en tabla de componentes.
+- `07-backend.md` (v2.1): Migración 0018 añadida al historial completo.
+- `13-maintenance.md` (v1.1): Nueva sección 1.6 documentando `_generar_finalidad()` con criterios de clasificación.
+- `15-ia-recomendacion-sistema.md` (v3.4): Nueva sección 5.7 con reglas de finalidad en prompts, formato JSON esperado, reglas de cardio e isométrico.
+- `14-changelog.md`: Esta entrada.
+
+---
 
 ### Trigger de cascada días → semanas + fixes de UI reactiva
 

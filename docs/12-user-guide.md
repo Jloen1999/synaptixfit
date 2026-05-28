@@ -1,8 +1,8 @@
 # 12 - Guía de Usuario
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.0  
-**Fecha:** 19-04-2026
+**Versión:** 4.0  
+**Fecha:** 13-05-2026
 
 ---
 
@@ -61,35 +61,83 @@ Al abrir la app verás:
 
 ### 4.2 Crear una Rutina de Entrenamiento
 
+Hay dos formas de crear una rutina:
+
+**Vía rápida con IA (recomendada):**
+1. Ve a **Bienestar → Rutinas**.
+2. Pulsa el botón verde **"Sugerir Rutina con IA"**.
+3. Verás una animación profesional de generación IA mostrándote paso a paso qué está analizando (perfil, historial, estado diario, ejercicios, etc.).
+4. En segundos, la IA habrá rellenado el nombre, descripción y objetivo de tu rutina. Puedes cancelar en cualquier momento pulsando **"Cancelar"**.
+5. Revisa los campos, ajusta si lo deseas, y continúa a Paso 2 para añadir ejercicios (también puedes usar IA con "Recomendar ejercicios").
+
+> 💡 También puedes usar la IA desde dentro del Paso 1 con los botones "Recomendar rutina con IA" y "Recomendar ejercicios". Ambos muestran la misma pantalla de carga profesional con botón de cancelación.
+
+**Vía manual (3 pasos):**
+
 ```
-1. Toca el botón "+" del Dashboard
-2. Navega al Explorador de Ejercicios
-3. Filtra por grupo muscular, equipamiento o dificultad
-4. Toca un ejercicio para ver su detalle (video/instrucciones)
-5. Ajusta series, repeticiones y descanso
-6. Toca "Agregar a rutina"
-7. Repite con al menos 3 ejercicios
-8. En el Constructor, reordena si lo necesitas
-9. Toca "Guardar rutina", dale un nombre y elige visibilidad
+PASO 1 — Metadatos:
+  1. Ve a la pestaña Bienestar → Mis Rutinas → botón (+)
+  2. Define: nombre, descripción, objetivo (fuerza, hipertrofia, etc.)
+  3. Elige visibilidad, duración (1-12 semanas) y días por semana
+  4. Opcional: pulsa "Recomendar rutina con IA" para que Gemini sugiera todo
+     └─ Puedes cancelar la recomendación en cualquier momento si tarda
+
+PASO 2 — Estructura (Semanas × Días × Ejercicios):
+  1. Selecciona cada semana y añade/edita sus días
+  2. Por cada día: añade ejercicios desde el catálogo (~1300 ejercicios)
+  3. Ajusta series, repeticiones, descanso y peso (acepta decimales: 75.5 kg)
+  4. Opcional: pulsa "Sugerir ejercicios con IA" para llenar un día automáticamente
+     └─ También puedes cancelar si prefieres elegir manualmente
+
+PASO 3 — Revisa tu rutina:
+  1. Revisa el resumen completo: semanas, días y ejercicios totales
+  2. Toca "Crear rutina" para guardar todo en tu perfil
+  3. Serás redirigido a la pantalla de detalle de tu nueva rutina
 ```
 
-### 4.3 Completar una Sesión
+> 💡 El campo de peso acepta valores decimales (ej: 22.5, 75.0) para cargas precisas.
 
-1. Ve a tus rutinas desde el Dashboard.
-2. Selecciona la rutina y comienza.
-3. Al finalizar, la app mostrará:
-   - Resumen (duración, calorías, ejercicios).
-   - Insignias desbloqueadas.
-   - Puntos de experiencia ganados.
+### 4.3 Revisar y Gestionar tu Rutina
 
-### 4.4 Planificar tu Semana Académica
+Al abrir una rutina desde "Mis Rutinas", verás una vista detallada con navegación por niveles:
+
+**Navegación por drill-down (3 niveles):**
+
+| Nivel | ¿Qué ves? | ¿Qué puedes hacer? |
+|-------|-----------|-------------------|
+| **Semanas** | Chips horizontales con tipo (Adapt/Carga/Pico/Desc) y conteo de ejercicios | Toca una semana para ver sus días |
+| **Días** | Lista de días con vista previa de ejercicios y estado (pendiente/en progreso/completado) | Toca un día para **expandirlo** y ver todos sus ejercicios con detalle |
+| **Ejercicios** | Lista completa de ejercicios del día con series, reps, descanso y peso | Edita los valores inline, sustituye ejercicios (long-press), o inicia la sesión |
+
+**Interacciones clave:**
+- **Expandir/colapsar día:** un solo tap muestra u oculta los ejercicios del día
+- **Editar ejercicio:** tap en un ejercicio habilita los controles ± para cambiar series/reps/descanso/peso
+- **Sustituir ejercicio:** mantén presionado un ejercicio para reemplazarlo desde el catálogo
+- **Iniciar sesión:** botón "Iniciar" en un día (solo disponible si el día tiene ejercicios)
+- **Añadir día/ejercicio:** botones para agregar más días a una semana o ejercicios a un día
+
+### 4.4 Completar una Sesión (con check-in inteligente)
+
+1. Desde **Mis Rutinas**, abre la rutina y pulsa **"Iniciar"** en el día que quieras entrenar.
+2. El cronómetro y los ejercicios aparecen **inmediatamente**.
+3. Al completar tu **primera serie**, durante el descanso de 90s, la app te preguntará **"¿Cómo te sientes hoy?"** (sueño, estrés, energía, dolor).
+   - *Si ya respondiste hoy, no se volverá a preguntar.*
+4. Según tus respuestas, la **IA de SynaptixFit** te sugerirá adaptaciones:
+   - Reducir series si hay fatiga alta
+   - Evitar ejercicios de zonas con dolor
+   - Bajar intensidad si tu energía está baja
+   - Puedes aceptar todas, una sola, o ignorar
+5. Continúa tu sesión con los ajustes aplicados.
+6. Al finalizar, la app preguntará tu **RPE** (esfuerzo percibido) y si guardar los cambios para futuras sesiones.
+
+### 4.5 Planificar tu Semana Académica
 
 1. Ve a la pestaña **Académico**.
 2. Agrega tus asignaturas y bloques de clase.
 3. La app detecta automáticamente conflictos con tus entrenamientos.
 4. Revisa las sugerencias de ajuste y acepta o descarta.
 
-### 4.5 Crear un Reto
+### 4.6 Crear un Reto
 
 **Reto simple:**
 1. Ve a **Retos → Crear Reto**.
@@ -101,7 +149,7 @@ Al abrir la app verás:
 2. La app valida que la suma de pesos sea exactamente 100%.
 3. Los hitos se pueden reordenar arrastrándolos.
 
-### 4.6 Interactuar en el Muro Social
+### 4.7 Interactuar en el Muro Social
 
 - Ve a la pestaña **Social**.
 - Visualiza logros de tus amigos.
@@ -155,5 +203,5 @@ Mínimo 3 ejercicios para poder guardarla.
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Última revisión:** v1.0
+**Documento compilado:** 13-05-2026  
+**Última revisión:** v3.3

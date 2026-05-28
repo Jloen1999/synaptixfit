@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../shared/utils/string_utils.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/challenge_progress_bar.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
@@ -57,8 +58,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
-              onChanged: (v) =>
-                  setState(() => _busqueda = v.trim().toLowerCase()),
+              onChanged: (v) => setState(() => _busqueda = normalizeSearch(v)),
             ),
           ),
           SingleChildScrollView(
@@ -268,8 +268,8 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
         if (_busqueda.isNotEmpty) {
           completadosInfo = completadosInfo
               .where((c) =>
-                  c.reto.titulo.toLowerCase().contains(_busqueda) ||
-                  c.reto.meta.toLowerCase().contains(_busqueda))
+                  normalizeSearch(c.reto.titulo).contains(_busqueda) ||
+                  normalizeSearch(c.reto.meta).contains(_busqueda))
               .toList();
         }
         if (_filtroTipo != null) {

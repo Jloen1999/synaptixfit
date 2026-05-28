@@ -537,6 +537,12 @@ Future<String> crearRutinaCompleta({
             'segundos_descanso': e.segundosDescanso,
             'indice_orden': i + 1,
             if (e.pesoKg != null) 'peso_kg': e.pesoKg,
+            if (e.duracionSegundos != null)
+              'duracion_segundos': e.duracionSegundos,
+            if (e.distanciaMetros != null)
+              'distancia_metros': e.distanciaMetros,
+            if (e.tiempoIsometricoSegundos != null)
+              'tiempo_isometrico_segundos': e.tiempoIsometricoSegundos,
           });
         }
         await client.from('seleccion_de_ejercicios').insert(rows);
@@ -557,6 +563,7 @@ Future<void> eliminarRutina(String rutinaId, WidgetRef ref) async {
   final client = Supabase.instance.client;
   await client.from('rutinas').delete().eq('id', rutinaId);
   ref.invalidate(rutinasUsuarioProvider);
+  ref.invalidate(rutinasComunidadProvider);
 }
 
 Future<void> actualizarEstadoSemana(
@@ -583,6 +590,9 @@ Future<void> agregarEjercicioADia({
   required int repeticiones,
   required int segundosDescanso,
   double? pesoKg,
+  int? duracionSegundos,
+  int? distanciaMetros,
+  int? tiempoIsometricoSegundos,
   required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
@@ -595,17 +605,57 @@ Future<void> agregarEjercicioADia({
     'segundos_descanso': segundosDescanso,
     'indice_orden': 99,
     if (pesoKg != null) 'peso_kg': pesoKg,
+    if (duracionSegundos != null) 'duracion_segundos': duracionSegundos,
+    if (distanciaMetros != null) 'distancia_metros': distanciaMetros,
+    if (tiempoIsometricoSegundos != null)
+      'tiempo_isometrico_segundos': tiempoIsometricoSegundos,
   });
+  await reactivarSiCompletada(rutinaId, ref);
   ref.invalidate(ejerciciosDeDiaProvider(diaId));
   ref.invalidate(nombresEjerciciosProvider(diaId));
 }
 
 Future<void> quitarEjercicioDeDia(
-    String seleccionId, String diaId, WidgetRef ref) async {
+    String seleccionId, String diaId, String rutinaId, WidgetRef ref) async {
   final client = Supabase.instance.client;
   await client.from('seleccion_de_ejercicios').delete().eq('id', seleccionId);
+  await reactivarSiCompletada(rutinaId, ref);
   ref.invalidate(ejerciciosDeDiaProvider(diaId));
   ref.invalidate(nombresEjerciciosProvider(diaId));
+}
+
+Future<void> reactivarSiCompletada(String rutinaId, WidgetRef ref) async {
+  final client = Supabase.instance.client;
+  final r = await client
+      .from('rutinas')
+      .select('estado')
+      .eq('id', rutinaId)
+      .maybeSingle();
+  if (r == null || r['estado'] != 'completado') return;
+
+  final semanas = await client
+      .from('semanas_rutina')
+      .select('id')
+      .eq('rutina_id', rutinaId);
+  final semanaIds = (semanas as List).map((s) => s['id'] as String).toList();
+
+  if (semanaIds.isNotEmpty) {
+    for (final sid in semanaIds) {
+      await client
+          .from('dias_rutina')
+          .update({'estado': 'pendiente'}).eq('semana_id', sid);
+    }
+    await client
+        .from('semanas_rutina')
+        .update({'estado': 'pendiente'}).eq('rutina_id', rutinaId);
+  }
+
+  await client.from('rutinas').update({'estado': 'activo'}).eq('id', rutinaId);
+
+  ref.invalidate(rutinasUsuarioProvider);
+  ref.invalidate(rutinasComunidadProvider);
+  ref.invalidate(semanasDeRutinaProvider(rutinaId));
+  ref.invalidate(progresoRutinasProvider);
 }
 
 Future<void> actualizarEjercicioDia(String seleccionId,
@@ -620,7 +670,7 @@ Future<void> actualizarEjercicioDia(String seleccionId,
 }
 
 Future<String> agregarDiaASemana(
-    String semanaId, int numeroDia, WidgetRef ref) async {
+    String semanaId, int numeroDia, String rutinaId, WidgetRef ref) async {
   final client = Supabase.instance.client;
   final data = await client
       .from('dias_rutina')
@@ -631,8 +681,17 @@ Future<String> agregarDiaASemana(
       })
       .select('id')
       .single();
+  await reactivarSiCompletada(rutinaId, ref);
   ref.invalidate(diasDeSemanaProvider(semanaId));
   return data['id'] as String;
+}
+
+Future<void> eliminarDiaDeSemana(
+    String diaId, String semanaId, String rutinaId, WidgetRef ref) async {
+  final client = Supabase.instance.client;
+  await client.from('dias_rutina').delete().eq('id', diaId);
+  await reactivarSiCompletada(rutinaId, ref);
+  ref.invalidate(diasDeSemanaProvider(semanaId));
 }
 
 // ---------------------------------------------------------------------------
@@ -720,12 +779,18 @@ class EjercicioInput {
     required this.repeticiones,
     required this.segundosDescanso,
     this.pesoKg,
+    this.duracionSegundos,
+    this.distanciaMetros,
+    this.tiempoIsometricoSegundos,
   });
   final String ejercicioId;
   final int series;
   final int repeticiones;
   final int segundosDescanso;
   final double? pesoKg;
+  final int? duracionSegundos;
+  final int? distanciaMetros;
+  final int? tiempoIsometricoSegundos;
 }
 
 final perfilBienestarProvider = FutureProvider<PerfilBienestarDb?>((ref) async {
@@ -1025,3 +1090,71 @@ class PeriodizacionEstado {
   final int semanasConsecutivas;
   final int puntuacionFatigaDiaria;
 }
+
+class ProgresoRutinaDto {
+  const ProgresoRutinaDto({
+    required this.diasCompletados,
+    required this.totalDias,
+  });
+
+  final int diasCompletados;
+  final int totalDias;
+
+  double get porcentaje =>
+      totalDias > 0 ? (diasCompletados / totalDias).clamp(0.0, 1.0) : 0.0;
+}
+
+final progresoRutinasProvider =
+    FutureProvider<Map<String, ProgresoRutinaDto>>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return {};
+
+  final rutinasData =
+      await client.from('rutinas').select('id').eq('usuario_id', user.id);
+
+  final ids = (rutinasData as List).map((r) => r['id'] as String).toList();
+  if (ids.isEmpty) return {};
+
+  final orSemanas = ids.map((id) => 'rutina_id.eq.$id').join(',');
+  final semanasData =
+      await client.from('semanas_rutina').select('id, rutina_id').or(orSemanas);
+
+  final semanaIds =
+      (semanasData as List).map((s) => s['id'] as String).toList();
+  if (semanaIds.isEmpty) {
+    return {
+      for (final id in ids)
+        id: const ProgresoRutinaDto(diasCompletados: 0, totalDias: 0)
+    };
+  }
+
+  final orDias = semanaIds.map((id) => 'semana_id.eq.$id').join(',');
+  final diasData =
+      await client.from('dias_rutina').select('semana_id, estado').or(orDias);
+
+  final rutinaDeSemana = <String, String>{};
+  for (final s in semanasData) {
+    rutinaDeSemana[s['id'] as String] = s['rutina_id'] as String;
+  }
+
+  final totalPorRutina = <String, int>{};
+  final completadosPorRutina = <String, int>{};
+  for (final d in diasData) {
+    final semanaId = d['semana_id'] as String;
+    final rutinaId = rutinaDeSemana[semanaId] ?? '';
+    totalPorRutina[rutinaId] = (totalPorRutina[rutinaId] ?? 0) + 1;
+    if (d['estado'] == 'completado') {
+      completadosPorRutina[rutinaId] =
+          (completadosPorRutina[rutinaId] ?? 0) + 1;
+    }
+  }
+
+  return {
+    for (final id in ids)
+      id: ProgresoRutinaDto(
+        diasCompletados: completadosPorRutina[id] ?? 0,
+        totalDias: totalPorRutina[id] ?? 0,
+      )
+  };
+});

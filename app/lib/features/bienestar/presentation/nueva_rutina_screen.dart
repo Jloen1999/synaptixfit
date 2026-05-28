@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,32 +17,51 @@ class _EjercicioPlan {
   const _EjercicioPlan({
     required this.ejercicioId,
     required this.nombre,
+    required this.finalidad,
+    this.urlGif,
     this.series = 3,
     this.repeticiones = 10,
     this.segundosDescanso = 90,
     this.pesoKg,
+    this.duracionSegundos,
+    this.distanciaMetros,
+    this.tiempoIsometricoSegundos,
   });
 
   final String ejercicioId;
   final String nombre;
+  final FinalidadEjercicio finalidad;
+  final String? urlGif;
   final int series;
   final int repeticiones;
   final int segundosDescanso;
   final double? pesoKg;
+  final int? duracionSegundos;
+  final int? distanciaMetros;
+  final int? tiempoIsometricoSegundos;
 
   _EjercicioPlan copyWith({
     int? series,
     int? repeticiones,
     int? segundosDescanso,
     double? pesoKg,
+    int? duracionSegundos,
+    int? distanciaMetros,
+    int? tiempoIsometricoSegundos,
   }) {
     return _EjercicioPlan(
       ejercicioId: ejercicioId,
       nombre: nombre,
+      finalidad: finalidad,
+      urlGif: urlGif,
       series: series ?? this.series,
       repeticiones: repeticiones ?? this.repeticiones,
       segundosDescanso: segundosDescanso ?? this.segundosDescanso,
       pesoKg: pesoKg ?? this.pesoKg,
+      duracionSegundos: duracionSegundos ?? this.duracionSegundos,
+      distanciaMetros: distanciaMetros ?? this.distanciaMetros,
+      tiempoIsometricoSegundos:
+          tiempoIsometricoSegundos ?? this.tiempoIsometricoSegundos,
     );
   }
 
@@ -51,12 +72,17 @@ class _EjercicioPlan {
       repeticiones: repeticiones,
       segundosDescanso: segundosDescanso,
       pesoKg: pesoKg,
+      duracionSegundos: duracionSegundos,
+      distanciaMetros: distanciaMetros,
+      tiempoIsometricoSegundos: tiempoIsometricoSegundos,
     );
   }
 }
 
 class NuevaRutinaScreen extends ConsumerStatefulWidget {
-  const NuevaRutinaScreen({super.key});
+  const NuevaRutinaScreen({this.autoRecomendar = false, super.key});
+
+  final bool autoRecomendar;
 
   @override
   ConsumerState<NuevaRutinaScreen> createState() => _NuevaRutinaScreenState();
@@ -66,8 +92,11 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   int _paso = 0;
   bool _creando = false;
   bool _loadingIA = false;
+  String _tipoCarga = '';
   bool _rutinaRecomendada = false;
   bool _ejerciciosRecomendados = false;
+  Timer? _timerMensajes;
+  String _mensajeCarga = '';
 
   final _nombreCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
@@ -86,6 +115,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     'fuerza',
     'resistencia',
     'movilidad',
+    'mixto',
   ];
 
   @override
@@ -93,6 +123,9 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     super.initState();
     _inicializarEstructura();
     _cargarObjetivoPerfil();
+    if (widget.autoRecomendar) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _recomendarRutina());
+    }
   }
 
   Future<void> _cargarObjetivoPerfil() async {
@@ -110,6 +143,21 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         .join(' ');
   }
 
+  String _sanitizarObjetivo(String o) {
+    final l = o.toLowerCase().trim();
+    if (_todosObjetivos.contains(l)) return l;
+    const mapeo = {
+      'hipertrofia': 'ganar_masa',
+      'ganancia_muscular': 'ganar_masa',
+      'perdida_de_peso': 'perder_peso',
+      'bajar_de_peso': 'perder_peso',
+      'cardio': 'resistencia',
+      'flexibilidad': 'movilidad',
+      'general': 'fitness_general',
+    };
+    return mapeo[l] ?? 'fuerza';
+  }
+
   void _inicializarEstructura() {
     _estructura.clear();
     for (var s = 1; s <= _duracionSemanas; s++) {
@@ -120,11 +168,108 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     }
   }
 
+  void _syncEstructura() {
+    _estructura.removeWhere((s, _) => s > _duracionSemanas);
+    for (var s = 1; s <= _duracionSemanas; s++) {
+      _estructura.putIfAbsent(s, () => {});
+    }
+    for (final s in _estructura.keys.toList()) {
+      final dias = _estructura[s]!;
+      dias.removeWhere((d, _) => d > _diasPorSemana);
+      for (var d = 1; d <= _diasPorSemana; d++) {
+        dias.putIfAbsent(d, () => []);
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _timerMensajes?.cancel();
     _nombreCtrl.dispose();
     _descCtrl.dispose();
     super.dispose();
+  }
+
+  static const _mensajesRutina = [
+    'Analizando tu perfil físico...',
+    'Consultando tu historial de entrenamiento...',
+    'Revisando tu estado diario...',
+    'Procesando catálogo de ejercicios...',
+    'Aplicando reglas de periodización...',
+    'Personalizando según tu objetivo...',
+    'Estructurando semanas y días...',
+    '¡Casi listo! Ajustando detalles finales...',
+  ];
+
+  static const _mensajesEjercicios = [
+    'Analizando estructura de la rutina...',
+    'Evaluando periodización por semana...',
+    'Distribuyendo grupos musculares...',
+    'Seleccionando ejercicios compatibles...',
+    'Ajustando volumen e intensidad...',
+    'Organizando días de entrenamiento...',
+    'Verificando progresión de cargas...',
+    '¡Casi listo! Últimos ajustes...',
+  ];
+
+  static const _mensajesSugerir = [
+    'Analizando ejercicios del día...',
+    'Identificando grupos musculares trabajados...',
+    'Buscando ejercicios complementarios...',
+    'Seleccionando según tu equipamiento...',
+    'Ajustando series y repeticiones...',
+    'Optimizando tiempos de descanso...',
+    'Verificando balance muscular...',
+    '¡Casi listo! Últimos ajustes...',
+  ];
+
+  void _iniciarSecuenciaMensajes() {
+    _timerMensajes?.cancel();
+    final mensajes = _tipoCarga == 'ejercicios'
+        ? _mensajesEjercicios
+        : _tipoCarga == 'sugerir'
+            ? _mensajesSugerir
+            : _mensajesRutina;
+    _mensajeCarga = mensajes.first;
+    int i = 0;
+    _timerMensajes = Timer.periodic(const Duration(milliseconds: 1800), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      i++;
+      if (i < mensajes.length) {
+        setState(() => _mensajeCarga = mensajes[i]);
+      }
+    });
+  }
+
+  void _detenerMensajesCarga() {
+    _timerMensajes?.cancel();
+    _timerMensajes = null;
+  }
+
+  void _terminarCargaIA() {
+    _detenerMensajesCarga();
+    setState(() {
+      _loadingIA = false;
+      _tipoCarga = '';
+    });
+  }
+
+  void _cancelarCargaIA() {
+    _detenerMensajesCarga();
+    setState(() {
+      _loadingIA = false;
+      _tipoCarga = '';
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Recomendación cancelada.'),
+            duration: Duration(seconds: 2)),
+      );
+    }
   }
 
   @override
@@ -132,6 +277,13 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     return FeatureScaffold(
       title: 'Nueva rutina',
       backPath: '/bienestar',
+      onBack: () {
+        if (_paso > 0) {
+          setState(() => _paso--);
+        } else {
+          context.go('/bienestar');
+        }
+      },
       child: _paso == 0
           ? _buildPaso1()
           : _paso == 1
@@ -140,8 +292,297 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     );
   }
 
+  Widget _buildPantallaGeneracion(ThemeData theme) {
+    final esEjercicios = _tipoCarga == 'ejercicios';
+    final iconWidget = Container(
+      width: 96,
+      height: 96,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF006E2D), Color(0xFF00C853)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF006E2D).withValues(alpha: 0.35),
+            blurRadius: 32,
+            spreadRadius: 4,
+          ),
+        ],
+      ),
+      child: const Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(Icons.auto_awesome, size: 40, color: Colors.white),
+          Positioned(
+            top: 18,
+            right: 18,
+            child: Icon(Icons.auto_awesome, size: 14, color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.92, end: 1.08),
+              duration: const Duration(milliseconds: 1200),
+              builder: (context, scale, child) => Transform.scale(
+                scale: scale,
+                child: child,
+              ),
+              child: iconWidget,
+              onEnd: () {
+                if (mounted) setState(() {});
+              },
+            ),
+            const SizedBox(height: 48),
+            Text(
+              'SynaptixFit AI',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              esEjercicios
+                  ? 'Generando estructura de ejercicios'
+                  : 'Generando tu rutina personalizada',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              height: 4,
+              width: 200,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.12),
+                  color: const Color(0xFF00C853),
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              child: Container(
+                key: ValueKey(_mensajeCarga),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        _mensajeCarga,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 36),
+            TextButton.icon(
+              onPressed: _cancelarCargaIA,
+              icon: const Icon(Icons.close, size: 18),
+              label: const Text('Cancelar'),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPantallaGeneracionEjerciciosDia(ThemeData theme) {
+    final iconWidget = Container(
+      width: 88,
+      height: 88,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7C3AED), Color(0xFFA78BFA)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+            blurRadius: 28,
+            spreadRadius: 3,
+          ),
+        ],
+      ),
+      child: const Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(Icons.fitness_center_rounded, size: 36, color: Colors.white),
+          Positioned(
+            bottom: 14,
+            right: 14,
+            child: Icon(Icons.auto_awesome, size: 12, color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.93, end: 1.07),
+              duration: const Duration(milliseconds: 900),
+              builder: (context, scale, child) => Transform.scale(
+                scale: scale,
+                child: child,
+              ),
+              child: iconWidget,
+              onEnd: () {
+                if (mounted) setState(() {});
+              },
+            ),
+            const SizedBox(height: 40),
+            Text(
+              'SynaptixFit AI',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sugiriendo ejercicios para tu día',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.today_rounded,
+                      size: 14, color: const Color(0xFF7C3AED)),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Personalizando ejercicios',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF7C3AED)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              height: 4,
+              width: 200,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  backgroundColor:
+                      const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                  color: const Color(0xFFA78BFA),
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              child: Container(
+                key: ValueKey(_mensajeCarga),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        _mensajeCarga,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 36),
+            TextButton.icon(
+              onPressed: _cancelarCargaIA,
+              icon: const Icon(Icons.close, size: 18),
+              label: const Text('Cancelar'),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPaso1() {
     final theme = Theme.of(context);
+
+    if (_loadingIA) {
+      return _buildPantallaGeneracion(theme);
+    }
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -161,7 +602,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         TextField(
           controller: _nombreCtrl,
           textCapitalization: TextCapitalization.sentences,
-          autofocus: true,
+          autofocus: !widget.autoRecomendar,
           decoration: const InputDecoration(
               labelText: 'Nombre *', hintText: 'ej: Rutina de fuerza'),
         ),
@@ -255,42 +696,35 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
               icon: const Icon(Icons.add_circle_outline)),
         ]),
         const SizedBox(height: 28),
+        OutlinedButton.icon(
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back),
+          label: const Text('Atrás'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(44),
+          ),
+        ),
+        const SizedBox(height: 28),
         if (EnvConfig.hasGeminiApiKey) ...[
           OutlinedButton.icon(
             onPressed: _loadingIA ? null : _recomendarRutina,
-            icon: _loadingIA
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.auto_awesome, size: 18),
-            label: Text(_loadingIA
-                ? 'Generando recomendación...'
-                : _rutinaRecomendada
-                    ? 'Cambiar rutina con IA'
-                    : 'Recomendar rutina con IA'),
+            icon: const Icon(Icons.auto_awesome, size: 18),
+            label: Text(_rutinaRecomendada
+                ? 'Cambiar rutina con IA'
+                : 'Recomendar rutina con IA'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(44),
             ),
           ),
-          if (_rutinaRecomendada) ...[
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _loadingIA ? null : _recomendarEjercicios,
-              icon: _loadingIA
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.fitness_center, size: 18),
-              label: Text(_loadingIA
-                  ? 'Generando ejercicios...'
-                  : 'Recomendar ejercicios'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-              ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _loadingIA ? null : _recomendarEjercicios,
+            icon: const Icon(Icons.fitness_center, size: 18),
+            label: const Text('Recomendar ejercicios'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(44),
             ),
-          ],
+          ),
           const SizedBox(height: 12),
         ],
         FilledButton.icon(
@@ -300,6 +734,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                   content: Text('El nombre debe tener al menos 3 caracteres')));
               return;
             }
+            _syncEstructura();
             setState(() => _paso = 1);
           },
           icon: const Icon(Icons.arrow_forward),
@@ -310,6 +745,10 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   }
 
   Widget _buildPaso2() {
+    if (_loadingIA) {
+      return _buildPantallaGeneracionEjerciciosDia(Theme.of(context));
+    }
+
     final semanas = _estructura.keys.toList()..sort();
     if (semanas.isEmpty) {
       return Center(
@@ -510,7 +949,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                   ),
                 ),
               ),
-              _resumenFila('Objetivo', _objetivo),
+              _resumenFila('Objetivo', _formatearObjetivo(_objetivo)),
               _resumenFila(
                   'Visibilidad',
                   _visibilidad == 'private'
@@ -609,19 +1048,53 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       );
 
   Future<void> _recomendarRutina() async {
-    setState(() => _loadingIA = true);
+    setState(() {
+      _loadingIA = true;
+      _tipoCarga = 'rutina';
+    });
+    _iniciarSecuenciaMensajes();
     try {
-      final perfil = await ref.read(perfilBienestarProvider.future);
+      // Invalidar providers para datos frescos y evitar errores cacheados
+      ref.invalidate(perfilBienestarProvider);
+      ref.invalidate(ejerciciosProvider);
+      ref.invalidate(historialSesionUsuarioProvider);
+      ref.invalidate(estadoDiarioHoyProvider);
+
+      // Cargar datos en paralelo: perfil, ejercicios, historial, estado diario
+      PerfilBienestarDb? perfil;
+      List<EjercicioDb> ejercicios = [];
+      HistorialSesionDto? historial;
+      EstadoDiarioDb? estadoDiario;
+
+      final resultados = await Future.wait([
+        _obtenerOConTimeout(
+            () => ref.read(perfilBienestarProvider.future), 'perfil'),
+        _obtenerOConTimeout(() => ref.read(ejerciciosProvider.future),
+            'catálogo de ejercicios'),
+        _obtenerOConTimeout(
+            () => ref.read(historialSesionUsuarioProvider.future), 'historial'),
+        _obtenerOConTimeout(
+            () => ref.read(estadoDiarioHoyProvider.future), 'estado diario'),
+      ]);
+
+      perfil = resultados[0] as PerfilBienestarDb?;
+      ejercicios = (resultados[1] as List<EjercicioDb>?) ?? [];
+      historial = resultados[2] as HistorialSesionDto?;
+      estadoDiario = resultados[3] as EstadoDiarioDb?;
+
+      if (!mounted) return;
+      if (!_loadingIA) return;
 
       if (perfil == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content: Text(
-                    'Completa tu perfil de bienestar para recibir recomendaciones')),
+                    'Completa tu perfil de bienestar para recibir recomendaciones'),
+                duration: Duration(seconds: 2)),
           );
         }
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
@@ -630,39 +1103,55 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Configura GEMINI_API_KEY en el archivo .env')),
+                content: Text('Configura GEMINI_API_KEY en el archivo .env'),
+                duration: Duration(seconds: 2)),
           );
         }
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
-      final ejercicios = await ref.read(ejerciciosProvider.future);
-      final historial = await ref.read(historialSesionUsuarioProvider.future);
-      final estadoDiario = await ref.read(estadoDiarioHoyProvider.future);
+      if (ejercicios.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'No se pudo cargar el catálogo de ejercicios. Verifica tu conexión.'),
+                duration: Duration(seconds: 2)),
+          );
+        }
+        _terminarCargaIA();
+        return;
+      }
 
+      // Llamada a Gemini
       final servicio = RecomendacionIaService();
-      final resultado = await servicio.generarRecomendacionRutina(
-        apiKey: apiKey,
-        perfil: perfil,
-        ejerciciosDisponibles: ejercicios,
-        historial: historial,
-        estadoDiario: estadoDiario,
-      );
+      final resultado = await servicio
+          .generarRecomendacionRutina(
+            apiKey: apiKey,
+            perfil: perfil,
+            ejerciciosDisponibles: ejercicios,
+            historial: historial,
+            estadoDiario: estadoDiario,
+          )
+          .timeout(const Duration(seconds: 45));
       if (!mounted) return;
+      if (!_loadingIA) return;
 
       if (resultado.tieneError) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.error!)),
+          SnackBar(
+              content: Text(resultado.error!),
+              duration: const Duration(seconds: 3)),
         );
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
       // Solo autocompletar metadatos, NO ejercicios
       _nombreCtrl.text = resultado.nombre;
       _descCtrl.text = resultado.descripcion;
-      _objetivo = resultado.objetivo;
+      _objetivo = _sanitizarObjetivo(resultado.objetivo);
       _duracionSemanas = resultado.duracionSemanas.clamp(1, 12);
 
       final semanaKeys = resultado.estructura.keys.toList()..sort();
@@ -671,8 +1160,10 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
             resultado.estructura[semanaKeys.first]!.length.clamp(1, 7);
       }
 
+      _detenerMensajesCarga();
       setState(() {
         _loadingIA = false;
+        _tipoCarga = '';
         _rutinaRecomendada = true;
       });
 
@@ -686,78 +1177,142 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
+        final msg = e is TimeoutException
+            ? 'La IA tardó demasiado en responder. Inténtalo de nuevo.'
+            : 'Error al generar recomendación. Verifica tu conexión e inténtalo de nuevo.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al generar recomendación: $e')),
+          SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
         );
       }
     }
   }
 
-  Future<void> _recomendarEjercicios() async {
-    setState(() => _loadingIA = true);
+  Future<T?> _obtenerOConTimeout<T>(
+      Future<T> Function() obtener, String nombre) async {
     try {
-      final perfil = await ref.read(perfilBienestarProvider.future);
-      final ejercicios = await ref.read(ejerciciosProvider.future);
-      final historial = await ref.read(historialSesionUsuarioProvider.future);
-      final estadoDiario = await ref.read(estadoDiarioHoyProvider.future);
+      return await obtener().timeout(const Duration(seconds: 20));
+    } catch (e) {
+      debugPrint('⚠ No se pudo cargar $nombre: $e');
+      return null;
+    }
+  }
+
+  Future<void> _recomendarEjercicios() async {
+    setState(() {
+      _loadingIA = true;
+      _tipoCarga = 'ejercicios';
+    });
+    _iniciarSecuenciaMensajes();
+    try {
+      ref.invalidate(perfilBienestarProvider);
+      ref.invalidate(ejerciciosProvider);
+      ref.invalidate(historialSesionUsuarioProvider);
+      ref.invalidate(estadoDiarioHoyProvider);
+
+      PerfilBienestarDb? perfil;
+      List<EjercicioDb> ejercicios = [];
+      HistorialSesionDto? historial;
+      EstadoDiarioDb? estadoDiario;
+
+      final resultados = await Future.wait([
+        _obtenerOConTimeout(
+            () => ref.read(perfilBienestarProvider.future), 'perfil'),
+        _obtenerOConTimeout(() => ref.read(ejerciciosProvider.future),
+            'catálogo de ejercicios'),
+        _obtenerOConTimeout(
+            () => ref.read(historialSesionUsuarioProvider.future), 'historial'),
+        _obtenerOConTimeout(
+            () => ref.read(estadoDiarioHoyProvider.future), 'estado diario'),
+      ]);
+
+      perfil = resultados[0] as PerfilBienestarDb?;
+      ejercicios = (resultados[1] as List<EjercicioDb>?) ?? [];
+      historial = resultados[2] as HistorialSesionDto?;
+      estadoDiario = resultados[3] as EstadoDiarioDb?;
+
+      if (!mounted) return;
+      if (!_loadingIA) return;
 
       if (perfil == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content: Text(
-                    'Completa tu perfil de bienestar para recibir recomendaciones')),
+                    'Completa tu perfil de bienestar para recibir recomendaciones'),
+                duration: Duration(seconds: 2)),
           );
         }
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
       final apiKey = EnvConfig.geminiApiKey;
       if (apiKey.isEmpty) {
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
+        return;
+      }
+
+      if (ejercicios.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'No se pudo cargar el catálogo de ejercicios. Verifica tu conexión.'),
+                duration: Duration(seconds: 2)),
+          );
+        }
+        _terminarCargaIA();
         return;
       }
 
       // Siempre llama a la IA con la configuración ACTUAL de la rutina
       final servicio = RecomendacionIaService();
-      final resultado = await servicio.generarEstructuraCompleta(
-        apiKey: apiKey,
-        perfil: perfil,
-        ejerciciosDisponibles: ejercicios,
-        nombreRutina: _nombreCtrl.text.isNotEmpty ? _nombreCtrl.text : 'Rutina',
-        descripcionRutina: _descCtrl.text,
-        objetivoRutina: _objetivo,
-        duracionSemanas: _duracionSemanas,
-        diasPorSemana: _diasPorSemana,
-        historial: historial,
-        estadoDiario: estadoDiario,
-      );
+      final resultado = await servicio
+          .generarEstructuraCompleta(
+            apiKey: apiKey,
+            perfil: perfil,
+            ejerciciosDisponibles: ejercicios,
+            nombreRutina:
+                _nombreCtrl.text.isNotEmpty ? _nombreCtrl.text : 'Rutina',
+            descripcionRutina: _descCtrl.text,
+            objetivoRutina: _objetivo,
+            duracionSemanas: _duracionSemanas,
+            diasPorSemana: _diasPorSemana,
+            historial: historial,
+            estadoDiario: estadoDiario,
+          )
+          .timeout(const Duration(seconds: 45));
 
       if (!mounted) return;
+      if (!_loadingIA) return; // usuario canceló
 
       if (resultado.tieneError) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.error!)),
+          SnackBar(
+              content: Text(resultado.error!),
+              duration: const Duration(seconds: 3)),
         );
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
       if (resultado.estructura.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('La IA no generó ejercicios. Intenta de nuevo.')),
+              content: Text('La IA no generó ejercicios. Intenta de nuevo.'),
+              duration: Duration(seconds: 2)),
         );
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
       _llenarEstructuraDesdeRecomendacion(resultado.estructura, ejercicios);
 
+      _detenerMensajesCarga();
       setState(() {
         _loadingIA = false;
+        _tipoCarga = '';
         _ejerciciosRecomendados = true;
         _paso = 1;
       });
@@ -776,9 +1331,12 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
+        final msg = e is TimeoutException
+            ? 'La IA tardó demasiado en recomendar ejercicios. Inténtalo de nuevo.'
+            : 'Error al recomendar ejercicios. Verifica tu conexión e inténtalo de nuevo.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al recomendar ejercicios: $e')),
+          SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
         );
       }
     }
@@ -793,16 +1351,21 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       for (final d in s.value.entries) {
         _estructura[s.key]![d.key] = d.value.map((e) {
           final match = ejercicios.cast<EjercicioDb?>().firstWhere(
-                (ex) => (ex?.exerciseDbId ?? ex?.id) == e.ejercicioId,
+                (ex) => ex?.id == e.ejercicioId,
                 orElse: () => null,
               );
           return _EjercicioPlan(
             ejercicioId: match?.id ?? e.ejercicioId,
             nombre: match?.nombre ?? 'Ejercicio recomendado',
+            finalidad: match?.finalidad ?? FinalidadEjercicio.fuerza,
+            urlGif: match?.urlGif,
             series: e.series,
             repeticiones: e.repeticiones,
             segundosDescanso: e.segundosDescanso,
             pesoKg: e.pesoKg,
+            duracionSegundos: e.duracionSegundos,
+            distanciaMetros: e.distanciaMetros,
+            tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
           );
         }).toList();
       }
@@ -810,28 +1373,70 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   }
 
   Future<void> _sugerirEjerciciosIA(int semana, int dia) async {
-    setState(() => _loadingIA = true);
+    setState(() {
+      _loadingIA = true;
+      _tipoCarga = 'sugerir';
+    });
+    _iniciarSecuenciaMensajes();
     try {
-      final perfil = await ref.read(perfilBienestarProvider.future);
-      final ejercicios = await ref.read(ejerciciosProvider.future);
-      final historial = await ref.read(historialSesionUsuarioProvider.future);
-      final estadoDiario = await ref.read(estadoDiarioHoyProvider.future);
+      ref.invalidate(perfilBienestarProvider);
+      ref.invalidate(ejerciciosProvider);
+      ref.invalidate(historialSesionUsuarioProvider);
+      ref.invalidate(estadoDiarioHoyProvider);
+
+      PerfilBienestarDb? perfil;
+      List<EjercicioDb> ejercicios = [];
+      HistorialSesionDto? historial;
+      EstadoDiarioDb? estadoDiario;
+
+      final resultados = await Future.wait([
+        _obtenerOConTimeout(
+            () => ref.read(perfilBienestarProvider.future), 'perfil'),
+        _obtenerOConTimeout(() => ref.read(ejerciciosProvider.future),
+            'catálogo de ejercicios'),
+        _obtenerOConTimeout(
+            () => ref.read(historialSesionUsuarioProvider.future), 'historial'),
+        _obtenerOConTimeout(
+            () => ref.read(estadoDiarioHoyProvider.future), 'estado diario'),
+      ]);
+
+      perfil = resultados[0] as PerfilBienestarDb?;
+      ejercicios = (resultados[1] as List<EjercicioDb>?) ?? [];
+      historial = resultados[2] as HistorialSesionDto?;
+      estadoDiario = resultados[3] as EstadoDiarioDb?;
+
+      if (!mounted) return;
+      if (!_loadingIA) return;
 
       if (perfil == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content: Text(
-                    'Completa tu perfil de bienestar para recibir sugerencias')),
+                    'Completa tu perfil de bienestar para recibir sugerencias'),
+                duration: Duration(seconds: 2)),
           );
         }
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
       final apiKey = EnvConfig.geminiApiKey;
       if (apiKey.isEmpty) {
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
+        return;
+      }
+
+      if (ejercicios.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'No se pudo cargar el catálogo de ejercicios. Verifica tu conexión.'),
+                duration: Duration(seconds: 2)),
+          );
+        }
+        _terminarCargaIA();
         return;
       }
 
@@ -839,36 +1444,42 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
           _estructura[semana]![dia]!.map((e) => e.ejercicioId).toList();
 
       final servicio = RecomendacionIaService();
-      final resultado = await servicio.generarRecomendacionEjercicios(
-        apiKey: apiKey,
-        perfil: perfil,
-        ejerciciosDisponibles: ejercicios,
-        nombreRutina: _nombreCtrl.text.isNotEmpty
-            ? _nombreCtrl.text
-            : 'Rutina personalizada',
-        objetivoRutina: _objetivo,
-        diaNum: dia,
-        ejerciciosYaAgregados: ejerciciosActuales,
-        historial: historial,
-        estadoDiario: estadoDiario,
-      );
+      final resultado = await servicio
+          .generarRecomendacionEjercicios(
+            apiKey: apiKey,
+            perfil: perfil,
+            ejerciciosDisponibles: ejercicios,
+            nombreRutina: _nombreCtrl.text.isNotEmpty
+                ? _nombreCtrl.text
+                : 'Rutina personalizada',
+            objetivoRutina: _objetivo,
+            diaNum: dia,
+            ejerciciosYaAgregados: ejerciciosActuales,
+            historial: historial,
+            estadoDiario: estadoDiario,
+          )
+          .timeout(const Duration(seconds: 45));
 
       if (!mounted) return;
+      if (!_loadingIA) return;
 
       if (resultado.tieneError) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resultado.error!)),
+          SnackBar(
+              content: Text(resultado.error!),
+              duration: const Duration(seconds: 3)),
         );
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
       if (resultado.ejercicios.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('No se encontraron ejercicios para recomendar')),
+              content: Text('No se encontraron ejercicios para recomendar'),
+              duration: Duration(seconds: 2)),
         );
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
         return;
       }
 
@@ -879,32 +1490,47 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
 
       for (final rec in resultado.ejercicios) {
         final match = ejercicios.cast<EjercicioDb?>().firstWhere(
-              (ex) => (ex?.exerciseDbId ?? ex?.id) == rec.ejercicioId,
+              (ex) => ex?.id == rec.ejercicioId,
               orElse: () => null,
             );
         _estructura[semana]![dia]!.add(_EjercicioPlan(
           ejercicioId: match?.id ?? rec.ejercicioId,
           nombre: match?.nombre ?? 'Ejercicio sugerido',
+          finalidad: match?.finalidad ?? FinalidadEjercicio.fuerza,
+          urlGif: match?.urlGif,
           series: rec.series,
           repeticiones: rec.repeticiones,
           segundosDescanso: rec.segundosDescanso,
           pesoKg: rec.pesoKg,
+          duracionSegundos: rec.duracionSegundos,
+          distanciaMetros: rec.distanciaMetros,
+          tiempoIsometricoSegundos: rec.tiempoIsometricoSegundos,
         ));
       }
-      setState(() => _loadingIA = false);
+
+      _detenerMensajesCarga();
+      setState(() {
+        _loadingIA = false;
+        _tipoCarga = '';
+        _semanaActiva = semana;
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
-                  '${resultado.ejercicios.length} ejercicios sugeridos añadidos al Día $dia')),
+                  '${resultado.ejercicios.length} ejercicios sugeridos para el Día $dia'),
+              duration: const Duration(seconds: 2)),
         );
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _loadingIA = false);
+        _terminarCargaIA();
+        final msg = e is TimeoutException
+            ? 'La IA tardó demasiado en sugerir ejercicios. Inténtalo de nuevo.'
+            : 'Error al sugerir ejercicios. Verifica tu conexión e inténtalo de nuevo.';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al sugerir ejercicios: $e')),
+          SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
         );
       }
     }
@@ -938,6 +1564,90 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
             .showSnackBar(SnackBar(content: Text('Error al crear: $e')));
       }
     }
+  }
+}
+
+// =============================================================================
+// Miniatura reusable de GIF para previsualización de ejercicios
+// =============================================================================
+class _MiniGifPreview extends StatelessWidget {
+  const _MiniGifPreview({this.urlGif, this.size = 48});
+  final String? urlGif;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap:
+          urlGif != null ? () => _mostrarGifAmpliado(context, urlGif!) : null,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: urlGif != null
+            ? CachedNetworkImage(
+                imageUrl: urlGif!,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Icon(Icons.image_outlined,
+                    size: 20, color: cs.outlineVariant),
+                errorWidget: (_, __, ___) => Icon(Icons.fitness_center_rounded,
+                    size: 22, color: cs.primary.withValues(alpha: 0.4)),
+              )
+            : Icon(Icons.fitness_center_rounded,
+                size: 22, color: cs.primary.withValues(alpha: 0.3)),
+      ),
+    );
+  }
+
+  void _mostrarGifAmpliado(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            width: 280,
+            height: 280,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.black.withValues(alpha: 0.85),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              alignment: Alignment.topRight,
+              children: [
+                Center(
+                  child: CachedNetworkImage(
+                    imageUrl: url,
+                    width: 260,
+                    height: 260,
+                    fit: BoxFit.contain,
+                    placeholder: (_, __) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: IconButton(
+                    icon: const Icon(Icons.close_rounded,
+                        color: Colors.white70, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1053,8 +1763,12 @@ class _DiaEditorCardState extends State<_DiaEditorCard> {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => _BuscadorEjerciciosSheet(
-          onSelected: (id, nombre) => widget.onEjercicioAdded(
-              _EjercicioPlan(ejercicioId: id, nombre: nombre))),
+          onSelected: (id, nombre, finalidad, urlGif) =>
+              widget.onEjercicioAdded(_EjercicioPlan(
+                  ejercicioId: id,
+                  nombre: nombre,
+                  finalidad: FinalidadEjercicio.fromString(finalidad),
+                  urlGif: urlGif))),
     );
   }
 }
@@ -1075,6 +1789,13 @@ class _EjercicioCompacto extends StatefulWidget {
 class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   late int _series, _reps, _descanso;
   late double? _peso;
+  late int? _duracionSegundos;
+  late int? _distanciaMetros;
+  late int? _tiempoIsometrico;
+  final _pesoCtrl = TextEditingController();
+  final _duracionCtrl = TextEditingController();
+  final _distanciaCtrl = TextEditingController();
+  final _tiempoIsoCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -1083,101 +1804,732 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
     _reps = widget.ejercicio.repeticiones;
     _descanso = widget.ejercicio.segundosDescanso;
     _peso = widget.ejercicio.pesoKg;
+    _duracionSegundos = widget.ejercicio.duracionSegundos;
+    _distanciaMetros = widget.ejercicio.distanciaMetros;
+    _tiempoIsometrico = widget.ejercicio.tiempoIsometricoSegundos;
+    _pesoCtrl.text = _peso != null
+        ? _peso!.toStringAsFixed(_peso! == _peso!.roundToDouble() ? 0 : 1)
+        : '';
+    _duracionCtrl.text =
+        _duracionSegundos != null ? _fmtDuracion(_duracionSegundos!) : '';
+    _distanciaCtrl.text =
+        _distanciaMetros != null ? _distanciaMetros.toString() : '';
+    _tiempoIsoCtrl.text =
+        _tiempoIsometrico != null ? _tiempoIsometrico.toString() : '';
   }
 
-  void _emit({int? s, int? r, int? d, double? p}) {
+  @override
+  void dispose() {
+    _pesoCtrl.dispose();
+    _duracionCtrl.dispose();
+    _distanciaCtrl.dispose();
+    _tiempoIsoCtrl.dispose();
+    super.dispose();
+  }
+
+  void _emit({
+    int? s,
+    int? r,
+    int? d,
+    double? p,
+    int? dur,
+    int? dist,
+    int? tIso,
+  }) {
     s ??= _series;
     r ??= _reps;
     d ??= _descanso;
     p ??= _peso;
+    dur ??= _duracionSegundos;
+    dist ??= _distanciaMetros;
+    tIso ??= _tiempoIsometrico;
     setState(() {
       _series = s!;
       _reps = r!;
       _descanso = d!;
       _peso = p;
+      _duracionSegundos = dur;
+      _distanciaMetros = dist;
+      _tiempoIsometrico = tIso;
     });
     widget.onChanged(widget.ejercicio.copyWith(
-        series: _series,
-        repeticiones: _reps,
-        segundosDescanso: _descanso,
-        pesoKg: _peso));
+      series: _series,
+      repeticiones: _reps,
+      segundosDescanso: _descanso,
+      pesoKg: _peso,
+      duracionSegundos: _duracionSegundos,
+      distanciaMetros: _distanciaMetros,
+      tiempoIsometricoSegundos: _tiempoIsometrico,
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(children: [
-        Expanded(
-            flex: 2,
-            child: InkWell(
-                onTap: () => context.push(
-                    '/bienestar/ejercicio/${widget.ejercicio.ejercicioId}'),
-                borderRadius: BorderRadius.circular(6),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(widget.ejercicio.nombre,
-                      style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                          decorationColor: Colors.grey),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ))),
-        _s(_series, 1, 10, (v) => _emit(s: v)),
-        const Text('×', style: TextStyle(fontSize: 10, color: Colors.grey)),
-        _s(_reps, 1, 50, (v) => _emit(r: v)),
-        const SizedBox(width: 4),
-        _s(_descanso, 15, 300, (v) => _emit(d: v), sufijo: 's'),
-        const SizedBox(width: 4),
-        SizedBox(
-            width: 36,
-            child: TextField(
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 9),
-              controller:
-                  TextEditingController(text: _peso?.toStringAsFixed(1) ?? ''),
-              decoration: const InputDecoration(
-                  isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 1, vertical: 4),
-                  border: OutlineInputBorder(),
-                  hintText: 'kg',
-                  hintStyle: TextStyle(fontSize: 8)),
-              onChanged: (v) => _emit(p: double.tryParse(v)),
-            )),
-        IconButton(
-            icon: const Icon(Icons.close, size: 14, color: Colors.red),
-            onPressed: widget.onRemove,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 20, minHeight: 20)),
-      ]),
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final finalidad = widget.ejercicio.finalidad;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 4, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Nombre del ejercicio + chip de finalidad + GIF ──
+            Row(
+              children: [
+                if (widget.ejercicio.urlGif != null) ...[
+                  _MiniGifPreview(urlGif: widget.ejercicio.urlGif, size: 42),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: InkWell(
+                          onTap: () => context.push(
+                              '/bienestar/ejercicio/${widget.ejercicio.ejercicioId}'),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Text(
+                              widget.ejercicio.nombre,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.underline,
+                                decorationColor:
+                                    cs.onSurfaceVariant.withValues(alpha: 0.3),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      _finalidadChip(finalidad, cs),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: IconButton(
+                    icon: Icon(Icons.close_rounded,
+                        size: 18, color: cs.error.withValues(alpha: 0.7)),
+                    onPressed: widget.onRemove,
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            // ── Campos dinámicos según finalidad ──
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final anchoPill = (constraints.maxWidth - 12) / 2;
+                return _buildCamposDinamicos(finalidad, anchoPill, cs);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _s(int val, int min, int max, void Function(int) onChange,
+  // ---------------------------------------------------------------------------
+  // Chip de finalidad (miniatura)
+  // ---------------------------------------------------------------------------
+  Widget _finalidadChip(FinalidadEjercicio f, ColorScheme cs) {
+    Color chipColor;
+    switch (f) {
+      case FinalidadEjercicio.fuerza:
+        chipColor = Colors.orange;
+      case FinalidadEjercicio.cardio:
+        chipColor = Colors.teal;
+      case FinalidadEjercicio.isometrico:
+        chipColor = Colors.indigo;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: chipColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: chipColor.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        '${f.icono} ${f.etiqueta}',
+        style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: chipColor.withValues(alpha: 0.9),
+            letterSpacing: 0.3),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Renderizado condicional de campos según finalidad
+  // ---------------------------------------------------------------------------
+  Widget _buildCamposDinamicos(
+      FinalidadEjercicio f, double anchoPill, ColorScheme cs) {
+    switch (f) {
+      case FinalidadEjercicio.fuerza:
+        return _camposFuerza(anchoPill, cs);
+      case FinalidadEjercicio.cardio:
+        return _camposCardio(anchoPill, cs);
+      case FinalidadEjercicio.isometrico:
+        return _camposIsometrico(anchoPill, cs);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FUERZA: Series, Reps, Descanso, Peso (grid 2×2 original)
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _camposFuerza(double anchoPill, ColorScheme cs) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _paramPill('Series', _series, 1, 10, (v) => _emit(s: v), anchoPill, cs),
+        _paramPill('Reps', _reps, 1, 50, (v) => _emit(r: v), anchoPill, cs),
+        _paramPill(
+            'Descanso', _descanso, 15, 300, (v) => _emit(d: v), anchoPill, cs,
+            sufijo: 's'),
+        _pesoPill(anchoPill, cs),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CARDIO: Intervalos (=series), Duración, Distancia (opcional), Descanso
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _camposCardio(double anchoPill, ColorScheme cs) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _paramPill(
+            'Intervalos', _series, 1, 20, (v) => _emit(s: v), anchoPill, cs),
+        _duracionPill(anchoPill, cs),
+        _distanciaPill(anchoPill, cs),
+        _paramPill(
+            'Descanso', _descanso, 15, 300, (v) => _emit(d: v), anchoPill, cs,
+            sufijo: 's'),
+      ],
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ISOMÉTRICO: Series, Tiempo de sujeción, Descanso
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _camposIsometrico(double anchoPill, ColorScheme cs) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _paramPill('Series', _series, 1, 10, (v) => _emit(s: v), anchoPill, cs),
+        _tiempoIsometricoPill(anchoPill, cs),
+        _paramPill(
+            'Descanso', _descanso, 15, 300, (v) => _emit(d: v), anchoPill, cs,
+            sufijo: 's'),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers de formato
+  // ---------------------------------------------------------------------------
+  String _fmtDuracion(int segundos) {
+    final min = segundos ~/ 60;
+    final sec = segundos % 60;
+    if (min > 0 && sec > 0) return '${min}m ${sec}s';
+    if (min > 0) return '${min} min';
+    return '${sec}s';
+  }
+
+  int _parseDuracion(String texto) {
+    // Formatos: "5m 30s", "5:30", "300", "5 min", "5m"
+    texto = texto.trim().toLowerCase();
+    final colon = RegExp(r'^(\d+):(\d+)$').firstMatch(texto);
+    if (colon != null) {
+      return int.parse(colon.group(1)!) * 60 + int.parse(colon.group(2)!);
+    }
+    int total = 0;
+    final minMatch = RegExp(r'(\d+)\s*(?:min|m)\b').firstMatch(texto);
+    final secMatch = RegExp(r'(\d+)\s*(?:seg|s)\b').firstMatch(texto);
+    if (minMatch != null) total += int.parse(minMatch.group(1)!) * 60;
+    if (secMatch != null) total += int.parse(secMatch.group(1)!);
+    if (minMatch == null && secMatch == null) {
+      final soloNum = int.tryParse(texto);
+      if (soloNum != null) total = soloNum;
+    }
+    return total;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pill genérico (+/- buttons)
+  // ---------------------------------------------------------------------------
+  Widget _paramPill(String label, int val, int min, int max,
+      void Function(int) onChange, double width, ColorScheme cs,
       {String sufijo = ''}) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      InkWell(
-          onTap: val > min ? () => onChange(val - 1) : null,
-          child: Icon(Icons.remove,
-              size: 11, color: val > min ? Colors.grey : Colors.grey.shade300)),
-      Text('$val$sufijo',
-          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600)),
-      InkWell(
-          onTap: val < max ? () => onChange(val + 1) : null,
-          child: Icon(Icons.add,
-              size: 11, color: val < max ? Colors.grey : Colors.grey.shade300)),
-    ]);
+    final canDown = val > min;
+    final canUp = val < max;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurfaceVariant,
+                          letterSpacing: 0.5)),
+                  Text('$val$sufijo',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                          letterSpacing: -0.5)),
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                SizedBox(
+                  width: 32,
+                  height: 28,
+                  child: IconButton(
+                    onPressed: canUp ? () => onChange(val + 1) : null,
+                    icon: Icon(Icons.keyboard_arrow_up_rounded,
+                        size: 20,
+                        color: canUp ? cs.primary : cs.outlineVariant),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                SizedBox(
+                  width: 32,
+                  height: 28,
+                  child: IconButton(
+                    onPressed: canDown ? () => onChange(val - 1) : null,
+                    icon: Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: canDown ? cs.primary : cs.outlineVariant),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pill de Duración (cardio) — input de texto con formato libre
+  // ---------------------------------------------------------------------------
+  Widget _duracionPill(double width, ColorScheme cs) {
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Duración',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _btnDelta(
+                  icon: Icons.remove,
+                  onTap: () {
+                    final actual = _duracionSegundos ?? 0;
+                    final nuevo = (actual - 30).clamp(0, 86400);
+                    _emit(dur: nuevo == 0 ? null : nuevo);
+                    _duracionCtrl.text = nuevo == 0 ? '' : _fmtDuracion(nuevo);
+                  },
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 58,
+                  height: 32,
+                  child: TextField(
+                    controller: _duracionCtrl,
+                    keyboardType: TextInputType.text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      hintText: 'ej. 5m',
+                      hintStyle: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    ),
+                    onChanged: (v) {
+                      if (v.isEmpty) {
+                        _emit(dur: null);
+                      } else {
+                        final segundos = _parseDuracion(v);
+                        if (segundos > 0) _emit(dur: segundos);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _btnDelta(
+                  icon: Icons.add,
+                  onTap: () {
+                    final actual = _duracionSegundos ?? 0;
+                    final nuevo = (actual + 30).clamp(0, 86400);
+                    _emit(dur: nuevo == 0 ? null : nuevo);
+                    _duracionCtrl.text = nuevo == 0 ? '' : _fmtDuracion(nuevo);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pill de Distancia (cardio, opcional) — input numérico en metros
+  // ---------------------------------------------------------------------------
+  Widget _distanciaPill(double width, ColorScheme cs) {
+    final distActual = _distanciaMetros ?? 0;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Distancia (m)',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _btnDelta(
+                  icon: Icons.remove,
+                  onTap: () {
+                    if (distActual > 0) {
+                      final nuevo = (distActual - 100).clamp(0, 42195);
+                      _emit(dist: nuevo == 0 ? null : nuevo);
+                      _distanciaCtrl.text = nuevo == 0 ? '' : nuevo.toString();
+                    }
+                  },
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 52,
+                  height: 32,
+                  child: TextField(
+                    controller: _distanciaCtrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      hintText: '—',
+                      hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    ),
+                    onChanged: (v) {
+                      final parsed = int.tryParse(v);
+                      if (parsed != null) {
+                        final limpio = parsed.clamp(0, 42195);
+                        _emit(dist: limpio == 0 ? null : limpio);
+                      } else if (v.isEmpty) {
+                        _emit(dist: null);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _btnDelta(
+                  icon: Icons.add,
+                  onTap: () {
+                    final nuevo = (distActual + 100).clamp(0, 42195);
+                    _emit(dist: nuevo == 0 ? null : nuevo);
+                    _distanciaCtrl.text = nuevo == 0 ? '' : nuevo.toString();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pill de Tiempo Isométrico — input numérico en segundos
+  // ---------------------------------------------------------------------------
+  Widget _tiempoIsometricoPill(double width, ColorScheme cs) {
+    final tiActual = _tiempoIsometrico ?? 0;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Tiempo (s)',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _btnDelta(
+                  icon: Icons.remove,
+                  onTap: () {
+                    if (tiActual > 0) {
+                      final nuevo = (tiActual - 5).clamp(0, 3600);
+                      _emit(tIso: nuevo == 0 ? null : nuevo);
+                      _tiempoIsoCtrl.text = nuevo == 0 ? '' : nuevo.toString();
+                    }
+                  },
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 52,
+                  height: 32,
+                  child: TextField(
+                    controller: _tiempoIsoCtrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      hintText: '—',
+                      hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    ),
+                    onChanged: (v) {
+                      final parsed = int.tryParse(v);
+                      if (parsed != null) {
+                        final limpio = parsed.clamp(0, 3600);
+                        _emit(tIso: limpio == 0 ? null : limpio);
+                      } else if (v.isEmpty) {
+                        _emit(tIso: null);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _btnDelta(
+                  icon: Icons.add,
+                  onTap: () {
+                    final nuevo = (tiActual + 5).clamp(0, 3600);
+                    _emit(tIso: nuevo == 0 ? null : nuevo);
+                    _tiempoIsoCtrl.text = nuevo == 0 ? '' : nuevo.toString();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pesoPill(double width, ColorScheme cs) {
+    final pesoActual = _peso ?? 0;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Peso (kg)',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _btnDelta(
+                    icon: Icons.remove,
+                    onTap: () {
+                      if (pesoActual > 0) {
+                        final nuevo = (pesoActual - 2.5).clamp(0, 999);
+                        _emit(
+                            p: nuevo == 0
+                                ? null
+                                : double.parse(nuevo.toStringAsFixed(1)));
+                        _pesoCtrl.text = nuevo == 0
+                            ? ''
+                            : nuevo.toStringAsFixed(
+                                nuevo == nuevo.roundToDouble() ? 0 : 1);
+                      }
+                    }),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 52,
+                  height: 32,
+                  child: TextField(
+                    controller: _pesoCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      hintText: '—',
+                      hintStyle: TextStyle(
+                          fontSize: 18,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    ),
+                    onChanged: (v) {
+                      final parsed = double.tryParse(v.replaceAll(',', '.'));
+                      if (parsed != null) {
+                        final limpio = parsed.clamp(0, 999).toDouble();
+                        _emit(p: limpio == 0 ? null : limpio);
+                      } else if (v.isEmpty) {
+                        _emit(p: null);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _btnDelta(
+                    icon: Icons.add,
+                    onTap: () {
+                      final nuevo = (pesoActual + 2.5).clamp(0, 999);
+                      _emit(
+                          p: nuevo == 0
+                              ? null
+                              : double.parse(nuevo.toStringAsFixed(1)));
+                      _pesoCtrl.text = nuevo == 0
+                          ? ''
+                          : nuevo.toStringAsFixed(
+                              nuevo == nuevo.roundToDouble() ? 0 : 1);
+                    }),
+              ],
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _btnDelta({required IconData icon, required VoidCallback onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 16),
+        ),
+      ),
+    );
   }
 }
 
 // =============================================================================
 class _BuscadorEjerciciosSheet extends StatefulWidget {
   const _BuscadorEjerciciosSheet({required this.onSelected});
-  final void Function(String id, String nombre) onSelected;
+  final void Function(
+      String id, String nombre, String finalidad, String? urlGif) onSelected;
   @override
   State<_BuscadorEjerciciosSheet> createState() =>
       _BuscadorEjerciciosSheetState();
@@ -1229,12 +2581,12 @@ class _BuscadorEjerciciosSheetState extends State<_BuscadorEjerciciosSheet> {
       future: _q.isEmpty
           ? client
               .from('v_ejercicios_completos')
-              .select('id, nombre')
+              .select('id, nombre, finalidad, url_gif')
               .limit(50)
               .then((d) => d as List<Map<String, dynamic>>)
           : client
               .from('v_ejercicios_completos')
-              .select('id, nombre')
+              .select('id, nombre, finalidad, url_gif')
               .ilike('nombre', '%$_q%')
               .limit(50)
               .then((d) => d as List<Map<String, dynamic>>),
@@ -1252,8 +2604,11 @@ class _BuscadorEjerciciosSheetState extends State<_BuscadorEjerciciosSheet> {
             final e = snap.data![i];
             final eId = e['id'] as String;
             final eNombre = e['nombre'] as String;
+            final eFinalidad = e['finalidad'] as String? ?? 'fuerza';
+            final eGif = e['url_gif'] as String?;
             return ListTile(
                 dense: true,
+                leading: _MiniGifPreview(urlGif: eGif),
                 title: Text(eNombre, style: const TextStyle(fontSize: 13)),
                 trailing: IconButton(
                   icon: const Icon(Icons.info_outline, size: 20),
@@ -1264,7 +2619,7 @@ class _BuscadorEjerciciosSheetState extends State<_BuscadorEjerciciosSheet> {
                   visualDensity: VisualDensity.compact,
                 ),
                 onTap: () {
-                  widget.onSelected(eId, eNombre);
+                  widget.onSelected(eId, eNombre, eFinalidad, eGif);
                   Navigator.pop(context);
                 });
           },

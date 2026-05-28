@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/catalogo_models.dart';
 import '../../../shared/models/db_models.dart';
+import '../../../shared/utils/string_utils.dart';
 import '../infrastructure/ejercicios_repository.dart';
 
 // ---------------------------------------------------------------------------
@@ -49,7 +50,7 @@ final ejerciciosFiltradosProvider =
   final todos = ref.watch(ejerciciosProvider).valueOrNull ?? [];
   if (filtro.tipo == FiltroTipo.todos) return todos;
 
-  final q = filtro.valor.toLowerCase();
+  final q = normalizeSearch(filtro.valor);
   switch (filtro.tipo) {
     case FiltroTipo.parteCuerpo:
       return todos
@@ -68,8 +69,9 @@ final ejerciciosFiltradosProvider =
     case FiltroTipo.busqueda:
       return todos
           .where((e) =>
-              e.nombre.toLowerCase().contains(q) ||
-              (e.descripcion?.toLowerCase().contains(q) ?? false))
+              normalizeSearch(e.nombre).contains(q) ||
+              (e.descripcion != null &&
+                  normalizeSearch(e.descripcion!).contains(q)))
           .toList();
     default:
       return todos;

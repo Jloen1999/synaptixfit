@@ -1,0 +1,54 @@
+[
+  {
+    "nombre": "abdomen",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "antebrazos",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "brazos (parte superior)",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "cardio",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "cintura",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "core",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "cuello",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "espalda",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "glúteos",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "hombros",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "pecho",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "piernas (parte inferior)",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "piernas (parte superior)",
+    "fuente": "exercisedb"
+  }
+]

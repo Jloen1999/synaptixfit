@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit
-**Versión:** 2.0
-**Fecha:** 11-05-2026
+**Versión:** 2.2
+**Fecha:** 28-05-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -13,7 +13,7 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 27 tablas, RLS, vistas materializadas |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 27 tablas, RLS, vistas materializadas (20 migraciones aplicadas) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
@@ -54,6 +54,10 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 0015 | `20260510_0015_rutinas_periodizacion.sql` | 10-05-2026 | Tablas `semanas_rutina`, `dias_rutina`, `series_sesion`. Columnas `duracion_semanas`, `objetivo`, `estado` en `rutinas`. Columna `dia_id` y `peso_kg` en `seleccion_de_ejercicios`. Columnas `dia_id`, `tipo` en `sesiones_registradas`. RLS completa. Drop de constraints antiguos que impedían periodización (UNIQUE por rutina_id sin dia_id). |
 | 0016 | `20260511_0016_estado_diario.sql` | 11-05-2026 | Tabla `estado_diario_usuario` (check-in diario de fatiga). RLS: solo propietario. |
 | 0017 | `20260511_0017_periodizacion_tipo_semana.sql` | 11-05-2026 | Columna `tipo_semana` en `semanas_rutina` con CHECK (`adaptacion`, `carga`, `pico`, `descarga`). Índice `(rutina_id, numero_semana, tipo_semana)`. |
+| 0018 | `20260519_0018_finalidad_ejercicios.sql` | 19-05-2026 | Columna `finalidad` en `ejercicios` con CHECK (`fuerza`, `cardio`, `isometrico`). Columnas `duracion_segundos`, `distancia_metros`, `tiempo_isometrico_segundos` en `seleccion_de_ejercicios`. Recreación de `v_ejercicios_completos` como vista normal con subqueries para incluir `finalidad`. |
+| 0019 | `20260527_0019_ampliar_finalidad.sql` | 27-05-2026 | Amplía el CHECK de `finalidad` para aceptar: `hipertrofia`, `resistencia`, `movilidad`. |
+| 0020 | `20260528_0020_deprecar_exercise_db_id.sql` | 28-05-2026 | Hace `exercise_db_id` nullable, elimina UNIQUE y el índice `idx_ejercicios_exercise_db_id`. Recrea `v_ejercicios_completos` sin `exercise_db_id`. |
+| 0021 | `20260528_0021_limpiar_ejercicios.sql` | 28-05-2026 | DELETE en orden FK de todas las tablas de ejercicios/rutinas/sesiones/catálogos para re-carga limpia. |
 
 ## 3. Servicio de IA — `RecomendacionIaService`
 
@@ -503,5 +507,5 @@ final data = await supabase
 
 ---
 
-**Documento compilado:** 11-05-2026
-**Última revisión:** v2.0
+**Documento compilado:** 19-05-2026
+**Última revisión:** v2.1

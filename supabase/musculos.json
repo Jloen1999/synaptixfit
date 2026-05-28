@@ -1,0 +1,242 @@
+[
+  {
+    "nombre": "abdomen",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "abdomen inferior",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "abdominales",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "abductores",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "aductores",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "antebrazos",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "braquial",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "braquiorradial",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "bíceps",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "columna",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "coracobraquial",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "core",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "cuádriceps",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "deltoides",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "deltoides anterior",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "deltoides anteriores",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "deltoides medio",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "deltoides posteriores",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "dorsal ancho",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "dorsales",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "elevador de la escápula",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "espalda",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "espalda alta",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "estabilizadores de tobillo",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "esternocleidomastoideo",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "extensores de muñeca",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "flexores de la cadera",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "flexores de muñeca",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "gemelos",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "glúteo mayor",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "glúteo medio",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "glúteos",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "hombros",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "ingle",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "isquiotibiales",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "manguito rotador",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "manos",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "muñecas",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "músculos de agarre",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "oblicuos",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "parte interna del muslo",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "pecho",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "pecho superior",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "pectorales",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "pectíneo",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "pies",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "redondo mayor",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "redondo menor",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "romboides",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "serrato anterior",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "sistema cardiovascular",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "supraespinoso",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "sóleo",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "tensor de la fascia lata",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "tibial anterior",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "tibiales",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "tobillos",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "trapecios",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "tríceps",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "zona lumbar",
+    "fuente": "exercisedb"
+  }
+]

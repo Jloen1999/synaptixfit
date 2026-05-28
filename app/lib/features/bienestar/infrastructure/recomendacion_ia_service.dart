@@ -15,6 +15,9 @@ class EjercicioRecomendado {
     this.repeticiones = 10,
     this.segundosDescanso = 90,
     this.pesoKg,
+    this.duracionSegundos,
+    this.distanciaMetros,
+    this.tiempoIsometricoSegundos,
   });
 
   final String ejercicioId;
@@ -22,6 +25,9 @@ class EjercicioRecomendado {
   final int repeticiones;
   final int segundosDescanso;
   final double? pesoKg;
+  final int? duracionSegundos;
+  final int? distanciaMetros;
+  final int? tiempoIsometricoSegundos;
 
   factory EjercicioRecomendado.fromMap(Map<String, dynamic> map) {
     return EjercicioRecomendado(
@@ -30,6 +36,10 @@ class EjercicioRecomendado {
       repeticiones: (map['repeticiones'] as num?)?.toInt() ?? 10,
       segundosDescanso: (map['segundosDescanso'] as num?)?.toInt() ?? 90,
       pesoKg: (map['pesoKg'] as num?)?.toDouble(),
+      duracionSegundos: (map['duracionSegundos'] as num?)?.toInt(),
+      distanciaMetros: (map['distanciaMetros'] as num?)?.toInt(),
+      tiempoIsometricoSegundos:
+          (map['tiempoIsometricoSegundos'] as num?)?.toInt(),
     );
   }
 }
@@ -110,7 +120,13 @@ class EjericicioRecienteDto {
 // =============================================================================
 
 class RecomendacionIaService {
-  RecomendacionIaService([Dio? dio]) : _dio = dio ?? Dio();
+  RecomendacionIaService([Dio? dio])
+      : _dio = dio ??
+            Dio(BaseOptions(
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 60),
+              sendTimeout: const Duration(seconds: 15),
+            ));
 
   final Dio _dio;
 
@@ -191,6 +207,24 @@ REGLAS DE RECOMENDACION SEGUN OBJETIVO:
 - movilidad: ejercicios de rango completo, peso corporal o ligero, enfasis en tecnica
 - fitness_general: equilibrio entre fuerza e hipertrofia (10-12 reps), descanso 60-90s
 
+REGLAS DE SERIES POR EJERCICIO (PERSONALIZA "series" PARA CADA EJERCICIO, NO uses siempre 3):
+- El numero de series DEBE variar segun el contexto. NO asignes 3 series a todos los ejercicios.
+- perder_peso: 2-3 series por ejercicio (priorizar densidad, no volumen por ejercicio)
+- ganar_masa: 3-4 series por ejercicio (ejercicios compuestos 4, aislados 3)
+- fuerza: 3-5 series por ejercicio (ejercicios compuestos principales 4-5, accesorios 3)
+- resistencia: 2-3 series por ejercicio (mas ejercicios variados, menos series cada uno)
+- movilidad: 2-3 series por ejercicio (enfasis en calidad, no cantidad)
+- fitness_general: 3 series por ejercicio (equilibrado)
+- Ajusta las series segun los minutos por sesion:
+  - Menos de 30 min: reduce series (2-3 maximo por ejercicio)
+  - 30-45 min: series moderadas (2-4 por ejercicio)
+  - 45-90 min: series completas (3-5 por ejercicio)
+  - Mas de 90 min: series maximas (4-5 por ejercicio)
+- Ejercicios compuestos (sentadilla, press banca, peso muerto, dominadas): +1 serie extra
+- Ejercicios aislados (curl, extension): -1 serie menos que los compuestos
+- Si el estado diario muestra fatiga alta (puntuacion > 50): reduce 1 serie a todos los ejercicios
+- Semana de ADAPTACION: 2-3 series. Semana de CARGA: 3-4 series. Semana de PICO: 4-5 series. Semana de DESCARGA: 2 series.
+
 PERIODIZACION (las semanas se etiquetan automaticamente):
 - Semana 1: ADAPTACION (70% volumen, enfasis en tecnica y aprendizaje)
 - Semanas intermedias: CARGA PROGRESIVA (85-90% volumen, aumentar peso/reps)
@@ -206,12 +240,36 @@ Formato JSON esperado:
   "estructura": {
     "1": {
       "1": [
-        {"exerciseId": "...", "series": 3, "repeticiones": 10, "segundosDescanso": 90, "pesoKg": null}
+        {"exerciseId": "...", "series": 4, "repeticiones": 8, "segundosDescanso": 90, "pesoKg": null, "duracionSegundos": null, "distanciaMetros": null, "tiempoIsometricoSegundos": null}
       ]
     }
   }
 }
 
+REGLAS SEGUN FINALIDAD DEL EJERCICIO (campo "finalidad" en el catalogo):
+- fuerza: Usa "series", "repeticiones", "segundosDescanso" y "pesoKg" (los otros campos en null).
+- cardio: Usa "duracionSegundos" (duración en segundos), opcionalmente "distanciaMetros". "series" equivale a intervalos. PON "repeticiones": 0 y "pesoKg": null.
+- isometrico: Usa "tiempoIsometricoSegundos" (tiempo de sujeción en segundos). PON "repeticiones": 0 y "pesoKg": null.
+- NUNCA combines campos de distintas finalidades en un mismo ejercicio. Usa solo los campos que correspondan a su finalidad.
+
+REGLAS DE CARDIO:
+- Para ejercicios de cardio, recomienda entre 600 y 3600 segundos de duración (10-60 min).
+- La distancia es opcional (entre 500 y 10000 metros si se especifica).
+- Los intervalos (series) para cardio van de 1 a 10.
+- El descanso entre intervalos de cardio es de 30-120 segundos.
+
+REGLAS DE ISOMETRICO:
+- Para ejercicios isométricos, recomienda entre 10 y 120 segundos de sujeción por serie.
+- Series: 2-4 por ejercicio isométrico.
+
+REGLAS PARA LA DESCRIPCION (campo "descripcion"):
+- NO incluyas numeros concretos (dias, semanas, sesiones) porque el usuario puede modificarlos manualmente despues.
+- Céntrate en la FILOSOFIA DE ENTRENAMIENTO: enfoque, tipo de ejercicios, metodologia, objetivo.
+- Ejemplos correctos: "Rutina de fuerza centrada en ejercicios compuestos con progresion semanal", "Entrenamiento de hipertrofia con enfoque en volumen y descansos controlados", "Programa de resistencia con ejercicios variados de cuerpo completo".
+- Ejemplos INCORRECTOS (NO uses): "Programa de 2 dias orientado a...", "Rutina de 4 semanas con...", "Plan de 3 sesiones semanales...".
+- Si el usuario tiene un objetivo concreto (ej: perder_peso), menciona la estrategia: "Rutina de definicion con circuitos de alta densidad y descansos cortos".
+
+IMPORTANTE: El valor de "series" en el JSON de ejemplo es solo ilustrativo. DEBES personalizarlo para cada ejercicio segun las REGLAS DE SERIES POR EJERCICIO definidas arriba. No uses el mismo numero de series para todos los ejercicios.
 La estructura debe tener ${perfil.diasDisponiblesSemana} dias en la semana 1.
 Cada dia debe tener entre 4 y 7 ejercicios que cubran grupos musculares equilibrados.
 Los dias deben alternar grupos musculares (ej: dia 1 torso, dia 2 pierna, dia 3 espalda/hombro).
@@ -273,13 +331,14 @@ El pesoKg debe ser null a menos que haya historial claro del usuario.
 
     final equipamiento = perfil.equipamientoDisponible;
     final catalogo = ejerciciosDisponibles
-        .where((e) => !ejerciciosYaAgregados.contains(e.exerciseDbId ?? e.id))
+        .where((e) => !ejerciciosYaAgregados.contains(e.id))
         .where((e) => _ejercicioUsaEquipamiento(e, equipamiento))
         .map((e) => {
-              'exerciseId': e.exerciseDbId ?? e.id,
+              'exerciseId': e.id,
               'nombre': e.nombre,
               'musculosObjetivo': e.musculosObjetivo,
               'equipamientos': e.equipamientos,
+              'finalidad': e.finalidad.name,
             })
         .toList();
 
@@ -300,6 +359,7 @@ CONTEXTO:
 - Nivel de actividad: ${perfil.nivelActividad}
 - Biometria: Edad ${perfil.edad}, ${perfil.pesoKg} kg, IMC ${perfil.imc.toStringAsFixed(1)}
 $historialTxt
+$estadoTxt
 
 IMPORTANTE: SOLO recomienda ejercicios del catalogo. Comprueba que el equipamiento del ejercicio sea compatible con el del usuario.
 
@@ -314,10 +374,23 @@ SUGERENCIAS SEGUN OBJETIVO:
 - fuerza: 3-4 ejercicios compuestos, 4-6 reps, descanso 120-180s
 - resistencia: 5-6 ejercicios variados, 15-25 reps, descanso 30-45s
 
+REGLAS DE SERIES (PERSONALIZA, NO uses siempre 3):
+- perder_peso: 2-3 series | ganar_masa: 3-4 series | fuerza: 3-5 series | resistencia: 2-3 series
+- Ajusta segun minutos por sesion: < 30 min → 2-3 series, 30-45 min → 2-4, 45-90 min → 3-5, > 90 min → 4-5
+- Ejercicios compuestos: +1 serie. Ejercicios aislados: -1 serie.
+- Si hay estado diario con fatiga alta: reduce 1 serie a todos los ejercicios.
+
 Formato del array:
 [
-  {"exerciseId": "...", "series": 3, "repeticiones": 10, "segundosDescanso": 90, "pesoKg": null}
+  {"exerciseId": "...", "series": 4, "repeticiones": 8, "segundosDescanso": 90, "pesoKg": null, "duracionSegundos": null, "distanciaMetros": null, "tiempoIsometricoSegundos": null}
 ]
+IMPORTANTE: "series": 4 en el ejemplo es solo ilustrativo. Personaliza SIEMPRE las series para cada ejercicio segun las reglas.
+
+REGLAS SEGUN FINALIDAD DEL EJERCICIO (campo "finalidad" en el catalogo):
+- fuerza: Usa "series", "repeticiones", "segundosDescanso" y "pesoKg" (los otros campos en null).
+- cardio: Usa "duracionSegundos" (600-3600s). Opcional "distanciaMetros". "series" = intervalos. PON "repeticiones": 0, "pesoKg": null.
+- isometrico: Usa "tiempoIsometricoSegundos" (10-120s por serie). Series: 2-4. PON "repeticiones": 0, "pesoKg": null.
+- NUNCA combines campos de distintas finalidades en un mismo ejercicio.
 ''';
 
     try {
@@ -390,10 +463,11 @@ Formato del array:
 
     final catalogo = ejerciciosFiltrados
         .map((e) => {
-              'exerciseId': e.exerciseDbId ?? e.id,
+              'exerciseId': e.id,
               'nombre': e.nombre,
               'musculosObjetivo': e.musculosObjetivo,
               'equipamientos': e.equipamientos,
+              'finalidad': e.finalidad.name,
             })
         .toList();
 
@@ -435,6 +509,16 @@ $periodizacion
 REGLAS DE PROGRAMACION SEGUN OBJETIVO:
 ${_reglasPorObjetivo(objetivoRutina)}
 
+REGLAS DE SERIES POR EJERCICIO (OBLIGATORIO personalizar para CADA ejercicio):
+- El numero de series DEBE variar. NO asignes el mismo valor a todos los ejercicios.
+- perder_peso: 2-3 series | ganar_masa: 3-4 series | fuerza: 3-5 series | resistencia: 2-3 series | movilidad: 2-3 | fitness_general: 3
+- Ajusta segun minutos por sesion (${perfil.minutosPorSesion} min): menos de 30 min → 2-3 series, 30-45 min → 2-4, 45-90 min → 3-5, mas de 90 min → 4-5
+- Ejercicios compuestos (sentadilla, press banca, peso muerto, dominadas, remo): asignales +1 serie extra respecto a los aislados
+- Ejercicios aislados (curl, extension de triceps, elevaciones laterales): asignales -1 serie respecto a los compuestos
+- Semana de ADAPTACION: 2-3 series. Semana de CARGA: 3-4 series. Semana de PICO: 4-5 series. Semana de DESCARGA: 2 series.
+- Si el estado diario muestra fatiga alta (puntuacion > 50): reduce 1 serie a TODOS los ejercicios de ese dia.
+${estadoTxt.isNotEmpty ? '- APLICA las adaptaciones del estado fisico de hoy a las series.' : ''}
+
 Los dias deben alternar grupos musculares. No repitas el mismo grupo muscular en dias consecutivos.
 Cada dia debe tener minimo 4 ejercicios, maximo 7.
 ${historial != null && historial.ejerciciosRecientes.isNotEmpty ? _formatearProgresion(historial) : ''}
@@ -446,7 +530,7 @@ Formato JSON (EXACTAMENTE $duracionSemanas semanas, $diasPorSemana dias por sema
 {
   "estructura": {
     "1": {
-      "1": [{"exerciseId": "...", "series": 3, "repeticiones": 10, "segundosDescanso": 90, "pesoKg": null}],
+      "1": [{"exerciseId": "...", "series": 4, "repeticiones": 8, "segundosDescanso": 90, "pesoKg": null}],
       "2": [...]
     },
     "2": {
@@ -455,6 +539,7 @@ Formato JSON (EXACTAMENTE $duracionSemanas semanas, $diasPorSemana dias por sema
     }
   }
 }
+IMPORTANTE: Los valores "series": 4 en el ejemplo son solo ilustrativos. Personaliza SIEMPRE las series para cada ejercicio segun las reglas de arriba.
 ''';
 
     try {
@@ -521,12 +606,15 @@ REGLAS DE PROGRESION:
 - Si RPE 7-8: subir peso 2.5-5% o mantener reps (zona optima)
 - Si RPE 8.5-9.5: mantener peso y reps (progresion sostenida)
 - Si RPE = 10 (fallo): NO subir peso la proxima sesion
-- Si el objetivo es fuerza: priorizar subir peso sobre reps
-- Si el objetivo es ganar_masa: equilibrio peso/reps, rango 8-12
-- Si el objetivo es perder_peso: mantener o bajar ligeramente el peso, subir reps
+- Si el objetivo es fuerza: priorizar subir peso sobre reps. Ajusta series a 3-5.
+- Si el objetivo es ganar_masa: equilibrio peso/reps, rango 8-12. Ajusta series a 3-4.
+- Si el objetivo es perder_peso: mantener o bajar ligeramente el peso, subir reps. Ajusta series a 2-3.
+- Si el objetivo es resistencia: mantener peso bajo, aumentar reps o series (2-3 series).
+- Ajusta tambien las series segun la progresion: si el peso sube mucho, puedes bajar 1 serie para compensar.
 
 Formato JSON:
-{"series": 3, "repeticiones": 10, "segundosDescanso": 90, "pesoKg": 22.5}
+{"series": 4, "repeticiones": 8, "segundosDescanso": 90, "pesoKg": 22.5}
+IMPORTANTE: "series": 4 es ilustrativo. Personaliza las series segun el contexto del ejercicio y objetivo.
 ''';
 
     try {

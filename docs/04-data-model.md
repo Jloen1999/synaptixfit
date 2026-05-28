@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 3.1
+**Versión:** 3.4
 **Estado:** VIGENTE
-**Fecha:** 14-05-2026
-**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas materializadas, triggers y políticas Supabase. Incluye trigger de cascada días→semanas.
+**Fecha:** 28-05-2026
+**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye trigger de cascada días→semanas. Catálogo actual: 95 ejercicios, 60 músculos, 13 partes del cuerpo, ~37 equipamientos.
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -89,12 +89,13 @@ erDiagram
 
     EJERCICIOS {
         uuid id PK
-        string exercise_db_id UK
+        string exercise_db_id "deprecated, nullable"
         string nombre
         string url_gif
         text[] instrucciones
         string dificultad
         text descripcion
+        string finalidad "fuerza | cardio | isometrico | hipertrofia | resistencia | movilidad"
         timestamp creado_en
         timestamp actualizado_en
     }
@@ -153,6 +154,11 @@ erDiagram
         int reps
         int segundos_descanso
         int indice_orden
+        uuid dia_id FK
+        double peso_kg
+        int duracion_segundos
+        int distancia_metros
+        int tiempo_isometrico_segundos
     }
     
     SESIONES_REGISTRADAS {
@@ -372,6 +378,7 @@ CREATE POLICY "usuarios_actualizar" ON usuarios
 ### 2.2 CATÁLOGO DE EJERCICIOS (modelo normalizado 3NF)
 
 Fuente adoptada para seeding: ExerciseDB (AscendAPI) via Kaggle, traducido al español con terminología anatómica profesional.
+Fuente adicional de ejercicios: Demic (videos descargados por lote con Internet Download Manager).
 
 #### 2.2.1 Tablas de catálogo (datos maestros)
 
@@ -407,12 +414,14 @@ CREATE POLICY equipamientos_select ON equipamientos FOR SELECT USING (true);
 ```sql
 CREATE TABLE ejercicios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  exercise_db_id TEXT UNIQUE,
+  exercise_db_id TEXT, -- deprecated, nullable desde migracion 0020
   nombre TEXT NOT NULL,
   url_gif TEXT,
   instrucciones TEXT[] NOT NULL DEFAULT '{}',
   dificultad TEXT NOT NULL DEFAULT 'medio',
   descripcion TEXT,
+  finalidad TEXT NOT NULL DEFAULT 'fuerza'
+    CHECK (finalidad IN ('fuerza', 'cardio', 'isometrico', 'hipertrofia', 'resistencia', 'movilidad')),
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   
@@ -420,8 +429,8 @@ CREATE TABLE ejercicios (
   CONSTRAINT ck_ejercicios_dificultad CHECK (dificultad IN ('facil', 'medio', 'dificil'))
 );
 
-CREATE INDEX idx_ejercicios_exercise_db_id ON ejercicios(exercise_db_id);
 CREATE INDEX idx_ejercicios_dificultad ON ejercicios(dificultad);
+CREATE INDEX idx_ejercicios_finalidad ON ejercicios(finalidad);
 CREATE INDEX idx_ejercicios_fts ON ejercicios USING GIN(
   to_tsvector('spanish', nombre || ' ' || coalesce(descripcion, ''))
 );
@@ -479,11 +488,13 @@ Para evitar múltiples JOINs en el frontend, se expone una **vista materializada
 
 La vista materializada `mv_ejercicios_completos` usa `LEFT JOIN LATERAL` para construir los arrays de catálogos en una sola pasada. Se expone mediante una vista wrapper `v_ejercicios_completos` que preserva compatibilidad hacia atrás.
 
+La migración 0020 recreó `v_ejercicios_completos` como vista directamente (sin materializar) por simplicidad y para reflejar los cambios de schema en tiempo real, eliminando `exercise_db_id` de la proyección.
+
 ```sql
-CREATE MATERIALIZED VIEW mv_ejercicios_completos AS
+CREATE VIEW v_ejercicios_completos AS
 SELECT
-  e.id, e.exercise_db_id, e.nombre, e.url_gif, e.instrucciones,
-  e.dificultad, e.descripcion, e.creado_en, e.actualizado_en,
+  e.id, e.nombre, e.url_gif, e.instrucciones,
+  e.dificultad, e.descripcion, e.finalidad, e.creado_en, e.actualizado_en,
   coalesce(pc.partes_cuerpo, '{}')       AS partes_cuerpo,
   coalesce(mt.musculos_objetivo, '{}')    AS musculos_objetivo,
   coalesce(ms.musculos_secundarios, '{}') AS musculos_secundarios,
@@ -511,23 +522,18 @@ LEFT JOIN LATERAL (
 ) eq ON true;
 ```
 
-**Vista wrapper para compatibilidad:**
-```sql
-CREATE VIEW v_ejercicios_completos AS SELECT * FROM mv_ejercicios_completos;
-```
+**Vista única (no materializada):**
 
-**Refresco automático mediante triggers:** Se han creado triggers sobre las 5 tablas base (`ejercicios`, `ejercicio_parte_cuerpo`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_equipamiento`) que ejecutan `REFRESH MATERIALIZED VIEW CONCURRENTLY` ante cualquier INSERT, UPDATE o DELETE.
+La migración 0018 convirtió `v_ejercicios_completos` en una vista normal por primera vez (incluyendo `finalidad`). La migración 0020 la recreó sin `exercise_db_id`. Ya no existe `mv_ejercicios_completos` ni triggers de refresco ya que la vista es directamente sobre las tablas base.
 
-**Índices sobre la materializada:**
+**Índices sobre la vista:**
 ```sql
-CREATE UNIQUE INDEX idx_mv_ejercicios_id ON mv_ejercicios_completos (id);
-CREATE INDEX idx_mv_ejercicios_nombre ON mv_ejercicios_completos (nombre);
-CREATE INDEX idx_mv_ejercicios_partes_gin ON mv_ejercicios_completos USING GIN (partes_cuerpo);
-CREATE INDEX idx_mv_ejercicios_musc_obj_gin ON mv_ejercicios_completos USING GIN (musculos_objetivo);
-CREATE INDEX idx_mv_ejercicios_musc_sec_gin ON mv_ejercicios_completos USING GIN (musculos_secundarios);
-CREATE INDEX idx_mv_ejercicios_equip_gin ON mv_ejercicios_completos USING GIN (equipamientos);
-CREATE INDEX idx_mv_ejercicios_fts ON mv_ejercicios_completos
-  USING GIN (to_tsvector('spanish', coalesce(nombre,'') || ' ' || coalesce(descripcion,'')));
+CREATE INDEX idx_mv_ejercicios_nombre ON ejercicios (nombre);
+CREATE INDEX idx_mv_ejercicios_dificultad ON ejercicios (dificultad);
+CREATE INDEX idx_mv_ejercicios_finalidad ON ejercicios (finalidad);
+CREATE INDEX idx_mv_ejercicios_fts ON ejercicios USING GIN (
+  to_tsvector('spanish', coalesce(nombre,'') || ' ' || coalesce(descripcion,''))
+);
 ```
 
 El frontend consulta `v_ejercicios_completos` para obtener el ejercicio completo con todos sus catálogos en una sola consulta, manteniendo la integridad referencial en el backend.
@@ -554,6 +560,35 @@ GRANT SELECT ON partes_cuerpo, musculos, equipamientos, ejercicios,
   ejercicio_musculo_objetivo, ejercicio_musculo_secundario,
   ejercicio_parte_cuerpo, ejercicio_equipamiento, v_ejercicios_completos
   TO anon, authenticated;
+```
+
+#### 2.2.7 Finalidad del Ejercicio (migraciones 0018 + 0019)
+
+Cada ejercicio se clasifica según su **finalidad** (tipo de esfuerzo), lo que determina qué campos se muestran en la UI y qué columnas de `seleccion_de_ejercicios` se utilizan:
+
+| Finalidad | Constraint | Columnas en seleccion_de_ejercicios | UI renderiza |
+|-----------|-----------|-------------------------------------|-------------|
+| `fuerza` | Series, Repeticiones, Descanso, Peso | `series`, `repeticiones`, `segundos_descanso`, `peso_kg` | Grid 2×2 (Series, Reps, Descanso, Peso kg) |
+| `cardio` | Intervalos, Duración, Distancia (opc), Descanso | `series` (=intervalos), `duracion_segundos`, `distancia_metros` (opc), `segundos_descanso` | Intervalos, Duración (input libre tipo "5m 30s"), Distancia (m, opc), Descanso |
+| `isometrico` | Series, Tiempo de sujeción, Descanso | `series`, `tiempo_isometrico_segundos`, `segundos_descanso` | Series, Tiempo de sujeción (s), Descanso |
+| `hipertrofia` | Series, Repeticiones, Descanso, Peso | `series`, `repeticiones`, `segundos_descanso`, `peso_kg` | Grid 2×2 (Series, Reps, Descanso, Peso kg) |
+| `resistencia` | Series, Repeticiones, Descanso, Peso | `series`, `repeticiones`, `segundos_descanso`, `peso_kg` | Grid 2×2 (Series, Reps, Descanso, Peso kg) |
+| `movilidad` | Series, Repeticiones, Descanso | `series`, `repeticiones`, `segundos_descanso` | Series, Reps, Descanso |
+
+**Nuevas columnas en `seleccion_de_ejercicios` (migración 0018):**
+- `duracion_segundos INT` — duración del cardio en segundos (ej: 1800 = 30 min)
+- `distancia_metros INT` — distancia recorrida en metros (opcional, solo cardio)
+- `tiempo_isometrico_segundos INT` — tiempo de sujeción en segundos (solo isométrico)
+
+**Migración 0019:** Amplía el CHECK de `finalidad` para aceptar `hipertrofia`, `resistencia` y `movilidad`.
+
+**Migración 0020:** Hace `exercise_db_id` nullable y elimina su UNIQUE. Recrea `v_ejercicios_completos` sin `exercise_db_id`.
+
+**Clasificación automática en seeding:** El script `seed_ejercicios.py` incluye la función `_generar_finalidad()` que clasifica ejercicios automáticamente:
+- **Cardio:** músculo objetivo `cardiovascular` en ExerciseDB, o nombre contiene palabras clave (correr, nadar, bicicleta, saltar, burpees, etc.)
+- **Isométrico:** nombre contiene plancha, isométrico, wall sit, puente estático, plank, etc.
+- **Fuerza/Hipertrofia/Resistencia/Movilidad:** todo lo demás (default)
+
 ```
 
 ---
@@ -614,6 +649,9 @@ CREATE TABLE seleccion_de_ejercicios (
   repeticiones INT NOT NULL DEFAULT 10,
   segundos_descanso INT NOT NULL DEFAULT 90,
   indice_orden INT NOT NULL,
+  duracion_segundos INT,
+  distancia_metros INT,
+  tiempo_isometrico_segundos INT,
   
   CONSTRAINT valid_sets CHECK (series BETWEEN 1 AND 10),
   CONSTRAINT valid_reps CHECK (repeticiones BETWEEN 1 AND 100),
@@ -1642,17 +1680,31 @@ CREATE INDEX idx_notificaciones_usuario_no_leidas ON notificaciones(usuario_id, 
 
 ---
 
-## 6. Sincronización de ejercicios desde ExerciseDB (Kaggle)
+## 6. Ingesta de ejercicios (proceso unificado)
 
-Estado actual: pipeline de sincronización activo con proveedor aprobado.
+Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB, Gym Workout).
 
-El script `supabase/seed_ejercicios.py` implementa la ingesta completa:
-1. **Limpieza:** Elimina registros existentes de las 8 tablas de ejercicios respetando dependencias FK.
-2. **Catálogos:** Inserta o actualiza `partes_cuerpo`, `musculos` y `equipamientos` desde los JSON traducidos (`synaptix_bodyParts_es.json`, `synaptix_muscles_es.json`, `synaptix_equipments_es.json`).
-3. **Ejercicios:** Inserta cada ejercicio con `exercise_db_id`, `nombre`, `url_gif` (construida desde R2), `instrucciones` y `descripcion`.
-4. **Relaciones N:M:** Vincula cada ejercicio con sus músculos objetivo, músculos secundarios, partes del cuerpo y equipamientos mediante las 4 tablas de relación.
+### 6.1 Script unificado
 
-Los GIFs se alojan en Cloudflare R2 bajo `ejercicios/360/{exercise_db_id}.gif` (resolución 360x360).
+`supabase/seed_todo.py` reemplaza a los 3 scripts anteriores. Flujo:
+1. Lee `nuevos_ejercicios.json` (95 ejercicios, campo `fuente`), `musculos.json` (60), `partes_cuerpo.json` (13).
+2. Extrae equipamientos de los ejercicios (~37).
+3. Upsert de catálogos (musculos, partes_cuerpo, equipamientos).
+4. Inserta ejercicios nuevos (dedup por nombre normalizado).
+5. Upsert de relaciones N:M (ejercicio_musculo_objetivo, _secundario, _parte_cuerpo, _equipamiento).
+6. Restaura relaciones incluso para ejercicios ya existentes (idempotente).
+
+### 6.2 Fuentes de ejercicios
+
+| Fuente | Origen | Videos | Ruta R2 |
+|--------|--------|--------|---------|
+| `demic` | YouCan/Demic, descarga IDM | MP4 (55 slugs) | `ejercicios/demic/{slug}.mp4` |
+| `exercisedb` | Kaggle ExerciseDB, traducido | GIF (30 slugs) | `ejercicios/exercisedb/{slug}.gif` |
+| `gym_workout` | Gym Workout videos | MP4 (22 slugs) | `ejercicios/gym_workout/{slug}.mp4` |
+
+### 6.3 Migración de limpieza
+
+`supabase/migrations/20260528_0021_limpiar_ejercicios.sql` — DELETE en orden FK de: series_sesion → sesiones_registradas → rutinas → dias_rutina → semanas_rutina → seleccion_de_ejercicios → ejercicios → equipamientos → musculos → partes_cuerpo. Ejecutar en SQL Editor antes de seed_todo.py.
 
 ---
 
@@ -1666,8 +1718,8 @@ Los GIFs se alojan en Cloudflare R2 bajo `ejercicios/360/{exercise_db_id}.gif` (
 
 ---
 
-**Documento compilado:** 11-05-2026
-**Versión:** 3.0
-**Referencia:** RFC v3.0 - Arquitectura de datos
+**Documento compilado:** 28-05-2026
+**Versión:** 3.4
+**Referencia:** RFC v3.4 - Arquitectura de datos
 **Validador:** Tech Lead + DBA
 
