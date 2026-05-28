@@ -2,256 +2,256 @@
   {
     "nombre": "abdomen",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abdomen_abdominales.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abdomen_abdominales.webp"
   },
   {
     "nombre": "abdomen inferior",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abdomen_inferior.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abdomen_inferior.webp"
   },
   {
     "nombre": "abductores",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abductores.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abductores.webp"
   },
   {
     "nombre": "aductores",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/aductores.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/aductores.webp"
   },
   {
     "nombre": "antebrazos",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/antebrazos.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/antebrazos.webp"
   },
   {
     "nombre": "braquial",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/braquial.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/braquial.webp"
   },
   {
     "nombre": "braquiorradial",
     "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/braquiorradial.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/braquiorradial.webp"
   },
   {
     "nombre": "bíceps",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/biceps.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/biceps.webp"
   },
   {
     "nombre": "columna",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/columna.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/columna.webp"
   },
   {
     "nombre": "coracobraquial",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/coracobraquial.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/coracobraquial.webp"
   },
   {
     "nombre": "core",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/core.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/core.webp"
   },
   {
     "nombre": "cuádriceps",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/cuadriceps.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/cuadriceps.webp"
   },
   {
     "nombre": "deltoides",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides.webp"
   },
   {
     "nombre": "deltoides anterior",
     "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides_anterior.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides_anterior.webp"
   },
   {
     "nombre": "deltoides medio",
     "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides_medio.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides_medio.webp"
   },
   {
     "nombre": "deltoides posteriores",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoide_posterior.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoide_posterior.webp"
   },
   {
     "nombre": "dorsal ancho",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/dorsal_ancho.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/dorsal_ancho.webp"
   },
   {
     "nombre": "elevador de la escápula",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/elevador_escapula.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/elevador_escapula.webp"
   },
   {
     "nombre": "espalda",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/espalda.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/espalda.webp"
   },
   {
     "nombre": "espalda alta",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/espalda_alta.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/espalda_alta.webp"
   },
   {
     "nombre": "estabilizadores de tobillo",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/estabilizador_tobillo.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/estabilizador_tobillo.webp"
   },
   {
     "nombre": "esternocleidomastoideo",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/esternocleidomastoideo.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/esternocleidomastoideo.webp"
   },
   {
     "nombre": "extensores de muñeca",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/extensores_muneca.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/extensores_muneca.webp"
   },
   {
     "nombre": "flexores de la cadera",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/flexor_cadera.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/flexor_cadera.webp"
   },
   {
     "nombre": "flexores de muñeca",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/flexor_muneca.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/flexor_muneca.webp"
   },
   {
     "nombre": "gemelos",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gemelos.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gemelos.webp"
   },
   {
     "nombre": "glúteo mayor",
     "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gluteo_mayor.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gluteo_mayor.webp"
   },
   {
     "nombre": "glúteo medio",
     "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gluteo_medio.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gluteo_medio.webp"
   },
   {
     "nombre": "ingle",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/ingle.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/ingle.webp"
   },
   {
     "nombre": "isquiotibiales",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/isquiotibiales.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/isquiotibiales.webp"
   },
   {
     "nombre": "manguito rotador",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/manguito_rotador.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/manguito_rotador.webp"
   },
   {
     "nombre": "manos",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/manos.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/manos.webp"
   },
   {
     "nombre": "muñecas",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/muneca.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/muneca.webp"
   },
   {
     "nombre": "músculos de agarre",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/agarre.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/agarre.webp"
   },
   {
     "nombre": "oblicuos",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/oblicuos.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/oblicuos.webp"
   },
   {
     "nombre": "pecho",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pecho.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pecho.webp"
   },
   {
     "nombre": "pecho superior",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pecho_superior.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pecho_superior.webp"
   },
   {
     "nombre": "pectíneo",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pectineo.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pectineo.webp"
   },
   {
     "nombre": "pies",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pies.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pies.webp"
   },
   {
     "nombre": "redondo mayor",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/redondo_mayor.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/redondo_mayor.webp"
   },
   {
     "nombre": "redondo menor",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/redondo_menor.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/redondo_menor.webp"
   },
   {
     "nombre": "romboides",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/romboides.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/romboides.webp"
   },
   {
     "nombre": "serrato anterior",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/serrato_anterior.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/serrato_anterior.webp"
   },
   {
     "nombre": "sistema cardiovascular",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/sistema_cardiovascular.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/sistema_cardiovascular.webp"
   },
   {
     "nombre": "supraespinoso",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/supraespinoso.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/supraespinoso.webp"
   },
   {
     "nombre": "sóleo",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/soleo.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/soleo.webp"
   },
   {
     "nombre": "tensor de la fascia lata",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/tensor_fascia_lata.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/tensor_fascia_lata.webp"
   },
   {
     "nombre": "tibial anterior",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/tibial_anterior.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/tibial_anterior.webp"
   },
   {
     "nombre": "trapecios",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/trapecios.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/trapecios.webp"
   },
   {
     "nombre": "tríceps",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/triceps.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/triceps.webp"
   },
   {
     "nombre": "zona lumbar",
     "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/zona_lumbar.png"
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/zona_lumbar.webp"
   }
 ]

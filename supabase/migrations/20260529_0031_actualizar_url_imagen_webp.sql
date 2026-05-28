@@ -1,9 +1,6 @@
--- Migration: 0029_agregar_url_imagen_musculos
--- Objetivo: Agregar columna url_imagen a la tabla musculos y
---           poblarla con las rutas R2 de las imagenes ilustrativas (.webp).
-
-alter table public.musculos
-  add column if not exists url_imagen text;
+-- Migration: 0031_actualizar_url_imagen_webp
+-- Objetivo: Actualizar las URLs de url_imagen en musculos de .png a .webp
+--           para reflejar la conversion de formato en R2.
 
 update public.musculos
   set url_imagen = case
@@ -59,4 +56,4 @@ update public.musculos
   when nombre = 'tríceps' then 'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/triceps.webp'
   when nombre = 'zona lumbar' then 'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/zona_lumbar.webp'
   end
-  where url_imagen is null;
+  where url_imagen like '%.png';
