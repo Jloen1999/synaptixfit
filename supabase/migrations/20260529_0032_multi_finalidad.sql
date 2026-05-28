@@ -4,7 +4,9 @@
 --           Ej: Burpees pueden ser [cardio, fuerza] a la vez.
 
 -- 1) Convertir columna existente a TEXT[]
---    Primero eliminar el DEFAULT que impide la conversion automatica
+--    La vista v_ejercicios_completos impide el ALTER TYPE: se dropea antes
+drop view if exists public.v_ejercicios_completos cascade;
+
 alter table public.ejercicios alter column finalidad drop default;
 
 alter table public.ejercicios
