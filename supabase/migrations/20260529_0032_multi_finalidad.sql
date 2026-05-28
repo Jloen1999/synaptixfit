@@ -4,8 +4,13 @@
 --           Ej: Burpees pueden ser [cardio, fuerza] a la vez.
 
 -- 1) Convertir columna existente a TEXT[]
+--    Primero eliminar el DEFAULT que impide la conversion automatica
+alter table public.ejercicios alter column finalidad drop default;
+
 alter table public.ejercicios
   alter column finalidad type text[] using array[finalidad]::text[];
+
+alter table public.ejercicios alter column finalidad set default array['fuerza']::text[];
 
 -- 2) Eliminar CHECK antiguo y poner nuevo que valide el array
 alter table public.ejercicios

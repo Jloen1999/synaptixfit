@@ -3,8 +3,13 @@
 --           y convertir finalidad de TEXT a TEXT[] para multi-finalidad.
 
 -- 1) Convertir finalidad a TEXT[] para soportar multi-finalidad
+--    Primero eliminar el DEFAULT que impide la conversion automatica
+alter table public.ejercicios alter column finalidad drop default;
+
 alter table public.ejercicios
   alter column finalidad type text[] using array[finalidad]::text[];
+
+alter table public.ejercicios alter column finalidad set default array['fuerza']::text[];
 
 -- 2) Eliminar CHECK antiguo y poner nuevo que valide el array
 alter table public.ejercicios
