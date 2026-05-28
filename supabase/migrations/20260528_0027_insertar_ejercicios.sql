@@ -3,8 +3,17 @@
 --           y convertir finalidad de TEXT a TEXT[] para multi-finalidad.
 
 -- 1) Convertir finalidad a TEXT[] para soportar multi-finalidad
---    La vista v_ejercicios_completos impide el ALTER TYPE: se dropea antes
+--    Eliminar toda dependencia antes del ALTER TYPE:
+--    vista regular, vista materializada, triggers de refresco
 drop view if exists public.v_ejercicios_completos cascade;
+drop materialized view if exists public.mv_ejercicios_completos cascade;
+drop trigger if exists trg_refrescar_mv_ejercicios on public.ejercicios;
+drop trigger if exists trg_refrescar_mv_junction_pc on public.ejercicio_parte_cuerpo;
+drop trigger if exists trg_refrescar_mv_junction_mo on public.ejercicio_musculo_objetivo;
+drop trigger if exists trg_refrescar_mv_junction_ms on public.ejercicio_musculo_secundario;
+drop trigger if exists trg_refrescar_mv_junction_eq on public.ejercicio_equipamiento;
+drop function if exists public.trigger_refrescar_mv_ejercicios();
+drop function if exists public.refrescar_mv_ejercicios();
 
 alter table public.ejercicios alter column finalidad drop default;
 
@@ -31,28 +40,28 @@ select
      from public.ejercicio_parte_cuerpo epc
      join public.partes_cuerpo pc on pc.id = epc.parte_cuerpo_id
      where epc.ejercicio_id = e.id),
-    '{}'
+    array[]::text[]
   ) as partes_cuerpo,
   coalesce(
     (select array_agg(distinct mt.nombre order by mt.nombre)
      from public.ejercicio_musculo_objetivo emo
      join public.musculos mt on mt.id = emo.musculo_id
      where emo.ejercicio_id = e.id),
-    '{}'
+    array[]::text[]
   ) as musculos_objetivo,
   coalesce(
     (select array_agg(distinct ms.nombre order by ms.nombre)
      from public.ejercicio_musculo_secundario ems
      join public.musculos ms on ms.id = ems.musculo_id
      where ems.ejercicio_id = e.id),
-    '{}'
+    array[]::text[]
   ) as musculos_secundarios,
   coalesce(
     (select array_agg(distinct eq.nombre order by eq.nombre)
      from public.ejercicio_equipamiento ee
      join public.equipamientos eq on eq.id = ee.equipamiento_id
      where ee.ejercicio_id = e.id),
-    '{}'
+    array[]::text[]
   ) as equipamientos
 from public.ejercicios e;
 
