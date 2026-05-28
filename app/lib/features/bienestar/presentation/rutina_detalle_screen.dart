@@ -1074,7 +1074,6 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
         final peso = _editando ? _peso : e.pesoKg;
         final pesoTxt = peso != null ? ' · ${peso.toStringAsFixed(1)} kg' : '';
         return '${series}×${reps} · $desc descanso$pesoTxt';
-      case FinalidadEjercicio.movilidad:
     }
   }
 
