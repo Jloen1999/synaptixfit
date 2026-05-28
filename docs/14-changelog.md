@@ -5,7 +5,34 @@
 
 ---
 
-## [3.6.0] — 28-05-2026
+## [3.8.0] — 29-05-2026
+
+### url_imagen para todos los músculos + ejercicio_db_id eliminado + catálogo limpiado
+
+**musculos.json con url_imagen completo (51/51):**
+- 12 músculos que faltaban ahora tienen `url_imagen` apuntando a R2: cuádriceps, elevador de la escápula, estabilizadores de tobillo, extensores de muñeca, flexores de la cadera, flexores de muñeca, muñecas, serrato anterior, sistema cardiovascular, supraespinoso, sóleo, tensor de la fascia lata.
+- `manos` ya tenía url_imagen correctamente (`manos.png`).
+- Corregido `deltoides posteriores` que apuntaba a `deltoides.png` → ahora apunta a `deltoide_posterior.png`.
+
+**Migración 0028 (`20260528_0028_eliminar_exercise_db_id.sql`):**
+- Elimina triggers de refresco de `mv_ejercicios_completos`.
+- Dropea la función `refrescar_mv_ejercicios_completos()`.
+- Dropea la vista materializada `mv_ejercicios_completos` (legacy, no usada desde 0018).
+- Dropea columna `exercise_db_id` de `ejercicios`.
+- Recrea `v_ejercicios_completos` SIN `exercise_db_id` y con ORDER BY en los array_agg.
+
+**Migración 0029 (`20260529_0029_agregar_url_imagen_musculos.sql`):**
+- `ALTER TABLE musculos ADD COLUMN url_imagen text`.
+- UPDATE con 51 CASE WHEN para poblar todas las rutas R2.
+
+**Migración 0030 (`20260529_0030_eliminar_musculos_duplicados.sql`):**
+- Remapea 9 músculos redundantes en tablas puente (`ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`).
+- DELETE de los 9 músculos redundantes: abdominales, deltoides anteriores, dorsales, glúteos, hombros, parte interna del muslo, pectorales, tibiales, tobillos.
+
+**Documentación:** 04-data-model.md v3.8, 07-backend.md v2.6, 13-maintenance.md v1.4, 14-changelog.md entrada 3.8.0.
+
+---
+
 
 ### Deprecación de `exercise_db_id` + ampliación de finalidad + nuevos ejercicios Demic
 
@@ -15,7 +42,6 @@
 
 **Migración 0020 (`20260528_0020_deprecar_exercise_db_id.sql`):**
 - `exercise_db_id` pasa a nullable, eliminando UNIQUE y el índice `idx_ejercicios_exercise_db_id`.
-- `v_ejercicios_completos` recreada sin `exercise_db_id`.
 
 **Nuevos ejercicios desde Demic:**
 - 8 ejercicios nuevos insertados desde `supabase/nuevos_ejercicios.json`.
@@ -71,9 +97,28 @@
 - `Gym Workout/`: eliminado (vacío).
 - `_archivo/`: archivos obsoletos (GIFs otras resoluciones, scripts temporales).
 
-**.gitignore actualizado:** r2_staging/, demic/originales/, demic/*.mp4, demic/*.py, _archivo/.
+**.gitignore actualizado:** r2_staging/, demic/originales/, demic/*.mp4, demic/*.py, _archivo/, .aiassistant/, .idea/.
 
-**Documentación:** 04-data-model.md v3.4, 07-backend.md v2.2, 13-maintenance.md v1.3, 14-changelog.md entrada 3.7.0.
+**Seguridad — SECURITY INVOKER:**
+- Migración 0022: `v_ejercicios_completos` cambiada de SECURITY DEFINER (default) a SECURITY INVOKER. La vista ahora ejecuta con los permisos RLS del usuario consultante. Compatible con las políticas `public-read` existentes en tablas subyacentes.
+
+**Dificultad alineada con JSON:**
+- Migración 0023: CHECK de `dificultad` en `ejercicios` cambiado de `('facil','medio','dificil')` a `('principiante','intermedio','avanzado')`.
+
+**Nuevo JSON: equipamientos.json:**
+- `supabase/equipamientos.json`: 24 equipamientos con `nombre` y `fuente`, extraídos de `nuevos_ejercicios.json`.
+
+**Migrations de datos (0024-0027):**
+- 0024: INSERT de 24 equipamientos desde `equipamientos.json`.
+- 0025: INSERT de 13 partes del cuerpo desde `partes_cuerpo.json`.
+- 0026: INSERT de 60 músculos desde `musculos.json`.
+- 0027: UNIQUE en `ejercicios.nombre` + INSERT de 95 ejercicios desde `nuevos_ejercicios.json`.
+
+**seed_todo.py refactorizado:**
+- Ya no inserta catálogos ni ejercicios (lo hacen las migraciones 0024-0027).
+- Solo verifica existencia en BD y restaura las relaciones N:M (musculos, partes, equipos).
+
+**Documentación:** 04-data-model.md v3.7, 07-backend.md v2.5, 13-maintenance.md v1.3, 14-changelog.md entrada 3.7.0.
 
 ---
 

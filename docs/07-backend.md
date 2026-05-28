@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit
-**Versión:** 2.2
-**Fecha:** 28-05-2026
+**Versión:** 2.6
+**Fecha:** 29-05-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -13,7 +13,7 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 27 tablas, RLS, vistas materializadas (20 migraciones aplicadas) |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 27 tablas, RLS, vistas materializadas (30 migraciones aplicadas) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
@@ -54,10 +54,19 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 0015 | `20260510_0015_rutinas_periodizacion.sql` | 10-05-2026 | Tablas `semanas_rutina`, `dias_rutina`, `series_sesion`. Columnas `duracion_semanas`, `objetivo`, `estado` en `rutinas`. Columna `dia_id` y `peso_kg` en `seleccion_de_ejercicios`. Columnas `dia_id`, `tipo` en `sesiones_registradas`. RLS completa. Drop de constraints antiguos que impedían periodización (UNIQUE por rutina_id sin dia_id). |
 | 0016 | `20260511_0016_estado_diario.sql` | 11-05-2026 | Tabla `estado_diario_usuario` (check-in diario de fatiga). RLS: solo propietario. |
 | 0017 | `20260511_0017_periodizacion_tipo_semana.sql` | 11-05-2026 | Columna `tipo_semana` en `semanas_rutina` con CHECK (`adaptacion`, `carga`, `pico`, `descarga`). Índice `(rutina_id, numero_semana, tipo_semana)`. |
-| 0018 | `20260519_0018_finalidad_ejercicios.sql` | 19-05-2026 | Columna `finalidad` en `ejercicios` con CHECK (`fuerza`, `cardio`, `isometrico`). Columnas `duracion_segundos`, `distancia_metros`, `tiempo_isometrico_segundos` en `seleccion_de_ejercicios`. Recreación de `v_ejercicios_completos` como vista normal con subqueries para incluir `finalidad`. |
+| 0018 | `20260519_0018_finalidad_ejercicios.sql` | 19-05-2026 | Columna `finalidad` en `ejercicios` con CHECK (`fuerza`, `cardio`, `isometrico`). Columnas `duracion_segundos`, `distancia_metros`, `tiempo_isometrico_segundos` en `seleccion_de_ejercicios`. Recreación de `v_ejercicios_completos` como vista normal con subqueries (independiente de la materializada). |
 | 0019 | `20260527_0019_ampliar_finalidad.sql` | 27-05-2026 | Amplía el CHECK de `finalidad` para aceptar: `hipertrofia`, `resistencia`, `movilidad`. |
-| 0020 | `20260528_0020_deprecar_exercise_db_id.sql` | 28-05-2026 | Hace `exercise_db_id` nullable, elimina UNIQUE y el índice `idx_ejercicios_exercise_db_id`. Recrea `v_ejercicios_completos` sin `exercise_db_id`. |
+| 0020 | `20260528_0020_deprecar_exercise_db_id.sql` | 28-05-2026 | Hace `exercise_db_id` nullable, elimina UNIQUE y el índice `idx_ejercicios_exercise_db_id`. Recrea `v_ejercicios_completos`. |
 | 0021 | `20260528_0021_limpiar_ejercicios.sql` | 28-05-2026 | DELETE en orden FK de todas las tablas de ejercicios/rutinas/sesiones/catálogos para re-carga limpia. |
+| 0022 | `20260528_0022_vista_ejercicios_security_invoker.sql` | 28-05-2026 | Cambia `v_ejercicios_completos` de SECURITY DEFINER (default) a SECURITY INVOKER para respetar RLS del usuario consultante. |
+| 0023 | `20260528_0023_actualizar_dificultad_ejercicios.sql` | 28-05-2026 | Cambia el CHECK de `dificultad` en `ejercicios` de `('facil','medio','dificil')` a `('principiante','intermedio','avanzado')` para coincidir con la nomenclatura del JSON. |
+| 0024 | `20260528_0024_insertar_equipamientos.sql` | 28-05-2026 | Inserta 24 equipamientos desde `equipamientos.json` (con `fuente`). |
+| 0025 | `20260528_0025_insertar_partes_cuerpo.sql` | 28-05-2026 | Inserta 13 partes del cuerpo desde `partes_cuerpo.json`. |
+| 0026 | `20260528_0026_insertar_musculos.sql` | 28-05-2026 | Inserta 60 músculos desde `musculos.json`. |
+| 0027 | `20260528_0027_insertar_ejercicios.sql` | 28-05-2026 | Añade UNIQUE en `ejercicios.nombre` e inserta los 95 ejercicios desde `nuevos_ejercicios.json`. |
+| 0028 | `20260528_0028_eliminar_exercise_db_id.sql` | 28-05-2026 | Elimina triggers y funcion de refresco de `mv_ejercicios_completos`, dropea la MV, elimina columna `exercise_db_id` de `ejercicios`, recrea `v_ejercicios_completos` sin el campo. |
+| 0029 | `20260529_0029_agregar_url_imagen_musculos.sql` | 29-05-2026 | Agrega columna `url_imagen` a `musculos` y la popula con las rutas R2 de los 51 PNGs ilustrativos. |
+| 0030 | `20260529_0030_eliminar_musculos_duplicados.sql` | 29-05-2026 | Remapea 9 músculos redundantes en tablas puente y los elimina: `abdominales→abdomen`, `deltoides anteriores→deltoides anterior`, `dorsales→dorsal ancho`, `glúteos→glúteo mayor`, `hombros→deltoides`, `parte interna del muslo→aductores`, `pectorales→pecho`, `tibiales→tibial anterior`, `tobillos→estabilizadores de tobillo`. |
 
 ## 3. Servicio de IA — `RecomendacionIaService`
 
@@ -460,12 +469,15 @@ Contratos de la capa de infraestructura:
 | 7 | `RepositorioRetos` | `retos/` | `crearRetoSimple()`, `crearRetoComplejo()`, `actualizarProgreso()`, `clonarRetoPublico()` |
 | 8 | `RepositorioMuro` | `social/` | `listarMuro()`, `darMeGusta()`, `quitarMeGusta()` |
 
-## 8. Vista Materializada de Ejercicios
+## 8. Vista de Ejercicios Completos
 
-**Tabla:** `mv_ejercicios_completos` (materializada)
-**Wrapper:** `v_ejercicios_completos` (vista normal → redirige a materializada)
+**Vista principal:** `v_ejercicios_completos` (standalone, SECURITY INVOKER — migración 0022)
 
-**Propósito:** Pre-calcular los arrays de catálogos (partes_cuerpo, musculos_objetivo, musculos_secundarios, equipamientos) para cada ejercicio, evitando múltiples JOINs en cada consulta del frontend.
+**Vista materializada (legacy):** `mv_ejercicios_completos` — ya no es consultada por `v_ejercicios_completos` desde la migración 0018. Se mantiene por compatibilidad con triggers de refresco heredados.
+
+**Propósito:** Pre-calcular los arrays de catálogos (partes_cuerpo, musculos_objetivo, musculos_secundarios, equipamientos) para cada ejercicio mediante subqueries correlacionadas, evitando múltiples JOINs en cada consulta del frontend.
+
+**Comportamiento de seguridad:** `SECURITY INVOKER` — la vista ejecuta con los permisos RLS del usuario que realiza la consulta, no del creador de la vista. Como las tablas subyacentes tienen política `public-read`, el acceso funciona correctamente tanto para usuarios anónimos como autenticados.
 
 **Triggers de refresco automático:** 5 triggers sobre las tablas base (`ejercicios`, `ejercicio_parte_cuerpo`, `ejercicio_musculo_objetivo`, `ejercicio_musculo_secundario`, `ejercicio_equipamiento`) ejecutan `REFRESH MATERIALIZED VIEW CONCURRENTLY mv_ejercicios_completos` ante cualquier INSERT, UPDATE o DELETE.
 

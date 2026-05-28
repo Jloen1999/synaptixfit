@@ -71,16 +71,17 @@ Nota de entorno en Windows:
 2. Si el entorno usa el lanzador de Windows, tambien es valido `py -m pip install supabase python-dotenv`.
 3. Los scripts `seed_ejercicios.py` y `seed_nuevos_ejercicios.py` buscan automáticamente el archivo `.env` en `supabase/.env`, en la raíz del workspace y en `app/.env`.
 
-### 1.3b Catálogo actual (28-05-2026) — Fuentes unificadas
+### 1.3b Catálogo actual (29-05-2026) — Fuentes unificadas
 
 | Recurso | Cantidad |
 |---------|----------|
 | Ejercicios únicos | 95 (62 demic + 21 exercisedb + 12 gym_workout) |
 | Partes del cuerpo | 13 |
-| Musculos | 60 |
-| Equipamientos | ~37 (extraídos de ejercicios) |
+| Musculos | 51 (9 redundantes eliminados vía migración 0030) |
+| Equipamientos | 24 (extraídos de ejercicios) |
 | Videos/GIFs para R2 | 107 (55 demic + 30 exercisedb + 22 gym_workout) |
-| Migraciones aplicadas | 21 |
+| Migraciones aplicadas | 30 |
+| PNGs ilustrativos de músculos | 51 (en `musculos/`, URL en columna `url_imagen` de la tabla) |
 
 ### 1.3c Script de seed unificado
 

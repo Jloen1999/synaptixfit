@@ -1,0 +1,98 @@
+[
+  {
+    "nombre": "almohada",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "banco",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "banco inclinado",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "banda de resistencia",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "barra",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "barra en t",
+    "fuente": "gym_workout"
+  },
+  {
+    "nombre": "barra ez",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "barra olímpica",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "cuerda",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "discos de pesas",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "equipo asistido",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "lastre",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "mancuerna",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "mancuernas",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "máquina contractora",
+    "fuente": "gym_workout"
+  },
+  {
+    "nombre": "máquina convergente",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "máquina de curl",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "máquina de extensión",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "máquina hack",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "máquina smith",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "pesa rusa",
+    "fuente": "exercisedb"
+  },
+  {
+    "nombre": "peso corporal",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "polea",
+    "fuente": "demic"
+  },
+  {
+    "nombre": "prensa de piernas",
+    "fuente": "demic"
+  }
+]

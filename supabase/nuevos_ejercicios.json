@@ -46,7 +46,7 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "isquiotibiales",
@@ -135,7 +135,7 @@
       "brazos (parte superior)"
     ],
     "musculos_objetivo": [
-      "abdominales",
+      "abdomen",
       "flexores de la cadera"
     ],
     "musculos_secundarios": [
@@ -165,7 +165,6 @@
       "brazos (parte superior)"
     ],
     "musculos_objetivo": [
-      "dorsales",
       "dorsal ancho"
     ],
     "musculos_secundarios": [
@@ -259,7 +258,7 @@
       "cuádriceps"
     ],
     "musculos_secundarios": [
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales",
       "abdomen"
     ],
@@ -290,12 +289,12 @@
       "deltoides",
       "deltoides posteriores",
       "trapecios",
-      "pectorales"
+      "pecho"
     ],
     "musculos_secundarios": [
-      "dorsales",
+      "dorsal ancho",
       "romboides",
-      "hombros",
+      "deltoides",
       "tríceps"
     ],
     "equipamientos": [
@@ -322,8 +321,8 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos",
-      "parte interna del muslo"
+      "glúteo mayor",
+      "aductores"
     ],
     "musculos_secundarios": [
       "isquiotibiales",
@@ -414,8 +413,7 @@
     ],
     "musculos_secundarios": [
       "deltoides",
-      "antebrazos",
-      "hombros"
+      "antebrazos"
     ],
     "equipamientos": [
       "barra",
@@ -473,7 +471,7 @@
       "core"
     ],
     "musculos_objetivo": [
-      "pectorales",
+      "pecho",
       "tríceps",
       "deltoides"
     ],
@@ -506,15 +504,14 @@
       "hombros"
     ],
     "musculos_objetivo": [
-      "pectorales",
+      "pecho",
       "tríceps",
-      "deltoides",
-      "hombros"
+      "deltoides"
     ],
     "musculos_secundarios": [
       "serrato anterior",
       "coracobraquial",
-      "hombros",
+      "deltoides",
       "tríceps",
       "pecho",
       "pecho superior",
@@ -551,8 +548,8 @@
       "bíceps",
       "tríceps",
       "deltoides",
-      "dorsales",
-      "pectorales"
+      "dorsal ancho",
+      "pecho"
     ],
     "musculos_secundarios": [
       "antebrazos",
@@ -585,13 +582,13 @@
     ],
     "musculos_objetivo": [
       "deltoides",
-      "pectorales"
+      "pecho"
     ],
     "musculos_secundarios": [
       "tríceps",
       "pecho superior",
       "trapecios",
-      "hombros"
+      "deltoides"
     ],
     "equipamientos": [
       "máquina smith"
@@ -617,7 +614,7 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales",
       "aductores"
     ],
@@ -650,8 +647,7 @@
     ],
     "musculos_objetivo": [
       "espalda alta",
-      "dorsal ancho",
-      "dorsales"
+      "dorsal ancho"
     ],
     "musculos_secundarios": [
       "bíceps",
@@ -683,7 +679,6 @@
       "brazos (parte superior)"
     ],
     "musculos_objetivo": [
-      "dorsales",
       "dorsal ancho"
     ],
     "musculos_secundarios": [
@@ -717,7 +712,7 @@
       "glúteos"
     ],
     "musculos_objetivo": [
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales"
     ],
     "musculos_secundarios": [
@@ -812,7 +807,7 @@
     ],
     "musculos_objetivo": [
       "zona lumbar",
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "flexores de la cadera"
@@ -875,7 +870,7 @@
       "core"
     ],
     "musculos_objetivo": [
-      "pectorales",
+      "pecho",
       "tríceps",
       "deltoides"
     ],
@@ -908,7 +903,7 @@
     ],
     "musculos_objetivo": [
       "deltoides",
-      "deltoides anteriores"
+      "deltoides anterior"
     ],
     "musculos_secundarios": [
       "tríceps",
@@ -941,7 +936,7 @@
     ],
     "musculos_objetivo": [
       "romboides",
-      "glúteos",
+      "glúteo mayor",
       "flexores de la cadera",
       "espalda alta"
     ],
@@ -1041,9 +1036,9 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales",
-      "parte interna del muslo"
+      "aductores"
     ],
     "musculos_secundarios": [
       "aductores",
@@ -1074,14 +1069,14 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "isquiotibiales",
       "zona lumbar",
       "abdomen",
       "core",
-      "glúteos",
+      "glúteo mayor",
       "espalda alta"
     ],
     "equipamientos": [
@@ -1112,7 +1107,7 @@
     "musculos_secundarios": [
       "braquial",
       "antebrazos",
-      "deltoides anteriores"
+      "deltoides anterior"
     ],
     "equipamientos": [
       "mancuerna",
@@ -1139,16 +1134,16 @@
       "hombros"
     ],
     "musculos_objetivo": [
-      "pectorales",
+      "pecho",
       "tríceps",
-      "deltoides anteriores"
+      "deltoides anterior"
     ],
     "musculos_secundarios": [
       "abdomen",
       "serrato anterior",
       "core",
       "tríceps",
-      "hombros"
+      "deltoides"
     ],
     "equipamientos": [
       "peso corporal"
@@ -1204,7 +1199,7 @@
       "cintura"
     ],
     "musculos_objetivo": [
-      "abdominales",
+      "abdomen",
       "abdomen inferior",
       "core"
     ],
@@ -1235,7 +1230,7 @@
       "espalda"
     ],
     "musculos_objetivo": [
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales",
       "columna"
     ],
@@ -1244,7 +1239,7 @@
       "espalda alta",
       "core",
       "antebrazos",
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales",
       "trapecios"
     ],
@@ -1275,7 +1270,7 @@
     ],
     "musculos_objetivo": [
       "romboides",
-      "glúteos",
+      "glúteo mayor",
       "flexores de la cadera",
       "espalda alta"
     ],
@@ -1369,9 +1364,9 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales",
-      "parte interna del muslo"
+      "aductores"
     ],
     "musculos_secundarios": [
       "gemelos"
@@ -1400,7 +1395,7 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "isquiotibiales",
@@ -1430,7 +1425,7 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales"
     ],
     "musculos_secundarios": [
@@ -1459,7 +1454,7 @@
       "abdomen"
     ],
     "musculos_objetivo": [
-      "abdominales",
+      "abdomen",
       "abdomen inferior",
       "core"
     ],
@@ -1523,7 +1518,7 @@
       "espalda"
     ],
     "musculos_objetivo": [
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales"
     ],
     "musculos_secundarios": [
@@ -1555,7 +1550,7 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "isquiotibiales",
@@ -1624,7 +1619,7 @@
       "espalda alta"
     ],
     "musculos_secundarios": [
-      "pectorales",
+      "pecho",
       "abdomen",
       "aductores"
     ],
@@ -1686,7 +1681,7 @@
     ],
     "musculos_objetivo": [
       "cuádriceps",
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "isquiotibiales",
@@ -1755,8 +1750,8 @@
       "espalda alta"
     ],
     "musculos_secundarios": [
-      "pectorales",
-      "glúteos"
+      "pecho",
+      "glúteo mayor"
     ],
     "equipamientos": [
       "peso corporal"
@@ -1820,7 +1815,7 @@
       "espalda alta"
     ],
     "musculos_secundarios": [
-      "pectorales",
+      "pecho",
       "abdomen",
       "aductores"
     ],
@@ -1848,7 +1843,7 @@
       "abdomen"
     ],
     "musculos_objetivo": [
-      "abdominales",
+      "abdomen",
       "abdomen inferior",
       "core"
     ],
@@ -1976,9 +1971,8 @@
       "espalda"
     ],
     "musculos_objetivo": [
-      "glúteos",
-      "glúteo medio",
-      "glúteo mayor"
+      "glúteo mayor",
+      "glúteo medio"
     ],
     "musculos_secundarios": [
       "isquiotibiales",
@@ -2014,7 +2008,7 @@
     ],
     "musculos_secundarios": [
       "isquiotibiales",
-      "glúteos"
+      "glúteo mayor"
     ],
     "equipamientos": [
       "máquina hack"
@@ -2039,7 +2033,7 @@
       "piernas (parte superior)"
     ],
     "musculos_objetivo": [
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "cuádriceps",
@@ -2152,7 +2146,7 @@
       "piernas (parte superior)"
     ],
     "musculos_objetivo": [
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "cuádriceps",
@@ -2185,7 +2179,7 @@
     ],
     "musculos_secundarios": [
       "pecho",
-      "hombros"
+      "deltoides"
     ],
     "equipamientos": [
       "peso corporal"
@@ -2267,7 +2261,7 @@
     "musculos_secundarios": [
       "isquiotibiales",
       "cuádriceps",
-      "glúteos"
+      "glúteo mayor"
     ],
     "equipamientos": [
       "barra"
@@ -2290,7 +2284,7 @@
       "piernas (parte superior)"
     ],
     "musculos_objetivo": [
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "oblicuos",
@@ -2318,7 +2312,7 @@
       "espalda"
     ],
     "musculos_objetivo": [
-      "dorsales"
+      "dorsal ancho"
     ],
     "musculos_secundarios": [
       "bíceps",
@@ -2372,7 +2366,7 @@
       "piernas (parte superior)"
     ],
     "musculos_objetivo": [
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "cuádriceps",
@@ -2430,7 +2424,7 @@
       "columna"
     ],
     "musculos_secundarios": [
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales"
     ],
     "equipamientos": [
@@ -2513,7 +2507,7 @@
       "piernas (parte superior)"
     ],
     "musculos_objetivo": [
-      "glúteos"
+      "glúteo mayor"
     ],
     "musculos_secundarios": [
       "isquiotibiales",
@@ -2544,7 +2538,7 @@
       "cuádriceps"
     ],
     "musculos_secundarios": [
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales",
       "estabilizadores de tobillo"
     ],
@@ -2598,7 +2592,7 @@
       "pecho"
     ],
     "musculos_objetivo": [
-      "pectorales"
+      "pecho"
     ],
     "musculos_secundarios": [
       "deltoides",
@@ -2661,7 +2655,7 @@
     "musculos_secundarios": [
       "oblicuos",
       "zona lumbar",
-      "hombros"
+      "deltoides"
     ],
     "equipamientos": [
       "peso corporal"
@@ -2787,11 +2781,11 @@
       "pecho"
     ],
     "musculos_objetivo": [
-      "pectorales"
+      "pecho"
     ],
     "musculos_secundarios": [
       "tríceps",
-      "hombros"
+      "deltoides"
     ],
     "equipamientos": [
       "barra"
@@ -2819,7 +2813,7 @@
       "columna"
     ],
     "musculos_secundarios": [
-      "glúteos",
+      "glúteo mayor",
       "isquiotibiales",
       "trapecios"
     ],
@@ -2846,11 +2840,11 @@
       "pecho"
     ],
     "musculos_objetivo": [
-      "pectorales"
+      "pecho"
     ],
     "musculos_secundarios": [
       "tríceps",
-      "hombros"
+      "deltoides"
     ],
     "equipamientos": [
       "barra"

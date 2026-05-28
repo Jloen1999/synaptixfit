@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 3.4
+**Versión:** 3.8
 **Estado:** VIGENTE
-**Fecha:** 28-05-2026
-**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye trigger de cascada días→semanas. Catálogo actual: 95 ejercicios, 60 músculos, 13 partes del cuerpo, ~37 equipamientos.
+**Fecha:** 29-05-2026
+**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye trigger de cascada días→semanas. Catálogo actual: 95 ejercicios, 51 músculos, 13 partes del cuerpo, 24 equipamientos.
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -392,6 +392,7 @@ CREATE TABLE partes_cuerpo (
 CREATE TABLE musculos (
   id SERIAL PRIMARY KEY,
   nombre TEXT NOT NULL UNIQUE,
+  url_imagen TEXT, -- Ruta R2 a la ilustracion del musculo (agregada en migracion 0029)
   creado_en TIMESTAMPTZ DEFAULT now()
 );
 
@@ -414,11 +415,11 @@ CREATE POLICY equipamientos_select ON equipamientos FOR SELECT USING (true);
 ```sql
 CREATE TABLE ejercicios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  exercise_db_id TEXT, -- deprecated, nullable desde migracion 0020
+  exercise_db_id TEXT, -- deprecated, eliminada en migracion 0028
   nombre TEXT NOT NULL,
   url_gif TEXT,
   instrucciones TEXT[] NOT NULL DEFAULT '{}',
-  dificultad TEXT NOT NULL DEFAULT 'medio',
+  dificultad TEXT NOT NULL DEFAULT 'intermedio',
   descripcion TEXT,
   finalidad TEXT NOT NULL DEFAULT 'fuerza'
     CHECK (finalidad IN ('fuerza', 'cardio', 'isometrico', 'hipertrofia', 'resistencia', 'movilidad')),
@@ -426,7 +427,7 @@ CREATE TABLE ejercicios (
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   
   CONSTRAINT ck_ejercicios_nombre_len CHECK (char_length(nombre) >= 2),
-  CONSTRAINT ck_ejercicios_dificultad CHECK (dificultad IN ('facil', 'medio', 'dificil'))
+  CONSTRAINT ck_ejercicios_dificultad CHECK (dificultad IN ('principiante', 'intermedio', 'avanzado'))
 );
 
 CREATE INDEX idx_ejercicios_dificultad ON ejercicios(dificultad);
@@ -482,49 +483,52 @@ CREATE POLICY epc_select ON ejercicio_parte_cuerpo FOR SELECT USING (true);
 CREATE POLICY ee_select ON ejercicio_equipamiento FOR SELECT USING (true);
 ```
 
-#### 2.2.4 Vista materializada para consultas rápidas
+#### 2.2.4 Vista única para consultas rápidas
 
-Para evitar múltiples JOINs en el frontend, se expone una **vista materializada** que pre-calcula los arrays de catálogos. Esta vista reemplaza la versión original (`v_ejercicios_completos`) que usaba subqueries correlacionadas y degradaba el rendimiento en catálogos grandes.
-
-La vista materializada `mv_ejercicios_completos` usa `LEFT JOIN LATERAL` para construir los arrays de catálogos en una sola pasada. Se expone mediante una vista wrapper `v_ejercicios_completos` que preserva compatibilidad hacia atrás.
-
-La migración 0020 recreó `v_ejercicios_completos` como vista directamente (sin materializar) por simplicidad y para reflejar los cambios de schema en tiempo real, eliminando `exercise_db_id` de la proyección.
+El frontend consulta `v_ejercicios_completos` para obtener cada ejercicio con sus arrays de catálogos en una sola consulta. La vista usa subqueries escalares correlacionadas sobre las tablas base y se define con `SECURITY INVOKER` (migración 0022) para respetar las políticas RLS del usuario consultante.
 
 ```sql
-CREATE VIEW v_ejercicios_completos AS
+CREATE OR REPLACE VIEW public.v_ejercicios_completos
+SECURITY INVOKER
+AS
 SELECT
-  e.id, e.nombre, e.url_gif, e.instrucciones,
+  e.id, e.exercise_db_id, e.nombre, e.url_gif, e.instrucciones,
   e.dificultad, e.descripcion, e.finalidad, e.creado_en, e.actualizado_en,
-  coalesce(pc.partes_cuerpo, '{}')       AS partes_cuerpo,
-  coalesce(mt.musculos_objetivo, '{}')    AS musculos_objetivo,
-  coalesce(ms.musculos_secundarios, '{}') AS musculos_secundarios,
-  coalesce(eq.equipamientos, '{}')        AS equipamientos
-FROM ejercicios e
-LEFT JOIN LATERAL (
-  SELECT array_agg(DISTINCT pc2.nombre ORDER BY pc2.nombre)
-  FROM ejercicio_parte_cuerpo epc JOIN partes_cuerpo pc2 ON pc2.id = epc.parte_cuerpo_id
-  WHERE epc.ejercicio_id = e.id
-) pc ON true
-LEFT JOIN LATERAL (
-  SELECT array_agg(DISTINCT mt2.nombre ORDER BY mt2.nombre)
-  FROM ejercicio_musculo_objetivo emo JOIN musculos mt2 ON mt2.id = emo.musculo_id
-  WHERE emo.ejercicio_id = e.id
-) mt ON true
-LEFT JOIN LATERAL (
-  SELECT array_agg(DISTINCT ms2.nombre ORDER BY ms2.nombre)
-  FROM ejercicio_musculo_secundario ems JOIN musculos ms2 ON ms2.id = ems.musculo_id
-  WHERE ems.ejercicio_id = e.id
-) ms ON true
-LEFT JOIN LATERAL (
-  SELECT array_agg(DISTINCT eq2.nombre ORDER BY eq2.nombre)
-  FROM ejercicio_equipamiento ee JOIN equipamientos eq2 ON eq2.id = ee.equipamiento_id
-  WHERE ee.ejercicio_id = e.id
-) eq ON true;
+  coalesce(
+    (SELECT array_agg(DISTINCT pc.nombre)
+     FROM ejercicio_parte_cuerpo epc
+     JOIN partes_cuerpo pc ON pc.id = epc.parte_cuerpo_id
+     WHERE epc.ejercicio_id = e.id), '{}'
+  ) AS partes_cuerpo,
+  coalesce(
+    (SELECT array_agg(DISTINCT mt.nombre)
+     FROM ejercicio_musculo_objetivo emo
+     JOIN musculos mt ON mt.id = emo.musculo_id
+     WHERE emo.ejercicio_id = e.id), '{}'
+  ) AS musculos_objetivo,
+  coalesce(
+    (SELECT array_agg(DISTINCT ms.nombre)
+     FROM ejercicio_musculo_secundario ems
+     JOIN musculos ms ON ms.id = ems.musculo_id
+     WHERE ems.ejercicio_id = e.id), '{}'
+  ) AS musculos_secundarios,
+  coalesce(
+    (SELECT array_agg(DISTINCT eq.nombre)
+     FROM ejercicio_equipamiento ee
+     JOIN equipamientos eq ON eq.id = ee.equipamiento_id
+     WHERE ee.ejercicio_id = e.id), '{}'
+  ) AS equipamientos
+FROM ejercicios e;
 ```
 
-**Vista única (no materializada):**
+**Historial de cambios:**
+- Migración 0006 — creación inicial como vista materializada `mv_ejercicios_completos` con `LEFT JOIN LATERAL`.
+- Migración 0014 — vista materializada con índices GIN y triggers de refresco automático.
+- Migración 0018 — convertida a vista normal con subqueries escalares, añadiendo `finalidad`.
+- Migración 0020 — `exercise_db_id` hecho nullable en la tabla, aún expuesto en la vista.
+- Migración 0022 — añadido `SECURITY INVOKER` para respetar RLS del usuario consultante.
 
-La migración 0018 convirtió `v_ejercicios_completos` en una vista normal por primera vez (incluyendo `finalidad`). La migración 0020 la recreó sin `exercise_db_id`. Ya no existe `mv_ejercicios_completos` ni triggers de refresco ya que la vista es directamente sobre las tablas base.
+> Nota: La vista materializada `mv_ejercicios_completos` y sus triggers de refresco (creados en migración 0014) aún existen en la BD pero no son consultados por `v_ejercicios_completos` desde la migración 0018.
 
 **Índices sobre la vista:**
 ```sql
@@ -582,7 +586,9 @@ Cada ejercicio se clasifica según su **finalidad** (tipo de esfuerzo), lo que d
 
 **Migración 0019:** Amplía el CHECK de `finalidad` para aceptar `hipertrofia`, `resistencia` y `movilidad`.
 
-**Migración 0020:** Hace `exercise_db_id` nullable y elimina su UNIQUE. Recrea `v_ejercicios_completos` sin `exercise_db_id`.
+**Migración 0020:** Hace `exercise_db_id` nullable y elimina su UNIQUE.
+
+**Migración 0022:** `v_ejercicios_completos` pasa a `SECURITY INVOKER` para respetar las políticas RLS del usuario que consulta.
 
 **Clasificación automática en seeding:** El script `seed_ejercicios.py` incluye la función `_generar_finalidad()` que clasifica ejercicios automáticamente:
 - **Cardio:** músculo objetivo `cardiovascular` en ExerciseDB, o nombre contiene palabras clave (correr, nadar, bicicleta, saltar, burpees, etc.)
@@ -1718,8 +1724,8 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ---
 
-**Documento compilado:** 28-05-2026
-**Versión:** 3.4
-**Referencia:** RFC v3.4 - Arquitectura de datos
+**Documento compilado:** 29-05-2026
+**Versión:** 3.8
+**Referencia:** RFC v3.8 - Arquitectura de datos
 **Validador:** Tech Lead + DBA
 

@@ -1,16 +1,15 @@
 """
-seed_todo.py - Script unificado de seeding para SynaptixFit.
+seed_todo.py - Restaurador de relaciones N:M para SynaptixFit.
 
-Lee los JSON consolidados y carga todo el catalogo de ejercicios en Supabase:
-  - nuevos_ejercicios.json  (90 ejercicios unificados, 3 fuentes)
-  - musculos.json           (60 musculos unificados)
-  - partes_cuerpo.json      (13 partes del cuerpo)
+Los catalogos y ejercicios se insertan via migraciones SQL (0024-0027).
+Este script unicamente restaura las relaciones N:M (musculos objetivo,
+musculos secundarios, partes del cuerpo, equipamientos) a partir
+de los JSON consolidados.
 
 Flujo:
-  1. Upsert de catalogos (musculos, partes_cuerpo, equipamientos)
-  2. Insercion de ejercicios (dedup por nombre)
-  3. Upsert de relaciones N:M
-  4. Resumen final
+   1. Verifica que catalogos y ejercicios existan en la BD
+   2. Inserta relaciones N:M para cada ejercicio
+   3. Resumen final
 
 Reemplaza a: seed_ejercicios.py, seed_nuevos_ejercicios.py, seed_gym_workout.py
 """
@@ -57,123 +56,34 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 EJERCICIOS_JSON = SCRIPT_DIR / "nuevos_ejercicios.json"
 MUSCULOS_JSON = SCRIPT_DIR / "musculos.json"
 PARTES_JSON = SCRIPT_DIR / "partes_cuerpo.json"
+EQUIP_JSON = SCRIPT_DIR / "equipamientos.json"
 
 
-# ---------------------------------------------------------------------------
-# Funciones de catalogo
-# ---------------------------------------------------------------------------
-
-def upsert_catalogo(supabase, tabla: str, items: list[dict]) -> dict:
-    """
-    Inserta items nuevos en una tabla de catalogo.
-    Retorna dict {nombre: id} con todos los registros (existentes + nuevos).
-    """
-    nombre_to_id: dict[str, any] = {}
+def cargar_catalogo(supabase, tabla: str, json_path: Path) -> dict:
+    """Carga nombres del JSON y los mapea a IDs desde la BD."""
+    with open(json_path, "r", encoding="utf-8") as f:
+        items_json = json.load(f)
+    nombres_json = {item["nombre"] for item in items_json}
 
     resp = supabase.table(tabla).select("id, nombre").execute()
+    mapa = {}
     for row in resp.data:
-        nombre_to_id[row["nombre"]] = row["id"]
+        mapa[row["nombre"]] = row["id"]
 
-    existentes = set(nombre_to_id.keys())
-    nuevos = []
-    vistos = set()
-    for item in items:
-        nombre = item["nombre"]
-        if nombre not in existentes and nombre not in vistos:
-            nuevos.append(item)
-            vistos.add(nombre)
-
-    if nuevos:
-        payload = [{"nombre": item["nombre"]} for item in nuevos]
-        result = supabase.table(tabla).insert(payload).execute()
-        for row in result.data:
-            nombre_to_id[row["nombre"]] = row["id"]
-        print(f"  [OK] {tabla}: {len(nuevos)} nuevos ({len(nombre_to_id)} total)")
-        for item in nuevos:
-            print(f"       + {item['nombre']}")
+    faltantes = nombres_json - set(mapa.keys())
+    if faltantes:
+        print(f"  [AVISO] {tabla}: {len(faltantes)} nombres faltantes en BD:")
+        for n in sorted(faltantes):
+            print(f"         - {n}")
     else:
-        print(f"  [OK] {tabla}: ya completo ({len(nombre_to_id)} registros)")
+        print(f"  [OK] {tabla}: {len(nombres_json)}/{len(items_json)} en BD")
 
-    return nombre_to_id
-
-
-def extraer_equipamientos(ejercicios: list) -> list[dict]:
-    """Extrae equipamientos unicos de los ejercicios."""
-    vistos = set()
-    items = []
-    for ej in ejercicios:
-        for nombre in ej.get("equipamientos", []):
-            if nombre not in vistos:
-                vistos.add(nombre)
-                items.append({"nombre": nombre})
-    return items
+    return mapa, len(nombres_json), len(faltantes)
 
 
 # ---------------------------------------------------------------------------
-# Insercion de ejercicios
+# Insercion de relaciones N:M
 # ---------------------------------------------------------------------------
-
-def insertar_ejercicios(supabase, ejercicios: list, catalogos: dict):
-    """
-    Inserta ejercicios nuevos y sus relaciones N:M.
-    Detecta duplicados por nombre normalizado (case-insensitive, sin acentos).
-    """
-    musculos_map = catalogos["musculos"]
-    partes_map = catalogos["partes_cuerpo"]
-    equip_map = catalogos["equipamientos"]
-
-    # Cargar existentes
-    resp = supabase.table("ejercicios").select("id, nombre").execute()
-    existentes = {}
-    for row in resp.data:
-        key = row["nombre"].strip().lower()
-        existentes[key] = row["id"]
-
-    print(f"   {len(existentes)} ejercicios ya existentes en la BD\n")
-
-    nuevos = 0
-    omitidos = 0
-    errores = 0
-    relaciones = 0
-
-    for ej in ejercicios:
-        nombre_key = ej["nombre_ejercicio"].strip().lower()
-
-        # Si ya existe, restaurar relaciones N:M (upsert idempotente)
-        existente_id = existentes.get(nombre_key)
-        if existente_id:
-            relaciones += insertar_relaciones(
-                supabase, existente_id, ej, musculos_map, partes_map, equip_map
-            )
-            omitidos += 1
-            continue
-
-        # Insertar nuevo
-        payload = {
-            "nombre": ej["nombre_ejercicio"],
-            "descripcion": ej.get("descripcion", ""),
-            "instrucciones": ej.get("instrucciones", []),
-            "dificultad": ej.get("dificultad", "intermedio"),
-            "finalidad": ej.get("finalidad", "fuerza"),
-            "url_gif": ej.get("url_video"),
-        }
-
-        try:
-            result = supabase.table("ejercicios").insert(payload).execute()
-            ejercicio_id = result.data[0]["id"]
-            existentes[nombre_key] = ejercicio_id
-            nuevos += 1
-
-            relaciones += insertar_relaciones(
-                supabase, ejercicio_id, ej, musculos_map, partes_map, equip_map
-            )
-            print(f"   [OK] Insertado: {ej['nombre_ejercicio']}")
-        except Exception as exc:
-            errores += 1
-            print(f"   [ERROR] {ej['nombre_ejercicio']}: {exc}")
-
-    return nuevos, omitidos, errores, relaciones
-
 
 def insertar_relaciones(supabase, ejercicio_id, ej, musculos_map, partes_map, equip_map):
     """Inserta relaciones N:M con upsert. Retorna cantidad insertada."""
@@ -252,7 +162,7 @@ def verificar(supabase):
 
 def main():
     print("=" * 60)
-    print("SynaptixFit - Seed Unificado de Ejercicios")
+    print("SynaptixFit - Restaurador de Relaciones N:M")
     print("=" * 60)
     print(f"Supabase: {SUPABASE_URL}")
     print()
@@ -261,49 +171,76 @@ def main():
     with open(EJERCICIOS_JSON, "r", encoding="utf-8") as f:
         ejercicios = json.load(f)
     with open(MUSCULOS_JSON, "r", encoding="utf-8") as f:
-        musculos = json.load(f)
+        musculos_json = json.load(f)
     with open(PARTES_JSON, "r", encoding="utf-8") as f:
-        partes = json.load(f)
+        partes_json = json.load(f)
+    with open(EQUIP_JSON, "r", encoding="utf-8") as f:
+        equip_json = json.load(f)
 
-    equipamientos = extraer_equipamientos(ejercicios)
-
-    print(f"Ejercicios cargados:  {len(ejercicios)}")
-    print(f"Musculos cargados:    {len(musculos)}")
-    print(f"Partes del cuerpo:    {len(partes)}")
-    print(f"Equipamientos (extraidos): {len(equipamientos)}")
+    print(f"Ejercicios en JSON:  {len(ejercicios)}")
+    print(f"Musculos en JSON:    {len(musculos_json)}")
+    print(f"Partes del cuerpo:   {len(partes_json)}")
+    print(f"Equipamientos:       {len(equip_json)}")
     print()
 
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     print("Conexion establecida con Supabase")
     print()
 
-    # Paso 1: Catalogos
-    print("Paso 1: Sincronizando catalogos...")
-    musculos_map = upsert_catalogo(supabase, "musculos", musculos)
-    partes_map = upsert_catalogo(supabase, "partes_cuerpo", partes)
-    equip_map = upsert_catalogo(supabase, "equipamientos", equipamientos)
-    catalogos = {
-        "musculos": musculos_map,
-        "partes_cuerpo": partes_map,
-        "equipamientos": equip_map,
-    }
+    # Paso 1: Verificar catalogos
+    print("Paso 1: Verificando catalogos (insertados por migraciones 0024-0026)...")
+    musculos_map, total_m, falt_m = cargar_catalogo(supabase, "musculos", MUSCULOS_JSON)
+    partes_map, total_p, falt_p = cargar_catalogo(supabase, "partes_cuerpo", PARTES_JSON)
+    equip_map, total_e, falt_e = cargar_catalogo(supabase, "equipamientos", EQUIP_JSON)
+
+    if falt_m or falt_p or falt_e:
+        print("\n  [ERROR] Faltan catalogos. Ejecuta primero las migraciones 0024-0026.")
+        sys.exit(1)
     print()
 
-    # Paso 2: Ejercicios + relaciones
-    print("Paso 2: Insertando ejercicios y relaciones...")
-    nuevos, omitidos, errores, relaciones = insertar_ejercicios(
-        supabase, ejercicios, catalogos
-    )
+    # Paso 2: Verificar ejercicios existentes
+    print("Paso 2: Verificando ejercicios (insertados por migracion 0027)...")
+    resp = supabase.table("ejercicios").select("id, nombre").execute()
+    ejercicios_bd = {}
+    for row in resp.data:
+        ejercicios_bd[row["nombre"].strip().lower()] = row["id"]
+
+    faltan = []
+    for ej in ejercicios:
+        key = ej["nombre_ejercicio"].strip().lower()
+        if key not in ejercicios_bd:
+            faltan.append(ej["nombre_ejercicio"])
+
+    if faltan:
+        print(f"  [ERROR] {len(faltan)} ejercicios faltantes en BD:")
+        for n in faltan:
+            print(f"         - {n}")
+        print("   Ejecuta primero la migracion 0027.")
+        sys.exit(1)
+    else:
+        print(f"  [OK] {len(ejercicios_bd)}/{len(ejercicios)} ejercicios en BD")
+    print()
+
+    # Paso 3: Restaurar relaciones N:M
+    print("Paso 3: Restaurando relaciones N:M...")
+    total_relaciones = 0
+    for ej in ejercicios:
+        key = ej["nombre_ejercicio"].strip().lower()
+        eid = ejercicios_bd[key]
+        total_relaciones += insertar_relaciones(
+            supabase, eid, ej, musculos_map, partes_map, equip_map
+        )
+
+    print(f"  [OK] {total_relaciones} relaciones insertadas/actualizadas")
+    print()
+
     verificar(supabase)
 
     print()
     print("=" * 60)
     print("Resumen:")
     print(f"   Ejercicios en JSON:  {len(ejercicios)}")
-    print(f"   Nuevos insertados:   {nuevos}")
-    print(f"   Ya existian:         {omitidos}")
-    print(f"   Errores:             {errores}")
-    print(f"   Relaciones N:M:      {relaciones}")
+    print(f"   Relaciones N:M:      {total_relaciones}")
     print("=" * 60)
 
 
