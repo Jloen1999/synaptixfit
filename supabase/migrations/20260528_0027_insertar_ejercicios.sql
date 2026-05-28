@@ -2,9 +2,8 @@
 -- Objetivo: Insertar los 103 ejercicios del catalogo unificado
 --           y convertir finalidad de TEXT a TEXT[] para multi-finalidad.
 
--- 1) Convertir finalidad a TEXT[] para soportar multi-finalidad
---    Eliminar toda dependencia antes del ALTER TYPE:
---    vista regular, vista materializada, triggers de refresco
+-- 1) Convertir finalidad a TEXT[] sin usar ALTER TYPE (evita conflictos con vistas/triggers)
+--    Estrategia: ADD columna nueva, copiar datos, DROP antigua, RENAME
 drop view if exists public.v_ejercicios_completos cascade;
 drop materialized view if exists public.mv_ejercicios_completos cascade;
 drop trigger if exists trg_refrescar_mv_ejercicios on public.ejercicios;
@@ -15,12 +14,15 @@ drop trigger if exists trg_refrescar_mv_junction_eq on public.ejercicio_equipami
 drop function if exists public.trigger_refrescar_mv_ejercicios();
 drop function if exists public.refrescar_mv_ejercicios();
 
-alter table public.ejercicios alter column finalidad drop default;
+alter table public.ejercicios drop constraint if exists ck_ejercicios_finalidad;
 
-alter table public.ejercicios
-  alter column finalidad type text[] using array[finalidad]::text[];
+alter table public.ejercicios add column finalidad_new text[] not null default array['fuerza']::text[];
 
-alter table public.ejercicios alter column finalidad set default array['fuerza']::text[];
+update public.ejercicios set finalidad_new = array[finalidad]::text[];
+
+alter table public.ejercicios drop column finalidad cascade;
+
+alter table public.ejercicios rename column finalidad_new to finalidad;
 
 -- Recrear la vista sin security_invoker (0022/0028 la recrean luego)
 create or replace view public.v_ejercicios_completos
