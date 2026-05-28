@@ -1,11 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sv_colors.dart';
-import '../../../core/design_system/sv_shadows.dart';
+import '../../../shared/models/catalogo_models.dart';
 import '../../../shared/models/db_models.dart';
+import '../../../shared/widgets/exercise_media_widget.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
+import '../../../shared/widgets/muscle_image_chip.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/sv_primary_button.dart';
 import '../application/ejercicios_provider.dart';
@@ -18,6 +19,7 @@ class DetalleEjercicioScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ejercicioAsync = ref.watch(ejercicioDetalleProvider(id));
+    final catalogos = ref.watch(catalogosProvider).valueOrNull;
 
     return ejercicioAsync.when(
       loading: () => const FeatureScaffold(
@@ -36,169 +38,101 @@ class DetalleEjercicioScreen extends ConsumerWidget {
           );
         }
 
-        return DefaultTabController(
-          length: 2,
-          child: FeatureScaffold(
-            title: ejercicio.nombre,
-            backPath: '/bienestar/explorador',
-            child: Column(
-              children: [
-                // GIF animado
-                _GifHero(urlGif: ejercicio.urlGif),
-
-                // Chips de metadatos
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      ...ejercicio.musculosObjetivo.map(
-                        (m) => _MetaChip(
-                          label: m,
-                          icon: Icons.sports_gymnastics_rounded,
-                          color: SVColors.primary,
-                        ),
-                      ),
-                      ...ejercicio.partesCuerpo.map(
-                        (p) => _MetaChip(
-                          label: p,
-                          icon: Icons.accessibility_new_rounded,
-                          color: SVColors.secondary,
-                        ),
-                      ),
-                      ...ejercicio.equipamientos.map(
-                        (e) => _MetaChip(
-                          label: e,
-                          icon: Icons.hardware_rounded,
-                          color: SVColors.tertiary,
-                        ),
-                      ),
-                      _MetaChip(
-                        label: ejercicio.dificultad,
-                        icon: Icons.speed_rounded,
-                        color: SVColors.accent,
-                      ),
-                      _MetaChip(
-                        label:
-                            '${ejercicio.finalidad.icono} ${ejercicio.finalidad.etiqueta}',
-                        icon: Icons.category_rounded,
-                        color: _finalidadColor(ejercicio.finalidad),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Tabs
-                const TabBar(
-                  tabs: [
-                    Tab(text: 'Instrucciones'),
-                    Tab(text: 'Información'),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _InstruccionesTab(instrucciones: ejercicio.instrucciones),
-                      _InfoTab(
-                        descripcion: ejercicio.descripcion,
-                        musculosSecundarios: ejercicio.musculosSecundarios,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Botón de acción
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SVPrimaryButton(
-                    label: 'Agregar a rutina',
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '${ejercicio.nombre} agregado a la rutina',
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        return _buildContent(context, ejercicio, catalogos);
       },
     );
   }
-}
 
-// ---------------------------------------------------------------------------
-// GIF Hero
-// ---------------------------------------------------------------------------
-class _GifHero extends StatelessWidget {
-  const _GifHero({this.urlGif});
-  final String? urlGif;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = constraints.maxWidth >= 900 ? 280.0 : 220.0;
-
-        return Container(
-          height: size,
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: SVShadows.ambientCard,
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: urlGif != null
-              ? CachedNetworkImage(
-                  imageUrl: urlGif!,
-                  width: double.infinity,
-                  height: size,
-                  fit: BoxFit.contain,
-                  placeholder: (_, __) => Container(
-                    color: SVColors.surfaceContainerHighest,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
+  Widget _buildContent(
+    BuildContext context,
+    EjercicioDb ejercicio,
+    CatalogosEjercicios? catalogos,
+  ) {
+    return DefaultTabController(
+      length: 2,
+      child: FeatureScaffold(
+        title: ejercicio.nombre,
+        backPath: '/bienestar/explorador',
+        child: Column(
+          children: [
+            ExerciseMediaWidget(
+              url: ejercicio.urlGif,
+              size: ExerciseMediaSize.hero,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  ...ejercicio.musculosObjetivo.map(
+                    (m) => MuscleImageChip(
+                      label: m,
+                      urlImagen: catalogos?.urlImagenMusculo(m),
+                      color: SVColors.primary,
                     ),
                   ),
-                  errorWidget: (_, __, ___) => _buildFallback(context),
-                )
-              : _buildFallback(context),
-        );
-      },
-    );
-  }
-
-  Widget _buildFallback(BuildContext context) {
-    return Container(
-      color: SVColors.surfaceContainerHighest,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Opacity(
-              opacity: 0.5,
-              child: SizedBox(
-                width: 80,
-                height: 80,
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  fit: BoxFit.contain,
-                ),
+                  ...ejercicio.partesCuerpo.map(
+                    (p) => _MetaChip(
+                      label: p,
+                      icon: Icons.accessibility_new_rounded,
+                      color: SVColors.secondary,
+                    ),
+                  ),
+                  ...ejercicio.equipamientos.map(
+                    (e) => _MetaChip(
+                      label: e,
+                      icon: Icons.hardware_rounded,
+                      color: SVColors.tertiary,
+                    ),
+                  ),
+                  _MetaChip(
+                    label: ejercicio.dificultad,
+                    icon: Icons.speed_rounded,
+                    color: SVColors.accent,
+                  ),
+                  _MetaChip(
+                    label:
+                        '${ejercicio.finalidad.icono} ${ejercicio.finalidad.etiqueta}',
+                    icon: Icons.category_rounded,
+                    color: _finalidadColor(ejercicio.finalidad),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Vista previa no disponible',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: SVColors.onSurfaceMuted,
+            const TabBar(
+              tabs: [
+                Tab(text: 'Instrucciones'),
+                Tab(text: 'Informacion'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _InstruccionesTab(instrucciones: ejercicio.instrucciones),
+                  _InfoTab(
+                    descripcion: ejercicio.descripcion,
+                    musculosSecundarios: ejercicio.musculosSecundarios,
+                    catalogos: catalogos,
                   ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SVPrimaryButton(
+                label: 'Agregar a rutina',
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${ejercicio.nombre} agregado a la rutina',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -207,9 +141,6 @@ class _GifHero extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Color según finalidad del ejercicio
-// ---------------------------------------------------------------------------
 Color _finalidadColor(FinalidadEjercicio f) {
   switch (f) {
     case FinalidadEjercicio.fuerza:
@@ -221,9 +152,6 @@ Color _finalidadColor(FinalidadEjercicio f) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Chip de metadato
-// ---------------------------------------------------------------------------
 class _MetaChip extends StatelessWidget {
   const _MetaChip({
     required this.label,
@@ -266,9 +194,6 @@ class _MetaChip extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Tab: Instrucciones
-// ---------------------------------------------------------------------------
 class _InstruccionesTab extends StatelessWidget {
   const _InstruccionesTab({required this.instrucciones});
   final List<String> instrucciones;
@@ -335,17 +260,16 @@ class _InstruccionesTab extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Tab: Información general
-// ---------------------------------------------------------------------------
 class _InfoTab extends StatelessWidget {
   const _InfoTab({
     this.descripcion,
     required this.musculosSecundarios,
+    this.catalogos,
   });
 
   final String? descripcion;
   final List<String> musculosSecundarios;
+  final CatalogosEjercicios? catalogos;
 
   @override
   Widget build(BuildContext context) {
@@ -355,25 +279,7 @@ class _InfoTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (descripcion != null && descripcion!.isNotEmpty) ...[
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Descripción',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
+          _sectionTitle(context, 'Descripcion'),
           const SizedBox(height: 10),
           Text(
             descripcion!,
@@ -382,27 +288,18 @@ class _InfoTab extends StatelessWidget {
           const SizedBox(height: 24),
         ],
         if (musculosSecundarios.isNotEmpty) ...[
-          _sectionTitle(context, 'Músculos secundarios'),
+          _sectionTitle(context, 'Musculos secundarios'),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 6,
             children: musculosSecundarios
                 .map(
-                  (m) => Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: SVColors.primary.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _capitalize(m),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: SVColors.primary.withValues(alpha: 0.8),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                  (m) => MuscleImageChip(
+                    label: m,
+                    urlImagen: catalogos?.urlImagenMusculo(m),
+                    color: SVColors.primary,
+                    compact: true,
                   ),
                 )
                 .toList(),
@@ -433,35 +330,5 @@ class _InfoTab extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Widget _infoItem(
-      BuildContext context, IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: SVColors.onSurfaceMuted),
-        const SizedBox(width: 10),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: Theme.of(context).textTheme.bodyMedium,
-              children: [
-                TextSpan(
-                  text: '$label: ',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                TextSpan(text: value),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _capitalize(String s) {
-    if (s.isEmpty) return s;
-    return s[0].toUpperCase() + s.substring(1);
   }
 }

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env_config.dart';
 import '../../../shared/models/db_models.dart';
+import '../../../shared/widgets/exercise_media_widget.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../application/ejercicios_provider.dart';
 import '../application/rutina_provider.dart';
@@ -1577,7 +1578,6 @@ class _MiniGifPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap:
           urlGif != null ? () => _mostrarGifAmpliado(context, urlGif!) : null,
@@ -1586,21 +1586,22 @@ class _MiniGifPreview extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: Theme.of(context)
+                .colorScheme
+                .outlineVariant
+                .withValues(alpha: 0.2),
+          ),
         ),
         clipBehavior: Clip.antiAlias,
-        child: urlGif != null
-            ? CachedNetworkImage(
-                imageUrl: urlGif!,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Icon(Icons.image_outlined,
-                    size: 20, color: cs.outlineVariant),
-                errorWidget: (_, __, ___) => Icon(Icons.fitness_center_rounded,
-                    size: 22, color: cs.primary.withValues(alpha: 0.4)),
-              )
-            : Icon(Icons.fitness_center_rounded,
-                size: 22, color: cs.primary.withValues(alpha: 0.3)),
+        child: ExerciseMediaWidget(
+          url: urlGif,
+          size: ExerciseMediaSize.mini,
+          borderRadius: BorderRadius.circular(8),
+          onTap: urlGif != null
+              ? () => _mostrarGifAmpliado(context, urlGif!)
+              : null,
+        ),
       ),
     );
   }
@@ -1624,14 +1625,27 @@ class _MiniGifPreview extends StatelessWidget {
               alignment: Alignment.topRight,
               children: [
                 Center(
-                  child: CachedNetworkImage(
-                    imageUrl: url,
-                    width: 260,
-                    height: 260,
-                    fit: BoxFit.contain,
-                    placeholder: (_, __) => const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                  ),
+                  child: url.endsWith('.mp4')
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: SizedBox(
+                            width: 260,
+                            height: 260,
+                            child: ExerciseMediaWidget(
+                              url: url,
+                              size: ExerciseMediaSize.card,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: url,
+                          width: 260,
+                          height: 260,
+                          fit: BoxFit.contain,
+                          placeholder: (_, __) => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8),

@@ -41,6 +41,14 @@ final catalogosProvider = FutureProvider<CatalogosEjercicios>((ref) async {
   return repo.fetchCatalogos();
 });
 
+final catalogoMusculosProvider = Provider<Map<String, String?>>((ref) {
+  final catalogos = ref.watch(catalogosProvider).valueOrNull;
+  if (catalogos == null) return {};
+  return {
+    for (final m in catalogos.musculos) m.nombre: m.urlImagen,
+  };
+});
+
 // ---------------------------------------------------------------------------
 // Capa 2 — Filtrado en memoria (< 1ms, cero red)
 // ---------------------------------------------------------------------------

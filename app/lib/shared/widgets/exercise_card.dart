@@ -1,6 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../core/design_system/sv_colors.dart';
+import 'exercise_media_widget.dart';
+import 'muscle_image_chip.dart';
 
 class ExerciseCard extends StatelessWidget {
   const ExerciseCard({
@@ -8,6 +9,7 @@ class ExerciseCard extends StatelessWidget {
     required this.muscleGroup,
     this.equipment,
     this.gifUrl,
+    this.muscleImageUrl,
     this.onTap,
     super.key,
   });
@@ -16,6 +18,7 @@ class ExerciseCard extends StatelessWidget {
   final String muscleGroup;
   final String? equipment;
   final String? gifUrl;
+  final String? muscleImageUrl;
   final VoidCallback? onTap;
 
   @override
@@ -37,45 +40,15 @@ class ExerciseCard extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           child: Row(
             children: [
-              // Miniatura del GIF — más grande y con bordes curvos
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: SizedBox(
                   width: 72,
                   height: 72,
-                  child: gifUrl != null
-                      ? CachedNetworkImage(
-                          imageUrl: gifUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(
-                            color: SVColors.surfaceContainerHighest,
-                            child: const Center(
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                          ),
-                          errorWidget: (_, __, ___) => Container(
-                            color: SVColors.surfaceContainerHighest,
-                            child: const Icon(
-                              Icons.fitness_center_rounded,
-                              size: 24,
-                              color: SVColors.onSurfaceMuted,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          color: SVColors.surfaceContainerHighest,
-                          child: const Icon(
-                            Icons.fitness_center_rounded,
-                            size: 24,
-                            color: SVColors.onSurfaceMuted,
-                          ),
-                        ),
+                  child: ExerciseMediaWidget(
+                    url: gifUrl,
+                    size: ExerciseMediaSize.card,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -96,10 +69,13 @@ class ExerciseCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        _Tag(
-                          label: muscleGroup,
-                          icon: Icons.sports_gymnastics_rounded,
-                          color: SVColors.primary,
+                        Flexible(
+                          child: MuscleImageChip(
+                            label: muscleGroup,
+                            urlImagen: muscleImageUrl,
+                            color: SVColors.primary,
+                            compact: true,
+                          ),
                         ),
                         if (equipment != null) ...[
                           const SizedBox(width: 6),

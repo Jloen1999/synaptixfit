@@ -240,6 +240,8 @@ class _ExploradorEjerciciosScreenState
     final notifier = ref.read(creacionRutinaProvider.notifier);
     final seleccionados = ref.watch(creacionRutinaProvider).seleccionados;
     final estaSeleccionado = seleccionados.any((s) => s.ejercicioId == item.id);
+    final catalogos = ref.read(catalogosProvider).valueOrNull;
+    final muscleImageUrl = catalogos?.urlImagenMusculo(item.musculoPrincipal);
 
     if (!_modoSeleccion) {
       return ExerciseCard(
@@ -247,6 +249,7 @@ class _ExploradorEjerciciosScreenState
         muscleGroup: item.musculoPrincipal,
         equipment: item.equipamientoPrincipal,
         gifUrl: item.urlGif,
+        muscleImageUrl: muscleImageUrl,
         onTap: () => context.push(
           '/bienestar/ejercicio/${item.id}',
         ),
@@ -260,6 +263,7 @@ class _ExploradorEjerciciosScreenState
           muscleGroup: item.musculoPrincipal,
           equipment: item.equipamientoPrincipal,
           gifUrl: item.urlGif,
+          muscleImageUrl: muscleImageUrl,
           onTap: () => _modoSeleccion
               ? notifier.toggleEjercicio(item.id, item.nombre)
               : context.push('/bienestar/ejercicio/${item.id}'),
