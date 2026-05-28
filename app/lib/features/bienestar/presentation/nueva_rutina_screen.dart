@@ -2629,7 +2629,10 @@ class _BuscadorEjerciciosSheetState extends State<_BuscadorEjerciciosSheet> {
             final e = snap.data![i];
             final eId = e['id'] as String;
             final eNombre = e['nombre'] as String;
-            final eFinalidad = e['finalidad'] as String? ?? 'fuerza';
+            final eFinalidadRaw = e['finalidad'];
+            final eFinalidad = (eFinalidadRaw is List && eFinalidadRaw.isNotEmpty)
+                ? eFinalidadRaw[0].toString()
+                : (eFinalidadRaw is String ? eFinalidadRaw : 'fuerza');
             final eGif = e['url_gif'] as String?;
             return ListTile(
                 dense: true,
