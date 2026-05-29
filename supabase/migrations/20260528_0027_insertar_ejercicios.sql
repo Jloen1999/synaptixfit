@@ -2,7 +2,7 @@
 -- Objetivo: Insertar los 103 ejercicios del catalogo unificado
 --           y convertir finalidad de TEXT a TEXT[] para multi-finalidad.
 
--- 1) Convertir finalidad a TEXT[] sin usar ALTER TYPE (ADD/DROP/RENAME)
+-- 1) Convertir finalidad a TEXT[] sin usar ALTER TYPE
 drop view if exists public.v_ejercicios_completos cascade;
 drop materialized view if exists public.mv_ejercicios_completos cascade;
 drop trigger if exists trg_refrescar_mv_ejercicios on public.ejercicios;
@@ -19,33 +19,30 @@ update public.ejercicios set finalidad_new = array[finalidad]::text[];
 alter table public.ejercicios drop column finalidad cascade;
 alter table public.ejercicios rename column finalidad_new to finalidad;
 
--- Recrear vista (0028 la recrea luego con security_invoker + sin exercise_db_id)
 create or replace view public.v_ejercicios_completos as
 select e.id, e.nombre, e.url_gif, e.instrucciones, e.dificultad,
        e.descripcion, e.finalidad, e.creado_en, e.actualizado_en,
   coalesce((select array_agg(distinct pc.nombre order by pc.nombre)
-    from public.ejercicio_parte_cuerpo epc join public.partes_cuerpo pc on pc.id = epc.parte_cuerpo_id
-    where epc.ejercicio_id = e.id), array[]::text[]) as partes_cuerpo,
+    from public.ejercicio_parte_cuerpo epc join public.partes_cuerpo pc on pc.id=epc.parte_cuerpo_id
+    where epc.ejercicio_id=e.id), array[]::text[]) as partes_cuerpo,
   coalesce((select array_agg(distinct mt.nombre order by mt.nombre)
-    from public.ejercicio_musculo_objetivo emo join public.musculos mt on mt.id = emo.musculo_id
-    where emo.ejercicio_id = e.id), array[]::text[]) as musculos_objetivo,
+    from public.ejercicio_musculo_objetivo emo join public.musculos mt on mt.id=emo.musculo_id
+    where emo.ejercicio_id=e.id), array[]::text[]) as musculos_objetivo,
   coalesce((select array_agg(distinct ms.nombre order by ms.nombre)
-    from public.ejercicio_musculo_secundario ems join public.musculos ms on ms.id = ems.musculo_id
-    where ems.ejercicio_id = e.id), array[]::text[]) as musculos_secundarios,
+    from public.ejercicio_musculo_secundario ems join public.musculos ms on ms.id=ems.musculo_id
+    where ems.ejercicio_id=e.id), array[]::text[]) as musculos_secundarios,
   coalesce((select array_agg(distinct eq.nombre order by eq.nombre)
-    from public.ejercicio_equipamiento ee join public.equipamientos eq on eq.id = ee.equipamiento_id
-    where ee.ejercicio_id = e.id), array[]::text[]) as equipamientos
+    from public.ejercicio_equipamiento ee join public.equipamientos eq on eq.id=ee.equipamiento_id
+    where ee.ejercicio_id=e.id), array[]::text[]) as equipamientos
 from public.ejercicios e;
 grant select on public.v_ejercicios_completos to anon, authenticated;
 
--- 2) CHECK para array de finalidades
 alter table public.ejercicios drop constraint if exists ck_ejercicios_finalidad;
 alter table public.ejercicios add constraint ck_ejercicios_finalidad
   check (finalidad <@ array['fuerza','cardio','isometrico','hipertrofia','resistencia','movilidad']::text[]);
 
--- 3) UNIQUE en nombre
 do $$ begin
-  if not exists (select 1 from pg_constraint where conname = 'ejercicios_nombre_unique' and conrelid = 'public.ejercicios'::regclass) then
+  if not exists (select 1 from pg_constraint where conname='ejercicios_nombre_unique' and conrelid='public.ejercicios'::regclass) then
     alter table public.ejercicios add constraint ejercicios_nombre_unique unique (nombre);
   end if; end $$;
 
@@ -92,7 +89,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'L-Sit en el suelo',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/l_sit_en_el_suelo.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/l-sit_en_el_suelo.mp4',
   ARRAY['Siéntate en el suelo con las piernas extendidas juntas frente a ti.', 'Coloca las palmas de las manos en el suelo a los lados de las caderas, manteniendo los brazos completamente estirados.', 'Empuja el suelo con las manos activando la depresión escapular, mientras contraes el abdomen para levantar los glúteos y las piernas del suelo.', 'Mantén una flexión de cadera de 90 grados, formando una ''L'' con tu cuerpo, y sostén la posición de forma isométrica.']::text[],
   'avanzado',
   'Ejercicio isométrico avanzado que utiliza el peso corporal; requiere fuerza en el core y flexibilidad para mantener el cuerpo elevado formando un ángulo de 90 grados.',
@@ -202,7 +199,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Flexión de Brazo a Una Mano (One-Arm Pushup)',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/flexion_de_brazo_a_una_mano_one_arm_pushup.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/flexion_de_brazo_a_una_mano_one-arm_pushup.mp4',
   ARRAY['Colócate en posición de plancha y separa los pies más allá del ancho de los hombros para crear una amplia base de sustentación.', 'Apoya una sola mano en el suelo alineada con el centro de tu pecho, rotándola ligeramente hacia afuera (aprox. 45 grados).', 'Desciende de forma controlada flexionando el codo cerca del torso y evitando que la cadera colapse o rote.', 'Empuja el suelo explosivamente para regresar a la posición de inicio, manteniendo la columna neutra.']::text[],
   'avanzado',
   'Ejercicio avanzado de calistenia que exige alta tensión en toda la cadena cinética, desarrollando fuerza unilateral en el complejo articular del hombro y gran estabilidad en el core.',
@@ -262,7 +259,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Jalón al Pecho en Polea',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/jalon_al_pecho_en_polea_alta.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/jalon_al_pecho_en_polea_alta.mp4',
   ARRAY['Ajusta los rodillos de la máquina para que tus muslos queden firmemente anclados y siéntate frente a la polea.', 'Sujeta la barra superior con un agarre prono, ligeramente más ancho que la anchura de los hombros.', 'Tira de la barra hacia la parte superior del pecho (clavícula/esternón alto), sacando el pecho e inclinando el torso solo unos grados hacia atrás.', 'Concéntrate en traccionar empujando los codos hacia abajo y ligeramente hacia el frente (plano escapular), evitando que se desplacen detrás de tu espalda.', 'Controla el ascenso del peso hasta lograr una extensión completa y un estiramiento profundo del dorsal.']::text[],
   'principiante',
   'Ejercicio de tracción vertical enfocado en la amplitud dorsal. El análisis corrige el error común de llevar los codos excesivamente hacia atrás o inclinar demasiado el torso, enfatizando el trabajo en el plano escapular.',
@@ -322,7 +319,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Flexión de Brazo (Push-up) - Técnica y Corrección',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/flexion_de_brazo_push_up_tecnica_y_correccion.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/flexion_de_brazo_push-up_-_tecnica_y_correccion.mp4',
   ARRAY['Colócate en posición de plancha alta, con las manos apoyadas en el suelo a una anchura ligeramente mayor que la de los hombros.', 'Apunta los dedos índices hacia adelante o ligeramente hacia afuera, evitando que se cierren hacia adentro.', 'Mantén el core contraído y el cuerpo en línea recta desde la cabeza hasta los talones.', 'Desciende flexionando los codos, asegurándote de que estos apunten hacia atrás y hacia los lados en un ángulo de unos 45 grados respecto a tu torso.', 'Empuja el suelo para volver a la posición inicial, manteniendo la tensión en el pecho y tríceps.']::text[],
   'principiante',
   'El video detalla la técnica óptima para la flexión de brazos tradicional. Subraya el error común de realizar el movimiento con las manos rotadas hacia adentro y los codos abiertos a 90 grados (en forma de ''T''), lo que aumenta el estrés en los hombros. La forma correcta requiere rotar las manos ligeramente hacia afuera y mantener los codos en un ángulo de aproximadamente 45 grados respecto al torso (forma de flecha).',
@@ -362,7 +359,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl de bíceps con barra',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/curl_de_biceps_con_barra.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_barra.mp4',
   ARRAY['Sujeta una barra con agarre supino (palmas hacia arriba) a la anchura de los hombros.', 'Mantén el torso recto, el abdomen contraído y fija los codos a los costados del cuerpo.', 'Flexiona los codos levantando el peso hacia los hombros, concentrando la contracción en los bíceps.', 'Baja la barra de forma controlada hasta la extensión completa de los brazos sin permitir que los codos se desplacen hacia el frente.']::text[],
   'principiante',
   'Ejercicio clásico de aislamiento para los flexores del codo. Se corrige el error común de mover los codos hacia adelante o encoger los hombros durante la fase concéntrica.',
@@ -382,7 +379,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Sentadilla con barra',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/sentadilla_con_barra_sentadilla_trasera.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_con_barra_sentadilla_trasera.mp4',
   ARRAY['Coloca la barra sobre la porción carnosa de los trapecios o deltoides posteriores, asegurándote de no apoyarla directamente sobre las vértebras cervicales.', 'Separa los pies a una anchura cómoda (generalmente la de los hombros) con ligera rotación externa de las puntas.', 'Inicia el descenso flexionando las rodillas y las caderas simultáneamente, manteniendo la columna neutra y evitando redondear la zona lumbar (butt wink) en la parte profunda.', 'Empuja con toda la planta del pie de manera uniforme para ascender a la posición inicial.']::text[],
   'avanzado',
   'Ejercicio multiarticular central para el tren inferior. Se analiza la ejecución segura destacando la colocación correcta de la barra, la alineación neutra de la columna y la trayectoria vertical.',
@@ -402,7 +399,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Flexiones de brazos',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/flexiones_de_brazos_en_suelo.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/flexiones_de_brazos_en_suelo.mp4',
   ARRAY['Colócate en posición de plancha alta con las manos un poco más abiertas que la anchura de los hombros.', 'Activa el core y aprieta los glúteos para mantener el cuerpo en una línea completamente recta.', 'Desciende flexionando los codos. Asegúrate de que formen un ángulo de unos 45 grados respecto al torso, no a 90 grados (evita la forma de ''T'').', 'Empuja el suelo con fuerza para regresar a la posición inicial bloqueando los codos.']::text[],
   'principiante',
   'Movimiento base de calistenia para la cadena de empuje. Enfatiza la trayectoria articular correcta de los codos hacia atrás en ángulo (forma de flecha) para maximizar el empuje del pectoral y proteger la articulación del hombro.',
@@ -572,7 +569,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl alterno con mancuernas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_alterno_vs_simultaneo.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/parada_de_antebrazos_forearm_stand.mp4',
   ARRAY['Sujeta un par de mancuernas con los brazos extendidos.', 'Para la versión alterna, flexiona un codo a la vez, supinando la muñeca (palma hacia arriba) durante el movimiento, y luego repite con el otro brazo.', 'Para la versión simultánea, flexiona ambos codos a la vez.', 'Mantén la parte superior de los brazos firme contra los costados y el torso estable durante todo el ejercicio.']::text[],
   'principiante',
   'Variantes del curl de bíceps con mancuernas, demostrando cómo la ejecución unilateral o simultánea impacta en el reclutamiento de los estabilizadores del core y el esfuerzo general.',
@@ -582,7 +579,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Parada de antebrazos (Forearm Stand)',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/parada_de_antebrazos_forearm_stand.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/traccion_facial_con_cuerda_face_pull.mp4',
   ARRAY['Colócate en posición de plancha sobre los antebrazos, asegurando que los codos estén alineados directamente debajo de los hombros y las palmas apoyadas en el suelo.', 'Mantén la cabeza neutra, mirando hacia el espacio entre tus manos, no hacia tus pies.', 'Camina con los pies hacia tus codos para elevar las caderas (posición de delfín o V invertida).', 'Eleva una pierna y usa la otra para impulsarte suavemente, buscando el punto de equilibrio vertical.']::text[],
   'avanzado',
   'Progresión de calistenia y gimnasia para lograr el equilibrio invertido sobre los antebrazos. Enfatiza la alineación de la cabeza, los codos y el uso de los pies para el impulso inicial.',
@@ -592,7 +589,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Tracción facial con cuerda (Face Pull)',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/traccion_facial_con_cuerda_face_pull.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_frontal_con_mancuernas.gif',
   ARRAY['Ajusta la polea a la altura del pecho o ligeramente por encima.', 'Sujeta la cuerda con un agarre prono (palmas hacia abajo o enfrentadas).', 'Tira de la cuerda hacia tu rostro (nivel de los ojos o frente) separando las manos y llevando los codos hacia atrás y arriba.', 'Asegúrate de rotar externamente los hombros en la parte final del movimiento, sintiendo la contracción en la parte posterior de los hombros.']::text[],
   'intermedio',
   'Ejercicio esencial para la salud de los hombros y la postura. Corrige la tendencia a jalar con los bíceps (como un remo), enseñando la rotación externa adecuada para activar los deltoides posteriores y los rotadores externos.',
@@ -602,7 +599,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Patada de glúteo con banda',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/circuito_de_gluteos_con_banda_de_resistencia.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_pistol_con_pesa_rusa.gif',
   ARRAY['Colócate en posición de cuadrupedia con una banda de resistencia por encima de las rodillas.', 'Realiza abducciones de cadera (hidrantes) levantando una rodilla lateralmente.', 'Ejecuta extensiones de cadera (patadas de burro) empujando el talón hacia el techo con la rodilla flexionada.', 'Finaliza con abducciones de pierna extendida, elevando la pierna recta lateralmente y hacia arriba.']::text[],
   'principiante',
   'Serie de ejercicios de aislamiento en cuadrupedia para activar y fortalecer los glúteos desde todos los ángulos utilizando una banda elástica para añadir resistencia.',
@@ -612,7 +609,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación de gemelos en máquina Hack',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_gemelos_en_maquina_hack.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/fondos_imposibles.gif',
   ARRAY['Paso 1: Ajusta la máquina Hack cargando los discos adecuados según tu nivel.', 'Paso 2: Colócate bajo las almohadillas apoyando únicamente el metatarso (la punta de los pies) en la base de la plataforma, dejando los talones suspendidos por fuera.', 'Paso 3: Sujétate de los agarres de seguridad y libera el freno de la máquina.', 'Paso 4: Realiza la fase concéntrica elevando los talones mediante una contracción máxima de los gemelos.', 'Paso 5: Mantén la contracción isométrica durante un segundo en la parte más alta y desciende controladamente los talones hasta sentir un estiramiento profundo en el tríceps sural.', 'Paso 6: Repite hasta completar el volumen de repeticiones pautado.']::text[],
   'intermedio',
   'Ejercicio para gemelos. Zona: piernas (parte inferior). Equipo: máquina hack.',
@@ -622,7 +619,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Prensa de piernas a 45°',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/prensa_de_piernas_a_45.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/flexion_lateral_con_lastre_sobre_fitball.gif',
   ARRAY['Paso 1: Reclina el respaldo de la prensa de piernas a un ángulo donde tu cadera no se despegue del asiento en la fase más profunda.', 'Paso 2: Siéntate apoyando firmemente la zona lumbar y coloca los pies en la plataforma superior separados a la anchura de los hombros (postura estándar).', 'Paso 3: Desbloquea los seguros laterales de la plataforma.', 'Paso 4: Ejecuta la fase excéntrica flexionando las rodillas de forma controlada hasta que formen un ángulo de 90 grados, o hasta donde tu movilidad de cadera lo permita sin curvar la espalda.', 'Paso 5: Empuja con toda la planta del pie (priorizando el empuje desde los talones) para extender las piernas de vuelta a la posición inicial, evitando bloquear las rodillas por completo.', 'Paso 6: Repite el patrón de movimiento asegurando una técnica estricta.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: prensa de piernas.',
@@ -632,7 +629,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación frontal con mancuernas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_frontal_con_mancuernas.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/remo_al_menton_a_una_mano_con_mancuerna.gif',
   ARRAY['Paso 1: De pie, con los pies separados a la anchura de los hombros y el core activado, sujeta una mancuerna en cada mano con agarre prono descansando sobre los muslos.', 'Paso 2: Manteniendo una levísima flexión en los codos, ejecuta una elevación frontal liderada por los hombros hasta que las mancuernas superen ligeramente la línea de la clavícula.', 'Paso 3: Sostén la máxima contracción del deltoides anterior durante un segundo.', 'Paso 4: Resiste el peso bajando las mancuernas de manera controlada y repite.']::text[],
   'intermedio',
   'Ejercicio para deltoides. Zona: hombros. Equipo: mancuernas.',
@@ -642,7 +639,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl de muñeca inverso con mancuernas sobre banco',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_de_muneca_inverso_con_mancuernas_sobre_banco.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_gemelos_de_pie_con_barra_balanceo_de_tobillo.gif',
   ARRAY['Paso 1: Siéntate en un banco sosteniendo un par de mancuernas en agarre prono (palmas hacia el suelo).', 'Paso 2: Apoya la longitud de los antebrazos sobre el banco o sobre tus propios muslos, dejando que las muñecas sobresalgan en el aire.', 'Paso 3: Permite que el peso fuerce la flexión de la muñeca hacia abajo (estiramiento).', 'Paso 4: Contrae los músculos extensores del antebrazo levantando los nudillos en dirección a ti.', 'Paso 5: Haz una pausa arriba y desciende gradualmente.']::text[],
   'intermedio',
   'Ejercicio para antebrazos. Zona: antebrazos. Equipo: mancuernas.',
@@ -652,7 +649,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl martillo en banco Scott a una mano',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_martillo_en_banco_scott_a_una_mano.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/torsion_de_tronco_tumbado_con_rodillas_flexionadas.gif',
   ARRAY['Paso 1: Ajusta la altura del asiento del banco Scott para que la axila repose cómodamente sobre el borde superior del cojín.', 'Paso 2: Apoya firmemente el tríceps y el codo en la almohadilla inclinada, sosteniendo una mancuerna con agarre neutro (como un martillo).', 'Paso 3: Flexiona el brazo aislando el músculo braquial y el bíceps, subiendo la mancuerna hacia el hombro frontal.', 'Paso 4: Aprieta el músculo en la cima del recorrido y realiza la bajada lenta hasta estirar el brazo por completo sin que el codo pierda contacto con el acolchado.']::text[],
   'intermedio',
   'Ejercicio para bíceps. Zona: brazos (parte superior). Equipo: mancuerna.',
@@ -662,7 +659,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Sentadilla Pistol con pesa rusa',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/sentadilla_pistol_con_pesa_rusa.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/jalon_frontal_en_maquina_convergente.gif',
   ARRAY['Paso 1: De pie, abraza una pesa rusa por los cuernos (agarre en copa) manteniéndola apretada contra el esternón para estabilizar el centro de gravedad.', 'Paso 2: Levanta una pierna estirándola por completo hacia el frente, quedando en equilibrio sobre la pierna contraria.', 'Paso 3: Flexiona la rodilla y cadera de la pierna de apoyo descendiendo en una sentadilla a una sola pierna lo más profundo que tu movilidad de tobillo te permita.', 'Paso 4: Evita que el talón de la pierna activa se levante del suelo y utiliza toda la potencia de tus cuádriceps y glúteos para presionar y volver a levantarte.', 'Paso 5: Alterna las piernas al finalizar las repeticiones pautadas.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: pesa rusa.',
@@ -672,7 +669,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Fondos en paralelas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/fondos_imposibles.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_de_concentracion_de_pie_con_mancuerna.gif',
   ARRAY['Paso 1: Posiciónate entre las barras paralelas sosteniendo el peso íntegro de tu cuerpo con los brazos estirados.', 'Paso 2: Retrae las escápulas y cruza las piernas atrás para mayor compacidad del core.', 'Paso 3: Mantén el torso lo más erguido y vertical posible (para maximizar la implicación de los tríceps sobre la del pecho) e inicia la bajada controlando la caída con la flexión de los codos hacia atrás.', 'Paso 4: Detén el descenso cuando la porción superior del brazo quede en paralelo con el suelo.', 'Paso 5: Empuja agresivamente contra las barras para bloquear los brazos arriba nuevamente.']::text[],
   'intermedio',
   'Ejercicio para tríceps. Zona: brazos (parte superior). Equipo: peso corporal.',
@@ -682,7 +679,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Flexión lateral con lastre sobre fitball',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/flexion_lateral_con_lastre_sobre_fitball.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/prensa_vertical_en_maquina_smith.gif',
   ARRAY['Paso 1: Apoya el costado de la cadera contra la curvatura del fitball, afirmando los pies lateralmente contra el piso o una pared para generar tracción.', 'Paso 2: Sostén un lastre (disco o mancuerna) abrazado al pecho o apoyado en la nuca.', 'Paso 3: Deja caer tu torso lateralmente acompañando la curva de la pelota para estirar el abdomen oblicuo.', 'Paso 4: Flexiona el tronco hacia arriba lateralmente utilizando la pared abdominal hasta alcanzar la contracción máxima y repite.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: lastre.',
@@ -692,7 +689,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Remo al mentón a una mano con mancuerna',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/remo_al_menton_a_una_mano_con_mancuerna.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_rodillas_colgado_con_impulso_excentrico.gif',
   ARRAY['Paso 1: De pie, con postura neutra, deja colgando la mancuerna de manera relajada frente al muslo.', 'Paso 2: Ejecuta la elevación vertical tirando primero desde el hombro y haciendo que el codo apunte siempre por encima de la línea de la muñeca (como si estuvieras tirando del arranque de una cortadora de césped verticalmente).', 'Paso 3: Eleva la carga hasta el nivel de la barbilla sin encoger excesivamente los trapecios de forma compensatoria.', 'Paso 4: Baja lentamente manteniendo el dominio de la carga en todo el recorrido.']::text[],
   'intermedio',
   'Ejercicio para deltoides. Zona: hombros. Equipo: mancuerna.',
@@ -702,7 +699,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación de gemelos de pie con barra',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_gemelos_de_pie_con_barra_balanceo_de_tobillo.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/hiperextension_lumbar_con_lastre_en_fitball.gif',
   ARRAY['Paso 1: Carga la barra sobre la porción carnosa de los trapecios (como en una sentadilla tradicional) estando de pie sobre una superficie firme.', 'Paso 2: Ejecuta una elevación plantar (ponte de puntillas) reclutando con intensidad el músculo gastrocnemio.', 'Paso 3: Sostén un instante la tensión pico arriba.', 'Paso 4: En el retorno excéntrico, permite un ligero balanceo cediendo el peso de regreso sobre la planta del pie completa.']::text[],
   'intermedio',
   'Ejercicio para gemelos. Zona: piernas (parte inferior). Equipo: barra.',
@@ -712,7 +709,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Torsión de tronco tumbado con rodillas flexionadas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/torsion_de_tronco_tumbado_con_rodillas_flexionadas.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/encogimientos_abdominales_en_polea_crunch_en_polea.gif',
   ARRAY['Paso 1: Tumbado en el suelo o colchoneta de espaldas, forma una T con tus brazos estabilizadores, y eleva los pies agrupando las rodillas dobladas hacia el ombligo.', 'Paso 2: Deja oscilar pausadamente tus piernas fusionadas cayendo sobre un lateral hasta casi palpar el suelo (logrando estiramiento rotacional del oblicuo).', 'Paso 3: Involucra tu musculatura del core y los oblícuos internos/externos para acarrear el peso del tren inferior de vuelta al centro del eje.', 'Paso 4: Replícalo consecutivamente cediendo hacia la dirección anatómica contraria.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: peso corporal.',
@@ -722,7 +719,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Jalón frontal en máquina convergente',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/jalon_frontal_en_maquina_convergente.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/dominadas_con_agarre_prono.mp4',
   ARRAY['Paso 1: Acomódate ajustando el tope acolchado a las rodillas para amarrar la estructura inferior y evitar que tu cuerpo se eleve.', 'Paso 2: Alcanza los pivotes o empuñaduras de la máquina usando una asimetría abierta en el agarre prono.', 'Paso 3: Impulsa el pecho hacia fuera y acciona el descenso bajando la resistencia no con las manos, sino intentando meter los codos hacia tus caderas.', 'Paso 4: Junta los omóplatos poderosamente traccionando la carga hasta el pecho superior.', 'Paso 5: Resiste pacientemente a la máquina mientras los cables/palancas ascienden y estiran las aletas dorsales.']::text[],
   'intermedio',
   'Ejercicio para dorsales. Zona: espalda. Equipo: máquina convergente.',
@@ -732,7 +729,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl de concentración de pie con mancuerna',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_de_concentracion_de_pie_con_mancuerna.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/empuje_de_cadera_con_barra_hip_thrust.mp4',
   ARRAY['Paso 1: Colócate semi-inclinado o de pie (con las piernas formando una base ancha), dejando pendular en vilo un brazo cargado con mancuerna, mientras usas el brazo adyacente amarrado al muslo de contrapeso.', 'Paso 2: Fija con precisión robótica el ángulo de tu húmero activo manteniéndolo inmóvil como una columna al piso.', 'Paso 3: Concentra toda la energía neural en accionar los picos del bíceps para enrollar el peso arriba sin alterar el eje central.', 'Paso 4: Maximiza la retención sangüínea de la congestión y baja exhalando sin prisas.']::text[],
   'intermedio',
   'Ejercicio para bíceps. Zona: brazos (parte superior). Equipo: mancuerna.',
@@ -742,7 +739,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Prensa vertical en máquina Smith',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/prensa_vertical_en_maquina_smith.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/prensa_vertical_en_maquina_smith.gif',
   ARRAY['Paso 1: Tumbado de espaldas bajo el pórtico de la máquina Smith, asienta las plantas de los pies sobre la barra transversal rotatoria.', 'Paso 2: Destraba la traba de seguridad con la suela del calzado, asumiendo la carga perimetral en la flexión vertical.', 'Paso 3: Impulsa perpendicularmente a 90 grados elevando la barra al techo con el vigor puro del cuádriceps y vastos femorales.', 'Paso 4: Contén en la altitud sin que la rodilla cruja por exceso de bloqueo óseo y desciende asumiendo el lastre hacia tu ombligo.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: máquina smith.',
@@ -752,7 +749,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación de rodillas colgado',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_rodillas_colgado_con_impulso_excentrico.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_rodillas_colgado_con_impulso_excentrico.gif',
   ARRAY['Paso 1: Suspéndete en cuelgue inactivo desde una barra para dominadas aguantando con tensión latente en la faja abdominal.', 'Paso 2: Engrana y asciende con agresividad agrupando ambas rótulas unidas escalando hasta topar contra el pecho superior.', 'Paso 3: Proyecta bruscamente y arroja como látigo las extremidades de forma reactiva al suelo, exigiendo el freno excéntrico máximo en la banda infraumbilical.', 'Paso 4: Amortigua la violenta bajada aprovechando el vaivén elástico del estiramiento muscular consecuente para disparar la subida próxima.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: peso corporal.',
@@ -762,7 +759,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Hiperextensión lumbar con lastre en fitball',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/hiperextension_lumbar_con_lastre_en_fitball.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/aperturas_en_maquina_contractora_peck_deck.mp4',
   ARRAY['Paso 1: Fija en balanza pélvica tu área púbica montada recostada cabalgando la bóveda de la pelota, bloqueando contra una tarima los tobillos posteriores para abolir desplazamientos indeseados.', 'Paso 2: Emplaza adosado a la coronilla o pecho superior el peso elegido para lastrar (disco/mancuerna).', 'Paso 3: Contrae con vigor sacro el canal lumbar para eregir el busto quebrado inferiormente transformándolo a ras horizontal estricto sin curvar o lesionar la zona hiperextendida.', 'Paso 4: Aguanta a pulso la estática en la cumbre antes de hundir laxamente pero con protección el busto ciñéndose a la ronda del fitball.']::text[],
   'intermedio',
   'Ejercicio para columna. Zona: espalda. Equipo: lastre.',
@@ -772,7 +769,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Crunch en polea',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/encogimientos_abdominales_en_polea_crunch_en_polea.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_piernas_colgado_en_barra.mp4',
   ARRAY['Paso 1: Híncate genuflexionado u arrodillado con el lomo dirigido hacia las regletas de la estructura de poleas superiores.', 'Paso 2: Pinza la soga accesoria entrelazándola próxima al cráneo sin jalar desde los brazos ni trapecios.', 'Paso 3: Ejecuta un Crunch (encogimiento visceral) arrastrando por motor del transverso absólico toda la tensión de las planchas de plomo hacia hundir la cara a las cuencas de las rótulas.', 'Paso 4: En este acortamiento del recto halla máxima dureza, mantén, y revierte dosificando lentamente re-expandiendo el tórax pero no el abdomen interno.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: polea.',
@@ -782,7 +779,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Dominadas con agarre prono',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/dominadas_con_agarre_prono.mp4',
+  '',
   ARRAY['Paso 1: Suspéndete de una barra de dominadas utilizando un agarre prono (palmas hacia adelante) ligeramente más ancho que la anchura de los hombros.', 'Paso 2: Inicia el movimiento activando la escápula mediante una depresión y retracción escapular (junta y desciende los omóplatos).', 'Paso 3: Realiza la fase concéntrica traccionando tu cuerpo hacia arriba, dirigiendo los codos hacia el suelo y ligeramente hacia atrás, hasta que la barbilla supere el nivel de la barra.', 'Paso 4: Haz una pausa de un segundo logrando la máxima contracción del dorsal ancho y la musculatura de la espalda alta.', 'Paso 5: Desciende de manera controlada (fase excéntrica) hasta la extensión completa de los brazos sin perder por completo la tensión en los hombros. Repite.']::text[],
   'intermedio',
   'Ejercicio para dorsal ancho. Zona: espalda. Equipo: peso corporal.',
@@ -792,7 +789,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Hip Thrust con barra',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/empuje_de_cadera_con_barra_hip_thrust.mp4',
+  '',
   ARRAY['Paso 1: Siéntate en el suelo apoyando la parte inferior de las escápulas (omóplatos) contra el borde de un banco plano. Coloca una barra con una almohadilla sobre el pliegue de tu cadera.', 'Paso 2: Planta los pies firmemente en el suelo a una distancia que permita formar un ángulo de 90 grados en tus rodillas cuando la cadera esté completamente extendida.', 'Paso 3: Mantén el mentón ligeramente pegado al pecho y la mirada hacia el frente para evitar la hiperextensión cervical y lumbar.', 'Paso 4: Empuja a través de los talones y extiende las caderas verticalmente contrayendo fuertemente los glúteos en la parte superior.', 'Paso 5: Realiza una retención isométrica de un segundo en el punto de máxima contracción y desciende la cadera controladamente. Repite.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: barra.',
@@ -802,7 +799,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Sentadilla dividida búlgara con mancuernas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/sentadilla_dividida_bulgara_con_mancuernas.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/remo_en_barra_t_con_apoyo_pectoral.mp4',
   ARRAY['Paso 1: Colócate de espaldas a un banco y apoya el empeine de un pie sobre él, mientras mantienes el pie contrario firme en el suelo, adelantado a una distancia prudente.', 'Paso 2: Sujeta una mancuerna en cada mano, mantén el torso erguido y el core estable.', 'Paso 3: Desciende controladamente flexionando la rodilla de la pierna delantera hasta que el muslo quede paralelo al suelo o la rodilla trasera casi roce la superficie.', 'Paso 4: Para un mayor enfoque en el cuádriceps, mantén el torso recto. Si deseas mayor énfasis en el glúteo, inclina ligeramente el torso hacia adelante.', 'Paso 5: Empuja verticalmente a través del pie delantero para retornar a la extensión inicial. Completa las repeticiones y cambia de pierna.']::text[],
   'intermedio',
   'Ejercicio para cuádriceps. Zona: piernas (parte superior). Equipo: mancuernas.',
@@ -812,7 +809,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl femoral tumbado en máquina',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_femoral_tumbado_en_maquina.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/extension_de_triceps_en_polea_alta.mp4',
   ARRAY['Paso 1: Túmbate bocabajo en la máquina de curl femoral, asegurando que las rodillas queden alineadas con el eje de rotación de la máquina.', 'Paso 2: Ajusta el rodillo para que descanse justo por encima de los talones (en la zona inferior de los gemelos).', 'Paso 3: Sujétate de los manerales delanteros para anclar el torso al banco y evitar la elevación de la cadera.', 'Paso 4: Flexiona las rodillas aplicando fuerza para llevar los talones hacia los glúteos de manera fluida y explosiva.', 'Paso 5: Sostén la contracción durante un segundo en el tope del movimiento y posteriormente desciende el peso de manera excéntrica lenta y controlada. Repite.']::text[],
   'intermedio',
   'Ejercicio para isquiotibiales. Zona: piernas (parte superior). Equipo: máquina de curl.',
@@ -822,7 +819,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Aperturas en máquina contractora (Peck Deck)',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/aperturas_en_maquina_contractora_peck_deck.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/fondos_de_triceps.mp4',
   ARRAY['Paso 1: Siéntate en la máquina contractora ajustando la altura del asiento para que los codos queden alineados horizontalmente con la articulación glenohumeral.', 'Paso 2: Apoya los antebrazos contra las almohadillas acolchadas y sujeta los agarres frontales manteniendo los codos en un ángulo de 90 grados.', 'Paso 3: Realiza una aducción horizontal de los brazos uniendo las almohadillas frente al pecho mediante una contracción concéntrica del pectoral mayor.', 'Paso 4: Mantén la contracción isométrica durante un segundo en el punto de máxima aproximación, sintiendo la congestión en las fibras esternales del pectoral.', 'Paso 5: Controla la fase excéntrica abriendo los brazos lentamente hasta sentir un estiramiento profundo en la caja torácica anterior.', 'Paso 6: Repite sin permitir que las pesas toquen la pila entre repeticiones, preservando la tensión continua en los pectorales.']::text[],
   'intermedio',
   'Ejercicio para pectorales. Zona: pecho. Equipo: máquina contractora.',
@@ -832,7 +829,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación de piernas colgado en barra',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/elevacion_de_piernas_colgado_en_barra.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/press_de_banca_plano_con_barra.mp4',
   ARRAY['Paso 1: Suspéndete de una barra de dominadas con agarre prono a la anchura de los hombros, dejando que las piernas cuelguen completamente extendidas y unidas.', 'Paso 2: Activa la musculatura profunda del core contrayendo el transverso del abdomen y estabilizando la cintura escapular mediante una leve depresión de los omóplatos.', 'Paso 3: Eleva las piernas extendidas hacia el frente mediante una flexión de cadera controlada, evitando cualquier balanceo pendular del tronco.', 'Paso 4: Continúa la elevación hasta que las piernas alcancen un ángulo de 90 grados respecto al torso, o hasta el límite que tu flexibilidad isquiotibial permita sin comprometer la técnica.', 'Paso 5: Mantén un segundo la contracción isométrica del recto abdominal en la posición más alta del recorrido.', 'Paso 6: Desciende las piernas lentamente controlando la fase excéntrica y evitando la hiperextensión lumbar al llegar al punto más bajo. Repite.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: peso corporal.',
@@ -842,7 +839,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Plancha abdominal isométrica',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/plancha_abdominal_isometrica.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/peso_muerto_convencional_con_barra.mp4',
   ARRAY['Paso 1: Colócate en decúbito prono sobre una superficie firme, apoyando los antebrazos en el suelo con los codos alineados verticalmente bajo la articulación glenohumeral.', 'Paso 2: Apoya las puntas de los pies separadas a la anchura de las caderas y eleva el cuerpo formando una línea perfectamente recta desde los talones hasta la coronilla.', 'Paso 3: Contrae el recto abdominal y el transverso del abdomen, manteniendo la pelvis en posición neutra sin anteversión ni retroversión pélvica.', 'Paso 4: Activa los glúteos y el cuádriceps femoral para estabilizar la cadena cinética posterior y evitar el colapso de la cadera.', 'Paso 5: Respira de forma controlada y diafragmática mientras mantienes la posición isométrica durante el tiempo prescrito sin comprometer la alineación corporal.', 'Paso 6: Finaliza la serie descendiendo el cuerpo de manera controlada hasta apoyar las rodillas en el suelo.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: peso corporal.',
@@ -852,7 +849,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Torsión rusa en suelo',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/torsion_rusa_en_suelo.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/press_de_banca_declinado_con_barra.mp4',
   ARRAY['Paso 1: Siéntate en el suelo con las rodillas flexionadas y los talones apoyados, inclinando el torso hacia atrás hasta formar un ángulo de aproximadamente 45 grados con el suelo.', 'Paso 2: Eleva los pies despegándolos del suelo para incrementar la activación del core y une las palmas de las manos frente al esternón.', 'Paso 3: Rota el tronco hacia el flanco derecho llevando los brazos en bloque solidario, contrayendo intensamente los músculos oblicuo externo e interno del lado contralateral.', 'Paso 4: Regresa al centro con control y rota hacia el flanco izquierdo replicando el mismo patrón biomecánico de rotación torácica.', 'Paso 5: Mantén la pelvis orientada al frente y estabilizada durante toda la torsión, aislando el movimiento rotacional en la columna torácica y no en la lumbar.', 'Paso 6: Continúa alternando los lados de forma rítmica y controlada hasta completar el volumen de repeticiones prescrito para cada lado.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: peso corporal.',
@@ -862,7 +859,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Remo en barra T con apoyo pectoral',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/remo_en_barra_t_con_apoyo_pectoral.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/curl_martillo_con_mancuernas.mp4',
   ARRAY['Paso 1: Carga los discos en un extremo de la barra olímpica y colócate a horcajadas sobre ella con el extremo cargado situado entre ambas piernas.', 'Paso 2: Flexiona ligeramente las rodillas e inclina el torso hacia adelante realizando una bisagra de cadera, preservando la columna vertebral en alineación neutra durante todo el ejercicio.', 'Paso 3: Sujeta el agarre en V con ambas manos y deja que la barra cuelgue con los brazos completamente extendidos, sintiendo la tracción inicial en los dorsales.', 'Paso 4: Tracciona la barra hacia el pecho llevando los codos hacia atrás y hacia arriba, juntando las escápulas en el punto máximo del recorrido concéntrico.', 'Paso 5: Mantén la contracción isométrica durante un segundo en la posición de máxima aducción escapular, sintiendo la activación profunda de dorsales, romboides y trapecios.', 'Paso 6: Controla la fase excéntrica descendiendo la carga lentamente hasta estirar por completo la cadena cinética dorsal sin perder la tensión escapular.']::text[],
   'intermedio',
   'Ejercicio para dorsal ancho. Zona: espalda. Equipo: barra en T.',
@@ -872,7 +869,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Extensión de tríceps en polea alta',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/extension_de_triceps_en_polea_alta.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/gym_workout/extension_de_piernas_en_maquina.mp4',
   ARRAY['Paso 1: Colócate frente a la polea alta con el accesorio de barra recta o cuerda enganchado y ajusta la polea a una altura ligeramente superior a la de tu cabeza.', 'Paso 2: Sujeta el accesorio con agarre prono y posiciona los codos firmemente contra las paredes laterales del torso, manteniendo los húmeros perpendiculares al suelo.', 'Paso 3: Inclina muy ligeramente el torso hacia adelante manteniendo la columna vertebral en posición neutra, las rodillas blandas y el core activado para estabilizar el tronco.', 'Paso 4: Extiende los codos empujando el accesorio hacia el suelo mediante una contracción concéntrica aislada del tríceps braquial, sin desplazar los codos de su posición.', 'Paso 5: Bloquea los codos en la posición más baja del recorrido, contrayendo intensamente las tres cabezas del tríceps durante un segundo en el pico de máxima activación.', 'Paso 6: Controla la fase excéntrica permitiendo que el cable ascienda lentamente hasta la flexión completa de los codos, resistiendo la tracción de la polea durante todo el retorno.']::text[],
   'intermedio',
   'Ejercicio para tríceps. Zona: brazos (parte superior). Equipo: polea.',
@@ -942,7 +939,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Burpees',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/burpees.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/burpees.gif',
   ARRAY['De pie, baja a cuclillas y apoya las manos en el suelo.', 'Extiende las piernas hacia atras hasta posicion de plancha.', 'Haz una flexión de brazos (opcional).', 'Recoge las piernas hacia el pecho.', 'Salta explosivamente con los brazos hacia arriba.', 'Aterriza suavemente y repite.']::text[],
   'intermedio',
   'Ejercicio compuesto de cuerpo completo: desde posicion de pie, bajas a plancha, haces flexión, recoges piernas y saltas explosivamente.',
@@ -952,7 +949,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Saltos de tijera',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/saltos_de_tijera.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/saltos_de_tijera.gif',
   ARRAY['De pie con los pies juntos y brazos a los lados.', 'Salta abriendo las piernas al ancho de hombros.', 'Simultaneamente, eleva los brazos por encima de la cabeza.', 'Vuelve a la posicion inicial con otro salto.', 'Mantén un ritmo constante y controlado.']::text[],
   'principiante',
   'Ejercicio cardiovascular clasico de calentamiento que consiste en saltar abriendo y cerrando piernas y brazos simultaneamente.',
@@ -972,7 +969,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Rodillas al pecho',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/rodillas_al_pecho.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/rodillas_al_pecho.gif',
   ARRAY['De pie, empieza a trotar en el sitio.', 'Eleva las rodillas hacia el pecho de forma alterna.', 'Mueve los brazos como si estuvieras corriendo.', 'Mantén la espalda recta y el core activado.', 'Aumenta progresivamente la velocidad.']::text[],
   'principiante',
   'Ejercicio de cardio que consiste en correr en el sitio elevando las rodillas lo mas alto posible.',
@@ -982,7 +979,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Salto de comba',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/salto_de_comba.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/salto_de_comba.gif',
   ARRAY['Sujeta los extremos de la cuerda con cada mano.', 'Coloca la cuerda detras de los talones.', 'Gira las muñecas para hacer pasar la cuerda por encima de la cabeza.', 'Salta ligeramente cuando la cuerda pase bajo tus pies.', 'Mantén un ritmo constante y aterriza sobre las puntas de los pies.']::text[],
   'principiante',
   'Ejercicio cardiovascular clasico utilizando una cuerda para saltar de forma continua.',
@@ -992,7 +989,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Sentadillas con salto',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/sentadillas_con_salto.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/sentadillas_con_salto.gif',
   ARRAY['De pie con los pies al ancho de hombros.', 'Baja a posicion de sentadilla manteniendo la espalda recta.', 'Desde la parte baja, salta explosivamente hacia arriba.', 'Extiende completamente las caderas y rodillas en el aire.', 'Aterriza suavemente con las rodillas flexionadas y vuelve a bajar.']::text[],
   'intermedio',
   'Sentadilla explosiva con salto vertical al final del movimiento para maximizar potencia y frecuencia cardiaca.',
@@ -1002,7 +999,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Salto al cajon',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/salto_al_cajon.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/salto_al_cajon.gif',
   ARRAY['Colocate frente al cajon con los pies al ancho de hombros.', 'Flexiona ligeramente las rodillas y lleva los brazos hacia atras.', 'Salta explosivamente impulsandote con ambas piernas.', 'Aterriza suavemente sobre el cajon con las rodillas flexionadas.', 'Ponte de pie completamente sobre el cajon.', 'Baja del cajon caminando (no saltes hacia atras).']::text[],
   'intermedio',
   'Ejercicio pliometrico que consiste en saltar desde el suelo a un cajon elevado, desarrollando potencia explosiva.',
@@ -1012,7 +1009,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Boxeo de sombra',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/boxeo_de_sombra.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/boxeo_de_sombra.gif',
   ARRAY['Adopta la posicion de guardia: pies separados, pierna dominante atras.', 'Puños a la altura de la barbilla, codos pegados al cuerpo.', 'Lanza combinaciones de golpes al aire: jabs, directos, ganchos.', 'Muevete constantemente: desplazamientos laterales, esquivas.', 'Mantén el ritmo y la respiracion durante todo el ejercicio.']::text[],
   'principiante',
   'Ejercicio de cardio que simula un combate de boxeo lanzando golpes al aire, excelente para coordinacion y ritmo.',
@@ -1022,7 +1019,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Zancadas con salto',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/zancadas_con_salto.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/zancadas_con_salto.gif',
   ARRAY['De pie, da un paso adelante con una pierna y baja a posicion de zancada.', 'Ambas rodillas deben formar angulos de 90 grados aproximadamente.', 'Desde la posicion baja, salta explosivamente hacia arriba.', 'En el aire, alterna las piernas para aterrizar con la pierna contraria adelantada.', 'Aterriza suavemente y encadena directamente con la siguiente zancada.']::text[],
   'avanzado',
   'Ejercicio pliometrico avanzado que combina zancadas alternas con salto explosivo entre cada repeticion.',
@@ -1032,7 +1029,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Tijeras abdominales',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/tijeras_abdominales.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/tijeras_abdominales.gif',
   ARRAY['Tumbate boca arriba con las piernas extendidas.', 'Coloca las manos debajo de los gluteos para proteger la zona lumbar.', 'Eleva ligeramente las piernas del suelo.', 'Alterna el movimiento subiendo y bajando las piernas como unas tijeras.', 'Mantén la zona lumbar pegada al suelo durante todo el ejercicio.']::text[],
   'principiante',
   'Ejercicio de resistencia abdominal que consiste en alternar las piernas hacia arriba y hacia abajo en un movimiento de tijera.',
@@ -1052,7 +1049,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Caminata en cinta',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/caminata_en_cinta.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/caminata_en_cinta.gif',
   ARRAY['Sube a la cinta de correr y configura una velocidad de caminata.', 'Camina de forma natural manteniendo una postura erguida.', 'Balancea los brazos de forma natural.', 'Mantén un ritmo constante durante 20-60 minutos.', 'No te sujetes a los pasamanos para maximizar el trabajo postural.']::text[],
   'principiante',
   'Ejercicio cardiovascular de baja intensidad caminando sobre cinta de correr, ideal para calentamiento o recuperacion activa.',
@@ -1062,7 +1059,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Carrera en cinta',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/carrera_en_cinta.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/carrera_en_cinta.gif',
   ARRAY['Configura la cinta a una velocidad de carrera moderada.', 'Corre con una postura erguida y zancada natural.', 'Mantén los hombros relajados y la mirada al frente.', 'Respira de forma ritmica y controlada.', 'Corre durante 15-45 minutos segun tu nivel de condicion fisica.']::text[],
   'principiante',
   'Ejercicio cardiovascular corriendo a ritmo moderado sobre cinta de correr para mejorar resistencia aerobica.',
@@ -1072,7 +1069,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Escaladora',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/escaladora.mp4',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/synaptixfit/escaladora.gif',
   ARRAY['Sube a la maquina de escaleras y selecciona un ritmo comodo.', 'Coloca las manos ligeramente sobre los pasamanos sin apoyar el peso.', 'Mantén la espalda recta y la mirada al frente.', 'Pisa los escalones de forma completa, sin apoyarte solo en las puntas.', 'Mantén un ritmo constante durante 10-30 minutos.']::text[],
   'intermedio',
   'Ejercicio cardiovascular en maquina de escaleras que simula el movimiento de subir escalones de forma continua, excelente para gluteos y piernas.',
