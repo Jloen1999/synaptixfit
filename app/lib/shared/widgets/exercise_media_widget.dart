@@ -66,7 +66,8 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
   void _prepare() {
     final url = widget.url;
     if (url == null || url.isEmpty) return;
-    if (!widget._useVideoPlayer) return;
+    if (!url.endsWith('.mp4')) return;
+    if (_videoCtrl != null) return;
 
     _videoCtrl = VideoPlayerController.networkUrl(Uri.parse(url));
     _videoCtrl!.initialize().then((_) {
@@ -78,7 +79,9 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
       setState(() => _videoReady = true);
       _videoCtrl!.setLooping(true);
       _videoCtrl!.setVolume(0);
-      _videoCtrl!.play();
+      if (widget._useVideoPlayer) {
+        _videoCtrl!.play();
+      }
     }).catchError((_) {
       if (!mounted) return;
       _videoCtrl?.dispose();
@@ -100,41 +103,35 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     final isHero = widget._useVideoPlayer;
     final radius = widget.borderRadius ??
         BorderRadius.circular(widget.size == ExerciseMediaSize.mini ? 8 : 14);
-
-    Widget content = _buildContent(context, radius);
+    final content = _buildContent(context, radius);
 
     if (isHero) {
-      content = LayoutBuilder(
-        builder: (context, constraints) {
-          final h = constraints.maxWidth >= 900 ? 280.0 : 220.0;
-          return Container(
-            height: h,
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: radius,
-              boxShadow: [
-                BoxShadow(
-                  color: SVColors.primary.withValues(alpha: 0.15),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+      final screenW = MediaQuery.of(context).size.width;
+      final h = screenW >= 900 ? 280.0 : 220.0;
+      return Container(
+        height: h,
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: [
+            BoxShadow(
+              color: SVColors.primary.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: content,
-          );
-        },
-      );
-    } else {
-      final w = widget.size == ExerciseMediaSize.mini ? 48.0 : 72.0;
-      content = SizedBox(
-        width: w,
-        height: w,
-        child: ClipRRect(borderRadius: radius, child: content),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: content,
       );
     }
 
-    return content;
+    final w = widget.size == ExerciseMediaSize.mini ? 48.0 : 72.0;
+    return SizedBox(
+      width: w,
+      height: w,
+      child: ClipRRect(borderRadius: radius, child: content),
+    );
   }
 
   Widget _buildContent(BuildContext context, BorderRadiusGeometry radius) {
@@ -143,25 +140,57 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
       return _buildFallback(context, radius);
     }
 
-    if (widget._useVideoPlayer) {
+    if (url.endsWith('.mp4')) {
       if (_videoInitFailed) {
         return _buildFallback(context, radius);
       }
       if (_videoReady && _videoCtrl != null) {
+        final isHero = widget._useVideoPlayer;
         return Stack(
           alignment: Alignment.center,
           fit: StackFit.expand,
           children: [
             VideoPlayer(_videoCtrl!),
-            Positioned(top: 8, right: 8, child: _muteButton()),
-            if (!_videoCtrl!.value.isPlaying) _playButtonOverlay(),
+            if (isHero) ...[
+              Positioned(top: 8, right: 8, child: _muteButton()),
+              if (!_videoCtrl!.value.isPlaying) _playButtonOverlay(),
+            ] else
+              GestureDetector(
+                onTap: () {
+                  if (!_videoCtrl!.value.isPlaying) {
+                    _videoCtrl!.play();
+                    setState(() {});
+                  }
+                },
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  child: Center(
+                    child: Icon(Icons.play_circle_fill_rounded,
+                        size: widget.size == ExerciseMediaSize.mini ? 16 : 24,
+                        color: Colors.white.withValues(alpha: 0.8)),
+                  ),
+                ),
+              ),
           ],
         );
       }
       return _buildVideoLoading(radius);
     }
 
-    return _buildVideoThumbnail(radius);
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: widget.fit,
+      placeholder: (_, __) => Container(
+        color: SVColors.surfaceContainerHighest,
+        child: const Center(
+          child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      ),
+      errorWidget: (_, __, ___) => _buildFallback(context, radius),
+    );
   }
 
   Widget _muteButton() {
@@ -211,26 +240,6 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildVideoThumbnail(BorderRadiusGeometry radius) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1A2A40), Color(0xFF0D1B2A)],
-        ),
-        borderRadius: radius,
-      ),
-      child: Center(
-        child: Icon(
-          Icons.play_circle_outline_rounded,
-          size: widget.size == ExerciseMediaSize.mini ? 20 : 36,
-          color: Colors.white.withValues(alpha: 0.55),
-        ),
       ),
     );
   }
