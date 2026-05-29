@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
@@ -67,7 +66,7 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     final url = widget.url;
     if (url == null || url.isEmpty) return;
     if (!url.endsWith('.mp4')) return;
-    if (_videoCtrl != null) return;
+    if (!widget._useVideoPlayer) return;
 
     _videoCtrl = VideoPlayerController.networkUrl(Uri.parse(url));
     _videoCtrl!.initialize().then((_) {
@@ -79,9 +78,7 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
       setState(() => _videoReady = true);
       _videoCtrl!.setLooping(true);
       _videoCtrl!.setVolume(0);
-      if (widget._useVideoPlayer) {
-        _videoCtrl!.play();
-      }
+      _videoCtrl!.play();
     }).catchError((_) {
       if (!mounted) return;
       _videoCtrl?.dispose();
@@ -140,56 +137,58 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
       return _buildFallback(context, radius);
     }
 
-    if (url.endsWith('.mp4')) {
+    if (widget._useVideoPlayer) {
       if (_videoInitFailed) {
         return _buildFallback(context, radius);
       }
       if (_videoReady && _videoCtrl != null) {
-        final isHero = widget._useVideoPlayer;
         return Stack(
           alignment: Alignment.center,
           fit: StackFit.expand,
           children: [
             VideoPlayer(_videoCtrl!),
-            if (isHero) ...[
-              Positioned(top: 8, right: 8, child: _muteButton()),
-              if (!_videoCtrl!.value.isPlaying) _playButtonOverlay(),
-            ] else
-              GestureDetector(
-                onTap: () {
-                  if (!_videoCtrl!.value.isPlaying) {
-                    _videoCtrl!.play();
-                    setState(() {});
-                  }
-                },
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  child: Center(
-                    child: Icon(Icons.play_circle_fill_rounded,
-                        size: widget.size == ExerciseMediaSize.mini ? 16 : 24,
-                        color: Colors.white.withValues(alpha: 0.8)),
-                  ),
-                ),
-              ),
+            Positioned(top: 8, right: 8, child: _muteButton()),
+            if (!_videoCtrl!.value.isPlaying) _playButtonOverlay(),
           ],
         );
       }
       return _buildVideoLoading(radius);
     }
 
-    return CachedNetworkImage(
-      imageUrl: url,
-      fit: widget.fit,
-      placeholder: (_, __) => Container(
-        color: SVColors.surfaceContainerHighest,
-        child: const Center(
-          child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2)),
+    return _buildMp4Thumbnail(radius);
+  }
+
+  Widget _buildMp4Thumbnail(BorderRadiusGeometry radius) {
+    final isTiny = widget.size == ExerciseMediaSize.mini;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0D2B4A), Color(0xFF1A3A5C)],
+        ),
+        borderRadius: radius,
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.play_circle_fill_rounded,
+              size: isTiny ? 20 : 32,
+              color: SVColors.secondaryContainer.withValues(alpha: 0.7),
+            ),
+            if (!isTiny) ...[
+              const SizedBox(height: 4),
+              Text('Video',
+                  style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontWeight: FontWeight.w500)),
+            ],
+          ],
         ),
       ),
-      errorWidget: (_, __, ___) => _buildFallback(context, radius),
     );
   }
 
