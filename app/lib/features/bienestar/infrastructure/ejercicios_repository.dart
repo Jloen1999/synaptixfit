@@ -42,7 +42,7 @@ class EjerciciosRepository {
       query = query.limit(10000);
     }
 
-    final response = await query;
+    final response = await query.timeout(const Duration(seconds: 12));
     return _mapearLista(response);
   }
 
@@ -53,7 +53,8 @@ class EjerciciosRepository {
           .from('v_ejercicios_completos')
           .select(_columnasEjercicio)
           .eq('id', id)
-          .single();
+          .single()
+          .timeout(const Duration(seconds: 8));
 
       return EjercicioDb.fromMap(response);
     } catch (_) {
@@ -68,7 +69,8 @@ class EjerciciosRepository {
         .select(_columnasEjercicio)
         .contains('partes_cuerpo', [parte])
         .order('nombre', ascending: true)
-        .limit(10000);
+        .limit(10000)
+        .timeout(const Duration(seconds: 12));
 
     return _mapearLista(response);
   }
@@ -80,7 +82,8 @@ class EjerciciosRepository {
         .select(_columnasEjercicio)
         .contains('musculos_objetivo', [musculo])
         .order('nombre', ascending: true)
-        .limit(10000);
+        .limit(10000)
+        .timeout(const Duration(seconds: 12));
 
     return _mapearLista(response);
   }
@@ -92,7 +95,8 @@ class EjerciciosRepository {
         .select(_columnasEjercicio)
         .contains('equipamientos', [equip])
         .order('nombre', ascending: true)
-        .limit(10000);
+        .limit(10000)
+        .timeout(const Duration(seconds: 12));
 
     return _mapearLista(response);
   }
@@ -106,7 +110,8 @@ class EjerciciosRepository {
         .select(_columnasEjercicio)
         .textSearch('nombre', query, config: 'spanish')
         .order('nombre', ascending: true)
-        .limit(10000);
+        .limit(10000)
+        .timeout(const Duration(seconds: 12));
 
     return _mapearLista(response);
   }
@@ -121,7 +126,7 @@ class EjerciciosRepository {
       _client.from('partes_cuerpo').select('id,nombre').order('nombre'),
       _client.from('musculos').select('id,nombre,url_imagen').order('nombre'),
       _client.from('equipamientos').select('id,nombre').order('nombre'),
-    ]);
+    ]).timeout(const Duration(seconds: 10));
 
     return CatalogosEjercicios(
       partesCuerpo: (results[0] as List)

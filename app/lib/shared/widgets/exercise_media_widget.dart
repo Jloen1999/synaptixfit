@@ -66,8 +66,6 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
   void _prepare() {
     final url = widget.url;
     if (url == null || url.isEmpty) return;
-
-    if (!url.endsWith('.mp4')) return;
     if (!widget._useVideoPlayer) return;
 
     _videoCtrl = VideoPlayerController.networkUrl(Uri.parse(url));
@@ -96,8 +94,6 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
       _videoCtrl!.setVolume(_isMuted ? 0 : 1.0);
     });
   }
-
-  bool get _isMp4 => widget.url != null && widget.url!.endsWith('.mp4');
 
   @override
   Widget build(BuildContext context) {
@@ -134,10 +130,7 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
       content = SizedBox(
         width: w,
         height: w,
-        child: ClipRRect(
-          borderRadius: radius,
-          child: content,
-        ),
+        child: ClipRRect(borderRadius: radius, child: content),
       );
     }
 
@@ -150,9 +143,9 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
       return _buildFallback(context, radius);
     }
 
-    if (_isMp4 && widget._useVideoPlayer) {
+    if (widget._useVideoPlayer) {
       if (_videoInitFailed) {
-        return _buildMp4Placeholder(radius, false);
+        return _buildFallback(context, radius);
       }
       if (_videoReady && _videoCtrl != null) {
         return Stack(
@@ -165,19 +158,10 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
           ],
         );
       }
-      return _buildMp4Placeholder(radius, true);
+      return _buildVideoLoading(radius);
     }
 
-    if (_isMp4) {
-      return _buildMp4Placeholder(radius, false);
-    }
-
-    return CachedNetworkImage(
-      imageUrl: url,
-      fit: widget.fit,
-      placeholder: (_, __) => _buildPlaceholder(radius),
-      errorWidget: (_, __, ___) => _buildFallback(context, radius),
-    );
+    return _buildVideoThumbnail(radius);
   }
 
   Widget _muteButton() {
@@ -199,7 +183,7 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     );
   }
 
-  Widget _buildMp4Placeholder(BorderRadiusGeometry radius, bool isLoading) {
+  Widget _buildVideoLoading(BorderRadiusGeometry radius) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -209,39 +193,44 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
         ),
         borderRadius: radius,
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        fit: StackFit.expand,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (isLoading)
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.videocam_rounded,
-                    size: 48, color: Colors.white.withValues(alpha: 0.5)),
-                const SizedBox(height: 12),
-                Text(
-                  'Cargando video...',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: 200,
-                  child: LinearProgressIndicator(
-                    color: SVColors.secondaryContainer,
-                    backgroundColor: Colors.white10,
-                  ),
-                ),
-              ],
-            )
-          else
-            Icon(Icons.play_circle_outline_rounded,
-                size: widget.size == ExerciseMediaSize.mini ? 20 : 32,
-                color: Colors.white.withValues(alpha: 0.4)),
+          const Icon(Icons.videocam_rounded, size: 48, color: Colors.white38),
+          const SizedBox(height: 12),
+          Text('Cargando video...',
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: 200,
+            child: LinearProgressIndicator(
+              color: SVColors.secondaryContainer,
+              backgroundColor: Colors.white10,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVideoThumbnail(BorderRadiusGeometry radius) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A2A40), Color(0xFF0D1B2A)],
+        ),
+        borderRadius: radius,
+      ),
+      child: Center(
+        child: Icon(
+          Icons.play_circle_outline_rounded,
+          size: widget.size == ExerciseMediaSize.mini ? 20 : 36,
+          color: Colors.white.withValues(alpha: 0.55),
+        ),
       ),
     );
   }
@@ -273,19 +262,6 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     );
   }
 
-  Widget _buildPlaceholder(BorderRadiusGeometry radius) {
-    return Container(
-      color: SVColors.surfaceContainerHighest,
-      child: const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFallback(BuildContext context, BorderRadiusGeometry radius) {
     final isTiny = widget.size == ExerciseMediaSize.mini;
     return Container(
@@ -303,32 +279,25 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
                 child: SizedBox(
                   width: 40,
                   height: 40,
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.fitness_center_rounded,
-                      size: isTiny ? 20 : 28,
-                      color: SVColors.onSurfaceMuted,
-                    ),
-                  ),
+                  child: Image.asset('assets/images/logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                          Icons.fitness_center_rounded,
+                          size: 28,
+                          color: SVColors.onSurfaceMuted)),
                 ),
               ),
               if (widget.size == ExerciseMediaSize.hero) ...[
                 const SizedBox(height: 8),
-                Text(
-                  'Vista previa no disponible',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: SVColors.onSurfaceMuted,
-                      ),
-                ),
+                Text('Vista previa no disponible',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: SVColors.onSurfaceMuted)),
               ],
             ] else
-              Icon(
-                Icons.fitness_center_rounded,
-                size: 20,
-                color: SVColors.onSurfaceMuted,
-              ),
+              const Icon(Icons.fitness_center_rounded,
+                  size: 20, color: SVColors.onSurfaceMuted),
           ],
         ),
       ),

@@ -2,8 +2,7 @@
 -- Objetivo: Insertar los 103 ejercicios del catalogo unificado
 --           y convertir finalidad de TEXT a TEXT[] para multi-finalidad.
 
--- 1) Convertir finalidad a TEXT[] sin usar ALTER TYPE (evita conflictos con vistas/triggers)
---    Estrategia: ADD columna nueva, copiar datos, DROP antigua, RENAME
+-- 1) Convertir finalidad a TEXT[] sin usar ALTER TYPE (ADD/DROP/RENAME)
 drop view if exists public.v_ejercicios_completos cascade;
 drop materialized view if exists public.mv_ejercicios_completos cascade;
 drop trigger if exists trg_refrescar_mv_ejercicios on public.ejercicios;
@@ -13,81 +12,42 @@ drop trigger if exists trg_refrescar_mv_junction_ms on public.ejercicio_musculo_
 drop trigger if exists trg_refrescar_mv_junction_eq on public.ejercicio_equipamiento;
 drop function if exists public.trigger_refrescar_mv_ejercicios();
 drop function if exists public.refrescar_mv_ejercicios();
-
 alter table public.ejercicios drop constraint if exists ck_ejercicios_finalidad;
 
 alter table public.ejercicios add column finalidad_new text[] not null default array['fuerza']::text[];
-
 update public.ejercicios set finalidad_new = array[finalidad]::text[];
-
 alter table public.ejercicios drop column finalidad cascade;
-
 alter table public.ejercicios rename column finalidad_new to finalidad;
 
--- Recrear la vista sin security_invoker (0022/0028 la recrean luego)
-create or replace view public.v_ejercicios_completos
-as
-select
-  e.id,
-  e.nombre,
-  e.url_gif,
-  e.instrucciones,
-  e.dificultad,
-  e.descripcion,
-  e.finalidad,
-  e.creado_en,
-  e.actualizado_en,
-  coalesce(
-    (select array_agg(distinct pc.nombre order by pc.nombre)
-     from public.ejercicio_parte_cuerpo epc
-     join public.partes_cuerpo pc on pc.id = epc.parte_cuerpo_id
-     where epc.ejercicio_id = e.id),
-    array[]::text[]
-  ) as partes_cuerpo,
-  coalesce(
-    (select array_agg(distinct mt.nombre order by mt.nombre)
-     from public.ejercicio_musculo_objetivo emo
-     join public.musculos mt on mt.id = emo.musculo_id
-     where emo.ejercicio_id = e.id),
-    array[]::text[]
-  ) as musculos_objetivo,
-  coalesce(
-    (select array_agg(distinct ms.nombre order by ms.nombre)
-     from public.ejercicio_musculo_secundario ems
-     join public.musculos ms on ms.id = ems.musculo_id
-     where ems.ejercicio_id = e.id),
-    array[]::text[]
-  ) as musculos_secundarios,
-  coalesce(
-    (select array_agg(distinct eq.nombre order by eq.nombre)
-     from public.ejercicio_equipamiento ee
-     join public.equipamientos eq on eq.id = ee.equipamiento_id
-     where ee.ejercicio_id = e.id),
-    array[]::text[]
-  ) as equipamientos
+-- Recrear vista (0028 la recrea luego con security_invoker + sin exercise_db_id)
+create or replace view public.v_ejercicios_completos as
+select e.id, e.nombre, e.url_gif, e.instrucciones, e.dificultad,
+       e.descripcion, e.finalidad, e.creado_en, e.actualizado_en,
+  coalesce((select array_agg(distinct pc.nombre order by pc.nombre)
+    from public.ejercicio_parte_cuerpo epc join public.partes_cuerpo pc on pc.id = epc.parte_cuerpo_id
+    where epc.ejercicio_id = e.id), array[]::text[]) as partes_cuerpo,
+  coalesce((select array_agg(distinct mt.nombre order by mt.nombre)
+    from public.ejercicio_musculo_objetivo emo join public.musculos mt on mt.id = emo.musculo_id
+    where emo.ejercicio_id = e.id), array[]::text[]) as musculos_objetivo,
+  coalesce((select array_agg(distinct ms.nombre order by ms.nombre)
+    from public.ejercicio_musculo_secundario ems join public.musculos ms on ms.id = ems.musculo_id
+    where ems.ejercicio_id = e.id), array[]::text[]) as musculos_secundarios,
+  coalesce((select array_agg(distinct eq.nombre order by eq.nombre)
+    from public.ejercicio_equipamiento ee join public.equipamientos eq on eq.id = ee.equipamiento_id
+    where ee.ejercicio_id = e.id), array[]::text[]) as equipamientos
 from public.ejercicios e;
-
 grant select on public.v_ejercicios_completos to anon, authenticated;
 
--- 2) Eliminar CHECK antiguo y poner nuevo que valide el array
-alter table public.ejercicios
-  drop constraint if exists ck_ejercicios_finalidad;
-
-alter table public.ejercicios
-  add constraint ck_ejercicios_finalidad
+-- 2) CHECK para array de finalidades
+alter table public.ejercicios drop constraint if exists ck_ejercicios_finalidad;
+alter table public.ejercicios add constraint ck_ejercicios_finalidad
   check (finalidad <@ array['fuerza','cardio','isometrico','hipertrofia','resistencia','movilidad']::text[]);
 
--- 3) Asegurar UNIQUE en nombre
-do $$
-begin
-  if not exists (
-    select 1 from pg_constraint
-    where conname = 'ejercicios_nombre_unique'
-      and conrelid = 'public.ejercicios'::regclass
-  ) then
+-- 3) UNIQUE en nombre
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'ejercicios_nombre_unique' and conrelid = 'public.ejercicios'::regclass) then
     alter table public.ejercicios add constraint ejercicios_nombre_unique unique (nombre);
-  end if;
-end $$;
+  end if; end $$;
 
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
@@ -652,7 +612,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación de gemelos en máquina Hack',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_gemelos_en_maquina_hack.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_gemelos_en_maquina_hack.mp4',
   ARRAY['Paso 1: Ajusta la máquina Hack cargando los discos adecuados según tu nivel.', 'Paso 2: Colócate bajo las almohadillas apoyando únicamente el metatarso (la punta de los pies) en la base de la plataforma, dejando los talones suspendidos por fuera.', 'Paso 3: Sujétate de los agarres de seguridad y libera el freno de la máquina.', 'Paso 4: Realiza la fase concéntrica elevando los talones mediante una contracción máxima de los gemelos.', 'Paso 5: Mantén la contracción isométrica durante un segundo en la parte más alta y desciende controladamente los talones hasta sentir un estiramiento profundo en el tríceps sural.', 'Paso 6: Repite hasta completar el volumen de repeticiones pautado.']::text[],
   'intermedio',
   'Ejercicio para gemelos. Zona: piernas (parte inferior). Equipo: máquina hack.',
@@ -662,7 +622,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Prensa de piernas a 45°',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/prensa_de_piernas_a_45.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/prensa_de_piernas_a_45.mp4',
   ARRAY['Paso 1: Reclina el respaldo de la prensa de piernas a un ángulo donde tu cadera no se despegue del asiento en la fase más profunda.', 'Paso 2: Siéntate apoyando firmemente la zona lumbar y coloca los pies en la plataforma superior separados a la anchura de los hombros (postura estándar).', 'Paso 3: Desbloquea los seguros laterales de la plataforma.', 'Paso 4: Ejecuta la fase excéntrica flexionando las rodillas de forma controlada hasta que formen un ángulo de 90 grados, o hasta donde tu movilidad de cadera lo permita sin curvar la espalda.', 'Paso 5: Empuja con toda la planta del pie (priorizando el empuje desde los talones) para extender las piernas de vuelta a la posición inicial, evitando bloquear las rodillas por completo.', 'Paso 6: Repite el patrón de movimiento asegurando una técnica estricta.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: prensa de piernas.',
@@ -672,7 +632,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación frontal con mancuernas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_frontal_con_mancuernas.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_frontal_con_mancuernas.mp4',
   ARRAY['Paso 1: De pie, con los pies separados a la anchura de los hombros y el core activado, sujeta una mancuerna en cada mano con agarre prono descansando sobre los muslos.', 'Paso 2: Manteniendo una levísima flexión en los codos, ejecuta una elevación frontal liderada por los hombros hasta que las mancuernas superen ligeramente la línea de la clavícula.', 'Paso 3: Sostén la máxima contracción del deltoides anterior durante un segundo.', 'Paso 4: Resiste el peso bajando las mancuernas de manera controlada y repite.']::text[],
   'intermedio',
   'Ejercicio para deltoides. Zona: hombros. Equipo: mancuernas.',
@@ -682,7 +642,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl de muñeca inverso con mancuernas sobre banco',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_de_muneca_inverso_con_mancuernas_sobre_banco.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_de_muneca_inverso_con_mancuernas_sobre_banco.mp4',
   ARRAY['Paso 1: Siéntate en un banco sosteniendo un par de mancuernas en agarre prono (palmas hacia el suelo).', 'Paso 2: Apoya la longitud de los antebrazos sobre el banco o sobre tus propios muslos, dejando que las muñecas sobresalgan en el aire.', 'Paso 3: Permite que el peso fuerce la flexión de la muñeca hacia abajo (estiramiento).', 'Paso 4: Contrae los músculos extensores del antebrazo levantando los nudillos en dirección a ti.', 'Paso 5: Haz una pausa arriba y desciende gradualmente.']::text[],
   'intermedio',
   'Ejercicio para antebrazos. Zona: antebrazos. Equipo: mancuernas.',
@@ -692,7 +652,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl martillo en banco Scott a una mano',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_martillo_en_banco_scott_a_una_mano.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_martillo_en_banco_scott_a_una_mano.mp4',
   ARRAY['Paso 1: Ajusta la altura del asiento del banco Scott para que la axila repose cómodamente sobre el borde superior del cojín.', 'Paso 2: Apoya firmemente el tríceps y el codo en la almohadilla inclinada, sosteniendo una mancuerna con agarre neutro (como un martillo).', 'Paso 3: Flexiona el brazo aislando el músculo braquial y el bíceps, subiendo la mancuerna hacia el hombro frontal.', 'Paso 4: Aprieta el músculo en la cima del recorrido y realiza la bajada lenta hasta estirar el brazo por completo sin que el codo pierda contacto con el acolchado.']::text[],
   'intermedio',
   'Ejercicio para bíceps. Zona: brazos (parte superior). Equipo: mancuerna.',
@@ -702,7 +662,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Sentadilla Pistol con pesa rusa',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/sentadilla_pistol_con_pesa_rusa.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/sentadilla_pistol_con_pesa_rusa.mp4',
   ARRAY['Paso 1: De pie, abraza una pesa rusa por los cuernos (agarre en copa) manteniéndola apretada contra el esternón para estabilizar el centro de gravedad.', 'Paso 2: Levanta una pierna estirándola por completo hacia el frente, quedando en equilibrio sobre la pierna contraria.', 'Paso 3: Flexiona la rodilla y cadera de la pierna de apoyo descendiendo en una sentadilla a una sola pierna lo más profundo que tu movilidad de tobillo te permita.', 'Paso 4: Evita que el talón de la pierna activa se levante del suelo y utiliza toda la potencia de tus cuádriceps y glúteos para presionar y volver a levantarte.', 'Paso 5: Alterna las piernas al finalizar las repeticiones pautadas.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: pesa rusa.',
@@ -712,7 +672,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Fondos en paralelas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/fondos_imposibles.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/fondos_imposibles.mp4',
   ARRAY['Paso 1: Posiciónate entre las barras paralelas sosteniendo el peso íntegro de tu cuerpo con los brazos estirados.', 'Paso 2: Retrae las escápulas y cruza las piernas atrás para mayor compacidad del core.', 'Paso 3: Mantén el torso lo más erguido y vertical posible (para maximizar la implicación de los tríceps sobre la del pecho) e inicia la bajada controlando la caída con la flexión de los codos hacia atrás.', 'Paso 4: Detén el descenso cuando la porción superior del brazo quede en paralelo con el suelo.', 'Paso 5: Empuja agresivamente contra las barras para bloquear los brazos arriba nuevamente.']::text[],
   'intermedio',
   'Ejercicio para tríceps. Zona: brazos (parte superior). Equipo: peso corporal.',
@@ -722,7 +682,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Flexión lateral con lastre sobre fitball',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/flexion_lateral_con_lastre_sobre_fitball.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/flexion_lateral_con_lastre_sobre_fitball.mp4',
   ARRAY['Paso 1: Apoya el costado de la cadera contra la curvatura del fitball, afirmando los pies lateralmente contra el piso o una pared para generar tracción.', 'Paso 2: Sostén un lastre (disco o mancuerna) abrazado al pecho o apoyado en la nuca.', 'Paso 3: Deja caer tu torso lateralmente acompañando la curva de la pelota para estirar el abdomen oblicuo.', 'Paso 4: Flexiona el tronco hacia arriba lateralmente utilizando la pared abdominal hasta alcanzar la contracción máxima y repite.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: lastre.',
@@ -732,7 +692,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Remo al mentón a una mano con mancuerna',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/remo_al_menton_a_una_mano_con_mancuerna.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/remo_al_menton_a_una_mano_con_mancuerna.mp4',
   ARRAY['Paso 1: De pie, con postura neutra, deja colgando la mancuerna de manera relajada frente al muslo.', 'Paso 2: Ejecuta la elevación vertical tirando primero desde el hombro y haciendo que el codo apunte siempre por encima de la línea de la muñeca (como si estuvieras tirando del arranque de una cortadora de césped verticalmente).', 'Paso 3: Eleva la carga hasta el nivel de la barbilla sin encoger excesivamente los trapecios de forma compensatoria.', 'Paso 4: Baja lentamente manteniendo el dominio de la carga en todo el recorrido.']::text[],
   'intermedio',
   'Ejercicio para deltoides. Zona: hombros. Equipo: mancuerna.',
@@ -742,7 +702,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación de gemelos de pie con barra',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_gemelos_de_pie_con_barra_balanceo_de_tobillo.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_gemelos_de_pie_con_barra_balanceo_de_tobillo.mp4',
   ARRAY['Paso 1: Carga la barra sobre la porción carnosa de los trapecios (como en una sentadilla tradicional) estando de pie sobre una superficie firme.', 'Paso 2: Ejecuta una elevación plantar (ponte de puntillas) reclutando con intensidad el músculo gastrocnemio.', 'Paso 3: Sostén un instante la tensión pico arriba.', 'Paso 4: En el retorno excéntrico, permite un ligero balanceo cediendo el peso de regreso sobre la planta del pie completa.']::text[],
   'intermedio',
   'Ejercicio para gemelos. Zona: piernas (parte inferior). Equipo: barra.',
@@ -752,7 +712,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Torsión de tronco tumbado con rodillas flexionadas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/torsion_de_tronco_tumbado_con_rodillas_flexionadas.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/torsion_de_tronco_tumbado_con_rodillas_flexionadas.mp4',
   ARRAY['Paso 1: Tumbado en el suelo o colchoneta de espaldas, forma una T con tus brazos estabilizadores, y eleva los pies agrupando las rodillas dobladas hacia el ombligo.', 'Paso 2: Deja oscilar pausadamente tus piernas fusionadas cayendo sobre un lateral hasta casi palpar el suelo (logrando estiramiento rotacional del oblicuo).', 'Paso 3: Involucra tu musculatura del core y los oblícuos internos/externos para acarrear el peso del tren inferior de vuelta al centro del eje.', 'Paso 4: Replícalo consecutivamente cediendo hacia la dirección anatómica contraria.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: peso corporal.',
@@ -762,7 +722,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Jalón frontal en máquina convergente',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/jalon_frontal_en_maquina_convergente.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/jalon_frontal_en_maquina_convergente.mp4',
   ARRAY['Paso 1: Acomódate ajustando el tope acolchado a las rodillas para amarrar la estructura inferior y evitar que tu cuerpo se eleve.', 'Paso 2: Alcanza los pivotes o empuñaduras de la máquina usando una asimetría abierta en el agarre prono.', 'Paso 3: Impulsa el pecho hacia fuera y acciona el descenso bajando la resistencia no con las manos, sino intentando meter los codos hacia tus caderas.', 'Paso 4: Junta los omóplatos poderosamente traccionando la carga hasta el pecho superior.', 'Paso 5: Resiste pacientemente a la máquina mientras los cables/palancas ascienden y estiran las aletas dorsales.']::text[],
   'intermedio',
   'Ejercicio para dorsales. Zona: espalda. Equipo: máquina convergente.',
@@ -772,7 +732,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl de concentración de pie con mancuerna',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_de_concentracion_de_pie_con_mancuerna.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_de_concentracion_de_pie_con_mancuerna.mp4',
   ARRAY['Paso 1: Colócate semi-inclinado o de pie (con las piernas formando una base ancha), dejando pendular en vilo un brazo cargado con mancuerna, mientras usas el brazo adyacente amarrado al muslo de contrapeso.', 'Paso 2: Fija con precisión robótica el ángulo de tu húmero activo manteniéndolo inmóvil como una columna al piso.', 'Paso 3: Concentra toda la energía neural en accionar los picos del bíceps para enrollar el peso arriba sin alterar el eje central.', 'Paso 4: Maximiza la retención sangüínea de la congestión y baja exhalando sin prisas.']::text[],
   'intermedio',
   'Ejercicio para bíceps. Zona: brazos (parte superior). Equipo: mancuerna.',
@@ -782,7 +742,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Prensa vertical en máquina Smith',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/prensa_vertical_en_maquina_smith.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/prensa_vertical_en_maquina_smith.mp4',
   ARRAY['Paso 1: Tumbado de espaldas bajo el pórtico de la máquina Smith, asienta las plantas de los pies sobre la barra transversal rotatoria.', 'Paso 2: Destraba la traba de seguridad con la suela del calzado, asumiendo la carga perimetral en la flexión vertical.', 'Paso 3: Impulsa perpendicularmente a 90 grados elevando la barra al techo con el vigor puro del cuádriceps y vastos femorales.', 'Paso 4: Contén en la altitud sin que la rodilla cruja por exceso de bloqueo óseo y desciende asumiendo el lastre hacia tu ombligo.']::text[],
   'intermedio',
   'Ejercicio para glúteos. Zona: piernas (parte superior). Equipo: máquina smith.',
@@ -792,7 +752,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Elevación de rodillas colgado',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_rodillas_colgado_con_impulso_excentrico.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/elevacion_de_rodillas_colgado_con_impulso_excentrico.mp4',
   ARRAY['Paso 1: Suspéndete en cuelgue inactivo desde una barra para dominadas aguantando con tensión latente en la faja abdominal.', 'Paso 2: Engrana y asciende con agresividad agrupando ambas rótulas unidas escalando hasta topar contra el pecho superior.', 'Paso 3: Proyecta bruscamente y arroja como látigo las extremidades de forma reactiva al suelo, exigiendo el freno excéntrico máximo en la banda infraumbilical.', 'Paso 4: Amortigua la violenta bajada aprovechando el vaivén elástico del estiramiento muscular consecuente para disparar la subida próxima.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: peso corporal.',
@@ -802,7 +762,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Hiperextensión lumbar con lastre en fitball',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/hiperextension_lumbar_con_lastre_en_fitball.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/hiperextension_lumbar_con_lastre_en_fitball.mp4',
   ARRAY['Paso 1: Fija en balanza pélvica tu área púbica montada recostada cabalgando la bóveda de la pelota, bloqueando contra una tarima los tobillos posteriores para abolir desplazamientos indeseados.', 'Paso 2: Emplaza adosado a la coronilla o pecho superior el peso elegido para lastrar (disco/mancuerna).', 'Paso 3: Contrae con vigor sacro el canal lumbar para eregir el busto quebrado inferiormente transformándolo a ras horizontal estricto sin curvar o lesionar la zona hiperextendida.', 'Paso 4: Aguanta a pulso la estática en la cumbre antes de hundir laxamente pero con protección el busto ciñéndose a la ronda del fitball.']::text[],
   'intermedio',
   'Ejercicio para columna. Zona: espalda. Equipo: lastre.',
@@ -812,7 +772,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Crunch en polea',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/encogimientos_abdominales_en_polea_crunch_en_polea.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/encogimientos_abdominales_en_polea_crunch_en_polea.mp4',
   ARRAY['Paso 1: Híncate genuflexionado u arrodillado con el lomo dirigido hacia las regletas de la estructura de poleas superiores.', 'Paso 2: Pinza la soga accesoria entrelazándola próxima al cráneo sin jalar desde los brazos ni trapecios.', 'Paso 3: Ejecuta un Crunch (encogimiento visceral) arrastrando por motor del transverso absólico toda la tensión de las planchas de plomo hacia hundir la cara a las cuencas de las rótulas.', 'Paso 4: En este acortamiento del recto halla máxima dureza, mantén, y revierte dosificando lentamente re-expandiendo el tórax pero no el abdomen interno.']::text[],
   'intermedio',
   'Ejercicio para abdomen. Zona: cintura. Equipo: polea.',
@@ -842,7 +802,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Sentadilla dividida búlgara con mancuernas',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/sentadilla_dividida_bulgara_con_mancuernas.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/sentadilla_dividida_bulgara_con_mancuernas.mp4',
   ARRAY['Paso 1: Colócate de espaldas a un banco y apoya el empeine de un pie sobre él, mientras mantienes el pie contrario firme en el suelo, adelantado a una distancia prudente.', 'Paso 2: Sujeta una mancuerna en cada mano, mantén el torso erguido y el core estable.', 'Paso 3: Desciende controladamente flexionando la rodilla de la pierna delantera hasta que el muslo quede paralelo al suelo o la rodilla trasera casi roce la superficie.', 'Paso 4: Para un mayor enfoque en el cuádriceps, mantén el torso recto. Si deseas mayor énfasis en el glúteo, inclina ligeramente el torso hacia adelante.', 'Paso 5: Empuja verticalmente a través del pie delantero para retornar a la extensión inicial. Completa las repeticiones y cambia de pierna.']::text[],
   'intermedio',
   'Ejercicio para cuádriceps. Zona: piernas (parte superior). Equipo: mancuernas.',
@@ -852,7 +812,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Curl femoral tumbado en máquina',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_femoral_tumbado_en_maquina.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/exercisedb/curl_femoral_tumbado_en_maquina.mp4',
   ARRAY['Paso 1: Túmbate bocabajo en la máquina de curl femoral, asegurando que las rodillas queden alineadas con el eje de rotación de la máquina.', 'Paso 2: Ajusta el rodillo para que descanse justo por encima de los talones (en la zona inferior de los gemelos).', 'Paso 3: Sujétate de los manerales delanteros para anclar el torso al banco y evitar la elevación de la cadera.', 'Paso 4: Flexiona las rodillas aplicando fuerza para llevar los talones hacia los glúteos de manera fluida y explosiva.', 'Paso 5: Sostén la contracción durante un segundo en el tope del movimiento y posteriormente desciende el peso de manera excéntrica lenta y controlada. Repite.']::text[],
   'intermedio',
   'Ejercicio para isquiotibiales. Zona: piernas (parte superior). Equipo: máquina de curl.',
@@ -982,7 +942,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Burpees',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/burpees.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/burpees.mp4',
   ARRAY['De pie, baja a cuclillas y apoya las manos en el suelo.', 'Extiende las piernas hacia atras hasta posicion de plancha.', 'Haz una flexión de brazos (opcional).', 'Recoge las piernas hacia el pecho.', 'Salta explosivamente con los brazos hacia arriba.', 'Aterriza suavemente y repite.']::text[],
   'intermedio',
   'Ejercicio compuesto de cuerpo completo: desde posicion de pie, bajas a plancha, haces flexión, recoges piernas y saltas explosivamente.',
@@ -992,7 +952,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Saltos de tijera',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/saltos_de_tijera.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/saltos_de_tijera.mp4',
   ARRAY['De pie con los pies juntos y brazos a los lados.', 'Salta abriendo las piernas al ancho de hombros.', 'Simultaneamente, eleva los brazos por encima de la cabeza.', 'Vuelve a la posicion inicial con otro salto.', 'Mantén un ritmo constante y controlado.']::text[],
   'principiante',
   'Ejercicio cardiovascular clasico de calentamiento que consiste en saltar abriendo y cerrando piernas y brazos simultaneamente.',
@@ -1002,7 +962,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Escaladores',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/mountain_climbers.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/mountain_climbers.mp4',
   ARRAY['Colocate en posicion de plancha con las manos debajo de los hombros.', 'Mantén el core firme y la espalda recta.', 'Lleva una rodilla hacia el pecho de forma explosiva.', 'Alterna las piernas rapidamente como si estuvieras escalando.', 'Mantén la cadera baja durante todo el movimiento.']::text[],
   'principiante',
   'Ejercicio de cardio y core en posicion de plancha donde alternas llevando las rodillas al pecho rapidamente.',
@@ -1012,7 +972,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Rodillas al pecho',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/rodillas_al_pecho.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/rodillas_al_pecho.mp4',
   ARRAY['De pie, empieza a trotar en el sitio.', 'Eleva las rodillas hacia el pecho de forma alterna.', 'Mueve los brazos como si estuvieras corriendo.', 'Mantén la espalda recta y el core activado.', 'Aumenta progresivamente la velocidad.']::text[],
   'principiante',
   'Ejercicio de cardio que consiste en correr en el sitio elevando las rodillas lo mas alto posible.',
@@ -1022,7 +982,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Salto de comba',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/salto_de_comba.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/salto_de_comba.mp4',
   ARRAY['Sujeta los extremos de la cuerda con cada mano.', 'Coloca la cuerda detras de los talones.', 'Gira las muñecas para hacer pasar la cuerda por encima de la cabeza.', 'Salta ligeramente cuando la cuerda pase bajo tus pies.', 'Mantén un ritmo constante y aterriza sobre las puntas de los pies.']::text[],
   'principiante',
   'Ejercicio cardiovascular clasico utilizando una cuerda para saltar de forma continua.',
@@ -1032,7 +992,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Sentadillas con salto',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/sentadillas_con_salto.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/sentadillas_con_salto.mp4',
   ARRAY['De pie con los pies al ancho de hombros.', 'Baja a posicion de sentadilla manteniendo la espalda recta.', 'Desde la parte baja, salta explosivamente hacia arriba.', 'Extiende completamente las caderas y rodillas en el aire.', 'Aterriza suavemente con las rodillas flexionadas y vuelve a bajar.']::text[],
   'intermedio',
   'Sentadilla explosiva con salto vertical al final del movimiento para maximizar potencia y frecuencia cardiaca.',
@@ -1042,7 +1002,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Salto al cajon',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/salto_al_cajon.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/salto_al_cajon.mp4',
   ARRAY['Colocate frente al cajon con los pies al ancho de hombros.', 'Flexiona ligeramente las rodillas y lleva los brazos hacia atras.', 'Salta explosivamente impulsandote con ambas piernas.', 'Aterriza suavemente sobre el cajon con las rodillas flexionadas.', 'Ponte de pie completamente sobre el cajon.', 'Baja del cajon caminando (no saltes hacia atras).']::text[],
   'intermedio',
   'Ejercicio pliometrico que consiste en saltar desde el suelo a un cajon elevado, desarrollando potencia explosiva.',
@@ -1052,7 +1012,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Boxeo de sombra',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/boxeo_de_sombra.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/boxeo_de_sombra.mp4',
   ARRAY['Adopta la posicion de guardia: pies separados, pierna dominante atras.', 'Puños a la altura de la barbilla, codos pegados al cuerpo.', 'Lanza combinaciones de golpes al aire: jabs, directos, ganchos.', 'Muevete constantemente: desplazamientos laterales, esquivas.', 'Mantén el ritmo y la respiracion durante todo el ejercicio.']::text[],
   'principiante',
   'Ejercicio de cardio que simula un combate de boxeo lanzando golpes al aire, excelente para coordinacion y ritmo.',
@@ -1062,7 +1022,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Zancadas con salto',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/zancadas_con_salto.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/zancadas_con_salto.mp4',
   ARRAY['De pie, da un paso adelante con una pierna y baja a posicion de zancada.', 'Ambas rodillas deben formar angulos de 90 grados aproximadamente.', 'Desde la posicion baja, salta explosivamente hacia arriba.', 'En el aire, alterna las piernas para aterrizar con la pierna contraria adelantada.', 'Aterriza suavemente y encadena directamente con la siguiente zancada.']::text[],
   'avanzado',
   'Ejercicio pliometrico avanzado que combina zancadas alternas con salto explosivo entre cada repeticion.',
@@ -1072,7 +1032,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Tijeras abdominales',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/tijeras_abdominales.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/tijeras_abdominales.mp4',
   ARRAY['Tumbate boca arriba con las piernas extendidas.', 'Coloca las manos debajo de los gluteos para proteger la zona lumbar.', 'Eleva ligeramente las piernas del suelo.', 'Alterna el movimiento subiendo y bajando las piernas como unas tijeras.', 'Mantén la zona lumbar pegada al suelo durante todo el ejercicio.']::text[],
   'principiante',
   'Ejercicio de resistencia abdominal que consiste en alternar las piernas hacia arriba y hacia abajo en un movimiento de tijera.',
@@ -1082,7 +1042,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Esprints en cinta',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/sprints_en_cinta.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/sprints_en_cinta.mp4',
   ARRAY['Configura la cinta a una velocidad de sprint elevada.', 'Sujetate brevemente a los pasamanos para subirte con seguridad.', 'Suelta los pasamanos y corre a maxima velocidad durante 20-30 segundos.', 'Reduce la velocidad drasticamente o apoya los pies en los laterales para recuperar.', 'Repite el ciclo de sprint y recuperacion segun tu nivel.']::text[],
   'intermedio',
   'Series de velocidad maxima en cinta de correr, alternando con periodos de recuperacion.',
@@ -1092,7 +1052,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Caminata en cinta',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/caminata_en_cinta.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/caminata_en_cinta.mp4',
   ARRAY['Sube a la cinta de correr y configura una velocidad de caminata.', 'Camina de forma natural manteniendo una postura erguida.', 'Balancea los brazos de forma natural.', 'Mantén un ritmo constante durante 20-60 minutos.', 'No te sujetes a los pasamanos para maximizar el trabajo postural.']::text[],
   'principiante',
   'Ejercicio cardiovascular de baja intensidad caminando sobre cinta de correr, ideal para calentamiento o recuperacion activa.',
@@ -1102,7 +1062,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Carrera en cinta',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/carrera_en_cinta.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/carrera_en_cinta.mp4',
   ARRAY['Configura la cinta a una velocidad de carrera moderada.', 'Corre con una postura erguida y zancada natural.', 'Mantén los hombros relajados y la mirada al frente.', 'Respira de forma ritmica y controlada.', 'Corre durante 15-45 minutos segun tu nivel de condicion fisica.']::text[],
   'principiante',
   'Ejercicio cardiovascular corriendo a ritmo moderado sobre cinta de correr para mejorar resistencia aerobica.',
@@ -1112,7 +1072,7 @@ values (
 insert into public.ejercicios (nombre, url_gif, instrucciones, dificultad, descripcion, finalidad)
 values (
   'Escaladora',
-  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/escaladora.gif',
+  'https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/cardio/escaladora.mp4',
   ARRAY['Sube a la maquina de escaleras y selecciona un ritmo comodo.', 'Coloca las manos ligeramente sobre los pasamanos sin apoyar el peso.', 'Mantén la espalda recta y la mirada al frente.', 'Pisa los escalones de forma completa, sin apoyarte solo en las puntas.', 'Mantén un ritmo constante durante 10-30 minutos.']::text[],
   'intermedio',
   'Ejercicio cardiovascular en maquina de escaleras que simula el movimiento de subir escalones de forma continua, excelente para gluteos y piernas.',
