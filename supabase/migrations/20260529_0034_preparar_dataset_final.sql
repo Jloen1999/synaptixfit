@@ -19,8 +19,9 @@ delete from musculos;
 delete from partes_cuerpo;
 
 -- 3) Cambios de esquema para dataset final
--- 3a) Quitar UNIQUE en nombre (384 nombres duplicados en el dataset)
+-- 3a) Quitar restricciones de nombre incompatibles con el dataset final
 alter table public.ejercicios drop constraint if exists ejercicios_nombre_unique;
+alter table public.ejercicios drop constraint if exists ck_ejercicios_nombre_len;
 
 -- 3b) Quitar CHECK de finalidad (el dataset tiene 125+ valores distintos)
 alter table public.ejercicios drop constraint if exists ck_ejercicios_finalidad;
