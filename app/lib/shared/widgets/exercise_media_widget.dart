@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
@@ -8,6 +9,7 @@ enum ExerciseMediaSize { mini, card, hero }
 class ExerciseMediaWidget extends StatefulWidget {
   const ExerciseMediaWidget({
     required this.url,
+    this.previewUrl,
     this.size = ExerciseMediaSize.card,
     this.fit = BoxFit.cover,
     this.borderRadius,
@@ -16,6 +18,7 @@ class ExerciseMediaWidget extends StatefulWidget {
   });
 
   final String? url;
+  final String? previewUrl;
   final ExerciseMediaSize size;
   final BoxFit fit;
   final BorderRadiusGeometry? borderRadius;
@@ -159,6 +162,19 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
   }
 
   Widget _buildMp4Thumbnail(BorderRadiusGeometry radius) {
+    final preview = widget.previewUrl;
+    if (preview != null && preview.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: preview,
+        fit: widget.fit,
+        placeholder: (_, __) => _buildThumbnailPlaceholder(radius),
+        errorWidget: (_, __, ___) => _buildThumbnailPlaceholder(radius),
+      );
+    }
+    return _buildThumbnailPlaceholder(radius);
+  }
+
+  Widget _buildThumbnailPlaceholder(BorderRadiusGeometry radius) {
     final isTiny = widget.size == ExerciseMediaSize.mini;
     return Container(
       decoration: BoxDecoration(
@@ -174,18 +190,10 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.play_circle_fill_rounded,
-              size: isTiny ? 20 : 32,
-              color: SVColors.secondaryContainer.withValues(alpha: 0.7),
+              Icons.fitness_center_rounded,
+              size: isTiny ? 16 : 28,
+              color: SVColors.secondaryContainer.withValues(alpha: 0.5),
             ),
-            if (!isTiny) ...[
-              const SizedBox(height: 4),
-              Text('Video',
-                  style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontWeight: FontWeight.w500)),
-            ],
           ],
         ),
       ),

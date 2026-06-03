@@ -9,6 +9,7 @@ class ExerciseCard extends StatelessWidget {
     required this.muscleGroup,
     this.equipment,
     this.gifUrl,
+    this.previewUrl,
     this.muscleImageUrl,
     this.onTap,
     super.key,
@@ -18,6 +19,7 @@ class ExerciseCard extends StatelessWidget {
   final String muscleGroup;
   final String? equipment;
   final String? gifUrl;
+  final String? previewUrl;
   final String? muscleImageUrl;
   final VoidCallback? onTap;
 
@@ -47,6 +49,7 @@ class ExerciseCard extends StatelessWidget {
                   height: 72,
                   child: ExerciseMediaWidget(
                     url: gifUrl,
+                    previewUrl: previewUrl,
                     size: ExerciseMediaSize.card,
                   ),
                 ),

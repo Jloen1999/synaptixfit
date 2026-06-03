@@ -57,6 +57,7 @@ class DetalleEjercicioScreen extends ConsumerWidget {
           children: [
             ExerciseMediaWidget(
               url: ejercicio.urlGif,
+              previewUrl: ejercicio.urlPreview,
               size: ExerciseMediaSize.hero,
             ),
             Padding(
@@ -93,7 +94,7 @@ class DetalleEjercicioScreen extends ConsumerWidget {
                   ),
                   ...ejercicio.finalidad.map(
                     (f) => _MetaChip(
-                      label: '${f.icono} ${f.etiqueta}',
+                      label: f,
                       icon: Icons.category_rounded,
                       color: _finalidadColor(f),
                     ),
@@ -142,21 +143,25 @@ class DetalleEjercicioScreen extends ConsumerWidget {
   }
 }
 
-Color _finalidadColor(FinalidadEjercicio f) {
-  switch (f) {
-    case FinalidadEjercicio.fuerza:
-      return Colors.orange;
-    case FinalidadEjercicio.cardio:
-      return Colors.teal;
-    case FinalidadEjercicio.isometrico:
-      return Colors.indigo;
-    case FinalidadEjercicio.hipertrofia:
-      return Colors.red;
-    case FinalidadEjercicio.resistencia:
-      return Colors.blue;
-    case FinalidadEjercicio.movilidad:
-      return Colors.green;
-  }
+Color _finalidadColor(String f) {
+  final lower = f.toLowerCase();
+  if (lower.contains('fuerza') || lower.contains('potencia'))
+    return Colors.orange;
+  if (lower.contains('cardio') ||
+      lower.contains('acondicionamiento') ||
+      lower.contains('quema')) return Colors.teal;
+  if (lower.contains('isometric') || lower.contains('estic'))
+    return Colors.indigo;
+  if (lower.contains('hipertrofia') || lower.contains('definicion'))
+    return Colors.red;
+  if (lower.contains('resistencia')) return Colors.blue;
+  if (lower.contains('movilidad') || lower.contains('flexibilidad'))
+    return Colors.green;
+  if (lower.contains('estabilidad') || lower.contains('control'))
+    return Colors.purple;
+  if (lower.contains('core') || lower.contains('abdominal'))
+    return Colors.amber;
+  return Colors.grey;
 }
 
 class _MetaChip extends StatelessWidget {

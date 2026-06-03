@@ -1,17 +1,15 @@
 """
 seed_todo.py - Restaurador de relaciones N:M para SynaptixFit.
 
-Los catalogos y ejercicios se insertan via migraciones SQL (0024-0027).
+Los catalogos y ejercicios se insertan via migraciones SQL (0034-0038).
 Este script unicamente restaura las relaciones N:M (musculos objetivo,
 musculos secundarios, partes del cuerpo, equipamientos) a partir
-de los JSON consolidados.
+del dataset final (dataset_final.json).
 
 Flujo:
    1. Verifica que catalogos y ejercicios existan en la BD
    2. Inserta relaciones N:M para cada ejercicio
    3. Resumen final
-
-Reemplaza a: seed_ejercicios.py, seed_nuevos_ejercicios.py, seed_gym_workout.py
 """
 
 import json
@@ -53,7 +51,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     sys.exit(1)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-EJERCICIOS_JSON = SCRIPT_DIR / "nuevos_ejercicios.json"
+EJERCICIOS_JSON = SCRIPT_DIR / "dataset_final.json"
 MUSCULOS_JSON = SCRIPT_DIR / "musculos.json"
 PARTES_JSON = SCRIPT_DIR / "partes_cuerpo.json"
 EQUIP_JSON = SCRIPT_DIR / "equipamientos.json"
@@ -194,12 +192,12 @@ def main():
     equip_map, total_e, falt_e = cargar_catalogo(supabase, "equipamientos", EQUIP_JSON)
 
     if falt_m or falt_p or falt_e:
-        print("\n  [ERROR] Faltan catalogos. Ejecuta primero las migraciones 0024-0026.")
+        print("\n  [ERROR] Faltan catalogos. Ejecuta primero las migraciones 0034-0038.")
         sys.exit(1)
     print()
 
     # Paso 2: Verificar ejercicios existentes
-    print("Paso 2: Verificando ejercicios (insertados por migracion 0027)...")
+    print("Paso 2: Verificando ejercicios (insertados por migracion 0038)...")
     resp = supabase.table("ejercicios").select("id, nombre").execute()
     ejercicios_bd = {}
     for row in resp.data:
@@ -215,7 +213,7 @@ def main():
         print(f"  [ERROR] {len(faltan)} ejercicios faltantes en BD:")
         for n in faltan:
             print(f"         - {n}")
-        print("   Ejecuta primero la migracion 0027.")
+        print("   Ejecuta primero la migracion 0038.")
         sys.exit(1)
     else:
         print(f"  [OK] {len(ejercicios_bd)}/{len(ejercicios)} ejercicios en BD")

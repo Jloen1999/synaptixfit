@@ -1,54 +1,59 @@
 [
   {
-    "nombre": "abdomen",
-    "fuente": "demic"
+    "nombre": "Antebrazos"
   },
   {
-    "nombre": "antebrazos",
-    "fuente": "exercisedb"
+    "nombre": "Brazos"
   },
   {
-    "nombre": "brazos (parte superior)",
-    "fuente": "exercisedb"
+    "nombre": "Cadera"
   },
   {
-    "nombre": "cardio",
-    "fuente": "exercisedb"
+    "nombre": "Caderas"
   },
   {
-    "nombre": "cintura",
-    "fuente": "exercisedb"
+    "nombre": "Core"
   },
   {
-    "nombre": "core",
-    "fuente": "demic"
+    "nombre": "Cuello"
   },
   {
-    "nombre": "cuello",
-    "fuente": "exercisedb"
+    "nombre": "Cuerpo completo"
   },
   {
-    "nombre": "espalda",
-    "fuente": "exercisedb"
+    "nombre": "Espalda"
   },
   {
-    "nombre": "glúteos",
-    "fuente": "demic"
+    "nombre": "Espalda alta"
   },
   {
-    "nombre": "hombros",
-    "fuente": "exercisedb"
+    "nombre": "Flexibilidad"
   },
   {
-    "nombre": "pecho",
-    "fuente": "exercisedb"
+    "nombre": "Hombros"
   },
   {
-    "nombre": "piernas (parte inferior)",
-    "fuente": "exercisedb"
+    "nombre": "Manos"
   },
   {
-    "nombre": "piernas (parte superior)",
-    "fuente": "exercisedb"
+    "nombre": "Movilidad"
+  },
+  {
+    "nombre": "Pecho"
+  },
+  {
+    "nombre": "Piernas"
+  },
+  {
+    "nombre": "Pies"
+  },
+  {
+    "nombre": "Tren inferior"
+  },
+  {
+    "nombre": "Tren superior"
+  },
+  {
+    "nombre": "Zona media"
   }
 ]

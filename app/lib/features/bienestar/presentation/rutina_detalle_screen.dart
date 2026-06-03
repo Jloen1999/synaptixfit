@@ -978,8 +978,8 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
     final nombresAsync = ref.watch(nombresEjerciciosProvider(widget.diaId));
     final nombre = nombresAsync.valueOrNull?[e.ejercicioId];
     final ejercicioAsync = ref.watch(ejercicioDetalleProvider(e.ejercicioId));
-    final finalidad = ejercicioAsync.valueOrNull?.finalidadPrincipal ??
-        FinalidadEjercicio.fuerza;
+    final finalidad =
+        ejercicioAsync.valueOrNull?.finalidadPrincipal ?? 'fuerza';
     return Column(
       children: [
         InkWell(
@@ -1043,53 +1043,47 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
     );
   }
 
-  String _buildDesc(FinalidadEjercicio finalidad, SeleccionEjercicioDb e) {
-    switch (finalidad) {
-      case FinalidadEjercicio.cardio:
-        final dur = (_editando ? _duracionSegundos : e.duracionSegundos) ?? 0;
-        final dist = _editando ? _distanciaMetros : e.distanciaMetros;
-        final mins = dur ~/ 60;
-        final segs = dur % 60;
-        final durStr = mins > 0 ? '${mins}m ${segs}s' : '${segs}s';
-        final desc = '${_editando ? _descanso : e.segundosDescanso}s';
-        return '$durStr · ${dist != null ? '${dist}m · ' : ''}$desc descanso';
-      case FinalidadEjercicio.isometrico:
-        final tiempo =
-            (_editando ? _tiempoIsometrico : e.tiempoIsometricoSegundos) ?? 0;
-        final series = _editando ? _series : e.series;
-        final desc = '${_editando ? _descanso : e.segundosDescanso}s';
-        return '${series}×${tiempo}s · $desc descanso';
-      case FinalidadEjercicio.movilidad:
-        final tiempo2 =
-            (_editando ? _tiempoIsometrico : e.tiempoIsometricoSegundos) ?? 0;
-        final series2 = _editando ? _series : e.series;
-        final desc2 = '${_editando ? _descanso : e.segundosDescanso}s';
-        return '${series2}×${tiempo2}s · $desc2 descanso';
-      case FinalidadEjercicio.fuerza:
-      case FinalidadEjercicio.hipertrofia:
-      case FinalidadEjercicio.resistencia:
-        final series = _editando ? _series : e.series;
-        final reps = _editando ? _reps : e.repeticiones;
-        final desc = '${_editando ? _descanso : e.segundosDescanso}s';
-        final peso = _editando ? _peso : e.pesoKg;
-        final pesoTxt = peso != null ? ' · ${peso.toStringAsFixed(1)} kg' : '';
-        return '${series}×${reps} · $desc descanso$pesoTxt';
+  String _buildDesc(String finalidad, SeleccionEjercicioDb e) {
+    final lower = finalidad.toLowerCase();
+    if (lower.contains('cardio') || lower.contains('acondicionamiento')) {
+      final dur = (_editando ? _duracionSegundos : e.duracionSegundos) ?? 0;
+      final dist = _editando ? _distanciaMetros : e.distanciaMetros;
+      final mins = dur ~/ 60;
+      final segs = dur % 60;
+      final durStr = mins > 0 ? '${mins}m ${segs}s' : '${segs}s';
+      final desc = '${_editando ? _descanso : e.segundosDescanso}s';
+      return '$durStr · ${dist != null ? '${dist}m · ' : ''}$desc descanso';
     }
+    if (lower.contains('isometric') ||
+        lower.contains('movilidad') ||
+        lower.contains('flexibilidad') ||
+        lower.contains('estabilidad')) {
+      final tiempo =
+          (_editando ? _tiempoIsometrico : e.tiempoIsometricoSegundos) ?? 0;
+      final series = _editando ? _series : e.series;
+      final desc = '${_editando ? _descanso : e.segundosDescanso}s';
+      return '${series}x${tiempo}s . $desc descanso';
+    }
+    final series = _editando ? _series : e.series;
+    final reps = _editando ? _reps : e.repeticiones;
+    final desc = '${_editando ? _descanso : e.segundosDescanso}s';
+    final peso = _editando ? _peso : e.pesoKg;
+    final pesoTxt = peso != null ? ' . ${peso.toStringAsFixed(1)} kg' : '';
+    return '${series}x${reps} . $desc descanso$pesoTxt';
   }
 
-  Widget _buildEditFields(FinalidadEjercicio finalidad) {
-    switch (finalidad) {
-      case FinalidadEjercicio.cardio:
-        return _buildCardioEditFields();
-      case FinalidadEjercicio.isometrico:
-        return _buildIsometricoEditFields();
-      case FinalidadEjercicio.fuerza:
-      case FinalidadEjercicio.hipertrofia:
-      case FinalidadEjercicio.resistencia:
-        return _buildFuerzaEditFields();
-      case FinalidadEjercicio.movilidad:
-        return _buildIsometricoEditFields();
+  Widget _buildEditFields(String finalidad) {
+    final lower = finalidad.toLowerCase();
+    if (lower.contains('cardio') || lower.contains('acondicionamiento')) {
+      return _buildCardioEditFields();
     }
+    if (lower.contains('isometric') ||
+        lower.contains('movilidad') ||
+        lower.contains('flexibilidad') ||
+        lower.contains('estabilidad')) {
+      return _buildIsometricoEditFields();
+    }
+    return _buildFuerzaEditFields();
   }
 
   Widget _buildFuerzaEditFields() {

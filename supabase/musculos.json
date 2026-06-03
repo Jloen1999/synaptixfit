@@ -1,257 +1,281 @@
 [
   {
-    "nombre": "abdomen",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abdomen_abdominales.webp"
+    "nombre": "Abductores"
   },
   {
-    "nombre": "abdomen inferior",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abdomen_inferior.webp"
+    "nombre": "Aductores"
   },
   {
-    "nombre": "abductores",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/abductores.webp"
+    "nombre": "Aductores del muslo"
   },
   {
-    "nombre": "aductores",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/aductores.webp"
+    "nombre": "Antebrazos"
   },
   {
-    "nombre": "antebrazos",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/antebrazos.webp"
+    "nombre": "Braquial"
   },
   {
-    "nombre": "braquial",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/braquial.webp"
+    "nombre": "Braquial anterior"
   },
   {
-    "nombre": "braquiorradial",
-    "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/braquiorradial.webp"
+    "nombre": "Braquiorradial"
   },
   {
-    "nombre": "bíceps",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/biceps.webp"
+    "nombre": "Bíceps"
   },
   {
-    "nombre": "columna",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/columna.webp"
+    "nombre": "Bíceps braquial"
   },
   {
-    "nombre": "coracobraquial",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/coracobraquial.webp"
+    "nombre": "Coracobraquial"
   },
   {
-    "nombre": "core",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/core.webp"
+    "nombre": "Core"
   },
   {
-    "nombre": "cuádriceps",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/cuadriceps.webp"
+    "nombre": "Core (como estabilizador)"
   },
   {
-    "nombre": "deltoides",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides.webp"
+    "nombre": "Cuadrado lumbar"
   },
   {
-    "nombre": "deltoides anterior",
-    "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides_anterior.webp"
+    "nombre": "Cuádriceps"
   },
   {
-    "nombre": "deltoides medio",
-    "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoides_medio.webp"
+    "nombre": "Deltoides"
   },
   {
-    "nombre": "deltoides posteriores",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/deltoide_posterior.webp"
+    "nombre": "Deltoides anterior"
   },
   {
-    "nombre": "dorsal ancho",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/dorsal_ancho.webp"
+    "nombre": "Deltoides medio"
   },
   {
-    "nombre": "elevador de la escápula",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/elevador_escapula.webp"
+    "nombre": "Deltoides posterior"
   },
   {
-    "nombre": "espalda",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/espalda.webp"
+    "nombre": "Dorsal ancho"
   },
   {
-    "nombre": "espalda alta",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/espalda_alta.webp"
+    "nombre": "Elevador de la escápula"
   },
   {
-    "nombre": "estabilizadores de tobillo",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/estabilizador_tobillo.webp"
+    "nombre": "Erectores espinales"
   },
   {
-    "nombre": "esternocleidomastoideo",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/esternocleidomastoideo.webp"
+    "nombre": "Erectores espinales torácicos"
   },
   {
-    "nombre": "extensores de muñeca",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/extensores_muneca.webp"
+    "nombre": "Escalenos"
   },
   {
-    "nombre": "flexores de la cadera",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/flexor_cadera.webp"
+    "nombre": "Estabilizadores de la escápula"
   },
   {
-    "nombre": "flexores de muñeca",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/flexor_muneca.webp"
+    "nombre": "Estabilizadores globales"
   },
   {
-    "nombre": "gemelos",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gemelos.webp"
+    "nombre": "Esternocleidomastoideo"
   },
   {
-    "nombre": "glúteo mayor",
-    "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gluteo_mayor.webp"
+    "nombre": "Extensor radial corto del carpo"
   },
   {
-    "nombre": "glúteo medio",
-    "fuente": "demic",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/gluteo_medio.webp"
+    "nombre": "Extensor radial largo del carpo"
   },
   {
-    "nombre": "ingle",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/ingle.webp"
+    "nombre": "Extensores de la muñeca"
   },
   {
-    "nombre": "isquiotibiales",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/isquiotibiales.webp"
+    "nombre": "Extensores de los dedos"
   },
   {
-    "nombre": "manguito rotador",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/manguito_rotador.webp"
+    "nombre": "Extensores de muñeca"
   },
   {
-    "nombre": "manos",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/manos.webp"
+    "nombre": "Extensores del antebrazo"
   },
   {
-    "nombre": "muñecas",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/muneca.webp"
+    "nombre": "Flexores de antebrazo"
   },
   {
-    "nombre": "músculos de agarre",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/agarre.webp"
+    "nombre": "Flexores de cadera"
   },
   {
-    "nombre": "oblicuos",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/oblicuos.webp"
+    "nombre": "Flexores de la muñeca"
   },
   {
-    "nombre": "pecho",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pecho.webp"
+    "nombre": "Flexores de los dedos"
   },
   {
-    "nombre": "pecho superior",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pecho_superior.webp"
+    "nombre": "Flexores de muñeca"
   },
   {
-    "nombre": "pectíneo",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pectineo.webp"
+    "nombre": "Flexores del antebrazo"
   },
   {
-    "nombre": "pies",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/pies.webp"
+    "nombre": "Gastrocnemio"
   },
   {
-    "nombre": "redondo mayor",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/redondo_mayor.webp"
+    "nombre": "Gemelos"
   },
   {
-    "nombre": "redondo menor",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/redondo_menor.webp"
+    "nombre": "Glúteo mayor"
   },
   {
-    "nombre": "romboides",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/romboides.webp"
+    "nombre": "Glúteo medio"
   },
   {
-    "nombre": "serrato anterior",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/serrato_anterior.webp"
+    "nombre": "Glúteos"
   },
   {
-    "nombre": "sistema cardiovascular",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/sistema_cardiovascular.webp"
+    "nombre": "Grupo muscular objetivo del estiramiento"
   },
   {
-    "nombre": "supraespinoso",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/supraespinoso.webp"
+    "nombre": "Grupo muscular principal"
   },
   {
-    "nombre": "sóleo",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/soleo.webp"
+    "nombre": "Hombros"
   },
   {
-    "nombre": "tensor de la fascia lata",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/tensor_fascia_lata.webp"
+    "nombre": "Iliopsoas"
   },
   {
-    "nombre": "tibial anterior",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/tibial_anterior.webp"
+    "nombre": "Isquiosurales"
   },
   {
-    "nombre": "trapecios",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/trapecios.webp"
+    "nombre": "Isquiotibiales"
   },
   {
-    "nombre": "tríceps",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/triceps.webp"
+    "nombre": "Manguito rotador"
   },
   {
-    "nombre": "zona lumbar",
-    "fuente": "exercisedb",
-    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/musculos/zona_lumbar.webp"
+    "nombre": "Movilidad articular"
+  },
+  {
+    "nombre": "Multífidos"
+  },
+  {
+    "nombre": "Músculos intrínsecos de la mano"
+  },
+  {
+    "nombre": "Músculos intrínsecos del pie"
+  },
+  {
+    "nombre": "Músculos paravertebrales"
+  },
+  {
+    "nombre": "Oblicuo externo"
+  },
+  {
+    "nombre": "Oblicuo interno"
+  },
+  {
+    "nombre": "Oblicuos"
+  },
+  {
+    "nombre": "Pantorrillas"
+  },
+  {
+    "nombre": "Pectoral"
+  },
+  {
+    "nombre": "Pectoral mayor"
+  },
+  {
+    "nombre": "Pectoral mayor (clavicular)"
+  },
+  {
+    "nombre": "Pectoral mayor (porción clavicular)"
+  },
+  {
+    "nombre": "Pectoral mayor (porción inferior)"
+  },
+  {
+    "nombre": "Pectoral menor"
+  },
+  {
+    "nombre": "Piernas"
+  },
+  {
+    "nombre": "Psoas ilíaco"
+  },
+  {
+    "nombre": "Recto abdominal"
+  },
+  {
+    "nombre": "Recto abdominal inferior"
+  },
+  {
+    "nombre": "Recto abdominal superior"
+  },
+  {
+    "nombre": "Recto femoral"
+  },
+  {
+    "nombre": "Redondo mayor"
+  },
+  {
+    "nombre": "Romboides"
+  },
+  {
+    "nombre": "Romboides mayor"
+  },
+  {
+    "nombre": "Romboides menor"
+  },
+  {
+    "nombre": "Sartorio"
+  },
+  {
+    "nombre": "Serrato anterior"
+  },
+  {
+    "nombre": "Suelo pélvico"
+  },
+  {
+    "nombre": "Supraespinoso"
+  },
+  {
+    "nombre": "Sóleo"
+  },
+  {
+    "nombre": "Tejido conectivo"
+  },
+  {
+    "nombre": "Tensor de la fascia lata"
+  },
+  {
+    "nombre": "Tibial anterior"
+  },
+  {
+    "nombre": "Tibial posterior"
+  },
+  {
+    "nombre": "Transverso abdominal"
+  },
+  {
+    "nombre": "Trapecio"
+  },
+  {
+    "nombre": "Trapecio inferior"
+  },
+  {
+    "nombre": "Trapecio medio"
+  },
+  {
+    "nombre": "Trapecio superior"
+  },
+  {
+    "nombre": "Tríceps"
+  },
+  {
+    "nombre": "Tríceps braquial"
+  },
+  {
+    "nombre": "Tríceps braquial (cabeza larga)"
+  },
+  {
+    "nombre": "Tríceps braquial (énfasis en la cabeza larga)"
   }
 ]

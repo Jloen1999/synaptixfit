@@ -31,7 +31,7 @@ class _EjercicioPlan {
 
   final String ejercicioId;
   final String nombre;
-  final FinalidadEjercicio finalidad;
+  final String finalidad;
   final String? urlGif;
   final int series;
   final int repeticiones;
@@ -1358,7 +1358,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
           return _EjercicioPlan(
             ejercicioId: match?.id ?? e.ejercicioId,
             nombre: match?.nombre ?? 'Ejercicio recomendado',
-            finalidad: match?.finalidadPrincipal ?? FinalidadEjercicio.fuerza,
+            finalidad: match?.finalidadPrincipal ?? 'fuerza',
             urlGif: match?.urlGif,
             series: e.series,
             repeticiones: e.repeticiones,
@@ -1497,7 +1497,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         _estructura[semana]![dia]!.add(_EjercicioPlan(
           ejercicioId: match?.id ?? rec.ejercicioId,
           nombre: match?.nombre ?? 'Ejercicio sugerido',
-          finalidad: match?.finalidadPrincipal ?? FinalidadEjercicio.fuerza,
+          finalidad: match?.finalidadPrincipal ?? 'fuerza',
           urlGif: match?.urlGif,
           series: rec.series,
           repeticiones: rec.repeticiones,
@@ -1781,7 +1781,7 @@ class _DiaEditorCardState extends State<_DiaEditorCard> {
               widget.onEjercicioAdded(_EjercicioPlan(
                   ejercicioId: id,
                   nombre: nombre,
-                  finalidad: FinalidadEjercicio.fromString(finalidad),
+                  finalidad: finalidad,
                   urlGif: urlGif))),
     );
   }
@@ -1961,21 +1961,24 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   // ---------------------------------------------------------------------------
   // Chip de finalidad (miniatura)
   // ---------------------------------------------------------------------------
-  Widget _finalidadChip(FinalidadEjercicio f, ColorScheme cs) {
+  Widget _finalidadChip(String f, ColorScheme cs) {
+    final lower = f.toLowerCase();
     Color chipColor;
-    switch (f) {
-      case FinalidadEjercicio.fuerza:
-        chipColor = Colors.orange;
-      case FinalidadEjercicio.cardio:
-        chipColor = Colors.teal;
-      case FinalidadEjercicio.isometrico:
-        chipColor = Colors.indigo;
-      case FinalidadEjercicio.hipertrofia:
-        chipColor = Colors.red;
-      case FinalidadEjercicio.resistencia:
-        chipColor = Colors.blue;
-      case FinalidadEjercicio.movilidad:
-        chipColor = Colors.green;
+    if (lower.contains('hipertrofia')) {
+      chipColor = Colors.red;
+    } else if (lower.contains('fuerza') || lower.contains('potencia')) {
+      chipColor = Colors.orange;
+    } else if (lower.contains('cardio') ||
+        lower.contains('acondicionamiento')) {
+      chipColor = Colors.teal;
+    } else if (lower.contains('resistencia')) {
+      chipColor = Colors.blue;
+    } else if (lower.contains('movilidad') || lower.contains('flexibilidad')) {
+      chipColor = Colors.green;
+    } else if (lower.contains('isometric')) {
+      chipColor = Colors.indigo;
+    } else {
+      chipColor = Colors.grey;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1985,7 +1988,7 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
         border: Border.all(color: chipColor.withValues(alpha: 0.25)),
       ),
       child: Text(
-        '${f.icono} ${f.etiqueta}',
+        f,
         style: TextStyle(
             fontSize: 9,
             fontWeight: FontWeight.w700,
@@ -1998,21 +2001,18 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   // ---------------------------------------------------------------------------
   // Renderizado condicional de campos según finalidad
   // ---------------------------------------------------------------------------
-  Widget _buildCamposDinamicos(
-      FinalidadEjercicio f, double anchoPill, ColorScheme cs) {
-    switch (f) {
-      case FinalidadEjercicio.fuerza:
-        return _camposFuerza(anchoPill, cs);
-      case FinalidadEjercicio.cardio:
-        return _camposCardio(anchoPill, cs);
-      case FinalidadEjercicio.isometrico:
-        return _camposIsometrico(anchoPill, cs);
-      case FinalidadEjercicio.hipertrofia:
-      case FinalidadEjercicio.resistencia:
-        return _camposFuerza(anchoPill, cs);
-      case FinalidadEjercicio.movilidad:
-        return _camposIsometrico(anchoPill, cs);
+  Widget _buildCamposDinamicos(String f, double anchoPill, ColorScheme cs) {
+    final lower = f.toLowerCase();
+    if (lower.contains('cardio') || lower.contains('acondicionamiento')) {
+      return _camposCardio(anchoPill, cs);
     }
+    if (lower.contains('isometric') ||
+        lower.contains('movilidad') ||
+        lower.contains('flexibilidad') ||
+        lower.contains('estabilidad')) {
+      return _camposIsometrico(anchoPill, cs);
+    }
+    return _camposFuerza(anchoPill, cs);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -2630,9 +2630,10 @@ class _BuscadorEjerciciosSheetState extends State<_BuscadorEjerciciosSheet> {
             final eId = e['id'] as String;
             final eNombre = e['nombre'] as String;
             final eFinalidadRaw = e['finalidad'];
-            final eFinalidad = (eFinalidadRaw is List && eFinalidadRaw.isNotEmpty)
-                ? eFinalidadRaw[0].toString()
-                : (eFinalidadRaw is String ? eFinalidadRaw : 'fuerza');
+            final eFinalidad =
+                (eFinalidadRaw is List && eFinalidadRaw.isNotEmpty)
+                    ? eFinalidadRaw[0].toString()
+                    : (eFinalidadRaw is String ? eFinalidadRaw : 'fuerza');
             final eGif = e['url_gif'] as String?;
             return ListTile(
                 dense: true,

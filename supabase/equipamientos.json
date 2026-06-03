@@ -1,110 +1,224 @@
 [
   {
-    "nombre": "almohada",
-    "fuente": "demic"
+    "nombre": "Agarre de cuerda"
   },
   {
-    "nombre": "banco",
-    "fuente": "demic"
+    "nombre": "Agarre de mano simple"
   },
   {
-    "nombre": "banco inclinado",
-    "fuente": "demic"
+    "nombre": "Agarre estrecho neutro"
   },
   {
-    "nombre": "banda de resistencia",
-    "fuente": "demic"
+    "nombre": "Almohadilla protectora"
   },
   {
-    "nombre": "barra",
-    "fuente": "demic"
+    "nombre": "Anillas"
   },
   {
-    "nombre": "barra en t",
-    "fuente": "gym_workout"
+    "nombre": "Asistencia"
   },
   {
-    "nombre": "barra ez",
-    "fuente": "demic"
+    "nombre": "Balón medicinal"
   },
   {
-    "nombre": "barra olímpica",
-    "fuente": "demic"
+    "nombre": "Banco"
   },
   {
-    "nombre": "cuerda",
-    "fuente": "demic"
+    "nombre": "Banco (opcional para soporte)"
   },
   {
-    "nombre": "discos de pesas",
-    "fuente": "demic"
+    "nombre": "Banco declinado"
   },
   {
-    "nombre": "equipo asistido",
-    "fuente": "demic"
+    "nombre": "Banco inclinado"
   },
   {
-    "nombre": "lastre",
-    "fuente": "demic"
+    "nombre": "Banco o silla"
   },
   {
-    "nombre": "mancuerna",
-    "fuente": "demic"
+    "nombre": "Banco plano"
   },
   {
-    "nombre": "mancuernas",
-    "fuente": "demic"
+    "nombre": "Banco predicador"
   },
   {
-    "nombre": "máquina contractora",
-    "fuente": "gym_workout"
+    "nombre": "Banco regulable"
   },
   {
-    "nombre": "máquina convergente",
-    "fuente": "demic"
+    "nombre": "Banda de resistencia"
   },
   {
-    "nombre": "máquina de curl",
-    "fuente": "exercisedb"
+    "nombre": "Banda de resistencia tubular"
   },
   {
-    "nombre": "máquina de extensión",
-    "fuente": "demic"
+    "nombre": "Banda elástica"
   },
   {
-    "nombre": "máquina hack",
-    "fuente": "exercisedb"
+    "nombre": "Barra"
   },
   {
-    "nombre": "máquina smith",
-    "fuente": "demic"
+    "nombre": "Barra de dominadas"
   },
   {
-    "nombre": "pesa rusa",
-    "fuente": "exercisedb"
+    "nombre": "Barra ez"
   },
   {
-    "nombre": "peso corporal",
-    "fuente": "demic"
+    "nombre": "Barra fija"
   },
   {
-    "nombre": "polea",
-    "fuente": "demic"
+    "nombre": "Barra larga"
   },
   {
-    "nombre": "prensa de piernas",
-    "fuente": "demic"
+    "nombre": "Barra recta"
   },
   {
-    "nombre": "cajon pliometrico",
-    "fuente": "synaptixfit"
+    "nombre": "Barra recta de polea"
   },
   {
-    "nombre": "cinta de correr",
-    "fuente": "synaptixfit"
+    "nombre": "Barra vertical"
   },
   {
-    "nombre": "maquina de escaleras",
-    "fuente": "synaptixfit"
+    "nombre": "Barras paralelas"
+  },
+  {
+    "nombre": "Barras paralelas bajas"
+  },
+  {
+    "nombre": "Battle ropes"
+  },
+  {
+    "nombre": "Bicicleta estática"
+  },
+  {
+    "nombre": "Cajón"
+  },
+  {
+    "nombre": "Cajón pliométrico"
+  },
+  {
+    "nombre": "Cinta rodante"
+  },
+  {
+    "nombre": "Cinturón de lastre"
+  },
+  {
+    "nombre": "Colchoneta"
+  },
+  {
+    "nombre": "Comba"
+  },
+  {
+    "nombre": "Cuerda de tríceps"
+  },
+  {
+    "nombre": "Disco"
+  },
+  {
+    "nombre": "Discos de pesas"
+  },
+  {
+    "nombre": "Déficit o escalón"
+  },
+  {
+    "nombre": "Ergómetro de remo"
+  },
+  {
+    "nombre": "Escalera"
+  },
+  {
+    "nombre": "Escalera de agilidad"
+  },
+  {
+    "nombre": "Escalón"
+  },
+  {
+    "nombre": "Fitball"
+  },
+  {
+    "nombre": "Foam roller"
+  },
+  {
+    "nombre": "Kettlebell"
+  },
+  {
+    "nombre": "Landmine"
+  },
+  {
+    "nombre": "Lastre"
+  },
+  {
+    "nombre": "Mancuerna"
+  },
+  {
+    "nombre": "Mancuernas"
+  },
+  {
+    "nombre": "Maneral de agarre estrecho (triángulo o v-bar)"
+  },
+  {
+    "nombre": "Máquina de palanca"
+  },
+  {
+    "nombre": "Máquina de poleas"
+  },
+  {
+    "nombre": "Máquina de prensa de piernas"
+  },
+  {
+    "nombre": "Máquina de prensa de piernas a 45°"
+  },
+  {
+    "nombre": "Máquina elíptica"
+  },
+  {
+    "nombre": "Máquina escaladora"
+  },
+  {
+    "nombre": "Máquina smith"
+  },
+  {
+    "nombre": "Pared"
+  },
+  {
+    "nombre": "Peso corporal"
+  },
+  {
+    "nombre": "Polea"
+  },
+  {
+    "nombre": "Rack de sentadillas"
+  },
+  {
+    "nombre": "Rodillo de espuma"
+  },
+  {
+    "nombre": "Rodillo de muñeca"
+  },
+  {
+    "nombre": "Silla"
+  },
+  {
+    "nombre": "Sillas"
+  },
+  {
+    "nombre": "Sin equipamiento"
+  },
+  {
+    "nombre": "Soporte"
+  },
+  {
+    "nombre": "Soporte de banca"
+  },
+  {
+    "nombre": "Suelo"
+  },
+  {
+    "nombre": "Superficie elevada"
+  },
+  {
+    "nombre": "Suspensión"
+  },
+  {
+    "nombre": "Toalla"
   }
 ]

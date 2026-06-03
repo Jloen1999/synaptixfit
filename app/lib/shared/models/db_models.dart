@@ -152,6 +152,7 @@ class EjercicioDb {
     required this.id,
     required this.nombre,
     this.urlGif,
+    this.urlPreview,
     required this.instrucciones,
     required this.dificultad,
     this.descripcion,
@@ -167,6 +168,7 @@ class EjercicioDb {
   final String id;
   final String nombre;
   final String? urlGif;
+  final String? urlPreview;
   final List<String> instrucciones;
   final String dificultad;
   final String? descripcion;
@@ -174,33 +176,30 @@ class EjercicioDb {
   final List<String> musculosObjetivo;
   final List<String> musculosSecundarios;
   final List<String> equipamientos;
-  final List<FinalidadEjercicio> finalidad;
+  final List<String> finalidad;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
-  /// Primer músculo objetivo como etiqueta resumida.
   String get musculoPrincipal =>
       musculosObjetivo.isNotEmpty ? musculosObjetivo.first : 'General';
 
-  /// Primer equipamiento como etiqueta resumida.
   String get equipamientoPrincipal =>
       equipamientos.isNotEmpty ? equipamientos.first : 'Sin equipo';
 
-  /// Primera parte del cuerpo como etiqueta resumida.
   String get parteCuerpoPrincipal =>
       partesCuerpo.isNotEmpty ? partesCuerpo.first : 'General';
 
-  /// Primera finalidad como valor principal para compatibilidad.
-  FinalidadEjercicio get finalidadPrincipal =>
-      finalidad.isNotEmpty ? finalidad.first : FinalidadEjercicio.fuerza;
+  String get finalidadPrincipal =>
+      finalidad.isNotEmpty ? finalidad.first : 'fuerza';
 
   factory EjercicioDb.fromMap(Map<String, dynamic> map) {
     return EjercicioDb(
       id: map['id'] as String,
       nombre: map['nombre'] as String,
       urlGif: map['url_gif'] as String?,
+      urlPreview: map['url_preview'] as String?,
       instrucciones: _parseStringList(map['instrucciones']),
-      dificultad: (map['dificultad'] as String?) ?? 'medio',
+      dificultad: (map['dificultad'] as String?) ?? 'intermedio',
       descripcion: map['descripcion'] as String?,
       partesCuerpo: _parseStringList(map['partes_cuerpo']),
       musculosObjetivo: _parseStringList(map['musculos_objetivo']),
@@ -220,7 +219,7 @@ class EjercicioDb {
       'instrucciones': instrucciones,
       'dificultad': dificultad,
       'descripcion': descripcion,
-      'finalidad': finalidad.map((f) => f.name).toList(),
+      'finalidad': finalidad,
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -1548,18 +1547,16 @@ List<String> _parseStringList(dynamic value) {
   return [];
 }
 
-List<FinalidadEjercicio> _parseFinalidad(dynamic value) {
+List<String> _parseFinalidad(dynamic value) {
   if (value is List) {
-    return FinalidadEjercicio.fromStrings(
-        value.map((e) => e.toString()).toList());
+    return value.map((e) => e.toString()).toList();
   }
   if (value is String) {
     final trimmed = value.replaceAll(RegExp(r'^\{|\}$'), '');
-    if (trimmed.isEmpty) return [FinalidadEjercicio.fuerza];
-    return FinalidadEjercicio.fromStrings(
-        trimmed.split(',').map((e) => e.trim()).toList());
+    if (trimmed.isEmpty) return ['fuerza'];
+    return trimmed.split(',').map((e) => e.trim()).toList();
   }
-  return [FinalidadEjercicio.fuerza];
+  return ['fuerza'];
 }
 
 // ---------------------------------------------------------------------------

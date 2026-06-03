@@ -249,6 +249,7 @@ class _ExploradorEjerciciosScreenState
         muscleGroup: item.musculoPrincipal,
         equipment: item.equipamientoPrincipal,
         gifUrl: item.urlGif,
+        previewUrl: item.urlPreview,
         muscleImageUrl: muscleImageUrl,
         onTap: () => context.push(
           '/bienestar/ejercicio/${item.id}',
@@ -263,6 +264,7 @@ class _ExploradorEjerciciosScreenState
           muscleGroup: item.musculoPrincipal,
           equipment: item.equipamientoPrincipal,
           gifUrl: item.urlGif,
+          previewUrl: item.urlPreview,
           muscleImageUrl: muscleImageUrl,
           onTap: () => _modoSeleccion
               ? notifier.toggleEjercicio(item.id, item.nombre)
