@@ -46,7 +46,7 @@ final retosProvider = FutureProvider<List<RetoResumen>>((ref) async {
   final retosData = await client
       .from('retos')
       .select(
-          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en, racha_actual, mejor_racha, ultimo_dia_activo')
+          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en')
       .eq('usuario_id', user.id)
       .eq('esta_completado', false)
       .order('fecha_fin', ascending: true);
@@ -315,7 +315,7 @@ final retosPublicosProvider = FutureProvider<List<RetoResumen>>((ref) async {
   final retosData = await client
       .from('retos')
       .select(
-          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en, racha_actual, mejor_racha, ultimo_dia_activo')
+          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en')
       .eq('visibilidad', 'publico')
       .neq('usuario_id', user.id)
       .eq('esta_completado', false)
