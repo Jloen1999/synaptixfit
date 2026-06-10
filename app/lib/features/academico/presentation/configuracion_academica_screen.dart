@@ -62,7 +62,7 @@ class _ConfiguracionAcademicaScreenState
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('Error: $e'),
             data: (universidades) => DropdownButtonFormField<String>(
-              value: _universidadId,
+              initialValue: _universidadId,
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'Universidad'),
               items: universidades
@@ -93,7 +93,7 @@ class _ConfiguracionAcademicaScreenState
                       'No hay carreras disponibles para esta universidad.');
                 }
                 return DropdownButtonFormField<String>(
-                  value: _carreraId,
+                  initialValue: _carreraId,
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Carrera'),
                   items: carreras.map((c) {

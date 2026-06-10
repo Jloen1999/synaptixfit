@@ -1,9 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/config/env_config.dart';
 import '../../../shared/models/db_models.dart';
 import '../../auth/infrastructure/bienestar_repository.dart';
+import '../../dashboard/application/dashboard_provider.dart';
+import '../../perfil/application/perfil_provider.dart';
+import '../infrastructure/recomendacion_contexto_service.dart';
 import '../infrastructure/recomendacion_ia_service.dart';
+import '../infrastructure/recomendacion_orquestador_service.dart';
+import 'ejercicios_provider.dart';
 
 class ItemRutina {
   const ItemRutina({
@@ -467,17 +474,7 @@ Future<String> crearRutinaCompleta({
   final user = client.auth.currentUser;
   if (user == null) throw Exception('No autenticado');
 
-  const objetivosValidos = [
-    'fitness_general',
-    'perder_peso',
-    'ganar_masa',
-    'fuerza',
-    'resistencia',
-    'movilidad',
-    'mixto',
-  ];
-  final objetivoFinal =
-      objetivosValidos.contains(objetivo) ? objetivo : 'fuerza';
+  final objetivoFinal = sanitizarObjetivo(objetivo);
 
   final rutinaData = await client
       .from('rutinas')
@@ -537,6 +534,7 @@ Future<String> crearRutinaCompleta({
             'segundos_descanso': e.segundosDescanso,
             'indice_orden': i + 1,
             if (e.pesoKg != null) 'peso_kg': e.pesoKg,
+            if (e.pesosKg != null) 'pesos_kg': e.pesosKg,
             if (e.duracionSegundos != null)
               'duracion_segundos': e.duracionSegundos,
             if (e.distanciaMetros != null)
@@ -726,7 +724,45 @@ Future<String> iniciarSesion({
   return data['id'] as String;
 }
 
-Future<void> finalizarSesion({
+class XpResultado {
+  final int xpGanado;
+  final int nuevoNivel;
+  final int nuevaXp;
+  final bool subeNivel;
+
+  const XpResultado({
+    required this.xpGanado,
+    required this.nuevoNivel,
+    required this.nuevaXp,
+    required this.subeNivel,
+  });
+}
+
+Future<XpResultado?> otorgarXp(
+    SupabaseClient client, String usuarioId, int cantidadXp) async {
+  if (cantidadXp <= 0) return null;
+  try {
+    final result = await client.rpc('otorgar_xp', params: {
+      'p_usuario_id': usuarioId,
+      'p_cantidad_xp': cantidadXp,
+    });
+    if (result == null) return null;
+    final list = result as List;
+    if (list.isEmpty) return null;
+    final row = list.first as Map<String, dynamic>;
+    return XpResultado(
+      xpGanado: cantidadXp,
+      nuevoNivel: (row['nuevo_nivel'] as num).toInt(),
+      nuevaXp: (row['nueva_xp'] as num).toInt(),
+      subeNivel: row['sube_nivel'] as bool? ?? false,
+    );
+  } catch (e) {
+    debugPrint('[otorgarXp] Error: $e');
+    return null;
+  }
+}
+
+Future<XpResultado?> finalizarSesion({
   required String sesionId,
   required String diaId,
   required String rutinaId,
@@ -735,6 +771,7 @@ Future<void> finalizarSesion({
   required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
   final duracionMin = (duracionSegundos / 60).round().clamp(1, 99999);
   final calorias = (duracionMin * rpe * 0.8).roundToDouble();
 
@@ -746,10 +783,19 @@ Future<void> finalizarSesion({
 
   await actualizarEstadoDia(diaId, 'completado', ref);
 
-  // El trigger actualizar_estado_semana() en BD actualiza la semana
-  // automáticamente cuando todos sus días están 'completado'.
   ref.invalidate(diasDeSemanaProvider);
   ref.invalidate(semanasDeRutinaProvider(rutinaId));
+
+  if (user == null) return null;
+
+  final xpGanado = 50 + duracionMin.clamp(0, 90) + (rpe * 5);
+  final xpResult = await otorgarXp(client, user.id, xpGanado);
+
+  if (xpResult != null) {
+    ref.invalidate(dashboardProvider);
+  }
+
+  return xpResult;
 }
 
 Future<void> registrarSerie({
@@ -779,6 +825,7 @@ class EjercicioInput {
     required this.repeticiones,
     required this.segundosDescanso,
     this.pesoKg,
+    this.pesosKg,
     this.duracionSegundos,
     this.distanciaMetros,
     this.tiempoIsometricoSegundos,
@@ -788,6 +835,7 @@ class EjercicioInput {
   final int repeticiones;
   final int segundosDescanso;
   final double? pesoKg;
+  final List<double>? pesosKg;
   final int? duracionSegundos;
   final int? distanciaMetros;
   final int? tiempoIsometricoSegundos;
@@ -806,7 +854,7 @@ final tiempoDiaProvider =
       .eq('dia_id', diaId)
       .order('completada_en', ascending: false)
       .limit(1);
-  if (data is List && data.isNotEmpty) {
+  if (data.isNotEmpty) {
     return (data.first['duracion_minutos'] as num?)?.toInt() ?? 0;
   }
   return 0;
@@ -824,7 +872,8 @@ final historialSesionUsuarioProvider =
       .select('id, rpe, completada_en')
       .eq('usuario_id', user.id)
       .order('completada_en', ascending: false)
-      .limit(30);
+      .limit(30)
+      .timeout(const Duration(seconds: 10));
 
   final sesionesList = sesionesData as List?;
   if (sesionesList == null || sesionesList.isEmpty) return null;
@@ -873,7 +922,8 @@ final historialSesionUsuarioProvider =
         .select('seleccion_id, peso_kg, repeticiones_realizadas, '
             'seleccion_de_ejercicios!inner(ejercicio_id, ejercicios!inner(nombre))')
         .inFilter('sesion_id', sesionesRecientesIds)
-        .order('creado_en', ascending: false);
+        .order('creado_en', ascending: false)
+        .timeout(const Duration(seconds: 10));
 
     final seriesRaw = seriesData as List?;
     if (seriesRaw == null) return null;
@@ -941,6 +991,407 @@ final estadoDiarioHoyProvider = FutureProvider<EstadoDiarioDb?>((ref) async {
   return EstadoDiarioDb.fromMap(data);
 });
 
+final cargaAcademicaSemanalProvider =
+    FutureProvider<CargaAcademicaSemanalDb?>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return null;
+
+  final hoy = DateTime.now();
+  final lunes = hoy
+      .subtract(Duration(days: hoy.weekday - 1))
+      .toIso8601String()
+      .substring(0, 10);
+
+  final data = await client
+      .from('carga_academica_semanal')
+      .select()
+      .eq('usuario_id', user.id)
+      .eq('semana_inicio', lunes)
+      .maybeSingle()
+      .timeout(const Duration(seconds: 8));
+
+  if (data == null) return null;
+  return CargaAcademicaSemanalDb.fromMap(data);
+});
+
+class AdherenciaComponentes {
+  final double valor;
+  final double cumplimientoHoras;
+  final double completitudTareas;
+  final double rachaDias;
+  final double contribH;
+  final double contribT;
+  final double contribR;
+
+  const AdherenciaComponentes({
+    required this.valor,
+    required this.cumplimientoHoras,
+    required this.completitudTareas,
+    required this.rachaDias,
+    required this.contribH,
+    required this.contribT,
+    required this.contribR,
+  });
+}
+
+class EnergiaComponentes {
+  final double valor;
+  final double base;
+  final int eDiaria;
+  final int eSueno;
+  final int eRecup;
+  final double eCog;
+  final double eEstres;
+  final double contribE;
+  final double contribS;
+  final double contribR;
+  final double contribC;
+  final double contribEs;
+  final double gateS;
+  final double gateR;
+  final double gateE;
+
+  const EnergiaComponentes({
+    required this.valor,
+    required this.base,
+    required this.eDiaria,
+    required this.eSueno,
+    required this.eRecup,
+    required this.eCog,
+    required this.eEstres,
+    required this.contribE,
+    required this.contribS,
+    required this.contribR,
+    required this.contribC,
+    required this.contribEs,
+    required this.gateS,
+    required this.gateR,
+    required this.gateE,
+  });
+}
+
+final adherenciaAcademicaProvider =
+    FutureProvider<AdherenciaComponentes?>((ref) async {
+  final carga = await ref.watch(cargaAcademicaSemanalProvider.future);
+
+  if (carga == null) return null;
+
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return null;
+
+  final cumplimientoHoras = carga.horasEstudioPlaneadas > 0
+      ? (carga.horasEstudioReales / carga.horasEstudioPlaneadas).clamp(0.0, 1.0)
+      : 0.5;
+
+  final lunes = _lunesDeEstaSemana();
+  final domingo = lunes.add(const Duration(days: 7));
+  final entregasData = await client
+      .from('entregas_examenes')
+      .select('esta_completado')
+      .eq('usuario_id', user.id)
+      .gte('fecha_limite', lunes.toIso8601String())
+      .lt('fecha_limite', domingo.toIso8601String())
+      .timeout(const Duration(seconds: 8));
+  final total = entregasData.length;
+  final completadas =
+      entregasData.where((e) => e['esta_completado'] == true).length;
+  final completitudTareas = total > 0 ? completadas / total : 0.5;
+
+  final diasData = await client
+      .from('horarios_academicos')
+      .select('hora_inicio')
+      .eq('usuario_id', user.id)
+      .eq('tipo_actividad', 'estudio')
+      .gte('hora_inicio', lunes.toIso8601String())
+      .lt('hora_inicio', domingo.toIso8601String())
+      .timeout(const Duration(seconds: 8));
+  final diasUnicos = diasData
+      .map((h) => DateTime.parse(h['hora_inicio'] as String).weekday)
+      .toSet()
+      .length;
+  final rachaDias = (diasUnicos / 7.0).clamp(0.0, 1.0);
+
+  final contribH = cumplimientoHoras * 100 * 0.60;
+  final contribT = completitudTareas * 100 * 0.30;
+  final contribR = rachaDias * 100 * 0.10;
+  final valor = (contribH + contribT + contribR).clamp(0.0, 100.0);
+
+  return AdherenciaComponentes(
+    valor: valor,
+    cumplimientoHoras: cumplimientoHoras,
+    completitudTareas: completitudTareas,
+    rachaDias: rachaDias,
+    contribH: contribH,
+    contribT: contribT,
+    contribR: contribR,
+  );
+});
+
+final estadoEnergeticoProvider =
+    FutureProvider<EnergiaComponentes?>((ref) async {
+  final estado = await ref.watch(estadoDiarioHoyProvider.future);
+  final carga = await ref.watch(cargaAcademicaSemanalProvider.future);
+
+  if (estado == null) return null;
+
+  final eDiariaInt = estado.nivelEnergia;
+  final eSuenoInt = estado.calidadSueno;
+  final eRecupInt = 5 - estado.dolorMuscular;
+
+  final eDiaria = (eDiariaInt / 5.0) * 100;
+  final eSueno = (eSuenoInt / 5.0) * 100;
+  final eRecup = (eRecupInt / 5.0) * 100;
+  final eCog = carga != null
+      ? ((1.0 - carga.horasEstudioReales / 40.0).clamp(0.0, 1.0)) * 100
+      : 50.0;
+  final eEstres = ((10.0 - (carga?.nivelEstres ?? 5).toDouble()) / 10.0) * 100;
+
+  final contribE = eDiaria * 0.30;
+  final contribS = eSueno * 0.25;
+  final contribR = eRecup * 0.20;
+  final contribC = eCog * 0.15;
+  final contribEs = eEstres * 0.10;
+  final base = contribE + contribS + contribR + contribC + contribEs;
+
+  final gateS = eSuenoInt <= 1
+      ? 0.40
+      : eSuenoInt == 2
+          ? 0.70
+          : 1.0;
+  final gateR = estado.dolorMuscular >= 4
+      ? 0.60
+      : estado.dolorMuscular == 3
+          ? 0.85
+          : 1.0;
+  final gateE = eDiariaInt <= 1
+      ? 0.50
+      : eDiariaInt == 2
+          ? 0.75
+          : 1.0;
+
+  final valor = (base * gateS * gateR * gateE).clamp(0.0, 100.0);
+
+  return EnergiaComponentes(
+    valor: valor,
+    base: base,
+    eDiaria: eDiariaInt,
+    eSueno: eSuenoInt,
+    eRecup: eRecupInt,
+    eCog: eCog,
+    eEstres: eEstres,
+    contribE: contribE,
+    contribS: contribS,
+    contribR: contribR,
+    contribC: contribC,
+    contribEs: contribEs,
+    gateS: gateS,
+    gateR: gateR,
+    gateE: gateE,
+  );
+});
+
+final contextoAcademicoProvider =
+    FutureProvider<ContextoAcademico?>((ref) async {
+  final carga = ref.watch(cargaAcademicaSemanalProvider).valueOrNull;
+  if (carga == null) return null;
+
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  var tieneExamenesProximos = false;
+
+  if (user != null) {
+    final hoy = DateTime.now().toIso8601String();
+    final enSieteDias =
+        DateTime.now().add(const Duration(days: 7)).toIso8601String();
+    final examenesData = await client
+        .from('entregas_examenes')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('esta_completado', false)
+        .gte('fecha_limite', hoy)
+        .lte('fecha_limite', enSieteDias)
+        .limit(1)
+        .maybeSingle()
+        .timeout(const Duration(seconds: 8));
+
+    tieneExamenesProximos = examenesData != null;
+  }
+
+  final adherencia =
+      ref.watch(adherenciaAcademicaProvider).valueOrNull?.valor ?? 50.0;
+  final estadoEnerg =
+      ref.watch(estadoEnergeticoProvider).valueOrNull?.valor ?? 50.0;
+
+  return ContextoAcademico(
+    horasEstudioReales: carga.horasEstudioReales.toDouble(),
+    nivelEstres: carga.nivelEstres.toDouble(),
+    evaluacionesSemana: carga.evaluacionesSemana,
+    horasSuenoPromedio: carga.horasSuenoPromedio,
+    tieneExamenesProximos: tieneExamenesProximos,
+    adherenciaAcademica: adherencia,
+    estadoEnergetico: estadoEnerg,
+  );
+});
+
+/// DTO que encapsula el Factor de Carga Total (FCT) y sus componentes.
+class CargaCognitivaData {
+  final double valor; // 0-100
+  final double horasEstudioReales;
+  final double nivelEstres;
+  final int evaluacionesSemana;
+  final double horasSuenoPromedio;
+  final bool tieneExamenesProximos;
+
+  const CargaCognitivaData({
+    required this.valor,
+    required this.horasEstudioReales,
+    required this.nivelEstres,
+    required this.evaluacionesSemana,
+    required this.horasSuenoPromedio,
+    required this.tieneExamenesProximos,
+  });
+
+  String get nivelLabel {
+    if (valor < 30) return 'Baja';
+    if (valor < 60) return 'Moderada';
+    if (valor < 80) return 'Alta';
+    return 'Crítica';
+  }
+}
+
+/// Factor de Carga Total (FCT) normalizado 0-100.
+/// Combina horas de estudio, estrés, evaluaciones y sueño.
+final cargaCognitivaProvider = FutureProvider<CargaCognitivaData?>((ref) async {
+  final academico = await ref.watch(contextoAcademicoProvider.future);
+  final estadoDiario = await ref.watch(estadoDiarioHoyProvider.future);
+  if (academico == null) return null;
+  final service = RecomendacionContextoService();
+  final fct = service.calcularFCT(academico, estadoDiario);
+  final valor = (fct * 100).clamp(0.0, 100.0);
+  return CargaCognitivaData(
+    valor: valor,
+    horasEstudioReales: academico.horasEstudioReales,
+    nivelEstres: academico.nivelEstres,
+    evaluacionesSemana: academico.evaluacionesSemana,
+    horasSuenoPromedio: academico.horasSuenoPromedio,
+    tieneExamenesProximos: academico.tieneExamenesProximos,
+  );
+});
+
+/// ID de la primera rutina activa del usuario, o null si no tiene.
+final rutinaActivaSeleccionadaProvider = Provider<String?>((ref) {
+  final data = ref.watch(dashboardProvider).valueOrNull;
+  if (data == null || data.rutinasActivas.isEmpty) return null;
+  return data.rutinasActivas.first.rutina.id;
+});
+
+/// Obtiene el {diaId, rutinaId} para iniciar una sesión desde QuickAction.
+/// Retorna null si no hay rutina activa o día pendiente.
+Future<Map<String, String>?> obtenerDiaYRutinaParaQuickAction(Ref ref) async {
+  final data = ref.read(dashboardProvider).valueOrNull;
+  if (data == null || data.rutinasActivas.isEmpty) return null;
+
+  final rutinaId = data.rutinasActivas.first.rutina.id;
+
+  try {
+    final semanas = await ref.read(semanasDeRutinaProvider(rutinaId).future);
+    if (semanas.isEmpty) return null;
+
+    final primeraSemana = semanas.first;
+    final dias = await ref.read(diasDeSemanaProvider(primeraSemana.id).future);
+    if (dias.isEmpty) return null;
+
+    final diaPendiente = dias.firstWhere(
+      (d) => d.estado != 'completado',
+      orElse: () => dias.first,
+    );
+
+    return {'diaId': diaPendiente.id, 'rutinaId': rutinaId};
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Sincroniza automáticamente carga_academica_semanal desde datos reales
+/// (horarios_academicos y entregas_examenes) para la semana actual.
+Future<void> syncCargaAcademicaSemanal(WidgetRef ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return;
+
+  final lunes = _lunesDeEstaSemana();
+  final domingo = lunes.add(const Duration(days: 7));
+  final lunesStr = lunes.toIso8601String().substring(0, 10);
+  final lunesIso = lunes.toIso8601String();
+  final domingoIso = domingo.toIso8601String();
+
+  final bloquesEstudio = await client
+      .from('horarios_academicos')
+      .select('hora_inicio, hora_fin')
+      .eq('usuario_id', user.id)
+      .eq('tipo_actividad', 'estudio')
+      .gte('hora_inicio', lunesIso)
+      .lt('hora_inicio', domingoIso)
+      .timeout(const Duration(seconds: 8));
+
+  int horasReales = 0;
+  for (final b in bloquesEstudio) {
+    final inicio = DateTime.parse(b['hora_inicio'] as String);
+    final fin = DateTime.parse(b['hora_fin'] as String);
+    horasReales += fin.difference(inicio).inMinutes;
+  }
+
+  final entregasData = await client
+      .from('entregas_examenes')
+      .select('esta_completado')
+      .eq('usuario_id', user.id)
+      .gte('fecha_limite', lunesIso)
+      .lt('fecha_limite', domingoIso)
+      .timeout(const Duration(seconds: 8));
+
+  final totalEntregas = entregasData.length;
+  final entregasCompletadas =
+      entregasData.where((e) => e['esta_completado'] == true).length;
+
+  final perfil = ref.read(perfilAcademicoProvider).valueOrNull;
+  final horasPlaneadas = perfil?.horasObjetivoEstudioSemana ?? 14;
+  final horasRealesRedondeadas = (horasReales / 60.0).round();
+
+  final cargaPrevia = await client
+      .from('carga_academica_semanal')
+      .select('xp_estudio_otorgado')
+      .eq('usuario_id', user.id)
+      .eq('semana_inicio', lunesStr)
+      .maybeSingle()
+      .timeout(const Duration(seconds: 6));
+
+  final yaOtorgado = cargaPrevia?['xp_estudio_otorgado'] as bool? ?? false;
+  var xpEstudioOtorgado = yaOtorgado;
+
+  if (!yaOtorgado && horasRealesRedondeadas >= (horasPlaneadas * 0.8).round()) {
+    await otorgarXp(client, user.id, 150);
+    xpEstudioOtorgado = true;
+    ref.invalidate(dashboardProvider);
+  }
+
+  await client.from('carga_academica_semanal').upsert({
+    'usuario_id': user.id,
+    'semana_inicio': lunesStr,
+    'horas_estudio_planeadas': horasPlaneadas,
+    'horas_estudio_reales': horasRealesRedondeadas,
+    'evaluaciones_semana': totalEntregas,
+    'entregas_semana': entregasCompletadas,
+    'xp_estudio_otorgado': xpEstudioOtorgado,
+  }, onConflict: 'usuario_id,semana_inicio');
+
+  ref.invalidate(cargaAcademicaSemanalProvider);
+  ref.invalidate(adherenciaAcademicaProvider);
+  ref.invalidate(estadoEnergeticoProvider);
+  ref.invalidate(contextoAcademicoProvider);
+}
+
 Future<void> guardarEstadoDiario({
   required int calidadSueno,
   required int nivelEstres,
@@ -976,6 +1427,12 @@ Future<void> guardarEstadoDiario({
 /// - 2 semanas: adaptación → carga
 /// - 3 semanas: adaptación → carga → pico
 /// - 4+ semanas: adaptación → carga → carga → descarga (y repite)
+
+DateTime _lunesDeEstaSemana() {
+  final hoy = DateTime.now();
+  return hoy.subtract(Duration(days: hoy.weekday - 1));
+}
+
 String _calcularTipoSemana(int semanaNum, int totalSemanas) {
   if (totalSemanas <= 1) return 'carga';
   if (semanaNum == 1) return 'adaptacion';
@@ -1002,7 +1459,7 @@ final estadoPeriodizacionProvider =
       .gte('completada_en', hace3Semanas)
       .order('completada_en', ascending: false);
 
-  if (sesionesData is! List || sesionesData.isEmpty) {
+  if (sesionesData.isEmpty) {
     return const PeriodizacionEstado();
   }
 
@@ -1157,4 +1614,59 @@ final progresoRutinasProvider =
         totalDias: totalPorRutina[id] ?? 0,
       )
   };
+});
+
+// ---------------------------------------------------------------------------
+// Motor de recomendación — orquestador
+// ---------------------------------------------------------------------------
+
+final geminiApiKeyProvider = Provider<String>((ref) => EnvConfig.geminiApiKey);
+
+final recomendacionOrquestadorProvider =
+    Provider<RecomendacionOrquestadorService>((ref) {
+  return RecomendacionOrquestadorService();
+});
+
+/// Instancia compartida de [RecomendacionIaService] para todo el app.
+/// Evita duplicar la configuración de Gemini (Dio, timeouts, parseo).
+final geminiServiceProvider = Provider<RecomendacionIaService>((ref) {
+  return RecomendacionIaService();
+});
+
+final generarRutinaProvider = FutureProvider.family<ResultadoGeneracion,
+    ({bool conIA, int duracionSemanas})>((ref, opts) async {
+  final orquestador = ref.watch(recomendacionOrquestadorProvider);
+  final apiKey = ref.watch(geminiApiKeyProvider);
+
+  final results = await Future.wait([
+    ref.watch(perfilBienestarProvider.future),
+    ref.watch(ejerciciosProvider.future),
+    ref.watch(historialSesionUsuarioProvider.future),
+    ref.watch(estadoDiarioHoyProvider.future),
+  ]);
+  final perfil = results[0] as PerfilBienestarDb?;
+  final catalogo = results[1] as List<EjercicioDb>;
+  final historial = results[2] as HistorialSesionDto?;
+  final estadoDiario = results[3] as EstadoDiarioDb?;
+
+  if (perfil == null) {
+    throw Exception(
+        'Completa tu perfil de bienestar antes de generar una rutina.');
+  }
+  if (catalogo.isEmpty) {
+    throw Exception('El catálogo de ejercicios no está disponible.');
+  }
+
+  final contextoAcademico = ref.watch(contextoAcademicoProvider).valueOrNull;
+
+  return orquestador.generarRutina(
+    perfil: perfil,
+    catalogo: catalogo,
+    historial: historial,
+    estadoDiario: estadoDiario,
+    contextoAcademico: contextoAcademico,
+    duracionSemanas: opts.duracionSemanas,
+    apiKey: apiKey,
+    conIA: opts.conIA,
+  );
 });

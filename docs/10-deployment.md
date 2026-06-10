@@ -1,8 +1,8 @@
 # 10 - Despliegue (Deployment)
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.0  
-**Fecha:** 19-04-2026
+**Versión:** 2.0  
+**Fecha:** 07-06-2026
 
 ---
 
@@ -23,8 +23,7 @@
 | Componente | Configuración MVP |
 |------------|------------------|
 | Base de datos | PostgreSQL (plan Free/Pro) |
-| Autenticación | Email/password + proveedores sociales |
-| Edge Functions | Deno runtime |
+| Autenticación | Email/password + Google OAuth |
 | Realtime | WebSocket (máx. conexiones según plan) |
 | Región | Más cercana al público objetivo |
 
@@ -56,9 +55,9 @@ flowchart LR
     Test --> Build["Flutter build"]
     Build --> Review["Pull Request → Code Review"]
     Review --> Master["Merge a master"]
-    Master --> Deploy["Despliegue automático"]
+    Master --> Deploy["Despliegue automático (futuro)"]
     Deploy --> Store["Play Store / App Store"]
-    Deploy --> Backend["Supabase migrations + Edge Functions"]
+    Deploy --> Backend["Supabase migrations"]
 ```
 
 ### 3.1 Comandos de build
@@ -77,17 +76,32 @@ flutter build ipa --release
 flutter build web --release
 ```
 
-### 3.2 Despliegue de backend
+### 3.2 Despliegue de base de datos
 
 ```bash
 # Migraciones de base de datos
 supabase db push
 
-# Edge Functions
-supabase functions deploy --all
+# Alternativa: ejecutar migraciones_pendientes.sql en SQL Editor de Supabase
+# (útil si el CLI no está vinculado al proyecto)
 
 # Verificar estado
 supabase status
+```
+
+> **Nota:** No hay Edge Functions que desplegar. Toda la lógica de negocio se ejecuta en el cliente Flutter.
+
+### 3.3 Configuración de pg_cron (Job nocturno — futuro)
+
+> **Estado:** No implementado en MVP. El job nocturno `generar_recomendaciones_diarias()` es una optimización futura.
+
+Si se activa en el futuro:
+1. Habilitar extensión `pg_cron` en Supabase (plan Pro+)
+2. Ejecutar en SQL Editor:
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+SELECT cron.schedule('recomendaciones-diarias', '0 2 * * *',
+  'SELECT generar_recomendaciones_diarias();');
 ```
 
 ---
@@ -95,8 +109,6 @@ supabase status
 ## 4. Variables de Entorno por Entorno
 
 Ver [08-installation.md](08-installation.md) para la lista completa. Cada entorno debe tener su propio archivo `.env` con las credenciales correspondientes.
-
-> ⚠️ Las claves de `SERVICE_ROLE_KEY` nunca deben estar en el cliente. Solo en Edge Functions y scripts de backend.
 
 ---
 
@@ -113,9 +125,8 @@ Ver [08-installation.md](08-installation.md) para la lista completa. Cada entorn
 
 ## 6. Estrategia de Rollback
 
-1. **Migraciones SQL:** Cada migración tiene su script de reversión en `backend/supabase/migrations/`.
-2. **Edge Functions:** Versionadas en Git. Rollback = redesplegar versión anterior.
-3. **App:** Publicación gradual (staged rollout) en Play Store. Rollback manual si tasa de errores sube.
+1. **Migraciones SQL:** Cada migración tiene su script de reversión en `supabase/migrations/`.
+2. **App:** Publicación gradual (staged rollout) en Play Store. Rollback manual si tasa de errores sube.
 
 ## 7. Guía de Despliegue de Cloudflare Worker
 
@@ -155,5 +166,5 @@ Haz clic en **Edit code** para reemplazar el código generado por defecto con la
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Última revisión:** 22-04-2026
+**Documento compilado:** 08-06-2026  
+**Última revisión:** v2.1

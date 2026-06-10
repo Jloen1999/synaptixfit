@@ -230,7 +230,8 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                           ? () async {
                               final nuevoId =
                                   await clonarReto(item.reto.id, ref);
-                              if (nuevoId != null && context.mounted) {
+                              if (nuevoId != null) {
+                                if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                       content:
@@ -643,16 +644,15 @@ class _RetoCardState extends ConsumerState<_RetoCard> {
                                       t.id, item.reto.id,
                                       completada: nuevoValor, ref: ref);
                                 } catch (_) {
-                                  if (mounted) {
-                                    setState(() => _optimistas.remove(t.id));
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                            'Error al ${nuevoValor ? "completar" : "desmarcar"} tarea'),
-                                        duration: const Duration(seconds: 2),
-                                      ),
-                                    );
-                                  }
+                                  if (!context.mounted) return;
+                                  setState(() => _optimistas.remove(t.id));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Error al ${nuevoValor ? "completar" : "desmarcar"} tarea'),
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
                                 }
                               },
                               borderRadius: BorderRadius.circular(8),

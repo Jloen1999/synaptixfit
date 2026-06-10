@@ -217,7 +217,7 @@ class _CrearRetoComplejoScreenState
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _tipo,
+                    initialValue: _tipo,
                     decoration: const InputDecoration(labelText: 'Tipo'),
                     items: const [
                       DropdownMenuItem(
@@ -231,7 +231,7 @@ class _CrearRetoComplejoScreenState
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _visibilidad,
+                    initialValue: _visibilidad,
                     decoration: const InputDecoration(labelText: 'Visibilidad'),
                     items: const [
                       DropdownMenuItem(

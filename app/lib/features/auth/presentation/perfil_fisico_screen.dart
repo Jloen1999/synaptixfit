@@ -7,6 +7,7 @@ import '../infrastructure/bienestar_repository.dart';
 import '../infrastructure/objetivo_ia_service.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/sv_primary_button.dart';
+import '../../bienestar/application/ejercicios_provider.dart';
 
 class PerfilFisicoScreen extends StatefulWidget {
   const PerfilFisicoScreen({super.key});
@@ -84,15 +85,6 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
       'label': 'Balón medicinal',
       'icono': Icons.sports_baseball_rounded
     },
-  ];
-
-  static const _objetivosOpciones = [
-    {'valor': 'fitness_general', 'label': 'Fitness general'},
-    {'valor': 'perder_peso', 'label': 'Perder peso'},
-    {'valor': 'ganar_masa', 'label': 'Ganar masa muscular'},
-    {'valor': 'fuerza', 'label': 'Aumentar fuerza'},
-    {'valor': 'resistencia', 'label': 'Mejorar resistencia'},
-    {'valor': 'movilidad', 'label': 'Mejorar movilidad'},
   ];
 
   double? get _imcActual {
@@ -275,10 +267,9 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
 
     try {
       final objetivo = _objetivoPrincipal ?? _objetivoCtrl.text;
-      final objetivoFinal =
-          _objetivosOpciones.any((o) => o['valor'] == objetivo)
-              ? objetivo
-              : 'fitness_general';
+      final objetivoFinal = finalidadesEstandar.contains(objetivo)
+          ? objetivo
+          : finalidadesEstandar.first;
 
       await _bienestarRepository.guardarPerfilBienestar(
         edad: int.parse(_edadCtrl.text),
@@ -400,7 +391,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                               ),
                               const SizedBox(height: 12),
                               DropdownButtonFormField<String>(
-                                value: _sexoSeleccionado,
+                                initialValue: _sexoSeleccionado,
                                 decoration: _decoracionCampo(
                                   'Sexo',
                                   prefixIcon: const Icon(Icons.wc_rounded),
@@ -533,7 +524,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                           content: _SeccionPaso(
                             children: [
                               DropdownButtonFormField<String>(
-                                value: _nivelActividadSeleccionado,
+                                initialValue: _nivelActividadSeleccionado,
                                 isExpanded: true,
                                 decoration: _decoracionCampo(
                                   'Nivel de actividad',
@@ -575,20 +566,17 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
-                                children: _objetivosOpciones.map((opt) {
-                                  final seleccionado =
-                                      _objetivoPrincipal == opt['valor'];
+                                children: finalidadesEstandar.map((f) {
+                                  final seleccionado = _objetivoPrincipal == f;
                                   return FilterChip(
-                                    label: Text(opt['label'] as String),
+                                    label: Text(f),
                                     selected: seleccionado,
                                     onSelected: (selected) {
                                       setState(() {
-                                        _objetivoPrincipal = selected
-                                            ? opt['valor'] as String
-                                            : null;
+                                        _objetivoPrincipal =
+                                            selected ? f : null;
                                         if (selected) {
-                                          _objetivoCtrl.text =
-                                              opt['label'] as String;
+                                          _objetivoCtrl.text = f;
                                         }
                                       });
                                     },

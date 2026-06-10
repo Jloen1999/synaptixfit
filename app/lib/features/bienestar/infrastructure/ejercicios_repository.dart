@@ -13,8 +13,9 @@ const _tamanoPagina = 50;
 
 /// Columnas mínimas necesarias del view para ahorrar ancho de banda.
 const _columnasEjercicio = 'id,nombre,url_gif,url_preview,instrucciones,'
-    'dificultad,descripcion,finalidad,partes_cuerpo,musculos_objetivo,'
-    'musculos_secundarios,equipamientos,creado_en,actualizado_en';
+    'dificultad,descripcion,finalidad,modalidad_entrenamiento,'
+    'tipo_medicion,es_circuito,partes_cuerpo,musculos_objetivo,'
+    'musculos_secundarios,equipamientos,creado_en';
 
 class EjerciciosRepository {
   EjerciciosRepository(this._client);

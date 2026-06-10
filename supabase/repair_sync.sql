@@ -1,0 +1,212 @@
+DELETE FROM supabase_migrations.schema_migrations;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES ('202604190001', '202604190001_init_schema.sql') ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202604210002',
+        '202604210002_add_rls_bienestar.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202604210003',
+        '202604210003_restore_table_grants_after_schema_reset.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202604210004',
+        '202604210004_backfill_usuarios_and_restore_auth_trigger.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202604210005',
+        '202604210005_add_academic_profile_and_weekly_load.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202604220006',
+        '202604220006_ejercicios_v2_normalizado.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202604220007',
+        '202604220007_seed_estudiantes.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605010008',
+        '202605010008_enable_realtime_ejercicios.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605040009',
+        '202605040009_add_docente_archivado_asignaturas.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605040010',
+        '202605040010_catalogo_academico.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605040011',
+        '202605040011_planes_estudio.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES ('202605050012', '202605050012_apuntes.sql') ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605060013',
+        '202605060013_usuario_carreras.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605090014',
+        '202605090014_performance_indexes.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605100015',
+        '202605100015_rutinas_periodizacion.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605100016',
+        '202605100016_plan_semanal_v2.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES ('202605110016', '202605110016_estado_diario.sql') ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605110017',
+        '202605110017_periodizacion_tipo_semana.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605110018',
+        '202605110018_fix_objetivo_constraint.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605130019',
+        '202605130019_fix_objetivo_check_constraint.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605140020',
+        '202605140020_trigger_cascada_semana.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605190018',
+        '202605190018_finalidad_ejercicios.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605270019',
+        '202605270019_ampliar_finalidad.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605280020',
+        '202605280020_deprecar_exercise_db_id.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605280021',
+        '202605280021_limpiar_ejercicios.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605280022',
+        '202605280022_vista_ejercicios_security_invoker.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605280023',
+        '202605280023_actualizar_dificultad_ejercicios.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605280028',
+        '202605280028_eliminar_exercise_db_id.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290029',
+        '202605290029_agregar_url_imagen_musculos.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290030',
+        '202605290030_eliminar_musculos_duplicados.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290031',
+        '202605290031_actualizar_url_imagen_webp.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290032',
+        '202605290032_multi_finalidad.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290034',
+        '202605290034_preparar_dataset_final.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290035',
+        '202605290035_insertar_musculos_final.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290036',
+        '202605290036_insertar_partes_cuerpo_final.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290037',
+        '202605290037_insertar_equipamientos_final.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202605290038',
+        '202605290038_insertar_ejercicios_final.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202606030039',
+        '202606030039_optimizar_vista_ejercicios.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202606030040',
+        '202606030040_optimizar_rendimiento_catalogo.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202606030041',
+        '202606030041_corregir_nombres_ejercicios.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202606030042',
+        '202606030042_seed_completo_desde_json.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202606040043',
+        '202606040043_agregar_modalidad_medicion_circuito.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202606040044',
+        '202606040044_estandarizar_finalidades_objetivo.sql'
+    ) ON CONFLICT (version) DO NOTHING;
+INSERT INTO supabase_migrations.schema_migrations (version, name)
+VALUES (
+        '202606050045',
+        '202606050045_pesos_por_serie.sql'
+    ) ON CONFLICT (version) DO NOTHING;

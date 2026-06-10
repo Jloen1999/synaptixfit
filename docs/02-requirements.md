@@ -1,8 +1,8 @@
 # 02 - Requisitos del Producto (SRS)
 
-Version: 3.0
-Estado: IN_PROGRESS — Sprint 5 (IA + Periodización + Check-in) completado
-Fecha: 11-05-2026
+Version: 3.2
+Estado: IN_PROGRESS — Sprint 6 (Motor de Recomendaciones Fases 0-10) completado
+Fecha: 07-06-2026
 Referencia cruzada: docs/03-architecture.md, docs/04-data-model.md
 
 ## 1. Resumen Ejecutivo
@@ -172,31 +172,27 @@ Proveer un MVP multiplataforma que permita planificar estudio, registrar progres
 ### 7.19 CU-19 Buscar y seleccionar ejercicios para una rutina
 *(Conservado de v2.9)*
 
-### 7.20 CU-20 Crear rutina con recomendación IA (NUEVO v3.0)
+### 7.20 CU-20 Crear rutina con recomendación IA (ACTUALIZADO v5.0)
 
 1. **Actor principal:** Estudiante.
-2. **Precondiciones:** Usuario autenticado, perfil de bienestar configurado, `GEMINI_API_KEY` configurada en backend.
-3. **Disparador:** El usuario accede a "Nueva rutina" y pulsa "Recomendar rutina con IA" en el Paso 1.
-4. **Flujo principal:**
-   1. El sistema recopila datos del perfil (edad, sexo, peso, altura, IMC, objetivo, nivel, equipamiento, días/semana, minutos/sesión).
-   2. El sistema consulta el historial de sesiones recientes (`historialSesionUsuarioProvider`).
-   3. El sistema consulta el check-in diario (`estadoDiarioHoyProvider`).
-   4. El sistema filtra el catálogo de ejercicios por equipamiento compatible.
-   5. El sistema construye un prompt estructurado con reglas de seguridad, periodización y formato JSON.
-   6. El sistema envía el prompt a Gemini Flash vía API REST.
-   7. El sistema parsea la respuesta JSON extrayendo: nombre, descripción, objetivo, duración y estructura (semanas × días × ejercicios).
-   8. El sistema rellena automáticamente los campos del formulario Paso 1.
-5. **Flujo alternativo:**
-   - A1 — El usuario ajusta manualmente los metadatos sugeridos antes de continuar.
-   - A2 — El usuario pulsa "Recomendar ejercicios" (tras recomendación de metadatos) para rellenar toda la estructura con ejercicios.
-   - A3 — En Paso 2, por cada día, el usuario pulsa "Sugerir ejercicios con IA" para añadir 3-6 ejercicios sin repetir.
+2. **Precondiciones:** Usuario autenticado, perfil de bienestar configurado. La API key de Gemini (`GEMINI_API_KEY`) es opcional — sin ella, el motor de reglas determinista funciona igual.
+3. **Disparador:** El usuario accede a "Nueva rutina" y pulsa "⚡ Generar rutina rápida" o "✨ Recomendar rutina con IA" en el Paso 1.
+4. **Flujo principal (motor determinista):**
+   1. El sistema sanitiza el objetivo con `sanitizarObjetivo()`.
+   2. El sistema determina el split de entrenamiento según días/semana y nivel de actividad.
+   3. El sistema selecciona ejercicios mediante 5 filtros encadenados + scoring ponderado.
+   4. El sistema aplica ajustes de contexto (modo exámenes, FCT, racha, fatiga, tendencia de peso).
+   5. El sistema aplica transición de objetivo si el usuario cambió recientemente.
+   6. El sistema calcula sobrecarga progresiva basada en historial real.
+   7. El sistema rellena automáticamente los campos del formulario Paso 1 y la estructura completa (semanas × días × ejercicios).
+5. **Flujo alternativo (con refinamiento IA):**
+   - Si el usuario tiene API key configurada y pulsa "✨ Recomendar rutina con IA", tras el pipeline determinista se ejecuta `refinarRutina()` con Gemini para mejorar nombres, variar ejercicios y reordenar.
 6. **Flujo de excepción:**
-   - E1 — API key no configurada: mostrar error "Falta GEMINI_API_KEY en el archivo .env" y permitir creación manual.
-   - E2 — Sin ejercicios compatibles con el equipamiento: mostrar error específico con el equipamiento listado.
-   - E3 — Gemini no responde o timeout: mostrar error de conexión y sugerir reintentar.
-   - E4 — Gemini devuelve JSON malformado: el sistema intenta extraer JSON de bloques Markdown o texto circundante; si falla, mostrar error de formato.
-7. **Postcondiciones:** Metadatos de rutina rellenos, estructura de ejercicios opcionalmente rellena. El usuario puede continuar al Paso 2 o 3.
-8. **Requisitos relacionados:** RF-BIE-13, RF-BIE-14, RF-BIE-15.
+   - E1 — Sin ejercicios compatibles con el equipamiento: mostrar error específico con el equipamiento listado.
+   - E2 — Gemini no responde o timeout: se usa la estructura del motor de reglas sin refinar.
+   - E3 — Gemini devuelve ejercicios inválidos: `_validarYReparar()` revierte al ejercicio original del motor de reglas.
+7. **Postcondiciones:** Metadatos de rutina rellenos, estructura completa de ejercicios rellena. El usuario puede continuar al Paso 2 o 3.
+8. **Requisitos relacionados:** RF-BIE-13, RF-BIE-14, RF-BIE-15, RF-BIE-22, RF-BIE-23.
 
 ### 7.21 CU-21 Realizar check-in diario antes de entrenar (NUEVO v3.0)
 
@@ -302,10 +298,46 @@ Añadidos en v3.0:
 ## 13. Criterios de Aceptación Global del MVP (AMPLIADO)
 *(CA-01 a CA-13 conservados)*
 
-14. **CA-14:** El usuario puede crear una rutina completa (metadatos + estructura de ejercicios) con 2 clics: "Recomendar rutina con IA" + "Recomendar ejercicios".
+14. **CA-14:** El usuario puede crear una rutina completa (metadatos + estructura de ejercicios) con 1 clic: "⚡ Generar rutina rápida" (motor determinista, <2s). Opcionalmente, con "✨ Recomendar rutina con IA" se añade refinamiento IA.
 15. **CA-15:** La IA nunca recomienda ejercicios que requieran equipamiento no declarado por el usuario.
 16. **CA-16:** El check-in diario se persiste correctamente y la puntuación de fatiga se calcula según la fórmula documentada.
 17. **CA-17:** Los badges de tipo de semana se muestran correctamente en el selector de semanas con los colores asignados.
+
+### CU-22 Dashboard Rediseñado (v6.0)
+
+**Actor:** Usuario autenticado
+**Precondición:** Sesión activa, datos de bienestar y academia cargados
+**Flujo principal:**
+1. El usuario abre la app y ve el dashboard rediseñado con layout de cards
+2. SaludoCard muestra avatar, nivel, XP y streaks (🔥 entrenamiento + 🧠 estudio)
+3. SmartBannerCard muestra consejo IA generado por Gemini o fallback
+4. QuickActionsRow ofrece 4 accesos rápidos (Pomodoro, Workout, Escanear, Nuevo reto)
+5. PlanWeekBar muestra "Semana X de Y" si hay rutina activa
+6. CognitiveLoadBar muestra el nivel de carga cognitiva actual
+7. EstadoSection muestra 3 MetricGauges (Energético, Adherencia, Carga Cognitiva)
+8. Secciones de KPIs, Bienestar, Retos y Rutinas completan el dashboard
+**Postcondición:** El usuario puede navegar a cualquier sección desde los accesos rápidos o las cards.
+
+### HU-39 — Progreso semanal
+Como estudiante quiero ver de un vistazo mi progreso semanal ("Semana X de Y") para planificar mi día.
+
+### HU-40 — Consejo IA
+Como estudiante quiero recibir un consejo personalizado de IA al abrir la app para motivarme.
+
+### HU-41 — Acceso rápido
+Como estudiante quiero acceder rápido a Pomodoro, Workout y Nuevo Reto desde el inicio.
+
+### CA-18 — SmartBanner se muestra on-load
+El SmartBanner debe mostrar un consejo (Gemini o fallback) al cargar el dashboard sin bloquear otros widgets.
+
+### CA-19 — QuickActions funcionales
+Workout debe navegar a sesión en vivo, Nuevo Reto a creación de reto simple. Pomodoro y Escanear muestran placeholder.
+
+### CA-20 — PlanWeekBar condicional
+Solo se muestra si hay rutina activa. Si no, se oculta sin afectar el layout.
+
+### CA-21 — CognitiveLoadBar condicional
+Solo se muestra si hay datos académicos. Si no, se oculta sin afectar el layout.
 
 ## 14. Matriz de Trazabilidad (AMPLIADO)
 *(Conservado de v2.9)*

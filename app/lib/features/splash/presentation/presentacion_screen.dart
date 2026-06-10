@@ -33,26 +33,26 @@ class _PresentacionScreenState extends ConsumerState<PresentacionScreen> {
   int _indiceActual = 0;
   bool _validandoSesion = true;
 
-  final List<DatosPresentacion> _paginas = [
+  final List<DatosPresentacion> _paginas = const [
     DatosPresentacion(
       titulo: 'Planifica tu exito academico',
       descripcion:
           'Organiza semestres, bloques de estudio y examenes en un flujo claro para avanzar sin estres.',
-      capaImagen: const _ImagenPresentacionAcademica(),
+      capaImagen: _ImagenPresentacionAcademica(),
       colorBrillo: SVColors.primaryContainer,
     ),
     DatosPresentacion(
       titulo: 'Convierte tu esfuerzo en logros',
       descripcion:
           'Acumula experiencia, completa retos y visualiza progreso real en cada sesion que termines.',
-      capaImagen: const _ImagenPresentacionRetos(),
+      capaImagen: _ImagenPresentacionRetos(),
       colorBrillo: SVColors.secondary,
     ),
     DatosPresentacion(
       titulo: 'Equilibra cuerpo y mente',
       descripcion:
           'Entrena con rutinas adaptadas, registra resultados y conecta con una comunidad universitaria activa.',
-      capaImagen: const _ImagenPresentacionBienestar(),
+      capaImagen: _ImagenPresentacionBienestar(),
       colorBrillo: SVColors.secondaryContainer,
     ),
   ];
@@ -104,7 +104,7 @@ class _PresentacionScreenState extends ConsumerState<PresentacionScreen> {
                 center: const Alignment(0.0, -0.7),
                 radius: 1.25,
                 colors: [
-                  _paginas[_indiceActual].colorBrillo.withOpacity(0.2),
+                  _paginas[_indiceActual].colorBrillo.withValues(alpha: 0.2),
                   SVColors.background,
                 ],
               ),
@@ -118,7 +118,7 @@ class _PresentacionScreenState extends ConsumerState<PresentacionScreen> {
               height: 220,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: SVColors.primary.withOpacity(0.05),
+                color: SVColors.primary.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -130,7 +130,7 @@ class _PresentacionScreenState extends ConsumerState<PresentacionScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: SVColors.secondary.withOpacity(0.05),
+                color: SVColors.secondary.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -241,7 +241,7 @@ class _PresentacionScreenState extends ConsumerState<PresentacionScreen> {
                             decoration: BoxDecoration(
                               color: _indiceActual == indice
                                   ? SVColors.primary
-                                  : SVColors.outline.withOpacity(0.28),
+                                  : SVColors.outline.withValues(alpha: 0.28),
                               borderRadius: BorderRadius.circular(99),
                             ),
                           ),
@@ -292,10 +292,10 @@ class _ImagenPresentacionAcademica extends StatelessWidget {
           height: 190,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: SVColors.primary.withOpacity(0.1),
+            color: SVColors.primary.withValues(alpha: 0.1),
             boxShadow: [
               BoxShadow(
-                color: SVColors.primaryContainer.withOpacity(0.24),
+                color: SVColors.primaryContainer.withValues(alpha: 0.24),
                 blurRadius: 58,
                 spreadRadius: 16,
               ),
@@ -315,7 +315,7 @@ class _ImagenPresentacionAcademica extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 24,
                 offset: const Offset(0, 12),
               ),
@@ -331,7 +331,7 @@ class _ImagenPresentacionAcademica extends StatelessWidget {
                     width: 60,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: SVColors.primary.withOpacity(0.22),
+                      color: SVColors.primary.withValues(alpha: 0.22),
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -349,7 +349,8 @@ class _ImagenPresentacionAcademica extends StatelessWidget {
                         width: 34,
                         height: 34,
                         decoration: BoxDecoration(
-                          color: SVColors.secondaryContainer.withOpacity(0.35),
+                          color: SVColors.secondaryContainer
+                              .withValues(alpha: 0.35),
                           borderRadius: BorderRadius.circular(9),
                         ),
                         child: const Icon(
@@ -363,7 +364,7 @@ class _ImagenPresentacionAcademica extends StatelessWidget {
                         child: Container(
                           height: 9,
                           decoration: BoxDecoration(
-                            color: SVColors.outline.withOpacity(0.12),
+                            color: SVColors.outline.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(99),
                           ),
                         ),
@@ -393,10 +394,10 @@ class _ImagenPresentacionRetos extends StatelessWidget {
           height: 190,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: SVColors.secondary.withOpacity(0.12),
+            color: SVColors.secondary.withValues(alpha: 0.12),
             boxShadow: [
               BoxShadow(
-                color: SVColors.secondaryContainer.withOpacity(0.45),
+                color: SVColors.secondaryContainer.withValues(alpha: 0.45),
                 blurRadius: 66,
                 spreadRadius: 12,
               ),
@@ -415,7 +416,7 @@ class _ImagenPresentacionRetos extends StatelessWidget {
             color: SVColors.secondary,
             boxShadow: [
               BoxShadow(
-                color: SVColors.tertiary.withOpacity(0.3),
+                color: SVColors.tertiary.withValues(alpha: 0.3),
                 blurRadius: 28,
                 offset: const Offset(0, 14),
               ),
@@ -463,10 +464,10 @@ class _ImagenPresentacionBienestar extends StatelessWidget {
           height: 190,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFFFF9800).withOpacity(0.11),
+            color: const Color(0xFFFF9800).withValues(alpha: 0.11),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF9800).withOpacity(0.2),
+                color: const Color(0xFFFF9800).withValues(alpha: 0.2),
                 blurRadius: 60,
                 spreadRadius: 16,
               ),
@@ -486,7 +487,7 @@ class _ImagenPresentacionBienestar extends StatelessWidget {
             color: SVColors.surfaceContainerLowest,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 24,
                 offset: const Offset(0, 12),
               ),

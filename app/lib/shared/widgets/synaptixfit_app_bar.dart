@@ -39,7 +39,10 @@ class SynaptixFitAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (compact) return const SizedBox.shrink();
     final canGoBack = context.canPop() || backPath != null || onBack != null;
     return AppBar(
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(title,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1),
       centerTitle: centerTitle,
       elevation: 0,
       scrolledUnderElevation: 0,

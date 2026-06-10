@@ -15,16 +15,16 @@
 | Flutter SDK | 3.x (estable) | Framework de desarrollo |
 | Dart SDK | 3.x (incluido con Flutter) | Lenguaje de programación |
 | Git | 2.x | Control de versiones |
-| Docker + Docker Compose | 24.x / 2.x | Solo para evaluaciones historicas de proveedores (pipeline no activo) |
-| Node.js | 18.x LTS | Herramientas auxiliares y scripts |
+| Python | 3.12+ | Scripts de seeding de datos (`supabase/seed_*.py`) |
+| Supabase CLI | Última | Despliegue de migraciones (opcional — `migraciones_pendientes.sql` como alternativa) |
 
 ### 1.2 Cuentas requeridas
 
 | Servicio | Propósito | Plan |
 |----------|----------|------|
-| Supabase | Base de datos, auth, realtime, edge functions | Free tier suficiente para MVP |
-| Cloudflare | R2 storage para multimedia de ejercicios | Free tier (10 GB) suficiente para MVP |
-| Kaggle | Descarga oficial del dataset ExerciseDB (AscendAPI) | Cuenta gratuita |
+| Supabase | Base de datos, auth, realtime | Free tier suficiente para MVP |
+| Cloudflare | R2 storage + Worker proxy para multimedia de ejercicios | Free tier (10 GB) suficiente para MVP |
+| Google Cloud | OAuth 2.0 (Google Sign-In), Gemini Flash API | Cuenta gratuita |
 | Stitch (Google) | Diseño UI (solo referencia) | Gratuito |
 
 ---
@@ -37,7 +37,6 @@ Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
 # === Supabase ===
 SUPABASE_URL=https://tu-proyecto.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # === Cloudflare R2 ===
 R2_ACCOUNT_ID=tu_account_id
@@ -46,17 +45,14 @@ R2_SECRET_ACCESS_KEY=tu_secret_key
 R2_BUCKET_NAME=synaptixfit-media
 R2_PUBLIC_URL=https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev
 
-# === Catalogo de ejercicios (ExerciseDB via Kaggle) ===
-EXERCISE_SOURCE_PROVIDER=exercisedb_kaggle
-EXERCISE_INGESTION_ENABLED=true
-EXERCISE_DATASET_VERSION=v1_sample
-EXERCISE_DATASET_DIR=backend/data_pipeline/exercisedb/raw
+# === Gemini ===
+GEMINI_API_KEY=AIzaSy...
 
 # === App (Flutter) ===
 APP_ENV=development
 ```
 
-> ⚠️ **NUNCA** subir claves de servicio (`SERVICE_ROLE_KEY`) al repositorio. Agregar `.env` al `.gitignore`.
+> ⚠️ **NUNCA** subir claves de servicio al repositorio. Agregar `.env` al `.gitignore`. La lectura de variables se hace vía `EnvConfig` en `app/lib/core/config/env_config.dart`.
 
 ---
 
@@ -110,24 +106,19 @@ flutter run -d chrome
 ### 4.2 Ejecutar migraciones
 
 ```bash
-cd backend/supabase
+cd supabase
 supabase db push
 ```
+
+Si el CLI no está vinculado al proyecto, ejecutar `migraciones_pendientes.sql` directamente en el SQL Editor de Supabase.
 
 ### 4.3 Configurar políticas RLS
 
 Las políticas se aplican automáticamente con las migraciones. Ver detalle en [04-data-model.md](04-data-model.md).
 
-### 4.4 Desplegar Edge Functions
+### 4.4 Edge Functions (no implementadas)
 
-```bash
-supabase functions deploy clonar_reto_publico
-supabase functions deploy publicar_logro
-supabase functions deploy validar_reto_complejo
-supabase functions deploy recomendar_plan_entrenamiento
-supabase functions deploy recalcular_plan_bienestar
-supabase functions deploy recordatorios_programados
-```
+El proyecto **no usa Edge Functions de Supabase** en el MVP. Toda la lógica de negocio (motor de recomendaciones, validaciones, generación de rutinas) se ejecuta en el cliente Flutter vía servicios Dart. Las Edge Functions quedan como optimización futura si se requiere lógica centralizada.
 
 ---
 
@@ -154,78 +145,34 @@ supabase functions deploy recordatorios_programados
 
 ---
 
-## 6. Ingesta de ExerciseDB desde Kaggle
+## 6. Dataset de Ejercicios
 
-Estado actual: **activo** con ExerciseDB (AscendAPI) como proveedor aprobado.
+Estado actual: **dataset final unificado** con ~909 ejercicios y 93 músculos.
 
-### 6.1 Nota sobre GitHub del proveedor
+### 6.1 Origen
 
-El repositorio `exercisedb-api` de GitHub se usa como referencia de documentacion/licencia. El dataset masivo no se distribuye completo desde ese repositorio.
+El dataset se compone de tres fuentes procesadas y unificadas:
 
-![Repositorio GitHub como cascaron documental](../app/assets/images/documentacion/exercisesdb/nohaydatos_git.png)
+| Fuente | Ejercicios Aportados | Estado |
+|--------|---------------------|--------|
+| Lyfta (original vía scraping) | 682 ejercicios con video | Integrado |
+| ExerciseDB (Kaggle) | +200 ejercicios complementarios | Integrado |
+| Duplicados/solapados | Eliminados en limpieza | Depurado |
 
-### 6.2 Descarga oficial en Kaggle
+### 6.2 Pipeline de ingesta
 
-1. Buscar en Kaggle: Fitness Exercises Dataset AscendAPI.
-2. Abrir el dataset y pulsar **Download**.
-3. Si es necesario, crear cuenta gratuita en Kaggle para habilitar la descarga.
-
-![Busqueda del dataset en Kaggle](../app/assets/images/documentacion/exercisesdb/busquedadataset.png)
-
-![Boton de descarga en Kaggle](../app/assets/images/documentacion/exercisesdb/descarga_dataset.png)
-
-### 6.3 Estructura minima esperada del ZIP
-
-Al descomprimir, validar la presencia de:
-1. `exercises.json` (catalogo principal, +1500 ejercicios).
-2. `muscles.json`, `equipments.json`, `bodyParts.json` (tablas de relacion).
-3. `gifs_180x180/` (multimedia liviana recomendada para Flutter MVP).
-
-![Estructura del dataset descargado](../app/assets/images/documentacion/exercisesdb/estructuradataset_descarga.png)
-
-### 6.4 Preparacion para pipeline interno
-
-1. Copiar el contenido descomprimido en `backend/data_pipeline/exercisedb/raw`.
-2. Ejecutar la traduccion al espanol de metadatos antes de transformar.
-3. Ejecutar transformacion al esquema SynaptixFit.
-4. Subir GIFs a Cloudflare R2.
-5. Importar metadatos y relaciones a Supabase.
-
-### 6.5 Traduccion previa del dataset (flujo usado)
-
-En esta iteracion se uso la carpeta local `exercisedb/` con los siguientes scripts:
+Los scripts de seeding se ejecutan desde la raíz del proyecto:
 
 ```bash
-cd exercisedb
-
-# 1) Traducir ejercicios
-python traducir_ejercicios.py
-
-# 2) Traducir catalogos auxiliares (ejecutar una vez por archivo)
-python traducir.py  # con ARCHIVO_ENTRADA=muscles.json y ARCHIVO_SALIDA=synaptix_musculos_es.json
-python traducir.py  # con ARCHIVO_ENTRADA=equipments.json y ARCHIVO_SALIDA=synaptix_equipamientos_es.json
-python traducir.py  # con ARCHIVO_ENTRADA=bodyParts.json y ARCHIVO_SALIDA=synaptix_partesCuerpo_es.json
+# Poblar catálogo completo
+python supabase/seed_ejercicios.py
 ```
 
-Salidas generadas por los scripts:
-1. `synaptix_exercisedb_es.json` (traduccion de `exercises.json`).
-2. `synaptix_musculos_es.json` (cuando `ARCHIVO_ENTRADA=muscles.json`).
-3. `synaptix_equipamientos_es.json` (cuando `ARCHIVO_ENTRADA=equipments.json`).
-4. `synaptix_partesCuerpo_es.json` (cuando `ARCHIVO_ENTRADA=bodyParts.json`).
-
-Nota operativa:
-1. `traducir.py` es reutilizable; requiere ajustar `ARCHIVO_ENTRADA` y `ARCHIVO_SALIDA` en cada corrida.
-2. Se recomienda conservar originales en ingles y almacenar traducciones en archivos separados para trazabilidad.
-
-Capturas de ejecucion:
-
-![Ejecucion de traduccion de ejercicios](../app/assets/images/documentacion/exercisesdb/traducir_ejercicios.png)
-
-![Ejecucion de traduccion de musculos](../app/assets/images/documentacion/exercisesdb/traducir_musculos.png)
-
-![Ejecucion de traduccion de equipamientos](../app/assets/images/documentacion/exercisesdb/traducir_equipamientos.png)
-
-![Ejecucion de traduccion de partes del cuerpo](../app/assets/images/documentacion/exercisesdb/traducir_partesCuerpo.png)
+Este script carga el JSON unificado y puebla las tablas:
+- `ejercicios` (909 registros con enlaces a imagen/video en R2)
+- `ejercicio_musculos_secundarios` (M:N cardinalidad 1:3.7)
+- `ejercicio_equipamiento` (M:N)
+- Catálogos: `musculos` (93), `partes_cuerpo`, `equipamientos`
 
 Ver detalle operativo y criterios de mantenimiento en [13-maintenance.md](13-maintenance.md).
 
@@ -235,7 +182,7 @@ Ver detalle operativo y criterios de mantenimiento en [13-maintenance.md](13-mai
 
 ```text
 synaptixfit/
-  docs/                          ← Documentación (14 archivos estándar)
+  docs/                          ← Documentación (17 archivos estándar)
   app/
     lib/
       core/                      ← Errores, utils, config, routing, design system, sync
@@ -244,18 +191,21 @@ synaptixfit/
         auth/
         academico/
         retos/
-        bienestar/
+        bienestar/               ← Motor de recomendaciones (9 servicios + orquestador)
         social/
         notificaciones/
         analitica/
       main.dart
     test/
     integration_test/
-  backend/
-    data_pipeline/               ← Scripts de ingesta ExerciseDB (Kaggle -> Supabase + R2)
-    supabase/                    ← Migraciones, políticas, Edge Functions
-    cloudflare/                  ← Workers para R2
+  supabase/
+    migrations/                  ← 49 migraciones SQL (0001 → 0050)
+    templates/                   ← Seed templates
+  cloudflare/
+    synaptixfit-r2-proxy/        ← Worker para proxy de imágenes R2
 ```
+
+> No existe carpeta `backend/`. Las migraciones de Supabase están en `supabase/migrations/`, no en `backend/supabase/`.
 
 ---
 
@@ -463,5 +413,5 @@ Future<void> updatePassword(String newPassword) async {
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Última revisión:** v1.0
+**Documento compilado:** 08-06-2026  
+**Última revisión:** v1.1

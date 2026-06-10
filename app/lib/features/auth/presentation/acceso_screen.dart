@@ -148,13 +148,14 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
                     constraints: const BoxConstraints(maxWidth: 620),
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
                     decoration: BoxDecoration(
-                      color: SVColors.surfaceContainerLowest.withOpacity(0.9),
+                      color: SVColors.surfaceContainerLowest
+                          .withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(26),
-                      border:
-                          Border.all(color: SVColors.outline.withOpacity(0.12)),
+                      border: Border.all(
+                          color: SVColors.outline.withValues(alpha: 0.12)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.07),
+                          color: Colors.black.withValues(alpha: 0.07),
                           blurRadius: 22,
                           offset: const Offset(0, 10),
                         ),
@@ -190,7 +191,7 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
                             style: OutlinedButton.styleFrom(
                               backgroundColor: Colors.white,
                               side: BorderSide(
-                                color: SVColors.outline.withOpacity(0.35),
+                                color: SVColors.outline.withValues(alpha: 0.35),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
@@ -232,7 +233,7 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
                           children: [
                             Expanded(
                               child: Divider(
-                                color: SVColors.outline.withOpacity(0.35),
+                                color: SVColors.outline.withValues(alpha: 0.35),
                               ),
                             ),
                             Padding(
@@ -247,7 +248,7 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
                             ),
                             Expanded(
                               child: Divider(
-                                color: SVColors.outline.withOpacity(0.35),
+                                color: SVColors.outline.withValues(alpha: 0.35),
                               ),
                             ),
                           ],
@@ -374,7 +375,7 @@ class _FondoModernoAcceso extends StatelessWidget {
             height: 210,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: SVColors.primary.withOpacity(0.08),
+              color: SVColors.primary.withValues(alpha: 0.08),
             ),
           ),
         ),
@@ -386,7 +387,7 @@ class _FondoModernoAcceso extends StatelessWidget {
             height: 170,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: SVColors.secondary.withOpacity(0.1),
+              color: SVColors.secondary.withValues(alpha: 0.1),
             ),
           ).animate(onPlay: (c) => c.repeat(reverse: true)).moveY(
                 begin: -10,

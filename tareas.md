@@ -1,0 +1,5 @@
+- 0. Añadir ejercicios nuevos desde YouCan (@joinyoucan)_8_7
+- 1. Revisar y corregir la documentación.
+- 2. Falta comentar gran parte del código.
+- 3. Implementar Google Health.
+- 4. Implementar cálculo de calorías con la fórmula matemática.

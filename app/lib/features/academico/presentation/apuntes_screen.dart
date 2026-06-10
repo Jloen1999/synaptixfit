@@ -76,7 +76,7 @@ class _ApuntesScreenState extends ConsumerState<ApuntesScreen> {
             : apuntes;
 
         if (filtrados.isEmpty) {
-          return EmptyState(
+          return const EmptyState(
             icon: Icons.article_outlined,
             title: 'Sin apuntes',
             message: 'Crea tu primer apunte usando Markdown.',
@@ -388,7 +388,7 @@ class _ApuntesEditorScreenState extends ConsumerState<ApuntesEditorScreen> {
         const SizedBox(height: 12),
         asignaturasAsync.when(
           data: (asigs) => DropdownButtonFormField<String>(
-            value: _asignaturaId,
+            initialValue: _asignaturaId,
             isExpanded: true,
             decoration:
                 const InputDecoration(labelText: 'Asignatura (opcional)'),
@@ -410,7 +410,7 @@ class _ApuntesEditorScreenState extends ConsumerState<ApuntesEditorScreen> {
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: _visibilidad,
+                initialValue: _visibilidad,
                 decoration: const InputDecoration(labelText: 'Visibilidad'),
                 items: const [
                   DropdownMenuItem(value: 'privado', child: Text('Privado')),

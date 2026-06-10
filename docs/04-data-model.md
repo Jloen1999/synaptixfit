@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 3.8
+**Versión:** 4.5
 **Estado:** VIGENTE
-**Fecha:** 29-05-2026
-**Propósito:** Definición completa de las 27 tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye trigger de cascada días→semanas. Catálogo actual: 89 ejercicios, 51 músculos, 13 partes del cuerpo, 24 equipamientos.
+**Fecha:** 09-06-2026
+**Propósito:** Definición completa de las 30+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up (función `otorgar_xp` en PostgreSQL), trigger de cascada días→semanas, tabla de historial de objetivos, feedback post-entrenamiento, pipeline académico (carga_academica_semanal, entregas_examenes, ContextoAcademico) y motor de recomendaciones. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -21,6 +21,8 @@
 - `perfil_bienestar_usuario`, `historial_peso` y `plan_entrenamiento_semanal` modelan los datos de bienestar físico del usuario.
 - `actividades_sociales`, `interacciones_sociales` y `amistades` corresponden a la actividad social y la red de contactos.
 - `preferencias_notificacion` modela la configuración de entrega de notificaciones por usuario.
+- `historial_objetivos` modela el registro de cambios de objetivo del usuario (Fase 5 — Transición de Objetivos).
+- `recomendaciones_pendientes` modela las sugerencias post-sesión generadas por el motor de feedback (Fase 7).
 
 ---
 
@@ -36,16 +38,18 @@ erDiagram
   USUARIOS ||--o{ NOTIFICACIONES : recibe
   USUARIOS ||--o{ ACTIVIDADES_SOCIALES : genera
   USUARIOS ||--o{ INTERACCIONES_SOCIALES : realiza
-  USUARIOS ||--o{ PERFIL_BIENESTAR_USUARIO : tiene
-  USUARIOS ||--o{ HISTORIAL_PESO : registra
-  USUARIOS ||--o{ PLAN_ENTRENAMIENTO_SEMANAL : planifica
-   USUARIOS ||--o{ PERFIL_ACADEMICO_USUARIO : tiene
-   USUARIOS ||--o{ CARGA_ACADEMICA_SEMANAL : reporta
-   USUARIOS ||--o{ PREFERENCIAS_NOTIFICACION : configura
-   USUARIOS ||--o{ AMISTADES : solicita
-   USUARIOS ||--o{ APUNTES : redacta
-   USUARIOS ||--o{ PLANES_ESTUDIO : planifica
-   USUARIOS ||--o{ USUARIO_CARRERAS : vincula
+    USUARIOS ||--o{ PERFIL_BIENESTAR_USUARIO : tiene
+    USUARIOS ||--o{ HISTORIAL_PESO : registra
+    USUARIOS ||--o{ PLAN_ENTRENAMIENTO_SEMANAL : planifica
+    USUARIOS ||--o{ PERFIL_ACADEMICO_USUARIO : tiene
+    USUARIOS ||--o{ CARGA_ACADEMICA_SEMANAL : reporta
+    USUARIOS ||--o{ PREFERENCIAS_NOTIFICACION : configura
+    USUARIOS ||--o{ AMISTADES : solicita
+    USUARIOS ||--o{ APUNTES : redacta
+    USUARIOS ||--o{ PLANES_ESTUDIO : planifica
+    USUARIOS ||--o{ USUARIO_CARRERAS : vincula
+    USUARIOS ||--o{ HISTORIAL_OBJETIVOS : registra_cambio
+    USUARIOS ||--o{ RECOMENDACIONES_PENDIENTES : recibe
 
    EJERCICIOS ||--o{ SELECCION_DE_EJERCICIOS : incluye
    EJERCICIOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : tiene
@@ -89,13 +93,15 @@ erDiagram
 
     EJERCICIOS {
         uuid id PK
-        string exercise_db_id "deprecated, nullable"
-        string nombre
-        string url_gif
+        string nombre UK
+        string url_video "video MP4 del ejercicio en R2"
+        string url_imagen "imagen preview del ejercicio en R2"
+        string url_gif "GIF animado (legacy)"
         text[] instrucciones
-        string dificultad
+        string dificultad "principiante | intermedio | avanzado"
         text descripcion
-        string finalidad "fuerza | cardio | isometrico | hipertrofia | resistencia | movilidad"
+        text[] finalidad "multi-finalidad: fuerza, cardio, isometrico, hipertrofia, resistencia, movilidad"
+        string fuente "origen del ejercicio: demic, exercisedb, gym_workout, lyfta"
         timestamp creado_en
         timestamp actualizado_en
     }
@@ -156,6 +162,7 @@ erDiagram
         int indice_orden
         uuid dia_id FK
         double peso_kg
+        jsonb pesos_kg "peso por serie, ej: [50.0, 52.5, 55.0]"
         int duracion_segundos
         int distancia_metros
         int tiempo_isometrico_segundos
@@ -373,6 +380,76 @@ CREATE POLICY "usuarios_actualizar" ON usuarios
   FOR UPDATE USING (auth.uid() = id);
 ```
 
+#### 2.1.1 Sistema de XP y Level-Up
+
+**Función PostgreSQL `otorgar_xp()`:** Gestiona la adjudicación de experiencia y subida de nivel atómicamente:
+
+```sql
+CREATE OR REPLACE FUNCTION otorgar_xp(p_usuario_id UUID, p_cantidad_xp INT)
+RETURNS TABLE (nuevo_nivel INT, nueva_xp INT, sube_nivel BOOLEAN)
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+DECLARE
+  v_nivel_actual INT;
+  v_xp_actual INT;
+  v_nuevo_xp INT;
+  v_nuevo_nivel INT;
+  v_umbral INT;
+  v_sube BOOLEAN := false;
+BEGIN
+  SELECT nivel, xp_total INTO v_nivel_actual, v_xp_actual
+  FROM usuarios WHERE id = p_usuario_id;
+
+  v_nuevo_xp := v_xp_actual + p_cantidad_xp;
+  v_nuevo_nivel := v_nivel_actual;
+
+  -- Umbral de level-up: 1000 × nivel
+  v_umbral := 1000 * v_nuevo_nivel;
+
+  WHILE v_nuevo_xp >= v_umbral LOOP
+    v_nuevo_xp := v_nuevo_xp - v_umbral;
+    v_nuevo_nivel := v_nuevo_nivel + 1;
+    v_umbral := 1000 * v_nuevo_nivel;
+    v_sube := true;
+  END LOOP;
+
+  UPDATE usuarios SET nivel = v_nuevo_nivel, xp_total = v_nuevo_xp
+  WHERE id = p_usuario_id;
+
+  RETURN QUERY SELECT v_nuevo_nivel, v_nuevo_xp, v_sube;
+END;
+$$;
+```
+
+**Fórmulas de XP por fuente:**
+
+| Fuente | Fórmula | Rango típico | Dónde se llama |
+|--------|---------|-------------|----------------|
+| Sesión entrenamiento | `50 + min(duraciónMin, 90) + (RPE × 5)` | 56–190 XP | `finalizarSesion()` en `rutina_provider.dart` |
+| Reto simple | 200 XP fijo | 200 XP | `completarReto()` en `retos_provider.dart` |
+| Reto complejo | `100 × cantidadHitos + 300` | 400–1300 XP | `completarReto()` en `retos_provider.dart` |
+| Meta estudio semanal | 150 XP (único por semana) | 150 XP | `syncCargaAcademicaSemanal()` en `rutina_provider.dart` |
+
+**DTO `XpResultado`** (`app/lib/features/bienestar/application/rutina_provider.dart:727`):
+
+```dart
+class XpResultado {
+  final int xpGanado;
+  final int nuevoNivel;
+  final int nuevaXp;
+  final bool subeNivel;
+
+  const XpResultado({
+    required this.xpGanado,
+    required this.nuevoNivel,
+    required this.nuevaXp,
+    required this.subeNivel,
+  });
+}
+```
+
+El DTO es retornado por `otorgarXp()` y `finalizarSesion()` para que la UI muestre feedback (SnackBar con "+XP" o "¡Subiste a nivel N!").
+
 ---
 
 ### 2.2 CATÁLOGO DE EJERCICIOS (modelo normalizado 3NF)
@@ -421,14 +498,19 @@ CREATE TABLE ejercicios (
   instrucciones TEXT[] NOT NULL DEFAULT '{}',
   dificultad TEXT NOT NULL DEFAULT 'intermedio',
   descripcion TEXT,
-  finalidad TEXT NOT NULL DEFAULT 'fuerza'
-    CHECK (finalidad IN ('fuerza', 'cardio', 'isometrico', 'hipertrofia', 'resistencia', 'movilidad')),
+  finalidad TEXT[] NOT NULL DEFAULT '{fuerza}',
+  fuente TEXT NOT NULL DEFAULT 'exercisedb',
+  url_video TEXT,
+  url_imagen TEXT,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   
   CONSTRAINT ck_ejercicios_nombre_len CHECK (char_length(nombre) >= 2),
   CONSTRAINT ck_ejercicios_dificultad CHECK (dificultad IN ('principiante', 'intermedio', 'avanzado'))
 );
+
+-- Índice GIN para búsqueda en arrays de finalidad
+CREATE INDEX idx_ejercicios_finalidad_gin ON ejercicios USING GIN(finalidad);
 
 CREATE INDEX idx_ejercicios_dificultad ON ejercicios(dificultad);
 CREATE INDEX idx_ejercicios_finalidad ON ejercicios(finalidad);
@@ -566,9 +648,9 @@ GRANT SELECT ON partes_cuerpo, musculos, equipamientos, ejercicios,
   TO anon, authenticated;
 ```
 
-#### 2.2.7 Finalidad del Ejercicio (migraciones 0018 + 0019)
+#### 2.2.7 Finalidad del Ejercicio (migraciones 0018 + 0019 + 0032)
 
-Cada ejercicio se clasifica según su **finalidad** (tipo de esfuerzo), lo que determina qué campos se muestran en la UI y qué columnas de `seleccion_de_ejercicios` se utilizan:
+Cada ejercicio se clasifica según su **finalidad** (tipo de esfuerzo). Desde la migración 0032, la columna `finalidad` es de tipo `TEXT[]` (multi-finalidad), permitiendo que un ejercicio tenga múltiples clasificaciones (ej: sentadilla puede ser `fuerza` e `hipertrofia`). La UI determina qué columnas de `seleccion_de_ejercicios` se utilizan según la primera finalidad del array:
 
 | Finalidad | Constraint | Columnas en seleccion_de_ejercicios | UI renderiza |
 |-----------|-----------|-------------------------------------|-------------|
@@ -590,10 +672,17 @@ Cada ejercicio se clasifica según su **finalidad** (tipo de esfuerzo), lo que d
 
 **Migración 0022:** `v_ejercicios_completos` pasa a `SECURITY INVOKER` para respetar las políticas RLS del usuario que consulta.
 
+**Migración 0032:** Convierte `finalidad` de `TEXT` a `TEXT[]` (multi-finalidad). Elimina el CHECK antiguo. Un ejercicio puede tener múltiples finalidades.
+
+**Migración 0045:** Añade columna `pesos_kg jsonb` a `seleccion_de_ejercicios` para asignar un peso diferente por cada serie del ejercicio. Si es `null`, todas las series usan el valor de `peso_kg`.
+
+**Migración 0050:** Reemplaza constraint `ck_perfil_objetivo` por `ck_perfil_objetivo_estandar` que acepta los 7 valores de `finalidadesEstandar`.
+
 **Clasificación automática en seeding:** El script `seed_ejercicios.py` incluye la función `_generar_finalidad()` que clasifica ejercicios automáticamente:
 - **Cardio:** músculo objetivo `cardiovascular` en ExerciseDB, o nombre contiene palabras clave (correr, nadar, bicicleta, saltar, burpees, etc.)
 - **Isométrico:** nombre contiene plancha, isométrico, wall sit, puente estático, plank, etc.
 - **Fuerza/Hipertrofia/Resistencia/Movilidad:** todo lo demás (default)
+- Desde la migración 0032, la clasificación asigna un array de finalidades (ej: un ejercicio puede ser `{fuerza,hipertrofia}`).
 
 ```
 
@@ -658,6 +747,7 @@ CREATE TABLE seleccion_de_ejercicios (
   duracion_segundos INT,
   distancia_metros INT,
   tiempo_isometrico_segundos INT,
+  pesos_kg JSONB,  -- Arreglo JSON con peso de cada serie, ej: [50.0, 52.5, 55.0]. Si null, usa peso_kg.
   
   CONSTRAINT valid_sets CHECK (series BETWEEN 1 AND 10),
   CONSTRAINT valid_reps CHECK (repeticiones BETWEEN 1 AND 100),
@@ -772,6 +862,10 @@ ALTER TABLE seleccion_de_ejercicios
   ADD COLUMN peso_kg DOUBLE PRECISION;
 
 CREATE INDEX idx_seleccion_dia ON seleccion_de_ejercicios(dia_id);
+
+-- Migración 0045: peso por serie (jsonb)
+ALTER TABLE seleccion_de_ejercicios
+  ADD COLUMN pesos_kg JSONB;
 ```
 
 **Drop de constraints antiguos incompatibles con periodización:**
@@ -798,11 +892,14 @@ CREATE TABLE series_sesion (
   repeticiones_realizadas INT,
   peso_kg DOUBLE PRECISION,
   completada BOOLEAN NOT NULL DEFAULT false,
+  failed_reps INT NOT NULL DEFAULT 0 CHECK (failed_reps >= 0),  -- Migración 0047
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_series_sesion ON series_sesion(sesion_id);
 ```
+
+**Columna `failed_reps` (migración 0047):** Permite registrar repeticiones fallidas por serie, alimentando el motor de feedback para degradación dinámica de carga. Cada repetición fallida descuenta 5% de carga en la siguiente sesión (clamp 70-95%).
 
 **Políticas RLS — periodización (herencia del propietario vía rutina/sesión):**
 ```sql
@@ -940,6 +1037,119 @@ class EstadoDiarioDb {
 La puntuación de fatiga se calcula como: `(6-sueño)×5 + (estrés-1)×5 + (6-energía)×4 + (dolor-1)×7`, limitado a 0-100. Valores > 50 activan `requiereAdaptacion`, indicando al servicio IA que reduzca volumen un 30% y evite ejercicios en zonas con dolor.
 
 Se persiste mediante `guardarEstadoDiario()` (upsert por `usuario_id + fecha`) desde el check-in antes de cada sesión en vivo.
+
+### 2.5.2 HISTORIAL_OBJETIVOS (cambios de objetivo del usuario — Fase 5)
+
+**Migración 0046 (`202606060046_historial_objetivos.sql`):**
+
+```sql
+CREATE TABLE historial_objetivos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  objetivo TEXT NOT NULL,
+  objetivo_anterior TEXT,
+  fecha_inicio DATE NOT NULL DEFAULT current_date,
+  fecha_fin DATE,
+  rutina_ids UUID[] DEFAULT '{}',
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_historial_objetivos_usuario
+  ON historial_objetivos(usuario_id, fecha_inicio DESC);
+```
+
+**Propósito:** Registrar cada cambio de objetivo del usuario (ej: de `Hipertrofia Muscular` a `Fuerza Máxima`) para alimentar el servicio `TransicionObjetivoService`. La transición interpola parámetros en 3 fases durante 3 semanas.
+
+**Políticas RLS:**
+```sql
+ALTER TABLE historial_objetivos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY historial_objetivos_select ON historial_objetivos
+  FOR SELECT USING (auth.uid() = usuario_id);
+
+CREATE POLICY historial_objetivos_insert ON historial_objetivos
+  FOR INSERT WITH CHECK (auth.uid() = usuario_id);
+
+CREATE POLICY historial_objetivos_update ON historial_objetivos
+  FOR UPDATE USING (auth.uid() = usuario_id);
+```
+
+**Modelo Dart `HistorialObjetivoDb`:**
+```dart
+class HistorialObjetivoDb {
+  final String id;
+  final String usuarioId;
+  final String objetivo;
+  final String? objetivoAnterior;
+  final DateTime fechaInicio;
+  final DateTime? fechaFin;
+  final List<String> rutinaIds;
+
+  int get semanasActivo {
+    final fin = fechaFin ?? DateTime.now();
+    return fin.difference(fechaInicio).inDays ~/ 7;
+  }
+}
+```
+
+### 2.5.3 RECOMENDACIONES_PENDIENTES (sugerencias post-sesión — Fase 7)
+
+**Migración 0048 (`202606060048_recomendaciones_pendientes.sql`):**
+
+```sql
+CREATE TABLE recomendaciones_pendientes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL CHECK (tipo IN ('progresion','degradacion','descarga','variante','academico')),
+  titulo TEXT NOT NULL,
+  descripcion TEXT,
+  ejercicio_id UUID REFERENCES ejercicios(id) ON DELETE SET NULL,
+  rutina_id UUID REFERENCES rutinas(id) ON DELETE SET NULL,
+  datos JSONB DEFAULT '{}',
+  aplicada BOOLEAN NOT NULL DEFAULT false,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_recom_pend_usuario
+  ON recomendaciones_pendientes(usuario_id, creado_en DESC);
+```
+
+**Propósito:** Almacenar sugerencias generadas automáticamente tras cada sesión por el `FeedbackEngine` (Fase 7) o por el job nocturno `pg_cron` (Fase 10). Tipos:
+- `progresion`: Aumentar carga (RPE bajo, sin fallos)
+- `degradacion`: Reducir carga (repeticiones fallidas detectadas)
+- `descarga`: Semana de recuperación (fatiga alta o inactividad)
+- `variante`: Sustituir ejercicio por variante similar
+- `academico`: Ajuste por carga académica (modo exámenes)
+
+**Políticas RLS:**
+```sql
+ALTER TABLE recomendaciones_pendientes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY recom_pend_select ON recomendaciones_pendientes
+  FOR SELECT USING (auth.uid() = usuario_id);
+
+CREATE POLICY recom_pend_insert ON recomendaciones_pendientes
+  FOR INSERT WITH CHECK (auth.uid() = usuario_id);
+
+CREATE POLICY recom_pend_update ON recomendaciones_pendientes
+  FOR UPDATE USING (auth.uid() = usuario_id);
+```
+
+**Modelo Dart `RecomendacionPendienteDb`:**
+```dart
+class RecomendacionPendienteDb {
+  final String id;
+  final String usuarioId;
+  final String tipo;         // progresion | degradacion | descarga | variante | academico
+  final String titulo;
+  final String? descripcion;
+  final String? ejercicioId;
+  final String? rutinaId;
+  final Map<String, dynamic> datos;  // JSONB: factor_carga, dias_inactivo, fatiga_promedio
+  final bool aplicada;
+  final DateTime creadoEn;
+}
+```
 
 ---
 
@@ -1404,6 +1614,7 @@ CREATE TABLE carga_academica_semanal (
   nivel_estres INT NOT NULL DEFAULT 5,
   horas_sueno_promedio DOUBLE PRECISION NOT NULL DEFAULT 7,
   notas TEXT,
+  xp_estudio_otorgado BOOLEAN NOT NULL DEFAULT false,  -- Migración 0051: XP único por semana
   creado_en TIMESTAMP DEFAULT now(),
   actualizado_en TIMESTAMP DEFAULT now(),
 
@@ -1425,6 +1636,76 @@ CREATE INDEX idx_carga_academica_semana ON carga_academica_semanal(semana_inicio
 CREATE POLICY "carga_academica_todo" ON carga_academica_semanal
   FOR ALL USING (auth.uid() = usuario_id);
 ```
+
+**Modelo Dart `CargaAcademicaSemanalDb`** (`app/lib/shared/models/db_models.dart:1188`):
+
+```dart
+class CargaAcademicaSemanalDb {
+  final String id;
+  final String usuarioId;
+  final DateTime semanaInicio;
+  final int horasEstudioPlaneadas;
+  final int horasEstudioReales;
+  final int evaluacionesSemana;
+  final int entregasSemana;
+  final int nivelEstres;          // 1-10
+  final double horasSuenoPromedio;
+  final String? notas;
+  final bool xpEstudioOtorgado;     // Migración 0051 — flag de XP semanal único
+  final DateTime creadoEn;
+  final DateTime actualizadoEn;
+
+  factory CargaAcademicaSemanalDb.fromMap(Map<String, dynamic> map);
+}
+```
+
+**DTO `ContextoAcademico`** (`app/lib/features/bienestar/infrastructure/recomendacion_contexto_service.dart:9`):
+
+DTO que agrega datos académicos y energéticos para alimentar el pipeline de recomendación. **No es un modelo de BD**, sino un objeto de transferencia construido desde 4 providers:
+
+```dart
+class ContextoAcademico {
+  final double horasEstudioReales;       // desde carga_academica_semanal
+  final double nivelEstres;              // desde carga_academica_semanal (1-10)
+  final int evaluacionesSemana;          // desde carga_academica_semanal
+  final double horasSuenoPromedio;       // desde carga_academica_semanal
+  final bool tieneExamenesProximos;      // desde entregas_examenes (próx. 7 días)
+  final double adherenciaAcademica;      // desde adherenciaAcademicaProvider (0-100)
+  final double estadoEnergetico;         // desde estadoEnergeticoProvider (0-100)
+}
+```
+
+**Relación con el pipeline de recomendación:**
+
+```
+carga_academica_semanal ──→ cargaAcademicaSemanalProvider (timeout 8s)
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+        adherenciaAcademicaProvider  estadoEnergeticoProvider  contextoAcademicoProvider
+        (0-100, disciplina pura)    (0-100, gates no lineales)  (combina carga + exámenes
+                    │               │                            + adherencia + energía)
+                    └───────────────┼───────────────┘
+                                    ▼
+                    RecomendacionOrquestadorService
+                      ├── calcularAjustes(academico, fisiologico, estadoDiario)
+                      │     ├── _calcularFCT() → factor de carga total
+                      │     ├── estadoEnergetico < 30 → ×0.40 volumen
+                      │     └── estadoEnergetico < 50 → ×0.75 volumen
+                      │
+                      └── RecomendacionIaService.refinarRutina()
+                            └── _formatearContextoCompleto()
+                                  └── incluye CARGA ACADEMICA en el prompt
+```
+
+**`syncCargaAcademicaSemanal()`** (`app/lib/features/bienestar/application/rutina_provider.dart:1094`):
+
+Función que auto-popula `carga_academica_semanal` desde datos reales antes de cada recomendación:
+1. Consulta `horarios_academicos` (tipo='estudio') de la semana actual → calcula `horas_estudio_reales`
+2. Consulta `entregas_examenes` de la semana → cuenta `evaluaciones_semana` y `entregas_semana`
+3. UPSERT en `carga_academica_semanal` con `ON CONFLICT (usuario_id, semana_inicio)`
+4. Si `horasReales ≥ 0.8 × horasPlaneadas` y `xp_estudio_otorgado == false` → otorga **150 XP** y marca el flag (único por semana)
+5. Invalida 4 providers para refresh en cascada
 
 ---
 
@@ -1658,6 +1939,8 @@ $$ LANGUAGE plpgsql;
 | **historial_peso** | Propio | Propio | - | - |
 | **plan_entrenamiento_semanal** | Propio | Propio | Propio | Propio |
 | **estado_diario_usuario** | Propio | Propio | Propio | - |
+| **historial_objetivos** | Propio | Propio | Propio | - |
+| **recomendaciones_pendientes** | Propio | Propio | Propio | - |
 | **actividades_sociales** | Propio + público | Propio | - | - |
 | **interacciones_sociales** | Propio + público | Propio | - | Propio |
 | **amistades** | Propio | Propio | Propio | Propio |
@@ -1724,8 +2007,8 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ---
 
-**Documento compilado:** 29-05-2026
-**Versión:** 3.8
-**Referencia:** RFC v3.8 - Arquitectura de datos
+**Documento compilado:** 09-06-2026
+**Versión:** 4.4
+**Referencia:** RFC v4.0 - Motor de Recomendaciones (Fases 0-10), Pipeline Académico v5.0
 **Validador:** Tech Lead + DBA
 

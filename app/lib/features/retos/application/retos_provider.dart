@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
+import '../../bienestar/application/rutina_provider.dart';
 import '../../dashboard/application/dashboard_provider.dart';
 
 class RetoResumen {
@@ -45,7 +46,7 @@ final retosProvider = FutureProvider<List<RetoResumen>>((ref) async {
   final retosData = await client
       .from('retos')
       .select(
-          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en')
+          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en, racha_actual, mejor_racha, ultimo_dia_activo')
       .eq('usuario_id', user.id)
       .eq('esta_completado', false)
       .order('fecha_fin', ascending: true);
@@ -156,6 +157,8 @@ void _invalidarRetos(WidgetRef ref, {String? retoId}) {
 
 Future<void> completarReto(String retoId, WidgetRef ref) async {
   final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+
   await client.from('retos').update({
     'esta_completado': true,
   }).eq('id', retoId);
@@ -163,6 +166,19 @@ Future<void> completarReto(String retoId, WidgetRef ref) async {
     'progreso_actual': 100,
     'esta_completado': true,
   }).eq('reto_id', retoId);
+
+  if (user != null) {
+    final hitosData =
+        await client.from('hitos_de_reto').select('id').eq('reto_id', retoId);
+    final cantidadHitos = (hitosData as List).length;
+    final xpGanado = cantidadHitos > 0 ? (cantidadHitos * 100) + 300 : 200;
+
+    final xpResult = await otorgarXp(client, user.id, xpGanado);
+    if (xpResult != null) {
+      ref.invalidate(dashboardProvider);
+    }
+  }
+
   _invalidarRetos(ref, retoId: retoId);
 }
 
@@ -299,7 +315,7 @@ final retosPublicosProvider = FutureProvider<List<RetoResumen>>((ref) async {
   final retosData = await client
       .from('retos')
       .select(
-          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en')
+          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en, racha_actual, mejor_racha, ultimo_dia_activo')
       .eq('visibilidad', 'publico')
       .neq('usuario_id', user.id)
       .eq('esta_completado', false)

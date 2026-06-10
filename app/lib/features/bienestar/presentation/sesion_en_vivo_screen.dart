@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../core/design_system/sv_colors.dart';
 import '../application/rutina_provider.dart';
+import '../application/ejercicios_provider.dart';
 
 class LiveSessionScreen extends ConsumerStatefulWidget {
   const LiveSessionScreen({super.key});
@@ -17,7 +17,6 @@ class LiveSessionScreen extends ConsumerStatefulWidget {
 
 class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   late final String _diaId;
-  late final String _semanaId;
   late final String _rutinaId;
   bool _paramsCargados = false;
 
@@ -39,6 +38,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   bool _checkInMostrado = false;
   bool _mostrarOverlayCheckIn = false;
   bool _seriesReducidas = false;
+  List<String> _zonasEvitar = [];
 
   @override
   void initState() => super.initState();
@@ -50,7 +50,6 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
     final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
     if (extra != null) {
       _diaId = extra['diaId'] as String;
-      _semanaId = extra['semanaId'] as String;
       _rutinaId = extra['rutinaId'] as String;
       _paramsCargados = true;
     }
@@ -60,8 +59,12 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   void dispose() {
     _cronometro?.cancel();
     _descansoTimer?.cancel();
-    for (final c in _pesoCtrl.values) c.dispose();
-    for (final c in _repsCtrl.values) c.dispose();
+    for (final c in _pesoCtrl.values) {
+      c.dispose();
+    }
+    for (final c in _repsCtrl.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -147,7 +150,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
-                      child: Text('${_formatoTiempo(_segundosTotales)}',
+                      child: Text(_formatoTiempo(_segundosTotales),
                           style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.w700))),
                   const SizedBox(height: 16),
@@ -202,14 +205,32 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
       setState(() => _finalizando = true);
       _cronometro?.cancel();
       _descansoTimer?.cancel();
-      await finalizarSesion(
+      final xpResult = await finalizarSesion(
           sesionId: _sesionId!,
           diaId: _diaId,
           rutinaId: _rutinaId,
           duracionSegundos: _segundosTotales,
           rpe: result.rpe,
           ref: ref);
-      if (mounted) context.go('/bienestar/rutina/$_rutinaId');
+      if (mounted) {
+        if (xpResult != null && xpResult.subeNivel) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  '¡Subiste a nivel ${xpResult.nuevoNivel}! 🎉 +${xpResult.xpGanado} XP'),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else if (xpResult != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('+${xpResult.xpGanado} XP 🔥'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+        context.go('/bienestar/rutina/$_rutinaId');
+      }
     }
   }
 
@@ -217,8 +238,9 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
     final h = segundos ~/ 3600;
     final m = (segundos % 3600) ~/ 60;
     final s = segundos % 60;
-    if (h > 0)
+    if (h > 0) {
       return '${h}h ${m.toString().padLeft(2, '0')}m ${s.toString().padLeft(2, '0')}s';
+    }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
@@ -294,6 +316,8 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                     seriesLocales: _seriesLocales,
                     pesoCtrl: _pesoCtrl,
                     repsCtrl: _repsCtrl,
+                    seriesReducidas: _seriesReducidas,
+                    zonasEvitar: _zonasEvitar,
                     descansoActivoEjercicioId: _descansoActivoEjercicioId,
                     descansoActivoSerie: _descansoActivoSerie,
                     descansoRestante: _descansoRestante,
@@ -352,7 +376,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
         icon: Icons.healing_rounded,
         titulo: 'Evitar ejercicios de zonas con dolor',
         descripcion: r.zonasDolor.join(', '),
-        aplicar: () => setState(() {}),
+        aplicar: () => setState(() => _zonasEvitar = r.zonasDolor),
       ));
     }
     if (r.energia <= 2) {
@@ -441,7 +465,8 @@ class _CheckInOverlayState extends ConsumerState<_CheckInOverlay> {
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                const Text("Responde durante el descanso.",
+                const Text(
+                    "Tus respuestas adaptan el entrenamiento y mejoran las recomendaciones futuras.",
                     style: TextStyle(fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 20),
                 _s("Calidad del sueno", _sueno, (v) => _sueno = v,
@@ -628,6 +653,8 @@ class _EjerciciosList extends ConsumerWidget {
       required this.seriesLocales,
       required this.pesoCtrl,
       required this.repsCtrl,
+      required this.seriesReducidas,
+      required this.zonasEvitar,
       required this.descansoActivoEjercicioId,
       required this.descansoActivoSerie,
       required this.descansoRestante,
@@ -637,6 +664,8 @@ class _EjerciciosList extends ConsumerWidget {
   final String diaId;
   final Map<String, Map<int, _SerieLocal>> seriesLocales;
   final Map<String, TextEditingController> pesoCtrl, repsCtrl;
+  final bool seriesReducidas;
+  final List<String> zonasEvitar;
   final String? descansoActivoEjercicioId;
   final int? descansoActivoSerie;
   final int descansoRestante;
@@ -665,6 +694,8 @@ class _EjerciciosList extends ConsumerWidget {
                   seriesLocales: seriesLocales,
                   pesoCtrl: pesoCtrl,
                   repsCtrl: repsCtrl,
+                  seriesReducidas: seriesReducidas,
+                  zonasEvitar: zonasEvitar,
                   descansoActivoEjercicioId: descansoActivoEjercicioId,
                   descansoActivoSerie: descansoActivoSerie,
                   descansoRestante: descansoRestante,
@@ -681,6 +712,8 @@ class _EjercicioLiveCard extends StatelessWidget {
       required this.seriesLocales,
       required this.pesoCtrl,
       required this.repsCtrl,
+      required this.seriesReducidas,
+      required this.zonasEvitar,
       required this.descansoActivoEjercicioId,
       required this.descansoActivoSerie,
       required this.descansoRestante,
@@ -691,6 +724,8 @@ class _EjercicioLiveCard extends StatelessWidget {
   final dynamic ejercicio;
   final Map<String, Map<int, _SerieLocal>> seriesLocales;
   final Map<String, TextEditingController> pesoCtrl, repsCtrl;
+  final bool seriesReducidas;
+  final List<String> zonasEvitar;
   final String? descansoActivoEjercicioId;
   final int? descansoActivoSerie;
   final int descansoRestante;
@@ -698,155 +733,286 @@ class _EjercicioLiveCard extends StatelessWidget {
   final VoidCallback onSaltarDescanso;
   final void Function(int) onAjustarDescanso;
 
+  static const _mapZonasAMusculos = {
+    'piernas': [
+      'Cuádriceps',
+      'Isquiotibiales',
+      'Glúteo mayor',
+      'Glúteo medio',
+      'Aductores',
+      'Abductores',
+      'Gemelos',
+      'Sóleo',
+      'Tibial anterior'
+    ],
+    'espalda': [
+      'Dorsal ancho',
+      'Romboides',
+      'Trapecio superior',
+      'Trapecio medio',
+      'Trapecio inferior',
+      'Erectores espinales'
+    ],
+    'hombros': ['Deltoides anterior', 'Deltoides medio', 'Deltoides posterior'],
+    'brazos': [
+      'Bíceps braquial',
+      'Tríceps braquial',
+      'Braquial',
+      'Braquiorradial'
+    ],
+    'pecho': ['Pectoral mayor', 'Pectoral menor', 'Serrato anterior'],
+    'core': ['Recto abdominal', 'Oblicuos', 'Transverso abdominal'],
+  };
+
+  bool _enZonaDolor(EjercicioDb? ej) {
+    if (ej == null || zonasEvitar.isEmpty) return false;
+    final musculosEvitar = <String>{};
+    for (final zona in zonasEvitar) {
+      final mapped = _mapZonasAMusculos[zona.toLowerCase().trim()];
+      if (mapped != null) {
+        musculosEvitar.addAll(mapped.map((m) => m.toLowerCase()));
+      }
+    }
+    final musculosEj = ej.musculosObjetivo.map((m) => m.toLowerCase()).toSet();
+    return musculosEj.intersection(musculosEvitar).isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final e = ejercicio as dynamic;
+    final e = ejercicio as SeleccionEjercicioDb;
     final enDescanso = descansoActivoEjercicioId == e.id;
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: Supabase.instance.client
-          .from('ejercicios')
-          .select('nombre')
-          .eq('id', e.ejercicioId)
-          .maybeSingle(),
-      builder: (ctx, snap) {
-        final nombre = snap.data?['nombre'] as String? ?? 'Ejercicio';
-        return Card(
-            elevation: 0,
-            margin: const EdgeInsets.only(bottom: 10),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(
-                    color: enDescanso
-                        ? Colors.orange.withValues(alpha: 0.3)
-                        : theme.colorScheme.outlineVariant
-                            .withValues(alpha: 0.3))),
-            child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        Expanded(
-                            child: Text(nombre,
-                                style: theme.textTheme.titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w700))),
-                        Text(
-                            '${e.series}×${e.repeticiones} · ${e.segundosDescanso}s',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: SVColors.onSurfaceMuted))
-                      ]),
-                      const SizedBox(height: 10),
-                      ...List.generate(e.series as int, (i) {
-                        final numSerie = i + 1;
-                        final local = seriesLocales[e.id]?[numSerie];
-                        final completada = local?.completada ?? false;
-                        final esDescanso =
-                            enDescanso && descansoActivoSerie == numSerie;
-                        final k = '${e.id}_$numSerie';
-                        pesoCtrl.putIfAbsent(
-                            k,
-                            () => TextEditingController(
-                                text: '${(e as dynamic).pesoKg ?? ''}'));
-                        repsCtrl.putIfAbsent(
-                            k,
-                            () => TextEditingController(
-                                text: '${e.repeticiones}'));
-                        return Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(children: [
-                              SizedBox(
-                                  width: 32,
-                                  child: esDescanso
-                                      ? Column(children: [
-                                          Text('${descansoRestante}s',
-                                              style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w700,
-                                                  color:
-                                                      Colors.orange.shade700)),
-                                          Text('⏳',
-                                              style: TextStyle(fontSize: 12))
-                                        ])
-                                      : InkWell(
-                                          onTap: () => onMarcarSerie(
-                                              e.id, numSerie, !completada),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                          child: Icon(
-                                              completada
-                                                  ? Icons.check_circle
-                                                  : Icons
-                                                      .radio_button_unchecked,
-                                              size: 22,
-                                              color: completada
-                                                  ? Colors.green
-                                                  : Colors.grey.shade400))),
-                              const SizedBox(width: 8),
-                              Text('S$numSerie',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade500,
-                                      fontWeight: FontWeight.w500)),
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                  width: 52,
-                                  child: TextField(
-                                      controller: pesoCtrl[k],
-                                      keyboardType: TextInputType.number,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 11),
-                                      decoration: const InputDecoration(
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 4, vertical: 6),
-                                          border: OutlineInputBorder(),
-                                          hintText: 'kg'))),
-                              const SizedBox(width: 4),
-                              const Text('kg',
-                                  style: TextStyle(
-                                      fontSize: 10, color: Colors.grey)),
-                              const SizedBox(width: 8),
-                              const Text('×',
-                                  style: TextStyle(
-                                      fontSize: 11, color: Colors.grey)),
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                  width: 40,
-                                  child: TextField(
-                                      controller: repsCtrl[k],
-                                      keyboardType: TextInputType.number,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 11),
-                                      decoration: InputDecoration(
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 4, vertical: 6),
-                                          border: const OutlineInputBorder(),
-                                          hintText: '${e.repeticiones}'))),
-                              const SizedBox(width: 4),
-                              Text('reps',
-                                  style: TextStyle(
-                                      fontSize: 10, color: Colors.grey)),
-                            ]));
-                      }),
-                      if (enDescanso) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _btn2('-15s', Colors.orange,
-                                  () => onAjustarDescanso(-15)),
-                              const SizedBox(width: 6),
-                              _btn2('Saltar', Colors.red, onSaltarDescanso),
-                              const SizedBox(width: 6),
-                              _btn2('+15s', Colors.orange,
-                                  () => onAjustarDescanso(15))
-                            ])
-                      ],
-                    ])));
-      },
-    );
+    final seriesEfectivas =
+        seriesReducidas ? (e.series - 1).clamp(1, 99) : e.series;
+    return Consumer(builder: (context, ref, _) {
+      final ejercicioAsync = ref.watch(ejercicioDetalleProvider(e.ejercicioId));
+      final ej = ejercicioAsync.valueOrNull;
+      final nombre = ej?.nombre ?? 'Ejercicio';
+      final modalidad = ej?.modalidadEntrenamiento ?? '';
+      final esCircuito = ej?.esCircuito ?? false;
+      final finalidad = ej?.finalidadPrincipal ?? '';
+      final enZonaDolor = _enZonaDolor(ej);
+      return Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 10),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                  color: enZonaDolor
+                      ? Colors.amber.withValues(alpha: 0.5)
+                      : enDescanso || seriesReducidas
+                          ? Colors.orange.withValues(alpha: 0.3)
+                          : theme.colorScheme.outlineVariant
+                              .withValues(alpha: 0.3))),
+          child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Row(children: [
+                              Expanded(
+                                child: Text(nombre,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w700)),
+                              ),
+                              if (enZonaDolor)
+                                Tooltip(
+                                  message:
+                                      'Ejercicio en zona de dolor reportada hoy',
+                                  child: Icon(Icons.warning_amber_rounded,
+                                      size: 18, color: Colors.amber.shade700),
+                                ),
+                            ]),
+                            if (modalidad.isNotEmpty ||
+                                esCircuito ||
+                                finalidad.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Row(children: [
+                                  if (modalidad.isNotEmpty)
+                                    Container(
+                                      margin: const EdgeInsets.only(right: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(modalidad,
+                                          style: TextStyle(
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  theme.colorScheme.primary)),
+                                    ),
+                                  if (esCircuito)
+                                    Container(
+                                      margin: const EdgeInsets.only(right: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.tertiary
+                                            .withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text('Circuito',
+                                          style: TextStyle(
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w700,
+                                              color:
+                                                  theme.colorScheme.tertiary)),
+                                    ),
+                                  if (finalidad.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.grey.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(finalidad,
+                                          style: const TextStyle(
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey)),
+                                    ),
+                                ]),
+                              ),
+                          ])),
+                      Text(
+                          seriesReducidas
+                              ? '$seriesEfectivas×${e.repeticiones} · ${e.segundosDescanso}s (adaptado)'
+                              : '${e.series}×${e.repeticiones} · ${e.segundosDescanso}s',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: seriesReducidas
+                                  ? Colors.orange.shade700
+                                  : SVColors.onSurfaceMuted))
+                    ]),
+                    const SizedBox(height: 10),
+                    ...List.generate(seriesEfectivas, (i) {
+                      final numSerie = i + 1;
+                      final local = seriesLocales[e.id]?[numSerie];
+                      final completada = local?.completada ?? false;
+                      final esDescanso =
+                          enDescanso && descansoActivoSerie == numSerie;
+                      final k = '${e.id}_$numSerie';
+                      pesoCtrl.putIfAbsent(k, () {
+                        final pesoInicial = (e.pesosKg != null &&
+                                i < e.pesosKg!.length &&
+                                e.pesosKg![i] > 0)
+                            ? e.pesosKg![i]
+                            : e.pesoKg;
+                        return TextEditingController(
+                            text: pesoInicial != null && pesoInicial > 0
+                                ? pesoInicial.toStringAsFixed(
+                                    pesoInicial == pesoInicial.roundToDouble()
+                                        ? 0
+                                        : 1)
+                                : '');
+                      });
+                      repsCtrl.putIfAbsent(
+                          k,
+                          () =>
+                              TextEditingController(text: '${e.repeticiones}'));
+                      return Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(children: [
+                            SizedBox(
+                                width: 32,
+                                child: esDescanso
+                                    ? Column(children: [
+                                        Text('${descansoRestante}s',
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.orange.shade700)),
+                                        const Text('⏳',
+                                            style: TextStyle(fontSize: 12))
+                                      ])
+                                    : InkWell(
+                                        onTap: () => onMarcarSerie(
+                                            e.id, numSerie, !completada),
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Icon(
+                                            completada
+                                                ? Icons.check_circle
+                                                : Icons.radio_button_unchecked,
+                                            size: 22,
+                                            color: completada
+                                                ? Colors.green
+                                                : Colors.grey.shade400))),
+                            const SizedBox(width: 8),
+                            Text('S$numSerie',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500,
+                                    fontWeight: FontWeight.w500)),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                                width: 52,
+                                child: TextField(
+                                    controller: pesoCtrl[k],
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 11),
+                                    decoration: const InputDecoration(
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 4, vertical: 6),
+                                        border: OutlineInputBorder(),
+                                        hintText: 'kg'))),
+                            const SizedBox(width: 4),
+                            const Text('kg',
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.grey)),
+                            const SizedBox(width: 8),
+                            const Text('×',
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.grey)),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                                width: 40,
+                                child: TextField(
+                                    controller: repsCtrl[k],
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 11),
+                                    decoration: InputDecoration(
+                                        isDense: true,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 4, vertical: 6),
+                                        border: const OutlineInputBorder(),
+                                        hintText: '${e.repeticiones}'))),
+                            const SizedBox(width: 4),
+                            const Text('reps',
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.grey)),
+                          ]));
+                    }),
+                    if (enDescanso) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _btn2('-15s', Colors.orange,
+                                () => onAjustarDescanso(-15)),
+                            const SizedBox(width: 6),
+                            _btn2('Saltar', Colors.red, onSaltarDescanso),
+                            const SizedBox(width: 6),
+                            _btn2('+15s', Colors.orange,
+                                () => onAjustarDescanso(15))
+                          ])
+                    ],
+                  ])));
+    });
   }
 
   Widget _btn2(String label, Color c, VoidCallback onTap) => InkWell(
@@ -876,142 +1042,4 @@ class _CheckInResult {
   });
   final int sueno, estres, energia, dolor;
   final List<String> zonasDolor;
-}
-
-class _CheckInDialog extends StatefulWidget {
-  const _CheckInDialog();
-
-  @override
-  State<_CheckInDialog> createState() => _CheckInDialogState();
-}
-
-class _CheckInDialogState extends State<_CheckInDialog> {
-  int _sueno = 3, _estres = 3, _energia = 3, _dolor = 1;
-  final _zonas = <String>{};
-
-  static const _opcionesZonas = [
-    "piernas",
-    "espalda",
-    "hombros",
-    "brazos",
-    "pecho",
-    "core",
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Row(
-        children: [
-          Icon(Icons.wb_sunny_rounded, size: 22, color: Colors.orange),
-          SizedBox(width: 8),
-          Text("Como te sientes hoy?"),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Antes de entrenar, cuentanos tu estado.",
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 20),
-            _slider("Calidad del sueno", _sueno, (v) => _sueno = v,
-                labels: const [
-                  "Muy mal",
-                  "Mal",
-                  "Regular",
-                  "Bien",
-                  "Excelente"
-                ]),
-            const SizedBox(height: 16),
-            _slider("Nivel de estres", _estres, (v) => _estres = v,
-                labels: const [
-                  "Muy bajo",
-                  "Bajo",
-                  "Moderado",
-                  "Alto",
-                  "Muy alto"
-                ]),
-            const SizedBox(height: 16),
-            _slider("Nivel de energia", _energia, (v) => _energia = v,
-                labels: const ["Agotado", "Bajo", "Normal", "Alto", "Pleno"]),
-            const SizedBox(height: 16),
-            _slider("Dolor / Agujetas", _dolor, (v) => _dolor = v,
-                labels: const [
-                  "Ninguno",
-                  "Leve",
-                  "Moderado",
-                  "Fuerte",
-                  "Intenso"
-                ]),
-            if (_dolor >= 3) ...[
-              const SizedBox(height: 16),
-              const Text("Donde sientes dolor?",
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: _opcionesZonas.map((z) {
-                  final selected = _zonas.contains(z);
-                  return FilterChip(
-                    label: Text(z[0].toUpperCase() + z.substring(1),
-                        style: const TextStyle(fontSize: 11)),
-                    selected: selected,
-                    onSelected: (v) =>
-                        setState(() => v ? _zonas.add(z) : _zonas.remove(z)),
-                    visualDensity: VisualDensity.compact,
-                  );
-                }).toList(),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Omitir")),
-        FilledButton(
-            onPressed: () => Navigator.pop(
-                context,
-                _CheckInResult(
-                  sueno: _sueno,
-                  estres: _estres,
-                  energia: _energia,
-                  dolor: _dolor,
-                  zonasDolor: _zonas.toList(),
-                )),
-            child: const Text("Empezar")),
-      ],
-    );
-  }
-
-  Widget _slider(String label, int value, void Function(int) onChange,
-      {required List<String> labels}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-            Text(labels[value - 1],
-                style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
-        ),
-        Slider(
-          value: value.toDouble(),
-          min: 1,
-          max: 5,
-          divisions: 4,
-          label: labels[value - 1],
-          onChanged: (v) => setState(() => onChange(v.round())),
-        ),
-      ],
-    );
-  }
 }

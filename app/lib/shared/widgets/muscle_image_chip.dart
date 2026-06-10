@@ -75,15 +75,17 @@ class MuscleImageChip extends StatelessWidget {
               color: color.withValues(alpha: 0.7),
             ),
           if (showImage || !compact) const SizedBox(width: 6),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: color.withValues(alpha: 0.85),
-              letterSpacing: 0.3,
+          Flexible(
+            child: Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: color.withValues(alpha: 0.85),
+                letterSpacing: 0.3,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

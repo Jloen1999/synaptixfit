@@ -1,4 +1,8 @@
 """
+OBSOLETO: Reemplazado por seed_completo.py + generate_migration_0042.py.
+Los datos correctos estan en supabase/dataset_final.json (corregido, 909 ejercicios).
+Para re-seed completo: python supabase/seed_completo.py --force
+
 seed_todo.py - Restaurador de relaciones N:M para SynaptixFit.
 
 Los catalogos y ejercicios se insertan via migraciones SQL (0034-0038).
@@ -186,7 +190,7 @@ def main():
     print()
 
     # Paso 1: Verificar catalogos
-    print("Paso 1: Verificando catalogos (insertados por migraciones 0024-0026)...")
+    print("Paso 1: Verificando catalogos (insertados por migraciones 0035-0037)...")
     musculos_map, total_m, falt_m = cargar_catalogo(supabase, "musculos", MUSCULOS_JSON)
     partes_map, total_p, falt_p = cargar_catalogo(supabase, "partes_cuerpo", PARTES_JSON)
     equip_map, total_e, falt_e = cargar_catalogo(supabase, "equipamientos", EQUIP_JSON)
@@ -198,33 +202,22 @@ def main():
 
     # Paso 2: Verificar ejercicios existentes
     print("Paso 2: Verificando ejercicios (insertados por migracion 0038)...")
-    resp = supabase.table("ejercicios").select("id, nombre").execute()
-    ejercicios_bd = {}
-    for row in resp.data:
-        ejercicios_bd[row["nombre"].strip().lower()] = row["id"]
+    resp = supabase.table("ejercicios").select("id, nombre").order("id").execute()
+    bd_rows = resp.data
 
-    faltan = []
-    for ej in ejercicios:
-        key = ej["nombre_ejercicio"].strip().lower()
-        if key not in ejercicios_bd:
-            faltan.append(ej["nombre_ejercicio"])
-
-    if faltan:
-        print(f"  [ERROR] {len(faltan)} ejercicios faltantes en BD:")
-        for n in faltan:
-            print(f"         - {n}")
-        print("   Ejecuta primero la migracion 0038.")
+    if len(bd_rows) != len(ejercicios):
+        print(f"  [ERROR] BD tiene {len(bd_rows)} ejercicios, JSON tiene {len(ejercicios)}.")
+        print("   Re-ejecuta la migracion 0038.")
         sys.exit(1)
     else:
-        print(f"  [OK] {len(ejercicios_bd)}/{len(ejercicios)} ejercicios en BD")
+        print(f"  [OK] {len(bd_rows)}/{len(ejercicios)} ejercicios en BD")
     print()
 
-    # Paso 3: Restaurar relaciones N:M
+    # Paso 3: Restaurar relaciones N:M (por orden de insercion)
     print("Paso 3: Restaurando relaciones N:M...")
     total_relaciones = 0
-    for ej in ejercicios:
-        key = ej["nombre_ejercicio"].strip().lower()
-        eid = ejercicios_bd[key]
+    for ej, row in zip(ejercicios, bd_rows):
+        eid = row["id"]
         total_relaciones += insertar_relaciones(
             supabase, eid, ej, musculos_map, partes_map, equip_map
         )

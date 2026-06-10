@@ -50,10 +50,10 @@ class MusculoDb {
   }
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'nombre': nombre,
-    if (urlImagen != null) 'url_imagen': urlImagen,
-  };
+        'id': id,
+        'nombre': nombre,
+        if (urlImagen != null) 'url_imagen': urlImagen,
+      };
 
   MusculoDb copyWith({int? id, String? nombre, String? urlImagen}) {
     return MusculoDb(
@@ -64,7 +64,8 @@ class MusculoDb {
   }
 
   @override
-  String toString() => 'MusculoDb(id: $id, nombre: $nombre, urlImagen: $urlImagen)';
+  String toString() =>
+      'MusculoDb(id: $id, nombre: $nombre, urlImagen: $urlImagen)';
 
   @override
   bool operator ==(Object other) =>
@@ -132,9 +133,9 @@ class CatalogosEjercicios {
   /// Retorna la URL de la imagen R2 para un músculo por su nombre, o null.
   String? urlImagenMusculo(String nombre) {
     final match = musculos.cast<MusculoDb?>().firstWhere(
-      (m) => m!.nombre == nombre,
-      orElse: () => null,
-    );
+          (m) => m!.nombre == nombre,
+          orElse: () => null,
+        );
     return match?.urlImagen;
   }
 }

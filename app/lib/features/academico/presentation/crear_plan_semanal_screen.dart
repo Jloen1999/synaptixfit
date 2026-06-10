@@ -355,7 +355,7 @@ class _CrearPlanSemanalScreenState
                   const SizedBox(height: 12),
                   asignaturasAsync.when(
                     data: (asigs) => DropdownButtonFormField<String?>(
-                      value: asignaturaId,
+                      initialValue: asignaturaId,
                       isExpanded: true,
                       decoration:
                           const InputDecoration(labelText: 'Asignatura'),
@@ -397,7 +397,7 @@ class _CrearPlanSemanalScreenState
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: dificultad,
+                          initialValue: dificultad,
                           decoration:
                               const InputDecoration(labelText: 'Dificultad'),
                           items: ['baja', 'media', 'alta']
@@ -564,7 +564,7 @@ class _CrearPlanSemanalScreenState
                 children: [
                   asignaturasAsync.when(
                     data: (asigs) => DropdownButtonFormField<String?>(
-                      value: asignaturaId,
+                      initialValue: asignaturaId,
                       isExpanded: true,
                       decoration:
                           const InputDecoration(labelText: 'Asignatura'),
@@ -1185,8 +1185,8 @@ class _BalanceCard extends StatelessWidget {
                           : deporte / (estudio + deporte),
                       minHeight: 6,
                       backgroundColor: Colors.blue.withValues(alpha: 0.2),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          const Color(0xFF00ACC1)),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF00ACC1)),
                     ),
                   ),
                 ],

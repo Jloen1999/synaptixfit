@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/models/db_models.dart';
 
 /// Tipos de cambios que pueden ocurrir en el perfil para invalidación selectiva.
-enum PerfilCambio { nombre, bienestar, preferencias, todo }
+enum PerfilCambio { nombre, bienestar, preferencias, academico, todo }
 
 class PerfilUsuario {
   const PerfilUsuario({required this.usuario, required this.perfil});
@@ -153,6 +153,22 @@ final perfilActividadProvider = FutureProvider<PerfilActividad>((ref) async {
       sesiones: sesiones,
       logros: logros,
       caloriasAcumuladas: caloriasAcumuladas);
+});
+
+/// Perfil académico (AcademicoTab).
+final perfilAcademicoProvider = FutureProvider<PerfilAcademicoDb?>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return null;
+
+  final data = await client
+      .from('perfil_academico_usuario')
+      .select()
+      .eq('usuario_id', user.id)
+      .maybeSingle();
+
+  if (data == null) return null;
+  return PerfilAcademicoDb.fromMap(data);
 });
 
 /// Preferencias de notificación (AjustesTab).

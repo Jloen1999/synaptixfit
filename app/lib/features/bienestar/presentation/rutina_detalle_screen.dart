@@ -24,21 +24,32 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
   int _semanaSeleccionada = 0;
   bool _celebracionMostrada = false;
   bool _completando = false;
+  bool _reutilizando = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final semanasAsync = ref.watch(semanasDeRutinaProvider(widget.rutinaId));
+    final todasCompletadas =
+        semanasAsync.valueOrNull?.every((s) => s.estado == 'completada') ??
+            false;
 
     return FeatureScaffold(
       title: '',
       backPath: '/bienestar',
       actions: [
-        IconButton(
-          icon: const Icon(Icons.edit_outlined, size: 20),
-          tooltip: 'Editar rutina',
-          onPressed: () => _editarRutina(),
-        ),
+        if (!todasCompletadas)
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            tooltip: 'Editar rutina',
+            onPressed: () => _editarRutina(),
+          ),
+        if (todasCompletadas)
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+            tooltip: 'Reutilizar rutina',
+            onPressed: () => _reutilizarRutina(),
+          ),
         IconButton(
           icon: const Icon(Icons.delete_outline, size: 20),
           tooltip: 'Eliminar rutina',
@@ -64,9 +75,6 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
           }
           final semanaActual = semanas[_semanaSeleccionada];
 
-          // Comprobar si la rutina está completamente terminada
-          final todasCompletadas =
-              semanas.every((s) => s.estado == 'completada');
           if (todasCompletadas && !_celebracionMostrada) {
             _celebracionMostrada = true;
             WidgetsBinding.instance
@@ -82,7 +90,8 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
               Expanded(
                   child: _DiasList(
                       semanaId: semanaActual.id, rutinaId: widget.rutinaId)),
-              if (todasCompletadas) _buildBotonCompletarRutina(theme),
+              if (!todasCompletadas) _buildBotonCompletarRutina(theme),
+              if (todasCompletadas) _buildBotonReutilizarRutina(theme),
             ],
           );
         },
@@ -100,8 +109,9 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
             .eq('id', widget.rutinaId)
             .maybeSingle(),
         builder: (context, snap) {
-          if (!snap.hasData || snap.data == null)
+          if (!snap.hasData || snap.data == null) {
             return const SizedBox.shrink();
+          }
           final r = snap.data!;
 
           return FutureBuilder<List<Map<String, dynamic>>>(
@@ -175,7 +185,7 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
                   Row(
                     children: [
                       Text(
-                          '${(progreso * 100).round()}% completado · ${diasCompletados} días',
+                          '${(progreso * 100).round()}% completado · $diasCompletados días',
                           style: const TextStyle(
                               fontSize: 10, color: Colors.grey)),
                       const Spacer(),
@@ -297,6 +307,32 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
     );
   }
 
+  Widget _buildBotonReutilizarRutina(ThemeData theme) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _reutilizando ? null : _reutilizarRutina,
+            icon: _reutilizando
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.refresh_rounded),
+            label:
+                Text(_reutilizando ? 'Reutilizando...' : 'Reutilizar rutina'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _completarRutina() async {
     setState(() => _completando = true);
     try {
@@ -307,6 +343,7 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
         setState(() => _completando = false);
         ref.invalidate(rutinasUsuarioProvider);
         ref.invalidate(semanasDeRutinaProvider(widget.rutinaId));
+        context.go('/bienestar');
       }
     } catch (e) {
       if (mounted) {
@@ -318,7 +355,133 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
     }
   }
 
+  Future<void> _reutilizarRutina() async {
+    setState(() => _reutilizando = true);
+    final client = Supabase.instance.client;
+    try {
+      final user = client.auth.currentUser;
+      if (user == null) throw Exception('No autenticado');
+
+      final rutinaMap = await client
+          .from('rutinas')
+          .select('nombre, descripcion, objetivo')
+          .eq('id', widget.rutinaId)
+          .maybeSingle();
+      if (rutinaMap == null) throw Exception('Rutina no encontrada');
+
+      final nuevaRutina = await client
+          .from('rutinas')
+          .insert({
+            'usuario_id': user.id,
+            'nombre': '${rutinaMap['nombre']} (copia)',
+            'descripcion': rutinaMap['descripcion'],
+            'visibilidad': 'private',
+            'objetivo': rutinaMap['objetivo'],
+            'cantidad_ejercicios': 0,
+          })
+          .select('id')
+          .single();
+      final nuevoId = nuevaRutina['id'] as String;
+
+      final semanas = await client
+          .from('semanas_rutina')
+          .select()
+          .eq('rutina_id', widget.rutinaId)
+          .order('numero_semana', ascending: true);
+
+      int totalEjercicios = 0;
+      for (final sMap in semanas) {
+        final nuevaSemana = await client
+            .from('semanas_rutina')
+            .insert({
+              'rutina_id': nuevoId,
+              'numero_semana': sMap['numero_semana'],
+              'nombre': sMap['nombre'],
+              'tipo_semana': sMap['tipo_semana'],
+            })
+            .select('id')
+            .single();
+        final nuevoSemanaId = nuevaSemana['id'] as String;
+
+        final dias = await client
+            .from('dias_rutina')
+            .select()
+            .eq('semana_id', sMap['id'])
+            .order('numero_dia', ascending: true);
+
+        for (final dMap in dias) {
+          final nuevoDia = await client
+              .from('dias_rutina')
+              .insert({
+                'semana_id': nuevoSemanaId,
+                'numero_dia': dMap['numero_dia'],
+                'nombre': dMap['nombre'],
+              })
+              .select('id')
+              .single();
+          final nuevoDiaId = nuevoDia['id'] as String;
+
+          final ejercicios = await client
+              .from('seleccion_de_ejercicios')
+              .select()
+              .eq('dia_id', dMap['id'])
+              .order('indice_orden', ascending: true);
+
+          if ((ejercicios as List).isNotEmpty) {
+            final rows = ejercicios.map((eMap) {
+              final row = <String, dynamic>{
+                'rutina_id': nuevoId,
+                'ejercicio_id': eMap['ejercicio_id'],
+                'dia_id': nuevoDiaId,
+                'series': eMap['series'],
+                'repeticiones': eMap['repeticiones'],
+                'segundos_descanso': eMap['segundos_descanso'],
+                'indice_orden': eMap['indice_orden'],
+              };
+              if (eMap['peso_kg'] != null) row['peso_kg'] = eMap['peso_kg'];
+              if (eMap['pesos_kg'] != null) row['pesos_kg'] = eMap['pesos_kg'];
+              if (eMap['duracion_segundos'] != null) {
+                row['duracion_segundos'] = eMap['duracion_segundos'];
+              }
+              if (eMap['distancia_metros'] != null) {
+                row['distancia_metros'] = eMap['distancia_metros'];
+              }
+              if (eMap['tiempo_isometrico_segundos'] != null) {
+                row['tiempo_isometrico_segundos'] =
+                    eMap['tiempo_isometrico_segundos'];
+              }
+              return row;
+            }).toList();
+            await client.from('seleccion_de_ejercicios').insert(rows);
+            totalEjercicios += ejercicios.length;
+          }
+        }
+      }
+
+      await client.from('rutinas').update({
+        'cantidad_ejercicios': totalEjercicios,
+      }).eq('id', nuevoId);
+
+      if (mounted) {
+        setState(() => _reutilizando = false);
+        ref.invalidate(rutinasUsuarioProvider);
+        context.go('/bienestar/rutina/$nuevoId');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _reutilizando = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al reutilizar: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _editarRutina() async {
+    final semanas = ref.read(semanasDeRutinaProvider(widget.rutinaId));
+    final todasCompletadas =
+        semanas.valueOrNull?.every((s) => s.estado == 'completada') ?? false;
+    if (todasCompletadas) return;
     final client = Supabase.instance.client;
     final data = await client
         .from('rutinas')
@@ -332,8 +495,10 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
     final descCtrl =
         TextEditingController(text: data['descripcion'] as String? ?? '');
     String visibilidad = data['visibilidad'] as String? ?? 'private';
-    String objetivo = data['objetivo'] as String? ?? 'fuerza';
+    String objetivo = sanitizarObjetivo(
+        data['objetivo'] as String? ?? 'Hipertrofia Muscular');
 
+    if (!mounted) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -365,23 +530,11 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: objetivo,
+                  initialValue: objetivo,
                   decoration: const InputDecoration(labelText: 'Objetivo'),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'fitness_general',
-                        child: Text('Fitness general')),
-                    DropdownMenuItem(
-                        value: 'perder_peso', child: Text('Perder peso')),
-                    DropdownMenuItem(
-                        value: 'ganar_masa', child: Text('Ganar masa')),
-                    DropdownMenuItem(value: 'fuerza', child: Text('Fuerza')),
-                    DropdownMenuItem(
-                        value: 'resistencia', child: Text('Resistencia')),
-                    DropdownMenuItem(
-                        value: 'movilidad', child: Text('Movilidad')),
-                    DropdownMenuItem(value: 'mixto', child: Text('Mixto')),
-                  ],
+                  items: finalidadesEstandar
+                      .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                      .toList(),
                   onChanged: (v) => setD(() => objetivo = v!),
                 ),
               ],
@@ -450,7 +603,7 @@ class _DiasList extends ConsumerWidget {
       error: (e, _) => Center(
           child: Text('Error: $e', style: const TextStyle(fontSize: 13))),
       data: (dias) {
-        if (dias.isEmpty)
+        if (dias.isEmpty) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             child: Column(children: [
@@ -466,6 +619,7 @@ class _DiasList extends ConsumerWidget {
                   label: const Text('Añadir día')),
             ]),
           );
+        }
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           itemCount: dias.length + 1,
@@ -767,46 +921,90 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
           return FutureBuilder<Map<String, dynamic>?>(
             future: Supabase.instance.client
                 .from('ejercicios')
-                .select('nombre')
+                .select('nombre, modalidad_entrenamiento, es_circuito')
                 .eq('id', e.ejercicioId)
                 .maybeSingle(),
             builder: (context, snap) {
               final nombre = snap.data?['nombre'] as String? ?? 'Ejercicio';
+              final modalidad =
+                  snap.data?['modalidad_entrenamiento'] as String? ?? '';
+              final esCircuito = (snap.data?['es_circuito'] as bool?) ?? false;
               return Padding(
-                padding: const EdgeInsets.only(left: 42, bottom: 2),
-                child: Row(
+                padding: const EdgeInsets.only(left: 42, bottom: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.4),
-                        shape: BoxShape.circle,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.4),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            nombre,
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey.shade700),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (modalidad.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(modalidad,
+                                style: TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.primary)),
+                          ),
+                        Text(
+                          '${e.series}×${e.repeticiones}',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                              fontWeight: FontWeight.w500),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        nombre,
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey.shade700),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 14),
+                      child: Row(children: [
+                        if (esCircuito)
+                          Text('Circuito · ',
+                              style: TextStyle(
+                                  fontSize: 10, color: Colors.grey.shade500)),
+                        if (e.pesosKg != null && e.pesosKg!.any((w) => w > 0))
+                          Text(
+                            e.pesosKg!
+                                .where((w) => w > 0)
+                                .map((w) => w.toStringAsFixed(
+                                    w == w.roundToDouble() ? 0 : 1))
+                                .join('/'),
+                            style: TextStyle(
+                                fontSize: 10, color: Colors.grey.shade400),
+                          )
+                        else if (e.pesoKg != null && e.pesoKg! > 0)
+                          Text(
+                            '${e.pesoKg!.toStringAsFixed(e.pesoKg! == e.pesoKg!.roundToDouble() ? 0 : 1)} kg',
+                            style: TextStyle(
+                                fontSize: 10, color: Colors.grey.shade400),
+                          ),
+                      ]),
                     ),
-                    Text(
-                      '${e.series}×${e.repeticiones}',
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    if (e.pesoKg != null && e.pesoKg! > 0)
-                      Text(
-                        ' · ${e.pesoKg!.toStringAsFixed(e.pesoKg! == e.pesoKg!.roundToDouble() ? 0 : 1)} kg',
-                        style: TextStyle(
-                            fontSize: 10, color: Colors.grey.shade400),
-                      ),
                   ],
                 ),
               );
@@ -914,38 +1112,99 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
   bool _editando = false;
   late int _series, _reps, _descanso;
   late double? _peso;
+  late List<double> _pesosKg;
+  late bool _mismoPeso;
   late int? _duracionSegundos;
   late int? _distanciaMetros;
   late int? _tiempoIsometrico;
 
+  final _pesoCtrl = TextEditingController();
+  final _duracionCtrl = TextEditingController();
+  final _distanciaCtrl = TextEditingController();
+  final _tiempoIsoCtrl = TextEditingController();
+  List<TextEditingController> _pesosKgCtrls = [];
+
   @override
   void initState() {
     super.initState();
+    _initFromEjercicio();
+  }
+
+  void _initFromEjercicio() {
     final e = widget.ejercicio;
     _series = e.series;
     _reps = e.repeticiones;
     _descanso = e.segundosDescanso;
     _peso = e.pesoKg;
+    _pesosKg = e.pesosKg ?? List.filled(e.series, 0.0);
+    _mismoPeso = e.pesosKg == null;
     _duracionSegundos = e.duracionSegundos;
     _distanciaMetros = e.distanciaMetros;
     _tiempoIsometrico = e.tiempoIsometricoSegundos;
+    _syncCtrls();
+    _initPesosKgCtrls();
+  }
+
+  void _syncCtrls() {
+    _pesoCtrl.text = (_peso ?? 0) > 0
+        ? (_peso! == _peso!.roundToDouble()
+            ? '${_peso!.toInt()}'
+            : _peso!.toStringAsFixed(1))
+        : '';
+    _duracionCtrl.text =
+        (_duracionSegundos ?? 0) > 0 ? _fmtDuracion(_duracionSegundos!) : '';
+    _distanciaCtrl.text =
+        (_distanciaMetros ?? 0) > 0 ? '$_distanciaMetros' : '';
+    _tiempoIsoCtrl.text =
+        (_tiempoIsometrico ?? 0) > 0 ? '$_tiempoIsometrico' : '';
+  }
+
+  void _initPesosKgCtrls() {
+    for (final c in _pesosKgCtrls) {
+      try {
+        c.dispose();
+      } catch (_) {}
+    }
+    _pesosKgCtrls = List.generate(_pesosKg.length, (i) {
+      final w = _pesosKg[i];
+      return TextEditingController(
+        text: w > 0
+            ? (w == w.roundToDouble() ? '${w.toInt()}' : w.toStringAsFixed(1))
+            : '',
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _pesoCtrl.dispose();
+    _duracionCtrl.dispose();
+    _distanciaCtrl.dispose();
+    _tiempoIsoCtrl.dispose();
+    for (final c in _pesosKgCtrls) {
+      c.dispose();
+    }
+    super.dispose();
   }
 
   Future<void> _guardarCambios() async {
+    final updateMap = <String, dynamic>{
+      'series': _series,
+      'repeticiones': _reps,
+      'segundos_descanso': _descanso,
+      if (_peso != null) 'peso_kg': _peso,
+      if (_duracionSegundos != null) 'duracion_segundos': _duracionSegundos,
+      if (_distanciaMetros != null) 'distancia_metros': _distanciaMetros,
+      if (_tiempoIsometrico != null)
+        'tiempo_isometrico_segundos': _tiempoIsometrico,
+    };
+    if (_mismoPeso) {
+      updateMap['pesos_kg'] = null;
+    } else {
+      updateMap['pesos_kg'] = _pesosKg;
+    }
     await actualizarEjercicioDia(
-        widget.ejercicio.id,
-        {
-          'series': _series,
-          'repeticiones': _reps,
-          'segundos_descanso': _descanso,
-          if (_peso != null) 'peso_kg': _peso,
-          if (_duracionSegundos != null) 'duracion_segundos': _duracionSegundos,
-          if (_distanciaMetros != null) 'distancia_metros': _distanciaMetros,
-          if (_tiempoIsometrico != null)
-            'tiempo_isometrico_segundos': _tiempoIsometrico,
-        },
-        widget.diaId,
-        ref);
+        widget.ejercicio.id, updateMap, widget.diaId, ref);
     await reactivarSiCompletada(widget.rutinaId, ref);
     _invalidarDiaSiCompletado();
     setState(() => _editando = false);
@@ -978,8 +1237,10 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
     final nombresAsync = ref.watch(nombresEjerciciosProvider(widget.diaId));
     final nombre = nombresAsync.valueOrNull?[e.ejercicioId];
     final ejercicioAsync = ref.watch(ejercicioDetalleProvider(e.ejercicioId));
-    final finalidad =
-        ejercicioAsync.valueOrNull?.finalidadPrincipal ?? 'fuerza';
+    final ej = ejercicioAsync.valueOrNull;
+    final finalidad = ej?.finalidadPrincipal ?? 'fuerza';
+    final modalidad = ej?.modalidadEntrenamiento ?? '';
+    final esCircuito = ej?.esCircuito ?? false;
     return Column(
       children: [
         InkWell(
@@ -1020,12 +1281,66 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
                     ),
-                    Text(
-                      _buildDesc(finalidad, e),
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: SVColors.onSurfaceMuted),
-                    ),
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      if (modalidad.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(right: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(modalidad,
+                              style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.primary)),
+                        ),
+                      if (esCircuito)
+                        Container(
+                          margin: const EdgeInsets.only(right: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.tertiary
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text('Circuito',
+                              style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.tertiary)),
+                        ),
+                      if (finalidad.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(finalidad,
+                              style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey)),
+                        ),
+                    ]),
+                    const SizedBox(height: 3),
+                    _buildParamPills(finalidad, esCircuito, theme),
                   ])),
+              if (!_editando)
+                Padding(
+                  padding: const EdgeInsets.only(right: 2),
+                  child: Icon(Icons.edit_note_rounded,
+                      size: 18,
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.3)),
+                ),
               IconButton(
                   icon: const Icon(Icons.delete_outline,
                       size: 18, color: Colors.red),
@@ -1038,41 +1353,102 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
             ]),
           ),
         ),
-        if (_editando) _buildEditFields(finalidad),
+        if (_editando) _buildEditFields(finalidad, esCircuito),
       ],
     );
   }
 
-  String _buildDesc(String finalidad, SeleccionEjercicioDb e) {
+  Widget _buildParamPills(String finalidad, bool esCircuito, ThemeData theme) {
+    final cs = theme.colorScheme;
     final lower = finalidad.toLowerCase();
+
     if (lower.contains('cardio') || lower.contains('acondicionamiento')) {
-      final dur = (_editando ? _duracionSegundos : e.duracionSegundos) ?? 0;
-      final dist = _editando ? _distanciaMetros : e.distanciaMetros;
+      final dur = _duracionSegundos ?? 0;
       final mins = dur ~/ 60;
       final segs = dur % 60;
       final durStr = mins > 0 ? '${mins}m ${segs}s' : '${segs}s';
-      final desc = '${_editando ? _descanso : e.segundosDescanso}s';
-      return '$durStr · ${dist != null ? '${dist}m · ' : ''}$desc descanso';
+      return Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          _buildDisplayPill('$_series int.', cs),
+          _buildDisplayPill(durStr, cs),
+          if (_distanciaMetros != null)
+            _buildDisplayPill('${_distanciaMetros}m', cs),
+          _buildDisplayPill('${_descanso}s', cs),
+        ],
+      );
     }
+
     if (lower.contains('isometric') ||
         lower.contains('movilidad') ||
         lower.contains('flexibilidad') ||
         lower.contains('estabilidad')) {
-      final tiempo =
-          (_editando ? _tiempoIsometrico : e.tiempoIsometricoSegundos) ?? 0;
-      final series = _editando ? _series : e.series;
-      final desc = '${_editando ? _descanso : e.segundosDescanso}s';
-      return '${series}x${tiempo}s . $desc descanso';
+      return Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          _buildDisplayPill('$_series\u00d7${_tiempoIsometrico ?? 0}s', cs),
+          _buildDisplayPill('${_descanso}s', cs),
+        ],
+      );
     }
-    final series = _editando ? _series : e.series;
-    final reps = _editando ? _reps : e.repeticiones;
-    final desc = '${_editando ? _descanso : e.segundosDescanso}s';
-    final peso = _editando ? _peso : e.pesoKg;
-    final pesoTxt = peso != null ? ' . ${peso.toStringAsFixed(1)} kg' : '';
-    return '${series}x${reps} . $desc descanso$pesoTxt';
+
+    if (esCircuito) {
+      final dur = _duracionSegundos ?? 0;
+      final mins = dur ~/ 60;
+      final segs = dur % 60;
+      final durStr = mins > 0 ? '${mins}m ${segs}s' : '${segs}s';
+      return Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          _buildDisplayPill(durStr, cs),
+          _buildDisplayPill('${_descanso}s desc', cs),
+        ],
+      );
+    }
+
+    final pesoStr = () {
+      if (_pesosKg.any((w) => w > 0)) {
+        return _pesosKg
+            .where((w) => w > 0)
+            .map((w) => w.toStringAsFixed(w == w.roundToDouble() ? 0 : 1))
+            .join('/');
+      }
+      if (_peso != null) {
+        return _peso!.toStringAsFixed(_peso == _peso?.roundToDouble() ? 0 : 1);
+      }
+      return null;
+    }();
+
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        _buildDisplayPill('$_series\u00d7$_reps', cs),
+        _buildDisplayPill('${_descanso}s', cs),
+        if (pesoStr != null) _buildDisplayPill('$pesoStr kg', cs),
+      ],
+    );
   }
 
-  Widget _buildEditFields(String finalidad) {
+  Widget _buildDisplayPill(String text, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: cs.outlineVariant.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(text,
+          style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurfaceVariant)),
+    );
+  }
+
+  Widget _buildEditFields(String finalidad, bool esCircuito) {
     final lower = finalidad.toLowerCase();
     if (lower.contains('cardio') || lower.contains('acondicionamiento')) {
       return _buildCardioEditFields();
@@ -1083,148 +1459,809 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
         lower.contains('estabilidad')) {
       return _buildIsometricoEditFields();
     }
-    return _buildFuerzaEditFields();
+    return _buildFuerzaEditFields(esCircuito: esCircuito);
   }
 
-  Widget _buildFuerzaEditFields() {
+  Widget _buildFuerzaEditFields({bool esCircuito = false}) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 48),
-      child: Row(children: [
-        _paramChip(
-            'Series', _series, (v) => setState(() => _series = v.clamp(1, 10))),
-        const Text(' × ', style: TextStyle(fontSize: 12)),
-        _paramChip(
-            'Reps', _reps, (v) => setState(() => _reps = v.clamp(1, 50))),
-        const Text(' · ', style: TextStyle(fontSize: 12, color: Colors.grey)),
-        _paramChip('Desc', _descanso,
-            (v) => setState(() => _descanso = v.clamp(15, 600)),
-            sufijo: 's'),
-        const SizedBox(width: 8),
-        SizedBox(
-            width: 60,
-            child: TextField(
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11),
-              controller:
-                  TextEditingController(text: _peso?.toStringAsFixed(1) ?? ''),
-              decoration: const InputDecoration(
-                  isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                  border: OutlineInputBorder(),
-                  hintText: 'kg'),
-              onChanged: (v) => setState(() => _peso = double.tryParse(v)),
-              onSubmitted: (_) => _guardarCambios(),
-            )),
-        const SizedBox(width: 8),
-        TextButton(
-            onPressed: _guardarCambios,
-            child: const Text('Guardar', style: TextStyle(fontSize: 11)),
-            style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero)),
-      ]),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final anchoPill = (constraints.maxWidth - 8) / 2;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (!esCircuito)
+                    _paramPill('Series', _series, 1, 10, _onSeriesChanged,
+                        anchoPill, cs),
+                  if (!esCircuito)
+                    _paramPill('Reps', _reps, 1, 50,
+                        (v) => setState(() => _reps = v), anchoPill, cs),
+                  if (esCircuito) _duracionPill(anchoPill, cs),
+                  _paramPill('Descanso', _descanso, 15, 600,
+                      (v) => setState(() => _descanso = v), anchoPill, cs,
+                      sufijo: 's'),
+                  _pesoPill(anchoPill, cs),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _guardarCambios,
+                  icon: const Icon(Icons.check, size: 16),
+                  label: const Text('Guardar cambios'),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: cs.primary,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
+  void _onSeriesChanged(int v) {
+    setState(() {
+      _series = v;
+      if (!_mismoPeso) {
+        final nuevos = List<double>.generate(
+            v, (i) => i < _pesosKg.length ? _pesosKg[i] : 0.0);
+        _pesosKg = nuevos;
+        _initPesosKgCtrls();
+      }
+    });
+  }
+
   Widget _buildCardioEditFields() {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 48),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            _paramChip('Intervalos', _series,
-                (v) => setState(() => _series = v.clamp(1, 20))),
-            const Text(' · ',
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
-            _paramChip('Desc', _descanso,
-                (v) => setState(() => _descanso = v.clamp(15, 600)),
-                sufijo: 's'),
-          ]),
-          const SizedBox(height: 6),
-          Row(children: [
-            _textChip('Duración', _duracionSegundos?.toString() ?? '',
-                (v) => setState(() => _duracionSegundos = int.tryParse(v))),
-            const SizedBox(width: 8),
-            _textChip('Distancia(m)', _distanciaMetros?.toString() ?? '',
-                (v) => setState(() => _distanciaMetros = int.tryParse(v))),
-            const SizedBox(width: 8),
-            TextButton(
-                onPressed: _guardarCambios,
-                child: const Text('Guardar', style: TextStyle(fontSize: 11)),
-                style: TextButton.styleFrom(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final anchoPill = (constraints.maxWidth - 8) / 2;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _paramPill('Intervalos', _series, 1, 20,
+                      (v) => setState(() => _series = v), anchoPill, cs),
+                  _duracionPill(anchoPill, cs),
+                  _distanciaPill(anchoPill, cs),
+                  _paramPill('Descanso', _descanso, 15, 600,
+                      (v) => setState(() => _descanso = v), anchoPill, cs,
+                      sufijo: 's'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _guardarCambios,
+                  icon: const Icon(Icons.check, size: 16),
+                  label: const Text('Guardar cambios'),
+                  style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero)),
-          ]),
-        ],
+                    foregroundColor: cs.primary,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   Widget _buildIsometricoEditFields() {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 48),
-      child: Row(children: [
-        _paramChip(
-            'Series', _series, (v) => setState(() => _series = v.clamp(1, 10))),
-        const Text(' × ', style: TextStyle(fontSize: 12)),
-        _paramChip('Tiempo(s)', _tiempoIsometrico ?? 0,
-            (v) => setState(() => _tiempoIsometrico = v.clamp(5, 300)),
-            sufijo: 's'),
-        const Text(' · ', style: TextStyle(fontSize: 12, color: Colors.grey)),
-        _paramChip('Desc', _descanso,
-            (v) => setState(() => _descanso = v.clamp(15, 600)),
-            sufijo: 's'),
-        const SizedBox(width: 8),
-        TextButton(
-            onPressed: _guardarCambios,
-            child: const Text('Guardar', style: TextStyle(fontSize: 11)),
-            style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero)),
-      ]),
-    );
-  }
-
-  Widget _textChip(String label, String val, void Function(String) onChange) {
-    return SizedBox(
-      width: 100,
-      child: TextField(
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 11),
-        controller: TextEditingController(text: val),
-        decoration: InputDecoration(
-            isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            border: const OutlineInputBorder(),
-            hintText: label,
-            labelText: label,
-            labelStyle: const TextStyle(fontSize: 9)),
-        onChanged: onChange,
-        onSubmitted: (_) => _guardarCambios(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final anchoPill = (constraints.maxWidth - 8) / 2;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _paramPill('Series', _series, 1, 10, _onSeriesChanged,
+                      anchoPill, cs),
+                  _tiempoIsometricoPill(anchoPill, cs),
+                  _paramPill('Descanso', _descanso, 15, 600,
+                      (v) => setState(() => _descanso = v), anchoPill, cs,
+                      sufijo: 's'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _guardarCambios,
+                  icon: const Icon(Icons.check, size: 16),
+                  label: const Text('Guardar cambios'),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: cs.primary,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _paramChip(String label, int val, void Function(int) onChange,
+  Widget _paramPill(String label, int val, int min, int max,
+      void Function(int) onChange, double width, ColorScheme cs,
       {String sufijo = ''}) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      InkWell(
-          onTap: () => onChange(val - 1),
-          child: const Icon(Icons.remove, size: 14)),
-      Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Text('$val$sufijo',
-              style:
-                  const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
-      InkWell(
-          onTap: () => onChange(val + 1),
-          child: const Icon(Icons.add, size: 14)),
-    ]);
+    final canDown = val > min;
+    final canUp = val < max;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurfaceVariant,
+                          letterSpacing: 0.5)),
+                  Text('$val$sufijo',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                          letterSpacing: -0.5)),
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                SizedBox(
+                  width: 32,
+                  height: 28,
+                  child: IconButton(
+                    onPressed: canUp ? () => onChange(val + 1) : null,
+                    icon: Icon(Icons.keyboard_arrow_up_rounded,
+                        size: 20,
+                        color: canUp ? cs.primary : cs.outlineVariant),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+                SizedBox(
+                  width: 32,
+                  height: 28,
+                  child: IconButton(
+                    onPressed: canDown ? () => onChange(val - 1) : null,
+                    icon: Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: canDown ? cs.primary : cs.outlineVariant),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Peso pills (single weight + per-series)
+  // ---------------------------------------------------------------------------
+  Widget _pesoPill(double width, ColorScheme cs) {
+    if (_mismoPeso) return _buildSingleWeightPill(width, cs);
+    return _buildPerSeriesWeightSection(width, cs);
+  }
+
+  Widget _buildSingleWeightPill(double width, ColorScheme cs) {
+    final pesoActual = _peso ?? 0;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Peso (kg)',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurfaceVariant,
+                        letterSpacing: 0.5)),
+                const Spacer(),
+                _pesoModeToggle(cs),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _btnDelta(
+                    icon: Icons.remove,
+                    onTap: () {
+                      if (pesoActual > 0) {
+                        final nuevo = (pesoActual - 2.5).clamp(0, 999);
+                        _peso = nuevo == 0
+                            ? null
+                            : double.parse(nuevo.toStringAsFixed(1));
+                        _pesoCtrl.text = nuevo == 0
+                            ? ''
+                            : nuevo.toStringAsFixed(
+                                nuevo == nuevo.roundToDouble() ? 0 : 1);
+                        setState(() {});
+                      }
+                    }),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 52,
+                  height: 32,
+                  child: TextField(
+                    controller: _pesoCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      hintText: '—',
+                      hintStyle: TextStyle(
+                          fontSize: 18,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    ),
+                    onChanged: (v) {
+                      final parsed = double.tryParse(v.replaceAll(',', '.'));
+                      if (parsed != null) {
+                        final limpio = parsed.clamp(0, 999).toDouble();
+                        _peso = limpio == 0 ? null : limpio;
+                      } else if (v.isEmpty) {
+                        _peso = null;
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _btnDelta(
+                    icon: Icons.add,
+                    onTap: () {
+                      final nuevo = (pesoActual + 2.5).clamp(0, 999);
+                      _peso = nuevo == 0
+                          ? null
+                          : double.parse(nuevo.toStringAsFixed(1));
+                      _pesoCtrl.text = nuevo == 0
+                          ? ''
+                          : nuevo.toStringAsFixed(
+                              nuevo == nuevo.roundToDouble() ? 0 : 1);
+                      setState(() {});
+                    }),
+              ],
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPerSeriesWeightSection(double width, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Peso x serie',
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurfaceVariant,
+                      letterSpacing: 0.5)),
+              const Spacer(),
+              _pesoModeToggle(cs),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ...List.generate(_pesosKg.length, (i) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 28,
+                    child: Text('${i + 1}.',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurfaceVariant)),
+                  ),
+                  const SizedBox(width: 4),
+                  _btnDelta(
+                      icon: Icons.remove,
+                      onTap: () {
+                        final actual = _pesosKg[i];
+                        if (actual > 0) {
+                          final nuevo = (actual - 2.5).clamp(0, 999);
+                          final pesos = List<double>.from(_pesosKg);
+                          pesos[i] = double.parse(nuevo.toStringAsFixed(1));
+                          _pesosKgCtrls[i].text = nuevo == 0
+                              ? ''
+                              : nuevo.toStringAsFixed(
+                                  nuevo == nuevo.roundToDouble() ? 0 : 1);
+                          setState(() => _pesosKg = pesos);
+                        }
+                      }),
+                  const SizedBox(width: 4),
+                  SizedBox(
+                    width: 48,
+                    height: 28,
+                    child: TextField(
+                      controller: _pesosKgCtrls[i],
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                          letterSpacing: -0.5),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        border: InputBorder.none,
+                        hintText: '—',
+                        hintStyle: TextStyle(
+                            fontSize: 15,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                      ),
+                      onChanged: (v) {
+                        final parsed = double.tryParse(v.replaceAll(',', '.'));
+                        if (parsed != null) {
+                          final limpio = parsed.clamp(0, 999).toDouble();
+                          final pesos = List<double>.from(_pesosKg);
+                          pesos[i] = limpio;
+                          setState(() => _pesosKg = pesos);
+                        } else if (v.isEmpty) {
+                          final pesos = List<double>.from(_pesosKg);
+                          pesos[i] = 0;
+                          setState(() => _pesosKg = pesos);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _btnDelta(
+                      icon: Icons.add,
+                      onTap: () {
+                        final actual = _pesosKg[i];
+                        final nuevo = (actual + 2.5).clamp(0, 999);
+                        final pesos = List<double>.from(_pesosKg);
+                        pesos[i] = double.parse(nuevo.toStringAsFixed(1));
+                        _pesosKgCtrls[i].text = nuevo == 0
+                            ? ''
+                            : nuevo.toStringAsFixed(
+                                nuevo == nuevo.roundToDouble() ? 0 : 1);
+                        setState(() => _pesosKg = pesos);
+                      }),
+                  const SizedBox(width: 8),
+                  if (i == 0)
+                    Text('kg',
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.5))),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _pesoModeToggle(ColorScheme cs) {
+    return GestureDetector(
+      onTap: () {
+        if (_mismoPeso) {
+          final pesos = List<double>.filled(_series, _peso ?? 0);
+          _initPesosKgCtrls();
+          setState(() {
+            _mismoPeso = false;
+            _pesosKg = pesos;
+          });
+        } else {
+          final single = _pesosKg.any((w) => w > 0)
+              ? _pesosKg.firstWhere((w) => w > 0, orElse: () => 0.0)
+              : 0.0;
+          _peso = single > 0 ? single : null;
+          _pesoCtrl.text = single > 0
+              ? (single == single.roundToDouble()
+                  ? '${single.toInt()}'
+                  : single.toStringAsFixed(1))
+              : '';
+          setState(() => _mismoPeso = true);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _mismoPeso ? Icons.content_copy_rounded : Icons.tune_rounded,
+              size: 12,
+              color: cs.primary,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              _mismoPeso ? 'Igual' : 'x serie',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: cs.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Duración, Distancia, Tiempo Isométrico pills
+  // ---------------------------------------------------------------------------
+  Widget _duracionPill(double width, ColorScheme cs) {
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Duración',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _btnDelta(
+                  icon: Icons.remove,
+                  onTap: () {
+                    final actual = _duracionSegundos ?? 0;
+                    final nuevo = (actual - 30).clamp(0, 86400);
+                    _duracionSegundos = nuevo == 0 ? null : nuevo;
+                    _duracionCtrl.text = nuevo == 0 ? '' : _fmtDuracion(nuevo);
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 58,
+                  height: 32,
+                  child: TextField(
+                    controller: _duracionCtrl,
+                    keyboardType: TextInputType.text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      hintText: 'ej. 5m',
+                      hintStyle: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    ),
+                    onChanged: (v) {
+                      if (v.isEmpty) {
+                        _duracionSegundos = null;
+                      } else {
+                        final segundos = _parseDuracion(v);
+                        if (segundos > 0) _duracionSegundos = segundos;
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _btnDelta(
+                  icon: Icons.add,
+                  onTap: () {
+                    final actual = _duracionSegundos ?? 0;
+                    final nuevo = (actual + 30).clamp(0, 86400);
+                    _duracionSegundos = nuevo == 0 ? null : nuevo;
+                    _duracionCtrl.text = nuevo == 0 ? '' : _fmtDuracion(nuevo);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _distanciaPill(double width, ColorScheme cs) {
+    final distActual = _distanciaMetros ?? 0;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Distancia (m)',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _btnDelta(
+                  icon: Icons.remove,
+                  onTap: () {
+                    if (distActual > 0) {
+                      final nuevo = (distActual - 100).clamp(0, 42195);
+                      _distanciaMetros = nuevo == 0 ? null : nuevo;
+                      _distanciaCtrl.text = nuevo == 0 ? '' : nuevo.toString();
+                      setState(() {});
+                    }
+                  },
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 52,
+                  height: 32,
+                  child: TextField(
+                    controller: _distanciaCtrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      hintText: '—',
+                      hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    ),
+                    onChanged: (v) {
+                      final parsed = int.tryParse(v);
+                      if (parsed != null) {
+                        _distanciaMetros = parsed.clamp(0, 42195);
+                        if (_distanciaMetros == 0) _distanciaMetros = null;
+                      } else if (v.isEmpty) {
+                        _distanciaMetros = null;
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _btnDelta(
+                  icon: Icons.add,
+                  onTap: () {
+                    final nuevo = (distActual + 100).clamp(0, 42195);
+                    _distanciaMetros = nuevo == 0 ? null : nuevo;
+                    _distanciaCtrl.text = nuevo == 0 ? '' : nuevo.toString();
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tiempoIsometricoPill(double width, ColorScheme cs) {
+    final tiActual = _tiempoIsometrico ?? 0;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Tiempo (s)',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _btnDelta(
+                  icon: Icons.remove,
+                  onTap: () {
+                    if (tiActual > 0) {
+                      final nuevo = (tiActual - 5).clamp(0, 3600);
+                      _tiempoIsometrico = nuevo == 0 ? null : nuevo;
+                      _tiempoIsoCtrl.text = nuevo == 0 ? '' : nuevo.toString();
+                      setState(() {});
+                    }
+                  },
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  width: 52,
+                  height: 32,
+                  child: TextField(
+                    controller: _tiempoIsoCtrl,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                        letterSpacing: -0.5),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      hintText: '—',
+                      hintStyle: TextStyle(
+                          fontSize: 14,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    ),
+                    onChanged: (v) {
+                      final parsed = int.tryParse(v);
+                      if (parsed != null) {
+                        _tiempoIsometrico = parsed.clamp(0, 3600);
+                        if (_tiempoIsometrico == 0) _tiempoIsometrico = null;
+                      } else if (v.isEmpty) {
+                        _tiempoIsometrico = null;
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4),
+                _btnDelta(
+                  icon: Icons.add,
+                  onTap: () {
+                    final nuevo = (tiActual + 5).clamp(0, 3600);
+                    _tiempoIsometrico = nuevo == 0 ? null : nuevo;
+                    _tiempoIsoCtrl.text = nuevo == 0 ? '' : nuevo.toString();
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _btnDelta({required IconData icon, required VoidCallback onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 16),
+        ),
+      ),
+    );
+  }
+
+  String _fmtDuracion(int segundos) {
+    final min = segundos ~/ 60;
+    final sec = segundos % 60;
+    if (min > 0 && sec > 0) return '${min}m ${sec}s';
+    if (min > 0) return '$min min';
+    return '${sec}s';
+  }
+
+  int _parseDuracion(String texto) {
+    texto = texto.trim().toLowerCase();
+    final colon = RegExp(r'^(\d+):(\d+)$').firstMatch(texto);
+    if (colon != null) {
+      return int.parse(colon.group(1)!) * 60 + int.parse(colon.group(2)!);
+    }
+    int total = 0;
+    final minMatch = RegExp(r'(\d+)\s*(?:min|m)\b').firstMatch(texto);
+    final secMatch = RegExp(r'(\d+)\s*(?:seg|s)\b').firstMatch(texto);
+    if (minMatch != null) total += int.parse(minMatch.group(1)!) * 60;
+    if (secMatch != null) total += int.parse(secMatch.group(1)!);
+    if (minMatch == null && secMatch == null) {
+      final soloNum = int.tryParse(texto);
+      if (soloNum != null) total = soloNum;
+    }
+    return total;
   }
 
   void _sustituirEjercicio(BuildContext context, String nombreActual) {
@@ -1294,20 +2331,22 @@ class _BuscadorEjerciciosSheetState extends State<_BuscadorEjerciciosSheet> {
               .from('v_ejercicios_completos')
               .select('id, nombre')
               .limit(50)
-              .then((d) => d as List<Map<String, dynamic>>)
+              .then((d) => d)
           : client
               .from('v_ejercicios_completos')
               .select('id, nombre')
               .ilike('nombre', '%$_q%')
               .limit(50)
-              .then((d) => d as List<Map<String, dynamic>>),
+              .then((d) => d),
       builder: (context, snap) {
-        if (!snap.hasData)
+        if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        if (snap.data!.isEmpty)
+        }
+        if (snap.data!.isEmpty) {
           return const Center(
               child:
                   Text('Sin resultados', style: TextStyle(color: Colors.grey)));
+        }
         return ListView.builder(
             controller: scrollCtrl,
             itemCount: snap.data!.length,
@@ -1402,13 +2441,13 @@ class _SustitucionSheetState extends ConsumerState<_SustitucionSheet> {
               .from('v_ejercicios_completos')
               .select('id, nombre')
               .limit(50)
-              .then((d) => d as List<Map<String, dynamic>>)
+              .then((d) => d)
           : client
               .from('v_ejercicios_completos')
               .select('id, nombre')
               .ilike('nombre', '%$_busqueda%')
               .limit(50)
-              .then((d) => d as List<Map<String, dynamic>>),
+              .then((d) => d),
       builder: (context, snap) {
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
@@ -1438,13 +2477,8 @@ class _ObjetivoBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icono, label) = switch (objetivo) {
-      'fuerza' => (Icons.fitness_center_rounded, 'Fuerza'),
-      'resistencia' => (Icons.directions_run_rounded, 'Resistencia'),
-      'hipertrofia' => (Icons.trending_up_rounded, 'Hipertrofia'),
-      'movilidad' => (Icons.accessibility_new_rounded, 'Movilidad'),
-      _ => (Icons.help_outline_rounded, objetivo),
-    };
+    final o = sanitizarObjetivo(objetivo);
+    final icono = iconoFinalidad(o);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -1456,7 +2490,7 @@ class _ObjetivoBadge extends StatelessWidget {
         children: [
           Icon(icono, size: 12, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 4),
-          Text(label,
+          Text(o,
               style: TextStyle(
                   fontSize: 10,
                   color: Theme.of(context).colorScheme.primary,

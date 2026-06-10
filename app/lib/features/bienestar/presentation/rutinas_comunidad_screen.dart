@@ -38,6 +38,14 @@ class _RutinasComunidadScreenState
 
     return FeatureScaffold(
       title: 'Rutinas',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.auto_awesome),
+          tooltip: 'Generar rutina con IA',
+          onPressed: () => context
+              .push('/bienestar/nueva-rutina', extra: {'autoRecomendar': true}),
+        ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/bienestar/nueva-rutina'),
         icon: const Icon(Icons.add),
@@ -157,12 +165,12 @@ class _RutinasComunidadScreenState
                 ? null
                 : FilledButton.tonal(
                     onPressed: () => _clonarRutina(r),
-                    child: const Text('Usar', style: TextStyle(fontSize: 11)),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
                       minimumSize: const Size(0, 30),
                     ),
+                    child: const Text('Usar', style: TextStyle(fontSize: 11)),
                   ),
             onTap: () => _mostrarDetalleRutina(context, r.id),
           ),

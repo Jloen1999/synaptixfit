@@ -1,9 +1,9 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit
-**Versión:** 4.2
-**Fecha:** 19-05-2026
-**Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md)
+**Versión:** 5.2
+**Fecha:** 09-06-2026
+**Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md), [04-data-model.md](04-data-model.md)
 
 ---
 
@@ -11,11 +11,10 @@
 
 ```mermaid
 flowchart LR
-    Home["🏠 Inicio<br/>Dashboard"] --> Academic["📚 Académico<br/>Plan Semanal"]
-    Home --> Challenges["🎯 Retos<br/>Crear/Listar"]
-    Home --> Wellness["💪 Bienestar<br/>Rutinas/Ejercicios/IA"]
-    Home --> Social["👥 Social<br/>Muro de Logros"]
-    Home --> Profile["👤 Perfil<br/>Datos + Bienestar"]
+    Home["Inicio<br/>Dashboard"] --> Academic["Académico<br/>Plan Semanal"]
+    Home --> Wellness["Rutinas<br/>Bienestar/IA/Ejercicios"]
+    Home --> Challenges["Retos<br/>Crear/Listar"]
+    Home --> Social["Social<br/>Muro de Logros"]
 
     Wellness --> RoutineList["Mis Rutinas<br/>+ Comunidad"]
     RoutineList --> NewRoutine["Nueva Rutina<br/>3 pasos + IA"]
@@ -45,7 +44,7 @@ flowchart LR
 | `/bienestar` | `RutinasComunidadScreen` | Comunidad y mis rutinas |
 | `/bienestar/nueva-rutina` | `NuevaRutinaScreen` | **Crear rutina con IA (3 pasos)** |
 | `/bienestar/explorador` | `ExploradorEjerciciosScreen` | Catálogo de ejercicios (~1300) |
-| `/bienestar/ejercicio/:id` | `DetalleEjercicioScreen` | Detalle de ejercicio |
+| `/bienestar/ejercicio/:id` | `DetalleEjercicioScreen` | Detalle de ejercicio. Soporta `extra: true` para ocultar botón "Agregar a rutina" (usado desde editor de rutina `_EjercicioCompacto`) |
 | `/bienestar/rutina/:id` | `RutinaDetalleScreen` | **Gestión: semanas, días, ejercicios, progreso, periodización** |
 | `/bienestar/rutina/sesion` | `LiveSessionScreen` | **Entrenamiento en vivo + check-in diario** |
 | `/bienestar/sesion-completada` | `SesionCompletadaScreen` | Historial de sesiones |
@@ -53,6 +52,41 @@ flowchart LR
 | `/notificaciones` | `NotificacionesScreen` | Centro de notificaciones |
 
 **Nota importante:** La ruta `/bienestar/rutina/sesion` debe estar definida ANTES de `/bienestar/rutina/:id` en GoRouter para evitar que "sesion" sea capturado como parámetro `:id`.
+
+### 2.1 Flujo "Agregar a Rutina" desde Detalle de Ejercicio
+
+La pantalla de detalle de ejercicio (`DetalleEjercicioScreen`) implementa un flujo de navegación bidireccional con retorno de datos que permite agregar ejercicios a una selección desde la vista de detalle:
+
+```mermaid
+flowchart TD
+    A["SeleccionEjerciciosScreen\n(Cuadrícula de selección)"] -->|"Tap en ejercicio"| B["_verDetalle()"]
+    B --> C["Navigator.push<EjercicioDb>\nMaterialPageRoute → DetalleEjercicioScreen"]
+    C --> D{"¿showAddButton?\n(controlado por extra)"}
+
+    D -->|"true (default)\nNavegado desde cuadrícula"| E["Muestra botón\n'Agregar a rutina'"]
+    D -->|"false (extra: true)\nNavegado desde _EjercicioCompacto"| F["Oculta botón\n(el ejercicio ya está añadido)"]
+
+    E --> G{"¿Usuario pulsa\n'Agregar a rutina'?"}
+    G -->|Sí| H["Navigator.pop(context, ejercicio)\nRetorna el EjercicioDb completo"]
+    G -->|No| I["Vuelve sin selección"]
+
+    H --> J["_verDetalle() recibe el resultado\ny lo añade a la selección automáticamente"]
+
+    F --> K["Solo vista de detalle\nsin acción de agregar"]
+```
+
+**Parámetro `showAddButton`:**
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `detalle_ejercicio_screen.dart` | Constructor | `final bool showAddButton` (default `true`). Controla la visibilidad del botón "Agregar a rutina". |
+| `app_router.dart` | Ruta `/bienestar/ejercicio/:id` | Acepta `extra: true` para establecer `showAddButton: false`. |
+| `seleccion_ejercicios_screen.dart` | `_verDetalle()` | Usa `await Navigator.of(context).push<EjercicioDb>(MaterialPageRoute(...))`. Al recibir el `EjercicioDb` de vuelta, lo añade a la selección. |
+| `nueva_rutina_screen.dart` | `_EjercicioCompacto` | Navega con `extra: true` para ocultar "Agregar a rutina" (el ejercicio ya está en la rutina). |
+
+**Comportamiento contextual:**
+- **Desde la cuadrícula de selección:** `showAddButton = true` (default). El botón "Agregar a rutina" está visible y al pulsarlo retorna el ejercicio seleccionado mediante `Navigator.pop`.
+- **Desde el editor de rutina (`_EjercicioCompacto`):** `showAddButton = false` (vía `extra: true`). El botón se oculta porque el ejercicio ya forma parte de la rutina. El usuario solo puede ver los detalles del ejercicio.
 
 ## 3. Gestión de Estado (Riverpod) — Catálogo Completo
 
@@ -83,6 +117,14 @@ flowchart LR
 | `rutinasUsuarioProvider` | `FutureProvider<List<RutinaDb>>` | Rutinas del usuario autenticado | `rutinas` WHERE `usuario_id` |
 | `rutinasComunidadProvider` | `FutureProvider<List<RutinaComunidadDto>>` | Rutinas públicas de la comunidad con nombre del autor | `rutinas` WHERE `visibilidad='public'` JOIN `usuarios` |
 
+### 3.2.1 Proveedores del Motor de Recomendaciones (Fases 0-10)
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `geminiApiKeyProvider` | `Provider<String>` | Lee `GEMINI_API_KEY` de `EnvConfig`. Cadena vacía si no configurada. |
+| `recomendacionOrquestadorProvider` | `Provider<RecomendacionOrquestadorService>` | Instancia única del orquestador que coordina los 7 servicios del pipeline |
+| `generarRutinaProvider` | `FutureProvider.family<ResultadoGeneracion, ({String usuarioId, bool usarIa})>` | Ejecuta el pipeline completo: sanitización → reglas → contexto → transición → progresión → IA (opcional). Invalida y recarga los 4 providers de contexto antes de ejecutar. |
+
 ### 3.3 Proveedores del Módulo de Ejercicios
 
 | Provider | Tipo | Propósito | Fuente |
@@ -94,12 +136,40 @@ flowchart LR
 
 ### 3.4 Proveedores del Dashboard
 
+[OBSOLETO v6.0 — Reemplazado por §9 Dashboard Rediseñado]
+
 | Provider | Tipo | Propósito |
 |----------|------|-----------|
-| `proveedorUsuario` | `FutureProvider<UsuarioDb>` | Perfil del usuario autenticado |
-| `proveedorTablero` | `FutureProvider` | Datos agregados del dashboard (KPIs, retos, racha) |
-| `retosProvider` | `FutureProvider<List<RetoResumen>>` | Retos activos del usuario con `tieneHitos` vía batch query |
-| `sesionesProvider` | `FutureProvider` | Sesiones recientes del usuario |
+| `dashboardProvider` | `FutureProvider<DashboardData>` | Datos agregados: usuario, calorías, sesiones, retos activos, notificaciones, perfil bienestar, plan semanal, rutinas activas. 7 queries en paralelo con `Future.wait`. |
+
+### 3.4.1 Proveedores del Pipeline Académico (NUEVOS v5.0)
+
+| Provider | Tipo | Propósito | Fuente Supabase |
+|----------|------|-----------|-----------------|
+| `cargaAcademicaSemanalProvider` | `FutureProvider<CargaAcademicaSemanalDb?>` | Carga académica de la semana actual (horas estudio, evaluaciones, estrés, sueño). Timeout 8s. | `carga_academica_semanal` WHERE `usuario_id` AND `semana_inicio = lunes` |
+| `adherenciaAcademicaProvider` | `FutureProvider<double>` (0-100) | Disciplina académica pura: `cumplimientoHoras(60%) + completitudTareas(30%) + rachaDias(10%)`. NO usa biometrías. | `carga_academica_semanal` + `entregas_examenes` + `horarios_academicos` |
+| `estadoEnergeticoProvider` | `FutureProvider<double>` (0-100) | Estado energético compuesto: base lineal (energía 30%, sueño 25%, recuperación 20%, cognitiva 15%, estrés 10%) × 3 gates no lineales. Previene falsos positivos. | `estado_diario_usuario` (hoy) + `carga_academica_semanal` |
+| `contextoAcademicoProvider` | `FutureProvider<ContextoAcademico?>` | DTO que agrega carga semanal + exámenes próximos (7 días) + adherencia + energía. Alimenta el pipeline de recomendación. | `carga_academica_semanal` + `entregas_examenes` + `adherenciaAcademicaProvider` + `estadoEnergeticoProvider` |
+
+**Función `syncCargaAcademicaSemanal(ref)`** (`app/lib/features/bienestar/application/rutina_provider.dart:1094`):
+- Se ejecuta automáticamente antes de `_recomendarRutina()` en `NuevaRutinaScreen`
+- Consulta `horarios_academicos` (tipo='estudio') → calcula horas reales
+- Consulta `entregas_examenes` → cuenta evaluaciones y entregas
+- UPSERT en `carga_academica_semanal`
+- Invalida 4 providers: `cargaAcademicaSemanalProvider`, `adherenciaAcademicaProvider`, `estadoEnergeticoProvider`, `contextoAcademicoProvider`
+
+**Cálculo de `adherenciaAcademicaProvider`:**
+- `cumplimientoHoras` (60%): `horasEstudioReales / horasEstudioPlaneadas`
+- `completitudTareas` (30%): `entregas_completadas / total_entregas`
+- `rachaDias` (10%): `diasUnicosEstudio / 7`
+- Resultado: clamp(0, 100). SIN penalización por sueño o estrés.
+
+**Cálculo de `estadoEnergeticoProvider`:**
+- Base: `energíaDiaria×0.30 + sueño×0.25 + recuperación×0.20 + cargaCognitiva×0.15 + estrésInvertido×0.10`
+- Gate sueño ≤1 → ×0.40
+- Gate dolor ≥4 → ×0.60
+- Gate energía ≤1 → ×0.50
+- Resultado: clamp(0, 100). Previene falsos positivos como "energía=75 con sueño=0".
 
 ### 3.5 Funciones de Mutación (en `rutina_provider.dart`)
 
@@ -109,12 +179,12 @@ flowchart LR
 | `eliminarRutina(rutinaId, ref)` | DELETE `rutinas` (CASCADE) | `rutinasUsuarioProvider` |
 | `clonarRutina(rutinaId, ref)` | INSERT `rutinas` (copia como privada) + `seleccion_de_ejercicios` | `rutinasUsuarioProvider` |
 | `iniciarSesion({rutinaId, diaId, ref})` | INSERT `sesiones_registradas` + UPDATE `dias_rutina.estado='en_progreso'` | `diasDeSemanaProvider` |
-| `finalizarSesion({sesionId, diaId, rutinaId, duracionSegundos, rpe, ref})` | UPDATE `sesiones_registradas` (duración, RPE, calorías) + UPDATE `dias_rutina.estado='completado'` (cascada a semana vía trigger `trg_dias_rutina_estado`) | `diasDeSemanaProvider` + `semanasDeRutinaProvider(rutinaId)` |
+| `finalizarSesion({sesionId, diaId, rutinaId, duracionSegundos, rpe, ref})` | UPDATE `sesiones_registradas` (duración, RPE, calorías) + UPDATE `dias_rutina.estado='completado'` (cascada a semana vía trigger `trg_dias_rutina_estado`) + **`otorgarXp()`** (cálculo: `50 + min(duraciónMin, 90) + rpe × 5`). Retorna `XpResultado?`. | `diasDeSemanaProvider` + `semanasDeRutinaProvider(rutinaId)` + `dashboardProvider` |
 | `registrarSerie({sesionId, seleccionId, numeroSerie, reps, peso})` | INSERT `series_sesion` | — |
 | `guardarEstadoDiario({sueño, estrés, energía, dolor, zonas, listo, ref})` | UPSERT `estado_diario_usuario` ON CONFLICT (`usuario_id`, `fecha`) | `estadoDiarioHoyProvider` |
 | `agregarEjercicioADia({rutinaId, diaId, ejercicioId, series, reps, descanso, ref})` | INSERT `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` |
 | `quitarEjercicioDeDia(seleccionId, diaId, ref)` | DELETE `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` |
-| `actualizarEjercicioDia(seleccionId, patch, diaId, ref)` | UPDATE `seleccion_de_ejercicios` | `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` |
+| `actualizarEjercicioDia(seleccionId, patch, diaId, ref)` | UPDATE `seleccion_de_ejercicios` — soporta `pesos_kg` (jsonb) como parte del patch | `ejerciciosDeDiaProvider(diaId)` + `nombresEjerciciosProvider(diaId)` |
 | `agregarDiaASemana(semanaId, numeroDia, ref)` | INSERT `dias_rutina` | `diasDeSemanaProvider(semanaId)` |
 
 ### 3.6 Proveedores del Módulo de Perfil
@@ -141,54 +211,56 @@ flowchart LR
 **Archivo:** `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart`
 **Ruta:** `/bienestar/nueva-rutina`
 
-### 4.1 Flujo de 3 Pasos
+### 4.1 Flujo de 3 Pasos (v5.0 — con Motor de Recomendaciones)
 
 ```mermaid
 flowchart TD
     Start["Usuario accede a Nueva Rutina"] --> Paso1["PASO 1: Metadatos"]
 
-    Paso1 --> BotonIA1{"¿Pulsa 'Recomendar\nrutina con IA'?"}
-    BotonIA1 -->|Sí| IA1["Llama a generarRecomendacionRutina()\nRellena: nombre, desc, objetivo, duración"]
-    BotonIA1 -->|No| Manual1["Rellena manualmente:\nnombre, descripción, objetivo\nvisibilidad, semanas, días/sem"]
+    Paso1 --> BotonRapido{"⚡ Generar rutina rápida\n(FilledButton, siempre visible)"}
+    Paso1 --> BotonIA{"✨ Recomendar con IA\n(OutlinedButton, solo con API key)"}
 
-    IA1 --> BotonIA2{"¿Pulsa 'Recomendar\nejercicios'?"}
-    Manual1 --> BotonIA2
+    BotonRapido -->|"Motor determinista\n(Fases 0-8, sin IA)"| Pipeline["Pipeline completo:\n1. Sanitizar objetivo\n2. Reglas → estructura\n3. Contexto → ajustes\n4. Progresión → sobrecarga\n5. Validación"]
+    BotonIA -->|"IA opcional\n(Fase 6 incluida)"| PipelineIA["Pipeline + refinarRutina()\nGemini mejora nombres,\nvaría 1-2 ejercicios/día,\nreordena"]
 
-    BotonIA2 -->|Sí| IA2["Llama a generarEstructuraCompleta()\nRellena TODA la estructura\n(semanas × días × ejercicios)"]
-    BotonIA2 -->|No| Paso2["PASO 2: Estructura"]
-
-    IA2 --> Paso2
+    Pipeline --> Paso2["PASO 2: Estructura\nrellena automáticamente"]
+    PipelineIA --> Paso2
 
     Paso2 --> Semanas["Selector de semanas\n(añadir/eliminar)"]
     Semanas --> Dias["Por cada semana: lista de días\n(añadir/eliminar)"]
-    Dias --> BotonIA3{"¿Pulsa 'Sugerir ejercicios\ncon IA' en un día?"}
-    BotonIA3 -->|Sí| IA3["Llama a generarRecomendacionEjercicios()\nAñade 3-6 ejercicios sin repetir"]
-    BotonIA3 -->|No| Manual3["Añade ejercicios manualmente\ndesde el catálogo"]
+    Dias --> Paso3
 
-    IA3 --> Paso3
-    Manual3 --> Paso3
-
-    Paso3["PASO 3: Revisión"] --> Review["Resumen: semanas, días,\nejercicios totales"]
+    Paso3["PASO 3: Revisión"] --> Review["Resumen: semanas, días,\nejercicios totales,\nperiodización, modalidades"]
     Review --> Create["Crear Rutina\nllama a crearRutinaCompleta()"]
     Create --> Navigate["Navega a /bienestar/rutina/:id"]
 ```
 
-### 4.2 Datos de Entrada al Prompt IA
+**Cambios clave respecto a v4.x:**
+- **Eliminados:** Botón redundante "Recomendar ejercicios" y método `_recomendarEjercicios()` (~140 líneas). Método `_llenarEstructuraDesdeRecomendacion()` (~30 líneas).
+- **Eliminado:** Método privado `_sanitizarObjetivo()` — ahora usa `sanitizarObjetivo()` de `string_utils.dart`.
+- **Nuevo:** Botón "⚡ Generar rutina rápida" (FilledButton, siempre visible) ejecuta el pipeline determinista completo en <2s.
+- **Nuevo:** Botón "✨ Recomendar rutina con IA" (OutlinedButton, solo visible si `GEMINI_API_KEY` configurada) añade refinamiento con Gemini.
+- **`_DiaEditorCard`** ahora recibe `objetivo` como parámetro para defaults contextuales al añadir ejercicios manualmente.
+- **`_generarRutinaRapida()`** resuelve nombres de ejercicios desde el catálogo real y aplica defaults por objetivo.
 
-Los siguientes datos se recopilan antes de cada llamada a la IA:
+### 4.2 Datos de Entrada al Motor de Recomendaciones
 
-| Dato | Provider/Origen | Uso en el prompt |
-|------|----------------|------------------|
-| Edad, sexo, peso, altura, IMC | `perfilBienestarProvider` | Reglas de seguridad biométrica |
-| Objetivo principal | `perfilBienestarProvider` | Reglas de programación (reps, descanso, tipo de ejercicios) |
-| Nivel de actividad | `perfilBienestarProvider` | Intensidad base de la rutina |
-| Equipamiento disponible | `perfilBienestarProvider` | Filtro de compatibilidad (solo se envían ejercicios del equipamiento) |
-| Días disponibles / semana | `perfilBienestarProvider` | Número de días en la estructura |
-| Minutos por sesión | `perfilBienestarProvider` | Volumen total por día |
-| Historial de sesiones | `historialSesionUsuarioProvider` | RPE promedio, volumen, ejercicios recientes, semanas consecutivas |
-| Estado diario (hoy) | `estadoDiarioHoyProvider` | Sueño, estrés, energía, dolor, zonas → adaptación |
-| Catálogo de ejercicios | `ejerciciosProvider` | Filtrado por equipamiento, enviado como JSON al prompt |
-| Ejercicios ya agregados | Estado local del formulario | Lista de exclusión para no repetir |
+El pipeline determinista (y el refinamiento IA opcional) reciben los siguientes datos, recopilados de providers Riverpod:
+
+| Dato | Provider/Origen | Uso en el pipeline |
+|------|----------------|-------------------|
+| Edad, sexo, peso, altura, IMC | `perfilBienestarProvider` | `ParametrosObjetivo` + `RecomendacionContextoService` (tendencia peso) |
+| Objetivo principal | `perfilBienestarProvider` | `sanitizarObjetivo()` → `ParametrosObjetivo.de()` → tabla de 7 parámetros |
+| Nivel de actividad | `perfilBienestarProvider` | `determinarSplit()` y `_nivelNumerico()` en reglas |
+| Equipamiento disponible | `perfilBienestarProvider` | Filtro de compatibilidad en `_aplicarFiltros()` |
+| Días disponibles / semana | `perfilBienestarProvider` | `determinarSplit()` — árbol de decisión del split |
+| Minutos por sesión | `perfilBienestarProvider` | No usado directamente por el motor de reglas (usa `ejerciciosPorDia` de `ParametrosObjetivo`) |
+| Historial de sesiones | `historialSesionUsuarioProvider` | `ProgresionCalculator` (sobrecarga) + `RecomendacionReglasService` (filtro de ejercicios recientes) |
+| Estado diario (hoy) | `estadoDiarioHoyProvider` | `RecomendacionContextoService` (FCT, fatiga, listoParaEntrenar) |
+| Catálogo de ejercicios | `ejerciciosProvider` | Filtrado por equipamiento, enviado a los 5 filtros del motor de reglas |
+| Contexto académico | `cargaAcademicaSemanal` | `RecomendacionContextoService.calcularFCT()` — pondera estudio, estrés, evaluaciones |
+| Historial de objetivos | `historial_objetivos` | `TransicionObjetivoService` — interpola si hubo cambio de objetivo |
+| Ejercicios ya agregados | Estado local del formulario | Lista de exclusión en el motor de reglas (no repite músculos primarios) |
 
 ### 4.3 Botón de Cancelación y Pantalla de Generación IA
 
@@ -508,7 +580,7 @@ if (ejerciciosDelDia.isEmpty) {
   );
   return; // No navega
 }
-// Si tiene ejercicios → muestra _CheckInDialog → inicia sesión
+// Si tiene ejercicios → inicia sesión (check-in se hace durante el primer descanso vía _CheckInOverlay)
 ```
 
 ### 5.5 Bloqueo de Día sin Ejercicios
@@ -524,6 +596,81 @@ Cuando se añade, quita o edita un ejercicio de un día:
 3. La cascada de semana se delega al trigger `trg_dias_rutina_estado` en BD: si algún día deja de estar completado, la semana se revierte automáticamente
 4. El botón "Iniciar" reaparece porque el día vuelve a estar pendiente
 
+### 5.7 Rutina Completada: UI Read-Only + Reutilizar
+
+Cuando todas las semanas de una rutina tienen estado `'completada'`, la UI cambia a modo read-only:
+
+| Elemento | Estado normal | Rutina completada |
+|----------|--------------|-------------------|
+| Icono editar (AppBar actions) | `edit_outlined` visible | **Oculto** |
+| Icono reutilizar (AppBar actions) | No existe | `refresh_rounded` visible |
+| Botón inferior | "Completar rutina" | "Reutilizar rutina" |
+| Edición inline de ejercicios | Permitida | Bloqueada vía safety gate `_editarRutina()` |
+| Diálogo de celebración | No | `_CelebracionDialog` al detectar completitud |
+
+**Flujo "Completar rutina":**
+
+```dart
+Future<void> _completarRutina() async {
+  // UPDATE rutinas SET estado='completado'
+  // Invalida rutinasUsuarioProvider + semanasDeRutinaProvider
+  // Navega a context.go('/bienestar')
+}
+```
+
+- El botón se muestra solo cuando `!todasCompletadas` (quedan semanas pendientes).
+- Se invalida `rutinasUsuarioProvider` y `semanasDeRutinaProvider` tras la actualización.
+- Navega de vuelta a la lista de rutinas (`/bienestar`).
+
+**Flujo "Reutilizar rutina" (`_reutilizarRutina()`):**
+
+Clona la jerarquía completa de la rutina:
+
+1. **Crear nueva rutina:** INSERT en `rutinas` con nombre `"{original} (copia)"`, visibilidad `'private'`, estado `'activo'`.
+2. **Iterar semanas:** Por cada `semanas_rutina` → INSERT con `tipo_semana` preservado.
+3. **Iterar días:** Por cada `dias_rutina` → INSERT en la nueva semana.
+4. **Copiar ejercicios:** Por cada `seleccion_de_ejercicios` del día original → INSERT con todos los parámetros:
+   - `peso_kg`, `pesos_kg` (jsonb), `duracion_segundos`, `distancia_metros`, `tiempo_isometrico_segundos`
+5. **Actualizar contador:** `UPDATE rutinas SET cantidad_ejercicios = total`.
+6. **Invalidar y navegar:** `ref.invalidate(rutinasUsuarioProvider)` → `context.go('/bienestar/rutina/$nuevoId')`.
+
+**Safety gate:** `_editarRutina()` verifica `todasCompletadas` al inicio y retorna temprano si es `true`.
+
+### 5.8 Pesos por Serie con Toggle "Mismo peso en todas las series"
+
+**Archivo:** `app/lib/features/bienestar/presentation/rutina_detalle_screen.dart`
+
+En la edición inline de ejercicios dentro del detalle de rutina (Nivel 3 expandido), se incorporó un nuevo sistema de pesos por serie:
+
+**Toggle "Mismo peso en todas las series":**
+- Cuando está activado (default): las series usan el campo `peso_kg` único.
+- Cuando se desactiva: aparecen `N` campos de peso (uno por serie) con steppers ± independientes.
+
+**Estado local:**
+```dart
+late List<double> _pesosKg;          // Inicializado desde e.pesosKg ?? List.filled(e.series, 0.0)
+bool _mismoPeso = e.pesosKg == null;  // true si pesos_kg es null en BD
+```
+
+**Comportamiento:**
+- Al cambiar el número de series: la lista `_pesosKg` se redimensiona preservando valores existentes.
+- Si `_mismoPeso`: se serializa `pesos_kg: null` en el UPDATE.
+- Si `!_mismoPeso`: se serializa `pesos_kg: [50.0, 52.5, 55.0, ...]` en el UPDATE a `actualizarEjercicioDia()`.
+- Cada campo de peso por serie se muestra en una fila con steppers ±1.0kg / ±0.5kg y sufijo "kg".
+
+**Integración con `actualizarEjercicioDia()`:**
+
+```dart
+// En rutina_detalle_screen.dart:1195-1200
+final updateMap = <String, dynamic>{...};
+if (_mismoPeso) {
+  updateMap['pesos_kg'] = null;        // Limpia jsonb, usa peso_kg
+} else {
+  updateMap['pesos_kg'] = _pesosKg;    // Guarda array de pesos
+}
+await actualizarEjercicioDia(e.id, updateMap, diaId, ref);
+```
+
 ## 6. Pantalla: Sesión en Vivo (`LiveSessionScreen`)
 
 **Archivo:** `app/lib/features/bienestar/presentation/sesion_en_vivo_screen.dart`
@@ -532,6 +679,8 @@ Cuando se añade, quita o edita un ejercicio de un día:
 ### 6.1 Check-in Diario (durante el primer descanso) + Adaptación IA
 
 El check-in ya no bloquea el inicio de la sesión. El cronómetro aparece **inmediatamente** al pulsar "Empezar entrenamiento", y el check-in se muestra durante el **primer descanso** (tras completar la primera serie). **Si el usuario ya hizo check-in hoy, el overlay no se muestra en absoluto** (verificación silenciosa antes de mostrar).
+
+**Texto del overlay mejorado:** "Tus respuestas adaptan el entrenamiento y mejoran las recomendaciones futuras."
 
 ```mermaid
 flowchart TD
@@ -569,10 +718,40 @@ flowchart TD
 
 | Condición | Sugerencia | Efecto |
 |-----------|-----------|--------|
-| `fatiga > 50` | Reducir 1 serie por ejercicio | `_seriesReducidas = true` → todas las cards muestran 1 serie menos |
+| `fatiga > 50` | Reducir 1 serie por ejercicio | `_seriesReducidas = true` → efecto en UI (ver más abajo) |
 | `fatiga > 50` | Bajar peso 10% en compuestos | Sugerencia visual (no se aplica automáticamente al peso del TextField) |
 | `dolor ≥ 3` + zonas | Evitar ejercicios de [zonas] | `_ejerciciosEvitados` se rellena. Banner rojo visible. |
 | `energía ≤ 2` | Reducir intensidad general | `_seriesReducidas = true` (mismo efecto) |
+
+**Consumo efectivo de `_seriesReducidas` en la UI:**
+
+La bandera `_seriesReducidas` se pasa desde `_LiveSessionScreenState` → `_EjerciciosList` → `_EjercicioLiveCard`:
+
+```dart
+// En _EjercicioLiveCard (sesion_en_vivo_screen.dart:714-715)
+final seriesEfectivas =
+    seriesReducidas ? (e.series - 1).clamp(1, 99) : e.series;
+```
+
+| Aspecto | Normal | `seriesReducidas == true` |
+|---------|--------|--------------------------|
+| Series por ejercicio | `e.series` | `(e.series - 1).clamp(1, 99)` |
+| Texto de series | `"4×10 · 90s"` | `"3×10 · 90s (adaptado)"` en naranja |
+| Borde de tarjeta | `outlineVariant` | Naranja con opacidad 30% |
+| `List.generate` | `e.series` iteraciones | `seriesEfectivas` iteraciones |
+
+**Prellenado de pesos por serie desde `pesos_kg`:**
+
+```dart
+// En _EjercicioLiveCard (sesion_en_vivo_screen.dart:822-834)
+final pesoInicial = (e.pesosKg != null &&
+        i < e.pesosKg!.length &&
+        e.pesosKg![i] > 0)
+    ? e.pesosKg![i]
+    : e.pesoKg;
+```
+
+Cada campo de peso en la sesión en vivo se inicializa con el valor del array `pesos_kg` para esa serie específica. Si no existe o es 0, usa `peso_kg` como fallback.
 
 **Banners de estado durante la sesión:**
 - Banner naranja: "Sesión adaptada: -1 serie por ejercicio" (visible si `_seriesReducidas == true`)
@@ -596,8 +775,14 @@ Al pulsar "Finalizar sesión":
 3. **ChoiceChips de persistencia:**
    - "Solo hoy": los cambios de peso/reps NO se guardan en `seleccion_de_ejercicios` (solo en `series_sesion`)
    - "Para siempre": los cambios de peso/reps SÍ se actualizan en `seleccion_de_ejercicios` para futuras sesiones
-4. Al confirmar → `finalizarSesion()` actualiza `sesiones_registradas` (duración, RPE, calorías) y marca el día como `completado`
-5. Navegación de vuelta a `RutinaDetalleScreen`
+4. Al confirmar → `finalizarSesion()` actualiza `sesiones_registradas` (duración, RPE, calorías), calcula XP (`50 + min(duraciónMin, 90) + rpe × 5`), llama `otorgarXp()` y retorna `XpResultado?`.
+5. **NUEVO v5.2 — Feedback de XP:** Tras finalizar, se muestra SnackBar:
+   - **Sin level-up:** `"+130 XP 🔥"` (duración 2s)
+   - **Con level-up:** `"¡Subiste a nivel 5! 🎉 +130 XP"` (duración 3s)
+6. Navegación de vuelta a `RutinaDetalleScreen`
+
+**Cambio en navegación post "Completar rutina":**
+- Desde `RutinaDetalleScreen`, el botón "Completar rutina" ahora navega a `context.go('/bienestar')` (vuelve a la lista principal), en lugar de permanecer en la misma pantalla.
 
 ### 6.4 Indicador de Fatiga
 
@@ -749,6 +934,81 @@ flowchart TD
 | `FatigaBanner` | Banner naranja de advertencia | Pre-sesión |
 | `FinalidadBadge` | Chip coloreado con finalidad del ejercicio (naranja=fuerza, teal=cardio, índigo=isométrico) | NuevaRutinaScreen, RutinaDetalleScreen |
 | `_MiniGifPreview` | Miniatura de GIF de ejercicio (42-48px). Tap abre diálogo a tamaño completo (280px). | Buscador de ejercicios, tarjeta de ejercicio compacta |
+| `MetricGauge` | **NUEVO v5.0** — CustomPainter con arco animado 1200ms, punto brillante en el extremo, color dinámico rojo→naranja→amarillo→verde→teal según valor 0-100, alertas contextuales. | Dashboard: sección "Estado Actual" (Energético, Adherencia Académica, Estudio) |
+
+### 8.0 Widget `MetricGauge` (NUEVO v5.0)
+
+**Archivo:** `app/lib/shared/widgets/metric_gauge.dart` (~248 líneas)
+
+Gauge radial animado usado en la sección "Estado Actual" del dashboard para visualizar métricas 0-100:
+
+```dart
+class MetricGauge extends StatefulWidget {
+  final double value;        // 0-100
+  final String label;        // "Energético", "Adherencia", "Estudio"
+  final String? subtitle;    // "Académica", "25/30h"
+  final String? alert;       // "Descanso recomendado", "Necesita atención"
+  final double size;         // 110-130px
+}
+```
+
+**Características visuales:**
+- Arco de 270° con `CustomPainter` (`_GaugePainter`)
+- Animación `easeOutCubic` de 1200ms en carga inicial
+- Re-animación cuando cambia `value` (transición suave entre valores)
+- Punto brillante (círculo 5px) en el extremo del arco
+- Color dinámico por umbrales: `<30` rojo, `<50` naranja, `<70` amarillo, `<85` verde, `≥85` teal
+- Valor numérico central grande (`fontSize: 28-32`, `FontWeight.w700`)
+- Sufijo `/100` debajo del valor
+- Chip de alerta contextual con color de fondo semitransparente
+
+**Uso en el dashboard** (`app/lib/features/dashboard/presentation/dashboard_screen.dart:156-279`):
+
+```dart
+MetricGauge(
+  value: energia,                    // desde estadoEnergeticoProvider
+  label: 'Energético',
+  alert: energia < 30 ? 'Descanso recomendado' : null,
+  size: 130,
+),
+MetricGauge(
+  value: adherencia,                 // desde adherenciaAcademicaProvider
+  label: 'Adherencia',
+  subtitle: 'Académica',
+  alert: adherencia < 40 ? 'Necesita atención' : null,
+  size: 130,
+),
+MetricGauge(
+  value: estudioPct,                 // calculado de cargaAcademicaSemanalProvider
+  label: 'Estudio',
+  subtitle: '${horasReales}/${horasPlaneadas}h',
+  size: 130,
+),
+```
+
+### 8.0.1 Dashboard — Sección "Estado Actual" (NUEVA v5.0) + Limpieza de KPIs (v5.2)
+
+[OBSOLETO v6.0 — Reemplazado por §9 Dashboard Rediseñado]
+
+**Limpieza de KPIs (v5.2):**
+
+Los siguientes KPIs fueron eliminados del dashboard por ser métricas sin datos reales ("métricas muertas"):
+- **KPI "Horas de estudio"** — eliminado (dato no persistido ni calculado correctamente en BD)
+- **KPI "Racha actual"** — eliminado (la racha nunca se actualizaba → siempre era 0)
+- **Badge 🔥 del `_SaludoCard`** — eliminado (ahora solo muestra nivel + XP con punto de energía)
+
+**KPI "Calorías hoy"** ahora se oculta cuando `calorias == 0` (antes siempre visible con valor 0, mostrando una métrica vacía).
+
+**Grid de KPIs dinámico** (`_buildKpiGrid` en `dashboard_screen.dart:312`):
+- `crossAxisCount` ahora es `children.length.clamp(1, 2)` en vez de un valor fijo
+- Cuando solo queda "Sesiones completadas" (calorías = 0), el grid muestra 1 columna
+- Cuando hay 2 KPIs (calorías > 0 + sesiones), el grid muestra 2 columnas
+- `_buildKpiColumn` refactorizado de arrow function a método con cuerpo para legibilidad
+
+**Indicador de energía en SaludoCard:**
+- Punto de color (🟢 verde, 🟡 amarillo, 🟠 naranja, 🔴 rojo) junto al nivel/XP
+- Basado en `estadoEnergeticoProvider`: `<30` rojo, `<50` naranja, `<70` amarillo, `≥70` verde
+- **v5.2:** Badge de racha (🔥) eliminado. Solo se muestra nivel + XP con punto de energía.
 
 ### 8.1 Enum `FinalidadEjercicio`
 
@@ -803,6 +1063,14 @@ Cada tarjeta de ejercicio en el Paso 2 (Editor de estructura) ahora muestra camp
 | `cardio` | Intervalos (=series), Duración, Distancia (opc), Descanso | `_paramPill`, `_duracionPill` (input libre tipo "5m 30s" → parseado a segundos), `_distanciaPill` |
 | `isometrico` | Series, Tiempo de sujeción (s), Descanso | `_paramPill`, `_tiempoIsometricoPill` (TextField numérico) |
 
+**Nuevo: Pesos por serie con toggle:** El widget `_EjercicioCompacto` en `nueva_rutina_screen.dart` también incorpora el sistema de pesos por serie:
+- Estado local `_pesosKg` (`List<double>`), `_mismoPeso` (`bool`).
+- Toggle "Mismo peso en todas las series" en el editor.
+- Cuando se desactiva, aparecen `N` campos de peso por serie con steppers ±1.0kg/±0.5kg.
+- Al cambiar el número de series, `_pesosKg` se redimensiona: añade el último valor si crece, o recorta si se reduce.
+- Serialización: si `_mismoPeso == true` → no se envía `pesos_kg` al INSERT. Si `false` → se envía `pesos_kg: _pesosKg`.
+- `EjercicioInput.pesosKg` (`List<double>?`) transporta los pesos por serie desde `_EjercicioCompacto` hasta `crearRutinaCompleta()`.
+
 **Parser de duración libre (`_parseDuracion()`):** Acepta formatos como `"5m 30s"`, `"5:30"`, `"300"` (segundos puros), `"5 min"`, `"5m"`. Se almacena en segundos en `duracionSegundos`.
 
 ### 8.3 Widget `_MiniGifPreview`
@@ -818,7 +1086,176 @@ Muestra una miniatura del GIF del ejercicio con tamaño configurable:
 
 Usa `CachedNetworkImage` con `placeholder` (icono de imagen) y `errorWidget` (icono de pesa). El diálogo de vista ampliada tiene fondo negro semitransparente, borde redondeado 20px, y botón de cierre en la esquina superior derecha.
 
-## 9. Manejo de Errores
+### 8.4 Pantalla de Resumen de Rutina (`_buildPaso3`) — Enriquecida
+
+**Archivo:** `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart`
+
+El Paso 3 (revisión antes de guardar) fue enriquecido con visualización avanzada de metadatos, periodización y parámetros dinámicos:
+
+#### 8.4.1 Corrección de Bug — `Expanded` en Filas
+
+**Problema:** Los `Row` con `_resumenFila` causaban `RenderFlex` con `BoxConstraints(unconstrained)` cuando los hijos no tenían restricciones explícitas.
+
+**Solución:** Todos los hijos de `Row` en el resumen ahora se envuelven en `Expanded` para garantizar que cada columna reciba restricciones de ancho del padre:
+
+```dart
+Row(
+  children: [
+    Expanded(child: _resumenFila('Objetivo', ...)),
+    Expanded(child: _resumenFila('Duración', ...)),
+  ],
+)
+```
+
+#### 8.4.2 Visualización de Descripción
+
+El campo `_descCtrl.text` (descripción de la rutina) ahora se muestra en el resumen cuando no está vacío, mediante una card dedicada con icono `description` y fondo sutil.
+
+#### 8.4.3 Chips de Periodización (`tipo_semana`)
+
+Cada semana muestra un chip coloreado indicando su fase de periodización:
+
+| Tipo | Color | Significado |
+|------|-------|-------------|
+| `adaptacion` | Ámbar | 70% volumen, énfasis en técnica |
+| `carga` | Naranja | 85-90% volumen, progresión |
+| `pico` | Rojo | Máxima intensidad |
+| `descarga` | Teal | 60% volumen, recuperación activa |
+
+**Implementación:** Nuevo helper `_calcularTipoSemana()` en `nueva_rutina_screen.dart` que replica la lógica de `rutina_provider.dart`. El chip se renderiza mediante `_buildTipoSemanaChip()` con `ChoiceChip` estilizado.
+
+#### 8.4.4 Fila de Resumen por Ejercicio (`_buildExerciseSummaryRow`)
+
+Reescrito para mostrar chips informativos por cada ejercicio en el resumen:
+
+| Chip | Condición | Color | Ejemplo |
+|------|-----------|-------|---------|
+| **Circuito** | `esCircuito == true` | Púrpura | `🔄 Circuito` |
+| **Finalidad** | Siempre visible | Variable (ver tabla) | `🏋️ Fuerza` |
+| **Modalidad** | Siempre visible | Variable | `⚡ Fuerza` |
+
+**Colores de finalidad** (helper `_colorFinalidad()`):
+
+| Finalidad | Color |
+|-----------|-------|
+| Hipertrofia | Púrpura |
+| Fuerza | Rojo |
+| Cardio | Verde |
+| Resistencia | Azul |
+| Movilidad | Teal |
+| Isométrico | Índigo |
+| (default) | Gris |
+
+**Modalidades de entrenamiento** (helper `_buildModalidadChip()`):
+- Fuerza (rojo), Aeróbica (verde), Metabólica (naranja), Movilidad (teal)
+
+#### 8.4.5 Parámetros de Ejercicio Dinámicos (`_buildParametrosEjercicio`)
+
+Reescrito para usar `tipoMedicion` (array) en lugar de `finalidad` (string único), permitiendo ejercicios con múltiples tipos de medición. Muestra dinámicamente:
+
+| Tipo de Medición | Campos Mostrados | Formato |
+|-----------------|-----------------|---------|
+| Fuerza / Hipertrofia | Series × Reps | `4×8` |
+| Isométrico | Series × Tiempo | `3×45s` |
+| Cardio | Duración, Distancia (opcional) | `30 min · 5 km` |
+| Todos | Peso (kg), Descanso (s) | `60 kg · 90s` |
+
+**Modo Circuito (`esCircuito == true`):**
+- Oculta series × repeticiones
+- Muestra solo duración total del circuito
+- Chip "Circuito" visible (púrpura)
+
+#### 8.4.6 Helpers Nuevos
+
+| Helper | Propósito |
+|--------|-----------|
+| `_calcularTipoSemana(int semanaNum, int totalSemanas)` | Asigna tipo de periodización a cada semana |
+| `_buildTipoSemanaChip(String tipo)` | Renderiza chip de periodización coloreado |
+| `_finalidadBadge(String finalidad)` | Chip coloreado con icono de finalidad |
+| `_circuitoChip()` | Chip púrpura "Circuito" con icono `loop` |
+| `_buildModalidadChip(String modalidad)` | Chip de modalidad de entrenamiento |
+| `_colorFinalidad(String finalidad)` | Devuelve `Color` según finalidad |
+| `_fmtDistancia(int metros)` | Formatea distancia: `<1000m` → `"X m"`, `≥1000m` → `"X.X km"` |
+
+#### 8.4.7 Función Top-Level `fmtDuracion(int segundos)`
+
+**Archivo:** `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart` (top-level)
+
+Extraída para ser compartida entre `_NuevaRutinaScreenState` y `_EjercicioCompactoState`. Convierte segundos a formato legible:
+
+```dart
+String fmtDuracion(int segundos) {
+  if (segundos < 60) return '$segundos s';
+  final min = segundos ~/ 60;
+  final sec = segundos % 60;
+  if (sec == 0) return '$min min';
+  return '${min}m ${sec}s';
+}
+```
+
+### 8.5 Widget `_EjercicioCompacto` — Modo Circuito
+
+**Archivo:** `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart`
+
+Cuando `esCircuito == true`, los campos de Series y Reps se ocultan en `_camposFuerza`, mostrando en su lugar un único campo de Duración:
+
+```dart
+// En _camposFuerza:
+if (widget.esCircuito) {
+  // Muestra solo campo de Duración (oculta Series + Reps)
+  return _duracionPill(context, ...);
+} else {
+  // Muestra pills normales de Series, Reps, Descanso, Peso
+  return Row(
+    children: [
+      _paramPill(...), // Series
+      _paramPill(...), // Reps
+      _paramPill(...), // Descanso
+      _pesoField(),    // Peso kg
+    ],
+  );
+}
+```
+
+Esta lógica ya existía en versiones anteriores y se verificó su correcto funcionamiento.
+
+## 9. Dashboard Rediseñado (v6.0)
+
+### 9.1 Widgets nuevos
+
+| Widget | Tipo | Provider | Archivo |
+|--------|------|----------|---------|
+| `SaludoCard` | StatelessWidget | recibe `DashboardData` | `widgets/saludo_card.dart` |
+| `SmartBannerCard` | ConsumerWidget | `consejoSmartProvider` | `widgets/smart_banner_card.dart` |
+| `QuickActionsRow` | StatelessWidget | ninguno | `widgets/quick_actions_row.dart` |
+| `PlanWeekBar` | ConsumerWidget | `rutinaActivaSeleccionadaProvider` | `widgets/plan_week_bar.dart` |
+| `CognitiveLoadBar` | ConsumerWidget | `cargaCognitivaProvider` | `widgets/cognitive_load_bar.dart` |
+| `StreakRow` | StatelessWidget | recibe params | `widgets/streak_badge.dart` |
+| `KpiGrid` | StatelessWidget | recibe `DashboardData` | `widgets/kpi_grid.dart` |
+| `BienestarCard` | StatelessWidget | recibe perfil | `widgets/bienestar_card.dart` |
+| `RetosSection` | StatelessWidget | recibe `DashboardData` | `widgets/retos_section.dart` |
+| `RutinasSection` | StatelessWidget | recibe `DashboardData` | `widgets/rutinas_section.dart` |
+
+### 9.2 Funciones compartidas
+
+Extraídas a `app/lib/shared/widgets/dashboard_dialogs.dart`:
+
+- `colorParaScore(double)` — mapea valor a color
+- `buildFormulaBar(...)` — barra de fórmula con items
+- `buildCalcRow(...)` — fila de cálculo raw/contrib
+- `buildGateRow(...)` — fila visual de gate con chips
+- `buildStatCard(...)` — tarjeta de estadística
+- `mostrarDialogoEnergia(...)` — diálogo de estado energético
+- `mostrarDialogoAdherencia(...)` — diálogo de adherencia académica
+- `mostrarDialogoEstudio(...)` — diálogo de progreso de estudio
+
+### 9.3 Estados del dashboard
+
+- **Carga:** SmartBanner muestra skeleton shimmer mientras Gemini responde
+- **Sin datos:** PlanWeekBar y CognitiveLoadBar se ocultan con `SizedBox.shrink()`
+- **Error:** SmartBanner muestra fallback determinista si Gemini falla
+
+## 10. Manejo de Errores
 
 | Código/Situación | Acción del Cliente |
 |------------------|-------------------|
@@ -831,7 +1268,7 @@ Usa `CachedNetworkImage` con `placeholder` (icono de imagen) y `errorWidget` (ic
 | Gemini JSON malformado | Toast: "Gemini generó una respuesta con formato no válido." |
 | Sin ejercicios compatibles | Error inline con lista de equipamiento del usuario |
 
-## 10. Métricas de Rendimiento
+## 11. Métricas de Rendimiento
 
 | Pantalla | Objetivo | Notas |
 |----------|---------|-------|
@@ -841,7 +1278,7 @@ Usa `CachedNetworkImage` con `placeholder` (icono de imagen) y `errorWidget` (ic
 | Recomendación IA | < 8s por prompt | Gemini Flash ~2-3s + parsing |
 | Interacciones locales | < 300ms | Sin llamadas de red |
 
-## 11. Cobertura de Casos de Uso (v3.0)
+## 12. Cobertura de Casos de Uso (v3.0)
 
 | CU ID | Nombre | Pantallas | Estado |
 |-------|--------|-----------|--------|
@@ -855,10 +1292,10 @@ Usa `CachedNetworkImage` con `placeholder` (icono de imagen) y `errorWidget` (ic
 | CU-11 | Crear reto complejo | Crear Reto Complejo | ✅ |
 | CU-19 | Buscar y seleccionar ejercicios | Explorador, Detalle, Constructor | ✅ |
 | **CU-20** | **Crear rutina con recomendación IA** | **NuevaRutinaScreen (3 pasos + IA)** | ✅ |
-| **CU-21** | **Check-in diario antes de entrenar** | **RutinaDetalleScreen → _CheckInDialog → LiveSessionScreen** | ✅ |
+| **CU-21** | **Check-in diario durante primer descanso** | **LiveSessionScreen → _CheckInOverlay (no bloqueante)** | ✅ |
 
 ---
 
-**Documento compilado:** 19-05-2026
-**Última revisión:** v4.2
-**Referencia:** Alineado con SRS v3.0, Arquitectura v3.1
+**Documento compilado:** 09-06-2026
+**Última revisión:** v5.2
+**Referencia:** Alineado con SRS v3.0, Arquitectura v4.0, Pipeline IA v5.0

@@ -10,7 +10,6 @@ import '../../features/academico/presentation/crear_plan_semanal_screen.dart';
 import '../../features/auth/presentation/acceso_screen.dart';
 import '../../features/auth/presentation/perfil_fisico_screen.dart';
 import '../../features/bienestar/presentation/detalle_ejercicio_screen.dart';
-import '../../features/bienestar/presentation/explorador_ejercicios_screen.dart';
 import '../../features/bienestar/presentation/nueva_rutina_screen.dart';
 import '../../features/bienestar/presentation/rutina_detalle_screen.dart';
 import '../../features/bienestar/presentation/rutinas_comunidad_screen.dart';
@@ -88,6 +87,7 @@ final GoRouter appRouter = GoRouter(
       path: '/bienestar/ejercicio/:id',
       builder: (context, state) => DetalleEjercicioScreen(
         id: state.pathParameters['id'] ?? 'sin-id',
+        showAddButton: !(state.extra is bool && state.extra == true),
       ),
     ),
     GoRoute(

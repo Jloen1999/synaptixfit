@@ -1,87 +1,111 @@
 # 15 - Sistema de Recomendación por IA (Rutinas y Ejercicios)
 
 **Proyecto:** SynaptixFit
-**Versión:** 3.4
-**Fecha:** 19-05-2026
+**Versión:** 5.0
+**Fecha:** 09-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [06-frontend.md](06-frontend.md), [04-data-model.md](04-data-model.md), [14-changelog.md](14-changelog.md)
 
 ---
 
 ## 1. Resumen Ejecutivo
 
-El sistema de recomendación por IA de SynaptixFit permite que un usuario
-genere una rutina de entrenamiento completa semana a semana, día a día y
-ejercicio a ejercicio mediante inteligencia artificial (Google Gemini Flash)
-ejecutada directamente desde el cliente Flutter. La IA recibe el perfil del
-usuario (27 factores detallados en §4), su historial de entrenamiento, su estado
-diario de fatiga/sueño/estrés y el catálogo completo de ejercicios (~1300) para
-generar recomendaciones personalizadas.
+El sistema de recomendación de SynaptixFit ha evolucionado de un enfoque puramente basado en IA (Gemini Flash) a una arquitectura híbrida con un **motor de reglas determinista como base** y **refinamiento IA opcional** (Fases 0-10). La versión 5.0 introduce **paralelización de providers**, **JSON mode forzado en Gemini**, **catálogo inteligente top 60**, **contexto académico real** y **parámetros personalizados por modalidad**.
 
-El campo `minutos_por_sesion` (configurado con un slider de 15 a 120 minutos
-durante el onboarding) es uno de los factores que la IA recibe y utiliza para
-determinar cuántos ejercicios caben en cada sesión, qué volumen asignar y cómo
-estructurar los descansos.
+**Arquitectura actual (v5.0):**
+```
+Pipeline Determinista (7 etapas, ~3s)         Refinamiento IA (opcional, ~9s)
+┌──────────────────────────────────┐         ┌──────────────────────────────┐
+│ 0. Future.wait (4 providers)     │         │                              │
+│ 1. sanitizarObjetivo()           │         │ 7. refinarRutina()            │
+│ 2. Reglas → split + ejercicios   │  ────→  │    JSON mode + catálogo top  │
+│ 3. Contexto → ajustes (FCT, EE)  │         │    60 + contexto unificado   │
+│ 4. Transición → interpolación    │         │    → validación extendida    │
+│ 5. Progresión → sobrecarga       │         │    → preservar params pre-IA │
+│ 6. Validación → estructura final │         │                              │
+└──────────────────────────────────┘         └──────────────────────────────┘
+```
+
+**Mejoras clave v5.0:**
+- **Paralelización**: `generarRutinaProvider` carga perfil, catálogo, historial y estado diario en paralelo con `Future.wait` (redujo 24s → 12s).
+- **Timeouts explícitos**: queries de perfil, historial y ejercicios tienen timeouts de 8-12s.
+- **Catálogo inteligente**: `_filtrarCatalogoParaIA()` filtra top 60 ejercicios por equipamiento, dificultad y score de relevancia (~200KB → ~15KB enviado a Gemini).
+- **JSON mode**: `_callGemini()` activa `response_mime_type: application/json` forzando salida JSON válida. Con fallback a `_extraerJson()` legacy.
+- **Contexto unificado**: `_formatearContextoCompleto()` genera bloque estructurado con PERFIL FÍSICO + HISTORIAL DEPORTIVO + ESTADO DIARIO + CARGA ACADÉMICA + SEGURIDAD BIOMÉTRICA.
+- **ContextoAcademico real**: El orquestador recibe el objeto `ContextoAcademico` completo con `adherenciaAcademica` y `estadoEnergetico`, no solo un string.
+- **Parámetros personalizados por modalidad**: `_toInput()` calcula valores basados en perfil — peso según % peso corporal × tipo de ejercicio, duración aeróbica según minutos/sesión y nivel, tiempo isométrico escalado con nivel.
+- **Progresión isométrica**: `ProgresionEjercicio` ahora tiene `nuevoTiempoIsometricoSegundos`. La calculadora de progresión maneja ejercicios isométricos con gates RPE.
+- **Validación extendida**: `_validarEjercicio()` valida duracionSegundos (30-7200), distanciaMetros (50-42195), tiempoIsometrico (5-300), pesoKg (0-300) con fallback a valores base.
+- **Preservación post-IA**: `_preservarParamsPreIa()` restaura duracion, distancia e isométrico del pre-IA cuando la IA los deja null.
+
+El campo `minutos_por_sesion` ya no es un factor primario del motor determinista; en su lugar se usa `ejerciciosPorDia` de la tabla `ParametrosObjetivo`.
 
 ---
 
-## 2. Arquitectura General
+## 2. Arquitectura General (v5.0 — Híbrida: Reglas + IA + Pipeline Académico)
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                         SynaptixFit — Cliente Flutter                        ║
 ║                                                                              ║
-║  ┌─────────────────────┐          ┌──────────────────────────────────┐      ║
-║  │ PerfilFisicoScreen   │          │       NuevaRutinaScreen           │      ║
-║  │ (Onboarding 4 pasos) │          │   (Creación de rutina, 3 pasos)   │      ║
-║  │                     │          │                                  │      ║
-║  │ Paso 1: Datos demo  │          │ Paso 1: Nombre, objetivo,        │      ║
-║  │ Paso 2: Peso/altura  │          │         duración, días/semana    │      ║
-║  │         + IA objetivo│          │         → "Recomendar rutina"   │      ║
-║  │ Paso 3: Actividad +  │          │         → "Recomendar ejercicios"│      ║
-║  │         objetivo ppal│          │ Paso 2: Editor de ejercicios    │      ║
-║  │ Paso 4: Disponibilidad│          │         → "Sugerir ejercicios" │      ║
-║  │  ▶ Días/semana       │          │         → Buscador manual       │      ║
-║  │  ▶ Minutos/sesión    │          │ Paso 3: Revisión y crear        │      ║
-║  │  ▶ Equipamiento      │          └──────────────┬───────────────────┘      ║
-║  └──────────┬───────────┘                         │                          ║
-║             │                                     │                          ║
-║             ▼                                     ▼                          ║
-║  ┌─────────────────────┐          ┌──────────────────────────────────┐      ║
-║  │  ObjetivoIaService   │          │     RecomendacionIaService        │      ║
-║  │                     │          │                                  │      ║
-║  │ generarSugerencias() │          │ 1. generarRecomendacionRutina()   │      ║
-║  │ → 5 objetivos breves│          │ 2. generarEstructuraCompleta()    │      ║
-║  └──────────┬───────────┘          │ 3. generarRecomendacionEjercicios()│     ║
-║             │                      │ 4. generarProgresionEjercicio()  │      ║
-║             │                      └──────────────┬───────────────────┘      ║
-║             │                                     │                          ║
-║             └──────────────┬──────────────────────┘                          ║
-║                            ▼                                                  ║
 ║  ┌──────────────────────────────────────────────────────────────────────┐   ║
-║  │                    Dio HTTP POST                                      │   ║
-║  │  https://generativelanguage.googleapis.com/v1beta/models/             │   ║
-║  │       gemini-flash-latest:generateContent                             │   ║
-║  │  Header: X-goog-api-key: $GEMINI_API_KEY                              │   ║
+║  │          generarRutinaProvider (Future.wait paralelo)                  │   ║
+║  │  ┌───────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐  │   ║
+║  │  │perfilBienestar│ │ ejercicios   │ │ historial    │ │ estadoDiario│  │   ║
+║  │  │Provider(8s)   │ │ Provider(12s)│ │ Provider(10s)│ │ Provider(8s)│  │   ║
+║  │  └───────┬───────┘ └──────┬───────┘ └──────┬───────┘ └──────┬─────┘  │   ║
+║  │          └────────────────┼────────────────┼───────────────┘         │   ║
+║  │                           ▼                                         │   ║
+║  │  ┌──────────────────────────────────────────────────────────────┐   │   ║
+║  │  │         RecomendacionOrquestadorService (Fase 8)               │   │   ║
+║  │  │                                                                │   │   ║
+║  │  │   ┌──────────┐  ┌──────────┐  ┌────────────┐  ┌───────────┐  │   │   ║
+║  │  │   │ Reglas   │  │ Contexto │  │ Transición │  │Progresión │  │   │   ║
+║  │  │   │ (Fase 2) │→ │ (Fase 3) │→ │  (Fase 5)  │→ │ (Fase 4)  │  │   │   ║
+║  │  │   └──────────┘  └─────┬────┘  └────────────┘  └───────────┘  │   │   ║
+║  │  │                       │                                       │   │   ║
+║  │  │         ┌─────────────┴─────────────┐                         │   │   ║
+║  │  │         │  ContextoAcademico real    │                         │   │   ║
+║  │  │         │  ├ adherenciaAcademica     │                         │   │   ║
+║  │  │         │  ├ estadoEnergetico        │                         │   │   ║
+║  │  │         │  ├ horasEstudio + estrés   │                         │   │   ║
+║  │  │         │  └ examenesProximos        │                         │   │   ║
+║  │  │         └───────────────────────────┘                         │   │   ║
+║  │  │                                                                │   │   ║
+║  │  │   ┌──────────────────┐     ┌──────────────────────────────┐   │   │   ║
+║  │  │   │ Feedback Engine  │     │  Refinamiento IA (Fase 6)     │   │   │   ║
+║  │  │   │ (Fase 7)         │     │  ├ _filtrarCatalogoParaIA()   │   │   │   ║
+║  │  │   │ Post-sesión      │     │  │   top 60 ejercicios        │   │   │   ║
+║  │  │   └──────────────────┘     │  ├ _formatearContextoCompleto│   │   │   ║
+║  │  │                            │  │   bloque unificado         │   │   │   ║
+║  │  │                            │  ├ _callGemini() → JSON mode  │   │   │   ║
+║  │  │                            │  └ _validarEjercicio()        │   │   │   ║
+║  │  │                            └──────────────────────────────┘   │   │   ║
+║  │  └──────────────────────────────────────────────────────────────┘   │   ║
 ║  └──────────────────────────────────────────────────────────────────────┘   ║
+║                                                                              ║
+║  ┌─────────────────────┐  ┌────────────────────────────┐  ┌──────────────┐  ║
+║  │  NuevaRutinaScreen   │  │  syncCargaAcademicaSemanal │  │ string_utils │  ║
+║  │                     │  │  (antes de recomendar)     │  │ Fase 0       │  ║
+║  │ ⚡ Generar rápida   │  │  → carga_academica_semanal │  │ sanitizarObj │  ║
+║  │ ✨ Recomendar con IA│  │  → adherencia + energético │  └──────────────┘  ║
+║  └─────────────────────┘  └────────────────────────────┘                    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-                                    │
-                                    ▼
+                                     │
+                                     ▼
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                         Infraestructura Externa                              ║
+║                         Infraestructura                                      ║
 ║                                                                              ║
-║  ┌─────────────────────┐          ┌──────────────────────────────────┐      ║
-║  │  Google Gemini Flash │          │    Supabase PostgreSQL            │      ║
-║  │                     │          │                                  │      ║
-║  │ Procesa el prompt   │          │ 27 tablas con RLS                │      ║
-║  │ con contexto del     │          │ perfil_bienestar_usuario         │      ║
-║  │ usuario y devuelve   │          │ rutinas, semanas_rutina,        │      ║
-║  │ JSON estructurado    │          │ dias_rutina, seleccion_         │      ║
-║  │ con la rutina        │          │ de_ejercicios, sesiones_        │      ║
-║  └─────────────────────┘          │ registradas, series_sesion,      │      ║
-║                                   │ estado_diario_usuario,           │      ║
-║                                   │ v_ejercicios_completos (view)    │      ║
-║                                   └──────────────────────────────────┘      ║
+║  ┌─────────────────────┐  ┌──────────────────────┐  ┌───────────────────┐  ║
+║  │  Supabase PostgreSQL │  │  Google Gemini Flash  │  │  pg_cron (2 AM)   │  ║
+║  │  29+ tablas + RLS    │  │  JSON mode forzado    │  │  Job nocturno     │  ║
+║  │  carga_academica_    │  │  response_mime_type:  │  │  Inactividad +    │  ║
+║  │  semanal             │  │  application/json     │  │  fatiga alta      │  ║
+║  │  entregas_examenes   │  │                        │  │                   │  ║
+║  │  historial_objetivos │  │                        │  │                   │  ║
+║  │  recomendaciones_    │  │                        │  │                   │  ║
+║  │  pendientes          │  │                        │  │                   │  ║
+║  └─────────────────────┘  └──────────────────────┘  └───────────────────┘  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -221,9 +245,59 @@ flowchart TD
 
 ---
 
-## 5. Los 4 Prompts a Gemini
+## 5. Los Prompts a Gemini (v4.0 — Refinamiento IA, no generación)
 
-### 5.1 Prompt #1 — Recomendación de Metadatos de Rutina
+> **Importante (v4.0):** Los prompts #1-#4 legacy (que generaban rutinas desde cero) han sido reemplazados por el motor de reglas determinista (Fases 0-5). Gemini ahora solo se usa en la Fase 6 (`refinarRutina()`) para mejorar una estructura ya generada. Los prompts legacy se mantienen documentados por compatibilidad con versiones anteriores.
+
+### 5.0 Sistema Unificado de Objetivos (Fase 0)
+
+**Archivo:** `app/lib/shared/utils/string_utils.dart`
+
+Antes de cualquier llamada a Gemini o al motor de reglas, el objetivo se sanitiza con `sanitizarObjetivo()`:
+
+```dart
+const finalidadesEstandar = [
+  'Hipertrofia Muscular',
+  'Fuerza Máxima',
+  'Potencia y Explosividad',
+  'Fuerza Resistencia',
+  'Movilidad y Flexibilidad',
+  'Estabilidad y Control Motor',
+  'Acondicionamiento Metabólico',
+];
+
+String sanitizarObjetivo(String raw) {
+  // 1. Coincidencia exacta contra finalidadesEstandar
+  // 2. Mapa legacy: hipertrofia→Hipertrofia Muscular, fuerza→Fuerza Máxima, ...
+  // 3. Fallback: 'Hipertrofia Muscular'
+}
+```
+
+Los 4 prompts de Gemini (legacy) y el motor de reglas usan esta misma función, garantizando consistencia en todo el sistema.
+
+### 5.0.1 Prompt de Refinamiento — `refinarRutina()` (Fase 6)
+
+**Método:** `refinarRutina()` en `RecomendacionIaService`
+**Rol IA:** "Eres un entrenador personal profesional. Refina esta rutina ya generada."
+**Input:** Estructura base completa (series, reps, descanso, pesos, ejercicios)
+**Output:** Estructura refinada con nombres mejorados, 1-2 ejercicios variados, reordenados
+
+**Reglas estrictas del prompt de refinamiento:**
+- **NO modificar** series, repeticiones ni tiempos de descanso
+- **NO modificar** pesos ni progresiones
+- **SÍ mejorar** nombre de la rutina
+- **SÍ mejorar** descripción
+- **SÍ variar** máximo 1-2 ejercicios por día (sustituir por variantes)
+- **SÍ reordenar** ejercicios dentro de cada día
+
+**Post-procesamiento `_validarYReparar()`:**
+1. Validar que cada `ejercicioId` existe en el catálogo
+2. Validar compatibilidad de equipamiento
+3. Validar que la dificultad es válida
+4. Validar que los parámetros están en rango
+5. Si cualquier validación falla → revertir al ejercicio original del motor de reglas
+
+### 5.1 Prompt #1 — Recomendación de Metadatos de Rutina (LEGACY, v3.x)
 
 **Método:** `generarRecomendacionRutina()` (`recomendacion_ia_service.dart:121`)
 **Rol IA:** "Eres un entrenador personal profesional con amplia experiencia en prescripción de ejercicio"
@@ -399,6 +473,254 @@ o los días por semana después de la recomendación:
 
 ---
 
+### 5.8 Pipeline de Fallback — IA → Reglas
+
+Cuando la IA falla (timeout, error de API, JSON malformado, respuesta vacía), el orquestador mantiene la estructura determinista intacta y continúa sin interrupción:
+
+```mermaid
+flowchart TD
+    A["Pipeline determinista\n(Fases 0-5) completo"] --> B{"¿conIA == true\n&& apiKey válida?"}
+    B -->|No| C["Retorna estructura\n determinista"]
+    B -->|Sí| D["_ia.refinarRutina()\ncon timeout 30s"]
+    D --> E{"¿TimeoutException?"}
+    E -->|Sí| F["motivoAjustes += 'IA no disponible (timeout)'"]
+    E -->|No| G{"¿resultadoIA.tieneError?"}
+    G -->|Sí| H["motivoAjustes += 'IA: {error}'"]
+    G -->|No| I["_preservarParamsPreIa()\nrestaura duracion, distancia,\nisometrico pre-IA"]
+    F --> C
+    H --> C
+    I --> J["Retorna estructura\nrefinada con IA"]
+    style C fill:#4CAF50,color:white
+    style J fill:#4285F4,color:white
+```
+
+### 5.9 Diagrama de Flujo del Pipeline Completo
+
+```mermaid
+sequenceDiagram
+    participant UI as NuevaRutinaScreen
+    participant GP as generarRutinaProvider
+    participant ORQ as Orquestador
+    participant REG as ReglasService
+    participant CTX as ContextoService
+    participant PROG as ProgresionCalculator
+    participant IA as RecomendacionIaService
+    participant GEM as Gemini Flash
+
+    UI->>GP: generarRutina(conIA: true)
+    GP->>GP: syncCargaAcademicaSemanal()
+    GP->>GP: Future.wait([perfil, catalogo, historial, estadoDiario])
+    GP->>ORQ: generarRutina(perfil, catalogo, historial, estadoDiario, contextoAcademico)
+
+    ORQ->>ORQ: sanitizarObjetivo()
+    ORQ->>REG: generarEstructura(perfil, catalogo, params)
+
+    REG->>REG: determinarSplit() + seleccionar ejercicios
+    REG-->>ORQ: estructura base + split
+
+    ORQ->>CTX: calcularAjustes(academico, fisiologico, estadoDiario)
+    CTX->>CTX: _calcularFCT() + gates estadoEnergético
+    CTX-->>ORQ: AjusteContexto (factorVolumen, deltaSeries, etc.)
+
+    ORQ->>PROG: progresionarEstructura()
+    PROG-->>ORQ: estructura con pesos + sobrecarga
+
+    ORQ->>IA: refinarRutina(estructura, perfil, catalogo, contextoAcademico...)
+    IA->>IA: _filtrarCatalogoParaIA() → top 60 ejercicios
+    IA->>IA: _formatearContextoCompleto() → bloque unificado
+    IA->>IA: construir prompt con 5 secciones
+    IA->>GEM: POST con response_mime_type: application/json
+    GEM-->>IA: JSON estructurado
+    IA->>IA: _validarEjercicio() × N ejercicios
+    IA-->>ORQ: ResultadoGeneracion refinado
+
+    ORQ->>ORQ: _preservarParamsPreIa()
+    ORQ-->>GP: ResultadoGeneracion completo
+    GP-->>UI: estructura lista para Paso 2
+```
+
+### 5.10 Integración del Contexto Académico Real
+
+El pipeline de recomendación ahora integra el `ContextoAcademico` completo como objeto tipado, no como string sin formato. El flujo de datos es:
+
+```mermaid
+flowchart LR
+    subgraph "Datos fuente"
+        HA["horarios_academicos\n(tipo='estudio')"]
+        EE["entregas_examenes\n(próximos 7 días)"]
+        CAS["carga_academica_semanal\n(semana actual)"]
+        EDH["estado_diario_usuario\n(hoy)"]
+    end
+
+    subgraph "Providers Riverpod"
+        SYNC["syncCargaAcademicaSemanal()\nauto-popula desde HA+EE"]
+        CP["cargaAcademicaSemanalProvider"]
+        AAP["adherenciaAcademicaProvider\n0-100: disciplina pura\nsin biometrías"]
+        EEP["estadoEnergeticoProvider\n0-100: base lineal × 3 gates"]
+        CAP["contextoAcademicoProvider\ncombina carga + próximos\nexámenes + adherencia + energía"]
+    end
+
+    subgraph "Pipeline"
+        CTX["RecomendacionContextoService"]
+        ORQ["RecomendacionOrquestadorService"]
+        IA["RecomendacionIaService\n_formatearContextoCompleto()"]
+    end
+
+    HA --> SYNC
+    EE --> SYNC
+    EE --> CAP
+    SYNC --> CAS
+    CAS --> CP
+    CP --> AAP
+    EDH --> EEP
+    CP --> EEP
+    AAP --> CAP
+    EEP --> CAP
+    CAP --> ORQ
+    ORQ --> CTX
+    CAP --> IA
+
+    style SYNC fill:#FF9800,color:white
+    style CAP fill:#4CAF50,color:white
+```
+
+**ContextoAcademico** (DTO definido en `recomendacion_contexto_service.dart`):
+
+| Campo | Tipo | Origen | Uso en pipeline |
+|-------|------|--------|-----------------|
+| `horasEstudioReales` | `double` | `carga_academica_semanal` | `_calcularFCT()` pondera 25% |
+| `nivelEstres` | `double` | `carga_academica_semanal` | `_calcularFCT()` pondera 25% |
+| `evaluacionesSemana` | `int` | `carga_academica_semanal` | `_calcularFCT()` pondera 15% |
+| `horasSuenoPromedio` | `double` | `carga_academica_semanal` | `_calcularFCT()` pondera 15% |
+| `tieneExamenesProximos` | `bool` | `entregas_examenes` (7 días) | Activa modo exámenes: volumen ×0.70 |
+| `adherenciaAcademica` | `double` (0-100) | `adherenciaAcademicaProvider` | Informa a Gemini sobre disciplina |
+| `estadoEnergetico` | `double` (0-100) | `estadoEnergeticoProvider` | Gates: <30→×0.40, <50→×0.75 |
+
+**`syncCargaAcademicaSemanal()`** se ejecuta automáticamente antes de `_recomendarRutina()`:
+1. Consulta `horarios_academicos` de la semana actual (tipo 'estudio') → calcula horas reales
+2. Consulta `entregas_examenes` de la semana → cuenta total y completadas
+3. UPSERT en `carga_academica_semanal` con datos frescos
+4. Invalida 4 providers: `cargaAcademicaSemanalProvider`, `adherenciaAcademicaProvider`, `estadoEnergeticoProvider`, `contextoAcademicoProvider`
+
+### 5.11 JSON Mode y Catálogo Inteligente
+
+**JSON Mode en `_callGemini()`** (`recomendacion_ia_service.dart:1263`):
+
+```dart
+data: {
+  'contents': [{ 'parts': [{'text': prompt}] }],
+  'generationConfig': {
+    'response_mime_type': 'application/json',  // ★ Fuerza salida JSON válida
+  },
+},
+```
+
+Si el JSON devuelto no es parseable, se aplica fallback con `_extraerJson()` que intenta 2 estrategias:
+1. Extraer de bloque markdown ```json ... ```
+2. Encontrar primer `{` o `[` y último `}` o `]`
+
+**Catálogo Inteligente `_filtrarCatalogoParaIA()`** (`recomendacion_ia_service.dart:900`):
+
+Reduce el catálogo de 1000+ ejercicios (~200KB) a **top 60** (~15KB) antes de enviar a Gemini:
+
+```dart
+static const _topCatalogo = 60;
+
+List<Map<String, dynamic>> _filtrarCatalogoParaIA({
+  required List<EjercicioDb> catalogo,
+  required PerfilBienestarDb perfil,
+  required String objetivo,
+  List<String>? excluirIds,
+}) {
+  // 1. Filtrar por equipamiento compatible
+  // 2. Filtrar por dificultad apta para el nivel
+  // 3. Excluir IDs ya usados en el día
+  // 4. Ordenar por _scoreParaIA() descendente
+  // 5. Tomar top 60
+}
+```
+
+**Score de relevancia `_scoreParaIA()`:**
+- Finalidad del ejercicio coincide con objetivo: +0.50
+- Ejercicio compuesto (≤2 músculos objetivo, ≥2 secundarios): +0.20
+- Multi-finalidad: +0.15
+- Dificultad intermedia: +0.10
+- Dificultad principiante: +0.05
+
+**Contexto Unificado `_formatearContextoCompleto()`** (`recomendacion_ia_service.dart:1160`):
+
+Genera un bloque de texto estructurado que se inyecta en los 3 prompts de IA:
+
+```
+PERFIL FISICO:
+- Objetivo: Fuerza Máxima | Nivel: moderado
+- Edad: 22 | Peso: 75.0kg | IMC: 23.4 (Normal)
+- Equipamiento: peso corporal, mancuerna, barra | Dias/sem: 4 | Min/sesion: 60
+
+HISTORIAL DEPORTIVO:
+- Sesiones: 24 | RPE promedio: 7.3 | Semanas consecutivas: 8
+- Dias esta semana: 2
+- Ejercicios recientes: ...
+
+ESTADO DIARIO:
+- Sueño: 4/5 | Estres: 2/5 | Energia: 4/5 | Dolor: 1/5
+- Fatiga: 15/100
+- Listo para entrenar: si
+
+CARGA ACADEMICA:
+- Horas estudio/semana: 25h | Estrés académico: 4.0/10
+- Evaluaciones esta semana: 1 | Sueño promedio: 7.5h
+- ¿Exámenes próximos? No
+- Adherencia académica: 78/100 | Estado energético: 72/100
+
+SEGURIDAD BIOMETRICA:
+- (Reglas de IMC y edad)
+```
+
+### 5.12 Parámetros Personalizados por Modalidad
+
+**`_toInput()` en el motor de reglas** (`recomendacion_reglas_service.dart:643`):
+
+Calcula valores iniciales diferenciados por tipo de ejercicio:
+
+| Modalidad | Parámetros calculados | Fórmula |
+|-----------|----------------------|---------|
+| **Fuerza** (usa peso) | `pesoKg` | `pesoCorporal × %estimado × intensidadRelativa` (clamp 1-300) |
+| **Aeróbico** (usa tiempo, NO reps) | `duracionSegundos` | `(minPorSesion×60 / ejerciciosPorDia) × 0.35 × nivelFactor` (clamp 120-3600) |
+| **Aeróbico** (usa distancia) | `distanciaMetros` | `(500 + nivel×500) × nivelFactor` (clamp 200-10000) |
+| **Isométrico** (usa tiempo, NO reps) | `tiempoIsometricoSegundos` | `15 + nivel×15` (clamp 10-120) |
+
+Donde `nivelFactor = 0.6 + nivelNumerico × 0.15`.
+
+**Progresión isométrica** (`progresion_calculator.dart`):
+- `ProgresionEjercicio` incluye `nuevoTiempoIsometricoSegundos`
+- Gate RPE ≤5 → +10s isométrico
+- Gate RPE ≥9.5 → -15% tiempo isométrico
+
+### 5.13 Validación Extendida post-IA
+
+**`_validarEjercicio()`** (`recomendacion_ia_service.dart:803`) aplica 6 validaciones con fallback al valor base del motor de reglas:
+
+| Campo | Rango válido | Fallback si falla |
+|-------|-------------|-------------------|
+| `series` | 1–10 | `base.series` |
+| `repeticiones` | 1–100 | `base.repeticiones` |
+| `segundosDescanso` | 15–600 | `base.segundosDescanso` |
+| `duracionSegundos` | 30–7200 | `base.duracionSegundos` |
+| `distanciaMetros` | 50–42195 | `base.distanciaMetros` |
+| `tiempoIsometricoSegundos` | 5–300 | `base.tiempoIsometricoSegundos` |
+| `pesoKg` | 0–300 | `base.pesoKg` |
+
+Además valida:
+- `ejercicioId` existe en el catálogo
+- Compatibilidad de equipamiento (`_ejercicioUsaEquipamiento()`)
+- Dificultad apta para el nivel de actividad del usuario
+
+**`_preservarParamsPreIa()`** (`recomendacion_orquestador_service.dart:375`):
+Después del refinamiento IA, restaura `duracionSegundos`, `distanciaMetros` y `tiempoIsometricoSegundos` desde la estructura pre-IA si la IA los dejó `null`. Esto garantiza que los ejercicios de cardio e isométricos mantengan sus parámetros calculados por el motor de reglas.
+
+---
+
 ## 6. Influencia del Tiempo por Sesión en la Recomendación
 
 ### 6.1 ¿Qué es `minutos_por_sesion`?
@@ -531,17 +853,38 @@ graph TD
 | 21 | **Requiere Descarga** | `requiereDescarga` (bool) | Fuerza semana inicial de descarga. |
 | 22 | **Historial Ejercicios** | `series_sesion` JOIN `ejercicios` | Para sobrecarga progresiva (peso, reps, RPE por ejercicio). |
 
-### 7.4 Factores de la Rutina (5)
+### 7.4 Factores Académicos y Energéticos (6 — NUEVOS v5.0)
+
+| # | Factor | Provider | Cómo Influye |
+|---|--------|----------|--------------|
+| 23 | **Horas Estudio Reales** | `cargaAcademicaSemanalProvider` | `_calcularFCT()` pondera 25% de la carga total |
+| 24 | **Nivel Estrés Académico** | `cargaAcademicaSemanalProvider` | `_calcularFCT()` pondera 25% |
+| 25 | **Evaluaciones Semana** | `cargaAcademicaSemanalProvider` | `_calcularFCT()` pondera 15% |
+| 26 | **Exámenes Próximos** | `contextoAcademicoProvider` (consulta `entregas_examenes`) | Activa modo exámenes: volumen ×0.70, +30s descanso |
+| 27 | **Adherencia Académica** | `adherenciaAcademicaProvider` (0-100) | Informa a Gemini sobre disciplina del usuario. NO castiga por dormir mal. |
+| 28 | **Estado Energético** | `estadoEnergeticoProvider` (0-100) | Gates no lineales: <30→×0.40 volumen, <50→×0.75 |
+
+**Cálculo de `adherenciaAcademicaProvider` (0-100):**
+- `cumplimientoHoras` (60%): `horasEstudioReales / horasEstudioPlaneadas`
+- `completitudTareas` (30%): `entregas_completadas / total_entregas`
+- `rachaDias` (10%): `diasUnicosEstudio / 7`
+
+**Cálculo de `estadoEnergeticoProvider` (0-100):**
+- Base lineal: `energía×0.30 + sueño×0.25 + recuperación×0.20 + cognitiva×0.15 + estrés×0.10`
+- 3 gates no lineales: sueño≤1→×0.40, dolor≥4→×0.60, energía≤1→×0.50
+- Previene falsos positivos como "energía=75 con sueño=0"
+
+### 7.5 Factores de la Rutina (5)
 
 | # | Factor | Tipo | Cómo Influye |
 |---|--------|------|--------------|
-| 23 | **Nombre Rutina** | Input usuario | Contexto semántico para la IA. |
-| 24 | **Objetivo Rutina** | Selección usuario | Puede diferir del objetivo principal del perfil. |
-| 25 | **Duración Semanas** | Input usuario | Define la periodización exacta. |
-| 26 | **Días/Semana** | Input usuario | Puede diferir del perfil. |
-| 27 | **Ejercicios Ya Agregados** | Estado actual del editor | La IA no repite ejercicios ya existentes en el día. |
+| 29 | **Nombre Rutina** | Input usuario | Contexto semántico para la IA. |
+| 30 | **Objetivo Rutina** | Selección usuario | Puede diferir del objetivo principal del perfil. |
+| 31 | **Duración Semanas** | Input usuario | Define la periodización exacta. |
+| 32 | **Días/Semana** | Input usuario | Puede diferir del perfil. |
+| 33 | **Ejercicios Ya Agregados** | Estado actual del editor | La IA no repite ejercicios ya existentes en el día. |
 
-### 7.4 Reglas de Seguridad por IMC y Edad
+### 7.6 Reglas de Seguridad por IMC y Edad
 
 | Condición | Regla en el Prompt |
 |-----------|-------------------|
@@ -551,7 +894,7 @@ graph TD
 | Edad > 50 | Sin 1RM. Rangos 8-15 reps. **Calentamiento articular 5-10 min obligatorio.** |
 | Edad < 18 | **Técnica sobre carga.** Evitar pesos máximos. Enfásis en peso corporal. |
 
-### 7.5 Reglas de Programación por Objetivo
+### 7.7 Reglas de Programación por Objetivo
 
 | Objetivo | Ejercicios/Día | Reps | Descanso | Peso | RPE |
 |----------|---------------|------|----------|------|-----|
@@ -865,7 +1208,7 @@ DiaEditorCard → Botón "Añadir ejercicio" → BottomSheet
 
 ---
 
-## 14. Diagrama de Arquitectura de Providers (Riverpod)
+## 14. Diagrama de Arquitectura de Providers (Riverpod — v5.0)
 
 ```mermaid
 flowchart TD
@@ -878,8 +1221,16 @@ flowchart TD
         BR["BienestarRepository<br/>guardarPerfilBienestar(),<br/>obtenerPerfilBienestar(),<br/>actualizarPerfilParcial()"]
     end
 
+    subgraph "Providers Académicos (NUEVOS v5.0)"
+        CASP["cargaAcademicaSemanalProvider<br/>FutureProvider<br/>→ CargaAcademicaSemanalDb?"]
+        AAP["adherenciaAcademicaProvider<br/>FutureProvider<br/>→ double (0-100)"]
+        EEP["estadoEnergeticoProvider<br/>FutureProvider<br/>→ double (0-100)"]
+        CAP["contextoAcademicoProvider<br/>FutureProvider<br/>→ ContextoAcademico?"]
+        SYNC["syncCargaAcademicaSemanal()<br/>auto-popula + invalida 4 providers"]
+    end
+
     subgraph "Providers (Riverpod)"
-        EP["ejerciciosProvider<br/>FutureProvider<br/>→ List&lt;EjercicioDb&gt;"]
+        EP["ejerciciosProvider<br/>StreamProvider<br/>→ List&lt;EjercicioDb&gt;"]
         PBP["perfilBienestarProvider<br/>FutureProvider<br/>→ PerfilBienestarDb?"]
         HSP["historialSesionUsuarioProvider<br/>FutureProvider<br/>→ HistorialSesionDto?"]
         EHP["estadoDiarioHoyProvider<br/>FutureProvider<br/>→ EstadoDiarioDb?"]
@@ -888,12 +1239,17 @@ flowchart TD
     end
 
     subgraph "Servicio IA"
-        IAS["RecomendacionIaService<br/>4 métodos de recomendación"]
+        IAS["RecomendacionIaService<br/>_filtrarCatalogoParaIA()<br/>_formatearContextoCompleto()<br/>_callGemini() con JSON mode"]
         OIAS["ObjetivoIaService<br/>generarSugerencias()"]
+    end
+
+    subgraph "Orquestador"
+        ORQ["RecomendacionOrquestadorService<br/>7 etapas + fallback IA<br/>_preservarParamsPreIa()"]
     end
 
     DB --> ER
     DB --> BR
+    DB --> CASP
     ER --> EP
     BR --> PBP
     DB --> HSP
@@ -901,79 +1257,103 @@ flowchart TD
     DB --> ESP
     DB --> BSP
 
+    CASP --> AAP
+    CASP --> EEP
+    EHP --> EEP
+    AAP --> CAP
+    EEP --> CAP
+    CASP --> CAP
+
+    PBP --> ORQ
+    EP --> ORQ
+    HSP --> ORQ
+    EHP --> ORQ
+    CAP --> ORQ
     PBP --> IAS
     EP --> IAS
     HSP --> IAS
     EHP --> IAS
-    ESP --> IAS
+    CAP --> IAS
 
-    IAS --> Gemini["Google Gemini Flash API"]
+    ORQ --> IAS
+    IAS --> Gemini["Google Gemini Flash API\nJSON mode forzado"]
 
     style DB fill:#33691E,color:white
     style Gemini fill:#4285F4,color:white
     style IAS fill:#FF9800,color:white
+    style CAP fill:#4CAF50,color:white
+    style ORQ fill:#9C27B0,color:white
 ```
 
 ---
 
-## 15. Referencias en el Código Fuente
+## 15. Referencias en el Código Fuente (v5.0)
 
 | Archivo | Líneas Clave | Propósito |
 |---------|-------------|-----------|
-| `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` | 1-867 | Servicio central de IA: 4 prompts, helpers, parseo JSON |
-| `app/lib/features/auth/infrastructure/objetivo_ia_service.dart` | 1-122 | IA que sugiere 5 objetivos en onboarding |
-| `app/lib/features/bienestar/application/rutina_provider.dart` | 439-524 | `crearRutinaCompleta()` — guarda en 4 tablas |
-| `app/lib/features/bienestar/application/rutina_provider.dart` | 711-817 | `historialSesionUsuarioProvider` — agrega historial |
-| `app/lib/features/bienestar/application/rutina_provider.dart` | 823-838 | `estadoDiarioHoyProvider` — lee check-in diario |
-| `app/lib/features/bienestar/application/rutina_provider.dart` | 840-868 | `guardarEstadoDiario()` — upsert check-in |
-| `app/lib/features/bienestar/application/rutina_provider.dart` | 875-881 | `_calcularTipoSemana()` — periodización |
-| `app/lib/features/bienestar/application/rutina_provider.dart` | 886-972 | `estadoPeriodizacionProvider` — detección fatiga |
-| `app/lib/features/bienestar/application/rutina_provider.dart` | 609-675 | `iniciarSesion()`, `finalizarSesion()`, `registrarSerie()` |
-| `app/lib/features/bienestar/application/ejercicios_provider.dart` | 1-87 | Providers de ejercicios con filtrado en memoria |
-| `app/lib/features/bienestar/application/bienestar_semanal_provider.dart` | 1-135 | Seguimiento semanal de bienestar |
-| `app/lib/features/bienestar/infrastructure/ejercicios_repository.dart` | 1-148 | Repositorio de ejercicios (v_ejercicios_completos) |
-| `app/lib/features/auth/infrastructure/bienestar_repository.dart` | 43-92 | `guardarPerfilBienestar()` — guarda minutos_por_sesion |
-| `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart` | 611-695 | `_recomendarRutina()` — llama al Prompt #1 |
-| `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart` | 697-785 | `_recomendarEjercicios()` — llama al Prompt #2 |
-| `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart` | 787-810 | `_llenarEstructuraDesdeRecomendacion()` — mapea exerciseDbId |
-| `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart` | 812-911 | `_sugerirEjerciciosIA()` — llama al Prompt #3 |
-| `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart` | 913-941 | `_crearRutina()` — dispara el guardado |
-| `app/lib/features/auth/presentation/perfil_fisico_screen.dart` | 39, 766-790 | Slider de minutos por sesión |
-| `app/lib/features/auth/presentation/perfil_fisico_screen.dart` | 280-294 | Guarda perfil con minutos_por_sesion |
-| `app/lib/shared/models/db_models.dart` | 770-898 | Modelo `PerfilBienestarDb` con `minutosPorSesion` |
-| `app/lib/shared/models/db_models.dart` | 903-972 | Modelo `EstadoDiarioDb` con `puntuacionFatiga` |
-| `supabase/sql/schema.sql` | 552, 566 | Schema: `minutos_por_sesion INT DEFAULT 45 CHECK (10-180)` |
+| `app/lib/shared/utils/string_utils.dart` | 1-63 | **★ Fase 0:** `finalidadesEstandar` (7 valores) + `sanitizarObjetivo()` — fuente única de verdad |
+| `app/lib/features/bienestar/infrastructure/parametros_objetivo.dart` | 1-196 | **★ Fase 1:** `ParametrosObjetivo` — tabla de 7 entradas calibrada contra dataset |
+| `app/lib/features/bienestar/infrastructure/recomendacion_reglas_service.dart` | 1-710 | **★ Fase 2:** Motor de reglas determinista — split, scoring, selección balanceada, `_toInput()` con params por modalidad |
+| `app/lib/features/bienestar/infrastructure/recomendacion_contexto_service.dart` | 1-381 | **★ Fase 3:** Capa de contexto — `ContextoAcademico` con `adherenciaAcademica` y `estadoEnergetico`, FCT, modo exámenes, racha, fatiga, `calcularAjustes()` con gates energéticos |
+| `app/lib/features/bienestar/infrastructure/progresion_calculator.dart` | 1-380 | **★ Fase 4:** Sobrecarga progresiva — 1RM, pesos por serie, degradación, progresión isométrica (`nuevoTiempoIsometricoSegundos`) |
+| `app/lib/features/bienestar/infrastructure/transicion_objetivo_service.dart` | 1-155 | **★ Fase 5:** Transición entre objetivos — interpolación en 3 fases |
+| `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` | 1-1357 | **★ Fase 6:** `refinarRutina()` + `_filtrarCatalogoParaIA()` (top 60) + `_formatearContextoCompleto()` + `_callGemini()` con JSON mode + `_validarEjercicio()` extendida |
+| `app/lib/features/bienestar/infrastructure/feedback_engine.dart` | 1-130 | **★ Fase 7:** Feedback post-sesión — degradación dinámica, inactividad |
+| `app/lib/features/bienestar/infrastructure/recomendacion_orquestador_service.dart` | 1-412 | **★ Fase 8:** Orquestador del pipeline — 7 etapas, `_preservarParamsPreIa()`, fallback cuando IA no disponible |
+| `app/lib/features/bienestar/application/rutina_provider.dart` | — | **★ Fase 9:** `geminiApiKeyProvider`, `recomendacionOrquestadorProvider`, `generarRutinaProvider` (Future.wait paralelo), `cargaAcademicaSemanalProvider`, `adherenciaAcademicaProvider`, `estadoEnergeticoProvider`, `contextoAcademicoProvider`, `syncCargaAcademicaSemanal()` |
+| `app/lib/features/bienestar/presentation/nueva_rutina_screen.dart` | — | **★ Fase 9:** Botones "⚡ Generar rápida" + "✨ Recomendar con IA", llama a `syncCargaAcademicaSemanal()` antes de recomendar |
+| `app/lib/shared/models/db_models.dart` | 1188-1238 | **★ Modelo:** `CargaAcademicaSemanalDb` — mapea tabla `carga_academica_semanal` |
+| `app/lib/shared/widgets/metric_gauge.dart` | 1-248 | **★ Widget:** `MetricGauge` — CustomPainter con arco animado 1200ms, usado en dashboard para adherencia/energía/estudio |
+| `supabase/migrations/202606060046_historial_objetivos.sql` | 1-30 | **★ Fase 5:** Tabla `historial_objetivos` con RLS |
+| `supabase/migrations/202606060047_failed_reps.sql` | 1-6 | **★ Fase 7:** Columna `failed_reps` en `series_sesion` |
+| `supabase/migrations/202606060048_recomendaciones_pendientes.sql` | 1-30 | **★ Fase 7:** Tabla `recomendaciones_pendientes` con RLS |
+| `supabase/migrations/20260606_0049_func_daily_recommendations.sql` | 1-101 | **★ Fase 10:** Función `generar_recomendaciones_diarias()` + `pg_cron` |
 
 ---
 
-## 16. Limitaciones y Consideraciones Técnicas
+## 16. Limitaciones y Consideraciones Técnicas (v5.0)
 
-### 16.1 Inconsistencia de la IA
+### 16.1 Determinismo del Motor de Reglas
 
-- Gemini **no siempre respeta** el límite de 4-7 ejercicios.
-- Los minutos por sesión influyen **indirectamente**: no hay una regla dura
-  como `floor(minutos / 15) = ejercicios`. La IA decide libremente.
-- Dos llamadas con los mismos parámetros pueden dar resultados diferentes.
+- El pipeline determinista (Fases 0-5) produce resultados **reproducibles**: mismo perfil → misma estructura.
+- La variabilidad solo se introduce en la Fase 6 (refinamiento IA), que es opcional.
+- Sin API key de Gemini, el sistema funciona completamente con el motor de reglas.
 
-### 16.2 Sin Validación Post-Gemini
+### 16.2 Validación Post-IA Robusta
 
-- El código confía en que Gemini respete las reglas del prompt.
-- Si Gemini devuelve un ejercicio con equipamiento incompatible, se muestra igual.
-- Si Gemini devuelve un `exerciseId` inexistente, se usa el string crudo como ID.
+- `_validarEjercicio()` implementa validación extendida con rangos para los 7 parámetros.
+- Si Gemini devuelve un ejercicio con equipamiento incompatible → se revierte al original.
+- Si Gemini devuelve un `ejercicioId` inexistente → se revierte al original.
+- `_preservarParamsPreIa()` garantiza que duración, distancia e isométrico no se pierdan tras refinamiento IA.
+- **Ya no se aceptan ejercicios inválidos** (corregido respecto a v3.x).
 
 ### 16.3 Rendimiento
 
-- Cada llamada a IA requiere **4 consultas a Supabase** (perfil + ejercicios +
-  historial + estado diario). El historial agrega los datos de `series_sesion`.
-- Sin caché: cada pulsación hace una nueva llamada a Gemini.
-- Las inserciones en BD son secuenciales, no en batch. Para una rutina de 4
-  semanas × 4 días × 5 ejercicios = **1 + 4 + 16 + 80 = 101 roundtrips HTTP**.
+- **Paralelización**: `Future.wait` carga 4 providers simultáneamente (redujo 24s → 12s).
+- Pipeline determinista: **~3 segundos** (con queries paralelizadas).
+- Refinamiento IA: **~9 segundos adicionales** (1 llamada a Gemini con timeout 30s).
+- **JSON mode** reduce fallos de parsing y re-intentos.
+- **Catálogo inteligente**: ~200KB → ~15KB enviados a Gemini (token savings significativos).
+- Las inserciones en BD siguen siendo secuenciales (no en batch).
 
-### 16.4 Seguridad de la API Key
+### 16.4 Integración Académica
+
+- `syncCargaAcademicaSemanal()` se ejecuta antes de cada recomendación para datos frescos.
+- `adherenciaAcademicaProvider` (0-100) mide disciplina pura sin penalizar por biometrías.
+- `estadoEnergeticoProvider` (0-100) usa gates no lineales para evitar falsos positivos.
+- `ContextoAcademico` se pasa como objeto tipado al orquestador y a Gemini vía `_formatearContextoCompleto()`.
+
+### 16.5 Calibración contra Dataset Real
+
+- `ParametrosObjetivo` está calibrado contra `dataset_final.json` (682 ejercicios, 7 finalidades).
+- Las modalidades, finalidades de ejercicio y volúmenes semanales reflejan la distribución real del dataset.
+- Para futuras expansiones del catálogo, solo hay que actualizar una tabla de 7 entradas.
+
+### 16.6 Seguridad de la API Key
 
 - `GEMINI_API_KEY` se lee de `.env` en cliente Flutter.
-- Se envía en el header `X-goog-api-key` de cada request HTTPS.
-- No se almacena en BD ni se envía a Supabase.
+- Solo se usa en la Fase 6 (refinamiento), que es opcional.
+- Sin API key, el sistema funciona con el motor de reglas determinista.
 
 ---
 
@@ -1005,30 +1385,23 @@ flowchart TD
 ║  └────────────────────────────────────────────────────────────────────────┘  ║
 ║                                      │                                        │  ║
 ║                                      ▼                                        │  ║
-║  ┌─ CREACIÓN DE RUTINA (3 pasos) ────────────────────────────────────────┐  ║
+║  ┌─ CREACIÓN DE RUTINA (v5.0 — Pipeline Híbrido) ───────────────────────┐  ║
 ║  │ NuevaRutinaScreen                                                      │  ║
 ║  │                                                                         │  ║
 ║  │  Paso 1: Metadatos                                                     │  ║
 ║  │  ┌──────────────────────────────────────────────────────────────┐     │  ║
-║  │  │ "Recomendar rutina con IA"                                     │     │  ║
-║  │  │   → RecomendacionIaService.generarRecomendacionRutina()        │     │  ║
-║  │  │   → Prompt #1 → Gemini → {nombre, desc, objetivo, duración}   │     │  ║
+║  │  │ ⚡ "Generar rutina rápida" (FilledButton, siempre visible)     │     │  ║
+║  │  │   → RecomendacionOrquestadorService.generarRutina(usarIa:false)│    │  ║
+║  │  │   → Pipeline determinista (Fases 0-5, 7 etapas, <2s)          │     │  ║
+║  │  │   → Resultado: estructura completa validada                   │     │  ║
+║  │  │                                                                │     │  ║
+║  │  │ ✨ "Recomendar rutina con IA" (OutlinedButton, con API key)    │     │  ║
+║  │  │   → RecomendacionOrquestadorService.generarRutina(usarIa:true) │     │  ║
+║  │  │   → Pipeline + refinarRutina() con Gemini (Fase 6)            │     │  ║
+║  │  │   → Gemini mejora nombres, varía 1-2 ejercicios/día, reordena │     │  ║
 ║  │  └──────────────────────────────────────────────────────────────┘     │  ║
 ║  │                                                                         │  ║
-║  │  Paso 2: Ejercicios (editor semana×día)                                │  ║
-║  │  ┌──────────────────────────────────────────────────────────────┐     │  ║
-║  │  │ "Recomendar ejercicios"                                        │     │  ║
-║  │  │   → RecomendacionIaService.generarEstructuraCompleta()         │     │  ║
-║  │  │   → Prompt #2 → Gemini → {estructura: semanas×días×ejercicios}│     │  ║
-║  │  │                                                                │     │  ║
-║  │  │ "Sugerir ejercicios con IA" (por día)                          │     │  ║
-║  │  │   → RecomendacionIaService.generarRecomendacionEjercicios()    │     │  ║
-║  │  │   → Prompt #3 → Gemini → [3-6 ejercicios]                     │     │  ║
-║  │  │                                                                │     │  ║
-║  │  │ "Añadir ejercicio" (manual)                                    │     │  ║
-║  │  │   → BottomSheet con buscador+filtros del catálogo              │     │  ║
-║  │  └──────────────────────────────────────────────────────────────┘     │  ║
-║  │                                                                         │  ║
+║  │  Paso 2: Ejercicios (editor semana×día) — relleno automático           │  ║
 ║  │  Paso 3: Revisión → "Crear rutina"                                     │  ║
 ║  │   → crearRutinaCompleta() → 4 tablas en cascada                        │  ║
 ║  │   → _calcularTipoSemana() asigna tipo a cada semana                    │  ║
@@ -1039,9 +1412,14 @@ flowchart TD
 ║  │ SesionEnVivoScreen → entrenamiento en vivo + registro de series        │  ║
 ║  │   → iniciarSesion() → finalizarSesion(rpe, duracion) → registrarSerie()│  ║
 ║  │                                                                         │  ║
-║  │ Sobrecarga Progresiva (por ejercicio):                                  │  ║
-║  │   → RecomendacionIaService.generarProgresionEjercicio()                 │  ║
-║  │   → Prompt #4 → Gemini → {series, reps, descanso, pesoKg}              │  ║
+║  │ Feedback Post-Sesión (Fase 7):                                          │  ║
+║  │   → FeedbackEngine.procesarSesion()                                     │  ║
+║  │   → Degradación dinámica basada en failed_reps                          │  ║
+║  │   → Inserta en recomendaciones_pendientes                               │  ║
+║  │                                                                         │  ║
+║  │ Job Nocturno (Fase 10):                                                 │  ║
+║  │   → pg_cron ejecuta generar_recomendaciones_diarias() a las 2 AM       │  ║
+║  │   → Detecta inactividad 7-30 días y fatiga alta                         │  ║
 ║  └────────────────────────────────────────────────────────────────────────┘  ║
 ║                                                                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -1050,5 +1428,39 @@ flowchart TD
 ---
 
 *Documento generado automáticamente a partir del análisis del código fuente
-(12-05-2026). Actualizado 19-05-2026 con reglas de finalidad. Para consultar cambios o ampliar secciones, referirse a los
+(12-05-2026). Actualizado 07-06-2026 con Motor de Recomendaciones (Fases 0-10). Para consultar cambios o ampliar secciones, referirse a los
 archivos listados en §15.*
+
+---
+
+## 18. Smart Banner: Consejo IA en Dashboard (v6.0)
+
+### 18.1 Diferencias con el pipeline de rutinas
+
+| Característica | Smart Banner | Pipeline Rutinas |
+|---------------|-------------|-----------------|
+| Prompt | ~1500 chars | ~15000 chars |
+| Timeout | 8 segundos | 30 segundos |
+| JSON mode | No | Sí |
+| Catálogo | No usa | Top 60 ejercicios |
+| Contexto | Energía + adherencia + carga | Contexto académico completo |
+| Respuesta | Texto libre (1-2 frases) | JSON estructurado |
+| Cache | Hive, TTL 1 hora | Sin cache |
+
+### 18.2 Flujo
+
+```
+consejoSmartProvider
+  ├─ Verifica cache Hive ('smartcache', key = 'smart_banner_{userId}')
+  │   └─ Si válido (<1h) → retorna cache
+  ├─ ¿Gemini API key configurada?
+  │   ├─ Sí → geminiServiceProvider.generarTexto(apiKey, prompt)
+  │   │   ├─ Éxito → cachea en Hive → retorna consejo
+  │   │   └─ Error/timeout 8s → _generarFallback()
+  │   └─ No → _generarFallback()
+  └─ _generarFallback(): 5 reglas deterministas basadas en energía/estrés/racha
+```
+
+### 18.3 Servicio compartido
+
+`geminiServiceProvider` expone una instancia única de `RecomendacionIaService` para todo el app. El método `generarTexto(apiKey, prompt)` envuelve `_callGemini()` y retorna texto plano.

@@ -1,19 +1,19 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 3.2
+**Versión:** 4.1
 **Estado:** APROBADO
-**Fecha:** 19-05-2026
+**Fecha:** 09-06-2026
 **Autor:** Arquitectura
 **Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.0)
 
 ## 1. Objetivo
 
-Definir la arquitectura completa de SynaptixFit (Flutter móvil/web + Supabase + Gemini IA), cubriendo:
-1. Estructura de carpetas y módulos.
-2. Modelo de datos y permisos (RLS).
-3. Contratos de servicios.
-4. Arquitectura del servicio de IA (Gemini Flash).
-5. Sistema de check-in diario y periodización.
+Definir la arquitectura completa de SynaptixFit (Flutter móvil/web + Supabase + Gemini IA + Motor de Reglas Determinista), cubriendo:
+1. Estructura de carpetas y módulos (incluyendo Fases 0-10 del Motor de Recomendaciones).
+2. Modelo de datos y permisos (RLS) — 29 tablas.
+3. Contratos de servicios (7 servicios de infraestructura nuevos).
+4. Arquitectura del servicio de IA (Gemini Flash) + Motor de Reglas Determinista.
+5. Sistema de check-in diario, periodización y feedback post-entrenamiento.
 6. Estrategia técnica por fases (MVP → Crecimiento).
 
 ## 2. Decisiones de Arquitectura
@@ -68,7 +68,7 @@ flowchart TB
     subgraph Nube["Infraestructura Cloud"]
         subgraph Supabase["Supabase"]
             Auth["Auth (JWT)"]
-            PG["PostgreSQL 15\n(27 tablas + RLS)"]
+            PG["PostgreSQL 15\n(29+ tablas + RLS)"]
             RT["Realtime (WebSocket)"]
             EF["Edge Functions\n(Deno)"]
         end
@@ -117,7 +117,7 @@ flowchart TB
 
 ```
 synaptixfit/
-├── docs/                          # 14 archivos de documentación
+├── docs/                          # 17 archivos de documentación
 ├── app/
 │   └── lib/
 │       ├── core/                  # Errores, utils, config, routing, design system, sync
@@ -128,8 +128,11 @@ synaptixfit/
 │       │       └── shell_route.dart        # StatefulShellRoute (5 tabs)
 │       ├── shared/
 │       │   ├── models/
-│       │   │   └── db_models.dart          # 25+ modelos (1645 líneas)
+│   │   │   └── db_models.dart          # 40+ modelos (~2004 líneas, incl. CargaAcademicaSemanalDb)
+│       │   ├── utils/
+│       │   │   └── string_utils.dart       # ★ finalidadesEstandar + sanitizarObjetivo() (Fase 0)
 │       │   └── widgets/
+│       │       └── metric_gauge.dart        # ★ Gauge radial animado (248 líneas)
 │       ├── features/
 │       │   ├── auth/                       # Login, registro, onboarding
 │       │   │   └── infrastructure/
@@ -139,10 +142,17 @@ synaptixfit/
 │       │   ├── retos/                      # Retos simples y complejos
 │       │   ├── bienestar/
 │       │   │   ├── infrastructure/
-│       │   │   │   ├── recomendacion_ia_service.dart  # ★ Servicio IA (867 líneas)
+│       │   │   │   ├── recomendacion_ia_service.dart        # ★ IA (1357 líneas) + refinarRutina() (Fase 6)
+│       │   │   │   ├── recomendacion_reglas_service.dart    # ★ Motor de reglas determinista (Fase 2, 710 líneas)
+│       │   │   │   ├── recomendacion_contexto_service.dart  # ★ Capa de contexto academia+fisiología (Fase 3, 381 líneas)
+│       │   │   │   ├── recomendacion_orquestador_service.dart # ★ Orquestador del pipeline (Fase 8, 412 líneas)
+│       │   │   │   ├── parametros_objetivo.dart             # ★ Tabla de 7 parámetros por objetivo (Fase 1, 196 líneas)
+│       │   │   │   ├── progresion_calculator.dart           # ★ Sobrecarga progresiva con isométrico (Fase 4, 380 líneas)
+│       │   │   │   ├── transicion_objetivo_service.dart     # ★ Transición entre objetivos (Fase 5, 155 líneas)
+│       │   │   │   ├── feedback_engine.dart                 # ★ Feedback post-sesión (Fase 7, 130 líneas)
 │       │   │   │   └── ejercicios_repository.dart
 │       │   │   └── application/
-│       │   │       ├── rutina_provider.dart         # ★ 30+ providers y funciones
+│       │   │       ├── rutina_provider.dart                 # ★ 50+ providers incl. académicos y energéticos (1421 líneas)
 │       │   │       ├── ejercicios_provider.dart
 │       │   │       └── sesion_provider.dart
 │       │   ├── social/                     # Muro, likes, comentarios
@@ -151,13 +161,18 @@ synaptixfit/
 │       │   └── perfil/                     # Perfil de usuario
 │       └── main.dart                       # Entry point, ProviderScope, Supabase.init
 ├── supabase/
-│   ├── migrations/                         # 18 migraciones SQL
+│   ├── migrations/                         # 49 migraciones SQL (0001→0050)
 │   ├── seed_ejercicios.py                  # Seeding del catálogo ExerciseDB
-│   └── seed_catalogo.py                    # Seeding del catálogo académico
+│   ├── seed_usuarios.py                    # Seeding de usuarios mock
+│   ├── seed_demo_data.py                   # Seeding de datos demo
+│   ├── seed_catalogo.py                    # Seeding del catálogo académico
+│   ├── seed_asignaturas.py                 # Seeding de asignaturas desde grados.json
+│   └── seed_todo.py                        # Seed unificado de ejercicios + relaciones
 ├── cloudflare/
 │   └── synaptixfit-r2-proxy/
 │       └── worker.js                       # Proxy R2 con CORS
-└── migraciones_pendientes.sql              # SQL consolidado para deploy manual
+├── migraciones_pendientes.sql              # SQL consolidado para deploy manual
+└── .env                                    # Variables de entorno (Supabase, Gemini, R2, Google OAuth)
 ```
 
 ## 6. Servicio de IA — Arquitectura en Profundidad
@@ -359,7 +374,7 @@ erDiagram
 
 ## 8. Servicio de IA — `RecomendacionIaService`
 
-**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (867 líneas)
+**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (1357 líneas)
 
 ### 8.1 DTOs (Data Transfer Objects)
 
@@ -369,7 +384,7 @@ erDiagram
 | `RecomendacionRutinaResult` | Resultado de recomendación de metadatos o estructura | `nombre`, `descripcion`, `objetivo`, `duracionSemanas`, `estructura` (Map<semana, Map<día, List<EjercicioRecomendado>>>), `error?` |
 | `RecomendacionEjerciciosResult` | Resultado de sugerencia de ejercicios para un día | `ejercicios` (List<EjercicioRecomendado>), `error?` |
 | `HistorialSesionDto` | Historial agregado de sesiones para contexto IA | `totalSesionesCompletadas`, `rpePromedio`, `volumenSemanalEstimado`, `ejerciciosRecientes`, `diasCompletadosUltimaSemana`, `semanasConsecutivasEntrenando`, `requiereDescarga` |
-| `EjericicioRecienteDto` | Datos de un ejercicio del historial | `nombreEjercicio`, `pesoPromedio`, `repsPromedio`, `rpePromedio`, `ultimaFecha` |
+| `EjercicioRecienteDto` | Datos de un ejercicio del historial | `nombreEjercicio`, `pesoPromedio`, `repsPromedio`, `rpePromedio`, `ultimaFecha` |
 
 ### 8.2 Métodos del Servicio
 
@@ -632,6 +647,14 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 | `rutinasComunidadProvider` | `FutureProvider<List<RutinaComunidadDto>>` | Rutinas públicas de la comunidad | `rutinas` WHERE visibilidad='public' + JOIN `usuarios` | Manual |
 | `rutinasUsuarioProvider` | `FutureProvider<List<RutinaDb>>` | Rutinas del usuario | `rutinas` WHERE usuario_id | Al crear/eliminar/clonar rutina |
 
+### 12.1.1 Proveedores del Motor de Recomendaciones (Fases 0-10)
+
+| Provider | Tipo | Propósito | Fuente de datos | Invalidación |
+|----------|------|-----------|----------------|-------------|
+| `geminiApiKeyProvider` | `Provider<String>` | API key de Gemini desde `.env` | `EnvConfig.geminiApiKey` | — |
+| `recomendacionOrquestadorProvider` | `Provider<RecomendacionOrquestadorService>` | Orquestador del pipeline de 7 etapas | Instancia única, coordina 7 servicios | — |
+| `generarRutinaProvider` | `FutureProvider.family<ResultadoGeneracion, ({String usuarioId, bool usarIa})>` | Pipeline completo: sanitización → reglas → contexto → transición → progresión → IA(opcional) | Invalida y recarga `perfilBienestar`, `ejercicios`, `historialSesion`, `estadoDiario` antes de ejecutar | Manual (botón "Generar") |
+
 ### 12.2 Funciones de Mutación (en `rutina_provider.dart`)
 
 | Función | Operación | Tablas afectadas |
@@ -668,7 +691,8 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 | Sprint 3 | Evaluaciones, calificaciones, retos, perfil bienestar, catálogo ejercicios, rutinas, sesiones | ✅ |
 | Sprint 4 | Multimedia R2, ingesta completa ExerciseDB, feed social, notificaciones, hardening | ✅ |
 | **Sprint 5** | **IA (Gemini), periodización, check-in diario, sobrecarga progresiva, perfil editable** | ✅ |
-| Sprint 6 | Retos complejos con dependencias, analítica avanzada, sincronización offline | 🔜 |
+| **Sprint 6** | **Motor de Recomendaciones (Fases 0-10): reglas deterministas, contexto, transición, feedback, orquestador** | ✅ |
+| Sprint 7 | Retos complejos con dependencias, analítica avanzada, sincronización offline | 🔜 |
 
 ## 14. Riesgos Técnicos y Mitigaciones
 
@@ -680,8 +704,53 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 | Periodización mal aplicada | Medio — rutina inadecuada | Algoritmo determinista (`_calcularTipoSemana`). El usuario puede crear rutinas sin IA. |
 | Coste de API en producción | Bajo (MVP) | Gemini Flash capa gratuita: 15 RPM. Prompts minimalistas (solo IDs). |
 
+## 15. Arquitectura del Dashboard Rediseñado (v6.0)
+
+### 15.1 Nuevos providers
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `cargaCognitivaProvider` | `FutureProvider<CargaCognitivaData?>` | Factor de Carga Total (FCT) 0-100 combinando horas estudio, estrés, evaluaciones y sueño |
+| `geminiServiceProvider` | `Provider<RecomendacionIaService>` | Instancia compartida del servicio Gemini para todo el app |
+| `consejoSmartProvider` | `FutureProvider<SmartBannerState>` | Consejo IA con Gemini + cache Hive 1h + fallback determinista |
+| `rutinaActivaSeleccionadaProvider` | `Provider<String?>` | ID de la primera rutina activa del usuario |
+
+### 15.2 Layout del dashboard
+
+ListView vertical con 10 secciones:
+1. SaludoCard + StreakRow — avatar, nivel, XP, streaks
+2. SmartBannerCard — consejo IA (Gemini o fallback)
+3. QuickActionsRow — 4 chips: Pomodoro, Workout, Escanear, Nuevo reto
+4. PlanWeekBar — "Semana X de Y" (condicional)
+5. CognitiveLoadBar — barra de carga cognitiva (condicional)
+6. EstadoSection — 3 MetricGauges (Energético, Adherencia, Carga)
+7. KpiGrid — calorías + sesiones
+8. BienestarCard — IMC, peso, objetivo
+9. RetosSection — retos activos con progreso
+10. RutinasSection — rutinas activas
+
+### 15.3 Estructura de archivos
+
+```
+features/dashboard/
+├── application/
+│   ├── dashboard_provider.dart    — DashboardData + dashboardProvider
+│   └── smart_banner_provider.dart — consejoSmartProvider
+├── domain/
+│   └── smart_banner_dto.dart      — SmartBannerContext, SmartBannerState
+└── presentation/
+    ├── dashboard_screen.dart      — Pantalla principal (~355 líneas)
+    └── widgets/                   — 12 widgets (SaludoCard, KpiGrid, RetosSection, etc.)
+```
+
+### 15.4 Hive para cache local
+
+Se inicializa en `main.dart` vía `HiveConfig.init()`. Se usan 2 boxes:
+- `smartcache` — cache del SmartBanner (TTL 1h)
+- `offline_dash` — fallback offline del dashboard
+
 ---
 
-**Documento compilado:** 19-05-2026
-**Versión:** 3.2
+**Documento compilado:** 09-06-2026
+**Versión:** 4.1
 **Clasificación:** PÚBLICO — Equipo jloen

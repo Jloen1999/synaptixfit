@@ -1,9 +1,9 @@
 # 01 - Introducción
 
 **Proyecto:** SynaptixFit — Aplicación Integral de Bienestar para Estudiantes Universitarios  
-**Versión del documento:** 1.2  
-**Fecha:** 10-05-2026  
-**Estado:** ✅ LISTO PARA DESARROLLO
+**Versión del documento:** 1.5  
+**Fecha:** 09-06-2026  
+**Estado:** ✅ EN DESARROLLO ACTIVO
 
 ---
 
@@ -37,14 +37,14 @@ La unificación de los ámbitos académico y de bienestar en una sola plataforma
 
 - **Para el estudiante:** reducción de la carga cognitiva asociada a la gestión de múltiples herramientas, aumento de la constancia semanal gracias a la gamificación no punitiva, y mejora del equilibrio entre estudio, actividad física y descanso.
 - **Para la comunidad universitaria:** fomento de una red de apoyo entre pares donde los logros académicos y deportivos se comparten y celebran, contribuyendo a un entorno más saludable y motivador.
-- **Como contribución académica:** el proyecto demuestra la viabilidad de integrar tecnologías modernas —Flutter multiplataforma, Supabase como backend gestionado, Cloudflare R2 para multimedia, y Realtime para sincronización en vivo— en una arquitectura que puede servir como referencia para futuros desarrollos en el ámbito edTech.
+- **Como contribución académica:** el proyecto demuestra la viabilidad de integrar tecnologías modernas —Flutter multiplataforma, Supabase como backend gestionado, Cloudflare R2 para multimedia, Google Gemini Flash (JSON mode) para refinamiento IA, un motor de reglas determinista para generación de rutinas, métricas académicas y energéticas con providers React, y Realtime para sincronización en vivo— en una arquitectura que puede servir como referencia para futuros desarrollos en el ámbito edTech.
 
 ### 1.6 Funcionalidades principales
 
 El MVP de SynaptixFit integra las siguientes funcionalidades, organizadas en cinco módulos:
 
-1. **Planificación académica:** gestión de asignaturas con horarios semanales, detección automática de conflictos entre bloques de estudio y sesiones de entrenamiento, y perfil académico personalizado con seguimiento de carga semanal y nivel de estrés.
-2. **Bienestar y entrenamiento:** catálogo de ejercicios con terminología anatómica profesional (más de 1.300 ejercicios con GIFs animados), constructor de rutinas personalizadas con selección de series, repeticiones y descansos, y registro de sesiones completadas con cálculo de calorías y XP.
+1. **Planificación académica:** gestión de asignaturas con horarios semanales, detección automática de conflictos entre bloques de estudio y sesiones de entrenamiento, y perfil académico personalizado con seguimiento de carga semanal y nivel de estrés. Incluye **métricas académicas** (adherencia académica 0-100 basada en disciplina pura) y **sincronización automática** de carga desde horarios y entregas.
+2. **Bienestar y entrenamiento:** catálogo de ejercicios con terminología anatómica profesional (más de 1.300 ejercicios con GIFs animados), constructor de rutinas personalizadas con selección de series, repeticiones y descansos, **motor de recomendaciones híbrido (reglas deterministas + refinamiento IA con Gemini JSON mode)** que genera rutinas completas con paralelización de providers, catálogo inteligente top 60 y parámetros personalizados por modalidad (fuerza, aeróbico, isométrico). Incluye feedback post-entrenamiento con degradación dinámica de carga y **métricas de estado energético** (0-100 con gates no lineales).
 3. **Retos gamificados:** creación de retos simples (meta única) y complejos (con hitos ponderados), sistema de progreso con barras visuales y cálculo automático de avance, y recompensas mediante experiencia (XP), niveles y rachas.
 4. **Red social de logros:** muro de actividad donde los estudiantes comparten sus sesiones completadas y retos finalizados, sistema de me gusta y comentarios, y control de visibilidad por recurso (público, solo amigos, privado).
 5. **Notificaciones adaptativas:** centro de avisos categorizados por prioridad (crítica, recomendada, informativa), alertas de conflicto horario y fatiga, y preferencias de entrega configurables por franja horaria y límite diario.
@@ -52,6 +52,8 @@ El MVP de SynaptixFit integra las siguientes funcionalidades, organizadas en cin
 ### 1.7 Observaciones y alcance
 
 El alcance definitivo del proyecto podrá ajustarse durante el desarrollo en coordinación con el tutor académico, manteniendo como prioridad la correcta aplicación de una metodología de desarrollo software y la validación de un núcleo funcional estable. Las funcionalidades avanzadas (integración con IA para recomendaciones personalizadas, notificaciones push nativas y sincronización offline completa) se consideran líneas de trabajo futuro.
+
+**Sistema de gamificación (diagnosticado, planificado):** La función PostgreSQL `otorgar_xp()` existe en la BD con lógica de level-up completa (umbral = 1000 × nivel, XP sobrante se acumula), pero **nunca se llama** desde el cliente Flutter (0 llamadas `.rpc()`). XP y nivel son display-only estáticos. El campo `racha_actual` nunca se actualiza (sin triggers). Pendiente de implementar: conectar `finalizarSesion()` → `client.rpc('otorgar_xp')` con fórmula `50 + min(duraciónMin, 90) + (RPE × 5)`.
 
 ---
 
@@ -75,7 +77,7 @@ El alcance definitivo del proyecto podrá ajustarse durante el desarrollo en coo
 | Estado | Riverpod (Funcional) |
 | Routing | Go Router |
 | UI | Widgets personalizados + tokens Synapse Velocity |
-| Persistencia local | Hive / Sembast (offline-first) |
+| Persistencia local | Hive (caché offline, cola de sincronización) |
 
 ### Backend
 | Componente | Tecnología |
@@ -83,15 +85,16 @@ El alcance definitivo del proyecto podrá ajustarse durante el desarrollo en coo
 | Base de datos | Supabase (PostgreSQL) |
 | Autenticación | Supabase Auth (email/password + JWT) |
 | Tiempo real | Supabase Realtime (WebSocket) |
-| Edge Functions | Supabase Functions (Deno) |
-| Almacenamiento multimedia | Cloudflare R2 (CORS + URLs firmadas) |
+| Almacenamiento multimedia | Cloudflare R2 (CORS + Worker proxy) |
+| Edge Functions | Supabase Functions (Deno) — **no implementadas en MVP** |
 
 ### Servicios Externos
 | Componente | Tecnología |
 |------------|-----------|
-| Catálogo de ejercicios | ExerciseDB (AscendAPI) via Kaggle (ingesta batch a Supabase) |
-| IA (Fase 2) | Supabase Vector (OpenAI embeddings) |
-| Push (Fase 2) | Firebase Cloud Messaging |
+| Catálogo de ejercicios | Dataset final (~909 ejercicios con video/imagen, ingesta batch desde JSON unificado) |
+| IA generativa | Gemini Flash API (Google) — refinamiento de rutinas con **JSON mode forzado** (`response_mime_type: application/json`), vía Dio (cliente Flutter). Catálogo inteligente top 60 (~15KB). |
+| Motor de reglas | Dart (cliente) — pipeline determinista con **parámetros personalizados por modalidad** (fuerza, aeróbico, isométrico), sin dependencia de IA |
+| Métricas | Dart (cliente) — `adherenciaAcademicaProvider` (0-100 disciplina pura), `estadoEnergeticoProvider` (0-100 con 3 gates no lineales) |
 
 ### Formatos Multimedia
 | Tipo | Formato | Límite |
@@ -139,11 +142,13 @@ El alcance definitivo del proyecto podrá ajustarse durante el desarrollo en coo
 ### 4.5 Navegación
 
 - **Bottom Navigation:** 5 tabs con glassmorphism.
-  - 🏠 Inicio (Dashboard)
-  - 📚 Académico
-  - 🎯 Retos
-  - 👥 Social
-  - 👤 Perfil
+  - Inicio (Dashboard)
+  - Académico
+  - Rutinas (Bienestar)
+  - Retos
+  - Social
+
+Perfil NO es un tab. Es una ruta separada `/perfil`, accesible desde el avatar.
 - **Tab activo:** Color secundario (verde) con punto indicador de 4px.
 
 ### 4.6 Proyecto Stitch
@@ -216,12 +221,12 @@ El alcance definitivo del proyecto podrá ajustarse durante el desarrollo en coo
 
 ## 8. Estructura de Documentación
 
-Este proyecto sigue el estándar modular de 14 puntos:
+Este proyecto sigue el estándar modular de documentación del equipo jloen:
 
 | # | Archivo | Descripción |
 |---|---------|------------|
 | 01 | `01-introduction.md` | Este documento. Contexto, objetivos, stack, glosario. |
-| 02 | [02-requirements.md](02-requirements.md) | Requisitos funcionales y no funcionales (SRS v2.5). |
+| 02 | [02-requirements.md](02-requirements.md) | Requisitos funcionales y no funcionales (SRS v3.0). |
 | 03 | [03-architecture.md](03-architecture.md) | Arquitectura del sistema, modelo 4+1, diagramas. |
 | 04 | [04-data-model.md](04-data-model.md) | Modelos ER, esquemas de BD, relaciones, RLS. |
 | 05 | [05-api.md](05-api.md) | Endpoints REST, requests/responses, auth, errores. |
@@ -233,7 +238,10 @@ Este proyecto sigue el estándar modular de 14 puntos:
 | 11 | [11-security.md](11-security.md) | Auth, RLS, encriptación, datos sensibles. |
 | 12 | [12-user-guide.md](12-user-guide.md) | Manual de uso, roles, flujos principales. |
 | 13 | [13-maintenance.md](13-maintenance.md) | Gobierno del catálogo de ejercicios, backups, actualización de dependencias. |
-| 14 | [14-changelog.md](14-changelog.md) | Historial de versiones y cambios. |
+| 14 | [14-changelog.md](14-changelog.md) | Historial de versiones y cambios (~1502 líneas). |
+| 15 | [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md) | Sistema de recomendación híbrido (motor de reglas + IA Gemini con JSON mode): pipeline completo, catálogo inteligente top 60, contexto académico unificado, parámetros por modalidad, validación extendida, fallback. |
+| 16 | [16-guia-autenticacion-google.md](16-guia-autenticacion-google.md) | Guía técnica de implementación de autenticación nativa con Google (Flutter + Supabase). |
+| 17 | [17-dataset-lyfta.md](17-dataset-lyfta.md) | Dataset Lyfta: pipeline de scraping, limpieza y generación de 682 ejercicios con video. |
 
 ---
 
@@ -249,6 +257,6 @@ Este proyecto sigue el estándar modular de 14 puntos:
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Versión:** 1.0  
+**Documento compilado:** 09-06-2026  
+**Versión:** 1.5  
 **Clasificación:** PÚBLICO — Equipo jloen

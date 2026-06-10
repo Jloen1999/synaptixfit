@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/presentation/auth_controller.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../academico/application/usuario_carreras_provider.dart';
+import '../../academico/application/catalogo_provider.dart';
 import '../../bienestar/application/rutina_provider.dart';
+import '../../bienestar/application/ejercicios_provider.dart';
 import '../../dashboard/application/dashboard_provider.dart';
 import '../../auth/infrastructure/bienestar_repository.dart';
 import '../application/perfil_provider.dart';
@@ -20,9 +23,7 @@ class PerfilScreen extends ConsumerStatefulWidget {
 
 class _PerfilScreenState extends ConsumerState<PerfilScreen> {
   PerfilUsuario? _cachedUsuario;
-  PerfilActividad? _cachedActividad;
   PreferenciasNotificacionDb? _cachedPrefs;
-  PerfilBienestarCompleto? _cachedBienestar;
 
   void _onPerfilActualizado({PerfilCambio cambio = PerfilCambio.todo}) {
     switch (cambio) {
@@ -34,12 +35,15 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
         ref.invalidate(perfilUsuarioProvider);
       case PerfilCambio.preferencias:
         ref.invalidate(perfilPreferenciasProvider);
+      case PerfilCambio.academico:
+        ref.invalidate(perfilAcademicoProvider);
       case PerfilCambio.todo:
         ref.invalidate(perfilBienestarProvider);
         ref.invalidate(perfilUsuarioProvider);
         ref.invalidate(perfilBienestarCompletoProvider);
         ref.invalidate(perfilActividadProvider);
         ref.invalidate(perfilPreferenciasProvider);
+        ref.invalidate(perfilAcademicoProvider);
     }
     ref.invalidate(dashboardProvider);
   }
@@ -47,12 +51,9 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
   @override
   Widget build(BuildContext context) {
     final usuarioAsync = ref.watch(perfilUsuarioProvider);
-    final actividadAsync = ref.watch(perfilActividadProvider);
     final preferenciasAsync = ref.watch(perfilPreferenciasProvider);
 
-    // Actualizar cachés cuando llegan datos nuevos.
     if (usuarioAsync.hasValue) _cachedUsuario = usuarioAsync.value;
-    if (actividadAsync.hasValue) _cachedActividad = actividadAsync.value;
     if (preferenciasAsync.hasValue) _cachedPrefs = preferenciasAsync.value;
 
     // Solo mostrar loading en la primera carga (sin datos cacheados).
@@ -73,8 +74,6 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
 
     final usuario = usuarioData.usuario;
     final perfil = usuarioData.perfil;
-    final actividad = _cachedActividad ??
-        const PerfilActividad(sesiones: 0, logros: 0, caloriasAcumuladas: 0);
     final preferencias = _cachedPrefs ??
         PreferenciasNotificacionDb(
           id: '',
@@ -86,14 +85,10 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
           actualizadoEn: DateTime.now(),
         );
 
-    final bienestarAsync = ref.watch(perfilBienestarCompletoProvider);
-    if (bienestarAsync.hasValue) _cachedBienestar = bienestarAsync.value;
-    final historial = _cachedBienestar?.historial ?? <HistorialPesoDb>[];
-
     return FeatureScaffold(
       title: '',
       child: DefaultTabController(
-        length: 3,
+        length: 4,
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) => [
             SliverToBoxAdapter(
@@ -108,32 +103,32 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
               pinned: true,
               delegate: _TabBarDelegate(
                 TabBar(
-                  tabs: const [
-                    Tab(text: 'Estadísticas'),
-                    Tab(text: 'Bienestar'),
-                    Tab(text: 'Ajustes'),
-                  ],
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
                   labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                   indicatorSize: TabBarIndicatorSize.label,
+                  tabs: const [
+                    Tab(text: 'Estadísticas'),
+                    Tab(text: 'Bienestar'),
+                    Tab(text: 'Académico'),
+                    Tab(text: 'Ajustes'),
+                  ],
                 ),
               ),
             ),
           ],
           body: TabBarView(
             children: [
-              _EstadisticasTab(
-                usuario: usuario,
-                sesiones: actividad.sesiones,
-                logros: actividad.logros,
-                caloriasAcumuladas: actividad.caloriasAcumuladas,
-              ),
+              const _EstadisticasTab(),
               _BienestarTab(
-                perfil: perfil,
-                historial: historial,
                 onPerfilChanged: () =>
                     _onPerfilActualizado(cambio: PerfilCambio.bienestar),
+              ),
+              _AcademicoTab(
+                onPerfilChanged: () =>
+                    _onPerfilActualizado(cambio: PerfilCambio.academico),
               ),
               _AjustesTab(usuario: usuario, prefs: preferencias),
             ],
@@ -141,6 +136,106 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
         ),
       ),
     );
+  }
+}
+
+// =============================================================================
+// Widgets compartidos entre tabs
+// =============================================================================
+Widget _buildSectionCard(
+    BuildContext context, String title, List<Widget> children) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: const Color(0xFF1E293B).withValues(alpha: 0.6)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFE2E8F0))),
+        const SizedBox(height: 12),
+        ...children,
+      ],
+    ),
+  );
+}
+
+Widget _buildEditRow(String label, String value, VoidCallback onTap,
+    {String? tooltip}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            Expanded(
+                child: Row(
+              children: [
+                Flexible(
+                  child: Text(label,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 13, color: Color(0xFF94A3B8))),
+                ),
+                if (tooltip != null) ...[
+                  const SizedBox(width: 4),
+                  Tooltip(
+                    message: tooltip,
+                    child: const Icon(Icons.help_outline_rounded,
+                        size: 14, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ],
+            )),
+            Text(value,
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 6),
+            const Icon(Icons.edit, size: 13, color: Color(0xFF64748B)),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _buildReadRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: Row(
+      children: [
+        Expanded(
+            child: Text(label,
+                style:
+                    const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)))),
+        Text(value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+      ],
+    ),
+  );
+}
+
+class _RowText extends StatelessWidget {
+  const _RowText(this.text, {this.isSub = false});
+
+  final String text;
+  final bool isSub;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text,
+        style: TextStyle(
+            fontSize: isSub ? 12 : 13,
+            color: isSub ? const Color(0xFF64748B) : const Color(0xFFE2E8F0)));
   }
 }
 
@@ -165,7 +260,6 @@ class _HeroHeader extends StatefulWidget {
 class _HeroHeaderState extends State<_HeroHeader> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final nombre = widget.usuario.nombreCompleto;
     final initial =
         nombre.isNotEmpty && nombre != '—' ? nombre[0].toUpperCase() : '?';
@@ -377,7 +471,7 @@ class _HeroHeaderState extends State<_HeroHeader> {
   }
 
   Future<void> _editarNombre(BuildContext context) async {
-    final repo = const BienestarRepository();
+    const repo = BienestarRepository();
     final ctrl = TextEditingController(text: widget.usuario.nombreCompleto);
     final result = await showDialog<String>(
       context: context,
@@ -410,21 +504,21 @@ class _HeroHeaderState extends State<_HeroHeader> {
 // =============================================================================
 // TAB 1: Estadísticas — Metric grid with glass cards
 // =============================================================================
-class _EstadisticasTab extends StatelessWidget {
-  const _EstadisticasTab({
-    required this.usuario,
-    required this.sesiones,
-    required this.logros,
-    required this.caloriasAcumuladas,
-  });
-
-  final UsuarioDb usuario;
-  final int sesiones;
-  final int logros;
-  final int caloriasAcumuladas;
+class _EstadisticasTab extends ConsumerWidget {
+  const _EstadisticasTab();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final usuarioAsync = ref.watch(perfilUsuarioProvider);
+    final actividadAsync = ref.watch(perfilActividadProvider);
+    final usuario = usuarioAsync.valueOrNull?.usuario;
+    final actividad = actividadAsync.valueOrNull ??
+        const PerfilActividad(sesiones: 0, logros: 0, caloriasAcumuladas: 0);
+
+    if (usuario == null) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
@@ -441,7 +535,7 @@ class _EstadisticasTab extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _metricCard(
-                '$sesiones',
+                '${actividad.sesiones}',
                 'Sesiones',
                 color: const Color(0xFF60A5FA),
               ),
@@ -453,7 +547,7 @@ class _EstadisticasTab extends StatelessWidget {
           children: [
             Expanded(
               child: _metricCard(
-                '$logros',
+                '${actividad.logros}',
                 'Retos',
                 color: const Color(0xFFE8A838),
               ),
@@ -461,7 +555,7 @@ class _EstadisticasTab extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _metricCard(
-                '$caloriasAcumuladas',
+                '${actividad.caloriasAcumuladas}',
                 'Calorías',
                 color: const Color(0xFFFF6B35),
               ),
@@ -531,30 +625,16 @@ class _EstadisticasTab extends StatelessWidget {
 // =============================================================================
 // TAB 2: Bienestar — All onboarding fields editable
 // =============================================================================
-class _BienestarTab extends StatefulWidget {
-  const _BienestarTab({
-    required this.perfil,
-    required this.historial,
-    this.onPerfilChanged,
-  });
+class _BienestarTab extends ConsumerStatefulWidget {
+  const _BienestarTab({this.onPerfilChanged});
 
-  final PerfilBienestarDb perfil;
-  final List<HistorialPesoDb> historial;
   final VoidCallback? onPerfilChanged;
 
   @override
-  State<_BienestarTab> createState() => _BienestarTabState();
+  ConsumerState<_BienestarTab> createState() => _BienestarTabState();
 }
 
-class _BienestarTabState extends State<_BienestarTab> {
-  static const _objetivos = [
-    'fitness_general',
-    'perder_peso',
-    'ganar_masa',
-    'fuerza',
-    'resistencia',
-    'movilidad',
-  ];
+class _BienestarTabState extends ConsumerState<_BienestarTab> {
   static const _nivelesActividad = [
     'sedentario',
     'ligero',
@@ -566,18 +646,9 @@ class _BienestarTabState extends State<_BienestarTab> {
     'femenino',
     'prefiero_no_decirlo',
   ];
-  static const _equipamientoOpciones = [
-    'peso_corporal',
-    'mancuernas',
-    'barra',
-    'banda_elastica',
-    'kettlebell',
-    'polea',
-    'maquina',
-    'medicina_ball',
-  ];
-
   final _repo = const BienestarRepository();
+
+  PerfilBienestarDb? _cachedPerfil;
 
   String _fmt(String o) => o
       .replaceAll('_', ' ')
@@ -587,7 +658,30 @@ class _BienestarTabState extends State<_BienestarTab> {
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.perfil;
+    final bienestarAsync = ref.watch(perfilBienestarCompletoProvider);
+    if (bienestarAsync.hasValue && bienestarAsync.value != null) {
+      _cachedPerfil = bienestarAsync.value!.perfil;
+    }
+    final p = _cachedPerfil ??
+        PerfilBienestarDb(
+          id: '',
+          usuarioId: '',
+          edad: 0,
+          sexo: 'prefiero_no_decirlo',
+          pesoKg: 0,
+          alturaCm: 0,
+          imc: 0,
+          nivelActividad: 'sedentario',
+          objetivoPrincipal: 'fitness_general',
+          objetivos: const [],
+          equipamientoDisponible: const [],
+          diasDisponiblesSemana: 0,
+          minutosPorSesion: 0,
+          onboardingCompletado: false,
+          creadoEn: DateTime.now(),
+          actualizadoEn: DateTime.now(),
+        );
+    final historial = bienestarAsync.valueOrNull?.historial ?? [];
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       children: [
@@ -604,8 +698,8 @@ class _BienestarTabState extends State<_BienestarTab> {
                   (v) => _guardar({'altura_cm': v, 'peso_kg': p.pesoKg}))),
           _readRow(
               'IMC',
-              p.imc > 0
-                  ? '${p.imc.toStringAsFixed(1)} · ${p.imcCategoria}'
+              p.pesoKg > 0 && p.alturaCm > 0
+                  ? '${(p.pesoKg / ((p.alturaCm / 100) * (p.alturaCm / 100))).toStringAsFixed(1)} · ${_imcCategoria(p.pesoKg / ((p.alturaCm / 100) * (p.alturaCm / 100)))}'
                   : '—'),
           _editRow('Sexo', p.sexo == 'prefiero_no_decirlo' ? '—' : _fmt(p.sexo),
               _editarSexo),
@@ -666,10 +760,10 @@ class _BienestarTabState extends State<_BienestarTab> {
         ]),
         const SizedBox(height: 16),
         _sectionCard('Evolución de peso', [
-          if (widget.historial.isEmpty)
+          if (historial.isEmpty)
             const _RowText('Sin registros aún', isSub: true)
           else
-            ...widget.historial.take(5).map((h) => _readRow(
+            ...historial.take(5).map((h) => _readRow(
                   '${h.registradoEn.day}/${h.registradoEn.month}/${h.registradoEn.year}',
                   '${h.pesoKg} kg · IMC ${h.imc}',
                 )),
@@ -679,78 +773,30 @@ class _BienestarTabState extends State<_BienestarTab> {
   }
 
   Widget _sectionCard(String title, List<Widget> children) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: const Color(0xFF1E293B).withValues(alpha: 0.6)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFE2E8F0))),
-          const SizedBox(height: 12),
-          ...children,
-        ],
-      ),
-    );
+    return _buildSectionCard(context, title, children);
   }
 
   Widget _editRow(String label, String value, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            children: [
-              Expanded(
-                  child: Text(label,
-                      style: const TextStyle(
-                          fontSize: 13, color: Color(0xFF94A3B8)))),
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 6),
-              const Icon(Icons.edit, size: 13, color: Color(0xFF64748B)),
-            ],
-          ),
-        ),
-      ),
-    );
+    return _buildEditRow(label, value, onTap);
   }
 
   Widget _readRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        children: [
-          Expanded(
-              child: Text(label,
-                  style:
-                      const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)))),
-          Text(value,
-              style:
-                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
+    return _buildReadRow(label, value);
   }
 
   String _pesoStr(double kg) => kg > 0 ? '${kg.toStringAsFixed(1)} kg' : '—';
   String _alturaStr(double cm) => cm > 0 ? '${cm.toStringAsFixed(0)} cm' : '—';
+  String _imcCategoria(double imc) {
+    if (imc < 18.5) return 'Bajo peso';
+    if (imc < 25) return 'Normal';
+    if (imc < 30) return 'Sobrepeso';
+    return 'Obesidad';
+  }
 
   Future<void> _guardar(Map<String, dynamic> data) async {
     await _repo.actualizarPerfilParcial(data);
     widget.onPerfilChanged?.call();
+    if (mounted) setState(() {});
   }
 
   Future<void> _editarNumero(String title, double current, int min, int max,
@@ -794,7 +840,7 @@ class _BienestarTabState extends State<_BienestarTab> {
                   onPressed: () => Navigator.pop(ctx, s),
                   child: Row(children: [
                     Icon(
-                        widget.perfil.sexo == s
+                        _cachedPerfil!.sexo == s
                             ? Icons.radio_button_checked
                             : Icons.radio_button_unchecked,
                         size: 18),
@@ -814,7 +860,7 @@ class _BienestarTabState extends State<_BienestarTab> {
 
   void _editarEdad() async {
     final ctrl = TextEditingController(
-        text: widget.perfil.edad > 0 ? '${widget.perfil.edad}' : '');
+        text: _cachedPerfil!.edad > 0 ? '${_cachedPerfil!.edad}' : '');
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -847,17 +893,19 @@ class _BienestarTabState extends State<_BienestarTab> {
       context: context,
       builder: (ctx) => SimpleDialog(
         title: const Text('Objetivo deportivo'),
-        children: _objetivos
-            .map((o) => SimpleDialogOption(
-                  onPressed: () => Navigator.pop(ctx, o),
+        children: finalidadesEstandar
+            .map((f) => SimpleDialogOption(
+                  onPressed: () => Navigator.pop(ctx, f),
                   child: Row(children: [
                     Icon(
-                        widget.perfil.objetivoPrincipal == o
+                        _cachedPerfil!.objetivoPrincipal == f
                             ? Icons.radio_button_checked
                             : Icons.radio_button_unchecked,
                         size: 18),
                     const SizedBox(width: 12),
-                    Text(_fmt(o)),
+                    Icon(iconoFinalidad(f), size: 18),
+                    const SizedBox(width: 8),
+                    Text(f),
                   ]),
                 ))
             .toList(),
@@ -878,7 +926,7 @@ class _BienestarTabState extends State<_BienestarTab> {
                   onPressed: () => Navigator.pop(ctx, n),
                   child: Row(children: [
                     Icon(
-                        widget.perfil.nivelActividad == n
+                        _cachedPerfil!.nivelActividad == n
                             ? Icons.radio_button_checked
                             : Icons.radio_button_unchecked,
                         size: 18),
@@ -896,8 +944,8 @@ class _BienestarTabState extends State<_BienestarTab> {
 
   void _editarDias() async {
     final ctrl = TextEditingController(
-        text: widget.perfil.diasDisponiblesSemana > 0
-            ? '${widget.perfil.diasDisponiblesSemana}'
+        text: _cachedPerfil!.diasDisponiblesSemana > 0
+            ? '${_cachedPerfil!.diasDisponiblesSemana}'
             : '');
     final result = await showDialog<String>(
       context: context,
@@ -928,8 +976,8 @@ class _BienestarTabState extends State<_BienestarTab> {
 
   void _editarMinutos() async {
     final ctrl = TextEditingController(
-        text: widget.perfil.minutosPorSesion > 0
-            ? '${widget.perfil.minutosPorSesion}'
+        text: _cachedPerfil!.minutosPorSesion > 0
+            ? '${_cachedPerfil!.minutosPorSesion}'
             : '');
     final result = await showDialog<String>(
       context: context,
@@ -960,47 +1008,492 @@ class _BienestarTabState extends State<_BienestarTab> {
 
   void _editarEquipamiento() async {
     final seleccionados =
-        Set<String>.from(widget.perfil.equipamientoDisponible);
+        Set<String>.from(_cachedPerfil!.equipamientoDisponible);
+
+    final client = Supabase.instance.client;
+    final data =
+        await client.from('equipamientos').select('nombre').order('nombre');
+    final equipDB = (data as List).map((e) => e['nombre'] as String).toList();
+
+    if (!mounted) return;
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setD) => AlertDialog(
-          title: const Text('Equipamiento disponible'),
-          content: SingleChildScrollView(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: _equipamientoOpciones
-                  .map((e) => FilterChip(
-                        label:
-                            Text(_fmt(e), style: const TextStyle(fontSize: 12)),
-                        selected: seleccionados.contains(e),
-                        onSelected: (v) => setD(() =>
-                            v ? seleccionados.add(e) : seleccionados.remove(e)),
-                      ))
-                  .toList(),
+        builder: (ctx, setD) {
+          var query = '';
+          return AlertDialog(
+            title: const Text('Equipamiento disponible'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      hintText: 'Buscar equipamiento...',
+                      prefixIcon: Icon(Icons.search, size: 20),
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    style: const TextStyle(fontSize: 13),
+                    onChanged: (v) => setD(() => query = v.toLowerCase()),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: equipDB
+                            .where((e) =>
+                                query.isEmpty ||
+                                e.toLowerCase().contains(query))
+                            .map((e) => FilterChip(
+                                  label: Text(_fmt(e),
+                                      style: const TextStyle(fontSize: 12)),
+                                  selected: seleccionados.contains(e),
+                                  onSelected: (v) => setD(() => v
+                                      ? seleccionados.add(e)
+                                      : seleccionados.remove(e)),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar')),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _guardar({'equipamiento_disponible': seleccionados.toList()});
-              },
-              child: const Text('Guardar'),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancelar')),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _guardar({'equipamiento_disponible': seleccionados.toList()});
+                },
+                child: Text('Guardar (${seleccionados.length})'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 // =============================================================================
-// TAB 3: Ajustes
+// TAB 3: Académico
+// =============================================================================
+class _AcademicoTab extends ConsumerStatefulWidget {
+  const _AcademicoTab({this.onPerfilChanged});
+
+  final VoidCallback? onPerfilChanged;
+
+  @override
+  ConsumerState<_AcademicoTab> createState() => _AcademicoTabState();
+}
+
+class _AcademicoTabState extends ConsumerState<_AcademicoTab> {
+  static const _modalidades = ['presencial', 'hibrida', 'virtual'];
+
+  String? _selectedUniversidadId;
+
+  PerfilAcademicoDb _empty() => PerfilAcademicoDb(
+        id: '',
+        usuarioId: '',
+        semestreActual: 1,
+        modalidad: 'presencial',
+        creditosSemestreActual: 20,
+        horasObjetivoEstudioSemana: 14,
+        creadoEn: DateTime.now(),
+        actualizadoEn: DateTime.now(),
+      );
+
+  Future<void> _guardar(Map<String, dynamic> data) async {
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return;
+    final existing = await client
+        .from('perfil_academico_usuario')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .maybeSingle();
+
+    if (existing != null) {
+      await client
+          .from('perfil_academico_usuario')
+          .update(data)
+          .eq('usuario_id', user.id);
+    } else {
+      await client.from('perfil_academico_usuario').insert({
+        'usuario_id': user.id,
+        ...data,
+      });
+    }
+    if (mounted) ref.invalidate(perfilAcademicoProvider);
+  }
+
+  Future<void> _editarNumero(
+      String label, int current, int min, int max, Function(int) onSave) async {
+    final ctrl = TextEditingController(text: current.toString());
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(label),
+        content: TextField(
+            controller: ctrl,
+            keyboardType: TextInputType.number,
+            autofocus: true),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Guardar')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      final v = int.tryParse(ctrl.text.trim()) ?? current;
+      onSave(v.clamp(min, max));
+    }
+  }
+
+  Future<void> _editarNumeroDecimal(String label, double? current, double min,
+      double max, Function(double) onSave) async {
+    final ctrl = TextEditingController(text: current?.toStringAsFixed(1) ?? '');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(label),
+        content: TextField(
+            controller: ctrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            autofocus: true),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Guardar')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      final v = double.tryParse(ctrl.text.trim()) ?? (current ?? 0);
+      onSave(v.clamp(min, max));
+    }
+  }
+
+  Future<void> _seleccionarUniversidad(CatalogoUniversidadDb? current) async {
+    final unisAsync = ref.read(universidadesProvider);
+    final unis = unisAsync.valueOrNull ?? [];
+    if (unis.isEmpty) return;
+
+    final selected = await showDialog<CatalogoUniversidadDb>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Selecciona tu universidad'),
+        children: [
+          RadioGroup<CatalogoUniversidadDb>(
+            groupValue: current,
+            onChanged: (v) => Navigator.pop(ctx, v),
+            child: Column(
+              children: unis
+                  .map((u) => RadioListTile<CatalogoUniversidadDb>(
+                        title: Text(u.nombre,
+                            style: const TextStyle(fontSize: 13)),
+                        value: u,
+                      ))
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (selected != null) {
+      _selectedUniversidadId = selected.id;
+      await _guardar({
+        'universidad': selected.nombre,
+        'carrera': null,
+      });
+    }
+  }
+
+  Future<void> _seleccionarCarrera(String? current) async {
+    if (_selectedUniversidadId == null) return;
+    final carrerasAsync =
+        ref.read(carrerasPorUniversidadProvider(_selectedUniversidadId!));
+    final carreras = carrerasAsync.valueOrNull ?? [];
+    if (carreras.isEmpty) return;
+
+    CatalogoCarreraDb? selected;
+    if (current != null) {
+      for (final c in carreras) {
+        if (c.nombre == current) selected = c;
+      }
+    }
+
+    final result = await showDialog<CatalogoCarreraDb>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Selecciona tu carrera'),
+        children: [
+          RadioGroup<CatalogoCarreraDb>(
+            groupValue: selected,
+            onChanged: (v) => Navigator.pop(ctx, v),
+            child: Column(
+              children: carreras
+                  .map((c) => RadioListTile<CatalogoCarreraDb>(
+                        title: Text(c.nombre,
+                            style: const TextStyle(fontSize: 13)),
+                        value: c,
+                      ))
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (result != null) {
+      final subjectsAsync =
+          ref.read(catalogoAsignaturasPorCarreraProvider(result.id));
+      final subjects = subjectsAsync.valueOrNull ?? [];
+      final totalCreditos =
+          subjects.fold<double>(0, (sum, s) => sum + (s.creditos ?? 0));
+      final horasCalc = (totalCreditos * 2).round().clamp(0, 80);
+
+      await _guardar({
+        'carrera': result.nombre,
+        'creditos_semestre_actual':
+            totalCreditos > 0 ? totalCreditos.round() : 20,
+        'horas_objetivo_estudio_semana': horasCalc > 0 ? horasCalc : 14,
+        'semestre_actual': 1,
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = ref.watch(perfilAcademicoProvider).valueOrNull ?? _empty();
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      children: [
+        _buildUniversitySection(p),
+        const SizedBox(height: 16),
+        _buildCareerSection(p),
+        const SizedBox(height: 16),
+        _buildSectionCard(context, 'Datos del semestre', [
+          _buildEditRow(
+              'Semestre',
+              '${p.semestreActual}°',
+              () => _editarNumero('Semestre actual', p.semestreActual, 1, 20,
+                  (v) => _guardar({'semestre_actual': v}))),
+          _buildEditRow(
+              'Modalidad',
+              p.modalidad[0].toUpperCase() + p.modalidad.substring(1),
+              () => _editarModalidad(p.modalidad)),
+          _buildEditRow(
+              'Créditos',
+              '${p.creditosSemestreActual}',
+              () => _editarNumero(
+                  'Créditos del semestre',
+                  p.creditosSemestreActual,
+                  1,
+                  60,
+                  (v) => _guardar({'creditos_semestre_actual': v}))),
+          _buildEditRow(
+              'Horas estudio / sem',
+              '${p.horasObjetivoEstudioSemana}h',
+              () => _editarNumero(
+                  'Horas objetivo de estudio por semana',
+                  p.horasObjetivoEstudioSemana,
+                  0,
+                  80,
+                  (v) => _guardar({'horas_objetivo_estudio_semana': v}))),
+          _buildEditRow(
+              'Promedio objetivo',
+              p.promedioObjetivo != null
+                  ? p.promedioObjetivo!.toStringAsFixed(1)
+                  : '—',
+              () => _editarNumeroDecimal(
+                  'Promedio objetivo (0-5)',
+                  p.promedioObjetivo,
+                  0,
+                  5,
+                  (v) => _guardar({'promedio_objetivo': v})),
+              tooltip:
+                  'Calificación promedio que deseas mantener. Escala 0-5. Ej: 4.0 para un buen promedio.'),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildUniversitySection(PerfilAcademicoDb p) {
+    final unisAsync = ref.watch(universidadesProvider);
+    final unis = unisAsync.valueOrNull ?? [];
+
+    CatalogoUniversidadDb? currentUni;
+    for (final u in unis) {
+      if (u.nombre == p.universidad) {
+        currentUni = u;
+        _selectedUniversidadId = u.id;
+        break;
+      }
+    }
+
+    return _buildSectionCard(context, 'Universidad', [
+      const _RowText(
+          'Selecciona tu universidad del catálogo para acceder a las carreras disponibles.',
+          isSub: true),
+      const SizedBox(height: 10),
+      if (unisAsync.isLoading)
+        const Center(child: CircularProgressIndicator(strokeWidth: 2))
+      else
+        _buildDropdownTile(
+          icon: Icons.school_rounded,
+          label: 'Universidad',
+          value: p.universidad ?? 'Seleccionar...',
+          onTap: () => _seleccionarUniversidad(currentUni),
+          onClear: p.universidad != null
+              ? () async {
+                  _selectedUniversidadId = null;
+                  await _guardar({'universidad': null, 'carrera': null});
+                }
+              : null,
+        ),
+    ]);
+  }
+
+  Widget _buildCareerSection(PerfilAcademicoDb p) {
+    final carrerasAsync = _selectedUniversidadId != null
+        ? ref.watch(carrerasPorUniversidadProvider(_selectedUniversidadId!))
+        : null;
+    final userCareersAsync = ref.watch(usuarioCarrerasProvider);
+    final userCareerIds =
+        (userCareersAsync.valueOrNull ?? []).map((uc) => uc.carreraId).toSet();
+
+    final carreras = (carrerasAsync?.valueOrNull ?? [])
+        .where((c) => !userCareerIds.contains(c.id))
+        .toList();
+
+    return _buildSectionCard(context, 'Carrera', [
+      const _RowText(
+          'Selecciona primero una universidad. Las carreras disponibles dependen de la universidad elegida.',
+          isSub: true),
+      const SizedBox(height: 10),
+      if (carrerasAsync != null && carrerasAsync.isLoading)
+        const Center(child: CircularProgressIndicator(strokeWidth: 2))
+      else
+        _buildDropdownTile(
+          icon: Icons.menu_book_rounded,
+          label: 'Carrera',
+          value: p.carrera ?? 'Seleccionar...',
+          onTap: () => _seleccionarCarrera(p.carrera),
+          onClear: p.carrera != null ? () => _guardar({'carrera': null}) : null,
+        ),
+      if (carreras.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        _RowText(
+            '${carreras.length} carrera(s) disponible(s) en esta universidad',
+            isSub: true),
+      ],
+    ]);
+  }
+
+  Widget _buildDropdownTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+    VoidCallback? onClear,
+  }) {
+    final hasValue = value != 'Seleccionar...';
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outlineVariant
+                  .withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFF64748B))),
+                  const SizedBox(height: 2),
+                  Text(value,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            if (hasValue && onClear != null)
+              GestureDetector(
+                onTap: onClear,
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.close_rounded,
+                      size: 18, color: Color(0xFF64748B)),
+                ),
+              )
+            else
+              const Icon(Icons.arrow_drop_down_rounded,
+                  color: Color(0xFF64748B)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editarModalidad(String current) async {
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Modalidad'),
+        children: [
+          RadioGroup<String>(
+            groupValue: current,
+            onChanged: (v) => Navigator.pop(ctx, v),
+            child: Column(
+              children: _modalidades
+                  .map((m) => RadioListTile<String>(
+                        title: Text(m[0].toUpperCase() + m.substring(1)),
+                        value: m,
+                      ))
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (selected != null && selected != current) {
+      await _guardar({'modalidad': selected});
+    }
+  }
+}
+
+// =============================================================================
+// TAB 4: Ajustes
 // =============================================================================
 class _AjustesTab extends ConsumerWidget {
   const _AjustesTab({required this.usuario, required this.prefs});
@@ -1065,8 +1558,6 @@ class _AjustesTab extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _CarrerasCard(),
-        const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -1099,22 +1590,6 @@ class _AjustesTab extends ConsumerWidget {
 
 // =============================================================================
 // Helpers
-// =============================================================================
-
-class _RowText extends StatelessWidget {
-  const _RowText(this.text, {this.isSub = false});
-  final String text;
-  final bool isSub;
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Text(text,
-          style: TextStyle(
-              fontSize: 13, color: isSub ? const Color(0xFF64748B) : null)),
-    );
-  }
-}
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   const _TabBarDelegate(this.tabBar);
@@ -1135,49 +1610,4 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant _TabBarDelegate old) => old.tabBar != tabBar;
-}
-
-class _CarrerasCard extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final carrerasAsync = ref.watch(usuarioCarrerasProvider);
-    return carrerasAsync.when(
-      data: (carreras) {
-        if (carreras.isEmpty) return const SizedBox.shrink();
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: const Color(0xFF1E293B).withValues(alpha: 0.6)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Carreras universitarias',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(
-                  '${carreras.length} carrera${carreras.length != 1 ? 's' : ''} registrada${carreras.length != 1 ? 's' : ''}',
-                  style:
-                      const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push('/academico/configuracion'),
-                  icon: const Icon(Icons.settings, size: 14),
-                  label: const Text('Gestionar carreras',
-                      style: TextStyle(fontSize: 12)),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
 }

@@ -129,3 +129,71 @@ drop policy if exists apuntes_update on public.apuntes;
 create policy apuntes_update on public.apuntes for update using (usuario_id = auth.uid());
 drop policy if exists apuntes_delete on public.apuntes;
 create policy apuntes_delete on public.apuntes for delete using (usuario_id = auth.uid());
+
+-- ═══ 0045: Pesos por serie (jsonb) ═══
+alter table if exists public.seleccion_de_ejercicios
+  add column if not exists pesos_kg jsonb;
+
+-- ═══ 0046: Historial de objetivos del usuario ═══
+create table if not exists public.historial_objetivos (
+  id uuid primary key default gen_random_uuid(),
+  usuario_id uuid not null references public.usuarios(id) on delete cascade,
+  objetivo text not null,
+  objetivo_anterior text,
+  fecha_inicio date not null default current_date,
+  fecha_fin date,
+  rutina_ids uuid[] default '{}',
+  creado_en timestamptz not null default now()
+);
+alter table public.historial_objetivos enable row level security;
+create policy historial_objetivos_select on public.historial_objetivos
+  for select using (auth.uid() = usuario_id);
+create policy historial_objetivos_insert on public.historial_objetivos
+  for insert with check (auth.uid() = usuario_id);
+create policy historial_objetivos_update on public.historial_objetivos
+  for update using (auth.uid() = usuario_id);
+create index if not exists idx_historial_objetivos_usuario
+  on public.historial_objetivos(usuario_id, fecha_inicio desc);
+
+-- ═══ 0047: Failed reps por serie ═══
+alter table if exists public.series_sesion
+  add column if not exists failed_reps int not null default 0 check (failed_reps >= 0);
+
+-- ═══ 0048: Recomendaciones pendientes post-sesión ═══
+create table if not exists public.recomendaciones_pendientes (
+  id uuid primary key default gen_random_uuid(),
+  usuario_id uuid not null references public.usuarios(id) on delete cascade,
+  tipo text not null check (tipo in ('progresion','degradacion','descarga','variante','academico')),
+  titulo text not null,
+  descripcion text,
+  ejercicio_id uuid references public.ejercicios(id) on delete set null,
+  rutina_id uuid references public.rutinas(id) on delete set null,
+  datos jsonb default '{}',
+  aplicada boolean not null default false,
+  creado_en timestamptz not null default now()
+);
+alter table public.recomendaciones_pendientes enable row level security;
+create policy recom_pend_select on public.recomendaciones_pendientes
+  for select using (auth.uid() = usuario_id);
+create policy recom_pend_insert on public.recomendaciones_pendientes
+  for insert with check (auth.uid() = usuario_id);
+create policy recom_pend_update on public.recomendaciones_pendientes
+  for update using (auth.uid() = usuario_id);
+create index if not exists idx_recom_pend_usuario
+  on public.recomendaciones_pendientes(usuario_id, creado_en desc);
+
+-- ═══ 0049: Función de generación de recomendaciones diarias (para pg_cron) ═══
+-- Ver contenido completo en: supabase/migrations/20260606_0049_func_daily_recommendations.sql
+
+-- Para activar pg_cron (requiere extensión en Supabase Dashboard):
+-- 1. Habilitar extensión pg_cron desde Supabase Dashboard → Database → Extensions
+-- 2. Ejecutar en SQL Editor:
+--    SELECT cron.schedule(
+--      'recomendaciones-diarias',
+--      '0 2 * * *',
+--      'SELECT generar_recomendaciones_diarias();'
+--    );
+-- 3. Verificar: SELECT * FROM cron.job;
+
+-- ═══ 0050: Eliminar constraint obsoleta ck_perfil_objetivo ═══
+-- Ver contenido completo en: supabase/migrations/20260607_0050_fix_objetivo_constraint.sql

@@ -1,531 +1,232 @@
-# 05 - Especificación de API
+# 05 - Interacción con APIs
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.1  
-**Fecha:** 03-05-2026  
+**Versión:** 2.0  
+**Fecha:** 08-06-2026  
 **Referencia:** [03-architecture.md](03-architecture.md) (sección 8)
 
 ---
 
-## 1. Convenciones Generales
+## 1. Arquitectura de Comunicación
 
-| Aspecto | Convención |
-|---------|-----------|
-| Protocolo | HTTPS |
-| Base URL | `https://{SUPABASE_URL}/functions/v1` |
-| Formato | JSON (Content-Type: application/json) |
-| Autenticación | Bearer Token (Supabase JWT) |
-| Paginación | `?pagina={n}&tamanio={n}` (por defecto: página 1, tamaño 20) |
-| Idioma de rutas | Español (kebab-case) |
-| Versionado | Sin versionado explícito en MVP (v1 implícito) |
+SynaptixFit **no usa un backend REST tradicional**. No hay Edge Functions de Supabase ni servidores Node.js/Express. Toda la lógica de negocio se ejecuta en el cliente Flutter (Dart).
 
-### 1.1 Headers obligatorios
+### 1.1 Canales de comunicación
 
-```http
-Authorization: Bearer {jwt_token}
-Content-Type: application/json
-apikey: {SUPABASE_ANON_KEY}
+```
+┌───────────────┐     Supabase SDK (PostgREST)     ┌──────────────┐
+│               │ ◄──────────────────────────────► │  Supabase    │
+│               │     Auth (OAuth / Magic Link)     │  (PostgreSQL │
+│               │ ◄──────────────────────────────► │   + Auth +   │
+│   Flutter     │     Realtime (WebSocket)          │   Realtime)  │
+│   App (Dart)  │ ◄──────────────────────────────► │              │
+│               │                                   └──────────────┘
+│               │     Gemini API (Dio HTTP)              ┌──────────────┐
+│               │ ◄──────────────────────────────────► │  Google      │
+│               │                                      │  Gemini      │
+│               │     Cloudflare R2 (Worker proxy)     │  Flash API   │
+│               │ ◄──────────────────────────────────► └──────────────┘
+│               │                                      ┌──────────────┐
+│               │                                      │  Cloudflare  │
+│               │                                      │  R2 + Worker │
+└───────────────┘                                      └──────────────┘
 ```
 
-### 1.2 Códigos de respuesta
+### 1.2 Autenticación (Supabase Auth)
 
-| Código | Significado | Acción del cliente |
-|--------|-----------|-------------------|
-| `200` | Operación exitosa | Procesar respuesta |
-| `201` | Recurso creado | Navegar a detalle |
-| `400` | Validación fallida | Mostrar error inline |
-| `401` | Token expirado / inválido | Redirigir a login |
-| `403` | Sin permisos (RLS) | Mostrar "Sin acceso" |
-| `404` | Recurso no encontrado | Mostrar "No encontrado" |
-| `409` | Conflicto (duplicado) | Informar al usuario |
-| `500` | Error interno del servidor | Retry con backoff exponencial |
+La autenticación usa el SDK `supabase_flutter` directamente. No hay endpoints REST de login/registro.
 
-### 1.3 Formato de error estándar
+| Proveedor | Método | Código en `app/lib/features/auth/` |
+|-----------|--------|-----------------------------------|
+| Google OAuth | `Supabase.instance.client.auth.signInWithOAuth(OAuthProvider.google)` | Flujo nativo + redirect URI |
+| Magic Link (email) | `Supabase.instance.client.auth.signInWithOtp(email: email)` | Sin contraseña |
+| Correo/contraseña | `auth.signInWithPassword()`, `auth.updateUser()` | Post-registro |
 
-```json
-{
-  "error": true,
-  "codigo": "VALIDACION_FALLIDA",
-  "mensaje": "La suma de pesos de hitos debe ser exactamente 100%",
-  "detalles": {
-    "campo": "hitos",
-    "valor_actual": 85
+El estado de sesión se maneja mediante `supabase.auth.onAuthStateChange` y se persiste automáticamente.
+
+---
+
+## 2. Acceso a Datos (PostgREST vía Supabase SDK)
+
+Todas las operaciones CRUD se ejecutan mediante el cliente Supabase Dart, que usa PostgREST internamente.
+
+### 2.1 Convenciones de consulta
+
+| Operación | Código Dart (ejemplo) |
+|-----------|----------------------|
+| SELECT | `supabase.from('ejercicios').select('id,nombre')` |
+| INSERT | `supabase.from('rutinas').insert({'nombre': '...'})` |
+| UPDATE | `supabase.from('ejercicios').update({'nombre': '...'}).eq('id', id)` |
+| DELETE | `supabase.from('ejercicios').delete().eq('id', id)` |
+| RPC | `supabase.rpc('funcion_pg', params: {...})` |
+| Stream (Realtime) | `supabase.from('ejercicios').stream()` |
+
+### 2.2 Vistas principales
+
+| Vista | Propósito | Consulta típica |
+|-------|-----------|----------------|
+| `v_ejercicios_completos` | Catálogo con arrays de catálogos pre-calculados | `supabase.from('v_ejercicios_completos').select('*')` |
+| `v_rutinas_comunidad` | Rutinas públicas con nombre de autor | `supabase.from('v_rutinas_comunidad').select('...')` |
+| (otras vistas) | Según necesidad del frontend | Definidas en migraciones SQL |
+
+### 2.3 Proveedores de datos (Riverpod)
+
+Los providers en `app/lib/features/*/application/` encapsulan las consultas a Supabase y exponen datos reactivos:
+
+```dart
+// Ejemplo: catálogo de ejercicios en tiempo real
+final ejerciciosProvider = StreamProvider<List<EjercicioDb>>((ref) {
+  return supabase.from('ejercicios').stream();
+});
+
+// Ejemplo: consulta one-shot con Family
+final ejercicioDetalleProvider = FutureProvider.family<EjercicioDb?, String>((ref, id) async {
+  final data = await supabase
+      .from('v_ejercicios_completos')
+      .select('*')
+      .eq('id', id)
+      .single();
+  return EjercicioDb.fromJson(data);
+});
+```
+
+---
+
+## 3. Motor de Recomendaciones (Dart, sin API REST)
+
+El sistema de recomendación es un pipeline de 9 servicios Dart que se ejecuta **100% en el cliente**. No hay llamadas REST.
+
+### 3.1 Pipeline (Fases 0-9)
+
+| Fase | Servicio | Archivo |
+|------|----------|---------|
+| 0 | Sanitización de objetivo | `string_utils.dart` |
+| 1 | Reglas de distribución | `recomendacion_reglas_service.dart` |
+| 2 | Contexto de usuario | `recomendacion_contexto_service.dart` |
+| 3 | Transiciones entre objetivos | `recomendacion_transicion_service.dart` |
+| 4 | Progresión de carga | `recomendacion_progresion_service.dart` |
+| 5 | Refuerzo muscular | `recomendacion_refuerzo_service.dart` |
+| 6 | Peso/rep RPE | `recomendacion_peso_service.dart` |
+| 7 | Validación+Fill | `recomendacion_validacion_service.dart` |
+| 8 | IA (Gemini, opcional) | `recomendacion_ia_service.dart` |
+| 9 | Renderizado | `recomendacion_render_service.dart` |
+
+### 3.2 Orquestador
+
+```dart
+// app/lib/features/bienestar/infrastructure/recomendacion_orquestador_service.dart
+class RecomendacionOrquestadorService {
+  Future<ResultadoGeneracion> ejecutar({
+    required String usuarioId,
+    required bool usarIa,
+  }) async {
+    // 1. Sanitizar objetivo
+    // 2. Aplicar reglas de distribución semanal
+    // 3. Obtener contexto (check-in, progreso, historial)
+    // 4. Detectar transición de objetivo
+    // 5. Calcular progresión
+    // 6. Refuerzo muscular
+    // 7. Calcular pesos/reps/RPE
+    // 8. Validar y llenar
+    // 9. (Opcional) Refinar con Gemini
+    // 10. Renderizar resultado
   }
 }
 ```
 
----
+### 3.3 IA Gemini (refinamiento opcional)
 
-## 2. Módulo de Autenticación
-
-### 2.1 Registro de usuario
-
-```
-POST /auth/registro
+```dart
+// app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart (1047 líneas)
+// 4 prompts: nuevas, comunidad, modificación, adaptación check-in
 ```
 
-**Request:**
-```json
-{
-  "email": "estudiante@universidad.com",
-  "password": "MiPassword123",
-  "nombre_completo": "Juan López"
-}
-```
-
-**Response (201):**
-```json
-{
-  "usuario_id": "uuid",
-  "email": "estudiante@universidad.com",
-  "token": "eyJhbGci...",
-  "requiere_onboarding": true
-}
-```
-
-### 2.2 Inicio de sesión
-
-```
-POST /auth/login
-```
-
-**Request:**
-```json
-{
-  "email": "estudiante@universidad.com",
-  "password": "MiPassword123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "usuario_id": "uuid",
-  "token": "eyJhbGci...",
-  "perfil": { "nombre_completo": "Juan López", "nivel": 3, "racha_actual": 7 }
-}
-```
-
-### 2.3 Cerrar sesión
-
-```
-POST /auth/logout
-```
+El servicio IA se invoca solo si `usarIa=true` y `GEMINI_API_KEY` está configurada en `.env`.
 
 ---
 
-## 3. Módulo de Perfil de Usuario
+## 4. Multimedia (Cloudflare R2)
 
-### 3.1 Obtener perfil
+El acceso a imágenes/videos de ejercicios se hace mediante URLs públicas de R2, servidas a través de un Worker proxy de Cloudflare.
 
-```
-GET /usuarios/{usuarioId}/perfil
-```
+### 4.1 Worker proxy
 
-**Response (200):**
-```json
-{
-  "id": "uuid",
-  "nombre_completo": "Juan López",
-  "email": "estudiante@universidad.com",
-  "url_avatar": "https://r2.dev/avatars/uuid.webp",
-  "biografia": "Estudiante de Ingeniería...",
-  "nivel": 3,
-  "xp_total": 2450,
-  "racha_actual": 7,
-  "perfil_visibilidad": "publico",
-  "sesiones_recientes": [],
-  "insignias": []
-}
-```
+**Archivo:** `cloudflare/synaptixfit-r2-proxy/worker.js`
 
-### 3.2 Actualizar perfil
+El Worker:
+1. Recibe peticiones a `https://r2-proxy.synaptixfit.workers.dev/{path}`
+2. Verifica origen (CORS)
+3. Sirve el objeto desde R2
+4. Cachea en Cloudflare CDN (TTL 24h)
 
-```
-PATCH /usuarios/{usuarioId}/perfil
-```
+### 4.2 Subida de contenido
 
-**Request:**
-```json
-{
-  "nombre_completo": "Juan López García",
-  "biografia": "Ingeniería Informática, 3er año",
-  "perfil_visibilidad": "solo_amigos"
-}
-```
-
-### 3.3 Subir avatar
-
-```
-POST /usuarios/{usuarioId}/avatar
-Content-Type: multipart/form-data
-```
-
-### 3.4 Guardar perfil físico (onboarding)
-
-```
-POST /usuarios/perfil-fisico
-```
-
-**Request:**
-```json
-{
-  "peso_kg": 75.5,
-  "altura_cm": 178,
-  "nivel_condicion": "intermedio",
-  "objetivo_principal": "fuerza",
-  "dias_disponibles": 4,
-  "tiempo_por_sesion_min": 60
-}
-```
+Las imágenes/videos se suben mediante scripts Python de seeding (no desde Flutter en MVP). El formato de URL almacenado en `ejercicios.url_imagen` es la ruta relativa dentro del bucket.
 
 ---
 
-## 4. Módulo Académico
+## 5. Catálogos y Datos Maestros
 
-### 4.1 Obtener horario académico semanal
+Los catálogos se consultan directamente a Supabase sin intermediarios:
 
-```
-GET /horario-academico/{usuarioId}/semana/{inicioSemana}
-```
-
-**Response (200):**
-```json
-{
-  "usuario_id": "uuid",
-  "inicio_semana": "2026-04-20",
-  "bloques": [
-    {
-      "id": "uuid",
-      "asignatura_id": "uuid",
-      "nombre_asignatura": "Cálculo II",
-      "hora_inicio": "2026-04-21T09:00:00Z",
-      "hora_fin": "2026-04-21T11:00:00Z",
-      "ubicacion": "Aula 301",
-      "tiene_conflicto": false
-    }
-  ],
-  "conflictos": [],
-  "sugerencias_ia": []
-}
-```
-
-### 4.2 Guardar horario académico
-
-```
-POST /horario-academico/guardar
-```
-
-### 4.3 Plan semanal integrado
-
-```
-GET /plan-semanal/integrado/{usuarioId}/{inicioSemana}
-```
+| Catálogo | Tabla | Frecuencia | Caché |
+|----------|-------|-----------|-------|
+| Ejercicios | `ejercicios` + `v_ejercicios_completos` | Tiempo real (Stream) | Riverpod |
+| Músculos | `musculos` (93 registros) | Al inicio | Provider estático |
+| Partes del cuerpo | `partes_cuerpo` (13 registros) | Al inicio | Provider estático |
+| Equipamientos | `equipamientos` (23 registros) | Al inicio | Provider estático |
+| Universidades | `universidades` | Bajo demanda | Provider lazy |
+| Carreras | `carreras` | Bajo demanda | Provider lazy |
+| Asignaturas | `asignaturas` | Bajo demanda | Provider lazy |
 
 ---
 
-## 5. Módulo de Ejercicios y Rutinas
+## 6. Funciones RPC de Supabase
 
-### 5.1 Buscar ejercicios
+Algunas operaciones complejas se implementan como funciones PostgreSQL (RPC) ejecutadas desde Dart:
 
-El catálogo de ejercicios está normalizado en 3FN con tablas maestras (`partes_cuerpo`, `musculos`, `equipamientos`) y relaciones N:M. El frontend consulta la vista `v_ejercicios_completos` que pre-calcula los arrays de catálogos.
-
-```
-GET /v_ejercicios_completos?select=*&nombre=ilike.%{texto}%&dificultad=eq.{nivel}&limit={n}&offset={m}
-```
-
-**Response (200):**
-```json
-{
-  "ejercicios": [
-    {
-      "id": "uuid",
-      "exercise_db_id": "0001",
-      "nombre": "Press de banca con barra",
-      "url_gif": "https://r2.dev/ejercicios/360/0001.gif",
-      "dificultad": "medio",
-      "partes_cuerpo": ["Pecho"],
-      "musculos_objetivo": ["Pectoral mayor"],
-      "musculos_secundarios": ["Deltoides anterior", "Tríceps braquial"],
-      "equipamientos": ["Barra", "Banco plano"]
-    }
-  ],
-  "total": 142,
-  "pagina": 1
-}
+```dart
+final result = await supabase.rpc('nombre_funcion', params: {
+  'param1': valor1,
+  'param2': valor2,
+});
 ```
 
-**Filtros por catálogo:** Se consultan las tablas de relación N:M para filtrar:
-```
-GET /ejercicio_musculo_objetivo?select=ejercicio_id&musculo_id=eq.{id}
-GET /ejercicio_parte_cuerpo?select=ejercicio_id&parte_cuerpo_id=eq.{id}
-GET /ejercicio_equipamiento?select=ejercicio_id&equipamiento_id=eq.{id}
-```
+Funciones existentes (definidas en migraciones):
 
-**Catálogos disponibles:**
-```
-GET /partes_cuerpo?select=id,nombre
-GET /musculos?select=id,nombre
-GET /equipamientos?select=id,nombre
-```
-
-### 5.2 Obtener detalle de ejercicio
-
-```
-GET /v_ejercicios_completos?id=eq.{ejercicioId}&limit=1
-```
-
-**Response (200):**
-```json
-{
-  "id": "uuid",
-  "exercise_db_id": "0001",
-  "nombre": "Press de banca con barra",
-  "url_gif": "https://r2.dev/ejercicios/360/0001.gif",
-  "dificultad": "medio",
-  "descripcion": "Ejercicio compuesto para tren superior. Trabaja principalmente el pectoral mayor...",
-  "instrucciones": [
-    "Acuéstate en el banco plano con los pies apoyados en el suelo.",
-    "Agarra la barra con un ancho ligeramente mayor que los hombros.",
-    "Baja la barra controladamente hasta el pecho.",
-    "Empuja la barra hacia arriba extendiendo los codos."
-  ],
-  "partes_cuerpo": ["Pecho"],
-  "musculos_objetivo": ["Pectoral mayor"],
-  "musculos_secundarios": ["Deltoides anterior", "Tríceps braquial"],
-  "equipamientos": ["Barra", "Banco plano"]
-}
-```
-
-**Nota:** La vista `v_ejercicios_completos` ya incluye los arrays de catálogos pre-calculados desde las tablas de relación N:M. No se requieren consultas adicionales para obtener músculos, partes del cuerpo o equipamientos.
-```
-
-### 5.3 Crear rutina
-
-```
-POST /rutinas
-```
-
-**Request:**
-```json
-{
-  "nombre": "Rutina de fuerza — Lunes",
-  "descripcion": "Pecho y tríceps",
-  "visibilidad": "privado",
-  "ejercicios": [
-    { "ejercicio_id": "uuid", "series": 4, "repeticiones": 8, "segundos_descanso": 90, "orden": 1 },
-    { "ejercicio_id": "uuid", "series": 3, "repeticiones": 12, "segundos_descanso": 60, "orden": 2 }
-  ]
-}
-```
-
-**Response (201):**
-```json
-{
-  "rutina_id": "uuid",
-  "creado_en": "2026-04-19T10:30:00Z"
-}
-```
-
-### 5.4 Registrar sesión completada
-
-```
-POST /sesiones/registro
-```
-
-**Request:**
-```json
-{
-  "rutina_id": "uuid",
-  "duracion_minutos": 55,
-  "calorias_quemadas": 340,
-  "rpe": 7,
-  "registros_ejercicio": [
-    { "ejercicio_id": "uuid", "series_completadas": 4, "repeticiones_completadas": 8 }
-  ]
-}
-```
+| Función | Propósito | Parámetros |
+|---------|-----------|------------|
+| `trg_dias_rutina_estado()` | Trigger: cascada de estado día→semana | (trigger, automático) |
+| (otras funciones PG) | Lógica de base de datos | Según migración |
 
 ---
 
-## 6. Módulo de Retos
+## 7. Comparativa: REST (obsoleto) vs Actual
 
-### 6.1 Crear reto simple
-
-```
-POST /retos/simple
-```
-
-**Request:**
-```json
-{
-  "titulo": "50 flexiones al día",
-  "tipo": "fitness",
-  "meta": "50 flexiones diarias durante 30 días",
-  "fecha_inicio": "2026-04-20",
-  "fecha_fin": "2026-05-20",
-  "visibilidad": "publico"
-}
-```
-
-### 6.2 Crear reto complejo
-
-```
-POST /retos/complejo
-```
-
-**Request:**
-```json
-{
-  "titulo": "Preparar examen final Cálculo II",
-  "tipo": "academic",
-  "hitos": [
-    { "titulo": "Repasar temas 1-3", "orden": 1 },
-    { "titulo": "Resolver ejercicios tipo examen", "orden": 2 },
-    { "titulo": "Examen preparatorio", "orden": 3 }
-  ],
-  "fecha_inicio": "2026-04-20",
-  "fecha_fin": "2026-06-01",
-  "visibilidad": "solo_amigos"
-}
-```
-
-### 6.3 Detalle de reto
-
-```
-GET /retos/{retoId}
-```
-
-### 6.4 Registrar progreso
-
-```
-POST /retos/{retoId}/progreso
-```
-
-**Request:**
-```json
-{
-  "hito_id": "uuid",
-  "cantidad_completada": 25.5
-}
-```
-
-### 6.5 Clonar reto público (RPC)
-
-```
-POST /rpc/clonar_reto_publico
-```
-
-**Request:**
-```json
-{
-  "reto_id": "uuid"
-}
-```
+| Aspecto | Enfoque antiguo (documentación previa) | Enfoque actual |
+|---------|--------------------------------------|----------------|
+| Backend | Edge Functions REST (Deno) | No existe; lógica en Dart cliente |
+| Auth | POST /auth/login, POST /auth/registro | Supabase Auth SDK nativo |
+| Rutinas | POST /rutinas (Edge Function) | `supabase.from('rutinas').insert(...)` |
+| Recomendación | Edge Function `recomendar_plan_entrenamiento` | Pipeline Dart orquestado (9 servicios) |
+| IA | Llamada desde Edge Function | Llamada directa Flutter → Gemini (Dio) |
+| Multimedia | Edge Function genera signed URLs | R2 Worker proxy con CORS |
+| Notificaciones | Edge Functions + ? | No implementado en MVP |
+| Retos | POST /retos/simple, /retos/complejo | `supabase.from('retos').insert(...)` |
 
 ---
 
-## 7. Módulo Social
+## 8. Plan de migración futura
 
-### 7.1 Obtener muro
+Si en el futuro se requiere lógica centralizada (procesamiento pesado, webhooks, tareas programadas), se evaluará:
 
-```
-GET /muro?periodo={today|week|month}&limite=20&cursor={cursor}
-```
+1. **Supabase Edge Functions** (Deno): para lógica que no debe ejecutarse en cliente
+2. **Supabase Cron**: para recordatorios y tareas periódicas
+3. **Webhooks externos**: para integraciones con servicios third-party
 
-### 7.2 Dar/quitar me gusta
-
-```
-POST /muro/{actividadId}/me-gusta
-DELETE /muro/{actividadId}/me-gusta
-```
-
-### 7.3 Comentar
-
-```
-POST /muro/{actividadId}/comentario
-```
+Por ahora, el motor de recomendaciones completo (Fases 0-9) corre en Dart y está probado.
 
 ---
 
-## 8. Módulo de Notificaciones
-
-### 8.1 Obtener notificaciones
-
-```
-GET /notificaciones?prioridad={critical|recommended|informative}&limite=20
-```
-
-### 8.2 Marcar como leída
-
-```
-PATCH /notificaciones/{notificacionId}
-```
-
-**Request:**
-```json
-{
-  "esta_leida": true
-}
-```
-
-### 8.3 Actualizar preferencias
-
-```
-PATCH /notificaciones/preferencias
-```
-
-**Request:**
-```json
-{
-  "recordatorio_estudio": true,
-  "recordatorio_retos": true,
-  "recordatorio_bienestar": true,
-  "franja_silencio_inicio": "22:00",
-  "franja_silencio_fin": "08:00",
-  "limite_diario_envios": 10
-}
-```
-
----
-
-## 9. Módulo de Bienestar
-
-### 9.1 Obtener tablero del dashboard
-
-```
-GET /usuarios/{usuarioId}/tablero
-```
-
-### 9.2 Generar plan semanal recomendado
-
-```
-POST /bienestar/plan-semanal
-```
-
-**Request:**
-```json
-{
-  "semana_inicio": "2026-04-20"
-}
-```
-
-### 9.3 Obtener URL firmada de multimedia
-
-```
-GET /ejercicios/{ejercicioId}/media
-```
-
-**Response (200):**
-```json
-{
-  "url_firmada": "https://r2.dev/...?signature=...",
-  "expira_en": "2026-04-19T11:30:00Z"
-}
-```
-
----
-
-**Documento compilado:** 19-04-2026  
-**Última revisión:** v1.0  
-**Referencia:** Contratos consolidados desde RFC v2.5 y especificaciones de pantallas v1.0
+**Documento compilado:** 08-06-2026  
+**Última revisión:** v2.0

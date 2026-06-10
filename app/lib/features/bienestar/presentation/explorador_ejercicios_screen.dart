@@ -11,7 +11,6 @@ import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../application/ejercicios_provider.dart';
-import '../application/rutina_provider.dart';
 
 class ExploradorEjerciciosScreen extends ConsumerStatefulWidget {
   const ExploradorEjerciciosScreen({super.key});
@@ -27,14 +26,6 @@ class _ExploradorEjerciciosScreenState
   int _tabSeleccionado = 0;
   String? _filtroSeleccionado;
   String _busqueda = '';
-  bool _modoSeleccion = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
-    _modoSeleccion = extra?['modoSeleccion'] == true;
-  }
 
   @override
   void dispose() {
@@ -57,6 +48,9 @@ class _ExploradorEjerciciosScreenState
       case 2:
         return FiltroEjercicios(
             tipo: FiltroTipo.equipamiento, valor: _filtroSeleccionado!);
+      case 3:
+        return FiltroEjercicios(
+            tipo: FiltroTipo.finalidad, valor: _filtroSeleccionado!);
       default:
         return const FiltroEjercicios();
     }
@@ -67,23 +61,12 @@ class _ExploradorEjerciciosScreenState
     final catalogosAsync = ref.watch(catalogosProvider);
     final ejerciciosFiltrados =
         ref.watch(ejerciciosFiltradosProvider(_buildFiltro()));
-    final creacionState = ref.watch(creacionRutinaProvider);
-    final seleccionados = creacionState.seleccionados;
-    final cantidad = seleccionados.length;
 
     return FeatureScaffold(
-      title: _modoSeleccion ? 'Elegir ejercicios' : 'Explorar Ejercicios',
-      backPath: _modoSeleccion ? '/bienestar/nueva-rutina' : '/bienestar',
-      floatingActionButton: _modoSeleccion && cantidad > 0
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/bienestar/configurar-rutina'),
-              icon: const Icon(Icons.tune),
-              label: Text('Configurar ($cantidad)'),
-            )
-          : null,
+      title: 'Explorar Ejercicios',
+      backPath: '/bienestar',
       child: Column(
         children: [
-          // Barra de búsqueda
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: TextField(
@@ -104,40 +87,26 @@ class _ExploradorEjerciciosScreenState
               onChanged: (v) => setState(() => _busqueda = normalizeSearch(v)),
             ),
           ),
-
-          // Tabs: Partes del Cuerpo / Músculos / Equipamientos
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: catalogosAsync.when(
-              loading: () => const SizedBox(height: 44),
-              error: (_, __) => const SizedBox.shrink(),
-              data: (c) => SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(value: 0, label: Text('Partes')),
-                  ButtonSegment(value: 1, label: Text('Músculos')),
-                  ButtonSegment(value: 2, label: Text('Equipo')),
-                ],
-                selected: {_tabSeleccionado},
-                onSelectionChanged: (v) {
-                  setState(() {
-                    _tabSeleccionado = v.first;
-                    _filtroSeleccionado = null;
-                  });
-                },
-              ),
+            child: SegmentedButton<int>(
+              segments: const [
+                ButtonSegment(value: 0, label: Text('Partes')),
+                ButtonSegment(value: 1, label: Text('Músculos')),
+                ButtonSegment(value: 2, label: Text('Equipo')),
+                ButtonSegment(value: 3, label: Text('Finalidad')),
+              ],
+              selected: {_tabSeleccionado},
+              onSelectionChanged: (v) {
+                setState(() {
+                  _tabSeleccionado = v.first;
+                  _filtroSeleccionado = null;
+                });
+              },
             ),
           ),
-
-          // Chips de filtro según tab seleccionado
-          catalogosAsync.when(
-            loading: () => const SizedBox(height: 44),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (catalogos) => _buildFilterChips(catalogos),
-          ),
-
+          _buildFilterChips(catalogosAsync.valueOrNull),
           const SizedBox(height: 8),
-
-          // Lista de ejercicios
           Expanded(
             child: _searchController.text.isNotEmpty &&
                     _busqueda.isNotEmpty &&
@@ -173,7 +142,7 @@ class _ExploradorEjerciciosScreenState
   Widget _buildEjerciciosList(List<EjercicioDb> items) {
     if (items.isEmpty) {
       if (_filtroSeleccionado != null) {
-        return Center(
+        return const Center(
           child: EmptyState(
             title: 'Sin ejercicios',
             message: 'No hay ejercicios en esta categoría.',
@@ -211,8 +180,7 @@ class _ExploradorEjerciciosScreenState
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                final item = items[index];
-                return _buildExerciseTile(item);
+                return _buildExerciseTile(items[index]);
               },
             );
           }
@@ -227,8 +195,7 @@ class _ExploradorEjerciciosScreenState
             ),
             itemCount: items.length,
             itemBuilder: (context, index) {
-              final item = items[index];
-              return _buildExerciseTile(item);
+              return _buildExerciseTile(items[index]);
             },
           );
         },
@@ -237,75 +204,27 @@ class _ExploradorEjerciciosScreenState
   }
 
   Widget _buildExerciseTile(EjercicioDb item) {
-    final notifier = ref.read(creacionRutinaProvider.notifier);
-    final seleccionados = ref.watch(creacionRutinaProvider).seleccionados;
-    final estaSeleccionado = seleccionados.any((s) => s.ejercicioId == item.id);
     final catalogos = ref.read(catalogosProvider).valueOrNull;
     final muscleImageUrl = catalogos?.urlImagenMusculo(item.musculoPrincipal);
 
-    if (!_modoSeleccion) {
-      return ExerciseCard(
-        name: item.nombre,
-        muscleGroup: item.musculoPrincipal,
-        equipment: item.equipamientoPrincipal,
-        gifUrl: item.urlGif,
-        previewUrl: item.urlPreview,
-        muscleImageUrl: muscleImageUrl,
-        onTap: () => context.push(
-          '/bienestar/ejercicio/${item.id}',
-        ),
-      );
-    }
-
-    return Stack(
-      children: [
-        ExerciseCard(
-          name: item.nombre,
-          muscleGroup: item.musculoPrincipal,
-          equipment: item.equipamientoPrincipal,
-          gifUrl: item.urlGif,
-          previewUrl: item.urlPreview,
-          muscleImageUrl: muscleImageUrl,
-          onTap: () => _modoSeleccion
-              ? notifier.toggleEjercicio(item.id, item.nombre)
-              : context.push('/bienestar/ejercicio/${item.id}'),
-        ),
-        Positioned(
-          top: 6,
-          right: 6,
-          child: InkWell(
-            onTap: () => notifier.toggleEjercicio(item.id, item.nombre),
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: estaSeleccionado
-                    ? Colors.green
-                    : Colors.white.withValues(alpha: 0.9),
-                border: Border.all(
-                  color: estaSeleccionado ? Colors.green : Colors.grey.shade300,
-                  width: 2,
-                ),
-              ),
-              child: Icon(
-                estaSeleccionado ? Icons.check : Icons.add,
-                size: 16,
-                color: estaSeleccionado ? Colors.white : Colors.grey.shade700,
-              ),
-            ),
-          ),
-        ),
-      ],
+    return ExerciseCard(
+      name: item.nombre,
+      muscleGroup: item.musculoPrincipal,
+      equipment: item.equipamientoPrincipal,
+      gifUrl: item.urlGif,
+      previewUrl: item.urlPreview,
+      muscleImageUrl: muscleImageUrl,
+      onTap: () => context.push('/bienestar/ejercicio/${item.id}'),
     );
   }
 
-  Widget _buildFilterChips(CatalogosEjercicios catalogos) {
+  Widget _buildFilterChips(CatalogosEjercicios? catalogos) {
+    final finalidades = ref.watch(finalidadesDisponiblesProvider);
     final nombres = switch (_tabSeleccionado) {
-      0 => catalogos.partesCuerpoNombres,
-      1 => catalogos.musculosNombres,
-      2 => catalogos.equipamientosNombres,
+      0 => catalogos?.partesCuerpoNombres ?? [],
+      1 => catalogos?.musculosNombres ?? [],
+      2 => catalogos?.equipamientosNombres ?? [],
+      3 => finalidades,
       _ => <String>[],
     };
 

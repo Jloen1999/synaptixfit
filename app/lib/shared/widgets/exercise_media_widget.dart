@@ -4,7 +4,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../core/design_system/sv_colors.dart';
 
-enum ExerciseMediaSize { mini, card, hero }
+enum ExerciseMediaSize { mini, card, hero, dialog }
 
 class ExerciseMediaWidget extends StatefulWidget {
   const ExerciseMediaWidget({
@@ -24,17 +24,20 @@ class ExerciseMediaWidget extends StatefulWidget {
   final BorderRadiusGeometry? borderRadius;
   final VoidCallback? onTap;
 
-  bool get _useVideoPlayer => size == ExerciseMediaSize.hero;
+  bool get _useVideoPlayer =>
+      size == ExerciseMediaSize.hero || size == ExerciseMediaSize.dialog;
 
   @override
   State<ExerciseMediaWidget> createState() => _ExerciseMediaWidgetState();
 }
 
 class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
+  static const _maxVideoCacheSize = 6;
+  static final Map<String, VideoPlayerController> _videoCache = {};
+
   VideoPlayerController? _videoCtrl;
   bool _videoReady = false;
   bool _videoInitFailed = false;
-  bool _isMuted = true;
 
   @override
   void initState() {
@@ -58,11 +61,27 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
   }
 
   void _disposeVideo() {
-    _videoCtrl?.pause();
-    _videoCtrl?.dispose();
+    if (_videoCtrl == null) return;
+    if (widget._useVideoPlayer) {
+      _videoCtrl!.pause();
+      _videoCtrl!.seekTo(Duration.zero);
+      _cacheController(widget.url, _videoCtrl!);
+    } else {
+      _videoCtrl!.pause();
+      _videoCtrl!.dispose();
+    }
     _videoCtrl = null;
     _videoReady = false;
     _videoInitFailed = false;
+  }
+
+  void _cacheController(String? url, VideoPlayerController ctrl) {
+    if (url == null || url.isEmpty) return;
+    _videoCache.remove(url);
+    if (_videoCache.length >= _maxVideoCacheSize) {
+      _videoCache.remove(_videoCache.keys.first)?.dispose();
+    }
+    _videoCache[url] = ctrl;
   }
 
   void _prepare() {
@@ -70,6 +89,17 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     if (url == null || url.isEmpty) return;
     if (!url.endsWith('.mp4')) return;
     if (!widget._useVideoPlayer) return;
+
+    final cached = _videoCache.remove(url);
+    if (cached != null) {
+      _videoCtrl = cached;
+      _videoReady = true;
+      cached.setVolume(0);
+      cached.seekTo(Duration.zero);
+      cached.play();
+      if (mounted) setState(() {});
+      return;
+    }
 
     _videoCtrl = VideoPlayerController.networkUrl(Uri.parse(url));
     _videoCtrl!.initialize().then((_) {
@@ -90,34 +120,40 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     });
   }
 
-  void _toggleMute() {
-    if (_videoCtrl == null) return;
-    setState(() {
-      _isMuted = !_isMuted;
-      _videoCtrl!.setVolume(_isMuted ? 0 : 1.0);
-    });
-  }
+  static const _heroBg = Colors.white;
 
   @override
   Widget build(BuildContext context) {
-    final isHero = widget._useVideoPlayer;
+    final isHero = widget.size == ExerciseMediaSize.hero;
+    final isDialog = widget.size == ExerciseMediaSize.dialog;
     final radius = widget.borderRadius ??
         BorderRadius.circular(widget.size == ExerciseMediaSize.mini ? 8 : 14);
     final content = _buildContent(context, radius);
 
+    if (isDialog) {
+      return ClipRRect(borderRadius: radius, child: content);
+    }
+
     if (isHero) {
       final screenW = MediaQuery.of(context).size.width;
-      final h = screenW >= 900 ? 280.0 : 220.0;
+      final maxH = screenW >= 900 ? 350.0 : 280.0;
       return Container(
-        height: h,
+        constraints: BoxConstraints(
+          maxWidth: screenW - 32,
+          maxHeight: maxH,
+        ),
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
+          color: _heroBg,
           borderRadius: radius,
+          border: Border.all(
+            color: SVColors.outlineVariant.withValues(alpha: 0.15),
+          ),
           boxShadow: [
             BoxShadow(
-              color: SVColors.primary.withValues(alpha: 0.15),
+              color: SVColors.primary.withValues(alpha: 0.08),
               blurRadius: 20,
-              offset: const Offset(0, 8),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -137,36 +173,62 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
   Widget _buildContent(BuildContext context, BorderRadiusGeometry radius) {
     final url = widget.url;
     if (url == null || url.isEmpty) {
-      return _buildFallback(context, radius);
+      return _buildMp4Thumbnail(radius);
     }
 
     if (widget._useVideoPlayer) {
+      if (!url.endsWith('.mp4')) {
+        return _buildMp4Thumbnail(radius);
+      }
       if (_videoInitFailed) {
         return _buildFallback(context, radius);
       }
       if (_videoReady && _videoCtrl != null) {
-        return Stack(
-          alignment: Alignment.center,
-          fit: StackFit.expand,
-          children: [
-            VideoPlayer(_videoCtrl!),
-            Positioned(top: 8, right: 8, child: _muteButton()),
-            if (!_videoCtrl!.value.isPlaying) _playButtonOverlay(),
-          ],
+        final videoRatio = _videoCtrl!.value.aspectRatio;
+        return AspectRatio(
+          aspectRatio: videoRatio,
+          child: Stack(
+            alignment: Alignment.center,
+            fit: StackFit.expand,
+            children: [
+              VideoPlayer(_videoCtrl!),
+              if (!_videoCtrl!.value.isPlaying) _playButtonOverlay(),
+            ],
+          ),
         );
       }
-      return _buildVideoLoading(radius);
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildThumbnailWhileLoading(radius),
+          _buildVideoLoading(radius),
+        ],
+      );
     }
 
     return _buildMp4Thumbnail(radius);
   }
 
-  Widget _buildMp4Thumbnail(BorderRadiusGeometry radius) {
+  Widget _buildThumbnailWhileLoading(BorderRadiusGeometry radius) {
     final preview = widget.previewUrl;
     if (preview != null && preview.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: preview,
-        fit: widget.fit,
+        fit: BoxFit.contain,
+        placeholder: (_, __) => const SizedBox.shrink(),
+        errorWidget: (_, __, ___) => const SizedBox.shrink(),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildMp4Thumbnail(BorderRadiusGeometry radius) {
+    final preview = widget.previewUrl;
+    final isHero = widget._useVideoPlayer;
+    if (preview != null && preview.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: preview,
+        fit: isHero ? BoxFit.contain : widget.fit,
         placeholder: (_, __) => _buildThumbnailPlaceholder(radius),
         errorWidget: (_, __, ___) => _buildThumbnailPlaceholder(radius),
       );
@@ -178,11 +240,14 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
     final isTiny = widget.size == ExerciseMediaSize.mini;
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0D2B4A), Color(0xFF1A3A5C)],
-        ),
+        color: widget._useVideoPlayer ? _heroBg : null,
+        gradient: widget._useVideoPlayer
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF0D2B4A), Color(0xFF1A3A5C)],
+              ),
         borderRadius: radius,
       ),
       child: Center(
@@ -192,28 +257,11 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
             Icon(
               Icons.fitness_center_rounded,
               size: isTiny ? 16 : 28,
-              color: SVColors.secondaryContainer.withValues(alpha: 0.5),
+              color: widget._useVideoPlayer
+                  ? SVColors.outlineVariant.withValues(alpha: 0.3)
+                  : SVColors.secondaryContainer.withValues(alpha: 0.5),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _muteButton() {
-    return GestureDetector(
-      onTap: _toggleMute,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.55),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-          size: 18,
-          color: Colors.white,
         ),
       ),
     );
@@ -222,28 +270,26 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
   Widget _buildVideoLoading(BorderRadiusGeometry radius) {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1A2A40), Color(0xFF0D1B2A)],
-        ),
+        color: Colors.white.withValues(alpha: 0.7),
         borderRadius: radius,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.videocam_rounded, size: 48, color: Colors.white38),
+          const Icon(Icons.videocam_rounded,
+              size: 48, color: SVColors.onSurfaceVariant),
           const SizedBox(height: 12),
           Text('Cargando video...',
               style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+                  color: SVColors.onSurfaceVariant.withValues(alpha: 0.8),
+                  fontSize: 13)),
           const SizedBox(height: 8),
           SizedBox(
             width: 200,
             child: LinearProgressIndicator(
-              color: SVColors.secondaryContainer,
-              backgroundColor: Colors.white10,
+              color: SVColors.primary,
+              backgroundColor: SVColors.outlineVariant.withValues(alpha: 0.2),
             ),
           ),
         ],
@@ -280,9 +326,10 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
 
   Widget _buildFallback(BuildContext context, BorderRadiusGeometry radius) {
     final isTiny = widget.size == ExerciseMediaSize.mini;
+    final isHero = widget._useVideoPlayer;
     return Container(
       decoration: BoxDecoration(
-        color: SVColors.surfaceContainerHighest,
+        color: isHero ? _heroBg : SVColors.surfaceContainerHighest,
         borderRadius: radius,
       ),
       child: Center(
@@ -297,13 +344,15 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
                   height: 40,
                   child: Image.asset('assets/images/logo.png',
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(
+                      errorBuilder: (_, __, ___) => Icon(
                           Icons.fitness_center_rounded,
                           size: 28,
-                          color: SVColors.onSurfaceMuted)),
+                          color: isHero
+                              ? SVColors.onSurfaceMuted
+                              : SVColors.onSurfaceMuted)),
                 ),
               ),
-              if (widget.size == ExerciseMediaSize.hero) ...[
+              if (isHero) ...[
                 const SizedBox(height: 8),
                 Text('Vista previa no disponible',
                     style: Theme.of(context)
@@ -312,8 +361,11 @@ class _ExerciseMediaWidgetState extends State<ExerciseMediaWidget> {
                         ?.copyWith(color: SVColors.onSurfaceMuted)),
               ],
             ] else
-              const Icon(Icons.fitness_center_rounded,
-                  size: 20, color: SVColors.onSurfaceMuted),
+              Icon(Icons.fitness_center_rounded,
+                  size: 20,
+                  color: isHero
+                      ? SVColors.onSurfaceMuted
+                      : SVColors.onSurfaceMuted),
           ],
         ),
       ),

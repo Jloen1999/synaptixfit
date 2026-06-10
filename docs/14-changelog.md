@@ -5,6 +5,440 @@
 
 ---
 
+## [6.0.0] — 10/06/2026
+
+### Rediseño del Dashboard
+
+- **SmartBannerCard:** consejo IA generado por Gemini al cargar el dashboard, con cache Hive 1h y fallback determinista
+- **QuickActionsRow:** 4 chips de acceso rápido (Pomodoro, Workout, Escanear, Nuevo reto)
+- **PlanWeekBar:** "Semana X de Y" mostrando progreso semanal de la rutina activa
+- **CognitiveLoadBar:** barra horizontal de carga cognitiva basada en FCT
+- **StreakRow:** badges 🔥 (racha entrenamiento) y 🧠 (días estudio/semana)
+- **cargaCognitivaProvider:** nuevo provider que expone el Factor de Carga Total públicamente
+- **geminiServiceProvider:** instancia compartida de Gemini para evitar duplicación
+- **consejoSmartProvider:** provider del Smart Banner con integración Gemini + Hive
+- **Migración 0052:** columnas `racha_actual`, `mejor_racha`, `ultimo_dia_activo` en tabla `retos`
+- **Hive:** inicializado en main.dart con boxes `smartcache` y `offline_dash`
+
+### Cambiado
+- DashboardScreen: 1445 → 355 líneas (-75%), 12 widgets extraídos a `widgets/`
+- DashboardData: refactorizado a archivo independiente
+- Dialog helpers: 8 funciones extraídas a `shared/widgets/dashboard_dialogs.dart`
+- `_calcularFCT` renombrado a `calcularFCT` (público) en `RecomendacionContextoService`
+- Navegación del dashboard usa `ListView` con cards responsivas
+- Layout: 10 secciones verticales con widgets condicionales
+
+### Corregido
+- Import circular entre `dashboard_provider.dart` y `rutina_provider.dart` eliminado
+- Documentación: tabs corregidos en `01-introduction.md` §4.5
+- Documentación: providers del dashboard corregidos en `06-frontend.md` §3.4
+
+---
+
+## [5.2.0] — 09/06/2026
+
+### Sistema de XP (Gamificación — Fase 1)
+
+Implementación del sistema de experiencia conectado a PostgreSQL vía RPC `otorgar_xp()`:
+
+- **DTO `XpResultado`** en `rutina_provider.dart`: retorna `{xpGanado, nuevoNivel, nuevaXp, subeNivel}` desde la respuesta de la función PostgreSQL.
+- **`otorgarXp(client, usuarioId, cantidadXp)`**: función pública sin underscore, llamable desde `retos_provider.dart`. Delega en `client.rpc('otorgar_xp', params: {p_usuario_id, p_cantidad_xp})`. La función PostgreSQL maneja level-up con umbral `1000 × nivel`.
+- **`finalizarSesion()`** ahora retorna `XpResultado?` en vez de `void`. Fórmula de XP: `50 + min(duraciónMin, 90) + (rpe × 5)` → rango típico 56–190 XP. Invalida `dashboardProvider`.
+- **Feedback en `SesionEnVivoScreen`**: Tras `finalizarSesion()`, muestra SnackBar con:
+  - `"+130 XP 🔥"` si no sube de nivel
+  - `"¡Subiste a nivel 5! 🎉 +130 XP"` si `subeNivel == true`
+- **Migración 0051**: `ALTER TABLE carga_academica_semanal ADD COLUMN xp_estudio_otorgado boolean DEFAULT false`
+- **Modelo `CargaAcademicaSemanalDb`**: nuevo campo `xpEstudioOtorgado` (bool)
+
+### Limpieza del Dashboard
+
+- **KPIs eliminados:** KPI "Horas de estudio" y KPI "Racha actual" eliminados del dashboard.
+- **Badge 🔥 eliminado** del `_SaludoCard` (el saludo ahora muestra solo nivel y XP con punto de energía).
+- **KPI "Calorías hoy":** ahora se oculta cuando `calorias == 0` (antes siempre visible con valor 0).
+- **Grid de KPIs dinámico:** `crossAxisCount` basado en `children.length.clamp(1, 2)` en vez de valor fijo. Cuando solo queda "Sesiones completadas", el grid muestra 1 columna.
+- **`_buildKpiColumn` refactorizado** a método con cuerpo (deja de ser arrow function).
+
+### XP por Retos y Metas de Estudio (Fase 3)
+
+- **`completarReto()`** en `retos_provider.dart`: ahora otorga XP — 200 XP para reto simple, `100 × cantidadHitos + 300` para reto complejo (rango 400–1300). Invalida `dashboardProvider`.
+- **`syncCargaAcademicaSemanal()`** en `rutina_provider.dart`: al finalizar, si `horasReales ≥ 0.8 × horasPlaneadas` y `xp_estudio_otorgado == false`, otorga 150 XP (único por semana) y marca el flag en BD.
+- **`otorgarXp`** hecho público (sin underscore) para ser llamado desde `retos_provider.dart`.
+
+### Timeout de IA ampliado
+
+- **`recomendacion_ia_service.dart`**: `receiveTimeout` del cliente Dio de Gemini ampliado de 35s a 45s para dar más margen a respuestas largas del modelo.
+
+### Fórmulas de XP
+
+| Fuente | Fórmula | Rango típico |
+|--------|---------|-------------|
+| Sesión entrenamiento | `50 + min(duraciónMin, 90) + (RPE × 5)` | 56–190 XP |
+| Reto simple | 200 XP | 200 XP |
+| Reto complejo | `100 × hitos + 300` | 400–1300 XP |
+| Meta estudio semanal | 150 XP (único por semana) | 150 XP |
+| Nivel-up | `xpTotal ≥ 1000 × nivel` → nivel++ | — |
+
+### Documentación actualizada
+- `04-data-model.md` (v4.5): DTO `XpResultado`, campo `xp_estudio_otorgado`, fórmulas de XP y level-up
+- `06-frontend.md` (v5.2): Feedback de XP en sesión en vivo, dashboard simplificado (KPIs eliminados, grid dinámico, `_buildKpiColumn` refactorizado)
+- `12-user-guide.md` (v4.1): Nueva sección sobre cómo se gana XP (sesiones, retos, estudio) y explicación de level-up
+- `14-changelog.md`: Esta entrada.
+- `AGENTS.md`: Actualizados conteos de líneas y migraciones.
+
+---
+
+## [5.1.0] — 09/06/2026
+
+### Pipeline Académico y Métricas Energéticas
+
+- **Pipeline académico completo:**
+  - Nuevo modelo `CargaAcademicaSemanalDb` mapea `carga_academica_semanal` (horas estudio, evaluaciones, estrés, sueño)
+  - `cargaAcademicaSemanalProvider`: consulta semana actual con timeout 8s
+  - `contextoAcademicoProvider`: combina carga semanal + exámenes próximos (consulta `entregas_examenes` para 7 días)
+  - `syncCargaAcademicaSemanal()`: auto-popula `carga_academica_semanal` desde `horarios_academicos` (tipo='estudio') y `entregas_examenes`. Se ejecuta antes de cada recomendación.
+- **Métricas académicas y energéticas:**
+  - `adherenciaAcademicaProvider` (0-100): disciplina pura — `cumplimientoHoras(60%) + completitudTareas(30%) + rachaDias(10%)`. SIN biometrías.
+  - `estadoEnergeticoProvider` (0-100): base lineal × 3 gates no lineales (sueño≤1→×0.40, dolor≥4→×0.60, energía≤1→×0.50)
+  - `calcularAjustes()` extendido con reglas de estado energético (crítico<30→×0.40, bajo<50→×0.75)
+  - `ContextoAcademico` extendido con `adherenciaAcademica` y `estadoEnergetico`
+- **Dashboard rediseñado:**
+  - Nueva sección "Estado Actual": 3 gauges radiales animados (Energético, Adherencia Académica, Estudio) entre KPIs y Bienestar
+  - Nuevo widget `MetricGauge`: CustomPainter con arco animado 1200ms, punto brillante, color dinámico, alertas contextuales
+  - Indicador de energía en `SaludoCard`: punto de color junto al nivel/XP
+
+### Sistema de Recomendación IA (refinamientos)
+
+- **Paralelización de providers:** `generarRutinaProvider` carga perfil, catálogo, historial y estado diario con `Future.wait` (24s → 12s)
+- **Timeouts explícitos:** queries de perfil (8s), historial (10s) y ejercicios (12s)
+- **Catálogo inteligente:** `_filtrarCatalogoParaIA()` filtra top 60 ejercicios por equipamiento, dificultad y score (1000+ ejercicios ~200KB → 60 ejercicios ~15KB)
+- **JSON mode:** `_callGemini()` activa `response_mime_type: application/json` forzando salida JSON válida. Fallback a `_extraerJson()`.
+- **Contexto unificado:** `_formatearContextoCompleto()` con 5 secciones: PERFIL FÍSICO, HISTORIAL DEPORTIVO, ESTADO DIARIO, CARGA ACADÉMICA, SEGURIDAD BIOMÉTRICA
+- **3 prompts reescritos:** `refinarRutina`, `generarRecomendacionEjercicios`, `generarEstructuraCompleta` con estructura estándar ROL+CONTEXTO+CATÁLOGO+REGLAS+FORMATO
+- **Parámetros por modalidad:** `_toInput()` calcula valores basados en perfil — peso según % corporal × tipo, duración aeróbica según min/sesión y nivel, tiempo isométrico escalado con nivel
+- **Progresión isométrica:** `ProgresionEjercicio.nuevoTiempoIsometricoSegundos` con gates RPE (≤5→+10s, ≥9.5→-15%)
+- **Validación extendida:** `_validarEjercicio()` valida duración (30-7200s), distancia (50-42195m), isométrico (5-300s), peso (0-300kg) con fallback a valores base
+- **Preservación post-IA:** `_preservarParamsPreIa()` restaura duración, distancia e isométrico del pre-IA cuando IA los deja null
+- **ContextoAcademico real:** el orquestador pasa `ContextoAcademico` completo a `refinarRutina`, no solo string "FCT 0.58"
+
+### Gamificación (diagnosticado)
+
+- `otorgar_xp()` en PostgreSQL existe con lógica de level-up pero NUNCA se llama desde Flutter (0 `.rpc()` calls)
+- `racha_actual` nunca se actualiza (sin triggers)
+- Pendiente de implementación: conectar `finalizarSesion()` → `client.rpc('otorgar_xp')`
+
+> **Resuelto en v5.2.0:** `otorgarXp()` implementado en Flutter, conectado a `finalizarSesion()`, `completarReto()` y `syncCargaAcademicaSemanal()`. Ver entrada v5.2.0.
+
+### Documentación sincronizada
+
+- `01-introduction.md` → v1.5: métricas académicas/energéticas, gamificación, stack actualizado
+- `03-architecture.md` → v4.1: nuevos archivos en árbol de directorios, conteos de líneas actualizados
+- `04-data-model.md` → v4.4: modelo `CargaAcademicaSemanalDb`, DTO `ContextoAcademico`, relaciones al pipeline
+- `06-frontend.md` → v5.1: `MetricGauge`, sección "Estado Actual", providers académicos/energéticos
+- `15-ia-recomendacion-sistema.md` → v5.0: pipeline completo, JSON mode, catálogo inteligente, contexto unificado, validación extendida, fallback, diagramas Mermaid
+- `AGENTS.md` actualizado con nuevos archivos y componentes
+
+---
+
+## [5.0.0] — 06-07/06/2026
+
+### Motor de Recomendaciones Completo (Fases 0-10)
+
+Implementación completa del motor de recomendaciones de SynaptixFit, compuesto por 11 fases que transforman la generación de rutinas de una llamada simple a Gemini en un pipeline determinista con refinamiento IA opcional.
+
+#### Fase 0 — Unificación del Sistema de Objetivos
+
+**`app/lib/shared/utils/string_utils.dart` (NUEVO, 63 líneas):** Fuente única de verdad para `finalidadesEstandar` (7 valores en español) y `sanitizarObjetivo()`. Eliminada la duplicación que existía entre `ejercicios_provider.dart` y `db_models.dart`.
+
+**7 finalidades estándar:**
+1. Hipertrofia Muscular
+2. Fuerza Máxima
+3. Potencia y Explosividad
+4. Fuerza Resistencia
+5. Movilidad y Flexibilidad
+6. Estabilidad y Control Motor
+7. Acondicionamiento Metabólico
+
+**`sanitizarObjetivo()` implementa mapeo legacy:** `hipertrofia`→Hipertrofia Muscular, `fuerza`→Fuerza Máxima, `ganar_masa`→Hipertrofia Muscular, `perder_peso`→Acondicionamiento Metabólico, `resistencia`→Fuerza Resistencia, `movilidad`→Movilidad y Flexibilidad, `fitness_general`→Estabilidad y Control Motor, `mixto`→Hipertrofia Muscular, `cardio`→Acondicionamiento Metabólico, `flexibilidad`→Movilidad y Flexibilidad. Fallback: `Hipertrofia Muscular`.
+
+**Archivos actualizados:**
+- `ejercicios_provider.dart`: Eliminada definición duplicada de `finalidadesEstandar` y `sanitizarObjetivo`. Re-exporta desde `string_utils.dart` con `export ... show`.
+- `db_models.dart`: Eliminado `sanitizarObjetivoLegacy()` duplicado. Añadido `import '../utils/string_utils.dart'`. Getter `PerfilBienestarDb.objetivoEstandar` simplificado a 1 línea: `sanitizarObjetivo(objetivoPrincipal)`. Corregido `finalidadPrincipal` fallback de `'fuerza'` a `'Hipertrofia Muscular'`.
+- `recomendacion_ia_service.dart`: Los 4 prompts de Gemini ahora usan `finalidadesEstandar` (español) en vez de valores legacy (inglés). `_reglasPorObjetivo()` usa `sanitizarObjetivo()`.
+- `rutina_detalle_screen.dart`: `_editarRutina()` sanitiza objetivo al cargar. `_ObjetivoBadge` usa `sanitizarObjetivo()` + `iconoFinalidad()`.
+- `rutina_provider.dart`: `crearRutinaCompleta()` usa `sanitizarObjetivo()` al sanitizar el objetivo.
+- `nueva_rutina_screen.dart`: Eliminado método privado `_sanitizarObjetivo()`. Usa función pública compartida.
+- `perfil_fisico_screen.dart`: Usa `finalidadesEstandar` para los radio buttons del onboarding.
+- `perfil_screen.dart`: Usa `finalidadesEstandar` para el selector de objetivo en perfil.
+
+#### Fase 1 — Tabla de Parámetros por Objetivo
+
+**`app/lib/features/bienestar/infrastructure/parametros_objetivo.dart` (NUEVO, 196 líneas):** Clase `ParametrosObjetivo` con tabla estática `tabla` de 7 entradas calibrada contra `dataset_final.json`. Cada entrada define: `seriesMin/Max`, `repsMin/Max`, `descansoMin/Max`, `rpeMin/Max`, `intensidadRelativa`, `ejerciciosPorDia`, `priorizarCompuestos`, `modalidades` (fuerza/aerobica/metabolica/movilidad), `finalidadesEjercicio`, `volumenSemanalObjetivo`, `admiteCircuito`. Factory `de(String objetivo)` usa `sanitizarObjetivo()` internamente con fallback seguro a Hipertrofia Muscular.
+
+**Calibración de parámetros contra el dataset:**
+
+| Objetivo | Series | Reps | Descanso | RPE | Intensidad | Ej/Día | Circuito |
+|----------|--------|------|----------|-----|-----------|--------|----------|
+| Hipertrofia Muscular | 3-4 | 6-15 | 60-120s | 7-9 | 70% | 5 | No |
+| Fuerza Máxima | 3-5 | 1-6 | 120-300s | 8-9.5 | 85% | 3 | No |
+| Potencia y Explosividad | 3-5 | 1-5 | 120-240s | 7-8.5 | 75% | 3 | Sí |
+| Fuerza Resistencia | 2-3 | 12-25 | 30-60s | 5-7 | 55% | 6 | No |
+| Movilidad y Flexibilidad | 2-3 | 8-15 | 30-60s | 3-5 | 30% | 7 | No |
+| Estabilidad y Control Motor | 2-3 | 6-12 | 45-90s | 4-6 | 40% | 6 | No |
+| Acondicionamiento Metabólico | 2-3 | 12-25 | 20-45s | 6-8 | 50% | 5 | Sí |
+
+#### Fase 2 — Motor de Reglas: Selección SQL + Scoring
+
+**`app/lib/features/bienestar/infrastructure/recomendacion_reglas_service.dart` (NUEVO, 429 líneas):**
+
+- **`generarEstructura()`**: API pública que retorna `Map<int, Map<int, List<EjercicioInput>>>` (estructura semanal de rutina).
+- **`determinarSplit()`**: Árbol de decisión para el split de entrenamiento: ≥5 días→Push/Pull/Legs, ≥4 días+nivel alto→Upper/Lower, resto→Full-Body.
+- **`splitLabel()`**: Etiqueta legible del split ("Full-Body", "Upper/Lower", "Push/Pull/Legs"), compartida con el orquestador.
+- **`_musculosPorDia()`**: Asigna músculos objetivo a cada día según split usando nombres reales del dataset.
+- **`_aplicarFiltros()`**: 5 filtros encadenados (dificultad, equipamiento, modalidad, músculo, ejercicios recientes).
+- **`_scoreEjercicioParaObjetivo()`**: 4 criterios ponderados (finalidad 40%, compuesto 25%, dificultad 20%, multi-finalidad 15%).
+- **`_seleccionBalanceada()`**: Selecciona 60% compuestos + aislados, evita músculos primarios duplicados.
+
+#### Fase 3 — Capa de Contexto: Academia + Fisiología + Gamificación
+
+**`app/lib/features/bienestar/infrastructure/recomendacion_contexto_service.dart` (NUEVO, 216 líneas):**
+
+**DTOs:** `ContextoAcademico` (horasEstudioReales, nivelEstres, evaluacionesSemana, horasSuenoPromedio, tieneExamenesProximos), `ContextoFisiologico` (pesoActual, pesoSemanaAnterior, rachaActual, nivelUsuario, modoExamenes, con tendenciaPesoSemanal), `AjusteContexto` (factorSeries, factorDescanso, restricciones, motivo).
+
+**`calcularAjustes()`**: 6 reglas encadenadas:
+1. **Modo exámenes**: Reduce series 20%, reduce descanso 15%
+2. **FCT (Factor de Carga Total)**: Pondera horas estudio, estrés, evaluaciones, sueño (baseline 8h corregido de 3h), dolor muscular, energía → factor 0.5-1.0
+3. **Racha**: ≥7 días → +10% series; ≥30 días → +15% series
+4. **Tendencia peso**: Perdiendo peso + objetivo hipertrofia → restricción; ganando peso + objetivo pérdida → restricción
+5. **Fatiga diaria**: >50 → reduce 30% series; >70 → reduce 50% series
+6. **Listo para entrenar**: false → reduce 40% series
+
+**`aplicarAjustes()`**: Clampa series/descanso respetando límites de `ParametrosObjetivo`.
+
+#### Fase 4 — Calculadora de Sobrecarga Progresiva
+
+**`app/lib/features/bienestar/infrastructure/progresion_calculator.dart` (NUEVO, 335 líneas):**
+
+- **`calcular1RM()`**: Fórmula no lineal con guard para pesos <3kg (Epley simplificada, evita división por cero).
+- **`generarPesosPorSerie()`**: Rampa 50%→75%→100% para ejercicios con peso.
+- **`calcularProgresion()`**: Doble progresión por tipoMedicion con soporte para peso, tiempo y distancia.
+- **`degradarPorInactividad()`**: >14 días→-20%, >21 días→-30% de carga.
+- **`generarInicial()`**: Sin historial, genera pesos por serie con rampa.
+- **`progresionarEstructura()`**: Batch que aplica progresión a toda la estructura generada.
+
+**DTOs:** `SerieRealizadaDto` (numeroSerie, repeticionesRealizadas, pesoKg, completada, failedReps), `ProgresionEjercicio` (nuevasSeries, nuevasRepeticiones, nuevoDescanso, nuevoPeso, pesosPorSerie, nuevaDuracionSegundos, nuevaDistanciaMetros, log).
+
+#### Fase 5 — Transición de Objetivos
+
+**`app/lib/features/bienestar/infrastructure/transicion_objetivo_service.dart` (NUEVO, 155 líneas):**
+
+**`calcularTransicion()`**: Interpola parámetros entre objetivo viejo y nuevo en 3 fases (factor 0.30→0.70→1.0) durante 3 semanas.
+
+**`_interpolar()`**: `lerpInt`/`lerpDouble` con guard `min>max` en series/reps/descanso para evitar inversión de rangos.
+
+**`aplicarTransicion()`**: Clampa ejercicios a rangos interpolados según fase.
+
+**`FaseTransicion` enum**: `estable`, `temprana`, `media`, `completa`.
+
+**Nueva migración 0046 (`202606060046_historial_objetivos.sql`):** Tabla `historial_objetivos` para trackear cambios de objetivo del usuario. Campos: `usuario_id`, `objetivo`, `objetivo_anterior`, `fecha_inicio`, `fecha_fin`, `rutina_ids`. RLS: propietario (SELECT, INSERT, UPDATE). Índice `(usuario_id, fecha_inicio DESC)`.
+
+**Nuevo modelo `HistorialObjetivoDb`** en `db_models.dart`: con getter `semanasActivo` (corregido bug de `difference` invertido).
+
+#### Fase 6 — Capa de Refinamiento IA (Gemini)
+
+**`recomendacion_ia_service.dart` modificado:**
+
+- **`refinarRutina()` (NUEVO):** Recibe estructura base generada por el motor de reglas y la refina con Gemini. El prompt pide: mejorar nombre, mejorar descripción, variar ejercicios (máx 1-2 por día), reordenar ejercicios. NO modifica series/reps/descanso (eso lo hace el motor de reglas).
+- **`_validarYReparar()` (NUEVO):** Valida cada ejercicio post-IA contra 4 reglas (ID existe en catálogo, equipamiento compatible, dificultad válida, parámetros en rango). Si falla → revierte al ejercicio original del motor de reglas.
+- **`_validarEjercicio()` (NUEVO):** Validación individual con `orElse` defensivo.
+- **`_parseError()` corregido:** Bug de `substring(0,100)` con strings cortos → ahora usa `clamp`.
+- **Guard contra catálogo vacío:** `refinarRutina()` retorna estructura base sin modificar si el catálogo está vacío.
+
+#### Fase 7 — Motor de Feedback Post-Entrenamiento
+
+**`app/lib/features/bienestar/infrastructure/feedback_engine.dart` (NUEVO, 130 líneas):**
+
+- **`procesarSesion()`**: Lee `series_sesion`, calcula degradación dinámica basada en `failed_reps` (no 15% fijo). Cada repetición fallida descuenta 5%, clamp 70-95%.
+- **`detectarInactividad()`**: `DateTime.tryParse` seguro sobre `completada_en`. Si >7 días de inactividad → genera recomendación de reenganche al 80%.
+- **`generarAlertaFatiga()`**: Con try-catch defensivo, inserta alerta en tabla `notificaciones` si fatiga sostenida >50.
+
+**Nueva migración 0047 (`202606060047_failed_reps.sql`):** Columna `failed_reps INT NOT NULL DEFAULT 0 CHECK (failed_reps >= 0)` en `series_sesion`.
+
+**Nueva migración 0048 (`202606060048_recomendaciones_pendientes.sql`):** Tabla `recomendaciones_pendientes` con campos: `tipo` (progresion/degradacion/descarga/variante/academico), `titulo`, `descripcion`, `ejercicio_id`, `rutina_id`, `datos JSONB`, `aplicada BOOLEAN`. RLS: propietario (SELECT, INSERT, UPDATE). Índice `(usuario_id, creado_en DESC)`.
+
+**Nuevo modelo `RecomendacionPendienteDb`** en `db_models.dart`.
+**Actualizado `SerieSesionDb`** con campo `failedReps`.
+
+#### Fase 8 — Orquestador
+
+**`app/lib/features/bienestar/infrastructure/recomendacion_orquestador_service.dart` (NUEVO, 352 líneas):**
+
+**`generarRutina()`**: Pipeline completo de 7 etapas:
+1. `sanitizarObjetivo()` → normaliza el objetivo
+2. `RecomendacionReglasService.generarEstructura()` → estructura base
+3. Validación de estructura vacía (error temprano si no hay ejercicios)
+4. `RecomendacionContextoService.aplicarAjustes()` → ajusta por academia/fisiología
+5. `TransicionObjetivoService.aplicarTransicion()` → interpola si hay cambio de objetivo
+6. `ProgresionCalculator.progresionarEstructura()` → aplica sobrecarga
+7. `RecomendacionIaService.refinarRutina()` → refinamiento IA (opcional)
+
+**`_buildTipoMedicionCache()`**: Construye mapa de `tipoMedicion` desde catálogo real (no mapa vacío).
+**`_capturarPesosKg()` / `_preservarPesosKg()`**: Preserva pesos por serie en round-trip de IA.
+**`_determinarSplitLabel()`**: Delega a `_reglas.splitLabel()` (principio DRY).
+
+**DTOs:** `MetadatosGeneracion` (objetivo, split, motivoAjustes, factorCargaTotal, iaRefinada), `ResultadoGeneracion` (nombre, descripcion, objetivo, duracionSemanas, estructura, metadatos, tieneError).
+
+#### Fase 9 — Integración UI
+
+**`rutina_provider.dart` modificado:**
+- Nuevos providers: `geminiApiKeyProvider` (lee GEMINI_API_KEY de EnvConfig), `recomendacionOrquestadorProvider` (instancia del orquestador), `generarRutinaProvider` (FutureProvider.family que ejecuta el pipeline completo).
+- El provider `generarRutinaProvider` recibe `(usuarioId, usarIa)` y devuelve `ResultadoGeneracion`.
+
+**`nueva_rutina_screen.dart` modificado:**
+- **Botón "⚡ Generar rutina rápida"** (FilledButton, siempre visible): Ejecuta el pipeline determinista (Fases 0-8) sin IA. Resultado en <2 segundos.
+- **Botón "✨ Recomendar rutina con IA"** (OutlinedButton, solo visible con API key configurada): Ejecuta el pipeline completo con refinamiento IA (Fase 6).
+- **Eliminado:** Botón redundante "Recomendar ejercicios" (~140 líneas eliminadas).
+- **Eliminado:** Método `_recomendarEjercicios()` (~140 líneas).
+- **Eliminado:** `_llenarEstructuraDesdeRecomendacion()` (~30 líneas).
+- **`_generarRutinaRapida()`**: Resuelve nombres de ejercicios desde catálogo, defaults por objetivo.
+- **`_DiaEditorCard`**: Recibe `objetivo` para defaults al añadir ejercicios.
+
+#### Fase 10 — Job Nocturno (pg_cron)
+
+**Nueva migración 0049 (`20260606_0049_func_daily_recommendations.sql`):** Función `generar_recomendaciones_diarias()`:
+
+1. **Usuarios inactivos 7-30 días**: Inserta recomendación de reenganche con factor de carga 0.80. Deduplica (no repite si ya hay una en últimos 7 días).
+2. **Fatiga alta en últimos 3 días**: Calcula puntuación de fatiga promedio (misma fórmula que el cliente: `(6-sueño)×5 + (estrés-1)×5 + (6-energía)×4 + (dolor-1)×7`). Si promedio >50 → inserta recomendación de descarga. Deduplica (no repite en últimos 3 días).
+3. **Retorno**: Devuelve las recomendaciones generadas en esta ejecución.
+
+Configurable vía `pg_cron` para ejecución diaria a las 2 AM:
+```sql
+SELECT cron.schedule('recomendaciones-diarias', '0 2 * * *', 'SELECT generar_recomendaciones_diarias();');
+```
+
+### Correcciones de bugs encontrados en auditoría (12 bugs)
+
+1. **FCT usaba umbral de sueño 3h** → corregido a 8h (baseline fisiológico correcto)
+2. **`semanasActivo` getter con `difference` invertido** → corregido en `HistorialObjetivoDb`
+3. **`pesosKg` se perdía en round-trip de IA** → preservación implementada en orquestador
+4. **Split label no consideraba `nivelActividad`** → `determinarSplit()` ahora recibe nivel
+5. **`_EjercicioPlan.nombre` se seteaba al UUID** → corregido resolviendo desde catálogo
+6. **Tiempo/distancia escribía progresión en campo equivocado** → `nuevaDuracionSegundos`/`nuevaDistanciaMetros` en `ProgresionEjercicio`
+7. **`_defaultTipoMedicion()` retornaba mapa vacío** → `_buildTipoMedicionCache()` construye desde catálogo real
+8. **`_parseError` crasheaba con strings <100 chars** → usa `.clamp()` en vez de `substring(0,100)`
+9. **`refinarRutina` crasheaba con catálogo vacío** → guard defensivo al inicio
+10. **`DateTime.parse` sin `tryParse`** → `DateTime.tryParse` en feedback engine
+11. **`peso corporal` vs `peso_corporal` inconsistencia** → normalizado en filtros de equipamiento
+12. **Denominador de 1RM cercano a cero con pesos <3kg** → guard `if (peso < 3) return peso` en `calcular1RM()`
+
+### Documentación actualizada
+- `04-data-model.md` (v4.2): Nuevas tablas `historial_objetivos` y `recomendaciones_pendientes`. Columna `failed_reps` en `series_sesion`. ER actualizado.
+- `06-frontend.md` (v5.0): Nuevas secciones del motor de recomendaciones, providers del orquestador, UI de generación rápida.
+- `07-backend.md` (v3.0): Migraciones 0046-0049. Nuevos servicios de infraestructura. pg_cron.
+- `10-deployment.md` (v2.0): Configuración de pg_cron para el job nocturno.
+- `03-architecture.md` (v4.0): Nuevos servicios, providers, estructura de carpetas actualizada.
+- `15-ia-recomendacion-sistema.md` (v4.0): Fase 0 (unificación objetivos), motor de reglas determinista, orquestador, refinamiento IA.
+- `14-changelog.md`: Esta entrada.
+
+---
+
+## [4.0.0] — 06-06-2026
+
+### Pesos por serie en rutinas (DB + Frontend)
+
+**Nueva migración 0045 (`20260605_0045_pesos_por_serie.sql`):**
+- Añade columna `pesos_kg jsonb` a `seleccion_de_ejercicios`.
+- Permite asignar un peso diferente por cada serie del ejercicio.
+- Si es `null`, todas las series usan el valor de `peso_kg`.
+
+**Modelo Dart actualizado:**
+- `SeleccionEjercicioDb.pesosKg` (`List<double>?`) añadido en `db_models.dart:327`.
+- Serialización en `fromMap()` (línea 343-347) y `toMap()` (línea 371).
+- `EjercicioInput.pesosKg` en `rutina_provider.dart:786` para flujo de creación.
+- `crearRutinaCompleta()` serializa `pesos_kg` en el INSERT (línea 533).
+- `actualizarEjercicioDia()` soporta `pesos_kg` en el patch desde `rutina_detalle_screen.dart:441`.
+
+**UI — Editor de peso por serie:**
+- `rutina_detalle_screen.dart`: Nueva sección inline con toggle "Mismo peso en todas las series". Cuando se desactiva, aparecen `N` campos de peso (uno por serie) con steppers ±.
+- `nueva_rutina_screen.dart`: `_EjercicioCompacto` también incorpora el toggle y campos por serie.
+- `sesion_en_vivo_screen.dart`: `_EjercicioLiveCard` prellena cada campo de peso desde `pesos_kg[i]` cuando existe, con fallback a `peso_kg`.
+
+### Navegación post "Completar rutina"
+
+- `_completarRutina()` en `rutina_detalle_screen.dart:345` ahora navega a `context.go('/bienestar')` después de actualizar el estado de la rutina a `'completado'`.
+- Invalida `rutinasUsuarioProvider` + `semanasDeRutinaProvider` antes de navegar.
+
+### Live Session: adaptación real con `seriesReducidas`
+
+- La bandera `_seriesReducidas` ahora se consume efectivamente en `sesion_en_vivo_screen.dart`:
+  - Se pasa como `seriesReducidas` a `_EjerciciosList` → `_EjercicioLiveCard`.
+  - `_EjercicioLiveCard` calcula `seriesEfectivas` = `seriesReducidas ? (e.series - 1).clamp(1, 99) : e.series`.
+  - El display de series muestra `(adaptado)` en naranja y el borde de la tarjeta se vuelve naranja con opacidad.
+  - `List.generate` usa `seriesEfectivas` en lugar de `e.series`.
+- Mejorado el texto del check-in overlay: "Tus respuestas adaptan el entrenamiento y mejoran las recomendaciones futuras."
+
+### Rutina completada: UI read-only + reutilizar
+
+- El botón "Completar rutina" solo se muestra cuando `!todasCompletadas` (quedan semanas pendientes).
+- Cuando `todasCompletadas == true`:
+  - Se oculta el icono de editar (`actions`).
+  - Aparece un botón "Reutilizar rutina" con icono `refresh_rounded` en actions.
+  - Aparece `_buildBotonReutilizarRutina()` en la parte inferior.
+  - `_editarRutina()` tiene safety gate que retorna temprano si completada (línea 483).
+- `_reutilizarRutina()` (línea 357) clona la jerarquía completa:
+  - Crea nueva rutina con sufijo " (copia)", estado activo, visibilidad privada.
+  - Itera semanas → días → ejercicios, copiando todos los parámetros (`peso_kg`, `pesos_kg`, `duracion_segundos`, `distancia_metros`, `tiempo_isometrico_segundos`).
+  - Invalida `rutinasUsuarioProvider` y navega a `/bienestar/rutina/$nuevoId`.
+- Se muestra `_CelebracionDialog` al detectar que todas las semanas están completadas.
+
+### Documentación actualizada
+- `06-frontend.md` (v4.4): Sección 5.7 — UI read-only y reutilizar. Sección 5.8 — Pesos por serie con toggle. Sección 6 actualizada con adaptación real y pesos prellenados. Sección 3.5 — `actualizarEjercicioDia` con pesos_kg.
+- `07-backend.md` (v2.7): Migración 0045 añadida al historial.
+- `04-data-model.md` (v3.9): Columna `pesos_kg jsonb` en `seleccion_de_ejercicios` y definición de `SeleccionEjercicioDb` con `pesosKg`.
+- `14-changelog.md`: Esta entrada.
+
+---
+
+## [3.9.0] — 05-06-2026
+
+### Flujo "Agregar a rutina" desde detalle de ejercicio + Resumen enriquecido + Dataset Lyfta
+
+**Flujo "Agregar a rutina" contextual:**
+- `detalle_ejercicio_screen.dart`: Nuevo parámetro `showAddButton` (default `true`). El botón "Agregar a rutina" ahora es contextual: se oculta cuando se navega desde el editor de rutina (`_EjercicioCompacto`) porque el ejercicio ya está añadido. Se muestra cuando se navega desde la cuadrícula de selección.
+- `seleccion_ejercicios_screen.dart`: `_verDetalle` ahora usa `await Navigator.of(context).push<EjercicioDb>(MaterialPageRoute(...))` en lugar de `context.push` sin await. Al recibir el `EjercicioDb` de vuelta, se añade a la selección automáticamente.
+- `app_router.dart`: La ruta `/bienestar/ejercicio/:id` acepta `extra: true` para ocultar el botón "Agregar a rutina".
+- `nueva_rutina_screen.dart` (línea ~2371): Navegación desde `_EjercicioCompacto` usa `extra: true` para que el detalle oculte "Agregar a rutina".
+
+**Pantalla de resumen (`_buildPaso3`) enriquecida:**
+- Corrección de bug: Los `Row` con `_resumenFila` ahora envuelven hijos en `Expanded` para evitar `RenderFlex` con `BoxConstraints(unconstrained)`.
+- Visualización de `descripcion` (campo `_descCtrl.text`) cuando no está vacío.
+- Chips de `tipo_semana` (periodización): Adaptación (ámbar), Carga (naranja), Pico (rojo), Descarga (teal).
+- `_buildExerciseSummaryRow` reescrito para mostrar chips por ejercicio:
+  - Chip "Circuito" (púrpura) si `esCircuito == true`
+  - Chip de `finalidad` (Hipertrofia/Fuerza/Cardio...) con color
+  - Chip de `modalidadEntrenamiento` (Fuerza/Aeróbica/Metabólica/Movilidad) con color
+- `_buildParametrosEjercicio` reescrito para usar `tipoMedicion` (array) en vez de `finalidad` (string). Muestra dinámicamente: series×reps para fuerza, series×tiempo para isométrico, duración/distancia para cardio, peso, descanso.
+- `esCircuito = true` oculta series×reps y muestra solo duración.
+- Nuevos helpers: `_calcularTipoSemana()`, `_buildTipoSemanaChip()`, `_finalidadBadge()`, `_circuitoChip()`, `_buildModalidadChip()`, `_colorFinalidad()`, `_fmtDistancia()`.
+- Función top-level `fmtDuracion(int segundos)` extraída para compartir entre `_NuevaRutinaScreenState` y `_EjercicioCompactoState`.
+
+**`_EjercicioCompacto` — `esCircuito` oculta contador de series:**
+- En `_camposFuerza`, las pills de Series y Reps se ocultan cuando `esCircuito == true`, mostrando en su lugar un campo de Duración. Esta lógica ya existía y se verificó correcta.
+
+**Nuevo dataset Lyfta documentado:**
+- Pipeline completo de 8 etapas documentado en `docs/17-dataset-lyfta.md`: scraping con Playwright → limpieza de URLs → derivación de videos → descarga → generación de dataset → pulido de nombres (2 pasadas) → procesamiento de previsualizaciones.
+- 682 ejercicios en español con videos MP4 y previsualizaciones.
+- Formato `dataset_final.json` con: nombre, descripción, instrucciones (3 pasos), dificultad, finalidad, partes_cuerpo, musculos_objetivo/secundarios, equipamientos, url_video, url_preview.
+- Videos y previsualizaciones alojados en Cloudflare R2.
+
+**Documentación actualizada:**
+- `06-frontend.md` (v4.3): Sección 2.1 — Flujo "Agregar a rutina" con diagrama Mermaid. Secciones 8.4-8.5 — Resumen enriquecido y modo circuito con tablas de colores, helpers y correcciones.
+- `01-introduction.md`: Tabla de estructura ampliada a 17 documentos.
+- `17-dataset-lyfta.md` (NUEVO): Documentación completa del dataset Lyfta (12 secciones, 8 etapas, formato JSON, mapeo BD, estadísticas).
+- `14-changelog.md`: Esta entrada.
+- `AGENTS.md`: Corrección de conteo de docs (15→17).
+
+---
+
 ## [3.8.0] — 29-05-2026
 
 ### url_imagen para todos los músculos + exercise_db_id eliminado + catálogo limpiado

@@ -3,15 +3,17 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env_config.dart';
+import '../../../core/design_system/sv_colors.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/exercise_media_widget.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../application/ejercicios_provider.dart';
 import '../application/rutina_provider.dart';
 import '../infrastructure/recomendacion_ia_service.dart';
+import '../infrastructure/parametros_objetivo.dart';
+import 'seleccion_ejercicios_screen.dart';
 
 // DTO local para el plan de ejercicios durante la creación
 class _EjercicioPlan {
@@ -20,10 +22,16 @@ class _EjercicioPlan {
     required this.nombre,
     required this.finalidad,
     this.urlGif,
+    this.urlPreview,
+    this.modalidadEntrenamiento = 'fuerza',
+    this.tipoMedicion = const ['repeticiones'],
+    this.esCircuito = false,
     this.series = 3,
     this.repeticiones = 10,
     this.segundosDescanso = 90,
     this.pesoKg,
+    this.pesosKg,
+    this.mismoPeso = true,
     this.duracionSegundos,
     this.distanciaMetros,
     this.tiempoIsometricoSegundos,
@@ -33,10 +41,16 @@ class _EjercicioPlan {
   final String nombre;
   final String finalidad;
   final String? urlGif;
+  final String? urlPreview;
+  final String modalidadEntrenamiento;
+  final List<String> tipoMedicion;
+  final bool esCircuito;
   final int series;
   final int repeticiones;
   final int segundosDescanso;
   final double? pesoKg;
+  final List<double>? pesosKg;
+  final bool mismoPeso;
   final int? duracionSegundos;
   final int? distanciaMetros;
   final int? tiempoIsometricoSegundos;
@@ -46,6 +60,8 @@ class _EjercicioPlan {
     int? repeticiones,
     int? segundosDescanso,
     double? pesoKg,
+    List<double>? pesosKg,
+    bool? mismoPeso,
     int? duracionSegundos,
     int? distanciaMetros,
     int? tiempoIsometricoSegundos,
@@ -55,10 +71,16 @@ class _EjercicioPlan {
       nombre: nombre,
       finalidad: finalidad,
       urlGif: urlGif,
+      urlPreview: urlPreview,
+      modalidadEntrenamiento: modalidadEntrenamiento,
+      tipoMedicion: tipoMedicion,
+      esCircuito: esCircuito,
       series: series ?? this.series,
       repeticiones: repeticiones ?? this.repeticiones,
       segundosDescanso: segundosDescanso ?? this.segundosDescanso,
       pesoKg: pesoKg ?? this.pesoKg,
+      pesosKg: pesosKg ?? this.pesosKg,
+      mismoPeso: mismoPeso ?? this.mismoPeso,
       duracionSegundos: duracionSegundos ?? this.duracionSegundos,
       distanciaMetros: distanciaMetros ?? this.distanciaMetros,
       tiempoIsometricoSegundos:
@@ -73,6 +95,7 @@ class _EjercicioPlan {
       repeticiones: repeticiones,
       segundosDescanso: segundosDescanso,
       pesoKg: pesoKg,
+      pesosKg: mismoPeso ? null : pesosKg,
       duracionSegundos: duracionSegundos,
       distanciaMetros: distanciaMetros,
       tiempoIsometricoSegundos: tiempoIsometricoSegundos,
@@ -95,29 +118,21 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   bool _loadingIA = false;
   String _tipoCarga = '';
   bool _rutinaRecomendada = false;
-  bool _ejerciciosRecomendados = false;
+  bool _iaRefinada = false;
+  String? _motivoAjustes;
+  final bool _ejerciciosRecomendados = false;
   Timer? _timerMensajes;
   String _mensajeCarga = '';
 
   final _nombreCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   String _visibilidad = 'private';
-  String _objetivo = 'fuerza';
+  String _objetivo = 'Hipertrofia Muscular';
   int _duracionSemanas = 4;
   int _diasPorSemana = 3;
 
   int _semanaActiva = 0;
   final Map<int, Map<int, List<_EjercicioPlan>>> _estructura = {};
-
-  static const _todosObjetivos = [
-    'fitness_general',
-    'perder_peso',
-    'ganar_masa',
-    'fuerza',
-    'resistencia',
-    'movilidad',
-    'mixto',
-  ];
 
   @override
   void initState() {
@@ -132,31 +147,9 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   Future<void> _cargarObjetivoPerfil() async {
     final perfil = await ref.read(perfilBienestarProvider.future);
     if (perfil != null && mounted) {
-      setState(() => _objetivo = perfil.objetivoPrincipal);
+      final v = sanitizarObjetivo(perfil.objetivoPrincipal);
+      setState(() => _objetivo = v);
     }
-  }
-
-  String _formatearObjetivo(String o) {
-    return o
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((w) => w[0].toUpperCase() + w.substring(1))
-        .join(' ');
-  }
-
-  String _sanitizarObjetivo(String o) {
-    final l = o.toLowerCase().trim();
-    if (_todosObjetivos.contains(l)) return l;
-    const mapeo = {
-      'hipertrofia': 'ganar_masa',
-      'ganancia_muscular': 'ganar_masa',
-      'perdida_de_peso': 'perder_peso',
-      'bajar_de_peso': 'perder_peso',
-      'cardio': 'resistencia',
-      'flexibilidad': 'movilidad',
-      'general': 'fitness_general',
-    };
-    return mapeo[l] ?? 'fuerza';
   }
 
   void _inicializarEstructura() {
@@ -273,10 +266,20 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     }
   }
 
+  String fmtDuracion(int segundos) {
+    final min = segundos ~/ 60;
+    final sec = segundos % 60;
+    if (min > 0 && sec > 0) return '${min}m ${sec}s';
+    if (min > 0) return '$min min';
+    return '${sec}s';
+  }
+
   @override
   Widget build(BuildContext context) {
     return FeatureScaffold(
-      title: 'Nueva rutina',
+      title: _paso >= 1 && _nombreCtrl.text.trim().isNotEmpty
+          ? _nombreCtrl.text.trim()
+          : 'Nueva rutina',
       backPath: '/bienestar',
       onBack: () {
         if (_paso > 0) {
@@ -499,18 +502,17 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                 border: Border.all(
                     color: const Color(0xFF7C3AED).withValues(alpha: 0.2)),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.today_rounded,
-                      size: 14, color: const Color(0xFF7C3AED)),
-                  const SizedBox(width: 6),
+                  Icon(Icons.today_rounded, size: 14, color: Color(0xFF7C3AED)),
+                  SizedBox(width: 6),
                   Text(
                     'Personalizando ejercicios',
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF7C3AED)),
+                        color: Color(0xFF7C3AED)),
                   ),
                 ],
               ),
@@ -579,6 +581,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
 
   Widget _buildPaso1() {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     if (_loadingIA) {
       return _buildPantallaGeneracion(theme);
@@ -587,8 +590,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Icon(Icons.fitness_center_rounded,
-            size: 48, color: theme.colorScheme.primary),
+        Icon(Icons.fitness_center_rounded, size: 48, color: cs.primary),
         const SizedBox(height: 8),
         Text('Paso 1 — Define tu rutina',
             style: theme.textTheme.headlineSmall
@@ -597,137 +599,205 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         const SizedBox(height: 4),
         Text('Nombre, objetivo y duración',
             style: theme.textTheme.bodyMedium
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ?.copyWith(color: cs.onSurfaceVariant),
             textAlign: TextAlign.center),
         const SizedBox(height: 24),
-        TextField(
-          controller: _nombreCtrl,
-          textCapitalization: TextCapitalization.sentences,
-          autofocus: !widget.autoRecomendar,
-          decoration: const InputDecoration(
-              labelText: 'Nombre *', hintText: 'ej: Rutina de fuerza'),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.edit_rounded, size: 18, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text('Nombre y descripción',
+                        style: theme.textTheme.labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _nombreCtrl,
+                  textCapitalization: TextCapitalization.sentences,
+                  autofocus: !widget.autoRecomendar,
+                  decoration: const InputDecoration(
+                      labelText: 'Nombre *', hintText: 'ej: Rutina de fuerza'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                      labelText: 'Descripción (opcional)',
+                      alignLabelWithHint: true),
+                ),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _descCtrl,
-          maxLines: 2,
-          decoration: const InputDecoration(
-              labelText: 'Descripción (opcional)', alignLabelWithHint: true),
+        const SizedBox(height: 14),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.gps_fixed_rounded, size: 18, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text('Objetivo',
+                        style: theme.textTheme.labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final cols = constraints.maxWidth > 400 ? 3 : 2;
+                    return Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: finalidadesEstandar
+                          .map((f) => SizedBox(
+                                width: (constraints.maxWidth - (cols - 1) * 6) /
+                                    cols,
+                                child: ChoiceChip(
+                                  avatar: Icon(
+                                    iconoFinalidad(f),
+                                    size: 14,
+                                    color: _objetivo == f
+                                        ? cs.onSecondaryContainer
+                                        : cs.onSurfaceVariant,
+                                  ),
+                                  label: Text(f,
+                                      style: const TextStyle(fontSize: 12)),
+                                  selected: _objetivo == f,
+                                  visualDensity: VisualDensity.compact,
+                                  onSelected: (_) =>
+                                      setState(() => _objetivo = f),
+                                ),
+                              ))
+                          .toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
-        Text('Objetivo',
-            style: theme.textTheme.labelLarge
-                ?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 14),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.visibility_rounded, size: 18, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text('Visibilidad',
+                        style: theme.textTheme.labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                        value: 'private',
+                        icon: Icon(Icons.lock_outline, size: 16),
+                        label: Text('Privada')),
+                    ButtonSegment(
+                        value: 'friends',
+                        icon: Icon(Icons.people_outline, size: 16),
+                        label: Text('Amigos')),
+                    ButtonSegment(
+                        value: 'public',
+                        icon: Icon(Icons.public_outlined, size: 16),
+                        label: Text('Pública')),
+                  ],
+                  selected: {_visibilidad},
+                  onSelectionChanged: (v) =>
+                      setState(() => _visibilidad = v.first),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.schedule_rounded, size: 18, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text('Duración',
+                        style: theme.textTheme.labelLarge
+                            ?.copyWith(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildStepper(
+                  label: 'Semanas',
+                  value: _duracionSemanas,
+                  min: 1,
+                  max: 12,
+                  suffix: 'semanas',
+                  onChanged: (v) => setState(() => _duracionSemanas = v),
+                  cs: cs,
+                ),
+                const SizedBox(height: 8),
+                _buildStepper(
+                  label: 'Días por semana',
+                  value: _diasPorSemana,
+                  min: 1,
+                  max: 7,
+                  suffix: 'días',
+                  onChanged: (v) => setState(() => _diasPorSemana = v),
+                  cs: cs,
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 28),
+        FilledButton.icon(
+          onPressed: _loadingIA ? null : _recomendarRutina,
+          icon: const Icon(Icons.auto_awesome, size: 18),
+          label: Text(_rutinaRecomendada ? 'Cambiar rutina' : 'Generar rutina'),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+          ),
+        ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: _todosObjetivos
-              .map((o) => ChoiceChip(
-                    label: Text(_formatearObjetivo(o)),
-                    selected: _objetivo == o,
-                    onSelected: (_) => setState(() => _objetivo = o),
-                  ))
-              .toList(),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Text(
-            'Puedes cambiar tu objetivo principal desde tu perfil en la pantalla de inicio.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: Colors.grey, fontStyle: FontStyle.italic),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(
-                value: 'private',
-                icon: Icon(Icons.lock_outline, size: 16),
-                label: Text('Privada')),
-            ButtonSegment(
-                value: 'friends',
-                icon: Icon(Icons.people_outline, size: 16),
-                label: Text('Amigos')),
-            ButtonSegment(
-                value: 'public',
-                icon: Icon(Icons.public_outlined, size: 16),
-                label: Text('Pública')),
-          ],
-          selected: {_visibilidad},
-          onSelectionChanged: (v) => setState(() => _visibilidad = v.first),
-        ),
-        const SizedBox(height: 20),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text('Duración:',
-              style: theme.textTheme.labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(width: 12),
-          IconButton(
-              onPressed: _duracionSemanas > 1
-                  ? () => setState(() => _duracionSemanas--)
-                  : null,
-              icon: const Icon(Icons.remove_circle_outline)),
-          Text('$_duracionSemanas semanas',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          IconButton(
-              onPressed: _duracionSemanas < 12
-                  ? () => setState(() => _duracionSemanas++)
-                  : null,
-              icon: const Icon(Icons.add_circle_outline)),
-        ]),
-        const SizedBox(height: 12),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text('Días por semana:',
-              style: theme.textTheme.labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(width: 12),
-          IconButton(
-              onPressed: _diasPorSemana > 1
-                  ? () => setState(() => _diasPorSemana--)
-                  : null,
-              icon: const Icon(Icons.remove_circle_outline)),
-          Text('$_diasPorSemana días',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          IconButton(
-              onPressed: _diasPorSemana < 7
-                  ? () => setState(() => _diasPorSemana++)
-                  : null,
-              icon: const Icon(Icons.add_circle_outline)),
-        ]),
-        const SizedBox(height: 28),
-        OutlinedButton.icon(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
-          label: const Text('Atrás'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(44),
-          ),
-        ),
-        const SizedBox(height: 28),
-        if (EnvConfig.hasGeminiApiKey) ...[
-          OutlinedButton.icon(
-            onPressed: _loadingIA ? null : _recomendarRutina,
-            icon: const Icon(Icons.auto_awesome, size: 18),
-            label: Text(_rutinaRecomendada
-                ? 'Cambiar rutina con IA'
-                : 'Recomendar rutina con IA'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(44),
-            ),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _loadingIA ? null : _recomendarEjercicios,
-            icon: const Icon(Icons.fitness_center, size: 18),
-            label: const Text('Recomendar ejercicios'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(44),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
         FilledButton.icon(
           onPressed: () {
             if (_nombreCtrl.text.trim().length < 3) {
@@ -740,6 +810,68 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
           },
           icon: const Icon(Icons.arrow_forward),
           label: const Text('Siguiente — Añadir ejercicios'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepper({
+    required String label,
+    required int value,
+    required int min,
+    required int max,
+    required String suffix,
+    required void Function(int) onChanged,
+    required ColorScheme cs,
+  }) {
+    final canDown = value > min;
+    final canUp = value < max;
+    return Row(
+      children: [
+        Expanded(
+          child: Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurfaceVariant)),
+        ),
+        SizedBox(
+          width: 36,
+          height: 36,
+          child: IconButton(
+            onPressed: canDown ? () => onChanged(value - 1) : null,
+            icon: Icon(Icons.remove_rounded,
+                size: 20, color: canDown ? cs.primary : cs.outlineVariant),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: cs.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '$value $suffix',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: cs.primary,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 36,
+          height: 36,
+          child: IconButton(
+            onPressed: canUp ? () => onChanged(value + 1) : null,
+            icon: Icon(Icons.add_rounded,
+                size: 20, color: canUp ? cs.primary : cs.outlineVariant),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+          ),
         ),
       ],
     );
@@ -770,6 +902,53 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
 
     return Column(
       children: [
+        if (_rutinaRecomendada) ...[
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Chip(
+              avatar: Icon(
+                _iaRefinada ? Icons.auto_awesome : Icons.bolt_rounded,
+                size: 16,
+                color:
+                    _iaRefinada ? Colors.blue.shade700 : Colors.orange.shade700,
+              ),
+              label: Text(
+                _iaRefinada ? 'IA' : 'Reglas',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: _iaRefinada
+                      ? Colors.blue.shade700
+                      : Colors.orange.shade700,
+                ),
+              ),
+              backgroundColor:
+                  _iaRefinada ? Colors.blue.shade50 : Colors.orange.shade50,
+              side: BorderSide.none,
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            ),
+            if (_motivoAjustes != null) ...[
+              const SizedBox(width: 6),
+              Tooltip(
+                message: _motivoAjustes!,
+                child: Chip(
+                  avatar: Icon(Icons.warning_amber_rounded,
+                      size: 16, color: Colors.amber.shade800),
+                  label: Text('Adaptado',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.amber.shade800)),
+                  backgroundColor: Colors.amber.shade50,
+                  side: BorderSide.none,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+              ),
+            ],
+          ]),
+          const SizedBox(height: 8),
+        ],
         // Selector de semanas con botón eliminar y añadir
         SizedBox(
           height: 44,
@@ -854,6 +1033,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                 semanaNum: semanaActual,
                 diaNum: diaNum,
                 ejercicios: ejercicios,
+                objetivo: _objetivo,
                 canDelete: diasDeSemana.length > 1,
                 onDelete: () => _eliminarDia(semanaActual, diaNum),
                 onEjercicioAdded: (e) =>
@@ -923,130 +1103,625 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
 
   Widget _buildPaso3() {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final totalEjercicios = _estructura.values.fold<int>(0,
         (t, dias) => t + dias.values.fold<int>(0, (t2, ej) => t2 + ej.length));
-    return Column(
+    final semanasVacias = _estructura.entries
+        .where((sem) => sem.value.values.every((d) => d.isEmpty))
+        .map((sem) => sem.key)
+        .toList();
+    final visibilidadStr = _visibilidad == 'private'
+        ? 'Privada'
+        : _visibilidad == 'friends'
+            ? 'Amigos'
+            : 'Pública';
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
       children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+        // ── Compact header ──
+        Row(children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.check_circle_rounded,
+                size: 24, color: Colors.green),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text('Revisa tu rutina',
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+          ),
+          TextButton.icon(
+            onPressed: () => setState(() => _paso = 1),
+            icon: const Icon(Icons.edit_rounded, size: 14),
+            label: const Text('Editar', style: TextStyle(fontSize: 12)),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ]),
+        const SizedBox(height: 16),
+
+        // ── Name + stats in a compact card ──
+        Container(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: cs.outlineVariant.withValues(alpha: 0.15)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.check_circle_outline,
-                  size: 48, color: Colors.green),
-              const SizedBox(height: 8),
-              Text('Revisa tu rutina',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: TextField(
-                  controller: _nombreCtrl,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre',
-                    isDense: true,
-                  ),
+              TextField(
+                controller: _nombreCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                style: theme.textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  hintText: 'Nombre de la rutina',
+                  hintStyle: TextStyle(
+                      fontSize: 14,
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                  isDense: true,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 ),
               ),
-              _resumenFila('Objetivo', _formatearObjetivo(_objetivo)),
-              _resumenFila(
-                  'Visibilidad',
-                  _visibilidad == 'private'
-                      ? 'Privada'
-                      : _visibilidad == 'friends'
-                          ? 'Amigos'
-                          : 'Pública'),
-              _resumenFila('Duración', '$_duracionSemanas semanas'),
-              _resumenFila('Total ejercicios', '$totalEjercicios'),
-              const SizedBox(height: 16),
-              const Divider(),
-              ..._estructura.entries.map((sem) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Card(
-                      margin: EdgeInsets.zero,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Semana ${sem.key}',
-                                  style: theme.textTheme.titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 6),
-                              ...sem.value.entries.map((dia) => Padding(
-                                    padding: const EdgeInsets.only(
-                                        left: 8, bottom: 4),
-                                    child: Row(children: [
-                                      Text('Día ${dia.key}:',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12)),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                          child: Text(
-                                              dia.value
-                                                  .map((e) => e.nombre)
-                                                  .join(', '),
-                                              style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: theme.colorScheme
-                                                      .onSurfaceVariant),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis)),
-                                    ]),
-                                  )),
-                            ]),
-                      ),
+              if (_descCtrl.text.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(children: [
+                    Icon(Icons.description_outlined,
+                        size: 12,
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(_descCtrl.text.trim(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontStyle: FontStyle.italic)),
                     ),
-                  )),
+                  ]),
+                ),
+              const Divider(height: 12),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: [
+                  _miniChip(Icons.flag_rounded, _objetivo, cs),
+                  const SizedBox(width: 8),
+                  _miniChip(Icons.visibility_rounded, visibilidadStr, cs),
+                  const SizedBox(width: 8),
+                  _miniChip(Icons.calendar_month_rounded,
+                      '$_duracionSemanas sem', cs),
+                  const SizedBox(width: 8),
+                  _miniChip(
+                      Icons.fitness_center_rounded, '$totalEjercicios ej', cs),
+                ]),
+              ),
             ],
           ),
         ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            child: Row(children: [
-              Expanded(
-                  child: OutlinedButton(
-                      onPressed: () => setState(() => _paso = 1),
-                      child: const Text('Editar'))),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: FilledButton(
-                onPressed: _creando ? null : _crearRutina,
-                child: _creando
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Text('Crear rutina'),
-              )),
-            ]),
+        const SizedBox(height: 20),
+
+        // ── Weeks progress bar ──
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cs.primary.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: Row(children: [
+            ..._estructura.entries.map((sem) {
+              final totalDia =
+                  sem.value.values.fold<int>(0, (t, ej) => t + ej.length);
+              final pct =
+                  sem.value.isEmpty ? 0.0 : totalDia / (sem.value.length * 5);
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: GestureDetector(
+                    onTap: semanasVacias.contains(sem.key)
+                        ? () => _confirmarEliminarSemana(sem.key)
+                        : null,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: totalDia > 0
+                                ? cs.primary.withValues(alpha: 0.3)
+                                : Colors.orange.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor:
+                                totalDia > 0 ? pct.clamp(0.1, 1.0) : 1.0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color:
+                                    totalDia > 0 ? cs.primary : Colors.orange,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text('S${sem.key}',
+                            style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: totalDia > 0
+                                    ? cs.onSurfaceVariant
+                                    : Colors.orange.shade600)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ]),
         ),
+        const SizedBox(height: 20),
+
+        // ── Week detail cards ──
+        ..._estructura.entries.map((sem) {
+          final dias = sem.value;
+          final totalDia = dias.values.fold<int>(0, (t, ej) => t + ej.length);
+          final estaVacia = totalDia == 0;
+          return Card(
+            elevation: estaVacia ? 0 : 0.5,
+            margin: const EdgeInsets.only(bottom: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: estaVacia
+                    ? Colors.orange.withValues(alpha: 0.4)
+                    : cs.outlineVariant.withValues(alpha: 0.3),
+                width: estaVacia ? 1.5 : 1,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: estaVacia
+                              ? Colors.orange.withValues(alpha: 0.1)
+                              : cs.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${sem.key}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: estaVacia ? Colors.orange : cs.primary,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text('Semana ${sem.key}',
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(width: 8),
+                      _buildTipoSemanaChip(
+                          cs, _calcularTipoSemana(sem.key, _estructura.length)),
+                      const Spacer(),
+                      if (estaVacia)
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text('Vacía',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange.shade600)),
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () => _confirmarEliminarSemana(sem.key),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(Icons.delete_rounded,
+                                  size: 14, color: Colors.red.shade400),
+                            ),
+                          ),
+                        ])
+                      else
+                        Text('$totalDia ej. · ${dias.length} días',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey)),
+                    ],
+                  ),
+                  if (estaVacia)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(children: [
+                          Icon(Icons.info_outline,
+                              size: 14, color: Colors.orange.shade600),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                                'Elimínala o edítala para agregar ejercicios.',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange.shade700)),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  if (!estaVacia) ...[
+                    const SizedBox(height: 8),
+                    ...dias.entries.map(
+                      (dia) => _buildDaySummary(dia.key, dia.value, cs),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 20),
+
+        // ── Action buttons ──
+        Row(children: [
+          Expanded(
+              child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => setState(() => _paso = 1),
+                  child: const Text('Volver a editar'))),
+          const SizedBox(width: 12),
+          Expanded(
+              child: FilledButton(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed:
+                _creando || semanasVacias.isNotEmpty ? null : _crearRutina,
+            child: _creando
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Text('Crear rutina'),
+          )),
+        ]),
+        if (semanasVacias.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              semanasVacias.length == 1
+                  ? 'Elimina o llena la Semana ${semanasVacias.first} antes de crear.'
+                  : 'Elimina o llena las semanas ${semanasVacias.join(", ")} antes de crear.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.w500),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _resumenFila(String label, String valor) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(children: [
-          SizedBox(
-              width: 110,
-              child: Text(label,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: Colors.grey))),
-          Expanded(
-              child: Text(valor,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 13))),
-        ]),
+  Widget _miniChip(IconData icon, String label, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 12, color: cs.primary),
+        const SizedBox(width: 4),
+        Text(label,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurfaceVariant)),
+      ]),
+    );
+  }
+
+  void _confirmarEliminarSemana(int semana) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar semana'),
+        content: Text('¿Eliminar la Semana $semana y todos sus días?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _eliminarSemana(semana);
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDaySummary(
+      int diaNum, List<_EjercicioPlan> ejercicios, ColorScheme cs) {
+    if (ejercicios.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 42, bottom: 6),
+        child: Text('Día $diaNum — Sin ejercicios',
+            style: TextStyle(
+                fontSize: 12,
+                color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                fontStyle: FontStyle.italic)),
       );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(left: 42, bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Día $diaNum',
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          ...ejercicios.map(
+            (e) => _buildExerciseSummaryRow(e),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExerciseSummaryRow(_EjercicioPlan e) {
+    final params = _buildParametrosEjercicio(e);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Container(
+              width: 4,
+              height: 4,
+              decoration: const BoxDecoration(
+                  color: SVColors.primary, shape: BoxShape.circle),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(
+                      e.nombre,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (e.esCircuito) ...[
+                    const SizedBox(width: 4),
+                    _circuitoChip(),
+                  ],
+                  const SizedBox(width: 4),
+                  _finalidadBadge(e.finalidad),
+                  const SizedBox(width: 4),
+                  _buildModalidadChip(e),
+                ]),
+                if (params.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(params,
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600)),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _buildParametrosEjercicio(_EjercicioPlan e) {
+    final parts = <String>[];
+    final hasTiempo = e.tipoMedicion.contains('tiempo');
+    final hasDistancia = e.tipoMedicion.contains('distancia');
+    final hasRepeticiones = e.tipoMedicion.contains('repeticiones');
+    final hasPeso = e.tipoMedicion.contains('peso');
+    final hasCalorias = e.tipoMedicion.contains('calorias');
+
+    if (e.esCircuito) {
+      if (e.duracionSegundos != null && e.duracionSegundos! > 0) {
+        parts.add(fmtDuracion(e.duracionSegundos!));
+      }
+    } else if (hasTiempo && !hasRepeticiones && !hasDistancia && !hasCalorias) {
+      if (e.tiempoIsometricoSegundos != null &&
+          e.tiempoIsometricoSegundos! > 0) {
+        parts.add('${e.series}×${e.tiempoIsometricoSegundos}s');
+      }
+    } else if (hasRepeticiones) {
+      parts.add('${e.series}×${e.repeticiones}');
+    }
+
+    if (hasPeso && e.pesosKg != null && e.pesosKg!.any((w) => w > 0)) {
+      parts.add(
+          'P: ${e.pesosKg!.where((w) => w > 0).map((w) => w.toStringAsFixed(w == w.roundToDouble() ? 0 : 1)).join('/')} kg');
+    } else if (hasPeso && e.pesoKg != null && e.pesoKg! > 0) {
+      parts.add('${e.pesoKg!.toStringAsFixed(1)} kg');
+    }
+
+    if ((hasDistancia || hasCalorias) &&
+        e.distanciaMetros != null &&
+        e.distanciaMetros! > 0) {
+      parts.add(_fmtDistancia(e.distanciaMetros!));
+    }
+
+    if (!e.esCircuito &&
+        hasTiempo &&
+        e.duracionSegundos != null &&
+        e.duracionSegundos! > 0) {
+      parts.add(fmtDuracion(e.duracionSegundos!));
+    }
+
+    if (e.segundosDescanso > 0) {
+      parts.add('${e.segundosDescanso}s desc.');
+    }
+
+    return parts.join(' · ');
+  }
+
+  String _fmtDistancia(int metros) {
+    if (metros >= 1000) return '${(metros / 1000).toStringAsFixed(1)} km';
+    return '$metros m';
+  }
+
+  Widget _circuitoChip() => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        decoration: BoxDecoration(
+          color: Colors.purple.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Text('Circuito',
+            style: TextStyle(
+                fontSize: 8,
+                fontWeight: FontWeight.w800,
+                color: Colors.purple)),
+      );
+
+  Widget _buildModalidadChip(_EjercicioPlan e) {
+    final (label, color) = switch (e.modalidadEntrenamiento) {
+      'fuerza' => ('Fuerza', Colors.redAccent),
+      'aerobica' => ('Aeróbica', Colors.teal),
+      'metabolica' => ('Metabólica', Colors.orange),
+      'movilidad' => ('Movilidad', Colors.indigo),
+      _ => (null, null),
+    };
+    if (label == null) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: color!.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 8, fontWeight: FontWeight.w800, color: color)),
+    );
+  }
+
+  Widget _finalidadBadge(String finalidad) {
+    final color = _colorFinalidad(finalidad);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+          finalidad.length <= 10 ? finalidad : '${finalidad.substring(0, 9)}…',
+          style: TextStyle(
+              fontSize: 8, fontWeight: FontWeight.w800, color: color)),
+    );
+  }
+
+  Color _colorFinalidad(String f) {
+    final lower = f.toLowerCase();
+    if (lower.contains('hipertrofia')) {
+      return Colors.redAccent;
+    }
+    if (lower.contains('fuerza') || lower.contains('potencia')) {
+      return Colors.orange;
+    }
+    if (lower.contains('cardio') || lower.contains('acondicionamiento')) {
+      return Colors.teal;
+    }
+    if (lower.contains('resistencia')) {
+      return Colors.blue;
+    }
+    if (lower.contains('movilidad') || lower.contains('flexibilidad')) {
+      return Colors.green;
+    }
+    if (lower.contains('isométrico')) {
+      return Colors.indigo;
+    }
+    return Colors.grey;
+  }
+
+  String _calcularTipoSemana(int semanaNum, int totalSemanas) {
+    if (totalSemanas <= 1) return 'carga';
+    if (semanaNum == 1) return 'adaptacion';
+    if (semanaNum == totalSemanas && totalSemanas >= 4) return 'descarga';
+    if (semanaNum == totalSemanas && totalSemanas >= 3) return 'pico';
+    return 'carga';
+  }
+
+  Widget _buildTipoSemanaChip(ColorScheme cs, String tipo) {
+    final (label, color) = switch (tipo) {
+      'adaptacion' => ('Adaptación', Colors.amber),
+      'carga' => ('Carga', Colors.orange),
+      'pico' => ('Pico', Colors.redAccent),
+      'descarga' => ('Descarga', Colors.teal),
+      _ => ('', Colors.grey),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+    );
+  }
 
   Future<void> _recomendarRutina() async {
     setState(() {
@@ -1055,133 +1730,105 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     });
     _iniciarSecuenciaMensajes();
     try {
-      // Invalidar providers para datos frescos y evitar errores cacheados
       ref.invalidate(perfilBienestarProvider);
       ref.invalidate(ejerciciosProvider);
       ref.invalidate(historialSesionUsuarioProvider);
       ref.invalidate(estadoDiarioHoyProvider);
 
-      // Cargar datos en paralelo: perfil, ejercicios, historial, estado diario
-      PerfilBienestarDb? perfil;
-      List<EjercicioDb> ejercicios = [];
-      HistorialSesionDto? historial;
-      EstadoDiarioDb? estadoDiario;
+      await syncCargaAcademicaSemanal(ref);
 
-      final resultados = await Future.wait([
-        _obtenerOConTimeout(
-            () => ref.read(perfilBienestarProvider.future), 'perfil'),
-        _obtenerOConTimeout(() => ref.read(ejerciciosProvider.future),
-            'catálogo de ejercicios'),
-        _obtenerOConTimeout(
-            () => ref.read(historialSesionUsuarioProvider.future), 'historial'),
-        _obtenerOConTimeout(
-            () => ref.read(estadoDiarioHoyProvider.future), 'estado diario'),
-      ]);
-
-      perfil = resultados[0] as PerfilBienestarDb?;
-      ejercicios = (resultados[1] as List<EjercicioDb>?) ?? [];
-      historial = resultados[2] as HistorialSesionDto?;
-      estadoDiario = resultados[3] as EstadoDiarioDb?;
-
-      if (!mounted) return;
-      if (!_loadingIA) return;
-
-      if (perfil == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'Completa tu perfil de bienestar para recibir recomendaciones'),
-                duration: Duration(seconds: 2)),
-          );
-        }
-        _terminarCargaIA();
-        return;
-      }
-
-      final apiKey = EnvConfig.geminiApiKey;
-      if (apiKey.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Configura GEMINI_API_KEY en el archivo .env'),
-                duration: Duration(seconds: 2)),
-          );
-        }
-        _terminarCargaIA();
-        return;
-      }
-
-      if (ejercicios.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'No se pudo cargar el catálogo de ejercicios. Verifica tu conexión.'),
-                duration: Duration(seconds: 2)),
-          );
-        }
-        _terminarCargaIA();
-        return;
-      }
-
-      // Llamada a Gemini
-      final servicio = RecomendacionIaService();
-      final resultado = await servicio
-          .generarRecomendacionRutina(
-            apiKey: apiKey,
-            perfil: perfil,
-            ejerciciosDisponibles: ejercicios,
-            historial: historial,
-            estadoDiario: estadoDiario,
-          )
+      final catalogoAsync = ref.read(ejerciciosProvider.future);
+      final conIA = EnvConfig.hasGeminiApiKey;
+      final resultado = await ref
+          .read(generarRutinaProvider(
+              (conIA: conIA, duracionSemanas: _duracionSemanas)).future)
           .timeout(const Duration(seconds: 45));
+      final catalogo = await catalogoAsync;
       if (!mounted) return;
       if (!_loadingIA) return;
 
       if (resultado.tieneError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(resultado.error!),
-              duration: const Duration(seconds: 3)),
-        );
         _terminarCargaIA();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(resultado.error!),
+                duration: const Duration(seconds: 3)),
+          );
+        }
         return;
       }
 
-      // Solo autocompletar metadatos, NO ejercicios
       _nombreCtrl.text = resultado.nombre;
       _descCtrl.text = resultado.descripcion;
-      _objetivo = _sanitizarObjetivo(resultado.objetivo);
+      _objetivo = sanitizarObjetivo(resultado.objetivo);
       _duracionSemanas = resultado.duracionSemanas.clamp(1, 12);
+      _diasPorSemana =
+          resultado.estructura[1]?.length.clamp(1, 7) ?? _diasPorSemana;
+      _syncEstructura();
 
-      final semanaKeys = resultado.estructura.keys.toList()..sort();
-      if (semanaKeys.isNotEmpty) {
-        _diasPorSemana =
-            resultado.estructura[semanaKeys.first]!.length.clamp(1, 7);
-      }
+      setState(() {
+        _estructura.clear();
+        for (final semana in resultado.estructura.entries) {
+          _estructura[semana.key] = {};
+          for (final dia in semana.value.entries) {
+            _estructura[semana.key]![dia.key] = dia.value.map((e) {
+              final match = catalogo.cast<EjercicioDb?>().firstWhere(
+                    (ex) => ex?.id == e.ejercicioId,
+                    orElse: () => null,
+                  );
+              return _EjercicioPlan(
+                ejercicioId: match?.id ?? e.ejercicioId,
+                nombre: match?.nombre ?? e.ejercicioId,
+                finalidad: match?.finalidadPrincipal ?? resultado.objetivo,
+                urlGif: match?.urlGif,
+                urlPreview: match?.urlPreview,
+                modalidadEntrenamiento:
+                    match?.modalidadEntrenamiento ?? 'fuerza',
+                tipoMedicion: match?.tipoMedicion ?? const ['repeticiones'],
+                esCircuito: match?.esCircuito ?? false,
+                series: e.series,
+                repeticiones: e.repeticiones,
+                segundosDescanso: e.segundosDescanso,
+                pesoKg: e.pesoKg,
+                pesosKg: e.pesosKg,
+                duracionSegundos: e.duracionSegundos,
+                distanciaMetros: e.distanciaMetros,
+                tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
+              );
+            }).toList();
+          }
+        }
+      });
 
       _detenerMensajesCarga();
       setState(() {
         _loadingIA = false;
         _tipoCarga = '';
         _rutinaRecomendada = true;
+        _iaRefinada = resultado.metadatos.iaRefinada;
+        _motivoAjustes = resultado.metadatos.motivoAjustes;
+        _paso = 1;
       });
 
-      if (mounted) {
+      if (mounted && !resultado.tieneError) {
+        final motivoIA = resultado.metadatos.motivoAjustes;
+        final mensaje = resultado.metadatos.iaRefinada
+            ? '¡Rutina generada con IA! Configúrala a tu gusto.'
+            : motivoIA != null
+                ? 'Rutina generada con reglas. $motivoIA.'
+                : '¡Rutina generada! Configúrala a tu gusto.';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  '¡Rutina recomendada! Configúrala a tu gusto y luego recomienda los ejercicios.'),
-              duration: Duration(seconds: 3)),
+          SnackBar(
+              content: Text(mensaje), duration: const Duration(seconds: 3)),
         );
       }
     } catch (e) {
       if (mounted) {
         _terminarCargaIA();
         final msg = e is TimeoutException
-            ? 'La IA tardó demasiado en responder. Inténtalo de nuevo.'
-            : 'Error al generar recomendación. Verifica tu conexión e inténtalo de nuevo.';
+            ? 'La generación tardó demasiado. Inténtalo de nuevo.'
+            : 'Error al generar rutina. Verifica tu conexión.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
         );
@@ -1196,180 +1843,6 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     } catch (e) {
       debugPrint('⚠ No se pudo cargar $nombre: $e');
       return null;
-    }
-  }
-
-  Future<void> _recomendarEjercicios() async {
-    setState(() {
-      _loadingIA = true;
-      _tipoCarga = 'ejercicios';
-    });
-    _iniciarSecuenciaMensajes();
-    try {
-      ref.invalidate(perfilBienestarProvider);
-      ref.invalidate(ejerciciosProvider);
-      ref.invalidate(historialSesionUsuarioProvider);
-      ref.invalidate(estadoDiarioHoyProvider);
-
-      PerfilBienestarDb? perfil;
-      List<EjercicioDb> ejercicios = [];
-      HistorialSesionDto? historial;
-      EstadoDiarioDb? estadoDiario;
-
-      final resultados = await Future.wait([
-        _obtenerOConTimeout(
-            () => ref.read(perfilBienestarProvider.future), 'perfil'),
-        _obtenerOConTimeout(() => ref.read(ejerciciosProvider.future),
-            'catálogo de ejercicios'),
-        _obtenerOConTimeout(
-            () => ref.read(historialSesionUsuarioProvider.future), 'historial'),
-        _obtenerOConTimeout(
-            () => ref.read(estadoDiarioHoyProvider.future), 'estado diario'),
-      ]);
-
-      perfil = resultados[0] as PerfilBienestarDb?;
-      ejercicios = (resultados[1] as List<EjercicioDb>?) ?? [];
-      historial = resultados[2] as HistorialSesionDto?;
-      estadoDiario = resultados[3] as EstadoDiarioDb?;
-
-      if (!mounted) return;
-      if (!_loadingIA) return;
-
-      if (perfil == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'Completa tu perfil de bienestar para recibir recomendaciones'),
-                duration: Duration(seconds: 2)),
-          );
-        }
-        _terminarCargaIA();
-        return;
-      }
-
-      final apiKey = EnvConfig.geminiApiKey;
-      if (apiKey.isEmpty) {
-        _terminarCargaIA();
-        return;
-      }
-
-      if (ejercicios.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'No se pudo cargar el catálogo de ejercicios. Verifica tu conexión.'),
-                duration: Duration(seconds: 2)),
-          );
-        }
-        _terminarCargaIA();
-        return;
-      }
-
-      // Siempre llama a la IA con la configuración ACTUAL de la rutina
-      final servicio = RecomendacionIaService();
-      final resultado = await servicio
-          .generarEstructuraCompleta(
-            apiKey: apiKey,
-            perfil: perfil,
-            ejerciciosDisponibles: ejercicios,
-            nombreRutina:
-                _nombreCtrl.text.isNotEmpty ? _nombreCtrl.text : 'Rutina',
-            descripcionRutina: _descCtrl.text,
-            objetivoRutina: _objetivo,
-            duracionSemanas: _duracionSemanas,
-            diasPorSemana: _diasPorSemana,
-            historial: historial,
-            estadoDiario: estadoDiario,
-          )
-          .timeout(const Duration(seconds: 45));
-
-      if (!mounted) return;
-      if (!_loadingIA) return; // usuario canceló
-
-      if (resultado.tieneError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(resultado.error!),
-              duration: const Duration(seconds: 3)),
-        );
-        _terminarCargaIA();
-        return;
-      }
-
-      if (resultado.estructura.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('La IA no generó ejercicios. Intenta de nuevo.'),
-              duration: Duration(seconds: 2)),
-        );
-        _terminarCargaIA();
-        return;
-      }
-
-      _llenarEstructuraDesdeRecomendacion(resultado.estructura, ejercicios);
-
-      _detenerMensajesCarga();
-      setState(() {
-        _loadingIA = false;
-        _tipoCarga = '';
-        _ejerciciosRecomendados = true;
-        _paso = 1;
-      });
-
-      if (mounted) {
-        final totalEj = resultado.estructura.values.fold<int>(
-            0,
-            (t, dias) =>
-                t + dias.values.fold<int>(0, (t2, ej) => t2 + ej.length));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  '¡$totalEj ejercicios añadidos en ${resultado.estructura.length} semanas! Revisa y ajusta.'),
-              duration: const Duration(seconds: 2)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        _terminarCargaIA();
-        final msg = e is TimeoutException
-            ? 'La IA tardó demasiado en recomendar ejercicios. Inténtalo de nuevo.'
-            : 'Error al recomendar ejercicios. Verifica tu conexión e inténtalo de nuevo.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
-        );
-      }
-    }
-  }
-
-  void _llenarEstructuraDesdeRecomendacion(
-      Map<int, Map<int, List<EjercicioRecomendado>>> estructura,
-      List<EjercicioDb> ejercicios) {
-    _estructura.clear();
-    for (final s in estructura.entries) {
-      _estructura[s.key] = {};
-      for (final d in s.value.entries) {
-        _estructura[s.key]![d.key] = d.value.map((e) {
-          final match = ejercicios.cast<EjercicioDb?>().firstWhere(
-                (ex) => ex?.id == e.ejercicioId,
-                orElse: () => null,
-              );
-          return _EjercicioPlan(
-            ejercicioId: match?.id ?? e.ejercicioId,
-            nombre: match?.nombre ?? 'Ejercicio recomendado',
-            finalidad: match?.finalidadPrincipal ?? 'fuerza',
-            urlGif: match?.urlGif,
-            series: e.series,
-            repeticiones: e.repeticiones,
-            segundosDescanso: e.segundosDescanso,
-            pesoKg: e.pesoKg,
-            duracionSegundos: e.duracionSegundos,
-            distanciaMetros: e.distanciaMetros,
-            tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
-          );
-        }).toList();
-      }
     }
   }
 
@@ -1484,12 +1957,30 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         return;
       }
 
+      final idsValidos = ejercicios.map((e) => e.id).toSet();
+      final ejerciciosValidos = resultado.ejercicios
+          .where((rec) => idsValidos.contains(rec.ejercicioId))
+          .toList();
+
+      if (ejerciciosValidos.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content:
+                    Text('La IA no devolvió ejercicios válidos del catálogo.'),
+                duration: Duration(seconds: 2)),
+          );
+        }
+        _terminarCargaIA();
+        return;
+      }
+
       // Si es "Sugerir otros" (viene de ejercicios recomendados), limpiar el día
       if (_ejerciciosRecomendados) {
         _estructura[semana]![dia]!.clear();
       }
 
-      for (final rec in resultado.ejercicios) {
+      for (final rec in ejerciciosValidos) {
         final match = ejercicios.cast<EjercicioDb?>().firstWhere(
               (ex) => ex?.id == rec.ejercicioId,
               orElse: () => null,
@@ -1497,8 +1988,12 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         _estructura[semana]![dia]!.add(_EjercicioPlan(
           ejercicioId: match?.id ?? rec.ejercicioId,
           nombre: match?.nombre ?? 'Ejercicio sugerido',
-          finalidad: match?.finalidadPrincipal ?? 'fuerza',
+          finalidad: match?.finalidadPrincipal ?? 'Hipertrofia Muscular',
           urlGif: match?.urlGif,
+          urlPreview: match?.urlPreview,
+          modalidadEntrenamiento: match?.modalidadEntrenamiento ?? 'fuerza',
+          tipoMedicion: match?.tipoMedicion ?? const ['repeticiones'],
+          esCircuito: match?.esCircuito ?? false,
           series: rec.series,
           repeticiones: rec.repeticiones,
           segundosDescanso: rec.segundosDescanso,
@@ -1538,6 +2033,25 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   }
 
   Future<void> _crearRutina() async {
+    final semanasVacias = _estructura.entries
+        .where((sem) => sem.value.values.every((d) => d.isEmpty))
+        .map((sem) => sem.key)
+        .toList();
+    if (semanasVacias.isNotEmpty) {
+      setState(() => _creando = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              semanasVacias.length == 1
+                  ? 'La Semana ${semanasVacias.first} no tiene ejercicios'
+                  : 'Las semanas ${semanasVacias.join(", ")} no tienen ejercicios',
+            ),
+          ),
+        );
+      }
+      return;
+    }
     setState(() => _creando = true);
     try {
       final estructuraInput = <int, Map<int, List<EjercicioInput>>>{};
@@ -1572,20 +2086,26 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
 // Miniatura reusable de GIF para previsualización de ejercicios
 // =============================================================================
 class _MiniGifPreview extends StatelessWidget {
-  const _MiniGifPreview({this.urlGif, this.size = 48});
+  const _MiniGifPreview({this.urlGif, this.previewUrl, this.size = 56});
   final String? urlGif;
+  final String? previewUrl;
   final double size;
 
   @override
   Widget build(BuildContext context) {
+    final preview = previewUrl ??
+        (urlGif != null && urlGif!.endsWith('.mp4') ? null : urlGif);
+
     return GestureDetector(
-      onTap:
-          urlGif != null ? () => _mostrarGifAmpliado(context, urlGif!) : null,
+      onTap: preview != null && preview.isNotEmpty
+          ? () => _mostrarGifAmpliado(context, urlGif, previewUrl)
+          : null,
       child: Container(
         width: size,
-        height: size,
+        height: size * 0.75,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
+          color: const Color(0xFF1A1A1E),
           border: Border.all(
             color: Theme.of(context)
                 .colorScheme
@@ -1594,72 +2114,108 @@ class _MiniGifPreview extends StatelessWidget {
           ),
         ),
         clipBehavior: Clip.antiAlias,
-        child: ExerciseMediaWidget(
-          url: urlGif,
-          size: ExerciseMediaSize.mini,
-          borderRadius: BorderRadius.circular(8),
-          onTap: urlGif != null
-              ? () => _mostrarGifAmpliado(context, urlGif!)
-              : null,
-        ),
+        child: preview != null
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: preview,
+                    fit: BoxFit.contain,
+                    placeholder: (_, __) => _placeholder(context),
+                    errorWidget: (_, __, ___) => _placeholder(context),
+                  ),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.05),
+                            Colors.black.withValues(alpha: 0.2),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : _placeholder(context),
       ),
     );
   }
 
-  void _mostrarGifAmpliado(BuildContext context, String url) {
+  Widget _placeholder(BuildContext context) {
+    return const Center(
+      child: Icon(
+        Icons.fitness_center_rounded,
+        size: 20,
+        color: Colors.white38,
+      ),
+    );
+  }
+
+  void _mostrarGifAmpliado(BuildContext context, String? url, String? preview) {
     showDialog(
       context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            width: 280,
-            height: 280,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: Colors.black.withValues(alpha: 0.85),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              alignment: Alignment.topRight,
-              children: [
-                Center(
-                  child: url.endsWith('.mp4')
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: SizedBox(
-                            width: 260,
-                            height: 260,
-                            child: ExerciseMediaWidget(
-                              url: url,
-                              size: ExerciseMediaSize.card,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        )
-                      : CachedNetworkImage(
-                          imageUrl: url,
-                          width: 260,
-                          height: 260,
-                          fit: BoxFit.contain,
-                          placeholder: (_, __) => const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2)),
-                        ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: Colors.white70, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                    visualDensity: VisualDensity.compact,
+      barrierColor: Colors.black87,
+      builder: (_) => Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.88,
+                  height: MediaQuery.of(context).size.height * 0.55,
+                  child: ExerciseMediaWidget(
+                    url: url,
+                    previewUrl: preview,
+                    size: ExerciseMediaSize.dialog,
+                    fit: BoxFit.contain,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1671,6 +2227,7 @@ class _DiaEditorCard extends StatefulWidget {
       {required this.semanaNum,
       required this.diaNum,
       required this.ejercicios,
+      required this.objetivo,
       required this.canDelete,
       required this.onDelete,
       required this.onEjercicioAdded,
@@ -1681,6 +2238,7 @@ class _DiaEditorCard extends StatefulWidget {
       this.loadingIA = false});
   final int semanaNum, diaNum;
   final List<_EjercicioPlan> ejercicios;
+  final String objetivo;
   final bool canDelete;
   final VoidCallback onDelete;
   final void Function(_EjercicioPlan) onEjercicioAdded;
@@ -1739,12 +2297,26 @@ class _DiaEditorCardState extends State<_DiaEditorCard> {
           ]),
           if (widget.ejercicios.isNotEmpty) ...[
             const SizedBox(height: 8),
-            ...widget.ejercicios.asMap().entries.map((entry) =>
-                _EjercicioCompacto(
-                    ejercicio: entry.value,
-                    onRemove: () => widget.onEjercicioRemoved(entry.key),
-                    onChanged: (nuevo) =>
-                        widget.onEjercicioUpdated(entry.key, nuevo))),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: widget.ejercicios.length,
+              onReorder: (oldIndex, newIndex) {
+                if (oldIndex < newIndex) newIndex--;
+                final item = widget.ejercicios.removeAt(oldIndex);
+                widget.ejercicios.insert(newIndex, item);
+                setState(() {});
+              },
+              itemBuilder: (context, index) {
+                final entry = widget.ejercicios[index];
+                return _EjercicioCompacto(
+                  key: ValueKey(entry.ejercicioId),
+                  ejercicio: entry,
+                  onRemove: () => widget.onEjercicioRemoved(index),
+                  onChanged: (nuevo) => widget.onEjercicioUpdated(index, nuevo),
+                );
+              },
+            ),
           ],
           const SizedBox(height: 8),
           if (widget.onSugerirEjerciciosIA != null)
@@ -1770,20 +2342,105 @@ class _DiaEditorCardState extends State<_DiaEditorCard> {
     );
   }
 
-  void _mostrarBuscador(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => _BuscadorEjerciciosSheet(
-          onSelected: (id, nombre, finalidad, urlGif) =>
-              widget.onEjercicioAdded(_EjercicioPlan(
-                  ejercicioId: id,
-                  nombre: nombre,
-                  finalidad: finalidad,
-                  urlGif: urlGif))),
+  void _mostrarBuscador(BuildContext context) async {
+    final previos = widget.ejercicios.map((e) => e.ejercicioId).toList();
+    final resultado = await Navigator.of(context).push<List<EjercicioDb>>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) =>
+            SeleccionEjerciciosScreen(seleccionadosPrevios: previos),
+      ),
     );
+    if (resultado == null) return;
+    if (!context.mounted) return;
+    final existingIds = widget.ejercicios.map((e) => e.ejercicioId).toSet();
+    final params = ParametrosObjetivo.de(widget.objetivo);
+    final container = ProviderScope.containerOf(context);
+    final estadoHoy = container.read(estadoDiarioHoyProvider).valueOrNull;
+    final zonasDolor = estadoHoy?.zonasDolor ?? [];
+
+    for (final ej in resultado) {
+      if (existingIds.contains(ej.id)) continue;
+      if (zonasDolor.isNotEmpty) {
+        final musculosEvitar = _musculosPorZonas(zonasDolor);
+        final musculosEj =
+            ej.musculosObjetivo.map((m) => m.toLowerCase()).toSet();
+        final afectados = musculosEj.intersection(musculosEvitar);
+        if (afectados.isNotEmpty) {
+          if (!context.mounted) return;
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Zona con dolor detectada'),
+              content: Text('Este ejercicio trabaja: ${afectados.join(", ")}.\n'
+                  'Hoy reportaste dolor en estas zonas. ¿Añadirlo de todos modos?'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancelar')),
+                FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Añadir')),
+              ],
+            ),
+          );
+          if (confirmed != true) continue;
+        }
+      }
+      widget.onEjercicioAdded(_EjercicioPlan(
+        ejercicioId: ej.id,
+        nombre: ej.nombre,
+        finalidad: ej.finalidad.isNotEmpty ? ej.finalidad.first : 'fuerza',
+        urlGif: ej.urlGif,
+        urlPreview: ej.urlPreview,
+        modalidadEntrenamiento: ej.modalidadEntrenamiento,
+        tipoMedicion: ej.tipoMedicion,
+        esCircuito: ej.esCircuito,
+        series: params.seriesDefault,
+        repeticiones: params.repsDefault,
+        segundosDescanso: params.descansoDefault,
+      ));
+    }
+  }
+
+  static const _mapZonasAMusculos = {
+    'piernas': [
+      'Cuádriceps',
+      'Isquiotibiales',
+      'Glúteo mayor',
+      'Glúteo medio',
+      'Aductores',
+      'Abductores',
+      'Gemelos',
+      'Sóleo',
+      'Tibial anterior'
+    ],
+    'espalda': [
+      'Dorsal ancho',
+      'Romboides',
+      'Trapecio superior',
+      'Trapecio medio',
+      'Trapecio inferior',
+      'Erectores espinales'
+    ],
+    'hombros': ['Deltoides anterior', 'Deltoides medio', 'Deltoides posterior'],
+    'brazos': [
+      'Bíceps braquial',
+      'Tríceps braquial',
+      'Braquial',
+      'Braquiorradial'
+    ],
+    'pecho': ['Pectoral mayor', 'Pectoral menor', 'Serrato anterior'],
+    'core': ['Recto abdominal', 'Oblicuos', 'Transverso abdominal'],
+  };
+
+  Set<String> _musculosPorZonas(List<String> zonas) {
+    final musculos = <String>{};
+    for (final zona in zonas) {
+      final mapped = _mapZonasAMusculos[zona.toLowerCase().trim()];
+      if (mapped != null) musculos.addAll(mapped.map((m) => m.toLowerCase()));
+    }
+    return musculos;
   }
 }
 
@@ -1792,7 +2449,8 @@ class _EjercicioCompacto extends StatefulWidget {
   const _EjercicioCompacto(
       {required this.ejercicio,
       required this.onRemove,
-      required this.onChanged});
+      required this.onChanged,
+      super.key});
   final _EjercicioPlan ejercicio;
   final VoidCallback onRemove;
   final void Function(_EjercicioPlan) onChanged;
@@ -1803,13 +2461,17 @@ class _EjercicioCompacto extends StatefulWidget {
 class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   late int _series, _reps, _descanso;
   late double? _peso;
+  late List<double> _pesosKg;
+  late bool _mismoPeso;
   late int? _duracionSegundos;
   late int? _distanciaMetros;
   late int? _tiempoIsometrico;
+  bool _expanded = true;
   final _pesoCtrl = TextEditingController();
   final _duracionCtrl = TextEditingController();
   final _distanciaCtrl = TextEditingController();
   final _tiempoIsoCtrl = TextEditingController();
+  final List<TextEditingController> _pesosKgCtrls = [];
 
   @override
   void initState() {
@@ -1818,18 +2480,43 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
     _reps = widget.ejercicio.repeticiones;
     _descanso = widget.ejercicio.segundosDescanso;
     _peso = widget.ejercicio.pesoKg;
+    _mismoPeso = widget.ejercicio.mismoPeso;
+    _pesosKg = widget.ejercicio.pesosKg != null
+        ? List.from(widget.ejercicio.pesosKg!)
+        : List.filled(_series, widget.ejercicio.pesoKg ?? 0);
+    _syncPesoCtrl();
     _duracionSegundos = widget.ejercicio.duracionSegundos;
     _distanciaMetros = widget.ejercicio.distanciaMetros;
     _tiempoIsometrico = widget.ejercicio.tiempoIsometricoSegundos;
-    _pesoCtrl.text = _peso != null
-        ? _peso!.toStringAsFixed(_peso! == _peso!.roundToDouble() ? 0 : 1)
-        : '';
     _duracionCtrl.text =
         _duracionSegundos != null ? _fmtDuracion(_duracionSegundos!) : '';
     _distanciaCtrl.text =
         _distanciaMetros != null ? _distanciaMetros.toString() : '';
     _tiempoIsoCtrl.text =
         _tiempoIsometrico != null ? _tiempoIsometrico.toString() : '';
+    _initPesosKgCtrls();
+  }
+
+  void _syncPesoCtrl() {
+    _pesoCtrl.text = _peso != null
+        ? _peso!.toStringAsFixed(_peso! == _peso!.roundToDouble() ? 0 : 1)
+        : '';
+  }
+
+  void _initPesosKgCtrls() {
+    for (final c in _pesosKgCtrls) {
+      c.dispose();
+    }
+    _pesosKgCtrls.clear();
+    for (var i = 0; i < _pesosKg.length; i++) {
+      final ctrl = TextEditingController(
+        text: _pesosKg[i] > 0
+            ? _pesosKg[i].toStringAsFixed(
+                _pesosKg[i] == _pesosKg[i].roundToDouble() ? 0 : 1)
+            : '',
+      );
+      _pesosKgCtrls.add(ctrl);
+    }
   }
 
   @override
@@ -1838,6 +2525,9 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
     _duracionCtrl.dispose();
     _distanciaCtrl.dispose();
     _tiempoIsoCtrl.dispose();
+    for (final c in _pesosKgCtrls) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -1846,6 +2536,8 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
     int? r,
     int? d,
     double? p,
+    List<double>? pesos,
+    bool? mismoPeso,
     int? dur,
     int? dist,
     int? tIso,
@@ -1854,23 +2546,42 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
     r ??= _reps;
     d ??= _descanso;
     p ??= _peso;
+    final mismoPesoFinal = mismoPeso ?? _mismoPeso;
     dur ??= _duracionSegundos;
     dist ??= _distanciaMetros;
     tIso ??= _tiempoIsometrico;
+
     setState(() {
       _series = s!;
       _reps = r!;
       _descanso = d!;
       _peso = p;
-      _duracionSegundos = dur;
-      _distanciaMetros = dist;
-      _tiempoIsometrico = tIso;
+      _mismoPeso = mismoPesoFinal;
+      _duracionSegundos = dur!;
+      _distanciaMetros = dist!;
+      _tiempoIsometrico = tIso!;
+      if (_mismoPeso) {
+        _pesosKg = List.filled(_series, _peso ?? 0);
+      } else if (s != _series) {
+        final lastVal = _pesosKg.isNotEmpty ? _pesosKg.last : (_peso ?? 0);
+        if (_series > _pesosKg.length) {
+          _pesosKg = List<double>.from(_pesosKg)
+            ..addAll(List.filled(_series - _pesosKg.length, lastVal));
+        } else if (_series < _pesosKg.length) {
+          _pesosKg = _pesosKg.sublist(0, _series);
+        }
+      }
     });
+    if (!_mismoPeso) {
+      _initPesosKgCtrls();
+    }
     widget.onChanged(widget.ejercicio.copyWith(
       series: _series,
       repeticiones: _reps,
       segundosDescanso: _descanso,
-      pesoKg: _peso,
+      pesoKg: _mismoPeso ? _peso : null,
+      pesosKg: _mismoPeso ? null : _pesosKg,
+      mismoPeso: _mismoPeso,
       duracionSegundos: _duracionSegundos,
       distanciaMetros: _distanciaMetros,
       tiempoIsometricoSegundos: _tiempoIsometrico,
@@ -1895,40 +2606,134 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Nombre del ejercicio + chip de finalidad + GIF ──
+            // ── Nombre del ejercicio + chip de finalidad + preview ──
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.ejercicio.urlGif != null) ...[
-                  _MiniGifPreview(urlGif: widget.ejercicio.urlGif, size: 42),
-                  const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    size: 20,
+                    color: cs.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+                if (widget.ejercicio.urlGif != null ||
+                    widget.ejercicio.urlPreview != null) ...[
+                  _MiniGifPreview(
+                    urlGif: widget.ejercicio.urlGif,
+                    previewUrl: widget.ejercicio.urlPreview,
+                    size: 56,
+                  ),
+                  const SizedBox(width: 10),
                 ],
                 Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: InkWell(
-                          onTap: () => context.push(
-                              '/bienestar/ejercicio/${widget.ejercicio.ejercicioId}'),
-                          borderRadius: BorderRadius.circular(6),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Text(
-                              widget.ejercicio.nombre,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                decoration: TextDecoration.underline,
-                                decorationColor:
-                                    cs.onSurfaceVariant.withValues(alpha: 0.3),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _expanded = !_expanded),
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              InkWell(
+                                onTap: () => context.push(
+                                    '/bienestar/ejercicio/${widget.ejercicio.ejercicioId}',
+                                    extra: true),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 4),
+                                  child: Text(
+                                    widget.ejercicio.nombre,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: cs.onSurfaceVariant
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: _finalidadChip(finalidad, cs),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  if (widget.ejercicio.esCircuito)
+                                    Text(
+                                      'Circuito',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color:
+                                            cs.tertiary.withValues(alpha: 0.9),
+                                      ),
+                                    )
+                                  else ...[
+                                    Text(
+                                      '$_series×$_reps',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: cs.onSurfaceVariant
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                    if (_mismoPeso && _peso != null) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${_peso!.toStringAsFixed(_peso! == _peso!.roundToDouble() ? 0 : 1)} kg',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          color:
+                                              cs.primary.withValues(alpha: 0.8),
+                                        ),
+                                      ),
+                                    ] else if (!_mismoPeso &&
+                                        _pesosKg.any((w) => w > 0)) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _pesosKg
+                                            .map((w) => w > 0
+                                                ? w.toStringAsFixed(
+                                                    w == w.roundToDouble()
+                                                        ? 0
+                                                        : 1)
+                                                : '—')
+                                            .join('/'),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                          color:
+                                              cs.primary.withValues(alpha: 0.8),
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                    ],
+                                  ],
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      _finalidadChip(finalidad, cs),
-                    ],
+                        AnimatedRotation(
+                          turns: _expanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 20,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -1944,13 +2749,26 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            // ── Campos dinámicos según finalidad ──
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final anchoPill = (constraints.maxWidth - 12) / 2;
-                return _buildCamposDinamicos(finalidad, anchoPill, cs);
-              },
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: _expanded
+                  ? LayoutBuilder(
+                      builder: (context, constraints) {
+                        final anchoPill = (constraints.maxWidth - 12) / 2;
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: _buildCamposDinamicos(
+                            widget.ejercicio.tipoMedicion,
+                            widget.ejercicio.esCircuito,
+                            anchoPill,
+                            cs,
+                          ),
+                        );
+                      },
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
@@ -1989,6 +2807,8 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
       ),
       child: Text(
         f,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
             fontSize: 9,
             fontWeight: FontWeight.w700,
@@ -2001,30 +2821,33 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   // ---------------------------------------------------------------------------
   // Renderizado condicional de campos según finalidad
   // ---------------------------------------------------------------------------
-  Widget _buildCamposDinamicos(String f, double anchoPill, ColorScheme cs) {
-    final lower = f.toLowerCase();
-    if (lower.contains('cardio') || lower.contains('acondicionamiento')) {
-      return _camposCardio(anchoPill, cs);
-    }
-    if (lower.contains('isometric') ||
-        lower.contains('movilidad') ||
-        lower.contains('flexibilidad') ||
-        lower.contains('estabilidad')) {
-      return _camposIsometrico(anchoPill, cs);
-    }
-    return _camposFuerza(anchoPill, cs);
+  Widget _buildCamposDinamicos(List<String> tipoMedicion, bool esCircuito,
+      double anchoPill, ColorScheme cs) {
+    final hasTime = tipoMedicion.contains('tiempo');
+    final hasDistOrCal =
+        tipoMedicion.contains('distancia') || tipoMedicion.contains('calorias');
+
+    if (hasTime && hasDistOrCal) return _camposCardio(anchoPill, cs);
+    if (hasTime) return _camposIsometrico(anchoPill, cs);
+    return _camposFuerza(anchoPill, cs, esCircuito: esCircuito);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // FUERZA: Series, Reps, Descanso, Peso (grid 2×2 original)
+  // FUERZA / METABOLICA: Series, Reps, Descanso, Peso (grid 2x2)
+  // Si esCircuito: oculta Series, muestra Duracion total en su lugar
   // ─────────────────────────────────────────────────────────────────────────
-  Widget _camposFuerza(double anchoPill, ColorScheme cs) {
+  Widget _camposFuerza(double anchoPill, ColorScheme cs,
+      {bool esCircuito = false}) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
-        _paramPill('Series', _series, 1, 10, (v) => _emit(s: v), anchoPill, cs),
-        _paramPill('Reps', _reps, 1, 50, (v) => _emit(r: v), anchoPill, cs),
+        if (!esCircuito)
+          _paramPill(
+              'Series', _series, 1, 10, (v) => _emit(s: v), anchoPill, cs),
+        if (!esCircuito)
+          _paramPill('Reps', _reps, 1, 50, (v) => _emit(r: v), anchoPill, cs),
+        if (esCircuito) _duracionPill(anchoPill, cs),
         _paramPill(
             'Descanso', _descanso, 15, 300, (v) => _emit(d: v), anchoPill, cs,
             sufijo: 's'),
@@ -2072,13 +2895,7 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   // ---------------------------------------------------------------------------
   // Helpers de formato
   // ---------------------------------------------------------------------------
-  String _fmtDuracion(int segundos) {
-    final min = segundos ~/ 60;
-    final sec = segundos % 60;
-    if (min > 0 && sec > 0) return '${min}m ${sec}s';
-    if (min > 0) return '${min} min';
-    return '${sec}s';
-  }
+  String _fmtDuracion(int segundos) => fmtDuracion(segundos);
 
   int _parseDuracion(String texto) {
     // Formatos: "5m 30s", "5:30", "300", "5 min", "5m"
@@ -2434,6 +3251,13 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   }
 
   Widget _pesoPill(double width, ColorScheme cs) {
+    if (_mismoPeso) {
+      return _buildSingleWeightPill(width, cs);
+    }
+    return _buildPerSeriesWeightSection(width, cs);
+  }
+
+  Widget _buildSingleWeightPill(double width, ColorScheme cs) {
     final pesoActual = _peso ?? 0;
     return SizedBox(
       width: width,
@@ -2447,12 +3271,19 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('Peso (kg)',
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurfaceVariant,
-                    letterSpacing: 0.5)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Peso (kg)',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurfaceVariant,
+                        letterSpacing: 0.5)),
+                const Spacer(),
+                _pesoModeToggle(cs),
+              ],
+            ),
             const SizedBox(height: 2),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -2529,6 +3360,171 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
     );
   }
 
+  Widget _buildPerSeriesWeightSection(double width, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Peso x serie',
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurfaceVariant,
+                      letterSpacing: 0.5)),
+              const Spacer(),
+              _pesoModeToggle(cs),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ...List.generate(_pesosKg.length, (i) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 28,
+                    child: Text('${i + 1}.',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurfaceVariant)),
+                  ),
+                  const SizedBox(width: 4),
+                  _btnDelta(
+                      icon: Icons.remove,
+                      onTap: () {
+                        final actual = _pesosKg[i];
+                        if (actual > 0) {
+                          final nuevo = (actual - 2.5).clamp(0, 999);
+                          final pesos = List<double>.from(_pesosKg);
+                          pesos[i] = double.parse(nuevo.toStringAsFixed(1));
+                          _pesosKgCtrls[i].text = nuevo == 0
+                              ? ''
+                              : nuevo.toStringAsFixed(
+                                  nuevo == nuevo.roundToDouble() ? 0 : 1);
+                          _emit(pesos: pesos);
+                        }
+                      }),
+                  const SizedBox(width: 4),
+                  SizedBox(
+                    width: 48,
+                    height: 28,
+                    child: TextField(
+                      controller: _pesosKgCtrls[i],
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                          letterSpacing: -0.5),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        border: InputBorder.none,
+                        hintText: '—',
+                        hintStyle: TextStyle(
+                            fontSize: 15,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                      ),
+                      onChanged: (v) {
+                        final parsed = double.tryParse(v.replaceAll(',', '.'));
+                        if (parsed != null) {
+                          final limpio = parsed.clamp(0, 999).toDouble();
+                          final pesos = List<double>.from(_pesosKg);
+                          pesos[i] = limpio;
+                          _emit(pesos: pesos);
+                        } else if (v.isEmpty) {
+                          final pesos = List<double>.from(_pesosKg);
+                          pesos[i] = 0;
+                          _emit(pesos: pesos);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _btnDelta(
+                      icon: Icons.add,
+                      onTap: () {
+                        final actual = _pesosKg[i];
+                        final nuevo = (actual + 2.5).clamp(0, 999);
+                        final pesos = List<double>.from(_pesosKg);
+                        pesos[i] = double.parse(nuevo.toStringAsFixed(1));
+                        _pesosKgCtrls[i].text = nuevo == 0
+                            ? ''
+                            : nuevo.toStringAsFixed(
+                                nuevo == nuevo.roundToDouble() ? 0 : 1);
+                        _emit(pesos: pesos);
+                      }),
+                  const SizedBox(width: 8),
+                  if (i == 0)
+                    Text('kg',
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.5))),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _pesoModeToggle(ColorScheme cs) {
+    return GestureDetector(
+      onTap: () {
+        if (_mismoPeso) {
+          final pesos = List<double>.filled(_series, _peso ?? 0);
+          _initPesosKgCtrls();
+          _emit(mismoPeso: false, pesos: pesos);
+        } else {
+          final single = _pesosKg.any((w) => w > 0)
+              ? _pesosKg.firstWhere((w) => w > 0, orElse: () => 0.0)
+              : 0.0;
+          _emit(mismoPeso: true, p: single > 0 ? single : null);
+          _syncPesoCtrl();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        decoration: BoxDecoration(
+          color: cs.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _mismoPeso ? Icons.content_copy_rounded : Icons.tune_rounded,
+              size: 12,
+              color: cs.primary,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              _mismoPeso ? 'Igual' : 'x serie',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: cs.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _btnDelta({required IconData icon, required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,
@@ -2550,110 +3546,10 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   }
 }
 
-// =============================================================================
-class _BuscadorEjerciciosSheet extends StatefulWidget {
-  const _BuscadorEjerciciosSheet({required this.onSelected});
-  final void Function(
-      String id, String nombre, String finalidad, String? urlGif) onSelected;
-  @override
-  State<_BuscadorEjerciciosSheet> createState() =>
-      _BuscadorEjerciciosSheetState();
-}
-
-class _BuscadorEjerciciosSheetState extends State<_BuscadorEjerciciosSheet> {
-  final _ctrl = TextEditingController();
-  String _q = '';
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      expand: false,
-      builder: (context, scrollCtrl) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Column(children: [
-          Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 12),
-          TextField(
-              controller: _ctrl,
-              autofocus: true,
-              decoration: const InputDecoration(
-                  hintText: 'Buscar ejercicio...',
-                  prefixIcon: Icon(Icons.search, size: 18),
-                  isDense: true),
-              onChanged: (v) => setState(() => _q = v.toLowerCase())),
-          const SizedBox(height: 8),
-          Expanded(child: _buildLista(scrollCtrl)),
-        ]),
-      ),
-    );
-  }
-
-  Widget _buildLista(ScrollController scrollCtrl) {
-    final client = Supabase.instance.client;
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _q.isEmpty
-          ? client
-              .from('v_ejercicios_completos')
-              .select('id, nombre, finalidad, url_gif')
-              .limit(50)
-              .then((d) => d as List<Map<String, dynamic>>)
-          : client
-              .from('v_ejercicios_completos')
-              .select('id, nombre, finalidad, url_gif')
-              .ilike('nombre', '%$_q%')
-              .limit(50)
-              .then((d) => d as List<Map<String, dynamic>>),
-      builder: (context, snap) {
-        if (!snap.hasData)
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        if (snap.data!.isEmpty)
-          return const Center(
-              child:
-                  Text('Sin resultados', style: TextStyle(color: Colors.grey)));
-        return ListView.builder(
-          controller: scrollCtrl,
-          itemCount: snap.data!.length,
-          itemBuilder: (context, i) {
-            final e = snap.data![i];
-            final eId = e['id'] as String;
-            final eNombre = e['nombre'] as String;
-            final eFinalidadRaw = e['finalidad'];
-            final eFinalidad =
-                (eFinalidadRaw is List && eFinalidadRaw.isNotEmpty)
-                    ? eFinalidadRaw[0].toString()
-                    : (eFinalidadRaw is String ? eFinalidadRaw : 'fuerza');
-            final eGif = e['url_gif'] as String?;
-            return ListTile(
-                dense: true,
-                leading: _MiniGifPreview(urlGif: eGif),
-                title: Text(eNombre, style: const TextStyle(fontSize: 13)),
-                trailing: IconButton(
-                  icon: const Icon(Icons.info_outline, size: 20),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    context.push('/bienestar/ejercicio/$eId');
-                  },
-                  visualDensity: VisualDensity.compact,
-                ),
-                onTap: () {
-                  widget.onSelected(eId, eNombre, eFinalidad, eGif);
-                  Navigator.pop(context);
-                });
-          },
-        );
-      },
-    );
-  }
+String fmtDuracion(int segundos) {
+  final min = segundos ~/ 60;
+  final sec = segundos % 60;
+  if (min > 0 && sec > 0) return '${min}m ${sec}s';
+  if (min > 0) return '$min min';
+  return '${sec}s';
 }

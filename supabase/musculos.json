@@ -1,159 +1,210 @@
 [
   {
-    "nombre": "Abductores"
+    "nombre": "Abductores",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/abductores.webp"
   },
   {
-    "nombre": "Aductores"
+    "nombre": "Aductores",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/aductores.webp"
   },
   {
-    "nombre": "Aductores del muslo"
+    "nombre": "Aductores del muslo",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/aductores_del_muslo.webp"
   },
   {
-    "nombre": "Antebrazos"
+    "nombre": "Antebrazos",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/antebrazos.webp"
   },
   {
-    "nombre": "Braquial"
+    "nombre": "Braquial",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/braquial.webp"
   },
   {
-    "nombre": "Braquial anterior"
+    "nombre": "Braquial anterior",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/braquial_anterior.webp"
   },
   {
-    "nombre": "Braquiorradial"
+    "nombre": "Braquiorradial",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/braquiorradial.webp"
   },
   {
-    "nombre": "Bíceps"
+    "nombre": "Bíceps",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/biceps.webp"
   },
   {
-    "nombre": "Bíceps braquial"
+    "nombre": "Bíceps braquial",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/biceps_braquial.webp"
   },
   {
-    "nombre": "Coracobraquial"
+    "nombre": "Coracobraquial",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/coracobraquial.webp"
   },
   {
-    "nombre": "Core"
+    "nombre": "Core",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/core.webp"
   },
   {
-    "nombre": "Core (como estabilizador)"
+    "nombre": "Core (como estabilizador)",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/core_como_estabilizador.webp"
   },
   {
-    "nombre": "Cuadrado lumbar"
+    "nombre": "Cuadrado lumbar",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/cuadrado_lumbar.webp"
   },
   {
-    "nombre": "Cuádriceps"
+    "nombre": "Cuádriceps",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/cuadriceps.webp"
   },
   {
-    "nombre": "Deltoides"
+    "nombre": "Deltoides",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/deltoides.webp"
   },
   {
-    "nombre": "Deltoides anterior"
+    "nombre": "Deltoides anterior",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/deltoides_anterior.webp"
   },
   {
-    "nombre": "Deltoides medio"
+    "nombre": "Deltoides medio",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/deltoides_medio.webp"
   },
   {
-    "nombre": "Deltoides posterior"
+    "nombre": "Deltoides posterior",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/deltoides_posterior.webp"
   },
   {
-    "nombre": "Dorsal ancho"
+    "nombre": "Dorsal ancho",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/dorsal_ancho.webp"
   },
   {
-    "nombre": "Elevador de la escápula"
+    "nombre": "Elevador de la escápula",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/elevador_de_la_escapula.webp"
   },
   {
-    "nombre": "Erectores espinales"
+    "nombre": "Erectores espinales",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/erectores_espinales.webp"
   },
   {
-    "nombre": "Erectores espinales torácicos"
+    "nombre": "Erectores espinales torácicos",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/erectores_espinales_toracicos.webp"
   },
   {
-    "nombre": "Escalenos"
+    "nombre": "Escalenos",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/escalenos.webp"
   },
   {
-    "nombre": "Estabilizadores de la escápula"
+    "nombre": "Estabilizadores de la escápula",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/estabilizadores_de_la_escapula.webp"
   },
   {
     "nombre": "Estabilizadores globales"
   },
   {
-    "nombre": "Esternocleidomastoideo"
+    "nombre": "Esternocleidomastoideo",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/esternocleidomastoideo.webp"
   },
   {
-    "nombre": "Extensor radial corto del carpo"
+    "nombre": "Extensor radial corto del carpo",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/extensor_radial_corto_del_carpo.webp"
   },
   {
-    "nombre": "Extensor radial largo del carpo"
+    "nombre": "Extensor radial largo del carpo",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/extensor_radial_largo_del_carpo.webp"
   },
   {
-    "nombre": "Extensores de la muñeca"
+    "nombre": "Extensores de la muñeca",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/extensores_de_la_muneca.webp"
   },
   {
-    "nombre": "Extensores de los dedos"
+    "nombre": "Extensores de los dedos",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/extensores_de_los_dedos.webp"
   },
   {
-    "nombre": "Extensores de muñeca"
+    "nombre": "Extensores de muñeca",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/extensor_de_muneca.webp"
   },
   {
-    "nombre": "Extensores del antebrazo"
+    "nombre": "Extensores del antebrazo",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/extensores_del_antebrazo.webp"
   },
   {
-    "nombre": "Flexores de antebrazo"
+    "nombre": "Flexores de antebrazo",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/flexores_de_antebrazo.webp"
   },
   {
-    "nombre": "Flexores de cadera"
+    "nombre": "Flexores de cadera",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/flexores_de_cadera.webp"
   },
   {
-    "nombre": "Flexores de la muñeca"
+    "nombre": "Flexores de la muñeca",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/flexores_de_la_muneca.webp"
   },
   {
-    "nombre": "Flexores de los dedos"
+    "nombre": "Flexores de los dedos",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/flexores_de_los_dedos.webp"
   },
   {
-    "nombre": "Flexores de muñeca"
+    "nombre": "Flexores de muñeca",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/flexores_muneca.webp"
   },
   {
-    "nombre": "Flexores del antebrazo"
+    "nombre": "Flexores del antebrazo",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/flexores_del_antebrazo.webp"
   },
   {
-    "nombre": "Gastrocnemio"
+    "nombre": "Gastrocnemio",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/gastrocnemio.webp"
   },
   {
-    "nombre": "Gemelos"
+    "nombre": "Gemelos",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/gemelos.webp"
   },
   {
-    "nombre": "Glúteo mayor"
+    "nombre": "Glúteo mayor",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/gluteo_mayor.webp"
   },
   {
-    "nombre": "Glúteo medio"
+    "nombre": "Glúteo medio",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/gluteo_medio.webp"
   },
   {
-    "nombre": "Glúteos"
+    "nombre": "Glúteos",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/gluteos.webp"
   },
   {
-    "nombre": "Grupo muscular objetivo del estiramiento"
+    "nombre": "Grupo muscular objetivo del estiramiento",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/grupo_muscular_objetivo_del_estiramiento.webp"
   },
   {
-    "nombre": "Grupo muscular principal"
+    "nombre": "Grupo muscular principal",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/grupo_muscular_principal.webp"
   },
   {
-    "nombre": "Hombros"
+    "nombre": "Hombros",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/hombros.webp"
   },
   {
-    "nombre": "Iliopsoas"
+    "nombre": "Iliopsoas",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/iliopsoas.webp"
   },
   {
-    "nombre": "Isquiosurales"
+    "nombre": "Isquiosurales",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/isquiosurales.webp"
   },
   {
-    "nombre": "Isquiotibiales"
+    "nombre": "Isquiotibiales",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/isquiotibiales.webp"
   },
   {
-    "nombre": "Manguito rotador"
+    "nombre": "Manguito rotador",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/manguito_rotador.webp"
   },
   {
-    "nombre": "Movilidad articular"
+    "nombre": "Movilidad articular",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/movilidad_articular.webp"
   },
   {
-    "nombre": "Multífidos"
+    "nombre": "Multífidos",
+    "url_imagen": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/musculos/multifidos.webp"
   },
   {
     "nombre": "Músculos intrínsecos de la mano"

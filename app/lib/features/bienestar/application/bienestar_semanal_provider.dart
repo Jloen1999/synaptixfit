@@ -30,10 +30,12 @@ class BienestarSemanalDto {
   String get proximaAccion {
     if (plan == null) return 'Define un plan de entrenamiento desde tu perfil.';
     if (cumplimiento >= 1.0) return '¡Objetivo cumplido! Mantén el ritmo.';
-    if (cumplimiento >= 0.7)
+    if (cumplimiento >= 0.7) {
       return 'Vas bien. Intenta completar las sesiones pendientes.';
-    if (cumplimiento >= 0.4)
+    }
+    if (cumplimiento >= 0.4) {
       return 'Recupera el ritmo. Programa sesiones más cortas si es necesario.';
+    }
     return 'Revisa tu plan. Quizás necesitas ajustar la carga semanal.';
   }
 }

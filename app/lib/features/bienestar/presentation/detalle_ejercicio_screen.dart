@@ -7,14 +7,20 @@ import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/exercise_media_widget.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/muscle_image_chip.dart';
+import '../../../shared/widgets/muscle_overlay.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/sv_primary_button.dart';
 import '../application/ejercicios_provider.dart';
 
 class DetalleEjercicioScreen extends ConsumerWidget {
-  const DetalleEjercicioScreen({required this.id, super.key});
+  const DetalleEjercicioScreen({
+    required this.id,
+    this.showAddButton = true,
+    super.key,
+  });
 
   final String id;
+  final bool showAddButton;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -53,89 +59,104 @@ class DetalleEjercicioScreen extends ConsumerWidget {
       child: FeatureScaffold(
         title: ejercicio.nombre,
         backPath: '/bienestar/explorador',
-        child: Column(
+        child: Stack(
           children: [
-            ExerciseMediaWidget(
-              url: ejercicio.urlGif,
-              previewUrl: ejercicio.urlPreview,
-              size: ExerciseMediaSize.hero,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  ...ejercicio.musculosObjetivo.map(
-                    (m) => MuscleImageChip(
-                      label: m,
-                      urlImagen: catalogos?.urlImagenMusculo(m),
-                      color: SVColors.primary,
+            Column(
+              children: [
+                Stack(
+                  children: [
+                    ExerciseMediaWidget(
+                      url: ejercicio.urlGif,
+                      previewUrl: ejercicio.urlPreview,
+                      size: ExerciseMediaSize.hero,
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      ...ejercicio.partesCuerpo.map(
+                        (p) => _MetaChip(
+                          label: p,
+                          icon: Icons.accessibility_new_rounded,
+                          color: SVColors.secondary,
+                        ),
+                      ),
+                      ...ejercicio.equipamientos.map(
+                        (e) => _MetaChip(
+                          label: e,
+                          icon: Icons.hardware_rounded,
+                          color: SVColors.tertiary,
+                        ),
+                      ),
+                      _MetaChip(
+                        label: ejercicio.dificultad,
+                        icon: Icons.speed_rounded,
+                        color: SVColors.accent,
+                      ),
+                      ...ejercicio.finalidad.map(
+                        (f) => _MetaChip(
+                          label: f,
+                          icon: Icons.category_rounded,
+                          color: _finalidadColor(f),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const TabBar(
+                  tabs: [
+                    Tab(text: 'Instrucciones'),
+                    Tab(text: 'Informacion'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _InstruccionesTab(instrucciones: ejercicio.instrucciones),
+                      _InfoTab(
+                        descripcion: ejercicio.descripcion,
+                        musculosSecundarios: ejercicio.musculosSecundarios,
+                        catalogos: catalogos,
+                      ),
+                    ],
+                  ),
+                ),
+                if (showAddButton)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SVPrimaryButton(
+                      label: 'Agregar a rutina',
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${ejercicio.nombre} agregado a la rutina',
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        Navigator.of(context).pop(ejercicio);
+                      },
                     ),
                   ),
-                  ...ejercicio.partesCuerpo.map(
-                    (p) => _MetaChip(
-                      label: p,
-                      icon: Icons.accessibility_new_rounded,
-                      color: SVColors.secondary,
-                    ),
-                  ),
-                  ...ejercicio.equipamientos.map(
-                    (e) => _MetaChip(
-                      label: e,
-                      icon: Icons.hardware_rounded,
-                      color: SVColors.tertiary,
-                    ),
-                  ),
-                  _MetaChip(
-                    label: ejercicio.dificultad,
-                    icon: Icons.speed_rounded,
-                    color: SVColors.accent,
-                  ),
-                  ...ejercicio.finalidad.map(
-                    (f) => _MetaChip(
-                      label: f,
-                      icon: Icons.category_rounded,
-                      color: _finalidadColor(f),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const TabBar(
-              tabs: [
-                Tab(text: 'Instrucciones'),
-                Tab(text: 'Informacion'),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _InstruccionesTab(instrucciones: ejercicio.instrucciones),
-                  _InfoTab(
-                    descripcion: ejercicio.descripcion,
-                    musculosSecundarios: ejercicio.musculosSecundarios,
-                    catalogos: catalogos,
-                  ),
-                ],
+            if (ejercicio.musculosObjetivo.isNotEmpty)
+              ..._buildMusclePositioned(
+                ejercicio.musculosObjetivo.take(3).toList(),
+                catalogos,
+                true,
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SVPrimaryButton(
-                label: 'Agregar a rutina',
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '${ejercicio.nombre} agregado a la rutina',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+            if (ejercicio.musculosSecundarios.isNotEmpty)
+              ..._buildMusclePositioned(
+                ejercicio.musculosSecundarios.take(3).toList(),
+                catalogos,
+                false,
               ),
-            ),
           ],
         ),
       ),
@@ -143,24 +164,51 @@ class DetalleEjercicioScreen extends ConsumerWidget {
   }
 }
 
+List<Widget> _buildMusclePositioned(
+    List<String> muscles, CatalogosEjercicios? catalogos, bool isLeft) {
+  return [
+    for (var i = 0; i < muscles.length; i++)
+      Positioned(
+        left: isLeft ? 0 : null,
+        right: isLeft ? null : 0,
+        top: 16.0 + i * 78,
+        child: MuscleOverlay(
+          musculo: muscles[i],
+          urlImagen: catalogos?.urlImagenMusculo(muscles[i]),
+          alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+        ),
+      ),
+  ];
+}
+
 Color _finalidadColor(String f) {
   final lower = f.toLowerCase();
-  if (lower.contains('fuerza') || lower.contains('potencia'))
+  if (lower.contains('fuerza') || lower.contains('potencia')) {
     return Colors.orange;
+  }
   if (lower.contains('cardio') ||
       lower.contains('acondicionamiento') ||
-      lower.contains('quema')) return Colors.teal;
-  if (lower.contains('isometric') || lower.contains('estic'))
+      lower.contains('quema')) {
+    return Colors.teal;
+  }
+  if (lower.contains('isometric') || lower.contains('estic')) {
     return Colors.indigo;
-  if (lower.contains('hipertrofia') || lower.contains('definicion'))
+  }
+  if (lower.contains('hipertrofia') || lower.contains('definicion')) {
     return Colors.red;
-  if (lower.contains('resistencia')) return Colors.blue;
-  if (lower.contains('movilidad') || lower.contains('flexibilidad'))
+  }
+  if (lower.contains('resistencia')) {
+    return Colors.blue;
+  }
+  if (lower.contains('movilidad') || lower.contains('flexibilidad')) {
     return Colors.green;
-  if (lower.contains('estabilidad') || lower.contains('control'))
+  }
+  if (lower.contains('estabilidad') || lower.contains('control')) {
     return Colors.purple;
-  if (lower.contains('core') || lower.contains('abdominal'))
+  }
+  if (lower.contains('core') || lower.contains('abdominal')) {
     return Colors.amber;
+  }
   return Colors.grey;
 }
 
@@ -241,7 +289,7 @@ class _InstruccionesTab extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   '${index + 1}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: SVColors.primary,
                     fontWeight: FontWeight.w800,
                     fontSize: 14,

@@ -1,0 +1,3632 @@
+[
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl martillo con mancuernas",
+        "descripcion": "Ejercicio de aislamiento para los flexores del codo que utiliza un agarre neutro para enfatizar el trabajo sobre el braquiorradial y el braquial anterior.",
+        "instrucciones": [
+            "Paso 1: Ponte de pie sosteniendo una mancuerna en cada mano con un agarre neutro (las palmas mirando hacia el torso) y los brazos extendidos.",
+            "Paso 2: Manteniendo los codos fijos a los lados del cuerpo, flexiona los codos para elevar las mancuernas hacia los hombros.",
+            "Paso 3: Sostén la máxima contracción en la parte superior durante un instante.",
+            "Paso 4: Desciende las mancuernas de manera lenta y controlada hasta la posición inicial."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior"
+        ],
+        "musculos_secundarios": [
+            "Bíceps braquial"
+        ],
+        "equipamientos": [
+            "Mancuernas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuernas.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuernas.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps inverso con mancuernas",
+        "descripcion": "Movimiento fundamental de flexión de codo con agarre supino que maximiza el reclutamiento y la hipertrofia del bíceps braquial.",
+        "instrucciones": [
+            "Paso 1: De pie, sostén una mancuerna en cada mano con los brazos extendidos y las palmas mirando hacia adelante (agarre supino).",
+            "Paso 2: Inicia el movimiento flexionando los codos y levantando ambas mancuernas simultáneamente hacia los hombros sin balancear el torso.",
+            "Paso 3: Aprieta fuertemente los bíceps al alcanzar la flexión completa del codo.",
+            "Paso 4: Baja el peso lentamente resistiendo la gravedad hasta extender por completo los brazos."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_inverso_con_mancuernas.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_inverso_con_mancuernas.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps en polea baja con barra recta",
+        "descripcion": "Variante del curl clásico que utiliza un sistema de poleas para mantener una tensión mecánica constante sobre el bíceps durante todo el rango de movimiento.",
+        "instrucciones": [
+            "Paso 1: Engancha una barra recta a la polea baja de una máquina de cables.",
+            "Paso 2: Sujeta la barra con un agarre supino a la anchura de los hombros y da un paso atrás para generar tensión en el cable.",
+            "Paso 3: Flexiona los codos llevando la barra hacia la parte superior del pecho, manteniendo los codos pegados al cuerpo.",
+            "Paso 4: Desciende la barra controladamente hasta que los brazos estén estirados, sintiendo el estiramiento del bíceps."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Tensión continua"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Barra recta de polea"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_en_polea_baja_con_barra_recta.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_en_polea_baja_con_barra_recta.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl inverso en polea baja con barra recta",
+        "descripcion": "Ejercicio de tensión continua que emplea un agarre prono para transferir el esfuerzo hacia los extensores de la muñeca y el braquiorradial.",
+        "instrucciones": [
+            "Paso 1: Conecta una barra recta a la polea inferior y sujétala con un agarre prono (palmas hacia abajo).",
+            "Paso 2: Colócate de pie, erguido, con los brazos extendidos y el core contraído.",
+            "Paso 3: Eleva la barra flexionando los codos hasta que las manos lleguen a la altura de los hombros, manteniendo las muñecas firmes.",
+            "Paso 4: Retorna a la posición inicial extendiendo los codos a una velocidad controlada."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de agarre"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Antebrazos",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Extensores de la muñeca"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Bíceps braquial"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Barra recta de polea"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_en_polea_baja_con_barra_recta.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_en_polea_baja_con_barra_recta.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl martillo en polea baja con cuerda",
+        "descripcion": "Movimiento con agarre neutro en polea que permite mayor libertad en las muñecas y aporta una tensión uniforme en la porción lateral del brazo.",
+        "instrucciones": [
+            "Paso 1: Fija el accesorio de cuerda en la polea más baja de la estación de cables.",
+            "Paso 2: Sujeta ambos extremos de la cuerda asegurando un agarre neutro y da un paso hacia atrás.",
+            "Paso 3: Tira de la cuerda hacia arriba dividiendo ligeramente los extremos al final de la fase concéntrica para mayor contracción.",
+            "Paso 4: Baja lentamente las manos hasta la extensión casi total de los codos."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Resistencia muscular"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior"
+        ],
+        "musculos_secundarios": [
+            "Bíceps braquial"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Cuerda de tríceps"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_en_polea_baja_con_cuerda.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_en_polea_baja_con_cuerda.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con barra EZ",
+        "descripcion": "Clásico ejercicio de constructor de masa para el bíceps que utiliza una barra ondulada para reducir el estrés en las articulaciones de la muñeca y el codo.",
+        "instrucciones": [
+            "Paso 1: De pie, agarra una barra EZ por sus ondulaciones interiores con un agarre semisupinado (ligeramente inclinado).",
+            "Paso 2: Inicia con la barra apoyada cerca de los muslos, con el abdomen contraído y la espalda recta.",
+            "Paso 3: Flexiona los codos subiendo la barra hacia el pecho mientras mantienes la parte superior de los brazos estática.",
+            "Paso 4: Regresa la barra a la posición de descanso manteniendo la fase excéntrica lenta y controlada."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza máxima"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial"
+        ],
+        "equipamientos": [
+            "Barra EZ",
+            "Discos de pesas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_barra_ez.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_barra_ez.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl inverso con barra EZ",
+        "descripcion": "Variación del curl con barra ondulada utilizando agarre prono. Es altamente efectivo para desarrollar el músculo braquiorradial y mejorar la fuerza del antebrazo.",
+        "instrucciones": [
+            "Paso 1: Agarra la barra EZ por la parte exterior de sus curvas con un agarre prono (palmas mirando hacia tu cuerpo).",
+            "Paso 2: Mantén los codos pegados al cuerpo, los hombros deprimidos y retraídos, y el core activo.",
+            "Paso 3: Eleva el peso flexionando únicamente la articulación del codo, manteniendo las muñecas en una posición neutra y rígida.",
+            "Paso 4: Baja el peso en la fase excéntrica con control absoluto hasta la completa extensión."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de agarre"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Antebrazos",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Bíceps braquial",
+            "Extensores de la muñeca"
+        ],
+        "equipamientos": [
+            "Barra EZ",
+            "Discos de pesas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_barra_ez.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_barra_ez.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl inverso con barra recta apoyado en banco",
+        "descripcion": "Ejercicio de aislamiento enfocado en el desarrollo de la musculatura braquiorradial y los extensores del antebrazo mediante flexión de codo con agarre prono, limitando el impulso con el apoyo corporal.",
+        "instrucciones": [
+            "Paso 1: Ajusta un banco inclinado o predicador a la altura adecuada para estabilizar el torso o los brazos.",
+            "Paso 2: Sujeta la barra recta con un agarre prono (las palmas mirando hacia abajo) y mantén los brazos extendidos.",
+            "Paso 3: Flexiona los codos para elevar la barra hacia los hombros de manera controlada sin despegar los brazos del apoyo.",
+            "Paso 4: Desciende la barra lentamente hasta la posición inicial extendiendo los codos por completo."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior"
+        ],
+        "musculos_secundarios": [
+            "Bíceps braquial",
+            "Extensores de los dedos",
+            "Extensor radial corto del carpo",
+            "Extensor radial largo del carpo"
+        ],
+        "equipamientos": [
+            "Barra recta",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_barra_recta_apoyado_en_banco.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_barra_recta_apoyado_en_banco.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con barra recta apoyado en banco",
+        "descripcion": "Ejercicio de aislamiento para hipertrofia del bíceps braquial mediante flexión de codo con agarre supino, utilizando un banco para estabilizar el cuerpo y aislar la carga mecánica en los flexores del brazo.",
+        "instrucciones": [
+            "Paso 1: Colócate en un banco predicador ajustando la almohadilla bajo las axilas para apoyar firmemente la zona posterior del brazo (tríceps).",
+            "Paso 2: Toma la barra recta con un agarre supino (las palmas mirando hacia arriba).",
+            "Paso 3: Flexiona los codos de forma concéntrica para llevar la barra hacia tus hombros contrayendo el bíceps al máximo.",
+            "Paso 4: Baja la carga de forma excéntrica y controlada hasta la casi total extensión del codo para mantener la tensión muscular."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial",
+            "Flexores del antebrazo"
+        ],
+        "equipamientos": [
+            "Barra recta",
+            "Banco predicador"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_barra_recta_apoyado_en_banco.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_barra_recta_apoyado_en_banco.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl inverso con barra recta de pie",
+        "descripcion": "Movimiento fundamental de pie que trabaja de forma integral la musculatura del antebrazo y brazo mediante la flexión del codo con agarre prono.",
+        "instrucciones": [
+            "Paso 1: Ponte de pie con la espalda recta, los pies a la anchura de los hombros y el core contraído para aportar estabilidad.",
+            "Paso 2: Sostén la barra recta frente a ti con un agarre prono (palmas hacia abajo) a la anchura de los hombros.",
+            "Paso 3: Flexiona los codos para subir la barra hacia la parte superior del pecho sin balancear el tronco ni empujar con las caderas.",
+            "Paso 4: Desciende la barra lentamente a la posición inicial manteniendo la tensión en el antebrazo y controlando la fase excéntrica."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de agarre"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior"
+        ],
+        "musculos_secundarios": [
+            "Bíceps braquial",
+            "Extensores de la muñeca",
+            "Deltoides anterior",
+            "Core"
+        ],
+        "equipamientos": [
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_barra_recta_de_pie.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_barra_recta_de_pie.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Extensión de tríceps sobre la cabeza con polea baja y cuerda",
+        "descripcion": "Ejercicio de aislamiento que maximiza el estiramiento y la activación de la cabeza larga del tríceps braquial debido a la flexión del hombro, manteniendo una tensión mecánica constante gracias a la resistencia de la polea.",
+        "instrucciones": [
+            "Paso 1: Engancha un agarre de cuerda a la polea ubicada en la posición más baja de la máquina.",
+            "Paso 2: Colócate de espaldas a la polea, sujeta la cuerda por detrás de la cabeza con un agarre neutro y da un paso hacia adelante para crear tensión.",
+            "Paso 3: Mantén el torso estable, el core contraído y los codos fijos apuntando hacia arriba. Extiende los codos concéntricamente hasta que los brazos estén completamente estirados sobre la cabeza.",
+            "Paso 4: Desciende la cuerda de forma excéntrica y controlada, flexionando los codos hasta sentir un estiramiento profundo en los tríceps antes de iniciar la siguiente repetición."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Tríceps braquial (énfasis en la cabeza larga)"
+        ],
+        "musculos_secundarios": [
+            "Core",
+            "Estabilizadores de la escápula"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Agarre de cuerda"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/extension_de_triceps_sobre_la_cabeza_con_polea_baja_y_cuerda.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/extension_de_triceps_sobre_la_cabeza_con_polea_baja_y_cuerda.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Hip thrust con barra",
+        "descripcion": "Ejercicio compuesto enfocado en la extensión de cadera que proporciona una máxima activación del glúteo mayor mediante la sobrecarga directa en la pelvis.",
+        "instrucciones": [
+            "Paso 1: Siéntate en el suelo con la parte inferior de las escápulas apoyada firmemente contra el borde de un banco y coloca la barra cargada (preferiblemente con almohadilla) sobre el pliegue de las caderas.",
+            "Paso 2: Planta los pies en el suelo separados aproximadamente a la anchura de los hombros o de las caderas, asegurándote de que las tibias queden verticales cuando las caderas estén completamente extendidas en la parte alta del movimiento.",
+            "Paso 3: Manteniendo la barbilla ligeramente metida y el abdomen contraído, empuja el suelo con los talones y extiende las caderas concéntricamente hasta que tus muslos y tu torso formen una línea recta paralela al suelo, contrayendo fuertemente los glúteos.",
+            "Paso 4: Desciende las caderas de manera excéntrica y controlada hacia la posición inicial, bajando en bloque sin arquear la zona lumbar."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza máxima",
+            "Potencia"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Cuádriceps",
+            "Erectores espinales",
+            "Glúteo medio"
+        ],
+        "equipamientos": [
+            "Barra recta",
+            "Banco",
+            "Almohadilla protectora"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/hip_thrust_con_barra.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/hip_thrust_con_barra.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con barra EZ en banco predicador",
+        "descripcion": "Ejercicio de aislamiento enfocado en el desarrollo e hipertrofia del bíceps braquial y el braquial anterior. El uso del banco predicador elimina el balanceo corporal y el impulso, mientras que la barra EZ proporciona un agarre semi-supinado que reduce la tensión articular sobre las muñecas en comparación con una barra recta.",
+        "instrucciones": [
+            "Paso 1: Ajusta el asiento del banco predicador para que las axilas descansen cómodamente sobre el borde superior de la almohadilla y la parte posterior de los brazos (tríceps) esté completamente apoyada.",
+            "Paso 2: Sujeta la barra EZ por las curvaturas interiores con un agarre semi-supinado (palmas orientadas hacia arriba y ligeramente hacia adentro).",
+            "Paso 3: Flexiona los codos de forma concéntrica para llevar la barra hacia los hombros, manteniendo el contacto constante de los brazos con la almohadilla para aislar el bíceps al máximo.",
+            "Paso 4: Desciende la barra de forma excéntrica y controlada hasta alcanzar la extensión casi completa del codo, manteniendo la tensión muscular en todo momento sin llegar a la hiperextensión."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial",
+            "Braquial anterior"
+        ],
+        "musculos_secundarios": [
+            "Braquiorradial",
+            "Flexores de la muñeca"
+        ],
+        "equipamientos": [
+            "Barra EZ",
+            "Banco predicador"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_barra_ez_en_banco_predicador.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_barra_ez_en_banco_predicador.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla sumo con mancuerna",
+        "descripcion": "Variante de la sentadilla tradicional con una postura de pies más amplia que enfatiza la activación de la musculatura aductora y el glúteo mayor, manteniendo el torso más erguido para reducir el estrés lumbar.",
+        "instrucciones": [
+            "Paso 1: Adopta una postura amplia con los pies separados más allá de la anchura de los hombros y las puntas apuntando hacia afuera en un ángulo de aproximadamente 45 grados.",
+            "Paso 2: Sujeta una mancuerna por uno de sus extremos (o discos) con ambas manos, dejando que cuelgue verticalmente en el centro con los brazos completamente extendidos.",
+            "Paso 3: Manteniendo el pecho erguido y el core contraído, flexiona las rodillas y las caderas de forma excéntrica, descendiendo hasta que los muslos estén paralelos al suelo.",
+            "Paso 4: Empuja firmemente el suelo con los talones para extender de forma concéntrica las caderas y rodillas, volviendo a la posición inicial mientras contraes los glúteos."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps",
+            "Glúteo mayor",
+            "Aductores del muslo"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Erectores espinales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Mancuerna"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_sumo_con_mancuerna.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_sumo_con_mancuerna.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Estiramiento de hombros y espalda alta frente a la pared",
+        "descripcion": "Ejercicio de estiramiento estático diseñado para elongar la musculatura del hombro y del dorsal, mejorando la movilidad y el rango de flexión de la cintura escapular.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie frente a una pared, aproximadamente a la distancia de un brazo o ligeramente más lejos, manteniendo los pies a la anchura de las caderas.",
+            "Paso 2: Apoya las palmas de las manos planas en la pared a la altura de los hombros.",
+            "Paso 3: Deja caer lentamente el pecho hacia el suelo, empujando las caderas hacia atrás mientras mantienes los brazos completamente extendidos, sintiendo el estiramiento en hombros y espalda.",
+            "Paso 4: Mantén la posición de estiramiento de forma sostenida y respira profundamente antes de regresar de manera controlada a la postura inicial."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Flexibilidad",
+            "Movilidad"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Dorsal ancho",
+            "Deltoides anterior"
+        ],
+        "musculos_secundarios": [
+            "Pectoral mayor",
+            "Pectoral menor",
+            "Redondo mayor"
+        ],
+        "equipamientos": [
+            "Pared"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/estiramiento_de_hombros_y_espalda_alta_frente_a_la_pared.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/estiramiento_de_hombros_y_espalda_alta_frente_a_la_pared.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Retracción escapular isométrica con espalda en la pared",
+        "descripcion": "Ejercicio de activación y control postural centrado en la estabilización de la cintura escapular mediante la contracción isométrica de la musculatura retractora contra una superficie plana.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie dando la espalda a una pared, apoyando firmemente los glúteos, la zona dorsal de la espalda y la cabeza.",
+            "Paso 2: Flexiona los codos a 90 grados y eleva los brazos hasta que la parte posterior del brazo y los dorsos de las manos toquen la pared.",
+            "Paso 3: Presiona activamente los codos y la parte posterior de los hombros contra la pared, forzando a las escápulas a juntarse en el centro de la espalda.",
+            "Paso 4: Sostén la máxima contracción isométrica durante los segundos indicados sin arquear excesivamente la zona lumbar, luego relaja la tensión."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Activación",
+            "Postura"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Romboides mayor",
+            "Romboides menor",
+            "Trapecio medio"
+        ],
+        "musculos_secundarios": [
+            "Trapecio inferior",
+            "Manguito rotador",
+            "Deltoides posterior"
+        ],
+        "equipamientos": [
+            "Pared"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/retraccion_escapular_isometrica_con_espalda_en_la_pared.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/retraccion_escapular_isometrica_con_espalda_en_la_pared.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Extensión torácica en pared con manos en la nuca",
+        "descripcion": "Ejercicio de movilidad articular diseñado para aumentar el rango de extensión de la columna torácica, utilizando la pared como soporte para los codos y punto de pivote.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie frente a una pared a corta distancia y entrelaza las manos suavemente por detrás de tu nuca o zona cervical baja.",
+            "Paso 2: Apoya ambos codos contra la pared a una altura ligeramente superior a la de tus hombros.",
+            "Paso 3: Manteniendo el abdomen contraído para no hiperextender la zona lumbar, empuja el pecho lentamente hacia la pared buscando arquear únicamente la zona media-alta de la espalda (columna torácica).",
+            "Paso 4: Sostén la extensión un breve instante y retorna de manera controlada a la posición neutra."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Movilidad",
+            "Postura"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Erectores espinales torácicos"
+        ],
+        "musculos_secundarios": [
+            "Serrato anterior",
+            "Tríceps braquial",
+            "Deltoides"
+        ],
+        "equipamientos": [
+            "Pared"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/extension_toracica_en_pared_con_manos_en_la_nuca.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/extension_toracica_en_pared_con_manos_en_la_nuca.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con mancuernas de pie",
+        "descripcion": "Ejercicio de aislamiento para el desarrollo de la hipertrofia del bíceps braquial, realizado de pie para requerir estabilización del core durante la flexión del codo con supinación.",
+        "instrucciones": [
+            "Paso 1: Ponte de pie con la espalda recta, los pies a la anchura de los hombros y sujeta una mancuerna en cada mano con agarre neutro a los lados del cuerpo.",
+            "Paso 2: Manteniendo los codos fijos y pegados al torso, flexiona los brazos para elevar las mancuernas, girando las muñecas progresivamente hacia un agarre supino (palmas hacia arriba).",
+            "Paso 3: Sostén la máxima contracción del bíceps en la parte superior del movimiento por un instante.",
+            "Paso 4: Desciende las mancuernas de manera excéntrica y controlada hasta la posición inicial, deshaciendo el giro de las muñecas hasta extender los codos por completo."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial",
+            "Deltoides anterior",
+            "Core"
+        ],
+        "equipamientos": [
+            "Mancuernas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_de_pie.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_de_pie.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Remo sentado en polea baja con agarre estrecho",
+        "descripcion": "Ejercicio compuesto de tracción horizontal que enfoca el trabajo en el grosor de la espalda y la retracción escapular, manteniendo una tensión mecánica continua mediante el uso de la polea y maximizando la aducción escapular gracias al agarre cerrado.",
+        "instrucciones": [
+            "Paso 1: Siéntate en la máquina de polea baja, apoya los pies firmemente en las plataformas manteniendo las rodillas ligeramente flexionadas y sujeta el maneral de agarre estrecho con ambas manos en posición neutra.",
+            "Paso 2: Retrae las escápulas, mantén la espalda recta, el pecho erguido y el core contraído, con los brazos completamente extendidos frente a ti.",
+            "Paso 3: Tira del maneral de forma concéntrica hacia la zona umbilical (parte baja del abdomen), flexionando los codos cerca del torso y juntando las escápulas al máximo en el pico de contracción.",
+            "Paso 4: Extiende los brazos de forma excéntrica y controlada hasta la posición inicial, permitiendo un estiramiento completo del dorsal ancho sin flexionar ni encorvar la columna lumbar."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Dorsal ancho",
+            "Romboides mayor",
+            "Trapecio medio"
+        ],
+        "musculos_secundarios": [
+            "Bíceps braquial",
+            "Braquial anterior",
+            "Deltoides posterior",
+            "Trapecio inferior",
+            "Erectores espinales"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Maneral de agarre estrecho (Triángulo o V-bar)"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_sentado_en_polea_baja_con_agarre_estrecho.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_sentado_en_polea_baja_con_agarre_estrecho.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elevación de piernas acostado",
+        "descripcion": "Ejercicio enfocado en la musculatura abdominal, específicamente en la flexión del tronco y estabilización pélvica.",
+        "instrucciones": [
+            "Paso 1: Acuéstate boca arriba en el suelo o colchoneta con las piernas extendidas y los brazos a los lados.",
+            "Paso 2: Contrae el abdomen presionando la zona lumbar contra el suelo.",
+            "Paso 3: Eleva ambas piernas rectas simultáneamente hasta que formen un ángulo de 90 grados con tu torso.",
+            "Paso 4: Desciende las piernas de forma excéntrica y controlada sin que los talones toquen el suelo para la siguiente repetición."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Resistencia muscular"
+        ],
+        "partes_cuerpo": [
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Recto abdominal",
+            "Iliopsoas"
+        ],
+        "musculos_secundarios": [
+            "Oblicuo externo",
+            "Oblicuo interno",
+            "Recto femoral"
+        ],
+        "equipamientos": [
+            "Peso corporal",
+            "Colchoneta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_de_piernas_acostado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_de_piernas_acostado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Tijeras verticales acostado",
+        "descripcion": "Movimiento de estabilización central y flexión de cadera alternada que mantiene una tensión isométrica en el recto abdominal.",
+        "instrucciones": [
+            "Paso 1: Acuéstate boca arriba, coloca las manos debajo de los glúteos para soporte lumbar y eleva ligeramente ambas piernas extendidas a unos centímetros del suelo.",
+            "Paso 2: Eleva una pierna hacia el techo manteniendo la otra abajo.",
+            "Paso 3: Alterna la posición de las piernas en un movimiento de tijera continuo y fluido.",
+            "Paso 4: Mantén el core contraído durante todo el ejercicio, evitando arquear la zona lumbar."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Resistencia muscular",
+            "Estabilidad"
+        ],
+        "partes_cuerpo": [
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Recto abdominal",
+            "Iliopsoas"
+        ],
+        "musculos_secundarios": [
+            "Oblicuos",
+            "Suelo pélvico",
+            "Recto femoral"
+        ],
+        "equipamientos": [
+            "Peso corporal",
+            "Colchoneta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/tijeras_verticales_acostado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/tijeras_verticales_acostado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Extensión de cadera en posición de oso",
+        "descripcion": "Ejercicio de activación de la cadena posterior y estabilización del core realizado desde una postura cuadrupédica isométrica.",
+        "instrucciones": [
+            "Paso 1: Colócate en posición de cuadrupedia y eleva ligeramente las rodillas del suelo (posición de oso), apoyándote sobre manos y puntas de los pies.",
+            "Paso 2: Manteniendo la espalda neutra y el core estable, extiende una pierna hacia atrás de forma controlada.",
+            "Paso 3: Contrae el glúteo en la máxima extensión de la pierna sin hiper-extender la región lumbar.",
+            "Paso 4: Regresa la rodilla a la posición inicial sin tocar el suelo y repite, o alterna las piernas según tu rutina."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Activación",
+            "Estabilidad central"
+        ],
+        "partes_cuerpo": [
+            "Core",
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Erectores espinales",
+            "Recto abdominal",
+            "Manguito rotador"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/extension_de_cadera_en_posicion_de_oso.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/extension_de_cadera_en_posicion_de_oso.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Mountain climbers",
+        "descripcion": "Ejercicio cardiovascular y de resistencia central que combina estabilización isométrica y flexión dinámica de cadera.",
+        "instrucciones": [
+            "Paso 1: Adopta una posición de plancha alta con las manos apoyadas en el suelo a la anchura de los hombros y el cuerpo formando una línea recta.",
+            "Paso 2: Lleva una rodilla hacia tu pecho de forma rápida y explosiva.",
+            "Paso 3: Regresa la pierna a la posición inicial de plancha.",
+            "Paso 4: Alterna inmediatamente con la otra pierna, manteniendo un ritmo constante como si estuvieras corriendo en el sitio sin elevar excesivamente la pelvis."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Acondicionamiento metabólico",
+            "Resistencia muscular"
+        ],
+        "partes_cuerpo": [
+            "Core",
+            "Cuerpo completo"
+        ],
+        "musculos_objetivo": [
+            "Recto abdominal",
+            "Iliopsoas"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Pectoral mayor",
+            "Tríceps braquial",
+            "Cuádriceps"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/mountain_climbers.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/mountain_climbers.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Crunch abdominal sentado",
+        "descripcion": "Variación del encogimiento abdominal tradicional realizado en una postura sentada, enfocándose en la contracción de la pared abdominal superior e inferior al acercar el torso a las rodillas.",
+        "instrucciones": [
+            "Paso 1: Siéntate en el borde de un banco o colchoneta, inclina el torso ligeramente hacia atrás y sujeta los bordes para mantener el equilibrio, con las piernas extendidas frente a ti.",
+            "Paso 2: Flexiona simultáneamente el tronco y las rodillas, acercando el pecho hacia los muslos.",
+            "Paso 3: Sostén la contracción en la zona abdominal durante un instante en el punto de mayor acortamiento.",
+            "Paso 4: Extiende el torso y las piernas de forma excéntrica y controlada para volver a la posición inicial sin que los pies descansen en el suelo."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Recto abdominal"
+        ],
+        "musculos_secundarios": [
+            "Iliopsoas",
+            "Oblicuos",
+            "Recto femoral"
+        ],
+        "equipamientos": [
+            "Peso corporal",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/crunch_abdominal_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/crunch_abdominal_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sit-up con piernas estiradas",
+        "descripcion": "Ejercicio clásico de flexión de tronco y cadera donde la extensión de las piernas reduce la inhibición del psoas, incrementando el trabajo global del flexor de la cadera.",
+        "instrucciones": [
+            "Paso 1: Acuéstate boca arriba en una colchoneta con las piernas completamente extendidas sobre el suelo y los brazos estirados por encima de la cabeza.",
+            "Paso 2: Inicia el movimiento contrayendo el abdomen y eleva los brazos, la cabeza y los hombros del suelo de forma secuencial.",
+            "Paso 3: Continúa flexionando el torso hasta llegar a una posición completamente sentada, intentando tocar las puntas de los pies con las manos.",
+            "Paso 4: Desciende desenrollando la columna vértebra a vértebra de forma excéntrica y controlada hasta regresar a la postura inicial en el suelo."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Fuerza",
+            "Resistencia muscular"
+        ],
+        "partes_cuerpo": [
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Recto abdominal",
+            "Iliopsoas"
+        ],
+        "musculos_secundarios": [
+            "Oblicuo externo",
+            "Oblicuo interno",
+            "Erectores espinales"
+        ],
+        "equipamientos": [
+            "Peso corporal",
+            "Colchoneta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/situp_con_piernas_estiradas.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/situp_con_piernas_estiradas.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla trasera con barra",
+        "descripcion": "Ejercicio compuesto fundamental para el desarrollo del tren inferior que implica la triple extensión de cadera, rodilla y tobillo, soportando la carga axial sobre la parte posterior de los hombros y espalda alta.",
+        "instrucciones": [
+            "Paso 1: Colócate debajo de la barra apoyándola sobre los trapecios o la parte posterior de los deltoides, y sujétala con ambas manos para mayor estabilidad.",
+            "Paso 2: Saca la barra del soporte, da un paso hacia atrás y separa los pies aproximadamente a la anchura de los hombros, con las puntas ligeramente hacia afuera.",
+            "Paso 3: Manteniendo el pecho alto y el core contraído, flexiona caderas y rodillas de forma excéntrica para descender hasta que los muslos estén paralelos al suelo o por debajo.",
+            "Paso 4: Empuja firmemente el suelo con toda la planta del pie para extender de forma concéntrica caderas y rodillas hasta regresar a la posición inicial."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza máxima"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps",
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Erectores espinales",
+            "Aductores",
+            "Core"
+        ],
+        "equipamientos": [
+            "Barra recta",
+            "Rack de sentadillas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_trasera_con_barra.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_trasera_con_barra.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con mancuernas sentado",
+        "descripcion": "Ejercicio de aislamiento enfocado en el desarrollo del bíceps braquial mediante la flexión del codo. Realizarlo sentado minimiza el uso de impulso corporal, forzando un trabajo más estricto del músculo con un agarre supino o rotación hacia supinación.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con la espalda recta, apoyada en el respaldo si lo tiene, y sostén una mancuerna en cada mano con los brazos extendidos a los lados del cuerpo.",
+            "Paso 2: Inicia el movimiento flexionando los codos para elevar las mancuernas, rotando las muñecas para asegurar un agarre supino (palmas hacia arriba) al llegar a la parte superior.",
+            "Paso 3: Sostén la máxima contracción del bíceps en la parte alta del movimiento durante un instante.",
+            "Paso 4: Desciende las mancuernas de forma excéntrica y controlada a la posición inicial, extendiendo los codos por completo."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con mancuernas sentado",
+        "descripcion": "Ejercicio de aislamiento enfocado en el desarrollo del bíceps braquial mediante la flexión del codo. Realizarlo sentado minimiza el uso de impulso corporal, forzando un trabajo más estricto del músculo con un agarre supino o rotación hacia supinación.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con la espalda recta, apoyada en el respaldo si lo tiene, y sostén una mancuerna en cada mano con los brazos extendidos a los lados del cuerpo.",
+            "Paso 2: Inicia el movimiento flexionando los codos para elevar las mancuernas, rotando las muñecas para asegurar un agarre supino (palmas hacia arriba) al llegar a la parte superior.",
+            "Paso 3: Sostén la máxima contracción del bíceps en la parte alta del movimiento durante un instante.",
+            "Paso 4: Desciende las mancuernas de forma excéntrica y controlada a la posición inicial, extendiendo los codos por completo."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl inverso con mancuernas sentado",
+        "descripcion": "Variante de flexión de codo realizada en posición sentada utilizando un agarre prono (palmas hacia abajo). Este agarre desplaza el énfasis del bíceps braquial hacia la musculatura del antebrazo y el braquial anterior.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco manteniendo la espalda recta y sujeta una mancuerna en cada mano con un agarre prono (las palmas mirando hacia atrás al estar los brazos colgando).",
+            "Paso 2: Flexiona los codos manteniendo los brazos pegados al torso, elevando las mancuernas de forma controlada sin cambiar la pronación de las muñecas.",
+            "Paso 3: Alcanza el punto de máxima flexión apretando la musculatura del antebrazo y el braquial.",
+            "Paso 4: Baja las mancuernas de manera excéntrica y pausada hasta retornar a la extensión completa de los codos."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de agarre"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior"
+        ],
+        "musculos_secundarios": [
+            "Bíceps braquial",
+            "Extensores de la muñeca"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl martillo con mancuernas sentado",
+        "descripcion": "Ejercicio de flexión de codo utilizando un agarre neutro (palmas enfrentadas) que permite un excelente desarrollo simultáneo del braquiorradial, braquial anterior y bíceps braquial, realizado sentado para maximizar la estabilidad.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con el torso erguido y sostén una mancuerna en cada mano usando un agarre neutro, con las palmas mirando hacia tu cuerpo.",
+            "Paso 2: Flexiona los codos para llevar las mancuernas hacia los hombros, manteniendo las palmas enfrentadas durante todo el recorrido.",
+            "Paso 3: Sostén la contracción en la parte alta del movimiento, asegurando que los codos no se desplacen excesivamente hacia adelante.",
+            "Paso 4: Desciende las cargas de forma controlada hasta la posición inicial de brazos extendidos."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de agarre"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior",
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Flexores del antebrazo",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Pullover con mancuerna en banco plano",
+        "descripcion": "Ejercicio compuesto que trabaja en la extensión del hombro, elongando y contrayendo tanto el dorsal ancho como el pectoral mayor. Su ejecución en banco plano estabiliza el torso durante el amplio rango de movimiento.",
+        "instrucciones": [
+            "Paso 1: Acuéstate boca arriba sobre un banco plano, apoyando firmemente la cabeza, los hombros y la zona dorsal. Planta los pies en el suelo.",
+            "Paso 2: Sostén una mancuerna con ambas manos por uno de sus extremos (formando un diamante con las palmas bajo el disco) y extiéndela sobre tu pecho con los codos ligeramente flexionados.",
+            "Paso 3: Desciende la mancuerna lentamente hacia atrás por encima de tu cabeza, manteniendo el ángulo de los codos constante, hasta sentir un estiramiento profundo en el pecho y dorsales.",
+            "Paso 4: Contrae los músculos objetivo para llevar la mancuerna de vuelta a la posición inicial sobre el pecho."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Movilidad"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor",
+            "Dorsal ancho"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial (cabeza larga)",
+            "Serrato anterior",
+            "Redondo mayor"
+        ],
+        "equipamientos": [
+            "Mancuerna",
+            "Banco plano"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/pullover_con_mancuerna_en_banco_plano.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/pullover_con_mancuerna_en_banco_plano.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Aperturas con mancuernas en banco plano",
+        "descripcion": "Ejercicio de aislamiento enfocado en la aducción horizontal del hombro, diseñado para maximizar el estiramiento y la hipertrofia del pectoral mayor al eliminar la asistencia del tríceps.",
+        "instrucciones": [
+            "Paso 1: Acuéstate sobre un banco plano sosteniendo una mancuerna en cada mano sobre el pecho, con los brazos extendidos pero manteniendo una ligera flexión en los codos.",
+            "Paso 2: Con las palmas enfrentadas (agarre neutro), abre los brazos hacia los lados en un movimiento amplio y semicircular, como si fueras a dar un abrazo.",
+            "Paso 3: Desciende hasta sentir un estiramiento profundo en los músculos pectorales, asegurándote de no sobrepasar la línea de los hombros de forma incómoda.",
+            "Paso 4: Contrae los pectorales para revertir el movimiento y juntar las mancuernas nuevamente en la parte superior."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Coracobraquial",
+            "Pectoral menor"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco plano"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/aperturas_con_mancuernas_en_banco_plano.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/aperturas_con_mancuernas_en_banco_plano.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Patada de tríceps con mancuernas",
+        "descripcion": "Ejercicio de aislamiento para el tríceps braquial realizado con el hombro en extensión, lo que permite lograr una fuerte contracción de la cabeza larga en el punto máximo del recorrido.",
+        "instrucciones": [
+            "Paso 1: Inclina el torso hacia adelante apoyando una mano y rodilla sobre un banco, o manteniendo una postura bisagra de cadera. Sostén una mancuerna con la otra mano usando un agarre neutro.",
+            "Paso 2: Pega la parte superior del brazo a tu torso de forma paralela al suelo y flexiona el codo a 90 grados.",
+            "Paso 3: Manteniendo el brazo superior completamente inmóvil, extiende el codo empujando la mancuerna hacia atrás hasta que el brazo quede totalmente estirado.",
+            "Paso 4: Contrae fuertemente el tríceps por un segundo y desciende la mancuerna de forma controlada a la posición inicial."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Tríceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Deltoides posterior",
+            "Core (como estabilizador)"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco (opcional para soporte)"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/patada_de_triceps_con_mancuernas.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/patada_de_triceps_con_mancuernas.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elevaciones laterales sin peso",
+        "descripcion": "Movimiento de abducción del hombro ejecutado sin carga externa, ideal para calentamiento, activación neuromuscular, rehabilitación o mejora de la movilidad activa del complejo articular del hombro.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie con una postura erguida, los pies a la anchura de los hombros y los brazos descansando a los lados del cuerpo.",
+            "Paso 2: Manteniendo una ligerísima flexión en los codos, eleva ambos brazos hacia los lados de forma controlada.",
+            "Paso 3: Sube los brazos hasta que queden paralelos al suelo, alineando las manos con la altura de los hombros.",
+            "Paso 4: Desciende los brazos lentamente hacia la posición inicial, manteniendo la tensión y el control muscular en todo momento."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Activación",
+            "Movilidad",
+            "Calentamiento"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides medio"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Deltoides posterior",
+            "Trapecio superior",
+            "Supraespinoso"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevaciones_laterales_sin_peso.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevaciones_laterales_sin_peso.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Remo con barra agarre prono",
+        "descripcion": "Ejercicio compuesto fundamental para el desarrollo del grosor de la espalda. El agarre prono (palmas hacia ti) incrementa la activación de la parte superior de la espalda y los retractores escapulares en comparación con otras variantes de agarre.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie frente a la barra, flexiona las caderas y rodillas manteniendo la espalda recta (bisagra de cadera) hasta que el torso quede casi paralelo al suelo.",
+            "Paso 2: Sujeta la barra con un agarre prono, con las manos separadas ligeramente más allá de la anchura de los hombros.",
+            "Paso 3: Tira de la barra hacia la parte inferior de tu pecho o abdomen alto, retrayendo fuertemente las escápulas y manteniendo los codos en un ángulo de aproximadamente 45 grados respecto al torso.",
+            "Paso 4: Extiende los brazos de forma excéntrica y controlada para volver a la posición inicial sin perder la postura recta de la espalda."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza máxima"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Dorsal ancho",
+            "Romboides",
+            "Trapecio medio"
+        ],
+        "musculos_secundarios": [
+            "Deltoides posterior",
+            "Erectores espinales",
+            "Braquial anterior",
+            "Bíceps braquial"
+        ],
+        "equipamientos": [
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_con_barra_agarre_prono.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_con_barra_agarre_prono.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de hombros sentado en máquina Smith",
+        "descripcion": "Ejercicio compuesto de empuje vertical enfocado en la hipertrofia y fuerza de los hombros. La trayectoria guiada por la máquina Smith ofrece gran estabilidad, aislando el trabajo en los deltoides al reducir la necesidad de usar músculos estabilizadores.",
+        "instrucciones": [
+            "Paso 1: Coloca un banco regulable bajo la barra de la máquina Smith, ajustando el respaldo a un ángulo de entre 75 y 85 grados para proteger la articulación del hombro.",
+            "Paso 2: Siéntate apoyando firmemente la espalda y la cabeza en el respaldo. Ajusta la barra para que quede a la altura de tu barbilla o clavícula al iniciar.",
+            "Paso 3: Sujeta la barra con un agarre prono (palmas hacia adelante) a una anchura ligeramente mayor a la de los hombros, retira los seguros y empuja concéntricamente la carga hacia arriba hasta extender casi por completo los codos.",
+            "Paso 4: Desciende la barra de forma excéntrica y controlada hasta que vuelva a quedar a la altura de la barbilla, evitando que los codos bajen en exceso o se abran hacia atrás."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza máxima"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides anterior",
+            "Deltoides medio"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial",
+            "Pectoral mayor (porción clavicular)",
+            "Serrato anterior",
+            "Trapecio superior"
+        ],
+        "equipamientos": [
+            "Máquina Smith",
+            "Banco regulable"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/press_hombros/press_de_hombros_sentado_en_maquina_smith.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/press_hombros/press_de_hombros_sentado_en_maquina_smith.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Peso muerto rumano con peso corporal",
+        "descripcion": "Ejercicio de bisagra de cadera enfocado en el estiramiento y activación de la cadena posterior utilizando únicamente el peso del cuerpo para promover la movilidad y el control motor.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie con los pies a la anchura de las caderas, manteniendo una ligera y constante flexión en las rodillas.",
+            "Paso 2: Manteniendo la espalda completamente recta y el core contraído, empuja las caderas hacia atrás de forma excéntrica como si quisieras tocar la pared detrás de ti.",
+            "Paso 3: Desciende el torso hasta que quede casi paralelo al suelo o hasta sentir un estiramiento profundo en la parte posterior de los muslos.",
+            "Paso 4: Contrae los glúteos y los isquiosurales para empujar las caderas hacia adelante de forma concéntrica y volver a la posición inicial erguida."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Movilidad",
+            "Activación",
+            "Control motor"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Isquiosurales",
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Erectores espinales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/peso_muerto_rumano_con_peso_corporal.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/peso_muerto_rumano_con_peso_corporal.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla con peso corporal",
+        "descripcion": "Ejercicio compuesto fundamental para el desarrollo del patrón de movimiento de triple flexión y extensión, mejorando la fuerza y movilidad del tren inferior con el propio peso.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie con los pies separados aproximadamente a la anchura de los hombros, con las puntas de los pies rotadas ligeramente hacia afuera.",
+            "Paso 2: Inicia el movimiento flexionando las caderas y las rodillas de forma simultánea, manteniendo el pecho erguido y el core activado.",
+            "Paso 3: Desciende de manera controlada hasta que tus muslos estén al menos paralelos al suelo, o tan profundo como tu movilidad lo permita sin perder la postura recta de la espalda.",
+            "Paso 4: Empuja fuertemente el suelo con toda la planta del pie para extender caderas y rodillas y regresar a la posición inicial de pie."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Movilidad",
+            "Fuerza base",
+            "Acondicionamiento"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps",
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Aductores",
+            "Erectores espinales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_con_peso_corporal.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_con_peso_corporal.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla sumo con peso corporal",
+        "descripcion": "Variante de la sentadilla libre que utiliza una postura amplia para enfatizar el estiramiento y activación de los músculos de la parte interna del muslo, además del glúteo mayor.",
+        "instrucciones": [
+            "Paso 1: Adopta una postura amplia separando los pies más allá de la anchura de los hombros, apuntando las puntas de los pies hacia afuera en un ángulo de aproximadamente 45 grados.",
+            "Paso 2: Manteniendo el torso erguido y las manos al frente para equilibrarte, flexiona caderas y rodillas asegurándote de que las rodillas se dirijan en la misma línea que las puntas de los pies.",
+            "Paso 3: Desciende excéntricamente hasta que tus muslos queden paralelos al suelo o sientas un buen estiramiento en los aductores.",
+            "Paso 4: Empuja firmemente el suelo con los talones, contrayendo fuertemente los glúteos y aductores para extender concéntricamente el cuerpo hasta la postura inicial."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Movilidad",
+            "Activación",
+            "Fuerza base"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps",
+            "Glúteo mayor",
+            "Aductores del muslo"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Core",
+            "Erectores espinales"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_sumo_con_peso_corporal.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_sumo_con_peso_corporal.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de hombros con mancuernas sentado",
+        "descripcion": "Ejercicio de empuje vertical diseñado para el desarrollo de la masa muscular y fuerza del complejo articular del hombro, ejecutado sentado para una mayor estabilidad del tronco.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con respaldo vertical, sujetando una mancuerna en cada mano a la altura de los hombros con los codos flexionados.",
+            "Paso 2: Mantén la espalda apoyada contra el respaldo y el core contraído para evitar arcos lumbares.",
+            "Paso 3: Empuja las mancuernas de forma concéntrica y vertical hacia arriba hasta que tus brazos estén casi completamente extendidos.",
+            "Paso 4: Desciende las mancuernas de manera excéntrica y controlada hasta que vuelvan a la altura de tus hombros sin rebotar."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides anterior",
+            "Deltoides medio"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial",
+            "Trapecio superior",
+            "Serrato anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_hombros_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_hombros_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de hombros con mancuernas sentado",
+        "descripcion": "Ejercicio de empuje vertical diseñado para el desarrollo de la masa muscular y fuerza del complejo articular del hombro, ejecutado sentado para una mayor estabilidad del tronco.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con respaldo vertical, sujetando una mancuerna en cada mano a la altura de los hombros con los codos flexionados.",
+            "Paso 2: Mantén la espalda apoyada contra el respaldo y el core contraído para evitar arcos lumbares.",
+            "Paso 3: Empuja las mancuernas de forma concéntrica y vertical hacia arriba hasta que tus brazos estén casi completamente extendidos.",
+            "Paso 4: Desciende las mancuernas de manera excéntrica y controlada hasta que vuelvan a la altura de tus hombros sin rebotar."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides anterior",
+            "Deltoides medio"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial",
+            "Trapecio superior",
+            "Serrato anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_hombros_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_hombros_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elevación frontal con mancuernas sentado",
+        "descripcion": "Ejercicio de aislamiento para el deltoides anterior, realizado sentado para eliminar el balanceo y focalizar la carga exclusivamente en la porción frontal del hombro.",
+        "instrucciones": [
+            "Paso 1: Siéntate con la espalda recta y sujeta una mancuerna en cada mano con agarre neutro, brazos extendidos a los costados.",
+            "Paso 2: Eleva un brazo hacia adelante de forma concéntrica manteniendo el codo ligeramente flexionado, hasta que la mancuerna llegue a la altura de tus ojos.",
+            "Paso 3: Sostén un breve instante la parte alta del movimiento para maximizar la contracción.",
+            "Paso 4: Baja el brazo de forma excéntrica y controlada a la posición inicial y alterna con el otro brazo."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Resistencia muscular"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides anterior"
+        ],
+        "musculos_secundarios": [
+            "Deltoides medio",
+            "Pectoral mayor (porción clavicular)"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_frontal_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_frontal_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elevación lateral con mancuernas sentado",
+        "descripcion": "Movimiento de abducción del hombro realizado sentado, enfocado en el desarrollo de la anchura del deltoides medio y la estética de la parte superior del cuerpo.",
+        "instrucciones": [
+            "Paso 1: Siéntate erguido, sujeta una mancuerna en cada mano con los brazos extendidos a los lados y palmas enfrentadas.",
+            "Paso 2: Eleva ambos brazos lateralmente hasta alcanzar la altura de los hombros, manteniendo una ligera flexión en los codos.",
+            "Paso 3: Mantén la posición un segundo, concentrándote en la contracción de la porción media del hombro.",
+            "Paso 4: Desciende los brazos lentamente de forma excéntrica hasta volver a la posición de inicio."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Estética"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides medio"
+        ],
+        "musculos_secundarios": [
+            "Trapecio superior",
+            "Deltoides anterior",
+            "Deltoides posterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_lateral_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_lateral_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elevación posterior con mancuernas sentado",
+        "descripcion": "Ejercicio de aislamiento enfocado en la musculatura posterior del hombro, ejecutado sentado e inclinado hacia adelante para maximizar el ángulo de tracción sobre el deltoides posterior.",
+        "instrucciones": [
+            "Paso 1: Siéntate en el borde del banco, inclina el torso hacia adelante hasta que tu pecho esté cerca de los muslos y sujeta las mancuernas por debajo de tus pantorrillas.",
+            "Paso 2: Con una ligera flexión en los codos, eleva los brazos lateralmente hacia atrás, concentrándote en separar los hombros.",
+            "Paso 3: Sube las mancuernas hasta que tus codos alcancen la altura de los hombros, contrayendo la zona posterior.",
+            "Paso 4: Baja los brazos de forma controlada y excéntrica hasta regresar a la posición inicial."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Postura"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides posterior"
+        ],
+        "musculos_secundarios": [
+            "Romboides",
+            "Trapecio medio",
+            "Manguito rotador"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_posterior_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_posterior_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Encogimiento de hombros con mancuernas sentado",
+        "descripcion": "Ejercicio de aislamiento enfocado en la hipertrofia y función del trapecio superior, utilizando mancuernas y posición sentada para una ejecución estricta.",
+        "instrucciones": [
+            "Paso 1: Siéntate erguido en un banco con una mancuerna en cada mano, brazos extendidos a lo largo del cuerpo y agarre neutro.",
+            "Paso 2: Eleva los hombros verticalmente hacia las orejas, evitando rotar las muñecas o usar los brazos para traccionar.",
+            "Paso 3: Contrae fuertemente el trapecio en la posición más alta del movimiento.",
+            "Paso 4: Desciende los hombros lentamente hasta la posición inicial de forma excéntrica para completar la repetición."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza funcional"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda alta"
+        ],
+        "musculos_objetivo": [
+            "Trapecio superior"
+        ],
+        "musculos_secundarios": [
+            "Elevador de la escápula",
+            "Trapecio medio"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/encogimiento_de_hombros_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/encogimiento_de_hombros_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla sumo con mancuerna",
+        "descripcion": "Variante de sentadilla con base amplia que enfatiza la activación de los músculos aductores y el glúteo mayor, manteniendo el torso erguido gracias a la carga posicionada centralmente.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie con una apertura de piernas mayor a la anchura de tus hombros y las puntas de los pies giradas hacia afuera unos 45 grados.",
+            "Paso 2: Sujeta una mancuerna por uno de sus extremos con ambas manos y deja que cuelgue verticalmente entre tus piernas con los brazos estirados.",
+            "Paso 3: Realiza una flexión de caderas y rodillas manteniendo el pecho erguido y el abdomen contraído, bajando hasta que los muslos estén paralelos al suelo.",
+            "Paso 4: Empuja a través de los talones para extender la cadera y las rodillas de forma controlada hasta regresar a la posición inicial."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps",
+            "Glúteo mayor",
+            "Aductores"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Erectores espinales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Mancuerna"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/sentadilla/sentadilla_sumo_con_mancuerna.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/sentadilla/sentadilla_sumo_con_mancuerna.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elevación lateral a una mano en polea baja inclinado",
+        "descripcion": "Ejercicio de aislamiento para el deltoides medio que mantiene una tensión constante durante todo el rango de movimiento gracias a la resistencia de la polea, mientras la inclinación del torso altera el perfil de resistencia para una mayor estimulación mecánica.",
+        "instrucciones": [
+            "Paso 1: Ajusta la polea en la posición más baja y selecciona un peso adecuado.",
+            "Paso 2: Colócate de costado a la máquina, sujeta el agarre de la polea con la mano más alejada y apoya la mano libre en la columna de la máquina o un soporte estable, inclinando el torso para que el brazo quede alineado con el cable.",
+            "Paso 3: Realiza una abducción del hombro elevando el brazo lateralmente de forma controlada hasta que el codo alcance la altura del hombro, manteniendo una ligera flexión en el codo.",
+            "Paso 4: Regresa lentamente a la posición inicial de forma excéntrica, evitando que el peso descanse en la pila de la máquina para mantener la tensión muscular."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Estética",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides medio"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Deltoides posterior",
+            "Trapecio superior",
+            "Supraespinoso"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Agarre de mano simple"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_lateral_a_una_mano_en_polea_baja_inclinado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_lateral_a_una_mano_en_polea_baja_inclinado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de banca plano con agarre neutro",
+        "descripcion": "Ejercicio de empuje horizontal realizado en banco plano utilizando mancuernas con agarre neutro, lo que reduce la rotación interna del hombro y enfatiza el trabajo del pectoral mayor y el tríceps.",
+        "instrucciones": [
+            "Paso 1: Túmbate sobre un banco plano, apoya firmemente los pies en el suelo y sujeta una mancuerna en cada mano con las palmas enfrentadas.",
+            "Paso 2: Baja las mancuernas de forma controlada hacia los lados de tu pecho, manteniendo los codos cerca del torso.",
+            "Paso 3: Empuja las mancuernas de manera explosiva hacia arriba hasta extender los brazos sin bloquear los codos.",
+            "Paso 4: Regresa a la posición inicial manteniendo el control de la carga durante todo el recorrido."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Banco plano",
+            "Mancuernas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_plano_con_agarre_neutro.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_plano_con_agarre_neutro.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de banca plano con barra",
+        "descripcion": "Movimiento básico de fuerza que trabaja la musculatura de empuje horizontal, permitiendo manejar cargas elevadas para el desarrollo integral del pecho y los brazos.",
+        "instrucciones": [
+            "Paso 1: Túmbate en el banco, retira la barra del soporte con un agarre prono ligeramente superior a la anchura de los hombros.",
+            "Paso 2: Baja la barra de forma lenta hasta tocar ligeramente el centro del pecho, manteniendo los codos en un ángulo de 45 grados respecto al torso.",
+            "Paso 3: Empuja la barra hacia arriba de forma potente extendiendo los codos sin hiperextender.",
+            "Paso 4: Realiza las repeticiones manteniendo el contacto de glúteos y espalda con el banco durante todo el movimiento."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Fuerza máxima",
+            "Hipertrofia"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Tríceps braquial"
+        ],
+        "equipamientos": [
+            "Banco plano",
+            "Barra recta",
+            "Soporte de banca"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_plano_con_barra.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_plano_con_barra.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de banca plano con agarre estrecho",
+        "descripcion": "Variante del press de banca enfocada en desplazar la mayor parte de la carga hacia los tríceps, manteniendo un agarre cerrado sobre la barra.",
+        "instrucciones": [
+            "Paso 1: Túmbate en el banco y sujeta la barra con un agarre a la anchura de los hombros o ligeramente más estrecho.",
+            "Paso 2: Baja la barra hacia la parte baja del pecho manteniendo los codos pegados al cuerpo durante todo el recorrido.",
+            "Paso 3: Empuja la barra de forma controlada hasta bloquear los codos al final del movimiento.",
+            "Paso 4: Mantén los hombros estables y evita el rebote contra el pecho."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia de tríceps",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Tríceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Pectoral mayor",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Banco plano",
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_plano_con_agarre_estrecho.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_plano_con_agarre_estrecho.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de banca inclinado con barra",
+        "descripcion": "Ejercicio enfocado en la porción superior del pectoral mediante un empuje inclinado, utilizando el banco en posición de 30 a 45 grados.",
+        "instrucciones": [
+            "Paso 1: Ajusta el banco en inclinación y siéntate, retirando la barra del soporte con agarre prono.",
+            "Paso 2: Baja la barra de forma controlada hacia la parte superior del pecho, cerca de las clavículas.",
+            "Paso 3: Empuja la barra hacia arriba hasta la extensión completa de los brazos.",
+            "Paso 4: Mantén la espalda firme contra el respaldo durante todo el ejercicio."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor (clavicular)"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Tríceps braquial"
+        ],
+        "equipamientos": [
+            "Banco inclinado",
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_inclinado_con_barra.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_inclinado_con_barra.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de banca declinado con barra",
+        "descripcion": "Variante realizada en un banco declinado, enfocada en trabajar la porción inferior del pectoral mayor y aislar menos el deltoides anterior.",
+        "instrucciones": [
+            "Paso 1: Túmbate en el banco declinado asegurando tus piernas en los soportes.",
+            "Paso 2: Retira la barra del soporte y bájala hacia la parte baja del pecho de forma controlada.",
+            "Paso 3: Empuja la barra verticalmente hasta la extensión de los codos.",
+            "Paso 4: Asegúrate de mantener la estabilidad del cuerpo y no arquear excesivamente la espalda."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor (porción inferior)"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Banco declinado",
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_declinado_con_barra.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_banca_declinado_con_barra.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Push-up",
+        "descripcion": "Ejercicio de empuje horizontal fundamental realizado con el peso corporal, que desarrolla la fuerza y la estabilidad de la cadena anterior mediante la extensión del codo y la aducción horizontal del hombro.",
+        "instrucciones": [
+            "Paso 1: Colócate en posición de plancha con las manos apoyadas en el suelo a una anchura ligeramente superior a la de los hombros y el cuerpo alineado desde la cabeza hasta los talones.",
+            "Paso 2: Manteniendo el core contraído y los codos en un ángulo de aproximadamente 45 grados respecto al torso, desciende el pecho hacia el suelo de forma controlada.",
+            "Paso 3: Empuja el suelo con firmeza para extender los brazos de manera concéntrica hasta alcanzar la posición inicial sin bloquear los codos.",
+            "Paso 4: Mantén la columna neutra y evita arquear la zona lumbar durante todo el recorrido del movimiento."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Fuerza",
+            "Resistencia muscular",
+            "Estabilidad"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor",
+            "Deltoides anterior",
+            "Tríceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Serrato anterior",
+            "Core",
+            "Estabilizadores de la escápula"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/push_up.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/push_up.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Press de hombros con mancuernas sentado",
+        "descripcion": "Ejercicio de empuje vertical para el fortalecimiento y desarrollo hipertrófico del complejo articular del hombro, ejecutado en posición sentada para asegurar una mayor estabilidad del tronco y aislar el trabajo muscular.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con respaldo vertical, sujeta una mancuerna en cada mano y elévalas hasta la altura de tus hombros con los codos flexionados.",
+            "Paso 2: Mantén la espalda totalmente apoyada contra el respaldo y el core contraído para evitar arquear la columna lumbar durante el movimiento.",
+            "Paso 3: Empuja las mancuernas hacia arriba de forma concéntrica y controlada hasta alcanzar la extensión casi completa de los brazos, sin llegar a bloquear los codos.",
+            "Paso 4: Desciende las mancuernas de manera excéntrica hasta retomar la posición inicial a la altura de los hombros, manteniendo siempre el control del peso."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides anterior",
+            "Deltoides medio"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial",
+            "Trapecio superior",
+            "Serrato anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_hombros_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/press_de_hombros_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con mancuernas sentado",
+        "descripcion": "Ejercicio de aislamiento enfocado en la hipertrofia del bíceps braquial, ejecutado en posición sentada para minimizar el uso de impulso corporal y maximizar el reclutamiento de las fibras musculares.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con respaldo, sosteniendo una mancuerna en cada mano con los brazos extendidos a los lados.",
+            "Paso 2: Flexiona los codos para elevar las mancuernas, rotando las muñecas durante el ascenso para terminar con un agarre supino.",
+            "Paso 3: Sostén la contracción máxima en la parte superior del movimiento durante un breve instante.",
+            "Paso 4: Desciende las mancuernas de forma excéntrica y controlada hasta la posición inicial de extensión completa."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con mancuernas sentado",
+        "descripcion": "Ejercicio de aislamiento enfocado en la hipertrofia del bíceps braquial, ejecutado en posición sentada para minimizar el uso de impulso corporal y maximizar el reclutamiento de las fibras musculares.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con respaldo, sosteniendo una mancuerna en cada mano con los brazos extendidos a los lados.",
+            "Paso 2: Flexiona los codos para elevar las mancuernas, rotando las muñecas durante el ascenso para terminar con un agarre supino.",
+            "Paso 3: Sostén la contracción máxima en la parte superior del movimiento durante un breve instante.",
+            "Paso 4: Desciende las mancuernas de forma excéntrica y controlada hasta la posición inicial de extensión completa."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl inverso con mancuernas sentado",
+        "descripcion": "Variante de flexión de codo con agarre prono realizada en banco, enfocada en el desarrollo de la musculatura del antebrazo y el braquial anterior.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco manteniendo el tronco erguido y sujeta una mancuerna en cada mano con agarre prono (palmas mirando hacia el suelo).",
+            "Paso 2: Mantén los codos pegados al cuerpo y flexiona los antebrazos para elevar las mancuernas.",
+            "Paso 3: Alcanza el pico de flexión contrayendo activamente los extensores del antebrazo.",
+            "Paso 4: Regresa lentamente a la posición inicial, manteniendo la tensión en la fase excéntrica del movimiento."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de agarre"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior"
+        ],
+        "musculos_secundarios": [
+            "Bíceps braquial",
+            "Extensores de la muñeca"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_inverso_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl martillo con mancuernas sentado",
+        "descripcion": "Ejercicio de flexión de codo con agarre neutro, altamente eficaz para el desarrollo simultáneo del braquial anterior, braquiorradial y bíceps braquial.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco con la espalda erguida, sujetando una mancuerna en cada mano con un agarre neutro (palmas enfrentadas).",
+            "Paso 2: Flexiona los codos para llevar las mancuernas hacia los hombros sin rotar las muñecas.",
+            "Paso 3: Aprieta los músculos del antebrazo y brazo en la parte superior del movimiento.",
+            "Paso 4: Desciende las cargas de manera controlada hasta la extensión total de los codos."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de agarre"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior",
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Flexores del antebrazo",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuernas_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuernas_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Pullover con mancuerna en banco plano",
+        "descripcion": "Ejercicio compuesto que permite un estiramiento profundo del dorsal ancho y el pectoral mayor a través de un amplio rango de movimiento de extensión del hombro.",
+        "instrucciones": [
+            "Paso 1: Acuéstate boca arriba en un banco plano, apoyando cabeza y hombros. Sujeta una mancuerna con ambas manos formando un diamante.",
+            "Paso 2: Con los codos ligeramente flexionados, baja la mancuerna por encima de tu cabeza hasta sentir un estiramiento profundo.",
+            "Paso 3: Contrae activamente la musculatura dorsal y pectoral para devolver la mancuerna a la posición vertical sobre el pecho.",
+            "Paso 4: Mantén una postura estable y controlada durante todo el rango de recorrido."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Movilidad torácica"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor",
+            "Dorsal ancho"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial",
+            "Serrato anterior",
+            "Redondo mayor"
+        ],
+        "equipamientos": [
+            "Mancuerna",
+            "Banco plano"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/pullover_con_mancuerna_en_banco_plano.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/pullover_con_mancuerna_en_banco_plano.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Aperturas con mancuernas en banco plano",
+        "descripcion": "Ejercicio de aislamiento enfocado en la aducción horizontal del hombro para el desarrollo estético y funcional del pectoral mayor.",
+        "instrucciones": [
+            "Paso 1: Acuéstate en un banco plano sosteniendo una mancuerna en cada mano, con brazos extendidos sobre el pecho y palmas enfrentadas.",
+            "Paso 2: Abre los brazos en un arco amplio y controlado hasta que sientas un estiramiento en el pecho.",
+            "Paso 3: Contrae el pectoral para retornar a la posición inicial uniendo las mancuernas sobre el centro del torso.",
+            "Paso 4: Mantén una ligera flexión en los codos durante todo el movimiento para proteger la articulación del hombro."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Coracobraquial"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco plano"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/aperturas_con_mancuernas_en_banco_plano.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/aperturas_con_mancuernas_en_banco_plano.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Patada de tríceps con mancuernas",
+        "descripcion": "Ejercicio de aislamiento que enfatiza la contracción completa del tríceps braquial mediante la extensión del codo con el hombro en posición estable.",
+        "instrucciones": [
+            "Paso 1: Inclina el torso hacia adelante, apoyando una mano en un banco. Sujeta la mancuerna con la otra mano manteniendo el brazo paralelo al suelo.",
+            "Paso 2: Con el brazo superior fijo, extiende el codo hasta estirar completamente el brazo hacia atrás.",
+            "Paso 3: Contrae fuertemente el tríceps en la extensión total.",
+            "Paso 4: Regresa de forma controlada a la flexión de 90 grados inicial."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Tríceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Deltoides posterior",
+            "Core"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/patada_de_triceps_con_mancuernas.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/patada_de_triceps_con_mancuernas.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elevaciones laterales sin peso",
+        "descripcion": "Ejercicio de movilidad y activación muscular para el deltoides medio, ideal para protocolos de calentamiento o trabajo de control motor.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie con la espalda recta y los brazos extendidos a los costados del cuerpo.",
+            "Paso 2: Eleva ambos brazos lateralmente de forma controlada hasta alcanzar la altura de los hombros.",
+            "Paso 3: Mantén la tensión en la parte alta antes de descender los brazos lentamente.",
+            "Paso 4: Realiza el movimiento de forma rítmica sin generar impulso mediante el balanceo del cuerpo."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Activación",
+            "Movilidad"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Hombros"
+        ],
+        "musculos_objetivo": [
+            "Deltoides medio"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Trapecio superior",
+            "Supraespinoso"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevaciones_laterales_sin_peso.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevaciones_laterales_sin_peso.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Remo con barra agarre prono",
+        "descripcion": "Movimiento compuesto de tracción horizontal para el desarrollo del grosor de la espalda, enfatizando la musculatura central y superior de la misma.",
+        "instrucciones": [
+            "Paso 1: Realiza una bisagra de cadera hasta que el torso quede casi paralelo al suelo, manteniendo la espalda recta.",
+            "Paso 2: Sujeta la barra con agarre prono y tracciona hacia el abdomen alto retrayendo las escápulas.",
+            "Paso 3: Aprieta la parte superior de la espalda al alcanzar el punto de máxima contracción.",
+            "Paso 4: Extiende los brazos controladamente hasta la posición inicial sin encorvar la columna."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza máxima"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Dorsal ancho",
+            "Romboides",
+            "Trapecio medio"
+        ],
+        "musculos_secundarios": [
+            "Deltoides posterior",
+            "Erectores espinales",
+            "Bíceps braquial"
+        ],
+        "equipamientos": [
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_con_barra_agarre_prono.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_con_barra_agarre_prono.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con mancuernas de pie",
+        "descripcion": "Ejercicio de aislamiento enfocado en la hipertrofia del bíceps braquial mediante la flexión del codo con supinación, realizado de pie para integrar la estabilización del core.",
+        "instrucciones": [
+            "Paso 1: Ponte de pie con la espalda erguida, los pies a la anchura de los hombros y sujeta una mancuerna en cada mano con agarre neutro a los lados del cuerpo.",
+            "Paso 2: Manteniendo los codos fijos cerca del torso, flexiona los brazos para elevar las mancuernas mientras rotas las muñecas para realizar un agarre supino (palmas hacia arriba) durante el ascenso.",
+            "Paso 3: Sostén la máxima contracción del bíceps en la parte superior del movimiento durante un instante.",
+            "Paso 4: Desciende las mancuernas de manera excéntrica y controlada a la posición inicial, invirtiendo la rotación de las muñecas hasta extender los codos por completo."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_de_pie.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_de_pie.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Estiramiento de dorsal de rodillas con apoyo en banco",
+        "descripcion": "Ejercicio de estiramiento estático que elonga las fibras del dorsal ancho y mejora la flexibilidad en la articulación del hombro mediante una posición de rodillas apoyadas.",
+        "instrucciones": [
+            "Paso 1: Colócate de rodillas frente a un banco plano a una distancia aproximada de un brazo.",
+            "Paso 2: Apoya los codos o antebrazos sobre el borde del banco, manteniendo las manos juntas o separadas a la anchura de los hombros.",
+            "Paso 3: Empuja el pecho hacia el suelo mientras desplazas los glúteos hacia atrás, sintiendo un estiramiento profundo a lo largo de los costados del torso y la espalda.",
+            "Paso 4: Sostén la posición de estiramiento de manera controlada y respira profundamente para relajar la musculatura."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Flexibilidad",
+            "Movilidad"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Dorsal ancho"
+        ],
+        "musculos_secundarios": [
+            "Redondo mayor",
+            "Pectoral mayor",
+            "Tríceps braquial"
+        ],
+        "equipamientos": [
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/estiramiento_de_dorsal_de_rodillas_con_apoyo_en_banco.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/estiramiento_de_dorsal_de_rodillas_con_apoyo_en_banco.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Estiramiento de espalda alta sentado",
+        "descripcion": "Estiramiento enfocado en la musculatura de la zona torácica y escapular, ideal para liberar tensión tras periodos de sedentarismo o entrenamiento intenso.",
+        "instrucciones": [
+            "Paso 1: Siéntate en una silla o banco con la espalda recta y los pies firmemente apoyados en el suelo.",
+            "Paso 2: Entrelaza los dedos de las manos frente a ti y extiende los brazos hacia adelante, empujando con las palmas hacia afuera.",
+            "Paso 3: Encórvate ligeramente hacia adelante desde la zona media de la espalda mientras alejas las manos de tu pecho, sintiendo el ensanchamiento de las escápulas.",
+            "Paso 4: Mantén la posición estática sintiendo el estiramiento en la zona entre las escápulas antes de retornar a la posición erguida."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Flexibilidad",
+            "Alivio de tensión"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Romboides",
+            "Trapecio medio"
+        ],
+        "musculos_secundarios": [
+            "Deltoides posterior",
+            "Serrato anterior"
+        ],
+        "equipamientos": [
+            "Banco o silla"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/estiramiento_de_espalda_alta_sentado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/estiramiento_de_espalda_alta_sentado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Rotación torácica en cuadrupedia",
+        "descripcion": "Ejercicio de movilidad dinámica para la columna torácica, diseñado para mejorar la capacidad de rotación del tronco y liberar restricciones en la espalda alta.",
+        "instrucciones": [
+            "Paso 1: Colócate en posición de cuadrupedia, con manos bajo los hombros y rodillas bajo las caderas.",
+            "Paso 2: Coloca una mano detrás de la nuca, manteniendo el codo apuntando hacia el suelo.",
+            "Paso 3: Rota el torso llevando el codo hacia arriba y hacia el techo, siguiendo el movimiento con la mirada y permitiendo que la columna torácica se abra.",
+            "Paso 4: Regresa el codo a la posición inicial acercándolo hacia la mano contraria y repite el movimiento de forma controlada antes de cambiar de lado."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Movilidad",
+            "Flexibilidad torácica"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Erectores espinales torácicos",
+            "Oblicuos"
+        ],
+        "musculos_secundarios": [
+            "Romboides",
+            "Trapecio"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/rotacion_toracica_en_cuadrupedia.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/rotacion_toracica_en_cuadrupedia.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl araña con mancuernas",
+        "descripcion": "Ejercicio de aislamiento del bíceps braquial realizado en decúbito prono sobre un banco inclinado, lo que elimina la posibilidad de balanceo y mantiene los brazos en una posición de ventaja mecánica para el aislamiento muscular.",
+        "instrucciones": [
+            "Paso 1: Ajusta un banco inclinado a unos 45 grados y túmbate sobre él boca abajo, apoyando el pecho y dejando los brazos colgando verticalmente hacia el suelo.",
+            "Paso 2: Sujeta una mancuerna en cada mano con un agarre supino (palmas mirando hacia adelante).",
+            "Paso 3: Flexiona los codos manteniendo los brazos superiores inmóviles, elevando las mancuernas hacia los hombros mediante la contracción del bíceps.",
+            "Paso 4: Desciende las cargas de forma controlada hasta la extensión completa de los codos, manteniendo la tensión en la fase excéntrica."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco inclinado"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_arana_con_mancuernas.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_arana_con_mancuernas.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con mancuernas en banco inclinado",
+        "descripcion": "Variante de curl que, gracias a la inclinación del respaldo, estira la cabeza larga del bíceps braquial en la posición inicial, aumentando la demanda mecánica y el rango de estiramiento.",
+        "instrucciones": [
+            "Paso 1: Ajusta el respaldo de un banco a una inclinación de entre 45 y 60 grados y siéntate apoyando completamente la espalda.",
+            "Paso 2: Sujeta una mancuerna en cada mano dejando que los brazos cuelguen hacia atrás, manteniendo los hombros estables.",
+            "Paso 3: Flexiona los codos de forma concéntrica para elevar las mancuernas hacia los hombros, manteniendo los codos fijos en todo momento.",
+            "Paso 4: Regresa lentamente a la posición inicial, permitiendo que el bíceps se estire completamente en la base del movimiento."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Estiramiento activo"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco inclinado"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_en_banco_inclinado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuernas_en_banco_inclinado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl de bíceps con mancuerna con agarre supino",
+        "descripcion": "Ejercicio de aislamiento enfocado en la flexión del codo donde el agarre supino garantiza la máxima implicación del bíceps braquial en su función principal de supinación y flexión.",
+        "instrucciones": [
+            "Paso 1: Ponte de pie con los pies a la anchura de las caderas y el torso erguido, sujetando una mancuerna en la mano con la palma mirando hacia adelante.",
+            "Paso 2: Manteniendo el codo pegado al torso, flexiona el brazo de forma concentrada hasta contraer totalmente el bíceps.",
+            "Paso 3: Sostén la contracción durante un segundo en el punto máximo de flexión.",
+            "Paso 4: Desciende la mancuerna de manera controlada hasta retornar a la posición inicial de extensión completa del codo."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza aislada"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Braquial anterior",
+            "Braquiorradial"
+        ],
+        "equipamientos": [
+            "Mancuerna"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuerna_con_agarre_supino.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_de_biceps_con_mancuerna_con_agarre_supino.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl martillo con mancuerna con agarre neutro",
+        "descripcion": "Variante de flexión de codo que mediante un agarre neutro permite una transferencia eficiente de fuerza hacia el braquiorradial y el braquial anterior, optimizando el desarrollo del antebrazo y brazo.",
+        "instrucciones": [
+            "Paso 1: Sujeta una mancuerna con agarre neutro (palmas mirando hacia el cuerpo) mientras estás de pie con el tronco estable.",
+            "Paso 2: Flexiona el codo para elevar la mancuerna hacia el hombro homolateral, manteniendo las palmas enfrentadas en todo momento.",
+            "Paso 3: Contrae los músculos de la zona lateral del brazo en la parte superior del movimiento.",
+            "Paso 4: Regresa lentamente a la posición de inicio, manteniendo la tensión en la fase de descenso."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de agarre"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior",
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Flexores del antebrazo"
+        ],
+        "equipamientos": [
+            "Mancuerna"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuerna_con_agarre_neutro.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuerna_con_agarre_neutro.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Curl martillo con mancuernas en banco inclinado",
+        "descripcion": "Ejercicio que combina la estabilidad del banco inclinado con el agarre neutro, permitiendo un mayor estiramiento del braquial anterior y braquiorradial al desplazar ligeramente el brazo hacia atrás.",
+        "instrucciones": [
+            "Paso 1: Siéntate en un banco inclinado a 45 grados apoyando bien la espalda y sosteniendo una mancuerna en cada mano con agarre neutro.",
+            "Paso 2: Flexiona ambos codos para elevar las mancuernas manteniendo las palmas enfrentadas y los codos en posición fija.",
+            "Paso 3: Aprieta los brazos en la fase concéntrica, asegurando que no haya rotación de la muñeca.",
+            "Paso 4: Desciende las cargas de forma controlada hasta la extensión completa de los codos, permitiendo un ligero estiramiento al final del recorrido."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Desarrollo del antebrazo"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Braquiorradial",
+            "Braquial anterior",
+            "Bíceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco inclinado"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuernas_en_banco_inclinado.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/curl_martillo_con_mancuernas_en_banco_inclinado.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla trasera con barra (postura estándar)",
+        "descripcion": "Ejercicio fundamental de fuerza compuesto donde la carga se apoya sobre los trapecios, permitiendo un trabajo integral de la musculatura del tren inferior con un patrón de movimiento completo.",
+        "instrucciones": [
+            "Paso 1: Colócate bajo la barra en un rack y apóyala sobre los trapecios. Separa los pies a la anchura de los hombros con las puntas ligeramente hacia afuera.",
+            "Paso 2: Retira la barra y mantén el core contraído y el pecho erguido.",
+            "Paso 3: Realiza la fase excéntrica flexionando caderas y rodillas simultáneamente hasta que los muslos estén paralelos al suelo.",
+            "Paso 4: Empuja desde los talones para extender caderas y rodillas hasta regresar a la posición inicial."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza máxima"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps",
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Aductores",
+            "Erectores espinales"
+        ],
+        "equipamientos": [
+            "Barra recta",
+            "Rack de sentadillas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_trasera_con_barra_postura_estandar.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_trasera_con_barra_postura_estandar.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla trasera con barra (postura cerrada)",
+        "descripcion": "Variante de la sentadilla tradicional donde una base de sustentación más estrecha traslada mayor énfasis mecánico hacia el vasto lateral del cuádriceps.",
+        "instrucciones": [
+            "Paso 1: Colócate bajo la barra y apóyala sobre los trapecios. Coloca los pies con una separación menor a la anchura de los hombros.",
+            "Paso 2: Mantén el torso lo más erguido posible para enfatizar el trabajo de las rodillas.",
+            "Paso 3: Desciende controladamente flexionando las rodillas hasta alcanzar la profundidad adecuada.",
+            "Paso 4: Extiende las piernas utilizando la fuerza de los cuádriceps para volver a la posición erguida."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Enfoque en cuádriceps"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps"
+        ],
+        "musculos_secundarios": [
+            "Glúteo mayor",
+            "Erectores espinales"
+        ],
+        "equipamientos": [
+            "Barra recta",
+            "Rack de sentadillas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_trasera_con_barra_postura_cerrada.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_trasera_con_barra_postura_cerrada.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla sumo con barra",
+        "descripcion": "Ejercicio de tren inferior realizado con una base muy amplia que permite una mayor participación de los músculos aductores y una posición de torso más vertical.",
+        "instrucciones": [
+            "Paso 1: Apoya la barra sobre los trapecios y separa los pies más allá de la anchura de los hombros, rotando las puntas hacia afuera.",
+            "Paso 2: Mantén el pecho erguido y desciende flexionando caderas y rodillas.",
+            "Paso 3: Asegúrate de que las rodillas sigan la línea de las puntas de los pies durante todo el recorrido.",
+            "Paso 4: Empuja con los talones y contrae glúteos y aductores para subir hasta la posición inicial."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Aductores",
+            "Glúteo mayor",
+            "Cuádriceps"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Erectores espinales"
+        ],
+        "equipamientos": [
+            "Barra recta",
+            "Rack de sentadillas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_sumo_con_barra.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_sumo_con_barra.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Prensa de piernas a 45° (pies altos)",
+        "descripcion": "Variante de prensa de piernas donde la posición superior de los pies aumenta la flexión de cadera, trasladando el mayor esfuerzo hacia la cadena posterior.",
+        "instrucciones": [
+            "Paso 1: Siéntate en la prensa y coloca los pies en la parte alta de la plataforma.",
+            "Paso 2: Libera el seguro y desciende la plataforma hasta que las rodillas alcancen un ángulo cercano a los 90 grados.",
+            "Paso 3: Mantén la espalda baja siempre apoyada contra el respaldo.",
+            "Paso 4: Empuja la plataforma mediante la extensión de caderas y rodillas sin bloquear las articulaciones al finalizar."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fortalecimiento de cadena posterior"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Glúteo mayor",
+            "Isquiosurales"
+        ],
+        "musculos_secundarios": [
+            "Cuádriceps",
+            "Aductores"
+        ],
+        "equipamientos": [
+            "Máquina de prensa de piernas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_pies_altos.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_pies_altos.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Prensa de piernas a 45° (pies bajos)",
+        "descripcion": "Variante de prensa que coloca los pies en la parte inferior de la plataforma, forzando una mayor flexión de rodilla y enfocando el trabajo en el cuádriceps.",
+        "instrucciones": [
+            "Paso 1: Siéntate en la prensa y coloca los pies en la parte baja de la plataforma, evitando que los talones se separen.",
+            "Paso 2: Desciende la plataforma controladamente, permitiendo que las rodillas se desplacen hacia adelante.",
+            "Paso 3: Asegúrate de mantener un rango de movimiento que no comprometa la integridad de la rodilla.",
+            "Paso 4: Extiende las piernas utilizando la fuerza de los cuádriceps para empujar la carga."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Enfoque en cuádriceps"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps"
+        ],
+        "musculos_secundarios": [
+            "Glúteo mayor"
+        ],
+        "equipamientos": [
+            "Máquina de prensa de piernas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_pies_bajos.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_pies_bajos.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Prensa de piernas a 45° (postura sumo)",
+        "descripcion": "Variante de prensa con pies separados y puntas hacia afuera, ideal para enfatizar la activación de los aductores y aumentar la profundidad en la zona interna del muslo.",
+        "instrucciones": [
+            "Paso 1: Siéntate en la prensa y coloca los pies con una apertura amplia, rotando las puntas hacia el exterior de la plataforma.",
+            "Paso 2: Desciende la plataforma permitiendo que las rodillas se abran lateralmente.",
+            "Paso 3: Alcanza un rango de profundidad que permita sentir el estiramiento en la cara interna del muslo.",
+            "Paso 4: Empuja la plataforma con fuerza, manteniendo la alineación de las rodillas con los pies."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Desarrollo de aductores"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Aductores",
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Cuádriceps",
+            "Isquiosurales"
+        ],
+        "equipamientos": [
+            "Máquina de prensa de piernas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_postura_sumo_enfasis_en_aductores.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_postura_sumo_enfasis_en_aductores.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Prensa de piernas a 45° (postura sumo)",
+        "descripcion": "Variante de prensa de piernas realizada con una base de sustentación amplia y rotación externa de caderas para enfatizar el trabajo de la musculatura aductora y el glúteo mayor.",
+        "instrucciones": [
+            "Paso 1: Colócate en la prensa de piernas y sitúa tus pies en la plataforma con una separación mayor a la de tus hombros y las puntas rotadas hacia el exterior.",
+            "Paso 2: Libera el seguro de la máquina y desciende la plataforma de forma controlada permitiendo que las rodillas se desplacen lateralmente hacia afuera.",
+            "Paso 3: Baja la plataforma hasta que sientas un estiramiento profundo en la cara interna de los muslos sin perder el contacto de la zona lumbar con el respaldo.",
+            "Paso 4: Empuja la plataforma mediante la extensión coordinada de caderas y rodillas, asegurándote de que las rodillas no colapsen hacia el interior durante el ascenso."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fortalecimiento de aductores"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Aductores",
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Cuádriceps",
+            "Isquiosurales"
+        ],
+        "equipamientos": [
+            "Máquina de prensa de piernas a 45°"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_postura_sumo.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_postura_sumo.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Prensa de piernas a 45° (postura cerrada)",
+        "descripcion": "Variante de prensa que utiliza una base de sustentación estrecha, lo cual desplaza una mayor demanda mecánica hacia el vasto lateral del cuádriceps.",
+        "instrucciones": [
+            "Paso 1: Sitúate en la máquina de prensa y coloca tus pies en el centro de la plataforma con una separación menor a la anchura de tus caderas.",
+            "Paso 2: Desbloquea la plataforma y desciende el peso manteniendo los talones totalmente apoyados en la superficie durante todo el recorrido.",
+            "Paso 3: Desciende con un control absoluto hasta que tus rodillas formen un ángulo agudo, siempre manteniendo la espalda baja firmemente apoyada en el respaldo.",
+            "Paso 4: Extiende las piernas empujando la carga, concentrando la fuerza en los cuádriceps y evitando bloquear las rodillas en la fase final del movimiento."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Enfoque en cuádriceps"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps"
+        ],
+        "musculos_secundarios": [
+            "Glúteo mayor",
+            "Tensor de la fascia lata"
+        ],
+        "equipamientos": [
+            "Máquina de prensa de piernas a 45°"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_postura_cerrada_enfasis_en_vasto_lateral.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_postura_cerrada_enfasis_en_vasto_lateral.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Prensa de piernas a 45° (postura estándar)",
+        "descripcion": "Ejercicio de empuje horizontal para el tren inferior que, realizado con una postura neutra, proporciona un estímulo equilibrado en toda la musculatura del muslo.",
+        "instrucciones": [
+            "Paso 1: Colócate en la prensa y sitúa tus pies en la plataforma a la misma anchura que tus hombros y con una ligera rotación externa de las puntas.",
+            "Paso 2: Libera la carga y desciende la plataforma de manera controlada hasta que tus rodillas alcancen un ángulo aproximado de 90 grados.",
+            "Paso 3: Asegúrate de que tu zona lumbar y pelvis permanezcan en contacto total con el respaldo durante el descenso para evitar esfuerzos inadecuados en la columna.",
+            "Paso 4: Empuja la carga mediante la extensión coordinada de rodillas y caderas, deteniendo el movimiento justo antes de que las articulaciones de la rodilla se bloqueen."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Desarrollo general de fuerza"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps",
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Aductores"
+        ],
+        "equipamientos": [
+            "Máquina de prensa de piernas a 45°"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_postura_estandar_enfasis_en_cuadriceps.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_postura_estandar_enfasis_en_cuadriceps.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Prensa de piernas a 45° (pies bajos)",
+        "descripcion": "Variante donde el posicionamiento inferior de los pies en la plataforma maximiza la flexión de rodilla, incrementando significativamente la carga mecánica sobre el cuádriceps.",
+        "instrucciones": [
+            "Paso 1: Posiciona tus pies en la parte inferior de la plataforma de la prensa, manteniendo la anchura de tus hombros y los talones apoyados firmemente.",
+            "Paso 2: Desbloquea la plataforma y baja la carga controladamente, permitiendo que las rodillas se desplacen hacia adelante por encima de la línea de los dedos de los pies.",
+            "Paso 3: Desciende hasta el límite de tu movilidad articular manteniendo siempre el apoyo firme de toda la planta del pie en la plataforma.",
+            "Paso 4: Extiende las piernas utilizando la fuerza de los cuádriceps para empujar el peso, controlando el retorno a la posición de inicio."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Enfoque en cuádriceps"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps"
+        ],
+        "musculos_secundarios": [
+            "Glúteo mayor"
+        ],
+        "equipamientos": [
+            "Máquina de prensa de piernas a 45°"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_pies_bajos_enfasis_en_cuadriceps.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_pies_bajos_enfasis_en_cuadriceps.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Prensa de piernas a 45° (pies altos)",
+        "descripcion": "Posición de los pies en la parte alta de la plataforma que aumenta la flexión de cadera, favoreciendo un mayor reclutamiento de glúteos e isquiosurales durante el empuje.",
+        "instrucciones": [
+            "Paso 1: Coloca tus pies en la parte superior de la plataforma de prensa, manteniendo una separación igual a la anchura de tus hombros.",
+            "Paso 2: Libera la carga y desciende la plataforma de forma lenta y controlada, asegurándote de que la rodilla se mantenga en una trayectoria alineada con el pie.",
+            "Paso 3: Desciende hasta alcanzar un rango de movimiento que involucre una mayor flexión de la articulación de la cadera.",
+            "Paso 4: Empuja la plataforma utilizando principalmente la fuerza de la cadena posterior y el glúteo, manteniendo el control de la carga durante todo el movimiento."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Desarrollo de cadena posterior"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Glúteo mayor",
+            "Isquiosurales"
+        ],
+        "musculos_secundarios": [
+            "Cuádriceps"
+        ],
+        "equipamientos": [
+            "Máquina de prensa de piernas a 45°"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_pies_altos_enfasis_en_gluteo_e_isquiosurales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/prensa_de_piernas_a_45_pies_altos_enfasis_en_gluteo_e_isquiosurales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Remo sentado en polea baja con agarre ancho prono (Espalda alta y deltoides posterior)",
+        "descripcion": "Ejercicio de tracción horizontal que, mediante un agarre ancho y prono, desplaza el énfasis de la carga hacia la parte superior de la espalda y la porción posterior del hombro.",
+        "instrucciones": [
+            "Paso 1: Siéntate frente a la polea baja, sujeta la barra larga con un agarre ancho en posición prono (palmas hacia abajo) y apoya los pies firmemente.",
+            "Paso 2: Mantén el torso estable y ligeramente inclinado hacia adelante para iniciar el movimiento.",
+            "Paso 3: Tracciona la barra hacia la zona del esternón, permitiendo que los codos se abran lateralmente para maximizar el trabajo escapular.",
+            "Paso 4: Regresa lentamente a la posición inicial manteniendo el control de la fase excéntrica y evitando redondear la espalda."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Mejora postural",
+            "Desarrollo de espalda alta"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Trapecio medio",
+            "Romboides",
+            "Deltoides posterior"
+        ],
+        "musculos_secundarios": [
+            "Dorsal ancho",
+            "Erectores espinales"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Barra larga"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_sentado_en_polea_baja_con_agarre_ancho_prono_espalda_alta_y_deltoides_posterior.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_sentado_en_polea_baja_con_agarre_ancho_prono_espalda_alta_y_deltoides_posterior.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Remo sentado en polea baja con agarre estrecho neutro (Dorsal ancho)",
+        "descripcion": "Ejercicio de tracción horizontal enfocado en el desarrollo del grosor del dorsal ancho mediante el uso de un agarre estrecho neutro que permite un mayor recorrido de tracción.",
+        "instrucciones": [
+            "Paso 1: Siéntate en la máquina de remo, apoya los pies en la plataforma y sujeta el agarre estrecho neutro con ambas manos.",
+            "Paso 2: Mantén la espalda recta y el core activado antes de iniciar el movimiento.",
+            "Paso 3: Realiza la tracción llevando el agarre hacia la zona inferior del abdomen, retrayendo las escápulas y pegando los codos al torso.",
+            "Paso 4: Extiende los brazos controladamente hasta la posición de estiramiento inicial sin encorvar la columna."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de tracción"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Dorsal ancho"
+        ],
+        "musculos_secundarios": [
+            "Romboides",
+            "Bíceps braquial",
+            "Trapecio medio"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Agarre estrecho neutro"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_sentado_en_polea_baja_con_agarre_estrecho_neutro_dorsal_ancho.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_sentado_en_polea_baja_con_agarre_estrecho_neutro_dorsal_ancho.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Remo sentado en polea baja con agarre biacromial supino (Dorsal ancho y espalda media)",
+        "descripcion": "Variante de remo que utiliza un agarre supino a la anchura de los hombros, favoreciendo una mayor implicación del bíceps y una excelente activación del dorsal ancho y musculatura interescapular.",
+        "instrucciones": [
+            "Paso 1: Siéntate frente a la polea baja, apoya los pies y sujeta la barra recta con un agarre supino (palmas hacia arriba) a la anchura de tus hombros (biacromial).",
+            "Paso 2: Mantén el pecho erguido y los hombros en posición neutra.",
+            "Paso 3: Tracciona la barra hacia el abdomen, enfocándote en empujar los codos hacia atrás y apretar las escápulas.",
+            "Paso 4: Regresa a la posición inicial extendiendo los brazos lentamente para mantener la tensión constante."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza",
+            "Desarrollo de espalda completa"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Espalda"
+        ],
+        "musculos_objetivo": [
+            "Dorsal ancho",
+            "Romboides",
+            "Trapecio medio"
+        ],
+        "musculos_secundarios": [
+            "Bíceps braquial",
+            "Braquial anterior"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_sentado_en_polea_baja_con_agarre_biacromial_supino_dorsal_ancho_y_espalda_media.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/remo_sentado_en_polea_baja_con_agarre_biacromial_supino_dorsal_ancho_y_espalda_media.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Hip thrust con mancuerna (Glúteo mayor)",
+        "descripcion": "Ejercicio de aislamiento enfocado en la extensión de cadera para el desarrollo del glúteo mayor, utilizando una mancuerna sobre la pelvis como carga externa.",
+        "instrucciones": [
+            "Paso 1: Siéntate en el suelo con la parte superior de la espalda apoyada contra un banco y coloca una mancuerna sobre la zona de la pelvis.",
+            "Paso 2: Flexiona las rodillas y apoya las plantas de los pies firmemente en el suelo a la anchura de las caderas.",
+            "Paso 3: Eleva la pelvis mediante la extensión de cadera hasta que el torso y los muslos formen una línea recta, apretando los glúteos en la parte superior.",
+            "Paso 4: Desciende la pelvis de manera controlada hasta la posición inicial sin perder la tensión muscular."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de cadena posterior"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Mancuerna",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/hip_thrust_con_mancuerna_gluteo_mayor.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/hip_thrust_con_mancuerna_gluteo_mayor.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Sentadilla búlgara con mancuernas (Cuádriceps)",
+        "descripcion": "Ejercicio unilateral de tren inferior que enfatiza el trabajo de cuádriceps mediante una gran amplitud de rango de movimiento y estabilización unipodal.",
+        "instrucciones": [
+            "Paso 1: Colócate de espaldas a un banco y apoya el empeine de un pie sobre él mientras sujetas una mancuerna en cada mano.",
+            "Paso 2: Mantén el torso erguido y desciende flexionando la rodilla y cadera de la pierna adelantada hasta que el muslo esté paralelo al suelo.",
+            "Paso 3: Mantén la rodilla alineada con la punta del pie durante todo el descenso.",
+            "Paso 4: Empuja con el talón de la pierna adelantada para regresar a la posición inicial."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza unilateral",
+            "Equilibrio"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Cuádriceps"
+        ],
+        "musculos_secundarios": [
+            "Glúteo mayor",
+            "Core",
+            "Aductores"
+        ],
+        "equipamientos": [
+            "Mancuernas",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_bulgara_con_mancuernas_cuadriceps.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/sentadilla_bulgara_con_mancuernas_cuadriceps.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Deadlift unilateral con mancuerna y apoyo (Isquiosurales)",
+        "descripcion": "Movimiento de bisagra de cadera unipodal para fortalecer isquiosurales y glúteos, utilizando un apoyo externo para facilitar el equilibrio.",
+        "instrucciones": [
+            "Paso 1: Sujeta una mancuerna en la mano contraria a la pierna de apoyo y apoya la mano libre en un soporte estable.",
+            "Paso 2: Inicia la bisagra de cadera llevando la pierna libre hacia atrás mientras el torso se inclina hacia adelante.",
+            "Paso 3: Desciende la mancuerna manteniendo la espalda recta hasta sentir un estiramiento en la parte posterior de la pierna de apoyo.",
+            "Paso 4: Regresa a la posición vertical mediante una extensión de cadera controlada."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Fortalecimiento isquiosural",
+            "Estabilidad",
+            "Propiocepción"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Isquiosurales"
+        ],
+        "musculos_secundarios": [
+            "Glúteo mayor",
+            "Erectores espinales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Mancuerna",
+            "Soporte"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/deadlift_unilateral_con_mancuerna_y_apoyo_isquiosurales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/deadlift_unilateral_con_mancuerna_y_apoyo_isquiosurales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Hip thrust con mancuerna (Glúteo mayor)",
+        "descripcion": "Ejercicio de aislamiento enfocado en la extensión de cadera para el desarrollo del glúteo mayor, utilizando una mancuerna sobre la pelvis como carga externa.",
+        "instrucciones": [
+            "Paso 1: Siéntate en el suelo con la parte superior de la espalda apoyada contra un banco y coloca una mancuerna sobre la zona de la pelvis.",
+            "Paso 2: Flexiona las rodillas y apoya las plantas de los pies firmemente en el suelo a la anchura de las caderas.",
+            "Paso 3: Eleva la pelvis mediante la extensión de cadera hasta que el torso y los muslos formen una línea recta, apretando los glúteos en la parte superior.",
+            "Paso 4: Desciende la pelvis de manera controlada hasta la posición inicial sin perder la tensión muscular."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de cadena posterior"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Mancuerna",
+            "Banco"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/hip_thrust_con_mancuerna_gluteo_mayor.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/hip_thrust_con_mancuerna_gluteo_mayor.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Donkey calf raise unilateral con mancuerna en déficit (Gastrocnemio)",
+        "descripcion": "Ejercicio de elevación de talón con flexión de cadera profunda, realizado sobre un déficit para maximizar el estiramiento y trabajo del tríceps sural.",
+        "instrucciones": [
+            "Paso 1: Apoya el antepié sobre un escalón o déficit, sostén una mancuerna en el lado del pie que trabaja y apóyate con la mano libre.",
+            "Paso 2: Realiza una flexión de cadera inclinando el torso y eleva el talón lo máximo posible mediante una contracción plantar.",
+            "Paso 3: Sostén un instante la contracción en la parte alta del movimiento.",
+            "Paso 4: Desciende el talón por debajo de la línea del escalón de manera controlada para lograr un estiramiento profundo."
+        ],
+        "dificultad": "avanzado",
+        "finalidad": [
+            "Hipertrofia de gemelos",
+            "Fuerza funcional"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Gastrocnemio"
+        ],
+        "musculos_secundarios": [
+            "Sóleo"
+        ],
+        "equipamientos": [
+            "Mancuerna",
+            "Déficit o escalón"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/donkey_calf_raise_unilateral_con_mancuerna_en_deficit_gastrocnemio.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/donkey_calf_raise_unilateral_con_mancuerna_en_deficit_gastrocnemio.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "[Gym] Aperturas en polea baja en banco inclinado con agarre neutro (Pectoral superior) / [Casa] Push-up inclinado con déficit en sillas (Pectoral inferior)",
+        "descripcion": "Catálogo dual que incluye una variante de aislamiento para el pectoral superior en poleas y un ejercicio de empuje con peso corporal sobre déficit para el pectoral inferior.",
+        "instrucciones": [
+            "Paso 1: Para la versión de gimnasio, ajusta un banco a 45 grados entre poleas bajas y realiza aperturas con agarre neutro.",
+            "Paso 2: Para la versión de casa, coloca las manos sobre dos sillas estables para realizar flexiones con mayor rango de recorrido.",
+            "Paso 3: Mantén el control constante en la fase excéntrica y una contracción focalizada en la fase concéntrica.",
+            "Paso 4: Asegúrate de mantener la alineación escapular durante todo el movimiento para proteger el hombro."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Definición muscular"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior",
+            "Serrato anterior"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Banco inclinado",
+            "Sillas"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/gym_aperturas_en_polea_baja_en_banco_inclinado_con_agarre_neutro_pectoral_superior_casa_push_up_inclinado_con_deficit_en_sillas_pectoral_inferior.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/gym_aperturas_en_polea_baja_en_banco_inclinado_con_agarre_neutro_pectoral_superior_casa_push_up_inclinado_con_deficit_en_sillas_pectoral_inferior.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "[Gym] Cruces en polea alta (Pectoral inferior) / [Casa] Push-up declinado con pies elevados (Pectoral superior)",
+        "descripcion": "Catálogo dual que presenta un movimiento de aducción horizontal para la parte baja del pecho en poleas y un empuje declinado para la porción clavicular.",
+        "instrucciones": [
+            "Paso 1: En gimnasio, realiza cruces de polea alta traccionando hacia abajo y al centro frente a tus muslos.",
+            "Paso 2: En casa, apoya los pies en una superficie elevada para realizar flexiones que enfaticen la parte superior del pectoral.",
+            "Paso 3: Ejecuta ambos movimientos con un tempo controlado, evitando el uso de inercia.",
+            "Paso 4: Mantén una postura estable y el core contraído durante toda la ejecución."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Estética"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor"
+        ],
+        "musculos_secundarios": [
+            "Tríceps braquial",
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Máquina de poleas",
+            "Superficie elevada"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/gym_cruces_en_polea_alta_pectoral_inferior_casa_push_up_declinado_con_pies_elevados_pectoral_superior.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/gym_cruces_en_polea_alta_pectoral_inferior_casa_push_up_declinado_con_pies_elevados_pectoral_superior.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "[Gym] Dips en paralelas con inclinación de torso (Pectoral inferior) / [Casa] Bench dips en silla (Tríceps braquial)",
+        "descripcion": "Catálogo dual que combina fondos en paralelas para enfatizar el pecho bajo y fondos entre bancos para el trabajo específico de tríceps.",
+        "instrucciones": [
+            "Paso 1: En gimnasio, realiza fondos en paralelas inclinando el torso hacia adelante para cargar el pectoral inferior.",
+            "Paso 2: En casa, utiliza una silla para realizar fondos centrando el esfuerzo en la extensión del codo para el tríceps.",
+            "Paso 3: Asegúrate de mantener los hombros alejados de las orejas en ambos ejercicios.",
+            "Paso 4: Controla el descenso y empuja explosivamente de forma segura para las articulaciones."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Fuerza",
+            "Hipertrofia"
+        ],
+        "partes_cuerpo": [
+            "Tren superior",
+            "Pecho",
+            "Brazos"
+        ],
+        "musculos_objetivo": [
+            "Pectoral mayor",
+            "Tríceps braquial"
+        ],
+        "musculos_secundarios": [
+            "Deltoides anterior"
+        ],
+        "equipamientos": [
+            "Barras paralelas",
+            "Silla"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/gym_dips_en_paralelas_con_inclinacion_de_torso_pectoral_inferior_casa_bench_dips_en_silla_triceps_braquial.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/gym_dips_en_paralelas_con_inclinacion_de_torso_pectoral_inferior_casa_bench_dips_en_silla_triceps_braquial.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Crunch abdominal (Recto abdominal superior)",
+        "descripcion": "Ejercicio de flexión del tronco diseñado para aislar la musculatura de la pared abdominal, centrándose en la parte superior del recto abdominal.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba en el suelo con las rodillas flexionadas y las plantas de los pies apoyadas.",
+            "Paso 2: Coloca las manos suavemente detrás de la cabeza o cruzadas sobre el pecho, evitando tirar del cuello.",
+            "Paso 3: Realiza una flexión de la columna levantando los hombros del suelo mediante la contracción del abdomen.",
+            "Paso 4: Mantén la zona lumbar pegada al suelo y desciende lentamente hasta la posición inicial."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Hipertrofia",
+            "Resistencia muscular"
+        ],
+        "partes_cuerpo": [
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Recto abdominal superior"
+        ],
+        "musculos_secundarios": [
+            "Oblicuos"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/crunch_abdominal_recto_abdominal_superior.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/crunch_abdominal_recto_abdominal_superior.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elevación de piernas en decúbito supino (Recto abdominal inferior)",
+        "descripcion": "Movimiento de flexión de cadera que, al realizarse en decúbito supino, exige una fuerte contracción isométrica y dinámica del abdomen para estabilizar la pelvis.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba con las piernas estiradas y los brazos extendidos a los costados para mayor estabilidad.",
+            "Paso 2: Eleva ambas piernas simultáneamente hacia el techo manteniendo las rodillas extendidas o con una ligera flexión.",
+            "Paso 3: Sube las piernas hasta que formen un ángulo de 90 grados con el torso, evitando arquear la espalda baja.",
+            "Paso 4: Desciende las piernas de forma controlada sin llegar a tocar el suelo, manteniendo la tensión en el abdomen inferior."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Estabilidad lumbopélvica"
+        ],
+        "partes_cuerpo": [
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Recto abdominal inferior"
+        ],
+        "musculos_secundarios": [
+            "Psoas ilíaco",
+            "Recto abdominal superior"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_de_piernas_en_decubito_supino_recto_abdominal_inferior.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elevacion_de_piernas_en_decubito_supino_recto_abdominal_inferior.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Crunch bicicleta (Oblicuos)",
+        "descripcion": "Ejercicio dinámico de rotación de tronco que combina la flexión abdominal con la activación cruzada de los oblicuos mediante un movimiento de pedaleo.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba con las manos detrás de la cabeza y las piernas elevadas con rodillas a 90 grados.",
+            "Paso 2: Lleva el codo derecho hacia la rodilla izquierda al mismo tiempo que extiendes la pierna derecha.",
+            "Paso 3: Alterna el movimiento llevando el codo izquierdo hacia la rodilla derecha de forma rítmica y controlada.",
+            "Paso 4: Mantén la mirada al frente y asegúrate de que la rotación provenga del torso y no solo del cuello."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Resistencia muscular",
+            "Hipertrofia de oblicuos"
+        ],
+        "partes_cuerpo": [
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Oblicuos"
+        ],
+        "musculos_secundarios": [
+            "Recto abdominal",
+            "Flexores de cadera"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/crunch_bicicleta_oblicuos.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/crunch_bicicleta_oblicuos.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Hollow body hold isométrico (Core)",
+        "descripcion": "Ejercicio isométrico fundamental para desarrollar la fuerza y el control del core, manteniendo la columna en una posición neutra y segura.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba con los brazos extendidos por encima de la cabeza y las piernas estiradas.",
+            "Paso 2: Eleva simultáneamente las piernas, la cabeza y los hombros del suelo, manteniendo la zona lumbar bien pegada al piso.",
+            "Paso 3: Mantén esta posición en forma de media luna, contrayendo fuertemente el abdomen.",
+            "Paso 4: Sostén la posición durante el tiempo establecido respirando de forma controlada."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Estabilidad del core",
+            "Fuerza isométrica"
+        ],
+        "partes_cuerpo": [
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Recto abdominal",
+            "Transverso abdominal"
+        ],
+        "musculos_secundarios": [
+            "Oblicuos",
+            "Flexores de cadera"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/hollow_body_hold_isometrico_core.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/hollow_body_hold_isometrico_core.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Extensión lumbar alterna en decúbito prono (Erectores espinales)",
+        "descripcion": "Ejercicio de cadena posterior diseñado para fortalecer los músculos de la zona baja de la espalda mediante la elevación alternada de miembros.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca abajo con las piernas estiradas y los brazos extendidos hacia adelante.",
+            "Paso 2: Eleva simultáneamente el brazo derecho y la pierna izquierda, manteniendo una ligera contracción en la zona lumbar.",
+            "Paso 3: Alterna el movimiento elevando el brazo izquierdo y la pierna derecha de forma fluida y controlada.",
+            "Paso 4: Evita movimientos bruscos y mantén la cabeza en posición neutra durante toda la serie."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Fortalecimiento lumbar",
+            "Salud postural"
+        ],
+        "partes_cuerpo": [
+            "Espalda",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Erectores espinales"
+        ],
+        "musculos_secundarios": [
+            "Glúteo mayor",
+            "Dorsal ancho"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/extension_lumbar_alterna_en_decubito_prono_erectores_espinales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/extension_lumbar_alterna_en_decubito_prono_erectores_espinales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Romanian deadlift con barra (Glúteo mayor)",
+        "descripcion": "Ejercicio de bisagra de cadera enfocado en el estiramiento activo y fortalecimiento del glúteo mayor, manteniendo una flexión mínima y constante de rodillas para minimizar la implicación del cuádriceps.",
+        "instrucciones": [
+            "Paso 1: Colócate de pie con los pies a la anchura de las caderas, sujetando la barra con un agarre prono frente a los muslos.",
+            "Paso 2: Realiza una bisagra de cadera empujando los glúteos hacia atrás mientras mantienes la espalda neutra y las rodillas bloqueadas en una flexión mínima.",
+            "Paso 3: Desciende la barra pegada a las piernas hasta notar un estiramiento profundo en glúteos e isquiosurales, sin permitir que la barra toque el suelo.",
+            "Paso 4: Contrae activamente los glúteos para regresar a la posición erguida, manteniendo el control total de la carga."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de cadena posterior"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Glúteo mayor"
+        ],
+        "musculos_secundarios": [
+            "Isquiosurales",
+            "Erectores espinales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/romanian_deadlift_con_barra_gluteo_mayor.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/romanian_deadlift_con_barra_gluteo_mayor.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Stiff-leg deadlift con barra (Isquiosurales)",
+        "descripcion": "Variante de peso muerto donde las piernas se mantienen casi totalmente extendidas, priorizando el estiramiento y trabajo directo de los isquiosurales a través de una bisagra de cadera profunda.",
+        "instrucciones": [
+            "Paso 1: Sujeta la barra con agarre prono, mantén los pies a la anchura de los hombros y las piernas con una flexión de rodilla mínima, casi bloqueadas pero no hiperextendidas.",
+            "Paso 2: Inclina el torso hacia adelante mediante una bisagra de cadera pronunciada, manteniendo la espalda firme y neutra.",
+            "Paso 3: Baja la barra hasta donde tu movilidad lo permita, buscando sentir la tensión máxima en la parte posterior de los muslos.",
+            "Paso 4: Regresa a la posición vertical mediante la extensión de cadera, manteniendo el peso cerca del cuerpo durante todo el recorrido."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Hipertrofia",
+            "Fuerza de cadena posterior"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Isquiosurales"
+        ],
+        "musculos_secundarios": [
+            "Glúteo mayor",
+            "Erectores espinales"
+        ],
+        "equipamientos": [
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/stiff_leg_deadlift_con_barra_isquiosurales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/stiff_leg_deadlift_con_barra_isquiosurales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "[Izquierda] Romanian deadlift con barra (Glúteo mayor) / [Derecha] Stiff-leg deadlift con barra (Isquiosurales)",
+        "descripcion": "Comparativa técnica que ilustra la diferencia en el patrón motor entre el Romanian deadlift para glúteos y el Stiff-leg deadlift enfocado en isquiosurales.",
+        "instrucciones": [
+            "Paso 1: Para la versión izquierda (Glúteo), mantén una flexión de rodilla ligera y constante durante todo el recorrido de bisagra.",
+            "Paso 2: Para la versión derecha (Isquios), mantén las piernas casi rectas durante el descenso para maximizar el estiramiento de los isquiosurales.",
+            "Paso 3: En ambos casos, asegura que el movimiento provenga exclusivamente de la articulación de la cadera.",
+            "Paso 4: Mantén siempre la columna en posición neutra y los hombros activos para evitar lesiones lumbares."
+        ],
+        "dificultad": "avanzado",
+        "finalidad": [
+            "Análisis biomecánico",
+            "Educación técnica"
+        ],
+        "partes_cuerpo": [
+            "Tren inferior"
+        ],
+        "musculos_objetivo": [
+            "Glúteo mayor",
+            "Isquiosurales"
+        ],
+        "musculos_secundarios": [
+            "Erectores espinales",
+            "Core"
+        ],
+        "equipamientos": [
+            "Barra recta"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/izquierda_romanian_deadlift_con_barra_gluteo_mayor_derecha_stiff_leg_deadlift_con_barra_isquiosurales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/izquierda_romanian_deadlift_con_barra_gluteo_mayor_derecha_stiff_leg_deadlift_con_barra_isquiosurales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Postura isométrica en decúbito supino (Erectores espinales)",
+        "descripcion": "Ejercicio estático destinado a activar y estabilizar la musculatura de la columna vertebral en posición acostada, promoviendo una postura neutra y controlada.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba con las piernas estiradas y los brazos relajados a los costados.",
+            "Paso 2: Activa la musculatura de la espalda baja presionando ligeramente la zona lumbar contra el suelo sin realizar un esfuerzo excesivo.",
+            "Paso 3: Mantén esta contracción isométrica controlada, asegurando que el torso permanezca alineado y estable.",
+            "Paso 4: Sostén la postura durante el tiempo indicado respirando de forma natural y rítmica."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Estabilidad",
+            "Activación muscular",
+            "Control motor"
+        ],
+        "partes_cuerpo": [
+            "Espalda",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Erectores espinales"
+        ],
+        "musculos_secundarios": [
+            "Multífidos",
+            "Recto abdominal"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/postura_isometrica_en_decubito_supino_erectores_espinales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/postura_isometrica_en_decubito_supino_erectores_espinales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Elongación axial en decúbito supino con tobillos cruzados y manos en la nuca (Erectores espinales)",
+        "descripcion": "Técnica de estiramiento y activación que busca alargar la columna vertebral y fortalecer los erectores espinales mediante una postura de tensión controlada.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba, cruza los tobillos y coloca las manos detrás de la nuca con los codos abiertos.",
+            "Paso 2: Intenta alargar el cuerpo desde la coronilla hasta los talones mientras mantienes la espalda baja en contacto con el suelo.",
+            "Paso 3: Genera una ligera tensión hacia arriba desde el cuello y los hombros, manteniendo los erectores espinales comprometidos en el esfuerzo.",
+            "Paso 4: Mantén la posición estática sintiendo el trabajo en la espalda sin elevar el torso."
+        ],
+        "dificultad": "intermedio",
+        "finalidad": [
+            "Descompresión vertebral",
+            "Fortalecimiento",
+            "Postura"
+        ],
+        "partes_cuerpo": [
+            "Espalda",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Erectores espinales"
+        ],
+        "musculos_secundarios": [
+            "Trapecio",
+            "Recto abdominal"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elongacion_axial_en_decubito_supino_con_tobillos_cruzados_y_manos_en_la_nuca_erectores_espinales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/elongacion_axial_en_decubito_supino_con_tobillos_cruzados_y_manos_en_la_nuca_erectores_espinales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Postura de reposo constructivo en decúbito supino con abducción de caderas (Zona lumbar)",
+        "descripcion": "Posición de descanso terapéutico diseñada para relajar la musculatura paravertebral y liberar tensiones en la región lumbar mediante la apertura de caderas.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba, flexiona las rodillas y junta las plantas de los pies, dejando que las rodillas caigan hacia afuera por gravedad.",
+            "Paso 2: Relaja los hombros y asegúrate de que toda la columna esté en contacto con el suelo.",
+            "Paso 3: Respira profundamente, permitiendo que la zona lumbar se relaje y se libere de cualquier presión acumulada.",
+            "Paso 4: Mantén esta postura durante varios minutos para favorecer el descanso del sistema muscular de la espalda."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Relajación",
+            "Alivio de tensión",
+            "Movilidad de cadera"
+        ],
+        "partes_cuerpo": [
+            "Espalda",
+            "Caderas"
+        ],
+        "musculos_objetivo": [
+            "Músculos paravertebrales",
+            "Aductores"
+        ],
+        "musculos_secundarios": [
+            "Psoas ilíaco"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/postura_de_reposo_constructivo_en_decubito_supino_con_abduccion_de_caderas_zona_lumbar.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/postura_de_reposo_constructivo_en_decubito_supino_con_abduccion_de_caderas_zona_lumbar.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Rotación lumbar en decúbito supino con cruce de pierna izquierda hacia la derecha (Cuadrado lumbar y erectores espinales)",
+        "descripcion": "Movimiento de movilidad asistida para la región baja de la espalda, que busca estirar los músculos laterales y posteriores mediante una rotación controlada.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba con los brazos en cruz y las piernas estiradas.",
+            "Paso 2: Flexiona la pierna izquierda y crúzala sobre el cuerpo hacia el lado derecho, buscando tocar el suelo con la rodilla si es posible.",
+            "Paso 3: Mantén los hombros bien pegados al suelo mientras realizas la rotación, sintiendo el estiramiento en la zona lumbar izquierda.",
+            "Paso 4: Sostén la posición de rotación durante unos segundos y vuelve lentamente al centro."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Movilidad",
+            "Estiramiento",
+            "Descompresión"
+        ],
+        "partes_cuerpo": [
+            "Espalda",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Cuadrado lumbar",
+            "Erectores espinales"
+        ],
+        "musculos_secundarios": [
+            "Oblicuos",
+            "Glúteo medio"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/rotacion_lumbar_en_decubito_supino_con_cruce_de_pierna_izquierda_hacia_la_derecha_cuadrado_lumbar_y_erectores_espinales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/rotacion_lumbar_en_decubito_supino_con_cruce_de_pierna_izquierda_hacia_la_derecha_cuadrado_lumbar_y_erectores_espinales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Rotación lumbar en decúbito supino con cruce de pierna izquierda hacia la izquierda (Cuadrado lumbar y erectores espinales)",
+        "descripcion": "Movimiento de movilidad lateral que enfoca el estiramiento en el lado izquierdo del cuadrado lumbar y erectores espinales mediante una rotación externa.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba, flexiona la pierna izquierda y ábrela hacia el costado izquierdo sin mover la pelvis excesivamente.",
+            "Paso 2: Permite que la rodilla se acerque al suelo por el lateral, manteniendo la espalda firme contra la base.",
+            "Paso 3: Siente cómo se elonga el tejido conectivo en el lado izquierdo de la espalda baja durante la apertura.",
+            "Paso 4: Mantén el control del movimiento y respira pausadamente mientras sostienes la posición."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Movilidad lateral",
+            "Estiramiento"
+        ],
+        "partes_cuerpo": [
+            "Espalda",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Cuadrado lumbar",
+            "Erectores espinales"
+        ],
+        "musculos_secundarios": [
+            "Aductores",
+            "Oblicuos"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/rotacion_lumbar_en_decubito_supino_con_cruce_de_pierna_izquierda_hacia_la_izquierda_cuadrado_lumbar_y_erectores_espinales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/rotacion_lumbar_en_decubito_supino_con_cruce_de_pierna_izquierda_hacia_la_izquierda_cuadrado_lumbar_y_erectores_espinales.webp"
+    },
+    {
+        "fuente": "demic",
+        "nombre_ejercicio": "Rotación lumbar en decúbito supino con cruce de pierna derecha hacia la derecha (Cuadrado lumbar y erectores espinales)",
+        "descripcion": "Movimiento de apertura lateral que elonga y libera tensión en el lado derecho de la región lumbar, ayudando a mejorar la movilidad y el bienestar de la columna.",
+        "instrucciones": [
+            "Paso 1: Túmbate boca arriba y flexiona la pierna derecha para prepararte para el movimiento.",
+            "Paso 2: Abre la pierna derecha hacia el lado derecho, buscando aproximar la rodilla al suelo mientras mantienes la espalda estable.",
+            "Paso 3: Siente el estiramiento profundo en el cuadrado lumbar y erectores espinales del lado derecho.",
+            "Paso 4: Regresa al centro con suavidad, evitando tirones en la musculatura de la espalda."
+        ],
+        "dificultad": "principiante",
+        "finalidad": [
+            "Movilidad",
+            "Estiramiento"
+        ],
+        "partes_cuerpo": [
+            "Espalda",
+            "Core"
+        ],
+        "musculos_objetivo": [
+            "Cuadrado lumbar",
+            "Erectores espinales"
+        ],
+        "musculos_secundarios": [
+            "Aductores",
+            "Oblicuos"
+        ],
+        "equipamientos": [
+            "Peso corporal"
+        ],
+        "url_video": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/rotacion_lumbar_en_decubito_supino_con_cruce_de_pierna_derecha_hacia_la_derecha_cuadrado_lumbar_y_erectores_espinales.mp4",
+        "url_preview": "https://pub-150303d1abd547199a65ccac4b8fe45b.r2.dev/ejercicios/demic/rotacion_lumbar_en_decubito_supino_con_cruce_de_pierna_derecha_hacia_la_derecha_cuadrado_lumbar_y_erectores_espinales.webp"
+    }
+]

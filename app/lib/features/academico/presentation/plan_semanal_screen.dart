@@ -314,7 +314,7 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
     }
 
     if (todos.isEmpty) {
-      return EmptyState(
+      return const EmptyState(
         icon: Icons.event_note_outlined,
         title: 'Sin actividades este día',
         message: 'Añade bloques de estudio, clases o entrenamientos.',

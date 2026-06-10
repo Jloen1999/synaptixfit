@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit
-**Versión:** 2.6
-**Fecha:** 29-05-2026
+**Versión:** 3.0
+**Fecha:** 07-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -13,14 +13,17 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 27 tablas, RLS, vistas materializadas (30 migraciones aplicadas) |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 29+ tablas, RLS, vistas (49 migraciones aplicadas, hasta 0050) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
+| Jobs programados | pg_cron (PostgreSQL) | Job nocturno de recomendaciones diarias (2 AM) |
 | Almacenamiento multimedia | Cloudflare R2 | GIFs de ejercicios (~1300 archivos, resolución 360x360) |
 | Proxy multimedia | Cloudflare Worker `synaptixfit-r2-proxy` | CORS + acceso público a bucket R2 |
-| **IA generativa** | **Gemini Flash API (Google)** | **Recomendación de rutinas, ejercicios y progresión** |
+| **IA generativa** | **Gemini Flash API (Google)** | **Refinamiento de rutinas (motor de reglas determinista como base)** |
 | **IA — HTTP client** | **Dio (Flutter)** | **Peticiones directas a `generativelanguage.googleapis.com`** |
+| **Motor de reglas** | **Dart (cliente)** | **Pipeline determinista: sanitización → reglas → contexto → transición → progresión** |
+| **Motor de feedback** | **Dart (cliente)** | **Procesamiento post-sesión: degradación dinámica, inactividad, fatiga** |
 
 ### 1.1 ¿Por qué la IA se ejecuta en cliente y no en Edge Function?
 
@@ -33,7 +36,7 @@ Para MVP/TFG, la simplicidad y latencia del enfoque cliente-side son preferibles
 
 ## 2. Migraciones — Historial Completo
 
-Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`.
+Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Actualmente hay **49 archivos de migración** cubriendo desde la creación inicial (0001) hasta la constraint de objetivos estándar (0050).
 
 | # | Archivo | Fecha | Descripción |
 |---|---------|-------|-------------|
@@ -46,31 +49,54 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 0007 | `20260422_0007_seed_estudiantes.sql` | 22-04-2026 | Seed de usuarios de prueba |
 | 0008 | `20260501_0008_enable_realtime_ejercicios.sql` | 01-05-2026 | Realtime en las 8 tablas del catálogo de ejercicios |
 | 0009 | `20260504_0009_add_docente_archivado_asignaturas.sql` | 04-05-2026 | Campos `docente` y `archivado` en `asignaturas` |
-| 0010 | `20260504_0010_catalogo_academico.sql` | 04-05-2026 | Tablas `catalogo_universidades`, `catalogo_carreras`, `catalogo_asignaturas` + RLS pública |
-| 0011 | `20260504_0011_planes_estudio.sql` | 04-05-2026 | Tabla `planes_estudio`, columnas `plan_estudio_id` y `prioridad` en `horarios_academicos` |
-| 0012 | `20260505_0012_apuntes.sql` | 05-05-2026 | Tabla `apuntes` (Markdown, visibilidad, nota rápida) + RLS |
+| 0010 | `20260504_0010_catalogo_academico.sql` | 04-05-2026 | Tablas catálogo académico + RLS pública |
+| 0011 | `20260504_0011_planes_estudio.sql` | 04-05-2026 | Tabla `planes_estudio`, columnas en `horarios_academicos` |
+| 0012 | `20260505_0012_apuntes.sql` | 05-05-2026 | Tabla `apuntes` (Markdown, visibilidad) + RLS |
 | 0013 | `20260506_0013_usuario_carreras.sql` | 06-05-2026 | Tabla `usuario_carreras` (M:N usuario ↔ carrera) |
-| 0014 | `20260509_0014_performance_indexes.sql` | 09-05-2026 | Vista materializada `mv_ejercicios_completos`, índices GIN, triggers de refresco automático |
-| 0015 | `20260510_0015_rutinas_periodizacion.sql` | 10-05-2026 | Tablas `semanas_rutina`, `dias_rutina`, `series_sesion`. Columnas `duracion_semanas`, `objetivo`, `estado` en `rutinas`. Columna `dia_id` y `peso_kg` en `seleccion_de_ejercicios`. Columnas `dia_id`, `tipo` en `sesiones_registradas`. RLS completa. Drop de constraints antiguos que impedían periodización (UNIQUE por rutina_id sin dia_id). |
-| 0016 | `20260511_0016_estado_diario.sql` | 11-05-2026 | Tabla `estado_diario_usuario` (check-in diario de fatiga). RLS: solo propietario. |
-| 0017 | `20260511_0017_periodizacion_tipo_semana.sql` | 11-05-2026 | Columna `tipo_semana` en `semanas_rutina` con CHECK (`adaptacion`, `carga`, `pico`, `descarga`). Índice `(rutina_id, numero_semana, tipo_semana)`. |
-| 0018 | `20260519_0018_finalidad_ejercicios.sql` | 19-05-2026 | Columna `finalidad` en `ejercicios` con CHECK (`fuerza`, `cardio`, `isometrico`). Columnas `duracion_segundos`, `distancia_metros`, `tiempo_isometrico_segundos` en `seleccion_de_ejercicios`. Recreación de `v_ejercicios_completos` como vista normal con subqueries (independiente de la materializada). |
-| 0019 | `20260527_0019_ampliar_finalidad.sql` | 27-05-2026 | Amplía el CHECK de `finalidad` para aceptar: `hipertrofia`, `resistencia`, `movilidad`. |
-| 0020 | `20260528_0020_deprecar_exercise_db_id.sql` | 28-05-2026 | Hace `exercise_db_id` nullable, elimina UNIQUE y el índice `idx_ejercicios_exercise_db_id`. Recrea `v_ejercicios_completos`. |
-| 0021 | `20260528_0021_limpiar_ejercicios.sql` | 28-05-2026 | DELETE en orden FK de todas las tablas de ejercicios/rutinas/sesiones/catálogos para re-carga limpia. |
-| 0022 | `20260528_0022_vista_ejercicios_security_invoker.sql` | 28-05-2026 | Cambia `v_ejercicios_completos` de SECURITY DEFINER (default) a SECURITY INVOKER para respetar RLS del usuario consultante. |
-| 0023 | `20260528_0023_actualizar_dificultad_ejercicios.sql` | 28-05-2026 | Cambia el CHECK de `dificultad` en `ejercicios` de `('facil','medio','dificil')` a `('principiante','intermedio','avanzado')` para coincidir con la nomenclatura del JSON. |
-| 0024 | `20260528_0024_insertar_equipamientos.sql` | 28-05-2026 | Inserta 24 equipamientos desde `equipamientos.json` (con `fuente`). |
-| 0025 | `20260528_0025_insertar_partes_cuerpo.sql` | 28-05-2026 | Inserta 13 partes del cuerpo desde `partes_cuerpo.json`. |
-| 0026 | `20260528_0026_insertar_musculos.sql` | 28-05-2026 | Inserta 60 músculos desde `musculos.json`. |
-| 0027 | `20260528_0027_insertar_ejercicios.sql` | 28-05-2026 | Añade UNIQUE en `ejercicios.nombre` e inserta los 89 ejercicios desde `nuevos_ejercicios.json` (ON CONFLICT DO NOTHING). |
-| 0028 | `20260528_0028_eliminar_exercise_db_id.sql` | 28-05-2026 | Elimina triggers y funcion de refresco de `mv_ejercicios_completos`, dropea la MV, elimina columna `exercise_db_id` de `ejercicios`, recrea `v_ejercicios_completos` sin el campo. |
-| 0029 | `20260529_0029_agregar_url_imagen_musculos.sql` | 29-05-2026 | Agrega columna `url_imagen` a `musculos` y la popula con las rutas R2 de los 51 PNGs ilustrativos. |
-| 0030 | `20260529_0030_eliminar_musculos_duplicados.sql` | 29-05-2026 | Remapea 9 músculos redundantes en tablas puente y los elimina: `abdominales→abdomen`, `deltoides anteriores→deltoides anterior`, `dorsales→dorsal ancho`, `glúteos→glúteo mayor`, `hombros→deltoides`, `parte interna del muslo→aductores`, `pectorales→pecho`, `tibiales→tibial anterior`, `tobillos→estabilizadores de tobillo`. |
+| 0014 | `20260509_0014_performance_indexes.sql` | 09-05-2026 | Vista materializada `mv_ejercicios_completos`, índices GIN, triggers |
+| 0015 | `20260510_0015_rutinas_periodizacion.sql` | 10-05-2026 | Tablas `semanas_rutina`, `dias_rutina`, `series_sesion`. Periodización completa |
+| 0016_a | `20260510_0016_plan_semanal_v2.sql` | 10-05-2026 | Versión 2 del plan semanal |
+| 0016_b | `20260511_0016_estado_diario.sql` | 11-05-2026 | Tabla `estado_diario_usuario` (check-in fatiga). RLS |
+| 0017 | `20260511_0017_periodizacion_tipo_semana.sql` | 11-05-2026 | Columna `tipo_semana` en `semanas_rutina` |
+| 0018_a | `20260511_0018_fix_objetivo_constraint.sql` | 11-05-2026 | Fix de constraint de objetivo |
+| 0018_b | `20260519_0018_finalidad_ejercicios.sql` | 19-05-2026 | Columna `finalidad` en `ejercicios` |
+| 0019_a | `20260513_0019_fix_objetivo_check_constraint.sql` | 13-05-2026 | Fix de check constraint de objetivo |
+| 0019_b | `20260527_0019_ampliar_finalidad.sql` | 27-05-2026 | Amplía CHECK de `finalidad` |
+| 0020_a | `20260514_0020_trigger_cascada_semana.sql` | 14-05-2026 | Trigger cascada días→semanas |
+| 0020_b | `20260528_0020_deprecar_exercise_db_id.sql` | 28-05-2026 | `exercise_db_id` nullable |
+| 0021 | `20260528_0021_limpiar_ejercicios.sql` | 28-05-2026 | Limpieza de datos de ejercicios |
+| 0022 | `20260528_0022_vista_ejercicios_security_invoker.sql` | 28-05-2026 | Vista SECURITY INVOKER |
+| 0023 | `20260528_0023_actualizar_dificultad_ejercicios.sql` | 28-05-2026 | Dificultad: principiante/intermedio/avanzado |
+| 0024-0027 | *(saltos en numeración)* | 28-05-2026 | Inserción de equipamientos (0024), partes_cuerpo (0025), músculos (0026), ejercicios (0027) |
+| 0028 | `20260528_0028_eliminar_exercise_db_id.sql` | 28-05-2026 | Elimina `exercise_db_id`, `mv_ejercicios_completos` |
+| 0029 | `20260529_0029_agregar_url_imagen_musculos.sql` | 29-05-2026 | `url_imagen` en `musculos` |
+| 0030 | `20260529_0030_eliminar_musculos_duplicados.sql` | 29-05-2026 | Remapea y elimina 9 músculos redundantes |
+| 0031 | `20260529_0031_actualizar_url_imagen_webp.sql` | 29-05-2026 | Conversión de PNG a WebP |
+| 0032 | `20260529_0032_multi_finalidad.sql` | 29-05-2026 | `finalidad` pasa a `TEXT[]` (multi-finalidad) |
+| 0033 | *(salto)* | — | (no utilizado) |
+| 0034 | `20260529_0034_preparar_dataset_final.sql` | 29-05-2026 | Preparación para dataset final |
+| 0035 | `20260529_0035_insertar_musculos_final.sql` | 29-05-2026 | Inserción de 93 músculos del dataset final |
+| 0036 | `20260529_0036_insertar_partes_cuerpo_final.sql` | 29-05-2026 | 13 partes del cuerpo del dataset final |
+| 0037 | `20260529_0037_insertar_equipamientos_final.sql` | 29-05-2026 | 24 equipamientos del dataset final |
+| 0038 | `20260529_0038_insertar_ejercicios_final.sql` | 29-05-2026 | Inserción de ~909 ejercicios del dataset final |
+| 0039 | `20260603_0039_optimizar_vista_ejercicios.sql` | 03-06-2026 | Optimización de `v_ejercicios_completos` |
+| 0040 | `20260603_0040_optimizar_rendimiento_catalogo.sql` | 03-06-2026 | Optimización rendimiento catálogo |
+| 0041 | `20260603_0041_corregir_nombres_ejercicios.sql` | 03-06-2026 | Corrección de nombres de ejercicios |
+| 0042 | `20260603_0042_seed_completo_desde_json.sql` | 03-06-2026 | Seed completo desde `dataset_final.json` |
+| 0043 | `20260604_0043_agregar_modalidad_medicion_circuito.sql` | 04-06-2026 | Modalidad medición y circuito |
+| 0044 | `20260604_0044_estandarizar_finalidades_objetivo.sql` | 04-06-2026 | Estandarización de finalidades y objetivo |
+| 0045 | `20260605_0045_pesos_por_serie.sql` | 05-06-2026 | Columna `pesos_kg jsonb` en `seleccion_de_ejercicios` |
+| 0046 | `20260606_0046_historial_objetivos.sql` | 06-06-2026 | Tabla `historial_objetivos` (transición de objetivos) |
+| 0047 | `20260606_0047_failed_reps.sql` | 06-06-2026 | Columna `failed_reps` en `series_sesion` |
+| 0048 | `20260606_0048_recomendaciones_pendientes.sql` | 06-06-2026 | Tabla `recomendaciones_pendientes` (feedback engine) |
+| 0049 | `20260606_0049_func_daily_recommendations.sql` | 06-06-2026 | Función `generar_recomendaciones_diarias()` para pg_cron |
+| 0050 | `20260607_0050_fix_objetivo_constraint.sql` | 07-06-2026 | `ck_perfil_objetivo_estandar` con finalidadesEstandar |
+
+> **Nota sobre numeración:** El proyecto tiene 49 archivos de migración. La numeración salta algunos números (0024-0027 se fusionaron, 0033 no se usó, 0016-0020 tienen dos archivos cada uno). La migración más alta es la 0050. Siempre aplicar en orden cronológico (por fecha en el nombre del archivo), no por número.
 
 ## 3. Servicio de IA — `RecomendacionIaService`
 
-**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (867 líneas)
+**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (1047 líneas)
 
 **Modelo:** Gemini Flash (`gemini-flash-latest`) vía REST API.
 **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`
@@ -245,6 +271,194 @@ Esto es necesario porque Gemini a veces envuelve el JSON en bloques de código M
 | `DioException` (otros) | "No se pudo conectar con Gemini en este momento." |
 | `FormatException` | "Gemini generó una respuesta con formato no válido. Inténtalo de nuevo." |
 | Otros | "Error inesperado: {primeros 100 caracteres}" |
+
+### 3.6 Motor de Reglas Determinista (Fases 0-2)
+
+#### 3.6.1 Sistema Unificado de Objetivos — `string_utils.dart`
+
+**Archivo:** `app/lib/shared/utils/string_utils.dart` (63 líneas)
+
+Define la fuente única de verdad para los 7 objetivos de entrenamiento en español:
+
+```dart
+const finalidadesEstandar = [
+  'Hipertrofia Muscular',
+  'Fuerza Máxima',
+  'Potencia y Explosividad',
+  'Fuerza Resistencia',
+  'Movilidad y Flexibilidad',
+  'Estabilidad y Control Motor',
+  'Acondicionamiento Metabólico',
+];
+
+String sanitizarObjetivo(String raw) {
+  // 1. Coincidencia exacta normalizada contra finalidadesEstandar
+  // 2. Mapeo legacy (hipertrofia→Hipertrofia Muscular, fuerza→Fuerza Máxima, etc.)
+  // 3. Fallback: 'Hipertrofia Muscular'
+}
+```
+
+Esta función es usada por todos los servicios del motor de recomendaciones: `ParametrosObjetivo.de()`, `RecomendacionReglasService`, `RecomendacionContextoService`, `TransicionObjetivoService` y los 4 prompts de Gemini.
+
+#### 3.6.2 Tabla de Parámetros por Objetivo — `ParametrosObjetivo`
+
+**Archivo:** `app/lib/features/bienestar/infrastructure/parametros_objetivo.dart` (196 líneas)
+
+Clase inmutable con `static const tabla` de 7 entradas calibradas contra `dataset_final.json`. Factory `ParametrosObjetivo.de(String objetivo)` usa `sanitizarObjetivo()` internamente.
+
+**Campos por entrada:**
+- `seriesMin/Max`, `repsMin/Max`, `descansoMin/Max` — rangos de prescripción
+- `rpeMin/Max` — Rate of Perceived Exertion objetivo
+- `intensidadRelativa` — % de 1RM recomendado (0.30-0.85)
+- `ejerciciosPorDia` — densidad de la sesión
+- `priorizarCompuestos` — si el objetivo se beneficia de multiarticulares
+- `modalidades` — tipo de entrenamiento (fuerza, aerobica, metabolica, movilidad)
+- `finalidadesEjercicio` — finalidades de ejercicio compatibles con este objetivo
+- `volumenSemanalObjetivo` — sets semanales recomendados
+- `admiteCircuito` — si permite estructura de circuito
+
+#### 3.6.3 Servicio de Reglas — `RecomendacionReglasService`
+
+**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_reglas_service.dart` (429 líneas)
+
+Motor determinista de generación de estructura de rutina. No depende de IA.
+
+**Métodos públicos:**
+- `generarEstructura(perfil, catalogo, params, historial?)` → `Map<int, Map<int, List<EjercicioInput>>>`
+- `determinarSplit(diasSemana, nivelActividad)` → `TipoSplit` (fullBody/upperLower/pushPullLegs)
+- `splitLabel(split)` → `String` ("Full-Body", "Upper/Lower", "Push/Pull/Legs")
+
+**Pipeline interno:**
+1. Determinar split según días disponibles y nivel de actividad
+2. Asignar músculos objetivo a cada día según split
+3. Aplicar 5 filtros encadenados (dificultad, equipamiento, modalidad, músculo, historial)
+4. Scorear ejercicios con 4 criterios ponderados (finalidad 40%, compuesto 25%, dificultad 20%, multi-finalidad 15%)
+5. Selección balanceada: 60% compuestos + aislados, sin músculos primarios duplicados
+
+### 3.7 Capa de Contexto (Fase 3)
+
+**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_contexto_service.dart` (216 líneas)
+
+**DTOs:**
+- `ContextoAcademico`: horasEstudioReales, nivelEstres, evaluacionesSemana, horasSuenoPromedio, tieneExamenesProximos
+- `ContextoFisiologico`: pesoActual, pesoSemanaAnterior, rachaActual, nivelUsuario, modoExamenes, tendenciaPesoSemanal
+- `AjusteContexto`: factorSeries, factorDescanso, restricciones, motivo
+
+**`calcularAjustes(contextoAcademico, contextoFisiologico, estadoDiario?)` → `AjusteContexto`**
+
+6 reglas encadenadas:
+1. **Modo exámenes**: -20% series, -15% descanso
+2. **FCT (Factor de Carga Total)**: Pondera horas estudio, estrés, evaluaciones, sueño (baseline 8h), dolor, energía → factor 0.5-1.0
+3. **Racha**: ≥7 días → +10% series; ≥30 días → +15% series
+4. **Tendencia peso**: Alerta si va contra objetivo
+5. **Fatiga diaria**: >50 → -30% series; >70 → -50% series
+6. **Listo para entrenar**: false → -40% series
+
+**`aplicarAjustes(ejercicios, ajuste, params)`**: Clampa series/descanso a rangos del `ParametrosObjetivo`.
+
+### 3.8 Calculadora de Sobrecarga Progresiva (Fase 4)
+
+**Archivo:** `app/lib/features/bienestar/infrastructure/progresion_calculator.dart` (335 líneas)
+
+**Métodos principales:**
+- `calcular1RM(peso, reps)` → `double`: Fórmula no lineal con guard para pesos <3kg
+- `generarPesosPorSerie(series, pesoBase)` → `List<double>`: Rampa 50%→75%→100%
+- `calcularProgresion(ejercicioId, historialSeries, tipoMedicion, params)` → `ProgresionEjercicio`
+- `degradarPorInactividad(diasInactivo, pesoActual)` → `double`: >14d→-20%, >21d→-30%
+- `generarInicial(ejercicioId, series, params)` → `ProgresionEjercicio`
+- `progresionarEstructura(estructura, historial, params)` → `Map<int, Map<int, List<EjercicioInput>>>`
+
+**DTO `ProgresionEjercicio`:** nuevasSeries, nuevasRepeticiones, nuevoDescanso, nuevoPeso, pesosPorSerie, nuevaDuracionSegundos, nuevaDistanciaMetros, log.
+
+### 3.9 Servicio de Transición de Objetivos (Fase 5)
+
+**Archivo:** `app/lib/features/bienestar/infrastructure/transicion_objetivo_service.dart` (155 líneas)
+
+**`calcularTransicion(objetivoActual, registroAnterior?)` → `ParametrosTransicion`**
+
+Si el usuario cambió de objetivo (ej: Hipertrofia→Fuerza), interpola parámetros en 3 fases durante 3 semanas:
+- Fase temprana (semana 1): factor 0.30 — 30% nuevo, 70% viejo
+- Fase media (semana 2): factor 0.70 — 70% nuevo, 30% viejo
+- Fase completa (semana 3+): factor 1.0 — 100% nuevo objetivo
+
+**`_interpolar(a, b, t)`**: `lerpInt`/`lerpDouble` con guard `min>max` para evitar inversión de rangos.
+
+**`aplicarTransicion(ejercicios, transicion)`**: Clampa ejercicios a rangos interpolados.
+
+### 3.10 Refinamiento IA (Fase 6)
+
+**Modificación en `RecomendacionIaService`:**
+
+**`refinarRutina(estructuraBase, perfil, catalogo, apiKey)` → `Map<int, Map<int, List<EjercicioInput>>>`**
+
+A diferencia de los métodos legacy que generaban desde cero, `refinarRutina()` recibe una estructura ya generada por el motor de reglas y la refina:
+- **Prompt**: Pide mejorar nombre, descripción, variar 1-2 ejercicios por día, reordenar. NO modifica series/reps/descanso.
+- **`_validarYReparar()`**: Post-procesa la respuesta de Gemini. Valida cada ejercicio contra 4 reglas: ID existe en catálogo, equipamiento compatible, dificultad válida, parámetros en rango. Si falla → revierte al ejercicio original.
+- **`_validarEjercicio()`**: Validación individual con `orElse` defensivo.
+- **Guards**: Catálogo vacío → retorna estructura base sin modificar. API key ausente → retorna estructura base.
+
+### 3.11 Motor de Feedback Post-Entrenamiento (Fase 7)
+
+**Archivo:** `app/lib/features/bienestar/infrastructure/feedback_engine.dart` (130 líneas)
+
+**`procesarSesion(sesionId, usuarioId, rutinaId?)`**: 
+- Lee `series_sesion` con la nueva columna `failed_reps`
+- Calcula degradación dinámica: cada repetición fallida descuenta 5% (clamp 70-95%). No usa 15% fijo.
+- Inserta en `recomendaciones_pendientes` con tipo `degradacion` o `progresion`.
+
+**`detectarInactividad(usuarioId)`**:
+- `DateTime.tryParse` seguro sobre `completada_en`
+- Si >7 días inactivo → inserta recomendación de reenganche al 80%.
+
+**`generarAlertaFatiga(usuarioId)`**:
+- Try-catch defensivo. Si fatiga promedio 3 días >50 → inserta en `notificaciones`.
+
+### 3.12 Orquestador del Pipeline (Fase 8)
+
+**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_orquestador_service.dart` (352 líneas)
+
+**`generarRutina({perfil, catalogo, historial?, estadoDiario?, contextoAcademico?, contextoFisiologico?, registroObjetivoAnterior?, usarIa})` → `ResultadoGeneracion`**
+
+Pipeline de 7 etapas secuenciales:
+
+```
+1. sanitizarObjetivo(perfil.objetivoPrincipal)
+2. RecomendacionReglasService.generarEstructura()        → estructura base
+3. Validación de estructura vacía (error temprano)
+4. RecomendacionContextoService.aplicarAjustes()         → ajusta por academia/fisiología
+5. TransicionObjetivoService.aplicarTransicion()         → interpola si cambió objetivo
+6. ProgresionCalculator.progresionarEstructura()         → aplica sobrecarga
+7. RecomendacionIaService.refinarRutina() [opcional]     → refina con Gemini
+```
+
+**DTOs:**
+- `MetadatosGeneracion`: objetivo, split, motivoAjustes, factorCargaTotal, iaRefinada
+- `ResultadoGeneracion`: nombre, descripcion, objetivo, duracionSemanas, estructura, metadatos, tieneError
+
+**Helpers críticos:**
+- `_buildTipoMedicionCache()`: Construye mapa `ejercicioId → tipoMedicion` desde catálogo real.
+- `_capturarPesosKg()` / `_preservarPesosKg()`: Preserva `pesos_kg` por serie en round-trip de IA.
+- `_determinarSplitLabel()`: Delega a `RecomendacionReglasService.splitLabel()` (DRY).
+
+### 3.13 Job Nocturno — pg_cron (Fase 10)
+
+**Función:** `generar_recomendaciones_diarias()` en PostgreSQL
+
+**Configuración (ejecutar en SQL Editor de Supabase):**
+```sql
+SELECT cron.schedule(
+  'recomendaciones-diarias',
+  '0 2 * * *',
+  'SELECT generar_recomendaciones_diarias();'
+);
+```
+
+**Lógica de la función (3 pasos):**
+1. **Inactividad 7-30 días**: Inserta recomendación de reenganche con factor 0.80. Deduplica (no repite si ya hay una en últimos 7 días).
+2. **Fatiga alta 3 días**: Calcula fórmula de fatiga (misma que el cliente). Promedio >50 → inserta recomendación de descarga. Deduplica (no repite en últimos 3 días).
+3. **Retorno**: `RETURN QUERY` de las recomendaciones generadas en esta ejecución.
+
+**Seguridad:** `SECURITY DEFINER SET search_path = ''` para acceso a todas las tablas. `GRANT EXECUTE` solo a `authenticated`.
 
 ## 4. Sistema de Check-in Diario
 
@@ -519,5 +733,5 @@ final data = await supabase
 
 ---
 
-**Documento compilado:** 19-05-2026
-**Última revisión:** v2.1
+**Documento compilado:** 07-06-2026
+**Última revisión:** v3.0

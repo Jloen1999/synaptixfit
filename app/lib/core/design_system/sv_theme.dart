@@ -72,27 +72,27 @@ class SVTheme {
           borderSide:
               BorderSide(color: SVColors.outlineVariant.withValues(alpha: 0.6)),
         ),
-        focusedBorder: OutlineInputBorder(
+        focusedBorder: const OutlineInputBorder(
           borderRadius: SVShapes.standard12,
-          borderSide: const BorderSide(color: SVColors.secondary, width: 2),
+          borderSide: BorderSide(color: SVColors.secondary, width: 2),
         ),
-        errorBorder: OutlineInputBorder(
+        errorBorder: const OutlineInputBorder(
           borderRadius: SVShapes.standard12,
-          borderSide: const BorderSide(color: SVColors.error),
+          borderSide: BorderSide(color: SVColors.error),
         ),
-        focusedErrorBorder: OutlineInputBorder(
+        focusedErrorBorder: const OutlineInputBorder(
           borderRadius: SVShapes.standard12,
-          borderSide: const BorderSide(color: SVColors.error, width: 2),
+          borderSide: BorderSide(color: SVColors.error, width: 2),
         ),
         hintStyle:
             SVTypography.bodyMedium.copyWith(color: SVColors.onSurfaceMuted),
       ),
 
       // Cards — fondo blanco, sombra sutil, bordes redondeados
-      cardTheme: CardThemeData(
+      cardTheme: const CardThemeData(
         color: SVColors.surfaceContainerLowest,
         elevation: 0,
-        shape: const RoundedRectangleBorder(
+        shape: RoundedRectangleBorder(
           borderRadius: SVShapes.large16,
         ),
         clipBehavior: Clip.antiAlias,
@@ -120,7 +120,7 @@ class SVTheme {
         contentTextStyle: SVTypography.bodyMedium.copyWith(
           color: SVColors.surfaceContainerLowest,
         ),
-        shape: RoundedRectangleBorder(borderRadius: SVShapes.standard12),
+        shape: const RoundedRectangleBorder(borderRadius: SVShapes.standard12),
         behavior: SnackBarBehavior.floating,
       ),
 
@@ -137,7 +137,7 @@ class SVTheme {
       ),
 
       // Divider
-      dividerTheme: DividerThemeData(
+      dividerTheme: const DividerThemeData(
         color: SVColors.surfaceContainerHighest,
         thickness: 1,
         space: 0,

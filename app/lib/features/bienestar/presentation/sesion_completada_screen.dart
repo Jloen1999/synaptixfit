@@ -75,7 +75,7 @@ class SesionCompletadaScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DropdownButtonFormField<String>(
-                  value: rutinaId,
+                  initialValue: rutinaId,
                   decoration: const InputDecoration(labelText: 'Rutina'),
                   items: rutinas
                       .map((r) =>

@@ -1,8 +1,8 @@
 # 12 - Guía de Usuario
 
 **Proyecto:** SynaptixFit  
-**Versión:** 4.0  
-**Fecha:** 13-05-2026
+**Versión:** 4.1  
+**Fecha:** 09-06-2026
 
 ---
 
@@ -52,12 +52,18 @@ Tras registrarte, la app te pedirá:
 
 ### 4.1 Dashboard (Pantalla de Inicio)
 
-Al abrir la app verás:
+El dashboard te muestra de un vistazo tu estado físico y académico:
 
-- Tu saludo personalizado con racha actual.
-- **KPIs del día:** Calorías quemadas, sesiones completadas, horas de estudio.
-- **Retos activos** con barra de progreso.
-- **Botón flotante (+)** para crear una nueva rutina.
+1. **Saludo y progreso** — Tu avatar, nivel, XP y rachas (🔥 entrenamiento, 🧠 estudio).
+2. **Consejo del día** — Un consejo personalizado generado por IA basado en tu energía y carga académica.
+3. **Acciones rápidas** — Botones para iniciar Pomodoro, entrenar, escanear apuntes o crear un reto.
+4. **Progreso semanal** — Si tienes una rutina activa, verás en qué semana vas.
+5. **Carga cognitiva** — Una barra que indica tu nivel de exigencia mental actual.
+6. **Estado actual** — Tres medidores circulares: Energético, Adherencia Académica y Carga Cognitiva. Toca cualquiera para ver el detalle.
+7. **KPIs** — Calorías quemadas hoy y sesiones completadas esta semana.
+8. **Bienestar** — Tu IMC, peso actual y objetivo fitness.
+9. **Retos activos** — Tus retos en curso con barras de progreso.
+10. **Rutinas activas** — Tus rutinas de entrenamiento activas.
 
 ### 4.2 Crear una Rutina de Entrenamiento
 
@@ -68,34 +74,32 @@ Hay dos formas de crear una rutina:
 2. Pulsa el botón verde **"Sugerir Rutina con IA"**.
 3. Verás una animación profesional de generación IA mostrándote paso a paso qué está analizando (perfil, historial, estado diario, ejercicios, etc.).
 4. En segundos, la IA habrá rellenado el nombre, descripción y objetivo de tu rutina. Puedes cancelar en cualquier momento pulsando **"Cancelar"**.
-5. Revisa los campos, ajusta si lo deseas, y continúa a Paso 2 para añadir ejercicios (también puedes usar IA con "Recomendar ejercicios").
-
-> 💡 También puedes usar la IA desde dentro del Paso 1 con los botones "Recomendar rutina con IA" y "Recomendar ejercicios". Ambos muestran la misma pantalla de carga profesional con botón de cancelación.
+5. Revisa los campos, ajusta si lo deseas, y continúa a Paso 2 para añadir ejercicios.
 
 **Vía manual (3 pasos):**
 
 ```
 PASO 1 — Metadatos:
   1. Ve a la pestaña Bienestar → Mis Rutinas → botón (+)
-  2. Define: nombre, descripción, objetivo (fuerza, hipertrofia, etc.)
+  2. Define: nombre, descripción, objetivo (Hipertrofia, Fuerza Máxima, etc.)
   3. Elige visibilidad, duración (1-12 semanas) y días por semana
-  4. Opcional: pulsa "Recomendar rutina con IA" para que Gemini sugiera todo
-     └─ Puedes cancelar la recomendación en cualquier momento si tarda
+  4. ⚡ "Generar rutina rápida" (verde, siempre visible): pipeline determinista <2s
+     └─ Rellena automáticamente toda la estructura de ejercicios
+  5. ✨ "Recomendar rutina con IA" (contorno, requiere API key): añade refinamiento IA
 
 PASO 2 — Estructura (Semanas × Días × Ejercicios):
   1. Selecciona cada semana y añade/edita sus días
   2. Por cada día: añade ejercicios desde el catálogo (~1300 ejercicios)
   3. Ajusta series, repeticiones, descanso y peso (acepta decimales: 75.5 kg)
-  4. Opcional: pulsa "Sugerir ejercicios con IA" para llenar un día automáticamente
-     └─ También puedes cancelar si prefieres elegir manualmente
 
 PASO 3 — Revisa tu rutina:
-  1. Revisa el resumen completo: semanas, días y ejercicios totales
+  1. Revisa el resumen completo: semanas, días, ejercicios, periodización
   2. Toca "Crear rutina" para guardar todo en tu perfil
   3. Serás redirigido a la pantalla de detalle de tu nueva rutina
 ```
 
 > 💡 El campo de peso acepta valores decimales (ej: 22.5, 75.0) para cargas precisas.
+> 💡 El botón "⚡ Generar rutina rápida" funciona sin conexión a internet (no usa IA).
 
 ### 4.3 Revisar y Gestionar tu Rutina
 
@@ -129,6 +133,7 @@ Al abrir una rutina desde "Mis Rutinas", verás una vista detallada con navegaci
    - Puedes aceptar todas, una sola, o ignorar
 5. Continúa tu sesión con los ajustes aplicados.
 6. Al finalizar, la app preguntará tu **RPE** (esfuerzo percibido) y si guardar los cambios para futuras sesiones.
+7. Verás cuánto **XP** ganaste (`+130 XP 🔥`) y si subiste de nivel (`¡Subiste a nivel 5! 🎉`).
 
 ### 4.5 Planificar tu Semana Académica
 
@@ -155,6 +160,26 @@ Al abrir una rutina desde "Mis Rutinas", verás una vista detallada con navegaci
 - Visualiza logros de tus amigos.
 - Da "me gusta" o comenta (máx. 200 caracteres).
 - Filtra por: hoy, esta semana o este mes.
+
+### 4.8 Sistema de XP y Niveles
+
+SynaptixFit premia tu consistencia con experiencia (XP) que te hace subir de nivel. Cada 1000 × nivel de XP acumulada, subes un nivel.
+
+#### Cómo se gana XP
+
+| Actividad | XP | Cuándo |
+|-----------|-----|--------|
+| **Completar una sesión de entrenamiento** | 56–190 XP | Al finalizar sesión en vivo. Depende de duración (máx 90 min) y RPE (esfuerzo percibido). |
+| **Completar un reto simple** | 200 XP | Al marcar el reto como completado. |
+| **Completar un reto complejo** | 400–1300 XP | Según la cantidad de hitos del reto. |
+| **Cumplir meta de estudio semanal** | 150 XP | Al alcanzar ≥80% de tus horas de estudio planeadas. Único por semana. |
+
+#### Subir de nivel
+
+- Cada nivel requiere `1000 × nivel_actual` XP acumulada.
+- Al subir de nivel, el excedente de XP se acumula para el siguiente nivel.
+- Cuando subes de nivel al finalizar una sesión, ves un mensaje especial: **"¡Subiste a nivel 5! 🎉 +130 XP"**.
+- Tu nivel se muestra en el saludo del dashboard y en tu perfil.
 
 ---
 
@@ -187,7 +212,7 @@ Puedes configurar una **franja de silencio** (ej: 22:00-08:00) desde Configuraci
 ## 7. Preguntas Frecuentes (FAQ)
 
 **¿Qué pasa si pierdo mi racha?**  
-La racha se muestra informativamente, sin penalización. Puede ocultarse desde Configuración.
+La racha se ha eliminado del dashboard. El progreso se mide ahora por XP y nivel, que nunca se pierden.
 
 **¿Puedo usar la app sin conexión?**  
 Sí. Los datos se guardan localmente y se sincronizan al reconectar.
@@ -203,5 +228,5 @@ Mínimo 3 ejercicios para poder guardarla.
 
 ---
 
-**Documento compilado:** 13-05-2026  
-**Última revisión:** v3.3
+**Documento compilado:** 09-06-2026  
+**Última revisión:** v4.1

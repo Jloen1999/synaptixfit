@@ -104,7 +104,8 @@ class BienestarRepository {
         .from('perfil_bienestar_usuario')
         .select()
         .eq('usuario_id', userId)
-        .maybeSingle();
+        .maybeSingle()
+        .timeout(const Duration(seconds: 10));
 
     if (resultado == null) return null;
     return PerfilBienestarDb.fromMap(resultado);

@@ -142,10 +142,12 @@ class _CrearRetoSimpleScreenState extends ConsumerState<CrearRetoSimpleScreen> {
               validator: (value) {
                 final texto = value?.trim() ?? '';
                 if (texto.isEmpty) return 'El título es obligatorio.';
-                if (texto.length < 5)
+                if (texto.length < 5) {
                   return 'El título debe tener al menos 5 caracteres.';
-                if (texto.length > 80)
+                }
+                if (texto.length > 80) {
                   return 'El título no puede superar 80 caracteres.';
+                }
                 return null;
               },
             ),

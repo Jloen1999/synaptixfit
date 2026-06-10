@@ -49,12 +49,18 @@ supabase db push                 # deploy migrations to linked project
 ## Architecture at a glance
 - **`app/lib/main.dart`** — entry point, loads `.env`, initializes Supabase, wraps in ProviderScope
 - **`app/lib/core/routing/app_router.dart`** — GoRouter with shell route + bottom nav (5 tabs)
-- **`app/lib/shared/models/db_models.dart`** — all DB model classes (~1645 lines)
+- **`app/lib/shared/models/db_models.dart`** — all DB model classes (~2004 lines, incl. `CargaAcademicaSemanalDb`)
+- **`app/lib/shared/widgets/metric_gauge.dart`** — animated radial gauge CustomPainter (1200ms) for dashboard metrics
 - **`app/lib/core/config/env_config.dart`** — reads Supabase URL/anonKey, Google OAuth, Gemini, R2 from `.env`
-- **`app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart`** — 4 Gemini prompts for routine/exercise recommendations
+- **`app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart`** — Gemini prompts with JSON mode + smart catalog (top 60) + unified context formatting (~1357 lines)
+- **`app/lib/features/bienestar/infrastructure/recomendacion_orquestador_service.dart`** — pipeline orchestrator: 7 stages + fallback + param preservation (~412 lines)
+- **`app/lib/features/bienestar/infrastructure/recomendacion_contexto_service.dart`** — ContextoAcademico DTO + FCT calculation + energy gates (~381 lines)
+- **`app/lib/features/bienestar/infrastructure/recomendacion_reglas_service.dart`** — deterministic rule engine with per-modality parameters (~710 lines)
+- **`app/lib/features/bienestar/infrastructure/progresion_calculator.dart`** — progressive overload with isometric support (~380 lines)
+- **`app/lib/features/bienestar/application/rutina_provider.dart`** — all routine + academic + energy providers (~1491 lines, incl. `adherenciaAcademicaProvider`, `estadoEnergeticoProvider`, `contextoAcademicoProvider`, `syncCargaAcademicaSemanal`, `otorgarXp()`, `finalizarSesion()`, DTO `XpResultado`)
 - **`app/lib/features/perfil/application/perfil_provider.dart`** — profile data cache with selective invalidation (PerfilCambio enum)
-- **`supabase/migrations/`** — 18 migration files, 27 tables + RLS, apply in order
-- **`docs/`** — 15-file documentation structure (01 through 15), kept in sync with code
+- **`supabase/migrations/`** — 50 migration files, 29+ tables + RLS, apply in order
+- **`docs/`** — 17-file documentation structure: 01-introduction → 17-dataset-lyfta, kept in sync with code
 - **`migraciones_pendientes.sql`** — consolidated SQL for manual deployment when CLI not linked
 
 ## Database notes
@@ -77,7 +83,7 @@ Per `.agents/rules/actualizacion-git.md`:
 | `corrector` | `corrector.md` | QA — ejecuta `dart format .` + `flutter analyze`, reporta y corrige issues de lint/formato |
 | `desarrollador` | `desarrollador.md` | Dev Flutter/Dart — implementa features, corrige bugs, escribe código de producción |
 | `diseñador` | `diseñador.md` | Arquitecto — diseña estructura de carpetas, esquemas BD, contratos de API, diagramas Mermaid |
-| `documentacion` | `documentacion.md` | Tech Writer — sincroniza `docs/` (14 archivos) con el código fuente, verifica discrepancias |
+| `documentacion` | `documentacion.md` | Tech Writer — sincroniza `docs/` (17 archivos) con el código fuente, verifica discrepancias |
 | `product-manager` | `product-manager.md` | PM — investiga mercado, define MVP y requisitos, escribe `docs/02-requirements.md` |
 
 ## Skills disponibles (.agents/skills/)
