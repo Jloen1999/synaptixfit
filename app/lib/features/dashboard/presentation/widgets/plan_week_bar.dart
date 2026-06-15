@@ -26,9 +26,10 @@ class PlanWeekBar extends ConsumerWidget {
         // Calcular semana actual basado en tiempo transcurrido desde la
         // creación de la primera semana. Cada semana del plan dura 7 días reales.
         final primeraSemana = semanas.first;
-        final diasDesdeInicio = ahora.difference(primeraSemana.creadoEn).inDays;
-        final semanasTranscurridas = diasDesdeInicio ~/ 7;
-        final actual = (semanasTranscurridas + 1).clamp(1, total);
+        final inicio = primeraSemana.creadoEn;
+        final semanasTranscurridas =
+            (ahora.difference(inicio).inDays / 7).ceil().clamp(1, 999);
+        final actual = semanasTranscurridas.clamp(1, total);
 
         return Container(
           width: double.infinity,

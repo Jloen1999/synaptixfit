@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../bienestar/application/rutina_provider.dart';
+
 /// Fila de 4 botones de acceso rápido para el dashboard.
-class QuickActionsRow extends StatelessWidget {
+class QuickActionsRow extends ConsumerWidget {
   const QuickActionsRow({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -15,30 +18,34 @@ class QuickActionsRow extends StatelessWidget {
             icon: Icons.timer_rounded,
             label: 'Pomodoro',
             color: const Color(0xFF2196F3),
-            onTap: () {
-              // TODO: abrir overlay de Pomodoro
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pomodoro — próximamente')),
-              );
-            },
+            onTap: () => context.push('/pomodoro'),
           ),
           const SizedBox(width: 8),
           _ActionChip(
             icon: Icons.fitness_center_rounded,
             label: 'Workout',
             color: const Color(0xFF4CAF50),
-            onTap: () => context.push('/bienestar/rutina/sesion'),
+            onTap: () async {
+              final params = await obtenerDiaYRutinaParaQuickAction(ref);
+              if (!context.mounted) return;
+              if (params == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No tienes una rutina activa para hoy'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } else {
+                context.push('/bienestar/rutina/sesion', extra: params);
+              }
+            },
           ),
           const SizedBox(width: 8),
           _ActionChip(
             icon: Icons.camera_alt_rounded,
             label: 'Escanear',
             color: const Color(0xFFE8A838),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Escanear — próximamente')),
-              );
-            },
+            onTap: () => context.push('/escanear'),
           ),
           const SizedBox(width: 8),
           _ActionChip(

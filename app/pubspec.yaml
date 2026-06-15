@@ -23,6 +23,12 @@ dependencies:
   # Persistencia local (offline-first)
   hive_flutter: ^1.1.0
 
+  # Conectividad y sincronización offline
+  connectivity_plus: ^6.1.0
+
+  # Gráficos y analítica
+  fl_chart: ^0.70.0
+
   # Tipografía
   google_fonts: ^6.2.1
   google_sign_in: ^6.2.2
@@ -36,9 +42,6 @@ dependencies:
   # Animaciones premium
   flutter_animate: ^4.5.0
 
-  # Animación confetti / Lottie
-  lottie: ^3.1.2
-
   # HTTP client
   dio: ^5.7.0
 
@@ -48,17 +51,6 @@ dependencies:
   # Shimmer skeleton loader
   shimmer: ^3.0.0
 
-  # Íconos
-  cupertino_icons: ^1.0.8
-
-  # URL launcher
-  url_launcher: ^6.3.1
-
-  # Imagen de perfil / avatar
-  image_picker: ^1.1.2
-
-  # Drag and drop para reordenar
-  reorderable_grid_view: ^2.2.8
   flutter_dotenv: ^6.0.0
 
   # Markdown (apuntes)

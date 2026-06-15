@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit
-**Versión:** 3.0
-**Fecha:** 07-06-2026
+**Versión:** 3.1
+**Fecha:** 14-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -13,7 +13,7 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 29+ tablas, RLS, vistas (49 migraciones aplicadas, hasta 0050) |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (11 migraciones consolidadas: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
@@ -34,65 +34,25 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 Para MVP/TFG, la simplicidad y latencia del enfoque cliente-side son preferibles. La API key de Gemini tiene scope limitado (solo generación de texto) y viaja sobre HTTPS. Para producción futura, se recomienda mover a Edge Function con rate limiting.
 
-## 2. Migraciones — Historial Completo
+## 2. Migraciones — Esquema Consolidado
 
-Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Actualmente hay **49 archivos de migración** cubriendo desde la creación inicial (0001) hasta la constraint de objetivos estándar (0050).
+Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026), el proyecto tiene **11 archivos de migración**:
 
 | # | Archivo | Fecha | Descripción |
 |---|---------|-------|-------------|
-| 0001 | `20260419_0001_init_schema.sql` | 19-04-2026 | Esquema inicial: tablas core, índices, funciones y RLS |
-| 0002 | `20260421_0002_add_rls_bienestar.sql` | 21-04-2026 | RLS para tablas de bienestar |
-| 0003 | `20260421_0003_restore_table_grants*.sql` | 21-04-2026 | Restauración de permisos PostgREST tras reset de schema |
-| 0004 | `20260421_0004_backfill_usuarios*.sql` | 21-04-2026 | Trigger `auth.users → public.usuarios` + backfill |
-| 0005 | `20260421_0005_add_academic_profile*.sql` | 21-04-2026 | `perfil_academico_usuario` y `carga_academica_semanal` |
-| 0006 | `20260422_0006_ejercicios_v2_normalizado.sql` | 22-04-2026 | Modelo 3NF de ejercicios (8 tablas: catálogos + N:M + vista) |
-| 0007 | `20260422_0007_seed_estudiantes.sql` | 22-04-2026 | Seed de usuarios de prueba |
-| 0008 | `20260501_0008_enable_realtime_ejercicios.sql` | 01-05-2026 | Realtime en las 8 tablas del catálogo de ejercicios |
-| 0009 | `20260504_0009_add_docente_archivado_asignaturas.sql` | 04-05-2026 | Campos `docente` y `archivado` en `asignaturas` |
-| 0010 | `20260504_0010_catalogo_academico.sql` | 04-05-2026 | Tablas catálogo académico + RLS pública |
-| 0011 | `20260504_0011_planes_estudio.sql` | 04-05-2026 | Tabla `planes_estudio`, columnas en `horarios_academicos` |
-| 0012 | `20260505_0012_apuntes.sql` | 05-05-2026 | Tabla `apuntes` (Markdown, visibilidad) + RLS |
-| 0013 | `20260506_0013_usuario_carreras.sql` | 06-05-2026 | Tabla `usuario_carreras` (M:N usuario ↔ carrera) |
-| 0014 | `20260509_0014_performance_indexes.sql` | 09-05-2026 | Vista materializada `mv_ejercicios_completos`, índices GIN, triggers |
-| 0015 | `20260510_0015_rutinas_periodizacion.sql` | 10-05-2026 | Tablas `semanas_rutina`, `dias_rutina`, `series_sesion`. Periodización completa |
-| 0016_a | `20260510_0016_plan_semanal_v2.sql` | 10-05-2026 | Versión 2 del plan semanal |
-| 0016_b | `20260511_0016_estado_diario.sql` | 11-05-2026 | Tabla `estado_diario_usuario` (check-in fatiga). RLS |
-| 0017 | `20260511_0017_periodizacion_tipo_semana.sql` | 11-05-2026 | Columna `tipo_semana` en `semanas_rutina` |
-| 0018_a | `20260511_0018_fix_objetivo_constraint.sql` | 11-05-2026 | Fix de constraint de objetivo |
-| 0018_b | `20260519_0018_finalidad_ejercicios.sql` | 19-05-2026 | Columna `finalidad` en `ejercicios` |
-| 0019_a | `20260513_0019_fix_objetivo_check_constraint.sql` | 13-05-2026 | Fix de check constraint de objetivo |
-| 0019_b | `20260527_0019_ampliar_finalidad.sql` | 27-05-2026 | Amplía CHECK de `finalidad` |
-| 0020_a | `20260514_0020_trigger_cascada_semana.sql` | 14-05-2026 | Trigger cascada días→semanas |
-| 0020_b | `20260528_0020_deprecar_exercise_db_id.sql` | 28-05-2026 | `exercise_db_id` nullable |
-| 0021 | `20260528_0021_limpiar_ejercicios.sql` | 28-05-2026 | Limpieza de datos de ejercicios |
-| 0022 | `20260528_0022_vista_ejercicios_security_invoker.sql` | 28-05-2026 | Vista SECURITY INVOKER |
-| 0023 | `20260528_0023_actualizar_dificultad_ejercicios.sql` | 28-05-2026 | Dificultad: principiante/intermedio/avanzado |
-| 0024-0027 | *(saltos en numeración)* | 28-05-2026 | Inserción de equipamientos (0024), partes_cuerpo (0025), músculos (0026), ejercicios (0027) |
-| 0028 | `20260528_0028_eliminar_exercise_db_id.sql` | 28-05-2026 | Elimina `exercise_db_id`, `mv_ejercicios_completos` |
-| 0029 | `20260529_0029_agregar_url_imagen_musculos.sql` | 29-05-2026 | `url_imagen` en `musculos` |
-| 0030 | `20260529_0030_eliminar_musculos_duplicados.sql` | 29-05-2026 | Remapea y elimina 9 músculos redundantes |
-| 0031 | `20260529_0031_actualizar_url_imagen_webp.sql` | 29-05-2026 | Conversión de PNG a WebP |
-| 0032 | `20260529_0032_multi_finalidad.sql` | 29-05-2026 | `finalidad` pasa a `TEXT[]` (multi-finalidad) |
-| 0033 | *(salto)* | — | (no utilizado) |
-| 0034 | `20260529_0034_preparar_dataset_final.sql` | 29-05-2026 | Preparación para dataset final |
-| 0035 | `20260529_0035_insertar_musculos_final.sql` | 29-05-2026 | Inserción de 93 músculos del dataset final |
-| 0036 | `20260529_0036_insertar_partes_cuerpo_final.sql` | 29-05-2026 | 13 partes del cuerpo del dataset final |
-| 0037 | `20260529_0037_insertar_equipamientos_final.sql` | 29-05-2026 | 24 equipamientos del dataset final |
-| 0038 | `20260529_0038_insertar_ejercicios_final.sql` | 29-05-2026 | Inserción de ~909 ejercicios del dataset final |
-| 0039 | `20260603_0039_optimizar_vista_ejercicios.sql` | 03-06-2026 | Optimización de `v_ejercicios_completos` |
-| 0040 | `20260603_0040_optimizar_rendimiento_catalogo.sql` | 03-06-2026 | Optimización rendimiento catálogo |
-| 0041 | `20260603_0041_corregir_nombres_ejercicios.sql` | 03-06-2026 | Corrección de nombres de ejercicios |
-| 0042 | `20260603_0042_seed_completo_desde_json.sql` | 03-06-2026 | Seed completo desde `dataset_final.json` |
-| 0043 | `20260604_0043_agregar_modalidad_medicion_circuito.sql` | 04-06-2026 | Modalidad medición y circuito |
-| 0044 | `20260604_0044_estandarizar_finalidades_objetivo.sql` | 04-06-2026 | Estandarización de finalidades y objetivo |
-| 0045 | `20260605_0045_pesos_por_serie.sql` | 05-06-2026 | Columna `pesos_kg jsonb` en `seleccion_de_ejercicios` |
-| 0046 | `20260606_0046_historial_objetivos.sql` | 06-06-2026 | Tabla `historial_objetivos` (transición de objetivos) |
-| 0047 | `20260606_0047_failed_reps.sql` | 06-06-2026 | Columna `failed_reps` en `series_sesion` |
-| 0048 | `20260606_0048_recomendaciones_pendientes.sql` | 06-06-2026 | Tabla `recomendaciones_pendientes` (feedback engine) |
-| 0049 | `20260606_0049_func_daily_recommendations.sql` | 06-06-2026 | Función `generar_recomendaciones_diarias()` para pg_cron |
-| 0050 | `20260607_0050_fix_objetivo_constraint.sql` | 07-06-2026 | `ck_perfil_objetivo_estandar` con finalidadesEstandar |
+| 0049 | `202606060049_esquema_base.sql` | 06-06-2026 | Esquema base completo (~12K líneas, pg_dump con 43+ tablas, índices, funciones, triggers, políticas RLS y datos del catálogo de ejercicios). Contiene todo el schema acumulado de las migraciones 0001→0048. |
+| 0050 | `202606120050_dependencias_retos.sql` | 12-06-2026 | Sprint 7A: columnas `estado`, `dependencias UUID[]`, `tipo_condicion`, `condicion_n` en `hitos_de_reto`. Trigger `trg_hito_completado` con función `desbloquear_hitos()` (evalúa condiciones AND/OR/X_OF_Y). |
+| 0001 | `202606130001_marcar_semana_completada.sql` | 13-06-2026 | Trigger `trg_marcar_semana_completada`: al completar todos los días de una semana, se marca automáticamente como `completada` (Fase A de correcciones). |
+| 0001 | `202606140001_v_analitica_semanal.sql` | 14-06-2026 | Sprint 7B: vista `v_analitica_semanal` que agrega sesiones por semana (RPE promedio, volumen total, días entrenados, calorías, ejercicios distintos). Tabla `insights_analitica` para cachear insights generados. |
+| 0002 | `20260616_0002_social_moderacion.sql` | 16-06-2026 | Sprint 9: moderación de feed social. Tabla `comentarios_feed` con RLS (autor edita/elimina). |
+| 0003 | `20260616_0003_insignias.sql` | 16-06-2026 | Sprint 9: sistema de insignias. Tablas `insignias` (catálogo público 15 insignias) y `usuario_insignias` (M:N). |
+| 0004 | `20260616_0004_consolidacion_fixes.sql` | 16-06-2026 | Consolidación de correcciones: 3 tablas nuevas (`planes_estudio`, `apuntes`, `sesiones_focus`), vista `v_ejercicios_completos`, 19 columnas añadidas a 9 tablas, 5 índices, 1 constraint corregido. |
+| 0005 | `20260616_0005_fechas_coherencia.sql` | 16-06-2026 | Sprint 9: corrección de coherencia de fechas en `rutinas` (`fecha_inicio`), `retos` (`fecha_fin`), y `entregas_examenes` (`hora_entrega`). Asegura que los timestamps sean consistentes entre creación y visualización. |
+| 0006 | `20260616000006_admin_rol.sql` | 16-06-2026 | Panel de administración: columna `rol` en `usuarios` (CHECK usuario/admin), función RPC `wipe_user_data(p_usuario_id)` (elimina historial preservando perfil, resetea nivel/XP/racha), políticas RLS admin bypass para `usuarios` y `sesiones_registradas`, función helper `es_admin()`. |
+| 0007 | `20260616000007_nivel_actividad_check.sql` | 16-06-2026 | Rediseño del onboarding: CHECK constraint en `perfil_bienestar_usuario.nivel_actividad` (`sedentario`/`ligero`/`moderado`/`alto`). |
+| 0008 | `20260616000008_asignaturas_usuario_semestre.sql` | 16-06-2026 | Mapeo de transversales: tabla `asignaturas_usuario_semestre(id, usuario_id, asignatura_id, curso, semestre)` con RLS propietario + admin bypass, UNIQUE(usuario_id, asignatura_id). Permite mapear asignaturas de semestre=0 a curso+semestre específicos. |
 
-> **Nota sobre numeración:** El proyecto tiene 49 archivos de migración. La numeración salta algunos números (0024-0027 se fusionaron, 0033 no se usó, 0016-0020 tienen dos archivos cada uno). La migración más alta es la 0050. Siempre aplicar en orden cronológico (por fecha en el nombre del archivo), no por número.
+> **Nota histórica:** Las migraciones intermedias 0001–0048 fueron consolidadas en `202606060049_esquema_base.sql` durante la Fase 3. Las migraciones 0050 anteriores (0050–0052 de xp_estudio_flag, retos_racha, etc.) también fueron absorbidas. El orden de aplicación real es cronológico por timestamp del nombre del archivo, no por el número de secuencia en el nombre.
 
 ## 3. Servicio de IA — `RecomendacionIaService`
 
@@ -194,7 +154,7 @@ Future<RecomendacionRutinaResult> generarRecomendacionRutina({
 **Propósito:** Analizar el historial real de un ejercicio específico y sugerir la siguiente progresión de carga (peso, reps, series).
 
 **Datos de entrada:**
-- `historialEjercicio`: Lista de `EjericicioRecienteDto` (peso promedio, reps promedio, RPE, fecha) de sesiones previas
+- `historialEjercicio`: Lista de `EjercicioRecienteDto` (peso promedio, reps promedio, RPE, fecha) de sesiones previas
 - `rpeUltimaSesion`: RPE reportado en la última sesión (1-10)
 
 **Reglas de progresión (en el prompt):**
@@ -734,4 +694,4 @@ final data = await supabase
 ---
 
 **Documento compilado:** 07-06-2026
-**Última revisión:** v3.0
+**Última revisión:** v3.1

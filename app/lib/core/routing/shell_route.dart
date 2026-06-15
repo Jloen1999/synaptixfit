@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/sync/presentation/widgets/offline_indicator.dart';
 import '../../shared/widgets/bottom_nav_bar.dart';
 
 class SynaptixShellRoute extends StatelessWidget {
@@ -11,7 +12,12 @@ class SynaptixShellRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          const OfflineIndicator(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: navigationShell.currentIndex,
         onTap: (index) => navigationShell.goBranch(

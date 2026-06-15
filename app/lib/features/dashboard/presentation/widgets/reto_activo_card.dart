@@ -226,6 +226,7 @@ class _RetoActivoCardState extends ConsumerState<RetoActivoCard> {
                               onTap: () async {
                                 final nuevoValor = !completado;
                                 setState(() => _optimistas[t.id] = nuevoValor);
+                                final messenger = ScaffoldMessenger.of(context);
                                 try {
                                   await toggleTareaCompletada(
                                     t.id,
@@ -236,7 +237,7 @@ class _RetoActivoCardState extends ConsumerState<RetoActivoCard> {
                                 } catch (_) {
                                   if (mounted) {
                                     setState(() => _optimistas.remove(t.id));
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    messenger.showSnackBar(
                                       SnackBar(
                                         content: Text(
                                             'Error al ${nuevoValor ? "completar" : "desmarcar"} tarea'),

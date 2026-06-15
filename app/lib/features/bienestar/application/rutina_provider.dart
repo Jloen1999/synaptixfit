@@ -4,12 +4,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env_config.dart';
 import '../../../shared/models/db_models.dart';
-import '../../auth/infrastructure/bienestar_repository.dart';
 import '../../dashboard/application/dashboard_provider.dart';
+import '../../dashboard/application/timeline_provider.dart';
 import '../../perfil/application/perfil_provider.dart';
+import '../domain/ejercicio_recomendado_dto.dart';
+import '../domain/historial_sesion_dto.dart';
+import '../infrastructure/parametros_objetivo.dart';
 import '../infrastructure/recomendacion_contexto_service.dart';
 import '../infrastructure/recomendacion_ia_service.dart';
+
+export '../domain/historial_sesion_dto.dart' show HistorialSesionDto;
+export '../infrastructure/recomendacion_ia_service.dart'
+    show RecomendacionIaService;
 import '../infrastructure/recomendacion_orquestador_service.dart';
+import '../../insignias/application/insignias_provider.dart';
 import 'ejercicios_provider.dart';
 
 class ItemRutina {
@@ -149,6 +157,7 @@ class RutinaNotifier extends StateNotifier<RutinaState> {
             .insert({
               'usuario_id': user.id,
               'nombre': nombre,
+              'estado': 'activo',
               'cantidad_ejercicios': state.items.length,
             })
             .select('id')
@@ -365,6 +374,7 @@ Future<void> clonarRutina(String rutinaId, WidgetRef ref) async {
         'nombre': '${rutinaMap['nombre']} (copiada)',
         'descripcion': rutinaMap['descripcion'],
         'visibilidad': 'private',
+        'estado': 'activo',
         'cantidad_ejercicios': rutinaMap['cantidad_ejercicios'],
       })
       .select('id')
@@ -467,6 +477,7 @@ Future<String> crearRutinaCompleta({
   required String visibilidad,
   required String objetivo,
   required int duracionSemanas,
+  DateTime? fechaInicio,
   required Map<int, Map<int, List<EjercicioInput>>> estructura,
   required WidgetRef ref,
 }) async {
@@ -486,6 +497,8 @@ Future<String> crearRutinaCompleta({
         'objetivo': objetivoFinal,
         'duracion_semanas': duracionSemanas,
         'cantidad_ejercicios': 0,
+        if (fechaInicio != null)
+          'fecha_inicio': fechaInicio.toIso8601String().substring(0, 10),
       })
       .select('id')
       .single();
@@ -554,6 +567,8 @@ Future<String> crearRutinaCompleta({
   }).eq('id', rutinaId);
 
   ref.invalidate(rutinasUsuarioProvider);
+  ref.invalidate(dashboardProvider);
+  ref.invalidate(timelineHoyProvider);
   return rutinaId;
 }
 
@@ -721,6 +736,19 @@ Future<String> iniciarSesion({
       .single();
 
   await actualizarEstadoDia(diaId, 'en_progreso', ref);
+
+  // B3: Setear fecha_inicio de la rutina al primer entrenamiento
+  final rutinaData = await client
+      .from('rutinas')
+      .select('fecha_inicio')
+      .eq('id', rutinaId)
+      .maybeSingle();
+  if (rutinaData != null && rutinaData['fecha_inicio'] == null) {
+    await client.from('rutinas').update({
+      'fecha_inicio': DateTime.now().toIso8601String().substring(0, 10),
+    }).eq('id', rutinaId);
+  }
+
   return data['id'] as String;
 }
 
@@ -791,9 +819,12 @@ Future<XpResultado?> finalizarSesion({
   final xpGanado = 50 + duracionMin.clamp(0, 90) + (rpe * 5);
   final xpResult = await otorgarXp(client, user.id, xpGanado);
 
-  if (xpResult != null) {
-    ref.invalidate(dashboardProvider);
-  }
+  ref.invalidate(dashboardProvider);
+
+  // Evaluar insignias tras completar sesión
+  await evaluarInsignias(ref);
+  ref.invalidate(rachaStateProvider);
+  ref.invalidate(timelineHoyProvider);
 
   return xpResult;
 }
@@ -915,7 +946,7 @@ final historialSesionUsuarioProvider =
   // Ejercicios recientes (de las ultimas 4 sesiones)
   final sesionesRecientesIds =
       sesionesRecientes.take(4).map((s) => s['id'] as String).toList();
-  List<EjericicioRecienteDto> ejerciciosRecientes = [];
+  List<EjercicioRecienteDto> ejerciciosRecientes = [];
   if (sesionesRecientesIds.isNotEmpty) {
     final seriesData = await client
         .from('series_sesion')
@@ -946,7 +977,7 @@ final historialSesionUsuarioProvider =
           .whereType<int>()
           .toList();
       if (pesos.isEmpty || reps.isEmpty) continue;
-      ejerciciosRecientes.add(EjericicioRecienteDto(
+      ejerciciosRecientes.add(EjercicioRecienteDto(
         nombreEjercicio: entry.key,
         pesoPromedio: pesos.reduce((a, b) => a + b) / pesos.length,
         repsPromedio: (reps.reduce((a, b) => a + b) / reps.length).round(),
@@ -1287,31 +1318,38 @@ final rutinaActivaSeleccionadaProvider = Provider<String?>((ref) {
   return data.rutinasActivas.first.rutina.id;
 });
 
-/// Obtiene el {diaId, rutinaId} para iniciar una sesión desde QuickAction.
-/// Retorna null si no hay rutina activa o día pendiente.
-Future<Map<String, String>?> obtenerDiaYRutinaParaQuickAction(Ref ref) async {
-  final data = ref.read(dashboardProvider).valueOrNull;
+/// Primer dia no completado de la rutina activa, iterando TODAS las semanas.
+/// Retorna {diaId, rutinaId} o null si no hay rutina activa o esta completada.
+final diaPendienteProvider = FutureProvider<Map<String, String>?>((ref) async {
+  final data = ref.watch(dashboardProvider).valueOrNull;
   if (data == null || data.rutinasActivas.isEmpty) return null;
 
   final rutinaId = data.rutinasActivas.first.rutina.id;
 
   try {
-    final semanas = await ref.read(semanasDeRutinaProvider(rutinaId).future);
+    final semanas = await ref.watch(semanasDeRutinaProvider(rutinaId).future);
     if (semanas.isEmpty) return null;
 
-    final primeraSemana = semanas.first;
-    final dias = await ref.read(diasDeSemanaProvider(primeraSemana.id).future);
-    if (dias.isEmpty) return null;
-
-    final diaPendiente = dias.firstWhere(
-      (d) => d.estado != 'completado',
-      orElse: () => dias.first,
-    );
-
-    return {'diaId': diaPendiente.id, 'rutinaId': rutinaId};
-  } catch (_) {
+    for (final semana in semanas) {
+      final dias = await ref.watch(diasDeSemanaProvider(semana.id).future);
+      for (final dia in dias) {
+        if (dia.estado != 'completado') {
+          return {'diaId': dia.id, 'rutinaId': rutinaId};
+        }
+      }
+    }
+    return null;
+  } catch (e) {
+    debugPrint('diaPendienteProvider error: $e');
     return null;
   }
+});
+
+/// Obtiene el {diaId, rutinaId} para iniciar una sesion desde QuickAction.
+/// Delega en diaPendienteProvider para logica unificada.
+Future<Map<String, String>?> obtenerDiaYRutinaParaQuickAction(
+    WidgetRef ref) async {
+  return ref.read(diaPendienteProvider.future);
 }
 
 /// Sincroniza automáticamente carga_academica_semanal desde datos reales
@@ -1669,4 +1707,17 @@ final generarRutinaProvider = FutureProvider.family<ResultadoGeneracion,
     apiKey: apiKey,
     conIA: opts.conIA,
   );
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// Proveedor de parametros por objetivo (rompe dependencia directa
+// presentation → infrastructure en nueva_rutina_screen.dart).
+// ───────────────────────────────────────────────────────────────────────────
+
+/// Expone una instancia de [ParametrosObjetivo] para un objetivo dado.
+/// Permite a las pantallas obtener los parametros de entrenamiento sin
+/// importar directamente la capa de infraestructura.
+final parametrosObjetivoProvider =
+    Provider.family<ParametrosObjetivo, String>((ref, objetivo) {
+  return ParametrosObjetivo.de(objetivo);
 });

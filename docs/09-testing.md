@@ -1,8 +1,8 @@
 # 09 - Estrategia de Testing
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.0  
-**Fecha:** 19-04-2026  
+**Versión:** 1.3  
+**Fecha:** 13-06-2026  
 **Referencia:** [02-requirements.md](02-requirements.md) (RNF-CAL-01/02/03)
 
 ---
@@ -27,6 +27,13 @@
 |--------|-------------------|
 | `retos` | Cálculo de progreso ponderado, validación de dependencias cíclicas, estados permitidos |
 | `bienestar` | Recomendación semanal de sesiones, detección de sobrecarga, ajuste de carga |
+| `insignias` | **NUEVO Sprint 9D** — InsigniaEngine (12 criterios de evaluación), RachaService (días consecutivos, hitos 7/30/100/365), otorgamiento automático vía UNIQUE constraint |
+| `social` | **NUEVO Sprint 9C** — CRUD comentarios (soft delete), toggle like, feed paginado con JOINs, publicaciones automáticas desde retos |
+| `pomodoro` | **NUEVO Sprint 9A** — Temporizador Pomodoro (25/5 min), StateNotifier con Timer.periodic, ciclo de estados (idle/estudio/descanso/pausado) |
+| `escanear` | **NUEVO Sprint 9A** — Abstracción ScannerService (Web vs Mobile), guardado como apunte Markdown vinculado a asignatura |
+| `analitica` | Correlación Pearson carga académica vs RPE, `InsightGenerator` de frases interpretativas, vista `v_analitica_semanal` |
+| `sync` | Cola Hive offline (`OfflineQueueService`), `ConnectivityService` con stream de estado, merge de operaciones |
+| `retos` | Grafo de dependencias (DFS, detección de ciclos), `TipoCondicion` (AND/OR/X_OF_Y), trigger `desbloquear_hitos()` |
 | `academico` | Detección de conflictos horarios, validación de evaluaciones |
 | `auth` | Validación de email, reglas de contraseña |
 
@@ -55,7 +62,14 @@ test('El progreso de reto complejo se calcula ponderando por orden de hitos', ()
 | Crear rutina | Seleccionar ejercicios → Guardar → Verificar en BD |
 | Registrar sesión | Completar rutina → RPE → XP → Publicación social |
 | Clonar reto público | Visualizar → Clonar → Verificar copia en perfil |
+| Publicar en feed social | Crear publicación → Verificar en feed → Comentar → Dar like |
+| Obtener insignia | Completar sesión → Verificar insignia otorgada → Verificar toast |
+| Racha diaria | Registrar sesión 7 días consecutivos → Verificar racha ≥ 7 → Verificar insignia |
+| Temporizador Pomodoro | Iniciar → Pausar/Reanudar → Verificar cambio de fase estudio/descanso |
+| Escanear y guardar | Escribir texto → Seleccionar asignatura → Guardar → Verificar apunte creado |
 | Sincronización offline | Crear recurso offline → Reconectar → Verificar sync |
+| Analítica semanal | Charts `fl_chart` con datos reales → Verificar `rpePromedio`, `volumenTotal`, `correlacionPearson` |
+| Retos con dependencias | Completar hito → Verificar desbloqueo automático → Validar condiciones AND/OR/X_OF_Y |
 
 ### 2.3 Tests de UI (Golden Tests)
 
@@ -121,5 +135,5 @@ git push →
 
 ---
 
-**Documento compilado:** 19-04-2026  
-**Última revisión:** v1.0
+**Documento compilado:** 13-06-2026  
+**Última revisión:** v1.3 — Sprint 9 completado: añadidos tests de insignias, social, pomodoro, escanear

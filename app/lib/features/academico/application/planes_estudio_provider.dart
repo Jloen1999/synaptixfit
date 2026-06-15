@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
+import '../../dashboard/application/timeline_provider.dart';
 
 final planesEstudioProvider = FutureProvider<List<PlanEstudioDb>>((ref) async {
   final client = Supabase.instance.client;
@@ -86,7 +87,8 @@ Future<PlanEstudioDb?> crearPlanEstudio({
   required String nombre,
   required DateTime semanaInicio,
   required DateTime semanaFin,
-  String visibilidad = 'privado',
+  String visibilidad = 'private',
+  required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -104,10 +106,11 @@ Future<PlanEstudioDb?> crearPlanEstudio({
       .select()
       .single();
 
+  ref.invalidate(timelineHoyProvider);
   return PlanEstudioDb.fromMap(data);
 }
 
-Future<void> eliminarPlanEstudio(String id) async {
+Future<void> eliminarPlanEstudio(String id, WidgetRef ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   await client
@@ -115,6 +118,8 @@ Future<void> eliminarPlanEstudio(String id) async {
       .delete()
       .eq('id', id)
       .eq('usuario_id', user!.id);
+
+  ref.invalidate(timelineHoyProvider);
 }
 
 Future<HorarioAcademicoDb?> crearBloqueEstudio({
@@ -127,6 +132,7 @@ Future<HorarioAcademicoDb?> crearBloqueEstudio({
   String tipoActividad = 'estudio',
   String? rutinaId,
   String? temas,
+  required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -149,6 +155,7 @@ Future<HorarioAcademicoDb?> crearBloqueEstudio({
       .select()
       .single();
 
+  ref.invalidate(timelineHoyProvider);
   return HorarioAcademicoDb.fromMap(data);
 }
 
@@ -163,6 +170,7 @@ Future<void> actualizarBloqueEstudio({
   String? tipoActividad,
   String? rutinaId,
   String? temas,
+  required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -183,9 +191,11 @@ Future<void> actualizarBloqueEstudio({
       .update(updates)
       .eq('id', id)
       .eq('usuario_id', user!.id);
+
+  ref.invalidate(timelineHoyProvider);
 }
 
-Future<void> eliminarBloqueEstudio(String id) async {
+Future<void> eliminarBloqueEstudio(String id, WidgetRef ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   await client
@@ -193,6 +203,8 @@ Future<void> eliminarBloqueEstudio(String id) async {
       .delete()
       .eq('id', id)
       .eq('usuario_id', user!.id);
+
+  ref.invalidate(timelineHoyProvider);
 }
 
 /// Crea un plan completo con entregas y bloques en una sola operación.
@@ -201,9 +213,10 @@ Future<String?> crearPlanCompleto({
   required String nombre,
   required DateTime semanaInicio,
   required DateTime semanaFin,
-  String visibilidad = 'privado',
+  String visibilidad = 'private',
   List<Map<String, dynamic>> entregas = const [],
   List<Map<String, dynamic>> bloques = const [],
+  required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -259,6 +272,7 @@ Future<String?> crearPlanCompleto({
     await client.from('horarios_academicos').insert(rows.toList());
   }
 
+  ref.invalidate(timelineHoyProvider);
   return planId;
 }
 
@@ -273,6 +287,7 @@ Future<HorarioAcademicoDb?> crearBloqueRapido({
   String? rutinaId,
   String? temas,
   String prioridad = 'media',
+  required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -299,6 +314,7 @@ Future<HorarioAcademicoDb?> crearBloqueRapido({
       .select()
       .single();
 
+  ref.invalidate(timelineHoyProvider);
   return HorarioAcademicoDb.fromMap(data);
 }
 

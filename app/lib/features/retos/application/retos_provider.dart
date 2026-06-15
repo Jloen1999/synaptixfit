@@ -1,21 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
 import '../../bienestar/application/rutina_provider.dart';
 import '../../dashboard/application/dashboard_provider.dart';
+import '../../dashboard/application/timeline_provider.dart';
+import '../../social/application/social_provider.dart';
+import '../../social/infrastructure/social_repository.dart';
+import '../../insignias/application/insignias_provider.dart';
+import 'retos_core.dart';
 
-class RetoResumen {
-  const RetoResumen({
-    required this.reto,
-    required this.progreso,
-    required this.tieneHitos,
-  });
-
-  final RetoDb reto;
-  final double progreso;
-  final bool tieneHitos;
-}
+export 'retos_core.dart';
+import 'reto_dependencia_service.dart';
+import '../domain/reto_grafo_dto.dart';
 
 class RetoDetalle {
   const RetoDetalle({
@@ -34,67 +32,6 @@ class RetoDetalle {
   final int likes;
   final int comentarios;
 }
-
-// ---------------------------------------------------------------------------
-// Provider de retos activos del usuario (desde Supabase)
-// ---------------------------------------------------------------------------
-final retosProvider = FutureProvider<List<RetoResumen>>((ref) async {
-  final client = Supabase.instance.client;
-  final user = client.auth.currentUser;
-  if (user == null) return [];
-
-  final retosData = await client
-      .from('retos')
-      .select(
-          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en')
-      .eq('usuario_id', user.id)
-      .eq('esta_completado', false)
-      .order('fecha_fin', ascending: true);
-
-  final retos = (retosData as List)
-      .map((r) => RetoDb.fromMap(r as Map<String, dynamic>))
-      .toList();
-
-  if (retos.isEmpty) return [];
-
-  // Batch único: todos los hitos de todos los retos activos
-  final retoIds = retos.map((r) => r.id).toList();
-  final todosHitosData = await client
-      .from('hitos_de_reto')
-      .select('reto_id, porcentaje_peso, progreso_actual, esta_completado')
-      .inFilter('reto_id', retoIds);
-
-  final hitosPorReto = <String, List<Map<String, dynamic>>>{};
-  for (final h in (todosHitosData as List)) {
-    final rid = h['reto_id'] as String;
-    hitosPorReto.putIfAbsent(rid, () => []).add(h);
-  }
-
-  final retosConHitos = hitosPorReto.keys.toSet();
-
-  final result = <RetoResumen>[];
-  for (final reto in retos) {
-    final hitos = hitosPorReto[reto.id] ?? [];
-    double progreso = 0.0;
-    if (hitos.isNotEmpty) {
-      final weighted = hitos.fold<double>(
-        0,
-        (t, h) =>
-            t +
-            ((h['porcentaje_peso'] as num).toDouble() / 100) *
-                ((h['progreso_actual'] as num).toDouble() / 100),
-      );
-      progreso = weighted.clamp(0.0, 1.0);
-    }
-    result.add(RetoResumen(
-      reto: reto,
-      progreso: progreso,
-      tieneHitos: retosConHitos.contains(reto.id),
-    ));
-  }
-
-  return result;
-});
 
 // ---------------------------------------------------------------------------
 // Provider de detalle de un reto
@@ -148,6 +85,8 @@ void _invalidarRetos(WidgetRef ref, {String? retoId}) {
   ref.invalidate(retosPublicosProvider);
   ref.invalidate(logrosCountProvider);
   ref.invalidate(dashboardProvider);
+  ref.invalidate(timelineHoyProvider);
+  ref.invalidate(hitosPendientesProvider);
   if (retoId != null) {
     ref.invalidate(retoDetalleProvider(retoId));
     ref.invalidate(tareasDeRetoProvider(retoId));
@@ -165,6 +104,7 @@ Future<void> completarReto(String retoId, WidgetRef ref) async {
   await client.from('hitos_de_reto').update({
     'progreso_actual': 100,
     'esta_completado': true,
+    'estado': 'completado',
   }).eq('reto_id', retoId);
 
   if (user != null) {
@@ -177,9 +117,34 @@ Future<void> completarReto(String retoId, WidgetRef ref) async {
     if (xpResult != null) {
       ref.invalidate(dashboardProvider);
     }
+
+    // Publicar automáticamente en el feed social al completar el reto
+    final retoData = await client
+        .from('retos')
+        .select('titulo')
+        .eq('id', retoId)
+        .maybeSingle();
+    if (retoData != null) {
+      final titulo = retoData['titulo'] as String? ?? 'Reto';
+      try {
+        final socialRepo = SocialRepository(client);
+        await socialRepo.crearPublicacion(
+          usuarioId: user.id,
+          descripcion: '¡He completado el reto "$titulo"! 🎯',
+          tipo: 'challenge_completed',
+        );
+        // Invalidar el feed social para que la publicación aparezca
+        ref.invalidate(socialFeedProvider);
+      } catch (_) {
+        // El logro social es best-effort; no bloquea la completación del reto
+      }
+    }
   }
 
   _invalidarRetos(ref, retoId: retoId);
+
+  // Evaluar insignias tras completar reto
+  await evaluarInsignias(ref);
 }
 
 Future<void> descompletarReto(String retoId, WidgetRef ref) async {
@@ -196,6 +161,7 @@ Future<void> toggleTareaCompletada(String hitoId, String retoId,
   await client.from('hitos_de_reto').update({
     'progreso_actual': completada ? 100 : 0,
     'esta_completado': completada,
+    'estado': completada ? 'completado' : 'en_progreso',
   }).eq('id', hitoId);
   _invalidarRetos(ref, retoId: retoId);
 }
@@ -232,7 +198,7 @@ Future<String?> clonarReto(String retoId, WidgetRef ref) async {
         'titulo': retoMap['titulo'],
         'tipo': retoMap['tipo'],
         'meta': retoMap['meta'],
-        'visibilidad': 'privado',
+        'visibilidad': 'private',
         'esta_completado': false,
         'fecha_inicio': DateTime.now().toIso8601String(),
         'fecha_fin': retoMap['fecha_fin'],
@@ -266,19 +232,6 @@ Future<String?> clonarReto(String retoId, WidgetRef ref) async {
   return nuevoId;
 }
 
-/// Retos completados del usuario (para logros en perfil)
-final logrosCountProvider = FutureProvider<int>((ref) async {
-  final client = Supabase.instance.client;
-  final user = client.auth.currentUser;
-  if (user == null) return 0;
-  final data = await client
-      .from('retos')
-      .select('id')
-      .eq('usuario_id', user.id)
-      .eq('esta_completado', true);
-  return (data as List).length;
-});
-
 final tareasDeRetoProvider =
     FutureProvider.family<List<HitoRetoDb>, String>((ref, retoId) async {
   final client = Supabase.instance.client;
@@ -305,62 +258,37 @@ final retoTieneHitosProvider =
 });
 
 // ---------------------------------------------------------------------------
-// Provider de retos públicos (para explorar y clonar)
+
 // ---------------------------------------------------------------------------
-final retosPublicosProvider = FutureProvider<List<RetoResumen>>((ref) async {
+// Sprint 7 — Providers de grafo de dependencias
+// ---------------------------------------------------------------------------
+
+/// Construye el grafo de dependencias para un reto con todos sus hitos.
+final grafoRetoProvider =
+    FutureProvider.family<GrafoReto?, String>((ref, retoId) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
-  if (user == null) return [];
+  if (user == null) return null;
 
-  final retosData = await client
-      .from('retos')
-      .select(
-          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en')
-      .eq('visibilidad', 'publico')
-      .neq('usuario_id', user.id)
-      .eq('esta_completado', false)
-      .order('fecha_fin', ascending: true)
-      .limit(20);
+  final hitosData = await client
+      .from('hitos_de_reto')
+      .select()
+      .eq('reto_id', retoId)
+      .order('indice_orden', ascending: true);
 
-  final retos = (retosData as List)
-      .map((r) => RetoDb.fromMap(r as Map<String, dynamic>))
+  final hitosList = hitosData as List;
+  if (hitosList.isEmpty) return null;
+
+  final hitos = hitosList
+      .map((h) => HitoRetoDb.fromMap(h as Map<String, dynamic>))
       .toList();
 
-  if (retos.isEmpty) return [];
+  const service = RetoDependenciaService();
 
-  final retoIds = retos.map((r) => r.id).toList();
-  final todosHitosData = await client
-      .from('hitos_de_reto')
-      .select('reto_id, porcentaje_peso, progreso_actual, esta_completado')
-      .inFilter('reto_id', retoIds);
-
-  final hitosPorReto = <String, List<Map<String, dynamic>>>{};
-  for (final h in (todosHitosData as List)) {
-    final rid = h['reto_id'] as String;
-    hitosPorReto.putIfAbsent(rid, () => []).add(h);
+  final error = service.validarDependencias(hitos);
+  if (error != null) {
+    debugPrint('[grafoRetoProvider] Error de dependencias: $error');
   }
 
-  final retosConHitos = hitosPorReto.keys.toSet();
-
-  final result = <RetoResumen>[];
-  for (final reto in retos) {
-    final hitos = hitosPorReto[reto.id] ?? [];
-    double progreso = 0.0;
-    if (hitos.isNotEmpty) {
-      final weighted = hitos.fold<double>(
-        0,
-        (t, h) =>
-            t +
-            ((h['porcentaje_peso'] as num).toDouble() / 100) *
-                ((h['progreso_actual'] as num).toDouble() / 100),
-      );
-      progreso = weighted.clamp(0.0, 1.0);
-    }
-    result.add(RetoResumen(
-      reto: reto,
-      progreso: progreso,
-      tieneHitos: retosConHitos.contains(reto.id),
-    ));
-  }
-  return result;
+  return service.construirGrafo(hitos);
 });

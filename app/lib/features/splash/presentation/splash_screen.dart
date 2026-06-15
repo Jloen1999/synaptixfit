@@ -23,7 +23,7 @@ class SplashScreen extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
-                'MVP inicial con navegación y datos mock.',
+                'Tu compañero de estudio y bienestar universitario.',
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),

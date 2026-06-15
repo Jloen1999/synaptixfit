@@ -2,6 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
+import '../../auth/infrastructure/bienestar_repository.dart';
+import '../../auth/infrastructure/objetivo_ia_service.dart';
+
+export '../../auth/infrastructure/bienestar_repository.dart'
+    show BienestarRepository;
+export '../../auth/infrastructure/objetivo_ia_service.dart'
+    show ObjetivoIaService;
 
 /// Tipos de cambios que pueden ocurrir en el perfil para invalidación selectiva.
 enum PerfilCambio { nombre, bienestar, preferencias, academico, todo }
@@ -57,6 +64,7 @@ final perfilUsuarioProvider = FutureProvider<PerfilUsuario>((ref) async {
           nivel: 1,
           xpTotal: 0,
           rachaActual: 0,
+          rol: 'usuario',
           creadoEn: DateTime.now(),
           actualizadoEn: DateTime.now(),
         );
@@ -267,3 +275,166 @@ final perfilCompletoProvider = FutureProvider<PerfilCompleto>((ref) async {
     preferencias: prefs,
   );
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// Proveedor del repositorio de bienestar (rompe dependencia directa
+// presentation → infrastructure en perfil_screen.dart).
+// ───────────────────────────────────────────────────────────────────────────
+
+/// Carreras del usuario con sus asignaturas del catálogo, para la sección
+/// de Estadísticas del perfil.
+/// Intenta primero `usuario_carreras` (FK); si está vacío, cae en el texto
+/// guardado en `perfil_academico_usuario.carrera` y busca por nombre.
+final carreraConAsignaturasProvider =
+    FutureProvider<List<({CarreraDb carrera, List<AsignaturaCatalogoDb> subjects})>>(
+        (ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return [];
+
+  // 1. Intentar por usuario_carreras (FK)
+  final ucList = await client
+      .from('usuario_carreras')
+      .select('carrera_id')
+      .eq('usuario_id', user.id);
+  var carreraIds = (ucList as List).map((r) => r['carrera_id'] as String).toList();
+
+  // 2. Fallback: buscar carrera por nombre desde perfil_academico_usuario
+  if (carreraIds.isEmpty) {
+    final perfilAcademico = await client
+        .from('perfil_academico_usuario')
+        .select('carrera')
+        .eq('usuario_id', user.id)
+        .maybeSingle();
+    final nombreCarrera = perfilAcademico?['carrera'] as String?;
+    if (nombreCarrera == null || nombreCarrera.isEmpty) return [];
+
+    final match = await client
+        .from('carreras')
+        .select('id')
+        .eq('nombre', nombreCarrera)
+        .maybeSingle();
+    if (match != null) {
+      carreraIds = [match['id'] as String];
+    }
+    if (carreraIds.isEmpty) return [];
+  }
+
+  // 3. Obtener datos de carreras
+  final carrerasData = <Map<String, dynamic>>[];
+  for (final cid in carreraIds) {
+    final c = await client
+        .from('carreras')
+        .select()
+        .eq('id', cid)
+        .maybeSingle();
+    if (c != null) carrerasData.add(c);
+  }
+  final carrerasMap = {
+    for (final c in carrerasData) c['id'] as String: CarreraDb.fromMap(c)
+  };
+
+  // 4. Obtener asignaturas para todas las carreras
+  final subjectsData = <Map<String, dynamic>>[];
+  for (final cid in carreraIds) {
+    final s = await client
+        .from('asignaturas_catalogo')
+        .select()
+        .eq('carrera_id', cid)
+        .order('curso', ascending: true)
+        .order('nombre', ascending: true);
+    subjectsData.addAll((s as List).cast<Map<String, dynamic>>());
+  }
+
+  // 5. Agrupar por carrera
+  final subjectsPorCarrera = <String, List<AsignaturaCatalogoDb>>{};
+  for (final s in (subjectsData as List)) {
+    final sub = AsignaturaCatalogoDb.fromMap(s);
+    subjectsPorCarrera.putIfAbsent(sub.carreraId, () => []).add(sub);
+  }
+
+  // 6. Construir resultado
+  final result = <({CarreraDb carrera, List<AsignaturaCatalogoDb> subjects})>[];
+  for (final cid in carreraIds) {
+    final carrera = carrerasMap[cid];
+    if (carrera == null) continue;
+    result.add((
+      carrera: carrera,
+      subjects: subjectsPorCarrera[cid] ?? [],
+    ));
+  }
+  return result;
+});
+
+/// Expone una instancia del repositorio de bienestar para que las pantallas
+/// de presentacion no importen directamente la capa de infraestructura.
+final bienestarRepositoryProvider = Provider<BienestarRepository>((ref) {
+  return const BienestarRepository();
+});
+
+/// Expone una instancia del servicio de sugerencias de objetivos via IA.
+final objetivoIaServiceProvider = Provider<ObjetivoIaService>((ref) {
+  return ObjetivoIaService();
+});
+
+/// Asignaturas del catálogo con semestre=0 que el usuario ha mapeado a un curso+semestre
+final asignaturasUsuarioSemestreProvider =
+    FutureProvider<List<AsignaturaUsuarioSemestreDb>>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return [];
+  final resp = await client
+      .from('asignaturas_usuario_semestre')
+      .select()
+      .eq('usuario_id', user.id);
+  return (resp as List).map((r) => AsignaturaUsuarioSemestreDb.fromMap(r)).toList();
+});
+
+/// Asignaturas del catálogo con semestre=0 (optativas sin temporalidad)
+final asignaturasSinSemestreProvider =
+    FutureProvider<List<AsignaturaCatalogoDb>>((ref) async {
+  final carreraIds = await _getCarrerasUsuario();
+  if (carreraIds.isEmpty) return [];
+  final subjects = <AsignaturaCatalogoDb>[];
+  for (final cid in carreraIds) {
+    final resp = await Supabase.instance.client
+        .from('asignaturas_catalogo')
+        .select()
+        .eq('carrera_id', cid)
+        .eq('semestre', 0)
+        .order('nombre');
+    for (final s in (resp as List)) {
+      subjects.add(AsignaturaCatalogoDb.fromMap(s));
+    }
+  }
+  return subjects;
+});
+
+/// Helper compartido que devuelve los carrera_ids del usuario
+Future<List<String>> _getCarrerasUsuario() async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return [];
+  final ucList = await client
+      .from('usuario_carreras')
+      .select('carrera_id')
+      .eq('usuario_id', user.id);
+  var ids = (ucList as List).map((r) => r['carrera_id'] as String).toList();
+  if (ids.isEmpty) {
+    final perfil = await client
+        .from('perfil_academico_usuario')
+        .select('carrera')
+        .eq('usuario_id', user.id)
+        .maybeSingle();
+    final nombre = perfil?['carrera'] as String?;
+    if (nombre != null && nombre.isNotEmpty) {
+      final match = await client
+          .from('carreras')
+          .select('id')
+          .eq('nombre', nombre)
+          .maybeSingle();
+      if (match != null) ids = [match['id'] as String];
+    }
+  }
+  return ids;
+}

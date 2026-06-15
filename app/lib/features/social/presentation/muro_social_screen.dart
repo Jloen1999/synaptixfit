@@ -1,144 +1,75 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/empty_state.dart';
-import '../../../shared/widgets/feed_card.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
+import '../../dashboard/application/dashboard_provider.dart';
+import '../../dashboard/application/timeline_provider.dart';
+import '../application/social_provider.dart';
+import 'widgets/feed_item_card.dart';
 
-class MuroSocialScreen extends StatefulWidget {
+/// Pantalla principal del Muro Social (refactorizada con Riverpod).
+///
+/// Carga el feed desde [socialFeedProvider] y permite dar like, comentar
+/// y crear nuevas publicaciones vía FAB.
+class MuroSocialScreen extends ConsumerStatefulWidget {
   const MuroSocialScreen({super.key});
 
   @override
-  State<MuroSocialScreen> createState() => _MuroSocialScreenState();
+  ConsumerState<MuroSocialScreen> createState() => _MuroSocialScreenState();
 }
 
-class _MuroSocialScreenState extends State<MuroSocialScreen> {
+class _MuroSocialScreenState extends ConsumerState<MuroSocialScreen> {
   String _filtroTemporal = 'todo';
-  final Set<String> _likedActividades = {};
-  List<ActividadSocialDb> _actividades = [];
-  final Map<String, String> _nombresUsuarios = {};
-  final Map<String, int> _likesCache = {};
-  final Map<String, int> _comentariosCache = {};
-  bool _cargando = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _cargarDatos();
-  }
-
-  Future<void> _cargarDatos() async {
-    final client = Supabase.instance.client;
-
-    try {
-      final data = await client
-          .from('actividades_sociales')
-          .select()
-          .order('creado_en', ascending: false);
-
-      final actividades = (data as List)
-          .map((a) => ActividadSocialDb.fromMap(a as Map<String, dynamic>))
-          .toList();
-
-      // Cargar nombres de usuarios
-      final userIds = actividades.map((a) => a.usuarioId).toSet();
-      for (final uid in userIds) {
-        final userMap = await client
-            .from('usuarios')
-            .select('nombre_completo')
-            .eq('id', uid)
-            .maybeSingle();
-        _nombresUsuarios[uid] =
-            userMap?['nombre_completo'] as String? ?? 'Usuario';
-      }
-
-      // Cargar conteos de interacciones
-      for (final actividad in actividades) {
-        final interacciones = await client
-            .from('interacciones_sociales')
-            .select('tipo_interaccion')
-            .eq('actividad_id', actividad.id);
-
-        final lista = interacciones as List;
-        _likesCache[actividad.id] =
-            lista.where((i) => i['tipo_interaccion'] == 'like').length;
-        _comentariosCache[actividad.id] =
-            lista.where((i) => i['tipo_interaccion'] == 'comment').length;
-      }
-
-      if (mounted) {
-        setState(() {
-          _actividades = actividades;
-          _cargando = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _cargando = false);
-    }
-  }
-
-  List<ActividadSocialDb> get _publicacionesFiltradas {
+  List<dynamic> _aplicarFiltro(List<dynamic> publicaciones) {
     final ahora = DateTime.now();
-    var lista = [..._actividades];
+    var lista = [...publicaciones];
 
     switch (_filtroTemporal) {
       case 'hoy':
-        lista = lista
-            .where((a) =>
-                a.creadoEn.year == ahora.year &&
-                a.creadoEn.month == ahora.month &&
-                a.creadoEn.day == ahora.day)
-            .toList();
+        lista = lista.where((a) {
+          final fecha = a.fecha ?? a.creadoEn;
+          if (fecha == null) return false;
+          return fecha.year == ahora.year &&
+              fecha.month == ahora.month &&
+              fecha.day == ahora.day;
+        }).toList();
         break;
       case 'semana':
         final inicioSemana = ahora.subtract(Duration(days: ahora.weekday - 1));
-        lista = lista
-            .where((a) => a.creadoEn.isAfter(DateTime(
-                inicioSemana.year, inicioSemana.month, inicioSemana.day)))
-            .toList();
+        lista = lista.where((a) {
+          final fecha = a.fecha ?? a.creadoEn;
+          if (fecha == null) return false;
+          return fecha.isAfter(DateTime(
+              inicioSemana.year, inicioSemana.month, inicioSemana.day));
+        }).toList();
         break;
       case 'mes':
-        lista = lista
-            .where((a) =>
-                a.creadoEn.year == ahora.year &&
-                a.creadoEn.month == ahora.month)
-            .toList();
+        lista = lista.where((a) {
+          final fecha = a.fecha ?? a.creadoEn;
+          if (fecha == null) return false;
+          return fecha.year == ahora.year && fecha.month == ahora.month;
+        }).toList();
         break;
     }
 
-    lista.sort((a, b) => b.creadoEn.compareTo(a.creadoEn));
+    lista.sort((a, b) {
+      final fa = a.fecha ?? a.creadoEn ?? DateTime(2000);
+      final fb = b.fecha ?? b.creadoEn ?? DateTime(2000);
+      return fb.compareTo(fa);
+    });
     return lista;
-  }
-
-  String _tiempoRelativo(DateTime fecha) {
-    final diff = DateTime.now().difference(fecha);
-    if (diff.inMinutes < 1) return 'ahora';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}d';
-    return '${fecha.day}/${fecha.month}';
-  }
-
-  Future<void> _onRefresh() async {
-    await _cargarDatos();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_cargando) {
-      return const FeatureScaffold(
-        title: 'Muro Social',
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    final publicaciones = _publicacionesFiltradas;
+    final feedAsync = ref.watch(socialFeedProvider);
 
     return FeatureScaffold(
       title: 'Muro Social',
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => _mostrarCrearPublicacion(context),
         child: const Icon(Icons.share_outlined),
       ),
       child: Column(
@@ -146,104 +77,223 @@ class _MuroSocialScreenState extends State<MuroSocialScreen> {
           // Filtros temporales
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Row(
-              children: [
-                _FiltroChip(
-                  label: 'Todo',
-                  seleccionado: _filtroTemporal == 'todo',
-                  onTap: () => setState(() => _filtroTemporal = 'todo'),
-                ),
-                const SizedBox(width: 8),
-                _FiltroChip(
-                  label: 'Hoy',
-                  seleccionado: _filtroTemporal == 'hoy',
-                  onTap: () => setState(() => _filtroTemporal = 'hoy'),
-                ),
-                const SizedBox(width: 8),
-                _FiltroChip(
-                  label: 'Semana',
-                  seleccionado: _filtroTemporal == 'semana',
-                  onTap: () => setState(() => _filtroTemporal = 'semana'),
-                ),
-                const SizedBox(width: 8),
-                _FiltroChip(
-                  label: 'Mes',
-                  seleccionado: _filtroTemporal == 'mes',
-                  onTap: () => setState(() => _filtroTemporal = 'mes'),
-                ),
-              ],
+            child: _FiltrosRow(
+              filtroActual: _filtroTemporal,
+              onCambiar: (filtro) => setState(() => _filtroTemporal = filtro),
             ),
           ),
-          // Lista con pull-to-refresh
+          // Contenido del feed
           Expanded(
-            child: publicaciones.isEmpty
-                ? const EmptyState(
+            child: feedAsync.when(
+              data: (publicaciones) {
+                final filtradas = _aplicarFiltro(publicaciones);
+
+                if (filtradas.isEmpty) {
+                  return const EmptyState(
                     title: 'Sin actividad',
                     message: 'Sé el primero en compartir un logro 🏆',
-                  )
-                : RefreshIndicator(
-                    onRefresh: _onRefresh,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final useGrid = constraints.maxWidth >= 980;
-                        if (useGrid) {
-                          return GridView.builder(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.all(16),
-                            itemCount: publicaciones.length,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              childAspectRatio: 1.5,
-                            ),
-                            itemBuilder: (context, index) =>
-                                _buildFeedItem(publicaciones[index]),
-                          );
-                        }
+                  );
+                }
 
-                        return ListView.separated(
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(socialFeedProvider);
+                    // También refrescar timeline y dashboard
+                    ref.invalidate(timelineHoyProvider);
+                    ref.invalidate(dashboardProvider);
+                  },
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final useGrid = constraints.maxWidth >= 980;
+                      if (useGrid) {
+                        return GridView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.all(16),
-                          itemCount: publicaciones.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 10),
+                          itemCount: filtradas.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 1.5,
+                          ),
                           itemBuilder: (context, index) =>
-                              _buildFeedItem(publicaciones[index]),
+                              FeedItemCard(publicacion: filtradas[index]),
                         );
-                      },
-                    ),
+                      }
+
+                      return ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filtradas.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) =>
+                            FeedItemCard(publicacion: filtradas[index]),
+                      );
+                    },
                   ),
+                );
+              },
+              loading: () => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              error: (error, _) => Center(
+                child: EmptyState(
+                  title: 'Error al cargar',
+                  message: 'No se pudo cargar el feed: $error',
+                  icon: Icons.error_outline,
+                  action: FilledButton.tonal(
+                    onPressed: () => ref.invalidate(socialFeedProvider),
+                    child: const Text('Reintentar'),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFeedItem(ActividadSocialDb actividad) {
-    final isLiked = _likedActividades.contains(actividad.id);
-    final baseLikes = _likesCache[actividad.id] ?? 0;
-    final totalLikes = isLiked ? baseLikes + 1 : baseLikes;
+  // ---------------------------------------------------------------------------
+  // Crear publicación (FAB → BottomSheet)
+  // ---------------------------------------------------------------------------
 
-    return FeedCard(
-      userName: _nombresUsuarios[actividad.usuarioId] ?? 'Usuario',
-      achievement: actividad.descripcion,
-      likes: totalLikes,
-      comments: _comentariosCache[actividad.id] ?? 0,
-      activityType: actividad.tipo,
-      timeAgo: _tiempoRelativo(actividad.creadoEn),
-      isLiked: isLiked,
-      onLike: () {
-        setState(() {
-          if (isLiked) {
-            _likedActividades.remove(actividad.id);
-          } else {
-            _likedActividades.add(actividad.id);
-          }
-        });
+  void _mostrarCrearPublicacion(BuildContext context) {
+    final tipoController = ValueNotifier<String>('milestone_reached');
+    final descController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Crear publicación',
+                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              // Tipo de publicación
+              ValueListenableBuilder<String>(
+                valueListenable: tipoController,
+                builder: (context, tipo, _) {
+                  return SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(
+                        value: 'milestone_reached',
+                        label: Text('Logro'),
+                        icon: Icon(Icons.star_outline, size: 18),
+                      ),
+                      ButtonSegment(
+                        value: 'rutina',
+                        label: Text('Rutina'),
+                        icon: Icon(Icons.fitness_center_outlined, size: 18),
+                      ),
+                      ButtonSegment(
+                        value: 'reto',
+                        label: Text('Reto'),
+                        icon: Icon(Icons.flag_outlined, size: 18),
+                      ),
+                    ],
+                    selected: {tipo},
+                    onSelectionChanged: (sel) {
+                      tipoController.value = sel.first;
+                    },
+                    showSelectedIcon: false,
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              // Descripción
+              TextField(
+                controller: descController,
+                maxLines: 5,
+                maxLength: 500,
+                decoration: const InputDecoration(
+                  hintText: '¿Qué quieres compartir?',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Botón publicar
+              FilledButton.icon(
+                onPressed: () async {
+                  final desc = descController.text.trim();
+                  if (desc.isEmpty) return;
+
+                  await publicarEnFeed(
+                    ref,
+                    descripcion: desc,
+                    tipo: tipoController.value,
+                  );
+
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                icon: const Icon(Icons.send_rounded, size: 18),
+                label: const Text('Publicar'),
+              ),
+            ],
+          ),
+        );
       },
-      onComment: () {},
+    );
+  }
+}
+
+/// Fila de chips de filtro temporal.
+class _FiltrosRow extends StatelessWidget {
+  const _FiltrosRow({
+    required this.filtroActual,
+    required this.onCambiar,
+  });
+
+  final String filtroActual;
+  final ValueChanged<String> onCambiar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _FiltroChip(
+          label: 'Todo',
+          seleccionado: filtroActual == 'todo',
+          onTap: () => onCambiar('todo'),
+        ),
+        const SizedBox(width: 8),
+        _FiltroChip(
+          label: 'Hoy',
+          seleccionado: filtroActual == 'hoy',
+          onTap: () => onCambiar('hoy'),
+        ),
+        const SizedBox(width: 8),
+        _FiltroChip(
+          label: 'Semana',
+          seleccionado: filtroActual == 'semana',
+          onTap: () => onCambiar('semana'),
+        ),
+        const SizedBox(width: 8),
+        _FiltroChip(
+          label: 'Mes',
+          seleccionado: filtroActual == 'mes',
+          onTap: () => onCambiar('mes'),
+        ),
+      ],
     );
   }
 }

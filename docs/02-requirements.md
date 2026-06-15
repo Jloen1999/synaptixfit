@@ -1,8 +1,8 @@
 # 02 - Requisitos del Producto (SRS)
 
-Version: 3.2
-Estado: IN_PROGRESS — Sprint 6 (Motor de Recomendaciones Fases 0-10) completado
-Fecha: 07-06-2026
+Version: 5.0
+Estado: EN DESARROLLO — Panel de administración (Fase 3)
+Fecha: 14-06-2026
 Referencia cruzada: docs/03-architecture.md, docs/04-data-model.md
 
 ## 1. Resumen Ejecutivo
@@ -50,10 +50,11 @@ Proveer un MVP multiplataforma que permita planificar estudio, registrar progres
 
 ### 3.2 Alcance Fase 2 (no bloqueante MVP)
 1. Retos complejos con hitos encadenados y dependencias.
-2. Comentarios y moderación en feed.
-3. Insignias y rachas avanzadas.
-4. Recomendaciones inteligentes de equilibrio estudio/actividad.
-5. Integraciones externas avanzadas (calendarios y wearables).
+2. Comentarios y moderación en feed — Permitir publicar, editar, eliminar comentarios propios. Moderador puede eliminar ajenos. Sistema de reportes.
+3. Insignias y rachas avanzadas — Catálogo de 15 insignias con criterios de desbloqueo. Rachas con hitos visuales (7/30/100 días). Riesgo de pérdida de racha.
+4. Pomodoro (temporizador de estudio con ciclos work/break) y Escanear (digitalización OCR de apuntes vía cámara).
+5. Recomendaciones inteligentes de equilibrio estudio/actividad.
+6. Integraciones externas avanzadas (calendarios y wearables).
 
 ### 3.3 Fuera de alcance MVP
 1. Chat en tiempo real entre usuarios.
@@ -339,6 +340,247 @@ Solo se muestra si hay rutina activa. Si no, se oculta sin afectar el layout.
 ### CA-21 — CognitiveLoadBar condicional
 Solo se muestra si hay datos académicos. Si no, se oculta sin afectar el layout.
 
+### CU-23 Línea de Tiempo Enriquecida con 3 Tabs (v6.2)
+
+**Actor:** Usuario autenticado
+**Precondición:** Sesión activa, datos de academia y bienestar cargados
+**Flujo principal:**
+1. El usuario abre el dashboard y ve la sección "Línea de tiempo" con 3 pestañas
+2. Tab "Hoy" muestra bloques académicos del día, sesiones completadas y entrenamiento pendiente destacado
+3. Tab "Semana" muestra entregas de los próximos 7 días agrupadas cronológicamente
+4. Tab "Retos" muestra retos activos con barra de progreso y días restantes
+5. El entrenamiento pendiente se destaca con una tarjeta naranja y botón "Comenzar" que navega a sesión en vivo
+**Postcondición:** El usuario puede planificar su día desde cualquier tab y acceder rápido a su entrenamiento.
+
+### HU-42 — Entrenamiento pendiente destacado
+Como estudiante quiero ver mi próximo entrenamiento pendiente destacado en la timeline para no perdérmelo.
+
+### HU-43 — Retos activos integrados
+Como estudiante quiero ver mis retos activos integrados en la timeline para seguir su progreso sin salir del dashboard.
+
+### HU-44 — Entregas próximos 7 días
+Como estudiante quiero ver las entregas de los próximos 7 días para planificar mi semana.
+
+### CA-22 — Tab "Hoy" completo
+El tab "Hoy" debe mostrar bloques académicos + sesiones + entrenamiento pendiente destacado, ordenados cronológicamente.
+
+### CA-23 — Tab "Semana" con entregas
+El tab "Semana" debe mostrar entregas de los próximos 7 días agrupadas cronológicamente, con máximo 7 items.
+
+### CA-24 — Tab "Retos" con progreso
+El tab "Retos" debe mostrar retos activos con barra de progreso porcentual y días restantes, con máximo 5 items.
+
+### CU-24 Retos con dependencias entre hitos
+
+**Actor:** Usuario autenticado
+**Precondición:** Usuario en pantalla de detalle de un reto complejo con hitos
+**Flujo principal:**
+1. El usuario ve el grafo de dependencias de hitos con nodos coloreados por estado
+2. El sistema muestra los hitos bloqueados con candado y la condición requerida (AND/OR/X_OF_Y)
+3. Al completar un hito, el trigger `trg_hito_completado` evalúa las dependencias y desbloquea los hitos posteriores
+4. El usuario solo puede iniciar hitos en estado `disponible`
+5. El grafo se actualiza en tiempo real reflejando los nuevos estados
+**Flujo alternativo:**
+- A1 — Condición X_OF_Y (ej. 2 de 3): el hito se desbloquea cuando se cumple el número requerido de predecesores completados
+- A2 — Red de dependencias compleja: el sistema navega el grafo de dependencias recursivamente para determinar transitivamente qué hitos son alcanzables
+**Postcondición:** Los hitos se desbloquean automáticamente al cumplir sus condiciones. El progreso del reto refleja el estado real de cada hito.
+
+### CU-25 Dashboard de analítica de rendimiento
+
+**Actor:** Usuario autenticado
+**Precondición:** Usuario con historial de entrenamiento (sesiones registradas) y datos académicos
+**Flujo principal:**
+1. El usuario accede a la nueva sección "Analítica" en el dashboard o desde navegación
+2. El sistema muestra tabs: Semanal, Mensual, Insights
+3. Tab Semanal: gráficos de tendencia RPE (LineChart), volumen semanal (BarChart), calorías por sesión
+4. Tab Mensual: agregación mensual con comparativa intermensual
+5. Tab Insights: correlaciones generadas (carga académica vs RPE, sueño vs rendimiento) con IA (Gemini)
+6. Los gráficos usan `fl_chart` (LineChart, BarChart, ScatterChart)
+**Flujo alternativo:**
+- A1 — Sin datos suficientes: mostrar estado vacío con mensaje "Completa más sesiones para ver tu analítica"
+- A2 — Sin API key de Gemini: los insights se generan con reglas deterministas (tendencias simples)
+**Postcondición:** El usuario puede visualizar su progreso histórico, identificar patrones y recibir recomendaciones basadas en datos.
+
+### CU-26 Sincronización offline
+
+**Actor:** Usuario autenticado
+**Precondición:** App abierta con o sin conexión a internet
+**Flujo principal:**
+1. El sistema detecta el estado de red vía `connectivity_plus`
+2. Con conexión: operaciones normales contra Supabase
+3. Sin conexión: la app sigue funcionando con datos cacheados en Hive
+4. Las mutaciones (crear/editar/eliminar) se encolan en `offline_queue` (Hive box)
+5. Al reconectar: `sync_merge_engine.dart` procesa la cola en orden FIFO
+6. Conflictos se resuelven con estrategia last-write-wins (timestamp de operación)
+7. Un indicador visual (`OfflineIndicator`) muestra el estado de conexión y operaciones pendientes
+**Flujo alternativo:**
+- A1 — Cola llena (>50 operaciones): advertir al usuario y sugerir conectar
+- A2 — Conflicto irresoluble: notificar al usuario y permitir elegir versión (local vs remota)
+**Flujo de excepción:**
+- E1 — Reconexión intermitente: el sistema espera conexión estable (>3s) antes de sincronizar
+- E2 — Error de merge: se notifica al usuario y se preserva la operación en cola para reintento
+**Postcondición:** Los datos del usuario están sincronizados con el servidor. Las operaciones offline se integran sin pérdida de datos.
+
+### CU-27 — Pomodoro (temporizador de estudio)
+**Prioridad:** MUST
+**Actor:** Estudiante
+**Precondición:** Usuario autenticado en el dashboard.
+**Flujo principal:**
+1. El usuario pulsa "Pomodoro" en QuickActions del dashboard.
+2. El sistema muestra la pantalla de temporizador con anillo de progreso circular.
+3. El usuario pulsa "Iniciar" → comienza ciclo work de 25 min.
+4. Al completar work, el sistema notifica y transiciona automáticamente a descanso corto de 5 min.
+5. Tras 4 ciclos work completados, el descanso es largo (15 min).
+6. El usuario puede pausar, reanudar, reiniciar o saltar descanso en cualquier momento.
+7. Cada sesión focus completada se registra en `sesiones_pomodoro`.
+**Postcondición:** Sesión Pomodoro registrada. El usuario vuelve al dashboard o continúa otro ciclo.
+
+### CU-28 — Escanear apuntes con OCR
+**Prioridad:** SHOULD
+**Actor:** Estudiante
+**Precondición:** Usuario autenticado. Dispositivo móvil (Android/iOS). Permiso de cámara concedido.
+**Flujo principal:**
+1. El usuario pulsa "Escanear" en QuickActions del dashboard.
+2. El sistema abre la cámara con overlay de guía de escaneo.
+3. El usuario captura una imagen del documento/apunte.
+4. El sistema procesa la imagen con OCR (ML Kit) y extrae el texto.
+5. El usuario previsualiza el texto extraído y selecciona una asignatura destino.
+6. El sistema guarda el texto como apunte Markdown en la tabla `apuntes`.
+**Flujo alternativo (Web):**
+- E1 — Plataforma Web: el sistema muestra mensaje "Esta función requiere la app móvil".
+**Postcondición:** Apunte creado con el texto extraído. Visible en la sección de apuntes del usuario.
+
+### CU-29 — Comentarios en feed social
+**Prioridad:** MUST
+**Actor:** Estudiante
+**Precondición:** Usuario autenticado. Existe al menos una publicación en el feed.
+**Flujo principal:**
+1. El usuario ve una publicación en el feed social.
+2. El usuario pulsa el botón de comentarios → se expande la sección de comentarios.
+3. El usuario escribe un comentario (1-500 caracteres) y pulsa enviar.
+4. El sistema guarda el comentario en `comentarios_feed` y lo muestra en tiempo real.
+5. El autor de la publicación recibe una notificación de nuevo comentario.
+**Flujo alternativo:**
+- E1 — Editar: el usuario pulsa "Editar" en su propio comentario, modifica el texto y confirma. Se actualiza `editado_en`.
+- E2 — Eliminar: el usuario pulsa "Eliminar" en su propio comentario. Se marca `eliminado = true` (soft delete).
+**Postcondición:** Comentario visible en la publicación. Notificación enviada al autor.
+
+### CU-30 — Insignias y rachas avanzadas
+**Prioridad:** MUST
+**Actor:** Estudiante
+**Precondición:** Usuario autenticado. Existen 15 insignias en el catálogo.
+**Flujo principal:**
+1. El usuario completa una acción que cumple un criterio de insignia (ej: 1ª sesión).
+2. El `InsigniaEngine` evalúa los criterios y detecta que se cumple "Primeros pasos".
+3. El sistema otorga la insignia (INSERT en `usuario_insignias`) y muestra toast animado "¡Nueva insignia!".
+4. El usuario puede ver su colección en `/insignias` — grid con obtenidas a color y bloqueadas en gris.
+5. El sistema muestra la racha actual con indicador de progreso hacia el próximo hito (7/30/100 días).
+6. Si quedan <4h para perder la racha, el sistema notifica "¡No pierdas tu racha!".
+**Postcondición:** Insignia otorgada y notificada. Racha actualizada.
+
+### HU-45 — Hitos bloqueados visibles
+Como estudiante quiero ver qué hitos están bloqueados y qué necesito completar para desbloquearlos, para planificar mi progreso en el reto.
+
+### HU-46 — Gráficos de rendimiento
+Como estudiante quiero ver gráficos de mi rendimiento (RPE, volumen, calorías) para entender mi progreso semanal y mensual.
+
+### HU-47 — Insights inteligentes
+Como estudiante quiero recibir insights generados sobre mi rendimiento (ej. "cuando duermes más de 7h, tu RPE baja 1 punto") para optimizar mi entrenamiento.
+
+### HU-48 — App funcional sin internet
+Como estudiante quiero poder usar la app sin conexión (registrar sesiones, ver mi rutina) y que sincronice automáticamente al reconectar.
+
+### HU-49 — Indicador de estado offline
+Como estudiante quiero ver un indicador claro de si estoy offline y cuántas operaciones pendientes tengo, para saber si mis datos están sincronizados.
+
+### HU-50 — Resolución de conflictos transparente
+Como estudiante quiero que la app resuelva conflictos de sincronización automáticamente sin que yo tenga que preocuparme, y solo pedirme intervenir en casos excepcionales.
+
+### HU-51 — Temporizador Pomodoro para estudio
+Como estudiante quiero usar un temporizador Pomodoro con ciclos de concentración (25 min) y descanso (5 min) para gestionar mis sesiones de estudio de forma eficaz.
+
+### HU-52 — Escanear apuntes con la cámara
+Como estudiante quiero digitalizar mis apuntes en papel usando la cámara del móvil para tenerlos disponibles en la app sin tener que transcribirlos manualmente.
+
+### HU-53 — Comentar logros de compañeros
+Como estudiante quiero comentar las publicaciones de logros de mis compañeros en el feed social para felicitarlos e interactuar con la comunidad.
+
+### HU-54 — Editar y eliminar mis comentarios
+Como estudiante quiero poder editar o eliminar un comentario que haya publicado si me equivoco o ya no refleja lo que quiero decir.
+
+### HU-55 — Coleccionar insignias por mis logros
+Como estudiante quiero desbloquear insignias al alcanzar hitos (primer entrenamiento, 10 sesiones, racha de 7 días) y ver mi colección en el perfil.
+
+### HU-56 — Ver mi racha con hitos visuales
+Como estudiante quiero ver mi racha actual de días consecutivos con actividad, cuántos días faltan para el próximo hito (7/30/100) y recibir alertas si estoy en riesgo de perderla.
+
+### CA-25 — Grafo de dependencias funcional
+El grafo de dependencias debe mostrar nodos coloreados por estado (rojo=bloqueado, azul=disponible, amarillo=en_progreso, verde=completado) con aristas que muestren la condición (AND/OR/X_OF_Y).
+
+### CA-26 — Charts de analítica renderizados
+Los gráficos Semanal y Mensual deben renderizarse con `fl_chart` mostrando datos reales del usuario. Sin datos, mostrar estado vacío.
+
+### CA-27 — Cola offline funcional
+Al desconectar internet, las operaciones de escritura deben encolarse automáticamente. Al reconectar, deben sincronizarse sin intervención del usuario.
+
+### CA-28 — OfflineIndicator visible
+El widget `OfflineIndicator` debe ser visible en todas las pantallas principales cuando no hay conexión, mostrando un badge con el número de operaciones pendientes.
+
+### CA-29 — Pomodoro funcional
+El temporizador debe mostrar un anillo de progreso circular con el tiempo restante. Los botones Iniciar, Pausar, Reanudar y Reiniciar deben responder en <200ms. Al completar un ciclo work, debe sonar una notificación y transicionar automáticamente a descanso. Las sesiones completadas deben persistir en `sesiones_pomodoro`.
+
+### CA-30 — Escanear funcional
+La cámara debe abrirse al pulsar "Escanear". La imagen capturada debe procesarse con OCR y mostrar el texto extraído en <3s. La precisión de OCR debe ser >80% en texto impreso en español. El resultado debe poder guardarse como apunte en una asignatura. En Web, debe mostrarse un mensaje informativo sin crashear.
+
+### CA-31 — Comentarios funcionales con RLS
+Los comentarios deben aparecer bajo cada publicación ordenados cronológicamente. Solo el autor puede editar o eliminar su comentario. El texto debe limitarse a 500 caracteres. Al publicar un comentario, el autor de la publicación debe recibir una notificación.
+
+### CA-32 — Insignias y rachas visibles
+El catálogo de 15 insignias debe ser visible en `/insignias`. Las obtenidas se muestran a color con fecha; las bloqueadas en gris con candado. Al desbloquear una insignia, debe mostrarse un toast animado. La racha actual debe mostrar días consecutivos y progreso hacia el próximo hito (barra de progreso). Si quedan <4h para perder la racha, debe enviarse una notificación.
+
+### CU-31 — Panel de administración: Wipe de datos de usuario (NUEVO v5.0)
+
+**Actor:** Administrador del sistema (rol `admin` en `usuarios.rol`)
+**Precondición:** Usuario administrador autenticado. Usuario objetivo identificado por `id`.
+**Flujo principal:**
+1. El administrador accede al panel de administración y busca al usuario por email o id.
+2. El administrador pulsa "Wipe de datos" en la ficha del usuario.
+3. El sistema muestra un diálogo de confirmación con el resumen de lo que se conservará y lo que se eliminará.
+4. El administrador confirma escribiendo el email del usuario.
+5. El sistema ejecuta `wipe_user_data(p_usuario_id)` que:
+   - **Conserva:** `id`, `email`, `nombre_completo`, `url_avatar`, `rol`, `nivel_privacidad`, `creado_en`, `perfil_bienestar_usuario`, `perfil_academico_usuario`, `usuario_carreras`
+   - **Resetea:** `nivel` → 1, `xp_total` → 0, `racha_actual` → 0
+   - **Elimina:** `sesiones_registradas`, `series_sesion`, `rutinas` (CASCADE → `semanas_rutina`, `dias_rutina`, `seleccion_de_ejercicios`), `retos` (CASCADE → `hitos_de_reto`, `progreso_de_reto`), `planes_estudio` (CASCADE → `horarios_academicos`), `apuntes`, `estado_diario_usuario`, `actividades_sociales` (CASCADE → `interacciones_sociales`), `notificaciones`, `usuario_insignias`, `historial_peso`, `historial_objetivos`, `recomendaciones_pendientes`, `insights_analitica`, `sesiones_focus`, `carga_academica_semanal`
+6. El sistema muestra un toast de confirmación: "Datos de [email] eliminados correctamente. Usuario reseteado a nivel 1."
+**Flujo alternativo:**
+- A1 — El administrador cancela la confirmación: no se ejecuta ninguna acción.
+- A2 — El usuario objetivo no existe: se muestra error "Usuario no encontrado".
+**Flujo de excepción:**
+- E1 — Error de BD durante el wipe: se muestra el error y se hace rollback de la transacción.
+- E2 — El administrador intenta hacer wipe de su propio usuario: se bloquea la acción con mensaje "No puedes eliminar tus propios datos".
+**Postcondiciones:** El usuario objetivo conserva sus datos personales y de perfil, pero todo su historial de actividad es eliminado. Los valores dinámicos (nivel, XP, racha) son reseteados. El usuario ve la app como si acabara de registrarse.
+
+### HU-57 — Conservar datos personales en wipe
+Como administrador quiero que al hacer wipe de un usuario se conserven sus datos personales estáticos (email, nombre, avatar, preferencias de perfil) para no tener que recrear manualmente su cuenta.
+
+### HU-58 — Resetear valores dinámicos en wipe
+Como administrador quiero que al hacer wipe de un usuario se resetee su nivel a 1, su XP a 0 y su racha a 0 para que el usuario comience desde cero sin perder su identidad.
+
+### HU-59 — Eliminar historial completo en wipe
+Como administrador quiero que al hacer wipe de un usuario se elimine todo su historial de actividad (sesiones, rutinas, retos, apuntes, publicaciones, comentarios, notificaciones, insignias) para cumplir con solicitudes de privacidad o corrección de datos corruptos.
+
+### HU-60 — Política de wipe solo datos dinámicos
+Como administrador quiero eliminar todo el historial de un usuario y resetear sus valores dinámicos (nivel, XP, racha) preservando solo sus datos personales y perfil, para mantener la integridad de la cuenta mientras se limpia su actividad.
+
+### CA-33 — Wipe conserva datos personales
+Tras ejecutar el wipe, el usuario debe conservar: `id`, `email`, `nombre_completo`, `url_avatar`, `rol`, `nivel_privacidad`, `creado_en`, y los registros en `perfil_bienestar_usuario`, `perfil_academico_usuario` y `usuario_carreras`.
+
+### CA-34 — Wipe resetea valores dinámicos
+Tras ejecutar el wipe, `usuarios.nivel` debe ser 1, `usuarios.xp_total` debe ser 0 y `usuarios.racha_actual` debe ser 0.
+
+### CA-35 — Usuario ve la app como recién registrado
+El usuario afectado ve su app como si acabara de registrarse: nivel 1, XP 0, racha 0, sin rutinas, sin sesiones, sin retos, sin apuntes, sin publicaciones, sin insignias. Mantiene su email, nombre, avatar y preferencias de perfil (bienestar, académico, carreras).
+
 ## 14. Matriz de Trazabilidad (AMPLIADO)
 *(Conservado de v2.9)*
 
@@ -366,6 +608,8 @@ Solo se muestra si hay datos académicos. Si no, se oculta sin afectar el layout
 
 3. **Fase 2 (crecimiento):** retos complejos con dependencias, comentarios en feed, insignias avanzadas, integraciones ampliadas, notificaciones push nativas.
 
+4. **Fase 3 (administración — EN DESARROLLO):** Panel de administración con wipe de datos de usuario (función `wipe_user_data`), gestión de usuarios (búsqueda, listado), columna `rol` en `usuarios` para distinguir `admin` de `usuario`.
+
 ## 17. Restricciones, Supuestos y Dependencias
 *(Conservado de v2.9)*
 
@@ -374,6 +618,6 @@ Añadido en v3.0:
 
 ---
 
-**Documento compilado:** 11-05-2026
-**Versión:** 3.0
+**Documento compilado:** 14-06-2026
+**Versión:** 5.0
 **Clasificación:** PÚBLICO — Equipo jloen

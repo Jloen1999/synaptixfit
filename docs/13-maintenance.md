@@ -23,24 +23,28 @@ Tras evaluar múltiples fuentes (Lyfta, ExerciseDB/Kaggle, Demic, wger), se opt�
 1. Se tomó como base el scraping de Lyfta (~682 ejercicios con video real).
 2. Se complementó con ejercicios de ExerciseDB que no existían en Lyfta (~200+).
 3. Se eliminaron duplicados por nombre (case-insensitive).
-4. Se generó un JSON unificado que alimenta `seed_ejercicios.py`.
+4. Se generó un JSON unificado que se incorporó directamente en la migración base `202606060049_esquema_base.sql`.
 
 ### 1.3 Pipeline de Seeding
 
 ```bash
-# Desde la raíz del proyecto
-python supabase/seed_ejercicios.py       # Carga catálogo completo (909 ejercicios)
-python supabase/seed_catalogo.py         # Universidades, carreras, asignaturas
-python supabase/seed_usuarios.py         # Usuarios mock
-python supabase/seed_asignaturas.py      # Asignaturas de usuario desde grados.json
-python supabase/seed_demo_data.py        # Datos demo completos
+# Desde la raíz del proyecto — único seed activo
+python supabase/seed_catalogo_v2.py      # Puebla catálogo académico (universidades, carreras, asignaturas) desde grados.json
 ```
 
-El script `seed_ejercicios.py`:
-1. UPSERT catálogos (`musculos`, `partes_cuerpo`, `equipamientos`)
-2. INSERT ejercicios con deduplicación por nombre
-3. UPSERT relaciones M:N (`ejercicio_musculos_secundarios`, `ejercicio_equipamiento`)
-4. Asigna `finalidad` automáticamente (`cardio`, `isometrico`, `fuerza`, `hipertrofia`, `resistencia`, `movilidad`)
+Los seeds mock (`seed_ejercicios.py`, `seed_catalogo.py`, `seed_usuarios.py`, `seed_asignaturas.py`, `seed_demo_data.py`) fueron retirados. El proyecto usa datos reales desde Supabase remoto.
+
+#### Sincronización BD local ↔ remota
+
+```bash
+# Poblar remoto desde local (subir datos de desarrollo)
+python supabase/seed_catalogo_v2.py
+
+# Volcar remoto a archivo de migración local (bajar datos de producción)
+supabase db dump --linked --data-only > supabase/seed_data.sql
+```
+
+La clasificación automática de `finalidad` (`cardio`, `isometrico`, `fuerza`, `hipertrofia`, `resistencia`, `movilidad`) está definida en el esquema de la BD (migración consolidada) y se aplica a nivel de base de datos.
 
 ### 1.4 Catálogo actual (08-06-2026)
 
@@ -51,7 +55,7 @@ El script `seed_ejercicios.py`:
 | Músculos | 93 (incluye `cardiovascular` para cardio, 9 redundantes históricos) |
 | Equipamientos | ~23 |
 | Relaciones M:N (ejercicio↔músculo sec.) | ~3360 (cardinalidad media 1:3.7) |
-| Migraciones aplicadas | 49 (0001→0050) |
+| Migración aplicada | 1 (esquema base consolidado, ~12K líneas) |
 | Fuentes de datos | Lyfta (682) + ExerciseDB (200+) fusionados |
 
 ### 1.5 Historial técnico (fuentes descartadas)
@@ -91,7 +95,7 @@ Migración 0020:
 |---|---|
 | Integridad relacional | Coincidencia entre ejercicios, músculos, equipos y partes del cuerpo |
 | Calidad multimedia | URLs de R2 accesibles vía Worker proxy |
-| Reproducibilidad | `seed_ejercicios.py` debe ser idempotente |
+| Reproducibilidad | `seed_catalogo_v2.py` debe ser idempotente |
 | Trazabilidad | Versión del JSON unificado registrada
 
 ---

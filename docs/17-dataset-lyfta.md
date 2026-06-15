@@ -12,7 +12,7 @@
 
 Dataset estructurado de **682 ejercicios físicos** en español, extraídos de la plataforma Lyfta mediante scraping automatizado y procesados a través de un pipeline de 8 etapas. Cada ejercicio incluye video MP4, previsualización y metadatos completos: nombre, descripción, instrucciones (3 pasos), dificultad, finalidad, partes del cuerpo, músculos (objetivo y secundarios), equipamientos y URLs alojadas en Cloudflare R2.
 
-El dataset está diseñado para ser ingerido en el catálogo de ejercicios de SynaptixFit (`supabase/seed_ejercicios.py`) y complementa las fuentes existentes (ExerciseDB/AscendAPI y Demic).
+El dataset está incorporado en la migración base `202606060049_esquema_base.sql` (~12K líneas) que carga directamente los 909 ejercicios en Supabase. El script histórico `supabase/seed_ejercicios.py` fue eliminado en la Fase 0 del Plan Maestro.
 
 ---
 

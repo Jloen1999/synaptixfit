@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
+import '../../dashboard/application/timeline_provider.dart';
 
 final entregasExamenesProvider =
     FutureProvider<List<EntregaExamenDb>>((ref) async {
@@ -63,6 +64,7 @@ Future<EntregaExamenDb?> crearEntrega({
   required String dificultad,
   String? asignaturaId,
   String? planEstudioId,
+  required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -82,6 +84,7 @@ Future<EntregaExamenDb?> crearEntrega({
       .select()
       .single();
 
+  ref.invalidate(timelineHoyProvider);
   return EntregaExamenDb.fromMap(data);
 }
 
@@ -92,6 +95,7 @@ Future<void> actualizarEntrega({
   DateTime? fechaLimite,
   String? dificultad,
   String? asignaturaId,
+  required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -111,10 +115,11 @@ Future<void> actualizarEntrega({
         .update(updates)
         .eq('id', id)
         .eq('usuario_id', user!.id);
+    ref.invalidate(timelineHoyProvider);
   }
 }
 
-Future<void> eliminarEntrega(String id) async {
+Future<void> eliminarEntrega(String id, WidgetRef ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
 
@@ -123,9 +128,12 @@ Future<void> eliminarEntrega(String id) async {
       .delete()
       .eq('id', id)
       .eq('usuario_id', user!.id);
+
+  ref.invalidate(timelineHoyProvider);
 }
 
-Future<void> toggleEntregaCompletada(String id, bool completada) async {
+Future<void> toggleEntregaCompletada(String id, bool completada,
+    {required WidgetRef ref}) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
 
@@ -137,4 +145,6 @@ Future<void> toggleEntregaCompletada(String id, bool completada) async {
       })
       .eq('id', id)
       .eq('usuario_id', user!.id);
+
+  ref.invalidate(timelineHoyProvider);
 }

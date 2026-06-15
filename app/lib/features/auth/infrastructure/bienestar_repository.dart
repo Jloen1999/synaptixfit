@@ -43,7 +43,6 @@ class BienestarRepository {
   Future<void> guardarPerfilBienestar({
     required int edad,
     required String sexo,
-    String? ciudad,
     required double pesoKg,
     required double alturaCm,
     required String nivelActividad,
@@ -65,7 +64,6 @@ class BienestarRepository {
       'usuario_id': userId,
       'edad': edad,
       'sexo': sexo,
-      'ciudad': ciudad,
       'peso_kg': pesoKg,
       'altura_cm': alturaCm,
       'imc': double.parse(imc.toStringAsFixed(1)),

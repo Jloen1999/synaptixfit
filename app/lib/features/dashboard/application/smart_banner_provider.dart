@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/config/env_config.dart';
@@ -6,83 +8,153 @@ import '../../bienestar/application/rutina_provider.dart';
 import '../domain/smart_banner_dto.dart';
 import 'dashboard_provider.dart';
 
-/// Genera un consejo personalizado para el SmartBanner usando Gemini.
-/// Cachea el resultado en Hive por 1 hora.
-/// Si Gemini falla, retorna un consejo determinista de fallback.
-final consejoSmartProvider = FutureProvider<SmartBannerState>((ref) async {
-  // Esperar a que los datos estén disponibles (usar .future, no .valueOrNull)
-  final dash = await ref.watch(dashboardProvider.future);
-  final energia = await ref.watch(estadoEnergeticoProvider.future);
-  final adherencia = await ref.watch(adherenciaAcademicaProvider.future);
-  final contexto = await ref.watch(contextoAcademicoProvider.future);
+class SmartBannerNotifier extends StateNotifier<SmartBannerState> {
+  final Ref _ref;
+  bool _refreshEnProgreso = false;
 
-  // Construir contexto
-  final ctx = SmartBannerContext(
-    energiaValor: energia?.valor ?? 0,
-    adherenciaValor: adherencia?.valor ?? 0,
-    nivelEstres: contexto?.nivelEstres ?? 5,
-    evaluacionesSemana: contexto?.evaluacionesSemana ?? 0,
-    tieneExamenesProximos: contexto?.tieneExamenesProximos ?? false,
-    rachaEntrenamiento: dash.racha,
-    rachaEstudio: adherencia?.rachaDias ?? 0,
-  );
+  SmartBannerNotifier(this._ref)
+      : super(const SmartBannerState(status: SmartBannerStatus.fallback)) {
+    _cargarInmediato();
+    _refreshEnBackground();
+  }
 
-  // Intentar cache Hive primero
-  final hiveBox = ref.read(hiveSmartCacheProvider);
-  final cacheKey = 'smart_banner_${dash.usuario.id}';
-  final cached = hiveBox.get(cacheKey);
-  if (cached != null) {
-    final cachedAt = cached['generadoEn'] as String?;
-    if (cachedAt != null) {
-      final cachedDate = DateTime.tryParse(cachedAt);
-      if (cachedDate != null &&
-          DateTime.now().difference(cachedDate).inHours < 1) {
-        return SmartBannerState(
+  void _cargarInmediato() {
+    final hiveBox = _ref.read(hiveSmartCacheProvider);
+    final dash = _ref.read(dashboardProvider).valueOrNull;
+    if (dash == null) {
+      state = const SmartBannerState(
+        status: SmartBannerStatus.fallback,
+        fallbackMensaje:
+            'Mantén el equilibrio entre estudio y ejercicio. Cada día cuenta.',
+      );
+      return;
+    }
+
+    final cacheKey = 'smart_banner_v2_${dash.usuario.id}';
+    final cached = hiveBox.get(cacheKey);
+
+    if (cached != null) {
+      final mensaje = cached['mensaje'] as String?;
+      final generadoEnStr = cached['generadoEn'] as String?;
+      if (mensaje != null && mensaje.isNotEmpty) {
+        final cleaned = _limpiarTexto(mensaje);
+        state = SmartBannerState(
           status: SmartBannerStatus.loaded,
-          mensaje: cached['mensaje'] as String,
-          generadoEn: cachedDate,
+          mensaje: cleaned,
+          generadoEn:
+              generadoEnStr != null ? DateTime.tryParse(generadoEnStr) : null,
         );
+        return;
       }
+    }
+
+    state = const SmartBannerState(
+      status: SmartBannerStatus.fallback,
+      fallbackMensaje:
+          'Mantén el equilibrio entre estudio y ejercicio. Cada día cuenta.',
+    );
+  }
+
+  Future<void> _refreshEnBackground() async {
+    if (_refreshEnProgreso) return;
+    _refreshEnProgreso = true;
+
+    try {
+      final dash = await _ref.read(dashboardProvider.future);
+      final energia = await _ref.read(estadoEnergeticoProvider.future);
+      final adherencia = await _ref.read(adherenciaAcademicaProvider.future);
+      final contexto = await _ref.read(contextoAcademicoProvider.future);
+
+      final ctx = SmartBannerContext(
+        energiaValor: energia?.valor ?? 0,
+        adherenciaValor: adherencia?.valor ?? 0,
+        nivelEstres: contexto?.nivelEstres ?? 5,
+        evaluacionesSemana: contexto?.evaluacionesSemana ?? 0,
+        tieneExamenesProximos: contexto?.tieneExamenesProximos ?? false,
+        rachaEntrenamiento: dash.racha,
+        rachaEstudio: adherencia?.rachaDias ?? 0,
+      );
+
+      final cacheKey = 'smart_banner_${dash.usuario.id}';
+      final hiveBox = _ref.read(hiveSmartCacheProvider);
+      final cached = hiveBox.get(cacheKey);
+      if (cached != null) {
+        final cachedAt = cached['generadoEn'] as String?;
+        if (cachedAt != null) {
+          final cachedDate = DateTime.tryParse(cachedAt);
+          if (cachedDate != null &&
+              DateTime.now().difference(cachedDate).inHours < 1) {
+            return;
+          }
+        }
+      }
+
+      if (!EnvConfig.hasGeminiApiKey) {
+        state = SmartBannerState(
+          status: SmartBannerStatus.fallback,
+          fallbackMensaje: _generarFallback(ctx),
+        );
+        return;
+      }
+
+      final gemini = _ref.read(geminiServiceProvider);
+      final apiKey = _ref.read(geminiApiKeyProvider);
+      final prompt = ctx.toPrompt();
+
+      final respuesta = await gemini.generarTexto(apiKey, prompt).timeout(
+            const Duration(seconds: 8),
+          );
+
+      final limpio = _limpiarTexto(respuesta);
+      final ahora = DateTime.now();
+      hiveBox.put(cacheKey, {
+        'mensaje': limpio,
+        'generadoEn': ahora.toIso8601String(),
+      });
+
+      state = SmartBannerState(
+        status: SmartBannerStatus.loaded,
+        mensaje: limpio,
+        generadoEn: ahora,
+      );
+    } catch (_) {
+      // Mantener estado actual (cache o fallback)
+    } finally {
+      _refreshEnProgreso = false;
     }
   }
 
-  // Sin API key → fallback inmediato
-  if (!EnvConfig.hasGeminiApiKey) {
-    final fallback = _generarFallback(ctx);
-    return SmartBannerState(
-      status: SmartBannerStatus.fallback,
-      fallbackMensaje: fallback,
-    );
+  String _limpiarTexto(String raw) {
+    var text = raw.trim();
+
+    final codeBlock = RegExp(r'```(?:json)?\s*([\s\S]*?)```');
+    final match = codeBlock.firstMatch(text);
+    if (match != null) text = match.group(1)!.trim();
+
+    if (text.startsWith('{') && text.endsWith('}')) {
+      try {
+        final map = json.decode(text) as Map<String, dynamic>;
+        text = (map['mensaje'] ?? map['texto'] ?? map['consejo'] ?? text)
+            .toString();
+      } catch (_) {}
+    }
+
+    text = text.replaceAll(RegExp(r'[\{\}"\[\]]'), '').trim();
+
+    if (text.length > 120) {
+      final lastSpace = text.lastIndexOf(' ', 120);
+      text = lastSpace > 80
+          ? '${text.substring(0, lastSpace)}...'
+          : '${text.substring(0, 117)}...';
+    }
+
+    return text;
   }
+}
 
-  // Llamar a Gemini vía el servicio compartido
-  try {
-    final gemini = ref.read(geminiServiceProvider);
-    final apiKey = ref.read(geminiApiKeyProvider);
-    final prompt = ctx.toPrompt();
-    final respuesta = await gemini.generarTexto(apiKey, prompt).timeout(
-          const Duration(seconds: 8),
-        );
-
-    // Cachear en Hive
-    final ahora = DateTime.now();
-    hiveBox.put(cacheKey, {
-      'mensaje': respuesta,
-      'generadoEn': ahora.toIso8601String(),
-    });
-
-    return SmartBannerState(
-      status: SmartBannerStatus.loaded,
-      mensaje: respuesta,
-      generadoEn: ahora,
-    );
-  } catch (_) {
-    final fallback = _generarFallback(ctx);
-    return SmartBannerState(
-      status: SmartBannerStatus.fallback,
-      fallbackMensaje: fallback,
-    );
-  }
+final consejoSmartProvider =
+    StateNotifierProvider<SmartBannerNotifier, SmartBannerState>((ref) {
+  return SmartBannerNotifier(ref);
 });
 
 String _generarFallback(SmartBannerContext ctx) {

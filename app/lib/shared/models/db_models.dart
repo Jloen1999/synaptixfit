@@ -46,6 +46,7 @@ class UsuarioDb {
     required this.nivel,
     required this.xpTotal,
     required this.rachaActual,
+    required this.rol,
     required this.creadoEn,
     required this.actualizadoEn,
   });
@@ -57,6 +58,7 @@ class UsuarioDb {
   final int nivel;
   final int xpTotal;
   final int rachaActual;
+  final String rol;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
@@ -69,6 +71,7 @@ class UsuarioDb {
       nivel: _parseInt(map['nivel'], fallback: 1),
       xpTotal: _parseInt(map['xp_total']),
       rachaActual: _parseInt(map['racha_actual']),
+      rol: (map['rol'] as String?) ?? 'usuario',
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
     );
@@ -83,6 +86,7 @@ class UsuarioDb {
       'nivel': nivel,
       'xp_total': xpTotal,
       'racha_actual': rachaActual,
+      'rol': rol,
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -251,6 +255,7 @@ class RutinaDb {
     required this.duracionSemanas,
     required this.objetivo,
     required this.estado,
+    this.fechaInicio,
     required this.creadoEn,
     required this.actualizadoEn,
   });
@@ -264,6 +269,7 @@ class RutinaDb {
   final int duracionSemanas;
   final String objetivo;
   final String estado;
+  final DateTime? fechaInicio;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
@@ -278,6 +284,9 @@ class RutinaDb {
       duracionSemanas: _parseInt(map['duracion_semanas'], fallback: 1),
       objetivo: (map['objetivo'] as String?) ?? 'fuerza',
       estado: (map['estado'] as String?) ?? 'activo',
+      fechaInicio: map['fecha_inicio'] != null
+          ? _parseDateTime(map['fecha_inicio'])
+          : null,
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
     );
@@ -294,6 +303,7 @@ class RutinaDb {
       'duracion_semanas': duracionSemanas,
       'objetivo': objetivo,
       'estado': estado,
+      if (fechaInicio != null) 'fecha_inicio': fechaInicio!.toIso8601String(),
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -451,6 +461,7 @@ class RetoDb {
     this.rachaActual = 0,
     this.mejorRacha = 0,
     this.ultimoDiaActivo,
+    this.tieneDependencias = false,
   });
 
   final String id;
@@ -467,6 +478,7 @@ class RetoDb {
   final int rachaActual;
   final int mejorRacha;
   final DateTime? ultimoDiaActivo;
+  final bool tieneDependencias;
 
   factory RetoDb.fromMap(Map<String, dynamic> map) {
     return RetoDb(
@@ -486,6 +498,7 @@ class RetoDb {
       ultimoDiaActivo: map['ultimo_dia_activo'] != null
           ? _parseDateTime(map['ultimo_dia_activo'])
           : null,
+      tieneDependencias: _parseBool(map['tiene_dependencias']),
     );
   }
 
@@ -506,6 +519,7 @@ class RetoDb {
       'mejor_racha': mejorRacha,
       if (ultimoDiaActivo != null)
         'ultimo_dia_activo': ultimoDiaActivo!.toIso8601String(),
+      'tiene_dependencias': tieneDependencias,
     };
   }
 }
@@ -519,6 +533,10 @@ class HitoRetoDb {
     required this.indiceOrden,
     required this.progresoActual,
     required this.estaCompletado,
+    this.estado = 'bloqueado',
+    this.dependencias = const [],
+    this.tipoCondicion = 'AND',
+    this.condicionN = 1,
   });
 
   final String id;
@@ -528,8 +546,28 @@ class HitoRetoDb {
   final int indiceOrden;
   final double progresoActual;
   final bool estaCompletado;
+  final String estado;
+  final List<String> dependencias;
+  final String tipoCondicion;
+  final int condicionN;
 
   factory HitoRetoDb.fromMap(Map<String, dynamic> map) {
+    final depsRaw = map['dependencias'];
+    final List<String> deps;
+    if (depsRaw is List) {
+      deps = depsRaw.map((e) => e.toString()).toList();
+    } else if (depsRaw is String && depsRaw.isNotEmpty) {
+      deps = depsRaw
+          .replaceAll('{', '')
+          .replaceAll('}', '')
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } else {
+      deps = [];
+    }
+
     return HitoRetoDb(
       id: map['id'] as String,
       retoId: map['reto_id'] as String,
@@ -538,6 +576,10 @@ class HitoRetoDb {
       indiceOrden: _parseInt(map['indice_orden'], fallback: 1),
       progresoActual: _parseDouble(map['progreso_actual']),
       estaCompletado: _parseBool(map['esta_completado']),
+      estado: (map['estado'] as String?) ?? 'bloqueado',
+      dependencias: deps,
+      tipoCondicion: (map['tipo_condicion'] as String?) ?? 'AND',
+      condicionN: (map['condicion_n'] as num?)?.toInt() ?? 1,
     );
   }
 
@@ -550,6 +592,10 @@ class HitoRetoDb {
       'indice_orden': indiceOrden,
       'progreso_actual': progresoActual,
       'esta_completado': estaCompletado,
+      'estado': estado,
+      'dependencias': dependencias,
+      'tipo_condicion': tipoCondicion,
+      'condicion_n': condicionN,
     };
   }
 }
@@ -745,6 +791,8 @@ class HorarioAcademicoDb {
     this.tipoActividad = 'estudio',
     this.rutinaId,
     this.temas,
+    this.completado = false,
+    this.asistenciaRegistradaEn,
   });
 
   final String id;
@@ -760,6 +808,8 @@ class HorarioAcademicoDb {
   final String tipoActividad;
   final String? rutinaId;
   final String? temas;
+  final bool completado;
+  final DateTime? asistenciaRegistradaEn;
 
   factory HorarioAcademicoDb.fromMap(Map<String, dynamic> map) {
     return HorarioAcademicoDb(
@@ -776,6 +826,10 @@ class HorarioAcademicoDb {
       tipoActividad: (map['tipo_actividad'] as String?) ?? 'estudio',
       rutinaId: map['rutina_id'] as String?,
       temas: map['temas'] as String?,
+      completado: _parseBool(map['completado']),
+      asistenciaRegistradaEn: map['asistencia_registrada_en'] != null
+          ? _parseDateTime(map['asistencia_registrada_en'])
+          : null,
     );
   }
 
@@ -794,6 +848,9 @@ class HorarioAcademicoDb {
       'tipo_actividad': tipoActividad,
       if (rutinaId != null) 'rutina_id': rutinaId,
       if (temas != null) 'temas': temas,
+      'completado': completado,
+      if (asistenciaRegistradaEn != null)
+        'asistencia_registrada_en': asistenciaRegistradaEn!.toIso8601String(),
     };
   }
 }
@@ -1160,6 +1217,9 @@ class PerfilAcademicoDb {
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
+  int get cursoActual => ((semestreActual - 1) ~/ 2) + 1;
+  int get semestreEnCurso => ((semestreActual - 1) % 2) + 1;
+
   factory PerfilAcademicoDb.fromMap(Map<String, dynamic> map) {
     return PerfilAcademicoDb(
       id: map['id'] as String,
@@ -1443,7 +1503,7 @@ class PlanEstudioDb {
       nombre: map['nombre'] as String,
       semanaInicio: _parseDateTime(map['semana_inicio']),
       semanaFin: _parseDateTime(map['semana_fin']),
-      visibilidad: (map['visibilidad'] as String?) ?? 'privado',
+      visibilidad: (map['visibilidad'] as String?) ?? 'private',
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
     );
@@ -1575,7 +1635,7 @@ class ApunteDb {
       asignaturaId: map['asignatura_id'] as String?,
       titulo: map['titulo'] as String,
       contenido: (map['contenido'] as String?) ?? '',
-      visibilidad: (map['visibilidad'] as String?) ?? 'privado',
+      visibilidad: (map['visibilidad'] as String?) ?? 'private',
       esNotaRapida: _parseBool(map['es_nota_rapida']),
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
@@ -1597,9 +1657,15 @@ class ApunteDb {
   }
 }
 
-/// Catálogo — universidad (solo lectura)
-class CatalogoUniversidadDb {
-  const CatalogoUniversidadDb({
+// ===========================================================================
+// Catálogo Académico v2 — 8 modelos normalizados
+// Sustituye a las 3 tablas v1 (catalogo_universidades, catalogo_carreras,
+// catalogo_asignaturas) eliminadas en la migración 0054.
+// ===========================================================================
+
+/// Universidad del catálogo académico (solo lectura)
+class UniversidadDb {
+  const UniversidadDb({
     required this.id,
     required this.nombre,
     required this.creadoEn,
@@ -1609,55 +1675,103 @@ class CatalogoUniversidadDb {
   final String nombre;
   final DateTime creadoEn;
 
-  factory CatalogoUniversidadDb.fromMap(Map<String, dynamic> map) {
-    return CatalogoUniversidadDb(
+  factory UniversidadDb.fromMap(Map<String, dynamic> map) {
+    return UniversidadDb(
       id: map['id'] as String,
       nombre: map['nombre'] as String,
       creadoEn: _parseDateTime(map['creado_en']),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'creado_en': creadoEn.toIso8601String(),
+    };
+  }
 }
 
-/// Catálogo — carrera (solo lectura)
-class CatalogoCarreraDb {
-  const CatalogoCarreraDb({
+/// Centro / facultad vinculado a una universidad (solo lectura)
+class CentroDb {
+  const CentroDb({
     required this.id,
     required this.universidadId,
     required this.nombre,
-    this.universidadNombre,
     required this.creadoEn,
   });
 
   final String id;
   final String universidadId;
   final String nombre;
-  final String? universidadNombre;
   final DateTime creadoEn;
 
-  factory CatalogoCarreraDb.fromMap(Map<String, dynamic> map) {
-    String? univNombre;
-    final univData = map['catalogo_universidades'];
-    if (univData != null) {
-      if (univData is Map<String, dynamic>) {
-        univNombre = univData['nombre'] as String?;
-      } else if (univData is List && univData.isNotEmpty) {
-        univNombre =
-            (univData.first as Map<String, dynamic>)['nombre'] as String?;
-      }
-    }
-    return CatalogoCarreraDb(
+  factory CentroDb.fromMap(Map<String, dynamic> map) {
+    return CentroDb(
       id: map['id'] as String,
       universidadId: map['universidad_id'] as String,
       nombre: map['nombre'] as String,
-      universidadNombre: univNombre,
       creadoEn: _parseDateTime(map['creado_en']),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'universidad_id': universidadId,
+      'nombre': nombre,
+      'creado_en': creadoEn.toIso8601String(),
+    };
+  }
 }
 
-/// Catálogo — asignatura predefinida (solo lectura, vinculada a una carrera)
-class CatalogoAsignaturaDb {
-  const CatalogoAsignaturaDb({
+/// Carrera / grado vinculada a un centro (solo lectura)
+class CarreraDb {
+  const CarreraDb({
+    required this.id,
+    required this.centroId,
+    required this.nombre,
+    this.totalCreditos,
+    this.totalHoras,
+    required this.creadoEn,
+  });
+
+  final String id;
+  final String centroId;
+  final String nombre;
+  final int? totalCreditos;
+  final int? totalHoras;
+  final DateTime creadoEn;
+
+  factory CarreraDb.fromMap(Map<String, dynamic> map) {
+    return CarreraDb(
+      id: map['id'] as String,
+      centroId: map['centro_id'] as String,
+      nombre: map['nombre'] as String,
+      totalCreditos: map['total_creditos'] != null
+          ? _parseInt(map['total_creditos'])
+          : null,
+      totalHoras:
+          map['total_horas'] != null ? _parseInt(map['total_horas']) : null,
+      creadoEn: _parseDateTime(map['creado_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'centro_id': centroId,
+      'nombre': nombre,
+      if (totalCreditos != null) 'total_creditos': totalCreditos,
+      if (totalHoras != null) 'total_horas': totalHoras,
+      'creado_en': creadoEn.toIso8601String(),
+    };
+  }
+}
+
+/// Asignatura del catálogo vinculada a una carrera (solo lectura)
+class AsignaturaCatalogoDb {
+  const AsignaturaCatalogoDb({
     required this.id,
     required this.carreraId,
     required this.nombre,
@@ -1665,6 +1779,10 @@ class CatalogoAsignaturaDb {
     this.semestre,
     this.caracter,
     this.creditos,
+    this.horas,
+    this.departamento,
+    this.idiomaImparticion,
+    this.urlGuiaDocente,
     required this.creadoEn,
   });
 
@@ -1675,23 +1793,213 @@ class CatalogoAsignaturaDb {
   final int? semestre;
   final String? caracter;
   final double? creditos;
+  final int? horas;
+  final String? departamento;
+  final String? idiomaImparticion;
+  final String? urlGuiaDocente;
   final DateTime creadoEn;
 
-  factory CatalogoAsignaturaDb.fromMap(Map<String, dynamic> map) {
-    return CatalogoAsignaturaDb(
+  factory AsignaturaCatalogoDb.fromMap(Map<String, dynamic> map) {
+    return AsignaturaCatalogoDb(
       id: map['id'] as String,
       carreraId: map['carrera_id'] as String,
       nombre: map['nombre'] as String,
-      curso: _parseInt(map['curso'], fallback: 0),
-      semestre: _parseInt(map['semestre'], fallback: 0),
+      curso: map['curso'] != null ? _parseInt(map['curso']) : null,
+      semestre: map['semestre'] != null ? _parseInt(map['semestre']) : null,
       caracter: map['caracter'] as String?,
       creditos: map['creditos'] != null ? _parseDouble(map['creditos']) : null,
+      horas: map['horas'] != null ? _parseInt(map['horas']) : null,
+      departamento: map['departamento'] as String?,
+      idiomaImparticion: map['idioma_imparticion'] as String?,
+      urlGuiaDocente: map['url_guia_docente'] as String?,
       creadoEn: _parseDateTime(map['creado_en']),
     );
   }
 
-  bool get isNullCurso => curso == null || curso == 0;
-  bool get isNullSemestre => semestre == null || semestre == 0;
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'carrera_id': carreraId,
+      'nombre': nombre,
+      if (curso != null) 'curso': curso,
+      if (semestre != null) 'semestre': semestre,
+      if (caracter != null) 'caracter': caracter,
+      if (creditos != null) 'creditos': creditos,
+      if (horas != null) 'horas': horas,
+      if (departamento != null) 'departamento': departamento,
+      if (idiomaImparticion != null) 'idioma_imparticion': idiomaImparticion,
+      if (urlGuiaDocente != null) 'url_guia_docente': urlGuiaDocente,
+      'creado_en': creadoEn.toIso8601String(),
+    };
+  }
+}
+
+/// Mapeo usuario → curso+semestre para asignaturas sin temporalidad fija (semestre=0)
+class AsignaturaUsuarioSemestreDb {
+  const AsignaturaUsuarioSemestreDb({
+    required this.id,
+    required this.usuarioId,
+    required this.asignaturaId,
+    required this.curso,
+    required this.semestre,
+    required this.creadoEn,
+  });
+
+  final String id;
+  final String usuarioId;
+  final String asignaturaId;
+  final int curso;
+  final int semestre;
+  final DateTime creadoEn;
+
+  factory AsignaturaUsuarioSemestreDb.fromMap(Map<String, dynamic> map) {
+    return AsignaturaUsuarioSemestreDb(
+      id: map['id'] as String,
+      usuarioId: map['usuario_id'] as String,
+      asignaturaId: map['asignatura_id'] as String,
+      curso: _parseInt(map['curso']),
+      semestre: _parseInt(map['semestre']),
+      creadoEn: _parseDateTime(map['creado_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'usuario_id': usuarioId,
+      'asignatura_id': asignaturaId,
+      'curso': curso,
+      'semestre': semestre,
+      'creado_en': creadoEn.toIso8601String(),
+    };
+  }
+}
+
+/// Profesor vinculado a una asignatura del catálogo (solo lectura)
+class ProfesorAsignaturaDb {
+  const ProfesorAsignaturaDb({
+    required this.id,
+    required this.asignaturaId,
+    required this.nombreCompleto,
+  });
+
+  final String id;
+  final String asignaturaId;
+  final String nombreCompleto;
+
+  factory ProfesorAsignaturaDb.fromMap(Map<String, dynamic> map) {
+    return ProfesorAsignaturaDb(
+      id: map['id'] as String,
+      asignaturaId: map['asignatura_id'] as String,
+      nombreCompleto: map['nombre_completo'] as String,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'asignatura_id': asignaturaId,
+      'nombre_completo': nombreCompleto,
+    };
+  }
+}
+
+/// Prerrequisito de una asignatura del catálogo (solo lectura)
+class PrerrequisitoAsignaturaDb {
+  const PrerrequisitoAsignaturaDb({
+    required this.id,
+    required this.asignaturaId,
+    required this.nombreAsignatura,
+  });
+
+  final String id;
+  final String asignaturaId;
+  final String nombreAsignatura;
+
+  factory PrerrequisitoAsignaturaDb.fromMap(Map<String, dynamic> map) {
+    return PrerrequisitoAsignaturaDb(
+      id: map['id'] as String,
+      asignaturaId: map['asignatura_id'] as String,
+      nombreAsignatura: map['nombre_asignatura'] as String,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'asignatura_id': asignaturaId,
+      'nombre_asignatura': nombreAsignatura,
+    };
+  }
+}
+
+/// Criterio de evaluación de una asignatura (solo lectura)
+class CriterioEvaluacionDb {
+  const CriterioEvaluacionDb({
+    required this.id,
+    required this.asignaturaId,
+    required this.examenFinalPorcentaje,
+    required this.evaluacionContinuaPorcentaje,
+    required this.practicasLaboratorioPorcentaje,
+  });
+
+  final String id;
+  final String asignaturaId;
+  final double examenFinalPorcentaje;
+  final double evaluacionContinuaPorcentaje;
+  final double practicasLaboratorioPorcentaje;
+
+  factory CriterioEvaluacionDb.fromMap(Map<String, dynamic> map) {
+    return CriterioEvaluacionDb(
+      id: map['id'] as String,
+      asignaturaId: map['asignatura_id'] as String,
+      examenFinalPorcentaje:
+          _parseDouble(map['examen_final_porcentaje'], fallback: 0),
+      evaluacionContinuaPorcentaje:
+          _parseDouble(map['evaluacion_continua_porcentaje'], fallback: 0),
+      practicasLaboratorioPorcentaje:
+          _parseDouble(map['practicas_laboratorio_porcentaje'], fallback: 0),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'asignatura_id': asignaturaId,
+      'examen_final_porcentaje': examenFinalPorcentaje,
+      'evaluacion_continua_porcentaje': evaluacionContinuaPorcentaje,
+      'practicas_laboratorio_porcentaje': practicasLaboratorioPorcentaje,
+    };
+  }
+}
+
+/// Referencia bibliográfica vinculada a una asignatura (solo lectura)
+class BibliografiaAsignaturaDb {
+  const BibliografiaAsignaturaDb({
+    required this.id,
+    required this.asignaturaId,
+    required this.referencia,
+  });
+
+  final String id;
+  final String asignaturaId;
+  final String referencia;
+
+  factory BibliografiaAsignaturaDb.fromMap(Map<String, dynamic> map) {
+    return BibliografiaAsignaturaDb(
+      id: map['id'] as String,
+      asignaturaId: map['asignatura_id'] as String,
+      referencia: map['referencia'] as String,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'asignatura_id': asignaturaId,
+      'referencia': referencia,
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------

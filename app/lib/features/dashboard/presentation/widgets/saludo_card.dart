@@ -3,21 +3,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/design_system/sv_colors.dart';
+import '../../../admin/application/admin_provider.dart';
 import '../../../bienestar/application/rutina_provider.dart';
 import 'streak_badge.dart';
 
 /// Tarjeta de saludo premium con gradiente, avatar, XP y racha.
+///
+/// [diasEstudio] es nullable para diferenciar entre «cargando» (null)
+/// y «sin datos de estudio» (0). Cuando es null, se muestra un indicador
+/// sutil de carga en la fila de rachas en lugar de un 0 falso.
 class SaludoCard extends StatelessWidget {
   const SaludoCard({
     required this.data,
     this.rachaEntrenamiento = 0,
-    this.diasEstudio = 0,
+    this.diasEstudio,
     super.key,
   });
 
   final dynamic data;
   final int rachaEntrenamiento;
-  final int diasEstudio;
+  final int? diasEstudio;
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +143,21 @@ class SaludoCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                // Botón de administración (solo visible para admins)
+                Consumer(
+                  builder: (context, ref, _) {
+                    final esAdmin = ref.watch(esAdminProvider).valueOrNull;
+                    if (esAdmin != true) return const SizedBox.shrink();
+                    return IconButton(
+                      onPressed: () => context.push('/admin'),
+                      icon: const Icon(Icons.admin_panel_settings),
+                      tooltip: 'Panel de Administración',
+                      color: Colors.white70,
+                      iconSize: 22,
+                      splashRadius: 20,
+                    );
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 18),
@@ -191,13 +211,28 @@ class SaludoCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (rachaEntrenamiento > 0 || diasEstudio > 0) ...[
+            if (rachaEntrenamiento > 0 ||
+                (diasEstudio != null && diasEstudio! > 0) ||
+                diasEstudio == null) ...[
               const SizedBox(height: 14),
               StreakRow(
                 rachaEntrenamiento: rachaEntrenamiento,
-                diasEstudio: diasEstudio,
+                diasEstudio: diasEstudio ?? 0,
+                isLoadingEstudio: diasEstudio == null,
               ),
             ],
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                _KpiChip(
+                    icon: Icons.local_fire_department_rounded,
+                    label: '${data.calorias} kcal'),
+                const SizedBox(width: 12),
+                _KpiChip(
+                    icon: Icons.fitness_center_rounded,
+                    label: '${data.sesiones} sesiones'),
+              ],
+            ),
             if (data.notificacionesNoLeidas.isNotEmpty) ...[
               const SizedBox(height: 14),
               Container(
@@ -251,6 +286,35 @@ class SaludoCard extends StatelessWidget {
           fontSize: 22,
           fontWeight: FontWeight.w800,
         ),
+      ),
+    );
+  }
+}
+
+class _KpiChip extends StatelessWidget {
+  const _KpiChip({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white70),
+          const SizedBox(width: 5),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white70)),
+        ],
       ),
     );
   }

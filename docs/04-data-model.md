@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 4.5
+**Versión:** 5.4
 **Estado:** VIGENTE
-**Fecha:** 09-06-2026
-**Propósito:** Definición completa de las 30+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up (función `otorgar_xp` en PostgreSQL), trigger de cascada días→semanas, tabla de historial de objetivos, feedback post-entrenamiento, pipeline académico (carga_academica_semanal, entregas_examenes, ContextoAcademico) y motor de recomendaciones. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
+**Fecha:** 15-06-2026
+**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, columna `rol` en `usuarios`, y tabla `asignaturas_usuario_semestre` para mapeo de transversales. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -15,7 +15,7 @@
 - `horarios_academicos` y `asignaturas` corresponden al horario académico y la asignatura.
 - `perfil_academico_usuario` modela el contexto académico base del estudiante para personalización.
 - `carga_academica_semanal` modela la carga real/percibida para ajustar entrenamiento y retos.
-- `catalogo_universidades`, `catalogo_carreras` y `catalogo_asignaturas` corresponden al catálogo académico público (solo lectura, alimentado desde `grados.json`).
+- `universidades`, `centros`, `carreras`, `asignaturas_catalogo`, `profesores_asignatura`, `prerrequisitos_asignatura`, `criterios_evaluacion` y `bibliografia_asignatura` corresponden al catálogo académico público v2 (8 tablas normalizadas desde `grados.json`, solo lectura).
 - `planes_estudio` y `usuario_carreras` corresponden a la planificación semanal y la vinculación de carreras al perfil del usuario.
 - `apuntes` corresponde al CRUD de apuntes Markdown con visibilidad.
 - `perfil_bienestar_usuario`, `historial_peso` y `plan_entrenamiento_semanal` modelan los datos de bienestar físico del usuario.
@@ -72,10 +72,18 @@ erDiagram
    ASIGNATURAS ||--o{ HORARIOS_ACADEMICOS : "programado en"
    ASIGNATURAS ||--o{ APUNTES : clasifica
 
-   CATALOGO_UNIVERSIDADES ||--o{ CATALOGO_CARRERAS : ofrece
-   CATALOGO_CARRERAS ||--o{ CATALOGO_ASIGNATURAS : contiene
-   CATALOGO_CARRERAS ||--o{ USUARIO_CARRERAS : asociada_a
-   CATALOGO_ASIGNATURAS ||--o{ ASIGNATURAS : "referencia de catálogo"
+   UNIVERSIDADES ||--o{ CENTROS : tiene
+   UNIVERSIDADES ||--o{ CARRERAS : ofrece
+   CENTROS ||--o{ CARRERAS : imparte
+   CARRERAS ||--o{ ASIGNATURAS_CATALOGO : contiene
+   ASIGNATURAS_CATALOGO ||--o{ PROFESORES_ASIGNATURA : "coordinada por"
+   ASIGNATURAS_CATALOGO ||--o{ PRERREQUISITOS_ASIGNATURA : requiere
+   ASIGNATURAS_CATALOGO ||--o{ CRITERIOS_EVALUACION : "evaluada con"
+   ASIGNATURAS_CATALOGO ||--o{ BIBLIOGRAFIA_ASIGNATURA : "referenciada en"
+   CARRERAS ||--o{ USUARIO_CARRERAS : asociada_a
+   ASIGNATURAS_CATALOGO ||--o{ ASIGNATURAS : "referencia de catálogo"
+   ASIGNATURAS_CATALOGO ||--o{ ASIGNATURAS_USUARIO_SEMESTRE : "mapeada como transversal"
+   USUARIOS ||--o{ ASIGNATURAS_USUARIO_SEMESTRE : "mapea transversales"
 
    PLANES_ESTUDIO ||--o{ HORARIOS_ACADEMICOS : agrupa
 
@@ -273,34 +281,91 @@ erDiagram
          timestamp actualizado_en
      }
      
-     CATALOGO_UNIVERSIDADES {
-         uuid id PK
-         string nombre UK
-         timestamp creado_en
-     }
-     
-     CATALOGO_CARRERAS {
-         uuid id PK
-         uuid universidad_id FK
-         string nombre
-         timestamp creado_en
-     }
-     
-     CATALOGO_ASIGNATURAS {
-         uuid id PK
-         uuid carrera_id FK
-         string nombre
-         int curso
-         int semestre
-         string caracter
-         numeric creditos
-         timestamp creado_en
-     }
+   UNIVERSIDADES {
+        uuid id PK
+        string nombre UK
+        string pais
+        string ciudad
+        timestamp creado_en
+    }
+
+    CENTROS {
+        uuid id PK
+        uuid universidad_id FK
+        string nombre
+        timestamp creado_en
+    }
+
+    CARRERAS {
+        uuid id PK
+        uuid universidad_id FK
+        uuid centro_id FK
+        string nombre
+        int total_creditos
+        int total_horas
+        timestamp creado_en
+    }
+
+    ASIGNATURAS_CATALOGO {
+        uuid id PK
+        uuid carrera_id FK
+        string nombre
+        int curso
+        int semestre
+        string caracter
+        numeric creditos
+        int horas
+        string departamento
+        string idioma_imparticion
+        string url_guia_docente
+        timestamp creado_en
+    }
+
+    PROFESORES_ASIGNATURA {
+        uuid id PK
+        uuid asignatura_id FK
+        string nombre_profesor
+        string rol
+        timestamp creado_en
+    }
+
+    PRERREQUISITOS_ASIGNATURA {
+        uuid id PK
+        uuid asignatura_id FK
+        string nombre_prerrequisito
+        timestamp creado_en
+    }
+
+    CRITERIOS_EVALUACION {
+        uuid id PK
+        uuid asignatura_id FK
+        numeric examen_final_porcentaje
+        numeric evaluacion_continua_porcentaje
+        numeric practicas_laboratorio_porcentaje
+        timestamp creado_en
+    }
+
+    BIBLIOGRAFIA_ASIGNATURA {
+        uuid id PK
+        uuid asignatura_id FK
+        string referencia
+        string tipo
+        timestamp creado_en
+    }
      
      USUARIO_CARRERAS {
          uuid id PK
          uuid usuario_id FK
          uuid carrera_id FK
+         timestamp creado_en
+     }
+     
+     ASIGNATURAS_USUARIO_SEMESTRE {
+         uuid id PK
+         uuid usuario_id FK "usuario que mapea"
+         uuid asignatura_id FK "asignatura del catálogo (semestre=0)"
+         int curso "1+"
+         int semestre "1 o 2"
          timestamp creado_en
      }
      
@@ -351,6 +416,10 @@ CREATE TABLE usuarios (
   nivel INT DEFAULT 1,
   xp_total INT DEFAULT 0,
   racha_actual INT DEFAULT 0,
+  rol TEXT NOT NULL DEFAULT 'usuario'
+    CHECK (rol IN ('usuario', 'admin')),
+  nivel_privacidad TEXT NOT NULL DEFAULT 'privado'
+    CHECK (nivel_privacidad IN ('publico', 'privado', 'amigos')),
   id_perfil_fisico UUID,
   
   -- Metadatos
@@ -375,9 +444,12 @@ CREATE POLICY "usuarios_seleccionar" ON usuarios
     EXISTS(SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.nivel_privacidad = 'publico')
   );
 
--- Actualizar: Solo el usuario puede actualizar su propio perfil
+-- Actualizar: El propio usuario o un admin pueden actualizar
 CREATE POLICY "usuarios_actualizar" ON usuarios
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING (
+    auth.uid() = id OR 
+    EXISTS(SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.rol = 'admin')
+  );
 ```
 
 #### 2.1.1 Sistema de XP y Level-Up
@@ -678,7 +750,7 @@ Cada ejercicio se clasifica según su **finalidad** (tipo de esfuerzo). Desde la
 
 **Migración 0050:** Reemplaza constraint `ck_perfil_objetivo` por `ck_perfil_objetivo_estandar` que acepta los 7 valores de `finalidadesEstandar`.
 
-**Clasificación automática en seeding:** El script `seed_ejercicios.py` incluye la función `_generar_finalidad()` que clasifica ejercicios automáticamente:
+**Clasificación automática en la migración base:** La migración `202606060049_esquema_base.sql` incluye la clasificación de finalidad para los 909 ejercicios:
 - **Cardio:** músculo objetivo `cardiovascular` en ExerciseDB, o nombre contiene palabras clave (correr, nadar, bicicleta, saltar, burpees, etc.)
 - **Isométrico:** nombre contiene plancha, isométrico, wall sit, puente estático, plank, etc.
 - **Fuerza/Hipertrofia/Resistencia/Movilidad:** todo lo demás (default)
@@ -1164,6 +1236,7 @@ CREATE TABLE retos (
   meta TEXT NOT NULL,
   visibilidad TEXT DEFAULT 'private',
   esta_completado BOOLEAN DEFAULT false,
+  tiene_dependencias BOOLEAN NOT NULL DEFAULT false,  -- Sprint 7: indica si el reto tiene hitos con dependencias
   
   fecha_inicio TIMESTAMP NOT NULL,
   fecha_fin TIMESTAMP NOT NULL,
@@ -1208,6 +1281,14 @@ CREATE TABLE hitos_de_reto (
   indice_orden INT NOT NULL,
   progreso_actual DOUBLE PRECISION DEFAULT 0,
   esta_completado BOOLEAN DEFAULT false,
+  -- Sprint 7: dependencias entre hitos
+  estado TEXT NOT NULL DEFAULT 'bloqueado'
+    CHECK (estado IN ('bloqueado', 'disponible', 'en_progreso', 'completado')),
+  dependencias UUID[] DEFAULT '{}',
+  tipo_condicion TEXT NOT NULL DEFAULT 'AND'
+    CHECK (tipo_condicion IN ('AND', 'OR', 'X_OF_Y')),
+  condicion_n INTEGER NOT NULL DEFAULT 1
+    CHECK (condicion_n >= 1),
   
   CONSTRAINT titulo_length CHECK (char_length(titulo) BETWEEN 3 AND 50),
   CONSTRAINT valid_weight CHECK (porcentaje_peso BETWEEN 5 AND 100)
@@ -1216,6 +1297,35 @@ CREATE TABLE hitos_de_reto (
 CREATE INDEX idx_hitos_de_reto_reto_id ON hitos_de_reto(reto_id);
 CREATE UNIQUE INDEX idx_hitos_de_reto_orden ON hitos_de_reto(reto_id, indice_orden);
 ```
+
+#### 2.7.1 Sistema de dependencias entre hitos (Sprint 7)
+
+**Nuevas columnas (migración `202606120050`):**
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `estado` | `TEXT` | `bloqueado` → `disponible` → `en_progreso` → `completado` |
+| `dependencias` | `UUID[]` | Array de IDs de hitos que deben cumplirse primero |
+| `tipo_condicion` | `TEXT` | `AND` (todas requeridas), `OR` (1+ requerida), `X_OF_Y` (N+ requeridas) |
+| `condicion_n` | `INTEGER` | Valor N para tipo `X_OF_Y` (cuántas dependencias satisfacer) |
+
+**DTOs asociados** (`app/lib/features/retos/domain/`):
+
+| DTO | Descripción |
+|-----|-------------|
+| `GrafoReto` | Contenedor: `retoId`, `List<NodoHito>`, `List<AristaDependencia>` |
+| `NodoHito` | Nodo del grafo: `hitoId`, `titulo`, `estado` (enum `EstadoHito`), `porcentajePeso`, `estaCompletado`, `profundidad` |
+| `AristaDependencia` | Arista: `desdeHitoId`, `haciaHitoId`, `condicion` (enum `TipoCondicion`), `condicionN` |
+| `EstadoHito` (enum) | `bloqueado`, `disponible`, `enProgreso`, `completado` |
+| `TipoCondicion` (enum) | `AND` (todas), `OR` (al menos 1), `X_OF_Y` (al menos N) |
+
+**Trigger `trg_hito_completado`:** Al completar un hito (`estado → 'completado'`), ejecuta `desbloquear_hitos(reto_id)` que evalúa las dependencias de todos los hitos bloqueados del reto:
+
+- `AND`: `completadas == total_deps`
+- `OR`: `completadas >= 1`
+- `X_OF_Y`: `completadas >= condicion_n`
+
+Los hitos que satisfacen su condición pasan automáticamente a `estado = 'disponible'`.
 
 -- Validar que la suma de pesos de hitos sea exactamente 100%
 CREATE FUNCTION validar_pesos_de_hitos()
@@ -1324,6 +1434,14 @@ CREATE TABLE horarios_academicos (
   hora_fin TIMESTAMP NOT NULL,
   ubicacion TEXT,
   tiene_conflicto BOOLEAN DEFAULT false,
+  -- Migración 0004: columnas de planificación y tipo
+  plan_estudio_id UUID REFERENCES planes_estudio(id) ON DELETE SET NULL,
+  prioridad TEXT NOT NULL DEFAULT 'media',
+  tipo_actividad TEXT NOT NULL DEFAULT 'estudio',
+  rutina_id UUID,
+  temas TEXT,
+  completado BOOLEAN DEFAULT false,
+  asistencia_registrada_en TIMESTAMP,
   
   creado_en TIMESTAMP DEFAULT now(),
   
@@ -1353,7 +1471,7 @@ CREATE TABLE asignaturas (
   nombre TEXT NOT NULL,
   codigo TEXT,
   descripcion TEXT,
-  catalogo_asignatura_id UUID REFERENCES catalogo_asignaturas(id) ON DELETE SET NULL,
+  catalogo_asignatura_id UUID REFERENCES asignaturas_catalogo(id) ON DELETE SET NULL,
   docente TEXT,
   archivado BOOLEAN NOT NULL DEFAULT false,
   dificultad_percibida INT NOT NULL DEFAULT 3,
@@ -1383,57 +1501,136 @@ CREATE POLICY "asignaturas_todo" ON asignaturas
 
 ---
 
-### 2.11.1 CATÁLOGO ACADÉMICO (catálogo público, solo lectura)
+### 2.11.1 CATÁLOGO ACADÉMICO v2 (catálogo público, solo lectura)
 
-Tablas pobladas desde `grados.json` mediante `supabase/seed_catalogo.py`. Proveen el catálogo de universidades, carreras y asignaturas predefinidas que los usuarios pueden consultar y vincular.
+> **Nota histórica:** Las tablas `catalogo_universidades`, `catalogo_carreras` y `catalogo_asignaturas` fueron eliminadas en la migración `0053_catalogo_v2.sql`. El catálogo ahora usa 8 tablas normalizadas que aprovechan todos los campos de `grados.json`:
 
-#### 2.11.1.1 catalogo_universidades
+#### 2.11.1.1 universidades
 
 ```sql
-CREATE TABLE catalogo_universidades (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nombre TEXT NOT NULL UNIQUE,
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+CREATE TABLE universidades (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre      TEXT NOT NULL UNIQUE,
+  pais        TEXT,
+  ciudad      TEXT,
+  creado_en   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
 
-#### 2.11.1.2 catalogo_carreras
+#### 2.11.1.2 centros
 
 ```sql
-CREATE TABLE catalogo_carreras (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  universidad_id UUID NOT NULL REFERENCES catalogo_universidades(id) ON DELETE CASCADE,
-  nombre TEXT NOT NULL,
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+CREATE TABLE centros (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  universidad_id  UUID NOT NULL REFERENCES universidades(id) ON DELETE CASCADE,
+  nombre          TEXT NOT NULL,
+  creado_en       TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(universidad_id, nombre)
 );
-
-CREATE INDEX idx_catalogo_carreras_univ ON catalogo_carreras(universidad_id);
 ```
 
-#### 2.11.1.3 catalogo_asignaturas
+#### 2.11.1.3 carreras
 
 ```sql
-CREATE TABLE catalogo_asignaturas (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  carrera_id UUID NOT NULL REFERENCES catalogo_carreras(id) ON DELETE CASCADE,
-  nombre TEXT NOT NULL,
-  curso INT,
-  semestre INT,
-  caracter TEXT,
-  creditos NUMERIC(4,1),
-  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+CREATE TABLE carreras (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  universidad_id  UUID NOT NULL REFERENCES universidades(id) ON DELETE CASCADE,
+  centro_id       UUID REFERENCES centros(id) ON DELETE SET NULL,
+  nombre          TEXT NOT NULL,
+  total_creditos  INTEGER,
+  total_horas     INTEGER,
+  creado_en       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(universidad_id, nombre)
+);
+```
+
+#### 2.11.1.4 asignaturas_catalogo
+
+```sql
+CREATE TABLE asignaturas_catalogo (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  carrera_id        UUID NOT NULL REFERENCES carreras(id) ON DELETE CASCADE,
+  nombre            TEXT NOT NULL,
+  curso             INTEGER,
+  semestre          INTEGER,
+  caracter          TEXT,
+  creditos          NUMERIC(5,2),
+  horas             INTEGER,
+  departamento      TEXT,
+  idioma_imparticion TEXT,
+  url_guia_docente  TEXT,
+  creado_en         TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(carrera_id, nombre)
 );
-
-CREATE INDEX idx_catalogo_asignaturas_carrera ON catalogo_asignaturas(carrera_id);
 ```
 
-**Políticas RLS — catálogo académico (lectura pública):**
+#### 2.11.1.5 profesores_asignatura
+
 ```sql
-CREATE POLICY catalogo_universidades_select ON catalogo_universidades FOR SELECT USING (true);
-CREATE POLICY catalogo_carreras_select ON catalogo_carreras FOR SELECT USING (true);
-CREATE POLICY catalogo_asignaturas_select ON catalogo_asignaturas FOR SELECT USING (true);
+CREATE TABLE profesores_asignatura (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  asignatura_id       UUID NOT NULL REFERENCES asignaturas_catalogo(id) ON DELETE CASCADE,
+  nombre_profesor     TEXT NOT NULL,
+  rol                 TEXT DEFAULT 'coordinador',
+  creado_en           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(asignatura_id, nombre_profesor)
+);
+```
+
+#### 2.11.1.6 prerrequisitos_asignatura
+
+```sql
+CREATE TABLE prerrequisitos_asignatura (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  asignatura_id       UUID NOT NULL REFERENCES asignaturas_catalogo(id) ON DELETE CASCADE,
+  nombre_prerrequisito TEXT NOT NULL,
+  creado_en           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(asignatura_id, nombre_prerrequisito)
+);
+```
+
+#### 2.11.1.7 criterios_evaluacion
+
+```sql
+CREATE TABLE criterios_evaluacion (
+  id                              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  asignatura_id                   UUID NOT NULL REFERENCES asignaturas_catalogo(id) ON DELETE CASCADE UNIQUE,
+  examen_final_porcentaje         NUMERIC(5,2) DEFAULT 0,
+  evaluacion_continua_porcentaje  NUMERIC(5,2) DEFAULT 0,
+  practicas_laboratorio_porcentaje NUMERIC(5,2) DEFAULT 0,
+  creado_en                       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+#### 2.11.1.8 bibliografia_asignatura
+
+```sql
+CREATE TABLE bibliografia_asignatura (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  asignatura_id   UUID NOT NULL REFERENCES asignaturas_catalogo(id) ON DELETE CASCADE,
+  referencia      TEXT NOT NULL,
+  tipo            TEXT DEFAULT 'basica',
+  creado_en       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+**Políticas RLS — catálogo académico v2 (lectura pública + inserción authenticated):**
+```sql
+-- Políticas: lectura pública, inserción solo authenticated (para seed)
+DO $$
+DECLARE
+  tbl TEXT;
+BEGIN
+  FOREACH tbl IN ARRAY ARRAY[
+    'universidades','centros','carreras','asignaturas_catalogo',
+    'profesores_asignatura','prerrequisitos_asignatura',
+    'criterios_evaluacion','bibliografia_asignatura'
+  ]
+  LOOP
+    EXECUTE format('CREATE POLICY "Lectura publica" ON %I FOR SELECT USING (true)', tbl);
+    EXECUTE format('CREATE POLICY "Insercion authenticated" ON %I FOR INSERT WITH CHECK (auth.role() = ''authenticated'')', tbl);
+  END LOOP;
+END $$;
 ```
 
 ---
@@ -1444,7 +1641,7 @@ CREATE POLICY catalogo_asignaturas_select ON catalogo_asignaturas FOR SELECT USI
 CREATE TABLE usuario_carreras (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-  carrera_id UUID NOT NULL REFERENCES catalogo_carreras(id) ON DELETE CASCADE,
+  carrera_id UUID NOT NULL REFERENCES carreras(id) ON DELETE CASCADE,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(usuario_id, carrera_id)
 );
@@ -1457,6 +1654,62 @@ CREATE INDEX idx_usuario_carreras_usuario ON usuario_carreras(usuario_id);
 CREATE POLICY usuario_carreras_select ON usuario_carreras FOR SELECT USING (usuario_id = auth.uid());
 CREATE POLICY usuario_carreras_insert ON usuario_carreras FOR INSERT WITH CHECK (usuario_id = auth.uid());
 CREATE POLICY usuario_carreras_delete ON usuario_carreras FOR DELETE USING (usuario_id = auth.uid());
+```
+
+---
+
+### 2.11.2a ASIGNATURAS_USUARIO_SEMESTRE (mapeo de transversales a curso+semestre)
+
+**Migración 0008:** Permite a usuarios mapear asignaturas del catálogo con `semestre=0` (transversales/optativas sin temporalidad fija) a un curso y semestre específicos.
+
+```sql
+CREATE TABLE asignaturas_usuario_semestre (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id    UUID NOT NULL,
+  asignatura_id UUID NOT NULL,
+  curso         INTEGER NOT NULL CHECK (curso >= 1),
+  semestre      INTEGER NOT NULL CHECK (semestre IN (1, 2)),
+  creado_en     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(usuario_id, asignatura_id)
+);
+```
+
+**Políticas RLS (propietario):**
+```sql
+ALTER TABLE public.asignaturas_usuario_semestre ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Propietario: lectura"
+  ON public.asignaturas_usuario_semestre
+  FOR SELECT USING (usuario_id = auth.uid());
+
+CREATE POLICY "Propietario: insert"
+  ON public.asignaturas_usuario_semestre
+  FOR INSERT WITH CHECK (usuario_id = auth.uid());
+
+CREATE POLICY "Propietario: update"
+  ON public.asignaturas_usuario_semestre
+  FOR UPDATE USING (usuario_id = auth.uid());
+
+CREATE POLICY "Propietario: delete"
+  ON public.asignaturas_usuario_semestre
+  FOR DELETE USING (usuario_id = auth.uid());
+
+CREATE POLICY "Admin: todo"
+  ON public.asignaturas_usuario_semestre
+  FOR ALL USING (public.es_admin())
+  WITH CHECK (public.es_admin());
+```
+
+**Modelo Dart** (`app/lib/shared/models/db_models.dart:1838`):
+```dart
+class AsignaturaUsuarioSemestreDb {
+  final String id;
+  final String usuarioId;
+  final String asignaturaId;
+  final int curso;
+  final int semestre;
+  final DateTime creadoEn;
+}
 ```
 
 ---
@@ -1561,6 +1814,47 @@ CREATE POLICY apuntes_update ON apuntes
 CREATE POLICY apuntes_delete ON apuntes
   FOR DELETE USING (usuario_id = auth.uid());
 ```
+
+---
+
+### 2.11.4a SESIONES_FOCUS (registro de sesiones Pomodoro)
+
+**Migración 0004 — Consolidación de correcciones:**
+
+```sql
+CREATE TABLE IF NOT EXISTS public.sesiones_focus (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id          UUID NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
+    duracion_minutos    INTEGER NOT NULL DEFAULT 25,
+    ciclos_completados  INTEGER NOT NULL DEFAULT 1,
+    tipo_fase           TEXT NOT NULL DEFAULT 'focus'
+      CHECK (tipo_fase IN ('focus', 'short_break', 'long_break')),
+    completada          BOOLEAN NOT NULL DEFAULT true,
+    fecha               DATE NOT NULL DEFAULT CURRENT_DATE,
+    creado_en           TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.sesiones_focus ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Owner access sesiones_focus" ON public.sesiones_focus
+    FOR ALL USING (auth.uid() = usuario_id)
+    WITH CHECK (auth.uid() = usuario_id);
+
+CREATE INDEX IF NOT EXISTS idx_sesiones_focus_usuario_fecha
+    ON public.sesiones_focus(usuario_id, fecha DESC);
+```
+
+**Propósito:** Registrar cada sesión de estudio Pomodoro completada por el usuario. La tabla es alimentada por `PomodoroProvider` (`app/lib/features/pomodoro/application/pomodoro_provider.dart`) al finalizar un ciclo de trabajo de 25 minutos.
+
+**Campos:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `duracion_minutos` | `INTEGER` | Duración de la sesión de focus (default: 25 min) |
+| `ciclos_completados` | `INTEGER` | Número de ciclos trabajo-descanso completados (default: 1) |
+| `tipo_fase` | `TEXT` | Fase del ciclo: `focus` (trabajo), `short_break` (descanso corto), `long_break` (descanso largo) |
+| `completada` | `BOOLEAN` | Si la sesión se completó (true) o se canceló (false) |
+| `fecha` | `DATE` | Fecha de la sesión (default: hoy) |
 
 ---
 
@@ -1709,6 +2003,88 @@ Función que auto-popula `carga_academica_semanal` desde datos reales antes de c
 
 ---
 
+### 2.11.7 INSIGHTS_ANALITICA (cache de insights generados por IA — Sprint 7)
+
+```sql
+CREATE TABLE insights_analitica (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  semana_inicio DATE NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('tendencia', 'recomendacion', 'alerta', 'correlacion')),
+  titulo TEXT NOT NULL,
+  descripcion TEXT,
+  datos JSONB DEFAULT '{}',
+  generado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(usuario_id, semana_inicio, tipo)
+);
+
+CREATE INDEX idx_insights_analitica_usuario
+  ON insights_analitica(usuario_id, semana_inicio DESC);
+```
+
+**Propósito:** Cachear insights generados por Gemini (o el motor de reglas) sobre tendencias de rendimiento del usuario, evitando re-generación en cada carga del dashboard de analítica.
+
+**Columnas:**
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `id` | `UUID` | PK autogenerado |
+| `usuario_id` | `UUID FK` | Usuario propietario |
+| `semana_inicio` | `DATE` | Lunes de la semana analizada |
+| `tipo` | `TEXT` | `tendencia` (RPE/volumen), `recomendacion` (sugerencia IA), `alerta` (sobrecarga/descarga), `correlacion` (estudio↔rendimiento) |
+| `titulo` | `TEXT` | Título legible del insight |
+| `descripcion` | `TEXT` | Descripción detallada (opcional) |
+| `datos` | `JSONB` | Métricas asociadas (RPE promedio, volumen, etc.) |
+| `generado_en` | `TIMESTAMPTZ` | Fecha de generación |
+
+**Políticas RLS:**
+```sql
+ALTER TABLE insights_analitica ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY insights_select ON insights_analitica
+  FOR SELECT USING (auth.uid() = usuario_id);
+
+CREATE POLICY insights_insert ON insights_analitica
+  FOR INSERT WITH CHECK (auth.uid() = usuario_id);
+
+CREATE POLICY insights_update ON insights_analitica
+  FOR UPDATE USING (auth.uid() = usuario_id);
+```
+
+---
+
+### 2.11.8 V_ANALITICA_SEMANAL (vista agregada de sesiones por semana — Sprint 7)
+
+```sql
+CREATE OR REPLACE VIEW v_analitica_semanal AS
+SELECT
+  s.usuario_id,
+  date_trunc('week', s.completada_en)::date AS semana_inicio,
+  COUNT(*) AS total_sesiones,
+  ROUND(AVG(s.duracion_minutos), 1) AS duracion_promedio,
+  ROUND(AVG(s.rpe)::numeric, 1) AS rpe_promedio,
+  SUM(s.duracion_minutos) AS volumen_total_minutos,
+  SUM(s.calorias_quemadas) AS calorias_totales,
+  COUNT(DISTINCT s.rutina_id) AS rutinas_distintas
+FROM sesiones_registradas s
+GROUP BY s.usuario_id, date_trunc('week', s.completada_en)::date;
+```
+
+**Propósito:** Vista denormalizada que agrega métricas de entrenamiento por semana natural para alimentar el dashboard de analítica (Fase B2-B3) y el widget `TendenciaRpeChart` (LineChart con fl_chart). Sin RLS propia — hereda los permisos de `sesiones_registradas`.
+
+**Métricas expuestas:**
+
+| Métrica | Descripción |
+|---------|-------------|
+| `total_sesiones` | Número de sesiones completadas en la semana |
+| `duracion_promedio` | Duración media de sesión en minutos |
+| `rpe_promedio` | RPE promedio semanal (1-10) |
+| `volumen_total_minutos` | Suma de minutos entrenados |
+| `calorias_totales` | Suma de calorías quemadas |
+| `rutinas_distintas` | Rutinas diferentes usadas |
+
+---
+
 ### 2.12 ACTIVIDADES SOCIALES (actividad social)
 
 ```sql
@@ -1718,6 +2094,7 @@ CREATE TABLE actividades_sociales (
   tipo TEXT NOT NULL, -- 'session_completed', 'challenge_completed', 'milestone_reached', 'badge_unlocked'
   descripcion TEXT NOT NULL,
   url_imagen TEXT, -- URL de R2
+  metadata TEXT, -- JSON opcional con metadatos adicionales (Migración 0004)
   
   creado_en TIMESTAMP DEFAULT now(),
   
@@ -1900,13 +2277,106 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
+### 3.4 Wipe de datos de usuario (admin)
+
+```sql
+CREATE OR REPLACE FUNCTION wipe_user_data(p_usuario_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_admin_id UUID;
+BEGIN
+  -- Verificar que quien ejecuta es admin
+  SELECT id INTO v_admin_id FROM public.usuarios
+  WHERE id = auth.uid() AND rol = 'admin';
+  
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Solo administradores pueden ejecutar wipe_user_data';
+  END IF;
+
+  -- Verificar que el admin no se wipee a sí mismo
+  IF v_admin_id = p_usuario_id THEN
+    RAISE EXCEPTION 'No puedes eliminar tus propios datos';
+  END IF;
+
+  -- ===== ELIMINAR historial (orden FK-safe) =====
+  DELETE FROM public.series_sesion WHERE sesion_id IN (
+    SELECT id FROM public.sesiones_registradas WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.sesiones_registradas WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.progreso_de_reto WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.hitos_de_reto WHERE reto_id IN (
+    SELECT id FROM public.retos WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.retos WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.interacciones_sociales WHERE actividad_id IN (
+    SELECT id FROM public.actividades_sociales WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.actividades_sociales WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.notificaciones WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.horarios_academicos WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.planes_estudio WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.apuntes WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.sesiones_focus WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.estado_diario_usuario WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.carga_academica_semanal WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.historial_peso WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.historial_objetivos WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.recomendaciones_pendientes WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.insights_analitica WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.plan_entrenamiento_semanal WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.preferencias_notificacion WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.amistades WHERE solicitante_id = p_usuario_id OR receptor_id = p_usuario_id;
+  DELETE FROM public.usuario_insignias WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.seleccion_de_ejercicios WHERE rutina_id IN (
+    SELECT id FROM public.rutinas WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.dias_rutina WHERE semana_id IN (
+    SELECT id FROM public.semanas_rutina WHERE rutina_id IN (
+      SELECT id FROM public.rutinas WHERE usuario_id = p_usuario_id
+    )
+  );
+  DELETE FROM public.semanas_rutina WHERE rutina_id IN (
+    SELECT id FROM public.rutinas WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.rutinas WHERE usuario_id = p_usuario_id;
+
+  -- ===== RESETEAR valores dinámicos =====
+  UPDATE public.usuarios
+  SET nivel = 1,
+      xp_total = 0,
+      racha_actual = 0,
+      actualizado_en = now()
+  WHERE id = p_usuario_id;
+
+  -- ===== CONSERVAR (NO se tocan): =====
+  --   id, email, nombre_completo, url_avatar, rol, nivel_privacidad, creado_en
+  --   perfil_bienestar_usuario (tabla independiente)
+  --   perfil_academico_usuario (tabla independiente)
+  --   usuario_carreras (tabla independiente)
+END;
+$$;
+```
+
+**Política de ejecución:** Solo usuarios con `rol = 'admin'` pueden ejecutar esta función. Se verifica dentro del cuerpo con `auth.uid()`. La función se ejecuta como `SECURITY DEFINER` para bypassear RLS durante el wipe.
+
+**Resumen de tablas afectadas:**
+
+| Acción | Tablas |
+|--------|--------|
+| **Eliminadas** (20+ tablas) | `series_sesion`, `sesiones_registradas`, `progreso_de_reto`, `hitos_de_reto`, `retos`, `interacciones_sociales`, `actividades_sociales`, `notificaciones`, `horarios_academicos`, `planes_estudio`, `apuntes`, `sesiones_focus`, `estado_diario_usuario`, `carga_academica_semanal`, `historial_peso`, `historial_objetivos`, `recomendaciones_pendientes`, `insights_analitica`, `plan_entrenamiento_semanal`, `preferencias_notificacion`, `amistades`, `usuario_insignias`, `seleccion_de_ejercicios`, `dias_rutina`, `semanas_rutina`, `rutinas` |
+| **Reseteadas** (UPDATE) | `usuarios` → `nivel=1, xp_total=0, racha_actual=0` |
+| **Conservadas** (sin tocar) | `usuarios` (columnas: `id`, `email`, `nombre_completo`, `url_avatar`, `rol`, `nivel_privacidad`, `creado_en`), `perfil_bienestar_usuario`, `perfil_academico_usuario`, `usuario_carreras` |
+
 ---
 
 ## 4. Políticas de Acceso (RLS Resumen)
 
 | Tabla | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
-| **usuarios** | Propio + público | Propio | Propio | - |
+| **usuarios** | Propio + público | Propio | Propio + admin | - |
 | **partes_cuerpo** | Todos | - | - | - |
 | **musculos** | Todos | - | - | - |
 | **equipamientos** | Todos | - | - | - |
@@ -1927,10 +2397,16 @@ $$ LANGUAGE plpgsql;
 | **notificaciones** | Propio | Admin | Propio | Propio |
 | **horarios_academicos** | Propio | Propio | Propio | Propio |
 | **asignaturas** | Propio | Propio | Propio | Propio |
-| **catalogo_universidades** | Todos | — | — | — |
-| **catalogo_carreras** | Todos | — | — | — |
-| **catalogo_asignaturas** | Todos | — | — | — |
+| **universidades** | Todos | — | — | — |
+| **centros** | Todos | — | — | — |
+| **carreras** | Todos | — | — | — |
+| **asignaturas_catalogo** | Todos | — | — | — |
+| **profesores_asignatura** | Todos | — | — | — |
+| **prerrequisitos_asignatura** | Todos | — | — | — |
+| **criterios_evaluacion** | Todos | — | — | — |
+| **bibliografia_asignatura** | Todos | — | — | — |
 | **usuario_carreras** | Propio | Propio | — | Propio |
+| **asignaturas_usuario_semestre** | Propio | Propio | Propio | Propio + Admin |
 | **planes_estudio** | Propio + visibilidad | Propio | Propio | Propio |
 | **apuntes** | Propio + visibilidad | Propio | Propio | Propio |
 | **perfil_academico_usuario** | Propio | Propio | Propio | Propio |
@@ -1941,6 +2417,8 @@ $$ LANGUAGE plpgsql;
 | **estado_diario_usuario** | Propio | Propio | Propio | - |
 | **historial_objetivos** | Propio | Propio | Propio | - |
 | **recomendaciones_pendientes** | Propio | Propio | Propio | - |
+| **insights_analitica** | Propio | Propio | Propio | - |
+| **sesiones_focus** | Propio | Propio | Propio | - |
 | **actividades_sociales** | Propio + público | Propio | - | - |
 | **interacciones_sociales** | Propio + público | Propio | - | Propio |
 | **amistades** | Propio | Propio | Propio | Propio |
@@ -1965,6 +2443,13 @@ CREATE FULL_TEXT_SEARCH INDEX idx_ejercicios_busqueda ON ejercicios USING GIN(
 
 -- Notificaciones adaptativas
 CREATE INDEX idx_notificaciones_usuario_no_leidas ON notificaciones(usuario_id, esta_leida, created_at DESC);
+
+-- Migración 0004: índices de consolidación
+CREATE INDEX idx_rutinas_usuario_estado ON rutinas(usuario_id, estado);
+CREATE INDEX idx_horarios_academicos_plan ON horarios_academicos(plan_estudio_id);
+CREATE INDEX idx_horarios_academicos_tipo ON horarios_academicos(tipo_actividad);
+CREATE INDEX idx_sesiones_dia ON sesiones_registradas(dia_id);
+CREATE INDEX idx_seleccion_ejercicios_dia ON seleccion_de_ejercicios(dia_id);
 ```
 
 ---
@@ -1975,7 +2460,7 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ### 6.1 Script unificado
 
-`supabase/seed_todo.py` reemplaza a los 3 scripts anteriores. Flujo:
+> **Nota histórica:** `supabase/seed_todo.py` fue un script de seeding unificado para ejercicios (reemplazó a `seed_ejercicios.py`, `seed_nuevos_ejercicios.py`, `seed_gym_workout.py`). Fue eliminado en la Fase 0 del Plan Maestro. Los ejercicios ahora se cargan directamente desde la migración base `202606060049_esquema_base.sql`.
 1. Lee `nuevos_ejercicios.json` (89 ejercicios, campo `fuente`), `musculos.json` (51), `partes_cuerpo.json` (13).
 2. Extrae equipamientos de los ejercicios (~37).
 3. Upsert de catálogos (musculos, partes_cuerpo, equipamientos).
@@ -1993,7 +2478,7 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ### 6.3 Migración de limpieza
 
-`supabase/migrations/20260528_0021_limpiar_ejercicios.sql` — DELETE en orden FK de: series_sesion → sesiones_registradas → rutinas → dias_rutina → semanas_rutina → seleccion_de_ejercicios → ejercicios → equipamientos → musculos → partes_cuerpo. Ejecutar en SQL Editor antes de seed_todo.py.
+`supabase/migrations/20260528_0021_limpiar_ejercicios.sql` — DELETE en orden FK de: series_sesion → sesiones_registradas → rutinas → dias_rutina → semanas_rutina → seleccion_de_ejercicios → ejercicios → equipamientos → musculos → partes_cuerpo. Esta migración fue absorbida en `202606060049_esquema_base.sql`.
 
 ---
 
@@ -2003,12 +2488,14 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 - [x] Materialized views para estadísticas (`mv_ejercicios_completos` implementada con triggers de refresco automático)
 - [x] Catálogo de ejercicios normalizado con terminología anatómica profesional
 - [x] Catálogo académico (universidades, carreras, asignaturas) poblado desde grados.json
+- [x] Tablas `planes_estudio`, `apuntes`, `sesiones_focus` creadas (migración 0004)
+- [x] Columnas de planificación, tipo de actividad y enlace a rutinas en `horarios_academicos` (migración 0004)
 - [ ] Audit table para cambios críticos (HIPAA compliance futuro)
 
 ---
 
-**Documento compilado:** 09-06-2026
-**Versión:** 4.4
-**Referencia:** RFC v4.0 - Motor de Recomendaciones (Fases 0-10), Pipeline Académico v5.0
+**Documento compilado:** 14-06-2026
+**Versión:** 5.3
+**Referencia:** RFC v5.1 - Motor de Recomendaciones (Fases 0-10), Pipeline Académico v5.0, Sprint 7 — Retos Complejos y Sincronización Offline, Migración 0004 — Consolidación de Correcciones, Fase 3 — Panel de Administración (wipe_user_data)
 **Validador:** Tech Lead + DBA
 

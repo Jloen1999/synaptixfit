@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../application/catalogo_provider.dart';
@@ -19,6 +20,10 @@ class _ConfiguracionAcademicaScreenState
     extends ConsumerState<ConfiguracionAcademicaScreen> {
   String? _universidadId;
   String? _carreraId;
+  int _semestreActual = 1;
+
+  int get _cursoActual => ((_semestreActual - 1) ~/ 2) + 1;
+  int get _semestreEnCurso => ((_semestreActual - 1) % 2) + 1;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +127,42 @@ class _ConfiguracionAcademicaScreenState
               },
             ),
 
+          // Curso y semestre
+          const SizedBox(height: 20),
+          Text('Curso y semestre actual',
+              style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(
+            'Curso $_cursoActual · $_semestreEnCurso° Semestre',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: List.generate(10, (i) {
+              final sem = i + 1;
+              final selected = sem == _semestreActual;
+              return ChoiceChip(
+                label: Text('$sem°',
+                    style: TextStyle(fontSize: 12,
+                      color: selected
+                          ? Theme.of(context).colorScheme.onSecondaryContainer
+                          : null,
+                    )),
+                selected: selected,
+                onSelected: (_) => setState(() => _semestreActual = sem),
+                selectedColor: Theme.of(context).colorScheme.secondaryContainer,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                side: BorderSide.none,
+              );
+            }),
+          ),
+
           // Asignaturas del catálogo (preview)
           if (_carreraId != null) ...[
             const SizedBox(height: 20),
@@ -169,7 +210,7 @@ class _ConfiguracionAcademicaScreenState
           if (_carreraId == null) ...[
             const SizedBox(height: 24),
             OutlinedButton(
-              onPressed: () => context.go('/dashboard'),
+              onPressed: () => context.go('/onboarding/cuenta'),
               child: const Text('Omitir — lo haré después'),
             ),
           ],
@@ -278,6 +319,29 @@ class _ConfiguracionAcademicaScreenState
     // Persistir la asociación de carrera
     await agregarCarrera(_carreraId!, ref);
 
+    // Guardar semestre actual en perfil_academico_usuario
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final existing = await Supabase.instance.client
+          .from('perfil_academico_usuario')
+          .select('id')
+          .eq('usuario_id', user.id)
+          .maybeSingle();
+      if (existing != null) {
+        await Supabase.instance.client
+            .from('perfil_academico_usuario')
+            .update({'semestre_actual': _semestreActual})
+            .eq('usuario_id', user.id);
+      } else {
+        await Supabase.instance.client
+            .from('perfil_academico_usuario')
+            .insert({
+          'usuario_id': user.id,
+          'semestre_actual': _semestreActual,
+        });
+      }
+    }
+
     progresoNotifier.dispose();
     anadidasNotifier.dispose();
 
@@ -285,7 +349,7 @@ class _ConfiguracionAcademicaScreenState
       Navigator.of(context).pop();
       ref.invalidate(asignaturasActivasProvider);
       ref.invalidate(asignaturasArchivadasProvider);
-      context.go('/academico/asignaturas', extra: {'nuevasIds': nuevasIds});
+      context.go('/onboarding/cuenta');
     }
   }
 

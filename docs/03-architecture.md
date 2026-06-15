@@ -1,10 +1,10 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 4.1
+**Versión:** 5.1
 **Estado:** APROBADO
-**Fecha:** 09-06-2026
+**Fecha:** 14-06-2026
 **Autor:** Arquitectura
-**Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.0)
+**Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.4)
 
 ## 1. Objetivo
 
@@ -117,7 +117,7 @@ flowchart TB
 
 ```
 synaptixfit/
-├── docs/                          # 17 archivos de documentación
+├── docs/                          # 18 archivos de documentación
 ├── app/
 │   └── lib/
 │       ├── core/                  # Errores, utils, config, routing, design system, sync
@@ -128,7 +128,7 @@ synaptixfit/
 │       │       └── shell_route.dart        # StatefulShellRoute (5 tabs)
 │       ├── shared/
 │       │   ├── models/
-│   │   │   └── db_models.dart          # 40+ modelos (~2004 líneas, incl. CargaAcademicaSemanalDb)
+│       │   │   └── db_models.dart          # 42+ modelos (~2330 líneas, incl. AsignaturaUsuarioSemestreDb)
 │       │   ├── utils/
 │       │   │   └── string_utils.dart       # ★ finalidadesEstandar + sanitizarObjetivo() (Fase 0)
 │       │   └── widgets/
@@ -152,22 +152,20 @@ synaptixfit/
 │       │   │   │   ├── feedback_engine.dart                 # ★ Feedback post-sesión (Fase 7, 130 líneas)
 │       │   │   │   └── ejercicios_repository.dart
 │       │   │   └── application/
-│       │   │       ├── rutina_provider.dart                 # ★ 50+ providers incl. académicos y energéticos (1421 líneas)
+│       │   │       ├── rutina_provider.dart                 # ★ 50+ providers incl. académicos y energéticos (1678 líneas)
 │       │   │       ├── ejercicios_provider.dart
 │       │   │       └── sesion_provider.dart
 │       │   ├── social/                     # Muro, likes, comentarios
 │       │   ├── notificaciones/             # Centro de notificaciones
 │       │   ├── dashboard/                  # Dashboard principal
-│       │   └── perfil/                     # Perfil de usuario
+│       │   ├── perfil/                     # Perfil de usuario
+│       │   ├── analitica/                  # Analítica avanzada — charts, correlaciones, insights (Sprint 7B)
+│       │   └── sync/                       # Sincronización offline — connectivity_plus + cola Hive (Sprint 7C)
+│       │   └── admin/                      # Panel de administración — wipe de datos, búsqueda de usuarios, rol admin
 │       └── main.dart                       # Entry point, ProviderScope, Supabase.init
 ├── supabase/
-│   ├── migrations/                         # 49 migraciones SQL (0001→0050)
-│   ├── seed_ejercicios.py                  # Seeding del catálogo ExerciseDB
-│   ├── seed_usuarios.py                    # Seeding de usuarios mock
-│   ├── seed_demo_data.py                   # Seeding de datos demo
-│   ├── seed_catalogo.py                    # Seeding del catálogo académico
-│   ├── seed_asignaturas.py                 # Seeding de asignaturas desde grados.json
-│   └── seed_todo.py                        # Seed unificado de ejercicios + relaciones
+│   ├── migrations/                         # 11 archivos de migración consolidados
+│   └── seed_catalogo_v2.py                 # Seeding del catálogo académico v2 desde grados.json
 ├── cloudflare/
 │   └── synaptixfit-r2-proxy/
 │       └── worker.js                       # Proxy R2 con CORS
@@ -692,7 +690,7 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 | Sprint 4 | Multimedia R2, ingesta completa ExerciseDB, feed social, notificaciones, hardening | ✅ |
 | **Sprint 5** | **IA (Gemini), periodización, check-in diario, sobrecarga progresiva, perfil editable** | ✅ |
 | **Sprint 6** | **Motor de Recomendaciones (Fases 0-10): reglas deterministas, contexto, transición, feedback, orquestador** | ✅ |
-| Sprint 7 | Retos complejos con dependencias, analítica avanzada, sincronización offline | 🔜 |
+| Sprint 7 | Retos complejos con dependencias, analítica avanzada, sincronización offline | ✅ |
 
 ## 14. Riesgos Técnicos y Mitigaciones
 
@@ -717,7 +715,7 @@ final progreso = diasTotales > 0 ? diasCompletados / diasTotales : 0.0;
 
 ### 15.2 Layout del dashboard
 
-ListView vertical con 10 secciones:
+ListView vertical con 8 secciones:
 1. SaludoCard + StreakRow — avatar, nivel, XP, streaks
 2. SmartBannerCard — consejo IA (Gemini o fallback)
 3. QuickActionsRow — 4 chips: Pomodoro, Workout, Escanear, Nuevo reto
@@ -725,9 +723,7 @@ ListView vertical con 10 secciones:
 5. CognitiveLoadBar — barra de carga cognitiva (condicional)
 6. EstadoSection — 3 MetricGauges (Energético, Adherencia, Carga)
 7. KpiGrid — calorías + sesiones
-8. BienestarCard — IMC, peso, objetivo
-9. RetosSection — retos activos con progreso
-10. RutinasSection — rutinas activas
+8. TimelineSection — linea de tiempo unificada con 3 tabs (Hoy | Semana | Retos)
 
 ### 15.3 Estructura de archivos
 
@@ -751,6 +747,333 @@ Se inicializa en `main.dart` vía `HiveConfig.init()`. Se usan 2 boxes:
 
 ---
 
-**Documento compilado:** 09-06-2026
-**Versión:** 4.1
+## 16. Arquitectura de Retos con Dependencias (Sprint 7A)
+
+### 16.1 Nuevas columnas en `hitos_de_reto`
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `estado` | `TEXT` | `bloqueado`, `disponible`, `en_progreso`, `completado` (default: `bloqueado`) |
+| `dependencias` | `UUID[]` | Array de IDs de hitos predecesores (vacío = sin dependencias) |
+| `tipo_condicion` | `TEXT` | `AND` (todos), `OR` (al menos uno), `X_OF_Y` (n de m) |
+| `condicion_n` | `INTEGER` | Para `X_OF_Y`: número requerido de predecesores completados |
+
+### 16.2 Trigger `trg_hito_completado`
+
+```sql
+CREATE OR REPLACE FUNCTION desbloquear_hitos()
+RETURNS TRIGGER AS $$
+DECLARE
+    hito RECORD;
+    completados INT;
+BEGIN
+    -- Solo si el hito pasó a 'completado'
+    IF NEW.estado = 'completado' AND OLD.estado != 'completado' THEN
+        -- Iterar hitos que dependen de este
+        FOR hito IN
+            SELECT * FROM hitos_de_reto
+            WHERE NEW.id = ANY(dependencias)
+              AND reto_id = NEW.reto_id
+        LOOP
+            SELECT COUNT(*) INTO completados
+            FROM hitos_de_reto
+            WHERE id = ANY(hito.dependencias)
+              AND estado = 'completado';
+
+            -- Evaluar condición
+            IF hito.tipo_condicion = 'AND' AND completados = array_length(hito.dependencias, 1) THEN
+                UPDATE hitos_de_reto SET estado = 'disponible' WHERE id = hito.id;
+            ELSIF hito.tipo_condicion = 'OR' AND completados >= 1 THEN
+                UPDATE hitos_de_reto SET estado = 'disponible' WHERE id = hito.id;
+            ELSIF hito.tipo_condicion = 'X_OF_Y' AND completados >= hito.condicion_n THEN
+                UPDATE hitos_de_reto SET estado = 'disponible' WHERE id = hito.id;
+            END IF;
+        END LOOP;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_hito_completado
+    AFTER UPDATE ON hitos_de_reto
+    FOR EACH ROW EXECUTE FUNCTION desbloquear_hitos();
+```
+
+### 16.3 Modelo de datos — Grafo de dependencias
+
+```mermaid
+flowchart LR
+    subgraph Reto["Reto Complejo"]
+        H1["Hito 1<br/>✅ completado"]
+        H2["Hito 2<br/>🔵 disponible<br/>AND(H1)"]
+        H3["Hito 3<br/>🔒 bloqueado<br/>AND(H1,H2)"]
+        H4["Hito 4<br/>🔒 bloqueado<br/>X_OF_Y(H1,H2,n=2)"]
+    end
+
+    H1 -->|"AND"| H2
+    H1 -->|"AND"| H3
+    H2 -->|"AND"| H3
+    H1 -->|"X_OF_Y"| H4
+    H2 -->|"X_OF_Y"| H4
+```
+
+### 16.4 Providers de dependencias
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `grafoRetoProvider` | `FutureProvider.family<GrafoDependencias, String>` | Construye el grafo completo de dependencias para un reto (nodos + aristas) |
+| `puedeIniciarHitoProvider` | `FutureProvider.family<bool, ({String retoId, String hitoId})>` | Verifica si un hito específico está en estado `disponible` y puede iniciarse |
+| `hitosDesbloqueadosProvider` | `FutureProvider.family<List<HitoDb>, String>` | Lista los hitos actualmente desbloqueados (`estado = 'disponible'`) para un reto |
+
+### 16.5 Widget `GrafoDependencias`
+
+- **Ubicación:** `app/lib/features/retos/presentation/widgets/grafo_dependencias.dart`
+- **Tecnología:** `CustomPainter` para renderizado de grafos con nodos y aristas
+- **Colores por estado:**
+  - 🔴 `bloqueado` — rojo apagado
+  - 🔵 `disponible` — azul primario
+  - 🟡 `en_progreso` — ámbar
+  - 🟢 `completado` — verde
+- **Etiquetas en aristas:** `AND`, `OR`, `2/3` (para X_OF_Y)
+- **Tooltips:** al tocar un nodo, muestra nombre del hito y condición requerida
+- **Integración:** en `DetalleRetoScreen`, reemplaza la lista lineal de hitos
+
+### 16.6 Corrección del disparo del trigger (Fase 2)
+
+**Problema resuelto:** El trigger `trg_hito_completado` solo se dispara cuando la columna `estado` de `hitos_de_reto` cambia a `'completado'`. Anteriormente, `toggleTareaCompletada()` en Flutter solo actualizaba `progreso_actual` y `esta_completado`, sin tocar la columna `estado`, por lo que el trigger nunca se ejecutaba y los hitos dependientes no se desbloqueaban.
+
+**Corrección:** `toggleTareaCompletada()` ahora actualiza la columna `estado`:
+- Al completar un hito: `estado = 'completado'`
+- Al descompletar un hito: `estado = 'en_progreso'`
+
+Esto asegura que el trigger `trg_hito_completado` se dispare correctamente y la función `desbloquear_hitos()` evalúe las dependencias (AND/OR/X_OF_Y) para desbloquear los hitos sucesores.
+
+---
+
+## 17. Arquitectura de Analítica (Sprint 7B)
+
+### 17.1 Vista agregada `v_analitica_semanal`
+
+```sql
+CREATE VIEW v_analitica_semanal AS
+SELECT
+    s.usuario_id,
+    date_trunc('week', s.fecha_inicio)::DATE AS inicio_semana,
+    COUNT(*) AS total_sesiones,
+    ROUND(AVG(s.rpe)::numeric, 1) AS rpe_promedio,
+    SUM(s.duracion_minutos) AS volumen_total_min,
+    SUM(s.calorias_quemadas) AS calorias_totales,
+    COUNT(DISTINCT e.nombre) AS ejercicios_distintos
+FROM sesiones_registradas s
+LEFT JOIN series_sesion ss ON s.id = ss.sesion_id
+LEFT JOIN seleccion_de_ejercicios se ON ss.seleccion_ejercicio_id = se.id
+LEFT JOIN ejercicios e ON se.ejercicio_id = e.id
+GROUP BY s.usuario_id, date_trunc('week', s.fecha_inicio)
+ORDER BY inicio_semana DESC;
+```
+
+### 17.2 Tabla `insights_analitica`
+
+```sql
+CREATE TABLE insights_analitica (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id  UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    tipo        TEXT NOT NULL,          -- 'tendencia', 'correlacion', 'recomendacion'
+    titulo      TEXT NOT NULL,
+    descripcion TEXT NOT NULL,
+    datos_json  JSONB,                  -- Datos numéricos que respaldan el insight
+    generado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
+    vigente_hasta TIMESTAMPTZ,         -- TTL opcional
+    UNIQUE(usuario_id, tipo, titulo)
+);
+
+ALTER TABLE insights_analitica ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Lectura owner" ON insights_analitica
+    FOR SELECT USING (auth.uid() = usuario_id);
+```
+
+### 17.3 Providers de analítica
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `analiticaSemanalProvider` | `FutureProvider<List<AnaliticaSemanalDto>>` | Datos agregados por semana (RPE, volumen, calorías) desde `v_analitica_semanal` |
+| `tendenciaRpeProvider` | `FutureProvider<List<FlSpot>>` | Puntos (semana, RPE) para LineChart |
+| `correlacionCargaProvider` | `FutureProvider<CorrelacionData?>` | Datos de correlación carga académica vs rendimiento para ScatterChart |
+| `insightsAnaliticaProvider` | `FutureProvider<List<InsightAnaliticaDto>>` | Insights cacheados en `insights_analitica` (Gemini o deterministas) |
+| `generarInsightsProvider` | `FutureProvider.family<void, String>` | Genera nuevos insights vía Gemini y los persiste en `insights_analitica` |
+
+### 17.4 Charts con `fl_chart`
+
+```mermaid
+flowchart TB
+    subgraph Charts["Widgets de Analítica"]
+        LC["TendenciaRpeChart<br/>LineChart<br/>RPE por semana"]
+        BC["VolumenBarChart<br/>BarChart<br/>Minutos por semana"]
+        SC["CorrelacionCargaScatter<br/>ScatterChart<br/>FCT vs RPE"]
+    end
+
+    subgraph Data["Fuentes de datos"]
+        AV["v_analitica_semanal"]
+        FCT["cargaCognitivaProvider"]
+        INS["insights_analitica"]
+    end
+
+    AV --> LC
+    AV --> BC
+    AV --> SC
+    FCT --> SC
+    INS --> Charts
+```
+
+- **`TendenciaRpeChart`:** `LineChart` con puntos semanales + línea de tendencia (regresión simple). Tooltips al tocar punto.
+- **`VolumenBarChart`:** `BarChart` con barras semanales, coloreadas según objetivo cumplido/excedido.
+- **`CorrelacionCargaScatter`:** `ScatterChart` con FCT (eje X) vs RPE (eje Y). Línea de regresión opcional.
+
+### 17.5 Integración en dashboard
+
+Nueva sección `AnaliticaSection` en el dashboard (posición después de TimelineSection):
+- Tab "Semanal": `TendenciaRpeChart` + `VolumenBarChart` en columna
+- Tab "Mensual": agregación mensual con comparativa intermensual
+- Tab "Insights": lista de insights generados + botón "Generar nuevos insights"
+
+---
+
+## 18. Arquitectura de Sincronización Offline (Sprint 7C)
+
+### 18.1 Detección de conectividad
+
+```dart
+// connectivity_plus: ^6.1.0
+final conectividadProvider = StreamProvider<List<ConnectivityResult>>((ref) {
+  return Connectivity().onConnectivityChanged;
+});
+
+final isOnlineProvider = Provider<bool>((ref) {
+  final conectividad = ref.watch(conectividadProvider);
+  return conectividad.valueOrNull?.any((r) => r != ConnectivityResult.none) ?? true;
+});
+```
+
+### 18.2 Cola Hive `offline_queue`
+
+```dart
+// Box: 'offline_queue' en Hive
+class OperacionPendiente {
+  final String id;            // UUID único de operación
+  final String tabla;         // Tabla destino (ej. 'sesiones_registradas')
+  final String tipo;          // 'insert', 'update', 'delete'
+  final Map<String, dynamic> datos;
+  final String? filtroId;     // Para updates/deletes: ID del registro
+  final DateTime timestamp;   // Cuándo se encoló
+  final int reintentos;       // Contador de reintentos (max 3)
+}
+```
+
+### 18.3 Motor de merge `sync_merge_engine.dart`
+
+**Archivo:** `app/lib/core/sync/sync_merge_engine.dart`
+
+```mermaid
+sequenceDiagram
+    participant App as App (offline)
+    participant Hive as Hive Cola
+    participant Engine as SyncMergeEngine
+    participant SB as Supabase
+
+    Note over App: Usuario hace operación sin red
+    App->>Hive: encolarOperacion(tabla, tipo, datos)
+
+    Note over App: Usuario recupera conexión
+    App->>Engine: sincronizar()
+    Engine->>Hive: obtenerCola() (FIFO)
+
+    loop Por cada operación
+        Engine->>SB: Ejecutar operación
+        alt Éxito
+            SB-->>Engine: OK
+            Engine->>Hive: eliminarDeCola(id)
+        else Conflicto (409)
+            Engine->>Engine: Aplicar last-write-wins
+            Engine->>SB: Reintentar con merge
+            SB-->>Engine: OK
+            Engine->>Hive: eliminarDeCola(id)
+        else Error irrecuperable
+            Engine->>Hive: incrementarReintentos(id)
+            alt reintentos > 3
+                Engine->>App: Notificar usuario (conflicto irresoluble)
+            end
+        end
+    end
+
+    Engine->>App: invalidarProviders()
+```
+
+### 18.4 Widget `OfflineIndicator`
+
+- **Ubicación:** `app/lib/core/sync/widgets/offline_indicator.dart`
+- **Posición:** Barra superior persistente (debajo del AppBar) en todas las pantallas
+- **Estados:**
+  - 🟢 **Online:** sin indicador (se oculta)
+  - 🟠 **Online sincronizando:** badge "Sincronizando X operaciones..." con spinner
+  - 🔴 **Offline:** barra roja "Sin conexión — X operaciones pendientes"
+  - ✅ **Sincronizado:** check verde fugaz (2s) "Todo sincronizado"
+
+### 18.5 Integración con providers existentes
+
+Todas las mutaciones en `rutina_provider.dart` y otros providers de escritura deben encapsularse:
+
+```dart
+Future<void> _ejecutarOEncolar({
+  required String tabla,
+  required String tipo,
+  required Map<String, dynamic> datos,
+  required Future<void> Function() operacionOnline,
+}) async {
+  final online = ref.read(isOnlineProvider);
+  if (online) {
+    await operacionOnline();
+  } else {
+    await _encolarOperacion(tabla: tabla, tipo: tipo, datos: datos);
+  }
+}
+```
+
+### 18.6 Nuevas dependencias
+
+```yaml
+# app/pubspec.yaml (adiciones)
+dependencies:
+  fl_chart: ^0.70.0
+  connectivity_plus: ^6.1.0
+```
+
+### 18.7 Migraciones actuales
+
+```
+supabase/migrations/
+├── 202606060049_esquema_base.sql          ← Esquema base (~12K líneas)
+├── 202606120050_dependencias_retos.sql    ← Sprint 7A: dependencias entre hitos
+├── 202606130001_marcar_semana_completada.sql ← Trigger de cascada semanas
+├── 202606140001_v_analitica_semanal.sql   ← Sprint 7B: vista analítica
+├── 20260616_0002_social_moderacion.sql    ← Sprint 9: moderación social
+├── 20260616_0003_insignias.sql            ← Sprint 9: insignias y rachas
+├── 20260616_0004_consolidacion_fixes.sql  ← Consolidación: tablas faltantes + columnas + índices
+├── 20260616_0005_fechas_coherencia.sql    ← Sprint 9: coherencia de fechas en rutinas, retos y entregas
+└── 20260616000006_admin_rol.sql           ← Panel de administración: columna rol, wipe_user_data, RLS admin
+```
+
+La migración `202606120050_dependencias_retos.sql` contiene:
+- `ALTER TABLE hitos_de_reto ADD COLUMN estado ...`
+- `ALTER TABLE hitos_de_reto ADD COLUMN dependencias UUID[] ...`
+- `ALTER TABLE hitos_de_reto ADD COLUMN tipo_condicion ...`
+- `ALTER TABLE hitos_de_reto ADD COLUMN condicion_n ...`
+- `CREATE OR REPLACE FUNCTION desbloquear_hitos() ...`
+- `CREATE TRIGGER trg_hito_completado ...`
+- `CREATE VIEW v_analitica_semanal AS ...`
+- `CREATE TABLE insights_analitica (...)`
+
+---
+
+**Documento compilado:** 12-06-2026
+**Versión:** 4.2
 **Clasificación:** PÚBLICO — Equipo jloen

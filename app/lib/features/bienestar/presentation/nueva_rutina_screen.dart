@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/config/env_config.dart';
 import '../../../core/design_system/sv_colors.dart';
@@ -11,8 +12,7 @@ import '../../../shared/widgets/exercise_media_widget.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../application/ejercicios_provider.dart';
 import '../application/rutina_provider.dart';
-import '../infrastructure/recomendacion_ia_service.dart';
-import '../infrastructure/parametros_objetivo.dart';
+import '../../dashboard/application/timeline_provider.dart';
 import 'seleccion_ejercicios_screen.dart';
 
 // DTO local para el plan de ejercicios durante la creación
@@ -130,6 +130,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   String _objetivo = 'Hipertrofia Muscular';
   int _duracionSemanas = 4;
   int _diasPorSemana = 3;
+  DateTime _fechaInicio = DateTime.now();
 
   int _semanaActiva = 0;
   final Map<int, Map<int, List<_EjercicioPlan>>> _estructura = {};
@@ -785,6 +786,54 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                   cs: cs,
                 ),
               ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () async {
+              final sel = await showDatePicker(
+                context: context,
+                initialDate: _fechaInicio,
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                helpText: 'Fecha de inicio del plan',
+              );
+              if (sel != null) setState(() => _fechaInicio = sel);
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today_rounded,
+                      size: 18, color: cs.primary),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Fecha de inicio',
+                          style: theme.textTheme.labelLarge
+                              ?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 2),
+                      Text(
+                        DateFormat.yMMMMd('es').format(_fechaInicio),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Icon(Icons.edit_calendar_rounded,
+                      size: 20, color: cs.primary),
+                ],
+              ),
             ),
           ),
         ),
@@ -1736,6 +1785,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       ref.invalidate(estadoDiarioHoyProvider);
 
       await syncCargaAcademicaSemanal(ref);
+      ref.invalidate(timelineHoyProvider);
 
       final catalogoAsync = ref.read(ejerciciosProvider.future);
       final conIA = EnvConfig.hasGeminiApiKey;
@@ -1917,7 +1967,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       final ejerciciosActuales =
           _estructura[semana]![dia]!.map((e) => e.ejercicioId).toList();
 
-      final servicio = RecomendacionIaService();
+      final servicio = ref.read(geminiServiceProvider);
       final resultado = await servicio
           .generarRecomendacionEjercicios(
             apiKey: apiKey,
@@ -2068,9 +2118,11 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         visibilidad: _visibilidad,
         objetivo: _objetivo,
         duracionSemanas: _duracionSemanas,
+        fechaInicio: _fechaInicio,
         estructura: estructuraInput,
         ref: ref,
       );
+      ref.invalidate(timelineHoyProvider);
       if (mounted) context.go('/bienestar/rutina/$rutinaId');
     } catch (e) {
       if (mounted) {
@@ -2354,8 +2406,8 @@ class _DiaEditorCardState extends State<_DiaEditorCard> {
     if (resultado == null) return;
     if (!context.mounted) return;
     final existingIds = widget.ejercicios.map((e) => e.ejercicioId).toSet();
-    final params = ParametrosObjetivo.de(widget.objetivo);
     final container = ProviderScope.containerOf(context);
+    final params = container.read(parametrosObjetivoProvider(widget.objetivo));
     final estadoHoy = container.read(estadoDiarioHoyProvider).valueOrNull;
     final zonasDolor = estadoHoy?.zonasDolor ?? [];
 

@@ -1,8 +1,8 @@
 # 12 - Guía de Usuario
 
 **Proyecto:** SynaptixFit  
-**Versión:** 4.1  
-**Fecha:** 09-06-2026
+**Versión:** 4.2  
+**Fecha:** 14-06-2026
 
 ---
 
@@ -29,22 +29,26 @@ SynaptixFit es una aplicación móvil diseñada para estudiantes universitarios 
 
 ## 3. Primeros Pasos
 
-### 3.1 Registro
+### 3.1 Registro y Onboarding
 
-1. Abre la app y toca **"Crear Cuenta"**.
-2. Introduce tu correo universitario y una contraseña segura (mín. 8 caracteres, 1 mayúscula, 1 número).
-3. Verifica tu correo con el código OTP enviado.
+SynaptixFit usa **Google OAuth** como método exclusivo de registro. El onboarding se compone de 4 pasos secuenciales:
 
-### 3.2 Onboarding — Perfil Físico
+1. **Inicia sesión con Google:** Toca **"Iniciar sesión con Google"** en la pantalla de acceso. La app usará tu cuenta de Google para autenticarte.
+2. **Configura tu perfil académico:** Selecciona tu universidad, centro y carrera desde el catálogo académico enriquecido. Esto permite a la app personalizar tu carga académica.
+3. **Establece tu nombre y contraseña:** Define tu nombre completo y una contraseña segura (mín. 8 caracteres). El email se toma automáticamente de Google (readonly).
+4. **Completa tu perfil físico:**
+   - **Datos demográficos:** Edad, sexo.
+   - **Datos físicos:** Peso (kg) y altura (con toggle metros/cm). Se calcula tu IMC automáticamente.
+   - **Nivel de actividad:** Sedentario, ligero, moderado o alto.
+   - **Objetivos:** Selecciona en un grid de 2 columnas: Hipertrofia, Fuerza, Resistencia, etc.
 
-Tras registrarte, la app te pedirá:
+> 💡 Puedes saltarte el perfil físico y completarlo después desde **Perfil → Configuración**. El perfil académico es obligatorio para la personalización.
 
-1. **Datos demográficos:** Edad, sexo, ciudad.
-2. **Datos físicos:** Peso (kg) y altura (cm). Se calcula tu IMC automáticamente.
-3. **Nivel de actividad:** De sedentario a muy activo.
-4. **Objetivos:** Perder peso, ganar masa, fitness general, fuerza o resistencia.
+#### Inicio de sesión existente
 
-> 💡 Puedes saltarte esto y completarlo después desde **Perfil → Configuración**.
+Si ya tienes cuenta, puedes iniciar sesión con:
+- **Email y contraseña** (si configuraste contraseña en el onboarding)
+- **Google** (mismo método que el registro)
 
 ---
 
@@ -61,9 +65,7 @@ El dashboard te muestra de un vistazo tu estado físico y académico:
 5. **Carga cognitiva** — Una barra que indica tu nivel de exigencia mental actual.
 6. **Estado actual** — Tres medidores circulares: Energético, Adherencia Académica y Carga Cognitiva. Toca cualquiera para ver el detalle.
 7. **KPIs** — Calorías quemadas hoy y sesiones completadas esta semana.
-8. **Bienestar** — Tu IMC, peso actual y objetivo fitness.
-9. **Retos activos** — Tus retos en curso con barras de progreso.
-10. **Rutinas activas** — Tus rutinas de entrenamiento activas.
+8. **Línea de tiempo** — Tus actividades del día organizadas en 3 pestañas: Hoy (clases, estudio, entrenamiento pendiente), Semana (entregas próximas) y Retos (retos activos con progreso).
 
 ### 4.2 Crear una Rutina de Entrenamiento
 
@@ -228,5 +230,5 @@ Mínimo 3 ejercicios para poder guardarla.
 
 ---
 
-**Documento compilado:** 09-06-2026  
-**Última revisión:** v4.1
+**Documento compilado:** 14-06-2026  
+**Última revisión:** v4.2

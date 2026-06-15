@@ -2187,18 +2187,15 @@
   "total_horas": 6000,
   "asignaturas": [
     {
-      "nombre": "Fundamentos de Computadores",
+      "nombre": "ÁLGEBRA LINEAL",
       "curso": 1,
-      "semestre": 2,
+      "semestre": 1,
       "caracter": "FORMACIÓN BÁSICA",
       "creditos": 6,
       "horas": 150,
-      "departamento": "Tecnología de Computadores y Comunicaciones",
-      "idioma_imparticion": "Español",
-      "profesores_coordinadores": [
-        "Francisco Fernández de Vega",
-        "Raúl Lérida Cintas"
-      ],
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
       "prerrequisitos": [],
       "criterios_evaluacion": {
         "examen_final_porcentaje": 0,
@@ -2206,11 +2203,68 @@
         "practicas_laboratorio_porcentaje": 0
       },
       "bibliografia_basica": [],
-      "url_guia_docente": "https://cume.unex.es/wp-content/uploads/sites/15/2025/07/plan1515-501430-2025-26.pdf"
+      "url_guia_docente": "No especificado en las fuentes"
     },
     {
-      "nombre": "INGENIERÍA DE SOFTWARE",
-      "curso": 4,
+      "nombre": "CÁLCULO",
+      "curso": 1,
+      "semestre": 1,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "FÍSICA",
+      "curso": 1,
+      "semestre": 1,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "FUNDAMENTOS DE PROGRAMACIÓN",
+      "curso": 1,
+      "semestre": 1,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "FUNDAMENTOS DE REDES",
+      "curso": 1,
       "semestre": 1,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2228,8 +2282,147 @@
       "url_guia_docente": "No especificado en las fuentes"
     },
     {
+      "nombre": "ECONOMÍA Y EMPRESA",
+      "curso": 1,
+      "semestre": 2,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "ESTADÍSTICA",
+      "curso": 1,
+      "semestre": 2,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "ESTRUCTURAS DE DATOS Y DE LA INFORMACIÓN",
+      "curso": 1,
+      "semestre": 2,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "FUNDAMENTOS DE COMPUTADORES",
+      "curso": 1,
+      "semestre": 2,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "Tecnología de Computadores y Comunicaciones",
+      "idioma_imparticion": "Español",
+      "profesores_coordinadores": [
+        "Francisco Fernández de Vega",
+        "Raúl Lérida Cintas"
+      ],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 50,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 50
+      },
+      "bibliografia_basica": [
+        "Fundamentos de los Computadores. 9ª Edición. Thomson. Pedro Miguel Anasagasti.",
+        "Organización y Arquitectura de Computadores. 7ª Edición. Prentice Hall. William Stallings."
+      ],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "FUNDAMENTOS DE ELECTRÓNICA",
+      "curso": 1,
+      "semestre": 2,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "AMPLIACIÓN DE MATEMÁTICAS",
+      "curso": 2,
+      "semestre": 1,
+      "caracter": "FORMACIÓN BÁSICA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
       "nombre": "INTERACCIÓN PERSONA-ORDENADOR",
-      "curso": 4,
+      "curso": 2,
+      "semestre": 1,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "FUNDAMENTOS DE REDES",
+      "curso": 2,
       "semestre": 1,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2248,7 +2441,7 @@
     },
     {
       "nombre": "METODOLOGÍA Y DESARROLLO DE PROGRAMAS",
-      "curso": 4,
+      "curso": 2,
       "semestre": 1,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2266,8 +2459,27 @@
       "url_guia_docente": "No especificado en las fuentes"
     },
     {
-      "nombre": "ANÁLISIS Y DISEÑO DE ALGORITMOS",
-      "curso": 4,
+      "nombre": "ESTRUCTURA DE COMPUTADORES",
+      "curso": 2,
+      "semestre": 1,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "BASES DE DATOS",
+      "curso": 2,
       "semestre": 2,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2286,7 +2498,7 @@
     },
     {
       "nombre": "ARQUITECTURA Y ORGANIZACIÓN DE COMPUTADORES",
-      "curso": 4,
+      "curso": 2,
       "semestre": 2,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2304,8 +2516,8 @@
       "url_guia_docente": "No especificado en las fuentes"
     },
     {
-      "nombre": "ASPECTOS SOCIALES Y PROFESIONALES DE LA INFORMÁTICA",
-      "curso": 4,
+      "nombre": "ANÁLISIS Y DISEÑO DE ALGORITMOS",
+      "curso": 2,
       "semestre": 2,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2323,8 +2535,8 @@
       "url_guia_docente": "No especificado en las fuentes"
     },
     {
-      "nombre": "GESTIÓN DE LAS ORGANIZACIONES",
-      "curso": 4,
+      "nombre": "ASPECTOS SOCIALES, LEGALES, ÉTICOS Y PROFESIONALES DE LA INFORMÁTICA",
+      "curso": 2,
       "semestre": 2,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2342,8 +2554,8 @@
       "url_guia_docente": "No especificado en las fuentes"
     },
     {
-      "nombre": "TECNOLOGÍAS WEB",
-      "curso": 4,
+      "nombre": "REDES DE ORDENADORES",
+      "curso": 2,
       "semestre": 2,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2361,8 +2573,27 @@
       "url_guia_docente": "No especificado en las fuentes"
     },
     {
-      "nombre": "GESTIÓN DE PROYECTOS TIC",
-      "curso": 5,
+      "nombre": "SISTEMAS DE INFORMACIÓN",
+      "curso": 3,
+      "semestre": 1,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "INGENIERÍA DEL SOFTWARE",
+      "curso": 3,
       "semestre": 1,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2381,7 +2612,7 @@
     },
     {
       "nombre": "PROGRAMACIÓN CONCURRENTE Y DISTRIBUIDA",
-      "curso": 5,
+      "curso": 3,
       "semestre": 1,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2399,8 +2630,8 @@
       "url_guia_docente": "No especificado en las fuentes"
     },
     {
-      "nombre": "SISTEMAS DE INFORMACIÓN",
-      "curso": 5,
+      "nombre": "SEGURIDAD DE LA INFORMACIÓN",
+      "curso": 3,
       "semestre": 1,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2418,8 +2649,8 @@
       "url_guia_docente": "No especificado en las fuentes"
     },
     {
-      "nombre": "SISTEMAS INTELIGENTES",
-      "curso": 5,
+      "nombre": "SISTEMAS OPERATIVOS",
+      "curso": 3,
       "semestre": 1,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2438,7 +2669,64 @@
     },
     {
       "nombre": "DISEÑO Y EVALUACIÓN DE TECNOLOGÍAS HARDWARE",
-      "curso": 5,
+      "curso": 3,
+      "semestre": 2,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "TECNOLOGÍAS WEB",
+      "curso": 3,
+      "semestre": 2,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "GESTIÓN DE LAS ORGANIZACIONES",
+      "curso": 3,
+      "semestre": 2,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "HABILIDADES COMUNICATIVAS",
+      "curso": 3,
       "semestre": 2,
       "caracter": "OBLIGATORIA",
       "creditos": 6,
@@ -2457,9 +2745,275 @@
     },
     {
       "nombre": "SISTEMAS DISTRIBUIDOS Y DE TIEMPO REAL",
-      "curso": 5,
+      "curso": 3,
       "semestre": 2,
       "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "METODOLOGÍA Y DESARROLLO DE APLICACIONES PARA INTERNET",
+      "curso": 4,
+      "semestre": 1,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "SISTEMAS INTELIGENTES",
+      "curso": 4,
+      "semestre": 1,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "GESTIÓN DE PROYECTOS TIC",
+      "curso": 4,
+      "semestre": 1,
+      "caracter": "OBLIGATORIA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "TRABAJO FIN DE GRADO",
+      "curso": 4,
+      "semestre": 2,
+      "caracter": "TRABAJO DE FIN DE GRADO",
+      "creditos": 12,
+      "horas": 300,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "INFRAESTRUCTURA Y ALMACENAMIENTO DE GRANDES VOLÚMENES DE DATOS",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "ADQUISICIÓN Y COMPUTACIÓN DEL BIG DATA",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "ANÁLISIS Y VISUALIZACIÓN DE DATOS",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "DESARROLLO DE APLICACIONES PARA DISPOSITIVOS MÓVILES",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "DISEÑO Y PROGRAMACIÓN WEB",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "PLATAFORMAS, FRAMEWORK Y TENDENCIAS TECNOLÓGICAS",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "SEGURIDAD AVANZADA",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "ARQUITECTURA DE SEGURIDAD EN LOS SISTEMAS",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "EVIDENCIAS DIGITALES Y ANÁLISIS FORENSE",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
+      "creditos": 6,
+      "horas": 150,
+      "departamento": "No especificado en las fuentes",
+      "idioma_imparticion": "No especificado en las fuentes",
+      "profesores_coordinadores": [],
+      "prerrequisitos": [],
+      "criterios_evaluacion": {
+        "examen_final_porcentaje": 0,
+        "evaluacion_continua_porcentaje": 0,
+        "practicas_laboratorio_porcentaje": 0
+      },
+      "bibliografia_basica": [],
+      "url_guia_docente": "No especificado en las fuentes"
+    },
+    {
+      "nombre": "PRÁCTICAS EXTERNAS",
+      "curso": 4,
+      "semestre": 0,
+      "caracter": "OPTATIVA",
       "creditos": 6,
       "horas": 150,
       "departamento": "No especificado en las fuentes",

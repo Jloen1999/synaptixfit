@@ -396,6 +396,35 @@ class _CrearPlanSemanalScreenState
                       ),
                       const SizedBox(width: 12),
                       Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final t = await showTimePicker(
+                              context: ctx,
+                              initialTime: TimeOfDay.fromDateTime(fechaLimite),
+                            );
+                            if (t != null) {
+                              setSheet(() => fechaLimite = DateTime(
+                                    fechaLimite.year,
+                                    fechaLimite.month,
+                                    fechaLimite.day,
+                                    t.hour,
+                                    t.minute,
+                                  ));
+                            }
+                          },
+                          child: InputDecorator(
+                            decoration:
+                                const InputDecoration(labelText: 'Hora límite'),
+                            child: Text(DateFormat.Hm().format(fechaLimite)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: dificultad,
                           decoration:
@@ -818,9 +847,10 @@ class _CrearPlanSemanalScreenState
       nombre: 'Plan ${DateFormat('dd/MM', 'es').format(lunes)}',
       semanaInicio: lunes,
       semanaFin: domingo,
-      visibilidad: 'privado',
+      visibilidad: 'private',
       entregas: entregas,
       bloques: bloques,
+      ref: ref,
     );
 
     if (planId != null && mounted) {

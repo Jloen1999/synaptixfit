@@ -23,7 +23,7 @@ class _GestionAsignaturasScreenState
   late final TabController _tabController;
   final _busquedaCtrl = TextEditingController();
   final _focusBusqueda = FocusNode();
-  List<CatalogoAsignaturaDb> _resultados = [];
+  List<AsignaturaCatalogoDb> _resultados = [];
   bool _buscando = false;
   bool _mostrandoResultados = false;
   Set<String> _nuevasIds = {};
@@ -223,7 +223,7 @@ class _GestionAsignaturasScreenState
 
     final client = Supabase.instance.client;
     final data = await client
-        .from('catalogo_asignaturas')
+        .from('asignaturas_catalogo')
         .select('*')
         .ilike('nombre', '%$q%')
         .limit(10);
@@ -231,12 +231,12 @@ class _GestionAsignaturasScreenState
     if (!mounted) return;
     setState(() {
       _resultados =
-          (data as List).map((e) => CatalogoAsignaturaDb.fromMap(e)).toList();
+          (data as List).map((e) => AsignaturaCatalogoDb.fromMap(e)).toList();
       _buscando = false;
     });
   }
 
-  Future<void> _agregarDesdeCatalogo(CatalogoAsignaturaDb a) async {
+  Future<void> _agregarDesdeCatalogo(AsignaturaCatalogoDb a) async {
     final activas = ref.read(asignaturasActivasProvider).valueOrNull ?? [];
     final existe =
         activas.any((ea) => ea.nombre.toLowerCase() == a.nombre.toLowerCase());
@@ -485,16 +485,16 @@ class _AsignaturaTile extends StatelessWidget {
   void _mostrarDetalle(BuildContext context) {
     final a = asignatura;
 
-    Future<CatalogoAsignaturaDb?> fetchCatalogo() async {
+    Future<AsignaturaCatalogoDb?> fetchCatalogo() async {
       if (a.catalogoAsignaturaId == null) return null;
       final client = Supabase.instance.client;
       final data = await client
-          .from('catalogo_asignaturas')
+          .from('asignaturas_catalogo')
           .select()
           .eq('id', a.catalogoAsignaturaId!)
           .maybeSingle();
       if (data == null) return null;
-      return CatalogoAsignaturaDb.fromMap(data);
+      return AsignaturaCatalogoDb.fromMap(data);
     }
 
     showModalBottomSheet(
@@ -503,7 +503,7 @@ class _AsignaturaTile extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return FutureBuilder<CatalogoAsignaturaDb?>(
+        return FutureBuilder<AsignaturaCatalogoDb?>(
           future: fetchCatalogo(),
           builder: (context, snap) {
             final catalogo = snap.data;

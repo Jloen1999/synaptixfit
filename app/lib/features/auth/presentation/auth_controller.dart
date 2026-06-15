@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../infrastructure/auth_repository.dart';
+import '../application/auth_provider.dart';
 
 class AuthState {
   const AuthState({
@@ -85,8 +85,6 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
-final authRepositoryProvider =
-    Provider<AuthRepository>((ref) => const AuthRepository());
 final authControllerProvider =
     StateNotifierProvider<AuthController, AuthState>((ref) {
   return AuthController(ref.watch(authRepositoryProvider));

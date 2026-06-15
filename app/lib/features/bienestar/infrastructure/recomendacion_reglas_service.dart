@@ -3,7 +3,6 @@ import 'dart:math';
 import '../../../shared/models/db_models.dart';
 import '../application/rutina_provider.dart';
 import 'parametros_objetivo.dart';
-import 'recomendacion_ia_service.dart';
 
 enum TipoSplit { fullBody, upperLower, pushPullLegs }
 

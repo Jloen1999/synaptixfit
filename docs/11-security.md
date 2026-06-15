@@ -1,8 +1,8 @@
 # 11 - Seguridad
 
 **Proyecto:** SynaptixFit  
-**Versión:** 1.2  
-**Fecha:** 10-05-2026  
+**Versión:** 1.3  
+**Fecha:** 14-06-2026  
 **Referencia:** [03-architecture.md](03-architecture.md) (sección 7), [04-data-model.md](04-data-model.md) (RLS)
 
 ---
@@ -74,7 +74,7 @@ flowchart TD
 
 | Tabla | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
-| `usuarios` | Propio + públicos | — | Solo propio | — |
+| `usuarios` | Propio + públicos | — | Solo propio + admin | — |
 | `partes_cuerpo` | Todos (catálogo público) | — | — | — |
 | `musculos` | Todos (catálogo público) | — | — | — |
 | `equipamientos` | Todos (catálogo público) | — | — | — |
@@ -92,9 +92,14 @@ flowchart TD
 | `notificaciones` | Solo propio | Funciones admin | Solo propio | Solo propio |
 | `horarios_academicos` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `asignaturas` | Solo propio | Solo propio | Solo propio | Solo propio |
-| `catalogo_universidades` | Todos (catálogo público) | — | — | — |
-| `catalogo_carreras` | Todos (catálogo público) | — | — | — |
-| `catalogo_asignaturas` | Todos (catálogo público) | — | — | — |
+| `universidades` | Todos (catálogo público) | Solo authenticated (seed) | — | — |
+| `centros` | Todos (catálogo público) | Solo authenticated (seed) | — | — |
+| `carreras` | Todos (catálogo público) | Solo authenticated (seed) | — | — |
+| `asignaturas_catalogo` | Todos (catálogo público) | Solo authenticated (seed) | — | — |
+| `profesores_asignatura` | Todos (catálogo público) | Solo authenticated (seed) | — | — |
+| `prerrequisitos_asignatura` | Todos (catálogo público) | Solo authenticated (seed) | — | — |
+| `criterios_evaluacion` | Todos (catálogo público) | Solo authenticated (seed) | — | — |
+| `bibliografia_asignatura` | Todos (catálogo público) | Solo authenticated (seed) | — | — |
 | `usuario_carreras` | Solo propio | Solo propio | — | Solo propio |
 | `planes_estudio` | Propio + según visibilidad | Solo propio | Solo propio | Solo propio |
 | `apuntes` | Propio + según visibilidad | Solo propio | Solo propio | Solo propio |
@@ -107,6 +112,21 @@ flowchart TD
 | `interacciones_sociales` | Según visibilidad de actividad | Autenticado | — | Solo propio |
 | `amistades` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `preferencias_notificacion` | Solo propio | Solo propio | Solo propio | — |
+
+### 2.4 Rol de administrador
+
+El sistema define un rol `admin` en la tabla `usuarios` (columna `rol` con CHECK `IN ('usuario', 'admin')`). Los administradores tienen permisos elevados para:
+
+| Permiso | Alcance | Implementación |
+|---------|--------|---------------|
+| **UPDATE en `usuarios`** | Resetear nivel, XP, racha de cualquier usuario | Política RLS: `auth.uid() = id OR EXISTS(SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.rol = 'admin')` |
+| **Ejecutar `wipe_user_data()`** | Eliminar todo el historial de un usuario preservando datos personales | Función `SECURITY DEFINER` con verificación interna de `rol = 'admin'` |
+| **Consultar cualquier usuario** | Listar usuarios para búsqueda en panel de administración | Mediante `usuarios_seleccionar` (ya visible si nivel_privacidad = 'publico') o mediante función admin con `SECURITY DEFINER` |
+
+**Restricciones del rol admin:**
+- Un administrador **no puede** hacer wipe de su propio usuario (validado en `wipe_user_data`).
+- El rol `admin` solo puede ser asignado manualmente por un superadmin de Supabase (no hay endpoint público de promoción).
+- Las acciones de administración deben quedar registradas en logs de auditoría (fase futura).
 
 ---
 
@@ -137,9 +157,14 @@ flowchart TD
 
 | Tabla | Sensibilidad | Visibilidad |
 |-------|-------------|-------------|
-| `catalogo_universidades` | Pública | Todos (lectura) |
-| `catalogo_carreras` | Pública | Todos (lectura) |
-| `catalogo_asignaturas` | Pública | Todos (lectura) |
+| `universidades` | Pública | Todos (lectura) |
+| `centros` | Pública | Todos (lectura) |
+| `carreras` | Pública | Todos (lectura) |
+| `asignaturas_catalogo` | Pública | Todos (lectura) |
+| `profesores_asignatura` | Pública | Todos (lectura) |
+| `prerrequisitos_asignatura` | Pública | Todos (lectura) |
+| `criterios_evaluacion` | Pública | Todos (lectura) |
+| `bibliografia_asignatura` | Pública | Todos (lectura) |
 
 Estos datos provienen de `grados.json` (datos educativos públicos) y no contienen información personal.
 
@@ -201,5 +226,5 @@ Eventos que deben quedar registrados (según sección 10.2 del SRS):
 
 ---
 
-**Documento compilado:** 10-05-2026  
-**Última revisión:** v1.2
+**Documento compilado:** 14-06-2026  
+**Última revisión:** v1.3 — Añadido rol admin y políticas de wipe

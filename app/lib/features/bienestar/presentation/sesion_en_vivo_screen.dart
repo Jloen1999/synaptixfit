@@ -8,6 +8,7 @@ import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../core/design_system/sv_colors.dart';
 import '../application/rutina_provider.dart';
 import '../application/ejercicios_provider.dart';
+import '../../dashboard/application/timeline_provider.dart';
 
 class LiveSessionScreen extends ConsumerStatefulWidget {
   const LiveSessionScreen({super.key});
@@ -212,6 +213,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
           duracionSegundos: _segundosTotales,
           rpe: result.rpe,
           ref: ref);
+      ref.invalidate(timelineHoyProvider);
       if (mounted) {
         if (xpResult != null && xpResult.subeNivel) {
           ScaffoldMessenger.of(context).showSnackBar(

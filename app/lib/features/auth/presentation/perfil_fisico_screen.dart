@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/config/env_config.dart';
-import '../infrastructure/bienestar_repository.dart';
-import '../infrastructure/objetivo_ia_service.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/sv_primary_button.dart';
 import '../../bienestar/application/ejercicios_provider.dart';
+import '../../perfil/application/perfil_provider.dart';
 
 class PerfilFisicoScreen extends StatefulWidget {
   const PerfilFisicoScreen({super.key});
@@ -25,12 +24,11 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
   ];
 
   final _edadCtrl = TextEditingController();
-  final _ciudadCtrl = TextEditingController();
   final _pesoCtrl = TextEditingController();
   final _alturaCtrl = TextEditingController();
   final _objetivoCtrl = TextEditingController();
-  final _objetivoIaService = ObjetivoIaService();
-  final _bienestarRepository = const BienestarRepository();
+  BienestarRepository get _bienestarRepository =>
+      ProviderScope.containerOf(context).read(bienestarRepositoryProvider);
 
   int _step = 0;
   String? _sexoSeleccionado;
@@ -39,10 +37,8 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
   int _diasDisponibles = 3;
   int _minutosPorSesion = 45;
   final Set<String> _equipamientoSeleccionado = {};
-  bool _cargandoSugerencias = false;
-  bool _mostrarSugerencias = true;
   bool _guardando = false;
-  List<String> _sugerenciasIa = const [];
+  bool _alturaEnMetros = false;
 
   static const _equipamientoOpciones = [
     {
@@ -89,12 +85,12 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
 
   double? get _imcActual {
     final peso = double.tryParse(_pesoCtrl.text.replaceAll(',', '.'));
-    final alturaCm = double.tryParse(_alturaCtrl.text.replaceAll(',', '.'));
-    if (peso == null || alturaCm == null || peso <= 0 || alturaCm <= 0) {
+    final alturaRaw = double.tryParse(_alturaCtrl.text.replaceAll(',', '.'));
+    if (peso == null || alturaRaw == null || peso <= 0 || alturaRaw <= 0) {
       return null;
     }
 
-    final alturaM = alturaCm / 100;
+    final alturaM = _alturaEnMetros ? alturaRaw : alturaRaw / 100;
     if (alturaM <= 0) return null;
     return peso / (alturaM * alturaM);
   }
@@ -117,7 +113,6 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
   @override
   void dispose() {
     _edadCtrl.dispose();
-    _ciudadCtrl.dispose();
     _pesoCtrl.dispose();
     _alturaCtrl.dispose();
     _objetivoCtrl.dispose();
@@ -177,9 +172,16 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
         if (peso == null || peso < 30 || peso > 200) {
           return 'El peso debe estar entre 30 y 200 kg';
         }
-        final altura = double.tryParse(_alturaCtrl.text.replaceAll(',', '.'));
-        if (altura == null || altura < 140 || altura > 220) {
-          return 'La altura debe estar entre 140 y 220 cm';
+        final alturaRaw =
+            double.tryParse(_alturaCtrl.text.replaceAll(',', '.'));
+        if (_alturaEnMetros) {
+          if (alturaRaw == null || alturaRaw < 1.40 || alturaRaw > 2.20) {
+            return 'La altura debe estar entre 1.40 y 2.20 m';
+          }
+        } else {
+          if (alturaRaw == null || alturaRaw < 140 || alturaRaw > 220) {
+            return 'La altura debe estar entre 140 y 220 cm';
+          }
         }
         return null;
 
@@ -198,44 +200,6 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
 
       default:
         return null;
-    }
-  }
-
-  Future<void> _cargarSugerenciasObjetivo() async {
-    if (_cargandoSugerencias) return;
-
-    if (!EnvConfig.hasGeminiApiKey) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se encontró GEMINI_API_KEY en .env'),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _cargandoSugerencias = true);
-
-    final result = await _objetivoIaService.generarSugerencias(
-      apiKey: EnvConfig.geminiApiKey,
-      edad: _edadCtrl.text,
-      sexo: _sexoSeleccionado,
-      nivelActividad: _nivelActividadSeleccionado,
-      ciudad: _ciudadCtrl.text,
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      _cargandoSugerencias = false;
-      _sugerenciasIa = result.sugerencias;
-      _mostrarSugerencias = true;
-    });
-
-    if (result.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.error!)),
-      );
     }
   }
 
@@ -271,12 +235,14 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
           ? objetivo
           : finalidadesEstandar.first;
 
+      final alturaRaw = double.parse(_alturaCtrl.text.replaceAll(',', '.'));
+      final alturaCm = _alturaEnMetros ? alturaRaw * 100 : alturaRaw;
+
       await _bienestarRepository.guardarPerfilBienestar(
         edad: int.parse(_edadCtrl.text),
         sexo: _sexoSeleccionado!,
-        ciudad: _ciudadCtrl.text.isEmpty ? null : _ciudadCtrl.text,
         pesoKg: double.parse(_pesoCtrl.text.replaceAll(',', '.')),
-        alturaCm: double.parse(_alturaCtrl.text.replaceAll(',', '.')),
+        alturaCm: alturaCm,
         nivelActividad: _nivelActividadSeleccionado ?? 'sedentario',
         objetivoPrincipal: objetivoFinal,
         equipamientoDisponible: _equipamientoSeleccionado.toList(),
@@ -287,7 +253,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
       await _bienestarRepository.marcarOnboardingCompletado();
 
       if (!mounted) return;
-      context.go('/academico/configuracion');
+      context.go('/dashboard');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -414,15 +380,6 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                   });
                                 },
                               ),
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: _ciudadCtrl,
-                                decoration: _decoracionCampo(
-                                  'Ciudad (opcional)',
-                                  prefixIcon:
-                                      const Icon(Icons.location_city_outlined),
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -447,13 +404,33 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                       const Icon(Icons.fitness_center_rounded),
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 8),
+                              SegmentedButton<bool>(
+                                segments: const [
+                                  ButtonSegment<bool>(
+                                    value: false,
+                                    label: Text('cm'),
+                                  ),
+                                  ButtonSegment<bool>(
+                                    value: true,
+                                    label: Text('m'),
+                                  ),
+                                ],
+                                selected: {_alturaEnMetros},
+                                onSelectionChanged: (selected) {
+                                  setState(
+                                      () => _alturaEnMetros = selected.first);
+                                },
+                              ),
+                              const SizedBox(height: 8),
                               TextField(
                                 controller: _alturaCtrl,
                                 keyboardType: TextInputType.number,
                                 onChanged: (_) => setState(() {}),
                                 decoration: _decoracionCampo(
-                                  'Altura (140-220 cm)',
+                                  _alturaEnMetros
+                                      ? 'Altura (1.40-2.20 m)'
+                                      : 'Altura (140-220 cm)',
                                   prefixIcon: const Icon(Icons.height_rounded),
                                 ),
                               ),
@@ -563,126 +540,75 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: finalidadesEstandar.map((f) {
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 4.0,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                ),
+                                itemCount: finalidadesEstandar.length,
+                                itemBuilder: (context, index) {
+                                  final f = finalidadesEstandar[index];
                                   final seleccionado = _objetivoPrincipal == f;
-                                  return FilterChip(
-                                    label: Text(f),
-                                    selected: seleccionado,
-                                    onSelected: (selected) {
-                                      setState(() {
-                                        _objetivoPrincipal =
-                                            selected ? f : null;
-                                        if (selected) {
-                                          _objetivoCtrl.text = f;
-                                        }
-                                      });
-                                    },
-                                  );
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 12),
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final apilar = constraints.maxWidth < 420;
-                                  final titulo = Text(
-                                    'Sugerencias de IA para tu objetivo',
-                                    style:
-                                        Theme.of(context).textTheme.labelLarge,
-                                  );
-
-                                  final acciones = Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      FilledButton.tonalIcon(
-                                        onPressed: _cargandoSugerencias
-                                            ? null
-                                            : _cargarSugerenciasObjetivo,
-                                        icon: const Icon(
-                                            Icons.auto_awesome_rounded),
-                                        label: Text(
-                                          _cargandoSugerencias
-                                              ? 'Generando...'
-                                              : 'Generar',
+                                  return InkWell(
+                                    onTap: () => setState(() {
+                                      _objetivoPrincipal =
+                                          seleccionado ? null : f;
+                                      if (!seleccionado) {
+                                        _objetivoCtrl.text = f;
+                                      }
+                                    }),
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: seleccionado
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: seleccionado
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .outlineVariant
+                                                  .withAlpha(80),
                                         ),
                                       ),
-                                      if (_sugerenciasIa.isNotEmpty)
-                                        OutlinedButton.icon(
-                                          onPressed: () {
-                                            setState(() {
-                                              _mostrarSugerencias =
-                                                  !_mostrarSugerencias;
-                                            });
-                                          },
-                                          icon: Icon(
-                                            _mostrarSugerencias
-                                                ? Icons.visibility_off_outlined
-                                                : Icons.visibility_outlined,
-                                          ),
-                                          label: Text(
-                                            _mostrarSugerencias
-                                                ? 'Ocultar'
-                                                : 'Mostrar',
-                                          ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 10),
+                                      child: Text(
+                                        f,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: seleccionado
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                          color: seleccionado
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimaryContainer
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
                                         ),
-                                    ],
-                                  );
-
-                                  if (apilar) {
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        titulo,
-                                        const SizedBox(height: 6),
-                                        acciones,
-                                      ],
-                                    );
-                                  }
-
-                                  return Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(child: titulo),
-                                      const SizedBox(width: 8),
-                                      Flexible(child: acciones),
-                                    ],
+                                      ),
+                                    ),
                                   );
                                 },
                               ),
-                              if (_cargandoSugerencias)
-                                const Padding(
-                                  padding: EdgeInsets.only(bottom: 12),
-                                  child: LinearProgressIndicator(minHeight: 3),
-                                ),
-                              if (_sugerenciasIa.isNotEmpty &&
-                                  _mostrarSugerencias)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: _sugerenciasIa
-                                        .map(
-                                          (item) => ActionChip(
-                                            avatar: const Icon(
-                                                Icons.tips_and_updates_outlined,
-                                                size: 18),
-                                            label: Text(item),
-                                            onPressed: () {
-                                              setState(() {
-                                                _objetivoCtrl.text = item;
-                                              });
-                                            },
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ),
+                              const SizedBox(height: 12),
                               TextField(
                                 controller: _objetivoCtrl,
                                 decoration: _decoracionCampo(

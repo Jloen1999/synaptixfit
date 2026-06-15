@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit
-**Versión:** 5.2
-**Fecha:** 09-06-2026
+**Versión:** 6.0
+**Fecha:** 12-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -138,6 +138,8 @@ flowchart TD
 
 [OBSOLETO v6.0 — Reemplazado por §9 Dashboard Rediseñado]
 
+> **Nota Sprint 9A:** Los QuickActions Pomodoro y Escanear ya no son placeholders — tienen navegación real a `/pomodoro` y `/escanear`. El `QuickActionsRow` es ahora un `ConsumerWidget` que consume `diaPendienteProvider` para el botón Workout.
+
 | Provider | Tipo | Propósito |
 |----------|------|-----------|
 | `dashboardProvider` | `FutureProvider<DashboardData>` | Datos agregados: usuario, calorías, sesiones, retos activos, notificaciones, perfil bienestar, plan semanal, rutinas activas. 7 queries en paralelo con `Future.wait`. |
@@ -198,6 +200,10 @@ flowchart TD
 | `perfilCompletoProvider` | `FutureProvider<PerfilCompleto>` | Compuesto que delega en los 4 providers anteriores. Para compatibilidad con otras pantallas. |
 | `usuarioCarrerasProvider` | `FutureProvider` | Carreras vinculadas del usuario (M:N) |
 | `carrerasUsuarioConNombreProvider` | `Family` | Carreras con nombre de universidad resuelto vía JOIN |
+| `carreraConAsignaturasProvider` | `FutureProvider<List<({CarreraDb, List<AsignaturaCatalogoDb>})>>` | Carreras del usuario con sus asignaturas del catálogo. Intenta primero `usuario_carreras` (FK); fallback a búsqueda por nombre desde `perfil_academico_usuario.carrera`. Útil para la sección Plan de estudios en PerfilScreen. |
+| `asignaturasUsuarioSemestreProvider` | `FutureProvider<List<AsignaturaUsuarioSemestreDb>>` | Asignaturas del catálogo con `semestre=0` que el usuario ha mapeado a un curso+semestre mediante la tabla `asignaturas_usuario_semestre`. |
+| `asignaturasSinSemestreProvider` | `FutureProvider<List<AsignaturaCatalogoDb>>` | Asignaturas del catálogo con `semestre=0` (optativas/transversales sin temporalidad fija) que el usuario puede mapear manualmente. Filtra por carrera del usuario. |
+| `_getCarrerasUsuario()` | Función helper | Devuelve `List<String>` de `carrera_id` del usuario. Consulta `usuario_carreras` primero; fallback a búsqueda por nombre desde `perfil_academico_usuario.carrera`. Usada por `asignaturasUsuarioSemestreProvider` y `asignaturasSinSemestreProvider`. |
 
 **Invalidación selectiva (`PerfilCambio` enum):**
 - `PerfilCambio.nombre` → solo `perfilUsuarioProvider` (2 queries vs 7)
@@ -814,21 +820,16 @@ Datos del header: `UsuarioDb` (nombre, email, nivel, xpTotal, rachaActual, urlAv
 
 ### 7.2 Pestaña 1 — Estadísticas (`_EstadisticasTab`)
 
-`ListView` con grid de 2 columnas de tarjetas de métricas (glass cards):
+`Row` con 4 `Expanded` stats: Sesiones, XP, Calorías, Retos (separados por `_statDivider`).
 
-| Métrica | Valor | Color | Subtítulo |
-|---------|-------|-------|-----------|
-| **XP Total** | `usuario.xpTotal` | `#72FE8G` (verde) | "Nivel X" |
-| **Sesiones** | `sesiones` (COUNT desde `sesiones_registradas`) | `#60A5FA` (azul) | — |
-| **Retos** | `logros` (COUNT retos completados) | `#E8A838` (dorado) | — |
-| **Calorías** | `caloriasAcumuladas` (SUM `calorias_quemadas`) | `#FF6B35` (naranja) | — |
-| **Racha actual** | `usuario.rachaActual` | `#A78BFA` (violeta) | "días consecutivos" |
+| Stat | Valor | Icono |
+|------|-------|-------|
+| **Sesiones** | `act.sesiones` | `Icons.fitness_center_rounded` |
+| **XP** | `_formatNum(widget.usuario.xpTotal)` | `Icons.stars_rounded` |
+| **Calorías** | `_formatNum(act.caloriasAcumuladas)` | `Icons.local_fire_department_rounded` |
+| **Retos** | `act.logros` | `Icons.emoji_events_rounded` |
 
-Estilo de tarjeta `_metricCard()`:
-- `BorderRadius.circular(16)`, padding 16px
-- Fondo: `color.withValues(alpha: 0.06)`, borde: `color.withValues(alpha: 0.12)`
-- Valor numérico: `fontSize: 28`, `FontWeight.w800`, color semántico, `letterSpacing: -1`
-- Label: 13px, `FontWeight.w600`, color `#94A3B8`. Subtítulo opcional: 11px, `#64748B`
+Cada stat se renderiza con `_statItem()`: icono, valor numérico grande (`fontSize: 22`, `FontWeight.w800`), label descriptivo. Los separadores verticales (`_statDivider`) dividen las 4 columnas.
 
 ### 7.3 Pestaña 2 — Bienestar (`_BienestarTab`)
 
@@ -916,6 +917,80 @@ flowchart TD
 - Avatar: `Image.network` con `loadingBuilder` (muestra inicial durante carga) y `errorBuilder` (fallback a inicial estilizada).
 - El nombre se lee de `usuarios.nombre_completo` (tabla pública), no de `perfil_bienestar_usuario`.
 - `_TabBarDelegate` (`SliverPersistentHeaderDelegate`) mantiene el `TabBar` fijado al hacer scroll.
+
+### 7.7 Plan de estudios (sección académica en PerfilScreen)
+
+Widget `_PlanEstudiosView` (StatefulWidget con providers) que se muestra como vista adicional dentro del perfil. Contiene:
+
+#### 7.7.1 Cabecera — Institución y semestre actual
+
+- **Card de institución** (`_buildInstitucionCard`): gradiente sutil, icono `school`, nombre de universidad (editable) y carrera.
+- **"Curso X · Y° Semestre"** — texto estático que refleja `perfilAcademicoProvider.cursoActual` y `perfilAcademicoProvider.semestreEnCurso`.
+
+#### 7.7.2 Plan de estudios — Cards de curso
+
+Una fila (`Row`) con tarjetas por cada curso disponible, usando `_buildCursoCards()`:
+
+```
+┌─────────┐ ┌─────────┐ ┌─────────┐
+│  1°     │ │  2°     │ │  3°     │
+│  Curso  │ │  Curso  │ │  Curso  │
+│ 5 asig. │ │ 6+1 asig│ │ 7 asig. │
+└─────────┘ └─────────┘ └─────────┘
+```
+
+- Cada card muestra el número de curso, label "Curso", y contador de asignaturas.
+- **Contador en tiempo real**: si hay transversales mapeadas (`asignaturasUsuarioSemestreProvider`), se muestra como "5+1 asig." donde el `+1` son las transversales mapeadas a ese curso.
+- El contador usa color `tertiary` si hay transversales, `primary` si no.
+- Tap en cada card abre `_showCursoBottomSheet()`: `DraggableScrollableSheet` con `DefaultTabController` (un tab por semestre) mostrando asignaturas del curso filtradas por semestre, con `_buildCursoSubjectRow()`.
+
+#### 7.7.3 Asignaturas transversales (colapsable)
+
+Sección `ExpansionTile` con título "Asignaturas transversales" + badge con conteo. Visible solo si `asignaturasSinSemestreProvider` tiene datos.
+
+Cada fila (`_buildSinSemestreRow`) muestra:
+- Icono `menu_book_outlined`
+- Nombre de la asignatura
+- Badge de créditos (ej: "6 ECTS")
+- Badge de estado de mapeo: "Curso 2 · 1° Sem" (si ya mapeada) o "Sin asignar" (si no)
+- **Botón +** (si no mapeada): agrega la asignatura al curso y semestre actual del usuario (`INSERT` en `asignaturas_usuario_semestre` con `cursoActual` y `semestreEnCurso`). Invalida `asignaturasUsuarioSemestreProvider` tras la inserción.
+- **Botón ✕** (si ya mapeada): elimina el mapeo (`DELETE` de `asignaturas_usuario_semestre`). Invalida `asignaturasUsuarioSemestreProvider`.
+
+#### 7.7.4 Curso y Semestre — Edición
+
+Después de la sección de transversales, se muestran filas editables:
+
+| Campo | Widget | Comportamiento |
+|-------|--------|---------------|
+| **Curso** | `_editTile` read-only | Muestra `p.cursoActual`. Al hacer tap abre `_seleccionarCurso()`: `SimpleDialog` con `RadioGroup<int>` de 1 hasta `maxCurso` (derivado del catálogo de asignaturas). |
+| **Semestre** | `_editTile` editable | Muestra `p.semestreEnCurso°`. Al hacer tap abre `_seleccionarSemestre()`: `SimpleDialog` con `RadioGroup<int>` de solo `[1, 2]` (1° o 2° semestre). |
+| **Créditos del semestre** | `_readTile` (solo lectura) | Calculados desde `asignaturas_catalogo` filtrando por curso+semestre actual + transversales mapeadas al mismo curso+semestre. Fallback: `p.creditosSemestreActual`. Formato: "60 ECTS" |
+| **Horas estimadas / sem** | `_readTile` (solo lectura) | Mismo cálculo que créditos pero para horas. Fallback: `p.horasObjetivoEstudioSemana`. Formato: "150h" |
+| **Promedio objetivo** | `_editTile` editable | Decimal editable (0-5) vía `_editarNumeroDecimal()`. Persiste en `perfil_academico_usuario`. |
+
+#### 7.7.5 Cálculo de créditos y horas
+
+```dart
+// En la build de _PlanEstudiosView:
+int creditosCalculados = 0;
+int horasCalculadas = 0;
+// 1. Asignaturas del catálogo filtradas por cursoActual + semestreEnCurso
+for (final entry in carreraData) {
+  for (final s in entry.subjects) {
+    if (s.curso == p.cursoActual && s.semestre == p.semestreEnCurso) {
+      creditosCalculados += (s.creditos ?? 0).round();
+      horasCalculadas += (s.horas ?? 0);
+    }
+  }
+}
+// 2. Incluir transversales mapeadas al mismo curso+semestre
+if (mapeos.isNotEmpty) {
+  final mappedIds = mapeos
+    .where((m) => m.curso == p.cursoActual && m.semestre == p.semestreEnCurso)
+    .map((m) => m.asignaturaId).toSet();
+  // Sumar créditos/horas de esas asignaturas
+}
+```
 
 ## 8. Componentes Reutilizables
 
@@ -1227,14 +1302,137 @@ Esta lógica ya existía en versiones anteriores y se verificó su correcto func
 |--------|------|----------|---------|
 | `SaludoCard` | StatelessWidget | recibe `DashboardData` | `widgets/saludo_card.dart` |
 | `SmartBannerCard` | ConsumerWidget | `consejoSmartProvider` | `widgets/smart_banner_card.dart` |
-| `QuickActionsRow` | StatelessWidget | ninguno | `widgets/quick_actions_row.dart` |
+| `QuickActionsRow` | ConsumerWidget | `diaPendienteProvider` | `widgets/quick_actions_row.dart` |
 | `PlanWeekBar` | ConsumerWidget | `rutinaActivaSeleccionadaProvider` | `widgets/plan_week_bar.dart` |
 | `CognitiveLoadBar` | ConsumerWidget | `cargaCognitivaProvider` | `widgets/cognitive_load_bar.dart` |
 | `StreakRow` | StatelessWidget | recibe params | `widgets/streak_badge.dart` |
 | `KpiGrid` | StatelessWidget | recibe `DashboardData` | `widgets/kpi_grid.dart` |
-| `BienestarCard` | StatelessWidget | recibe perfil | `widgets/bienestar_card.dart` |
-| `RetosSection` | StatelessWidget | recibe `DashboardData` | `widgets/retos_section.dart` |
-| `RutinasSection` | StatelessWidget | recibe `DashboardData` | `widgets/rutinas_section.dart` |
+| `TimelineSection` | ConsumerStatefulWidget | `timelineHoyProvider` + `retosProvider` | `widgets/timeline_section.dart` |
+
+### 9.1.1 TimelineSection — 3 Tabs (NUEVO v6.2)
+
+**Archivo:** `app/lib/features/dashboard/presentation/widgets/timeline_section.dart` (454 líneas)
+**Modelo:** `app/lib/shared/models/timeline_item.dart` (186 líneas)
+**Provider:** `app/lib/features/dashboard/application/timeline_provider.dart` (91 líneas)
+
+La línea de tiempo unificada del dashboard ahora tiene navegación por pestañas con 3 vistas:
+
+```mermaid
+flowchart LR
+    TS["TimelineSection\nConsumerStatefulWidget"] --> TC["TabController(length: 3)"]
+    TC --> T1["Tab: Hoy"]
+    TC --> T2["Tab: Semana"]
+    TC --> T3["Tab: Retos"]
+    
+    T1 --> TH["_TabHoy\n• Bloques académicos\n• Sesiones completadas\n• _EntrenamientoPendienteCard"]
+    T2 --> TS2["_TabSemana\n• Entregas 7 días\n• Agrupadas cronológicamente"]
+    T3 --> TR["_TabRetos\n• Retos activos\n• Progreso + días restantes"]
+```
+
+**Estructura del widget:**
+- `TabController(length: 3, vsync: this)` con `SingleTickerProviderStateMixin`
+- `Card` con header (icono timeline + título + botón "Plan" → `/plan-semanal`)
+- `TabBar` con 3 tabs: "Hoy", "Semana", "Retos"
+- `TabBarView` con altura fija 280px
+
+**Tab "Hoy" (`_TabHoy`):**
+- Consume `timelineHoyProvider` (5 queries en paralelo)
+- Separa entrenamiento pendiente (`TimelineTipo.entrenamientoPendiente`) del resto
+- Muestra `_EntrenamientoPendienteCard` destacada (naranja, con botón "Comenzar")
+- Muestra resto de items con `_TimelineTarjeta` (max 4-5)
+- Loading: `CircularProgressIndicator`, Error: texto "Error al cargar", Empty: "Sin actividades hoy"
+
+**Tab "Semana" (`_TabSemana`):**
+- Filtra items del `timelineHoyProvider` con `tipo == TimelineTipo.entrega`
+- Muestra max 7 entregas con `_TimelineTarjeta`
+- Empty: "Sin entregas esta semana"
+
+**Tab "Retos" (`_TabRetos`):**
+- Consume `retosProvider` (provider existente del módulo de retos)
+- Muestra max 5 retos con `_RetoCard`: título, `LinearProgressIndicator` con %, días restantes
+- Color dinámico: `fitness` → verde, resto → púrpura
+- Empty: "Sin retos activos"
+
+#### TimelineTipo — 9 valores
+
+| Valor | Color | Ícono | Label | Origen de datos |
+|-------|-------|-------|-------|-----------------|
+| `estudio` | Azul `#2196F3` | `menu_book` | Estudio | `horarios_academicos` (tipo='estudio') |
+| `clase` | Púrpura `#9C27B0` | `school` | Clase | `horarios_academicos` (tipo='clase') |
+| `deporte` | Verde `#4CAF50` | `fitness_center` | Deporte | `horarios_academicos` (tipo='deporte') o `sesiones_registradas` |
+| `sesion` | Verde `#4CAF50` | `check_circle` | Sesion | `sesiones_registradas` (completada) |
+| `entrega` | Rojo `#FF5722` | `assignment_turned_in` | Entrega | `entregas_examenes` (no completadas, 7 días) |
+| `reto` | Púrpura `#7C4DFF` | `emoji_events` | Reto | `retos` (activos, no completados) |
+| `entrenamientoPendiente` | Naranja `#FF9800` | `fitness_center` | Pendiente | `diaPendienteProvider` |
+| `nutricion` | Cyan `#00BCD4` | `restaurant` | Nutricion | FUTURIBLE — sin query |
+| `sueno` | Índigo `#3F51B5` | `bedtime` | Sueno | FUTURIBLE — sin query |
+
+#### Nuevos providers de timeline
+
+| Provider | Tipo | Propósito | Fuentes |
+|----------|------|-----------|---------|
+| `timelineHoyProvider` | `FutureProvider<List<TimelineItem>>` | Línea de tiempo unificada del día con 5 queries en paralelo | `horarios_academicos` (hoy) + `sesiones_registradas` (hoy) + `entregas_examenes` (7d, no completadas) + `retos` (activos) + `diaPendienteProvider` |
+| `diaPendienteProvider` | `FutureProvider<Map<String, String>?>` | Primer día no completado de la rutina activa, iterando TODAS las semanas. Retorna `{diaId, rutinaId}` o `null`. Unificado para QuickAction, Timeline y RutinaDetalle. | `dashboardProvider` → `semanasDeRutinaProvider(rutinaId)` → `diasDeSemanaProvider(semanaId)` |
+
+**`timelineHoyProvider` — 5 queries en paralelo:**
+```dart
+final resultados = await Future.wait([
+  // 1. Horarios académicos de hoy
+  client.from('horarios_academicos').select()...,
+  // 2. Sesiones registradas hoy
+  client.from('sesiones_registradas').select()...,
+  // 3. Entregas pendientes (7 días, no completadas)
+  client.from('entregas_examenes').select()...,
+  // 4. Retos activos
+  client.from('retos').select()...,
+]);
+// 5. Día pendiente (vía ref.read, no Future.wait)
+final diaPend = ref.read(diaPendienteProvider).valueOrNull;
+```
+
+**`diaPendienteProvider` — lógica unificada:**
+```dart
+final diaPendienteProvider = FutureProvider<Map<String, String>?>((ref) async {
+  final data = ref.watch(dashboardProvider).valueOrNull;
+  if (data == null || data.rutinasActivas.isEmpty) return null;
+  final rutinaId = data.rutinasActivas.first.rutina.id;
+  // Itera TODAS las semanas, no solo la primera
+  final semanas = await ref.watch(semanasDeRutinaProvider(rutinaId).future);
+  for (final semana in semanas) {
+    final dias = await ref.watch(diasDeSemanaProvider(semana.id).future);
+    for (final dia in dias) {
+      if (dia.estado != 'completado') {
+        return {'diaId': dia.id, 'rutinaId': rutinaId};
+      }
+    }
+  }
+  return null;
+});
+```
+
+#### TimelineItem — DTO unificado
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | `String` | ID único del item |
+| `tipo` | `TimelineTipo` | Tipo de actividad (9 valores) |
+| `titulo` | `String` | Título principal |
+| `subtitulo` | `String` | Subtítulo descriptivo |
+| `horaInicio` | `DateTime` | Hora de inicio |
+| `horaFin` | `DateTime` | Hora de fin |
+| `completado` | `bool` | Si la actividad está completada |
+| `datosOriginales` | `Object?` | Referencia al modelo original (HorarioAcademicoDb, SesionRegistradaDb, etc.) |
+| `duracionMinutos` | `int?` | Duración en minutos |
+| `rpe` | `int?` | RPE de la sesión (si aplica) |
+| `diasRestantes` | `int?` | Días hasta el vencimiento (entregas, retos) |
+| `rutinaId` | `String?` | ID de la rutina asociada |
+
+**Factory constructors:**
+- `TimelineItem.desdeHorario(HorarioAcademicoDb)` — tipo según `tipoActividad`
+- `TimelineItem.desdeSesion(SesionRegistradaDb)` — tipo `deporte`, completado=true
+- `TimelineItem.desdeEntrega(EntregaExamenDb)` — tipo `entrega`, subtítulo "Vence en X días"
+- `TimelineItem.desdeReto(RetoDb)` — tipo `reto`, subtítulo "Quedan X días"
+- `TimelineItem.desdeDiaPendiente(Map<String, String>)` — tipo `entrenamientoPendiente`
 
 ### 9.2 Funciones compartidas
 
@@ -1293,9 +1491,693 @@ Extraídas a `app/lib/shared/widgets/dashboard_dialogs.dart`:
 | CU-19 | Buscar y seleccionar ejercicios | Explorador, Detalle, Constructor | ✅ |
 | **CU-20** | **Crear rutina con recomendación IA** | **NuevaRutinaScreen (3 pasos + IA)** | ✅ |
 | **CU-21** | **Check-in diario durante primer descanso** | **LiveSessionScreen → _CheckInOverlay (no bloqueante)** | ✅ |
+| **CU-22** | **Crear reto complejo con dependencias** | **CrearRetoComplejoScreen (3 pasos: metadatos, hitos, dependencias)** | ✅ |
+| **CU-23** | **Visualizar grafo de dependencias** | **DetalleRetoScreen → GrafoDependencias** | ✅ |
 
 ---
 
-**Documento compilado:** 09-06-2026
-**Última revisión:** v5.2
-**Referencia:** Alineado con SRS v3.0, Arquitectura v4.0, Pipeline IA v5.0
+## 13. Pantallas de Retos (Sprint 7 — Fase A3)
+
+### 13.1 `DetalleRetoScreen` — Integración del Grafo de Dependencias
+
+**Archivo:** `app/lib/features/retos/presentation/detalle_reto_screen.dart`
+**Ruta:** `/retos/:id`
+
+Cuando un reto tiene `tiene_dependencias = true`, la pantalla de detalle ahora incluye el widget `GrafoDependencias` entre la cabecera y la lista de hitos. El grafo se construye desde el provider `grafoRetoProvider(retoId)`:
+
+```dart
+// En detalle_reto_screen.dart, dentro del build():
+if (reto.tieneDependencias) ...[
+  const SizedBox(height: 12),
+  Consumer(
+    builder: (context, ref, _) {
+      final grafoAsync = ref.watch(grafoRetoProvider(retoId));
+      return grafoAsync.when(
+        data: (grafo) => GrafoDependencias(grafo: grafo),
+        loading: () => const _SkeletonGrafo(),
+        error: (e, _) => _ErrorGrafoCard(error: e.toString()),
+      );
+    },
+  ),
+  const SizedBox(height: 12),
+],
+```
+
+### 13.2 `CrearRetoComplejoScreen` — 3 Pasos
+
+**Archivo:** `app/lib/features/retos/presentation/crear_reto_complejo_screen.dart`
+**Ruta:** `/retos/complejo`
+
+El flujo de creación de retos complejos se ha ampliado a 3 pasos:
+
+| Paso | Nombre | Contenido |
+|------|--------|-----------|
+| 1 | Metadatos | Título, tipo (fitness/academic), meta, fechas, visibilidad |
+| 2 | Hitos | Lista de hitos con título, porcentaje de peso, orden. Añadir/eliminar hitos dinámicamente |
+| 3 | Dependencias | Configuración de dependencias entre hitos: seleccionar dependencias (checkboxes), tipo de condición (AND/OR/X_OF_Y), valor N para X_OF_Y |
+
+### 13.3 Widget `GrafoDependencias`
+
+**Archivo:** `app/lib/features/retos/presentation/widgets/grafo_dependencias.dart` (~233 líneas)
+
+Widget que visualiza el grafo de dependencias de los hitos de un reto como un `Card` con layout estratificado por profundidad:
+
+```
+┌─────────────────────────────────────────────────┐
+│ 🔗 Dependencias                    Leyenda      │
+│                                                 │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐  │
+│  │  Hito 1  │    │  Hito 2  │    │  Hito 3  │  │
+│  │  20% ✅  │    │  30% 🔒  │    │  50% 🔒  │  │
+│  └────┬─────┘    └────┬─────┘    └──────────┘  │
+│       │ AND           │ OR                      │
+│       └──────┬────────┘                         │
+│              ▼                                   │
+│  ┌──────────────────────┐                       │
+│  │       Hito 4         │                       │
+│  │       50% 🔒         │                       │
+│  │  Cond: X OF Y (1/2)  │                       │
+│  └──────────────────────┘                       │
+└─────────────────────────────────────────────────┘
+```
+
+**Colores por estado:**
+
+| Estado | Color de fondo | Color de borde | Icono |
+|--------|---------------|----------------|-------|
+| `bloqueado` | `surfaceContainerHighest` | `grey.shade300` | `lock_rounded` |
+| `disponible` | `blue.withValues(alpha: 0.15)` | `blue` | `radio_button_unchecked` |
+| `enProgreso` | `orange.withValues(alpha: 0.15)` | `orange` | `play_circle_rounded` |
+| `completado` | `green.withValues(alpha: 0.15)` | `green` | `check_circle_rounded` |
+
+**Leyenda de condiciones en aristas:**
+
+| Condición | Label |
+|-----------|-------|
+| `AND` | "Requiere todas" |
+| `OR` | "Requiere 1" |
+| `X_OF_Y` | "Requiere N de Y" |
+
+### 13.4 Widget `_NodoHitoCard`
+
+**Archivo:** `app/lib/features/retos/presentation/widgets/grafo_dependencias.dart` (widget privado)
+
+Tarjeta individual que representa un hito dentro del grafo:
+
+- **Icono de estado** (22px a la izquierda): coloreado según `EstadoHito`
+- **Título del hito** con peso porcentual (`"Hito 1 — 20%"`)
+- **Barra de progreso** (`LinearProgressIndicator`) con el progreso actual del hito
+- **Chip de condición de desbloqueo**: visible solo si el hito está bloqueado y tiene dependencias. Muestra el tipo de condición y el progreso actual (ej: "AND (1/2)")
+- **Indicador visual**: borde coloreado según estado, opacidad reducida para hitos bloqueados
+
+### 13.5 Providers del Módulo de Retos (Sprint 7)
+
+| Provider | Tipo | Propósito | Fuente |
+|----------|------|-----------|--------|
+| `grafoRetoProvider` | `FutureProvider.family<GrafoReto?, String>` | Construye el grafo de dependencias desde `hitos_de_reto`. Usa `RetoDependenciaService` para construir nodos, aristas, detección de ciclos (DFS) y asignación de profundidad | `hitos_de_reto` WHERE `reto_id` |
+| `retoDependenciaServiceProvider` | `Provider<RetoDependenciaService>` | Servicio de construcción y validación de grafos de dependencias | — |
+
+---
+
+## 14. Sincronización Offline (Sprint 7 — Fase C1)
+
+### 14.1 Arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     UI Layer (Riverpod)                      │
+│  ┌─────────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │ OfflineIndicator│  │ SyncButton   │  │ ColaBadge     │  │
+│  │ Widget          │  │ Widget       │  │ (pendientes)  │  │
+│  └────────┬────────┘  └──────┬───────┘  └───────┬───────┘  │
+│           │                  │                   │           │
+├───────────┼──────────────────┼───────────────────┼───────────┤
+│           ▼                  ▼                   ▼           │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │           sync_provider.dart (Providers)              │    │
+│  │  connectivityStateProvider  ── Stream<State>         │    │
+│  │  offlineQueueLengthProvider ── int (cola Hive)       │    │
+│  │  syncProgressProvider       ── double (0.0-1.0)     │    │
+│  │  sincronizarColaOffline()   ── Future<void>          │    │
+│  └──────────┬───────────────────────────────────────────┘    │
+│             │                                                 │
+├─────────────┼─────────────────────────────────────────────────┤
+│             ▼                                                 │
+│  ┌──────────────────────┐  ┌────────────────────────┐       │
+│  │ ConnectivityService  │  │ OfflineQueueService    │       │
+│  │ connectivity_plus    │  │ Hive box: offline_queue│       │
+│  │ Stream<State>        │  │ encolar()/procesarCola()│       │
+│  └──────────────────────┘  └────────────────────────┘       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 14.2 Servicios
+
+#### `ConnectivityService`
+**Archivo:** `app/lib/features/sync/infrastructure/connectivity_service.dart` (35 líneas)
+
+- Usa `connectivity_plus ^6.1.0` para monitorear conectividad
+- `Stream<ConnectivityState> onStateChange` — emite cambios de conectividad en tiempo real
+- `Future<ConnectivityState> checkNow()` — verificación puntual del estado actual
+- `Future<bool> isOnline` — conveniencia booleana
+- Enum `ConnectivityState`: `online`, `offline`, `syncing`
+
+#### `OfflineQueueService`
+**Archivo:** `app/lib/features/sync/infrastructure/offline_queue_service.dart` (116 líneas)
+
+- **Cola Hive:** box `offline_queue` inicializada en `main.dart`
+- **Operaciones soportadas:** `INSERT`, `UPDATE`, `DELETE`
+- **DTO `OperacionPendiente`:** `id`, `tabla`, `operacion`, `datos` (JSON), `creadoEn`, `identificador` (opcional, para UPDATE/DELETE), `reintentos` (máx 3)
+- **`encolar({tabla, operacion, datos, identificador?})`:** añade operación al final de la cola
+- **`procesarCola()`:** recorre la cola secuencialmente, ejecutando cada operación contra Supabase. Si una operación falla, incrementa `reintentos` y continúa con la siguiente. Operaciones con `reintentos >= maxReintentos` se descartan
+- **`longitud`:** cantidad de operaciones pendientes
+
+### 14.3 Providers
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `connectivityServiceProvider` | `Provider<ConnectivityService>` | Instancia única del servicio de conectividad |
+| `connectivityStateProvider` | `StreamProvider<ConnectivityState>` | Stream del estado de conectividad (online/offline/syncing) |
+| `offlineQueueServiceProvider` | `Provider<OfflineQueueService>` | Instancia única de la cola offline |
+| `offlineQueueLengthProvider` | `Provider<int>` | Longitud actual de la cola (pendientes) |
+| `syncProgressProvider` | `StateProvider<double>` | Progreso de sincronización (0.0 → 1.0) |
+
+### 14.4 Flujo de Sincronización
+
+1. **Sin conexión** → la UI muestra `OfflineIndicator` (banner naranja). Las mutaciones se encolan en Hive.
+2. **Reconexión** → `connectivityStateProvider` emite `ConnectivityState.online`. La UI llama a `sincronizarColaOffline(ref)`.
+3. **Sincronización** → `syncProgressProvider` se actualiza mientras `OfflineQueueService.procesarCola()` recorre la cola.
+4. **Completado** → `syncProgressProvider = 1.0`. La UI muestra confirmación y los providers afectados se invalidan.
+
+### 14.5 DTO `OperacionPendiente`
+
+**Archivo:** `app/lib/features/sync/domain/operacion_pendiente_dto.dart` (21 líneas)
+
+```dart
+class OperacionPendiente {
+  final String id;
+  final String tabla;           // tabla Supabase destino
+  final String operacion;       // 'INSERT' | 'UPDATE' | 'DELETE'
+  final Map<String, dynamic> datos;  // payload de la operación
+  final DateTime creadoEn;
+  final String? identificador;  // ID del registro (para UPDATE/DELETE)
+  final int reintentos;         // intentos fallidos
+
+  static const maxReintentos = 3;
+}
+```
+
+---
+
+## 15. Analítica Avanzada (Sprint 7B)
+
+### 15.1 Arquitectura
+
+El módulo de analítica proporciona visualización de tendencias de rendimiento del usuario mediante gráficos interactivos (`fl_chart`) y generación de insights interpretativos en español.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   AnaliticaScreen                            │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  SegmentedButton: Semanal | Mensual | Trimestral   │    │
+│  └─────────────────────────────────────────────────────┘    │
+│  ┌──────────────────┐ ┌──────────────────┐                │
+│  │ RPE Promedio     │ │ Volumen Total    │                │
+│  │      7.2         │ │    320 min       │                │
+│  └──────────────────┘ └──────────────────┘                │
+│  ┌──────────────────┐ ┌──────────────────┐                │
+│  │ Días Entrenados  │ │ Consistencia %   │                │
+│  │      4/7         │ │      85%         │                │
+│  └──────────────────┘ └──────────────────┘                │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │         TendenciaRpeChart (LineChart)                 │  │
+│  │  RPE semanal con línea de tendencia                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │         VolumenBarChart (BarChart)                    │  │
+│  │  Minutos por semana con colores por objetivo         │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │     CorrelacionCargaScatter (ScatterChart)            │  │
+│  │  Carga académica (FCT) vs RPE + línea regresión      │  │
+│  │  📊 Coeficiente Pearson: r = -0.42                    │  │
+│  │  💬 "A mayor carga académica, tiendes a reportar     │  │
+│  │      menor esfuerzo en tus entrenamientos"            │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 15.2 Pantalla `AnaliticaScreen`
+
+**Archivo:** `app/lib/features/analitica/presentation/analitica_screen.dart`
+**Ruta:** `/analitica` (integrada en navegación principal)
+
+- **Selector de periodo:** `SegmentedButton<PeriodoAnalitica>` con 3 opciones: Semanal, Mensual, Trimestral
+- **Métricas clave:** 4 tarjetas (`_MetricaCard`) con RPE promedio, volumen total (min), días entrenados, consistencia (%)
+- **Charts:** `TendenciaRpeChart` (LineChart), `VolumenBarChart` (BarChart), `CorrelacionCargaScatter` (ScatterChart)
+- **Insights:** Frases generadas por `InsightGenerator` desde correlaciones y tendencias
+
+### 15.3 Charts con `fl_chart`
+
+#### `TendenciaRpeChart`
+- **Tipo:** `LineChart` de `fl_chart ^0.70.0`
+- **Datos:** RPE promedio semanal desde `v_analitica_semanal`
+- **Visualización:** Puntos semanales + línea de tendencia (regresión simple)
+- **Tooltips:** Al tocar punto: "Semana 12 jun — RPE 7.2"
+- **Provider fuente:** `tendenciaRpeProvider`
+
+#### `VolumenBarChart`
+- **Tipo:** `BarChart` de `fl_chart`
+- **Datos:** Volumen total en minutos por semana desde `v_analitica_semanal`
+- **Colores:** Barras coloreadas según objetivo cumplido (verde) o por debajo (naranja)
+- **Provider fuente:** `volumenSemanalProvider`
+
+#### `CorrelacionCargaScatter`
+- **Tipo:** `ScatterChart` de `fl_chart`
+- **Datos:** Eje X = FCT (Factor de Carga Total, 0-100), Eje Y = RPE promedio (1-10)
+- **Visualización:** Puntos de dispersión + línea de regresión lineal + coeficiente de Pearson
+- **Provider fuente:** `correlacionCargaProvider`
+- **InsightGenerator:** Frases interpretativas en español como:
+  - `"A mayor carga académica, tiendes a reportar menor esfuerzo en tus entrenamientos"` (correlación negativa)
+  - `"Tu rendimiento es consistente independientemente de la carga académica"` (correlación débil)
+
+### 15.4 Providers de Analítica
+
+| Provider | Tipo | Propósito | Fuente |
+|----------|------|-----------|--------|
+| `analiticaRepositoryProvider` | `Provider<AnaliticaRepository>` | Repositorio que consulta `v_analitica_semanal` + `carga_academica_semanal`, calcula correlación Pearson (~220 líneas) | `v_analitica_semanal` |
+| `analiticaSemanalProvider` | `FutureProvider<List<MetricaSemanal>>` | Datos agregados por semana (RPE, volumen, calorías, días) | `v_analitica_semanal` |
+| `tendenciaRpeProvider` | `FutureProvider<List<FlSpot>>` | Puntos (semana, RPE) para LineChart | Derivado de `analiticaSemanalProvider` |
+| `volumenSemanalProvider` | `FutureProvider<List<BarChartGroupData>>` | Datos de volumen para BarChart | Derivado de `analiticaSemanalProvider` |
+| `correlacionCargaProvider` | `FutureProvider<InsightCorrelacion?>` | Correlación Pearson: FCT vs RPE con frases interpretativas | `AnaliticaRepository` |
+| `periodoSeleccionadoProvider` | `StateProvider<PeriodoAnalitica>` | Periodo actual seleccionado (semanal/mensual/trimestral) | Estado local |
+
+### 15.5 DTOs
+
+#### `MetricaSemanal`
+**Archivo:** `app/lib/features/analitica/domain/metrica_semanal_dto.dart`
+- `inicioSemana` (DateTime), `totalSesiones` (int), `rpePromedio` (double)
+- `volumenTotalMin` (int), `caloriasTotales` (int), `ejerciciosDistintos` (int)
+- `factory fromMap(Map<String, dynamic>)` para datos de `v_analitica_semanal`
+
+#### `InsightCorrelacion`
+**Archivo:** `app/lib/features/analitica/domain/insight_correlacion_dto.dart`
+- `coeficientePearson` (double), `puntos` (List<Map<String, double>>)
+- `fraseInterpretativa` (String) — generada por `InsightGenerator`
+
+#### `PeriodoAnalitica` (enum)
+**Archivo:** `app/lib/features/analitica/domain/periodo_analitica.dart`
+- Valores: `semanal`, `mensual`, `trimestral`
+- Getters: `semanas` (int), `etiqueta` (String)
+
+### 15.6 `InsightGenerator`
+
+**Archivo:** `app/lib/features/analitica/infrastructure/insight_generator.dart`
+
+Generador estático de frases interpretativas en español:
+- **Racha:** `"Llevas {n} semanas consecutivas entrenando. ¡Sigue así!"`
+- **Consistencia:** `"Tu consistencia es del {pct}%. {recomendacion}"`
+- **Volumen:** `"Esta semana acumulaste {min} minutos de entrenamiento"`
+- **Correlación:** `"A mayor carga académica, tiendes a reportar {tendencia} esfuerzo"`
+
+### 15.7 `AnaliticaRepository`
+
+**Archivo:** `app/lib/features/analitica/infrastructure/analitica_repository.dart` (~220 líneas)
+
+- `obtenerMetricasSemanales(usuarioId, semanas)` → consulta `v_analitica_semanal`
+- `obtenerCorrelacionCarga(usuarioId)` → cruza `v_analitica_semanal` con `carga_academica_semanal`, calcula correlación Pearson
+- `obtenerCargaAcademicaSemanal(usuarioId)` → consulta `carga_academica_semanal`
+
+---
+
+---
+
+## 16. Pantalla Pomodoro (Sprint 9A)
+
+**Ruta:** `/pomodoro`
+**Archivos:** `features/pomodoro/` con domain/application/presentation/
+
+### 16.1 Arquitectura
+
+```
+features/pomodoro/
+├── domain/
+│   └── pomodoro_session.dart       # DTO con estados de la sesión
+├── application/
+│   └── pomodoro_provider.dart      # StateNotifier con Timer.periodic
+└── presentation/
+    ├── pomodoro_screen.dart         # Pantalla principal
+    └── widgets/
+        └── pomodoro_progress_painter.dart  # Anillo CustomPainter
+```
+
+### 16.2 Provider `pomodoroProvider`
+
+**Tipo:** `StateNotifierProvider<PomodoroNotifier, PomodoroState>`
+**Archivo:** `app/lib/features/pomodoro/application/pomodoro_provider.dart`
+
+Gestiona el ciclo de temporizador Pomodoro (25 minutos de estudio + 5 minutos de descanso):
+
+| Estado | Descripción |
+|--------|-------------|
+| `idle` | Sin sesión activa |
+| `estudio` | Temporizador de estudio (25 min) en curso |
+| `descanso` | Temporizador de descanso (5 min) en curso |
+| `pausado` | Sesión pausada manualmente |
+
+**Métodos del notifier:**
+- `iniciar()` — inicia temporizador de estudio (25 min)
+- `pausar()` — pausa el temporizador actual
+- `reanudar()` — reanuda desde donde se pausó
+- `reiniciar()` — reinicia desde 25:00
+- `saltarDescanso()` — salta al siguiente ciclo de estudio
+- `skip()` — finaliza la sesión actual
+
+**Implementación:** `Timer.periodic` con intervalo de 1 segundo. Cada tick decrementa el contador y actualiza el estado.
+
+### 16.3 Pantalla `PomodoroScreen`
+
+**Archivo:** `app/lib/features/pomodoro/presentation/pomodoro_screen.dart`
+
+Pantalla de temporizador con diseño minimalista:
+
+- **Anillo CustomPainter** (`PomodoroProgressPainter`): arco circular que decrece visualmente con el tiempo restante. Color dinámico: azul (estudio), verde (descanso).
+- **Tiempo restante** en el centro del anillo (formato `MM:SS`), fuente grande.
+- **Etiqueta de fase:** "Estudio" / "Descanso"
+- **Controles inferiores:** botones Iniciar, Pausar, Reanudar, Reiniciar, Skip
+- **Contador de ciclos:** "Ciclo X completado"
+
+---
+
+## 17. Pantalla Escanear (Sprint 9A)
+
+**Ruta:** `/escanear`
+**Archivos:** `features/escanear/` con domain/application/infrastructure/presentation/
+
+### 17.1 Arquitectura
+
+```
+features/escanear/
+├── domain/
+│   └── escanear_result.dart        # DTO con texto escaneado y metadatos
+├── application/
+│   └── escanear_provider.dart      # Provider del servicio de escaneo
+├── infrastructure/
+│   └── scanner_service.dart        # Abstracción ScannerService
+└── presentation/
+    └── escanear_screen.dart         # Pantalla dual Web/Mobile
+```
+
+### 17.2 Abstracción `ScannerService`
+
+**Archivo:** `app/lib/features/escanear/infrastructure/scanner_service.dart`
+
+Define la interfaz de escaneo con dos implementaciones condicionales por plataforma:
+
+| Plataforma | Comportamiento |
+|-----------|----------------|
+| **Web** | Muestra mensaje informativo: "El escaneo con cámara no está disponible en Web. Escribe o pega el texto manualmente." |
+| **Mobile (Android/iOS)** | Permite escribir/pegar texto libremente en un `TextField` multilínea |
+
+### 17.3 Pantalla `EscanearScreen`
+
+**Archivo:** `app/lib/features/escanear/presentation/escanear_screen.dart`
+
+Flujo completo de escaneo → guardado como apunte Markdown:
+
+1. **Entrada de texto:** `TextField` multilínea donde el usuario escribe o pega el contenido
+2. **Selección de asignatura:** dropdown con las asignaturas del usuario (desde `asignaturasProvider`)
+3. **Título opcional:** campo de texto para el título del apunte
+4. **Botón "Guardar":** crea un apunte Markdown vinculado a la asignatura seleccionada en `apuntes`
+5. **Confirmación:** SnackBar "Apunte guardado correctamente" y navegación de vuelta
+
+---
+
+## 18. Feed Social con Comentarios (Sprint 9C)
+
+**Archivos:** `features/social/` ahora con las 4 capas completas (domain, infrastructure, application, presentation)
+
+### 18.1 Arquitectura
+
+```
+features/social/
+├── domain/
+│   └── social_dto.dart             # DTOs Publicacion y Comentario
+├── infrastructure/
+│   └── social_repository.dart      # CRUD real: feed, likes, comentarios
+├── application/
+│   └── social_provider.dart        # 6 providers + mutaciones
+└── presentation/
+    ├── muro_social_screen.dart      # ConsumerStatefulWidget con filtros
+    └── widgets/
+        ├── feed_item_card.dart      # Card de publicación con comentarios
+        ├── comentario_card.dart     # Card individual de comentario
+        └── comentario_input.dart    # Barra de input de comentario
+```
+
+### 18.2 Migración: tabla `comentarios_feed`
+
+**Archivo:** `supabase/migrations/20260616_0002_social_moderacion.sql`
+
+- Tabla `comentarios_feed`: `id`, `publicacion_id` (FK → `actividades_sociales`), `usuario_id`, `contenido`, `creado_en`, `editado_en`, `eliminado`
+- RLS: autor puede editar/eliminar sus comentarios. Lectura: cualquier usuario autenticado.
+- Soft delete con columna `eliminado`.
+
+### 18.3 SocialRepository con CRUD real
+
+**Archivo:** `app/lib/features/social/infrastructure/social_repository.dart`
+
+| Método | Descripción |
+|--------|-------------|
+| `obtenerFeed(usuarioId, pagina, limite, tipoFiltro)` | Feed paginado con JOINs: `actividades_sociales` + `usuarios` + conteo de likes y comentarios |
+| `toggleLike(publicacionId, usuarioId)` | Alterna like: INSERT si no existe, DELETE si existe. Retorna nuevo conteo |
+| `obtenerLikeState(publicacionId, usuarioId)` | Verifica si el usuario dio like a una publicación |
+| `publicarEnFeed(usuarioId, tipo, contenido)` | INSERT en `actividades_sociales` |
+| `obtenerComentarios(publicacionId)` | SELECT con JOIN a `usuarios` para avatar/nombre |
+| `enviarComentario(publicacionId, usuarioId, contenido)` | INSERT en `comentarios_feed` |
+| `editarComentario(comentarioId, nuevoContenido)` | UPDATE soft |
+| `eliminarComentario(comentarioId)` | UPDATE `eliminado = true` |
+
+### 18.4 Providers Riverpod
+
+**Archivo:** `app/lib/features/social/application/social_provider.dart`
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `socialFeedProvider` | `FutureProvider<List<Publicacion>>` | Feed paginado con JOINs (usuarios, conteos, mi_like) |
+| `socialCommentsProvider.family` | `FutureProvider.family<List<Comentario>, String>` | Comentarios de una publicación por ID |
+| `likeStateProvider.family` | `FutureProvider.family<bool, String>` | Estado de like del usuario para una publicación |
+
+**Mutaciones:**
+| Mutación | Descripción |
+|----------|-------------|
+| `toggleLike(publicacionId, ref)` | Alterna like y revalida `socialFeedProvider` |
+| `publicarEnFeed(contenido, tipo, ref)` | Crea publicación y revalida feed |
+| `enviarComentario(publicacionId, contenido, ref)` | Inserta comentario y revalida `socialCommentsProvider` |
+| `editarComentarioMutation(comentarioId, nuevoContenido, ref)` | Edita comentario y revalida |
+| `eliminarComentarioMutation(comentarioId, ref)` | Soft delete y revalida |
+
+### 18.5 Widgets
+
+#### `FeedItemCard`
+**Archivo:** `app/lib/features/social/presentation/widgets/feed_item_card.dart`
+
+- Avatar del autor + nombre + tiempo relativo
+- Contenido de la publicación con tipo (logro, sesión, reto, etc.)
+- Botón de like con animación (`AnimatedScale` + color)
+- Conteo de likes y comentarios
+- Sección de comentarios expandible: al tocar "X comentarios", se despliega con `socialCommentsProvider`
+- `ComentarioInput` integrado al final de la sección expandida
+
+#### `ComentarioCard`
+**Archivo:** `app/lib/features/social/presentation/widgets/comentario_card.dart`
+
+- Avatar pequeño + nombre del autor
+- Contenido del comentario
+- Botones de editar/eliminar visibles solo para el autor del comentario
+- Indicador "editado" si `editado_en != null`
+
+#### `ComentarioInput`
+**Archivo:** `app/lib/features/social/presentation/widgets/comentario_input.dart`
+
+- `TextField` con validación 1-500 caracteres
+- Botón de enviar (deshabilitado si está vacío)
+- Teclado optimizado para texto
+
+### 18.6 MuroSocialScreen refactorizado
+
+**Archivo:** `app/lib/features/social/presentation/muro_social_screen.dart`
+
+Convertido a `ConsumerStatefulWidget`:
+- **Filtros temporales:** chips Horizontales (3 días, 7 días, 30 días, Todo)
+- **RefreshIndicator:** pull-to-refresh en el feed
+- **FAB funcional:** abre `BottomSheet` con formulario para crear publicación (contenido + tipo)
+- **Integración con retos:** al completar un reto, se publica automáticamente en el feed con tipo `logro`
+
+---
+
+## 19. Insignias y Rachas (Sprint 9D)
+
+**Ruta:** `/insignias`
+**Archivos:** `features/insignias/` completo con las 4 capas
+
+### 19.1 Arquitectura
+
+```
+features/insignias/
+├── domain/
+│   └── insignia_dto.dart           # DTOs Insignia y RachaState
+├── infrastructure/
+│   ├── insignias_repository.dart   # Consulta catálogo + usuario_insignias
+│   ├── insignia_engine.dart        # Motor de evaluación (12 criterios)
+│   └── racha_service.dart          # Cálculo de rachas diarias
+├── application/
+│   └── insignias_provider.dart     # 6 providers Riverpod
+└── presentation/
+    ├── insignias_screen.dart        # Pantalla principal con grid
+    └── widgets/
+        ├── insignia_card.dart       # Card con color por rareza
+        └── racha_indicator.dart     # Widget de racha con progreso
+```
+
+### 19.2 Migración: tablas `insignias` + `usuario_insignias`
+
+**Archivo:** `supabase/migrations/20260616_0003_insignias.sql`
+
+- **`insignias` (catálogo público, 15 insignias seed):**
+
+| Categoría | Insignias |
+|-----------|-----------|
+| 🏋️ Entrenamiento | Primer Entreno, Cien Sesiones, Bestia del Gym, Guerrera de Hierro |
+| 🧠 Académico | Estudiante Dedicado, Mente Brillante, Máquina de Apuntes |
+| 🎯 Retos | Retador Novato, Maestro de Retos, Imparable |
+| 💪 Esfuerzo | Sin Excusas, Consistencia de Acero, Madrugador |
+| 🔥 Rachas | Racha Imparable |
+| ☑️ Social | Social Butterfly |
+
+- **`usuario_insignias` (M:N):** `usuario_id`, `insignia_id`, `obtenida_en`. UNIQUE constraint previene duplicados.
+- **RLS:** catálogo público (lectura), `usuario_insignias` solo propietario.
+
+**Campos de `insignias`:**
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | UUID | PK |
+| `nombre` | TEXT | Nombre de la insignia |
+| `descripcion` | TEXT | Cómo obtenerla |
+| `categoria` | TEXT | entrenamiento, academico, retos, esfuerzo, rachas, social |
+| `rareza` | TEXT | comun, rara, epica, legendaria |
+| `icono` | TEXT | Emoji representativo |
+| `color_hex` | TEXT | Color primario en hex |
+| `criterio` | TEXT | Criterio de evaluación |
+
+**Colores por rareza:**
+| Rareza | Color | Borde |
+|--------|-------|-------|
+| Común | Gris `#9E9E9E` | Sutil |
+| Rara | Azul `#42A5F5` | Brillo leve |
+| Épica | Púrpura `#AB47BC` | Glow medio |
+| Legendaria | Dorado `#FFD700` | Glow intenso + partículas |
+
+### 19.3 InsigniaEngine (Motor de Evaluación)
+
+**Archivo:** `app/lib/features/insignias/infrastructure/insignia_engine.dart` (~170 líneas)
+
+Evalúa 12 criterios contra la base de datos y otorga insignias automáticamente cuando se cumplen:
+
+| # | Criterio | Consulta | Insignia |
+|---|----------|----------|----------|
+| 1 | Primera sesión completada | `COUNT sesiones_registradas >= 1` | Primer Entreno |
+| 2 | 100 sesiones completadas | `COUNT sesiones_registradas >= 100` | Cien Sesiones |
+| 3 | 10 check-ins | `COUNT estado_diario_usuario >= 10` | Sin Excusas |
+| 4 | RPE promedio ≥ 8 (últimas 10 sesiones) | `AVG(rpe) >= 8` | Bestia del Gym |
+| 5 | 50 sesiones + check-ins | `COUNT >= 50` | Guerrera de Hierro |
+| 6 | Racha ≥ 7 días | `racha_actual >= 7` | Racha Imparable |
+| 7 | 10+ bloques de estudio | `COUNT horarios_academicos tipo='estudio' >= 10` | Estudiante Dedicado |
+| 8 | 5+ apuntes creados | `COUNT apuntes >= 5` | Máquina de Apuntes |
+| 9 | 3+ retos completados | `COUNT retos estado='completado' >= 3` | Retador Novato |
+| 10 | 10+ retos completados | `COUNT >= 10` | Maestro de Retos |
+| 11 | 5+ publicaciones en feed | `COUNT actividades_sociales >= 5` | Social Butterfly |
+| 12 | 10+ insignias obtenidas | `COUNT usuario_insignias >= 10` | Imparable |
+
+**Método principal:** `evaluarInsignias(usuarioId, client)` — ejecuta los 12 criterios, compara con las ya obtenidas, e inserta las nuevas vía UNIQUE constraint.
+
+### 19.4 RachaService
+
+**Archivo:** `app/lib/features/insignias/infrastructure/racha_service.dart`
+
+Servicio de cálculo de rachas de actividad diaria:
+
+- **`calcularRacha(usuarioId)`:** consulta `sesiones_registradas` + `estado_diario_usuario` + `horarios_academicos` (estudio). Cuenta días consecutivos hacia atrás desde hoy. Retorna `RachaState`.
+- **Detección de riesgo:** si la última actividad fue hace <4 horas, el usuario está en zona de riesgo de perder la racha.
+- **Hitos de racha:** 7 días, 30 días, 100 días, 365 días.
+- **Mejor racha histórica:** consulta `usuarios.mejor_racha` como récord personal.
+- **DTO `RachaState`:** `diasConsecutivos`, `mejorRacha`, `hitosAlcanzados`, `riesgo` (bool), `progreso` (float 0-1 hacia el siguiente hito).
+
+### 19.5 Providers Riverpod
+
+**Archivo:** `app/lib/features/insignias/application/insignias_provider.dart`
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `insigniasRepositoryProvider` | `Provider<InsigniasRepository>` | Instancia única del repositorio |
+| `catalogoInsigniasProvider` | `FutureProvider<List<Insignia>>` | Catálogo completo de 15 insignias |
+| `insigniasUsuarioProvider` | `FutureProvider<List<Insignia>>` | Insignias obtenidas por el usuario (LEFT JOIN) |
+| `insigniasCountProvider` | `Provider<int>` | Conteo: obtenidas/total |
+| `rachaStateProvider` | `FutureProvider<RachaState>` | Estado de racha actual del usuario |
+| `insigniasRecienObtenidasProvider` | `StateProvider<List<Insignia>>` | Cola de insignias recién obtenidas para mostrar toast |
+
+**Acción `evaluarInsignias(usuarioId, ref)`:**
+- Ejecuta `InsigniaEngine.evaluarInsignias(usuarioId, client)`
+- Compara resultado con `insigniasUsuarioProvider` para detectar nuevas
+- Añade nuevas a `insigniasRecienObtenidasProvider` y muestra toast animado
+- Revalida `insigniasUsuarioProvider` y `insigniasCountProvider`
+
+**Integración en rutina_provider y retos_provider:**
+- `finalizarSesion()` → al finalizar, llama `evaluarInsignias()`
+- `completarReto()` → al completar, llama `evaluarInsignias()`
+- Ambas funciones son puntos de entrada del motor de insignias
+
+### 19.6 Widgets
+
+#### `InsigniasScreen`
+**Archivo:** `app/lib/features/insignias/presentation/insignias_screen.dart`
+
+`ConsumerStatefulWidget` con:
+- **Filtro por categoría:** 6 `FilterChip`s horizontales (Todas, Entrenamiento, Académico, Retos, Esfuerzo, Social)
+- **Grid 2 columnas:** `SliverGrid` con `InsigniaCard` para cada insignia
+- **Contador:** "X / 15 insignias" en el header
+- **Detalle BottomSheet:** al tocar una insignia, muestra nombre, descripción, categoría, rareza y fecha de obtención
+
+#### `InsigniaCard`
+**Archivo:** `app/lib/features/insignias/presentation/widgets/insignia_card.dart`
+
+- **Obtenida:** color vibrante según rareza, icono grande, nombre y fecha
+- **Bloqueada:** escala de grises, icono de candado, descripción del criterio
+- **Animación:** `AnimatedScale` al aparecer en el grid
+
+#### `InsigniaToast` (animación slide-up)
+- Se muestra brevemente (3s) cuando se obtiene una nueva insignia
+- Animación: slide desde abajo + fade in
+- Muestra icono, nombre y rareza de la insignia obtenida
+- Auto-descarta tras 3 segundos
+
+#### `RachaIndicator`
+**Archivo:** `app/lib/features/insignias/presentation/widgets/racha_indicator.dart`
+
+- **Barra de progreso:** `LinearProgressIndicator` hacia el siguiente hito (7, 30, 100, 365)
+- **Contador:** "🔥 X días consecutivos"
+- **Alerta de riesgo:** si quedan <4h para perder la racha, fondo rojo + texto "¡No pierdas tu racha!"
+- **Récord:** "🏆 Mejor racha: X días"
+- **Integrado en:** perfil (sección superior), dashboard (StreakRow)
+
+### 19.7 Integración con Dashboard
+
+- **StreakRow** ahora consume `rachaStateProvider` para mostrar racha real (antes era placeholder)
+- **InsigniaToast** se dispara automáticamente desde `insigniasRecienObtenidasProvider` al obtener una nueva insignia
+- El toast usa `Overlay` para aparecer sobre cualquier pantalla
+
+---
+
+**Documento compilado:** 13-06-2026
+**Última revisión:** v6.2 — Sprint 9 completado: añadidas §§16-19 (Pomodoro, Escanear, Social, Insignias). QuickActions actualizados.
+**Referencia:** Alineado con SRS v4.0, Arquitectura v4.3, Plan Maestro v1.3

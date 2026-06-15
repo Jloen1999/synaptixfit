@@ -668,6 +668,10 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
     final tieneEjercicios =
         ejerciciosAsync.whenOrNull(data: (e) => e.isNotEmpty) ?? false;
 
+    // Verifica si este dia es el dia pendiente actual
+    final diaPend = ref.watch(diaPendienteProvider).valueOrNull;
+    final esHoy = diaPend != null && diaPend['diaId'] == widget.dia.id;
+
     return Card(
       elevation: completado ? 0 : 0,
       margin: const EdgeInsets.only(bottom: 10),
@@ -692,7 +696,8 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(theme, completado, tiempoDia, tieneEjercicios),
+              _buildHeader(
+                  theme, completado, tiempoDia, tieneEjercicios, esHoy),
               if (_expandido && tieneEjercicios) ...[
                 const SizedBox(height: 10),
                 ejerciciosAsync.when(
@@ -770,7 +775,7 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
   }
 
   Widget _buildHeader(ThemeData theme, bool completado,
-      AsyncValue<int> tiempoDia, bool tieneEjercicios) {
+      AsyncValue<int> tiempoDia, bool tieneEjercicios, bool esHoy) {
     return Row(
       children: [
         Container(
@@ -804,6 +809,23 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
+                  // Badge "Hoy" cuando el dia coincide con el dia pendiente
+                  if (esHoy && !completado) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF9800).withAlpha(30),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('Hoy',
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFF9800))),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   if (tieneEjercicios)
                     AnimatedRotation(
                       turns: _expandido ? 0.5 : 0,

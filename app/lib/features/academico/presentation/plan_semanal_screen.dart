@@ -758,7 +758,8 @@ class _EntregaTimelineCard extends ConsumerWidget {
       color: theme.colorScheme.surfaceContainerLowest,
       child: InkWell(
         onTap: () async {
-          await toggleEntregaCompletada(entrega.id, !entrega.estaCompletado);
+          await toggleEntregaCompletada(entrega.id, !entrega.estaCompletado,
+              ref: ref);
           ref.invalidate(entregasPendientesProvider);
         },
         borderRadius: BorderRadius.circular(14),

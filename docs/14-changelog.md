@@ -5,6 +5,344 @@
 
 ---
 
+## [6.6.0] — 15-06-2026
+
+### Plan de estudios en PerfilScreen + Asignaturas transversales
+
+#### Fase 1 — Mapeo de transversales (BD)
+- **Nueva migración `20260616000008_asignaturas_usuario_semestre.sql`:** tabla `asignaturas_usuario_semestre(id, usuario_id, asignatura_id, curso, semestre)` con RLS propietario + admin bypass y UNIQUE(usuario_id, asignatura_id). Permite a usuarios mapear asignaturas sin temporalidad fija (semestre=0) a un curso y semestre específicos.
+
+#### Fase 2 — Modelo Dart y Providers
+- **Nuevo modelo `AsignaturaUsuarioSemestreDb`** en `db_models.dart` (línea 1838): 6 campos (id, usuarioId, asignaturaId, curso, semestre, creadoEn) con `fromMap`/`toMap`.
+- **Nuevo provider `carreraConAsignaturasProvider`:** carreras del usuario con asignaturas del catálogo. Busca por `usuario_carreras` (FK) primero; fallback a búsqueda por nombre.
+- **Nuevo provider `asignaturasUsuarioSemestreProvider`:** lista de mapeos del usuario desde `asignaturas_usuario_semestre`.
+- **Nuevo provider `asignaturasSinSemestreProvider`:** asignaturas del catálogo con `semestre=0` (optativas/transversales).
+- **Nueva función helper `_getCarrerasUsuario()`:** devuelve `carrera_id` del usuario lógica compartida.
+
+#### Fase 3 — UI: Stats + Plan de estudios
+- **Header de stats:** Ahora muestra 4 stats en `Row` con `Expanded`: Sesiones, XP, Calorías, Retos (XP como 4ª stat entre Sesiones y Calorías).
+- **Nueva sección "Plan de estudios":** cards de curso con contador de asignaturas en tiempo real, incluyendo transversales mapeadas (ej: "5+1 asig.").
+- **Sección colapsable "Asignaturas transversales":** `ExpansionTile` con lista de optativas sin semestre. Botón **+** para mapear al curso/semestre actual. Botón **✕** para quitar el mapeo.
+- **Curso** como línea editables (RadioGroup 1→maxCurso). **Semestre** editable con dropdown `RadioGroup<int>` de solo [1, 2] (1° o 2° semestre).
+- **Créditos/Horas del semestre:** calculados desde `asignaturas_catalogo` + transversales mapeadas al curso/semestre actual.
+
+#### Fase 4 — Seed fix
+- **Eliminado duplicado** "FUNDAMENTOS DE REDES" (Curso 1) de la carrera ITT en `grados.json`. La asignatura ya existía en Curso 2 correctamente; se eliminó la entrada duplicada en Curso 1 que causaba conflictos.
+
+#### Documentación
+- `00-plan-maestro.md`: migraciones 10→11, añadida migración 0008
+- `03-architecture.md`: migraciones 10→11, db_models 2004→2330 líneas, 40+→42+ modelos
+- `04-data-model.md`: migraciones 10→11, nueva tabla `asignaturas_usuario_semestre` con SQL, RLS y modelo Dart
+- `06-frontend.md`: stats actualizados (Row 4 columnas), nuevos providers, §7.7 Plan de estudios con cards de curso, transversales colapsable, edición curso/semestre
+- `07-backend.md`: migraciones 10→11, entrada 0008 añadida al historial
+- `08-installation.md`: migraciones 10→11
+- `14-changelog.md`: Esta entrada
+
+---
+
+## [6.4.0] — 13-06-2026
+
+### Sprint 9 — Pomodoro, Escanear, Social, Insignias y Refactor
+
+#### Fase 9B — Refactor de capas y limpieza
+- **Eliminadas 5 dependencias sin usar:** `reorderable_grid_view`, `lottie`, `cupertino_icons`, `url_launcher`, `image_picker`
+- **Corregido typo** `EjericicioRecienteDto` → `EjercicioRecienteDto` (6 ocurrencias)
+- **DTOs extraídos a domain/** en `bienestar/` (3 archivos: ejercicio_recomendado, recomendacion_result, historial_sesion)
+- **Capas domain/ creadas** en `auth/`, `academico/`, `perfil/`
+- **Capas infrastructure/ creadas** en `academico/`, `perfil/`
+- **Esqueletos creados** en `social/` y `notificaciones/` (domain + infrastructure + application)
+
+#### Fase 9A — QuickActions: Pomodoro y Escanear
+- **Pomodoro:** nuevo feature `pomodoro/` con temporizador de estudio (25/5 min), StateNotifier con Timer.periodic, anillo CustomPainter, ruta `/pomodoro`
+- **Escanear:** nuevo feature `escanear/` con abstracción ScannerService, pantalla dual Web/Mobile, guardado como apunte Markdown, ruta `/escanear`
+- **QuickActionsRow:** placeholders reemplazados por navegación real a `/pomodoro` y `/escanear`
+
+#### Fase 9C — Social Core: Comentarios y Feed
+- **Nueva tabla** `comentarios_feed` con RLS (autor edita/elimina)
+- **SocialRepository** con CRUD real: feed paginado con JOINs, likes persistentes, comentarios
+- **6 providers Riverpod:** socialFeedProvider, socialCommentsProvider.family, likeStateProvider.family, toggleLike, publicarEnFeed, enviarComentario
+- **Nuevos widgets:** FeedItemCard (comentarios expandibles), ComentarioCard, ComentarioInput
+- **MuroSocialScreen** refactorizado a ConsumerStatefulWidget con FAB funcional
+- **Retos → feed:** completar reto publica automáticamente en el feed social
+
+#### Fase 9D — Insignias y Rachas Avanzadas
+- **Nuevas tablas** `insignias` (catálogo público 15 insignias) + `usuario_insignias` (M:N)
+- **InsigniaEngine:** evalúa 12 criterios (sesiones, RPE, retos, racha, bloom_estudio, apuntes, publicaciones, likes, checkins, insignias) y otorga automáticamente
+- **RachaService:** cálculo de días consecutivos, detección de riesgo (<4h), hitos (7/30/100/365), mejor racha histórica
+- **6 providers Riverpod:** catalogoInsigniasProvider, insigniasUsuarioProvider, rachaStateProvider, insigniasRecienObtenidasProvider, evaluarInsignias()
+- **Nuevos widgets:** InsigniasScreen (grid + filtro 6 categorías), InsigniaCard (color por rareza), InsigniaToast (animación slide-up), RachaIndicator (barra progreso + alerta riesgo)
+- **Integrado en:** dashboard (toast automático), perfil (sección insignias + racha), finalizarSesion() y completarReto() (evaluación automática)
+
+#### Fase 9E (Fase B) — Correcciones de flujos y datos
+- **fecha_inicio en rutinas:** campo `fecha_inicio` ahora se persiste correctamente al crear y clonar rutinas
+- **Filtro retos expirados:** los retos con `fecha_fin < today` se excluyen de `retosActivosProvider` y no aparecen en timeline
+- **Fix `logrosCountProvider`:** corregido conteo de logros que incluía datos de otros usuarios por falta de filtro `usuario_id`
+
+#### Fase 9F (Fase C) — Corrección de horas fabricadas en TimelineItem
+- **7 fixes en `TimelineItem`:**
+  - `desdeHorario()`: corregida asignación de `horaInicio`/`horaFin` desde columnas reales de `horarios_academicos`
+  - `desdeSesion()`: corregida `duracionMinutos` extraída de `sesiones_registradas` en lugar de valor fabricado
+  - `desdeEntrega()`: corregida `fechaEntrega` desde `entregas_examenes.fecha_entrega` real
+  - `desdeReto()`: corregida `fechaFin` desde `retos.fecha_fin` y cálculo de `diasRestantes`
+  - `desdeDiaPendiente()`: corregida extracción de `diaId` y `rutinaId` desde el provider unificado
+  - `ordenarPorHora()`: corregida comparación para evitar `null` en hora
+  - `metadata`: corregidos parámetros inconsistentes entre factory constructors
+
+#### Fase 9G (Fase D) — Hitos en timeline y KPIs movidos a SaludoCard
+- **Hitos en timeline:** items de tipo `reto` ahora muestran hitos completados con badge (ej. "3/5 hitos")
+- **KPIs movidos:** los indicadores de racha, nivel y XP se integran visualmente en `SaludoCard` en lugar de `StreakRow` independiente
+- **SaludoCard unificado:** avatar + nombre + nivel + XP + racha + estado energético en un solo widget cohesivo
+
+#### Fase 9H (Fase E) — DatePicker y TimePicker
+- **DatePicker en `nueva_rutina_screen`:** selector de fecha para `fecha_inicio` usando `showDatePicker()` nativo de Flutter. Se persiste al crear la rutina y se muestra en `RutinaDetalleScreen`.
+- **TimePicker en entregas:** `showTimePicker()` para hora de entrega en `crear_entrega_screen.dart` y `editar_entrega_screen.dart`. Reemplaza el campo de texto manual por un selector de hora nativo.
+- **Formato 24h consistente:** ambos pickers usan `TimeOfDayFormat.HH_colon_mm` y se almacenan como `TIME` en BD.
+
+#### Migración de Consolidación (0004) — 16-06-2026
+- **3 tablas nuevas:** `planes_estudio` (planificación semanal), `apuntes` (notas Markdown), `sesiones_focus` (registro Pomodoro)
+- **1 vista:** `v_ejercicios_completos` actualizada con `string_agg` y columnas nuevas (`url_preview`, `modalidad_entrenamiento`, `tipo_medicion`, `es_circuito`)
+- **19 columnas añadidas** a 9 tablas existentes:
+  - `rutinas`: `estado`, `objetivo`, `duracion_semanas`
+  - `asignaturas`: `archivado`, `docente`
+  - `horarios_academicos`: `plan_estudio_id`, `prioridad`, `tipo_actividad`, `rutina_id`, `temas`
+  - `seleccion_de_ejercicios`: `dia_id`
+  - `sesiones_registradas`: `dia_id`, `tipo`
+  - `perfil_bienestar_usuario`: `ciudad`
+  - `actividades_sociales`: `metadata`
+  - `hitos_de_reto`: `estado`, `dependencias`, `tipo_condicion`, `condicion_n`
+  - `retos`: `tiene_dependencias`
+- **5 índices nuevos** para rendimiento (rutinas, horarios, sesiones, selección)
+- **Constraint corregido:** `notificaciones.prioridad` ampliado para aceptar `'baja'`
+
+#### Documentación
+- `02-requirements.md`: CU-27→30, HU-51→56, CA-29→32 añadidos
+- `06-frontend.md`: §§16-19 añadidas (Pomodoro, Escanear, Social, Insignias)
+- `AGENTS.md`: migraciones actualizadas (7→8), añadida referencia a `0005_fechas_coherencia`
+- `00-plan-maestro.md`: Sprint 9 COMPLETADO, migraciones 7→8
+- `09-testing.md`: nuevos módulos documentados
+- `04-data-model.md` → v5.2: nuevas tablas `planes_estudio`, `apuntes`, `sesiones_focus`; vista `v_ejercicios_completos` actualizada; columnas añadidas a 9 tablas existentes
+- `03-architecture.md`: migraciones actualizadas (7→8), añadida migración 0005
+- `07-backend.md`: migraciones actualizadas (7→8), entrada 0005 añadida al historial
+- `08-installation.md`: migraciones actualizadas (7→8)
+- `14-changelog.md`: Esta entrada + Fases 9E-9H añadidas
+
+#### Corrección de Flujos (Fase 2)
+- **Invalidaciones corregidas:** `crearRutinaCompleta()`, `guardarRutina()`, `finalizarSesion()` ahora invalidan `dashboardProvider` y `timelineHoyProvider` correctamente
+- **Reactividad en timeline:** `timelineHoyProvider` usa `ref.watch(diaPendienteProvider)` para actualizarse automáticamente
+- **Trigger de retos:** `toggleTareaCompletada()` ahora actualiza columna `estado` en `hitos_de_reto`, disparando `trg_hito_completado` correctamente
+- **Métricas de insignias:** `planes_estudio`, `apuntes_creados` y `bloques_estudio` ahora consultan las tablas correctas
+
+#### Panel de Administración — 14-06-2026
+- **Nueva columna** `rol` en `usuarios` (TEXT, default 'usuario', CHECK usuario/admin)
+- **Nueva función RPC** `wipe_user_data(p_usuario_id)` — elimina historial (24+ tablas) preservando perfil y reseteando nivel/XP/racha
+- **Nueva función helper** `es_admin()` — verifica si el usuario autenticado es admin
+- **Nuevo feature** `admin/` con: AdminPanelScreen, AdminUsuarioDetalle, AdminWipeDialog
+- **Nuevo provider** `esAdminProvider` para verificar rol admin
+- **Navegación:** ruta `/admin` protegida por rol, botón condicional en dashboard
+- **RLS admin bypass:** políticas "Admin read all usuarios", "Admin update usuarios", "Admin read all sesiones" que usan `es_admin()` para bypassear RLS
+- **Nueva migración:** `20260616000006_admin_rol.sql`
+
+#### Documentación (actualización admin)
+- `AGENTS.md`: migraciones actualizadas (8→9), añadido módulo `admin/` y referencia a `0006_admin_rol`
+- `00-plan-maestro.md`: migraciones 8→9, añadida sección Panel de Administración
+- `02-requirements.md`: CU-31, HU-57→60, CA-33→35 añadidos (wipe de datos)
+- `03-architecture.md`: migraciones 8→9, añadido feature `admin/` en árbol de carpetas, migración 0006 en listado
+- `04-data-model.md` → v5.3: columna `rol` en `usuarios`, función `wipe_user_data`, políticas admin RLS
+- `07-backend.md`: migraciones 8→9, entrada 0006 añadida al historial
+- `08-installation.md`: migraciones 8→9
+- `11-security.md` → v1.3: sección 2.4 Rol de administrador con permisos, restricciones y políticas
+- `14-changelog.md`: Esta entrada
+
+---
+
+## [6.1.0] — 11/06/2026
+
+### Fase 0 — Limpieza de datos mock y archivos obsoletos
+
+- **12 archivos eliminados:**
+  - 4 seeds mock: `seed_usuarios.py`, `seed_demo_data.py`, `seed_asignaturas.py`, `seed_todo.py`
+  - 2 seeds redundantes: `seed_completo.py`, `seed_catalogo.py`
+  - 2 generadores/herramientas: `generate_migration_0042.py`, `fix_nombres_dataset.py`
+  - 1 backup JSON: `dataset_final_backup2.json`
+  - 2 SQL obsoletos: `repair_sync.sql`, `sql/schema.sql`
+  - 1 texto mock: `splash_screen.dart` → "Tu compañero de estudio y bienestar universitario"
+- **10 archivos conservados:** 4 JSONs (`dataset_final.json`, `musculos.json`, `partes_cuerpo.json`, `equipamientos.json`), 4 repair SQLs, `delete_user_careers.sql`, `grados.json`
+- **AGENTS.md:** sección Data seeding actualizada → solo `seed_catalogo_v2.py`
+
+### Fase 1 — Catálogo Académico v2
+- **Migración consolidada:** 1 archivo (`202606060049_esquema_base.sql`, ~12K líneas) con schema completo + 909 ejercicios + catálogo v2
+- **8 tablas nuevas:** `universidades`, `centros`, `carreras`, `asignaturas_catalogo`, `profesores_asignatura`, `prerrequisitos_asignatura`, `criterios_evaluacion`, `bibliografia_asignatura`
+- **8 modelos Dart nuevos:** `UniversidadDb`, `CentroDb`, `CarreraDb`, `AsignaturaCatalogoDb`, `ProfesorAsignaturaDb`, `PrerrequisitoAsignaturaDb`, `CriterioEvaluacionDb`, `BibliografiaAsignaturaDb`
+- **3 modelos eliminados:** `CatalogoUniversidadDb`, `CatalogoCarreraDb`, `CatalogoAsignaturaDb`
+- **Seed `seed_catalogo_v2.py`:** poblado desde `grados.json` (remoto: 23 carreras, 367 asignaturas)
+- **Columnas timeline:** `completado` + `asistencia_registrada_en` en `horarios_academicos`
+- **RLS:** 8 tablas con lectura pública
+- **Providers + pantallas:** `catalogo_provider.dart`, `usuario_carreras_provider.dart`, `gestion_asignaturas_screen.dart`, `perfil_screen.dart` actualizados
+
+### Fase 2 — Línea de Tiempo Unificada
+- **DTO `TimelineItem`:** enum `TimelineTipo` con 7 valores + factory constructors (`desdeHorario`, `desdeSesion`, `desdeEntrega`)
+- **Provider `timelineHoyProvider`:** 3 queries en paralelo (horarios, sesiones, entregas) + merge cronológico
+- **Widget `TimelineSection`:** ConsumerWidget con estados loading/empty/data + max 5 items
+- **`BienestarCard` eliminado** del dashboard
+- **BUG-01 arreglado:** `QuickAction` "Workout" ahora usa `obtenerDiaYRutinaParaQuickAction`
+
+### Fase 3 — Consolidación de Migraciones
+- 52 → 1 archivo de migración (`202606060049_esquema_base.sql`)
+- `migraciones_pendientes.sql` eliminado por redundante
+- `AGENTS.md` actualizado ("1 migration file", "18 docs")
+
+### Fase A — Correcciones (13/06/2026)
+- **Trigger `marcar_semana_completada`:** nueva migración. Al completar todos los días de una semana, se marca automáticamente como `completada`
+- **Bug fix `sesionesRestantesSemana`:** de contar sesiones de HOY → contar sesiones de la SEMANA
+- **Mejora `obtenerDiaYRutinaParaQuickAction`:** de iterar solo `semanas.first` → iterar TODAS las semanas
+
+---
+
+## [6.2.0] — 13/06/2026
+
+### Fase B — Línea de Tiempo Enriquecida (3 Tabs)
+
+- **`TimelineTipo` ampliado:** de 7 a 9 valores. Añadidos `reto` y `entrenamientoPendiente`. Nuevos factory constructors: `TimelineItem.desdeReto()` y `TimelineItem.desdeDiaPendiente()`.
+- **`TimelineSection` con 3 tabs:**
+  - **Tab "Hoy":** bloques académicos + sesiones completadas + entrenamiento pendiente destacado (max 5 items)
+  - **Tab "Semana":** entregas de los próximos 7 días agrupadas cronológicamente (max 7)
+  - **Tab "Retos":** retos activos con barra de progreso y días restantes (max 5)
+- **`timelineHoyProvider`:** 5 queries en paralelo (horarios, sesiones, entregas 7d, retos activos, día pendiente)
+- **Widget `_EntrenamientoPendienteCard`:** tarjeta destacada naranja con botón "Comenzar" que navega directo a sesión en vivo
+- **Widget `_RetoCard`:** tarjeta con `LinearProgressIndicator` y badge de días restantes
+- **Navegación:** `TabController` con 3 tabs en `TabBar` + `TabBarView`; nueva ruta `/plan-semanal` desde header de timeline
+- **Archivos nuevos:**
+  - `timeline_item.dart` (186 líneas) — enum `TimelineTipo` (9 valores) + clase `TimelineItem` con 5 factory constructors
+  - `timeline_provider.dart` (91 líneas) — provider `timelineHoyProvider` con 5 queries
+  - `timeline_section.dart` (454 líneas) — widget con tabs + sub-widgets de tarjetas
+
+### Fase C — Provider de Día Pendiente Unificado
+
+- **`diaPendienteProvider`:** nuevo provider que itera TODAS las semanas de la rutina activa para encontrar el primer día no completado. Retorna `{diaId, rutinaId}` o `null`.
+- **`obtenerDiaYRutinaParaQuickAction()`:** refactorizado para delegar en `diaPendienteProvider` (lógica unificada)
+- **Consumidores unificados:** `QuickAction` "Workout", `TimelineSection` (_TabHoy), y `RutinaDetalleScreen` usan el mismo provider
+
+### Fase D — Integración y Documentación
+
+- **TimelineSection integrada** en el dashboard (posición 8 del ListView)
+- **Migración `0050`:** trigger `marcar_semana_completada` — al completar todos los días de una semana, se marca automáticamente como `completada`
+- **Bug fix `sesionesRestantesSemana`:** de contar sesiones de HOY → contar sesiones de la SEMANA
+- **Bug fix `obtenerDiaYRutinaParaQuickAction`:** de iterar solo `semanas.first` → iterar TODAS las semanas
+- **`AGENTS.md` actualizado:** 2 archivos de migración, nuevos archivos clave documentados
+- **`docs/02-requirements.md`:** CU-23, HU-42-44, CA-22-24 añadidos
+- **`docs/06-frontend.md`:** §9 actualizado con `TimelineSection` de 3 tabs y providers nuevos
+- **`docs/00-plan-maestro.md`:** Fases A, B, C, D marcadas como COMPLETADO
+
+### Fase E — Documentación del Dashboard v6.2
+
+- **`docs/14-changelog.md`:** entradas `[6.1.0]` y `[6.2.0]` creadas con detalle de todas las fases
+- **`docs/02-requirements.md`:** CU-23, HU-42→44, CA-22→24 añadidos para timeline, quick actions y carga cognitiva
+- **`docs/06-frontend.md` §9.1.1:** documentación de TimelineSection con 3 tabs, TimelineTipo (9 valores), providers y DTO
+- **`AGENTS.md`:** actualizado con 2 migraciones consolidadas y archivos clave
+
+### Fase F — Invalidación de Timeline (v6.2)
+
+- **`timelineHoyProvider` se invalida automáticamente en 6 archivos:**
+  - `retos_provider.dart` — `_invalidarRetos()` ahora invalida `timelineHoyProvider`
+  - `entregas_examenes_provider.dart` — 4 mutaciones (`crearEntrega`, `actualizarEntrega`, `eliminarEntrega`, `toggleEntregaCompletada`) añaden `WidgetRef ref` e invalidan timeline
+  - `planes_estudio_provider.dart` — 7 mutaciones (`crearPlanEstudio`, `eliminarPlanEstudio`, `crearBloqueEstudio`, `actualizarBloqueEstudio`, `eliminarBloqueEstudio`, `crearPlanCompleto`, `crearBloqueRapido`) añaden `WidgetRef ref` e invalidan timeline
+  - `sesion_en_vivo_screen.dart` — invalida `timelineHoyProvider` tras `finalizarSesion()`
+  - `nueva_rutina_screen.dart` — invalida `timelineHoyProvider` tras `syncCargaAcademicaSemanal()`
+- **Callers actualizados:** `plan_semanal_screen.dart` + `crear_plan_semanal_screen.dart`
+- **Dependencia circular evitada:** invalidación desde screens en lugar de providers para `rutina_provider ↔ timeline_provider`
+
+### Fase G — Navegación en Timeline y Limpieza (v6.2)
+
+- **`RutinasSection` eliminada** del dashboard: 9 → 8 secciones en `ListView`
+- **`_TimelineTarjeta` convertida a `ConsumerWidget`** con navegación `onTap`:
+  - `estudio`/`clase`/`deporte` → `/plan-semanal`
+  - `reto` → `/retos/:id`
+  - `entrega` → toggle completado + invalidate
+- **Documentación sincronizada:** `docs/03-architecture.md` §15.2, `docs/06-frontend.md` §9.1, `docs/12-user-guide.md` §4.1
+
+### Fase H — Verificación y Ajustes Finales (v6.2)
+
+- **PlanWeekBar** y **RutinaDetalleScreen** verificados: progreso semanal y badge "Hoy" se actualizan automáticamente tras completar sesiones
+- **`docs/00-plan-maestro.md`:** estadísticas de dashboard actualizadas (10→8 secciones, 263→119 líneas)
+- **QA:** 0 errores, 0 warnings, 5 info (todos preexistentes)
+
+---
+
+## [6.3.0] — 12/06/2026
+
+### Sprint 7 — Retos Complejos y Sincronización Offline
+
+#### Fase A1 — Migración DB + DTOs
+- **Migración `202606120050`:** nuevas columnas en `hitos_de_reto` (`estado`, `dependencias UUID[]`, `tipo_condicion`, `condicion_n`) y `retos` (`tiene_dependencias`)
+- Trigger `trg_hito_completado` + función `desbloquear_hitos()` con soporte AND/OR/X_OF_Y
+- DTOs: `GrafoReto`, `NodoHito`, `AristaDependencia`, `EstadoHito`, `TipoCondicion`
+
+#### Fase A2 — Motor de Desbloqueo
+- `reto_dependencia_service.dart`: construcción de grafo, detección de ciclos (DFS), validación de dependencias
+- `grafoRetoProvider`: provider que construye el grafo desde `hitos_de_reto`
+
+#### Fase A3 — UI Grafo de Dependencias
+- `grafo_dependencias.dart`: widget con nodos coloreados por estado (bloqueado/disponible/en_progreso/completado) y leyenda
+- `_NodoHitoCard`: tarjeta individual con icono de estado, condición de desbloqueo y barra de progreso
+- Integrado en `DetalleRetoScreen` (visible solo si `tiene_dependencias = true`)
+
+#### Fase C1 — Infraestructura Offline
+- `connectivity_service.dart`: Stream de estado de conectividad (online/offline/syncing)
+- `offline_queue_service.dart`: cola Hive para operaciones pendientes (INSERT/UPDATE/DELETE) con reintentos (max 3)
+- `sync_provider.dart`: providers Riverpod para estado de red, cola offline y sincronización
+- Nuevas dependencias: `connectivity_plus ^6.1.0`, `fl_chart ^0.70.0`
+
+#### Fase A4 — Notificaciones de Desbloqueo de Hitos
+- Notificaciones automáticas al desbloquear hitos (`notificaciones` table)
+- Al completar un hito con dependencias satisfechas, se inserta notificación con tipo `hito_desbloqueado`
+- Integración con el trigger `trg_hito_completado` para disparar notificaciones desde BD
+- Provider `notificacionesHitoProvider` para consultar notificaciones de desbloqueo pendientes
+
+#### Fase B1 — Infraestructura Analítica
+- **Vista `v_analitica_semanal`:** agrega sesiones por semana (RPE promedio, volumen total, días entrenados, calorías) con JOIN a `sesiones_registradas` y `rutinas`
+- **Migración `202606140001_v_analitica_semanal.sql`:** nueva migración para crear la vista analítica y aplicar en local y remoto
+- **Tabla `insights_analitica`:** cachea insights generados (tipo, titulo, descripcion, datos JSONB, semana_inicio, semana_fin). RLS propietario.
+- **DTO `MetricaSemanal`:** factory `fromMap` para datos de `v_analitica_semanal`
+- **DTO `InsightCorrelacion`:** resultados de correlación Pearson (coeficiente, p-valor, interpretación)
+- **Enum `PeriodoAnalitica`:** semanal/mensual/trimestral con getters `semanas` y `etiqueta`
+- **`AnaliticaRepository`:** consulta `v_analitica_semanal` + `carga_academica_semanal`, calcula correlación Pearson (~220 líneas)
+- **`InsightGenerator`:** generador estático de frases interpretativas en español (racha, consistencia, volumen, correlación)
+- **`analitica_provider.dart`:** 6 providers Riverpod (`analiticaRepositoryProvider`, `analiticaSemanalProvider`, `tendenciaRpeProvider`, `volumenSemanalProvider`, `correlacionCargaProvider`, `periodoSeleccionadoProvider`)
+
+#### Fase B2 — Charts de Analítica (fl_chart)
+- **`TendenciaRpeChart`:** `LineChart` con RPE promedio semanal y línea de tendencia. Eje X: semanas, eje Y: RPE (1-10). Tooltips con fecha y valor exacto.
+- **`VolumenBarChart`:** `BarChart` con volumen semanal (minutos entrenados). Barras con gradiente de color según intensidad.
+- **`CorrelacionCargaScatter`:** `ScatterChart` con correlación entre carga académica (horas estudio) y RPE de entrenamiento. Línea de regresión y coeficiente Pearson.
+- Dependencia `fl_chart ^0.70.0` integrada en el módulo `analitica/`
+
+#### Fase B3 — Pantalla AnaliticaScreen
+- **`AnaliticaScreen`:** nueva pantalla con `SegmentedButton` para selector de periodo (Semanal | Mensual | Trimestral)
+- Consume `analiticaSemanalProvider`, `tendenciaRpeProvider`, `volumenSemanalProvider`, `correlacionCargaProvider`
+- Sección de métricas clave: RPE promedio, volumen total, días entrenados, consistencia (%)
+- Sección de tendencia RPE con `TendenciaRpeChart`
+- Sección de volumen con `VolumenBarChart`
+- Sección de correlación académica con `CorrelacionCargaScatter` + frases interpretativas de `InsightGenerator`
+- Ruta: `/analitica` integrada en la navegación principal
+
+#### Fase C2 — Indicador Offline en Shell Route
+- **`OfflineIndicator`:** widget banner persistente en `SynaptixShellRoute` que muestra estado de conectividad
+- Consume `connectivityStateProvider` para mostrar banner "Sin conexión" (rojo) o "Sincronizando..." (ámbar)
+- Animación de transición suave al cambiar de estado (fade + slide)
+- La cola offline se procesa automáticamente al detectar reconexión (`syncProvider`)
+
+### Migraciones aplicadas en local y remoto
+- **Local:** `supabase db push` desplegó `202606120050_dependencias_retos.sql`, `202606130001_marcar_semana_completada.sql` y `202606140001_v_analitica_semanal.sql` en la BD local de Docker
+- **Remoto:** `python supabase/apply_migrations.py` aplicó las mismas migraciones al proyecto Supabase en producción
+- Seed `seed_catalogo_v2.py` verificado en ambos entornos
+
+### Documentación actualizada
+- `docs/00-plan-maestro.md`: Sprint 7 marcado COMPLETADO, Fases A1-A4, B1-B3 y C1-C2 marcadas COMPLETADO
+- `docs/04-data-model.md` → v5.0: nuevas columnas en `hitos_de_reto` y `retos`, tabla `insights_analitica`, vista `v_analitica_semanal`, mapeo canónico actualizado al catálogo v2
+- `docs/06-frontend.md` → v6.0: §13 Pantallas de Retos (DetalleRetoScreen, CrearRetoComplejoScreen, GrafoDependencias, _NodoHitoCard), §14 Sincronización Offline (arquitectura, servicios, providers, DTO)
+- `docs/14-changelog.md`: Esta entrada
+
+---
+
 ## [6.0.0] — 10/06/2026
 
 ### Rediseño del Dashboard
@@ -927,7 +1265,7 @@ RutinaDetalleScreen → "Iniciar"
 - `RecomendacionRutinaResult`: `nombre`, `descripcion`, `objetivo`, `duracionSemanas`, `estructura` (Map<int, Map<int, List<EjercicioRecomendado>>>), `error?`
 - `RecomendacionEjerciciosResult`: `ejercicios`, `error?`
 - `HistorialSesionDto`: `totalSesionesCompletadas`, `rpePromedio`, `volumenSemanalEstimado`, `ejerciciosRecientes`, `diasCompletadosUltimaSemana`, `semanasConsecutivasEntrenando`, `requiereDescarga`
-- `EjericicioRecienteDto`: `nombreEjercicio`, `pesoPromedio`, `repsPromedio`, `rpePromedio`, `ultimaFecha`
+- `EjercicioRecienteDto`: `nombreEjercicio`, `pesoPromedio`, `repsPromedio`, `rpePromedio`, `ultimaFecha`
 
 **Prompt Engineering — Helpers privados:**
 - `_reglasSeguridadIMC(imc, edad)`: Restricciones ACSM. IMC>30→bajo impacto, IMC<18.5→evitar déficit, edad>50→fortalecimiento articular, edad<18→priorizar técnica.

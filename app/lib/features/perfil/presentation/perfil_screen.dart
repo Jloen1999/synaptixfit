@@ -6,14 +6,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
-import '../../academico/application/usuario_carreras_provider.dart';
 import '../../academico/application/catalogo_provider.dart';
 import '../../bienestar/application/rutina_provider.dart';
 import '../../bienestar/application/ejercicios_provider.dart';
+import '../../../core/design_system/sv_colors.dart';
 import '../../dashboard/application/dashboard_provider.dart';
-import '../../auth/infrastructure/bienestar_repository.dart';
+import '../../insignias/application/insignias_provider.dart';
+import '../../admin/application/admin_provider.dart';
 import '../application/perfil_provider.dart';
 
+// =============================================================================
+// PerfilScreen — Pantalla principal de perfil rediseñada
+// =============================================================================
 class PerfilScreen extends ConsumerStatefulWidget {
   const PerfilScreen({super.key});
 
@@ -22,8 +26,22 @@ class PerfilScreen extends ConsumerStatefulWidget {
 }
 
 class _PerfilScreenState extends ConsumerState<PerfilScreen> {
+  int _selectedSection = 0;
   PerfilUsuario? _cachedUsuario;
   PreferenciasNotificacionDb? _cachedPrefs;
+
+  static const _sectionLabels = [
+    'Estadísticas',
+    'Bienestar',
+    'Académico',
+    'Ajustes'
+  ];
+  static const _sectionIcons = [
+    Icons.bar_chart_rounded,
+    Icons.fitness_center_rounded,
+    Icons.school_rounded,
+    Icons.settings_rounded,
+  ];
 
   void _onPerfilActualizado({PerfilCambio cambio = PerfilCambio.todo}) {
     switch (cambio) {
@@ -56,7 +74,6 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
     if (usuarioAsync.hasValue) _cachedUsuario = usuarioAsync.value;
     if (preferenciasAsync.hasValue) _cachedPrefs = preferenciasAsync.value;
 
-    // Solo mostrar loading en la primera carga (sin datos cacheados).
     if (usuarioAsync.isLoading && _cachedUsuario == null) {
       return const FeatureScaffold(
         title: '',
@@ -85,334 +102,213 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
           actualizadoEn: DateTime.now(),
         );
 
+    final actividad = ref.watch(perfilActividadProvider).valueOrNull ??
+        const PerfilActividad(sesiones: 0, logros: 0, caloriasAcumuladas: 0);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return FeatureScaffold(
-      title: '',
-      child: DefaultTabController(
-        length: 4,
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            SliverToBoxAdapter(
-              child: _HeroHeader(
-                usuario: usuario,
-                perfil: perfil,
-                onNombreChanged: () =>
-                    _onPerfilActualizado(cambio: PerfilCambio.nombre),
-              ),
-            ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _TabBarDelegate(
-                TabBar(
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                  indicatorSize: TabBarIndicatorSize.label,
-                  tabs: const [
-                    Tab(text: 'Estadísticas'),
-                    Tab(text: 'Bienestar'),
-                    Tab(text: 'Académico'),
-                    Tab(text: 'Ajustes'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          body: TabBarView(
-            children: [
-              const _EstadisticasTab(),
-              _BienestarTab(
-                onPerfilChanged: () =>
-                    _onPerfilActualizado(cambio: PerfilCambio.bienestar),
-              ),
-              _AcademicoTab(
-                onPerfilChanged: () =>
-                    _onPerfilActualizado(cambio: PerfilCambio.academico),
-              ),
-              _AjustesTab(usuario: usuario, prefs: preferencias),
-            ],
+      title: 'Perfil',
+      child: Column(
+        children: [
+          // ── Header fijo ──
+          _ProfileHeader(
+            usuario: usuario,
+            perfil: perfil,
+            actividad: actividad,
+            onNombreChanged: () =>
+                _onPerfilActualizado(cambio: PerfilCambio.nombre),
           ),
-        ),
+
+          // ── Selector de sección (ChoiceChips) ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: SizedBox(
+              height: 36,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _sectionLabels.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final selected = _selectedSection == index;
+                  return ChoiceChip(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _sectionIcons[index],
+                          size: 16,
+                          color: selected
+                              ? cs.onSecondaryContainer
+                              : cs.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(_sectionLabels[index]),
+                      ],
+                    ),
+                    selected: selected,
+                    onSelected: (_) => setState(() => _selectedSection = index),
+                    labelStyle: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    selectedColor: cs.secondaryContainer,
+                    backgroundColor: cs.surfaceContainerLow,
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    visualDensity: VisualDensity.compact,
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // ── Contenido de sección ──
+          Expanded(
+            child: IndexedStack(
+              index: _selectedSection,
+              children: [
+                const _EstadisticasTab(),
+                _BienestarTab(
+                  onPerfilChanged: () =>
+                      _onPerfilActualizado(cambio: PerfilCambio.bienestar),
+                ),
+                _AcademicoTab(
+                  onPerfilChanged: () =>
+                      _onPerfilActualizado(cambio: PerfilCambio.academico),
+                ),
+                _AjustesTab(usuario: usuario, prefs: preferencias),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 // =============================================================================
-// Widgets compartidos entre tabs
+// _ProfileHeader — Cabecera moderna con gradiente atlético
 // =============================================================================
-Widget _buildSectionCard(
-    BuildContext context, String title, List<Widget> children) {
-  return Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFF1E293B).withValues(alpha: 0.6)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFFE2E8F0))),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    ),
-  );
-}
-
-Widget _buildEditRow(String label, String value, VoidCallback onTap,
-    {String? tooltip}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 5),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          children: [
-            Expanded(
-                child: Row(
-              children: [
-                Flexible(
-                  child: Text(label,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 13, color: Color(0xFF94A3B8))),
-                ),
-                if (tooltip != null) ...[
-                  const SizedBox(width: 4),
-                  Tooltip(
-                    message: tooltip,
-                    child: const Icon(Icons.help_outline_rounded,
-                        size: 14, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ],
-            )),
-            Text(value,
-                style:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-            const SizedBox(width: 6),
-            const Icon(Icons.edit, size: 13, color: Color(0xFF64748B)),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-Widget _buildReadRow(String label, String value) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 5),
-    child: Row(
-      children: [
-        Expanded(
-            child: Text(label,
-                style:
-                    const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)))),
-        Text(value,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-      ],
-    ),
-  );
-}
-
-class _RowText extends StatelessWidget {
-  const _RowText(this.text, {this.isSub = false});
-
-  final String text;
-  final bool isSub;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(text,
-        style: TextStyle(
-            fontSize: isSub ? 12 : 13,
-            color: isSub ? const Color(0xFF64748B) : const Color(0xFFE2E8F0)));
-  }
-}
-
-// =============================================================================
-// HERO HEADER — Modern athletic dashboard
-// =============================================================================
-class _HeroHeader extends StatefulWidget {
-  const _HeroHeader({
+class _ProfileHeader extends StatefulWidget {
+  const _ProfileHeader({
     required this.usuario,
     required this.perfil,
+    required this.actividad,
     this.onNombreChanged,
   });
 
   final UsuarioDb usuario;
   final PerfilBienestarDb perfil;
+  final PerfilActividad actividad;
   final VoidCallback? onNombreChanged;
 
   @override
-  State<_HeroHeader> createState() => _HeroHeaderState();
+  State<_ProfileHeader> createState() => _ProfileHeaderState();
 }
 
-class _HeroHeaderState extends State<_HeroHeader> {
+class _ProfileHeaderState extends State<_ProfileHeader> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final nombre = widget.usuario.nombreCompleto;
     final initial =
         nombre.isNotEmpty && nombre != '—' ? nombre[0].toUpperCase() : '?';
-    final xpMax = 1000 * widget.usuario.nivel;
-    final xpProgreso =
-        xpMax > 0 ? (widget.usuario.xpTotal / xpMax).clamp(0.0, 1.0) : 0.0;
     final tieneAvatar = widget.usuario.urlAvatar != null &&
         widget.usuario.urlAvatar!.isNotEmpty;
+    final act = widget.actividad;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0A1628), Color(0xFF152238), Color(0xFF0D1B2A)],
+          colors: [
+            cs.primary,
+            cs.primaryContainer,
+            cs.primary.withValues(alpha: 0.85),
+          ],
         ),
       ),
       child: Column(
         children: [
-          // Avatar — gradient border ring
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF72FE8F), Color(0xFF006E2D)],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF72FE8F).withValues(alpha: 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(3),
-            child: ClipOval(
-              child: Container(
-                color: const Color(0xFF1A2A40),
-                child: tieneAvatar
-                    ? Image.network(
-                        widget.usuario.urlAvatar!,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return _avatarInitial(initial, 24);
-                        },
-                        errorBuilder: (context, error, stackTrace) =>
-                            _avatarInitial(initial, 24),
-                      )
-                    : _avatarInitial(initial, 24),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Name row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Text(
-                  nombre,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 6),
-              InkWell(
-                onTap: () => _editarNombre(context),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child:
-                      const Icon(Icons.edit, size: 14, color: Colors.white54),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            widget.usuario.email,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 20),
-          // XP Level badge + bar
+          // ── Avatar + Nombre ──
           Row(
             children: [
+              // Avatar con anillo de acento
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [cs.secondaryContainer, cs.secondary],
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.stars_rounded,
-                        size: 16, color: Color(0xFF72FE8F)),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Nivel ${widget.usuario.nivel}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: cs.secondaryContainer.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
+                padding: const EdgeInsets.all(2.5),
+                child: ClipOval(
+                  child: Container(
+                    color: cs.primaryContainer,
+                    child: tieneAvatar
+                        ? Image.network(
+                            widget.usuario.urlAvatar!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _avatarInitial(initial),
+                          )
+                        : _avatarInitial(initial),
+                  ),
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${widget.usuario.xpTotal} / $xpMax XP',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: xpProgreso,
-                        minHeight: 5,
-                        backgroundColor: Colors.white.withValues(alpha: 0.1),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF72FE8F),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            nombre,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: cs.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: () => _editarNombre(context),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: cs.onPrimary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(Icons.edit_outlined,
+                                size: 14,
+                                color: cs.onPrimary.withValues(alpha: 0.7)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.usuario.email,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onPrimary.withValues(alpha: 0.55),
                       ),
                     ),
                   ],
@@ -420,17 +316,19 @@ class _HeroHeaderState extends State<_HeroHeader> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Quick stats row
+
+          const SizedBox(height: 20),
+
+          // ── Stats: sesiones, XP, calorías, retos ──
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _miniStat('🔥', '${widget.usuario.rachaActual}', 'racha'),
-              const SizedBox(width: 24),
-              _miniStat(
-                  '📅', '${widget.perfil.diasDisponiblesSemana}', 'días/sem'),
-              const SizedBox(width: 24),
-              _miniStat('⏱', '${widget.perfil.minutosPorSesion}', 'min/ses'),
+              Expanded(child: _statItem(context, '${act.sesiones}', 'Sesiones', Icons.fitness_center_rounded)),
+              _statDivider(context),
+              Expanded(child: _statItem(context, _formatNum(widget.usuario.xpTotal), 'XP', Icons.stars_rounded)),
+              _statDivider(context),
+              Expanded(child: _statItem(context, _formatNum(act.caloriasAcumuladas), 'Calorías', Icons.local_fire_department_rounded)),
+              _statDivider(context),
+              Expanded(child: _statItem(context, '${act.logros}', 'Retos', Icons.emoji_events_rounded)),
             ],
           ),
         ],
@@ -438,40 +336,61 @@ class _HeroHeaderState extends State<_HeroHeader> {
     );
   }
 
-  Widget _avatarInitial(String initial, double size) {
+  Widget _avatarInitial(String initial) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      color: const Color(0xFF1A2A40),
+      color: cs.primaryContainer,
       alignment: Alignment.center,
       child: Text(
         initial,
         style: TextStyle(
-          color: const Color(0xFF72FE8F),
-          fontSize: size,
+          color: cs.secondaryContainer,
+          fontSize: 28,
           fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 
-  Widget _miniStat(String emoji, String value, String label) {
+  Widget _statItem(BuildContext context, String value, String label, IconData icon) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 18)),
-        const SizedBox(height: 2),
+        Icon(icon, size: 20, color: cs.onPrimary.withValues(alpha: 0.7)),
+        const SizedBox(height: 4),
         Text(value,
-            style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w700)),
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: cs.onPrimary,
+              fontWeight: FontWeight.w800,
+            )),
+        const SizedBox(height: 1),
         Text(label,
-            style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.45), fontSize: 10)),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: cs.onPrimary.withValues(alpha: 0.6),
+            )),
       ],
     );
   }
 
+  Widget _statDivider(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: 1,
+      height: 40,
+      color: cs.onPrimary.withValues(alpha: 0.15),
+    );
+  }
+
+  String _formatNum(int n) {
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return n.toString();
+  }
+
   Future<void> _editarNombre(BuildContext context) async {
-    const repo = BienestarRepository();
+    final repo =
+        ProviderScope.containerOf(context).read(bienestarRepositoryProvider);
     final ctrl = TextEditingController(text: widget.usuario.nombreCompleto);
     final result = await showDialog<String>(
       context: context,
@@ -502,152 +421,225 @@ class _HeroHeaderState extends State<_HeroHeader> {
 }
 
 // =============================================================================
-// TAB 1: Estadísticas — Metric grid with glass cards
+// _EstadisticasTab — Insignias
 // =============================================================================
 class _EstadisticasTab extends ConsumerWidget {
   const _EstadisticasTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usuarioAsync = ref.watch(perfilUsuarioProvider);
-    final actividadAsync = ref.watch(perfilActividadProvider);
-    final usuario = usuarioAsync.valueOrNull?.usuario;
-    final actividad = actividadAsync.valueOrNull ??
-        const PerfilActividad(sesiones: 0, logros: 0, caloriasAcumuladas: 0);
-
-    if (usuario == null) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-    }
+    final insigniasAsync = ref.watch(insigniasUsuarioProvider);
+    final insignias = insigniasAsync.valueOrNull ?? [];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _metricCard(
-                '${usuario.xpTotal}',
-                'XP Total',
-                subtitle: 'Nivel ${usuario.nivel}',
-                color: const Color(0xFF72FE8F),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _metricCard(
-                '${actividad.sesiones}',
-                'Sesiones',
-                color: const Color(0xFF60A5FA),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _metricCard(
-                '${actividad.logros}',
-                'Retos',
-                color: const Color(0xFFE8A838),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _metricCard(
-                '${actividad.caloriasAcumuladas}',
-                'Calorías',
-                color: const Color(0xFFFF6B35),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _metricCard(
-          '${usuario.rachaActual}',
-          'Racha actual',
-          subtitle: 'días consecutivos',
-          color: const Color(0xFFA78BFA),
-        ),
+        _buildInsigniasPreview(context, ref, insignias),
       ],
     );
   }
 
-  Widget _metricCard(
-    String value,
-    String label, {
-    String? subtitle,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: 0.12),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: color,
-              letterSpacing: -1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF94A3B8),
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-            ),
+  Widget _buildInsigniasPreview(
+      BuildContext context, WidgetRef ref, List<dynamic> insignias) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final countAsync = ref.watch(insigniasCountProvider);
+    final total = countAsync.valueOrNull ?? 0;
+    final preview = insignias.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.emoji_events_rounded,
+                size: 18, color: SVColors.accent),
+            const SizedBox(width: 8),
+            Text('Insignias',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                )),
+            const Spacer(),
+            Text('$total/15',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: SVColors.accent,
+                )),
           ],
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+
+        if (preview.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: Text(
+                'Completa actividades para\ndesbloquear insignias',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: SVColors.onSurfaceMuted,
+                ),
+              ),
+            ),
+          )
+        else
+          Row(
+            children: preview.map((ins) {
+              final color = Color(ins.colorRareza);
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: color.withValues(alpha: 0.1),
+                          border:
+                              Border.all(color: color.withValues(alpha: 0.25)),
+                        ),
+                        child: Center(
+                            child: Text(ins.icono,
+                                style: const TextStyle(fontSize: 22))),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(ins.nombre,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurfaceVariant,
+                          )),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => context.push('/insignias'),
+            icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+            label: const Text('Ver todas'),
+          ),
+        ),
+      ],
     );
   }
 }
 
 // =============================================================================
-// TAB 2: Bienestar — All onboarding fields editable
+// Sección de título consistente
+// =============================================================================
+Widget _sectionTitle(BuildContext context, String title, {Widget? trailing}) {
+  final theme = Theme.of(context);
+  return Row(
+    children: [
+      Text(title,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          )),
+      const Spacer(),
+      if (trailing != null) trailing,
+    ],
+  );
+}
+
+// =============================================================================
+// Fila editable moderna (basada en ListTile compacto)
+// =============================================================================
+Widget _editTile(
+  BuildContext context, {
+  required String label,
+  required String value,
+  String? subtitle,
+  IconData? leadingIcon,
+  required VoidCallback onTap,
+}) {
+  final theme = Theme.of(context);
+  return ListTile(
+    contentPadding: EdgeInsets.zero,
+    visualDensity: VisualDensity.compact,
+    leading: leadingIcon != null
+        ? Icon(leadingIcon, size: 20, color: theme.colorScheme.primary)
+        : null,
+    title: Text(label,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        )),
+    subtitle: subtitle != null
+        ? Text(subtitle, style: theme.textTheme.bodySmall)
+        : null,
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurfaceVariant,
+            )),
+        const SizedBox(width: 4),
+        Icon(Icons.chevron_right,
+            size: 18, color: theme.colorScheme.onSurfaceVariant),
+      ],
+    ),
+    onTap: onTap,
+  );
+}
+
+// =============================================================================
+// Fila de solo lectura
+// =============================================================================
+Widget _readTile(
+  BuildContext context, {
+  required String label,
+  required String value,
+  IconData? leadingIcon,
+}) {
+  final theme = Theme.of(context);
+  return ListTile(
+    contentPadding: EdgeInsets.zero,
+    visualDensity: VisualDensity.compact,
+    leading: leadingIcon != null
+        ? Icon(leadingIcon, size: 20, color: theme.colorScheme.primary)
+        : null,
+    title: Text(label,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+        )),
+    trailing: Text(value,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: theme.colorScheme.onSurfaceVariant,
+        )),
+  );
+}
+
+// =============================================================================
+// _BienestarTab
 // =============================================================================
 class _BienestarTab extends ConsumerStatefulWidget {
   const _BienestarTab({this.onPerfilChanged});
-
   final VoidCallback? onPerfilChanged;
-
   @override
   ConsumerState<_BienestarTab> createState() => _BienestarTabState();
 }
 
 class _BienestarTabState extends ConsumerState<_BienestarTab> {
-  static const _nivelesActividad = [
-    'sedentario',
-    'ligero',
-    'moderado',
-    'alto',
-  ];
+  static const _nivelesActividad = ['sedentario', 'ligero', 'moderado', 'alto'];
   static const _opcionesSexo = [
     'masculino',
     'femenino',
     'prefiero_no_decirlo',
   ];
-  final _repo = const BienestarRepository();
 
+  BienestarRepository get _repo => ref.read(bienestarRepositoryProvider);
   PerfilBienestarDb? _cachedPerfil;
 
   String _fmt(String o) => o
@@ -658,6 +650,7 @@ class _BienestarTabState extends ConsumerState<_BienestarTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final bienestarAsync = ref.watch(perfilBienestarCompletoProvider);
     if (bienestarAsync.hasValue && bienestarAsync.value != null) {
       _cachedPerfil = bienestarAsync.value!.perfil;
@@ -682,107 +675,141 @@ class _BienestarTabState extends ConsumerState<_BienestarTab> {
           actualizadoEn: DateTime.now(),
         );
     final historial = bienestarAsync.valueOrNull?.historial ?? [];
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
-        _sectionCard('Perfil físico', [
-          _editRow(
-              'Peso',
-              _pesoStr(p.pesoKg),
-              () => _editarNumero('Peso (kg)', p.pesoKg, 30, 250,
-                  (v) => _guardar({'peso_kg': v, 'altura_cm': p.alturaCm}))),
-          _editRow(
-              'Altura',
-              _alturaStr(p.alturaCm),
-              () => _editarNumero('Altura (cm)', p.alturaCm, 120, 230,
-                  (v) => _guardar({'altura_cm': v, 'peso_kg': p.pesoKg}))),
-          _readRow(
-              'IMC',
-              p.pesoKg > 0 && p.alturaCm > 0
-                  ? '${(p.pesoKg / ((p.alturaCm / 100) * (p.alturaCm / 100))).toStringAsFixed(1)} · ${_imcCategoria(p.pesoKg / ((p.alturaCm / 100) * (p.alturaCm / 100)))}'
-                  : '—'),
-          _editRow('Sexo', p.sexo == 'prefiero_no_decirlo' ? '—' : _fmt(p.sexo),
-              _editarSexo),
-          _editRow('Edad', p.edad > 0 ? '${p.edad} años' : '—', _editarEdad),
-          _editRow('Objetivo', _fmt(p.objetivoPrincipal), _editarObjetivo),
-          _editRow(
-              'Actividad',
-              p.nivelActividad.isNotEmpty ? _fmt(p.nivelActividad) : '—',
-              _editarNivelActividad),
-          _editRow(
-              'Días/semana',
-              p.diasDisponiblesSemana > 0 ? '${p.diasDisponiblesSemana}' : '—',
-              _editarDias),
-          _editRow(
-              'Min/sesión',
-              p.minutosPorSesion > 0 ? '${p.minutosPorSesion}' : '—',
-              _editarMinutos),
-        ]),
-        const SizedBox(height: 16),
-        _sectionCard('Equipamiento', [
-          if (p.equipamientoDisponible.isEmpty)
-            const _RowText('Sin equipamiento configurado', isSub: true)
-          else ...[
-            const SizedBox(height: 4),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
+        // ── Perfil físico ──
+        _sectionTitle(context, 'Perfil físico'),
+        const SizedBox(height: 8),
+        _editTile(context,
+            label: 'Peso',
+            value: _pesoStr(p.pesoKg),
+            leadingIcon: Icons.monitor_weight_outlined,
+            onTap: () => _editarNumero('Peso (kg)', p.pesoKg, 30, 250,
+                (v) => _guardar({'peso_kg': v, 'altura_cm': p.alturaCm}))),
+        _divider(context),
+        _editTile(context,
+            label: 'Altura',
+            value: _alturaStr(p.alturaCm),
+            leadingIcon: Icons.height,
+            onTap: () => _editarNumero('Altura (cm)', p.alturaCm, 120, 230,
+                (v) => _guardar({'altura_cm': v, 'peso_kg': p.pesoKg}))),
+        _divider(context),
+        _readTile(context,
+            label: 'IMC',
+            value: p.pesoKg > 0 && p.alturaCm > 0
+                ? '${(p.pesoKg / ((p.alturaCm / 100) * (p.alturaCm / 100))).toStringAsFixed(1)} · ${_imcCategoria(p.pesoKg / ((p.alturaCm / 100) * (p.alturaCm / 100)))}'
+                : '—',
+            leadingIcon: Icons.calculate_outlined),
+        _divider(context),
+        _editTile(context,
+            label: 'Sexo',
+            value: p.sexo == 'prefiero_no_decirlo' ? '—' : _fmt(p.sexo),
+            leadingIcon: Icons.person_outline,
+            onTap: _editarSexo),
+        _divider(context),
+        _editTile(context,
+            label: 'Edad',
+            value: p.edad > 0 ? '${p.edad} años' : '—',
+            leadingIcon: Icons.cake_outlined,
+            onTap: _editarEdad),
+        _divider(context),
+        _editTile(context,
+            label: 'Objetivo',
+            value: _fmt(p.objetivoPrincipal),
+            leadingIcon: Icons.flag_outlined,
+            onTap: _editarObjetivo),
+        _divider(context),
+        _editTile(context,
+            label: 'Actividad',
+            value: p.nivelActividad.isNotEmpty ? _fmt(p.nivelActividad) : '—',
+            leadingIcon: Icons.directions_run,
+            onTap: _editarNivelActividad),
+        _divider(context),
+        _editTile(context,
+            label: 'Días / semana',
+            value: p.diasDisponiblesSemana > 0
+                ? '${p.diasDisponiblesSemana}'
+                : '—',
+            leadingIcon: Icons.calendar_today,
+            onTap: _editarDias),
+        _divider(context),
+        _editTile(context,
+            label: 'Min / sesión',
+            value: p.minutosPorSesion > 0 ? '${p.minutosPorSesion}' : '—',
+            leadingIcon: Icons.timer_outlined,
+            onTap: _editarMinutos),
+
+        // ── Equipamiento ──
+        const SizedBox(height: 24),
+        _sectionTitle(context, 'Equipamiento'),
+        const SizedBox(height: 8),
+        if (p.equipamientoDisponible.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text('Sin equipamiento configurado',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: SVColors.onSurfaceMuted,
+                )),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: p.equipamientoDisponible
-                  .map((e) => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color:
-                              const Color(0xFF006E2D).withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _fmt(e),
-                          style: const TextStyle(
-                              fontSize: 12,
+                  .map((e) => Chip(
+                        label: Text(_fmt(e),
+                            style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF006E2D)),
-                        ),
+                            )),
+                        backgroundColor: theme.colorScheme.secondaryContainer
+                            .withValues(alpha: 0.12),
+                        side: BorderSide.none,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ))
                   .toList(),
             ),
-          ],
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _editarEquipamiento,
-              icon: const Icon(Icons.edit, size: 14),
-              label: const Text('Configurar equipamiento',
-                  style: TextStyle(fontSize: 12)),
-            ),
           ),
-        ]),
-        const SizedBox(height: 16),
-        _sectionCard('Evolución de peso', [
-          if (historial.isEmpty)
-            const _RowText('Sin registros aún', isSub: true)
-          else
-            ...historial.take(5).map((h) => _readRow(
-                  '${h.registradoEn.day}/${h.registradoEn.month}/${h.registradoEn.year}',
-                  '${h.pesoKg} kg · IMC ${h.imc}',
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _editarEquipamiento,
+            icon: const Icon(Icons.edit, size: 16),
+            label: const Text('Configurar equipamiento'),
+          ),
+        ),
+
+        // ── Evolución de peso ──
+        const SizedBox(height: 24),
+        _sectionTitle(context, 'Evolución de peso'),
+        const SizedBox(height: 8),
+        if (historial.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text('Sin registros aún',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: SVColors.onSurfaceMuted,
                 )),
-        ]),
+          )
+        else
+          ...historial.take(5).map((h) => _readTile(context,
+              label:
+                  '${h.registradoEn.day}/${h.registradoEn.month}/${h.registradoEn.year}',
+              value: '${h.pesoKg} kg · IMC ${h.imc}')),
       ],
     );
   }
 
-  Widget _sectionCard(String title, List<Widget> children) {
-    return _buildSectionCard(context, title, children);
-  }
-
-  Widget _editRow(String label, String value, VoidCallback onTap) {
-    return _buildEditRow(label, value, onTap);
-  }
-
-  Widget _readRow(String label, String value) {
-    return _buildReadRow(label, value);
-  }
+  Widget _divider(BuildContext context) => Divider(
+      height: 1,
+      indent: 48,
+      color:
+          Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3));
 
   String _pesoStr(double kg) => kg > 0 ? '${kg.toStringAsFixed(1)} kg' : '—';
   String _alturaStr(double cm) => cm > 0 ? '${cm.toStringAsFixed(0)} cm' : '—';
@@ -1086,20 +1113,16 @@ class _BienestarTabState extends ConsumerState<_BienestarTab> {
 }
 
 // =============================================================================
-// TAB 3: Académico
+// _AcademicoTab
 // =============================================================================
 class _AcademicoTab extends ConsumerStatefulWidget {
   const _AcademicoTab({this.onPerfilChanged});
-
   final VoidCallback? onPerfilChanged;
-
   @override
   ConsumerState<_AcademicoTab> createState() => _AcademicoTabState();
 }
 
 class _AcademicoTabState extends ConsumerState<_AcademicoTab> {
-  static const _modalidades = ['presencial', 'hibrida', 'virtual'];
-
   String? _selectedUniversidadId;
 
   PerfilAcademicoDb _empty() => PerfilAcademicoDb(
@@ -1137,33 +1160,6 @@ class _AcademicoTabState extends ConsumerState<_AcademicoTab> {
     if (mounted) ref.invalidate(perfilAcademicoProvider);
   }
 
-  Future<void> _editarNumero(
-      String label, int current, int min, int max, Function(int) onSave) async {
-    final ctrl = TextEditingController(text: current.toString());
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(label),
-        content: TextField(
-            controller: ctrl,
-            keyboardType: TextInputType.number,
-            autofocus: true),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Guardar')),
-        ],
-      ),
-    );
-    if (ok == true) {
-      final v = int.tryParse(ctrl.text.trim()) ?? current;
-      onSave(v.clamp(min, max));
-    }
-  }
-
   Future<void> _editarNumeroDecimal(String label, double? current, double min,
       double max, Function(double) onSave) async {
     final ctrl = TextEditingController(text: current?.toStringAsFixed(1) ?? '');
@@ -1191,22 +1187,22 @@ class _AcademicoTabState extends ConsumerState<_AcademicoTab> {
     }
   }
 
-  Future<void> _seleccionarUniversidad(CatalogoUniversidadDb? current) async {
+  Future<void> _seleccionarUniversidad(UniversidadDb? current) async {
     final unisAsync = ref.read(universidadesProvider);
     final unis = unisAsync.valueOrNull ?? [];
     if (unis.isEmpty) return;
 
-    final selected = await showDialog<CatalogoUniversidadDb>(
+    final selected = await showDialog<UniversidadDb>(
       context: context,
       builder: (ctx) => SimpleDialog(
         title: const Text('Selecciona tu universidad'),
         children: [
-          RadioGroup<CatalogoUniversidadDb>(
+          RadioGroup<UniversidadDb>(
             groupValue: current,
             onChanged: (v) => Navigator.pop(ctx, v),
             child: Column(
               children: unis
-                  .map((u) => RadioListTile<CatalogoUniversidadDb>(
+                  .map((u) => RadioListTile<UniversidadDb>(
                         title: Text(u.nombre,
                             style: const TextStyle(fontSize: 13)),
                         value: u,
@@ -1233,24 +1229,24 @@ class _AcademicoTabState extends ConsumerState<_AcademicoTab> {
     final carreras = carrerasAsync.valueOrNull ?? [];
     if (carreras.isEmpty) return;
 
-    CatalogoCarreraDb? selected;
+    CarreraDb? selected;
     if (current != null) {
       for (final c in carreras) {
         if (c.nombre == current) selected = c;
       }
     }
 
-    final result = await showDialog<CatalogoCarreraDb>(
+    final result = await showDialog<CarreraDb>(
       context: context,
       builder: (ctx) => SimpleDialog(
         title: const Text('Selecciona tu carrera'),
         children: [
-          RadioGroup<CatalogoCarreraDb>(
+          RadioGroup<CarreraDb>(
             groupValue: selected,
             onChanged: (v) => Navigator.pop(ctx, v),
             child: Column(
               children: carreras
-                  .map((c) => RadioListTile<CatalogoCarreraDb>(
+                  .map((c) => RadioListTile<CarreraDb>(
                         title: Text(c.nombre,
                             style: const TextStyle(fontSize: 13)),
                         value: c,
@@ -1279,206 +1275,22 @@ class _AcademicoTabState extends ConsumerState<_AcademicoTab> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final p = ref.watch(perfilAcademicoProvider).valueOrNull ?? _empty();
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-      children: [
-        _buildUniversitySection(p),
-        const SizedBox(height: 16),
-        _buildCareerSection(p),
-        const SizedBox(height: 16),
-        _buildSectionCard(context, 'Datos del semestre', [
-          _buildEditRow(
-              'Semestre',
-              '${p.semestreActual}°',
-              () => _editarNumero('Semestre actual', p.semestreActual, 1, 20,
-                  (v) => _guardar({'semestre_actual': v}))),
-          _buildEditRow(
-              'Modalidad',
-              p.modalidad[0].toUpperCase() + p.modalidad.substring(1),
-              () => _editarModalidad(p.modalidad)),
-          _buildEditRow(
-              'Créditos',
-              '${p.creditosSemestreActual}',
-              () => _editarNumero(
-                  'Créditos del semestre',
-                  p.creditosSemestreActual,
-                  1,
-                  60,
-                  (v) => _guardar({'creditos_semestre_actual': v}))),
-          _buildEditRow(
-              'Horas estudio / sem',
-              '${p.horasObjetivoEstudioSemana}h',
-              () => _editarNumero(
-                  'Horas objetivo de estudio por semana',
-                  p.horasObjetivoEstudioSemana,
-                  0,
-                  80,
-                  (v) => _guardar({'horas_objetivo_estudio_semana': v}))),
-          _buildEditRow(
-              'Promedio objetivo',
-              p.promedioObjetivo != null
-                  ? p.promedioObjetivo!.toStringAsFixed(1)
-                  : '—',
-              () => _editarNumeroDecimal(
-                  'Promedio objetivo (0-5)',
-                  p.promedioObjetivo,
-                  0,
-                  5,
-                  (v) => _guardar({'promedio_objetivo': v})),
-              tooltip:
-                  'Calificación promedio que deseas mantener. Escala 0-5. Ej: 4.0 para un buen promedio.'),
-        ]),
-      ],
-    );
-  }
-
-  Widget _buildUniversitySection(PerfilAcademicoDb p) {
-    final unisAsync = ref.watch(universidadesProvider);
-    final unis = unisAsync.valueOrNull ?? [];
-
-    CatalogoUniversidadDb? currentUni;
-    for (final u in unis) {
-      if (u.nombre == p.universidad) {
-        currentUni = u;
-        _selectedUniversidadId = u.id;
-        break;
-      }
-    }
-
-    return _buildSectionCard(context, 'Universidad', [
-      const _RowText(
-          'Selecciona tu universidad del catálogo para acceder a las carreras disponibles.',
-          isSub: true),
-      const SizedBox(height: 10),
-      if (unisAsync.isLoading)
-        const Center(child: CircularProgressIndicator(strokeWidth: 2))
-      else
-        _buildDropdownTile(
-          icon: Icons.school_rounded,
-          label: 'Universidad',
-          value: p.universidad ?? 'Seleccionar...',
-          onTap: () => _seleccionarUniversidad(currentUni),
-          onClear: p.universidad != null
-              ? () async {
-                  _selectedUniversidadId = null;
-                  await _guardar({'universidad': null, 'carrera': null});
-                }
-              : null,
-        ),
-    ]);
-  }
-
-  Widget _buildCareerSection(PerfilAcademicoDb p) {
-    final carrerasAsync = _selectedUniversidadId != null
-        ? ref.watch(carrerasPorUniversidadProvider(_selectedUniversidadId!))
-        : null;
-    final userCareersAsync = ref.watch(usuarioCarrerasProvider);
-    final userCareerIds =
-        (userCareersAsync.valueOrNull ?? []).map((uc) => uc.carreraId).toSet();
-
-    final carreras = (carrerasAsync?.valueOrNull ?? [])
-        .where((c) => !userCareerIds.contains(c.id))
-        .toList();
-
-    return _buildSectionCard(context, 'Carrera', [
-      const _RowText(
-          'Selecciona primero una universidad. Las carreras disponibles dependen de la universidad elegida.',
-          isSub: true),
-      const SizedBox(height: 10),
-      if (carrerasAsync != null && carrerasAsync.isLoading)
-        const Center(child: CircularProgressIndicator(strokeWidth: 2))
-      else
-        _buildDropdownTile(
-          icon: Icons.menu_book_rounded,
-          label: 'Carrera',
-          value: p.carrera ?? 'Seleccionar...',
-          onTap: () => _seleccionarCarrera(p.carrera),
-          onClear: p.carrera != null ? () => _guardar({'carrera': null}) : null,
-        ),
-      if (carreras.isNotEmpty) ...[
-        const SizedBox(height: 8),
-        _RowText(
-            '${carreras.length} carrera(s) disponible(s) en esta universidad',
-            isSub: true),
-      ],
-    ]);
-  }
-
-  Widget _buildDropdownTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    required VoidCallback onTap,
-    VoidCallback? onClear,
-  }) {
-    final hasValue = value != 'Seleccionar...';
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: const TextStyle(
-                          fontSize: 11, color: Color(0xFF64748B))),
-                  const SizedBox(height: 2),
-                  Text(value,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ),
-            if (hasValue && onClear != null)
-              GestureDetector(
-                onTap: onClear,
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(Icons.close_rounded,
-                      size: 18, color: Color(0xFF64748B)),
-                ),
-              )
-            else
-              const Icon(Icons.arrow_drop_down_rounded,
-                  color: Color(0xFF64748B)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _editarModalidad(String current) async {
-    final selected = await showDialog<String>(
+  Future<void> _seleccionarCurso(int current, int maxCurso) async {
+    final options = [for (var i = 1; i <= maxCurso; i++) i];
+    final p = ref.read(perfilAcademicoProvider).valueOrNull ?? _empty();
+    final selected = await showDialog<int>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('Modalidad'),
+        title: const Text('Selecciona tu curso'),
         children: [
-          RadioGroup<String>(
+          RadioGroup<int>(
             groupValue: current,
             onChanged: (v) => Navigator.pop(ctx, v),
             child: Column(
-              children: _modalidades
-                  .map((m) => RadioListTile<String>(
-                        title: Text(m[0].toUpperCase() + m.substring(1)),
-                        value: m,
+              children: options
+                  .map((c) => RadioListTile<int>(
+                        title: Text('Curso $c'),
+                        value: c,
                       ))
                   .toList(),
             ),
@@ -1487,83 +1299,787 @@ class _AcademicoTabState extends ConsumerState<_AcademicoTab> {
       ),
     );
     if (selected != null && selected != current) {
-      await _guardar({'modalidad': selected});
+      final novoSemestreActual = ((selected - 1) * 2) + p.semestreEnCurso;
+      await _guardar({'semestre_actual': novoSemestreActual});
     }
   }
+
+  Future<void> _seleccionarSemestre(int current) async {
+    final p = ref.read(perfilAcademicoProvider).valueOrNull ?? _empty();
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Selecciona el semestre'),
+        children: [
+          RadioGroup<int>(
+            groupValue: current,
+            onChanged: (v) => Navigator.pop(ctx, v),
+            child: Column(
+              children: [1, 2]
+                  .map((s) => RadioListTile<int>(
+                        title: Text('$s° Semestre'),
+                        value: s,
+                      ))
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (selected != null && selected != current) {
+      final novoSemestreActual = ((p.cursoActual - 1) * 2) + selected;
+      await _guardar({'semestre_actual': novoSemestreActual});
+    }
+  }
+
+  Widget _buildSinSemestreRow(BuildContext context, AsignaturaCatalogoDb s,
+      List<AsignaturaUsuarioSemestreDb> mapeos) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final mapeo = mapeos.where((m) => m.asignaturaId == s.id).firstOrNull;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            child: Icon(Icons.menu_book_outlined,
+                size: 16, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(s.nombre,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    )),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    if (s.creditos != null)
+                      _badge(context, '${s.creditos!.round()} ECTS', cs.primary),
+                    const SizedBox(width: 6),
+                    if (mapeo != null)
+                      _badge(context,
+                          'Curso ${mapeo.curso} · ${mapeo.semestre}° Sem',
+                          cs.secondaryContainer)
+                    else
+                      _badge(context, 'Sin asignar', cs.outlineVariant),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              if (mapeo != null) {
+                _quitarDeSemestre(mapeo);
+              } else {
+                _asignarSinSemestre(s);
+              }
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: mapeo != null
+                    ? cs.error.withValues(alpha: 0.1)
+                    : cs.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                mapeo != null ? Icons.close : Icons.add,
+                size: 16,
+                color: mapeo != null ? cs.error : cs.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _asignarSinSemestre(AsignaturaCatalogoDb s) async {
+    final p = ref.read(perfilAcademicoProvider).valueOrNull ?? _empty();
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return;
+    await client.from('asignaturas_usuario_semestre').upsert({
+      'usuario_id': user.id,
+      'asignatura_id': s.id,
+      'curso': p.cursoActual,
+      'semestre': p.semestreEnCurso,
+    }, onConflict: 'usuario_id, asignatura_id');
+    if (mounted) ref.invalidate(asignaturasUsuarioSemestreProvider);
+  }
+
+  Future<void> _quitarDeSemestre(AsignaturaUsuarioSemestreDb m) async {
+    final client = Supabase.instance.client;
+    await client.from('asignaturas_usuario_semestre').delete().eq('id', m.id);
+    if (mounted) ref.invalidate(asignaturasUsuarioSemestreProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = ref.watch(perfilAcademicoProvider).valueOrNull ?? _empty();
+    final carreraDataAsync = ref.watch(carreraConAsignaturasProvider);
+    final carreraData = carreraDataAsync.valueOrNull ?? [];
+    final sinSemestreAsync = ref.watch(asignaturasSinSemestreProvider);
+    final sinSemestre = sinSemestreAsync.valueOrNull ?? [];
+    final mapeosAsync = ref.watch(asignaturasUsuarioSemestreProvider);
+    final mapeos = mapeosAsync.valueOrNull ?? [];
+
+    // Calcular creditos y horas del curso+semestre actual desde el catálogo
+    int creditosCalculados = 0;
+    int horasCalculadas = 0;
+    int maxCurso = 0;
+    if (carreraData.isNotEmpty) {
+      for (final entry in carreraData) {
+        for (final s in entry.subjects) {
+          if (s.curso == p.cursoActual && s.semestre == p.semestreEnCurso) {
+            creditosCalculados += (s.creditos ?? 0).round();
+            horasCalculadas += (s.horas ?? 0);
+          }
+          if (s.curso != null && s.curso! > maxCurso) maxCurso = s.curso!;
+        }
+      }
+    }
+    // Incluir asignaturas mapeadas por el usuario (semestre 0)
+    if (mapeos.isNotEmpty) {
+      final mappedIds = mapeos
+          .where((m) => m.curso == p.cursoActual && m.semestre == p.semestreEnCurso)
+          .map((m) => m.asignaturaId)
+          .toSet();
+      if (mappedIds.isNotEmpty) {
+        for (final entry in carreraData) {
+          for (final s in entry.subjects) {
+            if (mappedIds.contains(s.id)) {
+              creditosCalculados += (s.creditos ?? 0).round();
+              horasCalculadas += (s.horas ?? 0);
+            }
+          }
+        }
+      }
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      children: [
+        // ── Header: Universidad + Carrera ──
+        _buildInstitucionCard(context, p),
+
+        const SizedBox(height: 20),
+
+        // ── Semestre actual ──
+        _sectionTitle(context, 'Semestre actual'),
+        const SizedBox(height: 4),
+        Text(
+          'Curso ${p.cursoActual} · ${p.semestreEnCurso}° Semestre',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+        ),
+
+        // ── Asignaturas (plan de estudios) ──
+        if (carreraData.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _sectionTitle(context, 'Plan de estudios'),
+          const SizedBox(height: 12),
+          _buildCursoCards(context, carreraData, mapeos),
+        ],
+
+        // ── Asignaturas transversales (semestre 0) — colapsable ──
+        if (sinSemestre.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: ExpansionTile(
+              title: Row(
+                children: [
+                  Icon(Icons.menu_book_outlined, size: 18,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 10),
+                  Text('Asignaturas transversales',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      )),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('${sinSemestre.length}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        )),
+                  ),
+                ],
+              ),
+              childrenPadding: const EdgeInsets.only(left: 16, right: 4, bottom: 8),
+              initiallyExpanded: false,
+              collapsedShape: const Border(),
+              shape: const Border(),
+              children: sinSemestre
+                  .map((s) => _buildSinSemestreRow(context, s, mapeos))
+                  .toList(),
+            ),
+          ),
+        ],
+
+        const SizedBox(height: 20),
+        _editTile(context,
+            label: 'Curso',
+            value: '${p.cursoActual}',
+            leadingIcon: Icons.layers_outlined,
+            onTap: () => _seleccionarCurso(p.cursoActual, maxCurso.clamp(1, 10))),
+        _divider(context),
+        _editTile(context,
+            label: 'Semestre',
+            value: '${p.semestreEnCurso}°',
+            leadingIcon: Icons.layers_outlined,
+            onTap: () => _seleccionarSemestre(p.semestreEnCurso)),
+        _divider(context),
+        _readTile(context,
+            label: 'Créditos del semestre',
+            value: creditosCalculados > 0
+                ? '$creditosCalculados ECTS'
+                : '${p.creditosSemestreActual} ECTS',
+            leadingIcon: Icons.school_outlined),
+        _divider(context),
+        _readTile(context,
+            label: 'Horas estimadas / sem',
+            value: horasCalculadas > 0
+                ? '${horasCalculadas}h'
+                : '${p.horasObjetivoEstudioSemana}h',
+            leadingIcon: Icons.access_time),
+        _divider(context),
+        _editTile(context,
+            label: 'Promedio objetivo',
+            value: p.promedioObjetivo != null
+                ? p.promedioObjetivo!.toStringAsFixed(1)
+                : '—',
+            leadingIcon: Icons.trending_up,
+            onTap: () => _editarNumeroDecimal(
+                'Promedio objetivo (0-5)',
+                p.promedioObjetivo,
+                0,
+                5,
+                (v) => _guardar({'promedio_objetivo': v}))),
+      ],
+    );
+  }
+
+  Widget _buildInstitucionCard(BuildContext context, PerfilAcademicoDb p) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            cs.primaryContainer.withValues(alpha: 0.12),
+            cs.secondaryContainer.withValues(alpha: 0.06),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Universidad ──
+          Row(
+            children: [
+              Icon(Icons.school_rounded, size: 18, color: cs.primary),
+              const SizedBox(width: 8),
+              Text('Universidad',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  )),
+            ],
+          ),
+          const SizedBox(height: 4),
+          InkWell(
+            onTap: () => _seleccionarUniversidad(
+                p.universidad != null ? null : null),
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    p.universidad ?? 'No configurada',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: p.universidad != null
+                          ? cs.onSurface
+                          : cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(Icons.edit_outlined,
+                      size: 14, color: cs.primary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          // ── Carrera ──
+          Row(
+            children: [
+              Icon(Icons.menu_book_rounded, size: 18, color: cs.secondaryContainer),
+              const SizedBox(width: 8),
+              Text('Carrera',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  )),
+            ],
+          ),
+          const SizedBox(height: 4),
+          InkWell(
+            onTap: () {
+              if (_selectedUniversidadId != null || p.universidad != null) {
+                _seleccionarCarrera(p.carrera);
+              }
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    p.carrera ?? 'Selecciona universidad primero',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: p.carrera != null
+                          ? cs.onSurface
+                          : cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                if (p.carrera != null)
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: cs.secondaryContainer.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(Icons.edit_outlined,
+                        size: 14, color: cs.secondaryContainer),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCursoCards(
+      BuildContext context, List<({CarreraDb carrera, List<AsignaturaCatalogoDb> subjects})> data,
+      List<AsignaturaUsuarioSemestreDb> mapeos) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    // Recopilar todos los cursos disponibles
+    final cursos = <int>{};
+    final subjectsPorCurso = <int, List<AsignaturaCatalogoDb>>{};
+    final nombresCarrera = <String>{};
+    for (final entry in data) {
+      nombresCarrera.add(entry.carrera.nombre);
+      for (final s in entry.subjects) {
+        if (s.curso != null) {
+          cursos.add(s.curso!);
+          subjectsPorCurso.putIfAbsent(s.curso!, () => []).add(s);
+        }
+      }
+    }
+
+    // Contar asignaturas transversales mapeadas por curso
+    final extraPorCurso = <int, int>{};
+    for (final m in mapeos) {
+      extraPorCurso[m.curso] = (extraPorCurso[m.curso] ?? 0) + 1;
+    }
+
+    if (cursos.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text('Sin asignaturas en el catálogo',
+            style: theme.textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+      );
+    }
+
+    final cursosOrdenados = cursos.toList()..sort();
+    final carreraLabel = nombresCarrera.length == 1
+        ? nombresCarrera.first
+        : '${nombresCarrera.length} carreras';
+    final totalAsignaturas = data.fold<int>(0, (s, e) => s + e.subjects.length);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Carrera(s) + contador
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text(
+            '$carreraLabel · $totalAsignaturas asignaturas',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+        ),
+        // Mini cards de cursos en una sola fila
+        Row(
+          children: cursosOrdenados.map((curso) {
+            final materias = subjectsPorCurso[curso]!;
+            final extra = extraPorCurso[curso] ?? 0;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                    right: curso == cursosOrdenados.last ? 0 : 8),
+                child: InkWell(
+                  onTap: () => _showCursoBottomSheet(context, curso, materias),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text('$curso°',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: cs.primary,
+                            )),
+                        const SizedBox(height: 1),
+                        Text('Curso',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            )),
+                        const SizedBox(height: 3),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: extra > 0
+                                ? cs.tertiary.withValues(alpha: 0.15)
+                                : cs.primaryContainer.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            extra > 0
+                                ? '${materias.length}+$extra asig.'
+                                : '${materias.length} asig.',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: extra > 0 ? cs.tertiary : cs.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 9,
+                              )),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  void _showCursoBottomSheet(
+      BuildContext context, int curso, List<AsignaturaCatalogoDb> materias) {
+    final semestres = materias.map((m) => m.semestre).whereType<int>().toSet().toList()..sort();
+    if (semestres.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.65,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (ctx, scrollController) {
+            return DefaultTabController(
+              length: semestres.length,
+              child: Column(
+                children: [
+                  // Handle
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  // Title + tabs
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Row(
+                      children: [
+                        Text('Curso $curso',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            )),
+                        const Spacer(),
+                        Text('${materias.length} asignaturas',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                      ],
+                    ),
+                  ),
+                  TabBar(
+                    tabs: semestres.map((s) => Tab(text: '$s° Semestre')).toList(),
+                    labelColor: Theme.of(context).colorScheme.primary,
+                    unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    indicatorColor: Theme.of(context).colorScheme.primary,
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: TabBarView(
+                      children: semestres.map((sem) {
+                        final filtered = materias.where((m) => m.semestre == sem).toList();
+                        return ListView(
+                          controller: scrollController,
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                          children: filtered.map((m) => _subjectRow(context, m)).toList(),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _subjectRow(BuildContext context, AsignaturaCatalogoDb m) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            child: Icon(Icons.menu_book_outlined,
+                size: 18, color: cs.primary.withValues(alpha: 0.5)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(m.nombre,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    )),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    if (m.creditos != null)
+                      _badge(context, '${m.creditos} ECTS', cs.primary),
+                    if (m.creditos != null && m.caracter != null)
+                      const SizedBox(width: 6),
+                    if (m.caracter != null)
+                      _badge(context, m.caracter!, cs.secondaryContainer),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _badge(BuildContext context, String text, Color color) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(text,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+            fontSize: 10,
+          )),
+    );
+  }
+
+  Widget _divider(BuildContext context) => Divider(
+      height: 1,
+      indent: 48,
+      color:
+          Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3));
 }
 
 // =============================================================================
-// TAB 4: Ajustes
+// _AjustesTab
 // =============================================================================
 class _AjustesTab extends ConsumerWidget {
-  const _AjustesTab({required this.usuario, required this.prefs});
+  const _AjustesTab({
+    required this.usuario,
+    required this.prefs,
+  });
 
   final UsuarioDb usuario;
   final PreferenciasNotificacionDb prefs;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-                color: const Color(0xFF1E293B).withValues(alpha: 0.6)),
-          ),
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.visibility_rounded,
-                    color: Color(0xFF94A3B8)),
-                title: const Text('Visibilidad del perfil',
-                    style: TextStyle(fontSize: 13)),
-                subtitle: const Text(
-                    'Privado · Solo tus amigos pueden ver tus rutinas',
-                    style: TextStyle(fontSize: 11)),
-                trailing: const Icon(Icons.chevron_right_rounded,
-                    color: Color(0xFF64748B)),
-                onTap: () {},
-              ),
-              const Divider(height: 1, indent: 56),
-              ListTile(
-                leading: const Icon(Icons.notifications_rounded,
-                    color: Color(0xFF94A3B8)),
-                title: const Text('Notificaciones',
-                    style: TextStyle(fontSize: 13)),
-                subtitle: Text(
-                    'Modo: ${prefs.modoActual} · ${prefs.limiteDiario}/día',
-                    style: const TextStyle(fontSize: 11)),
-                trailing: const Icon(Icons.chevron_right_rounded,
-                    color: Color(0xFF64748B)),
-                onTap: () => context.push('/notificaciones'),
-              ),
-              const Divider(height: 1, indent: 56),
-              ListTile(
-                leading: const Icon(Icons.dark_mode_rounded,
-                    color: Color(0xFF94A3B8)),
-                title:
-                    const Text('Modo silencio', style: TextStyle(fontSize: 13)),
-                subtitle: Text(
-                  '${prefs.horaSilencioInicio ?? '—'} a ${prefs.horaSilencioFin ?? '—'}',
-                  style: const TextStyle(fontSize: 11),
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded,
-                    color: Color(0xFF64748B)),
-                onTap: () {},
-              ),
-            ],
-          ),
+        // ── Opciones de cuenta ──
+        _sectionTitle(context, 'Cuenta'),
+        const SizedBox(height: 8),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          leading: Icon(Icons.visibility_outlined, color: cs.primary),
+          title:
+              Text('Visibilidad del perfil', style: theme.textTheme.bodyMedium),
+          subtitle: Text('Privado · Solo tus amigos pueden ver tus rutinas',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: SVColors.onSurfaceMuted,
+              )),
+          trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+          onTap: () {},
         ),
-        const SizedBox(height: 16),
+        Divider(
+            height: 1,
+            indent: 56,
+            color: cs.outlineVariant.withValues(alpha: 0.3)),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          leading: Icon(Icons.notifications_outlined, color: cs.primary),
+          title: Text('Notificaciones', style: theme.textTheme.bodyMedium),
+          subtitle:
+              Text('Modo: ${prefs.modoActual} · ${prefs.limiteDiario}/día',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: SVColors.onSurfaceMuted,
+                  )),
+          trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+          onTap: () => context.push('/notificaciones'),
+        ),
+        Divider(
+            height: 1,
+            indent: 56,
+            color: cs.outlineVariant.withValues(alpha: 0.3)),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          leading: Icon(Icons.dark_mode_outlined, color: cs.primary),
+          title: Text('Modo silencio', style: theme.textTheme.bodyMedium),
+          subtitle: Text(
+            '${prefs.horaSilencioInicio ?? '—'} a ${prefs.horaSilencioFin ?? '—'}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: SVColors.onSurfaceMuted,
+            ),
+          ),
+          trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+          onTap: () {},
+        ),
+
+        const SizedBox(height: 24),
+        _sectionTitle(context, 'Aplicación'),
+        const SizedBox(height: 8),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          leading: Icon(Icons.info_outline, color: cs.primary),
+          title:
+              Text('Acerca de SynaptixFit', style: theme.textTheme.bodyMedium),
+          trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+          onTap: () {},
+        ),
+
+        const SizedBox(height: 24),
+
+        // ── Panel de administración (solo admin) ──
+        Consumer(
+          builder: (context, ref, _) {
+            final esAdminAsync = ref.watch(esAdminProvider);
+            return esAdminAsync.when(
+              data: (esAdmin) => esAdmin
+                  ? Column(
+                      children: [
+                        _sectionTitle(context, 'Administración'),
+                        const SizedBox(height: 8),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          leading: Icon(Icons.admin_panel_settings,
+                              color: cs.primary),
+                          title: Text('Panel de Administración',
+                              style: theme.textTheme.bodyMedium),
+                          subtitle: Text('Gestionar usuarios, roles y datos',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: SVColors.onSurfaceMuted,
+                              )),
+                          trailing: Icon(Icons.chevron_right,
+                              color: cs.onSurfaceVariant),
+                          onTap: () => context.push('/admin'),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            );
+          },
+        ),
+
+        // ── Cerrar sesión ──
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () async {
               try {
                 await ref.read(authControllerProvider.notifier).logout();
+                ref.invalidate(perfilUsuarioProvider);
+                ref.invalidate(dashboardProvider);
+                ref.invalidate(rutinasUsuarioProvider);
                 if (!context.mounted) return;
                 context.go('/acceso');
               } catch (_) {
@@ -1574,40 +2090,16 @@ class _AjustesTab extends ConsumerWidget {
               }
             },
             icon: const Icon(Icons.logout_rounded,
-                size: 18, color: Color(0xFFEF4444)),
+                size: 18, color: SVColors.error),
             label: const Text('Cerrar sesión',
-                style: TextStyle(color: Color(0xFFEF4444))),
+                style: TextStyle(color: SVColors.error)),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(44),
-              side: const BorderSide(color: Color(0xFF3B1C1C)),
+              side: BorderSide(color: SVColors.error.withValues(alpha: 0.3)),
             ),
           ),
         ),
       ],
     );
   }
-}
-
-// =============================================================================
-// Helpers
-
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _TabBarDelegate(this.tabBar);
-  final TabBar tabBar;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-        color: Theme.of(context).scaffoldBackgroundColor, child: tabBar);
-  }
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  bool shouldRebuild(covariant _TabBarDelegate old) => old.tabBar != tabBar;
 }

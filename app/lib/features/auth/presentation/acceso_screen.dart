@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../../../core/config/env_config.dart';
 import '../../../core/design_system/sv_colors.dart';
 import '../../../shared/widgets/sv_primary_button.dart';
+import '../application/auth_provider.dart';
 import 'auth_controller.dart';
 
 class AccesoScreen extends ConsumerStatefulWidget {
@@ -37,6 +38,8 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
 
       if (evento.event == sb.AuthChangeEvent.signedIn) {
         ref.read(authControllerProvider.notifier).sincronizarSesionActiva();
+      } else if (evento.event == sb.AuthChangeEvent.signedOut) {
+        ref.read(authControllerProvider.notifier).logout();
       }
     });
 
@@ -57,7 +60,8 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
     if (!mounted) return;
 
     if (sesion.autenticado) {
-      context.go(sesion.requiereOnboarding ? '/onboarding' : '/dashboard');
+      context.go(
+          sesion.requiereOnboarding ? '/onboarding/academico' : '/dashboard');
       return;
     }
 
@@ -90,7 +94,7 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
 
       if (actual.autenticado && anterior?.autenticado != true) {
         if (actual.requiereOnboarding) {
-          context.go('/onboarding');
+          context.go('/onboarding/academico');
         } else {
           context.go('/dashboard');
         }
@@ -143,6 +147,15 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
                       .fade(duration: 420.ms)
                       .scale(begin: const Offset(0.94, 0.94)),
                   const SizedBox(height: 18),
+                  Text(
+                    '¿Nuevo en SynaptixFit? Regístrate con Google',
+                    style: tema.textTheme.bodyMedium?.copyWith(
+                      color: SVColors.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 14),
                   Container(
                     width: double.infinity,
                     constraints: const BoxConstraints(maxWidth: 620),
@@ -317,19 +330,6 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
                                       password: _contrasenaCtrl.text,
                                     ),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          onPressed: estado.loading
-                              ? null
-                              : () => ref
-                                  .read(authControllerProvider.notifier)
-                                  .registro(
-                                    email: _correoCtrl.text.trim(),
-                                    password: _contrasenaCtrl.text,
-                                  ),
-                          icon: const Icon(Icons.person_add_alt_1_rounded),
-                          label: const Text('Crear cuenta'),
                         ),
                       ],
                     ),

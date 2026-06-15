@@ -60,7 +60,7 @@ Future<ApunteDb?> crearApunte({
   required String titulo,
   required String contenido,
   String? asignaturaId,
-  String visibilidad = 'privado',
+  String visibilidad = 'private',
   bool esNotaRapida = false,
 }) async {
   final client = Supabase.instance.client;

@@ -8,6 +8,7 @@ import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/challenge_progress_bar.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../application/retos_provider.dart';
+import 'widgets/grafo_dependencias.dart';
 
 class DetalleRetoScreen extends ConsumerWidget {
   const DetalleRetoScreen({required this.id, super.key});
@@ -91,6 +92,11 @@ class DetalleRetoScreen extends ConsumerWidget {
                 ),
               const SizedBox(height: 8),
               _buildMetadataCard(context, detalle.reto),
+              if (detalle.reto.tieneDependencias &&
+                  detalle.hitos.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _GrafoSection(retoId: id),
+              ],
               const SizedBox(height: 8),
               if (detalle.hitos.isNotEmpty) ...[
                 ChallengeProgressBar(
@@ -215,17 +221,17 @@ class DetalleRetoScreen extends ConsumerWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: reto.visibilidad == 'publico'
+                    color: reto.visibilidad == 'public'
                         ? Colors.orange.withValues(alpha: 0.12)
                         : Colors.grey.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    reto.visibilidad == 'publico' ? 'Público' : 'Privado',
+                    reto.visibilidad == 'public' ? 'Público' : 'Privado',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: reto.visibilidad == 'publico'
+                      color: reto.visibilidad == 'public'
                           ? Colors.orange
                           : Colors.grey,
                     ),
@@ -462,6 +468,28 @@ class _MetadataItem extends StatelessWidget {
         Text(value,
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
       ],
+    );
+  }
+}
+
+class _GrafoSection extends ConsumerWidget {
+  const _GrafoSection({required this.retoId});
+
+  final String retoId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final grafoAsync = ref.watch(grafoRetoProvider(retoId));
+    return grafoAsync.when(
+      loading: () => const SizedBox(
+        height: 60,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (grafo) {
+        if (grafo == null) return const SizedBox.shrink();
+        return GrafoDependencias(grafo: grafo);
+      },
     );
   }
 }

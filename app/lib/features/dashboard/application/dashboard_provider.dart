@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env_config.dart';
 import '../../../shared/models/db_models.dart';
-import '../../retos/application/retos_provider.dart';
+import '../../retos/application/retos_core.dart';
 
 class RutinaActivaDashboard {
   const RutinaActivaDashboard({
@@ -44,8 +44,10 @@ class DashboardData {
   final List<RutinaActivaDashboard> rutinasActivas;
 
   int get racha => usuario.rachaActual;
-  int get xpParaSiguienteNivel => 1000 * usuario.nivel;
-  double get xpProgreso => usuario.xpTotal / xpParaSiguienteNivel;
+  int get xpParaSiguienteNivel => (usuario.nivel.clamp(1, 999)) * 100;
+  double get xpProgreso => xpParaSiguienteNivel > 0
+      ? (usuario.xpTotal / xpParaSiguienteNivel).clamp(0.0, 1.0)
+      : 0.0;
   double progresoReto(String retoId) => progresosRetos[retoId] ?? 0.0;
   bool tieneHitosReto(String retoId) => retosTienenHitos[retoId] ?? false;
 
@@ -71,57 +73,59 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
   final hoyFin =
       DateTime(now.year, now.month, now.day, 23, 59, 59).toIso8601String();
 
-  // Queries en paralelo con tipado explícito
-  final (
-    usuarioFuture,
-    sesionesFuture,
-    notifFuture,
-    perfilFuture,
-    planFuture,
-    horariosFuture,
-    rutinasFuture,
-  ) = (
-    client.from('usuarios').select().eq('id', user.id).maybeSingle(),
-    client
-        .from('sesiones_registradas')
-        .select()
-        .eq('usuario_id', user.id)
-        .gte('completada_en', hoyInicio),
-    client
-        .from('notificaciones')
-        .select()
-        .eq('usuario_id', user.id)
-        .eq('esta_leida', false)
-        .order('creado_en', ascending: false),
-    client
-        .from('perfil_bienestar_usuario')
-        .select()
-        .eq('usuario_id', user.id)
-        .maybeSingle(),
-    client
-        .from('plan_entrenamiento_semanal')
-        .select()
-        .eq('usuario_id', user.id)
-        .eq('estado', 'activo')
-        .maybeSingle(),
-    client
-        .from('horarios_academicos')
-        .select()
-        .eq('usuario_id', user.id)
-        .gte('hora_inicio', hoyInicio)
-        .lte('hora_inicio', hoyFin),
-    client
-        .from('rutinas')
-        .select('*')
-        .eq('usuario_id', user.id)
-        .eq('estado', 'activo')
-        .order('creado_en', ascending: false)
-        .limit(10),
-  );
+  // Lunes de esta semana para conteo semanal
+  final lunes = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+  final lunesInicio =
+      DateTime(lunes.year, lunes.month, lunes.day).toIso8601String();
+
+  // Queries en paralelo
+  final usuarioFuture =
+      client.from('usuarios').select().eq('id', user.id).maybeSingle();
+  final sesionesFuture = client
+      .from('sesiones_registradas')
+      .select()
+      .eq('usuario_id', user.id)
+      .gte('completada_en', hoyInicio);
+  final sesionesSemanaFuture = client
+      .from('sesiones_registradas')
+      .select()
+      .eq('usuario_id', user.id)
+      .gte('completada_en', lunesInicio);
+  final notifFuture = client
+      .from('notificaciones')
+      .select()
+      .eq('usuario_id', user.id)
+      .eq('esta_leida', false)
+      .order('creado_en', ascending: false);
+  final perfilFuture = client
+      .from('perfil_bienestar_usuario')
+      .select()
+      .eq('usuario_id', user.id)
+      .maybeSingle();
+  final planFuture = client
+      .from('plan_entrenamiento_semanal')
+      .select()
+      .eq('usuario_id', user.id)
+      .eq('estado', 'activo')
+      .maybeSingle();
+  final horariosFuture = client
+      .from('horarios_academicos')
+      .select()
+      .eq('usuario_id', user.id)
+      .gte('hora_inicio', hoyInicio)
+      .lte('hora_inicio', hoyFin);
+  final rutinasFuture = client
+      .from('rutinas')
+      .select('*')
+      .eq('usuario_id', user.id)
+      .eq('estado', 'activo')
+      .order('creado_en', ascending: false)
+      .limit(10);
 
   final results = await Future.wait<Object?>([
     usuarioFuture,
     sesionesFuture,
+    sesionesSemanaFuture,
     notifFuture,
     perfilFuture,
     planFuture,
@@ -131,11 +135,12 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
 
   final usuarioMap = results[0] as Map<String, dynamic>?;
   final sesionesHoy = results[1] as List<dynamic>;
-  final notifData = results[2] as List<dynamic>;
-  final perfilMap = results[3] as Map<String, dynamic>?;
-  final planMap = results[4] as Map<String, dynamic>?;
-  final horariosHoy = results[5] as List<dynamic>;
-  final rutinasData = results[6] as List<dynamic>;
+  final sesionesSemana = results[2] as List<dynamic>;
+  final notifData = results[3] as List<dynamic>;
+  final perfilMap = results[4] as Map<String, dynamic>?;
+  final planMap = results[5] as Map<String, dynamic>?;
+  final horariosHoy = results[6] as List<dynamic>;
+  final rutinasData = results[7] as List<dynamic>;
 
   final usuario = usuarioMap != null
       ? UsuarioDb.fromMap(usuarioMap)
@@ -148,6 +153,7 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
           nivel: 1,
           xpTotal: 0,
           rachaActual: 0,
+          rol: 'usuario',
           creadoEn: DateTime.now(),
           actualizadoEn: DateTime.now(),
         );
@@ -195,7 +201,7 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
   return DashboardData(
     usuario: usuario,
     calorias: caloriasHoy,
-    sesiones: sesionesHoy.length,
+    sesiones: sesionesSemana.length,
     horasEstudio: horasEstudioCalculadas,
     retosActivos: retos,
     notificacionesNoLeidas: notificaciones,

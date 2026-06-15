@@ -51,9 +51,9 @@ El MVP de SynaptixFit integra las siguientes funcionalidades, organizadas en cin
 
 ### 1.7 Observaciones y alcance
 
-El alcance definitivo del proyecto podrá ajustarse durante el desarrollo en coordinación con el tutor académico, manteniendo como prioridad la correcta aplicación de una metodología de desarrollo software y la validación de un núcleo funcional estable. Las funcionalidades avanzadas (integración con IA para recomendaciones personalizadas, notificaciones push nativas y sincronización offline completa) se consideran líneas de trabajo futuro.
+El alcance definitivo del proyecto podrá ajustarse durante el desarrollo en coordinación con el tutor académico, manteniendo como prioridad la correcta aplicación de una metodología de desarrollo software y la validación de un núcleo funcional estable. Las funcionalidades avanzadas (notificaciones push nativas e integración con calendarios externos) se consideran líneas de trabajo futuro. La integración con IA generativa (Gemini Flash), el sistema de periodización, el check-in diario de fatiga, y la sincronización offline (cola Hive + connectivity_plus) están implementados y funcionales.
 
-**Sistema de gamificación (diagnosticado, planificado):** La función PostgreSQL `otorgar_xp()` existe en la BD con lógica de level-up completa (umbral = 1000 × nivel, XP sobrante se acumula), pero **nunca se llama** desde el cliente Flutter (0 llamadas `.rpc()`). XP y nivel son display-only estáticos. El campo `racha_actual` nunca se actualiza (sin triggers). Pendiente de implementar: conectar `finalizarSesion()` → `client.rpc('otorgar_xp')` con fórmula `50 + min(duraciónMin, 90) + (RPE × 5)`.
+**Sistema de gamificación (100% implementado):** La función PostgreSQL `otorgar_xp()` se llama desde 3 ubicaciones del cliente Flutter: `finalizarSesion()` en `rutina_provider.dart:792` (fórmula `50 + min(duraciónMin, 90) + rpe × 5`), `syncCargaAcademicaSemanal()` en `rutina_provider.dart:1380` (bonificación de 150 XP al sincronizar carga), y `completarReto()` en `retos_provider.dart:181` (XP por completar hitos). El sistema incluye level-up automático (umbral = 1000 × nivel), XP sobrante acumulado, y DTO `XpResultado` para feedback de subida de nivel. El campo `racha_actual` se actualiza vía triggers en BD (`trg_actualizar_racha`).
 
 ---
 

@@ -259,7 +259,7 @@ class _VisibilidadChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (visibilidad) {
-      'publico' => Colors.green,
+      'public' => Colors.green,
       'solo_amigos' => Colors.orange,
       _ => Colors.grey,
     };
@@ -290,7 +290,7 @@ class _ApuntesEditorScreenState extends ConsumerState<ApuntesEditorScreen> {
   final _tituloCtrl = TextEditingController();
   final _contenidoCtrl = TextEditingController();
   String? _asignaturaId;
-  String _visibilidad = 'privado';
+  String _visibilidad = 'private';
   bool _mostrandoPreview = false;
   bool _esNotaRapida = false;
 
@@ -413,8 +413,8 @@ class _ApuntesEditorScreenState extends ConsumerState<ApuntesEditorScreen> {
                 initialValue: _visibilidad,
                 decoration: const InputDecoration(labelText: 'Visibilidad'),
                 items: const [
-                  DropdownMenuItem(value: 'privado', child: Text('Privado')),
-                  DropdownMenuItem(value: 'publico', child: Text('Público')),
+                  DropdownMenuItem(value: 'private', child: Text('Privado')),
+                  DropdownMenuItem(value: 'public', child: Text('Público')),
                   DropdownMenuItem(
                       value: 'solo_amigos', child: Text('Solo amigos')),
                 ],

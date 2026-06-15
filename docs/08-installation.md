@@ -164,15 +164,11 @@ El dataset se compone de tres fuentes procesadas y unificadas:
 Los scripts de seeding se ejecutan desde la raíz del proyecto:
 
 ```bash
-# Poblar catálogo completo
-python supabase/seed_ejercicios.py
+# Poblar catálogo académico v2 desde grados.json
+python supabase/seed_catalogo_v2.py
 ```
 
-Este script carga el JSON unificado y puebla las tablas:
-- `ejercicios` (909 registros con enlaces a imagen/video en R2)
-- `ejercicio_musculos_secundarios` (M:N cardinalidad 1:3.7)
-- `ejercicio_equipamiento` (M:N)
-- Catálogos: `musculos` (93), `partes_cuerpo`, `equipamientos`
+El catálogo de ejercicios (909 ejercicios, 93 músculos) ya está incluido en la migración base `202606060049_esquema_base.sql` (~12K líneas) y no requiere seed externo. Los seeds mock (`seed_ejercicios.py`, `seed_usuarios.py`, `seed_demo_data.py`, `seed_asignaturas.py`, `seed_todo.py`) fueron eliminados en la Fase 0 del Plan Maestro.
 
 Ver detalle operativo y criterios de mantenimiento en [13-maintenance.md](13-maintenance.md).
 
@@ -182,7 +178,7 @@ Ver detalle operativo y criterios de mantenimiento en [13-maintenance.md](13-mai
 
 ```text
 synaptixfit/
-  docs/                          ← Documentación (17 archivos estándar)
+  docs/                          ← Documentación (18 archivos estándar)
   app/
     lib/
       core/                      ← Errores, utils, config, routing, design system, sync
@@ -194,13 +190,13 @@ synaptixfit/
         bienestar/               ← Motor de recomendaciones (9 servicios + orquestador)
         social/
         notificaciones/
-        analitica/
+        analitica/               ← Analítica avanzada (Sprint 7B)
+        sync/                    ← Sincronización offline (Sprint 7C)
       main.dart
     test/
     integration_test/
   supabase/
-    migrations/                  ← 49 migraciones SQL (0001 → 0050)
-    templates/                   ← Seed templates
+    migrations/                  ← 11 migraciones SQL consolidadas
   cloudflare/
     synaptixfit-r2-proxy/        ← Worker para proxy de imágenes R2
 ```

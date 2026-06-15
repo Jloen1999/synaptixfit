@@ -56,7 +56,8 @@ class _CrearRetoSimpleScreenState extends ConsumerState<CrearRetoSimpleScreen> {
           _fechaFin = _fechaInicio.add(const Duration(days: 1));
         }
       } else {
-        _fechaFin = DateTime(seleccion.year, seleccion.month, seleccion.day);
+        _fechaFin =
+            DateTime(seleccion.year, seleccion.month, seleccion.day, 23, 59);
       }
     });
   }

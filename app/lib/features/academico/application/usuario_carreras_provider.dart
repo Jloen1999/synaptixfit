@@ -21,18 +21,18 @@ final usuarioCarrerasProvider =
 
 /// Carreras del usuario con el nombre de la carrera resuelto.
 final carrerasUsuarioConNombreProvider =
-    FutureProvider.family<List<CatalogoCarreraDb>, List<UsuarioCarreraDb>>(
+    FutureProvider.family<List<CarreraDb>, List<UsuarioCarreraDb>>(
         (ref, usuarioCarreras) async {
   final client = Supabase.instance.client;
-  final result = <CatalogoCarreraDb>[];
+  final result = <CarreraDb>[];
   for (final uc in usuarioCarreras) {
     final data = await client
-        .from('catalogo_carreras')
-        .select('*, catalogo_universidades(nombre)')
+        .from('carreras')
+        .select()
         .eq('id', uc.carreraId)
         .maybeSingle();
     if (data != null) {
-      result.add(CatalogoCarreraDb.fromMap(data));
+      result.add(CarreraDb.fromMap(data));
     }
   }
   return result;
@@ -94,7 +94,7 @@ Future<int> sincronizarAsignaturasDeCarreras(WidgetRef ref) async {
 
   for (final cid in carreraIds) {
     final catalogoData = await client
-        .from('catalogo_asignaturas')
+        .from('asignaturas_catalogo')
         .select()
         .eq('carrera_id', cid);
 

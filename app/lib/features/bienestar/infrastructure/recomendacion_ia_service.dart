@@ -5,119 +5,11 @@ import 'package:flutter/foundation.dart';
 
 import '../../../shared/models/db_models.dart';
 import '../application/ejercicios_provider.dart';
+import '../domain/ejercicio_recomendado_dto.dart';
+import '../domain/historial_sesion_dto.dart';
+import '../domain/recomendacion_result_dto.dart';
 import 'parametros_objetivo.dart';
 import 'recomendacion_contexto_service.dart';
-
-// =============================================================================
-// DTOs
-// =============================================================================
-
-class EjercicioRecomendado {
-  const EjercicioRecomendado({
-    required this.ejercicioId,
-    this.series = 3,
-    this.repeticiones = 10,
-    this.segundosDescanso = 90,
-    this.pesoKg,
-    this.duracionSegundos,
-    this.distanciaMetros,
-    this.tiempoIsometricoSegundos,
-  });
-
-  final String ejercicioId;
-  final int series;
-  final int repeticiones;
-  final int segundosDescanso;
-  final double? pesoKg;
-  final int? duracionSegundos;
-  final int? distanciaMetros;
-  final int? tiempoIsometricoSegundos;
-
-  factory EjercicioRecomendado.fromMap(Map<String, dynamic> map) {
-    return EjercicioRecomendado(
-      ejercicioId: map['exerciseId'] as String? ?? '',
-      series: (map['series'] as num?)?.toInt() ?? 3,
-      repeticiones: (map['repeticiones'] as num?)?.toInt() ?? 10,
-      segundosDescanso: (map['segundosDescanso'] as num?)?.toInt() ?? 90,
-      pesoKg: (map['pesoKg'] as num?)?.toDouble(),
-      duracionSegundos: (map['duracionSegundos'] as num?)?.toInt(),
-      distanciaMetros: (map['distanciaMetros'] as num?)?.toInt(),
-      tiempoIsometricoSegundos:
-          (map['tiempoIsometricoSegundos'] as num?)?.toInt(),
-    );
-  }
-}
-
-class RecomendacionRutinaResult {
-  const RecomendacionRutinaResult({
-    required this.nombre,
-    required this.descripcion,
-    required this.objetivo,
-    required this.duracionSemanas,
-    required this.estructura,
-    this.error,
-  });
-
-  final String nombre;
-  final String descripcion;
-  final String objetivo;
-  final int duracionSemanas;
-  final Map<int, Map<int, List<EjercicioRecomendado>>> estructura;
-  final String? error;
-
-  bool get tieneError => error != null;
-}
-
-class RecomendacionEjerciciosResult {
-  const RecomendacionEjerciciosResult({
-    required this.ejercicios,
-    this.error,
-  });
-
-  final List<EjercicioRecomendado> ejercicios;
-  final String? error;
-
-  bool get tieneError => error != null;
-}
-
-/// Datos de sesiones previas para que la IA pueda aplicar sobrecarga
-/// progresiva y detectar patrones de fatiga.
-class HistorialSesionDto {
-  const HistorialSesionDto({
-    this.totalSesionesCompletadas = 0,
-    this.rpePromedio = 0.0,
-    this.volumenSemanalEstimado = 0,
-    this.ejerciciosRecientes = const [],
-    this.diasCompletadosUltimaSemana = 0,
-    this.semanasConsecutivasEntrenando = 0,
-  });
-
-  final int totalSesionesCompletadas;
-  final double rpePromedio;
-  final int volumenSemanalEstimado;
-  final List<EjericicioRecienteDto> ejerciciosRecientes;
-  final int diasCompletadosUltimaSemana;
-  final int semanasConsecutivasEntrenando;
-
-  bool get requiereDescarga =>
-      rpePromedio > 8.0 && semanasConsecutivasEntrenando >= 4;
-}
-
-class EjericicioRecienteDto {
-  const EjericicioRecienteDto({
-    required this.nombreEjercicio,
-    required this.pesoPromedio,
-    required this.repsPromedio,
-    required this.rpePromedio,
-    required this.ultimaFecha,
-  });
-
-  final String nombreEjercicio;
-  final double pesoPromedio;
-  final int repsPromedio;
-  final double rpePromedio;
-  final DateTime ultimaFecha;
-}
 
 // =============================================================================
 // Servicio
@@ -554,7 +446,7 @@ IMPORTANTE: Los valores "series": 4 en el ejemplo son solo ilustrativos. Persona
     required PerfilBienestarDb perfil,
     required String nombreEjercicio,
     required String objetivoRutina,
-    required List<EjericicioRecienteDto> historialEjercicio,
+    required List<EjercicioRecienteDto> historialEjercicio,
     double rpeUltimaSesion = 7.0,
   }) async {
     if (apiKey.trim().isEmpty || historialEjercicio.isEmpty) return null;
@@ -1263,10 +1155,13 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
   /// Método público para generación de texto simple vía Gemini.
   /// Usado por SmartBanner y otros widgets que necesitan prompts de texto libre.
   Future<String> generarTexto(String apiKey, String prompt) async {
-    return _callGemini(apiKey, prompt);
+    return _callGemini(apiKey, prompt, useJsonMode: false);
   }
 
-  Future<String> _callGemini(String apiKey, String prompt) async {
+  Future<String> _callGemini(String apiKey, String prompt,
+      {bool useJsonMode = true}) async {
+    final genConfig = <String, dynamic>{};
+    if (useJsonMode) genConfig['response_mime_type'] = 'application/json';
     final response = await _dio.post<Map<String, dynamic>>(
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
       options: Options(
@@ -1283,9 +1178,7 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
             ]
           }
         ],
-        'generationConfig': {
-          'response_mime_type': 'application/json',
-        },
+        'generationConfig': genConfig,
       },
     );
 
@@ -1306,6 +1199,9 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
     }
 
     final trimmed = raw.trim();
+
+    if (!useJsonMode) return trimmed;
+
     try {
       json.decode(trimmed);
       return trimmed;
