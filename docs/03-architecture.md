@@ -1,8 +1,8 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 5.1
+**Versión:** 5.2
 **Estado:** APROBADO
-**Fecha:** 14-06-2026
+**Fecha:** 21-06-2026
 **Autor:** Arquitectura
 **Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.4)
 
@@ -117,7 +117,7 @@ flowchart TB
 
 ```
 synaptixfit/
-├── docs/                          # 18 archivos de documentación
+├── docs/                          # 22 archivos de documentación (00-plan-maestro → 21-plan-definitivo)
 ├── app/
 │   └── lib/
 │       ├── core/                  # Errores, utils, config, routing, design system, sync
@@ -160,11 +160,23 @@ synaptixfit/
 │       │   ├── dashboard/                  # Dashboard principal
 │       │   ├── perfil/                     # Perfil de usuario
 │       │   ├── analitica/                  # Analítica avanzada — charts, correlaciones, insights (Sprint 7B)
-│       │   └── sync/                       # Sincronización offline — connectivity_plus + cola Hive (Sprint 7C)
-│       │   └── admin/                      # Panel de administración — wipe de datos, búsqueda de usuarios, rol admin
+│       │   ├── sync/                       # Sincronización offline — connectivity_plus + cola Hive (Sprint 7C)
+│       │   ├── pomodoro/                   # Temporizador Pomodoro (25/5 min) con anillo CustomPainter
+│       │   ├── escanear/                   # Digitalización OCR de apuntes (Web: mensaje informativo)
+│       │   ├── insignias/                  # Sistema de insignias y rachas (15 insignias, InsigniaEngine, RachaService)
+│       │   ├── academico/                  # ★ Time-Blocking académico — Custom Grid nativo, DnD, IA (Gemini Flash)
+│       │   │   ├── domain/                  # DTOs: BloquePlanificadoData, InboxConfig, TimeblockIaResult
+│       │   │   ├── infrastructure/          # TimeBlockIaService (reglas N1-N10, prompt, validación, fallback)
+│       │   │   ├── application/             # Providers: inboxConfig, calendarGrid, horariosFijos, bloqueEstudio
+│       │   │   └── presentation/            # InboxScreen, CanvasScreen, widgets (TimeGridPainter, TimeBlockWidget, ProgressGamificationBar, canvas_helpers)
+│       │   └── admin/                      # Panel de administración Fase 2 — 34 archivos, 5 tabs
+│       │       ├── domain/                  # 7 DTOs: AdminKpi, AdminContenido, AdminEjercicio, AdminAuditoria, AdminUsuarioEstadisticas, AdminTimelineEntry, UsuarioAdmin
+│       │       ├── infrastructure/          # 6 repositorios: admin, metricas, auditoria, contenido, ejercicios, usuario stats
+│       │       ├── application/             # 6 provider files: admin, metricas, auditoria, contenido, ejercicios, usuario stats
+│       │       └── presentation/            # AdminHubScreen (TabBar 5 tabs) + 15 widgets/pantallas (KPI, usuarios, contenido, ejercicios, logs, gráficos, timeline, paginación)
 │       └── main.dart                       # Entry point, ProviderScope, Supabase.init
 ├── supabase/
-│   ├── migrations/                         # 11 archivos de migración consolidados
+│   ├── migrations/                         # 26 archivos de migración (0049-0025)
 │   └── seed_catalogo_v2.py                 # Seeding del catálogo académico v2 desde grados.json
 ├── cloudflare/
 │   └── synaptixfit-r2-proxy/
@@ -1059,7 +1071,10 @@ supabase/migrations/
 ├── 20260616_0003_insignias.sql            ← Sprint 9: insignias y rachas
 ├── 20260616_0004_consolidacion_fixes.sql  ← Consolidación: tablas faltantes + columnas + índices
 ├── 20260616_0005_fechas_coherencia.sql    ← Sprint 9: coherencia de fechas en rutinas, retos y entregas
-└── 20260616000006_admin_rol.sql           ← Panel de administración: columna rol, wipe_user_data, RLS admin
+├── 20260616000006_admin_rol.sql           ← Panel admin v1: columna rol, wipe_user_data, RLS admin
+├── 20260616000007_nivel_actividad_check.sql ← Onboarding: CHECK constraint nivel_actividad
+├── 20260616000008_asignaturas_usuario_semestre.sql ← Mapeo de transversales
+└── 20260616000009_admin_panel_v2.sql      ← Panel admin Fase 1: admin_auditoria, v_admin_metricas, moderación, columna activo
 ```
 
 La migración `202606120050_dependencias_retos.sql` contiene:
@@ -1069,11 +1084,13 @@ La migración `202606120050_dependencias_retos.sql` contiene:
 - `ALTER TABLE hitos_de_reto ADD COLUMN condicion_n ...`
 - `CREATE OR REPLACE FUNCTION desbloquear_hitos() ...`
 - `CREATE TRIGGER trg_hito_completado ...`
-- `CREATE VIEW v_analitica_semanal AS ...`
-- `CREATE TABLE insights_analitica (...)`
+La migración `20260617000011_timeblocking.sql` (Sprint Time-Blocking) contiene:
+- `ALTER TABLE horarios_academicos ADD COLUMN es_fijo BOOLEAN NOT NULL DEFAULT true`
+- `ALTER TABLE horarios_academicos ADD COLUMN dia_semana INT CHECK (dia_semana BETWEEN 1 AND 7)`
+- `CREATE INDEX idx_horarios_dia_semana ON horarios_academicos(usuario_id, dia_semana)`
 
 ---
 
-**Documento compilado:** 12-06-2026
-**Versión:** 4.2
+**Documento compilado:** 17-06-2026
+**Versión:** 5.3
 **Clasificación:** PÚBLICO — Equipo jloen

@@ -96,15 +96,18 @@ supabase db push                 # deploy migrations to linked project
 - **`app/lib/features/social/presentation/widgets/comentario_input.dart`** — Barra de input de comentario con validación 1-500 chars
 - **`app/lib/features/insignias/domain/insignia_dto.dart`** — DTOs `Insignia` (catálogo con rareza/color) y `RachaState` (estado de racha con hitos)
 - **`app/lib/features/insignias/infrastructure/insignias_repository.dart`** — `InsigniasRepository` consulta catálogo LEFT JOIN usuario_insignias, otorga por UNIQUE constraint
-- **`app/lib/features/insignias/infrastructure/insignia_engine.dart`** — `InsigniaEngine` evalúa 12 criterios contra BD y otorga insignias automáticamente (~170 lines)
+- **`app/lib/features/insignias/infrastructure/insignia_engine.dart`** — `InsigniaEngine` evalúa 13 criterios contra BD y otorga insignias automáticamente (~258 lines). Incluye métrica `semanas_plan_adherencia` para insignia "Planificador Maestro" (4 semanas consecutivas con ≥80% adherencia).
 - **`app/lib/features/insignias/infrastructure/racha_service.dart`** — `RachaService` calcula racha diaria (sesiones + check-ins), hitos (7/30/100/365), riesgo (<4h)
 - **`app/lib/features/insignias/application/insignias_provider.dart`** — 6 providers: `catalogoInsigniasProvider`, `insigniasUsuarioProvider`, `insigniasCountProvider`, `rachaStateProvider`, `insigniasRecienObtenidasProvider`; acción `evaluarInsignias()` + toast `mostrarInsigniaToast()`
 - **`app/lib/features/insignias/presentation/insignias_screen.dart`** — `ConsumerStatefulWidget` con filtro por categoría (6 chips), grid 2 columnas, bottom sheet de detalle
 - **`app/lib/features/insignias/presentation/widgets/insignia_card.dart`** — Card de insignia (obtenida = color vibrante, bloqueada = gris + candado)
 - **`app/lib/features/insignias/presentation/widgets/racha_indicator.dart`** — Widget de racha con barra de progreso, alerta de riesgo, récord histórico
-- **`app/lib/features/admin/`** — Panel de administración: AdminPanelScreen, AdminUsuarioDetalle, AdminWipeDialog; provider `esAdminProvider`; ruta `/admin` protegida por rol
-- **`supabase/migrations/`** — 11 migration files (202606060049 esquema base ~12K lines + 202606120050 dependencias_retos + 202606130001 marcar_semana_completada + 202606140001 v_analitica_semanal + 20260616000002 social_moderacion + 20260616000003 insignias + 20260616000004 consolidacion_fixes + 20260616000005 fechas_coherencia + 20260616000006_admin_rol + 20260616000007_nivel_actividad_check + 20260616000008_asignaturas_usuario_semestre), 50+ tables + 2 views + RLS. NOTA: 0002-0004 renombrados para evitar colisión de timestamp en schema_migrations; 0004 modificado con DROP VIEW IF EXISTS para v_ejercicios_completos; 0005 corrige coherencia de fechas en rutinas, retos y entregas; 0006 añade columna rol, RPC wipe_user_data, políticas admin bypass RLS y función es_admin(); 0007 añade CHECK constraint en nivel_actividad (sedentario/ligero/moderado/alto); 0008 añade tabla asignaturas_usuario_semestre para mapeo de transversales a curso+semestre.
-- **`docs/`** — 18-file documentation structure: 00-plan-maestro → 17-dataset-lyfta, kept in sync with code
+- **`app/lib/features/admin/`** — Panel de administración Fase 3 (final): `AdminHubScreen` (TabBar 5 tabs: KPIs, Usuarios, Contenido, Ejercicios, Auditoría), `AdminPanelScreen` (refactorizado como pestaña Usuarios con búsqueda, filtros, ordenamiento y botón eliminar), `AdminUsuarioDetalle` (3 sub-pestañas: Perfil/Estadísticas/Timeline con gráficos fl_chart y timeline real, configuración de usuario: editar nombre/email, reset XP, cambiar nivel, eliminar usuario), `AdminWipeDialog`; 7 DTOs en domain/ (`UsuarioAdmin`, `AdminMetricasGlobales`, `AuditoriaRegistro`, `ContenidoReportado`, `AdminEjercicio`, `AdminUsuarioEstadisticas`, `AdminTimelineEntry`), 6 repositorios en infrastructure/ (`AdminRepository` extendido con `deleteUser()`, `AdminMetricasRepository`, `AdminAuditoriaRepository`, `AdminContenidoRepository`, `AdminEjercicioRepository`, `AdminUsuarioStatsRepository`), 6 provider files en application/ (`admin_provider.dart` con `eliminarUsuario()` y mutaciones de configuración, `admin_metricas_provider.dart`, `admin_auditoria_provider.dart`, `admin_contenido_provider.dart`, `admin_ejercicio_provider.dart`, `admin_usuario_stats_provider.dart`), 15 widgets/pantallas en presentation/ (3 pantallas + 12 widgets: `AdminKpiCard`, `AdminKpiDashboard` con gráfico de tendencia 30 días fl_chart, `AdminLogEntry`, `AdminAuditoriaList`, `AdminPaginacionBar`, `AdminWipeDialog`, `AdminContenidoCard`, `AdminContenidoList`, `AdminEjercicioCard`, `AdminEjercicioList`, `AdminGraficosUsuario`, `AdminTimelineUsuario`); ruta `/admin` protegida por rol; `errorBuilder` añadido a todos los `Image.network`
+- **`app/lib/features/academico/`** — Time-Blocking académico (refactor v7.1 — Lienzo Continuo): Custom Grid nativo (Stack+Positioned+Draggable+ DragTarget, 0 dependencias), `InboxScreen` (ruta `/academico/planificar`, sliders de estudio/deporte + barra de energía), `CanvasScreen` (ruta `/academico/planificar/canvas`, grid 7×16h con Drag & Drop + SnackBar XP, fondo oscuro #1A1A2E, barra de navegación semanal infinita `< Anterior | Fechas | Siguiente > | Hoy`, eje horario inline, barra inferior solo "← Volver" y "Guardar plan" — eliminado el botón "Rutina" independiente), `AcademicBlockSheet` (sheet unificado para crear/editar bloques con pestaña Deporte que integra distribución completa de rutina: selector de rutina, switch "Distribuir rutina completa" con selector de días FilterChips L-D, DatePicker de inicio, resumen de bloques, consulta `dias_rutina` reales vía `semana_id`), `RutinaConfigSheet` (conservado pero ya no se usa desde canvas; solo invocado por `placeRutinaDistribuida`), widgets (`TimeGridPainter`, `TimeBlockWidget` con indicador visual de rutina: barra blanca semitransparente + nombre del día + nombre de rutina en subtitle para bloques con `diaRutinaId != null`, `ProgressGamificationBar`, `ConflictBanner`), DTOs (`InboxConfig`, `TimeBlock` con campos `fecha`, `esHitoInamovible` y getter `diaSemanaEfectivo`, `SemanaGenerada`, `CalendarGridState` con campos `semanaOffset`, `fechaInicioPantalla`, `sincronizando` y getter `fechaFinPantalla` en `domain/calendar_dtos.dart`; `TimeBlockTipo` con 8 valores: estudio, deporte, clase, descanso, comida, sueno, entrega, examen), providers (`inboxConfigProvider`, `entregasPendientesProvider`, `asignaturasActivasInboxProvider`, `rutinasActivasInboxProvider`, `horariosFijosProvider`, `calendarGridProvider` con debounce 500ms, persistencia instantánea en moveBlock/resizeBlock y `placeRutinaDistribuida()` para distribución completa de rutina usando columna correcta `semana_id` en `dias_rutina`, `bloque_estudio_provider.dart` con `toggleBloqueCompletado()`), `@Deprecated` en `inyectarRutinaCascada` (queries columnas inexistentes `dia_semana`, `enfoque` en `dias_rutina`), `TimeblockIaService` (Gemini Flash, prompt español, N1-N10 + H1-H5, fallback heurístico), `GridMath` (conversión hora↔píxel con snap 30min + 5 nuevos métodos: `fechaToColumnIndex`, `columnIndexToFecha`, `fechaToOffsetX`, `offsetXToColumnIndex`, `dayHeaderLabel`), XP unificado (plan 100+5×bloques, bloque ceil(mins/30)×10, entrega 30, check-in 20), `@Deprecated` en `wizard_plan_provider.dart` y `crear_plan_semanal_screen.dart`.
+- **`app/lib/features/bienestar/presentation/nueva_rutina_screen.dart`** — Creación de rutinas con IA (3 pasos) + edición de nombres de semanas y días vía dialog con TextField, maps `_nombresSemanas`/`_nombresDias`, métodos `_editarNombreSemana()`/`_editarNombreDia()`.
+- **`app/lib/core/sync/`** — SyncHub (Fase 2): `DominioEvento` enum (8 eventos: planGuardado, bloqueEstudioCompletado, sesionCompletada, checkInRealizado, entregaCompletada, retoCompletado, pomodoroCompletado, xpOtorgado), `EventoPayload` DTO, `SyncHub` con mapa de invalidaciones por evento, `syncHubProvider` (Riverpod Provider).
+- **`supabase/migrations/`** — 26 archivos de migración. NOTA: 0002-0004 renombrados para evitar colisión; 0004 con DROP VIEW IF EXISTS; 0005 corrige fechas; 0006 admin_rol; 0007 nivel_actividad; 0008 asignaturas_usuario_semestre; 0009 admin_panel_v2; 0010 admin_delete_user; 0011 calendar_grid (es_fijo + dia_semana); 0012 xp_planificacion (xp_planificacion_otorgado en planes_estudio); 0013 bloque_xp_tracking (xp_bloque_otorgado + xp_entrega_otorgado); 0014 retos_bloques_bridge (reto_id + hito_id FK); 0015 dia_rutina_fk (dia_rutina_id + semana_rutina_id FK); 0016 rutina_fk_fix (rutina_id → FK real); 0017 trigger_hito_progreso (trigger progreso automático de hitos); 0018 unique_dias_rutina (UNIQUE + CHECK en dias_rutina); 0019 fix_duplicate_fk_rutina (elimina FK duplicada en horarios_academicos); 0022 lienzo_continuo (amplía CHECK tipo_actividad + FK a entregas_examenes + nuevas columnas en entregas_examenes); 0023 lienzo_continuo_v2 (columna es_hito_inamovible BOOLEAN + índice idx_horarios_fecha_rango en horarios_academicos); 0024 ics_sync (soporte importación/exportación ICS); 0025 ics_upsert_fix (corrección UPSERT en sincronización ICS).
+- **`docs/`** — 22-file documentation structure: 00-plan-maestro → 21-plan-definitivo, kept in sync with code. Updated for Sprint Time-Blocking (v7.0) y 9 fases de coherencia.
 
 ## Database notes
 - All tables have Row Level Security enabled; `ejercicios` + catalog tables are public-read
@@ -126,7 +129,7 @@ Per `.agents/rules/actualizacion-git.md`:
 | `corrector` | `corrector.md` | QA — ejecuta `dart format .` + `flutter analyze`, reporta y corrige issues de lint/formato |
 | `desarrollador` | `desarrollador.md` | Dev Flutter/Dart — implementa features, corrige bugs, escribe código de producción |
 | `diseñador` | `diseñador.md` | Arquitecto — diseña estructura de carpetas, esquemas BD, contratos de API, diagramas Mermaid |
-| `documentacion` | `documentacion.md` | Tech Writer — sincroniza `docs/` (18 archivos) con el código fuente, verifica discrepancias |
+| `documentacion` | `documentacion.md` | Tech Writer — sincroniza `docs/` (22 archivos) con el código fuente, verifica discrepancias |
 | `product-manager` | `product-manager.md` | PM — investiga mercado, define MVP y requisitos, escribe `docs/02-requirements.md` |
 
 ## Skills disponibles (.agents/skills/)
@@ -141,3 +144,31 @@ Per `.agents/rules/actualizacion-git.md`:
 Todo agente o skill que modifique el código del proyecto debe:
 1. **Leer `AGENTS.md` al iniciar** para tener contexto completo del proyecto.
 2. **Actualizar `AGENTS.md` al finalizar** si sus cambios afectan: stack tecnológico, arquitectura, estructura de carpetas, rutas, dependencias, comandos, estructura de `docs/`, o convenciones de código.
+
+## Regla de sincronización docs ↔ código
+
+Todo cambio en el código que afecte APIs, rutas, modelos, tablas, dependencias o arquitectura **debe** reflejarse en `docs/`. El agente `documentacion` es responsable de esta sincronización.
+
+| Cambio en código | Docs a actualizar |
+|-----------------|-------------------|
+| Nueva feature completa | `14-changelog.md` + doc del módulo afectado |
+| Nuevo archivo/carpeta | `AGENTS.md` (§Architecture) + `03-architecture.md` |
+| Nueva migración | `AGENTS.md` + `04-data-model.md` + `07-backend.md` |
+| Nueva ruta | `06-frontend.md` (§2) |
+| Cambio de nombre de archivo/clase | `AGENTS.md` + docs que lo referencien |
+| Feature eliminada | Eliminar de TODOS los docs que la mencionen |
+
+### Verificación de consistencia docs ↔ código
+
+```bash
+# Verificar que no hay referencias a carpetas de features inexistentes
+grep -rn "planificador/" docs/  # Debe devolver 0 resultados
+
+# Verificar que los nombres de providers en docs existen en código
+grep -rn "Provider\|provider" docs/ | grep -v "AGENTS.md"
+
+# Verificar conteo de migraciones
+ls supabase/migrations/*.sql | wc -l  # Comparar con AGENTS.md y docs/
+```
+
+El agente `documentacion` DEBE ejecutar esta verificación al final de cada sprint.

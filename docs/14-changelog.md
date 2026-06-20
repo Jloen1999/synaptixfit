@@ -5,6 +5,320 @@
 
 ---
 
+## [7.1.0] — 18-06-2026
+
+### Refactor Lienzo Continuo v2 — Fases 0, 1 y 2
+
+#### Fase 3 — Integración de distribución de rutina + eliminación botón Rutina
+
+**Eliminación del botón Rutina independiente del canvas:**
+- `canvas_screen.dart`: Eliminado el import de `rutina_config_sheet.dart`, el método `_showRutinaConfigSheet()`, y el `OutlinedButton.icon` "Rutina" del bottom bar del canvas.
+- El bottom bar ahora solo tiene "← Volver" y "Guardar plan".
+
+**Integración de distribución de rutina en pestaña Deporte de AcademicBlockSheet:**
+- `academic_block_sheet.dart`: La pestaña "Deporte" del `SegmentedButton` ahora integra la funcionalidad completa de distribución de rutina:
+  - Al seleccionar una rutina, consulta `dias_rutina` reales de la BD (usando columna `semana_id`, NO `semana_rutina_id`).
+  - Switch "Distribuir rutina completa" que muestra: selector de días (FilterChips L-D), fecha de inicio (DatePicker), y resumen con total de bloques.
+  - Botón cambia entre "Crear sesión de deporte" (bloque individual) y "Distribuir X bloques" (distribución completa vía `placeRutinaDistribuida`).
+  - Import de `supabase_flutter` añadido.
+  - Variables de estado: `_distribuirRutina`, `_diasDistribucion`, `_fechaInicioDistribucion`, `_totalDiasRutina`, `_cargandoDias`, `_duracionSemanasRutina`.
+  - Métodos nuevos: `_cargarTotalDias()`, `_buildDistribucionSection()`, `_buildFechaInicioPicker()`, `_buildDistribucionResumen()`.
+
+**`RutinaConfigSheet` conservado pero ya no usado desde canvas:**
+- `rutina_config_sheet.dart` sigue existiendo como widget pero ya no se importa ni usa desde `canvas_screen.dart`. Toda la funcionalidad de distribución está ahora en `academic_block_sheet.dart`. El sheet solo es invocado por `placeRutinaDistribuida` desde `calendar_grid_provider.dart`.
+
+**Edición de nombres de semanas y días en nueva_rutina_screen.dart:**
+- Ahora permite al usuario editar los nombres de semanas y días:
+  - Maps `_nombresSemanas` y `_nombresDias` para almacenar nombres personalizados.
+  - Icono de lápiz (edit) junto a cada chip de semana y cada card de día para editar el nombre vía dialog con TextField.
+  - Métodos nuevos: `_editarNombreSemana(int semana)`, `_editarNombreDia(int semana, int dia)`.
+  - Los nombres se pasan a `crearRutinaCompleta()` que ya aceptaba `nombresSemanas` y `nombresDias` pero nunca recibía datos.
+  - `_eliminarSemana` y `_eliminarDia` ahora limpian los maps de nombres.
+  - `_DiaEditorCard` ahora acepta `nombre` y `onEditNombre` como parámetros.
+
+**Indicador visual de rutina en TimeBlockWidget:**
+- `time_block_widget.dart`: Bloques de deporte distribuidos desde una rutina (`diaRutinaId != null`) ahora muestran:
+  - Barra vertical blanca semitransparente a la izquierda como indicador visual de pertenencia a rutina.
+  - Header muestra el nombre del día de la rutina (ej: "Torso", "Día 1").
+  - Subtitle muestra el nombre de la rutina en texto tenue (ej: "Push Pull Legs").
+
+**Bug fix: columna `semana_id` en queries de `dias_rutina`:**
+- `calendar_grid_provider.dart`: En `placeRutinaDistribuida`, corregidas 3 referencias de `semana_rutina_id` → `semana_id` (select, inFilter, acceso al map). La columna real en `dias_rutina` es `semana_id`, no `semana_rutina_id` (que existe en `horarios_academicos`).
+- `rutina_config_sheet.dart`: Misma corrección + consulta async al seleccionar rutina para mostrar el total real en el UI.
+- Código deprecado: `inyectarRutinaCascada` mantiene el tag `@Deprecated` por usar columnas inexistentes (`dia_semana`, `enfoque`) en `dias_rutina`.
+
+### Documentación actualizada
+- `AGENTS.md`: migraciones 24→26, actualizadas descripciones de `canvas_screen.dart` (sin botón Rutina), `academic_block_sheet.dart` (distribución rutina integrada), `nueva_rutina_screen.dart` (nombres editables), `time_block_widget.dart` (indicador visual rutina), `rutina_config_sheet.dart` (deprecado de canvas).
+- `docs/06-frontend.md` → v7.1: §21.6.2 actualizado con eliminación de botón Rutina; §21.6.3 enriquecido con indicador visual de rutina; nueva §21.6.5 documentando `AcademicBlockSheet` con pestaña Deporte.
+- `docs/14-changelog.md`: Esta entrada.
+
+---
+#### Fase 0 — Coherencia del Ecosistema
+
+**`toggleBloqueCompletado()` activado en `plan_semanal_screen.dart`:**
+- Los bloques de estudio/deporte ahora muestran un checkbox para marcarlos como completados directamente en la vista de Plan Semanal.
+- Al marcar un bloque: actualiza `horarios_academicos.completado = true`, otorga XP (`ceil(mins/30) × 10`), emite evento `bloqueEstudioCompletado` al SyncHub.
+
+**SyncHub — 4 eventos nuevos activados:**
+- `sesionCompletada` → emitido en `finalizarSesion()` (`rutina_provider.dart`). Invalida `dashboardProvider`, `timelineHoyProvider`, `perfilActividadProvider`.
+- `checkInRealizado` → emitido en `guardarEstadoDiario()` (`rutina_provider.dart`). Invalida `estadoDiarioHoyProvider`, `estadoEnergeticoProvider`.
+- `entregaCompletada` → emitido en `toggleEntregaCompletada()` (`entregas_examenes_provider.dart`). Invalida `contextoAcademicoProvider`, `timelineHoyProvider`.
+- `retoCompletado` → emitido en `completarReto()` (`retos_provider.dart`). Invalida `dashboardProvider`, `retosActivosProvider`, `timelineHoyProvider`.
+
+**`BalanceSemanalDto` corregido:**
+- Ahora usa datos reales de `completado` desde `horarios_academicos` y `carga_academica_semanal` en vez de multiplicadores hardcodeados (0.9/0.85).
+- El cálculo de adherencia refleja el progreso real del usuario, no estimaciones.
+
+**`InsigniaEngine` — nuevo criterio `semanas_plan_adherencia`:**
+- Insignia "Planificador Maestro": 4 semanas consecutivas con ≥80% de adherencia al plan semanal.
+- Nueva métrica consulta `carga_academica_semanal` para calcular semanas consecutivas con `horas_reales / horas_planeadas ≥ 0.8`.
+- El engine ahora evalúa 13 criterios (antes 12).
+
+#### Fase 1 — Infraestructura de Datos
+
+**Nueva migración `20260618000022_lienzo_continuo.sql`:**
+- Amplía CHECK de `tipo_actividad` en `horarios_academicos` (8 valores: estudio, deporte, clase, descanso, comida, sueno, examen, entrega).
+- Nueva FK `entrega_examen_id` → `entregas_examenes(id)` para vincular bloques de estudio con exámenes/entregas.
+- Nuevas columnas en `entregas_examenes`: `descripcion TEXT`, `hora_inicio_str TEXT`.
+- Amplía CHECK de `tipo` en `entregas_examenes` (6 valores: entrega, examen, proyecto, quiz, presentacion, otro).
+- Nuevo índice `idx_horarios_fecha_inicio` para navegación semanal.
+
+**Nueva migración `20260618000023_lienzo_continuo_v2.sql`:**
+- Nueva columna `es_hito_inamovible BOOLEAN NOT NULL DEFAULT false` en `horarios_academicos`. Protege bloques de exámenes y entregas contra arrastre accidental.
+- Nuevo índice `idx_horarios_fecha_rango ON horarios_academicos(usuario_id, hora_inicio)` para consultas por rango de fechas.
+
+**Modelo `HorarioAcademicoDb`:**
+- Nuevo campo `esHitoInamovible` (`bool`, default `false`). Serializado en `fromMap()`/`toMap()`.
+
+**DTO `TimeBlock`:**
+- Nuevos campos: `fecha` (`DateTime?`), `esHitoInamovible` (`bool`).
+- Nuevo getter `diaSemanaEfectivo`: calcula el día de la semana real desde `fecha` si está presente; fallback al `diaSemana` almacenado.
+
+**DTO `CalendarGridState`:**
+- Nuevos campos: `semanaOffset` (`int`, default `0`), `fechaInicioPantalla` (`DateTime`, default `DateTime.now()`).
+- Nuevo getter `fechaFinPantalla`: `fechaInicioPantalla + 6 días`.
+
+**`GridMath` — 5 nuevos métodos para navegación por fecha:**
+- `fechaToColumnIndex(DateTime fecha, DateTime fechaBase)` → `int` — convierte una fecha al índice de columna (0-6) en el grid.
+- `columnIndexToFecha(int columna, DateTime fechaBase)` → `DateTime` — convierte un índice de columna a la fecha correspondiente.
+- `fechaToOffsetX(DateTime fecha, DateTime fechaBase)` → `double` — posición X en píxeles para una fecha dada.
+- `offsetXToColumnIndex(double offsetX)` → `int` — índice de columna desde una posición X en píxeles.
+- `dayHeaderLabel(DateTime fecha)` → `String` — etiqueta legible para el header de día (ej: "Lun 15").
+
+**Nueva migración `20260618000019_fix_duplicate_fk_rutina.sql`:**
+- Elimina FK duplicada `horarios_academicos_rutina_id_fkey` que causaba error PostgREST PGRST201.
+
+#### Fase 2 — Navegación Temporal Infinita + Limpieza IA
+
+**Eliminación de botones IA del flujo Time-Blocking:**
+- **Eliminado:** Botón "Autocompletar con IA" (`AutocompleteFab` en `canvas_helpers.dart`). La generación IA ahora ocurre automáticamente al inicializar el canvas, no como acción explícita del usuario.
+- **Eliminado:** Botón "Generar mi semana" del `InboxScreen`. Reemplazado por botón "Ir al Canvas" que navega directamente al lienzo.
+
+**Canvas refactorizado — Lienzo Continuo:**
+- **Primera columna = Hoy:** La columna izquierda del grid siempre corresponde al día actual, facilitando orientación inmediata.
+- **Navegación semanal infinita:** Botones `< Anterior` y `Siguiente >` permiten navegar semanas hacia adelante y atrás sin límite. El `CalendarGridState` mantiene `semanaOffset` y `fechaInicioPantalla` para controlar la semana visible.
+- **Barra de navegación:** Muestra el rango de fechas de la semana actual (ej: "Sem 15-21 Jun 2026") con botón `Hoy` para retorno rápido a la semana actual.
+- **Fondo oscuro:** `#1A1A2E` (dark navy) aplicado al canvas completo. Reduce fatiga visual en sesiones largas de planificación y mejora el contraste de los bloques coloreados.
+- **Eje horario inline:** Las etiquetas de hora (07:00, 08:00...) flotan sobre las líneas del grid en la columna izquierda, eliminando la necesidad de una columna de etiquetas separada.
+- **Barra inferior simplificada:** Solo 2 botones: `Volver` (navega al inbox) y `Guardar` (persiste la semana en `horarios_academicos`).
+
+#### Documentación actualizada
+- `AGENTS.md`: migraciones 21→24, actualizadas descripciones de `insignia_engine.dart` (13 criterios), `calendar_dtos.dart` (nuevos campos), `GridMath` (5 nuevos métodos), lista de migraciones con 0019, 0022, 0023.
+- `docs/04-data-model.md` → v5.6: columna `es_hito_inamovible` en `horarios_academicos`, índice `idx_horarios_fecha_rango`, migración 0023 documentada.
+- `docs/06-frontend.md` → v7.0: §21 reescrita con Lienzo Continuo, navegación infinita, fondo oscuro, checkbox de completado, eliminación de `AutocompleteFab` y "Generar mi semana".
+- `docs/14-changelog.md`: Esta entrada.
+
+---
+
+## [7.0.0] — 17-06-2026
+
+### Sprint Time-Blocking — Planificación Semanal con IA (Custom Grid Nativo)
+
+#### Decisión de Arquitectura: Syncfusion DESCARTADO
+- **Syncfusion Flutter Calendar:** Descartado por licencia de pago (~$995/año), +15MB APK, configuración acoplada a SfCalendar, sobreingeniería para el caso de uso.
+- **Custom Grid Nativo (SELECCIONADO):** `Stack` + `Positioned` + `Draggable` + `DragTarget`. 0 dependencias nuevas. Control total del renderizado. Matemática hora↔píxel explícita.
+
+#### Nueva migración `20260617000011_timeblocking.sql` (PLANIFICADA)
+- **Nuevas columnas en `horarios_academicos`:** `es_fijo BOOLEAN DEFAULT true` (distingue horarios fijos de bloques generados por IA), `dia_semana INT CHECK (1-7)` (anclaje a día semanal).
+- **Nuevo índice:** `idx_horarios_dia_semana` para consultas rápidas por día.
+
+#### Nuevo módulo `academico/`
+- **Rutas:** `/academico/planificar` (Inbox), `/academico/planificar/canvas` (Canvas semanal)
+- **Providers (3):** `inboxConfigProvider`, `horariosFijosProvider`, `calendarGridProvider`
+- **Servicio IA:** `TimeblockIaService` (clase, no Riverpod) — Gemini Flash con reglas N1-N10, validación post-IA, fallback determinista
+- **Widgets (6):** `InboxScreen`, `CanvasScreen`, `TimeGridPainter`, `TimeBlockWidget`, `ProgressGamificationBar`, `SuggestedBlockWidget`
+- **Servicio IA:** `TimeBlockIaService` — Gemini Flash con reglas N1-N10, validación post-IA, fallback determinista
+- **Matemática del grid:** `horaToY()`, `yToHora()`, `duracionToHeight()`, `diaToX()` con constantes `PIXELS_PER_HOUR=80`, `HOUR_START=7`, `COLUMN_WIDTH=120`
+
+#### Sistema de colores Flat Design (8 colores por tipo de bloque)
+Azul acero (`#4A90D9`=clase), azul estudio (`#3B82F6`=estudio), naranja (`#FF8C42`=deporte), rojo (`#E74C3C`=entrega), verde (`#27AE60`=descanso), gris (`#95A5A6`=libre), amarillo (`#F1C40F`=examen), teal (`#1ABC9C`=pomodoro).
+
+#### Gamificación integrada
+- Barra de progreso semanal (adherencia al plan)
+- XP de estudio (150 XP al cumplir ≥80% del plan semanal)
+- Insignia "Planificador Maestro" (4 semanas consecutivas con ≥80%)
+
+#### Documentación actualizada (10 archivos)
+- `docs/04-data-model.md`: Columnas `es_fijo`, `dia_semana` en `horarios_academicos`
+- `docs/06-frontend.md`: §21 Time-Blocking con Custom Grid nativo, matemática, widgets
+- `docs/07-backend.md`: §12 `TimeBlockIaService` con reglas N1-N10, prompt, fallback
+- `docs/12-user-guide.md`: §4.5 reescrito con flujo "Generar mi semana" (5 subsecciones)
+- `docs/15-ia-recomendacion-sistema.md`: §19 IA para Time-Blocking Académico
+- `docs/02-requirements.md`: CU-36/37/38, HU-69-72, CA-42-44, Fase 4 en §16
+- `docs/00-plan-maestro.md`: Sprint Time-Blocking documentado, Syncfusion descarte explicado
+- `docs/03-architecture.md`: Módulo `academico/` en árbol de carpetas
+- `docs/14-changelog.md`: Esta entrada
+- `AGENTS.md`: Conteo de migraciones 17→21, nuevas carpetas
+
+#### 0 dependencias nuevas
+Sin cambios en `pubspec.yaml`. Todo el time-blocking usa widgets nativos de Flutter. `fl_chart` ya estaba instalado (Sprint 7B).
+
+---
+
+#### Nueva migración `20260616000010_admin_delete_user.sql`
+- **Nueva RPC `delete_user(p_usuario_id)`:** eliminación hard de usuario desde el panel de administración. Elimina 28+ tablas de historial + perfiles + `auth.users`. Solo admin, no puede auto-eliminarse.
+
+#### Mejoras en el panel de administración
+
+**Delete User (hard delete):**
+- RPC `delete_user(p_usuario_id)` con eliminación en cascada FK-safe de 28+ tablas, incluyendo `auth.users`
+- Botón "Eliminar usuario" en la lista de usuarios (`AdminPanelScreen`) y en el detalle (`AdminUsuarioDetalle`)
+- Diálogo de confirmación con advertencia "Esta acción es irreversible"
+- Registro automático en `admin_auditoria` con `accion = 'delete_user'`
+
+**Dashboard KPIs — Gráfico de tendencia 30 días:**
+- `AdminKpiDashboard` ahora incluye un gráfico `LineChart` de `fl_chart` bajo el grid de KPIs
+- Muestra la tendencia de registros diarios de los últimos 30 días desde `adminRegistrosDiariosProvider`
+- Tooltips con fecha y valor exacto
+
+**Filtros y ordenamiento en lista de usuarios:**
+- `AdminPanelScreen` con filtros por email, nombre y rol
+- Ordenamiento por fecha de registro, nivel o XP
+- Debounce de 300ms en campo de búsqueda
+
+**Detalle de usuario enriquecido — Configuración:**
+- `AdminUsuarioDetalle` ahora incluye sección de configuración de usuario:
+  - Editar nombre (`actualizarNombre()`)
+  - Editar email
+  - Reset XP (setea `xp_total = 0`, registra en `admin_auditoria`)
+  - Cambiar nivel manualmente
+  - Botón "Eliminar usuario" (hard delete)
+- Actividad reciente del usuario visible en la pestaña Timeline
+- Conteos de retos, rutinas e insignias en la pestaña Perfil
+
+**Fix de imágenes:**
+- `errorBuilder` añadido a todos los `Image.network` en widgets admin (`AdminPanelScreen`, `AdminUsuarioDetalle`) para manejar avatares con URL inválida mostrando fallback con inicial
+
+#### Archivos modificados (admin)
+- `infrastructure/admin_repository.dart` — extendido con `deleteUser()` y consulta de detalle ampliada
+- `application/admin_provider.dart` — añadido `eliminarUsuario()` + mutaciones de configuración
+- `presentation/admin_panel_screen.dart` — filtros, ordenamiento, botón eliminar
+- `presentation/admin_usuario_detalle.dart` — secciones nuevas (configuración, actividad reciente), botón eliminar
+- `presentation/widgets/admin_kpi_dashboard.dart` — gráfico de tendencia 30 días con `fl_chart`
+
+#### Documentación actualizada
+- `AGENTS.md`: migraciones 12→13, módulo admin actualizado con nuevas funcionalidades
+- `docs/00-plan-maestro.md`: añadidos módulos F (Delete User), G (Gráfico KPIs), H (Filtros), I (Configuración)
+- `docs/04-data-model.md` → v5.5: RPC `delete_user` documentada con SQL completo, comparativa con `wipe_user_data`
+- `docs/06-frontend.md` → §20: Panel de Administración actualizado con delete user, gráfico tendencia, filtros/ordenamiento, configuración
+- `docs/07-backend.md`: migración 0010 añadida al historial
+- `docs/18-implementacion-admin.md` → v1.1: Fase 3 documentada con delete user, configuración, gráfico KPIs
+- `docs/14-changelog.md`: Esta entrada
+
+---
+
+## [6.7.0] — 15-06-2026
+
+### Panel de Administración — Fase 1 MVP ✅ IMPLEMENTADO
+
+Implementación del MVP del panel de administración v2: Hub con 3 tabs (KPIs, Usuarios, Auditoría), dashboard de métricas globales y trazabilidad de acciones administrativas.
+
+#### Nueva migración `20260616000009_admin_panel_v2.sql`
+- **Nueva tabla `admin_auditoria`:** trazabilidad de todas las acciones administrativas. Campos: `id`, `admin_id` (FK → usuarios), `target_usuario_id` (FK → usuarios), `accion` (CHECK: wipe/reset_xp/set_nivel/ocultar_ejercicio/moderar), `detalles` JSONB, `creado_en`. RLS: SELECT + INSERT solo admin. Índices en `admin_id`, `target_usuario_id`, `creado_en`.
+- **Nueva vista `v_admin_metricas`:** 10 KPIs globales agregados: `total_usuarios`, `nuevos_esta_semana`, `usuarios_activos_semana`, `sesiones_esta_semana`, `retos_creados_semana`, `publicaciones_semana`, `publicaciones_reportadas`, `comentarios_reportados`, `insignias_otorgadas`, `nivel_promedio`.
+- **Columnas de moderación en `actividades_sociales`:** `reportado` (BOOLEAN), `reportado_por` (UUID FK), `esta_eliminado` (BOOLEAN), `eliminado_por` (UUID FK), `eliminado_en` (TIMESTAMPTZ).
+- **Columnas de moderación en `comentarios_feed`:** `reportado` (BOOLEAN), `reportado_por` (UUID FK).
+- **Columna de catálogo en `ejercicios`:** `activo` (BOOLEAN DEFAULT true) con índice.
+- **Nuevas políticas RLS admin:** UPDATE/DELETE en `actividades_sociales`, UPDATE en `comentarios_feed`, UPDATE en `ejercicios`.
+
+#### Archivos implementados en `features/admin/` (14 nuevos + 5 modificados)
+
+**Domain (3 DTOs nuevos):**
+- `admin_kpi_dto.dart` — `AdminMetricasGlobales` con 10 campos y `fromMap`
+- `admin_auditoria_dto.dart` — `AuditoriaRegistro` con enum `AccionAuditoria`
+- `admin_contenido_dto.dart` — `ContenidoReportado`
+- `admin_dto.dart` — `UsuarioAdmin` (existente, mantenido)
+
+**Infrastructure (2 repositorios nuevos):**
+- `admin_metricas_repository.dart` — `obtenerMetricasGlobales()`, `obtenerRegistrosDiarios()`
+- `admin_auditoria_repository.dart` — `insertarAuditoria()`, `consultarLogs()`
+- `admin_repository.dart` — `AdminRepository` (existente, extendido)
+
+**Application (2 providers files nuevos + 1 extendido):**
+- `admin_provider.dart` (extendido) — `esAdminProvider`, `adminUsuariosProvider`, `adminUsuarioDetalleProvider`, `resetXpUsuario()`, `setNivelUsuario()`
+- `admin_metricas_provider.dart` — `adminMetricasProvider`, `adminRegistrosDiariosProvider`
+- `admin_auditoria_provider.dart` — `adminAuditoriaProvider`, `registrarAuditoria()`
+
+**Presentation (6 widgets + 2 pantallas refactorizadas):**
+- `admin_hub_screen.dart` — **Nuevo.** `ConsumerStatefulWidget` con `TabBar` (3 tabs: KPIs, Usuarios, Auditoría)
+- `admin_panel_screen.dart` — **Refactorizado.** Pestaña "Usuarios" con búsqueda y acciones (reset XP, set nivel, wipe)
+- `admin_usuario_detalle.dart` — **Enriquecido.** 3 sub-pestañas (Perfil/Estadísticas/Timeline)
+- `widgets/admin_kpi_dashboard.dart` — Grid 2×3 KPIs
+- `widgets/admin_kpi_card.dart` — Card individual con icono, valor, tendencia (↑↓→)
+- `widgets/admin_log_entry.dart` — Fila de log con badge por tipo de acción
+- `widgets/admin_auditoria_list.dart` — Lista paginada de registros de auditoría
+- `widgets/admin_paginacion_bar.dart` — Barra de paginación reutilizable
+- `widgets/admin_wipe_dialog.dart` — Refactorizado con registro en `admin_auditoria`
+
+#### Routing
+- `app_router.dart`: ruta `/admin` → `AdminHubScreen` (reemplaza `AdminPanelScreen`)
+
+#### Documentación actualizada
+- `AGENTS.md`: migraciones 11→12, módulo admin extendido (7 DTOs, 6 repos, 6 provider files, 15 widgets/pantallas)
+- `00-plan-maestro.md` → v1.5: Fase 2 marcada COMPLETADO, checkboxes actualizados con implementación real
+- `18-implementacion-admin.md` → v1.0: Fase 1 MVP y Fase 2 marcadas COMPLETADO, tablas de archivos actualizadas con realidad vs plan
+- `03-architecture.md`: árbol admin actualizado con archivos Fase 2 (34 archivos, 5 tabs)
+- `06-frontend.md` → §20: Panel de Administración actualizado con 5 tabs reales y widgets completos
+- `14-changelog.md`: Esta entrada actualizada con implementación real Fase 1 MVP + Fase 2
+
+#### Fase 2 — Moderación, Ejercicios, Gráficos y Timeline ✅ COMPLETADO — 15/06/2026
+
+**Archivos implementados en `features/admin/` (15 nuevos + 2 modificados):**
+
+**Domain (3 DTOs nuevos):**
+- `admin_ejercicio_dto.dart` — `AdminEjercicio` con campo `activo`
+- `admin_usuario_estadisticas_dto.dart` — `AdminUsuarioEstadisticas` + `AdminDataPoint`
+- `admin_timeline_dto.dart` — `AdminTimelineEntry` + enum `TimelineTipoAdmin`
+
+**Infrastructure (3 repositorios nuevos):**
+- `admin_contenido_repository.dart` — `listarContenidoReportado()`, `aprobarContenido()`, `eliminarContenido()`
+- `admin_ejercicio_repository.dart` — `listarEjercicios()`, `toggleActivo()`
+- `admin_usuario_stats_repository.dart` — `obtenerRpeSemanal()`, `obtenerVolumenSemanal()`, `obtenerTimeline()`
+
+**Application (3 provider files nuevos):**
+- `admin_contenido_provider.dart` — `adminContenidoReportadoProvider`, mutaciones `moderarPublicacion()`, `moderarComentario()`
+- `admin_ejercicio_provider.dart` — `adminEjerciciosProvider`, `adminEjercicioToggleProvider`
+- `admin_usuario_stats_provider.dart` — `adminUsuarioStatsProvider`, `adminUsuarioTimelineProvider`
+
+**Presentation (6 widgets nuevos + 2 modificados):**
+- `admin_contenido_card.dart` — Card de contenido reportado con botones aprobar/eliminar
+- `admin_contenido_list.dart` — Lista paginada de publicaciones/comentarios reportados
+- `admin_ejercicio_card.dart` — Card con `Switch` activo/inactivo + `AlertDialog` de confirmación
+- `admin_ejercicio_list.dart` — Lista paginada de ejercicios con búsqueda por nombre/dificultad/grupo
+- `admin_graficos_usuario.dart` — `LineChart` RPE semanal + `BarChart` volumen semanal con `fl_chart`
+- `admin_timeline_usuario.dart` — Timeline vertical cronológica de actividad del usuario
+- `admin_usuario_detalle.dart` — **Modificado.** Placeholders de estadísticas y timeline reemplazados por widgets reales
+- `admin_hub_screen.dart` — **Modificado.** `TabController(length: 3)` → `TabController(length: 5)`; añadidos tabs Contenido y Ejercicios
+
+#### Conteo final del panel admin (Fase 1 + Fase 2)
+- **7 DTOs** en `domain/`
+- **6 repositorios** en `infrastructure/`
+- **6 provider files** en `application/` (10 providers individuales + 8 mutaciones)
+- **15 widgets/pantallas** en `presentation/` (3 pantallas + 12 widgets)
+- **Total:** 34 archivos en `features/admin/`
+
+---
+
 ## [6.6.0] — 15-06-2026
 
 ### Plan de estudios en PerfilScreen + Asignaturas transversales

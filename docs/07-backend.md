@@ -13,7 +13,7 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (11 migraciones consolidadas: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre) |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (26 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
@@ -36,7 +36,7 @@ Para MVP/TFG, la simplicidad y latencia del enfoque cliente-side son preferibles
 
 ## 2. Migraciones — Esquema Consolidado
 
-Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026), el proyecto tiene **11 archivos de migración**:
+Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **26 archivos de migración**:
 
 | # | Archivo | Fecha | Descripción |
 |---|---------|-------|-------------|
@@ -51,12 +51,27 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 0006 | `20260616000006_admin_rol.sql` | 16-06-2026 | Panel de administración: columna `rol` en `usuarios` (CHECK usuario/admin), función RPC `wipe_user_data(p_usuario_id)` (elimina historial preservando perfil, resetea nivel/XP/racha), políticas RLS admin bypass para `usuarios` y `sesiones_registradas`, función helper `es_admin()`. |
 | 0007 | `20260616000007_nivel_actividad_check.sql` | 16-06-2026 | Rediseño del onboarding: CHECK constraint en `perfil_bienestar_usuario.nivel_actividad` (`sedentario`/`ligero`/`moderado`/`alto`). |
 | 0008 | `20260616000008_asignaturas_usuario_semestre.sql` | 16-06-2026 | Mapeo de transversales: tabla `asignaturas_usuario_semestre(id, usuario_id, asignatura_id, curso, semestre)` con RLS propietario + admin bypass, UNIQUE(usuario_id, asignatura_id). Permite mapear asignaturas de semestre=0 a curso+semestre específicos. |
+| 0009 | `20260616000009_admin_panel_v2.sql` | 16-06-2026 | Panel admin Fase 1 MVP: tabla `admin_auditoria` (trazabilidad de acciones administrativas con CHECK de 5 tipos de acción), vista `v_admin_metricas` (10 KPIs globales agregados), columnas de moderación en `actividades_sociales` (`reportado`, `reportado_por`, `esta_eliminado`, `eliminado_por`, `eliminado_en`), `comentarios_feed` (`reportado`, `reportado_por`) y `ejercicios` (`activo BOOLEAN DEFAULT true`). Nuevas políticas RLS admin para UPDATE/DELETE en actividades_sociales, comentarios_feed y ejercicios. |
+| 0010 | `20260616000010_admin_delete_user.sql` | 16-06-2026 | Panel admin Fase 3: RPC `delete_user(p_usuario_id)` para eliminación hard de usuarios. Elimina 28+ tablas de historial + perfiles + `auth.users`. Solo admin, no puede auto-eliminarse. Complementa a `wipe_user_data` (que conserva perfil) con una eliminación definitiva para casos de spam/abuso. |
+| 0011 | `20260617000011_calendar_grid.sql` | 17-06-2026 | Sprint Time-Blocking: columnas `es_fijo`, `dia_semana` en tabla `horarios_academicos`. Índice `idx_horarios_dia_semana` para consultas rápidas por día de la semana. |
+| 0012 | `20260618000012_xp_planificacion.sql` | 18-06-2026 | XP unificado para planificación: columna `xp_planificacion_otorgado` en `planes_estudio`. XP base por guardar plan semanal (100 XP + 5 XP por bloque). |
+| 0013 | `20260618000013_bloque_xp_tracking.sql` | 18-06-2026 | Tracking de XP por bloque y entrega: columnas `xp_bloque_otorgado` y `xp_entrega_otorgado` en `horarios_academicos`. XP por bloque completado: `ceil(minutos/30)*10`. |
+| 0014 | `20260618000014_retos_bloques_bridge.sql` | 18-06-2026 | Vinculación retos↔bloques: columnas `reto_id` y `hito_id` (FK) en `horarios_academicos` para asociar bloques de estudio a retos/hitos. |
+| 0015 | `20260618000015_dia_rutina_fk.sql` | 18-06-2026 | FK para días de rutina: columnas `dia_rutina_id` y `semana_rutina_id` (FK) en `dias_rutina` para trazabilidad completa. |
+| 0016 | `20260618000016_rutina_fk_fix.sql` | 18-06-2026 | Corrección de FK: `rutina_id` en `dias_rutina` convertido a FK real (anteriormente era solo UUID sin constraint). |
+| 0017 | `20260618000017_trigger_hito_progreso.sql` | 18-06-2026 | Trigger `trg_hito_progreso`: actualiza automáticamente el progreso de hitos cuando se completan bloques de estudio vinculados. |
+| 0018 | `20260618000018_unique_dias_rutina.sql` | 18-06-2026 | Constraints UNIQUE y CHECK en `dias_rutina`: evita duplicados de día por semana y valida días 1-7.
+| 0019 | `20260618000019_fix_duplicate_fk_rutina.sql` | 18-06-2026 | Elimina FK duplicada `horarios_academicos_rutina_id_fkey` que causaba error PostgREST PGRST201. |
+| 0022 | `20260618000022_lienzo_continuo.sql` | 18-06-2026 | Lienzo Continuo v1: amplía CHECK de `tipo_actividad` en `horarios_academicos` (8 valores), FK `entrega_examen_id` → `entregas_examenes`, columnas nuevas en `entregas_examenes`, índice `idx_horarios_fecha_inicio`. |
+| 0023 | `20260618000023_lienzo_continuo_v2.sql` | 18-06-2026 | Lienzo Continuo v2: columna `es_hito_inamovible BOOLEAN` en `horarios_academicos` + índice `idx_horarios_fecha_rango`. |
+| 0024 | `20260619000024_ics_sync.sql` | 19-06-2026 | Soporte para importación/exportación de calendarios ICS (RFC 5545) a `horarios_academicos`. |
+| 0025 | `20260620000025_ics_upsert_fix.sql` | 20-06-2026 | Corrección de UPSERT en sincronización ICS: maneja correctamente conflictos de clave duplicada durante importación.
 
 > **Nota histórica:** Las migraciones intermedias 0001–0048 fueron consolidadas en `202606060049_esquema_base.sql` durante la Fase 3. Las migraciones 0050 anteriores (0050–0052 de xp_estudio_flag, retos_racha, etc.) también fueron absorbidas. El orden de aplicación real es cronológico por timestamp del nombre del archivo, no por el número de secuencia en el nombre.
 
 ## 3. Servicio de IA — `RecomendacionIaService`
 
-**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (1047 líneas)
+**Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (~1357 líneas)
 
 **Modelo:** Gemini Flash (`gemini-flash-latest`) vía REST API.
 **Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`
@@ -680,7 +695,134 @@ final data = await supabase
 | `ejercicio_parte_cuerpo` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M |
 | `ejercicio_equipamiento` | INSERT, UPDATE, DELETE | Actualización de relaciones N:M |
 
-## 10. Cloudflare Worker — Proxy R2
+## 12. Servicio de IA para Time-Blocking — `TimeBlockIaService`
+
+**Archivo:** `app/lib/features/academico/infrastructure/timeblock_ia_service.dart`
+**Modelo:** Gemini Flash (`gemini-flash-latest`) — mismo endpoint y autenticación que `RecomendacionIaService`
+**Timeout:** 20 segundos (respuesta más larga por la complejidad del scheduling)
+
+### 12.1 Propósito
+
+Generar una distribución semanal óptima de bloques de estudio, deporte y preparación de entregas, respetando los horarios fijos del usuario (clases, compromisos) y aplicando 10 reglas de time-blocking académico.
+
+### 12.2 Datos de Entrada
+
+```dart
+Future<TimeblockIaResult> generarPlanSemanal({
+  required String apiKey,
+  required InboxConfig inbox,               // Horas estudio, días deporte, entregas
+  required List<HorarioAcademicoDb> horariosFijos,  // Clases y compromisos (es_fijo=true)
+  required PerfilBienestarDb? perfil,       // Para duración de sesiones de deporte
+})
+```
+
+| Dato | Origen | Uso |
+|------|--------|-----|
+| `inbox.horasEstudioSemana` | Slider (5-40h) | Volumen total de estudio a distribuir |
+| `inbox.diasDeporteSemana` | Slider (1-6 días) | Cantidad y frecuencia de bloques de entrenamiento |
+| `inbox.entregasProximas` | `entregas_examenes` (próximos 14 días) | La IA crea bloques de preparación 2-3 días antes de cada entrega |
+| `horariosFijos` | `horarios_academicos WHERE es_fijo=true` | Huecos ocupados que la IA NO puede usar |
+| `perfil.minutosPorSesion` | `perfil_bienestar_usuario` | Duración de cada bloque de deporte |
+
+### 12.3 Reglas de Time-Blocking (N1-N10)
+
+La IA recibe estas 10 reglas inyectadas en el prompt como restricciones obligatorias:
+
+| # | Regla | Descripción |
+|---|-------|-------------|
+| **N1** | No solapar con fijos | Ningún bloque generado puede solaparse con `horariosFijos` |
+| **N2** | Pausa comida 12:00-14:00 | Reservar 2h centrales para descanso/comida. No generar bloques en esa franja |
+| **N3** | Máximo 2h continuas de estudio | Ningún bloque de estudio >120 min. Si se necesitan más horas, crear bloques separados con ≥15 min de pausa |
+| **N4** | Deporte no trasnochador | No programar deporte después de las 21:00 (afecta al sueño) |
+| **N5** | Buffer pre-entrega | Para cada entrega en ≤3 días, reservar 2 bloques de 60 min en los 2 días previos |
+| **N6** | Buffer pre-examen | Para cada examen en ≤5 días, reservar bloques diarios de 90 min |
+| **N7** | Distribución balanceada | Las horas de estudio se reparten equitativamente entre días hábiles. Máximo 2:1 de ratio entre el día más cargado y el menos cargado |
+| **N8** | Alternancia estudio/deporte | No colocar bloques de deporte inmediatamente después de estudio (>30 min de separación). Idealmente en franjas opuestas del día |
+| **N9** | Respetar preferencia horaria | Usuario puede indicar preferencia "mañana" (estudio 7-12), "tarde" (14-19) o "noche" (19-23). La IA prioriza la franja elegida |
+| **N10** | Mínimo 1 día libre | Si el usuario estudia 5+ días, dejar al menos 1 día (generalmente sábado o domingo) sin bloques de estudio |
+
+### 12.4 Prompt Engineering
+
+```dart
+String _buildPrompt(InboxConfig inbox, List<HorarioAcademicoDb> fijos) {
+  return '''
+Eres un planificador académico profesional. Genera UN plan semanal de time-blocking.
+
+## RESTRICCIONES OBLIGATORIAS:
+${_formatearReglasN1N10()}
+
+## HORARIOS FIJOS (NO MODIFICAR):
+${_formatearHorariosFijos(fijos)}
+
+## INTENCIONES DEL USUARIO:
+- Horas totales de estudio: ${inbox.horasEstudioSemana}h
+- Días de deporte: ${inbox.diasDeporteSemana}
+- Duración por sesión deportiva: ${perfil?.minutosPorSesion ?? 60} min
+- Entregas próximas: ${_formatearEntregas(inbox.entregasProximas)}
+- Preferencia horaria: ${inbox.preferenciaHoraria}
+
+## FORMATO JSON DE RESPUESTA:
+{
+  "nombrePlan": "Semana del X al Y",
+  "bloques": [
+    {
+      "diaSemana": 1,
+      "horaInicio": "09:00",
+      "duracionMinutos": 90,
+      "tipo": "estudio",
+      "asignatura": "Cálculo I",
+      "notas": "Preparar entrega del viernes"
+    }
+  ],
+  "metricas": {
+    "horasEstudioTotal": 20,
+    "horasDeporteTotal": 4,
+    "diasConBloques": 5,
+    "ratioBalance": 1.3
+  }
+}
+
+Responde ÚNICAMENTE con el JSON. Sin Markdown.
+''';
+}
+```
+
+### 12.5 Validación Post-IA
+
+Tras recibir la respuesta de Gemini, `_validarPlan()` verifica:
+
+| Validación | Acción si falla |
+|------------|----------------|
+| No solapamiento con fijos | Elimina el bloque conflictivo |
+| Suma de horas ≈ inbox.horasEstudio (±15%) | Ajusta duraciones proporcionalmente |
+| Regla N3 (máx 120 min) | Divide bloques >120 min en 2 |
+| Cada bloque tiene `diaSemana` 1-7 | Descarta bloques con día inválido |
+| `horaInicio` entre 7:00-23:00 | Descarta bloques fuera de rango |
+
+Si quedan <3 bloques válidos tras la validación, se retorna fallback determinista (distribución equitativa simple sin IA).
+
+### 12.6 Fallback Determinista
+
+Cuando `GEMINI_API_KEY` no está configurada o Gemini falla, `_generarFallback()`:
+
+1. Calcula horas de estudio por día = `horasEstudioSemana / díasHábiles`
+2. Distribuye en bloques de 60-90 min entre 9:00-12:00 y 15:00-19:00
+3. Respeta horarios fijos (recorta o desplaza bloques)
+4. Los bloques de deporte se asignan a última hora de la tarde (18:00-20:00)
+5. Las entregas generan bloques de preparación 2 días antes
+
+### 12.7 Métricas de Rendimiento
+
+| Métrica | Objetivo | Medición |
+|---------|----------|----------|
+| Latencia Gemini | <6s | `Stopwatch` en `_callGemini()` |
+| Tasa de éxito de parsing | >95% | Contador de `FormatException` vs éxitos |
+| Tasa de validación post-IA | >90% bloques válidos | `bloquesValidos / bloquesGenerados` |
+| Uso de fallback | <10% | Cuando no hay API key o Gemini falla |
+
+---
+
+## 13. Cloudflare Worker — Proxy R2
 
 **Archivo:** `cloudflare/synaptixfit-r2-proxy/worker.js`
 
@@ -693,5 +835,5 @@ final data = await supabase
 
 ---
 
-**Documento compilado:** 07-06-2026
-**Última revisión:** v3.1
+**Documento compilado:** 17-06-2026
+**Última revisión:** v4.0 — Sprint Time-Blocking: añadido §12 `TimeBlockIaService` con reglas N1-N10, prompt engineering, validación post-IA y fallback determinista.

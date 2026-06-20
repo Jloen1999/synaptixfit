@@ -1,8 +1,8 @@
 # 12 - Guía de Usuario
 
 **Proyecto:** SynaptixFit  
-**Versión:** 4.2  
-**Fecha:** 14-06-2026
+**Versión:** 4.3  
+**Fecha:** 21-06-2026
 
 ---
 
@@ -137,12 +137,79 @@ Al abrir una rutina desde "Mis Rutinas", verás una vista detallada con navegaci
 6. Al finalizar, la app preguntará tu **RPE** (esfuerzo percibido) y si guardar los cambios para futuras sesiones.
 7. Verás cuánto **XP** ganaste (`+130 XP 🔥`) y si subiste de nivel (`¡Subiste a nivel 5! 🎉`).
 
-### 4.5 Planificar tu Semana Académica
+### 4.5 Planificar tu Semana con Time-Blocking
 
-1. Ve a la pestaña **Académico**.
-2. Agrega tus asignaturas y bloques de clase.
-3. La app detecta automáticamente conflictos con tus entrenamientos.
-4. Revisa las sugerencias de ajuste y acepta o descarta.
+SynaptixFit te ayuda a organizar tu semana completa combinando clases, estudio, deporte y entregas en un solo calendario semanal. La IA distribuye tus horas de estudio automáticamente respetando tus horarios fijos.
+
+#### 4.5.1 Configurar tus Horarios Fijos (una sola vez)
+
+1. Ve a **Académico → Configuración**.
+2. Añade tus **clases presenciales** y **compromisos fijos** indicando día de la semana, hora de inicio y duración.
+3. Estos horarios aparecerán como bloques grises bloqueados en el grid de time-blocking. La IA nunca los modificará ni solapará bloques sobre ellos.
+
+> 💡 Solo necesitas configurar esto una vez. Si tus horarios cambian al inicio de cada cuatrimestre, vuelve aquí y actualízalos.
+
+#### 4.5.2 El Inbox — Declarar tus Intenciones
+
+1. Ve a **Académico → Planificar mi semana**.
+2. Verás la pantalla "Inbox" con un diseño minimalista:
+   - **Slider de horas de estudio:** Desliza para indicar cuántas horas quieres dedicar al estudio esta semana (entre 0 y 50 horas).
+   - **Slider de días de deporte:** Indica cuántos días quieres entrenar (0-7 días). La duración de cada sesión se configura en el propio Inbox con un dropdown (30/45/60/90/120 min).
+   - **Entregas pendientes:** La app detecta automáticamente tus entregas y exámenes de la semana actual.
+3. El slider de horas de estudio se precarga con tu objetivo del perfil académico si lo has configurado.
+
+#### 4.5.3 Ir al Canvas
+
+1. Revisa que tus intenciones sean correctas en el Inbox.
+2. Pulsa el botón **"Ir al Canvas"**.
+3. Serás llevado al lienzo semanal donde la IA genera automáticamente la distribución de tus bloques al inicializar el canvas.
+4. Los bloques generados respetan tus horarios fijos y preferencias configuradas en el Inbox.
+
+> 💡 Si no tienes la API key de Gemini configurada, la app usa un algoritmo de distribución equitativa como fallback.
+
+#### 4.5.4 El Lienzo — Revisar y Ajustar
+
+El Canvas muestra tu semana en una cuadrícula de 7 columnas (días) × 16 filas (horas, de 7:00 a 23:00) con fondo oscuro para reducir fatiga visual. La columna izquierda siempre corresponde al día actual.
+
+**Barra de navegación semanal infinita:**
+- `< Anterior | Sem 15-21 Jun 2026 | Siguiente > | Hoy` — permite navegar semanas hacia adelante y atrás sin límite, con retorno rápido a la semana actual.
+
+1. **Identifica tus bloques por colores:**
+   - 🔵 **Azul:** Bloques de estudio (generados por IA o manuales)
+   - 🟠 **Naranja:** Sesiones de deporte. Si provienen de una rutina, muestran una barra blanca vertical a la izquierda y el nombre del día de la rutina.
+   - ⚪ **Gris:** Clases y horarios fijos (no se pueden mover)
+   - 🔴 **Rojo:** Exámenes y entregas (hitos inamovibles, no se pueden arrastrar)
+
+2. **Añade bloques manualmente:**
+   - Pulsa en un hueco vacío del canvas para abrir el `AcademicBlockSheet`.
+   - Selecciona el tipo de bloque: Estudio, Examen, Entrega, Deporte, o Reto.
+   - En la pestaña **Deporte**, puedes seleccionar una rutina y activar "Distribuir rutina completa" para colocar automáticamente todos los días de entrenamiento en el canvas.
+
+3. **Ajusta con drag & drop:**
+   - Mantén presionado cualquier bloque (excepto los grises de clase y los rojos inamovibles) y arrástralo a otro día u hora.
+   - El bloque hace "snap" automático a intervalos de 30 minutos.
+
+4. **Redimensiona bloques:**
+   - Arrastra el borde inferior de un bloque para ajustar su duración.
+
+5. **Marca bloques como completados:**
+   - Cada bloque de estudio/deporte tiene un checkbox. Al marcarlo, ganas XP (`ceil(mins/30) × 10`).
+
+6. **Elimina bloques:**
+   - Desliza un bloque hacia la izquierda o pulsa el icono de papelera.
+
+#### 4.5.5 Guardar y Visualizar
+
+1. Cuando estés satisfecho con tu plan, pulsa **"Guardar plan"** en la barra inferior del canvas.
+2. La app guarda todos los bloques generados en tu base de datos.
+3. Serás redirigido a la pantalla de **Plan Semanal** donde verás:
+   - Tus bloques del día en la timeline.
+   - Cada bloque muestra su tipo, asignatura y duración.
+   - Puedes **marcar bloques como completados** ✅ para seguir tu adherencia y ganar XP.
+4. La **barra de progreso** en el Canvas te muestra cuántas horas de estudio y sesiones de deporte has planificado.
+5. Si cumples ≥80% de tu plan 4 semanas seguidas, desbloquearás la insignia **"Planificador Maestro"** 🏆.
+
+> 💡 Puedes volver al canvas en cualquier momento desde el Inbox. Los bloques se guardan automáticamente al moverlos o redimensionarlos.
 
 ### 4.6 Crear un Reto
 
@@ -230,5 +297,5 @@ Mínimo 3 ejercicios para poder guardarla.
 
 ---
 
-**Documento compilado:** 14-06-2026  
-**Última revisión:** v4.2
+**Documento compilado:** 21-06-2026  
+**Última revisión:** v4.3 — §4.5.3 actualizado: eliminado botón "Generar mi semana", reemplazado por "Ir al Canvas". §4.5.4 actualizado con distribución de rutina desde pestaña Deporte, indicador visual de rutina en bloques, y bloqueos inamovibles (exámenes/entregas). §4.5.5 actualizado: barra inferior "Guardar plan" en vez de "Guardar semana" en AppBar. Insignia "Planificador Maestro" ya implementada.

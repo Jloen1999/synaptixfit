@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit
-**Versión:** 6.0
-**Fecha:** 12-06-2026
+**Versión:** 7.1
+**Fecha:** 21-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -2178,6 +2178,508 @@ Servicio de cálculo de rachas de actividad diaria:
 
 ---
 
-**Documento compilado:** 13-06-2026
-**Última revisión:** v6.2 — Sprint 9 completado: añadidas §§16-19 (Pomodoro, Escanear, Social, Insignias). QuickActions actualizados.
-**Referencia:** Alineado con SRS v4.0, Arquitectura v4.3, Plan Maestro v1.3
+## 20. Panel de Administración (v6.8 — Fase 3 Final)
+
+**Ruta:** `/admin`
+**Archivos:** `features/admin/` con 34 archivos en 4 capas (7 DTOs, 6 repositorios, 6 provider files, 15 widgets/pantallas)
+
+### 20.1 Arquitectura
+
+```
+features/admin/
+├── domain/
+│   ├── admin_dto.dart                      # UsuarioAdmin (existente)
+│   ├── admin_kpi_dto.dart                  # AdminMetricasGlobales (10 campos)
+│   ├── admin_contenido_dto.dart            # ContenidoReportado
+│   ├── admin_auditoria_dto.dart            # AuditoriaRegistro + enum AccionAuditoria
+│   ├── admin_ejercicio_dto.dart            # AdminEjercicio (con campo activo)
+│   ├── admin_usuario_estadisticas_dto.dart # AdminUsuarioEstadisticas + AdminDataPoint
+│   └── admin_timeline_dto.dart             # AdminTimelineEntry + enum TimelineTipoAdmin
+├── infrastructure/
+│   ├── admin_repository.dart               # listarUsuarios, obtenerDetalle, deleteUser, resetXp, setNivel
+│   ├── admin_metricas_repository.dart      # obtenerMetricasGlobales, obtenerRegistrosDiarios
+│   ├── admin_auditoria_repository.dart     # insertarAuditoria, consultarLogs
+│   ├── admin_contenido_repository.dart     # listarContenidoReportado, aprobarContenido, eliminarContenido
+│   ├── admin_ejercicio_repository.dart     # listarEjercicios, toggleActivo
+│   └── admin_usuario_stats_repository.dart # obtenerRpeSemanal, obtenerVolumenSemanal, obtenerTimeline
+├── application/
+│   ├── admin_provider.dart                 # esAdminProvider, adminUsuariosPaginados, adminUsuarioDetalle + mutaciones (eliminarUsuario, editarNombreUsuario, editarEmailUsuario)
+│   ├── admin_metricas_provider.dart        # adminMetricasProvider, adminRegistrosDiariosProvider
+│   ├── admin_auditoria_provider.dart       # adminAuditoriaProvider, registrarAuditoria
+│   ├── admin_contenido_provider.dart       # adminContenidoReportadoProvider + moderarPublicacion, moderarComentario
+│   ├── admin_ejercicio_provider.dart       # adminEjerciciosProvider, adminEjercicioToggleProvider
+│   └── admin_usuario_stats_provider.dart   # adminUsuarioStatsProvider, adminUsuarioTimelineProvider
+└── presentation/
+    ├── admin_hub_screen.dart               # Hub principal con TabBar (5 tabs)
+    ├── admin_panel_screen.dart             # Pestaña "Usuarios" con búsqueda, filtros, ordenamiento y botón eliminar
+    ├── admin_usuario_detalle.dart          # 3 sub-pestañas + configuración de usuario + botón eliminar
+    └── widgets/
+        ├── admin_kpi_dashboard.dart        # Grid 2×3 KPIs + gráfico tendencia 30 días (fl_chart LineChart)
+        ├── admin_kpi_card.dart             # Card individual de KPI
+        ├── admin_auditoria_list.dart       # Lista paginada de registros de auditoría
+        ├── admin_log_entry.dart            # Fila de log con badge por tipo de acción
+        ├── admin_paginacion_bar.dart       # Barra de paginación reutilizable
+        ├── admin_wipe_dialog.dart          # Diálogo de confirmación de wipe/delete
+        ├── admin_contenido_card.dart       # Card de contenido reportado con aprobar/eliminar
+        ├── admin_contenido_list.dart       # Lista paginada de contenido reportado
+        ├── admin_ejercicio_card.dart       # Card con Switch activo/inactivo
+        ├── admin_ejercicio_list.dart       # Lista paginada de ejercicios con búsqueda
+        ├── admin_graficos_usuario.dart     # Gráficos fl_chart (LineChart RPE + BarChart volumen)
+        └── admin_timeline_usuario.dart     # Timeline vertical de actividad del usuario
+```
+
+### 20.2 AdminHubScreen — Punto de entrada con TabBar
+
+**Archivo:** `app/lib/features/admin/presentation/admin_hub_screen.dart`
+
+`ConsumerStatefulWidget` con `TabController(length: 5)` que reemplaza al antiguo `AdminPanelScreen` como punto de entrada único al panel:
+
+| Tab | Contenido | Widget principal |
+|-----|-----------|-----------------|
+| **KPIs** | Métricas globales de la plataforma | `AdminKpiDashboard` |
+| **Usuarios** | Búsqueda, listado y gestión | `AdminListaUsuarios` (refactor del antiguo `AdminPanelScreen`) |
+| **Contenido** | Moderación de publicaciones/comentarios | `AdminContenidoList` |
+| **Ejercicios** | Catálogo admin con toggle activo | `AdminEjercicioCard` (lista) |
+| **Logs** | Registros de auditoría | `AdminLogEntry` (lista cronológica) |
+
+**Protección de ruta:** La ruta `/admin` en GoRouter verifica `esAdminProvider` antes de renderizar. Si el usuario no es admin, redirige a `/dashboard`.
+
+### 20.3 AdminKpiDashboard — Grid de KPIs + Gráfico de Tendencia
+
+**Archivo:** `app/lib/features/admin/presentation/widgets/admin_kpi_dashboard.dart`
+
+Grid 2×3 de `AdminKpiCard` con 6 métricas principales desde `adminMetricasProvider`:
+1. **Total usuarios** — `v_admin_metricas.total_usuarios`
+2. **Activos hoy** — `v_admin_metricas.usuarios_activos_hoy`
+3. **Sesiones hoy** — `v_admin_metricas.sesiones_hoy`
+4. **Rutinas activas** — `v_admin_metricas.rutinas_activas`
+5. **Retos activos** — `v_admin_metricas.retos_activos`
+6. **Reportado pendiente** — `v_admin_metricas.contenido_reportado_pendiente`
+
+**Gráfico de tendencia 30 días (Fase 3):** Bajo el grid de KPIs, un `LineChart` de `fl_chart` que muestra la tendencia de registros diarios de los últimos 30 días, consumiendo `adminRegistrosDiariosProvider`. Eje X: días, eje Y: cantidad de registros. Tooltips con fecha y valor exacto.
+
+**Estados del provider:**
+- `AsyncLoading` → 6 skeletons de cards (shimmer) + skeleton del gráfico
+- `AsyncError` → mensaje "Error al cargar métricas" + botón reintentar
+- `AsyncData` → grid con valores reales + gráfico de tendencia
+
+### 20.4 AdminKpiCard
+
+**Archivo:** `app/lib/features/admin/presentation/widgets/admin_kpi_card.dart`
+
+Card individual con:
+- Icono representativo (person, trending_up, fitness_center, flag, bar_chart, stars)
+- Valor numérico destacado (tamaño grande, bold)
+- Etiqueta descriptiva
+- Color dinámico según tipo de métrica (verde=positivo, ámbar=neutral, azul=info)
+- Tendencia (↑/↓) si aplica comparación intermensual
+
+### 20.5 AdminListaUsuarios — Búsqueda, filtros y ordenamiento
+
+**Archivo:** `app/lib/features/admin/presentation/admin_panel_screen.dart` (refactorizado como pestaña "Usuarios")
+
+- **Búsqueda:** `TextField` con debounce 300ms para filtrar por email o nombre
+- **Filtros (Fase 3):** chips de filtro por rol (`admin`/`usuario`), estado (activo/inactivo)
+- **Ordenamiento (Fase 3):** `PopupMenuButton` con opciones: "Más recientes", "Más antiguos", "Mayor nivel", "Mayor XP"
+- **Paginación:** 20 usuarios por página, `AdminPaginacionBar` con botones ← → y contador "Página X de Y"
+- **Lista:** `ListView.builder` con cards de usuario mostrando avatar, nombre, email, rol, nivel, racha
+- **Acciones por usuario:** `PopupMenuButton` con "Ver detalle" (→ `AdminUsuarioDetalle`), "Cambiar rol", "Eliminar datos (Wipe)"
+- **Botón eliminar (Fase 3):** opción "Eliminar usuario" (hard delete vía RPC `delete_user`) con diálogo de confirmación
+- **`errorBuilder`:** todos los `Image.network` de avatares tienen fallback a inicial del nombre
+- **Providers:** `adminUsuariosProvider(query)` (datos + búsqueda), ordenamiento gestionado en cliente
+
+### 20.6 AdminUsuarioDetalle — Perfil, Estadísticas, Timeline y Configuración
+
+**Archivo:** `app/lib/features/admin/presentation/admin_usuario_detalle.dart`
+
+Enriquecido con `TabController(length: 3)` y sección de configuración:
+
+| Pestaña | Contenido | Datos |
+|---------|-----------|-------|
+| **Perfil** | Datos del usuario (email, nombre, nivel, XP, racha) + **sección de configuración (Fase 3):** editar nombre, editar email, reset XP, cambiar nivel, botón eliminar usuario + conteos de actividad (sesiones, rutinas, retos, insignias) | `usuarios` + `perfil_bienestar_usuario` + `perfil_academico_usuario` + subconsultas COUNT |
+| **Estadísticas** | `AdminGraficosUsuario`: LineChart RPE semanal + BarChart volumen semanal | `adminUsuarioStatsProvider` → `v_analitica_semanal` filtrado por usuario |
+| **Timeline** | `AdminTimelineUsuario`: actividad cronológica (sesiones, retos, publicaciones, check-ins) | `adminUsuarioTimelineProvider` → queries múltiples |
+
+**Configuración de usuario (Fase 3):**
+- **Editar nombre:** diálogo con `TextField` pre-rellenado, llama a `editarNombreUsuario()`
+- **Editar email:** diálogo con validación de formato, llama a `editarEmailUsuario()`
+- **Reset XP:** botón con confirmación, setea `xp_total = 0`, registra en `admin_auditoria`
+- **Cambiar nivel:** diálogo con selector numérico, registra en `admin_auditoria`
+- **Eliminar usuario:** botón rojo con diálogo de confirmación "Esta acción es irreversible", invoca RPC `delete_user`
+- **`errorBuilder`:** fallback a inicial del nombre si `url_avatar` es inválido
+
+### 20.7 AdminContenidoList — Moderación de contenido
+
+**Archivo:** `app/lib/features/admin/presentation/widgets/admin_contenido_list.dart`
+
+Lista las publicaciones y comentarios con `reportado = true`, consumiendo `adminContenidoReportadoProvider`:
+
+- **Publicaciones reportadas:** muestra autor, contenido, fecha y quién reportó. Acciones: "Ocultar" (`esta_eliminado = true`), "Restaurar" (`esta_eliminado = false`), "Ignorar reporte" (`reportado = false`).
+- **Comentarios reportados:** muestra autor, contenido, fecha. Acciones: "Eliminar" (soft delete), "Ignorar reporte".
+- Cada acción de moderación inserta un registro en `admin_auditoria`.
+
+### 20.8 AdminEjercicioCard — Catálogo admin
+
+**Archivo:** `app/lib/features/admin/presentation/widgets/admin_ejercicio_card.dart`
+
+Lista del catálogo completo consumiendo `adminEjerciciosProvider`:
+
+- Cada ejercicio muestra: nombre, dificultad, músculos objetivo, estado actual (activo/inactivo)
+- **Toggle:** `Switch` que llama a `adminEjercicioToggleProvider` → UPDATE `ejercicios.activo`
+- Al desactivar: el ejercicio se oculta de búsquedas y recomendaciones IA (filtradas por `WHERE activo = true`)
+- **Indicador visual:** ejercicios inactivos en gris con opacidad reducida
+- **Búsqueda/filtro:** `TextField` para filtrar por nombre, chips de filtro por dificultad y grupo muscular
+
+### 20.9 AdminLogEntry — Logs de auditoría
+
+**Archivo:** `app/lib/features/admin/presentation/widgets/admin_log_entry.dart`
+
+Lista cronológica (más reciente primero) de `admin_auditoria`:
+
+- Cada entrada muestra: admin (email), usuario afectado (email o "N/A"), acción (badge coloreado), detalles (JSONB expandible), fecha/hora
+- **Badges por acción:** wipe (rojo), reset_xp (naranja), set_nivel (azul), ocultar_ejercicio (gris), moderar (ámbar)
+- **Filtro:** chips para filtrar por tipo de acción
+- **Provider:** `adminAuditoriaProvider`
+
+### 20.10 AdminGraficosUsuario + AdminTimelineUsuario
+
+**Archivos:**
+- `app/lib/features/admin/presentation/widgets/admin_graficos_usuario.dart`
+- `app/lib/features/admin/presentation/widgets/admin_timeline_usuario.dart`
+
+Widgets usados dentro de `AdminUsuarioDetalle` (pestañas Estadísticas y Timeline):
+
+- **Gráficos:** `fl_chart` — `LineChart` con RPE semanal (eje Y: 1-10, eje X: semanas) y `BarChart` con volumen semanal en minutos. Datos desde `adminUsuarioStatsProvider`.
+- **Timeline:** `ListView` con items tipo `TimelineItem` (sesiones, retos, publicaciones, check-ins, estudio) ordenados cronológicamente. Máximo 50 items.
+
+### 20.11 AdminPaginacionBar
+
+**Archivo:** `app/lib/features/admin/presentation/widgets/admin_paginacion_bar.dart`
+
+Componente reutilizable para paginación:
+- Botones ← Anterior / Siguiente → (deshabilitados en extremos)
+- Indicador "Página X de Y (Z resultados)"
+- Selector de items por página (10/25/50)
+- Usado por: `AdminListaUsuarios`, `AdminContenidoList`, `AdminEjercicioCard`
+
+### 20.12 Providers nuevos y extendidos
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `esAdminProvider` | `FutureProvider<bool>` | Verifica si el usuario autenticado tiene `rol = 'admin'` |
+| `adminMetricasProvider` | `FutureProvider<AdminMetricasGlobales>` | Métricas desde `v_admin_metricas` |
+| `adminRegistrosDiariosProvider` | `FutureProvider<List<RegistroDiario>>` | Registros diarios últimos 30 días (para gráfico de tendencia) |
+| `adminFiltroUsuariosProvider` | `StateProvider<String>` | Filtro de búsqueda de usuarios |
+| `adminUsuariosPaginadosProvider` | `FutureProvider<List<UsuarioAdmin>>` | Usuarios paginados y filtrados |
+| `adminContenidoReportadoProvider` | `FutureProvider<List<dynamic>>` | Publicaciones y comentarios reportados |
+| `adminEjerciciosProvider` | `FutureProvider<List<EjercicioAdmin>>` | Catálogo completo con campo `activo` |
+| `adminAuditoriaProvider` | `FutureProvider<List<AuditoriaRegistro>>` | Logs de auditoría cronológicos |
+| `adminUsuarioStatsProvider` | `FutureProvider.family<UsuarioEstadisticas, String>` | RPE y volumen por usuario |
+| `adminUsuarioTimelineProvider` | `FutureProvider.family<List<TimelineItem>, String>` | Timeline de actividad por usuario |
+
+**Mutaciones extendidas en `admin_provider.dart`:**
+| Mutación | Descripción | Fase |
+|----------|-------------|------|
+| `resetXpUsuario(usuarioId, ref)` | Resetea XP a 0 sin cambiar nivel. Inserta en `admin_auditoria`. | Fase 1 |
+| `setNivelUsuario(usuarioId, nuevoNivel, ref)` | Cambia nivel manualmente. Inserta en `admin_auditoria`. | Fase 1 |
+| `listarUsuariosFiltrado(filtro, pagina, ref)` | Búsqueda paginada con filtro. | Fase 1 |
+| `contarUsuarios(filtro, ref)` | Conteo total para paginación. | Fase 1 |
+| `ocultarEjercicio(ejercicioId, ref)` | UPDATE `activo = false`. Inserta en `admin_auditoria`. | Fase 2 |
+| `mostrarEjercicio(ejercicioId, ref)` | UPDATE `activo = true`. Inserta en `admin_auditoria`. | Fase 2 |
+| `moderarPublicacion(publicacionId, accion, ref)` | Soft delete/restaurar/ignorar reporte. Inserta en `admin_auditoria`. | Fase 2 |
+| `moderarComentario(comentarioId, accion, ref)` | Soft delete/ignorar reporte. Inserta en `admin_auditoria`. | Fase 2 |
+| `eliminarUsuario(usuarioId, ref)` | Hard delete vía RPC `delete_user`. Inserta en `admin_auditoria`. Invalida listado. | **Fase 3** |
+| `editarNombreUsuario(usuarioId, nombre, ref)` | UPDATE `usuarios.nombre_completo`. Inserta en `admin_auditoria`. | **Fase 3** |
+| `editarEmailUsuario(usuarioId, email, ref)` | UPDATE `usuarios.email`. Inserta en `admin_auditoria`. | **Fase 3** |
+
+**Validación de imágenes (Fase 3):**
+Todos los `Image.network` en widgets del panel admin incluyen `errorBuilder` que muestra un fallback con la inicial del nombre del usuario (avatar placeholder accesible).
+
+---
+
+## 21. Sistema de Time-Blocking Académico — Lienzo Continuo (v7.1)
+
+**Archivos base:** `app/lib/features/academico/`
+**Rutas nuevas:** `/academico/planificar`, `/academico/planificar/canvas`
+**Sin dependencias externas:** 0 nuevas en `pubspec.yaml`. Usa widgets nativos de Flutter: `Stack`, `Positioned`, `Draggable`, `DragTarget`.
+
+### 21.1 Stack Tecnológico
+
+| Componente | Tecnología | Propósito |
+|------------|-----------|-----------|
+| **Grid Canvas** | Flutter nativo: `Stack` + `Positioned` | Renderizar bloques sobre una cuadrícula horaria semanal |
+| **Drag & Drop** | `Draggable` + `DragTarget` | Reorganizar bloques entre días y horas sin dependencia externa |
+| **IA (Time-Blocking)** | Gemini Flash (mismo `RecomendacionIaService`) | Generar la distribución semanal óptima desde reglas N1-N10 |
+| **Estado** | Riverpod (`StateNotifierProvider`) | Inbox config, grid state, horarios fijos, resultado IA |
+| **Persistencia** | Supabase `horarios_academicos` | Guardar/recuperar el plan semanal |
+| **Gamificación** | Widgets nativos + `fl_chart` (ya instalado) | Barra de progreso de productividad |
+
+### 21.2 Rutas de Navegación
+
+| Ruta | Pantalla | Descripción |
+|------|----------|-------------|
+| `/academico/planificar` | `InboxScreen` | Inbox: sliders de intenciones + entregas + horarios fijos |
+
+| `/academico/planificar/canvas` | `CanvasScreen` | Canvas semanal infinito: visualización, drag & drop, navegación temporal, guardar |
+### 21.3 Providers del Módulo Planificador
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `inboxConfigProvider` | `StateNotifierProvider<InboxConfigNotifier, InboxConfig>` | Estado del formulario inbox: horas de estudio, días de deporte, entregas pendientes |
+| `entregasPendientesProvider` | `FutureProvider` | Entregas y exámenes próximos desde `entregas_examenes` |
+| `asignaturasActivasInboxProvider` | `FutureProvider` | Asignaturas activas del usuario para asignar a bloques de estudio |
+| `rutinasActivasInboxProvider` | `FutureProvider` | Rutinas activas para asignar a bloques de deporte |
+| `horariosFijosProvider` | `FutureProvider<List<HorarioAcademicoDb>>` | Consulta `horarios_academicos WHERE es_fijo = true` |
+| `calendarGridProvider` | `StateNotifierProvider<CalendarGridNotifier, CalendarGridState>` | Estado mutable del canvas: bloques posicionados, DnD, resize, navegación semanal infinita |
+| `bloque_estudio_provider.dart` | Funciones de mutación | `toggleBloqueCompletado()` — marca bloques como completados con checkbox, otorga XP |
+
+### 21.4 Matemática del Grid Hora ↔ Píxel
+
+El canvas usa un sistema de coordenadas basado en constantes fijas para convertir horas a posiciones y viceversa:
+
+```dart
+// Constantes del grid (definidas en planificador_constants.dart)
+const double PIXELS_PER_HOUR = 80.0;    // 80px = 1 hora de bloque
+const int HOUR_START = 7;               // El grid empieza a las 07:00
+const int HOUR_END = 23;                // El grid termina a las 23:00
+const double COLUMN_WIDTH = 120.0;      // Ancho de cada columna (día)
+const double HOUR_LABEL_WIDTH = 48.0;   // Ancho de la columna de etiquetas horarias
+const double HEADER_HEIGHT = 40.0;      // Alto del header con días de la semana
+
+// Fórmulas de conversión
+double horaToY(DateTime hora) {
+  final totalMinutes = hora.hour * 60 + hora.minute;
+  final startMinutes = HOUR_START * 60;
+  return (totalMinutes - startMinutes) / 60.0 * PIXELS_PER_HOUR;
+}
+
+double duracionToHeight(int duracionMinutos) {
+  return (duracionMinutos / 60.0) * PIXELS_PER_HOUR;
+}
+
+DateTime yToHora(double y) {
+  final totalMinutes = (y / PIXELS_PER_HOUR * 60.0).round() + (HOUR_START * 60);
+  final hour = totalMinutes ~/ 60;
+  final minute = totalMinutes % 60;
+  return DateTime(2024, 1, 1, hour.clamp(HOUR_START, HOUR_END - 1), minute);
+}
+
+// Posicionamiento de columna por día
+double diaToX(int diaSemana) {
+  // diaSemana: 1=Lunes..7=Domingo
+  return HOUR_LABEL_WIDTH + (diaSemana - 1) * COLUMN_WIDTH;
+}
+
+// Ancho total del canvas
+double get canvasWidth => HOUR_LABEL_WIDTH + 7 * COLUMN_WIDTH;
+double get canvasHeight => (HOUR_END - HOUR_START) * PIXELS_PER_HOUR;
+```
+
+**Snap al grid:** Al soltar un bloque (`DragTarget.onAcceptWithDetails`), las coordenadas se redondean al slot horario más cercano con precisión de 15 minutos (20px). El bloque se ancla a `diaSemana` y `horaInicio` exactos.
+
+### 21.5 Flujo de Usuario
+
+```mermaid
+flowchart TD
+    A["Usuario accede a /academico/planificar"] --> B["INBOX: Configurar intenciones"]
+    
+    B --> B1["Slider: Horas de estudio / semana"]
+    B1 --> B2["Slider: Días de deporte / semana"]
+    B2 --> B3["Lista: Entregas próximas (desde entregas_examenes)"]
+    B3 --> B4["Horarios fijos: solo lectura (clases, compromisos)"]
+    B4 --> B5["Barra de energía: indica disponibilidad cognitiva"]
+    B5 --> C["Botón 'Ir al Canvas' → /academico/planificar/canvas"]
+    
+    C --> D["CANVAS: Lienzo Continuo con navegación semanal infinita"]
+    
+    D --> D1["Primera columna = Hoy. Barra de navegación: < Anterior | Fechas | Siguiente > | Hoy"]
+    D1 --> D2["Visualizar semana completa con bloques coloreados"]
+    D2 --> D3{"¿Ajustes manuales?"}
+    D3 -->|"Drag & Drop"| D4["Mover bloques entre días/horas"]
+    D3 -->|"Resize"| D5["Ajustar duración desde borde inferior"]
+    D3 -->|"Checkbox"| D6["Marcar bloque como completado → XP + SyncHub"]
+    D3 -->|"No"| E["Barra inferior: Volver + Guardar"]
+    D4 --> E
+    D5 --> E
+    D6 --> E
+    
+    E --> F["UPSERT en horarios_academicos (es_fijo = false)"]
+    F --> G["Dashboard: Timeline muestra plan del día"]
+```
+
+### 21.6 Widgets Clave
+
+#### 21.6.1 `InboxScreen`
+
+**Archivo:** `app/lib/features/academico/presentation/inbox_screen.dart`
+
+Formulario de intenciones académicas con diseño de "Inbox" minimalista:
+
+| Campo | Widget | Rango | Propósito |
+|-------|--------|-------|-----------|
+| Horas de estudio | `Slider` + label | 0–50 h/semana | Define carga semanal de estudio auto-dirigido |
+| Días de deporte | `Slider` + label | 1–6 días/semana | Reserva huecos para entrenamiento (no colisionan con fijos) |
+| Entregas próximas | `Chips` + fechas | Desde `entregas_examenes` | La IA prioriza bloques pre-entrega |
+| Horarios fijos | `ListView` (read-only) | Desde `horariosFijosProvider` | Clases y compromisos inamovibles |
+
+**Barra de energía:** Indicador visual de disponibilidad cognitiva basado en `estadoEnergeticoProvider`. Ayuda al usuario a decidir cuántas horas de estudio planificar.
+
+**Botón "Ir al Canvas":** `FilledButton` con `Icons.grid_view` que navega a `/academico/planificar/canvas` llevando la configuración del inbox. El canvas se inicializa con los horarios fijos y la IA genera la distribución automáticamente al cargar.
+
+#### 21.6.2 `CanvasScreen` (Lienzo Continuo — Grid semanal infinito)
+
+**Archivo:** `app/lib/features/academico/presentation/canvas_screen.dart`
+
+Lienzo semanal de 7 columnas × 16 horas con navegación temporal infinita. Fondo oscuro `#1A1A2E` para reducir fatiga visual en sesiones largas de planificación.
+
+**Navegación semanal infinita:**
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  < Anterior  |  Sem 15-21 Jun 2026  |  Siguiente >  |  [Hoy]               │
+├────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──────────┬──┤
+│  07:00 │          │          │          │          │          │          │  │
+│  08:00 │ ████████ │          │ ████████ │          │ ████████ │          │  │
+│  09:00 │ Matemát. │          │  Física  │          │ Matemát. │          │  │
+│  10:00 │          │ ████████ │          │ ████████ │          │          │  │
+│  11:00 │ ████████ │ Estudio  │          │ Estudio  │          │          │  │
+│  ...   │   ...    │   ...    │   ...    │   ...    │   ...    │   ...    │  │
+│  20:00 │ ████████ │          │          │          │          │ ████████ │  │
+│        │ Deporte  │          │          │          │          │ Deporte  │  │
+├────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──────────┴──┤
+│                              [ Volver ]  [ Guardar ]                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Características del Lienzo Continuo:**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Primera columna = Hoy** | La columna izquierda siempre corresponde al día actual, facilitando orientación inmediata |
+| **Navegación infinita** | Botones `< Anterior` / `Siguiente >` permiten navegar semanas hacia adelante y atrás sin límite |
+| **Selector de fechas** | La barra superior muestra el rango de fechas de la semana visible (ej: "Sem 15-21 Jun 2026") |
+| **Botón Hoy** | Retorna instantáneamente a la semana actual |
+| **Eje horario inline** | Las horas (07:00, 08:00...) flotan sobre las líneas del grid en la columna izquierda |
+| **Fondo oscuro** | `#1A1A2E` (dark navy) — reduce fatiga visual, mejora contraste de bloques coloreados |
+| **Barra inferior simplificada** | Solo 2 botones: `Volver` (navega al inbox) y `Guardar` (persiste la semana) |
+
+**Capas del `Stack`:**
+1. **GridLinesPainter** (`CustomPainter`): Líneas de hora (gris suave, 1px) y líneas de día (gris medio, 2px).
+2. **Bloques fijos** (`Positioned`): Horarios inamovibles con opacidad 90%. No aceptan drag.
+3. **Bloques IA** (`Draggable > Positioned`): Bloques generados por IA. Draggable, feedback con opacidad 70%.
+4. **Bloques inamovibles** (`Positioned`): Bloques con `esHitoInamovible = true` (exámenes, entregas). No aceptan drag, protegidos contra edición accidental.
+5. **DragTargets** por celda: Cada intersección hora×día es un `DragTarget` que acepta `TimeBlock`.
+
+**Checkbox de completado:** Cada bloque de estudio/deporte incluye un checkbox. Al marcarlo:
+- `toggleBloqueCompletado()` actualiza `horarios_academicos.completado = true`
+- Otorga XP: `ceil(mins/30) × 10`
+- Emite evento `bloqueEstudioCompletado` al SyncHub para invalidar providers relacionados
+
+#### 21.6.3 `TimeBlockWidget`
+
+**Archivo:** `app/lib/features/academico/presentation/widgets/time_block_widget.dart`
+
+Tarjeta de bloque con soporte drag. Renderiza:
+
+| Propiedad | Descripción |
+|-----------|-------------|
+| Color | Por tipo de bloque (ver §21.7) |
+| Título | Texto en negrita blanco, 13px |
+| Duración | Subtítulo: "1h 30m" en opacidad 80% |
+| Asignatura | Badge pequeño con nombre de asignatura |
+| Handle de resize | Borde inferior con `GestureDetector` para redimensionar |
+| Feedback de drag | Misma card con opacidad 70% y sombra elevada |
+| **Indicador de rutina** | **NUEVO v7.1** — Bloques de deporte con `diaRutinaId != null` muestran: barra vertical blanca semitransparente a la izquierda (pertenencia a rutina), nombre del día de la rutina en el header (ej: "Torso"), nombre de la rutina en el subtitle en texto tenue (ej: "Push Pull Legs") |
+
+**Implementación Drag:**
+```dart
+Draggable<BloquePlanificadoData>(
+  data: bloque,
+  feedback: Material(child: DraggableBlockCard(bloque: bloque, isFeedback: true)),
+  childWhenDragging: Opacity(opacity: 0.3, child: DraggableBlockCard(bloque: bloque)),
+  child: DraggableBlockCard(bloque: bloque),
+)
+```
+
+#### 21.6.4 `ProgressGamificationBar`
+
+**Archivo:** `app/lib/features/academico/presentation/widgets/progress_gamification_bar.dart`
+
+Barra de progreso horizontal que muestra la adherencia al plan generado:
+
+- **Estudio planeado vs real:** Barra azul (horas completadas) sobre fondo gris (horas planeadas)
+- **Deporte planeado vs real:** Barra naranja
+- **Porcentaje global:** "73% de la semana completada"
+- **Racha de cumplimiento:** 🔥 "3 semanas seguidas cumpliendo el plan"
+- **Insignia:** Al alcanzar 80%+ en 4 semanas consecutivas → insignia "Planificador Maestro"
+
+#### 21.6.5 `AcademicBlockSheet` (Sheet unificado de creación/edición de bloques con distribución de rutina)
+
+**Archivo:** `app/lib/features/academico/presentation/widgets/academic_block_sheet.dart`
+
+Sheet reutilizable que se abre al tocar un hueco vacío en el canvas o al editar un bloque existente. Usa `SegmentedButton` con 5 pestañas: Estudio, Examen, Entrega, Deporte, Reto. La pestaña **"Deporte" integra la distribución completa de rutina** (antes en `RutinaConfigSheet`, que ya no se usa desde el canvas):
+
+**Selector de rutina:**
+- Dropdown que lista las rutinas activas del usuario desde `rutinasActivasInboxProvider`.
+- Al seleccionar una rutina, se consultan automáticamente los `dias_rutina` reales de la BD usando la columna `semana_id` (corregido de `semana_rutina_id`).
+
+**Switch "Distribuir rutina completa":**
+- Al activarlo, muestra:
+  - **Selector de días (FilterChips):** chips L-D para elegir qué días de la rutina distribuir en el lienzo.
+  - **DatePicker de inicio:** fecha desde la cual empezar a colocar los bloques de deporte.
+  - **Resumen de distribución:** total de bloques a crear, días seleccionados, y nombre de la rutina.
+- El botón principal cambia dinámicamente: "Crear sesión de deporte" (bloque individual) ↔ "Distribuir X bloques" (distribución completa vía `placeRutinaDistribuida()`).
+
+**Variables de estado:**
+| Variable | Tipo | Propósito |
+|----------|------|-----------|
+| `_distribuirRutina` | `bool` | Switch de distribución completa |
+| `_diasDistribucion` | `Set<int>` | Días seleccionados (1=L, 7=D) |
+| `_fechaInicioDistribucion` | `DateTime` | Fecha de inicio para distribución |
+| `_totalDiasRutina` | `int?` | Total de días reales en la rutina (desde BD) |
+| `_cargandoDias` | `bool` | Indicador de carga de consulta a BD |
+| `_duracionSemanasRutina` | `int?` | Duración en semanas de la rutina seleccionada |
+
+**Métodos nuevos:**
+- `_cargarTotalDias()` — consulta `dias_rutina` con `semana_id` para obtener el total real de días.
+- `_buildDistribucionSection()` — renderiza la UI de distribución completa.
+- `_buildFechaInicioPicker()` — DatePicker para seleccionar la fecha de inicio.
+- `_buildDistribucionResumen()` — muestra conteo de bloques y días seleccionados.
+
+**Flujo de distribución de rutina:**
+```
+1. Usuario selecciona rutina → se cargan días reales desde BD
+2. Activa "Distribuir rutina completa" → elige días y fecha de inicio
+3. Pulsa "Distribuir X bloques" → llama a calendarGridProvider.placeRutinaDistribuida()
+4. Los bloques de deporte aparecen en el canvas con indicador visual de rutina (barra blanca + nombre del día)
+```
+
+### 21.7 Sistema de Colores por Tipo de Bloque (Flat Design)
+
+Cada tipo de bloque se distingue por color plano con opacidad para mantener legibilidad sobre el fondo oscuro del grid:
+
+| Tipo de Bloque | Hex Code | Color | Uso |
+|----------------|----------|-------|-----|
+| `clase` | `#4A90D9` | Azul acero | Clases presenciales (horarios fijos) |
+| `estudio` | `#3B82F6` | Azul estudio | Bloques de estudio generados por IA |
+| `deporte` | `#FF8C42` | Naranja cálido | Bloques de entrenamiento |
+| `entrega` | `#E74C3C` | Rojo coral | Bloques pre-entrega (2-3 días antes) |
+| `descanso` | `#27AE60` | Verde esmeralda | Descanso/comida (12:00-14:00) |
+| `libre` | `#95A5A6` | Gris medio | Tiempo libre / buffer |
+| `examen` | `#F1C40F` | Amarillo dorado | Preparación de examen (3-5 días antes) |
+| `pomodoro` | `#1ABC9C` | Teal | Sesiones Pomodoro (25 min) |
+
+**Regla de opacidad:** Bloques fijos usan opacidad 90% (`withOpacity(0.9)`), bloques IA usan 80% (`withOpacity(0.8)`), bloques en drag usan 70% (`withOpacity(0.7)`). El fondo del grid es `#1A1A2E` (dark navy).
+
+### 21.8 Integración con el Dashboard
+
+Tras guardar la semana desde el canvas:
+
+1. Los bloques con `es_fijo = false` se guardan en `horarios_academicos` con `dia_semana` calculado.
+2. `timelineHoyProvider` ahora incluye bloques generados por IA en el tab "Hoy".
+3. La barra de carga cognitiva se actualiza con las horas de estudio planeadas vs reales.
+
+---
+
+**Documento compilado:** 18-06-2026
+**Última revisión:** v7.1 — §21.6.5 añadida: `AcademicBlockSheet` con distribución de rutina integrada en pestaña Deporte. §21.6.3 `TimeBlockWidget` actualizado con indicador visual de rutina (barra blanca + nombre del día + nombre de rutina). CanvasScreen: confirmada eliminación del botón "Rutina" independiente (barra inferior solo "← Volver" y "Guardar plan").
+**Referencia:** Alineado con SRS v5.2, Arquitectura v5.3, Plan Maestro v2.0

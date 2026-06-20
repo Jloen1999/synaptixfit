@@ -178,7 +178,7 @@ Ver detalle operativo y criterios de mantenimiento en [13-maintenance.md](13-mai
 
 ```text
 synaptixfit/
-  docs/                          ← Documentación (18 archivos estándar)
+  docs/                          ← Documentación (22 archivos: 00-plan-maestro → 21-plan-definitivo)
   app/
     lib/
       core/                      ← Errores, utils, config, routing, design system, sync
@@ -196,7 +196,7 @@ synaptixfit/
     test/
     integration_test/
   supabase/
-    migrations/                  ← 11 migraciones SQL consolidadas
+    migrations/                  ← 26 migraciones SQL (0049-0025)
   cloudflare/
     synaptixfit-r2-proxy/        ← Worker para proxy de imágenes R2
 ```

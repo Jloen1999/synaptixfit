@@ -1,9 +1,9 @@
 # 00 — Plan Maestro SynaptixFit
 
-**Versión:** 1.4  
-**Fecha:** 14-06-2026  
-**Estado:** COMPLETADO — Sprint 9 finalizado. Rediseño de onboarding completado.  
-**Propósito:** Hoja de ruta unificada para las próximas fases de desarrollo. Consolida los planes A, B, C, D discutidos en sesión de arquitectura.
+**Versión:** 2.0  
+**Fecha:** 17-06-2026  
+**Estado:** COMPLETADO — Sprint 9 + Time-Blocking + 9 fases de coherencia de gamificación finalizados. Rediseño de onboarding completado. Panel de administración Fase 3 completado (5 tabs, moderación, gráficos, timeline, delete user, configuración de usuario, gráfico de tendencia KPIs). Sprint Time-Blocking v7.0 completado (Custom Grid Nativo, IA Time-Blocking, XP unificado, SyncHub). 26 migraciones desplegadas.  
+**Propósito:** Hoja de ruta consolidada del desarrollo de SynaptixFit. Documenta el plan maestro, las 9 fases de coherencia, el Sprint Time-Blocking y todas las features implementadas.
 
 ---
 
@@ -12,7 +12,7 @@
 | Elemento | Estado actual |
 |----------|---------------|
 | Dashboard | v6.2 — rediseño completo, 8 secciones, 8 widgets en `widgets/`, 119 líneas en `dashboard_screen.dart` |
-| Migraciones | 11 archivos en `supabase/migrations/`: `202606060049_esquema_base.sql`, `202606120050_dependencias_retos.sql`, `202606130001_marcar_semana_completada.sql`, `202606140001_v_analitica_semanal.sql`, `20260616000002_social_moderacion.sql`, `20260616000003_insignias.sql`, `20260616000004_consolidacion_fixes.sql`, `20260616000005_fechas_coherencia.sql`, `20260616000006_admin_rol.sql`, `20260616000007_nivel_actividad_check.sql`, `20260616000008_asignaturas_usuario_semestre.sql` |
+| Migraciones | 26 archivos en `supabase/migrations/`: `0049_esquema_base`, `0050_dependencias_retos`, `0001_marcar_semana_completada`, `0001_v_analitica_semanal`, `0002_social_moderacion`, `0003_insignias`, `0004_consolidacion_fixes`, `0005_fechas_coherencia`, `0006_admin_rol`, `0007_nivel_actividad_check`, `0008_asignaturas_usuario_semestre`, `0009_admin_panel_v2`, `0010_admin_delete_user`, `0011_calendar_grid`, `0012_xp_planificacion`, `0013_bloque_xp_tracking`, `0014_retos_bloques_bridge`, `0015_dia_rutina_fk`, `0016_rutina_fk_fix`, `0017_trigger_hito_progreso`, `0018_unique_dias_rutina`, `0019_fix_duplicate_fk_rutina`, `0022_lienzo_continuo`, `0023_lienzo_continuo_v2`, `0024_ics_sync`, `0025_ics_upsert_fix` |
 | Migración base | `202606060049_esquema_base.sql` (~12K líneas, pg_dump completo con 43+ tablas) |
 | Catálogo ejercicios | 909 ejercicios, 93 músculos, 74 equipamientos, 19 partes del cuerpo, vista `v_ejercicios_completos` |
 | Catálogo académico | 8 tablas normalizadas (`universidades`, `centros`, `carreras`, `asignaturas_catalogo`, `profesores_asignatura`, `prerrequisitos_asignatura`, `criterios_evaluacion`, `bibliografia_asignatura`) — todos los campos de `grados.json` |
@@ -888,24 +888,175 @@ Widget `OfflineIndicator` integrado en `SynaptixShellRoute`: banner persistente 
 
 ---
 
-## Panel de Administración (v6.5)
+## Panel de Administración (v6.5 → v6.8)
 
 | Módulo | Estado | Descripción |
 |--------|--------|-------------|
 | A: Roles y Wipe | ✅ COMPLETADO | Columna `rol` en `usuarios` (TEXT, 'usuario'/'admin'), función RPC `wipe_user_data(p_usuario_id)`, políticas RLS admin bypass, función `es_admin()` |
+| B: Dashboard de Métricas | ✅ COMPLETADO | Vista `v_admin_metricas` con 9 KPIs globales, tabla `admin_auditoria` para trazabilidad, provider `adminMetricasProvider` y `adminRegistrosDiariosProvider` |
+| C: Moderación de Contenido | ✅ COMPLETADO | Columnas `reportado`/`reportado_por` en `actividades_sociales` y `comentarios_feed`, soft delete (`esta_eliminado`, `eliminado_por`, `eliminado_en`), políticas admin UPDATE/DELETE |
+| D: Catálogo de Ejercicios Admin | ✅ COMPLETADO | Columna `activo` (BOOLEAN DEFAULT true) en `ejercicios`, provider `adminEjerciciosProvider` con toggle activo/inactivo |
+| E: Logs de Auditoría | ✅ COMPLETADO | Tabla `admin_auditoria` con CHECK de acciones (wipe/reset_xp/set_nivel/ocultar_ejercicio/moderar), RLS solo admin, índices |
+| F: Delete User (Fase 3) | ✅ COMPLETADO | RPC `delete_user(p_usuario_id)` para eliminación hard de usuario (incluye auth.users y 26+ tablas), botón eliminar en lista y detalle, `AdminWipeDialog` de confirmación. Migración `20260616000010_admin_delete_user.sql`. |
+| G: Gráfico de Tendencia KPIs | ✅ COMPLETADO | `AdminKpiDashboard` con gráfico de tendencia 30 días usando `fl_chart` (`LineChart` de registros diarios) |
+| H: Filtros y Ordenamiento | ✅ COMPLETADO | `AdminPanelScreen` con filtros por email/nombre/rol, ordenamiento por fecha/nivel/XP, debounce 300ms |
+| I: Configuración de Usuario | ✅ COMPLETADO | `AdminUsuarioDetalle` con edición de nombre/email, reset XP, cambio de nivel, y botón eliminar usuario |
 
-**Nueva migración:** `20260616000006_admin_rol.sql`
-**Nuevo feature:** `admin/` con AdminPanelScreen, AdminUsuarioDetalle, AdminWipeDialog
-**Nuevo provider:** `esAdminProvider`
-**Nueva ruta:** `/admin` protegida por rol, botón condicional en dashboard
+**Nuevas migraciones:** `20260616000006_admin_rol.sql`, `20260616000009_admin_panel_v2.sql`, `20260616000010_admin_delete_user.sql`
+**Nuevo feature:** `admin/` ampliado de 6 a 34 archivos con 4 capas completas (domain/, infrastructure/, application/, presentation/)
+**Nuevos providers (10):** `adminMetricasProvider`, `adminRegistrosDiariosProvider`, `adminUsuariosPaginadosProvider`, `adminFiltroUsuariosProvider`, `adminContenidoReportadoProvider`, `adminEjerciciosProvider`, `adminEjercicioToggleProvider`, `adminAuditoriaProvider`, `adminUsuarioStatsProvider`, `adminUsuarioTimelineProvider`
+**Nuevas mutaciones:** `resetXpUsuario()`, `setNivelUsuario()`, `listarUsuariosFiltrado()`, `contarUsuarios()`, `ocultarEjercicio()`, `mostrarEjercicio()`, `moderarPublicacion()`, `moderarComentario()`, `eliminarUsuario()`, `editarNombreUsuario()`, `editarEmailUsuario()`
+**Nuevos widgets (13):** `AdminHubScreen` (TabBar con 5 tabs), `AdminKpiDashboard` (grid 2×3 KPIs + gráfico de tendencia 30 días fl_chart), `AdminKpiCard`, `AdminListaUsuarios` (paginación + filtros + ordenamiento), `AdminContenidoCard`, `AdminContenidoList`, `AdminEjercicioCard` (toggle activo), `AdminEjercicioList`, `AdminLogEntry`, `AdminGraficosUsuario` (fl_chart), `AdminTimelineUsuario`, `AdminAuditoriaList`, `AdminPaginacionBar`
+**Ruta:** `/admin` protegida por rol, `AdminHubScreen` como punto de entrada con TabBar
 
 ### Detalle de la función `wipe_user_data(p_usuario_id)`
 - **Conserva:** `id`, `email`, `nombre_completo`, `url_avatar`, `rol`, `nivel_privacidad`, `creado_en`, `perfil_bienestar_usuario`, `perfil_academico_usuario`, `usuario_carreras`
 - **Resetea:** `nivel` → 1, `xp_total` → 0, `racha_actual` → 0
 - **Elimina:** 24+ tablas de historial (sesiones, rutinas, retos, apuntes, publicaciones, comentarios, notificaciones, insignias, etc.)
+- **Registra en auditoría:** Cada wipe genera una entrada en `admin_auditoria` con `accion = 'wipe'` y `detalles` JSONB con el email del usuario afectado
 - **Seguridad:** Solo `admin` puede ejecutar. No puede hacer wipe de su propio usuario.
 
+### Nuevas funcionalidades Fase 1 MVP del Panel
+
+#### Tabla `admin_auditoria`
+Registra todas las acciones administrativas con: `id`, `admin_id` (FK → usuarios), `target_usuario_id` (FK → usuarios), `accion` (CHECK: wipe/reset_xp/set_nivel/ocultar_ejercicio/moderar), `detalles` JSONB, `creado_en`. RLS: SELECT + INSERT solo para admin. Índices en `admin_id`, `target_usuario_id`, `creado_en`.
+
+#### Vista `v_admin_metricas`
+9 métricas globales agregadas: `total_usuarios`, `nuevos_esta_semana`, `usuarios_activos_semana`, `sesiones_esta_semana`, `retos_creados_semana`, `publicaciones_semana`, `publicaciones_reportadas`, `comentarios_reportados`, `insignias_otorgadas`, `nivel_promedio`.
+
+#### Columnas de moderación
+- `actividades_sociales`: +`reportado` (BOOLEAN), +`reportado_por` (UUID FK), +`esta_eliminado`, +`eliminado_por`, +`eliminado_en`
+- `comentarios_feed`: +`reportado` (BOOLEAN), +`reportado_por` (UUID FK)
+- `ejercicios`: +`activo` (BOOLEAN DEFAULT true)
+
+#### AdminHubScreen (refactor del panel)
+`AdminPanelScreen` refactorizado como pestaña "Usuarios" dentro de `AdminHubScreen`, un `ConsumerStatefulWidget` con `TabController(length: 5)`:
+1. **KPIs:** `AdminKpiDashboard` — grid 2×3 de `AdminKpiCard` + gráfico de registros diarios
+2. **Usuarios:** `AdminListaUsuarios` — lista paginada con `AdminPaginacionBar`, filtro por email/nombre, acciones (ver detalle, reset XP, set nivel)
+3. **Contenido:** `AdminContenidoList` — publicaciones y comentarios reportados, acciones de moderación (ocultar/restaurar)
+4. **Ejercicios:** `AdminEjercicioCard` — catálogo con toggle `activo`/`inactivo`
+5. **Logs:** `AdminLogEntry` — registros de auditoría cronológicos
+
+#### AdminUsuarioDetalle enriquecido
+3 sub-pestañas (Perfil / Estadísticas / Timeline):
+- **Perfil:** datos del usuario, acciones admin (reset XP, set nivel, wipe)
+- **Estadísticas:** `AdminGraficosUsuario` con `fl_chart` (RPE semanal LineChart + volumen BarChart)
+- **Timeline:** `AdminTimelineUsuario` — actividad del usuario en orden cronológico
+
+### Plan de Implementación
+
+El diseño arquitectónico está completo (docs/ actualizados). La implementación se divide en 3 fases:
+
+- [x] **Fase 0 — Corrección de bugs previos** (0.5h) ✅ COMPLETADO — 15/06/2026
+  - [x] Avatar fallback en `AdminPanelScreen` y `AdminUsuarioDetalle` (manejar `url_avatar` null)
+  - [x] `flutter analyze` a 0 issues (verificado)
+  - [x] Verificar que `esAdminProvider` funcione correctamente con el rol de BD
+
+- [x] **Fase 1 — MVP: Hub + KPIs + Paginación + Auditoría** (8h) ✅ COMPLETADO — 15/06/2026
+  - [x] **Migración BD:** `20260616000009_admin_panel_v2.sql` con `admin_auditoria`, `v_admin_metricas`, columnas de moderación, columna `activo` en ejercicios, políticas RLS admin
+  - [x] **DTOs (4):** `admin_kpi_dto.dart` (`AdminMetricasGlobales`), `admin_auditoria_dto.dart` (`AuditoriaRegistro`), `admin_contenido_dto.dart` (`ContenidoReportado`), `admin_dto.dart` (`UsuarioAdmin`)
+  - [x] **Repositorios (3):** `admin_metricas_repository.dart` (`AdminMetricasRepository`), `admin_auditoria_repository.dart` (`AdminAuditoriaRepository`), `admin_repository.dart` (`AdminRepository`)
+  - [x] **Providers (7+):** `adminMetricasProvider`, `adminRegistrosDiariosProvider`, `adminAuditoriaProvider`, `esAdminProvider`, `adminUsuariosProvider`, `adminUsuarioDetalleProvider`, `registrarAuditoria()`, `resetXpUsuario()`, `setNivelUsuario()`
+  - [x] **Widgets (6):** `AdminKpiDashboard`, `AdminKpiCard`, `AdminLogEntry`, `AdminAuditoriaList`, `AdminPaginacionBar`, `AdminWipeDialog`
+  - [x] **Pantalla principal:** `AdminHubScreen` con `TabBar` (3 tabs: KPIs, Usuarios, Auditoría)
+  - [x] **Refactor:** `AdminPanelScreen` → pestaña "Usuarios" dentro de `AdminHubScreen`
+  - [x] **Enriquecido:** `AdminUsuarioDetalle` con 3 sub-pestañas (Perfil/Estadísticas/Timeline)
+  - [x] **Routing:** `app_router.dart` → ruta `/admin` apunta a `AdminHubScreen`
+  - [x] `flutter analyze` 0 issues al finalizar
+
+- [x] **Fase 2 — Completo: Moderación + Ejercicios + Gráficos + Timeline** (6h) ✅ COMPLETADO — 15/06/2026
+  - [x] **Widgets complementarios (6):** `AdminContenidoCard`, `AdminContenidoList`, `AdminEjercicioCard`, `AdminEjercicioList`, `AdminGraficosUsuario` (fl_chart), `AdminTimelineUsuario`
+  - [x] **Moderación:** acciones ocultar/restaurar en publicaciones y comentarios, registro en `admin_auditoria`
+  - [x] **Ejercicios:** toggle `activo`/`inactivo` con confirmación, registro en `admin_auditoria`
+  - [x] **Gráficos de usuario:** RPE semanal (LineChart) + volumen (BarChart) con `fl_chart`
+  - [x] **Timeline de usuario:** actividad cronológica con `TimelineItem`
+  - [x] **HubScreen:** `TabController(length: 3)` → `TabController(length: 5)`, añadidos tabs Contenido y Ejercicios
+  - [x] **UsuarioDetalle:** placeholders reemplazados por widgets reales (gráficos + timeline)
+  - [x] `flutter analyze` 0 issues, `flutter test` passing
+
+- [x] **Post-implementación** ✅ COMPLETADO — 15/06/2026
+  - [x] `AGENTS.md`: actualizado con conteos reales (26 migraciones, 22 docs, módulo admin con 7 DTOs, 6 repos, 6 provider files, 15 widgets/pantallas, delete_user, gráfico tendencia KPIs, configuración usuario)
+  - [x] `docs/14-changelog.md`: entrada `[6.8.0]` añadida con Fase 3 final
+  - [x] `docs/18-implementacion-admin.md`: Fase 3 marcada como completada con fechas reales
+  - [x] `docs/03-architecture.md`: árbol admin actualizado con archivos Fase 3
+  - [x] `docs/06-frontend.md`: §20 Panel de Administración actualizado con delete user, gráfico tendencia, filtros/ordenamiento, configuración
+  - [x] `docs/04-data-model.md`: RPC `delete_user` documentada
+  - [x] `docs/07-backend.md`: migración 0010 añadida al historial
+  - [x] `dart format .` ejecutado
+  - [x] `flutter analyze` → 0 issues, 0 warnings
+
 ---
+
+## Sprint Time-Blocking — Planificación Semanal con IA (v7.0) ✅ COMPLETADO
+
+**Objetivo:** Implementar un sistema de time-blocking académico con IA que genere automáticamente la distribución semanal de horas de estudio, deporte y preparación de entregas, con un Canvas interactivo nativo (sin dependencias externas).
+
+### Decisión de Arquitectura
+
+| Alternativa | Decisión | Motivo |
+|-------------|----------|--------|
+| ✅ **Custom Grid Nativo** | **SELECCIONADO** | 0 dependencias extras, control total del renderizado, matemática pixel↔hora explícita |
+| ❌ Syncfusion Flutter Calendar | **DESCARTADO** | Licencia de pago (~$995/año), +15MB APK, configuración acoplada a SfCalendar, sobreingeniería |
+| ❌ TableCalendar | Descartado | No soporta drag & drop nativo |
+
+### Stack nativo propuesto
+
+- **Widgets:** `Stack` + `Positioned` + `Draggable` + `DragTarget`
+- **Cálculo de posición:** `horaToY()` / `yToHora()` con constantes `PIXELS_PER_HOUR=80`, `HOUR_START=7`, `COLUMN_WIDTH=120`
+- **DnD:** API nativa de Flutter, sin dependencias extra
+- **Scroll:** `InteractiveViewer` + `SingleChildScrollView` horizontal/vertical sincronizados
+- **IA:** Gemini Flash (`TimeBlockIaService`) con reglas N1-N10
+
+### Módulos del Sprint
+
+| Módulo | Descripción | Prioridad |
+|--------|-------------|-----------|
+| **S1: DB + Modelo** | Columnas `es_fijo`, `dia_semana` en `horarios_academicos`. Migración 0011. DTO `BloquePlanificadoData`. | MUST |
+| **S2: Custom Grid + DnD** | Canvas semanal con Stack/Positioned/Draggable/DragTarget. Matemática hora↔píxel. Snap a 15 min. | MUST |
+| **S3: IA Time-Blocking** | `TimeBlockIaService` con reglas N1-N10. Prompt + validación + fallback. | MUST |
+| **S4: UI + Integración** | InboxScreen, CanvasScreen, TimeGridPainter, TimeBlockWidget, ProgressGamificationBar. Rutas y providers. | MUST |
+
+### Nuevas rutas
+- `/academico/planificar` → `InboxScreen`
+- `/academico/planificar/canvas` → `CanvasScreen`
+
+### Nuevos providers
+- `inboxConfigProvider` (StateNotifierProvider)
+- `horariosFijosProvider` (FutureProvider)
+- `calendarGridProvider` (StateNotifierProvider)
+- `TimeblockIaService` (servicio IA, genera distribución semanal con reglas N1-N10 + H1-H5)
+
+### Dependencias
+**0 nuevas.** Solo se usan widgets nativos y dependencias ya existentes (`fl_chart` para gamificación).
+
+### Verificación
+```bash
+# Sprint 2: Verificar que 06-frontend.md menciona los providers reales
+grep -c "inboxConfigProvider\|calendarGridProvider" docs/06-frontend.md
+# Debe devolver >0
+
+# Sprint 3: Verificar que 12-user-guide.md no menciona el wizard antiguo
+grep "4 pasos\|Entregas.*Horario fijo.*Estudio.*Deporte" docs/12-user-guide.md
+# Debe devolver 0 resultados
+
+# Sprint 4: Verificar 0 referencias a syncfusion
+grep -r "syncfusion\|SfCalendar\|syncfusion_flutter_calendar" docs/
+# Debe devolver 0 resultados
+```
+
+### Archivos de documentación afectados
+| Archivo | Sprint | Cambio específico |
+|---------|--------|-------------------|
+| `04-data-model.md` | S1 | Columnas `es_fijo`, `dia_semana` en `horarios_academicos` |
+| `15-ia-recomendacion-sistema.md` | S1 | §19: "IA para Time-Blocking Académico" con reglas N1-N10 |
+| `06-frontend.md` | S2 | §21: Custom Grid nativo, providers, rutas, matemática hora↔píxel, widgets |
+| `07-backend.md` | S2 | §12: `TimeBlockIaService` — prompt, validación, fallback |
+| `02-requirements.md` | S2 | CU-36/37/38 con criterios de aceptación |
+| `12-user-guide.md` | S3 | §4.5 reescrito con flujo "Generar mi semana" |
+| `00-plan-maestro.md` | S4 | Este sprint documentado |
+| `03-architecture.md` | S4 | Módulo `academico/` en árbol de carpetas |
+| `14-changelog.md` | S4 | Entrada `[7.0.0]` del refactor completo |
+| `AGENTS.md` | S4 | Conteo de migraciones (21), nuevas carpetas |
 
 ---
 
@@ -917,6 +1068,7 @@ Widget `OfflineIndicator` integrado en `SynaptixShellRoute`: banner persistente 
 4. ~~Documentación sincroniza `docs/` en Fase 4 y verifica consistencia.~~ ✅
 5. ~~Commit final.~~ ✅
 6. ~~Sprint 7 — Retos con dependencias, analítica avanzada, sincronización offline.~~ ✅
+7. ~~**Sprint Time-Blocking — Planificación semanal con IA.**~~ ✅ COMPLETADO — 17-06-2026
 7. ~~Sprint 9 — Pomodoro, Escanear, Social, Insignias, Refactor de capas.~~ ✅
 8. **Próximo:** Definir Sprint 11 — pulido de UX, tests, features pendientes.
 
