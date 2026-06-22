@@ -298,7 +298,7 @@ Reescribir completamente `supabase/seed_catalogo.py` como `supabase/seed_catalog
 | `usuario_carreras_provider.dart` | Adaptar queries a nueva tabla `carreras`. |
 | `asignaturas_provider.dart` | Adaptar JOINs a `asignaturas_catalogo`. |
 | `configuracion_academica_screen.dart` | Nuevos diálogos de selección con datos enriquecidos (centro, créditos, etc.) |
-| `gestion_asignaturas_screen.dart` | Búsqueda sobre `asignaturas_catalogo` con nuevos campos. |
+| — | `gestion_asignaturas_screen.dart` eliminada en v7.2 (EscanearHorarioBoton movido a `perfil_screen.dart`). |
 | `perfil_screen.dart` | Diálogos de selección universidad/carrera actualizados. |
 
 ### Estimación detallada
@@ -313,7 +313,7 @@ Reescribir completamente `supabase/seed_catalogo.py` como `supabase/seed_catalog
 | `usuario_carreras_provider.dart` | 40 | 0.5 |
 | `asignaturas_provider.dart` | 40 | 0.5 |
 | `configuracion_academica_screen.dart` | 100 | 1.0 |
-| `gestion_asignaturas_screen.dart` | 80 | 1.0 |
+| — | `gestion_asignaturas_screen.dart` eliminada | 0 | 0 |
 | `perfil_screen.dart` | 60 | 0.8 |
 | `db push` + `db reset` + seed + verificación | — | 1.0 |
 | **TOTAL** | **~970** | **~10.8** |

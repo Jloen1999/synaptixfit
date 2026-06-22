@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/env_config.dart';
+import '../../../core/sync/dominio_evento.dart';
+import '../../../core/sync/sync_hub.dart';
 import '../../../shared/models/db_models.dart';
 import '../../dashboard/application/dashboard_provider.dart';
 import '../../dashboard/application/timeline_provider.dart';
 import '../../perfil/application/perfil_provider.dart';
+import '../../academico/application/inbox_config_provider.dart';
 import '../domain/ejercicio_recomendado_dto.dart';
 import '../domain/historial_sesion_dto.dart';
 import '../infrastructure/parametros_objetivo.dart';
@@ -358,6 +361,29 @@ final rutinasUsuarioProvider = FutureProvider<List<RutinaDb>>((ref) async {
       .toList();
 });
 
+final rutinaPorIdProvider =
+    FutureProvider.family<RutinaDb?, String>((ref, id) async {
+  final client = Supabase.instance.client;
+  final data =
+      await client.from('rutinas').select('*').eq('id', id).maybeSingle();
+  if (data == null) return null;
+  return RutinaDb.fromMap(data);
+});
+
+final rutinaEsPropietariaProvider =
+    FutureProvider.family<bool, String>((ref, id) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return false;
+  final data = await client
+      .from('rutinas')
+      .select('usuario_id')
+      .eq('id', id)
+      .maybeSingle();
+  if (data == null) return false;
+  return data['usuario_id'] == user.id;
+});
+
 Future<void> clonarRutina(String rutinaId, WidgetRef ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -479,6 +505,8 @@ Future<String> crearRutinaCompleta({
   required int duracionSemanas,
   DateTime? fechaInicio,
   required Map<int, Map<int, List<EjercicioInput>>> estructura,
+  Map<int, String>? nombresSemanas,
+  Map<int, Map<int, String>>? nombresDias,
   required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
@@ -513,7 +541,7 @@ Future<String> crearRutinaCompleta({
         .insert({
           'rutina_id': rutinaId,
           'numero_semana': semanaNum,
-          'nombre': 'Semana $semanaNum',
+          'nombre': nombresSemanas?[semanaNum] ?? 'Semana $semanaNum',
           'tipo_semana': tipo,
         })
         .select('id')
@@ -527,7 +555,7 @@ Future<String> crearRutinaCompleta({
           .insert({
             'semana_id': semanaId,
             'numero_dia': diaNum,
-            'nombre': 'Día $diaNum',
+            'nombre': nombresDias?[semanaNum]?[diaNum] ?? 'Día $diaNum',
           })
           .select('id')
           .single();
@@ -567,6 +595,7 @@ Future<String> crearRutinaCompleta({
   }).eq('id', rutinaId);
 
   ref.invalidate(rutinasUsuarioProvider);
+  ref.invalidate(rutinasActivasInboxProvider);
   ref.invalidate(dashboardProvider);
   ref.invalidate(timelineHoyProvider);
   return rutinaId;
@@ -819,12 +848,12 @@ Future<XpResultado?> finalizarSesion({
   final xpGanado = 50 + duracionMin.clamp(0, 90) + (rpe * 5);
   final xpResult = await otorgarXp(client, user.id, xpGanado);
 
-  ref.invalidate(dashboardProvider);
-
-  // Evaluar insignias tras completar sesión
   await evaluarInsignias(ref);
-  ref.invalidate(rachaStateProvider);
-  ref.invalidate(timelineHoyProvider);
+
+  ref.read(syncHubProvider).dispatch(
+        DominioEvento.sesionCompletada,
+        payload: EventoPayload(sesionId: sesionId),
+      );
 
   return xpResult;
 }
@@ -1135,6 +1164,7 @@ final adherenciaAcademicaProvider =
       .select('hora_inicio')
       .eq('usuario_id', user.id)
       .eq('tipo_actividad', 'estudio')
+      .eq('completado', true)
       .gte('hora_inicio', lunes.toIso8601String())
       .lt('hora_inicio', domingo.toIso8601String())
       .timeout(const Duration(seconds: 8));
@@ -1370,6 +1400,7 @@ Future<void> syncCargaAcademicaSemanal(WidgetRef ref) async {
       .select('hora_inicio, hora_fin')
       .eq('usuario_id', user.id)
       .eq('tipo_actividad', 'estudio')
+      .eq('completado', true)
       .gte('hora_inicio', lunesIso)
       .lt('hora_inicio', domingoIso)
       .timeout(const Duration(seconds: 8));
@@ -1397,6 +1428,18 @@ Future<void> syncCargaAcademicaSemanal(WidgetRef ref) async {
   final horasPlaneadas = perfil?.horasObjetivoEstudioSemana ?? 14;
   final horasRealesRedondeadas = (horasReales / 60.0).round();
 
+  final hoyStr = DateTime.now().toIso8601String().substring(0, 10);
+  final estadoHoy = await client
+      .from('estado_diario_usuario')
+      .select('nivel_estres, calidad_sueno')
+      .eq('usuario_id', user.id)
+      .eq('fecha', hoyStr)
+      .maybeSingle()
+      .timeout(const Duration(seconds: 5));
+  final nivelEstres = ((estadoHoy?['nivel_estres'] as int?) ?? 5).clamp(1, 10);
+  final calidadSueno =
+      ((estadoHoy?['calidad_sueno'] as int?) ?? 0).clamp(0, 14);
+
   final cargaPrevia = await client
       .from('carga_academica_semanal')
       .select('xp_estudio_otorgado')
@@ -1422,6 +1465,8 @@ Future<void> syncCargaAcademicaSemanal(WidgetRef ref) async {
     'evaluaciones_semana': totalEntregas,
     'entregas_semana': entregasCompletadas,
     'xp_estudio_otorgado': xpEstudioOtorgado,
+    'nivel_estres': nivelEstres,
+    'horas_sueno_promedio': calidadSueno,
   }, onConflict: 'usuario_id,semana_inicio');
 
   ref.invalidate(cargaAcademicaSemanalProvider);
@@ -1457,7 +1502,10 @@ Future<void> guardarEstadoDiario({
     if (notas != null) 'notas': notas,
   }, onConflict: 'usuario_id,fecha');
 
+  await otorgarXp(client, user.id, 20);
   ref.invalidate(estadoDiarioHoyProvider);
+
+  ref.read(syncHubProvider).dispatch(DominioEvento.checkInRealizado);
 }
 
 /// Determina el tipo de semana según periodización:
@@ -1721,3 +1769,21 @@ final parametrosObjetivoProvider =
     Provider.family<ParametrosObjetivo, String>((ref, objetivo) {
   return ParametrosObjetivo.de(objetivo);
 });
+
+// ---------------------------------------------------------------------------
+// Mutaciones de nombres de días y semanas
+// ---------------------------------------------------------------------------
+
+/// Actualiza el nombre de un día de rutina.
+Future<void> actualizarNombreDia(String diaId, String nombre) async {
+  await Supabase.instance.client
+      .from('dias_rutina')
+      .update({'nombre': nombre}).eq('id', diaId);
+}
+
+/// Actualiza el nombre de una semana de rutina.
+Future<void> actualizarNombreSemana(String semanaId, String nombre) async {
+  await Supabase.instance.client
+      .from('semanas_rutina')
+      .update({'nombre': nombre}).eq('id', semanaId);
+}

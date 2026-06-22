@@ -4,10 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/academico/presentation/configuracion_academica_screen.dart';
 import '../../features/academico/presentation/apuntes_screen.dart';
-import '../../features/academico/presentation/gestion_asignaturas_screen.dart';
-import '../../features/academico/presentation/plan_academico_screen.dart';
 import '../../features/academico/presentation/plan_semanal_screen.dart';
-import '../../features/academico/presentation/crear_plan_semanal_screen.dart';
+import '../../features/academico/presentation/inbox_screen.dart';
+import '../../features/academico/presentation/canvas_screen.dart';
 import '../../features/analitica/presentation/analitica_screen.dart';
 import '../../features/auth/presentation/acceso_screen.dart';
 import '../../features/auth/presentation/onboarding_cuenta_screen.dart';
@@ -22,8 +21,8 @@ import '../../features/bienestar/presentation/sesion_en_vivo_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/notificaciones/presentation/notificaciones_screen.dart';
 import '../../features/perfil/presentation/perfil_screen.dart';
-import '../../features/retos/presentation/crear_reto_complejo_screen.dart';
-import '../../features/retos/presentation/crear_reto_simple_screen.dart';
+import '../../features/perfil/presentation/selector_asignaturas_screen.dart';
+import '../../features/retos/presentation/crear_reto_screen.dart';
 import '../../features/retos/presentation/detalle_reto_screen.dart';
 import '../../features/retos/presentation/retos_screen.dart';
 import '../../features/social/presentation/muro_social_screen.dart';
@@ -32,7 +31,7 @@ import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/pomodoro/presentation/pomodoro_screen.dart';
 import '../../features/escanear/presentation/escanear_screen.dart';
 import '../../features/insignias/presentation/insignias_screen.dart';
-import '../../features/admin/presentation/admin_panel_screen.dart';
+import '../../features/admin/presentation/admin_hub_screen.dart';
 import '../../features/admin/presentation/admin_usuario_detalle.dart';
 import 'shell_route.dart';
 
@@ -77,6 +76,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PerfilFisicoScreen(),
     ),
     GoRoute(
+      path: '/onboarding/asignaturas',
+      builder: (context, state) =>
+          const SelectorAsignaturasScreen(esOnboarding: true),
+    ),
+    GoRoute(
       path: '/onboarding',
       builder: (context, state) => const PerfilFisicoScreen(),
     ),
@@ -94,7 +98,7 @@ final GoRouter appRouter = GoRouter(
         StatefulShellBranch(routes: [
           GoRoute(
             path: '/academico',
-            builder: (context, state) => const PlanAcademicoScreen(),
+            builder: (context, state) => const SizedBox.shrink(),
           ),
         ]),
         StatefulShellBranch(routes: [
@@ -151,12 +155,8 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: '/retos/simple',
-      builder: (context, state) => const CrearRetoSimpleScreen(),
-    ),
-    GoRoute(
-      path: '/retos/complejo',
-      builder: (context, state) => const CrearRetoComplejoScreen(),
+      path: '/retos/crear',
+      builder: (context, state) => const CrearRetoScreen(),
     ),
     GoRoute(
       path: '/retos/:id',
@@ -168,13 +168,15 @@ final GoRouter appRouter = GoRouter(
       path: '/plan-semanal',
       builder: (context, state) => const PlanSemanalScreen(),
     ),
+    // CanvasScreen — planificador autosuficiente
     GoRoute(
-      path: '/plan-semanal/crear',
-      builder: (context, state) => const CrearPlanSemanalScreen(),
+      path: '/academico/planificar',
+      builder: (context, state) => const CanvasScreen(),
     ),
+    // InboxScreen (fallback / legacy)
     GoRoute(
-      path: '/academico/asignaturas',
-      builder: (context, state) => const GestionAsignaturasScreen(),
+      path: '/academico/planificar/inbox',
+      builder: (context, state) => const InboxScreen(),
     ),
     GoRoute(
       path: '/academico/apuntes',
@@ -201,6 +203,10 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PerfilScreen(),
     ),
     GoRoute(
+      path: '/perfil/asignaturas/selector',
+      builder: (context, state) => const SelectorAsignaturasScreen(),
+    ),
+    GoRoute(
       path: '/pomodoro',
       builder: (context, state) => const PomodoroScreen(),
     ),
@@ -214,7 +220,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/admin',
-      builder: (context, state) => const AdminPanelScreen(),
+      builder: (context, state) => const AdminHubScreen(),
     ),
     GoRoute(
       path: '/admin/usuario/:id',

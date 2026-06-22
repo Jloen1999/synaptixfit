@@ -5,6 +5,96 @@
 
 ---
 
+## [7.2.0] — 23-06-2026
+
+### Localización (i18n) — Español global en widgets Material
+
+- **Nueva dependencia:** `flutter_localizations` (`sdk: flutter`) en `pubspec.yaml`.
+- **`main.dart`:** `MaterialApp.router` ahora incluye `localizationsDelegates` (`GlobalMaterialLocalizations`, `GlobalWidgetsLocalizations`, `GlobalCupertinoLocalizations`) y `supportedLocales` (`es_ES`, `es`, `en`).
+- **Causa raíz documentada:** Antes solo estaba `initializeDateFormatting('es')` + `locale`, pero sin delegates los widgets Material (`showDatePicker`, `showTimePicker`) caían a inglés. Ahora **todos** los `showDatePicker` de la app salen en español.
+- **`canvas_screen.dart`:** `DateFormat('d MMM')` → `DateFormat('d MMM', 'es')` en el banner de fechas.
+
+### Eliminación de `gestion_asignaturas_screen.dart`
+
+- **Eliminado:** `app/lib/features/academico/presentation/gestion_asignaturas_screen.dart` (estaba huérfana, sin ruta registrada en GoRouter).
+- **`EscanearHorarioBoton` movido** a `app/lib/features/perfil/presentation/perfil_screen.dart`, dentro de la tarjeta "Mis asignaturas" (Perfil > pestaña Académico).
+- **Eliminadas** todas las referencias a `GestionAsignaturasScreen` de `docs/` y `AGENTS.md`.
+
+### Escaneo de horarios con IA — Documentado como feature completa
+
+- **`AiScheduleParserService`** (`ai_schedule_parser_service.dart`): Gemini `gemini-2.5-flash` multimodal con `inline_data` base64, prompt determinista que inyecta las asignaturas activas y extrae SOLO el patrón semanal (temperatura 0, topK 1). Saneamiento de Markdown y ensamblaje del paquete `{fecha_inicio_clases, fecha_fin_clases, horarios:[...]}`. Cross-platform con `Uint8List`+`mimeType`. `AiParsingException` para errores.
+- **`escanear_horario_provider.dart`:** `guardarFechasSemestre()` + `generarHorariosDesdePaquete()` idempotente vía `ics_uid` sintético.
+- **`escanear_horario_boton.dart`:** Flujo Clean UI: verifica fechas de semestre en el perfil → Rama A (pide fechas en BottomSheet y guarda) / Rama B (fricción cero) → `file_picker` con `withData:true` → `LinearProgressIndicator`/`CircularProgressIndicator` → SnackBar «Horario sincronizado con éxito».
+- **Integrado en** `perfil_screen.dart` (tarjeta "Mis asignaturas" → pestaña Académico). `PerfilAcademicoDb` con `fechaInicioClases`/`fechaFinClases` + getter `tieneFechasSemestre`.
+- **Nuevo diagrama Mermaid** en `docs/03-architecture.md` §6.4 documentando el flujo completo.
+
+### Lienzo Time-Blocking — Arrastre libre de bloques
+
+- **Todos los bloques ahora son arrastrables** (incluidas clases/exámenes). En `canvas_screen.dart` se eliminó la rama no-arrastrable de `_DraggableBlock`. El campo `esHitoInamovible` ya no impide el movimiento.
+- **`moveBlock` sin restricciones:** En `calendar_grid_provider.dart`, ya no rechaza por bloque inamovible ni por solapamiento (movimiento libre). Los solapamientos se reportan como avisos en la metadata, no bloquean. **Corregido bug de acarreo** en el cálculo de la hora de fin (ahora usa minutos totales).
+- **`resizeBlock` solo impide bajar de 30 min** (permite solapes). También permite redimensionar clases/exámenes.
+- **`TimeBlockWidget` sin candado:** Eliminado el icono de candado (`Icons.lock_rounded`) y el parámetro `isLocked` de `_headerRow` (y sus 5 llamadas). `_puedeRedimensionar` ahora es `!esFijo` (las clases/exámenes también se redimensionan).
+
+### Lienzo Time-Blocking — Arrastre entre semanas
+
+- **Chevrons ‹ › como `DragTarget<TimeBlock>`:** En `canvas_screen.dart`, los chevrons de la barra de navegación semanal aceptan bloques soltados sobre ellos. Al soltar, `_moverBloqueASemana(block, delta, state)` mueve el bloque a la semana anterior/siguiente (mismo día y hora) y `navegarSemana(delta)` navega allí.
+- **SnackBar** de confirmación («Movido a semana anterior» / «Movido a semana siguiente»).
+- **Resaltado visual al pasar por encima** (`onWillAcceptWithDetails`/`onLeave`).
+- **Zonas de soltado agrandadas** (`padding` h26/v12) para acertar con facilidad.
+- **Nuevo helper** `_moverBloqueASemana(block, delta, state)` + integración con `moveBlock`.
+- **Nuevo diagrama Mermaid** en `docs/03-architecture.md` §6.5 documentando el flujo de arrastre.
+
+### Fix de overflow al arrastrar (RenderFlex right overflow)
+
+- **`feedback` del `LongPressDraggable`:** Antes usaba `Transform.scale(1.05)` (agrandaba 5% y sobresalía del grid). Ahora se renderiza al tamaño exacto del bloque dentro de un `Material` transparente.
+- **`time_block_widget.dart` `_buildClaseLayout`:** El `Row` de la hora (icono ⏰ + "HH:MM") desbordaba ~1.6px en columnas estrechas. Se envolvió el `Text` en `Flexible` con `TextOverflow.ellipsis`.
+
+### Widget de métricas de ejercicio (`exercise_metrics.dart`)
+
+- **Nuevo archivo:** `app/lib/shared/widgets/exercise_metrics.dart`
+- **`SemanticMicroChip`:** Chip semántico de métrica con icono, etiqueta y color contextual.
+- **`ExerciseMetricsRow`:** Fila de chips semánticos que visualiza métricas de un ejercicio.
+- **`ExerciseMetricCategoria`:** Enum con factory `desdeModalidad()` y `desdeFinalidad()` para clasificar métricas.
+- **Aplicado en:** `nueva_rutina_screen.dart`, `rutina_detalle_screen.dart`, `sesion_en_vivo_screen.dart`, `rutinas_comunidad_screen.dart`.
+
+### Mejoras en sesión en vivo (`sesion_en_vivo_screen.dart`)
+
+- **Etiquetas "Serie N"/"Ronda N"** para ejercicios de fuerza/cardio.
+- **Feedback visual de ejercicio completado:** Borde verde + badge "Completado" en ejercicios finalizados.
+- **Encabezado de columnas Peso/Reps** con icono de mancuerna.
+
+### Mejoras en nueva rutina (`nueva_rutina_screen.dart`)
+
+- **Días vacíos sin ejercicios se omiten al guardar.**
+- **Botón "Guardar" en el AppBar.**
+- **Aviso de cambios sin guardar** al retroceder (confirmación antes de perder datos).
+
+### Limpieza de código deprecado
+
+- **Eliminados archivos:**
+  - `app/lib/features/academico/presentation/crear_plan_semanal_screen.dart`
+  - `app/lib/features/academico/application/wizard_plan_provider.dart`
+- **Eliminada ruta** `/plan-semanal/crear` e import de `app_router.dart`.
+- **Limpieza de lints:**
+  - Import sin usar `retos_core.dart` en `rutina_provider.dart`.
+  - `prefer_const_declarations` en `timeblock_ia_service.dart` (línea 220).
+  - `unnecessary_cast` en `rutina_provider.dart` (líneas 371 y 385).
+  - `unused_element_parameter` del parámetro `enabled` en `sesion_en_vivo_screen.dart`.
+- **`flutter analyze`: 0 issues.**
+
+### Documentación actualizada
+
+- `AGENTS.md`: migraciones 38 (añadidas `social_publicaciones_v2` y `procedencia_clones`), corrección `integrado en perfil_screen.dart`, eliminadas referencias a `wizard_plan_provider.dart`/`crear_plan_semanal_screen.dart`/`gestion_asignaturas_screen.dart`, añadidos `exercise_metrics.dart` y sección de Localización (i18n).
+- `docs/03-architecture.md`: árbol de carpetas actualizado (academico con AI schedule parser, canvas con DragTarget, exercise_metrics), migraciones 38, stack con `flutter_localizations`, nuevos diagramas Mermaid §6.4 (Escaneo IA) y §6.5 (Arrastre Lienzo).
+- `docs/06-frontend.md`: ruta `/academico/asignaturas` eliminada, añadida §2.0 Localización (i18n) con causa raíz documentada.
+- `docs/07-backend.md`: migraciones 38, tabla completa con 12 nuevas entradas.
+- `docs/14-changelog.md`: Esta entrada.
+- `docs/20-plan-verificacion-qa.md`: Issues de deprecación marcadas como resueltas, `flutter analyze` actualizado a 0 issues.
+- `docs/ESTADO-DOCUMENTACION-DEFINITIVO.md`: `gestion_asignaturas_screen` marcada como eliminada, `flutter analyze` actualizado.
+- `docs/00-plan-maestro.md`: `gestion_asignaturas_screen` marcada como eliminada.
+
+---
+
 ## [7.1.0] — 18-06-2026
 
 ### Refactor Lienzo Continuo v2 — Fases 0, 1 y 2

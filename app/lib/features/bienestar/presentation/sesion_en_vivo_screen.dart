@@ -2,13 +2,31 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
-import '../../../core/design_system/sv_colors.dart';
+import '../../../shared/widgets/exercise_thumb.dart';
+import '../../../shared/widgets/exercise_metrics.dart';
 import '../application/rutina_provider.dart';
 import '../application/ejercicios_provider.dart';
 import '../../dashboard/application/timeline_provider.dart';
+
+/// Nombre del día de rutina (para mostrarlo en la cabecera del entrenamiento).
+final _diaNombreProvider =
+    FutureProvider.family<String?, String>((ref, diaId) async {
+  final client = Supabase.instance.client;
+  final row = await client
+      .from('dias_rutina')
+      .select('nombre, numero_dia')
+      .eq('id', diaId)
+      .maybeSingle();
+  if (row == null) return null;
+  final nombre = (row['nombre'] as String?)?.trim();
+  if (nombre != null && nombre.isNotEmpty) return nombre;
+  final num = row['numero_dia'];
+  return num != null ? 'Día $num' : null;
+});
 
 class LiveSessionScreen extends ConsumerStatefulWidget {
   const LiveSessionScreen({super.key});
@@ -268,9 +286,12 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final diaNombre = _paramsCargados
+        ? ref.watch(_diaNombreProvider(_diaId)).valueOrNull
+        : null;
     if (!_sesionIniciada) {
       return FeatureScaffold(
-          title: 'Entrenamiento',
+          title: diaNombre ?? 'Entrenamiento',
           backPath: '/bienestar',
           child: Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -287,7 +308,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
           ])));
     }
     return FeatureScaffold(
-        title: '',
+        title: diaNombre ?? 'Entrenamiento',
         backPath: '/bienestar',
         child: Stack(children: [
           Column(children: [
@@ -334,16 +355,27 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
                         child: FilledButton(
                           onPressed: _finalizando ? null : _finalizarSesion,
                           style: FilledButton.styleFrom(
-                              backgroundColor: Colors.red.shade700),
+                              backgroundColor: Colors.red.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14))),
                           child: _finalizando
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2, color: Colors.white))
-                              : const Text('🛑 Finalizar entrenamiento',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.w700)),
+                              : const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.stop_circle_outlined, size: 20),
+                                    SizedBox(width: 8),
+                                    Text('Finalizar entrenamiento',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
                         )))),
           ]),
           if (_mostrarOverlayCheckIn)
@@ -398,12 +430,12 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
 
   Widget _btn(String label, Color c, VoidCallback onTap) => InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(100),
       child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
               color: c.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6)),
+              borderRadius: BorderRadius.circular(100)),
           child: Text(label,
               style: TextStyle(
                   fontSize: 10, color: c, fontWeight: FontWeight.w600))));
@@ -794,33 +826,73 @@ class _EjercicioLiveCard extends StatelessWidget {
       final esCircuito = ej?.esCircuito ?? false;
       final finalidad = ej?.finalidadPrincipal ?? '';
       final enZonaDolor = _enZonaDolor(ej);
+      final finL = finalidad.toLowerCase();
+      final esCardio = esCircuito ||
+          finL.contains('cardio') ||
+          finL.contains('acondicionamiento');
+      final esIso = !esCardio &&
+          (finL.contains('isometric') ||
+              finL.contains('movilidad') ||
+              finL.contains('flexibilidad') ||
+              finL.contains('estabilidad'));
+      final esFuerza = !esCardio && !esIso;
+      if (ej == null && ejercicioAsync.isLoading) {
+        return _skeletonCard(theme);
+      }
+      final seriesCompletadas = List.generate(
+        seriesEfectivas,
+        (i) => seriesLocales[e.id]?[i + 1]?.completada ?? false,
+      ).where((c) => c).length;
+      final ejercicioCompletado =
+          seriesEfectivas > 0 && seriesCompletadas == seriesEfectivas;
       return Card(
           elevation: 0,
           margin: const EdgeInsets.only(bottom: 10),
+          color:
+              ejercicioCompletado ? Colors.green.withValues(alpha: 0.04) : null,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
               side: BorderSide(
-                  color: enZonaDolor
-                      ? Colors.amber.withValues(alpha: 0.5)
-                      : enDescanso || seriesReducidas
-                          ? Colors.orange.withValues(alpha: 0.3)
-                          : theme.colorScheme.outlineVariant
-                              .withValues(alpha: 0.3))),
+                  color: ejercicioCompletado
+                      ? Colors.green.withValues(alpha: 0.45)
+                      : enZonaDolor
+                          ? Colors.amber.withValues(alpha: 0.5)
+                          : enDescanso || seriesReducidas
+                              ? Colors.orange.withValues(alpha: 0.3)
+                              : theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.3))),
           child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
+                      GestureDetector(
+                        onTap: () => context
+                            .push('/bienestar/ejercicio/${e.ejercicioId}'),
+                        child: ExerciseThumb(
+                            urlGif: ej?.urlGif, urlPreview: ej?.urlPreview),
+                      ),
+                      const SizedBox(width: 10),
                       Expanded(
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                             Row(children: [
                               Expanded(
-                                child: Text(nombre,
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w700)),
+                                child: GestureDetector(
+                                  onTap: () => context.push(
+                                      '/bienestar/ejercicio/${e.ejercicioId}'),
+                                  child: Text(nombre,
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              decorationColor: theme
+                                                  .colorScheme.primary
+                                                  .withValues(alpha: 0.3))),
+                                ),
                               ),
                               if (enZonaDolor)
                                 Tooltip(
@@ -830,74 +902,123 @@ class _EjercicioLiveCard extends StatelessWidget {
                                       size: 18, color: Colors.amber.shade700),
                                 ),
                             ]),
-                            if (modalidad.isNotEmpty ||
-                                esCircuito ||
-                                finalidad.isNotEmpty)
+                            if (modalidad.isNotEmpty || esCircuito)
                               Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Row(children: [
+                                padding: const EdgeInsets.only(top: 4),
+                                child:
+                                    Wrap(spacing: 6, runSpacing: 4, children: [
                                   if (modalidad.isNotEmpty)
-                                    Container(
-                                      margin: const EdgeInsets.only(right: 4),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary
-                                            .withValues(alpha: 0.08),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(modalidad,
-                                          style: TextStyle(
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w600,
-                                              color:
-                                                  theme.colorScheme.primary)),
-                                    ),
+                                    _TipoPill(
+                                        texto: modalidad,
+                                        color: theme.colorScheme.primary),
                                   if (esCircuito)
-                                    Container(
-                                      margin: const EdgeInsets.only(right: 4),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.tertiary
-                                            .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text('Circuito',
-                                          style: TextStyle(
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w700,
-                                              color:
-                                                  theme.colorScheme.tertiary)),
-                                    ),
-                                  if (finalidad.isNotEmpty)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Colors.grey.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(finalidad,
-                                          style: const TextStyle(
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.grey)),
-                                    ),
+                                    _TipoPill(
+                                        texto: 'Circuito',
+                                        color: theme.colorScheme.tertiary),
                                 ]),
                               ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: ExerciseMetricsRow(
+                                      categoria: esFuerza
+                                          ? ExerciseMetricCategoria.fuerza
+                                          : esCardio
+                                              ? ExerciseMetricCategoria.aerobico
+                                              : ExerciseMetricCategoria
+                                                  .isometrico,
+                                      color: seriesReducidas
+                                          ? Colors.orange.shade700
+                                          : null,
+                                      series: seriesEfectivas,
+                                      repeticiones: e.repeticiones,
+                                      pesoKg: e.pesoKg,
+                                      pesosKg: e.pesosKg,
+                                      segundosDescanso: e.segundosDescanso,
+                                      duracionSegundos: e.duracionSegundos,
+                                      distanciaMetros: e.distanciaMetros,
+                                      tiempoIsometricoSegundos:
+                                          e.tiempoIsometricoSegundos,
+                                    ),
+                                  ),
+                                  if (seriesReducidas) ...[
+                                    const SizedBox(width: 6),
+                                    Text('(adaptado)',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.orange.shade700)),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ])),
-                      Text(
-                          seriesReducidas
-                              ? '$seriesEfectivas×${e.repeticiones} · ${e.segundosDescanso}s (adaptado)'
-                              : '${e.series}×${e.repeticiones} · ${e.segundosDescanso}s',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                              color: seriesReducidas
-                                  ? Colors.orange.shade700
-                                  : SVColors.onSurfaceMuted))
+                      if (ejercicioCompletado) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.check_circle,
+                                size: 14, color: Colors.green.shade600),
+                            const SizedBox(width: 4),
+                            Text('Completado',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green.shade700)),
+                          ]),
+                        ),
+                      ],
                     ]),
                     const SizedBox(height: 10),
+                    if (esFuerza)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(children: [
+                          const SizedBox(width: 104),
+                          SizedBox(
+                            width: 74,
+                            child: Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.fitness_center,
+                                      size: 12,
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant),
+                                  const SizedBox(width: 3),
+                                  Text('Peso',
+                                      style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 28),
+                          SizedBox(
+                            width: 78,
+                            child: Center(
+                              child: Text('Reps',
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant)),
+                            ),
+                          ),
+                        ]),
+                      ),
                     ...List.generate(seriesEfectivas, (i) {
                       final numSerie = i + 1;
                       final local = seriesLocales[e.id]?[numSerie];
@@ -951,52 +1072,57 @@ class _EjercicioLiveCard extends StatelessWidget {
                                                 ? Colors.green
                                                 : Colors.grey.shade400))),
                             const SizedBox(width: 8),
-                            Text('S$numSerie',
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.w500)),
-                            const SizedBox(width: 8),
                             SizedBox(
-                                width: 52,
-                                child: TextField(
-                                    controller: pesoCtrl[k],
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(fontSize: 11),
-                                    decoration: const InputDecoration(
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 4, vertical: 6),
-                                        border: OutlineInputBorder(),
-                                        hintText: 'kg'))),
-                            const SizedBox(width: 4),
-                            const Text('kg',
-                                style: TextStyle(
-                                    fontSize: 10, color: Colors.grey)),
+                                width: 56,
+                                child: Text(
+                                    esCardio
+                                        ? 'Ronda $numSerie'
+                                        : 'Serie $numSerie',
+                                    style: TextStyle(
+                                        fontSize: 11,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600))),
                             const SizedBox(width: 8),
-                            const Text('×',
-                                style: TextStyle(
-                                    fontSize: 11, color: Colors.grey)),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                                width: 40,
-                                child: TextField(
-                                    controller: repsCtrl[k],
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(fontSize: 11),
-                                    decoration: InputDecoration(
-                                        isDense: true,
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: 4, vertical: 6),
-                                        border: const OutlineInputBorder(),
-                                        hintText: '${e.repeticiones}'))),
-                            const SizedBox(width: 4),
-                            const Text('reps',
-                                style: TextStyle(
-                                    fontSize: 10, color: Colors.grey)),
+                            if (esFuerza) ...[
+                              _InputMetrica(
+                                  controller: pesoCtrl[k]!,
+                                  suffixText: 'kg',
+                                  width: 74),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                  width: 12,
+                                  child: Center(
+                                      child: Text('×',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: theme.colorScheme
+                                                  .onSurfaceVariant)))),
+                              const SizedBox(width: 8),
+                              _InputMetrica(
+                                  controller: repsCtrl[k]!,
+                                  suffixText: 'reps',
+                                  width: 78),
+                            ] else if (esCardio) ...[
+                              if ((e.duracionSegundos ?? 0) > 0)
+                                SemanticMicroChip(
+                                    icon: Icons.timer_outlined,
+                                    label: _fmtDurLive(e.duracionSegundos),
+                                    dense: true),
+                              if ((e.distanciaMetros ?? 0) > 0) ...[
+                                const SizedBox(width: 6),
+                                SemanticMicroChip(
+                                    icon: Icons.route,
+                                    label: '${e.distanciaMetros} m',
+                                    dense: true),
+                              ],
+                            ] else ...[
+                              if ((e.tiempoIsometricoSegundos ?? 0) > 0)
+                                SemanticMicroChip(
+                                    icon: Icons.timer,
+                                    label: '${e.tiempoIsometricoSegundos}s',
+                                    dense: true),
+                            ],
                           ]));
                     }),
                     if (enDescanso) ...[
@@ -1017,17 +1143,143 @@ class _EjercicioLiveCard extends StatelessWidget {
     });
   }
 
+  Widget _skeletonCard(ThemeData theme) {
+    final base =
+        theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
+    Widget box(double w, double h) => Container(
+          width: w,
+          height: h,
+          decoration: BoxDecoration(
+            color: base,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(children: [
+          box(48, 48),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                box(150, 14),
+                const SizedBox(height: 8),
+                box(90, 10),
+              ],
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  String _fmtDurLive(int? secs) {
+    final s = secs ?? 0;
+    final m = s ~/ 60;
+    final r = s % 60;
+    return m > 0 ? '${m}m ${r}s' : '${r}s';
+  }
+
   Widget _btn2(String label, Color c, VoidCallback onTap) => InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(100),
       child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
               color: c.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6)),
+              borderRadius: BorderRadius.circular(100)),
           child: Text(label,
               style: TextStyle(
                   fontSize: 10, color: c, fontWeight: FontWeight.w600))));
+}
+
+// =============================================================================
+// Helper widgets
+// =============================================================================
+
+class _TipoPill extends StatelessWidget {
+  const _TipoPill({required this.texto, required this.color});
+  final String texto;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(texto,
+          style: TextStyle(
+              fontSize: 9, fontWeight: FontWeight.w600, color: color)),
+    );
+  }
+}
+
+class _InputMetrica extends StatelessWidget {
+  const _InputMetrica({
+    required this.controller,
+    required this.suffixText,
+    this.width,
+  });
+  final TextEditingController controller;
+  final String suffixText;
+  final double? width;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: width ?? 72,
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurface,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+          suffixText: suffixText,
+          suffixStyle: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide:
+                BorderSide(color: theme.colorScheme.primary, width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // =============================================================================

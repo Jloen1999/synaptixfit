@@ -196,7 +196,7 @@ synaptixfit/
     test/
     integration_test/
   supabase/
-    migrations/                  ← 26 migraciones SQL (0049-0025)
+    migrations/                  ← 38 migraciones SQL (0049-20260622000012)
   cloudflare/
     synaptixfit-r2-proxy/        ← Worker para proxy de imágenes R2
 ```

@@ -13,7 +13,7 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (26 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix) |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (38 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix + 0001 dias_disponibles_array + 0002 fix_nivel_umbral + 0003 xp_overflow_multinivel + 20260622000004 visibilidad_rls + 20260622000005 carga_xp_estudio_otorgado + 20260622000006 retos_sinergia_v2 + 20260622000007 retos_xp_tracking + 20260622000008 retos_deep_linking + 20260622000009 social_realtime + 20260622000010 perfil_fechas_semestre + 20260622000011 social_publicaciones_v2 + 20260622000012 procedencia_clones) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
@@ -36,7 +36,7 @@ Para MVP/TFG, la simplicidad y latencia del enfoque cliente-side son preferibles
 
 ## 2. Migraciones — Esquema Consolidado
 
-Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **26 archivos de migración**:
+Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **38 archivos de migración**:
 
 | # | Archivo | Fecha | Descripción |
 |---|---------|-------|-------------|
@@ -66,6 +66,18 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 0023 | `20260618000023_lienzo_continuo_v2.sql` | 18-06-2026 | Lienzo Continuo v2: columna `es_hito_inamovible BOOLEAN` en `horarios_academicos` + índice `idx_horarios_fecha_rango`. |
 | 0024 | `20260619000024_ics_sync.sql` | 19-06-2026 | Soporte para importación/exportación de calendarios ICS (RFC 5545) a `horarios_academicos`. |
 | 0025 | `20260620000025_ics_upsert_fix.sql` | 20-06-2026 | Corrección de UPSERT en sincronización ICS: maneja correctamente conflictos de clave duplicada durante importación.
+| 0001 | `20260621000001_dias_disponibles_array.sql` | 21-06-2026 | Array `dias_disponibles` en `perfil_bienestar_usuario` para especificar días de entrenamiento (L-D).
+| 0002 | `20260621000002_fix_nivel_umbral.sql` | 21-06-2026 | Corrección del umbral de subida de nivel: `100 × nivel` (consistente con la UI).
+| 0003 | `20260621000003_xp_overflow_multinivel.sql` | 21-06-2026 | Subida de nivel inmediata con arrastre del sobrante multinivel en `otorgar_xp()`.
+| 20260622000004 | `20260622000004_visibilidad_rls.sql` | 22-06-2026 | RLS en `rutinas`/`retos`/`horarios_academicos` con políticas dueño + admin + lectura de pares. Funciones SECURITY DEFINER `es_admin`/`nivel_privacidad_de`/`son_amigos`. Trigger `trg_invalidar_contenido_privado`.
+| 20260622000005 | `20260622000005_carga_xp_estudio_otorgado.sql` | 22-06-2026 | Columna `xp_estudio_otorgado` en `carga_academica_semanal` (faltaba en remoto, corregía error 42703).
+| 20260622000006 | `20260622000006_retos_sinergia_v2.sql` | 22-06-2026 | Refactor de Retos Fase 1: `asignatura_id`, `dificultad`, `entidad_vinculada` en `retos` y `hitos_de_reto`.
+| 20260622000007 | `20260622000007_retos_xp_tracking.sql` | 22-06-2026 | Refactor de Retos Fase 5: `xp_otorgado` en `retos`/`hitos_de_reto`, RPC `restar_xp`.
+| 20260622000008 | `20260622000008_retos_deep_linking.sql` | 22-06-2026 | Sincronización bidireccional reto/tarea ⇄ examen/entrega con triggers SECURITY DEFINER.
+| 20260622000009 | `20260622000009_social_realtime.sql` | 22-06-2026 | Publicación `supabase_realtime` de tablas sociales con `REPLICA IDENTITY FULL`.
+| 20260622000010 | `20260622000010_perfil_fechas_semestre.sql` | 22-06-2026 | Columnas `fecha_inicio_clases`/`fecha_fin_clases` en `perfil_academico_usuario` para flujo de escaneo IA.
+| 20260622000011 | `20260622000011_social_publicaciones_v2.sql` | 22-06-2026 | Columnas en `actividades_sociales` para tipos de publicación enriquecidos.
+| 20260622000012 | `20260622000012_procedencia_clones.sql` | 22-06-2026 | Columna `procedencia` en `rutinas` para trazabilidad de clones.
 
 > **Nota histórica:** Las migraciones intermedias 0001–0048 fueron consolidadas en `202606060049_esquema_base.sql` durante la Fase 3. Las migraciones 0050 anteriores (0050–0052 de xp_estudio_flag, retos_racha, etc.) también fueron absorbidas. El orden de aplicación real es cronológico por timestamp del nombre del archivo, no por el número de secuencia en el nombre.
 

@@ -33,7 +33,8 @@ flowchart LR
 |------|----------|-------------|
 | `/dashboard` | `DashboardScreen` | Inicio con KPIs, retos activos, acceso rápido |
 | `/academico` | `PlanAcademicoScreen` | Plan académico semanal con horarios |
-| `/academico/asignaturas` | `GestionAsignaturasScreen` | Búsqueda y gestión de asignaturas |
+| `/academico/planificar` | `CanvasScreen` | Lienzo Time-Blocking (grid 7×16h, DnD libre, asistente IA) |
+| `/academico/planificar/inbox` | `InboxScreen` | Configuración de carga académica semanal (legacy) |
 | `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera + carga masiva |
 | `/academico/apuntes` | `ApuntesScreen` | Editor Markdown + explorador |
 | `/academico/apuntes/editor` | `ApuntesEditorScreen` | Editor Markdown a pantalla completa |
@@ -52,6 +53,18 @@ flowchart LR
 | `/notificaciones` | `NotificacionesScreen` | Centro de notificaciones |
 
 **Nota importante:** La ruta `/bienestar/rutina/sesion` debe estar definida ANTES de `/bienestar/rutina/:id` en GoRouter para evitar que "sesion" sea capturado como parámetro `:id`.
+
+### 2.0 Localización (i18n / l10n)
+
+SynaptixFit soporta español (predeterminado) e inglés mediante `flutter_localizations`:
+
+| Archivo | Configuración |
+|---------|--------------|
+| `pubspec.yaml` | `flutter_localizations: sdk: flutter` |
+| `main.dart` | `MaterialApp.router(locale: Locale('es','ES'), localizationsDelegates: [GlobalMaterialLocalizations, GlobalWidgetsLocalizations, GlobalCupertinoLocalizations], supportedLocales: [es_ES, es, en])` |
+| `canvas_screen.dart` | `DateFormat('d MMM', 'es')` — banner de fechas en español |
+
+**Causa raíz documentada:** Antes solo estaba `initializeDateFormatting('es')` + `locale`, pero sin `localizationsDelegates` los widgets Material (`showDatePicker`, `showTimePicker`) caían a inglés. Con los delegates, **todos** los `showDatePicker` de la app salen en español.
 
 ### 2.1 Flujo "Agregar a Rutina" desde Detalle de Ejercicio
 

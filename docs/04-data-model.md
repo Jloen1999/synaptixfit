@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 5.4
+**Versión:** 5.7
 **Estado:** VIGENTE
-**Fecha:** 15-06-2026
-**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, columna `rol` en `usuarios`, y tabla `asignaturas_usuario_semestre` para mapeo de transversales. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
+**Fecha:** 23-06-2026
+**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, función `delete_user` para eliminación hard de usuarios, columna `rol` en `usuarios`, tabla `asignaturas_usuario_semestre` para mapeo de transversales, tabla `admin_auditoria` para trazabilidad administrativa, vista `v_admin_metricas` para KPIs globales, y columnas de moderación en `actividades_sociales`, `comentarios_feed` y `ejercicios`. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -239,6 +239,9 @@ erDiagram
         timestamp hora_fin
         string location
         boolean tiene_conflicto
+        boolean es_fijo "indica horario fijo (clase, compromiso) vs generado por time-blocking"
+        int dia_semana "1=Lunes..7=Domingo para anclar bloques a día específico"
+        boolean es_hito_inamovible "bloques protegidos contra arrastre (exámenes, entregas)"
         timestamp created_at
     }
     
@@ -369,18 +372,21 @@ erDiagram
          timestamp creado_en
      }
      
-     HORARIOS_ACADEMICOS {
-         uuid id PK
-         uuid usuario_id FK
-         uuid asignatura_id FK
-         uuid plan_estudio_id FK
-         string prioridad
-         timestamp hora_inicio
-         timestamp hora_fin
-         string location
-         boolean tiene_conflicto
-         timestamp created_at
-     }
+      HORARIOS_ACADEMICOS {
+          uuid id PK
+          uuid usuario_id FK
+          uuid asignatura_id FK
+          uuid plan_estudio_id FK
+          string prioridad
+          timestamp hora_inicio
+          timestamp hora_fin
+          string location
+          boolean tiene_conflicto
+          boolean es_fijo "indica horario fijo (clase, compromiso) vs generado por time-blocking"
+          int dia_semana "1=Lunes..7=Domingo para anclar bloques a día específico"
+          boolean es_hito_inamovible "bloques protegidos contra arrastre (exámenes, entregas)"
+          timestamp created_at
+      }
     
     ACTIVIDADES_SOCIALES {
         uuid id PK
@@ -1442,6 +1448,11 @@ CREATE TABLE horarios_academicos (
   temas TEXT,
   completado BOOLEAN DEFAULT false,
   asistencia_registrada_en TIMESTAMP,
+  -- Migración 0011: columnas de time-blocking
+  es_fijo BOOLEAN NOT NULL DEFAULT true,  -- true=horario fijo (clase), false=bloque generado por IA
+  dia_semana INT CHECK (dia_semana BETWEEN 1 AND 7),  -- 1=Lunes..7=Domingo, anclaje a día semanal
+  -- Migración 0023: hitos inamovibles
+  es_hito_inamovible BOOLEAN NOT NULL DEFAULT false,  -- bloques que no se pueden arrastrar (exámenes, entregas)
   
   creado_en TIMESTAMP DEFAULT now(),
   
@@ -1451,6 +1462,8 @@ CREATE TABLE horarios_academicos (
 
 CREATE INDEX idx_horarios_academicos_usuario_id ON horarios_academicos(usuario_id);
 CREATE INDEX idx_horarios_academicos_hora_inicio ON horarios_academicos(hora_inicio);
+-- Migración 0023: índice para navegación por fechas
+CREATE INDEX idx_horarios_fecha_rango ON horarios_academicos(usuario_id, hora_inicio);
 ```
 
 **Políticas RLS:**
@@ -2370,6 +2383,256 @@ $$;
 | **Reseteadas** (UPDATE) | `usuarios` → `nivel=1, xp_total=0, racha_actual=0` |
 | **Conservadas** (sin tocar) | `usuarios` (columnas: `id`, `email`, `nombre_completo`, `url_avatar`, `rol`, `nivel_privacidad`, `creado_en`), `perfil_bienestar_usuario`, `perfil_academico_usuario`, `usuario_carreras` |
 
+### 3.4.1 Delete de usuario (hard delete — admin) — NUEVO v5.5
+
+**Migración:** `20260616000010_admin_delete_user.sql`
+
+```sql
+CREATE OR REPLACE FUNCTION delete_user(p_usuario_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_admin_id UUID;
+BEGIN
+  -- Verificar que quien ejecuta es admin
+  SELECT id INTO v_admin_id FROM public.usuarios
+  WHERE id = auth.uid() AND rol = 'admin';
+
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'Solo administradores pueden ejecutar delete_user';
+  END IF;
+
+  -- Verificar que el admin no se elimine a sí mismo
+  IF v_admin_id = p_usuario_id THEN
+    RAISE EXCEPTION 'No puedes eliminar tu propio usuario';
+  END IF;
+
+  -- 1. Eliminar datos del usuario en orden FK-safe (26+ tablas)
+  DELETE FROM public.series_sesion WHERE sesion_id IN (
+    SELECT id FROM public.sesiones_registradas WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.sesiones_registradas WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.progreso_de_reto WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.hitos_de_reto WHERE reto_id IN (
+    SELECT id FROM public.retos WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.retos WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.interacciones_sociales WHERE actividad_id IN (
+    SELECT id FROM public.actividades_sociales WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.comentarios_feed WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.actividades_sociales WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.notificaciones WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.horarios_academicos WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.planes_estudio WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.apuntes WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.sesiones_focus WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.estado_diario_usuario WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.carga_academica_semanal WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.historial_peso WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.historial_objetivos WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.recomendaciones_pendientes WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.insights_analitica WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.plan_entrenamiento_semanal WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.preferencias_notificacion WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.amistades WHERE solicitante_id = p_usuario_id OR receptor_id = p_usuario_id;
+  DELETE FROM public.usuario_insignias WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.usuario_carreras WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.asignaturas_usuario_semestre WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.seleccion_de_ejercicios WHERE rutina_id IN (
+    SELECT id FROM public.rutinas WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.dias_rutina WHERE semana_id IN (
+    SELECT id FROM public.semanas_rutina WHERE rutina_id IN (
+      SELECT id FROM public.rutinas WHERE usuario_id = p_usuario_id
+    )
+  );
+  DELETE FROM public.semanas_rutina WHERE rutina_id IN (
+    SELECT id FROM public.rutinas WHERE usuario_id = p_usuario_id
+  );
+  DELETE FROM public.rutinas WHERE usuario_id = p_usuario_id;
+
+  -- 2. Eliminar perfiles del usuario
+  DELETE FROM public.perfil_bienestar_usuario WHERE usuario_id = p_usuario_id;
+  DELETE FROM public.perfil_academico_usuario WHERE usuario_id = p_usuario_id;
+
+  -- 3. Eliminar registros de auditoría donde este usuario fue target
+  DELETE FROM public.admin_auditoria WHERE target_usuario_id = p_usuario_id;
+
+  -- 4. Eliminar al usuario de la tabla pública
+  DELETE FROM public.usuarios WHERE id = p_usuario_id;
+
+  -- 5. Eliminar de auth.users (si existe)
+  DELETE FROM auth.users WHERE id = p_usuario_id;
+END;
+$$;
+```
+
+**Diferencia clave con `wipe_user_data`:**
+| Aspecto | `wipe_user_data` | `delete_user` |
+|---------|-----------------|---------------|
+| **Propósito** | Resetear datos del usuario conservando cuenta | Eliminar completamente al usuario |
+| **Conserva** | `usuarios` (perfil), `perfil_bienestar_usuario`, `perfil_academico_usuario` | Nada |
+| **Elimina** | 26+ tablas de historial | 28+ tablas (historial + perfiles + usuario + auth.users) |
+| **auth.users** | No lo toca | Lo elimina |
+| **Uso** | Moderación ligera, "segunda oportunidad" | Eliminación definitiva, spam/abusos |
+
+**Política de ejecución:** Solo usuarios con `rol = 'admin'` pueden ejecutar esta función. Se verifica dentro del cuerpo con `auth.uid()`. La función se ejecuta como `SECURITY DEFINER` para bypassear RLS durante la eliminación.
+
+**Llamada desde Flutter:**
+```dart
+Future<void> deleteUser(WidgetRef ref, String usuarioId) async {
+  final client = Supabase.instance.client;
+  await client.rpc('delete_user', params: {'p_usuario_id': usuarioId});
+  ref.invalidate(adminUsuariosProvider);
+}
+```
+
+---
+
+### 3.5 Tabla `admin_auditoria` — Trazabilidad de acciones administrativas (NUEVO v5.4)
+
+**Migración:** `20260616000009_admin_panel_v2.sql`
+
+```sql
+CREATE TABLE admin_auditoria (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id          UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  target_usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+  accion            TEXT NOT NULL CHECK (accion IN (
+                      'wipe', 'reset_xp', 'set_nivel', 'ocultar_ejercicio', 'moderar', 'delete_user'
+                    )),
+  detalles          JSONB DEFAULT '{}',
+  creado_en         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_admin_auditoria_admin ON admin_auditoria(admin_id);
+CREATE INDEX idx_admin_auditoria_target ON admin_auditoria(target_usuario_id);
+CREATE INDEX idx_admin_auditoria_creado ON admin_auditoria(creado_en DESC);
+```
+
+**Políticas RLS:**
+```sql
+ALTER TABLE admin_auditoria ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admin solo lectura de auditoria" ON admin_auditoria
+  FOR SELECT USING (public.es_admin());
+
+CREATE POLICY "Admin insercion de auditoria" ON admin_auditoria
+  FOR INSERT WITH CHECK (public.es_admin());
+```
+
+**Modelo Dart `AuditoriaRegistroDb`** (`app/lib/features/admin/domain/admin_log_dto.dart`):
+```dart
+class AuditoriaRegistroDb {
+  final String id;
+  final String adminId;
+  final String? targetUsuarioId;
+  final String accion;         // wipe | reset_xp | set_nivel | ocultar_ejercicio | moderar
+  final Map<String, dynamic> detalles;  // JSONB con contexto específico de la acción
+  final DateTime creadoEn;
+}
+```
+
+**Registro automático:** Cada mutación admin (`resetXpUsuario`, `setNivelUsuario`, `wipe_user_data`, `deleteUser`, `ocultarEjercicio`, `moderarPublicacion`, `moderarComentario`) inserta un registro en `admin_auditoria` con los detalles relevantes (email del usuario afectado, valores anteriores/nuevos, motivo).
+
+### 3.6 Vista `v_admin_metricas` — KPIs globales para panel de administración (NUEVO v5.4)
+
+**Migración:** `20260616000009_admin_panel_v2.sql`
+
+```sql
+CREATE VIEW v_admin_metricas AS
+SELECT
+  (SELECT COUNT(*) FROM usuarios) AS total_usuarios,
+  (SELECT COUNT(*) FROM usuarios WHERE creado_en >= date_trunc('week', now())) AS nuevos_esta_semana,
+  (SELECT COUNT(DISTINCT usuario_id) FROM sesiones_registradas
+   WHERE completada_en >= date_trunc('week', now())) AS usuarios_activos_semana,
+  (SELECT COUNT(*) FROM sesiones_registradas
+   WHERE completada_en >= date_trunc('week', now())) AS sesiones_esta_semana,
+  (SELECT COUNT(*) FROM retos
+   WHERE creado_en >= date_trunc('week', now())) AS retos_creados_semana,
+  (SELECT COUNT(*) FROM actividades_sociales
+   WHERE creado_en >= date_trunc('week', now())) AS publicaciones_semana,
+  (SELECT COUNT(*) FROM actividades_sociales WHERE reportado = true) AS publicaciones_reportadas,
+  (SELECT COUNT(*) FROM comentarios_feed WHERE reportado = true) AS comentarios_reportados,
+  (SELECT COUNT(*) FROM usuario_insignias) AS insignias_otorgadas,
+  (SELECT ROUND(AVG(nivel), 1) FROM usuarios) AS nivel_promedio;
+```
+
+**RLS:** La vista hereda permisos de las tablas subyacentes. Accesible solo para admin mediante política en las tablas base.
+
+**DTO `AdminMetricasGlobales`** (`app/lib/features/admin/domain/admin_kpi_dto.dart`):
+```dart
+class AdminMetricasGlobales {
+  final int totalUsuarios;
+  final int nuevosEstaSemana;
+  final int usuariosActivosSemana;
+  final int sesionesEstaSemana;
+  final int retosCreadosSemana;
+  final int publicacionesSemana;
+  final int publicacionesReportadas;
+  final int comentariosReportados;
+  final int insigniasOtorgadas;
+  final double nivelPromedio;
+
+  factory AdminMetricasGlobales.fromMap(Map<String, dynamic> map) { ... }
+}
+```
+
+### 3.7 Columnas de moderación — `actividades_sociales`, `comentarios_feed`, `ejercicios` (NUEVO v5.4)
+
+**Migración:** `20260616000009_admin_panel_v2.sql`
+
+#### `actividades_sociales` — columnas nuevas
+```sql
+ALTER TABLE actividades_sociales
+  ADD COLUMN reportado      BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN reportado_por  UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+  ADD COLUMN esta_eliminado BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN eliminado_por  UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+  ADD COLUMN eliminado_en   TIMESTAMPTZ;
+```
+
+#### `comentarios_feed` — columnas nuevas
+```sql
+ALTER TABLE comentarios_feed
+  ADD COLUMN reportado     BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN reportado_por UUID REFERENCES usuarios(id) ON DELETE SET NULL;
+```
+
+#### `ejercicios` — columna nueva
+```sql
+ALTER TABLE ejercicios
+  ADD COLUMN activo BOOLEAN NOT NULL DEFAULT true;
+
+CREATE INDEX idx_ejercicios_activo ON ejercicios(activo);
+```
+
+**Impacto en frontend:**
+- `actividades_sociales`: el feed excluye publicaciones con `esta_eliminado = true` (`WHERE esta_eliminado = false`)
+- `ejercicios`: las búsquedas y recomendaciones IA filtran por `activo = true`
+- Los botones de reporte en el frontend (futurible) actualizarán `reportado = true` y `reportado_por`
+
+**Nuevas políticas RLS admin para moderación:**
+```sql
+-- Admin puede UPDATE/DELETE en actividades_sociales (moderación)
+CREATE POLICY "Admin modera publicaciones" ON actividades_sociales
+  FOR UPDATE USING (public.es_admin());
+
+CREATE POLICY "Admin elimina publicaciones" ON actividades_sociales
+  FOR DELETE USING (public.es_admin());
+
+-- Admin puede UPDATE en comentarios_feed (moderación)
+CREATE POLICY "Admin modera comentarios" ON comentarios_feed
+  FOR UPDATE USING (public.es_admin());
+
+-- Admin puede UPDATE en ejercicios (toggle activo)
+CREATE POLICY "Admin actualiza ejercicios" ON ejercicios
+  FOR UPDATE USING (public.es_admin());
+```
+
 ---
 
 ## 4. Políticas de Acceso (RLS Resumen)
@@ -2380,7 +2643,7 @@ $$;
 | **partes_cuerpo** | Todos | - | - | - |
 | **musculos** | Todos | - | - | - |
 | **equipamientos** | Todos | - | - | - |
-| **ejercicios** | Todos | - | - | - |
+| **ejercicios** | Todos | - | Admin | - |
 | **ejercicio_musculo_objetivo** | Todos | - | - | - |
 | **ejercicio_musculo_secundario** | Todos | - | - | - |
 | **ejercicio_parte_cuerpo** | Todos | - | - | - |
@@ -2419,10 +2682,12 @@ $$;
 | **recomendaciones_pendientes** | Propio | Propio | Propio | - |
 | **insights_analitica** | Propio | Propio | Propio | - |
 | **sesiones_focus** | Propio | Propio | Propio | - |
-| **actividades_sociales** | Propio + público | Propio | - | - |
+| **actividades_sociales** | Propio + público | Propio | Admin | Admin |
 | **interacciones_sociales** | Propio + público | Propio | - | Propio |
+| **comentarios_feed** | Autenticado | Autenticado | Autor + Admin | Autor |
 | **amistades** | Propio | Propio | Propio | Propio |
 | **preferencias_notificacion** | Propio | Propio | Propio | - |
+| **admin_auditoria** | Admin | Admin | - | - |
 
 ---
 
@@ -2494,8 +2759,8 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ---
 
-**Documento compilado:** 14-06-2026
-**Versión:** 5.3
-**Referencia:** RFC v5.1 - Motor de Recomendaciones (Fases 0-10), Pipeline Académico v5.0, Sprint 7 — Retos Complejos y Sincronización Offline, Migración 0004 — Consolidación de Correcciones, Fase 3 — Panel de Administración (wipe_user_data)
+**Documento compilado:** 15-06-2026
+**Versión:** 5.5
+**Referencia:** RFC v5.1 - Motor de Recomendaciones (Fases 0-10), Pipeline Académico v5.0, Sprint 7 — Retos Complejos y Sincronización Offline, Migración 0004 — Consolidación de Correcciones, Fase 3 — Panel de Administración (wipe_user_data + delete_user + admin_auditoria + v_admin_metricas + moderación)
 **Validador:** Tech Lead + DBA
 

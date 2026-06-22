@@ -29,6 +29,7 @@ Definir la arquitectura completa de SynaptixFit (Flutter móvil/web + Supabase +
 | **IA generativa** | Gemini Flash API (REST) | Cliente-side vía `dio`, sin SDK de Google |
 | **Almacenamiento** | Cloudflare R2 + Worker de proxy | Multimedia de ejercicios, URLs públicas |
 | **Persistencia local** | Hive | Caché offline, cola de sincronización |
+| **Localización** | `flutter_localizations` (es_ES, es, en) | Widgets Material en español, `showDatePicker` en español |
 
 ### 2.2 ¿Por qué Gemini Flash y no otra IA?
 
@@ -132,13 +133,14 @@ synaptixfit/
 │       │   ├── utils/
 │       │   │   └── string_utils.dart       # ★ finalidadesEstandar + sanitizarObjetivo() (Fase 0)
 │       │   └── widgets/
-│       │       └── metric_gauge.dart        # ★ Gauge radial animado (248 líneas)
+│       │       ├── metric_gauge.dart        # ★ Gauge radial animado (248 líneas)
+│       │       └── exercise_metrics.dart    # ★ SemanticMicroChip, ExerciseMetricsRow, ExerciseMetricCategoria
 │       ├── features/
 │       │   ├── auth/                       # Login, registro, onboarding
 │       │   │   └── infrastructure/
 │       │   │       ├── auth_repository.dart
 │       │   │       └── bienestar_repository.dart  # CRUD perfil bienestar
-│       │   ├── academico/                  # Planes, asignaturas, apuntes
+│       │   ├── academico/                  # Planes, time-blocking (lienzo continuo), escaneo IA, apuntes
 │       │   ├── retos/                      # Retos simples y complejos
 │       │   ├── bienestar/
 │       │   │   ├── infrastructure/
@@ -164,11 +166,11 @@ synaptixfit/
 │       │   ├── pomodoro/                   # Temporizador Pomodoro (25/5 min) con anillo CustomPainter
 │       │   ├── escanear/                   # Digitalización OCR de apuntes (Web: mensaje informativo)
 │       │   ├── insignias/                  # Sistema de insignias y rachas (15 insignias, InsigniaEngine, RachaService)
-│       │   ├── academico/                  # ★ Time-Blocking académico — Custom Grid nativo, DnD, IA (Gemini Flash)
-│       │   │   ├── domain/                  # DTOs: BloquePlanificadoData, InboxConfig, TimeblockIaResult
-│       │   │   ├── infrastructure/          # TimeBlockIaService (reglas N1-N10, prompt, validación, fallback)
-│       │   │   ├── application/             # Providers: inboxConfig, calendarGrid, horariosFijos, bloqueEstudio
-│       │   │   └── presentation/            # InboxScreen, CanvasScreen, widgets (TimeGridPainter, TimeBlockWidget, ProgressGamificationBar, canvas_helpers)
+│       │   ├── academico/                  # ★ Time-Blocking académico — Custom Grid nativo, DnD libre, IA (Gemini Flash), arrastre entre semanas
+│       │   │   ├── domain/                  # DTOs: TimeBlock, InboxConfig, CalendarGridState, TimeBlockTipo (8 valores), SemanaGenerada
+│       │   │   ├── infrastructure/          # TimeBlockIaService + AiScheduleParserService (Gemini multimodal, parseo de horarios PDF/imagen)
+│       │   │   ├── application/             # Providers: inboxConfig, calendarGrid (moveBlock sin restricciones, resizeBlock min 30min), horariosFijos, bloqueEstudio, escanear_horario
+│       │   │   └── presentation/            # InboxScreen, CanvasScreen (chevrons DragTarget para mover entre semanas, _moverBloqueASemana, feedback sin overflow), widgets (TimeGridPainter, TimeBlockWidget sin candado, ProgressGamificationBar), AcademicBlockSheet (pestaña Deporte integrada), escanear_horario_boton (integrado en perfil_screen)
 │       │   └── admin/                      # Panel de administración Fase 2 — 34 archivos, 5 tabs
 │       │       ├── domain/                  # 7 DTOs: AdminKpi, AdminContenido, AdminEjercicio, AdminAuditoria, AdminUsuarioEstadisticas, AdminTimelineEntry, UsuarioAdmin
 │       │       ├── infrastructure/          # 6 repositorios: admin, metricas, auditoria, contenido, ejercicios, usuario stats
@@ -176,7 +178,7 @@ synaptixfit/
 │       │       └── presentation/            # AdminHubScreen (TabBar 5 tabs) + 15 widgets/pantallas (KPI, usuarios, contenido, ejercicios, logs, gráficos, timeline, paginación)
 │       └── main.dart                       # Entry point, ProviderScope, Supabase.init
 ├── supabase/
-│   ├── migrations/                         # 26 archivos de migración (0049-0025)
+│   ├── migrations/                         # 38 archivos de migración (0049 esquema base + 37 posteriores)
 │   └── seed_catalogo_v2.py                 # Seeding del catálogo académico v2 desde grados.json
 ├── cloudflare/
 │   └── synaptixfit-r2-proxy/
@@ -350,6 +352,60 @@ flowchart TD
 
     I --> L["UI: Banner 'Tu cuerpo\nnecesita descanso'"]
     K --> M["Sin alerta"]
+```
+
+### 6.4 Diagrama de Flujo: Escaneo de Horarios con IA
+
+```mermaid
+flowchart TD
+    A["Usuario pulsa\n'Escanear horario'\nen Perfil → pestaña Académico"] --> B{"¿Perfil académico\ntiene fechas de semestre?"}
+    
+    B -->|"No (Rama A)"| C["BottomSheet:\npedir fecha_inicio y fecha_fin"]
+    C --> D["guardarFechasSemestre()\nUPSERT perfil_academico_usuario"]
+    D --> E["Fricción cero\n(Rama B)"]
+    B -->|"Sí (Rama B)"| E
+    
+    E --> F["file_picker\n(imagen o PDF, withData: true)"]
+    F --> G["AiScheduleParserService\n.parseAndAssembleSchedule()"]
+    
+    G --> H["Gemini Flash multimodal\n(inline_data base64)"]
+    H --> I["Prompt determinista:\ninyecta asignaturas activas\nextrae SOLO patrón semanal\ntemperatura 0, topK 1"]
+    I --> J["Ensambla paquete:\n{fecha_inicio_clases,\nfecha_fin_clases,\nhorarios:[...]}"]
+    
+    J --> K["Sanea respuesta Markdown\ny parsea JSON"]
+    K --> L["generarHorariosDesdePaquete()\nMaterializa patrón semanal\nen ocurrencias fechadas"]
+    L --> M["UPSERT horarios_academicos\n(es_fijo=false,\nes_hito_inamovible=true,\nidempotente vía ics_uid)"]
+    M --> N["SnackBar:\n'Horario sincronizado con éxito'"]
+    
+    G -->|"Error"| O["AiParsingException\n→ SnackBar error"]
+```
+
+### 6.5 Diagrama de Flujo: Arrastre de Bloques en el Lienzo Time-Blocking
+
+```mermaid
+flowchart TD
+    A["Usuario hace long-press\n(~250ms) sobre un bloque"] --> B["LongPressDraggable activa\nfeedback sin scale (tamaño exacto)"]
+    
+    B --> C{"¿Dónde suelta\nel bloque?"}
+    
+    C -->|"En celda del grid"| D["DragTarget.onAcceptWithDetails"]
+    D --> E["moveBlock(block, nuevaFecha, nuevaHora)"]
+    E --> F{"¿Nuevo cálculo\nde hora fin?"}
+    F --> G["Calcula minutos totales\n(evita bug de acarreo)"]
+    G --> H["Persiste en BD + invalida provider"]
+    H --> I["Reporta solapamientos\ncomo avisos (no bloquea)"]
+    
+    C -->|"En chevron ‹"| J["DragTarget.onAcceptWithDetails\n(chevron izquierdo)"]
+    J --> K["_moverBloqueASemana(block, -1, state)\nCalcula misma hora, día anterior"]
+    K --> L["moveBlock + navegarSemana(-1)"]
+    L --> M["SnackBar: 'Movido a semana anterior'"]
+    
+    C -->|"En chevron ›"| N["DragTarget.onAcceptWithDetails\n(chevron derecho)"]
+    N --> O["_moverBloqueASemana(block, +1, state)\nCalcula misma hora, día siguiente"]
+    O --> P["moveBlock + navegarSemana(+1)"]
+    P --> Q["SnackBar: 'Movido a semana siguiente'"]
+    
+    C -->|"Redimensionar\n(drag en borde)"| R["resizeBlock()\nMínimo 30 minutos\nPermite solapes"]
 ```
 
 ## 7. Modelo de Datos Relacional (Resumen)
