@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit
-**Versión:** 3.1
-**Fecha:** 14-06-2026
+**Versión:** 3.3
+**Fecha:** 27-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -13,13 +13,13 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (38 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix + 0001 dias_disponibles_array + 0002 fix_nivel_umbral + 0003 xp_overflow_multinivel + 20260622000004 visibilidad_rls + 20260622000005 carga_xp_estudio_otorgado + 20260622000006 retos_sinergia_v2 + 20260622000007 retos_xp_tracking + 20260622000008 retos_deep_linking + 20260622000009 social_realtime + 20260622000010 perfil_fechas_semestre + 20260622000011 social_publicaciones_v2 + 20260622000012 procedencia_clones) |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (47 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix + 0001 dias_disponibles_array + 0002 fix_nivel_umbral + 0003 xp_overflow_multinivel + 20260622000004 visibilidad_rls + 20260622000005 carga_xp_estudio_otorgado + 20260622000006 retos_sinergia_v2 + 20260622000007 retos_xp_tracking + 20260622000008 retos_deep_linking + 20260622000009 social_realtime + 20260622000010 perfil_fechas_semestre + 20260622000011 social_publicaciones_v2 + 20260622000012 procedencia_clones + 20260622000013 archivos_asignatura + 20260622000014 apuntes_actualizado_en + 20260622000015 apuntes_visibilidad_fix + 20260622000016 documentos_ia + 20260622000017 documentos_ia_ampliar_check + 20260625000018 perfil_academico_rls + 20260625000019 usuario_insignias_update_asignaturas_rls + 20260626000020 valor_met_ejercicios + 20260626000021 duracion_real) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
 | Jobs programados | pg_cron (PostgreSQL) | Job nocturno de recomendaciones diarias (2 AM) |
 | Almacenamiento multimedia | Cloudflare R2 | GIFs de ejercicios (~1300 archivos, resolución 360x360) |
-| Proxy multimedia | Cloudflare Worker `synaptixfit-r2-proxy` | CORS + acceso público a bucket R2 |
+| Proxy multimedia | Cloudflare Worker `synaptixfit-r2-proxy` | CORS + subida/descarga/borrado a bucket R2 (GET, PUT, DELETE) |
 | **IA generativa** | **Gemini Flash API (Google)** | **Refinamiento de rutinas (motor de reglas determinista como base)** |
 | **IA — HTTP client** | **Dio (Flutter)** | **Peticiones directas a `generativelanguage.googleapis.com`** |
 | **Motor de reglas** | **Dart (cliente)** | **Pipeline determinista: sanitización → reglas → contexto → transición → progresión** |
@@ -36,7 +36,7 @@ Para MVP/TFG, la simplicidad y latencia del enfoque cliente-side son preferibles
 
 ## 2. Migraciones — Esquema Consolidado
 
-Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **38 archivos de migración**:
+Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **47 archivos de migración**:
 
 | # | Archivo | Fecha | Descripción |
 |---|---------|-------|-------------|
@@ -78,6 +78,15 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 20260622000010 | `20260622000010_perfil_fechas_semestre.sql` | 22-06-2026 | Columnas `fecha_inicio_clases`/`fecha_fin_clases` en `perfil_academico_usuario` para flujo de escaneo IA.
 | 20260622000011 | `20260622000011_social_publicaciones_v2.sql` | 22-06-2026 | Columnas en `actividades_sociales` para tipos de publicación enriquecidos.
 | 20260622000012 | `20260622000012_procedencia_clones.sql` | 22-06-2026 | Columna `procedencia` en `rutinas` para trazabilidad de clones.
+| 20260622000013 | `20260622000013_archivos_asignatura.sql` | 22-06-2026 | Tabla `archivos_asignatura` con metadatos de archivos adjuntos a una asignatura (Cloudflare R2).
+| 20260622000014 | `20260622000014_apuntes_actualizado_en.sql` | 22-06-2026 | Columna `actualizado_en` en `apuntes` (faltaba en migración original).
+| 20260622000015 | `20260622000015_apuntes_visibilidad_fix.sql` | 22-06-2026 | Corrige CHECK de `apuntes.visibilidad` heredado en español → valores canónicos `private`/`public`/`solo_amigos`.
+| 20260622000016 | `20260622000016_documentos_ia.sql` | 22-06-2026 | Tabla `documentos_ia` para persistir resúmenes y mapas mentales generados por IA.
+| 20260622000017 | `20260622000017_documentos_ia_ampliar_check.sql` | 22-06-2026 | Amplía CHECKs en `documentos_ia` para `guia_docente`.
+| 20260625000018 | `20260625000018_perfil_academico_rls.sql` | 25-06-2026 | Habilita RLS en `perfil_academico_usuario` con políticas owner + admin.
+| 20260625000019 | `20260625000019_usuario_insignias_update_asignaturas_rls.sql` | 25-06-2026 | UPDATE policy en `usuario_insignias` + RLS en `asignaturas`.
+| 20260626000020 | `20260626000020_valor_met_ejercicios.sql` | 26-06-2026 | Columna `valor_met` en `ejercicios` (MET Compendio Adultos 2024) + recrea `v_ejercicios_completos`.
+| 20260626000021 | `20260626000021_duracion_real.sql` | 26-06-2026 | RENAME `duracion_segundos` → `duracion_objetivo_segundos` + ADD `duracion_real_segundos` en `seleccion_de_ejercicios`.
 
 > **Nota histórica:** Las migraciones intermedias 0001–0048 fueron consolidadas en `202606060049_esquema_base.sql` durante la Fase 3. Las migraciones 0050 anteriores (0050–0052 de xp_estudio_flag, retos_racha, etc.) también fueron absorbidas. El orden de aplicación real es cronológico por timestamp del nombre del archivo, no por el número de secuencia en el nombre.
 
@@ -836,16 +845,153 @@ Cuando `GEMINI_API_KEY` no está configurada o Gemini falla, `_generarFallback()
 
 ## 13. Cloudflare Worker — Proxy R2
 
-**Archivo:** `cloudflare/synaptixfit-r2-proxy/worker.js`
+**Archivos:**
+- `cloudflare/synaptixfit-r2-proxy/worker.js` — código fuente del Worker (217 líneas)
+- `cloudflare/synaptixfit-r2-proxy/wrangler.jsonc` — configuración de despliegue Wrangler CLI
 
-**Propósito:** Servir archivos multimedia de ejercicios desde el bucket R2 con CORS configurado.
+### 13.1 Propósito
 
-**Comportamiento:**
-- Las URLs de GIFs se construyen como `https://pub-XXX.r2.dev/ejercicios/360/{exercise_db_id}.gif`
-- El worker aplica headers CORS para permitir acceso desde cualquier origen
-- Sin autenticación (acceso público de solo lectura)
+Servir como proxy unificado para operaciones de lectura, escritura y borrado sobre el bucket Cloudflare R2 `synaptixfit-r2`. El Worker gestiona CORS, caché CDN y verificación de configuración.
+
+### 13.2 Configuración de despliegue (`wrangler.jsonc`)
+
+```jsonc
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "synaptixfit-r2-proxy",
+  "main": "worker.js",
+  "compatibility_date": "2025-06-23",
+  "r2_buckets": [
+    {
+      "binding": "R2_BUCKET",
+      "bucket_name": "synaptixfit-r2"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
+```
+
+**Campos clave:**
+- `r2_buckets[0].binding`: Nombre de la variable disponible en `env.R2_BUCKET` dentro del Worker.
+- `r2_buckets[0].bucket_name`: Nombre real del bucket R2 en Cloudflare Dashboard.
+- `observability.enabled`: Activa logs y métricas en Cloudflare Dashboard.
+
+### 13.3 Despliegue
+
+Hay dos métodos para desplegar el Worker:
+
+**Opción recomendada — Wrangler CLI:**
+```bash
+npm i -g wrangler               # Instalar Wrangler
+npx wrangler login              # Autenticarse en Cloudflare
+# Ajustar "bucket_name" en wrangler.jsonc al bucket real
+npx wrangler deploy             # Desplegar con configuración del archivo
+```
+
+**Alternativa — Cloudflare Dashboard:**
+1. Ir a Workers & Pages → `synaptixfit-r2-proxy` → Edit Code
+2. Settings → Bindings → Add R2 Bucket Binding:
+   - Variable name: `R2_BUCKET`
+   - R2 Bucket: `synaptixfit-r2` (o el nombre real del bucket)
+3. Pegar el código de `worker.js` y hacer Deploy
+4. Copiar la URL del Worker (`.workers.dev`) al `.env` de la app Flutter
+
+### 13.4 Guarda de verificación del binding R2_BUCKET
+
+**Problema original (resuelto):** Si el binding `R2_BUCKET` no estaba configurado en Cloudflare Dashboard (ni vía `wrangler.jsonc`), el código del Worker hacía `env.R2_BUCKET.put(...)` pero `env.R2_BUCKET` era `undefined`, causando el error opaco: `Cannot read properties of undefined (reading 'put')`.
+
+**Solución implementada:** Guarda justo después del bloque OPTIONS y antes del bloque `try` principal:
+
+```javascript
+// Guarda: verificar que el binding R2_BUCKET existe antes de usarlo
+if (!env.R2_BUCKET) {
+  console.error('[synaptixfit-r2-proxy] Binding R2_BUCKET no configurado en este Worker.');
+  return new Response(JSON.stringify({
+    error: 'Configuración incompleta del servidor',
+    message: 'El binding R2_BUCKET no está configurado. Agrega el binding en Cloudflare Dashboard → Workers & Pages → synaptixfit-r2-proxy → Settings → Bindings, o despliega con `npx wrangler deploy` usando wrangler.jsonc.',
+  }), {
+    status: 503,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+```
+
+**Mejora:** Reemplaza el error 500 genérico `Cannot read properties of undefined` por un **error 503 Service Unavailable** con un mensaje descriptivo que indica exactamente qué falta configurar y cómo solucionarlo (Dashboard vs Wrangler CLI).
+
+### 13.5 Métodos HTTP soportados
+
+| Método | Ruta | Propósito | Headers de respuesta |
+|--------|------|-----------|---------------------|
+| `GET` | `/{objectKey}` | Descargar objeto de R2 | `Content-Type` (del metadata), `Content-Length`, `Cache-Control: public, max-age=31536000, immutable`, `ETag` |
+| `PUT` | `/{objectKey}` | Subir objeto a R2 | `{ success: true, key, url }` (JSON) |
+| `DELETE` | `/{objectKey}` | Eliminar objeto de R2 | `{ success: true, message, key }` (JSON) |
+| `OPTIONS` | `/*` | Preflight CORS | 204 No Content con headers CORS |
+| `POST` | `/_proxy/ics` | Proxy ICS (CORS abierto) | Texto del calendario descargado |
+
+### 13.6 CORS
+
+- **Rutas R2 (`/*`):** CORS restringido. Orígenes permitidos: `synaptixfit.com` (producción) + `localhost:*` (desarrollo). Fallback al primer origen de la lista.
+- **Ruta ICS (`/_proxy/ics`):** CORS abierto (`Access-Control-Allow-Origin: *`). Necesario porque la app descarga calendarios `.ics` de orígenes externos (universidades) y los reproduce vía el Worker para evitar bloqueos CORS del navegador.
+
+### 13.7 Convención de claves de objeto
+
+Las subidas desde la app Flutter usan la siguiente estructura jerárquica:
+
+```
+usuarios/{user_id}/asignaturas/{asignatura_id}/archivos/{timestamp}_{nombre_archivo}
+```
+
+Ejemplo: `usuarios/d4e5f6a7/asignaturas/b8c9d0e1/archivos/1719000000_apuntes_calculo.pdf`
+
+Esta convención permite:
+- Aislamiento por usuario (prefijo `usuarios/{user_id}`)
+- Organización por asignatura (`asignaturas/{asignatura_id}`)
+- Prevención de colisiones de nombres (timestamp Unix en segundos)
+- Fácil enumeración y limpieza por prefijo
+
+### 13.8 Flujo de subida desde Flutter
+
+1. **UI:** `AsignaturaDetalleScreen` → botón "Subir archivo" → `file_picker` con `withData: true`
+2. **Repositorio:** `ArchivosAsignaturaRepository.subirArchivo(asignaturaId, bytes, nombre, tipoMime)`
+3. **Clave R2:** Construye `usuarios/{userId}/asignaturas/{asignaturaId}/archivos/{timestamp}_{nombre}`
+4. **URL:** `{VITE_R2_WORKER_URL}/{objectKey}` (desde `app/.env`)
+5. **HTTP PUT:** `Dio.put(url, data: bytes, options: Options(headers: {'Content-Type': tipoMime}))` con callback `onSendProgress`
+6. **Worker:** Recibe PUT, extrae `key` del pathname, ejecuta `env.R2_BUCKET.put(key, body, { httpMetadata: { contentType } })`
+7. **Respuesta Worker:** `{ success: true, key: "...", url: "..." }`
+8. **Supabase:** Inserta metadatos en `archivos_asignatura`:
+   - `asignatura_id`, `usuario_id`, `nombre_original`, `cloudflare_object_key`
+   - `url_publica_o_firmada`, `tamano_bytes`, `tipo_mime`
+9. **Rollback:** Si falla la inserción en Supabase, se intenta `DELETE` al Worker para borrar el objeto ya subido a R2 (best-effort, sin garantía transaccional)
+10. **URL pública:** Se construye usando `CLOUDFLARE_R2_BASE_URL` (si existe en `.env`) o la URL base del Worker como fallback
+
+### 13.9 Tabla `archivos_asignatura` (migración 20260622000013)
+
+```sql
+CREATE TABLE archivos_asignatura (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  asignatura_id UUID NOT NULL REFERENCES asignaturas(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  nombre_original TEXT NOT NULL,
+  cloudflare_object_key TEXT NOT NULL,
+  url_publica_o_firmada TEXT,
+  tamano_bytes BIGINT,
+  tipo_mime TEXT,
+  subido_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- RLS: solo dueño y admin
+ALTER TABLE archivos_asignatura ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Dueño CRUD" ON archivos_asignatura
+  FOR ALL USING (auth.uid() = usuario_id);
+CREATE POLICY "Admin lectura" ON archivos_asignatura
+  FOR SELECT USING (es_admin());
+
+CREATE INDEX idx_archivos_asignatura ON archivos_asignatura(asignatura_id, subido_en DESC);
+```
 
 ---
 
-**Documento compilado:** 17-06-2026
-**Última revisión:** v4.0 — Sprint Time-Blocking: añadido §12 `TimeBlockIaService` con reglas N1-N10, prompt engineering, validación post-IA y fallback determinista.
+**Documento compilado:** 27-06-2026
+**Última revisión:** v3.3 — Migraciones 47 (0020 `valor_met_ejercicios` + 0021 `duracion_real`), `CalorieCalculatorService` documentado como nuevo servicio de infraestructura.

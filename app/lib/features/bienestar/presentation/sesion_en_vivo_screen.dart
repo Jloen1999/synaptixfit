@@ -8,6 +8,7 @@ import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/exercise_thumb.dart';
 import '../../../shared/widgets/exercise_metrics.dart';
+import '../../perfil/application/perfil_provider.dart';
 import '../application/rutina_provider.dart';
 import '../application/ejercicios_provider.dart';
 import '../../dashboard/application/timeline_provider.dart';
@@ -50,6 +51,11 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
   final Map<String, Map<int, _SerieLocal>> _seriesLocales = {};
   final Map<String, TextEditingController> _pesoCtrl = {};
   final Map<String, TextEditingController> _repsCtrl = {};
+
+  /// Sistema de vueltas (laps) basado en timestamps.
+  /// Preciso aunque la app pase a segundo plano.
+  final Map<String, DateTime> _lapStartTimes = {};
+  final Map<String, int> _duracionRealMap = {};
 
   String? _sesionId;
   bool _sesionIniciada = false;
@@ -109,6 +115,11 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
     );
     setState(() {});
 
+    // Sistema de laps por timestamp — primera interacción con el ejercicio
+    if (completada) {
+      _lapStartTimes.putIfAbsent(key, () => DateTime.now());
+    }
+
     if (completada && _sesionId != null) {
       final reps = int.tryParse(_repsCtrl['${key}_$numSerie']?.text ?? '');
       final peso = double.tryParse(_pesoCtrl['${key}_$numSerie']?.text ?? '');
@@ -121,6 +132,15 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
           completada: true);
     }
     if (completada) _iniciarDescanso(seleccionId, numSerie);
+  }
+
+  void _capturarLap(String seleccionId) {
+    final inicio = _lapStartTimes[seleccionId];
+    if (inicio == null) return;
+    final delta = DateTime.now().difference(inicio).inSeconds;
+    _duracionRealMap[seleccionId] =
+        (_duracionRealMap[seleccionId] ?? 0) + delta;
+    _lapStartTimes[seleccionId] = DateTime.now();
   }
 
   void _iniciarDescanso(String ejercicioId, int numSerie) {
@@ -224,12 +244,19 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
       setState(() => _finalizando = true);
       _cronometro?.cancel();
       _descansoTimer?.cancel();
+
+      // Capturar todos los laps abiertos antes de finalizar
+      for (final id in _lapStartTimes.keys.toList()) {
+        _capturarLap(id);
+      }
+
       final xpResult = await finalizarSesion(
           sesionId: _sesionId!,
           diaId: _diaId,
           rutinaId: _rutinaId,
           duracionSegundos: _segundosTotales,
           rpe: result.rpe,
+          duracionRealPorEjercicio: Map<String, int>.from(_duracionRealMap),
           ref: ref);
       ref.invalidate(timelineHoyProvider);
       if (mounted) {
@@ -281,6 +308,57 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
     });
   }
 
+  Widget _buildTimerBar(ThemeData theme) {
+    final ejerciciosAsync =
+        _paramsCargados ? ref.watch(ejerciciosDeDiaProvider(_diaId)) : null;
+    final ejercicios = ejerciciosAsync?.valueOrNull ?? [];
+    final objetivoTotalSeg = ejercicios.fold<int>(
+      0,
+      (sum, e) => sum + (e.duracionObjetivoSegundos ?? 0),
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: theme.colorScheme.surfaceContainerLowest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(children: [
+            const Icon(Icons.timer_rounded, size: 18, color: Colors.grey),
+            const SizedBox(width: 6),
+            Text(_formatoTiempo(_segundosTotales),
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const Spacer(),
+            if (_descansoActivoEjercicioId != null) ...[
+              Text('Descanso ${_formatoTiempo(_descansoRestante)}',
+                  style: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13)),
+              const SizedBox(width: 8),
+              _btn('Saltar', Colors.orange, _saltarDescanso),
+            ],
+          ]),
+          if (objetivoTotalSeg > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Objetivo: ${_formatoTiempo(objetivoTotalSeg)}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color:
+                      theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------------------
 
   @override
@@ -312,27 +390,7 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
         backPath: '/bienestar',
         child: Stack(children: [
           Column(children: [
-            Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                color: theme.colorScheme.surfaceContainerLowest,
-                child: Row(children: [
-                  const Icon(Icons.timer_rounded, size: 18, color: Colors.grey),
-                  const SizedBox(width: 6),
-                  Text(_formatoTiempo(_segundosTotales),
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700)),
-                  const Spacer(),
-                  if (_descansoActivoEjercicioId != null) ...[
-                    Text('Descanso ${_formatoTiempo(_descansoRestante)}',
-                        style: TextStyle(
-                            color: Colors.orange.shade700,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13)),
-                    const SizedBox(width: 8),
-                    _btn('Saltar', Colors.orange, _saltarDescanso),
-                  ],
-                ])),
+            _buildTimerBar(theme),
             Expanded(
                 child: _EjerciciosList(
                     diaId: _diaId,
@@ -938,10 +996,6 @@ class _EjercicioLiveCard extends StatelessWidget {
                                       pesoKg: e.pesoKg,
                                       pesosKg: e.pesosKg,
                                       segundosDescanso: e.segundosDescanso,
-                                      duracionSegundos: e.duracionSegundos,
-                                      distanciaMetros: e.distanciaMetros,
-                                      tiempoIsometricoSegundos:
-                                          e.tiempoIsometricoSegundos,
                                     ),
                                   ),
                                   if (seriesReducidas) ...[
@@ -955,6 +1009,38 @@ class _EjercicioLiveCard extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            if ((e.tiempoIsometricoSegundos ?? 0) > 0 ||
+                                (e.duracionObjetivoSegundos ?? 0) > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: [
+                                    if ((e.tiempoIsometricoSegundos ?? 0) > 0)
+                                      SemanticMicroChip(
+                                        icon: Icons.timer,
+                                        label: '${e.tiempoIsometricoSegundos}s',
+                                        dense: true,
+                                      ),
+                                    if ((e.duracionObjetivoSegundos ?? 0) > 0)
+                                      buildCalorieChip(
+                                        valorMet: ej?.valorMet,
+                                        pesoUsuarioKg: ref
+                                            .watch(perfilUsuarioProvider)
+                                            .valueOrNull
+                                            ?.perfil
+                                            .pesoKg,
+                                        duracionSegundos:
+                                            e.duracionObjetivoSegundos,
+                                        modalidad: ej?.modalidadEntrenamiento ??
+                                            'fuerza',
+                                        esCircuito: ej?.esCircuito ?? false,
+                                        dense: true,
+                                      ),
+                                  ],
+                                ),
+                              ),
                           ])),
                       if (ejercicioCompletado) ...[
                         const SizedBox(width: 8),
@@ -1104,16 +1190,19 @@ class _EjercicioLiveCard extends StatelessWidget {
                                   suffixText: 'reps',
                                   width: 78),
                             ] else if (esCardio) ...[
-                              if ((e.duracionSegundos ?? 0) > 0)
+                              if ((e.duracionObjetivoSegundos ?? 0) > 0)
                                 SemanticMicroChip(
                                     icon: Icons.timer_outlined,
-                                    label: _fmtDurLive(e.duracionSegundos),
+                                    label:
+                                        _fmtDurLive(e.duracionObjetivoSegundos),
                                     dense: true),
                               if ((e.distanciaMetros ?? 0) > 0) ...[
                                 const SizedBox(width: 6),
                                 SemanticMicroChip(
                                     icon: Icons.route,
-                                    label: '${e.distanciaMetros} m',
+                                    label: e.distanciaMetros! >= 1000
+                                        ? '${(e.distanciaMetros! / 1000).toStringAsFixed(1)} km'
+                                        : '${e.distanciaMetros} m',
                                     dense: true),
                               ],
                             ] else ...[

@@ -332,7 +332,7 @@ class ProgresionCalculator {
               tipoMedicion: tipoMed,
               diasInactivo: diasInactivo,
               params: params,
-              duracionActual: e.duracionSegundos,
+              duracionActual: e.duracionObjetivoSegundos,
               distanciaActual: e.distanciaMetros,
               tiempoIsometricoActual: e.tiempoIsometricoSegundos,
             );
@@ -347,7 +347,7 @@ class ProgresionCalculator {
               rpeUltimaSesion: rpe,
               seriesRealizadas: historial,
               params: params,
-              duracionActual: e.duracionSegundos,
+              duracionActual: e.duracionObjetivoSegundos,
               distanciaActual: e.distanciaMetros,
               tiempoIsometricoActual: e.tiempoIsometricoSegundos,
             );
@@ -359,7 +359,7 @@ class ProgresionCalculator {
               descanso: e.segundosDescanso,
               pesoKg: e.pesoKg,
               tipoMedicion: tipoMed,
-              duracionSegundos: e.duracionSegundos,
+              duracionSegundos: e.duracionObjetivoSegundos,
               distanciaMetros: e.distanciaMetros,
               tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
             );
@@ -372,7 +372,8 @@ class ProgresionCalculator {
             segundosDescanso: prog.nuevoDescanso,
             pesoKg: prog.nuevoPeso,
             pesosKg: prog.pesosPorSerie,
-            duracionSegundos: prog.nuevaDuracionSegundos ?? e.duracionSegundos,
+            duracionObjetivoSegundos:
+                prog.nuevaDuracionSegundos ?? e.duracionObjetivoSegundos,
             distanciaMetros: prog.nuevaDistanciaMetros ?? e.distanciaMetros,
             tiempoIsometricoSegundos: prog.nuevoTiempoIsometricoSegundos ??
                 e.tiempoIsometricoSegundos,

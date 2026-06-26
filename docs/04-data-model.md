@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 5.7
+**Versión:** 5.8
 **Estado:** VIGENTE
-**Fecha:** 23-06-2026
-**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, función `delete_user` para eliminación hard de usuarios, columna `rol` en `usuarios`, tabla `asignaturas_usuario_semestre` para mapeo de transversales, tabla `admin_auditoria` para trazabilidad administrativa, vista `v_admin_metricas` para KPIs globales, y columnas de moderación en `actividades_sociales`, `comentarios_feed` y `ejercicios`. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
+**Fecha:** 27-06-2026
+**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, función `delete_user` para eliminación hard de usuarios, columna `rol` en `usuarios`, tabla `asignaturas_usuario_semestre` para mapeo de transversales, tabla `admin_auditoria` para trazabilidad administrativa, vista `v_admin_metricas` para KPIs globales, columnas de moderación en `actividades_sociales`, `comentarios_feed` y `ejercicios`, columna `valor_met` (MET del Compendio de Adultos 2024) en `ejercicios`, y dualidad planificación vs ejecución real (`duracion_objetivo_segundos`/`duracion_real_segundos`) en `seleccion_de_ejercicios`. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -110,6 +110,7 @@ erDiagram
         text descripcion
         text[] finalidad "multi-finalidad: fuerza, cardio, isometrico, hipertrofia, resistencia, movilidad"
         string fuente "origen del ejercicio: demic, exercisedb, gym_workout, lyfta"
+        double valor_met "coeficiente MET del Compendio Adultos 2024 (default 6.0)"
         timestamp creado_en
         timestamp actualizado_en
     }
@@ -171,7 +172,8 @@ erDiagram
         uuid dia_id FK
         double peso_kg
         jsonb pesos_kg "peso por serie, ej: [50.0, 52.5, 55.0]"
-        int duracion_segundos
+        int duracion_objetivo_segundos
+        int duracion_real_segundos
         int distancia_metros
         int tiempo_isometrico_segundos
     }
@@ -580,6 +582,7 @@ CREATE TABLE ejercicios (
   fuente TEXT NOT NULL DEFAULT 'exercisedb',
   url_video TEXT,
   url_imagen TEXT,
+  valor_met DOUBLE PRECISION NOT NULL DEFAULT 6.0,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   
@@ -733,14 +736,15 @@ Cada ejercicio se clasifica según su **finalidad** (tipo de esfuerzo). Desde la
 | Finalidad | Constraint | Columnas en seleccion_de_ejercicios | UI renderiza |
 |-----------|-----------|-------------------------------------|-------------|
 | `fuerza` | Series, Repeticiones, Descanso, Peso | `series`, `repeticiones`, `segundos_descanso`, `peso_kg` | Grid 2×2 (Series, Reps, Descanso, Peso kg) |
-| `cardio` | Intervalos, Duración, Distancia (opc), Descanso | `series` (=intervalos), `duracion_segundos`, `distancia_metros` (opc), `segundos_descanso` | Intervalos, Duración (input libre tipo "5m 30s"), Distancia (m, opc), Descanso |
+| `cardio` | Intervalos, Duración, Distancia (opc), Descanso | `series` (=intervalos), `duracion_objetivo_segundos`, `distancia_metros` (opc), `segundos_descanso` | Intervalos, Duración (input libre tipo "5m 30s"), Distancia (m, opc), Descanso |
 | `isometrico` | Series, Tiempo de sujeción, Descanso | `series`, `tiempo_isometrico_segundos`, `segundos_descanso` | Series, Tiempo de sujeción (s), Descanso |
 | `hipertrofia` | Series, Repeticiones, Descanso, Peso | `series`, `repeticiones`, `segundos_descanso`, `peso_kg` | Grid 2×2 (Series, Reps, Descanso, Peso kg) |
 | `resistencia` | Series, Repeticiones, Descanso, Peso | `series`, `repeticiones`, `segundos_descanso`, `peso_kg` | Grid 2×2 (Series, Reps, Descanso, Peso kg) |
 | `movilidad` | Series, Repeticiones, Descanso | `series`, `repeticiones`, `segundos_descanso` | Series, Reps, Descanso |
 
 **Nuevas columnas en `seleccion_de_ejercicios` (migración 0018):**
-- `duracion_segundos INT` — duración del cardio en segundos (ej: 1800 = 30 min)
+- `duracion_objetivo_segundos INT` — duración planificada del cardio en segundos (ej: 1800 = 30 min)
+- `duracion_real_segundos INT` — duración real medida durante la sesión en vivo (migración 0021)
 - `distancia_metros INT` — distancia recorrida en metros (opcional, solo cardio)
 - `tiempo_isometrico_segundos INT` — tiempo de sujeción en segundos (solo isométrico)
 
@@ -755,6 +759,12 @@ Cada ejercicio se clasifica según su **finalidad** (tipo de esfuerzo). Desde la
 **Migración 0045:** Añade columna `pesos_kg jsonb` a `seleccion_de_ejercicios` para asignar un peso diferente por cada serie del ejercicio. Si es `null`, todas las series usan el valor de `peso_kg`.
 
 **Migración 0050:** Reemplaza constraint `ck_perfil_objetivo` por `ck_perfil_objetivo_estandar` que acepta los 7 valores de `finalidadesEstandar`.
+
+**Migración 0020 (`20260626000020_valor_met_ejercicios.sql`):** Añade columna `valor_met DOUBLE PRECISION NOT NULL DEFAULT 6.0` a `ejercicios` y recrea `v_ejercicios_completos` para exponer el coeficiente MET del Compendio de Adultos 2024. Esto permite al `CalorieCalculatorService` estimar el gasto calórico con precisión científica.
+
+**Migración 0021 (`20260626000021_duracion_real.sql`):** Renombra `duracion_segundos` → `duracion_objetivo_segundos` y añade `duracion_real_segundos INTEGER` en `seleccion_de_ejercicios` para soportar la dualidad planificación vs ejecución real. La duración real se captura vía sistema de laps por timestamp en `sesion_en_vivo_screen.dart`.
+
+**Ampliación del CHECK de `tipo` en `sesiones_registradas`:** Se añadió `'reto'` como valor válido para registrar sesiones transaccionales de retos fitness completados, permitiendo que las calorías de retos contribuyan al total acumulado del perfil de actividad.
 
 **Clasificación automática en la migración base:** La migración `202606060049_esquema_base.sql` incluye la clasificación de finalidad para los 909 ejercicios:
 - **Cardio:** músculo objetivo `cardiovascular` en ExerciseDB, o nombre contiene palabras clave (correr, nadar, bicicleta, saltar, burpees, etc.)
@@ -822,7 +832,8 @@ CREATE TABLE seleccion_de_ejercicios (
   repeticiones INT NOT NULL DEFAULT 10,
   segundos_descanso INT NOT NULL DEFAULT 90,
   indice_orden INT NOT NULL,
-  duracion_segundos INT,
+  duracion_objetivo_segundos INT,
+  duracion_real_segundos INT,
   distancia_metros INT,
   tiempo_isometrico_segundos INT,
   pesos_kg JSONB,  -- Arreglo JSON con peso de cada serie, ej: [50.0, 52.5, 55.0]. Si null, usa peso_kg.
@@ -1023,7 +1034,7 @@ CREATE TABLE sesiones_registradas (
   calorias_quemadas DOUBLE PRECISION,
   rpe INT CHECK (rpe BETWEEN 1 AND 10),
   tipo TEXT NOT NULL DEFAULT 'libre'
-    CHECK (tipo IN ('libre', 'rutina', 'semanal')),
+    CHECK (tipo IN ('libre', 'rutina', 'semanal', 'reto')),
   
   completada_en TIMESTAMP NOT NULL,
   creado_en TIMESTAMP DEFAULT now(),
@@ -2759,8 +2770,9 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ---
 
-**Documento compilado:** 15-06-2026
-**Versión:** 5.5
-**Referencia:** RFC v5.1 - Motor de Recomendaciones (Fases 0-10), Pipeline Académico v5.0, Sprint 7 — Retos Complejos y Sincronización Offline, Migración 0004 — Consolidación de Correcciones, Fase 3 — Panel de Administración (wipe_user_data + delete_user + admin_auditoria + v_admin_metricas + moderación)
+**Documento compilado:** 27-06-2026
+**Versión:** 5.8
+**Referencia:** RFC v5.1 - Motor de Recomendaciones, Pipeline Académico v5.0, Sprint 7 - Retos Complejos y Sincronización Offline, Migración 0004 - Consolidación de Correcciones, Fase 3 - Panel de Administración, Migración 0020 - valor_met (MET Compendio Adultos 2024), Migración 0021 - dualidad planificación vs ejecución real.
 **Validador:** Tech Lead + DBA
+
 

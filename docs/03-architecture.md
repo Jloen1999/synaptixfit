@@ -1,8 +1,8 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 5.2
+**Versión:** 5.3
 **Estado:** APROBADO
-**Fecha:** 21-06-2026
+**Fecha:** 27-06-2026
 **Autor:** Arquitectura
 **Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.4)
 
@@ -129,12 +129,12 @@ synaptixfit/
 │       │       └── shell_route.dart        # StatefulShellRoute (5 tabs)
 │       ├── shared/
 │       │   ├── models/
-│       │   │   └── db_models.dart          # 42+ modelos (~2330 líneas, incl. AsignaturaUsuarioSemestreDb)
+│       │   │   └── db_models.dart          # 42+ modelos (~2515 líneas, incl. EjercicioDb con valorMet, SeleccionEjercicioDb con duracionObjetivoSegundos/duracionRealSegundos, AsignaturaUsuarioSemestreDb)
 │       │   ├── utils/
 │       │   │   └── string_utils.dart       # ★ finalidadesEstandar + sanitizarObjetivo() (Fase 0)
 │       │   └── widgets/
 │       │       ├── metric_gauge.dart        # ★ Gauge radial animado (248 líneas)
-│       │       └── exercise_metrics.dart    # ★ SemanticMicroChip, ExerciseMetricsRow, ExerciseMetricCategoria
+│       │       └── exercise_metrics.dart    # ★ SemanticMicroChip, ExerciseMetricsRow, SemantiCalorieChip, buildCalorieChip(), ExerciseMetricCategoria
 │       ├── features/
 │       │   ├── auth/                       # Login, registro, onboarding
 │       │   │   └── infrastructure/
@@ -145,6 +145,7 @@ synaptixfit/
 │       │   ├── bienestar/
 │       │   │   ├── infrastructure/
 │       │   │   │   ├── recomendacion_ia_service.dart        # ★ IA (1357 líneas) + refinarRutina() (Fase 6)
+│       │   │   │   ├── calorie_calculator_service.dart       # ★ Cálculo calórico MET (116 líneas, Compendio Adultos 2024)
 │       │   │   │   ├── recomendacion_reglas_service.dart    # ★ Motor de reglas determinista (Fase 2, 710 líneas)
 │       │   │   │   ├── recomendacion_contexto_service.dart  # ★ Capa de contexto academia+fisiología (Fase 3, 381 líneas)
 │       │   │   │   ├── recomendacion_orquestador_service.dart # ★ Orquestador del pipeline (Fase 8, 412 líneas)
@@ -154,7 +155,7 @@ synaptixfit/
 │       │   │   │   ├── feedback_engine.dart                 # ★ Feedback post-sesión (Fase 7, 130 líneas)
 │       │   │   │   └── ejercicios_repository.dart
 │       │   │   └── application/
-│       │   │       ├── rutina_provider.dart                 # ★ 50+ providers incl. académicos y energéticos (1678 líneas)
+│       │   │       ├── rutina_provider.dart                 # ★ 50+ providers incl. académicos y energéticos (~1912 líneas, finalizarSesion con duracionRealPorEjercicio, EjercicioInput con duracionObjetivoSegundos/duracionRealSegundos)
 │       │   │       ├── ejercicios_provider.dart
 │       │   │       └── sesion_provider.dart
 │       │   ├── social/                     # Muro, likes, comentarios
@@ -178,11 +179,12 @@ synaptixfit/
 │       │       └── presentation/            # AdminHubScreen (TabBar 5 tabs) + 15 widgets/pantallas (KPI, usuarios, contenido, ejercicios, logs, gráficos, timeline, paginación)
 │       └── main.dart                       # Entry point, ProviderScope, Supabase.init
 ├── supabase/
-│   ├── migrations/                         # 38 archivos de migración (0049 esquema base + 37 posteriores)
+│   ├── migrations/                         # 47 archivos de migración (0049 esquema base + 46 posteriores)
 │   └── seed_catalogo_v2.py                 # Seeding del catálogo académico v2 desde grados.json
 ├── cloudflare/
 │   └── synaptixfit-r2-proxy/
-│       └── worker.js                       # Proxy R2 con CORS
+│       ├── worker.js                       # Proxy R2 con CORS (GET, PUT, DELETE) + ICS proxy
+│       └── wrangler.jsonc                  # Config Wrangler CLI: binding R2_BUCKET + observability
 ├── migraciones_pendientes.sql              # SQL consolidado para deploy manual
 └── .env                                    # Variables de entorno (Supabase, Gemini, R2, Google OAuth)
 ```
@@ -1147,6 +1149,6 @@ La migración `20260617000011_timeblocking.sql` (Sprint Time-Blocking) contiene:
 
 ---
 
-**Documento compilado:** 17-06-2026
+**Documento compilado:** 27-06-2026
 **Versión:** 5.3
 **Clasificación:** PÚBLICO — Equipo jloen

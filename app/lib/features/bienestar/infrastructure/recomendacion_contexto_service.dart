@@ -283,7 +283,7 @@ class RecomendacionContextoService {
             segundosDescanso: nuevoDescanso,
             pesoKg: e.pesoKg,
             pesosKg: e.pesosKg,
-            duracionSegundos: e.duracionSegundos,
+            duracionObjetivoSegundos: e.duracionObjetivoSegundos,
             distanciaMetros: e.distanciaMetros,
             tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
           );
@@ -363,7 +363,7 @@ class RecomendacionContextoService {
                   repeticiones: 10,
                   segundosDescanso: 30,
                   pesoKg: null,
-                  duracionSegundos:
+                  duracionObjetivoSegundos:
                       movilidadPool.first.tipoMedicion.contains('tiempo')
                           ? 600
                           : null,

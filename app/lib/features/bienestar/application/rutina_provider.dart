@@ -12,6 +12,7 @@ import '../../perfil/application/perfil_provider.dart';
 import '../../academico/application/inbox_config_provider.dart';
 import '../domain/ejercicio_recomendado_dto.dart';
 import '../domain/historial_sesion_dto.dart';
+import '../infrastructure/calorie_calculator_service.dart';
 import '../infrastructure/parametros_objetivo.dart';
 import '../infrastructure/recomendacion_contexto_service.dart';
 import '../infrastructure/recomendacion_ia_service.dart';
@@ -576,8 +577,8 @@ Future<String> crearRutinaCompleta({
             'indice_orden': i + 1,
             if (e.pesoKg != null) 'peso_kg': e.pesoKg,
             if (e.pesosKg != null) 'pesos_kg': e.pesosKg,
-            if (e.duracionSegundos != null)
-              'duracion_segundos': e.duracionSegundos,
+            if (e.duracionObjetivoSegundos != null)
+              'duracion_objetivo_segundos': e.duracionObjetivoSegundos,
             if (e.distanciaMetros != null)
               'distancia_metros': e.distanciaMetros,
             if (e.tiempoIsometricoSegundos != null)
@@ -632,7 +633,7 @@ Future<void> agregarEjercicioADia({
   required int repeticiones,
   required int segundosDescanso,
   double? pesoKg,
-  int? duracionSegundos,
+  int? duracionObjetivoSegundos,
   int? distanciaMetros,
   int? tiempoIsometricoSegundos,
   required WidgetRef ref,
@@ -647,7 +648,8 @@ Future<void> agregarEjercicioADia({
     'segundos_descanso': segundosDescanso,
     'indice_orden': 99,
     if (pesoKg != null) 'peso_kg': pesoKg,
-    if (duracionSegundos != null) 'duracion_segundos': duracionSegundos,
+    if (duracionObjetivoSegundos != null)
+      'duracion_objetivo_segundos': duracionObjetivoSegundos,
     if (distanciaMetros != null) 'distancia_metros': distanciaMetros,
     if (tiempoIsometricoSegundos != null)
       'tiempo_isometrico_segundos': tiempoIsometricoSegundos,
@@ -825,12 +827,32 @@ Future<XpResultado?> finalizarSesion({
   required String rutinaId,
   required int duracionSegundos,
   required int rpe,
+  Map<String, int> duracionRealPorEjercicio = const {},
   required WidgetRef ref,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   final duracionMin = (duracionSegundos / 60).round().clamp(1, 99999);
-  final calorias = (duracionMin * rpe * 0.8).roundToDouble();
+
+  // ── Persistir duración real por ejercicio ─────────────────────────
+  for (final entry in duracionRealPorEjercicio.entries) {
+    if (entry.value > 0) {
+      await client.from('seleccion_de_ejercicios').update({
+        'duracion_real_segundos': entry.value,
+      }).eq('id', entry.key);
+    }
+  }
+
+  // ── Cálculo calórico basado en MET (usa duración real si existe) ──
+  final pesoKg = await _obtenerPesoUsuarioSesion(client);
+  final calorias = await _calcularCaloriasMetSesion(
+    client: client,
+    diaId: diaId,
+    pesoUsuarioKg: pesoKg,
+    duracionTotalSegundos: duracionSegundos,
+    duracionRealPorEjercicio: duracionRealPorEjercicio,
+  );
+  // ──────────────────────────────────────────────────────────────────
 
   await client.from('sesiones_registradas').update({
     'duracion_minutos': duracionMin,
@@ -842,6 +864,7 @@ Future<XpResultado?> finalizarSesion({
 
   ref.invalidate(diasDeSemanaProvider);
   ref.invalidate(semanasDeRutinaProvider(rutinaId));
+  ref.invalidate(perfilActividadProvider);
 
   if (user == null) return null;
 
@@ -886,7 +909,8 @@ class EjercicioInput {
     required this.segundosDescanso,
     this.pesoKg,
     this.pesosKg,
-    this.duracionSegundos,
+    this.duracionObjetivoSegundos,
+    this.duracionRealSegundos,
     this.distanciaMetros,
     this.tiempoIsometricoSegundos,
   });
@@ -896,7 +920,8 @@ class EjercicioInput {
   final int segundosDescanso;
   final double? pesoKg;
   final List<double>? pesosKg;
-  final int? duracionSegundos;
+  final int? duracionObjetivoSegundos;
+  final int? duracionRealSegundos;
   final int? distanciaMetros;
   final int? tiempoIsometricoSegundos;
 }
@@ -1786,4 +1811,102 @@ Future<void> actualizarNombreSemana(String semanaId, String nombre) async {
   await Supabase.instance.client
       .from('semanas_rutina')
       .update({'nombre': nombre}).eq('id', semanaId);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Helpers para cálculo calórico basado en MET
+// ───────────────────────────────────────────────────────────────────────────
+
+Future<double> _obtenerPesoUsuarioSesion(SupabaseClient client) async {
+  try {
+    final user = client.auth.currentUser;
+    if (user == null) return 70.0;
+    final row = await client
+        .from('perfil_bienestar_usuario')
+        .select('peso_kg')
+        .eq('usuario_id', user.id)
+        .maybeSingle();
+    final peso = (row?['peso_kg'] as num?)?.toDouble();
+    return peso ?? 70.0;
+  } catch (_) {
+    return 70.0;
+  }
+}
+
+Future<double> _calcularCaloriasMetSesion({
+  required SupabaseClient client,
+  required String diaId,
+  required double pesoUsuarioKg,
+  required int duracionTotalSegundos,
+  Map<String, int> duracionRealPorEjercicio = const {},
+}) async {
+  try {
+    final selecciones = await client
+        .from('seleccion_de_ejercicios')
+        .select(
+            'id, ejercicio_id, series, segundos_descanso, duracion_objetivo_segundos')
+        .eq('dia_id', diaId)
+        .order('indice_orden', ascending: true);
+
+    if ((selecciones as List).isEmpty) {
+      return CalorieCalculatorService.calcular(
+        valorMet: 6.0,
+        pesoUsuarioKg: pesoUsuarioKg,
+        duracionSegundos: duracionTotalSegundos,
+      );
+    }
+
+    final ejercicioIds =
+        (selecciones).map((s) => s['ejercicio_id'] as String).toSet().toList();
+
+    final ejerciciosData = await client
+        .from('v_ejercicios_completos')
+        .select('id, valor_met, modalidad_entrenamiento, es_circuito')
+        .inFilter('id', ejercicioIds);
+
+    final metPorEjercicio = <String, double>{};
+    for (final e in (ejerciciosData as List)) {
+      final id = e['id'] as String;
+      final met = CalorieCalculatorService.derivarMet(
+        valorMet: (e['valor_met'] as num?)?.toDouble(),
+        modalidad: (e['modalidad_entrenamiento'] as String?) ?? 'fuerza',
+        esCircuito: e['es_circuito'] == true,
+      );
+      metPorEjercicio[id] = met;
+    }
+
+    double totalKcal = 0;
+    for (final s in selecciones) {
+      final selId = s['id'] as String;
+      final eid = s['ejercicio_id'] as String;
+      final met = metPorEjercicio[eid] ?? 6.0;
+      final durReal = duracionRealPorEjercicio[selId];
+      final durObj = (s['duracion_objetivo_segundos'] as num?)?.toInt() ?? 0;
+      final dur = durReal ?? durObj;
+      final desc = (s['segundos_descanso'] as num?)?.toInt() ?? 0;
+      final series = (s['series'] as num?)?.toInt() ?? 1;
+
+      if (dur > 0) {
+        totalKcal += CalorieCalculatorService.calcular(
+          valorMet: met,
+          pesoUsuarioKg: pesoUsuarioKg,
+          duracionSegundos: dur * series,
+        );
+      }
+      if (desc > 0 && series > 1) {
+        totalKcal += CalorieCalculatorService.calcularDescanso(
+          pesoUsuarioKg: pesoUsuarioKg,
+          duracionSegundos: desc * (series - 1),
+        );
+      }
+    }
+
+    return totalKcal;
+  } catch (_) {
+    return CalorieCalculatorService.calcular(
+      valorMet: 6.0,
+      pesoUsuarioKg: pesoUsuarioKg,
+      duracionSegundos: duracionTotalSegundos,
+    );
+  }
 }

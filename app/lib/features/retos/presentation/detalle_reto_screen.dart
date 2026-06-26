@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/design_system/sv_colors.dart';
+import '../../../core/design_system/sv_shapes.dart';
 import '../../../shared/models/db_models.dart';
-import '../../../shared/widgets/challenge_progress_bar.dart';
-import '../../../shared/widgets/feature_scaffold.dart';
+import '../../../shared/widgets/exercise_metrics.dart';
+import '../../bienestar/infrastructure/calorie_calculator_service.dart';
+import '../../perfil/application/perfil_provider.dart';
 import '../application/retos_provider.dart';
-import 'widgets/grafo_dependencias.dart';
 
 class DetalleRetoScreen extends ConsumerWidget {
   const DetalleRetoScreen({required this.id, super.key});
@@ -38,237 +41,171 @@ class DetalleRetoScreen extends ConsumerWidget {
       }
     });
 
-    return detalleAsync.when(
-      loading: () => const FeatureScaffold(
-        title: 'Detalle de Reto',
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) => FeatureScaffold(
-        title: 'Detalle de Reto',
-        child: Center(child: Text('Error: $e')),
-      ),
-      data: (detalle) {
-        if (detalle == null) {
-          return const FeatureScaffold(
-            title: 'Detalle de Reto',
-            child: Center(child: Text('Reto no encontrado')),
-          );
-        }
+    return Scaffold(
+      backgroundColor: SVColors.background,
+      body: detalleAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(
+          child: Text('Error: $e',
+              style: const TextStyle(color: SVColors.onSurface)),
+        ),
+        data: (detalle) {
+          if (detalle == null) {
+            return const Center(
+              child: Text('Reto no encontrado',
+                  style: TextStyle(color: SVColors.onSurface)),
+            );
+          }
 
-        final esPropio = _esPropio(detalle.reto.usuarioId);
-        final completado = detalle.reto.estaCompletado;
+          final esPropio = _esPropio(detalle.reto.usuarioId);
+          final completado = detalle.reto.estaCompletado;
+          final tipoLabel =
+              detalle.reto.tipo == 'fitness' ? 'Fitness' : 'Académico';
+          final tipoColor = detalle.reto.tipo == 'fitness'
+              ? const Color(0xFF2E7D32)
+              : const Color(0xFF1976D2);
 
-        return FeatureScaffold(
-          title: detalle.reto.titulo,
-          backPath: '/retos',
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (completado)
-                Card(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle, color: Colors.green),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text('Reto completado',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.green)),
-                        ),
-                        if (esPropio)
-                          TextButton(
-                            onPressed: () async {
-                              await descompletarReto(id, ref);
-                            },
-                            child: const Text('Desmarcar'),
+          return SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _CabeceraPlana(
+                  titulo: detalle.reto.titulo,
+                  tipoLabel: tipoLabel,
+                  tipoColor: tipoColor,
+                  completado: completado,
+                  esPropio: esPropio,
+                  onVolver: () => context.pop(),
+                  onDesmarcar: esPropio && completado
+                      ? () async => await descompletarReto(id, ref)
+                      : null,
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    children: [
+                      const SizedBox(height: 10),
+                      if (detalle.hitos.isNotEmpty)
+                        _BarraProgresoPlana(progreso: detalle.progresoGeneral),
+                      if (detalle.hitos.isNotEmpty) const SizedBox(height: 6),
+                      if (detalle.reto.meta.isNotEmpty) ...[
+                        Text(
+                          detalle.reto.meta,
+                          style: const TextStyle(
+                            color: SVColors.onSurface,
+                            fontSize: 14,
+                            height: 1.4,
                           ),
-                      ],
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              _buildMetadataCard(context, detalle.reto),
-              if (detalle.reto.tieneDependencias &&
-                  detalle.hitos.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                _GrafoSection(retoId: id),
-              ],
-              const SizedBox(height: 8),
-              if (detalle.hitos.isNotEmpty) ...[
-                ChallengeProgressBar(
-                    progress: detalle.progresoGeneral,
-                    label: 'Progreso general'),
-              ] else ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.hourglass_empty,
-                              size: 16, color: Colors.grey),
-                          SizedBox(width: 6),
-                          Text('Pendiente',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Marca como completado cuando termines',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: Colors.grey),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 16),
-              if (!completado && esPropio)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.flag_outlined),
-                    label: const Text('Marcar como completado'),
-                    onPressed: () => _confirmarCompletar(context, ref),
-                  ),
-                ),
-              if (detalle.hitos.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text('Tareas', style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 8),
-                if (esPropio && !completado)
-                  _TareasOrdenables(
-                    hitos: detalle.hitos,
-                    retoId: id,
-                    onToggle: (hitoId, completada) async {
-                      await toggleTareaCompletada(hitoId, id,
-                          completada: completada, ref: ref);
-                    },
-                    onReorder: (ids) async {
-                      await reordenarTareas(id, ids, ref: ref);
-                    },
-                  )
-                else
-                  ...detalle.hitos.map((hito) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _TareaControl(
-                          hito: hito,
-                          editable: false,
-                          onToggle: (_) {},
                         ),
-                      )),
-              ],
-              if (!esPropio)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.copy),
-                    label: const Text('Clonar reto a mi perfil'),
-                    onPressed: () => _clonar(context, ref),
+                        const SizedBox(height: 12),
+                      ],
+                      _FilaMetadatos(
+                        inicio: detalle.reto.fechaInicio,
+                        fin: detalle.reto.fechaFin,
+                        visibilidad: detalle.reto.visibilidad,
+                      ),
+                      if (detalle.reto.tipo == 'fitness') ...[
+                        const SizedBox(height: 10),
+                        _FilaCaloriasEstimadas(
+                          hitos: detalle.hitos,
+                          completado: completado,
+                          pesoUsuarioKg: ref
+                              .watch(perfilUsuarioProvider)
+                              .valueOrNull
+                              ?.perfil
+                              .pesoKg,
+                        ),
+                      ],
+                      if (detalle.hitos.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            const Text(
+                              'Tareas',
+                              style: TextStyle(
+                                color: SVColors.onSurface,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${detalle.hitos.where((h) => h.estaCompletado).length} / ${detalle.hitos.length}',
+                              style: TextStyle(
+                                color: tipoColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        ...List.generate(detalle.hitos.length, (i) {
+                          final hito = detalle.hitos[i];
+                          return _TareaDeslizable(
+                            key: ValueKey(hito.id),
+                            hito: hito,
+                            color: tipoColor,
+                            editable: esPropio && !completado,
+                            onToggle: esPropio && !completado
+                                ? () async {
+                                    HapticFeedback.mediumImpact();
+                                    await toggleTareaCompletada(
+                                      hito.id,
+                                      id,
+                                      completada: !hito.estaCompletado,
+                                      ref: ref,
+                                    );
+                                  }
+                                : null,
+                          );
+                        }),
+                      ],
+                      if (!completado && esPropio) ...[
+                        const SizedBox(height: 20),
+                        FilledButton.icon(
+                          icon: const Icon(Icons.flag_outlined),
+                          label: const Text('Marcar como completado'),
+                          style: FilledButton.styleFrom(
+                            elevation: 0,
+                            backgroundColor: SVColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: const RoundedRectangleBorder(
+                                borderRadius: SVShapes.standard12),
+                          ),
+                          onPressed: () => _confirmarCompletar(context, ref),
+                        ),
+                      ],
+                      if (!esPropio) ...[
+                        const SizedBox(height: 20),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.copy),
+                          label: const Text('Clonar reto a mi perfil'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: SVColors.primary,
+                            side: BorderSide(
+                                color: SVColors.primary.withValues(alpha: 0.3)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: const RoundedRectangleBorder(
+                                borderRadius: SVShapes.standard12),
+                          ),
+                          onPressed: () => _clonar(context, ref),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
   bool _esPropio(String usuarioId) {
     final user = Supabase.instance.client.auth.currentUser;
     return user?.id == usuarioId;
-  }
-
-  static Widget _buildMetadataCard(BuildContext context, RetoDb reto) {
-    final tipoIcono = reto.tipo == 'fitness'
-        ? Icons.fitness_center_rounded
-        : Icons.school_rounded;
-    final tipoColor = reto.tipo == 'fitness' ? Colors.green : Colors.blue;
-    final tipoLabel = reto.tipo == 'fitness' ? 'Fitness' : 'Académico';
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(tipoIcono, size: 18, color: tipoColor),
-                const SizedBox(width: 6),
-                Text(tipoLabel,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, color: tipoColor)),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: reto.visibilidad == 'public'
-                        ? Colors.orange.withValues(alpha: 0.12)
-                        : Colors.grey.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    reto.visibilidad == 'public' ? 'Público' : 'Privado',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: reto.visibilidad == 'public'
-                          ? Colors.orange
-                          : Colors.grey,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (reto.meta.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(reto.meta, style: Theme.of(context).textTheme.bodyMedium),
-            ],
-            const Divider(height: 20),
-            Row(
-              children: [
-                _MetadataItem(
-                  icon: Icons.calendar_today,
-                  label: 'Inicio',
-                  value: DateFormat('dd/MM/yy').format(reto.fechaInicio),
-                ),
-                const SizedBox(width: 16),
-                _MetadataItem(
-                  icon: Icons.flag_outlined,
-                  label: 'Fin',
-                  value: DateFormat('dd/MM/yy').format(reto.fechaFin),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            _MetadataItem(
-              icon: Icons.edit_calendar_outlined,
-              label: 'Creado',
-              value: DateFormat('dd/MM/yy').format(reto.creadoEn),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _confirmarCompletar(BuildContext context, WidgetRef ref) {
@@ -306,137 +243,341 @@ class DetalleRetoScreen extends ConsumerWidget {
   }
 }
 
-class _TareasOrdenables extends StatefulWidget {
-  const _TareasOrdenables({
-    required this.hitos,
-    required this.retoId,
-    required this.onToggle,
-    required this.onReorder,
+class _CabeceraPlana extends StatelessWidget {
+  const _CabeceraPlana({
+    required this.titulo,
+    required this.tipoLabel,
+    required this.tipoColor,
+    required this.completado,
+    required this.esPropio,
+    required this.onVolver,
+    this.onDesmarcar,
   });
 
-  final List<HitoRetoDb> hitos;
-  final String retoId;
-  final Future<void> Function(String hitoId, bool completada) onToggle;
-  final Future<void> Function(List<String> idsOrdenados) onReorder;
-
-  @override
-  State<_TareasOrdenables> createState() => _TareasOrdenablesState();
-}
-
-class _TareasOrdenablesState extends State<_TareasOrdenables> {
-  late List<HitoRetoDb> _locales;
-  bool _reordenando = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _locales = List.from(widget.hitos);
-  }
-
-  @override
-  void didUpdateWidget(covariant _TareasOrdenables oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!_reordenando && oldWidget.hitos != widget.hitos) {
-      _locales = List.from(widget.hitos);
-    }
-  }
-
-  void _onReorder(int oldIndex, int newIndex) {
-    setState(() {
-      _reordenando = true;
-      if (newIndex > oldIndex) newIndex--;
-      final item = _locales.removeAt(oldIndex);
-      _locales.insert(newIndex, item);
-    });
-
-    widget.onReorder(_locales.map((h) => h.id).toList()).then((_) {
-      if (mounted) setState(() => _reordenando = false);
-    }).catchError((_) {
-      if (mounted) {
-        setState(() {
-          _reordenando = false;
-          _locales = List.from(widget.hitos);
-        });
-      }
-    });
-  }
+  final String titulo;
+  final String tipoLabel;
+  final Color tipoColor;
+  final bool completado;
+  final bool esPropio;
+  final VoidCallback onVolver;
+  final VoidCallback? onDesmarcar;
 
   @override
   Widget build(BuildContext context) {
-    return ReorderableListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _locales.length,
-      onReorder: _onReorder,
-      itemBuilder: (context, index) {
-        final hito = _locales[index];
-        return Padding(
-          key: ValueKey(hito.id),
-          padding: const EdgeInsets.only(bottom: 8),
-          child: _TareaControl(
-            hito: hito,
-            editable: true,
-            onToggle: (completada) {
-              widget.onToggle(hito.id, completada);
-            },
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 8, 12, 4),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: onVolver,
+            icon:
+                const Icon(Icons.arrow_back, color: SVColors.onSurfaceVariant),
+            tooltip: 'Volver',
           ),
-        );
-      },
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  titulo,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SVColors.onSurface,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: tipoColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        tipoLabel,
+                        style: TextStyle(
+                          color: tipoColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (completado) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Completado',
+                          style: TextStyle(
+                            color: Color(0xFF2E7D32),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (esPropio && completado && onDesmarcar != null)
+            TextButton(
+              onPressed: onDesmarcar,
+              child: const Text(
+                'Desmarcar',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
 
-class _TareaControl extends StatelessWidget {
-  const _TareaControl({
-    required this.hito,
-    required this.editable,
-    required this.onToggle,
-  });
+class _BarraProgresoPlana extends StatelessWidget {
+  const _BarraProgresoPlana({required this.progreso});
 
-  final HitoRetoDb hito;
-  final bool editable;
-  final ValueChanged<bool> onToggle;
+  final double progreso;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: editable ? () => onToggle(!hito.estaCompletado) : null,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(4)),
+          child: LinearProgressIndicator(
+            value: progreso,
+            minHeight: 6,
+            backgroundColor: SVColors.primary.withValues(alpha: 0.12),
+            valueColor: const AlwaysStoppedAnimation<Color>(SVColors.primary),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Progreso general: ${(progreso * 100).toStringAsFixed(0)}%',
+          style: TextStyle(
+            color: SVColors.primary.withValues(alpha: 0.7),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FilaMetadatos extends StatelessWidget {
+  const _FilaMetadatos({
+    required this.inicio,
+    required this.fin,
+    required this.visibilidad,
+  });
+
+  final DateTime inicio;
+  final DateTime fin;
+  final String visibilidad;
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = DateFormat('dd/MM/yy');
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: const BoxDecoration(
+        color: SVColors.surfaceContainerLowest,
+        borderRadius: SVShapes.standard12,
+      ),
+      child: Row(
+        children: [
+          _ItemMeta(
+              icono: Icons.calendar_today,
+              label: 'Inicio',
+              valor: fmt.format(inicio)),
+          const SizedBox(width: 20),
+          _ItemMeta(
+              icono: Icons.flag_outlined, label: 'Fin', valor: fmt.format(fin)),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: visibilidad == 'public'
+                  ? SVColors.accent.withValues(alpha: 0.12)
+                  : SVColors.outlineVariant.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              visibilidad == 'public' ? 'Público' : 'Privado',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: visibilidad == 'public'
+                    ? SVColors.accent
+                    : SVColors.onSurfaceMuted,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemMeta extends StatelessWidget {
+  const _ItemMeta({
+    required this.icono,
+    required this.label,
+    required this.valor,
+  });
+
+  final IconData icono;
+  final String label;
+  final String valor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icono, size: 14, color: SVColors.onSurfaceMuted),
+        const SizedBox(width: 4),
+        Text(
+          '$label: ',
+          style: const TextStyle(fontSize: 11, color: SVColors.onSurfaceMuted),
+        ),
+        Text(
+          valor,
+          style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: SVColors.onSurface),
+        ),
+      ],
+    );
+  }
+}
+
+class _TareaDeslizable extends StatefulWidget {
+  const _TareaDeslizable({
+    required this.hito,
+    required this.color,
+    required this.editable,
+    this.onToggle,
+    super.key,
+  });
+
+  final HitoRetoDb hito;
+  final Color color;
+  final bool editable;
+  final VoidCallback? onToggle;
+
+  @override
+  State<_TareaDeslizable> createState() => _TareaDeslizableState();
+}
+
+class _TareaDeslizableState extends State<_TareaDeslizable> {
+  static const _umbral = 60.0;
+  double _distanciaTotal = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final completado = widget.hito.estaCompletado;
+
+    return GestureDetector(
+      onTap: widget.editable ? widget.onToggle : null,
+      onHorizontalDragStart: (_) => _distanciaTotal = 0,
+      onHorizontalDragUpdate: (d) {
+        _distanciaTotal += d.delta.dx;
+        if (!widget.editable) return;
+        setState(() {});
+      },
+      onHorizontalDragEnd: (d) {
+        if (_distanciaTotal.abs() >= _umbral && widget.editable) {
+          widget.onToggle?.call();
+          HapticFeedback.mediumImpact();
+        }
+        _distanciaTotal = 0;
+        setState(() {});
+      },
+      child: AnimatedOpacity(
+        opacity: completado ? 0.4 : 1.0,
+        duration: const Duration(milliseconds: 250),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            color: _distanciaTotal.abs() / 200 > 0.05
+                ? const Color(0xFF2E7D32)
+                    .withValues(alpha: _distanciaTotal.abs() / 400)
+                : SVColors.surfaceContainerLowest,
+            borderRadius: SVShapes.standard12,
+          ),
           child: Row(
             children: [
-              Icon(
-                hito.estaCompletado
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
-                size: 22,
-                color:
-                    hito.estaCompletado ? Colors.green : Colors.grey.shade400,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  hito.titulo,
-                  style: TextStyle(
-                    fontSize: 14,
-                    decoration:
-                        hito.estaCompletado ? TextDecoration.lineThrough : null,
-                    color: hito.estaCompletado ? Colors.grey : null,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: completado ? widget.color : Colors.transparent,
+                  border: Border.all(
+                    color: completado ? widget.color : SVColors.outline,
+                    width: 2,
                   ),
                 ),
+                child: completado
+                    ? const Icon(Icons.check,
+                        size: 14, color: SVColors.onPrimary)
+                    : null,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.blueGrey.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(4),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.hito.titulo,
+                      style: TextStyle(
+                        color: completado
+                            ? SVColors.onSurfaceMuted
+                            : SVColors.onSurface,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        decoration:
+                            completado ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${widget.hito.porcentajePeso}% del total',
+                      style: TextStyle(
+                        color: completado
+                            ? SVColors.outline
+                            : SVColors.onSurfaceMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text('${hito.porcentajePeso}% del total',
-                    style:
-                        const TextStyle(fontSize: 10, color: Colors.blueGrey)),
               ),
+              if (widget.editable && !completado)
+                Icon(Icons.swipe_rounded,
+                    size: 14, color: SVColors.outline.withValues(alpha: 0.4)),
             ],
           ),
         ),
@@ -445,51 +586,66 @@ class _TareaControl extends StatelessWidget {
   }
 }
 
-class _MetadataItem extends StatelessWidget {
-  const _MetadataItem({
-    required this.icon,
-    required this.label,
-    required this.value,
+/// Chip de calorías estimadas para retos de tipo fitness.
+///
+/// Calcula el gasto calórico total iterando sobre los hitos (o el reto
+/// completo si no tiene hitos) usando la fórmula MET:
+///   Σ (MET × Peso × Tiempo) + Σ (1.5 × Peso × Descanso)
+///
+/// Si el reto no tiene hitos se estima una duración por defecto de 30 min.
+class _FilaCaloriasEstimadas extends StatelessWidget {
+  const _FilaCaloriasEstimadas({
+    required this.hitos,
+    required this.completado,
+    this.pesoUsuarioKg,
   });
 
-  final IconData icon;
-  final String label;
-  final String value;
+  final List<HitoRetoDb> hitos;
+  final bool completado;
+  final double? pesoUsuarioKg;
+
+  static double _metDesdeDificultad(String dificultad) => switch (dificultad) {
+        'alta' => 8.0,
+        'baja' => 3.0,
+        _ => 4.5, // media
+      };
+
+  static int _segundosDesdeDificultad(String dificultad) =>
+      switch (dificultad) {
+        'alta' => 1800, // 30 min
+        'baja' => 600, // 10 min
+        _ => 1200, // 20 min (media)
+      };
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Colors.grey),
-        const SizedBox(width: 4),
-        Text('$label: ',
-            style: const TextStyle(fontSize: 11, color: Colors.grey)),
-        Text(value,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
-      ],
-    );
-  }
-}
+    double totalKcal = 0;
 
-class _GrafoSection extends ConsumerWidget {
-  const _GrafoSection({required this.retoId});
+    if (hitos.isEmpty) {
+      totalKcal = CalorieCalculatorService.calcular(
+        valorMet: _metDesdeDificultad('media'),
+        pesoUsuarioKg: pesoUsuarioKg,
+        duracionSegundos: 1800, // 30 min por defecto
+      );
+    } else {
+      for (final hito in hitos) {
+        final met = _metDesdeDificultad(hito.dificultad);
+        final dur = _segundosDesdeDificultad(hito.dificultad);
+        totalKcal += CalorieCalculatorService.calcular(
+          valorMet: met,
+          pesoUsuarioKg: pesoUsuarioKg,
+          duracionSegundos: dur,
+        );
+        totalKcal += CalorieCalculatorService.calcularDescanso(
+          pesoUsuarioKg: pesoUsuarioKg,
+          duracionSegundos: 300, // 5 min de descanso entre tareas
+        );
+      }
+    }
 
-  final String retoId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final grafoAsync = ref.watch(grafoRetoProvider(retoId));
-    return grafoAsync.when(
-      loading: () => const SizedBox(
-        height: 60,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      ),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (grafo) {
-        if (grafo == null) return const SizedBox.shrink();
-        return GrafoDependencias(grafo: grafo);
-      },
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SemantiCalorieChip(calorias: totalKcal),
     );
   }
 }

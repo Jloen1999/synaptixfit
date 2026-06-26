@@ -47,6 +47,7 @@ class UsuarioDb {
     required this.xpTotal,
     required this.rachaActual,
     required this.rol,
+    this.nivelPrivacidad = 'privado',
     required this.creadoEn,
     required this.actualizadoEn,
   });
@@ -59,6 +60,7 @@ class UsuarioDb {
   final int xpTotal;
   final int rachaActual;
   final String rol;
+  final String nivelPrivacidad;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
@@ -72,6 +74,7 @@ class UsuarioDb {
       xpTotal: _parseInt(map['xp_total']),
       rachaActual: _parseInt(map['racha_actual']),
       rol: (map['rol'] as String?) ?? 'usuario',
+      nivelPrivacidad: (map['nivel_privacidad'] as String?) ?? 'privado',
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
     );
@@ -87,6 +90,7 @@ class UsuarioDb {
       'xp_total': xpTotal,
       'racha_actual': rachaActual,
       'rol': rol,
+      'nivel_privacidad': nivelPrivacidad,
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -166,6 +170,7 @@ class EjercicioDb {
     this.modalidadEntrenamiento = 'fuerza',
     this.tipoMedicion = const ['repeticiones'],
     this.esCircuito = false,
+    this.valorMet = 6.0,
     required this.creadoEn,
     required this.actualizadoEn,
   });
@@ -185,6 +190,7 @@ class EjercicioDb {
   final String modalidadEntrenamiento;
   final List<String> tipoMedicion;
   final bool esCircuito;
+  final double valorMet;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
@@ -221,6 +227,7 @@ class EjercicioDb {
         return v.isEmpty ? const ['repeticiones'] : v;
       }(),
       esCircuito: _parseBool(map['es_circuito']),
+      valorMet: (map['valor_met'] as num?)?.toDouble() ?? 6.0,
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(
         map['actualizado_en'],
@@ -238,6 +245,7 @@ class EjercicioDb {
       'dificultad': dificultad,
       'descripcion': descripcion,
       'finalidad': finalidad,
+      'valor_met': valorMet,
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -258,6 +266,9 @@ class RutinaDb {
     this.fechaInicio,
     required this.creadoEn,
     required this.actualizadoEn,
+    this.origenId,
+    this.origenPropietarioId,
+    this.origenPropietarioNombre,
   });
 
   final String id;
@@ -272,6 +283,12 @@ class RutinaDb {
   final DateTime? fechaInicio;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
+  final String? origenId;
+  final String? origenPropietarioId;
+  final String? origenPropietarioNombre;
+
+  /// True si esta rutina es una reutilización/clon de la rutina de otro usuario.
+  bool get esReutilizada => origenId != null;
 
   factory RutinaDb.fromMap(Map<String, dynamic> map) {
     return RutinaDb(
@@ -289,6 +306,9 @@ class RutinaDb {
           : null,
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
+      origenId: map['origen_id'] as String?,
+      origenPropietarioId: map['origen_propietario_id'] as String?,
+      origenPropietarioNombre: map['origen_propietario_nombre'] as String?,
     );
   }
 
@@ -306,6 +326,11 @@ class RutinaDb {
       if (fechaInicio != null) 'fecha_inicio': fechaInicio!.toIso8601String(),
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
+      if (origenId != null) 'origen_id': origenId,
+      if (origenPropietarioId != null)
+        'origen_propietario_id': origenPropietarioId,
+      if (origenPropietarioNombre != null)
+        'origen_propietario_nombre': origenPropietarioNombre,
     };
   }
 }
@@ -322,7 +347,8 @@ class SeleccionEjercicioDb {
     this.diaId,
     this.pesoKg,
     this.pesosKg,
-    this.duracionSegundos,
+    this.duracionObjetivoSegundos,
+    this.duracionRealSegundos,
     this.distanciaMetros,
     this.tiempoIsometricoSegundos,
   });
@@ -337,7 +363,8 @@ class SeleccionEjercicioDb {
   final String? diaId;
   final double? pesoKg;
   final List<double>? pesosKg;
-  final int? duracionSegundos;
+  final int? duracionObjetivoSegundos;
+  final int? duracionRealSegundos;
   final int? distanciaMetros;
   final int? tiempoIsometricoSegundos;
 
@@ -357,8 +384,11 @@ class SeleccionEjercicioDb {
               .map((e) => (e as num).toDouble())
               .toList()
           : null,
-      duracionSegundos: map['duracion_segundos'] != null
-          ? _parseInt(map['duracion_segundos'])
+      duracionObjetivoSegundos: map['duracion_objetivo_segundos'] != null
+          ? _parseInt(map['duracion_objetivo_segundos'])
+          : null,
+      duracionRealSegundos: map['duracion_real_segundos'] != null
+          ? _parseInt(map['duracion_real_segundos'])
           : null,
       distanciaMetros: map['distancia_metros'] != null
           ? _parseInt(map['distancia_metros'])
@@ -381,7 +411,10 @@ class SeleccionEjercicioDb {
       if (diaId != null) 'dia_id': diaId,
       if (pesoKg != null) 'peso_kg': pesoKg,
       if (pesosKg != null) 'pesos_kg': pesosKg,
-      if (duracionSegundos != null) 'duracion_segundos': duracionSegundos,
+      if (duracionObjetivoSegundos != null)
+        'duracion_objetivo_segundos': duracionObjetivoSegundos,
+      if (duracionRealSegundos != null)
+        'duracion_real_segundos': duracionRealSegundos,
       if (distanciaMetros != null) 'distancia_metros': distanciaMetros,
       if (tiempoIsometricoSegundos != null)
         'tiempo_isometrico_segundos': tiempoIsometricoSegundos,
@@ -462,6 +495,13 @@ class RetoDb {
     this.mejorRacha = 0,
     this.ultimoDiaActivo,
     this.tieneDependencias = false,
+    this.asignaturaId,
+    this.dificultad = 'media',
+    this.entidadVinculadaId,
+    this.entidadVinculadaTipo,
+    this.origenId,
+    this.origenPropietarioId,
+    this.origenPropietarioNombre,
   });
 
   final String id;
@@ -479,6 +519,16 @@ class RetoDb {
   final int mejorRacha;
   final DateTime? ultimoDiaActivo;
   final bool tieneDependencias;
+  final String? asignaturaId;
+  final String dificultad;
+  final String? entidadVinculadaId;
+  final String? entidadVinculadaTipo;
+  final String? origenId;
+  final String? origenPropietarioId;
+  final String? origenPropietarioNombre;
+
+  /// True si este reto es una reutilización/clon del reto de otro usuario.
+  bool get esReutilizado => origenId != null;
 
   factory RetoDb.fromMap(Map<String, dynamic> map) {
     return RetoDb(
@@ -499,6 +549,13 @@ class RetoDb {
           ? _parseDateTime(map['ultimo_dia_activo'])
           : null,
       tieneDependencias: _parseBool(map['tiene_dependencias']),
+      asignaturaId: map['asignatura_id'] as String?,
+      dificultad: (map['dificultad'] as String?) ?? 'media',
+      entidadVinculadaId: map['entidad_vinculada_id'] as String?,
+      entidadVinculadaTipo: map['entidad_vinculada_tipo'] as String?,
+      origenId: map['origen_id'] as String?,
+      origenPropietarioId: map['origen_propietario_id'] as String?,
+      origenPropietarioNombre: map['origen_propietario_nombre'] as String?,
     );
   }
 
@@ -520,6 +577,17 @@ class RetoDb {
       if (ultimoDiaActivo != null)
         'ultimo_dia_activo': ultimoDiaActivo!.toIso8601String(),
       'tiene_dependencias': tieneDependencias,
+      if (asignaturaId != null) 'asignatura_id': asignaturaId,
+      'dificultad': dificultad,
+      if (entidadVinculadaId != null)
+        'entidad_vinculada_id': entidadVinculadaId,
+      if (entidadVinculadaTipo != null)
+        'entidad_vinculada_tipo': entidadVinculadaTipo,
+      if (origenId != null) 'origen_id': origenId,
+      if (origenPropietarioId != null)
+        'origen_propietario_id': origenPropietarioId,
+      if (origenPropietarioNombre != null)
+        'origen_propietario_nombre': origenPropietarioNombre,
     };
   }
 }
@@ -537,6 +605,10 @@ class HitoRetoDb {
     this.dependencias = const [],
     this.tipoCondicion = 'AND',
     this.condicionN = 1,
+    this.asignaturaId,
+    this.dificultad = 'media',
+    this.entidadVinculadaId,
+    this.entidadVinculadaTipo,
   });
 
   final String id;
@@ -550,6 +622,10 @@ class HitoRetoDb {
   final List<String> dependencias;
   final String tipoCondicion;
   final int condicionN;
+  final String? asignaturaId;
+  final String dificultad;
+  final String? entidadVinculadaId;
+  final String? entidadVinculadaTipo;
 
   factory HitoRetoDb.fromMap(Map<String, dynamic> map) {
     final depsRaw = map['dependencias'];
@@ -580,6 +656,10 @@ class HitoRetoDb {
       dependencias: deps,
       tipoCondicion: (map['tipo_condicion'] as String?) ?? 'AND',
       condicionN: (map['condicion_n'] as num?)?.toInt() ?? 1,
+      asignaturaId: map['asignatura_id'] as String?,
+      dificultad: (map['dificultad'] as String?) ?? 'media',
+      entidadVinculadaId: map['entidad_vinculada_id'] as String?,
+      entidadVinculadaTipo: map['entidad_vinculada_tipo'] as String?,
     );
   }
 
@@ -596,6 +676,12 @@ class HitoRetoDb {
       'dependencias': dependencias,
       'tipo_condicion': tipoCondicion,
       'condicion_n': condicionN,
+      if (asignaturaId != null) 'asignatura_id': asignaturaId,
+      'dificultad': dificultad,
+      if (entidadVinculadaId != null)
+        'entidad_vinculada_id': entidadVinculadaId,
+      if (entidadVinculadaTipo != null)
+        'entidad_vinculada_tipo': entidadVinculadaTipo,
     };
   }
 }
@@ -714,6 +800,8 @@ class AsignaturaDb {
     this.catalogoAsignaturaId,
     required this.archivado,
     required this.creadoEn,
+    this.icsUrl,
+    this.ultimaSincronizacion,
   });
 
   final String id;
@@ -725,6 +813,8 @@ class AsignaturaDb {
   final String? catalogoAsignaturaId;
   final bool archivado;
   final DateTime creadoEn;
+  final String? icsUrl;
+  final DateTime? ultimaSincronizacion;
 
   AsignaturaDb copyWith({
     String? nombre,
@@ -733,6 +823,8 @@ class AsignaturaDb {
     String? docente,
     String? catalogoAsignaturaId,
     bool? archivado,
+    String? icsUrl,
+    DateTime? ultimaSincronizacion,
   }) {
     return AsignaturaDb(
       id: id,
@@ -744,6 +836,8 @@ class AsignaturaDb {
       catalogoAsignaturaId: catalogoAsignaturaId ?? this.catalogoAsignaturaId,
       archivado: archivado ?? this.archivado,
       creadoEn: creadoEn,
+      icsUrl: icsUrl ?? this.icsUrl,
+      ultimaSincronizacion: ultimaSincronizacion ?? this.ultimaSincronizacion,
     );
   }
 
@@ -758,6 +852,10 @@ class AsignaturaDb {
       catalogoAsignaturaId: map['catalogo_asignatura_id'] as String?,
       archivado: _parseBool(map['archivado']),
       creadoEn: _parseDateTime(map['creado_en']),
+      icsUrl: map['ics_url'] as String?,
+      ultimaSincronizacion: map['ultima_sincronizacion'] != null
+          ? _parseDateTime(map['ultima_sincronizacion'])
+          : null,
     );
   }
 
@@ -772,6 +870,9 @@ class AsignaturaDb {
       'archivado': archivado,
       'catalogo_asignatura_id': catalogoAsignaturaId,
       'creado_en': creadoEn.toIso8601String(),
+      if (icsUrl != null) 'ics_url': icsUrl,
+      if (ultimaSincronizacion != null)
+        'ultima_sincronizacion': ultimaSincronizacion!.toIso8601String(),
     };
   }
 }
@@ -793,6 +894,17 @@ class HorarioAcademicoDb {
     this.temas,
     this.completado = false,
     this.asistenciaRegistradaEn,
+    this.asignaturaNombre,
+    this.rutinaNombre,
+    this.esFijo = false,
+    this.diaSemana,
+    this.xpBloqueOtorgado = false,
+    this.retoId,
+    this.hitoId,
+    this.diaRutinaId,
+    this.semanaRutinaId,
+    this.esHitoInamovible = false,
+    this.icsUid,
   });
 
   final String id;
@@ -810,6 +922,17 @@ class HorarioAcademicoDb {
   final String? temas;
   final bool completado;
   final DateTime? asistenciaRegistradaEn;
+  final String? asignaturaNombre;
+  final String? rutinaNombre;
+  final bool esFijo;
+  final int? diaSemana;
+  final bool xpBloqueOtorgado;
+  final String? retoId;
+  final String? hitoId;
+  final String? diaRutinaId;
+  final String? semanaRutinaId;
+  final bool esHitoInamovible;
+  final String? icsUid;
 
   factory HorarioAcademicoDb.fromMap(Map<String, dynamic> map) {
     return HorarioAcademicoDb(
@@ -830,6 +953,21 @@ class HorarioAcademicoDb {
       asistenciaRegistradaEn: map['asistencia_registrada_en'] != null
           ? _parseDateTime(map['asistencia_registrada_en'])
           : null,
+      asignaturaNombre: map['asignaturas'] is Map
+          ? (map['asignaturas'] as Map)['nombre'] as String?
+          : null,
+      rutinaNombre: map['rutinas'] is Map
+          ? (map['rutinas'] as Map)['nombre'] as String?
+          : null,
+      esFijo: _parseBool(map['es_fijo']),
+      diaSemana: map['dia_semana'] as int?,
+      xpBloqueOtorgado: _parseBool(map['xp_bloque_otorgado']),
+      retoId: map['reto_id'] as String?,
+      hitoId: map['hito_id'] as String?,
+      diaRutinaId: map['dia_rutina_id'] as String?,
+      semanaRutinaId: map['semana_rutina_id'] as String?,
+      esHitoInamovible: _parseBool(map['es_hito_inamovible']),
+      icsUid: map['ics_uid'] as String?,
     );
   }
 
@@ -851,6 +989,8 @@ class HorarioAcademicoDb {
       'completado': completado,
       if (asistenciaRegistradaEn != null)
         'asistencia_registrada_en': asistenciaRegistradaEn!.toIso8601String(),
+      'es_hito_inamovible': esHitoInamovible,
+      if (icsUid != null) 'ics_uid': icsUid,
     };
   }
 }
@@ -952,7 +1092,7 @@ class PerfilBienestarDb {
     required this.objetivoPrincipal,
     required this.objetivos,
     required this.equipamientoDisponible,
-    required this.diasDisponiblesSemana,
+    this.diasDisponibles = const [1, 3, 5],
     required this.minutosPorSesion,
     required this.onboardingCompletado,
     required this.creadoEn,
@@ -971,8 +1111,12 @@ class PerfilBienestarDb {
   final String objetivoPrincipal;
   final List<String> objetivos;
   final List<String> equipamientoDisponible;
-  final int diasDisponiblesSemana;
+  final List<int> diasDisponibles;
   final int minutosPorSesion;
+
+  /// Getter computado para compatibilidad con código heredado.
+  /// Retorna la cantidad de días disponibles (length del array).
+  int get diasDisponiblesSemana => diasDisponibles.length;
   final bool onboardingCompletado;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
@@ -1001,8 +1145,8 @@ class PerfilBienestarDb {
           (map['objetivo_principal'] as String?) ?? 'fitness_general',
       objetivos: _parseStringList(map['objetivos']),
       equipamientoDisponible: _parseStringList(map['equipamiento_disponible']),
-      diasDisponiblesSemana:
-          _parseInt(map['dias_disponibles_semana'], fallback: 3),
+      diasDisponibles:
+          _parseIntList(map['dias_disponibles'], fallback: const [1, 3, 5]),
       minutosPorSesion: _parseInt(map['minutos_por_sesion'], fallback: 45),
       onboardingCompletado: _parseBool(map['onboarding_completado']),
       creadoEn: _parseDateTime(map['creado_en']),
@@ -1024,7 +1168,7 @@ class PerfilBienestarDb {
       'objetivo_principal': objetivoPrincipal,
       'objetivos': objetivos,
       'equipamiento_disponible': equipamientoDisponible,
-      'dias_disponibles_semana': diasDisponiblesSemana,
+      'dias_disponibles': diasDisponibles,
       'minutos_por_sesion': minutosPorSesion,
       'onboarding_completado': onboardingCompletado,
       'creado_en': creadoEn.toIso8601String(),
@@ -1040,7 +1184,7 @@ class PerfilBienestarDb {
     String? objetivoPrincipal,
     List<String>? objetivos,
     List<String>? equipamientoDisponible,
-    int? diasDisponiblesSemana,
+    List<int>? diasDisponibles,
     int? minutosPorSesion,
     bool? onboardingCompletado,
     int? edad,
@@ -1060,8 +1204,7 @@ class PerfilBienestarDb {
       objetivos: objetivos ?? this.objetivos,
       equipamientoDisponible:
           equipamientoDisponible ?? this.equipamientoDisponible,
-      diasDisponiblesSemana:
-          diasDisponiblesSemana ?? this.diasDisponiblesSemana,
+      diasDisponibles: diasDisponibles ?? this.diasDisponibles,
       minutosPorSesion: minutosPorSesion ?? this.minutosPorSesion,
       onboardingCompletado: onboardingCompletado ?? this.onboardingCompletado,
       creadoEn: creadoEn,
@@ -1201,6 +1344,8 @@ class PerfilAcademicoDb {
     required this.creditosSemestreActual,
     required this.horasObjetivoEstudioSemana,
     this.promedioObjetivo,
+    this.fechaInicioClases,
+    this.fechaFinClases,
     required this.creadoEn,
     required this.actualizadoEn,
   });
@@ -1214,11 +1359,18 @@ class PerfilAcademicoDb {
   final int creditosSemestreActual;
   final int horasObjetivoEstudioSemana;
   final double? promedioObjetivo;
+  final DateTime? fechaInicioClases;
+  final DateTime? fechaFinClases;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
 
   int get cursoActual => ((semestreActual - 1) ~/ 2) + 1;
   int get semestreEnCurso => ((semestreActual - 1) % 2) + 1;
+
+  /// Indica si el semestre tiene configuradas las fechas de inicio y fin de
+  /// clases, necesarias para generar horarios a partir de un patrón semanal.
+  bool get tieneFechasSemestre =>
+      fechaInicioClases != null && fechaFinClases != null;
 
   factory PerfilAcademicoDb.fromMap(Map<String, dynamic> map) {
     return PerfilAcademicoDb(
@@ -1234,6 +1386,12 @@ class PerfilAcademicoDb {
           _parseInt(map['horas_objetivo_estudio_semana'], fallback: 14),
       promedioObjetivo: map['promedio_objetivo'] != null
           ? _parseDouble(map['promedio_objetivo'])
+          : null,
+      fechaInicioClases: map['fecha_inicio_clases'] != null
+          ? _parseDateTime(map['fecha_inicio_clases'])
+          : null,
+      fechaFinClases: map['fecha_fin_clases'] != null
+          ? _parseDateTime(map['fecha_fin_clases'])
           : null,
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
@@ -1251,6 +1409,9 @@ class PerfilAcademicoDb {
       'creditos_semestre_actual': creditosSemestreActual,
       'horas_objetivo_estudio_semana': horasObjetivoEstudioSemana,
       'promedio_objetivo': promedioObjetivo,
+      'fecha_inicio_clases':
+          fechaInicioClases?.toIso8601String().split('T').first,
+      'fecha_fin_clases': fechaFinClases?.toIso8601String().split('T').first,
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
     };
@@ -1537,6 +1698,7 @@ class EntregaExamenDb {
     this.planEstudioId,
     required this.creadoEn,
     required this.actualizadoEn,
+    this.icsUid,
   });
 
   final String id;
@@ -1550,6 +1712,7 @@ class EntregaExamenDb {
   final String? planEstudioId;
   final DateTime creadoEn;
   final DateTime actualizadoEn;
+  final String? icsUid;
 
   factory EntregaExamenDb.fromMap(Map<String, dynamic> map) {
     return EntregaExamenDb(
@@ -1564,6 +1727,7 @@ class EntregaExamenDb {
       planEstudioId: map['plan_estudio_id'] as String?,
       creadoEn: _parseDateTime(map['creado_en']),
       actualizadoEn: _parseDateTime(map['actualizado_en']),
+      icsUid: map['ics_uid'] as String?,
     );
   }
 
@@ -1580,6 +1744,7 @@ class EntregaExamenDb {
       if (planEstudioId != null) 'plan_estudio_id': planEstudioId,
       'creado_en': creadoEn.toIso8601String(),
       'actualizado_en': actualizadoEn.toIso8601String(),
+      if (icsUid != null) 'ics_uid': icsUid,
     };
   }
 }
@@ -2016,6 +2181,26 @@ List<String> _parseStringList(dynamic value) {
     return trimmed.split(',').map((e) => e.trim()).toList();
   }
   return [];
+}
+
+/// Parsea un array de enteros desde Postgres (integer[]), JSON o String '{1,2,3}'.
+List<int> _parseIntList(dynamic value, {List<int> fallback = const []}) {
+  if (value is List) {
+    return value
+        .map((e) => e is int ? e : int.tryParse('$e') ?? 0)
+        .where((e) => e > 0)
+        .toList();
+  }
+  if (value is String) {
+    final trimmed = value.replaceAll(RegExp(r'^\{|\}$'), '');
+    if (trimmed.isEmpty) return fallback;
+    return trimmed
+        .split(',')
+        .map((e) => int.tryParse(e.trim()) ?? 0)
+        .where((e) => e > 0)
+        .toList();
+  }
+  return fallback;
 }
 
 List<String> _parseFinalidad(dynamic value) {

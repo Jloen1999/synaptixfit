@@ -15,7 +15,7 @@ const _tamanoPagina = 50;
 const _columnasEjercicio = 'id,nombre,url_gif,url_preview,instrucciones,'
     'dificultad,descripcion,finalidad,modalidad_entrenamiento,'
     'tipo_medicion,es_circuito,partes_cuerpo,musculos_objetivo,'
-    'musculos_secundarios,equipamientos,creado_en';
+    'musculos_secundarios,equipamientos,valor_met,creado_en';
 
 class EjerciciosRepository {
   EjerciciosRepository(this._client);

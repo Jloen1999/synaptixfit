@@ -374,15 +374,19 @@ class RecomendacionReglasService {
     final userEquip = perfil.equipamientoDisponible
         .map((e) => e.toLowerCase().trim().replaceAll('_', ' '))
         .toSet();
-    if (userEquip.contains('sin equipamiento') ||
-        userEquip.contains('peso corporal') ||
-        userEquip.contains('peso_corporal')) {
-      return true;
-    }
+    // Si el ejercicio no requiere equipamiento, es compatible con cualquier usuario
     if (ejercicio.equipamientos.isEmpty) return true;
-    return ejercicio.equipamientos.every((req) {
+    // Verificar que al menos un equipamiento del ejercicio es compatible con el usuario
+    return ejercicio.equipamientos.any((req) {
       final r = req.toLowerCase().trim();
-      return userEquip.contains(r) || r == 'suelo' || r == 'asistencia';
+      // peso corporal / sin equipamiento siempre son compatibles
+      if (r == 'peso corporal' ||
+          r == 'sin equipamiento' ||
+          r == 'suelo' ||
+          r == 'asistencia') {
+        return true;
+      }
+      return userEquip.contains(r);
     });
   }
 
@@ -590,7 +594,7 @@ class RecomendacionReglasService {
             segundosDescanso: e.segundosDescanso,
             pesoKg: e.pesoKg,
             pesosKg: e.pesosKg,
-            duracionSegundos: e.duracionSegundos,
+            duracionObjetivoSegundos: e.duracionObjetivoSegundos,
             distanciaMetros: e.distanciaMetros,
             tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
           );
@@ -623,7 +627,7 @@ class RecomendacionReglasService {
             repeticiones: params.repsDefault,
             segundosDescanso: params.descansoDefault,
             pesoKg: null,
-            duracionSegundos:
+            duracionObjetivoSegundos:
                 elegido.tipoMedicion.contains('tiempo') ? 600 : null,
             distanciaMetros:
                 elegido.tipoMedicion.contains('distancia') ? 1000 : null,
@@ -655,9 +659,9 @@ class RecomendacionReglasService {
         ejerciciosPorDia > 0 ? (minPorSesion * 60) ~/ ejerciciosPorDia : 600;
     final nivelFactor = 0.6 + nivel * 0.15;
 
-    int? duracionSegundos;
+    int? duracionObjetivoSegundos;
     if (usaTiempo && !esIsometrico) {
-      duracionSegundos =
+      duracionObjetivoSegundos =
           (timePerExerciseSec * 0.35 * nivelFactor).round().clamp(120, 3600);
     }
 
@@ -685,7 +689,7 @@ class RecomendacionReglasService {
       repeticiones: params.repsDefault,
       segundosDescanso: params.descansoDefault,
       pesoKg: pesoKg,
-      duracionSegundos: duracionSegundos,
+      duracionObjetivoSegundos: duracionObjetivoSegundos,
       distanciaMetros: distanciaMetros,
       tiempoIsometricoSegundos: tiempoIsometrico,
     );

@@ -295,7 +295,7 @@ class RecomendacionOrquestadorService {
                   repeticiones: e.repeticiones,
                   segundosDescanso: e.segundosDescanso,
                   pesoKg: e.pesoKg,
-                  duracionSegundos: e.duracionSegundos,
+                  duracionObjetivoSegundos: e.duracionObjetivoSegundos,
                   distanciaMetros: e.distanciaMetros,
                   tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
                 ))
@@ -318,7 +318,7 @@ class RecomendacionOrquestadorService {
                   repeticiones: e.repeticiones,
                   segundosDescanso: e.segundosDescanso,
                   pesoKg: e.pesoKg,
-                  duracionSegundos: e.duracionSegundos,
+                  duracionObjetivoSegundos: e.duracionObjetivoSegundos,
                   distanciaMetros: e.distanciaMetros,
                   tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
                 ))
@@ -400,7 +400,8 @@ class RecomendacionOrquestadorService {
             segundosDescanso: e.segundosDescanso,
             pesoKg: e.pesoKg,
             pesosKg: prevPesos,
-            duracionSegundos: e.duracionSegundos ?? preIa?.duracionSegundos,
+            duracionObjetivoSegundos:
+                e.duracionObjetivoSegundos ?? preIa?.duracionObjetivoSegundos,
             distanciaMetros: e.distanciaMetros ?? preIa?.distanciaMetros,
             tiempoIsometricoSegundos:
                 e.tiempoIsometricoSegundos ?? preIa?.tiempoIsometricoSegundos,

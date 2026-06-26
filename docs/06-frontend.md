@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit
-**Versión:** 7.1
-**Fecha:** 21-06-2026
+**Versión:** 7.2
+**Fecha:** 27-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -780,25 +780,29 @@ Cada campo de peso en la sesión en vivo se inicializa con el valor del array `p
 
 | Componente | Comportamiento |
 |------------|---------------|
-| **Cronómetro** | Se inicia automáticamente al entrar. Muestra `HH:MM:SS` en AppBar. |
+| **Cronómetro** | Se inicia automáticamente al entrar. Muestra `HH:MM:SS` en barra superior. |
+| **Timer Bar (`_buildTimerBar`)** | Barra fija debajo del AppBar mostrando el cronómetro principal + texto "Objetivo: HH:MM:SS" en gris tenue (calculado como suma de `duracionObjetivoSegundos` de todos los ejercicios del día). |
 | **Lista de ejercicios** | Cada ejercicio muestra sus series como filas con: checkbox circular, campo de peso (kg) editable, campo de reps editable. |
-| **Check de serie** | Al marcar completada → `registrarSerie()` + inicia cronómetro de descanso (90s). |
+| **Check de serie** | Al marcar completada → `registrarSerie()` + inicia cronómetro de descanso (90s). **También inicia el lap por timestamp** (`_lapStartTimes.putIfAbsent(seleccionId, DateTime.now())`). |
 | **Cronómetro de descanso** | Cuenta atrás visible. Botones: `+15s`, `-15s`, `Saltar`. Al llegar a 0, desaparece automáticamente. |
 | **Edición de peso/reps** | Campos editables inline durante la sesión. Se guardan en `series_sesion`. |
+| **Sistema de Laps por Timestamp** | `Map<String, DateTime> _lapStartTimes` registra el inicio de cada ejercicio. `_capturarLap(seleccionId)` calcula `DateTime.now().difference()` y acumula en `_duracionRealMap`. Los laps se capturan al marcar series y al finalizar sesión. **Inmune a backgrounding** (usa timestamps absolutos, no un contador). |
 
 ### 6.3 Diálogo de Finalización
 
 Al pulsar "Finalizar sesión":
-1. Muestra duración total en formato legible (ej: "45 min 30 s")
-2. **Slider RPE** (1-10): Rate of Perceived Exertion
-3. **ChoiceChips de persistencia:**
+1. Captura todos los laps abiertos (`for (final id in _lapStartTimes.keys) _capturarLap(id)`)
+2. Muestra duración total en formato legible (ej: "45 min 30 s")
+3. **Slider RPE** (1-10): Rate of Perceived Exertion
+4. **ChoiceChips de persistencia:**
    - "Solo hoy": los cambios de peso/reps NO se guardan en `seleccion_de_ejercicios` (solo en `series_sesion`)
    - "Para siempre": los cambios de peso/reps SÍ se actualizan en `seleccion_de_ejercicios` para futuras sesiones
-4. Al confirmar → `finalizarSesion()` actualiza `sesiones_registradas` (duración, RPE, calorías), calcula XP (`50 + min(duraciónMin, 90) + rpe × 5`), llama `otorgarXp()` y retorna `XpResultado?`.
-5. **NUEVO v5.2 — Feedback de XP:** Tras finalizar, se muestra SnackBar:
+5. Al confirmar → `finalizarSesion()` recibe `duracionRealPorEjercicio: Map<String, int>` (desde `_duracionRealMap`) que persiste `duracion_real_segundos` en `seleccion_de_ejercicios`. Además actualiza `sesiones_registradas` (duración, RPE, calorías), calcula XP (`50 + min(duraciónMin, 90) + rpe × 5`), llama `otorgarXp()` y retorna `XpResultado?`.
+6. **Cálculo calórico en la sesión:** usa `duracionRealSegundos` cuando existe (dato real medido), fallback a `duracionObjetivoSegundos` (proyección planificada).
+7. **NUEVO v5.2 — Feedback de XP:** Tras finalizar, se muestra SnackBar:
    - **Sin level-up:** `"+130 XP 🔥"` (duración 2s)
    - **Con level-up:** `"¡Subiste a nivel 5! 🎉 +130 XP"` (duración 3s)
-6. Navegación de vuelta a `RutinaDetalleScreen`
+8. Navegación de vuelta a `RutinaDetalleScreen`
 
 **Cambio en navegación post "Completar rutina":**
 - Desde `RutinaDetalleScreen`, el botón "Completar rutina" ahora navega a `context.go('/bienestar')` (vuelve a la lista principal), en lugar de permanecer en la misma pantalla.
@@ -1086,6 +1090,61 @@ Los siguientes KPIs fueron eliminados del dashboard por ser métricas sin datos 
 - **Badge 🔥 del `_SaludoCard`** — eliminado (ahora solo muestra nivel + XP con punto de energía)
 
 **KPI "Calorías hoy"** ahora se oculta cuando `calorias == 0` (antes siempre visible con valor 0, mostrando una métrica vacía).
+
+### 8.0.2 Widgets de Métricas de Ejercicio (`exercise_metrics.dart`)
+
+**Archivo:** `app/lib/shared/widgets/exercise_metrics.dart` (~346 líneas)
+
+**`SemantiCalorieChip`:** Chip de calorías con icono de fuego:
+- **Modo real:** fondo naranja al 15% con `Icon(Icons.local_fire_department)` y texto `"N kcal"`.
+- **Modo estimado:** fondo gris al 12% con texto `"~N kcal (est.)"` para proyecciones.
+- Parámetros: `calorias` (double?), `esEstimado` (bool), `dense` (bool para modo compacto).
+- Si calorías es null o ≤ 0, no se renderiza (`SizedBox.shrink()`).
+
+**`buildCalorieChip()`:** Función helper que calcula calorías usando `CalorieCalculatorService`:
+- Parámetros: `valorMet`, `pesoUsuarioKg`, `duracionSegundos`, `duracionRealSegundos` (opcional), `modalidad`, `esCircuito`, `dense`.
+- Si `duracionRealSegundos` está presente, se usa para el cálculo real (chip naranja sólido).
+- Si solo hay `duracionSegundos`, se usa como proyección con sufijo `(est.)` (chip gris).
+- Usa `CalorieCalculatorService.derivarMet()` para obtener el MET si no se proporciona.
+- Delega en `SemantiCalorieChip`.
+
+**`SemanticMicroChip`:** Chip semántico genérico con icono, etiqueta y color contextual.
+**`ExerciseMetricsRow`:** Fila de chips semánticos que visualiza métricas de un ejercicio (ya NO muestra duración/distancia/isométrico — estas métricas se movieron a chips independientes).
+**`ExerciseMetricCategoria`:** Enum con factory `desdeModalidad()` y `desdeFinalidad()` para clasificar métricas.
+
+**Aplicado en:** `nueva_rutina_screen.dart`, `rutina_detalle_screen.dart`, `sesion_en_vivo_screen.dart`, `rutinas_comunidad_screen.dart`, `detalle_reto_screen.dart`.
+
+### 8.0.3 Servicio de Cálculo Calórico (`CalorieCalculatorService`)
+
+**Archivo:** `app/lib/features/bienestar/infrastructure/calorie_calculator_service.dart` (~116 líneas)
+
+Implementa la fórmula científica estándar del Compendio de Adultos 2024:
+
+```
+calorías = valorMet × pesoUsuarioKg × (duracionSegundos / 3600)
+```
+
+**Métodos estáticos:**
+
+| Método | Propósito | Parámetros clave |
+|--------|-----------|-----------------|
+| `calcular()` | Calorías para un bloque de ejercicio | `valorMet`, `pesoUsuarioKg?`, `duracionSegundos` |
+| `calcularDescanso()` | Calorías en descanso (MET 1.5) | `pesoUsuarioKg?`, `duracionSegundos` |
+| `calcularTotal()` | Gasto calórico de lista de bloques con descansos | `pesoUsuarioKg?`, `bloques: List<Map>` |
+| `derivarMet()` | Obtiene MET desde catálogo o deriva por modalidad | `valorMet?`, `modalidad`, `esCircuito` |
+| `redondear()` | Convierte a entero para UI | `calorias` (double) |
+
+**Valores MET por defecto (derivados):**
+
+| Modalidad | MET | Uso típico |
+|-----------|-----|-----------|
+| `movilidad` | 2.3 | Flexibilidad, yoga, estiramientos |
+| `fuerza` (default) | 6.0 | Ejercicios de fuerza general |
+| `metabolica` | 8.0 | Circuitos, HIIT, cross-training |
+| `aerobica` | 8.3 | Cardio, running, cycling |
+| Circuito (`esCircuito`) | 8.0 | Anula la modalidad |
+
+**Fallback de peso:** Si `pesoUsuarioKg` es null o ≤ 0, se usa 70.0 kg con warning en consola (sin bloquear la UI).
 
 **Grid de KPIs dinámico** (`_buildKpiGrid` en `dashboard_screen.dart:312`):
 - `crossAxisCount` ahora es `children.length.clamp(1, 2)` en vez de un valor fijo
@@ -2693,6 +2752,6 @@ Tras guardar la semana desde el canvas:
 
 ---
 
-**Documento compilado:** 18-06-2026
-**Última revisión:** v7.1 — §21.6.5 añadida: `AcademicBlockSheet` con distribución de rutina integrada en pestaña Deporte. §21.6.3 `TimeBlockWidget` actualizado con indicador visual de rutina (barra blanca + nombre del día + nombre de rutina). CanvasScreen: confirmada eliminación del botón "Rutina" independiente (barra inferior solo "← Volver" y "Guardar plan").
+**Documento compilado:** 27-06-2026
+**Última revisión:** v7.2 — Añadido §8.0.2 (calorie chips: SemantiCalorieChip, buildCalorieChip), §8.0.3 (CalorieCalculatorService), §6.2-6.3 actualizados (sistema de laps por timestamp, timer bar "Objetivo: HH:MM:SS", duracionRealPorEjercicio en finalizarSesion).
 **Referencia:** Alineado con SRS v5.2, Arquitectura v5.3, Plan Maestro v2.0

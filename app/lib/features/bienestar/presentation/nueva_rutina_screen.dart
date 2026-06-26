@@ -9,6 +9,7 @@ import '../../../core/config/env_config.dart';
 import '../../../core/design_system/sv_colors.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/exercise_media_widget.dart';
+import '../../../shared/widgets/exercise_metrics.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../application/ejercicios_provider.dart';
 import '../application/rutina_provider.dart';
@@ -32,7 +33,7 @@ class _EjercicioPlan {
     this.pesoKg,
     this.pesosKg,
     this.mismoPeso = true,
-    this.duracionSegundos,
+    this.duracionObjetivoSegundos,
     this.distanciaMetros,
     this.tiempoIsometricoSegundos,
   });
@@ -51,7 +52,7 @@ class _EjercicioPlan {
   final double? pesoKg;
   final List<double>? pesosKg;
   final bool mismoPeso;
-  final int? duracionSegundos;
+  final int? duracionObjetivoSegundos;
   final int? distanciaMetros;
   final int? tiempoIsometricoSegundos;
 
@@ -62,7 +63,7 @@ class _EjercicioPlan {
     double? pesoKg,
     List<double>? pesosKg,
     bool? mismoPeso,
-    int? duracionSegundos,
+    int? duracionObjetivoSegundos,
     int? distanciaMetros,
     int? tiempoIsometricoSegundos,
   }) {
@@ -81,7 +82,8 @@ class _EjercicioPlan {
       pesoKg: pesoKg ?? this.pesoKg,
       pesosKg: pesosKg ?? this.pesosKg,
       mismoPeso: mismoPeso ?? this.mismoPeso,
-      duracionSegundos: duracionSegundos ?? this.duracionSegundos,
+      duracionObjetivoSegundos:
+          duracionObjetivoSegundos ?? this.duracionObjetivoSegundos,
       distanciaMetros: distanciaMetros ?? this.distanciaMetros,
       tiempoIsometricoSegundos:
           tiempoIsometricoSegundos ?? this.tiempoIsometricoSegundos,
@@ -96,7 +98,7 @@ class _EjercicioPlan {
       segundosDescanso: segundosDescanso,
       pesoKg: pesoKg,
       pesosKg: mismoPeso ? null : pesosKg,
-      duracionSegundos: duracionSegundos,
+      duracionObjetivoSegundos: duracionObjetivoSegundos,
       distanciaMetros: distanciaMetros,
       tiempoIsometricoSegundos: tiempoIsometricoSegundos,
     );
@@ -129,17 +131,22 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   String _visibilidad = 'private';
   String _objetivo = 'Hipertrofia Muscular';
   int _duracionSemanas = 4;
-  int _diasPorSemana = 3;
+  List<int> _diasDisponibles = [1, 3, 5];
   DateTime _fechaInicio = DateTime.now();
 
   int _semanaActiva = 0;
   final Map<int, Map<int, List<_EjercicioPlan>>> _estructura = {};
+  final Map<int, String> _nombresSemanas = {};
+  final Map<int, Map<int, String>> _nombresDias = {};
+  bool _hayCambios = false;
 
   @override
   void initState() {
     super.initState();
     _inicializarEstructura();
     _cargarObjetivoPerfil();
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _cargarDisponibilidadPerfil());
     if (widget.autoRecomendar) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _recomendarRutina());
     }
@@ -153,11 +160,24 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
     }
   }
 
+  Future<void> _cargarDisponibilidadPerfil() async {
+    final perfil = await ref.read(perfilBienestarProvider.future);
+    if (perfil != null && perfil.diasDisponibles.isNotEmpty && mounted) {
+      setState(() {
+        _diasDisponibles = List.from(perfil.diasDisponibles);
+        _inicializarEstructura();
+      });
+    }
+  }
+
   void _inicializarEstructura() {
     _estructura.clear();
+    _nombresSemanas.clear();
+    _nombresDias.clear();
+    final dias = List<int>.from(_diasDisponibles)..sort();
     for (var s = 1; s <= _duracionSemanas; s++) {
       _estructura[s] = {};
-      for (var d = 1; d <= _diasPorSemana; d++) {
+      for (final d in dias) {
         _estructura[s]![d] = [];
       }
     }
@@ -166,13 +186,11 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   void _syncEstructura() {
     _estructura.removeWhere((s, _) => s > _duracionSemanas);
     for (var s = 1; s <= _duracionSemanas; s++) {
-      _estructura.putIfAbsent(s, () => {});
-    }
-    for (final s in _estructura.keys.toList()) {
-      final dias = _estructura[s]!;
-      dias.removeWhere((d, _) => d > _diasPorSemana);
-      for (var d = 1; d <= _diasPorSemana; d++) {
-        dias.putIfAbsent(d, () => []);
+      if (!_estructura.containsKey(s)) {
+        _estructura[s] = {};
+        for (final d in _diasDisponibles) {
+          _estructura[s]![d] = [];
+        }
       }
     }
   }
@@ -285,16 +303,84 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       onBack: () {
         if (_paso > 0) {
           setState(() => _paso--);
+        } else if (_hayCambios) {
+          _confirmarSalirSinGuardar();
         } else {
           context.go('/bienestar');
         }
       },
+      actions: [
+        if (_paso >= 1)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: _creando || (!_hayCambios && _paso != 2)
+                  ? null
+                  : _crearRutina,
+              icon: _creando
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.save_rounded, size: 16),
+              label: Text(
+                _creando ? '' : 'Guardar',
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+      ],
       child: _paso == 0
           ? _buildPaso1()
           : _paso == 1
               ? _buildPaso2()
               : _buildPaso3(),
     );
+  }
+
+  Future<void> _confirmarSalirSinGuardar() async {
+    final accion = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Guardar cambios?'),
+        content: const Text(
+          'Has añadido ejercicios a la rutina. ¿Quieres guardarla antes de salir?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'descartar'),
+            child: const Text('Descartar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'cancelar'),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'guardar'),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    switch (accion) {
+      case 'guardar':
+        _crearRutina();
+      case 'descartar':
+        context.go('/bienestar');
+      case 'cancelar':
+      case null:
+        break;
+    }
   }
 
   Widget _buildPantallaGeneracion(ThemeData theme) {
@@ -776,14 +862,45 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                   cs: cs,
                 ),
                 const SizedBox(height: 8),
-                _buildStepper(
-                  label: 'Días por semana',
-                  value: _diasPorSemana,
-                  min: 1,
-                  max: 7,
-                  suffix: 'días',
-                  onChanged: (v) => setState(() => _diasPorSemana = v),
-                  cs: cs,
+                Text(
+                  'Días de entrenamiento',
+                  style: theme.textTheme.labelLarge
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: List.generate(7, (i) {
+                    final dia = i + 1;
+                    const labels = [
+                      'Lun',
+                      'Mar',
+                      'Mié',
+                      'Jue',
+                      'Vie',
+                      'Sáb',
+                      'Dom'
+                    ];
+                    final selected = _diasDisponibles.contains(dia);
+                    return FilterChip(
+                      label:
+                          Text(labels[i], style: const TextStyle(fontSize: 12)),
+                      selected: selected,
+                      onSelected: (v) {
+                        setState(() {
+                          if (v) {
+                            _diasDisponibles.add(dia);
+                            _diasDisponibles.sort();
+                          } else {
+                            _diasDisponibles.remove(dia);
+                          }
+                          _syncEstructura();
+                        });
+                      },
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }),
                 ),
               ],
             ),
@@ -1017,10 +1134,19 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                       0;
                   return Row(mainAxisSize: MainAxisSize.min, children: [
                     ChoiceChip(
-                      label: Text('Sem $s ($totalEj)',
+                      label: Text(
+                          '${_nombresSemanas[s] ?? 'Sem $s'} ($totalEj)',
                           style: const TextStyle(fontSize: 12)),
                       selected: _semanaActiva == i,
                       onSelected: (_) => setState(() => _semanaActiva = i),
+                    ),
+                    InkWell(
+                      onTap: () => _editarNombreSemana(s),
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Padding(
+                          padding: EdgeInsets.all(2),
+                          child:
+                              Icon(Icons.edit, size: 14, color: Colors.grey)),
                     ),
                     if (semanas.length > 1)
                       InkWell(
@@ -1085,10 +1211,14 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                 objetivo: _objetivo,
                 canDelete: diasDeSemana.length > 1,
                 onDelete: () => _eliminarDia(semanaActual, diaNum),
-                onEjercicioAdded: (e) =>
-                    setState(() => _estructura[semanaActual]![diaNum]!.add(e)),
-                onEjercicioRemoved: (idx) => setState(
-                    () => _estructura[semanaActual]![diaNum]!.removeAt(idx)),
+                onEjercicioAdded: (e) => setState(() {
+                  _estructura[semanaActual]![diaNum]!.add(e);
+                  _hayCambios = true;
+                }),
+                onEjercicioRemoved: (idx) => setState(() {
+                  _estructura[semanaActual]![diaNum]!.removeAt(idx);
+                  _hayCambios = true;
+                }),
                 onEjercicioUpdated: (idx, e) => setState(
                     () => _estructura[semanaActual]![diaNum]![idx] = e),
                 onSugerirEjerciciosIA: EnvConfig.hasGeminiApiKey
@@ -1098,6 +1228,18 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                     ? 'Sugerir otros ejercicios'
                     : 'Sugerir ejercicios con IA',
                 loadingIA: _loadingIA,
+                nombre: _nombresDias[semanaActual]?[diaNum] ??
+                    const [
+                      '',
+                      'Lunes',
+                      'Martes',
+                      'Miércoles',
+                      'Jueves',
+                      'Viernes',
+                      'Sábado',
+                      'Domingo'
+                    ][diaNum],
+                onEditNombre: () => _editarNombreDia(semanaActual, diaNum),
               );
             },
           ),
@@ -1111,11 +1253,9 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         ? 0
         : _estructura.keys.reduce((a, b) => a > b ? a : b);
     final nuevaSemana = maxSemana + 1;
-    final dias = _estructura.values.firstOrNull;
-    final numDias = dias?.length ?? _diasPorSemana;
     setState(() {
       _estructura[nuevaSemana] = {};
-      for (var d = 1; d <= numDias; d++) {
+      for (final d in _diasDisponibles) {
         _estructura[nuevaSemana]![d] = [];
       }
       _duracionSemanas = _estructura.length;
@@ -1126,6 +1266,8 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   void _eliminarSemana(int semana) {
     setState(() {
       _estructura.remove(semana);
+      _nombresSemanas.remove(semana);
+      _nombresDias.remove(semana);
       _duracionSemanas = _estructura.length;
       if (_estructura.isEmpty) {
         _agregarSemana();
@@ -1137,17 +1279,135 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   }
 
   void _agregarDia(int semana) {
-    final dias = (_estructura[semana]?.keys.toList() ?? [])..sort();
-    final maxDia = dias.isEmpty ? 0 : dias.last;
-    setState(() {
-      _estructura[semana]![maxDia + 1] = [];
-    });
+    final diasExistentes = _estructura[semana]?.keys.toSet() ?? {};
+    final diasDisponiblesParaAgregar = List.generate(7, (i) => i + 1)
+        .where((d) => !diasExistentes.contains(d))
+        .toList();
+
+    if (diasDisponiblesParaAgregar.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ya tienes todos los días de la semana')),
+      );
+      return;
+    }
+
+    const labels = [
+      '',
+      'Lunes',
+      'Martes',
+      'Miércoles',
+      'Jueves',
+      'Viernes',
+      'Sábado',
+      'Domingo'
+    ];
+    showDialog(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Seleccionar día'),
+        children: diasDisponiblesParaAgregar
+            .map((d) => SimpleDialogOption(
+                  onPressed: () {
+                    setState(() {
+                      _estructura[semana]![d] = [];
+                    });
+                    Navigator.pop(ctx);
+                  },
+                  child: Text(labels[d]),
+                ))
+            .toList(),
+      ),
+    );
   }
 
   void _eliminarDia(int semana, int dia) {
     setState(() {
       _estructura[semana]!.remove(dia);
+      _nombresDias[semana]?.remove(dia);
+      _hayCambios = true;
     });
+  }
+
+  void _editarNombreSemana(int semana) {
+    final ctrl = TextEditingController(
+      text: _nombresSemanas[semana] ?? 'Semana $semana',
+    );
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Nombre de la semana'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Ej: Carga, Descarga, Adaptación...',
+            isDense: true,
+          ),
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final nombre = ctrl.text.trim();
+              setState(() {
+                if (nombre.isEmpty || nombre == 'Semana $semana') {
+                  _nombresSemanas.remove(semana);
+                } else {
+                  _nombresSemanas[semana] = nombre;
+                }
+              });
+              Navigator.pop(ctx);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editarNombreDia(int semana, int dia) {
+    final nombre = _nombresDias[semana]?[dia];
+    final ctrl = TextEditingController(text: nombre ?? 'Día $dia');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Nombre del día'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Ej: Torso, Pierna, Full Body...',
+            isDense: true,
+          ),
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = ctrl.text.trim();
+              setState(() {
+                _nombresDias.putIfAbsent(semana, () => {});
+                if (value.isEmpty || value == 'Día $dia') {
+                  _nombresDias[semana]!.remove(dia);
+                } else {
+                  _nombresDias[semana]![dia] = value;
+                }
+              });
+              Navigator.pop(ctx);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildPaso3() {
@@ -1461,8 +1721,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed:
-                _creando || semanasVacias.isNotEmpty ? null : _crearRutina,
+            onPressed: _creando || totalEjercicios == 0 ? null : _crearRutina,
             child: _creando
                 ? const SizedBox(
                     width: 18,
@@ -1472,13 +1731,25 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                 : const Text('Crear rutina'),
           )),
         ]),
-        if (semanasVacias.isNotEmpty)
+        if (totalEjercicios == 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Añade al menos un ejercicio antes de crear.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.w500),
+            ),
+          )
+        else if (semanasVacias.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               semanasVacias.length == 1
-                  ? 'Elimina o llena la Semana ${semanasVacias.first} antes de crear.'
-                  : 'Elimina o llena las semanas ${semanasVacias.join(", ")} antes de crear.',
+                  ? 'Las semanas vacías se omitirán al guardar.'
+                  : 'Las semanas ${semanasVacias.join(", ")} se omitirán al guardar.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 12,
@@ -1563,7 +1834,6 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   }
 
   Widget _buildExerciseSummaryRow(_EjercicioPlan e) {
-    final params = _buildParametrosEjercicio(e);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1602,74 +1872,31 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                   const SizedBox(width: 4),
                   _buildModalidadChip(e),
                 ]),
-                if (params.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(params,
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: ExerciseMetricsRow(
+                    dense: true,
+                    categoria: ExerciseMetricCategoriaResolver.desdeModalidad(
+                      e.modalidadEntrenamiento,
+                      tipoMedicion: e.tipoMedicion,
+                      esCircuito: e.esCircuito,
+                    ),
+                    series: e.series,
+                    repeticiones: e.repeticiones,
+                    pesoKg: e.pesoKg,
+                    pesosKg: e.pesosKg,
+                    segundosDescanso: e.segundosDescanso,
+                    duracionSegundos: e.duracionObjetivoSegundos,
+                    distanciaMetros: e.distanciaMetros,
+                    tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
                   ),
+                ),
               ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  String _buildParametrosEjercicio(_EjercicioPlan e) {
-    final parts = <String>[];
-    final hasTiempo = e.tipoMedicion.contains('tiempo');
-    final hasDistancia = e.tipoMedicion.contains('distancia');
-    final hasRepeticiones = e.tipoMedicion.contains('repeticiones');
-    final hasPeso = e.tipoMedicion.contains('peso');
-    final hasCalorias = e.tipoMedicion.contains('calorias');
-
-    if (e.esCircuito) {
-      if (e.duracionSegundos != null && e.duracionSegundos! > 0) {
-        parts.add(fmtDuracion(e.duracionSegundos!));
-      }
-    } else if (hasTiempo && !hasRepeticiones && !hasDistancia && !hasCalorias) {
-      if (e.tiempoIsometricoSegundos != null &&
-          e.tiempoIsometricoSegundos! > 0) {
-        parts.add('${e.series}×${e.tiempoIsometricoSegundos}s');
-      }
-    } else if (hasRepeticiones) {
-      parts.add('${e.series}×${e.repeticiones}');
-    }
-
-    if (hasPeso && e.pesosKg != null && e.pesosKg!.any((w) => w > 0)) {
-      parts.add(
-          'P: ${e.pesosKg!.where((w) => w > 0).map((w) => w.toStringAsFixed(w == w.roundToDouble() ? 0 : 1)).join('/')} kg');
-    } else if (hasPeso && e.pesoKg != null && e.pesoKg! > 0) {
-      parts.add('${e.pesoKg!.toStringAsFixed(1)} kg');
-    }
-
-    if ((hasDistancia || hasCalorias) &&
-        e.distanciaMetros != null &&
-        e.distanciaMetros! > 0) {
-      parts.add(_fmtDistancia(e.distanciaMetros!));
-    }
-
-    if (!e.esCircuito &&
-        hasTiempo &&
-        e.duracionSegundos != null &&
-        e.duracionSegundos! > 0) {
-      parts.add(fmtDuracion(e.duracionSegundos!));
-    }
-
-    if (e.segundosDescanso > 0) {
-      parts.add('${e.segundosDescanso}s desc.');
-    }
-
-    return parts.join(' · ');
-  }
-
-  String _fmtDistancia(int metros) {
-    if (metros >= 1000) return '${(metros / 1000).toStringAsFixed(1)} km';
-    return '$metros m';
   }
 
   Widget _circuitoChip() => Container(
@@ -1813,8 +2040,10 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       _descCtrl.text = resultado.descripcion;
       _objetivo = sanitizarObjetivo(resultado.objetivo);
       _duracionSemanas = resultado.duracionSemanas.clamp(1, 12);
-      _diasPorSemana =
-          resultado.estructura[1]?.length.clamp(1, 7) ?? _diasPorSemana;
+      final diasIA = resultado.estructura[1]?.keys.toList() ?? _diasDisponibles;
+      if (diasIA.isNotEmpty) {
+        _diasDisponibles = List.from(diasIA)..sort();
+      }
       _syncEstructura();
 
       setState(() {
@@ -1842,7 +2071,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                 segundosDescanso: e.segundosDescanso,
                 pesoKg: e.pesoKg,
                 pesosKg: e.pesosKg,
-                duracionSegundos: e.duracionSegundos,
+                duracionObjetivoSegundos: e.duracionObjetivoSegundos,
                 distanciaMetros: e.distanciaMetros,
                 tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
               );
@@ -2048,7 +2277,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
           repeticiones: rec.repeticiones,
           segundosDescanso: rec.segundosDescanso,
           pesoKg: rec.pesoKg,
-          duracionSegundos: rec.duracionSegundos,
+          duracionObjetivoSegundos: rec.duracionObjetivoSegundos,
           distanciaMetros: rec.distanciaMetros,
           tiempoIsometricoSegundos: rec.tiempoIsometricoSegundos,
         ));
@@ -2059,6 +2288,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         _loadingIA = false;
         _tipoCarga = '';
         _semanaActiva = semana;
+        _hayCambios = true;
       });
 
       if (mounted) {
@@ -2083,43 +2313,40 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
   }
 
   Future<void> _crearRutina() async {
-    final semanasVacias = _estructura.entries
-        .where((sem) => sem.value.values.every((d) => d.isEmpty))
-        .map((sem) => sem.key)
-        .toList();
-    if (semanasVacias.isNotEmpty) {
-      setState(() => _creando = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              semanasVacias.length == 1
-                  ? 'La Semana ${semanasVacias.first} no tiene ejercicios'
-                  : 'Las semanas ${semanasVacias.join(", ")} no tienen ejercicios',
-            ),
-          ),
-        );
-      }
-      return;
-    }
     setState(() => _creando = true);
     try {
       final estructuraInput = <int, Map<int, List<EjercicioInput>>>{};
       for (final s in _estructura.entries) {
-        estructuraInput[s.key] = {};
+        final diasConEjercicios = <int, List<EjercicioInput>>{};
         for (final d in s.value.entries) {
-          estructuraInput[s.key]![d.key] =
-              d.value.map((e) => e.toInput()).toList();
+          if (d.value.isEmpty) continue;
+          diasConEjercicios[d.key] = d.value.map((e) => e.toInput()).toList();
         }
+        if (diasConEjercicios.isNotEmpty) {
+          estructuraInput[s.key] = diasConEjercicios;
+        }
+      }
+      if (estructuraInput.isEmpty) {
+        setState(() => _creando = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Añade al menos un ejercicio antes de guardar'),
+            ),
+          );
+        }
+        return;
       }
       final rutinaId = await crearRutinaCompleta(
         nombre: _nombreCtrl.text.trim(),
         descripcion: _descCtrl.text.trim(),
         visibilidad: _visibilidad,
         objetivo: _objetivo,
-        duracionSemanas: _duracionSemanas,
+        duracionSemanas: estructuraInput.length,
         fechaInicio: _fechaInicio,
         estructura: estructuraInput,
+        nombresSemanas: _nombresSemanas.isNotEmpty ? _nombresSemanas : null,
+        nombresDias: _nombresDias.isNotEmpty ? _nombresDias : null,
         ref: ref,
       );
       ref.invalidate(timelineHoyProvider);
@@ -2287,7 +2514,9 @@ class _DiaEditorCard extends StatefulWidget {
       required this.onEjercicioUpdated,
       this.onSugerirEjerciciosIA,
       this.labelSugerirIA = 'Sugerir ejercicios con IA',
-      this.loadingIA = false});
+      this.loadingIA = false,
+      this.nombre,
+      this.onEditNombre});
   final int semanaNum, diaNum;
   final List<_EjercicioPlan> ejercicios;
   final String objetivo;
@@ -2299,6 +2528,8 @@ class _DiaEditorCard extends StatefulWidget {
   final VoidCallback? onSugerirEjerciciosIA;
   final String labelSugerirIA;
   final bool loadingIA;
+  final String? nombre;
+  final VoidCallback? onEditNombre;
   @override
   State<_DiaEditorCard> createState() => _DiaEditorCardState();
 }
@@ -2331,9 +2562,17 @@ class _DiaEditorCardState extends State<_DiaEditorCard> {
                             fontSize: 12,
                             color: theme.colorScheme.primary)))),
             const SizedBox(width: 10),
-            Text('Día ${widget.diaNum}',
+            Text(widget.nombre ?? 'Día ${widget.diaNum}',
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w700)),
+            if (widget.onEditNombre != null)
+              InkWell(
+                onTap: widget.onEditNombre,
+                borderRadius: BorderRadius.circular(8),
+                child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.edit, size: 14, color: Colors.grey)),
+              ),
             const Spacer(),
             Text('${widget.ejercicios.length} ej.',
                 style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
@@ -2515,7 +2754,7 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
   late double? _peso;
   late List<double> _pesosKg;
   late bool _mismoPeso;
-  late int? _duracionSegundos;
+  late int? _duracionObjetivoSegundos;
   late int? _distanciaMetros;
   late int? _tiempoIsometrico;
   bool _expanded = true;
@@ -2537,11 +2776,12 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
         ? List.from(widget.ejercicio.pesosKg!)
         : List.filled(_series, widget.ejercicio.pesoKg ?? 0);
     _syncPesoCtrl();
-    _duracionSegundos = widget.ejercicio.duracionSegundos;
+    _duracionObjetivoSegundos = widget.ejercicio.duracionObjetivoSegundos;
     _distanciaMetros = widget.ejercicio.distanciaMetros;
     _tiempoIsometrico = widget.ejercicio.tiempoIsometricoSegundos;
-    _duracionCtrl.text =
-        _duracionSegundos != null ? _fmtDuracion(_duracionSegundos!) : '';
+    _duracionCtrl.text = _duracionObjetivoSegundos != null
+        ? _fmtDuracion(_duracionObjetivoSegundos!)
+        : '';
     _distanciaCtrl.text =
         _distanciaMetros != null ? _distanciaMetros.toString() : '';
     _tiempoIsoCtrl.text =
@@ -2599,7 +2839,7 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
     d ??= _descanso;
     p ??= _peso;
     final mismoPesoFinal = mismoPeso ?? _mismoPeso;
-    dur ??= _duracionSegundos;
+    dur ??= _duracionObjetivoSegundos;
     dist ??= _distanciaMetros;
     tIso ??= _tiempoIsometrico;
 
@@ -2609,9 +2849,9 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
       _descanso = d!;
       _peso = p;
       _mismoPeso = mismoPesoFinal;
-      _duracionSegundos = dur!;
-      _distanciaMetros = dist!;
-      _tiempoIsometrico = tIso!;
+      _duracionObjetivoSegundos = dur;
+      _distanciaMetros = dist;
+      _tiempoIsometrico = tIso;
       if (_mismoPeso) {
         _pesosKg = List.filled(_series, _peso ?? 0);
       } else if (s != _series) {
@@ -2634,7 +2874,7 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
       pesoKg: _mismoPeso ? _peso : null,
       pesosKg: _mismoPeso ? null : _pesosKg,
       mismoPeso: _mismoPeso,
-      duracionSegundos: _duracionSegundos,
+      duracionObjetivoSegundos: _duracionObjetivoSegundos,
       distanciaMetros: _distanciaMetros,
       tiempoIsometricoSegundos: _tiempoIsometrico,
     ));
@@ -2717,59 +2957,27 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
                                     child: _finalidadChip(finalidad, cs),
                                   ),
                                   const SizedBox(width: 6),
-                                  if (widget.ejercicio.esCircuito)
-                                    Text(
-                                      'Circuito',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color:
-                                            cs.tertiary.withValues(alpha: 0.9),
+                                  Flexible(
+                                    child: ExerciseMetricsRow(
+                                      dense: true,
+                                      categoria: ExerciseMetricCategoriaResolver
+                                          .desdeModalidad(
+                                        widget.ejercicio.modalidadEntrenamiento,
+                                        tipoMedicion:
+                                            widget.ejercicio.tipoMedicion,
+                                        esCircuito: widget.ejercicio.esCircuito,
                                       ),
-                                    )
-                                  else ...[
-                                    Text(
-                                      '$_series×$_reps',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: cs.onSurfaceVariant
-                                            .withValues(alpha: 0.7),
-                                      ),
+                                      series: _series,
+                                      repeticiones: _reps,
+                                      pesoKg: _mismoPeso ? _peso : null,
+                                      pesosKg: _mismoPeso ? null : _pesosKg,
+                                      duracionSegundos:
+                                          _duracionObjetivoSegundos,
+                                      distanciaMetros: _distanciaMetros,
+                                      tiempoIsometricoSegundos:
+                                          _tiempoIsometrico,
                                     ),
-                                    if (_mismoPeso && _peso != null) ...[
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${_peso!.toStringAsFixed(_peso! == _peso!.roundToDouble() ? 0 : 1)} kg',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                          color:
-                                              cs.primary.withValues(alpha: 0.8),
-                                        ),
-                                      ),
-                                    ] else if (!_mismoPeso &&
-                                        _pesosKg.any((w) => w > 0)) ...[
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _pesosKg
-                                            .map((w) => w > 0
-                                                ? w.toStringAsFixed(
-                                                    w == w.roundToDouble()
-                                                        ? 0
-                                                        : 1)
-                                                : '—')
-                                            .join('/'),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                          color:
-                                              cs.primary.withValues(alpha: 0.8),
-                                        ),
-                                        maxLines: 1,
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ],
                               ),
                             ],
@@ -3069,7 +3277,7 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
                 _btnDelta(
                   icon: Icons.remove,
                   onTap: () {
-                    final actual = _duracionSegundos ?? 0;
+                    final actual = _duracionObjetivoSegundos ?? 0;
                     final nuevo = (actual - 30).clamp(0, 86400);
                     _emit(dur: nuevo == 0 ? null : nuevo);
                     _duracionCtrl.text = nuevo == 0 ? '' : _fmtDuracion(nuevo);
@@ -3111,7 +3319,7 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
                 _btnDelta(
                   icon: Icons.add,
                   onTap: () {
-                    final actual = _duracionSegundos ?? 0;
+                    final actual = _duracionObjetivoSegundos ?? 0;
                     final nuevo = (actual + 30).clamp(0, 86400);
                     _emit(dur: nuevo == 0 ? null : nuevo);
                     _duracionCtrl.text = nuevo == 0 ? '' : _fmtDuracion(nuevo);

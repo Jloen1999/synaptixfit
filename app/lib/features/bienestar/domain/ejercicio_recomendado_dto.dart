@@ -7,7 +7,7 @@ class EjercicioRecomendado {
     this.repeticiones = 10,
     this.segundosDescanso = 90,
     this.pesoKg,
-    this.duracionSegundos,
+    this.duracionObjetivoSegundos,
     this.distanciaMetros,
     this.tiempoIsometricoSegundos,
   });
@@ -17,7 +17,7 @@ class EjercicioRecomendado {
   final int repeticiones;
   final int segundosDescanso;
   final double? pesoKg;
-  final int? duracionSegundos;
+  final int? duracionObjetivoSegundos;
   final int? distanciaMetros;
   final int? tiempoIsometricoSegundos;
 
@@ -28,7 +28,8 @@ class EjercicioRecomendado {
       repeticiones: (map['repeticiones'] as num?)?.toInt() ?? 10,
       segundosDescanso: (map['segundosDescanso'] as num?)?.toInt() ?? 90,
       pesoKg: (map['pesoKg'] as num?)?.toDouble(),
-      duracionSegundos: (map['duracionSegundos'] as num?)?.toInt(),
+      duracionObjetivoSegundos:
+          (map['duracionObjetivoSegundos'] as num?)?.toInt(),
       distanciaMetros: (map['distanciaMetros'] as num?)?.toInt(),
       tiempoIsometricoSegundos:
           (map['tiempoIsometricoSegundos'] as num?)?.toInt(),

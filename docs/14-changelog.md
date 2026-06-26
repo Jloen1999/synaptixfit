@@ -5,6 +5,81 @@
 
 ---
 
+## [7.3.0] — 27-06-2026
+
+### Sistema de Cálculo Calórico MET (Compendio Adultos 2024)
+
+- **Nuevo servicio:** `CalorieCalculatorService` en `app/lib/features/bienestar/infrastructure/calorie_calculator_service.dart` (116 líneas). Implementa la fórmula científica estándar: `(valorMet × pesoUsuarioKg × duracionSegundos / 3600)` con fallback 70 kg si el peso no está disponible (sin bloquear la UI).
+- **5 métodos estáticos:**
+  - `calcular()` — calorías para un bloque de ejercicio.
+  - `calcularDescanso()` — calorías quemadas en descanso (MET 1.5).
+  - `calcularTotal()` — gasto calórico de una lista de bloques con descansos.
+  - `derivarMet()` — obtiene el MET desde el campo `valorMet` del catálogo o lo deriva de la modalidad (fuerza=6.0, movilidad=2.3, metabólica=8.0, aeróbica=8.3).
+  - `redondear()` — convierte a entero para UI.
+- **Nuevo campo `valorMet`** (`DOUBLE PRECISION`, default 6.0) en `EjercicioDb` (modelo `db_models.dart`). Se expone en la vista `v_ejercicios_completos`.
+- **`dataset_final.json` actualizado** con 909 ejercicios con `valor_met` asignado por categoría programática:
+  - MET 2.3 → 99 ejercicios (movilidad/flexibilidad)
+  - MET 3.0 → 186 (fuerza moderada/accesorios)
+  - MET 4.5 → 59 (fuerza resistencia)
+  - MET 6.0 → 248 (fuerza vigorosa/cargas libres)
+  - MET 8.0 → 317 (calistenia + circuitos + metabólico)
+- **Scripts de seeding:** `supabase/add_valor_met.py` (asigna MET desde JSON) y `supabase/sync_valor_met.py` (siembra en BD).
+
+### Dualidad Planificación vs Ejecución Real
+
+- **`SeleccionEjercicioDb`:**
+  - Campo `duracionSegundos` renombrado a `duracionObjetivoSegundos` (duracción planificada).
+  - Nuevo campo `duracionRealSegundos` (`int?`) que captura la duración real medida durante la sesión en vivo.
+- **`EjercicioInput`** (`rutina_provider.dart`): mismos cambios (`duracionObjetivoSegundos` + `duracionRealSegundos`).
+- **Migración `20260626000021_duracion_real.sql`:** `RENAME duracion_segundos → duracion_objetivo_segundos` + `ADD duracion_real_segundos INTEGER` en `seleccion_de_ejercicios`.
+
+### Sistema de Laps por Timestamp en Entrenamiento Activo
+
+- **`sesion_en_vivo_screen.dart`:**
+  - Nuevos maps: `_lapStartTimes` (`Map<String, DateTime>`) y `_duracionRealMap` (`Map<String, int>`).
+  - `_capturarLap(seleccionId)`: captura delta con `DateTime.now().difference()`, inmune a backgrounding de la app.
+  - Los laps se capturan automáticamente al marcar series completadas y al finalizar la sesión (todos los laps abiertos se cierran).
+  - `finalizarSesion()` ahora acepta `Map<String, int> duracionRealPorEjercicio` y persiste `duracion_real_segundos` en `seleccion_de_ejercicios`.
+- **`_buildTimerBar()`:** muestra "Objetivo: HH:MM:SS" en gris tenue debajo del cronómetro principal, calculando la suma de `duracionObjetivoSegundos` de todos los ejercicios del día.
+- **Cálculo MET en sesión:** usa `duracionRealSegundos` cuando existe (dato real), fallback a `duracionObjetivoSegundos` (proyección).
+
+### Chips de Calorías Clean UI
+
+- **`SemantiCalorieChip`** en `exercise_metrics.dart`: chip con icono de fuego (`Icons.local_fire_department`) y texto "N kcal". Dos modos visuales:
+  - **Naranja sólido** (15% opacidad): calorías reales.
+  - **Gris tenue** (12% opacidad) con sufijo `(est.)`: calorías estimadas/proyectadas.
+- **`buildCalorieChip()`:** función helper que acepta `valorMet`, `pesoUsuarioKg`, `duracionSegundos`, `duracionRealSegundos` opcional, `modalidad` y `esCircuito`. Usa `CalorieCalculatorService.derivarMet()` y `calcular()`. Delega en `SemantiCalorieChip`.
+- **`ExerciseMetricsRow` ya NO muestra duración/distancia/isométrico:** estas métricas se movieron a chips independientes junto al chip de calorías.
+- **Aplicado en:** `rutina_detalle_screen.dart`, `sesion_en_vivo_screen.dart`, `detalle_reto_screen.dart`, `rutinas_comunidad_screen.dart`.
+
+### Gamificación Transaccional en Retos Fitness
+
+- **`completarReto()` en `retos_provider.dart`:** para retos de tipo `fitness`, calcula las calorías MET de los hitos (o del reto completo si no tiene hitos) usando `CalorieCalculatorService` e inserta una fila en `sesiones_registradas` con `id = retoId`, `tipo = 'reto'` y `calorias_quemadas` calculadas.
+- **`descompletarReto()`:** borra la sesión correspondiente → `caloriasAcumuladas` del perfil de actividad se revierte exactamente.
+- **`_obtenerPesoUsuario()`:** consulta `perfil_bienestar_usuario` (tabla correcta). Antes consultaba `perfil_bienestar` (tabla inexistente), causando fallback a 70 kg siempre. **Bug corregido.**
+- **`_FilaCaloriasEstimadas`** en `detalle_reto_screen.dart`: chip de calorías proyectadas visible en el detalle del reto, incluso antes de completarlo.
+
+### Corrección de bug: `_obtenerPesoUsuario`
+
+- **`rutina_provider.dart` (línea 1825) y `retos_provider.dart` (línea 561):** `_obtenerPesoUsuarioSesion()` / `_obtenerPesoUsuario()` consultaban `perfil_bienestar` (tabla inexistente) → corregido a `perfil_bienestar_usuario`. El fallback 70 kg seguía funcionando, pero ahora los usuarios con peso registrado obtienen cálculos calóricos personalizados.
+
+### Migraciones de BD
+
+- **`20260626000020_valor_met_ejercicios.sql`:** `ALTER TABLE ejercicios ADD COLUMN valor_met DOUBLE PRECISION NOT NULL DEFAULT 6.0` + recrea `v_ejercicios_completos` incluyendo `valor_met` (56 líneas). Aplicada en local y remoto vía `supabase db push`.
+- **`20260626000021_duracion_real.sql`:** `RENAME duracion_segundos → duracion_objetivo_segundos` + `ADD duracion_real_segundos INTEGER` en `seleccion_de_ejercicios` (15 líneas). Aplicada en local y remoto.
+- **Total migraciones:** 45 → 47.
+
+### Documentación actualizada
+
+- `AGENTS.md`: migraciones 45→47, añadidas entradas `20260626000020` y `20260626000021`, añadido `CalorieCalculatorService` a bienestar/infrastructure, actualizadas descripciones de `EjercicioDb` (valorMet), `SeleccionEjercicioDb` (campos renombrados), `EjercicioInput` (duracionObjetivo/Real), `exercise_metrics.dart` (SemantiCalorieChip, buildCalorieChip), `rutina_provider.dart` (~1912 líneas), `retos_provider.dart` (calorías transaccionales, bug fix peso).
+- `docs/14-changelog.md`: Esta entrada.
+- `docs/03-architecture.md`: añadido `CalorieCalculatorService` al árbol de bienestar/infrastructure, actualizado `exercise_metrics.dart` (calorie chips), actualizado `db_models.dart` (valorMet, campos renombrados), migraciones 47.
+- `docs/04-data-model.md`: `valor_met` en tabla `ejercicios` y ER, campos renombrados en `seleccion_de_ejercicios`, tipo `'reto'` en `sesiones_registradas`, migraciones 0020 y 0021.
+- `docs/06-frontend.md`: añadida sección de chips de calorías, actualizada sección de sesión en vivo con laps/timer bar, actualizado `exercise_metrics.dart`.
+- `docs/07-backend.md`: migraciones 38→47, añadidas entradas 0020 y 0021 al historial.
+
+---
+
 ## [7.2.0] — 23-06-2026
 
 ### Localización (i18n) — Español global en widgets Material

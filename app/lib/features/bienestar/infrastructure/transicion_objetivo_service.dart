@@ -150,7 +150,7 @@ class TransicionObjetivoService {
             segundosDescanso: nd,
             pesoKg: e.pesoKg,
             pesosKg: e.pesosKg,
-            duracionSegundos: e.duracionSegundos,
+            duracionObjetivoSegundos: e.duracionObjetivoSegundos,
             distanciaMetros: e.distanciaMetros,
             tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
           );

@@ -588,10 +588,27 @@ REGLAS DE REFINAMIENTO:
 
 5. PARAMETROS: NO modifiques series, repeticiones ni descanso a menos que tengas una razon MUY clara (ej: un ejercicio compuesto deberia tener mas series que un aislado). Los valores actuales ya fueron calculados para el objetivo "$obj" (${params.seriesMin}-${params.seriesMax} series, ${params.repsMin}-${params.repsMax} reps, ${params.descansoMin}-${params.descansoMax}s descanso).
 
+6. NOMBRA LOS DIAS: Asigna un nombre descriptivo a cada dia de entrenamiento basado en los grupos musculares y ejercicios. Ej: "Dia 1: Torso - Empuje y press banca", "Dia 2: Pierna - Sentadilla y peso muerto", "Dia 3: Full Body - Resistencia y core". No uses nombres genericos como "Dia 1".
+
+7. NOMBRA LAS SEMANAS: Asigna un nombre descriptivo a cada semana basado en su fase de periodizacion. Ej: "Semana 1: Adaptacion - Tecnica y activacion", "Semana 2: Carga progresiva - Volumen moderado", "Semana 3: Carga maxima - Sobrecarga", "Semana 4: Descarga - Recuperacion activa".
+
 Formato JSON:
 {
   "nombre": "Nombre mejorado",
   "descripcion": "Descripcion mejorada",
+  "nombresSemanas": {
+    "1": "Semana 1: Adaptacion - Tecnica y activacion",
+    "2": "Semana 2: Carga progresiva - Volumen moderado"
+  },
+  "nombresDias": {
+    "1": {
+      "1": "Dia 1: Torso - Empuje y press banca",
+      "2": "Dia 2: Pierna - Sentadilla y peso muerto"
+    },
+    "2": {
+      "1": "Dia 1: Torso - Press inclinado y fondos"
+    }
+  },
   "estructura": {
     "1": {
       "1": [
@@ -601,7 +618,7 @@ Formato JSON:
   }
 }
 
-El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sustituyes un ejercicio, asegurate de que el exerciseId existe en el catalogo.
+El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sustituyes un ejercicio, asegurate de que el exerciseId existe en el catalogo. Los campos nombresSemanas y nombresDias son opcionales.
 ''';
 
     try {
@@ -611,6 +628,30 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
       final nombre = parsed['nombre'] as String? ?? nombreRutina;
       final descripcion = parsed['descripcion'] as String? ?? descripcionRutina;
       final estructuraRaw = parsed['estructura'] as Map<String, dynamic>?;
+
+      final nombresSemanas = <int, String>{};
+      final ns = parsed['nombresSemanas'] as Map<String, dynamic>?;
+      if (ns != null) {
+        for (final e in ns.entries) {
+          nombresSemanas[int.tryParse(e.key) ?? 0] = e.value.toString();
+        }
+      }
+
+      final nombresDias = <int, Map<int, String>>{};
+      final nd = parsed['nombresDias'] as Map<String, dynamic>?;
+      if (nd != null) {
+        for (final se in nd.entries) {
+          final semanaNum = int.tryParse(se.key) ?? 0;
+          nombresDias[semanaNum] = <int, String>{};
+          final dias = se.value as Map<String, dynamic>?;
+          if (dias != null) {
+            for (final de in dias.entries) {
+              nombresDias[semanaNum]![int.tryParse(de.key) ?? 0] =
+                  de.value.toString();
+            }
+          }
+        }
+      }
 
       Map<int, Map<int, List<EjercicioRecomendado>>> estructuraRefinada;
       if (estructuraRaw != null) {
@@ -633,6 +674,8 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
         objetivo: obj,
         duracionSemanas: duracionSemanas,
         estructura: estructuraRefinada,
+        nombresSemanas: nombresSemanas,
+        nombresDias: nombresDias,
       );
     } catch (e) {
       debugPrint(
@@ -720,8 +763,9 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
     final repsOk = ia.repeticiones >= 1 && ia.repeticiones <= 100;
     final descansoOk = ia.segundosDescanso >= 15 && ia.segundosDescanso <= 600;
 
-    final duracionOk = ia.duracionSegundos == null ||
-        (ia.duracionSegundos! >= 30 && ia.duracionSegundos! <= 7200);
+    final duracionOk = ia.duracionObjetivoSegundos == null ||
+        (ia.duracionObjetivoSegundos! >= 30 &&
+            ia.duracionObjetivoSegundos! <= 7200);
     final distanciaOk = ia.distanciaMetros == null ||
         (ia.distanciaMetros! >= 50 && ia.distanciaMetros! <= 42195);
     final isometricoOk = ia.tiempoIsometricoSegundos == null ||
@@ -736,9 +780,10 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
       segundosDescanso:
           descansoOk ? ia.segundosDescanso : base.segundosDescanso,
       pesoKg: pesoOk ? ia.pesoKg : base.pesoKg,
-      duracionSegundos: duracionOk && ia.duracionSegundos != null
-          ? ia.duracionSegundos
-          : base.duracionSegundos,
+      duracionObjetivoSegundos:
+          duracionOk && ia.duracionObjetivoSegundos != null
+              ? ia.duracionObjetivoSegundos
+              : base.duracionObjetivoSegundos,
       distanciaMetros: distanciaOk && ia.distanciaMetros != null
           ? ia.distanciaMetros
           : base.distanciaMetros,
@@ -755,12 +800,20 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
 
   /// Filtra ejercicios que usan equipamiento compatible con el usuario.
   /// peso_corporal siempre es compatible.
+  /// Verifica que al menos un equipamiento del ejercicio sea compatible
+  /// con los que tiene el usuario. Ejercicios sin equipamiento (peso corporal)
+  /// son siempre compatibles.
   bool _ejercicioUsaEquipamiento(
       EjercicioDb ejercicio, List<String> equipamientoUsuario) {
+    // Sin equipamiento requerido → compatible con cualquier usuario
+    if (ejercicio.equipamientos.isEmpty) return true;
+    // Si el usuario tiene peso_corporal, los ejercicios de peso corporal son compatibles
     if (equipamientoUsuario.contains('peso_corporal') &&
-        ejercicio.equipamientos.contains('peso corporal')) {
+        ejercicio.equipamientos
+            .any((eq) => eq.toLowerCase() == 'peso corporal')) {
       return true;
     }
+    // Verificar si algún equipamiento del ejercicio coincide con el del usuario
     return ejercicio.equipamientos.any((eq) {
       final eqLower = eq.toLowerCase();
       for (final ue in equipamientoUsuario) {
@@ -1163,7 +1216,7 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
     final genConfig = <String, dynamic>{};
     if (useJsonMode) genConfig['response_mime_type'] = 'application/json';
     final response = await _dio.post<Map<String, dynamic>>(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
       options: Options(
         headers: {
           'Content-Type': 'application/json',

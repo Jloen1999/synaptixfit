@@ -4,9 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/models/db_models.dart';
+import '../../../shared/widgets/badge_reutilizado.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/exercise_thumb.dart';
+import '../../../shared/widgets/exercise_metrics.dart';
 import '../../../core/design_system/sv_colors.dart';
+import '../../perfil/application/perfil_provider.dart';
 import '../application/rutina_provider.dart';
 import '../application/ejercicios_provider.dart';
 
@@ -33,28 +37,97 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
     final todasCompletadas =
         semanasAsync.valueOrNull?.every((s) => s.estado == 'completada') ??
             false;
+    final esPropietario =
+        ref.watch(rutinaEsPropietariaProvider(widget.rutinaId)).valueOrNull ??
+            false;
 
     return FeatureScaffold(
       title: '',
       backPath: '/bienestar',
       actions: [
-        if (!todasCompletadas)
+        if (esPropietario) ...[
+          if (!todasCompletadas)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: FilledButton.icon(
+                onPressed: _completando ? null : _completarRutina,
+                icon: _completando
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.emoji_events_rounded, size: 16),
+                label: const Text('Completar'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF006E2D),
+                  foregroundColor: Colors.white,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  textStyle: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          if (!todasCompletadas)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              tooltip: 'Editar rutina',
+              onPressed: () => _editarRutina(),
+            ),
+          if (todasCompletadas)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: FilledButton.icon(
+                onPressed: _reutilizando ? null : _reutilizarRutina,
+                icon: _reutilizando
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text('Reutilizar'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF7B5BD6),
+                  foregroundColor: Colors.white,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  textStyle: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
           IconButton(
-            icon: const Icon(Icons.edit_outlined, size: 20),
-            tooltip: 'Editar rutina',
-            onPressed: () => _editarRutina(),
+            icon: const Icon(Icons.delete_outline, size: 20),
+            tooltip: 'Eliminar rutina',
+            onPressed: () => _confirmarEliminar(),
           ),
-        if (todasCompletadas)
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, size: 20),
-            tooltip: 'Reutilizar rutina',
-            onPressed: () => _reutilizarRutina(),
+        ] else ...[
+          // Visitante — solo puede reutilizar (crear copia propia)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: FilledButton.icon(
+              onPressed: _reutilizando ? null : _reutilizarRutina,
+              icon: _reutilizando
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Reutilizar'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7B5BD6),
+                foregroundColor: Colors.white,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                textStyle:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
           ),
-        IconButton(
-          icon: const Icon(Icons.delete_outline, size: 20),
-          tooltip: 'Eliminar rutina',
-          onPressed: () => _confirmarEliminar(),
-        ),
+        ],
       ],
       child: semanasAsync.when(
         loading: () =>
@@ -89,8 +162,9 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
               const SizedBox(height: 12),
               Expanded(
                   child: _DiasList(
-                      semanaId: semanaActual.id, rutinaId: widget.rutinaId)),
-              if (!todasCompletadas) _buildBotonCompletarRutina(theme),
+                      semanaId: semanaActual.id,
+                      rutinaId: widget.rutinaId,
+                      esPropietario: esPropietario)),
               if (todasCompletadas) _buildBotonReutilizarRutina(theme),
             ],
           );
@@ -100,6 +174,8 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
   }
 
   Widget _buildHeader(ThemeData theme, List<SemanaRutinaDb> semanas) {
+    final rutinaAsync = ref.watch(rutinaPorIdProvider(widget.rutinaId));
+    final rutina = rutinaAsync.valueOrNull;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: FutureBuilder<Map<String, dynamic>?>(
@@ -169,6 +245,13 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
                       _EstadoBadge(estado: r['estado'] as String? ?? 'activo'),
                     ],
                   ),
+                  if (rutina?.esReutilizada == true) ...[
+                    const SizedBox(height: 6),
+                    BadgeReutilizado(
+                      etiqueta: 'Reutilizada',
+                      propietario: rutina!.origenPropietarioNombre,
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
@@ -246,7 +329,7 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
                     child:
                         Icon(Icons.check_circle, size: 14, color: Colors.green),
                   ),
-                Text('Sem ${s.numeroSemana}'),
+                Text(s.nombre.isNotEmpty ? s.nombre : 'Sem ${s.numeroSemana}'),
                 if (tipoLabel.isNotEmpty) ...[
                   const SizedBox(width: 4),
                   Container(
@@ -280,33 +363,6 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
     );
   }
 
-  Widget _buildBotonCompletarRutina(ThemeData theme) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: _completando ? null : _completarRutina,
-            icon: _completando
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.emoji_events_rounded),
-            label: Text(_completando ? 'Completando...' : 'Completar rutina'),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF006E2D),
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(48),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBotonReutilizarRutina(ThemeData theme) {
     return SafeArea(
       child: Padding(
@@ -334,9 +390,48 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
   }
 
   Future<void> _completarRutina() async {
-    setState(() => _completando = true);
+    final client = Supabase.instance.client;
     try {
-      await Supabase.instance.client
+      final semanas = await client
+          .from('semanas_rutina')
+          .select('id')
+          .eq('rutina_id', widget.rutinaId);
+      final semanaIds = semanas.map((s) => s['id'] as String).toList();
+      if (semanaIds.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('La rutina no tiene semanas configuradas.')),
+          );
+        }
+        return;
+      }
+      final orSem = semanaIds.map((id) => 'semana_id.eq.$id').join(',');
+      final dias = await client.from('dias_rutina').select('id').or(orSem);
+      final diaIds = dias.map((d) => d['id'] as String).toList();
+      final orDia = diaIds.map((id) => 'dia_id.eq.$id').join(',');
+      final diasConEjercicios = (await client
+              .from('seleccion_de_ejercicios')
+              .select('dia_id')
+              .or(orDia))
+          .map((r) => r['dia_id'] as String)
+          .toSet();
+      final diasVacios =
+          diaIds.where((id) => !diasConEjercicios.contains(id)).toList();
+      if (diasVacios.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'No puedes completar la rutina: hay días sin ejercicios.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+      setState(() => _completando = true);
+      await client
           .from('rutinas')
           .update({'estado': 'completado'}).eq('id', widget.rutinaId);
       if (mounted) {
@@ -364,10 +459,22 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
 
       final rutinaMap = await client
           .from('rutinas')
-          .select('nombre, descripcion, objetivo')
+          .select('nombre, descripcion, objetivo, usuario_id')
           .eq('id', widget.rutinaId)
           .maybeSingle();
       if (rutinaMap == null) throw Exception('Rutina no encontrada');
+
+      // Referencia al propietario original para la distinción visual.
+      final propId = rutinaMap['usuario_id'] as String?;
+      String? propietarioNombre;
+      if (propId != null) {
+        final propRow = await client
+            .from('usuarios')
+            .select('nombre_completo')
+            .eq('id', propId)
+            .maybeSingle();
+        propietarioNombre = propRow?['nombre_completo'] as String?;
+      }
 
       final nuevaRutina = await client
           .from('rutinas')
@@ -378,6 +485,10 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
             'visibilidad': 'private',
             'objetivo': rutinaMap['objetivo'],
             'cantidad_ejercicios': 0,
+            'origen_id': widget.rutinaId,
+            if (propId != null) 'origen_propietario_id': propId,
+            if (propietarioNombre != null)
+              'origen_propietario_nombre': propietarioNombre,
           })
           .select('id')
           .single();
@@ -440,8 +551,9 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
               };
               if (eMap['peso_kg'] != null) row['peso_kg'] = eMap['peso_kg'];
               if (eMap['pesos_kg'] != null) row['pesos_kg'] = eMap['pesos_kg'];
-              if (eMap['duracion_segundos'] != null) {
-                row['duracion_segundos'] = eMap['duracion_segundos'];
+              if (eMap['duracion_objetivo_segundos'] != null) {
+                row['duracion_objetivo_segundos'] =
+                    eMap['duracion_objetivo_segundos'];
               }
               if (eMap['distancia_metros'] != null) {
                 row['distancia_metros'] = eMap['distancia_metros'];
@@ -589,10 +701,14 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
 }
 
 class _DiasList extends ConsumerWidget {
-  const _DiasList({required this.semanaId, required this.rutinaId});
+  const _DiasList(
+      {required this.semanaId,
+      required this.rutinaId,
+      required this.esPropietario});
 
   final String semanaId;
   final String rutinaId;
+  final bool esPropietario;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -611,12 +727,14 @@ class _DiasList extends ConsumerWidget {
                   title: 'Sin días',
                   message: 'Añade días de entrenamiento a esta semana.',
                   icon: Icons.today_rounded),
-              const SizedBox(height: 8),
-              FilledButton.tonalIcon(
-                  onPressed: () =>
-                      agregarDiaASemana(semanaId, 1, rutinaId, ref),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Añadir día')),
+              if (esPropietario) ...[
+                const SizedBox(height: 8),
+                FilledButton.tonalIcon(
+                    onPressed: () =>
+                        agregarDiaASemana(semanaId, 1, rutinaId, ref),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Añadir día')),
+              ],
             ]),
           );
         }
@@ -625,18 +743,24 @@ class _DiasList extends ConsumerWidget {
           itemCount: dias.length + 1,
           itemBuilder: (context, i) {
             if (i == dias.length) {
-              return Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: TextButton.icon(
-                    onPressed: () => agregarDiaASemana(
-                        semanaId, dias.length + 1, rutinaId, ref),
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Añadir día',
-                        style: TextStyle(fontSize: 12))),
-              );
+              return esPropietario
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: TextButton.icon(
+                          onPressed: () => agregarDiaASemana(
+                              semanaId, dias.last.numeroDia + 1, rutinaId, ref),
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Añadir día',
+                              style: TextStyle(fontSize: 12))),
+                    )
+                  : const SizedBox.shrink();
             }
             return _DiaCard(
-                key: ValueKey(dias[i].id), dia: dias[i], rutinaId: rutinaId);
+              key: ValueKey(dias[i].id),
+              dia: dias[i],
+              rutinaId: rutinaId,
+              esPropietario: esPropietario,
+            );
           },
         );
       },
@@ -645,10 +769,15 @@ class _DiasList extends ConsumerWidget {
 }
 
 class _DiaCard extends ConsumerStatefulWidget {
-  const _DiaCard({required this.dia, required this.rutinaId, super.key});
+  const _DiaCard(
+      {required this.dia,
+      required this.rutinaId,
+      required this.esPropietario,
+      super.key});
 
   final DiaRutinaDb dia;
   final String rutinaId;
+  final bool esPropietario;
 
   @override
   ConsumerState<_DiaCard> createState() => _DiaCardState();
@@ -711,17 +840,20 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
                             diaId: widget.dia.id,
                             semanaId: widget.dia.semanaId,
                             rutinaId: widget.rutinaId,
+                            esPropietario: widget.esPropietario,
                           );
                         }),
-                        const SizedBox(height: 4),
-                        TextButton.icon(
-                          onPressed: () => _mostrarBuscador(context, ref),
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('Añadir ejercicio',
-                              style: TextStyle(fontSize: 11)),
-                          style: TextButton.styleFrom(
-                              visualDensity: VisualDensity.compact),
-                        ),
+                        if (widget.esPropietario) ...[
+                          const SizedBox(height: 4),
+                          TextButton.icon(
+                            onPressed: () => _mostrarBuscador(context, ref),
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Añadir ejercicio',
+                                style: TextStyle(fontSize: 11)),
+                            style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact),
+                          ),
+                        ],
                       ],
                     );
                   },
@@ -750,17 +882,19 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
                         Text('Sin ejercicios aún.',
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(color: SVColors.onSurfaceMuted)),
-                        const Spacer(),
-                        TextButton.icon(
-                          onPressed: () => _mostrarBuscador(context, ref),
-                          icon: const Icon(Icons.add, size: 14),
-                          label: const Text('Añadir ejercicio',
-                              style: TextStyle(fontSize: 11)),
-                          style: TextButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8)),
-                        ),
+                        if (widget.esPropietario) ...[
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () => _mostrarBuscador(context, ref),
+                            icon: const Icon(Icons.add, size: 14),
+                            label: const Text('Añadir ejercicio',
+                                style: TextStyle(fontSize: 11)),
+                            style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8)),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -772,6 +906,39 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
         ),
       ),
     );
+  }
+
+  Future<void> _editarNombreDia() async {
+    final ctrl = TextEditingController(
+      text: widget.dia.nombre.isNotEmpty
+          ? widget.dia.nombre
+          : 'Día ${widget.dia.numeroDia}',
+    );
+    final nuevo = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Nombre del día'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(hintText: 'Ej. Pecho y tríceps'),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Guardar')),
+        ],
+      ),
+    );
+    if (nuevo != null && nuevo.isNotEmpty && mounted) {
+      await actualizarNombreDia(widget.dia.id, nuevo);
+      ref.invalidate(diasDeSemanaProvider(widget.dia.semanaId));
+    }
   }
 
   Widget _buildHeader(ThemeData theme, bool completado,
@@ -809,6 +976,18 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
+                  if (widget.esPropietario && !completado)
+                    InkWell(
+                      onTap: _editarNombreDia,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(Icons.edit_outlined,
+                            size: 15,
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.6)),
+                      ),
+                    ),
                   // Badge "Hoy" cuando el dia coincide con el dia pendiente
                   if (esHoy && !completado) ...[
                     Container(
@@ -913,18 +1092,19 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
                   );
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18),
-                tooltip: 'Eliminar día',
-                style: IconButton.styleFrom(
-                  foregroundColor: Colors.red.shade300,
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              if (widget.esPropietario)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  tooltip: 'Eliminar día',
+                  style: IconButton.styleFrom(
+                    foregroundColor: Colors.red.shade300,
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: () => _confirmarEliminarDia(),
                 ),
-                onPressed: () => _confirmarEliminarDia(),
-              ),
             ],
           ),
       ],
@@ -952,7 +1132,7 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
                   snap.data?['modalidad_entrenamiento'] as String? ?? '';
               final esCircuito = (snap.data?['es_circuito'] as bool?) ?? false;
               return Padding(
-                padding: const EdgeInsets.only(left: 42, bottom: 4),
+                padding: const EdgeInsets.only(left: 42, bottom: 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -979,7 +1159,6 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
                         ),
                         if (modalidad.isNotEmpty)
                           Container(
-                            margin: const EdgeInsets.only(right: 4),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
@@ -993,39 +1172,26 @@ class _DiaCardState extends ConsumerState<_DiaCard> {
                                     fontWeight: FontWeight.w600,
                                     color: theme.colorScheme.primary)),
                           ),
-                        Text(
-                          '${e.series}×${e.repeticiones}',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500,
-                              fontWeight: FontWeight.w500),
-                        ),
                       ],
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(left: 14),
-                      child: Row(children: [
-                        if (esCircuito)
-                          Text('Circuito · ',
-                              style: TextStyle(
-                                  fontSize: 10, color: Colors.grey.shade500)),
-                        if (e.pesosKg != null && e.pesosKg!.any((w) => w > 0))
-                          Text(
-                            e.pesosKg!
-                                .where((w) => w > 0)
-                                .map((w) => w.toStringAsFixed(
-                                    w == w.roundToDouble() ? 0 : 1))
-                                .join('/'),
-                            style: TextStyle(
-                                fontSize: 10, color: Colors.grey.shade400),
-                          )
-                        else if (e.pesoKg != null && e.pesoKg! > 0)
-                          Text(
-                            '${e.pesoKg!.toStringAsFixed(e.pesoKg! == e.pesoKg!.roundToDouble() ? 0 : 1)} kg',
-                            style: TextStyle(
-                                fontSize: 10, color: Colors.grey.shade400),
-                          ),
-                      ]),
+                      padding: const EdgeInsets.only(left: 14, top: 4),
+                      child: ExerciseMetricsRow(
+                        dense: true,
+                        categoria:
+                            ExerciseMetricCategoriaResolver.desdeModalidad(
+                          modalidad,
+                          esCircuito: esCircuito,
+                        ),
+                        series: e.series,
+                        repeticiones: e.repeticiones,
+                        pesoKg: e.pesoKg,
+                        pesosKg: e.pesosKg,
+                        segundosDescanso: e.segundosDescanso,
+                        duracionSegundos: e.duracionObjetivoSegundos,
+                        distanciaMetros: e.distanciaMetros,
+                        tiempoIsometricoSegundos: e.tiempoIsometricoSegundos,
+                      ),
                     ),
                   ],
                 ),
@@ -1118,13 +1284,15 @@ class _EjercicioRow extends ConsumerStatefulWidget {
       required this.ejercicio,
       required this.diaId,
       required this.semanaId,
-      required this.rutinaId});
+      required this.rutinaId,
+      required this.esPropietario});
 
   final int index;
   final SeleccionEjercicioDb ejercicio;
   final String diaId;
   final String semanaId;
   final String rutinaId;
+  final bool esPropietario;
 
   @override
   ConsumerState<_EjercicioRow> createState() => _EjercicioRowState();
@@ -1136,7 +1304,7 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
   late double? _peso;
   late List<double> _pesosKg;
   late bool _mismoPeso;
-  late int? _duracionSegundos;
+  late int? _duracionObjetivoSegundos;
   late int? _distanciaMetros;
   late int? _tiempoIsometrico;
 
@@ -1160,7 +1328,7 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
     _peso = e.pesoKg;
     _pesosKg = e.pesosKg ?? List.filled(e.series, 0.0);
     _mismoPeso = e.pesosKg == null;
-    _duracionSegundos = e.duracionSegundos;
+    _duracionObjetivoSegundos = e.duracionObjetivoSegundos;
     _distanciaMetros = e.distanciaMetros;
     _tiempoIsometrico = e.tiempoIsometricoSegundos;
     _syncCtrls();
@@ -1173,8 +1341,9 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
             ? '${_peso!.toInt()}'
             : _peso!.toStringAsFixed(1))
         : '';
-    _duracionCtrl.text =
-        (_duracionSegundos ?? 0) > 0 ? _fmtDuracion(_duracionSegundos!) : '';
+    _duracionCtrl.text = (_duracionObjetivoSegundos ?? 0) > 0
+        ? _fmtDuracion(_duracionObjetivoSegundos!)
+        : '';
     _distanciaCtrl.text =
         (_distanciaMetros ?? 0) > 0 ? '$_distanciaMetros' : '';
     _tiempoIsoCtrl.text =
@@ -1215,7 +1384,8 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
       'repeticiones': _reps,
       'segundos_descanso': _descanso,
       if (_peso != null) 'peso_kg': _peso,
-      if (_duracionSegundos != null) 'duracion_segundos': _duracionSegundos,
+      if (_duracionObjetivoSegundos != null)
+        'duracion_objetivo_segundos': _duracionObjetivoSegundos,
       if (_distanciaMetros != null) 'distancia_metros': _distanciaMetros,
       if (_tiempoIsometrico != null)
         'tiempo_isometrico_segundos': _tiempoIsometrico,
@@ -1266,8 +1436,12 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
     return Column(
       children: [
         InkWell(
-          onLongPress: () => _sustituirEjercicio(context, nombre ?? ''),
-          onTap: () => setState(() => _editando = !_editando),
+          onLongPress: widget.esPropietario
+              ? () => _sustituirEjercicio(context, nombre ?? '')
+              : null,
+          onTap: widget.esPropietario
+              ? () => setState(() => _editando = !_editando)
+              : null,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -1281,6 +1455,13 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: theme.colorScheme.primary))),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () =>
+                    context.push('/bienestar/ejercicio/${e.ejercicioId}'),
+                child: ExerciseThumb(
+                    urlGif: ej?.urlGif, urlPreview: ej?.urlPreview, size: 44),
+              ),
               const SizedBox(width: 10),
               Expanded(
                   child: Column(
@@ -1304,7 +1485,7 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                           overflow: TextOverflow.ellipsis),
                     ),
                     const SizedBox(height: 2),
-                    Row(children: [
+                    Wrap(spacing: 4, runSpacing: 4, children: [
                       if (modalidad.isNotEmpty)
                         Container(
                           margin: const EdgeInsets.only(right: 4),
@@ -1354,8 +1535,48 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                     ]),
                     const SizedBox(height: 3),
                     _buildParamPills(finalidad, esCircuito, theme),
+                    if ((_distanciaMetros ?? 0) > 0 ||
+                        (_tiempoIsometrico ?? 0) > 0 ||
+                        (_duracionObjetivoSegundos ?? 0) > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            if ((_distanciaMetros ?? 0) > 0)
+                              SemanticMicroChip(
+                                icon: Icons.route,
+                                label: _distanciaMetros! >= 1000
+                                    ? '${(_distanciaMetros! / 1000).toStringAsFixed(1)} km'
+                                    : '$_distanciaMetros m',
+                                dense: true,
+                              ),
+                            if ((_tiempoIsometrico ?? 0) > 0)
+                              SemanticMicroChip(
+                                icon: Icons.timer,
+                                label: '${_tiempoIsometrico}s',
+                                dense: true,
+                              ),
+                            if ((_duracionObjetivoSegundos ?? 0) > 0)
+                              buildCalorieChip(
+                                valorMet: ej?.valorMet,
+                                pesoUsuarioKg: ref
+                                    .watch(perfilUsuarioProvider)
+                                    .valueOrNull
+                                    ?.perfil
+                                    .pesoKg,
+                                duracionSegundos: _duracionObjetivoSegundos,
+                                modalidad:
+                                    ej?.modalidadEntrenamiento ?? 'fuerza',
+                                esCircuito: ej?.esCircuito ?? false,
+                                dense: true,
+                              ),
+                          ],
+                        ),
+                      ),
                   ])),
-              if (!_editando)
+              if (widget.esPropietario && !_editando)
                 Padding(
                   padding: const EdgeInsets.only(right: 2),
                   child: Icon(Icons.edit_note_rounded,
@@ -1363,110 +1584,36 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                       color: theme.colorScheme.onSurfaceVariant
                           .withValues(alpha: 0.3)),
                 ),
-              IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      size: 18, color: Colors.red),
-                  onPressed: () {
-                    quitarEjercicioDeDia(
-                        e.id, widget.diaId, widget.rutinaId, ref);
-                    _invalidarDiaSiCompletado();
-                  },
-                  visualDensity: VisualDensity.compact),
+              if (widget.esPropietario)
+                IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        size: 18, color: Colors.red),
+                    onPressed: () {
+                      quitarEjercicioDeDia(
+                          e.id, widget.diaId, widget.rutinaId, ref);
+                      _invalidarDiaSiCompletado();
+                    },
+                    visualDensity: VisualDensity.compact),
             ]),
           ),
         ),
-        if (_editando) _buildEditFields(finalidad, esCircuito),
+        if (widget.esPropietario && _editando)
+          _buildEditFields(finalidad, esCircuito),
       ],
     );
   }
 
   Widget _buildParamPills(String finalidad, bool esCircuito, ThemeData theme) {
-    final cs = theme.colorScheme;
-    final lower = finalidad.toLowerCase();
-
-    if (lower.contains('cardio') || lower.contains('acondicionamiento')) {
-      final dur = _duracionSegundos ?? 0;
-      final mins = dur ~/ 60;
-      final segs = dur % 60;
-      final durStr = mins > 0 ? '${mins}m ${segs}s' : '${segs}s';
-      return Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: [
-          _buildDisplayPill('$_series int.', cs),
-          _buildDisplayPill(durStr, cs),
-          if (_distanciaMetros != null)
-            _buildDisplayPill('${_distanciaMetros}m', cs),
-          _buildDisplayPill('${_descanso}s', cs),
-        ],
-      );
-    }
-
-    if (lower.contains('isometric') ||
-        lower.contains('movilidad') ||
-        lower.contains('flexibilidad') ||
-        lower.contains('estabilidad')) {
-      return Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: [
-          _buildDisplayPill('$_series\u00d7${_tiempoIsometrico ?? 0}s', cs),
-          _buildDisplayPill('${_descanso}s', cs),
-        ],
-      );
-    }
-
-    if (esCircuito) {
-      final dur = _duracionSegundos ?? 0;
-      final mins = dur ~/ 60;
-      final segs = dur % 60;
-      final durStr = mins > 0 ? '${mins}m ${segs}s' : '${segs}s';
-      return Wrap(
-        spacing: 4,
-        runSpacing: 4,
-        children: [
-          _buildDisplayPill(durStr, cs),
-          _buildDisplayPill('${_descanso}s desc', cs),
-        ],
-      );
-    }
-
-    final pesoStr = () {
-      if (_pesosKg.any((w) => w > 0)) {
-        return _pesosKg
-            .where((w) => w > 0)
-            .map((w) => w.toStringAsFixed(w == w.roundToDouble() ? 0 : 1))
-            .join('/');
-      }
-      if (_peso != null) {
-        return _peso!.toStringAsFixed(_peso == _peso?.roundToDouble() ? 0 : 1);
-      }
-      return null;
-    }();
-
-    return Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        _buildDisplayPill('$_series\u00d7$_reps', cs),
-        _buildDisplayPill('${_descanso}s', cs),
-        if (pesoStr != null) _buildDisplayPill('$pesoStr kg', cs),
-      ],
-    );
-  }
-
-  Widget _buildDisplayPill(String text, ColorScheme cs) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: cs.outlineVariant.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(6),
+    return ExerciseMetricsRow(
+      categoria: ExerciseMetricCategoriaResolver.desdeFinalidad(
+        finalidad,
+        esCircuito: esCircuito,
       ),
-      child: Text(text,
-          style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: cs.onSurfaceVariant)),
+      series: _series,
+      repeticiones: _reps,
+      pesoKg: _peso,
+      pesosKg: _pesosKg,
+      segundosDescanso: _descanso,
     );
   }
 
@@ -1559,7 +1706,6 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                   _paramPill('Intervalos', _series, 1, 20,
                       (v) => setState(() => _series = v), anchoPill, cs),
                   _duracionPill(anchoPill, cs),
-                  _distanciaPill(anchoPill, cs),
                   _paramPill('Descanso', _descanso, 15, 600,
                       (v) => setState(() => _descanso = v), anchoPill, cs,
                       sufijo: 's'),
@@ -2007,9 +2153,9 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                 _btnDelta(
                   icon: Icons.remove,
                   onTap: () {
-                    final actual = _duracionSegundos ?? 0;
+                    final actual = _duracionObjetivoSegundos ?? 0;
                     final nuevo = (actual - 30).clamp(0, 86400);
-                    _duracionSegundos = nuevo == 0 ? null : nuevo;
+                    _duracionObjetivoSegundos = nuevo == 0 ? null : nuevo;
                     _duracionCtrl.text = nuevo == 0 ? '' : _fmtDuracion(nuevo);
                     setState(() {});
                   },
@@ -2038,10 +2184,10 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                     ),
                     onChanged: (v) {
                       if (v.isEmpty) {
-                        _duracionSegundos = null;
+                        _duracionObjetivoSegundos = null;
                       } else {
                         final segundos = _parseDuracion(v);
-                        if (segundos > 0) _duracionSegundos = segundos;
+                        if (segundos > 0) _duracionObjetivoSegundos = segundos;
                       }
                     },
                   ),
@@ -2050,97 +2196,10 @@ class _EjercicioRowState extends ConsumerState<_EjercicioRow> {
                 _btnDelta(
                   icon: Icons.add,
                   onTap: () {
-                    final actual = _duracionSegundos ?? 0;
+                    final actual = _duracionObjetivoSegundos ?? 0;
                     final nuevo = (actual + 30).clamp(0, 86400);
-                    _duracionSegundos = nuevo == 0 ? null : nuevo;
+                    _duracionObjetivoSegundos = nuevo == 0 ? null : nuevo;
                     _duracionCtrl.text = nuevo == 0 ? '' : _fmtDuracion(nuevo);
-                    setState(() {});
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _distanciaPill(double width, ColorScheme cs) {
-    final distActual = _distanciaMetros ?? 0;
-    return SizedBox(
-      width: width,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text('Distancia (m)',
-                style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurfaceVariant,
-                    letterSpacing: 0.5)),
-            const SizedBox(height: 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _btnDelta(
-                  icon: Icons.remove,
-                  onTap: () {
-                    if (distActual > 0) {
-                      final nuevo = (distActual - 100).clamp(0, 42195);
-                      _distanciaMetros = nuevo == 0 ? null : nuevo;
-                      _distanciaCtrl.text = nuevo == 0 ? '' : nuevo.toString();
-                      setState(() {});
-                    }
-                  },
-                ),
-                const SizedBox(width: 4),
-                SizedBox(
-                  width: 52,
-                  height: 32,
-                  child: TextField(
-                    controller: _distanciaCtrl,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: cs.onSurface,
-                        letterSpacing: -0.5),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                      border: InputBorder.none,
-                      hintText: '—',
-                      hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
-                    ),
-                    onChanged: (v) {
-                      final parsed = int.tryParse(v);
-                      if (parsed != null) {
-                        _distanciaMetros = parsed.clamp(0, 42195);
-                        if (_distanciaMetros == 0) _distanciaMetros = null;
-                      } else if (v.isEmpty) {
-                        _distanciaMetros = null;
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 4),
-                _btnDelta(
-                  icon: Icons.add,
-                  onTap: () {
-                    final nuevo = (distActual + 100).clamp(0, 42195);
-                    _distanciaMetros = nuevo == 0 ? null : nuevo;
-                    _distanciaCtrl.text = nuevo == 0 ? '' : nuevo.toString();
                     setState(() {});
                   },
                 ),
