@@ -2047,7 +2047,7 @@ Se reescribieron 6 documentos del estándar de 14 puntos con nivel profesional e
   - Visibilidad chips en todas las cards de lista.
 
 ### Fix de encoding en seed_catalogo.py
-- El script ahora escribe directamente a archivo con UTF-8 en lugar de stdout, evitando corrupción de caracteres acentuados en Windows.
+- El script ahora escribe directamente a archivo con UTF-8 en lugar de stdout, evitando corrupción de caracteres acentuados en Windows y garantizando codificación correcta en cualquier plataforma.
 
 ### SQL consolidado para despliegue manual
 - Archivo `migraciones_pendientes.sql` en raíz con las 4 migraciones nuevas para ejecutar en Supabase SQL Editor.
@@ -2361,7 +2361,7 @@ Se reescribieron 6 documentos del estándar de 14 puntos con nivel profesional e
 ## [2.5.4] — 19-04-2026
 
 ### Documentación SHA-1 Android (validada)
-- Se añadió en [docs/08-installation.md](08-installation.md) el procedimiento verificado para obtener SHA-1 en Windows con `gradlew signingReport`.
+- Se añadió en [docs/08-installation.md](08-installation.md) el procedimiento verificado para obtener SHA-1 con `gradlew signingReport`, incluyendo comandos para Windows, WSL y Linux.
 - Se agregaron comandos alternativos con `keytool` para casos donde Gradle falle.
 - Se incluyeron referencias de capturas pendientes para documentar visualmente: ejecución de comando, salida SHA1 y formulario OAuth Android.
 

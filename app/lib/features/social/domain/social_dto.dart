@@ -13,6 +13,7 @@ class Publicacion {
   final bool likedByMe;
   final DateTime fecha;
   final String? metadata;
+  final DateTime? editadoEn;
 
   const Publicacion({
     required this.id,
@@ -27,7 +28,11 @@ class Publicacion {
     required this.likedByMe,
     required this.fecha,
     this.metadata,
+    this.editadoEn,
   });
+
+  /// Indica si la publicación ha sido editada por su autor.
+  bool get fueEditada => editadoEn != null;
 
   /// Construye una [Publicacion] desde un mapa de Supabase.
   ///
@@ -71,6 +76,9 @@ class Publicacion {
       likedByMe: likedByMe,
       fecha: DateTime.parse(map['creado_en'] as String),
       metadata: map['metadata'] as String?,
+      editadoEn: map['editado_en'] != null
+          ? DateTime.parse(map['editado_en'] as String)
+          : null,
     );
   }
 }

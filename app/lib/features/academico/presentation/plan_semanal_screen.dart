@@ -6,9 +6,11 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
+import '../../../shared/widgets/undo_toast.dart';
 import '../../../core/design_system/sv_colors.dart';
 import '../../retos/application/retos_provider.dart';
 import '../application/balance_semanal_provider.dart';
+import '../application/bloque_estudio_provider.dart';
 import '../application/entregas_examenes_provider.dart';
 import '../application/planes_estudio_provider.dart';
 
@@ -25,10 +27,93 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
   int _pomodoroRestante = 0;
   bool _pomodoroActivo = false;
 
+  /// Bloques marcados como completados de forma optimista que aún están dentro
+  /// de la ventana de «Deshacer» (commit diferido tipo Gmail).
+  final Set<String> _completadoOptimista = {};
+
   @override
   void dispose() {
     _pomodoroTimer?.cancel();
     super.dispose();
+  }
+
+  /// Maneja el toque sobre el botón de completar/desmarcar de un bloque.
+  ///
+  /// - Desmarcar: efecto inmediato.
+  /// - Completar: commit diferido con ventana de «Deshacer» (6 s) tipo Gmail.
+  ///   El XP solo se otorga si el usuario no deshace dentro de la ventana.
+  Future<void> _onToggleBloque(HorarioAcademicoDb b) async {
+    if (_completadoOptimista.contains(b.id)) return;
+
+    if (b.completado) {
+      await toggleBloqueCompletado(
+        bloqueId: b.id,
+        completado: false,
+        duracionMinutos: b.horaFin.difference(b.horaInicio).inMinutes,
+        ref: ref,
+      );
+      if (!mounted) return;
+      ref.invalidate(horariosSemanaActualProvider);
+      ref.invalidate(balanceSemanalProvider);
+      return;
+    }
+
+    _completarConDeshacer(b);
+  }
+
+  /// Marca el bloque como completado de forma optimista y muestra un toast
+  /// con acción «Deshacer» durante 5 s (auto-descartable). Si la ventana expira
+  /// sin deshacer, confirma el cambio en BD y otorga el XP.
+  void _completarConDeshacer(HorarioAcademicoDb b) {
+    setState(() => _completadoOptimista.add(b.id));
+    final duracion = b.horaFin.difference(b.horaInicio).inMinutes;
+
+    UndoToast.show(
+      context,
+      message: 'Bloque completado',
+      actionLabel: 'Deshacer',
+      duration: const Duration(seconds: 5),
+      onAction: () {
+        // El usuario deshace: no se confirma; se revierte el estado optimista.
+        if (mounted) {
+          setState(() => _completadoOptimista.remove(b.id));
+        }
+      },
+      onTimeout: () => _confirmarCompletado(b, duracion),
+    );
+  }
+
+  /// Confirma en BD la finalización del bloque (commit diferido) tras expirar
+  /// la ventana de «Deshacer». Captura errores para no propagarlos.
+  Future<void> _confirmarCompletado(
+      HorarioAcademicoDb b, int duracionMinutos) async {
+    if (!mounted) return;
+    try {
+      final xpResult = await toggleBloqueCompletado(
+        bloqueId: b.id,
+        completado: true,
+        duracionMinutos: duracionMinutos,
+        ref: ref,
+      );
+      if (!mounted) return;
+      ref.invalidate(horariosSemanaActualProvider);
+      ref.invalidate(balanceSemanalProvider);
+      if (xpResult != null) {
+        UndoToast.show(
+          context,
+          message: xpResult.subeNivel
+              ? '¡Nivel ${xpResult.nuevoNivel}! +${xpResult.xpGanado} XP'
+              : '+${xpResult.xpGanado} XP',
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (_) {
+      // Silencioso: no propagar para no congelar la UI.
+    } finally {
+      if (mounted) {
+        setState(() => _completadoOptimista.remove(b.id));
+      }
+    }
   }
 
   @override
@@ -297,6 +382,8 @@ class _PlanSemanalScreenState extends ConsumerState<PlanSemanalScreen> {
         padding: const EdgeInsets.only(bottom: 10),
         child: _TimelineCard(
           bloque: b,
+          completadoOverride: _completadoOptimista.contains(b.id) ? true : null,
+          onToggleCompletado: !b.esFijo ? () => _onToggleBloque(b) : null,
           onStartPomodoro:
               b.tipoActividad == 'estudio' ? () => _iniciarPomodoro() : null,
           onIniciarSesion: b.tipoActividad == 'deporte' && b.rutinaId != null
@@ -543,11 +630,15 @@ class _SelectorDias extends StatelessWidget {
 class _TimelineCard extends StatelessWidget {
   const _TimelineCard({
     required this.bloque,
+    this.completadoOverride,
+    this.onToggleCompletado,
     this.onStartPomodoro,
     this.onIniciarSesion,
   });
 
   final HorarioAcademicoDb bloque;
+  final bool? completadoOverride;
+  final VoidCallback? onToggleCompletado;
   final VoidCallback? onStartPomodoro;
   final VoidCallback? onIniciarSesion;
 
@@ -555,132 +646,167 @@ class _TimelineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final (color, icono) = _estiloBloque(bloque.tipoActividad);
+    final completado = completadoOverride ?? bloque.completado;
 
     final horaInicio =
         '${bloque.horaInicio.hour.toString().padLeft(2, '0')}:${bloque.horaInicio.minute.toString().padLeft(2, '0')}';
     final horaFin =
         '${bloque.horaFin.hour.toString().padLeft(2, '0')}:${bloque.horaFin.minute.toString().padLeft(2, '0')}';
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: color.withValues(alpha: 0.15)),
-      ),
-      color: theme.colorScheme.surfaceContainerLowest,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 52,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(2),
+    return Opacity(
+      opacity: completado ? 0.6 : 1.0,
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+              color: completado
+                  ? Colors.green.withValues(alpha: 0.3)
+                  : color.withValues(alpha: 0.15)),
+        ),
+        color: theme.colorScheme.surfaceContainerLowest,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: completado ? Colors.green : color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              children: [
-                Icon(icono, size: 20, color: color),
-                const SizedBox(height: 4),
-                Text(horaInicio,
-                    style: const TextStyle(
-                        fontSize: 9, fontWeight: FontWeight.w600)),
-              ],
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(width: 12),
+              Column(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          _tipoLabel(bloque.tipoActividad),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: color,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 9,
+                  Icon(icono,
+                      size: 20, color: completado ? Colors.green : color),
+                  const SizedBox(height: 4),
+                  Text(horaInicio,
+                      style: const TextStyle(
+                          fontSize: 9, fontWeight: FontWeight.w600)),
+                ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            _tipoLabel(bloque.tipoActividad),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 9,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      if (bloque.prioridad == 'alta')
-                        Icon(Icons.flag_rounded,
-                            size: 12, color: Colors.red.shade300),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _nombreBloque(bloque),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
+                        const SizedBox(width: 6),
+                        if (bloque.prioridad == 'alta')
+                          Icon(Icons.flag_rounded,
+                              size: 12, color: Colors.red.shade300),
+                        if (completado) ...[
+                          const SizedBox(width: 4),
+                          const Icon(Icons.check_circle_rounded,
+                              size: 12, color: Colors.green),
+                        ],
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (bloque.temas != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
-                      'Tema: ${bloque.temas}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: 10,
-                        color: SVColors.onSurfaceMuted,
+                      _nombreBloque(bloque),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        decoration:
+                            completado ? TextDecoration.lineThrough : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
+                    if (bloque.temas != null) ...[
+                      const SizedBox(height: 2),
                       Text(
-                        '$horaInicio - $horaFin',
+                        'Tema: ${bloque.temas}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 10,
                           color: SVColors.onSurfaceMuted,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const Spacer(),
-                      if (onStartPomodoro != null)
-                        _ActionChip(
-                          label: 'Pomodoro',
-                          icon: Icons.timer_outlined,
-                          color: Colors.blue,
-                          onTap: onStartPomodoro!,
-                        ),
-                      if (onIniciarSesion != null) ...[
-                        const SizedBox(width: 6),
-                        _ActionChip(
-                          label: 'Iniciar',
-                          icon: Icons.play_arrow_rounded,
-                          color: const Color(0xFF00ACC1),
-                          onTap: onIniciarSesion!,
-                        ),
-                      ],
                     ],
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          '$horaInicio - $horaFin',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 10,
+                            color: SVColors.onSurfaceMuted,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (onStartPomodoro != null && !completado)
+                          _ActionChip(
+                            label: 'Pomodoro',
+                            icon: Icons.timer_outlined,
+                            color: Colors.blue,
+                            onTap: onStartPomodoro!,
+                          ),
+                        if (onIniciarSesion != null && !completado) ...[
+                          const SizedBox(width: 6),
+                          _ActionChip(
+                            label: 'Iniciar',
+                            icon: Icons.play_arrow_rounded,
+                            color: const Color(0xFF00ACC1),
+                            onTap: onIniciarSesion!,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              if (onToggleCompletado != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: onToggleCompletado,
+                  icon: Icon(
+                    completado
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    color: completado ? Colors.green : SVColors.onSurfaceMuted,
+                    size: 24,
+                  ),
+                  tooltip: completado ? 'Desmarcar' : 'Completar',
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   String _nombreBloque(HorarioAcademicoDb b) {
-    return b.asignaturaId;
+    if (b.tipoActividad == 'deporte' && b.rutinaNombre != null) {
+      return b.rutinaNombre!;
+    }
+    return b.asignaturaNombre ?? b.asignaturaId;
   }
 
   static (Color, IconData) _estiloBloque(String tipo) {
@@ -900,61 +1026,74 @@ class _RetoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final academicos = retos.where((r) => r.reto.tipo == 'academico').toList();
-    if (academicos.isEmpty) return const SizedBox.shrink();
+    final activos = retos.where((r) => !r.reto.estaCompletado).toList();
+    if (activos.isEmpty) return const SizedBox.shrink();
 
-    final primero = academicos.first;
-    return Card(
-      elevation: 0,
-      color: const Color(0xFF7B1FA2).withValues(alpha: 0.06),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side:
-            BorderSide(color: const Color(0xFF7B1FA2).withValues(alpha: 0.15)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          children: [
-            const Icon(Icons.emoji_events_rounded,
-                color: Color(0xFF7B1FA2), size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                primero.reto.titulo,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF7B1FA2),
+    return Column(
+      children: activos.map((r) {
+        final color = r.reto.tipo == 'academico'
+            ? const Color(0xFF7B1FA2)
+            : r.reto.tipo == 'ejercicio'
+                ? const Color(0xFFF97316)
+                : const Color(0xFF6366F1);
+        final icono = r.reto.tipo == 'academico'
+            ? Icons.emoji_events_rounded
+            : r.reto.tipo == 'ejercicio'
+                ? Icons.fitness_center_rounded
+                : Icons.star_rounded;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Card(
+            elevation: 0,
+            color: color.withValues(alpha: 0.06),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: color.withValues(alpha: 0.15)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(icono, color: color, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      r.reto.titulo,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontWeight: FontWeight.w600, color: color),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                  ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: SizedBox(
+                      width: 60,
+                      height: 6,
+                      child: LinearProgressIndicator(
+                        value: r.progreso,
+                        backgroundColor: color.withValues(alpha: 0.12),
+                        valueColor: AlwaysStoppedAnimation(color),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${(r.progreso * 100).round()}%',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: color),
+                  ),
+                ],
               ),
             ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: SizedBox(
-                width: 60,
-                height: 6,
-                child: LinearProgressIndicator(
-                  value: primero.progreso,
-                  backgroundColor:
-                      const Color(0xFF7B1FA2).withValues(alpha: 0.15),
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(Color(0xFF7B1FA2)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '${(primero.progreso * 100).round()}%',
-              style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF7B1FA2)),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

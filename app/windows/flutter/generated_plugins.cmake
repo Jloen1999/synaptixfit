@@ -5,6 +5,8 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   connectivity_plus
+  passkeys_windows
+  pdfx
   url_launcher_windows
 )
 

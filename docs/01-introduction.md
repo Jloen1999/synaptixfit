@@ -225,8 +225,9 @@ Este proyecto sigue el estándar modular de documentación del equipo jloen:
 
 | # | Archivo | Descripción |
 |---|---------|------------|
+| 00 | [00-plan-maestro.md](00-plan-maestro.md) | Plan maestro: hoja de ruta, fases 0-4, Sprints 7-9, Time-Blocking, panel admin. |
 | 01 | `01-introduction.md` | Este documento. Contexto, objetivos, stack, glosario. |
-| 02 | [02-requirements.md](02-requirements.md) | Requisitos funcionales y no funcionales (SRS v3.0). |
+| 02 | [02-requirements.md](02-requirements.md) | Requisitos funcionales y no funcionales (SRS v5.1). |
 | 03 | [03-architecture.md](03-architecture.md) | Arquitectura del sistema, modelo 4+1, diagramas. |
 | 04 | [04-data-model.md](04-data-model.md) | Modelos ER, esquemas de BD, relaciones, RLS. |
 | 05 | [05-api.md](05-api.md) | Endpoints REST, requests/responses, auth, errores. |
@@ -238,10 +239,14 @@ Este proyecto sigue el estándar modular de documentación del equipo jloen:
 | 11 | [11-security.md](11-security.md) | Auth, RLS, encriptación, datos sensibles. |
 | 12 | [12-user-guide.md](12-user-guide.md) | Manual de uso, roles, flujos principales. |
 | 13 | [13-maintenance.md](13-maintenance.md) | Gobierno del catálogo de ejercicios, backups, actualización de dependencias. |
-| 14 | [14-changelog.md](14-changelog.md) | Historial de versiones y cambios (~1502 líneas). |
+| 14 | [14-changelog.md](14-changelog.md) | Historial de versiones y cambios (~2162 líneas). |
 | 15 | [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md) | Sistema de recomendación híbrido (motor de reglas + IA Gemini con JSON mode): pipeline completo, catálogo inteligente top 60, contexto académico unificado, parámetros por modalidad, validación extendida, fallback. |
 | 16 | [16-guia-autenticacion-google.md](16-guia-autenticacion-google.md) | Guía técnica de implementación de autenticación nativa con Google (Flutter + Supabase). |
 | 17 | [17-dataset-lyfta.md](17-dataset-lyfta.md) | Dataset Lyfta: pipeline de scraping, limpieza y generación de 682 ejercicios con video. |
+| 18 | [18-implementacion-admin.md](18-implementacion-admin.md) | Panel de administración Fase 3: arquitectura, implementación, DTOs, repositorios, widgets. |
+| 19 | [19-plan-coherencia-gamificacion.md](19-plan-coherencia-gamificacion.md) | Plan de coherencia de gamificación: 9 fases, XP unificado, SyncHub, insignias. |
+| 20 | [20-plan-verificacion-qa.md](20-plan-verificacion-qa.md) | Plan de verificación QA: checklist, pruebas, métricas de calidad. |
+| 21 | [21-plan-definitivo.md](21-plan-definitivo.md) | Plan definitivo: arquitectura final, roadmap completado, estado del proyecto. |
 
 ---
 

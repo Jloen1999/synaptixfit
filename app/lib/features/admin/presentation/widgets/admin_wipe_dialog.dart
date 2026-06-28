@@ -21,12 +21,11 @@ class AdminWipeDialog extends StatefulWidget {
 
 class _AdminWipeDialogState extends State<AdminWipeDialog> {
   final _controller = TextEditingController();
-  final bool _ejecutando = false;
   bool _conservarExpandido = false;
   bool _resetearExpandido = false;
   bool _eliminarExpandido = false;
 
-  bool get _confirmado => _controller.text.trim() == 'ELIMINAR' && !_ejecutando;
+  bool get _confirmado => _controller.text.trim() == 'ELIMINAR';
 
   @override
   void dispose() {
@@ -119,7 +118,6 @@ class _AdminWipeDialogState extends State<AdminWipeDialog> {
               const SizedBox(height: 20),
               TextField(
                 controller: _controller,
-                enabled: !_ejecutando,
                 decoration: const InputDecoration(
                   labelText: 'Escribe ELIMINAR para confirmar',
                   border: OutlineInputBorder(),
@@ -136,25 +134,13 @@ class _AdminWipeDialogState extends State<AdminWipeDialog> {
                   fontFamily: 'monospace',
                 ),
               ),
-
-              if (_ejecutando) ...[
-                const SizedBox(height: 16),
-                const LinearProgressIndicator(),
-                const SizedBox(height: 8),
-                const Center(
-                  child: Text(
-                    'Ejecutando wipe...',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
       ),
       actions: [
         TextButton(
-          onPressed: _ejecutando ? null : () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
         FilledButton.icon(

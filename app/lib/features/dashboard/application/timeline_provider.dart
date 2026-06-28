@@ -7,6 +7,14 @@ import '../../../shared/models/timeline_item.dart';
 import '../../bienestar/application/rutina_provider.dart';
 import '../../retos/application/retos_core.dart';
 
+final completionOverlayProvider = StateProvider<Map<String, bool>>((ref) => {});
+
+/// Día seleccionado en las pestañas del timeline del inicio (por defecto hoy).
+final selectedDiaProvider = StateProvider<DateTime>((ref) {
+  final n = DateTime.now();
+  return DateTime(n.year, n.month, n.day);
+});
+
 /// Linea de tiempo unificada para HOY con retos y dia pendiente.
 final timelineHoyProvider = FutureProvider<List<TimelineItem>>((ref) async {
   if (!EnvConfig.hasSupabase) return [];
@@ -38,12 +46,11 @@ final timelineHoyProvider = FutureProvider<List<TimelineItem>>((ref) async {
         .gte('completada_en', inicioHoy.toIso8601String())
         .lte('completada_en', finHoy.toIso8601String())
         .order('completada_en', ascending: true),
-    // 3. Entregas pendientes (7 dias, no completadas)
+    // 3. Entregas (7 dias, incluye completadas)
     client
         .from('entregas_examenes')
         .select()
         .eq('usuario_id', user.id)
-        .eq('esta_completado', false)
         .gte('fecha_limite', inicioHoy.toIso8601String())
         .lte('fecha_limite', finSemana.toIso8601String())
         .order('fecha_limite', ascending: true)
@@ -62,6 +69,10 @@ final timelineHoyProvider = FutureProvider<List<TimelineItem>>((ref) async {
 
   for (final h in resultados[0] as List<dynamic>) {
     final map = h as Map<String, dynamic>;
+    // Exámenes/entregas se muestran vía la consulta de entregas_examenes;
+    // evitamos duplicarlos desde su bloque del calendario.
+    final tipoAct = map['tipo_actividad'] as String?;
+    if (tipoAct == 'examen' || tipoAct == 'entrega') continue;
     items.add(TimelineItem.desdeHorario(HorarioAcademicoDb.fromMap(map)));
   }
   for (final s in resultados[1] as List<dynamic>) {
@@ -93,5 +104,61 @@ final timelineHoyProvider = FutureProvider<List<TimelineItem>>((ref) async {
 
   items.sort((a, b) => a.referenciaTemporal.compareTo(b.referenciaTemporal));
 
+  return items;
+});
+
+/// Línea de tiempo (tareas programadas) de un día concreto: horarios, sesiones
+/// y entregas con fecha en ese día. Para HOY se usa [timelineHoyProvider], que
+/// además incluye retos, hitos y el día de entrenamiento pendiente.
+final timelineDiaProvider =
+    FutureProvider.family<List<TimelineItem>, DateTime>((ref, dia) async {
+  if (!EnvConfig.hasSupabase) return [];
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return [];
+
+  final inicio = DateTime(dia.year, dia.month, dia.day);
+  final fin = DateTime(dia.year, dia.month, dia.day, 23, 59, 59);
+
+  final res = await Future.wait([
+    client
+        .from('horarios_academicos')
+        .select()
+        .eq('usuario_id', user.id)
+        .gte('hora_inicio', inicio.toIso8601String())
+        .lte('hora_inicio', fin.toIso8601String())
+        .order('hora_inicio', ascending: true),
+    client
+        .from('sesiones_registradas')
+        .select()
+        .eq('usuario_id', user.id)
+        .gte('completada_en', inicio.toIso8601String())
+        .lte('completada_en', fin.toIso8601String())
+        .order('completada_en', ascending: true),
+    client
+        .from('entregas_examenes')
+        .select()
+        .eq('usuario_id', user.id)
+        .gte('fecha_limite', inicio.toIso8601String())
+        .lte('fecha_limite', fin.toIso8601String())
+        .order('fecha_limite', ascending: true),
+  ]);
+
+  final items = <TimelineItem>[];
+  for (final h in res[0] as List<dynamic>) {
+    final map = h as Map<String, dynamic>;
+    final tipoAct = map['tipo_actividad'] as String?;
+    if (tipoAct == 'examen' || tipoAct == 'entrega') continue;
+    items.add(TimelineItem.desdeHorario(HorarioAcademicoDb.fromMap(map)));
+  }
+  for (final s in res[1] as List<dynamic>) {
+    items.add(TimelineItem.desdeSesion(
+        SesionRegistradaDb.fromMap(s as Map<String, dynamic>)));
+  }
+  for (final e in res[2] as List<dynamic>) {
+    items.add(TimelineItem.desdeEntrega(
+        EntregaExamenDb.fromMap(e as Map<String, dynamic>)));
+  }
+  items.sort((a, b) => a.referenciaTemporal.compareTo(b.referenciaTemporal));
   return items;
 });

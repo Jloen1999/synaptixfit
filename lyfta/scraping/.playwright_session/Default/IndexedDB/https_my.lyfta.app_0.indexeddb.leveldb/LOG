@@ -1,0 +1,25 @@
+2026/06/02-02:11:09.515 1fb0 Reusing MANIFEST C:\Users\JLOel\Desktop\scraping\.playwright_session\Default\IndexedDB\https_my.lyfta.app_0.indexeddb.leveldb/MANIFEST-000001
+2026/06/02-02:11:09.516 1fb0 Recovering log #102
+2026/06/02-02:11:09.517 1fb0 Reusing old log C:\Users\JLOel\Desktop\scraping\.playwright_session\Default\IndexedDB\https_my.lyfta.app_0.indexeddb.leveldb/000102.log 
+2026/06/02-02:11:09.518 1fb0 Delete type=2 #101
+2026/06/02-02:11:09.627 2ad8 Level-0 table #107: started
+2026/06/02-02:11:09.630 2ad8 Level-0 table #107: 2056 bytes OK
+2026/06/02-02:11:09.632 2ad8 Delete type=0 #102
+2026/06/02-02:11:09.633 1fa0 Manual compaction at level-0 from '\x00$\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00%\x00\x00\x00' @ 0 : 0; will stop at '\x00$\x00\x00\x05' @ 1809 : 1
+2026/06/02-02:11:09.634 1fa0 Compacting 1@0 + 1@1 files
+2026/06/02-02:11:09.637 1fa0 Generated table #108@0: 301 keys, 4726 bytes
+2026/06/02-02:11:09.637 1fa0 Compacted 1@0 + 1@1 files => 4726 bytes
+2026/06/02-02:11:09.638 1fa0 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/06/02-02:11:09.639 1fa0 Delete type=2 #107
+2026/06/02-02:11:09.640 1fa0 Manual compaction at level-0 from '\x00$\x00\x00\x05' @ 1809 : 1 .. '\x00%\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/06/02-02:11:12.658 2ad8 Level-0 table #110: started
+2026/06/02-02:11:12.662 2ad8 Level-0 table #110: 2427 bytes OK
+2026/06/02-02:11:12.665 2ad8 Delete type=2 #104
+2026/06/02-02:11:12.665 2ad8 Delete type=0 #106
+2026/06/02-02:11:12.667 1fa0 Manual compaction at level-0 from '\x00%\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00&\x00\x00\x00' @ 0 : 0; will stop at '\x00%\x00\x00\x05' @ 1864 : 1
+2026/06/02-02:11:12.668 1fa0 Compacting 1@0 + 1@1 files
+2026/06/02-02:11:12.672 1fa0 Generated table #111@0: 301 keys, 4714 bytes
+2026/06/02-02:11:12.673 1fa0 Compacted 1@0 + 1@1 files => 4714 bytes
+2026/06/02-02:11:12.674 1fa0 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/06/02-02:11:12.675 1fa0 Delete type=2 #110
+2026/06/02-02:11:12.677 1fa0 Manual compaction at level-0 from '\x00%\x00\x00\x05' @ 1864 : 1 .. '\x00&\x00\x00\x00' @ 0 : 0; will stop at (end)

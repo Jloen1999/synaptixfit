@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'loopback_auth_stub.dart'
+    if (dart.library.io) 'loopback_auth_io.dart';
+
 import '../../../core/config/env_config.dart';
 
 class AuthResult {
@@ -187,6 +190,11 @@ class AuthRepository {
         );
       }
 
+      if (defaultTargetPlatform != TargetPlatform.android &&
+          defaultTargetPlatform != TargetPlatform.iOS) {
+        return await _loginGoogleEscritorio();
+      }
+
       if (!EnvConfig.hasGoogleWebClientId) {
         return const AuthResult(
           requiereOnboarding: true,
@@ -269,6 +277,77 @@ class AuthRepository {
         error:
             'No fue posible iniciar con Google. Revisa SHA-1, package name y GOOGLE_WEB_CLIENT_ID.',
       );
+    }
+  }
+
+  Future<AuthResult> _loginGoogleEscritorio() async {
+    LoopbackServer? server;
+    try {
+      server = await iniciarServidorLoopback(puerto: 9999);
+    } catch (_) {
+      try {
+        server = await iniciarServidorLoopback();
+      } catch (e) {
+        debugPrint('No se pudo iniciar servidor loopback: $e');
+        return const AuthResult(
+          requiereOnboarding: true,
+          autenticado: false,
+          error:
+              'No se pudo iniciar la autenticacion. El puerto 9999 esta en uso. '
+              'Liberalo o anade el puerto alternativo en Supabase y GCP.',
+        );
+      }
+    }
+
+    try {
+      final redirectTo = 'http://localhost:${server.port}/callback';
+
+      final launched = await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: redirectTo,
+      );
+
+      if (!launched) {
+        return const AuthResult(
+          requiereOnboarding: true,
+          autenticado: false,
+          error: 'No se pudo abrir el navegador',
+        );
+      }
+
+      final callbackUri = await server.callback;
+      if (callbackUri == null) {
+        return const AuthResult(
+          requiereOnboarding: true,
+          autenticado: false,
+          error:
+              'Tiempo de espera agotado para la autenticacion. Intentalo de nuevo.',
+        );
+      }
+
+      await _client.auth.getSessionFromUrl(callbackUri);
+
+      final user = _client.auth.currentUser;
+      if (user == null) {
+        return const AuthResult(
+          requiereOnboarding: true,
+          autenticado: false,
+          error: 'No se pudo completar la autenticacion con Google',
+        );
+      }
+
+      return AuthResult(
+        requiereOnboarding: _requiereOnboardingDesdeMetadata(user),
+        autenticado: true,
+      );
+    } on AuthException catch (e) {
+      return AuthResult(
+        requiereOnboarding: true,
+        autenticado: false,
+        error: e.message,
+      );
+    } finally {
+      await server.close();
     }
   }
 

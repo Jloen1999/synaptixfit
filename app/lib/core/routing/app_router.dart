@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../features/academico/presentation/academic_screen.dart';
+import '../../features/academico/domain/archivo_asignatura_dto.dart';
+import '../../features/academico/presentation/archivo_visor_screen.dart';
+import '../../features/academico/presentation/asignatura_detalle_screen.dart';
 import '../../features/academico/presentation/configuracion_academica_screen.dart';
 import '../../features/academico/presentation/apuntes_screen.dart';
 import '../../features/academico/presentation/plan_semanal_screen.dart';
 import '../../features/academico/presentation/inbox_screen.dart';
 import '../../features/academico/presentation/canvas_screen.dart';
+import '../../features/academico/presentation/practica_screen.dart';
+import '../../shared/models/db_models.dart';
 import '../../features/analitica/presentation/analitica_screen.dart';
 import '../../features/auth/presentation/acceso_screen.dart';
 import '../../features/auth/presentation/onboarding_cuenta_screen.dart';
@@ -25,7 +31,7 @@ import '../../features/perfil/presentation/selector_asignaturas_screen.dart';
 import '../../features/retos/presentation/crear_reto_screen.dart';
 import '../../features/retos/presentation/detalle_reto_screen.dart';
 import '../../features/retos/presentation/retos_screen.dart';
-import '../../features/social/presentation/muro_social_screen.dart';
+import '../../features/social/presentation/progreso_screen.dart';
 import '../../features/splash/presentation/presentacion_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/pomodoro/presentation/pomodoro_screen.dart';
@@ -98,7 +104,7 @@ final GoRouter appRouter = GoRouter(
         StatefulShellBranch(routes: [
           GoRoute(
             path: '/academico',
-            builder: (context, state) => const SizedBox.shrink(),
+            builder: (context, state) => const AcademicScreen(),
           ),
         ]),
         StatefulShellBranch(routes: [
@@ -115,8 +121,8 @@ final GoRouter appRouter = GoRouter(
         ]),
         StatefulShellBranch(routes: [
           GoRoute(
-            path: '/social',
-            builder: (context, state) => const MuroSocialScreen(),
+            path: '/progreso',
+            builder: (context, state) => const ProgresoScreen(),
           ),
         ]),
       ],
@@ -156,7 +162,12 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/retos/crear',
-      builder: (context, state) => const CrearRetoScreen(),
+      builder: (context, state) {
+        final extra = state.extra;
+        final prefilledSubjectId =
+            extra is Map ? extra['prefilledSubjectId'] as String? : null;
+        return CrearRetoScreen(prefilledSubjectId: prefilledSubjectId);
+      },
     ),
     GoRoute(
       path: '/retos/:id',
@@ -187,8 +198,29 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const ConfiguracionAcademicaScreen(),
     ),
     GoRoute(
+      path: '/academico/asignatura/:id',
+      builder: (context, state) => AsignaturaDetalleScreen(
+        asignaturaId: state.pathParameters['id'] ?? '',
+        asignaturaInicial:
+            state.extra is AsignaturaDb ? state.extra as AsignaturaDb : null,
+      ),
+    ),
+    GoRoute(
       path: '/academico/apuntes/editor',
       builder: (context, state) => const ApuntesEditorScreen(),
+    ),
+    GoRoute(
+      path: '/academico/archivo/visor',
+      builder: (context, state) {
+        final archivo = state.extra as ArchivoAsignaturaDto;
+        return ArchivoVisorScreen(archivo: archivo);
+      },
+    ),
+    GoRoute(
+      path: '/academico/practica/:materialId',
+      builder: (context, state) => PracticaScreen(
+        materialId: state.pathParameters['materialId'] ?? '',
+      ),
     ),
     GoRoute(
       path: '/notificaciones',

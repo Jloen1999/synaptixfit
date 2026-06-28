@@ -48,7 +48,7 @@ class BienestarRepository {
     required String nivelActividad,
     required String objetivoPrincipal,
     List<String> equipamientoDisponible = const [],
-    int diasDisponiblesSemana = 3,
+    List<int> diasDisponibles = const [1, 3, 5],
     int minutosPorSesion = 45,
   }) async {
     final alturaM = alturaCm / 100;
@@ -71,7 +71,8 @@ class BienestarRepository {
       'objetivo_principal': objetivoPrincipal,
       'objetivos': [objetivoPrincipal],
       'equipamiento_disponible': equipamientoDisponible,
-      'dias_disponibles_semana': diasDisponiblesSemana,
+      'dias_disponibles': diasDisponibles,
+      'dias_disponibles_semana': diasDisponibles.length,
       'minutos_por_sesion': minutosPorSesion,
       'onboarding_completado': true,
     };
@@ -198,5 +199,31 @@ class BienestarRepository {
         .from('perfil_bienestar_usuario')
         .update(data)
         .eq('usuario_id', userId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // actualizarPrivacidad — UPDATE public.usuarios.nivel_privacidad
+  // ---------------------------------------------------------------------------
+  /// [nivel] debe ser uno de: 'publico', 'amigos', 'privado'.
+  Future<void> actualizarPrivacidad(String nivel) async {
+    if (!EnvConfig.hasSupabase) return;
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client.from('usuarios').update({
+      'nivel_privacidad': nivel,
+    }).eq('id', userId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // actualizarPreferencias — UPSERT parcial en preferencias_notificacion
+  // ---------------------------------------------------------------------------
+  Future<void> actualizarPreferencias(Map<String, dynamic> data) async {
+    if (!EnvConfig.hasSupabase) return;
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client.from('preferencias_notificacion').upsert(
+      {'usuario_id': userId, ...data},
+      onConflict: 'usuario_id',
+    );
   }
 }

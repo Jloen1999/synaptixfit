@@ -72,7 +72,7 @@ final horariosSemanaActualProvider =
 
   final data = await client
       .from('horarios_academicos')
-      .select()
+      .select('*, asignaturas(nombre), rutinas(nombre)')
       .eq('usuario_id', user.id)
       .gte('hora_inicio', lunesStr)
       .lte('hora_inicio', domingoStr)
@@ -236,44 +236,53 @@ Future<String?> crearPlanCompleto({
 
   final planId = planData['id'] as String;
 
-  if (entregas.isNotEmpty) {
-    final rows = entregas.map((e) => {
+  try {
+    if (entregas.isNotEmpty) {
+      final rows = entregas.map((e) => {
+            'usuario_id': user.id,
+            'plan_estudio_id': planId,
+            'titulo': e['titulo'],
+            'tipo': e['tipo'],
+            'fecha_limite': e['fecha_limite'],
+            'dificultad': e['dificultad'],
+            if (e['asignatura_id'] != null) 'asignatura_id': e['asignatura_id'],
+          });
+      await client.from('entregas_examenes').insert(rows.toList());
+    }
+
+    if (bloques.isNotEmpty) {
+      final rows = bloques.map((b) {
+        final dia = b['dia_semana'] as int;
+        final horaInicio =
+            _fechaDesdeDiaYHora(semanaInicio, dia, b['hora_inicio'] as String);
+        final horaFin =
+            _fechaDesdeDiaYHora(semanaInicio, dia, b['hora_fin'] as String);
+        return {
           'usuario_id': user.id,
           'plan_estudio_id': planId,
-          'titulo': e['titulo'],
-          'tipo': e['tipo'],
-          'fecha_limite': e['fecha_limite'],
-          'dificultad': e['dificultad'],
-          if (e['asignatura_id'] != null) 'asignatura_id': e['asignatura_id'],
-        });
-    await client.from('entregas_examenes').insert(rows.toList());
-  }
+          'asignatura_id': b['asignatura_id'],
+          'hora_inicio': horaInicio.toIso8601String(),
+          'hora_fin': horaFin.toIso8601String(),
+          'prioridad': b['prioridad'] ?? 'media',
+          'tipo_actividad': b['tipo_actividad'] ?? 'estudio',
+          if (b['rutina_id'] != null) 'rutina_id': b['rutina_id'],
+          if (b['temas'] != null) 'temas': b['temas'],
+          if (b['ubicacion'] != null) 'ubicacion': b['ubicacion'],
+        };
+      });
+      await client.from('horarios_academicos').insert(rows.toList());
+    }
 
-  if (bloques.isNotEmpty) {
-    final rows = bloques.map((b) {
-      final dia = b['dia_semana'] as int;
-      final horaInicio =
-          _fechaDesdeDiaYHora(semanaInicio, dia, b['hora_inicio'] as String);
-      final horaFin =
-          _fechaDesdeDiaYHora(semanaInicio, dia, b['hora_fin'] as String);
-      return {
-        'usuario_id': user.id,
-        'plan_estudio_id': planId,
-        'asignatura_id': b['asignatura_id'],
-        'hora_inicio': horaInicio.toIso8601String(),
-        'hora_fin': horaFin.toIso8601String(),
-        'prioridad': b['prioridad'] ?? 'media',
-        'tipo_actividad': b['tipo_actividad'] ?? 'estudio',
-        if (b['rutina_id'] != null) 'rutina_id': b['rutina_id'],
-        if (b['temas'] != null) 'temas': b['temas'],
-        if (b['ubicacion'] != null) 'ubicacion': b['ubicacion'],
-      };
-    });
-    await client.from('horarios_academicos').insert(rows.toList());
+    ref.invalidate(timelineHoyProvider);
+    return planId;
+  } catch (_) {
+    await client
+        .from('planes_estudio')
+        .delete()
+        .eq('id', planId)
+        .eq('usuario_id', user.id);
+    return null;
   }
-
-  ref.invalidate(timelineHoyProvider);
-  return planId;
 }
 
 /// Añade un bloque rápido al plan actual desde la vista principal.

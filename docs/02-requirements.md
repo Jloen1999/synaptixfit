@@ -1,8 +1,8 @@
 # 02 - Requisitos del Producto (SRS)
 
-Version: 5.0
-Estado: EN DESARROLLO — Panel de administración (Fase 3)
-Fecha: 14-06-2026
+Version: 5.1
+Estado: COMPLETADO — Panel de administración Fase 1 MVP finalizado
+Fecha: 15-06-2026
 Referencia cruzada: docs/03-architecture.md, docs/04-data-model.md
 
 ## 1. Resumen Ejecutivo
@@ -581,6 +581,174 @@ Tras ejecutar el wipe, `usuarios.nivel` debe ser 1, `usuarios.xp_total` debe ser
 ### CA-35 — Usuario ve la app como recién registrado
 El usuario afectado ve su app como si acabara de registrarse: nivel 1, XP 0, racha 0, sin rutinas, sin sesiones, sin retos, sin apuntes, sin publicaciones, sin insignias. Mantiene su email, nombre, avatar y preferencias de perfil (bienestar, académico, carreras).
 
+### CU-32 — Dashboard de métricas globales (NUEVO v5.1)
+
+**Actor:** Administrador del sistema (rol `admin`)
+**Precondición:** Usuario administrador autenticado. Vista `v_admin_metricas` creada en BD.
+**Flujo principal:**
+1. El administrador accede al panel de administración → pestaña "KPIs".
+2. El sistema muestra un grid 2×3 con 6 KPIs principales: total usuarios, nuevos esta semana, usuarios activos semana, sesiones esta semana, retos creados semana, nivel promedio.
+3. El administrador ve un gráfico de registros diarios (últimos 30 días) debajo de los KPIs.
+4. Los KPIs se actualizan en tiempo real al recargar la pestaña.
+**Flujo alternativo:**
+- A1 — Sin datos: se muestra "Sin datos disponibles" con icono informativo.
+**Postcondiciones:** El administrador puede monitorear la salud global de la plataforma.
+
+### CU-33 — Moderación de contenido (NUEVO v5.1)
+
+**Actor:** Administrador del sistema (rol `admin`)
+**Precondición:** Usuario administrador autenticado. Existen publicaciones o comentarios reportados.
+**Flujo principal:**
+1. El administrador accede al panel → pestaña "Contenido".
+2. El sistema lista publicaciones y comentarios marcados como `reportado = true`.
+3. El administrador revisa el contenido reportado y decide:
+   - **Ocultar publicación:** soft delete (`esta_eliminado = true`). El contenido desaparece del feed público.
+   - **Restaurar publicación:** revertir soft delete. El contenido vuelve a ser visible.
+   - **Eliminar comentario:** soft delete del comentario reportado.
+4. Cada acción de moderación se registra en `admin_auditoria` con `accion = 'moderar'` y detalles en JSONB.
+**Postcondiciones:** El contenido inapropiado es ocultado de la plataforma. Se mantiene trazabilidad de las acciones de moderación.
+
+### CU-34 — Catálogo de ejercicios admin (NUEVO v5.1)
+
+**Actor:** Administrador del sistema (rol `admin`)
+**Precondición:** Usuario administrador autenticado. Catálogo de ejercicios poblado.
+**Flujo principal:**
+1. El administrador accede al panel → pestaña "Ejercicios".
+2. El sistema lista el catálogo completo con toggle `activo`/`inactivo` por ejercicio.
+3. El administrador puede ocultar un ejercicio (desmarcar `activo = false`) — el ejercicio deja de aparecer en búsquedas y recomendaciones IA.
+4. El administrador puede reactivar un ejercicio (marcar `activo = true`).
+5. Cada cambio se registra en `admin_auditoria` con `accion = 'ocultar_ejercicio'`.
+**Postcondiciones:** El catálogo se adapta sin eliminar ejercicios. Los usuarios solo ven ejercicios con `activo = true`.
+
+### CU-35 — Logs de auditoría (NUEVO v5.1)
+
+**Actor:** Administrador del sistema (rol `admin`)
+**Precondición:** Usuario administrador autenticado. Tabla `admin_auditoria` con registros.
+**Flujo principal:**
+1. El administrador accede al panel → pestaña "Logs".
+2. El sistema muestra los registros de auditoría en orden cronológico inverso.
+3. Cada entrada muestra: admin que ejecutó, usuario afectado, acción, detalles (JSONB), fecha/hora.
+4. El administrador puede filtrar por tipo de acción o por admin.
+**Postcondiciones:** Todas las acciones administrativas quedan registradas con trazabilidad completa.
+
+### HU-61 — Ver métricas globales
+Como administrador quiero ver un dashboard con métricas globales (usuarios totales, nuevos, activos, sesiones, retos) para monitorear la salud de la plataforma.
+
+### HU-62 — Moderar publicaciones reportadas
+Como administrador quiero ver las publicaciones reportadas por la comunidad y poder ocultarlas o restaurarlas para mantener un entorno seguro.
+
+### HU-63 — Moderar comentarios reportados
+Como administrador quiero ver los comentarios reportados y poder eliminarlos si infringen las normas de la comunidad.
+
+### HU-64 — Gestionar catálogo de ejercicios
+Como administrador quiero poder ocultar o reactivar ejercicios del catálogo sin eliminarlos permanentemente, para curar el contenido disponible.
+
+### HU-65 — Ver logs de auditoría
+Como administrador quiero consultar un registro de todas las acciones administrativas realizadas en el sistema (wipes, moderación, cambios de ejercicios) con trazabilidad de quién y cuándo.
+
+### HU-66 — Ver estadísticas de un usuario
+Como administrador quiero ver gráficos de rendimiento (RPE, volumen) y timeline de actividad de cualquier usuario para diagnosticar problemas o verificar uso.
+
+### HU-67 — Resetear XP y nivel de usuario
+Como administrador quiero poder resetear el XP o cambiar el nivel de un usuario específico desde el panel, para corregir datos inconsistentes sin necesidad de un wipe completo.
+
+### HU-68 — Buscar usuarios con paginación
+Como administrador quiero buscar usuarios por email o nombre con paginación para gestionar eficientemente una base de usuarios grande.
+
+### CA-36 — KPIs visibles en dashboard admin
+El grid de KPIs debe mostrar 6 métricas con valores reales desde `v_admin_metricas`. Los valores deben actualizarse al recargar la pestaña. Sin datos, mostrar estado vacío.
+
+### CA-37 — Moderación funcional con RLS
+Al ocultar una publicación, `esta_eliminado = true` debe persistirse en BD y la publicación debe desaparecer del feed público en la siguiente recarga. La acción debe registrarse en `admin_auditoria`.
+
+### CA-38 — Toggle de ejercicios funcional
+Al desactivar un ejercicio (`activo = false`), debe desaparecer de las búsquedas del explorador y de las recomendaciones IA. Al reactivarlo, debe reaparecer. El cambio debe registrarse en auditoría.
+
+### CA-39 — Logs de auditoría con trazabilidad
+Cada entrada en `admin_auditoria` debe incluir `admin_id`, `target_usuario_id` (si aplica), `accion` válida, `detalles` JSONB y `creado_en`. Los logs deben ser visibles solo para admins.
+
+### CA-40 — AdminUsuarioDetalle con 3 sub-pestañas
+La pantalla de detalle de usuario debe mostrar 3 pestañas: Perfil (datos + acciones), Estadísticas (gráficos RPE/volumen con fl_chart), Timeline (actividad cronológica). Los gráficos deben usar datos reales del usuario.
+
+### CA-41 — Búsqueda de usuarios paginada
+La búsqueda de usuarios debe soportar paginación (10 por página) y filtro por email o nombre. El conteo total de resultados debe mostrarse. La navegación entre páginas debe ser fluida.
+
+### CU-36 — Planificar semana con Time-Blocking (NUEVO v7.0)
+
+**Actor:** Usuario autenticado
+**Precondición:** Usuario con horarios fijos configurados (clases, compromisos) y perfil académico activo.
+**Flujo principal:**
+1. El usuario accede a `/academico/planificar` → pantalla "Inbox".
+2. El usuario configura intenciones: horas de estudio (slider 5-40h), días de deporte (slider 1-6), preferencia horaria (mañana/tarde/noche).
+3. El sistema muestra las entregas próximas detectadas automáticamente desde `entregas_examenes`.
+4. Los horarios fijos se muestran en una lista de solo lectura.
+5. El usuario pulsa "✨ Generar mi semana".
+6. El sistema llama a `TimeBlockIaService` (Gemini Flash) con reglas N1-N10 y las intenciones del usuario.
+7. El sistema muestra pantalla de carga con animación y mensajes de progreso.
+8. La IA genera un JSON con la distribución semanal de bloques.
+9. El sistema valida el JSON (no solapamientos, horas totales, reglas N3/N4).
+10. El usuario es redirigido al Canvas (`/academico/planificar/canvas`) con el plan visualizado.
+**Flujo alternativo:**
+- A1 — Sin API key de Gemini: se ejecuta el algoritmo de fallback determinista (distribución equitativa). Se muestra banner "Plan generado con distribución equilibrada".
+- A2 — Gemini falla o timeout: se ejecuta fallback. Se muestra toast "No se pudo conectar con la IA. Se ha usado un plan por defecto."
+**Flujo de excepción:**
+- E1 — Sin horarios fijos configurados: el sistema muestra un banner "No tienes horarios fijos configurados. La IA usará toda la semana como disponible."
+- E2 — JSON inválido de Gemini (sin bloques válidos): se usa fallback determinista.
+**Postcondiciones:** Plan semanal visualizado en el Canvas. Los bloques se guardan como `horarios_academicos` con `es_fijo = false`.
+
+### CU-37 — Ajustar plan semanal en Canvas (NUEVO v7.0)
+
+**Actor:** Usuario autenticado
+**Precondición:** Plan semanal generado y visualizado en `/academico/planificar/canvas`.
+**Flujo principal:**
+1. El usuario ve el Canvas con la cuadrícula semanal de 7 días × 16 horas (7:00-23:00).
+2. Los bloques se distinguen por color: azul=fijos, púrpura=estudio, naranja=deporte, rojo=entrega, verde=descanso.
+3. El usuario arrastra un bloque a otro día/hora (drag & drop con snap a intervalos de 15 min).
+4. El usuario redimensiona un bloque arrastrando su borde inferior.
+5. El usuario añade un bloque manual pulsando un hueco vacío.
+6. El usuario elimina un bloque deslizando a la izquierda o pulsando el icono de papelera.
+7. La barra de progreso inferior se actualiza en tiempo real mostrando horas planeadas por tipo.
+8. El usuario pulsa "Guardar semana" → UPSERT en `horarios_academicos`.
+**Flujo alternativo:**
+- A1 — El usuario sale sin guardar: se muestra diálogo "¿Guardar cambios antes de salir?"
+**Postcondiciones:** Plan semanal persistido. Timeline del Dashboard refleja los bloques del día.
+
+### CU-38 — Visualizar y cumplir plan semanal (NUEVO v7.0)
+
+**Actor:** Usuario autenticado
+**Precondición:** Plan semanal guardado. Dashboard cargado.
+**Flujo principal:**
+1. El usuario ve sus bloques del día en la Línea de Tiempo del Dashboard (pestaña "Hoy").
+2. Cada bloque muestra tipo, asignatura, duración y estado (pendiente/completado).
+3. El usuario marca bloques como completados ✅ durante el día.
+4. La barra `ProgressGamificationBar` en el dashboard muestra el progreso semanal.
+5. Al cumplir ≥80% del plan, la semana se marca como completada y se otorga XP de estudio (150 XP).
+6. Tras 4 semanas consecutivas con ≥80% de adherencia, se desbloquea la insignia "Planificador Maestro".
+**Flujo alternativo:**
+- A1 — Sin plan guardado: la pestaña "Hoy" muestra solo clases y sesiones, sin bloques de estudio.
+**Postcondiciones:** Progreso semanal visible. XP académico otorgado al completar la semana. Insignia desbloqueada al alcanzar el hito.
+
+### HU-69 — Configurar horarios fijos
+Como estudiante quiero configurar mis clases y compromisos fijos una sola vez para que la IA los respete al planificar mi semana.
+
+### HU-70 — Generar semana con IA
+Como estudiante quiero que la IA me distribuya las horas de estudio automáticamente en mi semana, respetando mis clases y mis preferencias, para no tener que hacerlo manualmente.
+
+### HU-71 — Ajustar plan con drag & drop
+Como estudiante quiero poder arrastrar bloques en el calendario semanal para ajustar el plan generado por la IA a mis necesidades cambiantes.
+
+### HU-72 — Ver mi progreso semanal
+Como estudiante quiero ver mi progreso de cumplimiento del plan semanal en el Dashboard para mantenerme motivado y consistente.
+
+### CA-42 — Time-Blocking funcional con IA
+El botón "Generar mi semana" debe producir un plan semanal con bloques distribuidos en ≤8s (con Gemini) o ≤1s (fallback). Los bloques no deben solaparse con horarios fijos. La validación post-IA debe aprobar ≥90% de los bloques generados.
+
+### CA-43 — Canvas interactivo con drag & drop
+El Canvas debe permitir arrastrar bloques entre días/horas con respuesta táctil <100ms. Los bloques deben hacer snap a intervalos de 15 min. El redimensionamiento debe ser fluido (60fps). El estado del grid debe persistir al navegar entre pantallas.
+
+### CA-44 — Progreso visible en Dashboard
+La barra de progreso semanal debe mostrar el porcentaje de bloques completados. Al completar ≥80% del plan, debe otorgarse XP de estudio y mostrarse feedback positivo. La insignia "Planificador Maestro" debe desbloquearse tras 4 semanas consecutivas de cumplimiento.
+
 ## 14. Matriz de Trazabilidad (AMPLIADO)
 *(Conservado de v2.9)*
 
@@ -608,7 +776,9 @@ El usuario afectado ve su app como si acabara de registrarse: nivel 1, XP 0, rac
 
 3. **Fase 2 (crecimiento):** retos complejos con dependencias, comentarios en feed, insignias avanzadas, integraciones ampliadas, notificaciones push nativas.
 
-4. **Fase 3 (administración — EN DESARROLLO):** Panel de administración con wipe de datos de usuario (función `wipe_user_data`), gestión de usuarios (búsqueda, listado), columna `rol` en `usuarios` para distinguir `admin` de `usuario`.
+4. **Fase 3 (administración — COMPLETADO):** Panel de administración con wipe de datos de usuario (función `wipe_user_data`), dashboard de métricas globales (`v_admin_metricas`), moderación de contenido (columnas `reportado`/`reportado_por` en `actividades_sociales` y `comentarios_feed`), catálogo de ejercicios admin (columna `activo`), logs de auditoría (`admin_auditoria`), búsqueda de usuarios con paginación, estadísticas y timeline por usuario.
+
+5. **Fase 4 (planificación inteligente — PLANIFICADO):** Sistema de Time-Blocking académico con IA (Gemini Flash). Custom Grid nativo (Stack + Positioned + Draggable + DragTarget, 0 dependencias nuevas). Inbox de intenciones (sliders horas/días + entregas). Canvas semanal interactivo con drag & drop. Reglas N1-N10 de planificación académica. Integración con Dashboard (Timeline + barra de progreso). Insignia "Planificador Maestro". Columnas `es_fijo` y `dia_semana` en `horarios_academicos`.
 
 ## 17. Restricciones, Supuestos y Dependencias
 *(Conservado de v2.9)*
@@ -618,6 +788,7 @@ Añadido en v3.0:
 
 ---
 
-**Documento compilado:** 14-06-2026
-**Versión:** 5.0
+**Documento compilado:** 17-06-2026
+**Versión:** 5.2
+**Estado:** VIGENTE — Sprint Time-Blocking planificado. Añadidos CU-36/37/38 (planificación semanal IA + Canvas + progreso), HU-69-72, CA-42-44 y Fase 4 en §16.
 **Clasificación:** PÚBLICO — Equipo jloen

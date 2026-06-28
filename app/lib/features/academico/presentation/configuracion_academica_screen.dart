@@ -148,7 +148,8 @@ class _ConfiguracionAcademicaScreenState
               final selected = sem == _semestreActual;
               return ChoiceChip(
                 label: Text('$sem°',
-                    style: TextStyle(fontSize: 12,
+                    style: TextStyle(
+                      fontSize: 12,
                       color: selected
                           ? Theme.of(context).colorScheme.onSecondaryContainer
                           : null,
@@ -210,7 +211,7 @@ class _ConfiguracionAcademicaScreenState
           if (_carreraId == null) ...[
             const SizedBox(height: 24),
             OutlinedButton(
-              onPressed: () => context.go('/onboarding/cuenta'),
+              onPressed: () => context.go('/onboarding/asignaturas'),
               child: const Text('Omitir — lo haré después'),
             ),
           ],
@@ -306,6 +307,8 @@ class _ConfiguracionAcademicaScreenState
           nombre: a.nombre,
           codigo: codigo,
           descripcion: descripcion.isNotEmpty ? descripcion : null,
+          catalogoAsignaturaId: a.id,
+          archivado: true,
         );
         if (creada != null) {
           nuevasIds.add(creada.id);
@@ -328,14 +331,10 @@ class _ConfiguracionAcademicaScreenState
           .eq('usuario_id', user.id)
           .maybeSingle();
       if (existing != null) {
-        await Supabase.instance.client
-            .from('perfil_academico_usuario')
-            .update({'semestre_actual': _semestreActual})
-            .eq('usuario_id', user.id);
+        await Supabase.instance.client.from('perfil_academico_usuario').update(
+            {'semestre_actual': _semestreActual}).eq('usuario_id', user.id);
       } else {
-        await Supabase.instance.client
-            .from('perfil_academico_usuario')
-            .insert({
+        await Supabase.instance.client.from('perfil_academico_usuario').insert({
           'usuario_id': user.id,
           'semestre_actual': _semestreActual,
         });
@@ -349,13 +348,20 @@ class _ConfiguracionAcademicaScreenState
       Navigator.of(context).pop();
       ref.invalidate(asignaturasActivasProvider);
       ref.invalidate(asignaturasArchivadasProvider);
-      context.go('/onboarding/cuenta');
+      context.go('/onboarding/asignaturas');
     }
   }
 
   Future<bool> _existeAsignatura(String nombre) async {
-    final asignaturas = ref.read(asignaturasActivasProvider).valueOrNull ?? [];
-    return asignaturas
-        .any((a) => a.nombre.toLowerCase() == nombre.toLowerCase());
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return false;
+    final existing = await client
+        .from('asignaturas')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .ilike('nombre', nombre)
+        .maybeSingle();
+    return existing != null;
   }
 }

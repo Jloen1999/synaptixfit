@@ -2513,3 +2513,210 @@ class RecomendacionPendienteDb {
     };
   }
 }
+
+class MaterialEstudioDb {
+  const MaterialEstudioDb({
+    required this.id,
+    required this.usuarioId,
+    required this.asignaturaId,
+    required this.tipoOrigen,
+    required this.origenId,
+    required this.titulo,
+    required this.creadoEn,
+    required this.estadoDominio,
+    this.ultimoRepasoEn,
+    this.siguienteRepasoEn,
+    required this.intervaloActualDias,
+    required this.facilidad,
+    required this.repasosCompletados,
+    required this.repasosFallidos,
+    required this.xpPracticaOtorgado,
+  });
+
+  final String id;
+  final String usuarioId;
+  final String asignaturaId;
+  final String tipoOrigen;
+  final String origenId;
+  final String titulo;
+  final DateTime creadoEn;
+  final String estadoDominio;
+  final DateTime? ultimoRepasoEn;
+  final DateTime? siguienteRepasoEn;
+  final int intervaloActualDias;
+  final double facilidad;
+  final int repasosCompletados;
+  final int repasosFallidos;
+  final bool xpPracticaOtorgado;
+
+  factory MaterialEstudioDb.fromMap(Map<String, dynamic> map) {
+    return MaterialEstudioDb(
+      id: map['id'] as String,
+      usuarioId: map['usuario_id'] as String,
+      asignaturaId: map['asignatura_id'] as String,
+      tipoOrigen: (map['tipo_origen'] as String?) ?? 'apunte',
+      origenId: map['origen_id'] as String,
+      titulo: (map['titulo'] as String?) ?? '',
+      creadoEn: _parseDateTime(map['creado_en']),
+      estadoDominio:
+          (map['estado_dominio'] as String?) ?? 'sin_evaluar',
+      ultimoRepasoEn: map['ultimo_repaso_en'] != null
+          ? _parseDateTime(map['ultimo_repaso_en'])
+          : null,
+      siguienteRepasoEn: map['siguiente_repaso_en'] != null
+          ? _parseDateTime(map['siguiente_repaso_en'])
+          : null,
+      intervaloActualDias:
+          _parseInt(map['intervalo_actual_dias']),
+      facilidad: _parseDouble(map['facilidad'], fallback: 2.5),
+      repasosCompletados:
+          _parseInt(map['repasos_completados']),
+      repasosFallidos: _parseInt(map['repasos_fallidos']),
+      xpPracticaOtorgado:
+          _parseBool(map['xp_practica_otorgado']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'usuario_id': usuarioId,
+      'asignatura_id': asignaturaId,
+      'tipo_origen': tipoOrigen,
+      'origen_id': origenId,
+      'titulo': titulo,
+      'creado_en': creadoEn.toIso8601String(),
+      'estado_dominio': estadoDominio,
+      'ultimo_repaso_en': ultimoRepasoEn?.toIso8601String(),
+      'siguiente_repaso_en': siguienteRepasoEn?.toIso8601String(),
+      'intervalo_actual_dias': intervaloActualDias,
+      'facilidad': facilidad,
+      'repasos_completados': repasosCompletados,
+      'repasos_fallidos': repasosFallidos,
+      'xp_practica_otorgado': xpPracticaOtorgado,
+    };
+  }
+}
+
+class BancoPreguntasDb {
+  const BancoPreguntasDb({
+    required this.id,
+    required this.materialId,
+    required this.usuarioId,
+    required this.xpOtorgado,
+    required this.generadoEn,
+  });
+
+  final String id;
+  final String materialId;
+  final String usuarioId;
+  final bool xpOtorgado;
+  final DateTime generadoEn;
+
+  factory BancoPreguntasDb.fromMap(Map<String, dynamic> map) {
+    return BancoPreguntasDb(
+      id: map['id'] as String,
+      materialId: map['material_id'] as String,
+      usuarioId: map['usuario_id'] as String,
+      xpOtorgado: _parseBool(map['xp_otorgado']),
+      generadoEn: _parseDateTime(map['generado_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'material_id': materialId,
+      'usuario_id': usuarioId,
+      'xp_otorgado': xpOtorgado,
+      'generado_en': generadoEn.toIso8601String(),
+    };
+  }
+}
+
+class PreguntaDb {
+  const PreguntaDb({
+    required this.id,
+    required this.bancoId,
+    required this.tipo,
+    required this.enunciado,
+    this.opciones,
+    required this.respuestaCorrecta,
+    this.explicacion,
+    required this.orden,
+  });
+
+  final String id;
+  final String bancoId;
+  final String tipo;
+  final String enunciado;
+  final List<String>? opciones;
+  final String respuestaCorrecta;
+  final String? explicacion;
+  final int orden;
+
+  factory PreguntaDb.fromMap(Map<String, dynamic> map) {
+    return PreguntaDb(
+      id: map['id'] as String,
+      bancoId: map['banco_id'] as String,
+      tipo: (map['tipo'] as String?) ?? 'opcion_multiple',
+      enunciado: (map['enunciado'] as String?) ?? '',
+      opciones: (map['opciones'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
+      respuestaCorrecta:
+          (map['respuesta_correcta'] as String?) ?? '',
+      explicacion: map['explicacion'] as String?,
+      orden: _parseInt(map['orden']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'banco_id': bancoId,
+      'tipo': tipo,
+      'enunciado': enunciado,
+      'opciones': opciones,
+      'respuesta_correcta': respuestaCorrecta,
+      'explicacion': explicacion,
+      'orden': orden,
+    };
+  }
+}
+
+class IntentoPreguntaDb {
+  const IntentoPreguntaDb({
+    required this.id,
+    required this.usuarioId,
+    required this.preguntaId,
+    required this.esCorrecta,
+    required this.respondidoEn,
+  });
+
+  final String id;
+  final String usuarioId;
+  final String preguntaId;
+  final bool esCorrecta;
+  final DateTime respondidoEn;
+
+  factory IntentoPreguntaDb.fromMap(Map<String, dynamic> map) {
+    return IntentoPreguntaDb(
+      id: map['id'] as String,
+      usuarioId: map['usuario_id'] as String,
+      preguntaId: map['pregunta_id'] as String,
+      esCorrecta: _parseBool(map['es_correcta']),
+      respondidoEn: _parseDateTime(map['respondido_en']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'usuario_id': usuarioId,
+      'pregunta_id': preguntaId,
+      'es_correcta': esCorrecta,
+      'respondido_en': respondidoEn.toIso8601String(),
+    };
+  }
+}

@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/sync/dominio_evento.dart';
+import '../../../core/sync/sync_hub.dart';
 import '../../../shared/models/db_models.dart';
+import '../../bienestar/application/rutina_provider.dart';
 import '../../dashboard/application/timeline_provider.dart';
 
 final entregasExamenesProvider =
@@ -85,6 +88,10 @@ Future<EntregaExamenDb?> crearEntrega({
       .single();
 
   ref.invalidate(timelineHoyProvider);
+  ref.invalidate(cargaAcademicaSemanalProvider);
+  ref.invalidate(adherenciaAcademicaProvider);
+  ref.invalidate(estadoEnergeticoProvider);
+  ref.invalidate(contextoAcademicoProvider);
   return EntregaExamenDb.fromMap(data);
 }
 
@@ -116,6 +123,10 @@ Future<void> actualizarEntrega({
         .eq('id', id)
         .eq('usuario_id', user!.id);
     ref.invalidate(timelineHoyProvider);
+    ref.invalidate(cargaAcademicaSemanalProvider);
+    ref.invalidate(adherenciaAcademicaProvider);
+    ref.invalidate(estadoEnergeticoProvider);
+    ref.invalidate(contextoAcademicoProvider);
   }
 }
 
@@ -130,6 +141,10 @@ Future<void> eliminarEntrega(String id, WidgetRef ref) async {
       .eq('usuario_id', user!.id);
 
   ref.invalidate(timelineHoyProvider);
+  ref.invalidate(cargaAcademicaSemanalProvider);
+  ref.invalidate(adherenciaAcademicaProvider);
+  ref.invalidate(estadoEnergeticoProvider);
+  ref.invalidate(contextoAcademicoProvider);
 }
 
 Future<void> toggleEntregaCompletada(String id, bool completada,
@@ -146,5 +161,31 @@ Future<void> toggleEntregaCompletada(String id, bool completada,
       .eq('id', id)
       .eq('usuario_id', user!.id);
 
-  ref.invalidate(timelineHoyProvider);
+  if (completada) {
+    final data = await client
+        .from('entregas_examenes')
+        .select('xp_entrega_otorgado')
+        .eq('id', id)
+        .maybeSingle()
+        .timeout(const Duration(seconds: 4));
+
+    final yaOtorgado = data?['xp_entrega_otorgado'] as bool? ?? false;
+    if (!yaOtorgado) {
+      await otorgarXp(client, user.id, 30);
+      await client
+          .from('entregas_examenes')
+          .update({
+            'xp_entrega_otorgado': true,
+          })
+          .eq('id', id)
+          .eq('usuario_id', user.id);
+    }
+  }
+
+  await syncCargaAcademicaSemanal(ref);
+
+  ref.read(syncHubProvider).dispatch(
+        DominioEvento.entregaCompletada,
+        payload: EventoPayload(entregaId: id),
+      );
 }

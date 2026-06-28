@@ -34,7 +34,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
   String? _sexoSeleccionado;
   String? _nivelActividadSeleccionado;
   String? _objetivoPrincipal;
-  int _diasDisponibles = 3;
+  final Set<int> _diasDisponibles = {1, 3, 5};
   int _minutosPorSesion = 45;
   final Set<String> _equipamientoSeleccionado = {};
   bool _guardando = false;
@@ -246,7 +246,7 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
         nivelActividad: _nivelActividadSeleccionado ?? 'sedentario',
         objetivoPrincipal: objetivoFinal,
         equipamientoDisponible: _equipamientoSeleccionado.toList(),
-        diasDisponiblesSemana: _diasDisponibles,
+        diasDisponibles: _diasDisponibles.toList()..sort(),
         minutosPorSesion: _minutosPorSesion,
       );
 
@@ -629,43 +629,43 @@ class _PerfilFisicoScreenState extends State<PerfilFisicoScreen> {
                           content: _SeccionPaso(
                             children: [
                               Text(
-                                'Días disponibles por semana',
+                                'Días disponibles para entrenar',
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelLarge
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
-                              Row(
-                                children: [
-                                  Text('$_diasDisponibles',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          )),
-                                  const SizedBox(width: 4),
-                                  Text('días',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium),
-                                  Expanded(
-                                    child: Slider(
-                                      value: _diasDisponibles.toDouble(),
-                                      min: 1,
-                                      max: 7,
-                                      divisions: 6,
-                                      label: '$_diasDisponibles',
-                                      onChanged: (v) {
-                                        setState(
-                                            () => _diasDisponibles = v.round());
-                                      },
-                                    ),
-                                  ),
-                                ],
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: List.generate(7, (i) {
+                                  final dia = i + 1;
+                                  const labels = [
+                                    'Lun',
+                                    'Mar',
+                                    'Mié',
+                                    'Jue',
+                                    'Vie',
+                                    'Sáb',
+                                    'Dom'
+                                  ];
+                                  final selected =
+                                      _diasDisponibles.contains(dia);
+                                  return FilterChip(
+                                    label: Text(labels[i]),
+                                    selected: selected,
+                                    onSelected: (v) {
+                                      setState(() {
+                                        if (v) {
+                                          _diasDisponibles.add(dia);
+                                        } else {
+                                          _diasDisponibles.remove(dia);
+                                        }
+                                      });
+                                    },
+                                  );
+                                }),
                               ),
                               const SizedBox(height: 12),
                               Text(

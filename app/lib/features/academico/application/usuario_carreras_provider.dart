@@ -123,7 +123,7 @@ Future<int> sincronizarAsignaturasDeCarreras(WidgetRef ref) async {
         'nombre': nombre,
         'catalogo_asignatura_id': a['id'],
         'descripcion': desc.isNotEmpty ? desc : null,
-        'archivado': false,
+        'archivado': true,
       });
       creadas++;
     }

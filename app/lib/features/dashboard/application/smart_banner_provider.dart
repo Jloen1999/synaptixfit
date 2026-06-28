@@ -16,6 +16,37 @@ class SmartBannerNotifier extends StateNotifier<SmartBannerState> {
       : super(const SmartBannerState(status: SmartBannerStatus.fallback)) {
     _cargarInmediato();
     _refreshEnBackground();
+    // Reactividad en tiempo real: al cambiar bienestar / adherencia / contexto
+    // académico, recalcula el consejo (fallback determinista) al instante.
+    _ref.listen(estadoEnergeticoProvider, (_, __) => _actualizarPorContexto());
+    _ref.listen(
+        adherenciaAcademicaProvider, (_, __) => _actualizarPorContexto());
+    _ref.listen(contextoAcademicoProvider, (_, __) => _actualizarPorContexto());
+  }
+
+  /// Recalcula el consejo a partir de los valores actuales de bienestar,
+  /// adherencia y contexto académico (determinista, sin IA → instantáneo).
+  void _actualizarPorContexto() {
+    final energia = _ref.read(estadoEnergeticoProvider).valueOrNull;
+    final adherencia = _ref.read(adherenciaAcademicaProvider).valueOrNull;
+    final contexto = _ref.read(contextoAcademicoProvider).valueOrNull;
+    final dash = _ref.read(dashboardProvider).valueOrNull;
+    final ctx = SmartBannerContext(
+      energiaValor: energia?.valor ?? 0,
+      adherenciaValor: adherencia?.valor ?? 0,
+      nivelEstres: contexto?.nivelEstres ?? 5,
+      evaluacionesSemana: contexto?.evaluacionesSemana ?? 0,
+      tieneExamenesProximos: contexto?.tieneExamenesProximos ?? false,
+      rachaEntrenamiento: dash?.racha ?? 0,
+      rachaEstudio: adherencia?.rachaDias ?? 0,
+      tieneCheckIn: energia != null,
+      tieneAdherencia: adherencia != null,
+    );
+    if (!mounted) return;
+    state = SmartBannerState(
+      status: SmartBannerStatus.fallback,
+      fallbackMensaje: _generarFallback(ctx),
+    );
   }
 
   void _cargarInmediato() {
@@ -73,6 +104,8 @@ class SmartBannerNotifier extends StateNotifier<SmartBannerState> {
         tieneExamenesProximos: contexto?.tieneExamenesProximos ?? false,
         rachaEntrenamiento: dash.racha,
         rachaEstudio: adherencia?.rachaDias ?? 0,
+        tieneCheckIn: energia != null,
+        tieneAdherencia: adherencia != null,
       );
 
       final cacheKey = 'smart_banner_${dash.usuario.id}';
@@ -141,13 +174,6 @@ class SmartBannerNotifier extends StateNotifier<SmartBannerState> {
 
     text = text.replaceAll(RegExp(r'[\{\}"\[\]]'), '').trim();
 
-    if (text.length > 120) {
-      final lastSpace = text.lastIndexOf(' ', 120);
-      text = lastSpace > 80
-          ? '${text.substring(0, lastSpace)}...'
-          : '${text.substring(0, 117)}...';
-    }
-
     return text;
   }
 }
@@ -158,17 +184,34 @@ final consejoSmartProvider =
 });
 
 String _generarFallback(SmartBannerContext ctx) {
-  if (ctx.energiaValor < 30) {
-    return 'Tu energía está baja hoy. Prioriza el descanso y la recuperación.';
-  }
+  // 1. Señales académicas concretas (no dependen del check-in).
   if (ctx.tieneExamenesProximos) {
-    return 'Tienes exámenes próximos. Ajusta tu entrenamiento para mantener el foco académico.';
+    return 'Tienes evaluaciones próximas. Modera la intensidad del entrenamiento y reserva bloques de repaso para llegar con la mente fresca.';
   }
-  if (ctx.energiaValor > 70 && ctx.nivelEstres < 5) {
-    return 'Energía alta y estrés bajo. Es un gran día para un entrenamiento intenso.';
+  if (ctx.tieneAdherencia && ctx.adherenciaValor < 40) {
+    return 'Tu adherencia académica está baja. Retoma tu plan con bloques cortos de estudio hoy; la constancia importa más que la intensidad.';
+  }
+
+  // 2. Señales de energía física (solo fiables si hay check-in).
+  if (ctx.tieneCheckIn && ctx.energiaValor < 30) {
+    return 'Tu energía está baja hoy. Prioriza el descanso y aligera tanto el estudio como el entrenamiento.';
+  }
+  if (ctx.tieneCheckIn && ctx.energiaValor > 70 && ctx.nivelEstres < 5) {
+    return 'Energía alta y estrés bajo: gran día para un entrenamiento exigente y una sesión de estudio profunda.';
+  }
+
+  // 3. Refuerzo positivo por constancia.
+  if (ctx.tieneAdherencia && ctx.rachaEstudio >= 5) {
+    return '¡${ctx.rachaEstudio.round()} días seguidos cumpliendo tu plan de estudio! Mantén el ritmo y compénsalo con movimiento.';
   }
   if (ctx.rachaEntrenamiento >= 5) {
-    return '¡${ctx.rachaEntrenamiento} días seguidos entrenando! Mantén la constancia.';
+    return '¡${ctx.rachaEntrenamiento} días seguidos entrenando! Tu constancia también impulsa tu rendimiento académico.';
   }
+
+  // 4. Invitación al check-in solo si no hay nada más relevante que destacar.
+  if (!ctx.tieneCheckIn) {
+    return 'Empieza con tu check-in diario: así ajustamos tu estudio y tu entrenamiento a cómo te sientes hoy.';
+  }
+
   return 'Mantén el equilibrio entre estudio y ejercicio. Cada día cuenta.';
 }

@@ -1,7 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/sync/dominio_evento.dart';
+import '../../../core/sync/sync_hub.dart';
+import '../../bienestar/application/rutina_provider.dart';
+import '../../insignias/application/insignias_provider.dart';
 import '../domain/pomodoro_session.dart';
 
 /// Valores por defecto de la sesion Pomodoro.
@@ -12,7 +17,7 @@ const _defaultSessionsBeforeLongBreak = 4;
 
 /// StateNotifier que gestiona el temporizador Pomodoro con [Timer.periodic].
 class PomodoroNotifier extends StateNotifier<PomodoroSession> {
-  PomodoroNotifier()
+  PomodoroNotifier({this.onCicloCompletado})
       : super(
           const PomodoroSession(
             workSeconds: _defaultWorkSeconds,
@@ -23,6 +28,9 @@ class PomodoroNotifier extends StateNotifier<PomodoroSession> {
         );
 
   Timer? _timer;
+
+  /// Callback que se invoca cuando se completa un ciclo de trabajo (25 min).
+  final void Function()? onCicloCompletado;
 
   /// Arranca el temporizador desde idle o reinicia tras pausa.
   void iniciar() {
@@ -114,6 +122,7 @@ class PomodoroNotifier extends StateNotifier<PomodoroSession> {
     if (state.phase == PomodoroPhase.work) {
       // Completo un ciclo de trabajo
       final newCount = state.completedCount + 1;
+      onCicloCompletado?.call();
       final isLongBreak = newCount % state.sessionsBeforeLongBreak == 0;
       final nextPhase =
           isLongBreak ? PomodoroPhase.longBreak : PomodoroPhase.shortBreak;
@@ -150,5 +159,26 @@ class PomodoroNotifier extends StateNotifier<PomodoroSession> {
 /// Provider unico del temporizador Pomodoro.
 final pomodoroProvider =
     StateNotifierProvider<PomodoroNotifier, PomodoroSession>(
-  (ref) => PomodoroNotifier(),
+  (ref) => PomodoroNotifier(
+    onCicloCompletado: () {
+      _otorgarXpPomodoro(ref);
+    },
+  ),
 );
+
+void _otorgarXpPomodoro(Ref ref) {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return;
+  otorgarXp(client, user.id, 5);
+  ref.read(syncHubProvider).dispatch(DominioEvento.pomodoroCompletado);
+  final engine = ref.read(insigniaEngineProvider);
+  engine.evaluarYOtorgar(user.id).then((nuevas) {
+    if (nuevas.isNotEmpty) {
+      ref.read(insigniasRecienObtenidasProvider.notifier).state = nuevas;
+      ref.invalidate(catalogoInsigniasProvider);
+      ref.invalidate(insigniasUsuarioProvider);
+      ref.invalidate(insigniasCountProvider);
+    }
+  }).catchError((_) {});
+}

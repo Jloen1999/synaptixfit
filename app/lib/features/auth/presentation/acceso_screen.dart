@@ -38,8 +38,6 @@ class _AccesoScreenState extends ConsumerState<AccesoScreen> {
 
       if (evento.event == sb.AuthChangeEvent.signedIn) {
         ref.read(authControllerProvider.notifier).sincronizarSesionActiva();
-      } else if (evento.event == sb.AuthChangeEvent.signedOut) {
-        ref.read(authControllerProvider.notifier).logout();
       }
     });
 

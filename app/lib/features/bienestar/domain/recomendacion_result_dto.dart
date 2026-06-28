@@ -9,6 +9,8 @@ class RecomendacionRutinaResult {
     required this.duracionSemanas,
     required this.estructura,
     this.error,
+    this.nombresSemanas = const {},
+    this.nombresDias = const {},
   });
 
   final String nombre;
@@ -17,6 +19,8 @@ class RecomendacionRutinaResult {
   final int duracionSemanas;
   final Map<int, Map<int, List<EjercicioRecomendado>>> estructura;
   final String? error;
+  final Map<int, String> nombresSemanas;
+  final Map<int, Map<int, String>> nombresDias;
 
   bool get tieneError => error != null;
 }

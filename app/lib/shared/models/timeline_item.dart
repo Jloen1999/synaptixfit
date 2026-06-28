@@ -18,14 +18,14 @@ enum TimelineTipo {
 
 extension TimelineTipoX on TimelineTipo {
   Color get color => switch (this) {
-        TimelineTipo.estudio => const Color(0xFF2196F3),
-        TimelineTipo.clase => const Color(0xFF9C27B0),
-        TimelineTipo.deporte => const Color(0xFF4CAF50),
-        TimelineTipo.sesion => const Color(0xFF4CAF50),
-        TimelineTipo.entrega => const Color(0xFFFF5722),
+        TimelineTipo.estudio => const Color(0xFF3B82F6),
+        TimelineTipo.clase => const Color(0xFF8B5CF6),
+        TimelineTipo.deporte => const Color(0xFFFF8C42),
+        TimelineTipo.sesion => const Color(0xFF10B981),
+        TimelineTipo.entrega => const Color(0xFFE74C3C),
         TimelineTipo.reto => const Color(0xFF7C4DFF),
-        TimelineTipo.hitoReto => const Color(0xFFE040FB),
-        TimelineTipo.entrenamientoPendiente => const Color(0xFFFF9800),
+        TimelineTipo.hitoReto => const Color(0xFF7C4DFF),
+        TimelineTipo.entrenamientoPendiente => const Color(0xFFFF8C42),
         TimelineTipo.nutricion => const Color(0xFF00BCD4),
         TimelineTipo.sueno => const Color(0xFF3F51B5),
       };
@@ -93,15 +93,23 @@ class TimelineItem {
 
   factory TimelineItem.desdeHorario(HorarioAcademicoDb h) {
     final tipo = switch (h.tipoActividad) {
-      'estudio' => TimelineTipo.estudio,
       'clase' => TimelineTipo.clase,
       'deporte' => TimelineTipo.deporte,
+      'examen' => TimelineTipo.entrega,
+      'entrega' => TimelineTipo.entrega,
       _ => TimelineTipo.estudio,
+    };
+    final tieneTemas = h.temas != null && h.temas!.isNotEmpty;
+    final titulo = switch (tipo) {
+      TimelineTipo.clase => tieneTemas ? h.temas! : 'Clase',
+      TimelineTipo.deporte => tieneTemas ? h.temas! : 'Entrenamiento',
+      TimelineTipo.entrega => tieneTemas ? h.temas! : 'Tarea académica',
+      _ => tieneTemas ? h.temas! : 'Estudio',
     };
     return TimelineItem(
       id: h.id,
       tipo: tipo,
-      titulo: 'Estudio',
+      titulo: titulo,
       subtitulo: h.ubicacion ?? '',
       horaInicio: h.horaInicio,
       horaFin: h.horaFin,

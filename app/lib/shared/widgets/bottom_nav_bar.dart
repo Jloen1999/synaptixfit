@@ -61,9 +61,9 @@ class _BottomNavBarState extends State<BottomNavBar> {
                   label: 'Retos',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.people_outline),
-                  selectedIcon: Icon(Icons.people_rounded),
-                  label: 'Social',
+                  icon: Icon(Icons.insights_outlined),
+                  selectedIcon: Icon(Icons.insights_rounded),
+                  label: 'Progreso',
                 ),
               ],
             ),

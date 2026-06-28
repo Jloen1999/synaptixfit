@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/utils/string_utils.dart';
-import '../../../shared/models/db_models.dart';
+import '../../../shared/widgets/badge_reutilizado.dart';
 import '../../../shared/widgets/challenge_progress_bar.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../application/retos_provider.dart';
+import 'crear_reto_simple_sheet.dart';
 
+/// Vista unificada de retos: muestra activos y completados con filtros.
 class RetosScreen extends ConsumerStatefulWidget {
   const RetosScreen({super.key});
 
@@ -19,369 +19,441 @@ class RetosScreen extends ConsumerStatefulWidget {
 }
 
 class _RetosScreenState extends ConsumerState<RetosScreen> {
-  int _tabIndex = 0;
+  final _busquedaCtrl = TextEditingController();
   String _busqueda = '';
-  String? _filtroTipo;
-  String? _filtroComplejidad; // null = todos, 'simple', 'complejo'
+  String _vista = 'mios'; // 'mios' | 'comunidad'
+  String? _filtroEstado = 'activos'; // 'activos' | 'completados' | null (todos)
+  String? _filtroTipo; // null | 'fitness' | 'academic'
+  String? _filtroComplejidad; // null | 'simple' | 'complejo'
+
+  @override
+  void dispose() {
+    _busquedaCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _esComunidad => _vista == 'comunidad';
 
   @override
   Widget build(BuildContext context) {
     return FeatureScaffold(
       title: 'Retos',
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => mostrarCrearRetoSimpleSheet(context),
+        child: const Icon(Icons.add),
+      ),
       child: Column(
         children: [
+          // Navegación principal: Mis retos / Comunidad
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-            child: SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(value: 0, label: Text('Activos')),
-                ButtonSegment(value: 1, label: Text('Explorar')),
-                ButtonSegment(value: 2, label: Text('Completados')),
-              ],
-              selected: {_tabIndex},
-              onSelectionChanged: (v) => setState(() => _tabIndex = v.first),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar por título...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _busqueda.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () => setState(() => _busqueda = ''),
-                      )
-                    : null,
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                    value: 'mios',
+                    label: Text('Mis retos'),
+                    icon: Icon(Icons.flag_rounded, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: 'comunidad',
+                    label: Text('Comunidad'),
+                    icon: Icon(Icons.public_rounded, size: 16),
+                  ),
+                ],
+                selected: {_vista},
+                showSelectedIcon: false,
+                onSelectionChanged: (s) => setState(() => _vista = s.first),
               ),
-              onChanged: (v) => setState(() => _busqueda = normalizeSearch(v)),
             ),
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+
+          // Búsqueda (+ filtros avanzados solo en «Mis retos»)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
             child: Row(
               children: [
-                _FiltroChip(
-                  label: 'Todos',
-                  selected: _filtroTipo == null,
-                  onSelected: (_) => setState(() => _filtroTipo = null),
+                Expanded(
+                  child: TextField(
+                    controller: _busquedaCtrl,
+                    decoration: InputDecoration(
+                      hintText: _esComunidad
+                          ? 'Buscar en la comunidad...'
+                          : 'Buscar por título...',
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      suffixIcon: _busqueda.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _busquedaCtrl.clear();
+                                setState(() => _busqueda = '');
+                              },
+                            )
+                          : null,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
+                    onChanged: (v) =>
+                        setState(() => _busqueda = normalizeSearch(v)),
+                  ),
                 ),
-                const SizedBox(width: 6),
-                _FiltroChip(
-                  label: 'Fitness',
-                  selected: _filtroTipo == 'fitness',
-                  onSelected: (_) => setState(() => _filtroTipo =
-                      _filtroTipo == 'fitness' ? null : 'fitness'),
-                ),
-                const SizedBox(width: 6),
-                _FiltroChip(
-                  label: 'Académico',
-                  selected: _filtroTipo == 'academico',
-                  onSelected: (_) => setState(() => _filtroTipo =
-                      _filtroTipo == 'academico' ? null : 'academico'),
-                ),
-                const SizedBox(width: 12),
-                _FiltroChip(
-                  label: 'Simple',
-                  selected: _filtroComplejidad == 'simple',
-                  onSelected: (_) => setState(() => _filtroComplejidad =
-                      _filtroComplejidad == 'simple' ? null : 'simple'),
-                ),
-                const SizedBox(width: 6),
-                _FiltroChip(
-                  label: 'Complejo',
-                  selected: _filtroComplejidad == 'complejo',
-                  onSelected: (_) => setState(() => _filtroComplejidad =
-                      _filtroComplejidad == 'complejo' ? null : 'complejo'),
-                ),
+                if (!_esComunidad) ...[
+                  const SizedBox(width: 8),
+                  _BotonFiltros(
+                    activos: _hayFiltrosAvanzados,
+                    onTap: _abrirFiltros,
+                  ),
+                ],
               ],
             ),
           ),
+
+          // Filtro rápido de estado (solo en «Mis retos»)
+          if (!_esComunidad) _buildEstadoChips(),
+
+          const SizedBox(height: 6),
+          // Lista
           Expanded(
-            child: _buildContenido(),
+            child: _esComunidad ? _buildListaComunidad() : _buildLista(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContenido() {
-    switch (_tabIndex) {
-      case 0:
-        return _buildLista(
-          async: ref.watch(retosProvider),
-          onRefresh: () async {
-            ref.invalidate(retosProvider);
-            return ref.read(retosProvider.future);
-          },
-          esExplorar: false,
-          showCreate: true,
-        );
-      case 1:
-        return _buildLista(
-          async: ref.watch(retosPublicosProvider),
-          onRefresh: () async {
-            ref.invalidate(retosPublicosProvider);
-            return ref.read(retosPublicosProvider.future);
-          },
-          esExplorar: true,
-          showCreate: false,
-        );
-      case 2:
-        return _buildCompletados();
-      default:
-        return const SizedBox.shrink();
+  Widget _buildEstadoChips() {
+    Widget chip(String label, String? value) {
+      final selected = _filtroEstado == value;
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          label: Text(label, style: const TextStyle(fontSize: 12)),
+          selected: selected,
+          showCheckmark: false,
+          visualDensity: VisualDensity.compact,
+          onSelected: (_) => setState(() => _filtroEstado = value),
+        ),
+      );
     }
+
+    return SizedBox(
+      height: 42,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+        children: [
+          chip('Activos', 'activos'),
+          chip('Completados', 'completados'),
+          chip('Todos', null),
+        ],
+      ),
+    );
   }
 
-  Widget _buildLista({
-    required AsyncValue<List<RetoResumen>> async,
-    required Future<void> Function() onRefresh,
-    bool esExplorar = false,
-    bool showCreate = false,
-  }) {
+  // ---------------------------------------------------------------------------
+  // Lista de retos públicos de la comunidad
+  // ---------------------------------------------------------------------------
+  Widget _buildListaComunidad() {
+    final async = ref.watch(retosPublicosProvider);
+
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (retos) {
-        var filtrados = _aplicarFiltros(retos);
+        if (retos.isEmpty) {
+          return const EmptyState(
+            icon: Icons.public_off,
+            title: 'Sin retos públicos',
+            message: 'Aún no hay retos compartidos por la comunidad.',
+          );
+        }
 
-        if (showCreate || filtrados.isNotEmpty) {
-          final total = retos.length;
-          final progresoMedio = total > 0
-              ? (retos.fold<double>(0, (s, r) => s + r.progreso) / total)
-              : 0.0;
-          final completados = retos.where((r) => r.progreso >= 1.0).length;
-          return RefreshIndicator(
-            onRefresh: onRefresh,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 80),
-              children: [
-                if (showCreate) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Reto simple'),
-                          onPressed: () => context.go('/retos/simple'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Reto complejo'),
-                          onPressed: () => context.go('/retos/complejo'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (total > 0) ...[
-                  const SizedBox(height: 10),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _MiniStat(
-                              icon: Icons.flag_outlined,
-                              value: '$total',
-                              label: 'Activos'),
-                          _MiniStat(
-                              icon: Icons.check_circle_outline,
-                              value: '$completados',
-                              label: 'Listos'),
-                          _MiniStat(
-                              icon: Icons.trending_up,
-                              value: '${(progresoMedio * 100).round()}%',
-                              label: 'Progreso'),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                if (filtrados.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 40),
-                    child: EmptyState(
-                      icon: Icons.search_off,
-                      title: 'Sin resultados',
-                      message: 'No hay retos que coincidan con los filtros.',
-                    ),
-                  ),
-                ...filtrados.map((item) => _RetoCard(
-                      item: item,
-                      esExplorar: esExplorar,
-                      onComplete: !esExplorar
-                          ? () => _confirmarCompletarDesdeLista(
-                              context, item.reto.id)
-                          : null,
-                      onClone: esExplorar
-                          ? () async {
-                              final nuevoId =
-                                  await clonarReto(item.reto.id, ref);
-                              if (nuevoId != null) {
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content:
-                                          Text('Reto clonado correctamente')),
-                                );
-                              }
-                            }
-                          : null,
-                      onTap: () => context.push('/retos/${item.reto.id}'),
-                    )),
-              ],
+        var filtrados = retos;
+        if (_busqueda.isNotEmpty) {
+          filtrados = retos
+              .where((r) =>
+                  normalizeSearch(r.reto.titulo).contains(_busqueda) ||
+                  normalizeSearch(r.reto.meta).contains(_busqueda))
+              .toList();
+        }
+
+        if (filtrados.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: EmptyState(
+              icon: Icons.search_off,
+              title: 'Sin resultados',
+              message: 'No hay retos que coincidan con tu búsqueda.',
             ),
           );
         }
 
-        return const EmptyState(
-          icon: Icons.flag_outlined,
-          title: 'Sin retos activos',
-          message: 'Crea un reto para empezar.',
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(retosPublicosProvider);
+            return ref.read(retosPublicosProvider.future);
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
+            itemCount: filtrados.length,
+            itemBuilder: (context, index) {
+              final item = filtrados[index];
+              return _RetoComunidadCard(
+                item: item,
+                onTap: () => context.push('/retos/${item.reto.id}'),
+                onClonar: () => _clonarReto(item),
+              );
+            },
+          ),
         );
       },
     );
   }
 
-  Widget _buildCompletados() {
-    return FutureBuilder<List<_RetoCompletadoInfo>>(
-      future: _cargarCompletados(),
-      builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        var completadosInfo = snap.data ?? [];
+  Future<void> _clonarReto(RetoResumen item) async {
+    final nuevoId = await clonarReto(item.reto.id, ref);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(nuevoId != null
+              ? 'Reto "${item.reto.titulo}" añadido a tus retos'
+              : 'No se pudo copiar el reto'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    if (nuevoId != null) setState(() => _vista = 'mios');
+  }
 
+  // ---------------------------------------------------------------------------
+  // Lista unificada (activos + completados) con filtros aplicados
+  // ---------------------------------------------------------------------------
+  Widget _buildLista() {
+    final async = ref.watch(todosRetosProvider);
+
+    return async.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+      data: (retos) {
         // Aplicar filtros
-        if (_busqueda.isNotEmpty) {
-          completadosInfo = completadosInfo
-              .where((c) =>
-                  normalizeSearch(c.reto.titulo).contains(_busqueda) ||
-                  normalizeSearch(c.reto.meta).contains(_busqueda))
-              .toList();
-        }
-        if (_filtroTipo != null) {
-          completadosInfo =
-              completadosInfo.where((c) => c.reto.tipo == _filtroTipo).toList();
-        }
-        if (_filtroComplejidad == 'simple') {
-          completadosInfo =
-              completadosInfo.where((c) => !c.tieneHitos).toList();
-        } else if (_filtroComplejidad == 'complejo') {
-          completadosInfo = completadosInfo.where((c) => c.tieneHitos).toList();
-        }
+        var filtrados = _aplicarFiltros(retos);
 
-        if (completadosInfo.isEmpty) {
-          final conFiltros = _busqueda.isNotEmpty ||
-              _filtroTipo != null ||
-              _filtroComplejidad != null;
-          return EmptyState(
+        if (retos.isEmpty) {
+          return const EmptyState(
             icon: Icons.flag_outlined,
-            title: conFiltros ? 'Sin resultados' : 'Sin retos completados',
-            message: conFiltros
-                ? 'No hay retos que coincidan con los filtros.'
-                : 'Completa tu primer reto para verlo aquí.',
+            title: 'Sin retos',
+            message: 'Crea tu primer reto para empezar.',
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
-          itemCount: completadosInfo.length,
-          itemBuilder: (context, index) {
-            final c = completadosInfo[index];
-            final reto = c.reto;
-            final tipoColor =
-                reto.tipo == 'fitness' ? Colors.green : Colors.blue;
-            final tipoIcono = reto.tipo == 'fitness'
-                ? Icons.fitness_center_rounded
-                : Icons.school_rounded;
-            return Card(
-              margin: const EdgeInsets.only(bottom: 6),
-              child: ListTile(
-                leading: Icon(tipoIcono, color: tipoColor),
-                title: Text(reto.titulo,
-                    style: const TextStyle(
-                        decoration: TextDecoration.lineThrough,
-                        color: Colors.grey)),
-                subtitle: Text(
-                    '${reto.meta} · ${DateFormat('dd/MM/yy').format(reto.fechaFin)}${c.tieneHitos ? "" : " · Simple"}',
-                    style: const TextStyle(fontSize: 12)),
-                trailing: const Icon(Icons.check_circle,
-                    color: Colors.green, size: 22),
-                onTap: () => context.push('/retos/${reto.id}'),
-              ),
-            );
+
+        if (filtrados.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 40),
+            child: EmptyState(
+              icon: Icons.search_off,
+              title: 'Sin resultados',
+              message: 'No hay retos que coincidan con los filtros.',
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(todosRetosProvider);
+            return ref.read(todosRetosProvider.future);
           },
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
+            itemCount: filtrados.length,
+            itemBuilder: (context, index) {
+              final item = filtrados[index];
+              final completado =
+                  item.reto.estaCompletado || item.progreso >= 1.0;
+              return _RetoCard(
+                item: item,
+                onComplete: completado
+                    ? null
+                    : () => _confirmarCompletar(context, item.reto.id),
+                onTap: () => context.push('/retos/${item.reto.id}'),
+                onEdit: () =>
+                    mostrarCrearRetoSimpleSheet(context, retoId: item.reto.id),
+                onDelete: () => _confirmarEliminar(context, item),
+              );
+            },
+          ),
         );
       },
     );
   }
 
-  Future<List<_RetoCompletadoInfo>> _cargarCompletados() async {
-    final client = Supabase.instance.client;
-    final user = client.auth.currentUser;
-    if (user == null) return [];
-    final data = await client
-        .from('retos')
-        .select()
-        .eq('usuario_id', user.id)
-        .eq('esta_completado', true)
-        .order('fecha_fin', ascending: false)
-        .limit(20);
-
-    final retos = (data as List).map((r) => RetoDb.fromMap(r)).toList();
-
-    if (retos.isEmpty) return [];
-
-    final retoIds = retos.map((r) => r.id).toList();
-    final hitosData = await client
-        .from('hitos_de_reto')
-        .select('reto_id')
-        .inFilter('reto_id', retoIds);
-    final retosConHitos =
-        (hitosData as List).map((h) => h['reto_id'] as String).toSet();
-
-    return retos
-        .map((r) => _RetoCompletadoInfo(
-              reto: r,
-              tieneHitos: retosConHitos.contains(r.id),
-            ))
-        .toList();
-  }
-
+  // ---------------------------------------------------------------------------
+  // Filtros
+  // ---------------------------------------------------------------------------
   List<RetoResumen> _aplicarFiltros(List<RetoResumen> retos) {
     var filtrados = retos;
+
+    // Filtro por estado
+    if (_filtroEstado == 'activos') {
+      filtrados = filtrados
+          .where((r) => !r.reto.estaCompletado && r.progreso < 1.0)
+          .toList();
+    } else if (_filtroEstado == 'completados') {
+      filtrados = filtrados
+          .where((r) => r.reto.estaCompletado || r.progreso >= 1.0)
+          .toList();
+    }
+    // _filtroEstado == null → mostrar todos
+
+    // Búsqueda
     if (_busqueda.isNotEmpty) {
       filtrados = filtrados
           .where((r) =>
-              r.reto.titulo.toLowerCase().contains(_busqueda) ||
-              r.reto.meta.toLowerCase().contains(_busqueda))
+              normalizeSearch(r.reto.titulo).contains(_busqueda) ||
+              normalizeSearch(r.reto.meta).contains(_busqueda))
           .toList();
     }
+
+    // Tipo
     if (_filtroTipo != null) {
       filtrados = filtrados.where((r) => r.reto.tipo == _filtroTipo).toList();
     }
+
+    // Complejidad
     if (_filtroComplejidad == 'simple') {
       filtrados = filtrados.where((r) => !r.tieneHitos).toList();
     } else if (_filtroComplejidad == 'complejo') {
       filtrados = filtrados.where((r) => r.tieneHitos).toList();
     }
+
     return filtrados;
   }
 
-  void _confirmarCompletarDesdeLista(BuildContext context, String retoId) {
+  bool get _hayFiltrosAvanzados =>
+      _filtroTipo != null || _filtroComplejidad != null;
+
+  void _abrirFiltros() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setSheet) {
+          Widget chip(String label, bool sel, VoidCallback onTap) => Padding(
+                padding: const EdgeInsets.only(right: 8, bottom: 8),
+                child: FilterChip(
+                  label: Text(label, style: const TextStyle(fontSize: 12)),
+                  selected: sel,
+                  visualDensity: VisualDensity.compact,
+                  onSelected: (_) {
+                    onTap();
+                    setSheet(() {});
+                    setState(() {});
+                  },
+                ),
+              );
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('Filtros',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 16)),
+                    const Spacer(),
+                    if (_hayFiltrosAvanzados)
+                      TextButton(
+                        onPressed: () {
+                          _filtroTipo = null;
+                          _filtroComplejidad = null;
+                          setSheet(() {});
+                          setState(() {});
+                        },
+                        child: const Text('Limpiar'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text('Tipo',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 6),
+                Wrap(children: [
+                  chip('Todos', _filtroTipo == null, () => _filtroTipo = null),
+                  chip('Fitness', _filtroTipo == 'fitness',
+                      () => _filtroTipo = 'fitness'),
+                  chip('Académico', _filtroTipo == 'academic',
+                      () => _filtroTipo = 'academic'),
+                ]),
+                const SizedBox(height: 10),
+                const Text('Complejidad',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 6),
+                Wrap(children: [
+                  chip('Todas', _filtroComplejidad == null,
+                      () => _filtroComplejidad = null),
+                  chip('Simple', _filtroComplejidad == 'simple',
+                      () => _filtroComplejidad = 'simple'),
+                  chip('Complejo', _filtroComplejidad == 'complejo',
+                      () => _filtroComplejidad = 'complejo'),
+                ]),
+              ],
+            ),
+          );
+        });
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Diálogo de confirmación para eliminar reto
+  // ---------------------------------------------------------------------------
+  void _confirmarEliminar(BuildContext context, RetoResumen item) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar reto'),
+        content: Text(
+            '¿Seguro que quieres eliminar "${item.reto.titulo}"? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await eliminarReto(item.reto.id, ref);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    const SnackBar(content: Text('Reto eliminado')),
+                  );
+              }
+            },
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Diálogo de confirmación para completar reto
+  // ---------------------------------------------------------------------------
+  void _confirmarCompletar(BuildContext context, String retoId) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -431,20 +503,23 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
   }
 }
 
+// =============================================================================
+// Card de reto individual
+// =============================================================================
 class _RetoCard extends ConsumerStatefulWidget {
   const _RetoCard({
     required this.item,
-    required this.esExplorar,
-    this.onClone,
     this.onComplete,
     required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final RetoResumen item;
-  final bool esExplorar;
-  final VoidCallback? onClone;
   final VoidCallback? onComplete;
   final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   ConsumerState<_RetoCard> createState() => _RetoCardState();
@@ -468,7 +543,8 @@ class _RetoCardState extends ConsumerState<_RetoCard> {
         : diasRestantes == 0
             ? 'Hoy'
             : 'Vencido';
-    final expandible = item.tieneHitos && !widget.esExplorar;
+    final completado = reto.estaCompletado || item.progreso >= 1.0;
+    final expandible = item.tieneHitos && !completado;
 
     final tareasAsync =
         _expanded ? ref.watch(tareasDeRetoProvider(reto.id)) : null;
@@ -486,96 +562,121 @@ class _RetoCardState extends ConsumerState<_RetoCard> {
               Row(
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    width: 34,
+                    height: 34,
                     decoration: BoxDecoration(
                       color: tipoColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(9),
                     ),
-                    child: Row(
+                    child: Icon(tipoIcono, size: 18, color: tipoColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(tipoIcono, size: 14, color: tipoColor),
-                        const SizedBox(width: 4),
                         Text(
-                          reto.tipo == 'fitness' ? 'Fitness' : 'Académico',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: tipoColor,
-                              fontWeight: FontWeight.w600),
+                          reto.titulo,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    decoration: completado
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                    color: completado ? Colors.grey : null,
+                                  ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          reto.meta.isNotEmpty
+                              ? reto.meta
+                              : (reto.tipo == 'fitness'
+                                  ? 'Fitness'
+                                  : 'Académico'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                        ),
+                        if (reto.esReutilizado) ...[
+                          const SizedBox(height: 3),
+                          const BadgeReutilizado(
+                            dense: true,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  if (completado)
+                    const Icon(Icons.check_circle,
+                        size: 18, color: Colors.green)
+                  else
+                    Text(
+                      textoDias,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: diasRestantes <= 3 ? Colors.red : Colors.grey,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  SizedBox(
+                    width: 32,
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, size: 18),
+                      padding: EdgeInsets.zero,
+                      tooltip: 'Opciones',
+                      onSelected: (v) {
+                        if (v == 'editar') widget.onEdit();
+                        if (v == 'eliminar') widget.onDelete();
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: 'editar',
+                          child: Row(children: [
+                            Icon(Icons.edit_outlined, size: 18),
+                            SizedBox(width: 10),
+                            Text('Editar'),
+                          ]),
+                        ),
+                        PopupMenuItem(
+                          value: 'eliminar',
+                          child: Row(children: [
+                            Icon(Icons.delete_outline,
+                                size: 18, color: Colors.red),
+                            SizedBox(width: 10),
+                            Text('Eliminar',
+                                style: TextStyle(color: Colors.red)),
+                          ]),
                         ),
                       ],
                     ),
                   ),
-                  if (item.tieneHitos) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.deepPurple.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text('Complejo',
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.deepPurple,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ] else ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text('Simple',
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.green,
-                              fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                  const Spacer(),
-                  Text(textoDias,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: diasRestantes <= 3 ? Colors.red : Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      )),
-                  if (widget.onClone != null) ...[
-                    const SizedBox(width: 4),
-                    InkWell(
-                      onTap: widget.onClone,
-                      borderRadius: BorderRadius.circular(8),
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(Icons.copy, size: 16, color: Colors.grey),
-                      ),
-                    ),
-                  ],
                 ],
               ),
               const SizedBox(height: 8),
-              Text(reto.titulo,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-              if (reto.meta.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(reto.meta, style: Theme.of(context).textTheme.bodySmall),
-              ],
-              const SizedBox(height: 8),
-              ChallengeProgressBar(
-                progress: item.progreso,
+              Row(
+                children: [
+                  Expanded(
+                      child: ChallengeProgressBar(progress: item.progreso)),
+                  const SizedBox(width: 8),
+                  Text('${(item.progreso * 100).round()}%',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w600)),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text('${(item.progreso * 100).round()}% completado',
-                  style: const TextStyle(fontSize: 10, color: Colors.grey)),
-              if (widget.onComplete != null)
+
+              // Botón completar (solo si no está completado)
+              if (widget.onComplete != null && !completado)
                 Align(
                   alignment: Alignment.centerRight,
                   child: InkWell(
@@ -603,7 +704,8 @@ class _RetoCardState extends ConsumerState<_RetoCard> {
                     ),
                   ),
                 ),
-              // Tareas expandibles
+
+              // Tareas expandibles (solo para retos con tareas no completados)
               if (expandible) ...[
                 const SizedBox(height: 4),
                 GestureDetector(
@@ -632,12 +734,13 @@ class _RetoCardState extends ConsumerState<_RetoCard> {
                       child: Column(
                         children: [
                           ...tareas.map((t) {
-                            final completado = _optimistas.containsKey(t.id)
-                                ? _optimistas[t.id]!
-                                : t.estaCompletado;
+                            final tareaCompletada =
+                                _optimistas.containsKey(t.id)
+                                    ? _optimistas[t.id]!
+                                    : t.estaCompletado;
                             return InkWell(
                               onTap: () async {
-                                final nuevoValor = !completado;
+                                final nuevoValor = !tareaCompletada;
                                 setState(() => _optimistas[t.id] = nuevoValor);
                                 try {
                                   await toggleTareaCompletada(
@@ -662,11 +765,11 @@ class _RetoCardState extends ConsumerState<_RetoCard> {
                                 child: Row(
                                   children: [
                                     Icon(
-                                      completado
+                                      tareaCompletada
                                           ? Icons.check_circle
                                           : Icons.radio_button_unchecked,
                                       size: 18,
-                                      color: completado
+                                      color: tareaCompletada
                                           ? Colors.green
                                           : Colors.grey.shade400,
                                     ),
@@ -676,11 +779,12 @@ class _RetoCardState extends ConsumerState<_RetoCard> {
                                         t.titulo,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          decoration: completado
+                                          decoration: tareaCompletada
                                               ? TextDecoration.lineThrough
                                               : null,
-                                          color:
-                                              completado ? Colors.grey : null,
+                                          color: tareaCompletada
+                                              ? Colors.grey
+                                              : null,
                                         ),
                                       ),
                                     ),
@@ -731,60 +835,127 @@ class _RetoCardState extends ConsumerState<_RetoCard> {
   }
 }
 
-class _RetoCompletadoInfo {
-  const _RetoCompletadoInfo({
-    required this.reto,
-    required this.tieneHitos,
-  });
+// =============================================================================
+// Botón de filtros avanzados (con punto indicador si hay filtros activos)
+// =============================================================================
+class _BotonFiltros extends StatelessWidget {
+  const _BotonFiltros({required this.activos, required this.onTap});
 
-  final RetoDb reto;
-  final bool tieneHitos;
-}
-
-class _FiltroChip extends StatelessWidget {
-  const _FiltroChip({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool selected;
-  final ValueChanged<bool> onSelected;
+  final bool activos;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      selected: selected,
-      onSelected: onSelected,
-      visualDensity: VisualDensity.compact,
+    final cs = Theme.of(context).colorScheme;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton.filledTonal(
+          onPressed: onTap,
+          icon: const Icon(Icons.tune_rounded, size: 20),
+          visualDensity: VisualDensity.compact,
+          tooltip: 'Filtros',
+        ),
+        if (activos)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: cs.primary,
+                shape: BoxShape.circle,
+                border: Border.all(color: cs.surface, width: 1.5),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
 
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({
-    required this.icon,
-    required this.value,
-    required this.label,
+// =============================================================================
+// Card de reto público de la comunidad (solo lectura + acción «Usar»)
+// =============================================================================
+class _RetoComunidadCard extends StatelessWidget {
+  const _RetoComunidadCard({
+    required this.item,
+    required this.onTap,
+    required this.onClonar,
   });
 
-  final IconData icon;
-  final String value;
-  final String label;
+  final RetoResumen item;
+  final VoidCallback onTap;
+  final VoidCallback onClonar;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
+    final reto = item.reto;
+    final theme = Theme.of(context);
+    final tipoIcono = reto.tipo == 'fitness'
+        ? Icons.fitness_center_rounded
+        : Icons.school_rounded;
+    final tipoColor = reto.tipo == 'fitness' ? Colors.green : Colors.blue;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: tipoColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(tipoIcono, size: 18, color: tipoColor),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      reto.titulo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${reto.tipo == 'fitness' ? 'Fitness' : 'Académico'}'
+                      '${item.tieneHitos ? ' · Complejo' : ''}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.tonal(
+                onPressed: onClonar,
+                style: FilledButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  minimumSize: const Size(0, 32),
+                ),
+                child: const Text('Usar', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

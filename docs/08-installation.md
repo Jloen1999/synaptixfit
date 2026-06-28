@@ -322,13 +322,14 @@ Nota práctica para firmas:
 - En desarrollo Android, registra al menos la huella **debug SHA-1**.
 - Antes de publicar en Play Store, añade también la huella **release SHA-1** (o App Signing de Google Play si aplica).
 
-### 8.3.3 Obtener huella SHA-1 en Windows (validado)
+### 8.3.3 Obtener huella SHA-1 (Windows / WSL / Linux)
 
-Comando recomendado (probado en este proyecto):
+#### Método recomendado: `gradlew signingReport` (multiplataforma)
 
-```powershell
+```bash
 cd app/android
-.\gradlew signingReport
+./gradlew signingReport        # Linux / WSL / macOS
+# .\gradlew signingReport      # Windows (PowerShell)
 ```
 
 El comando anterior devuelve las huellas por variante. Ejemplo real obtenido:
@@ -344,20 +345,38 @@ SHA1: ...
 Keystore detectado en entorno local:
 
 ```text
-C:\Users\JLOel\.android\debug.keystore
+# Linux / WSL / macOS
+~/.android/debug.keystore
+
+# Windows
+C:\Users\<usuario>\.android\debug.keystore
 ```
 
-Alternativa (si Gradle falla) usando `keytool` sobre keystore debug:
+#### Alternativa con `keytool` (si Gradle falla)
+
+**Linux / WSL / macOS:**
+
+```bash
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
+```
+
+Si no reconoce `keytool`, usar la ruta completa con JAVA_HOME:
+
+```bash
+$JAVA_HOME/bin/keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
+```
+
+**Windows (PowerShell):**
 
 ```powershell
 keytool -list -v -alias androiddebugkey -keystore "$env:USERPROFILE\.android\debug.keystore" -storepass android -keypass android
 ```
 
-Si no reconoce `keytool`, ejecuta primero:
-
 ```powershell
 & "$env:JAVA_HOME\bin\keytool.exe" -list -v -alias androiddebugkey -keystore "$env:USERPROFILE\.android\debug.keystore" -storepass android -keypass android
 ```
+
+> ⚠️ **Importante al migrar de entorno:** Al mover el proyecto a otra máquina o entorno (ej. de Windows a WSL), se genera un nuevo `debug.keystore` con un SHA-1 diferente. Es necesario registrar el nuevo SHA-1 en **dos lugares**: Firebase Console y Google Cloud Console (OAuth Client ID Android). Consulta la [Guía de Troubleshooting en docs/16-guia-autenticacion-google.md](16-guia-autenticacion-google.md#troubleshooting-migración-de-entorno-nuevo-sha-1).
 
 Referencias de capturas a añadir manualmente:
 

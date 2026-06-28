@@ -10,6 +10,14 @@ class InsigniaEngine {
 
   const InsigniaEngine(this._client);
 
+  /// Obtiene el progreso actual de una métrica específica para un usuario.
+  /// Retorna el valor numérico de la métrica (ej: sesiones completadas, racha).
+  Future<int> obtenerProgresoMetrica(
+      String usuarioId, String criterioTipo) async {
+    final metricas = await _obtenerMetricas(usuarioId);
+    return metricas[criterioTipo] ?? 0;
+  }
+
   /// Evalúa todos los criterios para un usuario.
   /// Retorna la lista de insignias recién obtenidas (nuevas).
   Future<List<Insignia>> evaluarYOtorgar(String usuarioId) async {
@@ -141,6 +149,17 @@ class InsigniaEngine {
           .select('id')
           .eq('usuario_id', usuarioId);
       metricas['apuntes_creados'] = (apuntesData as List).length;
+
+      // --- Semanas consecutivas con adherencia de plan >= 80% ---
+      final cargaData = await _client
+          .from('carga_academica_semanal')
+          .select(
+              'semana_inicio, horas_estudio_planeadas, horas_estudio_reales')
+          .eq('usuario_id', usuarioId)
+          .gt('horas_estudio_planeadas', 0)
+          .order('semana_inicio', ascending: false);
+      metricas['semanas_plan_adherencia'] =
+          _contarSemanasAdherencia(cargaData as List);
     } catch (e) {
       debugPrint('[InsigniaEngine] Error obteniendo métricas: $e');
     }
@@ -226,5 +245,22 @@ class InsigniaEngine {
       }
     }
     return consecutivos;
+  }
+
+  static int _contarSemanasAdherencia(List<dynamic> rows) {
+    if (rows.isEmpty) return 0;
+
+    int consecutivas = 0;
+    for (final r in rows) {
+      final row = r as Map<String, dynamic>;
+      final planeadas = (row['horas_estudio_planeadas'] as num).toDouble();
+      final reales = (row['horas_estudio_reales'] as num).toDouble();
+      if (planeadas > 0 && reales >= planeadas * 0.8) {
+        consecutivas++;
+      } else {
+        break;
+      }
+    }
+    return consecutivas;
   }
 }

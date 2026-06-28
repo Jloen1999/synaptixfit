@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/admin_dto.dart';
 import '../infrastructure/admin_repository.dart';
+import 'admin_auditoria_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Repositorio
@@ -36,21 +37,59 @@ final esAdminProvider = FutureProvider<bool>((ref) async {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Listado de usuarios (con búsqueda)
+// Parámetros de filtro y ordenamiento
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Lista paginada de usuarios filtrada por [query] (email o nombre).
+/// Parámetros combinados para el listado de usuarios:
+/// búsqueda textual, filtro de rol, campo de orden y dirección.
+class AdminFiltrosParams {
+  final String query;
+  final String rolFiltro;
+  final String ordenarPor;
+  final bool ascendente;
+
+  const AdminFiltrosParams({
+    this.query = '',
+    this.rolFiltro = 'todos',
+    this.ordenarPor = 'creado_en',
+    this.ascendente = false,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      other is AdminFiltrosParams &&
+      other.query == query &&
+      other.rolFiltro == rolFiltro &&
+      other.ordenarPor == ordenarPor &&
+      other.ascendente == ascendente;
+
+  @override
+  int get hashCode => Object.hash(query, rolFiltro, ordenarPor, ascendente);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Listado de usuarios (con búsqueda, filtros y ordenamiento)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Lista paginada de usuarios filtrada y ordenada según [params].
 final adminUsuariosProvider =
-    FutureProvider.family<List<UsuarioAdmin>, String>((ref, query) async {
+    FutureProvider.family<List<UsuarioAdmin>, AdminFiltrosParams>(
+        (ref, params) async {
   final repo = ref.watch(adminRepositoryProvider);
-  return repo.listarUsuarios(query: query);
+  return repo.listarUsuarios(
+    query: params.query,
+    rolFiltro: params.rolFiltro,
+    ordenarPor: params.ordenarPor,
+    ascendente: params.ascendente,
+  );
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Detalle completo de un usuario
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Obtiene el perfil completo y conteos de actividad de un usuario.
+/// Obtiene el perfil completo, conteos de actividad y datos recientes
+/// (sesiones, retos, insignias, rutinas) de un usuario.
 final adminUsuarioDetalleProvider =
     FutureProvider.family<Map<String, dynamic>, String>((ref, id) async {
   final repo = ref.watch(adminRepositoryProvider);
@@ -71,6 +110,12 @@ Future<Map<String, dynamic>> wipeUserData(
   // Invalidar todos los providers relacionados para refrescar la UI
   ref.invalidate(adminUsuariosProvider);
   ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  registrarAuditoria(
+    ref,
+    accion: 'wipe',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+  );
   return result;
 }
 
@@ -84,4 +129,109 @@ Future<void> cambiarRolUsuario(
   await repo.cambiarRol(usuarioId, nuevoRol);
   ref.invalidate(adminUsuariosProvider);
   ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  await registrarAuditoria(
+    ref,
+    accion: 'cambiar_rol',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+    detalle: {'nuevo_rol': nuevoRol},
+  );
+}
+
+/// Elimina permanentemente un usuario y todos sus datos.
+/// Registra auditoría y redirige al panel de administración.
+Future<Map<String, dynamic>> eliminarUsuario(
+  WidgetRef ref,
+  String usuarioId,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  final result = await repo.deleteUser(usuarioId);
+  ref.invalidate(adminUsuariosProvider);
+  ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  await registrarAuditoria(
+    ref,
+    accion: 'eliminar_usuario',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+    detalle: {'email': result['email']},
+  );
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Configuración de usuario desde admin
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Actualiza el nombre completo de un usuario desde el panel admin.
+Future<void> actualizarNombreUsuario(
+  WidgetRef ref,
+  String usuarioId,
+  String nuevoNombre,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  await repo.actualizarNombre(usuarioId, nuevoNombre);
+  ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  ref.invalidate(adminUsuariosProvider);
+  await registrarAuditoria(
+    ref,
+    accion: 'actualizar_nombre',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+    detalle: {'nombre': nuevoNombre},
+  );
+}
+
+/// Actualiza el email de un usuario desde el panel admin.
+Future<void> actualizarEmailUsuario(
+  WidgetRef ref,
+  String usuarioId,
+  String nuevoEmail,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  await repo.actualizarEmail(usuarioId, nuevoEmail);
+  ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  ref.invalidate(adminUsuariosProvider);
+  await registrarAuditoria(
+    ref,
+    accion: 'actualizar_email',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+    detalle: {'email': nuevoEmail},
+  );
+}
+
+/// Resetea el XP total de un usuario a 0 desde el panel admin.
+Future<void> resetXpUsuario(
+  WidgetRef ref,
+  String usuarioId,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  await repo.resetXp(usuarioId);
+  ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  ref.invalidate(adminUsuariosProvider);
+  await registrarAuditoria(
+    ref,
+    accion: 'reset_xp',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+  );
+}
+
+/// Cambia manualmente el nivel de un usuario desde el panel admin.
+Future<void> cambiarNivelUsuario(
+  WidgetRef ref,
+  String usuarioId,
+  int nuevoNivel,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  await repo.cambiarNivel(usuarioId, nuevoNivel);
+  ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  ref.invalidate(adminUsuariosProvider);
+  await registrarAuditoria(
+    ref,
+    accion: 'cambiar_nivel',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+    detalle: {'nivel': nuevoNivel},
+  );
 }

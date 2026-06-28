@@ -3,40 +3,53 @@
  *
  * Este Worker actúa como proxy para subir/descargar/borrar archivos en
  * Cloudflare R2 (GIFs de ejercicios, imágenes, etc.).
+ * También incluye un proxy para descargar calendarios .ics (evita CORS).
  *
- * IMPORTANTE: Este archivo es de REFERENCIA.
- * Copia y pega este código en Cloudflare Dashboard:
- *   https://dash.cloudflare.com
- *   → Workers & Pages → synaptixfit-r2-proxy → Edit Code
+ * DESPLIEGUE RECOMENDADO (vía Wrangler CLI):
+ *   1. Instala Wrangler: npm i -g wrangler
+ *   2. Autentícate: npx wrangler login
+ *   3. Ajusta "bucket_name" en wrangler.jsonc al bucket R2 real
+ *   4. Despliega: npx wrangler deploy
  *
- * CONFIGURACIÓN REQUERIDA EN CLOUDFLARE DASHBOARD:
- *   1. Crear Worker llamado "synaptixfit-r2-proxy"
- *   2. En Settings → Bindings → Add R2 Bucket Binding:
+ * ALTERNATIVA (Cloudflare Dashboard):
+ *   1. Ve a https://dash.cloudflare.com
+ *   2. Workers & Pages → synaptixfit-r2-proxy → Edit Code
+ *   3. Settings → Bindings → Add R2 Bucket Binding:
  *      Variable name : R2_BUCKET
  *      R2 Bucket     : (el bucket de SynaptixFit)
- *   3. Pegar este código y hacer Deploy.
- *   4. Copiar la URL del Worker (.workers.dev) al .env de la app Flutter.
+ *   4. Pega este código completo y haz Deploy.
+ *   5. Copia la URL del Worker (.workers.dev) al .env de la app Flutter.
  */
 
-// ─── CORS ────────────────────────────────────────────────────────────────────
+// ─── CORS helpers ────────────────────────────────────────────────────────────
 
-function getCorsHeaders(request) {
+const OPEN_CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age': '86400',
+};
+
+function getR2CorsHeaders(request) {
   const origin = request.headers.get('Origin');
   const allowedOrigins = [
-    'http://localhost:5173',         // Desarrollo web local (Flutter web / Vite)
-    'http://localhost:3000',         // Desarrollo alternativo
-    'https://synaptixfit.com',       // Producción web (actualiza con tu dominio real)
+    'https://synaptixfit.com',
   ];
 
-  const allowedOrigin = allowedOrigins.includes(origin)
-    ? origin
-    : allowedOrigins[allowedOrigins.length - 1];
+  let allowedOrigin;
+  if (origin && origin.startsWith('http://localhost')) {
+    allowedOrigin = origin;
+  } else if (allowedOrigins.includes(origin)) {
+    allowedOrigin = origin;
+  } else {
+    allowedOrigin = allowedOrigins[0];
+  }
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Content-Length, Authorization',
-    'Access-Control-Max-Age': '86400', // 24 horas de caché preflight
+    'Access-Control-Max-Age': '86400',
   };
 }
 
@@ -45,16 +58,88 @@ function getCorsHeaders(request) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const corsHeaders = getCorsHeaders(request);
 
-    // Manejar preflight (OPTIONS) para CORS
+    // ── /_proxy/ics — CORS abierto (*) ──────────────────────────────────────
+    if (url.pathname === '/_proxy/ics') {
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: OPEN_CORS });
+      }
+
+      if (request.method !== 'POST') {
+        return new Response(JSON.stringify({ error: 'Usa POST' }), {
+          status: 405,
+          headers: { ...OPEN_CORS, 'Content-Type': 'application/json' },
+        });
+      }
+
+      try {
+        const body = await request.json();
+        const targetUrl = body?.url;
+        if (!targetUrl) {
+          return new Response(JSON.stringify({ error: 'Falta campo "url"' }), {
+            status: 400,
+            headers: { ...OPEN_CORS, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const icsResp = await fetch(targetUrl, {
+          headers: {
+            'User-Agent': 'SynaptixFit/1.0 (Calendar Sync)',
+            'Accept': 'text/calendar, text/plain, */*',
+          },
+          redirect: 'follow',
+        });
+
+        if (!icsResp.ok) {
+          return new Response(JSON.stringify({
+            error: `El servidor respondió ${icsResp.status}`,
+            status: icsResp.status,
+          }), {
+            status: 502,
+            headers: { ...OPEN_CORS, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const icsText = await icsResp.text();
+        return new Response(icsText, {
+          status: 200,
+          headers: {
+            ...OPEN_CORS,
+            'Content-Type': 'text/plain; charset=utf-8',
+          },
+        });
+      } catch (err) {
+        console.error('[ics-proxy] Error:', err);
+        return new Response(JSON.stringify({
+          error: 'Error al descargar el calendario',
+          detail: err.message,
+        }), {
+          status: 500,
+          headers: { ...OPEN_CORS, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // ── R2 — CORS restringido ───────────────────────────────────────────────
+    const corsHeaders = getR2CorsHeaders(request);
+
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
+    // Guarda: verificar que el binding R2_BUCKET existe antes de usarlo
+    if (!env.R2_BUCKET) {
+      console.error('[synaptixfit-r2-proxy] Binding R2_BUCKET no configurado en este Worker.');
+      return new Response(JSON.stringify({
+        error: 'Configuración incompleta del servidor',
+        message: 'El binding R2_BUCKET no está configurado. Agrega el binding en Cloudflare Dashboard → Workers & Pages → synaptixfit-r2-proxy → Settings → Bindings, o despliega con `npx wrangler deploy` usando wrangler.jsonc.',
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     try {
-      // Extraer la key del objeto R2 desde el path
-      // Ejemplo: /ejercicios/gifs/0001.gif → ejercicios/gifs/0001.gif
       const key = url.pathname.replace(/^\//, '');
 
       if (!key) {
@@ -64,7 +149,6 @@ export default {
         });
       }
 
-      // ── GET: Descargar archivo desde R2 ──────────────────────────────────
       if (request.method === 'GET') {
         const object = await env.R2_BUCKET.get(key);
 
@@ -80,17 +164,17 @@ export default {
             ...corsHeaders,
             'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream',
             'Content-Length': object.size.toString(),
-            'Cache-Control': 'public, max-age=31536000, immutable', // Caché de 1 año
+            'Cache-Control': 'public, max-age=31536000, immutable',
             'ETag': object.etag,
           },
         });
       }
 
-      // ── PUT: Subir archivo a R2 ───────────────────────────────────────────
       if (request.method === 'PUT') {
         const contentType = request.headers.get('Content-Type') ?? 'application/octet-stream';
+        const body = await request.arrayBuffer();
 
-        await env.R2_BUCKET.put(key, request.body, {
+        await env.R2_BUCKET.put(key, body, {
           httpMetadata: { contentType },
         });
 
@@ -104,7 +188,6 @@ export default {
         });
       }
 
-      // ── DELETE: Eliminar archivo de R2 ───────────────────────────────────
       if (request.method === 'DELETE') {
         await env.R2_BUCKET.delete(key);
 
@@ -114,18 +197,17 @@ export default {
         });
       }
 
-      // Método no soportado
       return new Response(JSON.stringify({ error: 'Método no permitido' }), {
         status: 405,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
     } catch (error) {
-      // Nunca exponer stack traces en producción — útil solo en desarrollo
-      console.error('[synaptixfit-r2-proxy] Error:', error);
+      console.error('[synaptixfit-r2-proxy] Error:', error, error?.stack);
       return new Response(JSON.stringify({
         error: 'Error interno del servidor',
-        message: error.message,
+        message: error?.message ?? String(error ?? 'Error desconocido'),
+        name: error?.name ?? 'Error',
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,0 +1,1818 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/design_system/sv_colors.dart';
+import '../../../core/design_system/sv_shapes.dart';
+import '../../../shared/models/db_models.dart';
+import '../application/apuntes_asignatura_provider.dart';
+import '../application/apuntes_provider.dart';
+import '../application/archivos_asignatura_provider.dart';
+import '../application/asignaturas_provider.dart';
+import '../application/conteos_asignatura_provider.dart';
+import '../application/documento_ia_provider.dart';
+import '../application/materiales_estudio_provider.dart';
+import '../application/practica_provider.dart';
+import '../application/tareas_asignatura_provider.dart';
+import '../domain/archivo_asignatura_dto.dart';
+import '../domain/asignatura_visual.dart';
+import '../domain/fuente_estudio.dart';
+import '../infrastructure/documento_ia_repository.dart';
+import '../infrastructure/estudio_ia_service.dart';
+import 'apunte_visor_screen.dart';
+import 'mapa_mental_screen.dart';
+import 'resumen_ia_screen.dart';
+import 'widgets/archivo_tile.dart';
+import 'widgets/dashboard_asignatura_tab.dart';
+import 'widgets/tareas_asignatura_tab.dart';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AsignaturaDetalleScreen
+// ══════════════════════════════════════════════════════════════════════════════
+
+class AsignaturaDetalleScreen extends ConsumerStatefulWidget {
+  const AsignaturaDetalleScreen({
+    required this.asignaturaId,
+    this.asignaturaInicial,
+    super.key,
+  });
+
+  final String asignaturaId;
+  final AsignaturaDb? asignaturaInicial;
+
+  @override
+  ConsumerState<AsignaturaDetalleScreen> createState() =>
+      _AsignaturaDetalleScreenState();
+}
+
+class _AsignaturaDetalleScreenState
+    extends ConsumerState<AsignaturaDetalleScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab;
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tab.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AsignaturaDb? asignatura;
+    if (widget.asignaturaInicial != null) {
+      asignatura = widget.asignaturaInicial;
+    } else {
+      asignatura =
+          ref.watch(asignaturaPorIdProvider(widget.asignaturaId)).valueOrNull;
+    }
+
+    final color = colorAsignatura(widget.asignaturaId);
+    final siglas = asignatura != null ? siglasAsignatura(asignatura) : '···';
+    final nombre = asignatura?.nombre ?? 'Asignatura';
+    final conteos =
+        ref.watch(conteosAsignaturaProvider(widget.asignaturaId)).valueOrNull;
+    final tareas =
+        ref.watch(tareasAsignaturaProvider(widget.asignaturaId)).valueOrNull;
+    int? pendientesHoy;
+    if (tareas != null) {
+      final ahora = DateTime.now();
+      final hoy = DateTime(ahora.year, ahora.month, ahora.day);
+      pendientesHoy = tareas.where((t) {
+        final r = t.referenciaTemporal;
+        return !t.completado && DateTime(r.year, r.month, r.day) == hoy;
+      }).length;
+    }
+
+    return Scaffold(
+      backgroundColor: SVColors.background,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _Header(
+              siglas: siglas,
+              nombre: nombre,
+              color: color,
+              apuntes: conteos?.apuntes,
+              archivos: conteos?.archivos,
+              pendientesHoy: pendientesHoy,
+            ),
+            _FlatTabBar(controller: _tab, color: color),
+            Expanded(
+              child: TabBarView(
+                controller: _tab,
+                children: [
+                  _ProgresoTab(
+                    asignaturaId: widget.asignaturaId,
+                    asignaturaNombre: nombre,
+                    color: color,
+                  ),
+                  _TemarioTab(
+                    asignaturaId: widget.asignaturaId,
+                    color: color,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.siglas,
+    required this.nombre,
+    required this.color,
+    this.apuntes,
+    this.archivos,
+    this.pendientesHoy,
+  });
+
+  final String siglas;
+  final String nombre;
+  final Color color;
+  final int? apuntes;
+  final int? archivos;
+  final int? pendientesHoy;
+
+  String _metricas() {
+    final partes = <String>[
+      '$apuntes ${apuntes == 1 ? 'apunte' : 'apuntes'}',
+      '$archivos ${archivos == 1 ? 'archivo' : 'archivos'}',
+    ];
+    if (pendientesHoy != null) {
+      partes.add(
+          '$pendientesHoy ${pendientesHoy == 1 ? 'pendiente' : 'pendientes'} hoy');
+    }
+    return partes.join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 8, 16, 10),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => context.pop(),
+            icon:
+                const Icon(Icons.arrow_back, color: SVColors.onSurfaceVariant),
+            tooltip: 'Volver',
+          ),
+          Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: SVShapes.standard12,
+            ),
+            child: Text(
+              siglas,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  nombre,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SVColors.onSurface,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
+                ),
+                if (apuntes != null && archivos != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    _metricas(),
+                    style: const TextStyle(
+                      color: SVColors.onSurfaceMuted,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── TabBar ────────────────────────────────────────────────────────────────────
+
+class _FlatTabBar extends StatelessWidget {
+  const _FlatTabBar({required this.controller, required this.color});
+
+  final TabController controller;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.all(4),
+      decoration: const BoxDecoration(
+        color: SVColors.surfaceContainerLow,
+        borderRadius: SVShapes.standard12,
+      ),
+      // El indicador se dirige por `controller.animation` (continuo durante el
+      // swipe) en lugar de `controller.index` (discreto, que se actualizaba al
+      // asentarse la página y provocaba el lag del foco al deslizar).
+      child: AnimatedBuilder(
+        animation: controller.animation ?? controller,
+        builder: (context, _) {
+          final t = controller.animation?.value ?? controller.index.toDouble();
+          return Row(
+            children: [
+              _celda(0, Icons.trending_up_rounded, 'Progreso', t),
+              _celda(1, Icons.menu_book_rounded, 'Temario', t),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _celda(int index, IconData icono, String texto, double t) {
+    // 1.0 = totalmente seleccionada; 0.0 = inactiva. Interpola con el swipe.
+    final sel = (1.0 - (t - index).abs()).clamp(0.0, 1.0);
+    final contenido =
+        Color.lerp(SVColors.onSurfaceVariant, color, sel) ?? color;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => controller.animateTo(index),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.14 * sel),
+            borderRadius: SVShapes.standard,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icono, size: 16, color: contenido),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  texto,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: contenido,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Pestaña fusionada: Progreso (Dashboard + Tareas)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _ProgresoTab extends ConsumerWidget {
+  const _ProgresoTab({
+    required this.asignaturaId,
+    required this.asignaturaNombre,
+    required this.color,
+  });
+
+  final String asignaturaId;
+  final String asignaturaNombre;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DashboardAsignaturaTab(
+            asignaturaId: asignaturaId,
+            asignaturaNombre: asignaturaNombre,
+            color: color,
+          ),
+          const SizedBox(height: 8),
+          TareasAsignaturaTab(asignaturaId: asignaturaId, color: color),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Pestaña fusionada: Temario (Apuntes + Archivos)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _TemarioTab extends ConsumerStatefulWidget {
+  const _TemarioTab({required this.asignaturaId, required this.color});
+
+  final String asignaturaId;
+  final Color color;
+
+  @override
+  ConsumerState<_TemarioTab> createState() => _TemarioTabState();
+}
+
+class _TemarioTabState extends ConsumerState<_TemarioTab> {
+  final _scrollCtrl = ScrollController();
+
+  Future<void> _crearApunte() async {
+    final guardado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => EditorApunteScreen(
+          asignaturaId: widget.asignaturaId,
+          existente: null,
+        ),
+      ),
+    );
+    if (guardado == true) {
+      ref.invalidate(apuntesPorAsignaturaProvider(widget.asignaturaId));
+      ref.invalidate(conteosAsignaturaProvider(widget.asignaturaId));
+      ref.invalidate(apuntesProvider);
+    }
+  }
+
+  Future<void> _abrirVisor(ApunteDb apunte) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ApunteVisorScreen(apunte: apunte),
+      ),
+    );
+    ref.invalidate(apuntesPorAsignaturaProvider(widget.asignaturaId));
+    ref.invalidate(conteosAsignaturaProvider(widget.asignaturaId));
+    ref.invalidate(apuntesProvider);
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final apuntesAsync =
+        ref.watch(apuntesPorAsignaturaProvider(widget.asignaturaId));
+    final archivosAsync =
+        ref.watch(archivosAsignaturaProvider(widget.asignaturaId));
+
+    return Stack(
+      children: [
+        ListView(
+          controller: _scrollCtrl,
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
+          children: [
+            _SeccionTitulo(
+                icono: Icons.notes_rounded, texto: 'Apuntes', color: widget.color),
+            const SizedBox(height: 6),
+            apuntesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => _vacio(Icons.error_outline,
+                  'No se pudieron cargar los apuntes', '$e'),
+              data: (apuntes) {
+                if (apuntes.isEmpty) {
+                  return _vacio(Icons.notes_rounded, 'Sin apuntes todavía',
+                      'Pulsa + para crear tu primera nota.');
+                }
+                return Column(
+                  children: apuntes.map((a) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _ApunteRow(
+                      apunte: a,
+                      onTap: () => _abrirVisor(a),
+                    ),
+                  )).toList(),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            _SeccionTitulo(
+                icono: Icons.folder_outlined,
+                texto: 'Archivos',
+                color: widget.color),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _subirArchivo,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: widget.color,
+                  side: BorderSide(
+                      color: widget.color.withValues(alpha: 0.5)),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 14),
+                  shape: const RoundedRectangleBorder(
+                      borderRadius: SVShapes.standard12),
+                ),
+                icon: const Icon(Icons.upload_file_outlined,
+                    size: 20),
+                label: const Text('Subir archivo',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const SizedBox(height: 8),
+            archivosAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => _vacio(Icons.error_outline,
+                  'No se pudieron cargar los archivos', '$e'),
+              data: (archivos) {
+                if (archivos.isEmpty) {
+                  return _vacio(
+                    Icons.folder_outlined,
+                    'Sin archivos todavía',
+                    'Sube PDFs, imágenes o documentos para generar resúmenes y tests.',
+                  );
+                }
+                return Column(
+                  children: archivos.map((a) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ArchivoTile(
+                      archivo: a,
+                      onAbrir: () => context.push(
+                          '/academico/archivo/visor',
+                          extra: a),
+                      onEliminar: () => _eliminarArchivo(a),
+                    ),
+                  )).toList(),
+                );
+              },
+            ),
+          ],
+        ),
+        Positioned(
+          right: 20,
+          bottom: 20,
+          child: FloatingActionButton(
+            backgroundColor: widget.color,
+            foregroundColor: SVColors.onPrimary,
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            onPressed: _crearApunte,
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // TODO(Fase2): mostrar barra de progreso durante la subida
+  // ignore: unused_field
+  String? _subiendoNombre;
+  // ignore: unused_field
+  double _progreso = 0;
+
+  Future<void> _subirArchivo() async {
+    final FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(withData: true);
+    } catch (_) {
+      _snack('No se pudo abrir el selector de archivos', error: true);
+      return;
+    }
+    if (result == null || result.files.isEmpty) return;
+
+    final archivo = result.files.first;
+    final bytes = archivo.bytes;
+    if (bytes == null) {
+      _snack('No se pudo leer el archivo seleccionado', error: true);
+      return;
+    }
+
+    setState(() {
+      _subiendoNombre = archivo.name;
+      _progreso = 0;
+    });
+
+    try {
+      final repo = ref.read(archivosRepositoryProvider);
+      await repo.subirArchivo(
+        asignaturaId: widget.asignaturaId,
+        nombreArchivo: archivo.name,
+        bytes: bytes,
+        onProgreso: (p) {
+          if (mounted) setState(() => _progreso = p);
+        },
+      );
+      if (!mounted) return;
+      ref.invalidate(archivosAsignaturaProvider(widget.asignaturaId));
+      ref.invalidate(conteosAsignaturaProvider(widget.asignaturaId));
+      _snack('Archivo subido con éxito');
+    } catch (e) {
+      _snack('$e', error: true);
+    } finally {
+      if (mounted) setState(() => _subiendoNombre = null);
+    }
+  }
+
+  Future<void> _eliminarArchivo(ArchivoAsignaturaDto a) async {
+    final confirma = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: SVColors.surfaceContainerLowest,
+        title: const Text('Eliminar archivo',
+            style: TextStyle(color: SVColors.onSurface)),
+        content: Text(
+          '¿Eliminar "${a.nombreArchivo}"? Esta acción no se puede deshacer.',
+          style: const TextStyle(color: SVColors.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Eliminar',
+                  style: TextStyle(color: SVColors.error))),
+        ],
+      ),
+    );
+    if (confirma != true) return;
+    try {
+      await ref.read(archivosRepositoryProvider).eliminarArchivo(a);
+      if (!mounted) return;
+      ref.invalidate(archivosAsignaturaProvider(widget.asignaturaId));
+      ref.invalidate(conteosAsignaturaProvider(widget.asignaturaId));
+      _snack('Archivo eliminado');
+    } catch (e) {
+      _snack('$e', error: true);
+    }
+  }
+
+  void _snack(String msg, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: error ? const Color(0xFFC62828) : null,
+    ));
+  }
+}
+
+class _SeccionTitulo extends StatelessWidget {
+  const _SeccionTitulo({
+    required this.icono,
+    required this.texto,
+    required this.color,
+  });
+
+  final IconData icono;
+  final String texto;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icono, size: 18, color: color),
+        const SizedBox(width: 8),
+        Text(
+          texto,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Widget _vacio(IconData icono, String titulo, String subtitulo) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 40),
+    child: Column(
+      children: [
+        Icon(icono, size: 44, color: SVColors.outlineVariant),
+        const SizedBox(height: 12),
+        Text(titulo,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                color: SVColors.onSurface,
+                fontSize: 15,
+                fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text(subtitulo,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                color: SVColors.onSurfaceMuted, fontSize: 12.5)),
+      ],
+    ),
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Pestaña A: Apuntes (conservada para compatibilidad)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _ApuntesTab extends ConsumerWidget {
+  const _ApuntesTab({required this.asignaturaId, required this.color});
+
+  final String asignaturaId;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final apuntesAsync = ref.watch(apuntesPorAsignaturaProvider(asignaturaId));
+
+    return Stack(
+      children: [
+        apuntesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => _vacio(
+              Icons.error_outline, 'No se pudieron cargar los apuntes', '$e'),
+          data: (apuntes) {
+            if (apuntes.isEmpty) {
+              return _vacio(Icons.notes_rounded, 'Sin apuntes todavía',
+                  'Pulsa + para crear tu primera nota.');
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
+              itemCount: apuntes.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, i) => _ApunteRow(
+                apunte: apuntes[i],
+                onTap: () => _abrirVisor(context, ref, apuntes[i]),
+              ),
+            );
+          },
+        ),
+        Positioned(
+          right: 20,
+          bottom: 20,
+          child: FloatingActionButton(
+            backgroundColor: color,
+            foregroundColor: SVColors.onPrimary,
+            elevation: 2,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            onPressed: () => _abrirEditor(context, ref, null),
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Abre el editor como una PANTALLA COMPLETA mediante Navigator.push.
+  ///
+  /// Reemplaza el showModalBottomSheet que causaba el doble ciclo IME
+  /// (Input channel destroyed → Starting input dos veces) responsable de
+  /// la selección automática de texto en Android.
+  Future<void> _abrirEditor(
+    BuildContext context,
+    WidgetRef ref,
+    ApunteDb? existente,
+  ) async {
+    final guardado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => EditorApunteScreen(
+          asignaturaId: asignaturaId,
+          existente: existente,
+        ),
+      ),
+    );
+    if (guardado == true) {
+      ref.invalidate(apuntesPorAsignaturaProvider(asignaturaId));
+      ref.invalidate(conteosAsignaturaProvider(asignaturaId));
+      ref.invalidate(apuntesProvider);
+    }
+  }
+
+  /// Abre el apunte en MODO LECTURA (visor). Desde el visor se puede editar,
+  /// descargar o eliminar. Al volver, refresca los listados.
+  Future<void> _abrirVisor(
+    BuildContext context,
+    WidgetRef ref,
+    ApunteDb apunte,
+  ) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ApunteVisorScreen(apunte: apunte),
+      ),
+    );
+    ref.invalidate(apuntesPorAsignaturaProvider(asignaturaId));
+    ref.invalidate(conteosAsignaturaProvider(asignaturaId));
+    ref.invalidate(apuntesProvider);
+  }
+
+  Widget _vacio(IconData icono, String titulo, String subtitulo) {
+    return ListView(children: [
+      const SizedBox(height: 80),
+      Icon(icono, size: 48, color: SVColors.outlineVariant),
+      const SizedBox(height: 14),
+      Text(titulo,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+              color: SVColors.onSurface,
+              fontSize: 16,
+              fontWeight: FontWeight.w700)),
+      const SizedBox(height: 6),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Text(subtitulo,
+            textAlign: TextAlign.center,
+            style:
+                const TextStyle(color: SVColors.onSurfaceMuted, fontSize: 13)),
+      ),
+    ]);
+  }
+}
+
+class _ApunteRow extends ConsumerWidget {
+  const _ApunteRow({required this.apunte, required this.onTap});
+
+  final ApunteDb apunte;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final docs = ref
+        .watch(docsGuardadosProvider((
+          fuenteTipo: 'apunte',
+          fuenteId: apunte.id,
+        )))
+        .valueOrNull;
+    final material = ref
+        .watch(materialPorFuenteProvider((
+          tipoOrigen: 'apunte',
+          origenId: apunte.id,
+        )))
+        .valueOrNull;
+    final fecha = DateFormat('d MMM yyyy', 'es').format(apunte.actualizadoEn);
+    final tieneResumen = docs?.resumen == true;
+    final tieneMapa = docs?.mapa == true;
+    final colorBorde = _colorSemaforo(material);
+
+    return Material(
+      color: SVColors.surfaceContainerLowest,
+      borderRadius: SVShapes.standard12,
+      elevation: 1,
+      shadowColor: SVColors.outlineVariant.withValues(alpha: 0.2),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: colorBorde != null
+                ? Border(
+                    left: BorderSide(color: colorBorde, width: 3),
+                  )
+                : null,
+          ),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+            children: [
+              const Icon(Icons.sticky_note_2_outlined,
+                  color: SVColors.onSurfaceMuted, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(apunte.titulo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: SVColors.onSurface,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(fecha,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: SVColors.onSurfaceMuted, fontSize: 11.5)),
+                  ],
+                ),
+              ),
+              _iaBadge(Icons.article_outlined, 'Ver resumen',
+                  visible: tieneResumen, onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ResumenIaScreen(
+                      fuente: FuenteTexto(
+                        titulo: apunte.titulo,
+                        fuenteId: apunte.id,
+                        asignaturaId: apunte.asignaturaId,
+                        contenido: apunte.contenido,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              _iaBadge(Icons.account_tree_outlined, 'Ver mapa mental',
+                  visible: tieneMapa, onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => MapaMentalScreen(
+                      fuente: FuenteTexto(
+                        titulo: apunte.titulo,
+                        fuenteId: apunte.id,
+                        asignaturaId: apunte.asignaturaId,
+                        contenido: apunte.contenido,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              _iaBadge(Icons.checklist_rounded, 'Generar Práctica',
+                  visible: true, onTap: () {
+                _generarPracticaDesdeApunte(context, ref, apunte);
+              }),
+              const Icon(Icons.chevron_right,
+                  color: SVColors.outlineVariant, size: 20),
+            ],
+          ),
+        ),
+      ),
+    ),
+    );
+  }
+}
+
+Widget _iaBadge(
+  IconData icono,
+  String tooltip, {
+  required bool visible,
+  required VoidCallback onTap,
+}) {
+  return SizedBox(
+    width: 32,
+    height: 28,
+    child: visible
+        ? Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: GestureDetector(
+              onTap: onTap,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: SVColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icono, size: 16, color: SVColors.primary),
+              ),
+            ),
+          )
+        : const SizedBox.shrink(),
+  );
+}
+
+Future<void> _generarPracticaDesdeApunte(
+  BuildContext context,
+  WidgetRef ref,
+  ApunteDb apunte,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final iaService = EstudioIaService();
+    if (!iaService.disponible) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('La IA no está configurada (falta GEMINI_API_KEY).'),
+        backgroundColor: Color(0xFFC62828),
+      ));
+      return;
+    }
+
+    messenger.showSnackBar(const SnackBar(
+      content: Row(children: [
+        SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+        SizedBox(width: 12),
+        Text('Generando preguntas de práctica...'),
+      ]),
+      duration: Duration(seconds: 30),
+    ));
+
+    final preguntas = await iaService.generarPractica(FuenteTexto(
+      titulo: apunte.titulo,
+      fuenteId: apunte.id,
+      asignaturaId: apunte.asignaturaId,
+      contenido: apunte.contenido,
+    ));
+
+    final repo = ref.read(practicaRepositoryProvider);
+    final banco = await repo.obtenerOCrearBancoPorFuente(
+      tipoOrigen: 'apunte',
+      origenId: apunte.id,
+      asignaturaId: apunte.asignaturaId,
+      titulo: apunte.titulo,
+    );
+    await repo.guardarPreguntas(banco.id, preguntas);
+
+    final docRepo = ref.read(documentoIaRepositoryProvider);
+    await docRepo.guardar(
+      fuenteTipo: 'apunte',
+      fuenteId: apunte.id,
+      asignaturaId: apunte.asignaturaId,
+      fuenteTitulo: apunte.titulo,
+      tipo: TipoDocumentoIa.practica,
+      contenido: '',
+    );
+
+    ref.invalidate(docsGuardadosProvider((fuenteTipo: 'apunte', fuenteId: apunte.id)));
+    ref.invalidate(bancoPreguntasProvider(banco.id));
+
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      content: Text('¡Práctica generada! ${preguntas.length} preguntas listas.'),
+      backgroundColor: const Color(0xFF2E7D32),
+    ));
+
+    final materialId = await _obtenerMaterialId(apunte);
+    if (materialId != null && context.mounted) {
+      context.push('/academico/practica/$materialId');
+    }
+  } on EstudioIaException catch (e) {
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      content: Text(e.message),
+      backgroundColor: const Color(0xFFC62828),
+    ));
+  } catch (e) {
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      content: Text('Error al generar la práctica: $e'),
+      backgroundColor: const Color(0xFFC62828),
+    ));
+  }
+}
+
+Color? _colorSemaforo(MaterialEstudioDb? material) {
+  if (material == null) return null;
+  final ahora = DateTime.now();
+  if (material.siguienteRepasoEn != null &&
+      material.siguienteRepasoEn!.isBefore(ahora)) {
+    return const Color(0xFFEF5350); // rojo — atrasado
+  }
+  return switch (material.estadoDominio) {
+    'dominado' => const Color(0xFF4CAF50), // verde
+    'en_progreso' => const Color(0xFFFFC107), // amarillo
+    'necesita_repaso' => const Color(0xFFEF5350), // rojo
+    _ => null,
+  };
+}
+
+Future<String?> _obtenerMaterialId(ApunteDb apunte) async {
+  try {
+    final result = await Supabase.instance.client
+        .from('materiales_estudio')
+        .select('id')
+        .eq('tipo_origen', 'apunte')
+        .eq('origen_id', apunte.id)
+        .maybeSingle();
+    return result?['id'] as String?;
+  } catch (_) {
+    return null;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EditorApunteScreen  — editor de apuntes Markdown (Clean UI)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Editor de apuntes a pantalla completa con estética Clean UI.
+///
+/// Diseño minimalista tipo "papel": título grande sin recuadro, cuerpo sin
+/// bordes y barra de formato fija que flota sobre el teclado.
+///
+/// Manejo de selección robusto en Android/One UI: el cuerpo es un
+/// `TextField` con `maxLines: null` dentro de un `SingleChildScrollView`
+/// (sin `expands: true`, cuyo scroll interno entra en conflicto con el
+/// reconocedor de selección y provoca selecciones espurias al tocar). Un
+/// `GestureDetector` translúcido captura los toques en la zona vacía para
+/// posicionar el cursor; sobre el texto, el gesto nativo del campo decide:
+/// toque = cursor, pulsación sostenida = selección.
+class EditorApunteScreen extends ConsumerStatefulWidget {
+  const EditorApunteScreen({
+    required this.asignaturaId,
+    this.existente,
+    super.key,
+  });
+
+  final String asignaturaId;
+  final ApunteDb? existente;
+
+  @override
+  ConsumerState<EditorApunteScreen> createState() => _EditorApunteScreenState();
+}
+
+class _EditorApunteScreenState extends ConsumerState<EditorApunteScreen> {
+  late final TextEditingController _titulo;
+  late final TextEditingController _contenido;
+  late final FocusNode _contenidoFocus;
+
+  bool _guardando = false;
+  bool _vistaPrevia = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titulo = TextEditingController(text: widget.existente?.titulo ?? '');
+    _contenido = TextEditingController(text: widget.existente?.contenido ?? '');
+    _contenidoFocus = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _titulo.dispose();
+    _contenido.dispose();
+    _contenidoFocus.dispose();
+    super.dispose();
+  }
+
+  // ── Guardado ─────────────────────────────────────────────────────────────
+
+  Future<void> _guardar() async {
+    final titulo = _titulo.text.trim();
+    if (titulo.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El título no puede estar vacío.')),
+      );
+      return;
+    }
+    setState(() => _guardando = true);
+    try {
+      if (widget.existente == null) {
+        await crearApunte(
+          titulo: titulo,
+          contenido: _contenido.text,
+          asignaturaId: widget.asignaturaId,
+        );
+      } else {
+        await actualizarApunte(
+          id: widget.existente!.id,
+          titulo: titulo,
+          contenido: _contenido.text,
+          asignaturaId: widget.asignaturaId,
+          visibilidad: widget.existente!.visibilidad,
+        );
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _guardando = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo guardar: $e')),
+        );
+      }
+    }
+  }
+
+  // ── Inserción de Markdown ─────────────────────────────────────────────────
+
+  /// Aplica un nuevo valor al controlador de forma segura para el IME.
+  ///
+  /// En Android (especialmente One UI / Samsung) mutar `controller.value`
+  /// mientras el campo está desenfocado o el teclado mantiene una región de
+  /// composición activa desincroniza el estado de edición. Esa desincronización
+  /// hace que los toques posteriores se interpreten como selección en lugar de
+  /// posicionar el cursor. Reafirmamos el foco y limpiamos la composición para
+  /// que el IME vuelva a un estado coherente con un cursor colapsado.
+  void _aplicarValor(String nuevoTexto, int cursor) {
+    if (!_contenidoFocus.hasFocus) {
+      _contenidoFocus.requestFocus();
+    }
+    final pos = cursor.clamp(0, nuevoTexto.length);
+    _contenido.value = TextEditingValue(
+      text: nuevoTexto,
+      selection: TextSelection.collapsed(offset: pos),
+      composing: TextRange.empty,
+    );
+  }
+
+  /// Devuelve una selección válida; si el campo nunca recibió foco, apunta al
+  /// final del texto en lugar de a un offset inválido (-1).
+  TextSelection _seleccionSegura(TextEditingValue v) {
+    final sel = v.selection;
+    if (!sel.isValid) {
+      return TextSelection.collapsed(offset: v.text.length);
+    }
+    return sel;
+  }
+
+  void _insertarMarkdown(String antes, String despues) {
+    final v = _contenido.value;
+    final sel = _seleccionSegura(v);
+    final texto = v.text;
+
+    final inicio = sel.start.clamp(0, texto.length);
+    final fin = sel.end.clamp(0, texto.length);
+    final seleccionado = texto.substring(inicio, fin);
+
+    final reemplazo =
+        seleccionado.isEmpty ? '$antes$despues' : '$antes$seleccionado$despues';
+
+    final nuevoTexto = texto.replaceRange(inicio, fin, reemplazo);
+    final nuevaPos = seleccionado.isEmpty
+        ? inicio + antes.length
+        : inicio + reemplazo.length;
+
+    _aplicarValor(nuevoTexto, nuevaPos);
+  }
+
+  void _insertarLinea(String prefijo) {
+    final v = _contenido.value;
+    final texto = v.text;
+    final inicio = _seleccionSegura(v).start.clamp(0, texto.length);
+
+    final antes = texto.substring(0, inicio);
+    final salto = antes.isEmpty || antes.endsWith('\n') ? '' : '\n';
+    final resto = texto.substring(inicio);
+    final nuevoTexto = '$antes$salto$prefijo$resto';
+    final nuevaPos = inicio + salto.length + prefijo.length;
+
+    _aplicarValor(nuevoTexto, nuevaPos);
+  }
+
+  /// Enfoca el campo de contenido y coloca el cursor al final.
+  ///
+  /// Se invoca cuando el usuario toca cualquier zona vacía del editor (por
+  /// debajo del texto). Un toque simple SIEMPRE posiciona el cursor; la
+  /// selección queda reservada para la pulsación sostenida sobre el texto,
+  /// que es el gesto nativo del [TextField].
+  void _enfocarContenidoAlFinal() {
+    if (!_contenidoFocus.hasFocus) {
+      _contenidoFocus.requestFocus();
+    }
+    _contenido.selection =
+        TextSelection.collapsed(offset: _contenido.text.length);
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: SVColors.surfaceContainerLowest,
+      appBar: AppBar(
+        backgroundColor: SVColors.surfaceContainerLowest,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 0,
+        leading: IconButton(
+          icon:
+              const Icon(Icons.close_rounded, color: SVColors.onSurfaceVariant),
+          onPressed: () => Navigator.of(context).pop(false),
+          tooltip: 'Cancelar',
+        ),
+        title: Text(
+          widget.existente == null ? 'Nuevo apunte' : 'Editar apunte',
+          style: const TextStyle(
+            color: SVColors.onSurfaceMuted,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _vistaPrevia ? Icons.edit_outlined : Icons.visibility_outlined,
+              size: 22,
+            ),
+            color: _vistaPrevia ? SVColors.primary : SVColors.onSurfaceVariant,
+            tooltip: _vistaPrevia ? 'Editar' : 'Vista previa',
+            onPressed: () {
+              _contenidoFocus.unfocus();
+              setState(() => _vistaPrevia = !_vistaPrevia);
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 4, right: 12),
+            child: FilledButton(
+              onPressed: _guardando ? null : _guardar,
+              style: FilledButton.styleFrom(
+                backgroundColor: SVColors.primary,
+                foregroundColor: SVColors.onPrimary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                minimumSize: const Size(0, 38),
+                shape:
+                    const RoundedRectangleBorder(borderRadius: SVShapes.pill),
+              ),
+              child: _guardando
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: SVColors.onPrimary),
+                    )
+                  : const Text('Guardar',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Título ─────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: TextField(
+                controller: _titulo,
+                cursorColor: SVColors.primary,
+                maxLines: 1,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.next,
+                style: const TextStyle(
+                  color: SVColors.onSurface,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  height: 1.25,
+                ),
+                decoration: const InputDecoration(
+                  isCollapsed: true,
+                  border: InputBorder.none,
+                  hintText: 'Título',
+                  hintStyle: TextStyle(
+                    color: SVColors.outline,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                onSubmitted: (_) => _enfocarContenidoAlFinal(),
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // ── Cuerpo: editor o vista previa ──────────────────────────────
+            // El cuerpo se envuelve en un GestureDetector translúcido para que
+            // un toque en CUALQUIER zona (incluida la parte vacía bajo el
+            // texto) posicione el cursor en lugar de no hacer nada. Sobre el
+            // texto, el propio TextField gestiona el gesto nativo: toque =
+            // cursor, pulsación sostenida = selección. Se evita `expands:true`
+            // (cuyo scroll interno entra en conflicto con el reconocedor de
+            // selección en One UI/Samsung y dispara selecciones espurias) en
+            // favor de `maxLines:null` dentro de un scroll externo.
+            Expanded(
+              child: _vistaPrevia
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _VistaPreviaMarkdown(contenido: _contenido.text),
+                    )
+                  : GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: _enfocarContenidoAlFinal,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+                        child: TextField(
+                          controller: _contenido,
+                          focusNode: _contenidoFocus,
+                          cursorColor: SVColors.primary,
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: const TextStyle(
+                            color: SVColors.onSurface,
+                            height: 1.7,
+                            fontSize: 15.5,
+                          ),
+                          decoration: const InputDecoration(
+                            isCollapsed: true,
+                            border: InputBorder.none,
+                            hintText:
+                                'Empieza a escribir…\n\nUsa Markdown: # títulos, **negrita**, *cursiva*, - listas',
+                            hintStyle: TextStyle(
+                              color: SVColors.outline,
+                              height: 1.7,
+                              fontSize: 15.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+
+            // ── Barra inferior: formato + contador (solo en edición) ───────
+            if (!_vistaPrevia) _barraInferior(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Barra fija inferior que flota sobre el teclado: herramientas de formato
+  /// a la izquierda (scroll horizontal) y recuento de palabras a la derecha.
+  Widget _barraInferior() {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: SVColors.surfaceContainerLowest,
+        border: Border(
+          top: BorderSide(color: SVColors.outlineVariant, width: 1),
+        ),
+      ),
+      child: SizedBox(
+        height: 50,
+        child: Row(
+          children: [
+            Expanded(
+              child: _BarraFormato(
+                onNegrita: () => _insertarMarkdown('**', '**'),
+                onCursiva: () => _insertarMarkdown('*', '*'),
+                onTitulo: () => _insertarLinea('# '),
+                onSubtitulo: () => _insertarLinea('## '),
+                onLista: () => _insertarLinea('- '),
+                onNumerada: () => _insertarLinea('1. '),
+                onCodigo: () => _insertarMarkdown('`', '`'),
+                onCita: () => _insertarLinea('> '),
+                onSeparador: () => _insertarLinea('\n---\n'),
+                onEnlace: () => _insertarMarkdown('[', '](url)'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _contenido,
+                builder: (context, value, _) {
+                  final palabras = value.text.trim().isEmpty
+                      ? 0
+                      : value.text.trim().split(RegExp(r'\s+')).length;
+                  return Text(
+                    '$palabras palabras',
+                    style: const TextStyle(
+                        color: SVColors.onSurfaceMuted, fontSize: 12),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Barra de formato Markdown
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Botón de la barra de formato.
+///
+/// Usa [ExcludeFocus] + [GestureDetector] (no [IconButton]) para NO robar el
+/// foco al editor: así el teclado permanece abierto y el cursor intacto al
+/// insertar marcas Markdown. Se usa `onTap` (no `onTapDown`) para no disparar
+/// inserciones a mitad de gesto al desplazar horizontalmente la barra.
+class _FormatBtn extends StatelessWidget {
+  const _FormatBtn({
+    required this.icono,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icono;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExcludeFocus(
+      child: Tooltip(
+        message: tooltip,
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: 44,
+            height: 50,
+            alignment: Alignment.center,
+            child: Icon(icono, size: 21, color: SVColors.onSurfaceVariant),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BarraFormato extends StatelessWidget {
+  const _BarraFormato({
+    required this.onNegrita,
+    required this.onCursiva,
+    required this.onTitulo,
+    required this.onSubtitulo,
+    required this.onLista,
+    required this.onNumerada,
+    required this.onCodigo,
+    required this.onCita,
+    required this.onSeparador,
+    required this.onEnlace,
+  });
+
+  final VoidCallback onNegrita;
+  final VoidCallback onCursiva;
+  final VoidCallback onTitulo;
+  final VoidCallback onSubtitulo;
+  final VoidCallback onLista;
+  final VoidCallback onNumerada;
+  final VoidCallback onCodigo;
+  final VoidCallback onCita;
+  final VoidCallback onSeparador;
+  final VoidCallback onEnlace;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Row(
+        children: [
+          _FormatBtn(
+              icono: Icons.format_bold, tooltip: 'Negrita', onTap: onNegrita),
+          _FormatBtn(
+              icono: Icons.format_italic, tooltip: 'Cursiva', onTap: onCursiva),
+          _sep(),
+          _FormatBtn(icono: Icons.title, tooltip: 'Título', onTap: onTitulo),
+          _FormatBtn(
+              icono: Icons.text_fields,
+              tooltip: 'Subtítulo',
+              onTap: onSubtitulo),
+          _sep(),
+          _FormatBtn(
+              icono: Icons.format_list_bulleted,
+              tooltip: 'Lista',
+              onTap: onLista),
+          _FormatBtn(
+              icono: Icons.format_list_numbered,
+              tooltip: 'Numerada',
+              onTap: onNumerada),
+          _sep(),
+          _FormatBtn(icono: Icons.code, tooltip: 'Código', onTap: onCodigo),
+          _FormatBtn(icono: Icons.format_quote, tooltip: 'Cita', onTap: onCita),
+          _FormatBtn(
+              icono: Icons.horizontal_rule,
+              tooltip: 'Separador',
+              onTap: onSeparador),
+          _FormatBtn(icono: Icons.link, tooltip: 'Enlace', onTap: onEnlace),
+        ],
+      ),
+    );
+  }
+
+  Widget _sep() => Container(
+        width: 1,
+        height: 22,
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        color: SVColors.outlineVariant,
+      );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Vista previa Markdown
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _VistaPreviaMarkdown extends StatelessWidget {
+  const _VistaPreviaMarkdown({required this.contenido});
+
+  final String contenido;
+
+  @override
+  Widget build(BuildContext context) {
+    if (contenido.trim().isEmpty) {
+      return const Center(
+        child: Text('Sin contenido para previsualizar',
+            style: TextStyle(color: SVColors.onSurfaceMuted, fontSize: 13)),
+      );
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: DefaultTextStyle(
+        style: const TextStyle(
+            color: SVColors.onSurface, fontSize: 14, height: 1.5),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: _parsear(contenido),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _parsear(String md) {
+    final widgets = <Widget>[];
+    for (final linea in md.split('\n')) {
+      if (linea.startsWith('### ')) {
+        widgets.add(_txt(linea.substring(4), 16, FontWeight.w700));
+      } else if (linea.startsWith('## ')) {
+        widgets.add(_txt(linea.substring(3), 18, FontWeight.w700));
+      } else if (linea.startsWith('# ')) {
+        widgets.add(_txt(linea.substring(2), 20, FontWeight.w800));
+      } else if (linea.startsWith('- ') || linea.startsWith('* ')) {
+        widgets.add(Padding(
+          padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('• ',
+                style: TextStyle(color: SVColors.onSurfaceVariant)),
+            Expanded(child: _txt(linea.substring(2), 14, FontWeight.w400)),
+          ]),
+        ));
+      } else if (linea.startsWith('> ')) {
+        widgets.add(Container(
+          margin: const EdgeInsets.symmetric(vertical: 3),
+          padding: const EdgeInsets.only(left: 10),
+          decoration: BoxDecoration(
+            border: Border(
+                left: BorderSide(
+                    color: SVColors.primary.withValues(alpha: 0.5), width: 3)),
+          ),
+          child: _txt(linea.substring(2), 14, FontWeight.w400,
+              color: SVColors.onSurfaceVariant),
+        ));
+      } else if (linea == '---') {
+        widgets.add(const Padding(
+          padding: EdgeInsets.symmetric(vertical: 6),
+          child: Divider(color: SVColors.outlineVariant),
+        ));
+      } else if (linea.trim().isEmpty) {
+        widgets.add(const SizedBox(height: 6));
+      } else {
+        widgets.add(_txt(linea, 14, FontWeight.w400));
+      }
+    }
+    return widgets;
+  }
+
+  Widget _txt(String texto, double size, FontWeight peso, {Color? color}) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Text.rich(
+          _inline(texto),
+          style: TextStyle(
+              fontSize: size,
+              fontWeight: peso,
+              color: color ?? SVColors.onSurface),
+        ),
+      );
+
+  TextSpan _inline(String texto) {
+    final spans = <InlineSpan>[];
+    final exp = RegExp(r'(\*\*.*?\*\*|\*.*?\*|`.*?`)');
+    int last = 0;
+    for (final m in exp.allMatches(texto)) {
+      if (m.start > last) {
+        spans.add(TextSpan(text: texto.substring(last, m.start)));
+      }
+      final val = m.group(0)!;
+      if (val.startsWith('**')) {
+        spans.add(TextSpan(
+            text: val.substring(2, val.length - 2),
+            style: const TextStyle(fontWeight: FontWeight.w800)));
+      } else if (val.startsWith('*')) {
+        spans.add(TextSpan(
+            text: val.substring(1, val.length - 1),
+            style: const TextStyle(fontStyle: FontStyle.italic)));
+      } else {
+        spans.add(TextSpan(
+            text: val.substring(1, val.length - 1),
+            style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                backgroundColor: SVColors.surfaceContainerHighest,
+                color: SVColors.onSurfaceVariant)));
+      }
+      last = m.end;
+    }
+    if (last < texto.length) spans.add(TextSpan(text: texto.substring(last)));
+    return TextSpan(
+        children: spans.isEmpty ? null : spans,
+        text: spans.isEmpty ? texto : null);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Pestaña B: Archivos
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _ArchivosTab extends ConsumerStatefulWidget {
+  const _ArchivosTab({required this.asignaturaId, required this.color});
+
+  final String asignaturaId;
+  final Color color;
+
+  @override
+  ConsumerState<_ArchivosTab> createState() => _ArchivosTabState();
+}
+
+class _ArchivosTabState extends ConsumerState<_ArchivosTab> {
+  String? _subiendoNombre;
+  double _progreso = 0;
+
+  Future<void> _subir() async {
+    final FilePickerResult? result;
+    try {
+      result = await FilePicker.platform.pickFiles(withData: true);
+    } catch (_) {
+      _snack('No se pudo abrir el selector de archivos', error: true);
+      return;
+    }
+    if (result == null || result.files.isEmpty) return;
+
+    final archivo = result.files.first;
+    final bytes = archivo.bytes;
+    if (bytes == null) {
+      _snack('No se pudo leer el archivo seleccionado', error: true);
+      return;
+    }
+
+    setState(() {
+      _subiendoNombre = archivo.name;
+      _progreso = 0;
+    });
+
+    try {
+      final repo = ref.read(archivosRepositoryProvider);
+      await repo.subirArchivo(
+        asignaturaId: widget.asignaturaId,
+        nombreArchivo: archivo.name,
+        bytes: bytes,
+        onProgreso: (p) {
+          if (mounted) setState(() => _progreso = p);
+        },
+      );
+      if (!mounted) return;
+      ref.invalidate(archivosAsignaturaProvider(widget.asignaturaId));
+      ref.invalidate(conteosAsignaturaProvider(widget.asignaturaId));
+      _snack('Archivo subido con éxito');
+    } catch (e) {
+      _snack('$e', error: true);
+    } finally {
+      if (mounted) setState(() => _subiendoNombre = null);
+    }
+  }
+
+  Future<void> _eliminar(ArchivoAsignaturaDto a) async {
+    final confirma = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: SVColors.surfaceContainerLowest,
+        title: const Text('Eliminar archivo',
+            style: TextStyle(color: SVColors.onSurface)),
+        content: Text(
+          '¿Eliminar "${a.nombreArchivo}"? Esta acción no se puede deshacer.',
+          style: const TextStyle(color: SVColors.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Eliminar',
+                  style: TextStyle(color: SVColors.error))),
+        ],
+      ),
+    );
+    if (confirma != true) return;
+    try {
+      await ref.read(archivosRepositoryProvider).eliminarArchivo(a);
+      if (!mounted) return;
+      ref.invalidate(archivosAsignaturaProvider(widget.asignaturaId));
+      ref.invalidate(conteosAsignaturaProvider(widget.asignaturaId));
+      _snack('Archivo eliminado');
+    } catch (e) {
+      _snack('$e', error: true);
+    }
+  }
+
+  void _abrirArchivo(ArchivoAsignaturaDto archivo) =>
+      context.push('/academico/archivo/visor', extra: archivo);
+
+  void _snack(String msg, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: error ? const Color(0xFFC62828) : null,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final archivosAsync =
+        ref.watch(archivosAsignaturaProvider(widget.asignaturaId));
+
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _subiendoNombre != null ? null : _subir,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: widget.color,
+              side: BorderSide(color: widget.color.withValues(alpha: 0.5)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: const RoundedRectangleBorder(
+                  borderRadius: SVShapes.standard12),
+            ),
+            icon: const Icon(Icons.upload_file_outlined, size: 20),
+            label: const Text('Subir archivo',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ),
+      ),
+      Expanded(
+        child: archivosAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => _vacio(
+              Icons.error_outline, 'No se pudieron cargar los archivos', '$e'),
+          data: (archivos) {
+            final tieneSubida = _subiendoNombre != null;
+            if (archivos.isEmpty && !tieneSubida) {
+              return _vacio(
+                Icons.folder_outlined,
+                'Sin archivos todavía',
+                'Sube PDFs, imágenes o diapositivas de esta asignatura.',
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+              itemCount: archivos.length + (tieneSubida ? 1 : 0),
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, i) {
+                if (tieneSubida && i == 0) {
+                  return ArchivoSubiendoTile(
+                      nombre: _subiendoNombre!, progreso: _progreso);
+                }
+                final archivo = archivos[i - (tieneSubida ? 1 : 0)];
+                return ArchivoTile(
+                  archivo: archivo,
+                  onAbrir: () => _abrirArchivo(archivo),
+                  onEliminar: () => _eliminar(archivo),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    ]);
+  }
+
+  Widget _vacio(IconData icono, String titulo, String subtitulo) {
+    return ListView(children: [
+      const SizedBox(height: 70),
+      Icon(icono, size: 48, color: SVColors.outlineVariant),
+      const SizedBox(height: 14),
+      Text(titulo,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+              color: SVColors.onSurface,
+              fontSize: 16,
+              fontWeight: FontWeight.w700)),
+      const SizedBox(height: 6),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Text(subtitulo,
+            textAlign: TextAlign.center,
+            style:
+                const TextStyle(color: SVColors.onSurfaceMuted, fontSize: 13)),
+      ),
+    ]);
+  }
+}

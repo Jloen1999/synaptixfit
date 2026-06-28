@@ -87,6 +87,24 @@ Future<void> evaluarInsignias(WidgetRef ref) async {
   }
 }
 
+/// Evalúa y otorga insignias usando [ProviderContainer] (sin [WidgetRef]).
+/// Útil para llamar desde callbacks que no tienen acceso a un widget.
+Future<void> evaluarInsigniasDesdeContainer(ProviderContainer container) async {
+  final engine = container.read(insigniaEngineProvider);
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return;
+
+  try {
+    final nuevas = await engine.evaluarYOtorgar(userId);
+    if (nuevas.isNotEmpty) {
+      container.read(insigniasRecienObtenidasProvider.notifier).state = nuevas;
+      container.invalidate(catalogoInsigniasProvider);
+      container.invalidate(insigniasUsuarioProvider);
+      container.invalidate(insigniasCountProvider);
+    }
+  } catch (_) {}
+}
+
 /// Muestra el toast de insignia recién obtenida usando Overlay.
 void mostrarInsigniaToast(BuildContext context, List<Insignia> insignias) {
   if (insignias.isEmpty) return;

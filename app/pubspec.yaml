@@ -45,8 +45,13 @@ dependencies:
   # HTTP client
   dio: ^5.7.0
 
+  # Selección de archivos (PDF/imagen) para escaneo de horarios
+  file_picker: ^8.1.6
+
   # Internacionalización
   intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
 
   # Shimmer skeleton loader
   shimmer: ^3.0.0
@@ -55,7 +60,14 @@ dependencies:
 
   # Markdown (apuntes)
   flutter_markdown: ^0.7.4
+  markdown: ^7.3.1
   percent_indicator: ^4.2.5
+
+  # Apertura externa de archivos (URLs, PDFs, etc.)
+  url_launcher: ^6.3.1
+
+  # Visor PDF multiplataforma (web + mobile)
+  pdfx: ^2.6.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1

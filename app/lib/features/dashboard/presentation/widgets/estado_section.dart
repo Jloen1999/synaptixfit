@@ -52,7 +52,7 @@ class EstadoSection extends ConsumerWidget {
       ),
       color: cs.surfaceContainerLow,
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -68,14 +68,14 @@ class EstadoSection extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             LayoutBuilder(
               builder: (context, constraints) {
                 final count = (carga != null ? 3 : 2);
-                final gaps = (count - 1) * 10;
+                final gaps = (count - 1) * 8;
                 final gaugeSize = ((constraints.maxWidth - gaps) / count)
                     .floorToDouble()
-                    .clamp(85.0, 130.0);
+                    .clamp(70.0, 100.0);
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

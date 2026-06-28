@@ -10,6 +10,10 @@ class SocialRepository {
 
   /// Obtiene el feed de publicaciones recientes con datos de usuario,
   /// conteos de likes/comentarios y si el usuario actual dio like.
+  ///
+  /// Optimizado: usa 3 consultas en lote (actividades + likes + comentarios)
+  /// en lugar de N+1 por publicación, de modo que el refresco en tiempo real
+  /// sea barato independientemente del número de publicaciones.
   Future<List<Publicacion>> obtenerFeed({
     int limit = 20,
     int offset = 0,
@@ -22,39 +26,45 @@ class SocialRepository {
         .order('creado_en', ascending: false)
         .range(offset, offset + limit - 1);
 
-    final actividades = data as List;
-    final resultados = <Publicacion>[];
+    final actividades = (data as List).cast<Map<String, dynamic>>();
+    if (actividades.isEmpty) return [];
 
-    for (final a in actividades) {
-      final map = a as Map<String, dynamic>;
+    final ids = actividades.map((a) => a['id'] as String).toList();
+
+    // Lote 1: todos los likes de la página.
+    final likesData = await _client
+        .from('interacciones_sociales')
+        .select('actividad_id, usuario_id')
+        .inFilter('actividad_id', ids)
+        .eq('tipo_interaccion', 'like');
+
+    final likesPorActividad = <String, int>{};
+    final misLikes = <String>{};
+    for (final l in (likesData as List)) {
+      final aid = l['actividad_id'] as String;
+      likesPorActividad[aid] = (likesPorActividad[aid] ?? 0) + 1;
+      if (userId.isNotEmpty && l['usuario_id'] == userId) {
+        misLikes.add(aid);
+      }
+    }
+
+    // Lote 2: conteo real de comentarios (comentarios_feed, no eliminados).
+    final comentariosData = await _client
+        .from('comentarios_feed')
+        .select('actividad_id')
+        .inFilter('actividad_id', ids)
+        .eq('eliminado', false);
+
+    final comentariosPorActividad = <String, int>{};
+    for (final c in (comentariosData as List)) {
+      final aid = c['actividad_id'] as String;
+      comentariosPorActividad[aid] = (comentariosPorActividad[aid] ?? 0) + 1;
+    }
+
+    return actividades.map((map) {
       final actividadId = map['id'] as String;
-
-      // Batch: conteo de likes y comentarios + mi_like
-      final likesData = await _client
-          .from('interacciones_sociales')
-          .select('id')
-          .eq('actividad_id', actividadId)
-          .eq('tipo_interaccion', 'like');
-
-      final comentariosData = await _client
-          .from('interacciones_sociales')
-          .select('id')
-          .eq('actividad_id', actividadId)
-          .eq('tipo_interaccion', 'comment');
-
-      final miLike = userId.isNotEmpty
-          ? await _client
-              .from('interacciones_sociales')
-              .select('id')
-              .eq('actividad_id', actividadId)
-              .eq('usuario_id', userId)
-              .eq('tipo_interaccion', 'like')
-              .maybeSingle()
-          : null;
-
       final usuarioData = map['usuarios'] as Map<String, dynamic>?;
-
-      resultados.add(Publicacion(
+      return Publicacion(
         id: actividadId,
         usuarioId: map['usuario_id'] as String,
         nombreUsuario: usuarioData?['nombre_completo'] as String? ?? 'Usuario',
@@ -62,15 +72,16 @@ class SocialRepository {
         descripcion: map['descripcion'] as String,
         tipo: map['tipo'] as String,
         urlImagen: map['url_imagen'] as String?,
-        likesCount: (likesData as List).length,
-        comentariosCount: (comentariosData as List).length,
-        likedByMe: miLike != null,
+        likesCount: likesPorActividad[actividadId] ?? 0,
+        comentariosCount: comentariosPorActividad[actividadId] ?? 0,
+        likedByMe: misLikes.contains(actividadId),
         fecha: DateTime.parse(map['creado_en'] as String),
         metadata: map['metadata'] as String?,
-      ));
-    }
-
-    return resultados;
+        editadoEn: map['editado_en'] != null
+            ? DateTime.parse(map['editado_en'] as String)
+            : null,
+      );
+    }).toList();
   }
 
   /// Da like a una actividad.
@@ -106,11 +117,15 @@ class SocialRepository {
   }
 
   /// Crea una publicación en el feed social.
+  ///
+  /// [metadata] es un JSON serializado (TEXT) opcional con la entidad
+  /// vinculada (insignia, rutina o reto) seleccionada por el usuario.
   Future<String?> crearPublicacion({
     required String usuarioId,
     required String descripcion,
     String? urlImagen,
     String tipo = 'milestone_reached',
+    String? metadata,
   }) async {
     final data = await _client
         .from('actividades_sociales')
@@ -119,11 +134,30 @@ class SocialRepository {
           'tipo': tipo,
           'descripcion': descripcion,
           'url_imagen': urlImagen,
+          if (metadata != null) 'metadata': metadata,
         })
         .select('id')
         .maybeSingle();
 
     return data?['id'] as String?;
+  }
+
+  /// Edita la descripción de una publicación propia y marca `editado_en`
+  /// para que la UI refleje que fue editada. La RLS garantiza que solo el
+  /// autor puede actualizarla.
+  Future<void> editarPublicacion(
+      String publicacionId, String descripcion) async {
+    await _client.from('actividades_sociales').update({
+      'descripcion': descripcion,
+      'editado_en': DateTime.now().toIso8601String(),
+    }).eq('id', publicacionId);
+  }
+
+  /// Elimina una publicación propia. Los comentarios asociados se eliminan en
+  /// cascada (FK ON DELETE CASCADE). La RLS garantiza que solo el autor puede
+  /// eliminarla.
+  Future<void> eliminarPublicacion(String publicacionId) async {
+    await _client.from('actividades_sociales').delete().eq('id', publicacionId);
   }
 
   /// Obtiene los comentarios de una actividad, incluyendo datos del autor.

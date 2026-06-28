@@ -52,7 +52,7 @@ class QuickActionsRow extends ConsumerWidget {
             icon: Icons.add_rounded,
             label: 'Nuevo reto',
             color: const Color(0xFF7C4DFF),
-            onTap: () => context.push('/retos/simple'),
+            onTap: () => context.push('/retos/crear'),
           ),
         ],
       ),

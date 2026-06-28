@@ -1,8 +1,8 @@
 # 05 - Interacción con APIs
 
 **Proyecto:** SynaptixFit  
-**Versión:** 2.0  
-**Fecha:** 08-06-2026  
+**Versión:** 2.1  
+**Fecha:** 24-06-2026  
 **Referencia:** [03-architecture.md](03-architecture.md) (sección 8)
 
 ---
@@ -147,21 +147,98 @@ El servicio IA se invoca solo si `usarIa=true` y `GEMINI_API_KEY` está configur
 
 ## 4. Multimedia (Cloudflare R2)
 
-El acceso a imágenes/videos de ejercicios se hace mediante URLs públicas de R2, servidas a través de un Worker proxy de Cloudflare.
+El acceso a archivos multimedia (GIFs de ejercicios, archivos de asignaturas) se realiza mediante URLs públicas de R2, servidas a través de un Worker proxy de Cloudflare (`synaptixfit-r2-proxy`).
 
-### 4.1 Worker proxy
+### 4.1 Worker proxy (GET, PUT, DELETE)
 
-**Archivo:** `cloudflare/synaptixfit-r2-proxy/worker.js`
+**Archivos:**
+- `cloudflare/synaptixfit-r2-proxy/worker.js` — código fuente del Worker
+- `cloudflare/synaptixfit-r2-proxy/wrangler.jsonc` — configuración de despliegue (binding `R2_BUCKET`)
 
-El Worker:
-1. Recibe peticiones a `https://r2-proxy.synaptixfit.workers.dev/{path}`
-2. Verifica origen (CORS)
-3. Sirve el objeto desde R2
-4. Cachea en Cloudflare CDN (TTL 24h)
+**Configuración de despliegue (`wrangler.jsonc`):**
+```jsonc
+{
+  "name": "synaptixfit-r2-proxy",
+  "main": "worker.js",
+  "compatibility_date": "2025-06-23",
+  "r2_buckets": [
+    {
+      "binding": "R2_BUCKET",
+      "bucket_name": "synaptixfit-r2"
+    }
+  ],
+  "observability": { "enabled": true }
+}
+```
 
-### 4.2 Subida de contenido
+El binding `R2_BUCKET` es **obligatorio** para el funcionamiento del Worker. Sin este binding, `env.R2_BUCKET` es `undefined` y todas las operaciones de subida fallan. El Worker incluye una **guarda de verificación** justo después del bloque OPTIONS:
 
-Las imágenes/videos se suben mediante scripts Python de seeding (no desde Flutter en MVP). El formato de URL almacenado en `ejercicios.url_imagen` es la ruta relativa dentro del bucket.
+```javascript
+// Guarda: verificar que el binding R2_BUCKET existe antes de usarlo
+if (!env.R2_BUCKET) {
+  console.error('[synaptixfit-r2-proxy] Binding R2_BUCKET no configurado en este Worker.');
+  return new Response(JSON.stringify({
+    error: 'Configuración incompleta del servidor',
+    message: 'El binding R2_BUCKET no está configurado...',
+  }), {
+    status: 503,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+```
+
+Esta guarda **reemplaza el error 500 genérico** `Cannot read properties of undefined (reading 'put')` por un error 503 descriptivo que indica claramente qué falta configurar.
+
+**Métodos HTTP soportados:**
+
+| Método | Ruta | Propósito | Respuesta |
+|--------|------|-----------|-----------|
+| `GET` | `/{objectKey}` | Descargar archivo desde R2 | Binario con `Content-Type`, `Cache-Control: immutable`, `ETag` |
+| `PUT` | `/{objectKey}` | Subir archivo a R2 | `{ success: true, key, url }` |
+| `DELETE` | `/{objectKey}` | Eliminar archivo de R2 | `{ success: true, message, key }` |
+| `OPTIONS` | `/*` | Preflight CORS | 204 con headers CORS |
+
+El Worker también expone un endpoint especial con CORS abierto (`*`):
+| `POST` | `/_proxy/ics` | Proxy para descargar calendarios ICS (evita CORS) | Texto del calendario |
+
+**CORS:** Restringido para rutas R2 (origen `synaptixfit.com` + `localhost` en desarrollo). Abierto (`*`) para `/_proxy/ics`.
+
+**Caché:** Las respuestas GET incluyen `Cache-Control: public, max-age=31536000, immutable` para aprovechar el CDN de Cloudflare.
+
+### 4.2 Flujo completo de subida de archivos (desde Flutter)
+
+El repositorio `ArchivosAsignaturaRepository` (`app/lib/features/academico/infrastructure/archivos_asignatura_repository.dart`) implementa el siguiente flujo para subir archivos de asignaturas a R2:
+
+```
+1. Usuario selecciona archivo → file_picker con withData: true
+2. ArchivosAsignaturaRepository.subirArchivo() recibe bytes + metadatos
+3. Construye clave de objeto R2:
+   usuarios/{user_id}/asignaturas/{asignatura_id}/archivos/{timestamp}_{nombre}
+4. Construye URL de subida: {VITE_R2_WORKER_URL}/{objectKey}
+   (URL del Worker desde app/.env)
+5. Envía HTTP PUT con los bytes del archivo al Worker synaptixfit-r2-proxy
+   (Dio con seguimiento de progreso)
+6. El Worker recibe la petición, extrae la clave del pathname de la URL
+7. El Worker usa env.R2_BUCKET.put(key, body, { httpMetadata: { contentType } })
+   para almacenar en R2
+8. Si el binding R2_BUCKET no existe → 503 con mensaje descriptivo
+9. El Worker responde: { success: true, key, url }
+10. El repositorio registra metadatos en la tabla archivos_asignatura (Supabase)
+    con cloudflare_object_key, url_publica_o_firmada, tamano_bytes, tipo_mime
+11. Si falla el registro en Supabase → rollback best-effort:
+    DELETE al Worker para borrar el objeto de R2 ya subido
+12. La URL pública se construye usando CLOUDFLARE_R2_BASE_URL (si existe)
+    o la URL del Worker como fallback
+```
+
+**Convención de claves de objeto:**
+```
+usuarios/{user_id}/asignaturas/{asignatura_id}/archivos/{timestamp}_{nombre_archivo}
+```
+Ejemplo: `usuarios/abc-123/asignaturas/def-456/archivos/1719000000_apuntes_matematicas.pdf`
+
+**Subida de contenido multimedia de ejercicios:**
+Los GIFs de ejercicios (~1300 archivos, resolución 360×360) se suben mediante scripts Python de seeding (`supabase/seed_catalogo_v2.py`). El formato de URL almacenado en `ejercicios.url_imagen` usa la ruta pública de R2.
 
 ---
 
@@ -229,4 +306,4 @@ Por ahora, el motor de recomendaciones completo (Fases 0-9) corre en Dart y est�
 ---
 
 **Documento compilado:** 08-06-2026  
-**Última revisión:** v2.0
+**Última revisión:** v2.1 — Worker R2: documentado `wrangler.jsonc`, binding `R2_BUCKET`, guarda de verificación, flujo completo de subida de archivos (PUT/DELETE), y convención de claves.

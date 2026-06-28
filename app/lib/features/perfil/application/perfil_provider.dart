@@ -88,7 +88,7 @@ final perfilUsuarioProvider = FutureProvider<PerfilUsuario>((ref) async {
           objetivoPrincipal: 'fitness_general',
           objetivos: const [],
           equipamientoDisponible: const [],
-          diasDisponiblesSemana: 0,
+          diasDisponibles: const [],
           minutosPorSesion: 0,
           onboardingCompletado: false,
           creadoEn: DateTime.now(),
@@ -285,9 +285,9 @@ final perfilCompletoProvider = FutureProvider<PerfilCompleto>((ref) async {
 /// de Estadísticas del perfil.
 /// Intenta primero `usuario_carreras` (FK); si está vacío, cae en el texto
 /// guardado en `perfil_academico_usuario.carrera` y busca por nombre.
-final carreraConAsignaturasProvider =
-    FutureProvider<List<({CarreraDb carrera, List<AsignaturaCatalogoDb> subjects})>>(
-        (ref) async {
+final carreraConAsignaturasProvider = FutureProvider<
+        List<({CarreraDb carrera, List<AsignaturaCatalogoDb> subjects})>>(
+    (ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
   if (user == null) return [];
@@ -297,7 +297,8 @@ final carreraConAsignaturasProvider =
       .from('usuario_carreras')
       .select('carrera_id')
       .eq('usuario_id', user.id);
-  var carreraIds = (ucList as List).map((r) => r['carrera_id'] as String).toList();
+  var carreraIds =
+      (ucList as List).map((r) => r['carrera_id'] as String).toList();
 
   // 2. Fallback: buscar carrera por nombre desde perfil_academico_usuario
   if (carreraIds.isEmpty) {
@@ -323,11 +324,8 @@ final carreraConAsignaturasProvider =
   // 3. Obtener datos de carreras
   final carrerasData = <Map<String, dynamic>>[];
   for (final cid in carreraIds) {
-    final c = await client
-        .from('carreras')
-        .select()
-        .eq('id', cid)
-        .maybeSingle();
+    final c =
+        await client.from('carreras').select().eq('id', cid).maybeSingle();
     if (c != null) carrerasData.add(c);
   }
   final carrerasMap = {
@@ -387,7 +385,9 @@ final asignaturasUsuarioSemestreProvider =
       .from('asignaturas_usuario_semestre')
       .select()
       .eq('usuario_id', user.id);
-  return (resp as List).map((r) => AsignaturaUsuarioSemestreDb.fromMap(r)).toList();
+  return (resp as List)
+      .map((r) => AsignaturaUsuarioSemestreDb.fromMap(r))
+      .toList();
 });
 
 /// Asignaturas del catálogo con semestre=0 (optativas sin temporalidad)
@@ -408,6 +408,22 @@ final asignaturasSinSemestreProvider =
     }
   }
   return subjects;
+});
+
+/// Busca la asignatura concreta del usuario a partir del catalogo_asignatura_id.
+final asignaturaPorCatalogoProvider =
+    FutureProvider.family<AsignaturaDb?, String>((ref, catalogoId) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return null;
+  final data = await client
+      .from('asignaturas')
+      .select()
+      .eq('usuario_id', user.id)
+      .eq('catalogo_asignatura_id', catalogoId)
+      .maybeSingle();
+  if (data == null) return null;
+  return AsignaturaDb.fromMap(data);
 });
 
 /// Helper compartido que devuelve los carrera_ids del usuario

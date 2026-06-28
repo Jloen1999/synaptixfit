@@ -1,0 +1,200 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//SynaptixFit Test//ES
+CALSCALE:GREGORIAN
+X-WR-CALNAME:SynaptixFit - Semana de Prueba
+X-WR-TIMEZONE:Europe/Madrid
+
+BEGIN:VEVENT
+UID:sxf-redes-clase-001
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260622T090000
+DTEND;TZID=Europe/Madrid:20260622T110000
+SUMMARY:Clase Teórica - Redes de Computadores
+DESCRIPTION:Tema 3: Capa de Transporte. Protocolos TCP y UDP.
+LOCATION:Aula 2.1
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-redes-practica-002
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260622T120000
+DTEND;TZID=Europe/Madrid:20260622T140000
+SUMMARY:Clase Práctica - Redes de Computadores
+DESCRIPTION:Configuración de routers y switches en Packet Tracer.
+LOCATION:Laboratorio Cisco
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-si-investigacion-003
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260622T160000
+DTEND;TZID=Europe/Madrid:20260622T190000
+SUMMARY:Tarea de Investigación - Sistemas Inteligentes
+DESCRIPTION:Implementación y análisis del algoritmo A* para pathfinding.
+CATEGORIES:ENTREGA
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-is-teoria-004
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260623T080000
+DTEND;TZID=Europe/Madrid:20260623T100000
+SUMMARY:Clase Magistral - Ingeniería de Software
+DESCRIPTION:Tema 5: Patrones de Diseño. Singleton, Factory, Observer.
+LOCATION:Aula Magna
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-algebra-problemas-005
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260623T110000
+DTEND;TZID=Europe/Madrid:20260623T130000
+SUMMARY:Clase de Problemas - Álgebra Lineal
+DESCRIPTION:Diagonalización de matrices y valores propios.
+LOCATION:Aula 3.4
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-is-entrega-parcial-006
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260623T150000
+DTEND;TZID=Europe/Madrid:20260623T155900
+SUMMARY:Entrega Parcial - Ingeniería de Software
+DESCRIPTION:Subir documento SRS (Software Requirements Specification) al campus virtual. Formato PDF.
+CATEGORIES:ENTREGA
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-ipo-teoria-007
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260624T090000
+DTEND;TZID=Europe/Madrid:20260624T110000
+SUMMARY:Clase Teórica - Interacción Persona-Ordenador
+DESCRIPTION:Tema 4: Heurísticas de Nielsen y evaluación de usabilidad.
+LOCATION:Aula 1.2
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-ed-examen-008
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260624T120000
+DTEND;TZID=Europe/Madrid:20260624T133000
+SUMMARY:Examen Parcial - Estructuras de Datos
+DESCRIPTION:Evaluación de los temas 1 al 4: listas, pilas, colas y árboles binarios.
+LOCATION:Aula 4.1
+CATEGORIES:EXAMEN
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-redes-entrega-lab-009
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260624T160000
+DTEND;TZID=Europe/Madrid:20260624T165900
+SUMMARY:Entrega Laboratorio - Redes de Computadores
+DESCRIPTION:Memoria de prácticas: configuración de VLANs y enrutamiento estático.
+CATEGORIES:ENTREGA
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-bd-practica-010
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260625T083000
+DTEND;TZID=Europe/Madrid:20260625T103000
+SUMMARY:Clase Práctica - Bases de Datos
+DESCRIPTION:Consultas SQL avanzadas: JOINs, subconsultas y funciones de ventana.
+LOCATION:Laboratorio Informática 2
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-ac-teoria-011
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260625T110000
+DTEND;TZID=Europe/Madrid:20260625T130000
+SUMMARY:Clase Teórica - Arquitectura de Computadores
+DESCRIPTION:Tema 6: Pipeline y ejecución superescalar.
+LOCATION:Aula 2.3
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-is-proyecto-final-012
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260625T170000
+DTEND;TZID=Europe/Madrid:20260625T175900
+SUMMARY:Proyecto Final - Ingeniería de Software
+DESCRIPTION:Entrega del proyecto final: aplicación web con arquitectura MVC + documentación.
+CATEGORIES:ENTREGA
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-calculo-problemas-013
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260626T090000
+DTEND;TZID=Europe/Madrid:20260626T103000
+SUMMARY:Clase de Problemas - Cálculo II
+DESCRIPTION:Integrales múltiples y teorema de Green.
+LOCATION:Aula 5.1
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-so-quiz-014
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260626T110000
+DTEND;TZID=Europe/Madrid:20260626T120000
+SUMMARY:Quiz Semanal - Sistemas Operativos
+DESCRIPTION:Evaluación rápida: gestión de procesos y planificación de CPU.
+LOCATION:Aula Virtual
+CATEGORIES:EXAMEN
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-is-entrega-doc-015
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260626T150000
+DTEND;TZID=Europe/Madrid:20260626T163000
+SUMMARY:Entrega Documento - Ingeniería de Software
+DESCRIPTION:Documento de diseño detallado (SDD) con diagramas UML.
+CATEGORIES:ENTREGA
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-fisica-recuperacion-016
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260627T100000
+DTEND;TZID=Europe/Madrid:20260627T120000
+SUMMARY:Clase de Recuperación - Física II
+DESCRIPTION:Repaso general: electromagnetismo y ondas. Preparación para el examen final.
+LOCATION:Aula 3.1
+CATEGORIES:CLASE
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-po-examen-017
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260627T130000
+DTEND;TZID=Europe/Madrid:20260627T150000
+SUMMARY:Examen Final - Programación Orientada a Objetos
+DESCRIPTION:Examen práctico de POO con Java. Herencia, polimorfismo e interfaces.
+LOCATION:Laboratorio Informática 1
+CATEGORIES:EXAMEN
+END:VEVENT
+
+BEGIN:VEVENT
+UID:sxf-si-entrega-final-018
+DTSTAMP:20260620T142600Z
+DTSTART;TZID=Europe/Madrid:20260627T160000
+DTEND;TZID=Europe/Madrid:20260627T165900
+SUMMARY:Entrega Final - Sistemas Inteligentes
+DESCRIPTION:Implementación completa del sistema de recomendación con redes neuronales.
+CATEGORIES:ENTREGA
+END:VEVENT
+
+END:VCALENDAR

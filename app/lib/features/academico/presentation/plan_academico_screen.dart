@@ -22,13 +22,13 @@ class PlanAcademicoScreen extends ConsumerWidget {
         ),
         IconButton(
           icon: const Icon(Icons.school_outlined),
-          tooltip: 'Gestionar asignaturas',
-          onPressed: () => context.push('/academico/asignaturas'),
+          tooltip: 'Configuración académica',
+          onPressed: () => context.push('/academico/configuracion'),
         ),
         IconButton(
           icon: const Icon(Icons.add_circle_outline),
           tooltip: 'Nuevo plan semanal',
-          onPressed: () => context.push('/plan-semanal/crear'),
+          onPressed: () => context.push('/academico/planificar'),
         ),
       ],
       child: horariosAsync.when(
@@ -47,7 +47,7 @@ class PlanAcademicoScreen extends ConsumerWidget {
                       style: TextStyle(color: Colors.grey)),
                   const SizedBox(height: 12),
                   FilledButton.icon(
-                    onPressed: () => context.push('/plan-semanal/crear'),
+                    onPressed: () => context.push('/academico/planificar'),
                     icon: const Icon(Icons.add),
                     label: const Text('Crear plan semanal'),
                   ),

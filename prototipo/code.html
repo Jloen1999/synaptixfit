@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Replace Exercise - SynaptixFit</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style type="text/tailwindcss">
+    @layer utilities {
+      .text-brand-yellow { color: #d4ff00; }
+      .bg-brand-yellow { background-color: #d4ff00; }
+      .border-brand-yellow { border-color: #d4ff00; }
+      .text-brand-blue { color: #5dade2; }
+      .text-brand-orange { color: #e67e22; }
+      .bg-card-dark { background: linear-gradient(180deg, #1c1c1e 0%, #111 100%); }
+    }
+  </style>
+</head>
+<body class="bg-[#0a0a0a] text-white font-sans h-screen flex flex-col antialiased">
+<!-- BEGIN: Header -->
+<header class="pt-12 pb-4 px-4 bg-black flex items-center shadow-md z-10 sticky top-0" data-purpose="main-header">
+<button aria-label="Close" class="bg-gray-800 rounded-full p-2 mr-4 focus:outline-none">
+<svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+<div>
+<h1 class="text-xl font-bold leading-tight">Replace Exercise</h1>
+<p class="text-xs text-gray-400 mt-1">Replacing: Barbell Box Squat</p>
+</div>
+</header>
+<!-- END: Header -->
+<!-- BEGIN: Main Content -->
+<main class="flex-1 overflow-y-auto px-4 pb-20 scrollbar-hide" data-purpose="main-content">
+<!-- Search Bar -->
+<div class="mt-4 mb-6 relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<input class="w-full bg-gray-800 text-sm text-white rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-gray-600 border-none placeholder-gray-500" placeholder="Search exercises..." type="text"/>
+</div>
+<!-- Suggested Section -->
+<div class="mb-4 flex items-center">
+<div class="w-1 h-4 bg-brand-yellow rounded-full mr-2"></div>
+<h2 class="text-xs font-bold tracking-widest text-gray-300 uppercase">Suggested For This Day</h2>
+</div>
+<!-- Exercise Grid -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Card 1 -->
+<div class="bg-card-dark rounded-2xl overflow-hidden border border-gray-800 flex flex-col relative group">
+<div class="absolute top-2 right-2 bg-black/50 rounded p-1 z-10">
+<svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="bg-white h-32 relative flex justify-center items-center overflow-hidden">
+<img alt="Barbell Back Wide Shrug" class="object-contain h-full w-full opacity-90 scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkX5BqRQLeII9IOiyW5SxbY8rtagbn6vOtheoimRN6ABbt5tGsi26SUueCBawkwDCL4gNHfRSzCVMUrurOrGnCVdrdDeGruhMd5LG-C6KcGTP6o8wyTAWKAQvEC8xm6xYFBNKqVhmQnhXMguY3fw-iSBf_0GsadTFlwFW2IlNgJOR_okujMTWx6kSz3zFGGppClBDHJWtOJJihm4vB_RNZCU0Spnq-LrDotdpWaVlc3WslIS2OGIIdkPuTfYXb85q5Q2C-LJGsvlbW"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
+</div>
+<div class="p-3 flex-1 flex flex-col justify-between">
+<h3 class="text-sm font-semibold leading-snug mb-1">Barbell Back Wide Shrug</h3>
+<div class="flex items-center justify-between mt-auto">
+<div class="text-[10px] font-medium space-x-1">
+<span class="text-brand-blue uppercase">Back</span>
+<span class="text-gray-400 capitalize">Barbell</span>
+</div>
+<button class="bg-brand-yellow text-black text-xs font-bold py-1.5 px-3 rounded-lg flex items-center space-x-1 hover:bg-yellow-400 active:scale-95 transition-transform">
+<svg class="h-3 w-3" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Swap</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-card-dark rounded-2xl overflow-hidden border border-gray-800 flex flex-col relative group">
+<div class="absolute top-2 right-2 bg-black/50 rounded p-1 z-10">
+<svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="bg-white h-32 relative flex justify-center items-center overflow-hidden">
+<img alt="Barbell Behind the Neck" class="object-contain h-full w-full opacity-90 scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfLPTJk1LL5s_fCBqURNc4ZzC678D633GVWE-tyagwzQmGAjKtuYY9rq25eSvaqotayFrWUsRG8vk9y4WlB7yyU3LO5P-DaAcrSuaIymXuKHaEBiq7pnFzixgtcZ0mB2l8P1JFTjLwdhlhSjUcRR7dUaigSilnXhd9_tSWk1UzBBA7-Z2MUwb4VGuQIxLZf0-bZ8ACiYErUmDTHWRX5fu-jXA61bVz0erayqM3MnJEWr5C_0pnLpHWl2d1n6fje8yYLxiptld1y05U"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
+</div>
+<div class="p-3 flex-1 flex flex-col justify-between">
+<h3 class="text-sm font-semibold leading-snug mb-1">Barbell Behind th...</h3>
+<div class="flex items-center justify-between mt-auto">
+<div class="text-[10px] font-medium space-x-1">
+<span class="text-brand-orange uppercase">Shoulders</span>
+<span class="text-gray-400 capitalize">Barbell</span>
+</div>
+<button class="bg-brand-yellow text-black text-xs font-bold py-1.5 px-3 rounded-lg flex items-center space-x-1 hover:bg-yellow-400 active:scale-95 transition-transform">
+<svg class="h-3 w-3" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Swap</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-card-dark rounded-2xl overflow-hidden border border-gray-800 flex flex-col relative group">
+<div class="absolute top-2 right-2 bg-black/50 rounded p-1 z-10">
+<svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="bg-white h-32 relative flex justify-center items-center overflow-hidden">
+<img alt="Barbell Behind the Back Shrug" class="object-contain h-full w-full opacity-90 scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaF9KwJSLRw_6nQRQw8cpsXD0l44QT3vhyvVEnYtPkD-jd3wVri3257qDcrjFmhwXZULcM993SLQIuCkPPme0QNxw1mfRGNJruMUcweYYyKKyEXwy36D8UwoKPOwxo9GkvB_7YfgggNclwn2TOsjPOPCgF5OZMBfYCKp5YNSHr5HRErZnO2Fr9lUAEtQKYHSh0Hn86NjJCOU5kyeL9VSqyjlnLODtPOAQv3WfLpwRwdiIh8xdCz8_V0m6l0EChTYptsBCYyV8tkBFY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
+</div>
+<div class="p-3 flex-1 flex flex-col justify-between">
+<h3 class="text-sm font-semibold leading-snug mb-1">Barbell Behind th...</h3>
+<div class="flex items-center justify-between mt-auto">
+<div class="text-[10px] font-medium space-x-1">
+<span class="text-brand-blue uppercase">Back</span>
+<span class="text-gray-400 capitalize">Barbell</span>
+</div>
+<button class="bg-brand-yellow text-black text-xs font-bold py-1.5 px-3 rounded-lg flex items-center space-x-1 hover:bg-yellow-400 active:scale-95 transition-transform">
+<svg class="h-3 w-3" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Swap</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-card-dark rounded-2xl overflow-hidden border border-gray-800 flex flex-col relative group">
+<div class="absolute top-2 right-2 bg-black/50 rounded p-1 z-10">
+<svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="bg-white h-32 relative flex justify-center items-center overflow-hidden">
+<img alt="Barbell Bent Arm Pullover" class="object-contain h-full w-full opacity-90 scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjE7LbK_xCHCzz9i8zZMVe3zIK3eZdts0AFfmqnG4QfAguC4SfekjNDi_BYGdune7nECVY79-6BtsazZ28dt7d-JCPuJaKhDzmYiVbO0ATTJ46buViugS9StoXNFOMBh_HNoo9Wwneru-6p5MDBKKYmbAgvDc9wSCqp2VxXiY0aiobT_THsb5ri05_Wu8UHI1xk8i0SOFV8xAQIG8vYBy7f0TCwVZYHpFQZHBECScPNSJ2uzoLlnUDEh3naorBK30LBBH_fvs9SUsy"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
+</div>
+<div class="p-3 flex-1 flex flex-col justify-between">
+<h3 class="text-sm font-semibold leading-snug mb-1">Barbell Bent Arm...</h3>
+<div class="flex items-center justify-between mt-auto">
+<div class="text-[10px] font-medium space-x-1">
+<span class="text-brand-blue uppercase">Back</span>
+<span class="text-gray-400 capitalize">Barbell</span>
+</div>
+<button class="bg-brand-yellow text-black text-xs font-bold py-1.5 px-3 rounded-lg flex items-center space-x-1 hover:bg-yellow-400 active:scale-95 transition-transform">
+<svg class="h-3 w-3" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Swap</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 5 (Partial visibility) -->
+<div class="bg-card-dark rounded-2xl overflow-hidden border border-gray-800 flex flex-col relative group">
+<div class="absolute top-2 right-2 bg-black/50 rounded p-1 z-10">
+<svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="bg-white h-32 relative flex justify-center items-center overflow-hidden">
+<img alt="Barbell Row" class="object-contain h-full w-full opacity-90 scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCw-mwCbTLQvlfBGOJAulY3SioLbBXT74dnaEQSYs_wunWD9tEwx1AnAECe-r9nAP8A9K4ALrryjE3CBkK39wFxCWPWk9Wr76F3PUhlB0cSX3ILE3Lj4GAlogrX-5yp2H1vMvFV4NF7US6sEGD_iaEefMrSSGH9gVahB9h2Lwlu2N_ZIsERg7Xe35rY5wMRBQJOQVCFdUo54f99OqLjFxWBVuBj5YsLEH56DF8UWb5a_1hHSgvuf4L7sFbweuEBevSeqDadbX6V4HtE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
+</div>
+<div class="p-3">
+<!-- Text content omitted to mimic screenshot cutoff -->
+</div>
+</div>
+<!-- Card 6 (Partial visibility) -->
+<div class="bg-card-dark rounded-2xl overflow-hidden border border-gray-800 flex flex-col relative group">
+<div class="absolute top-2 right-2 bg-black/50 rounded p-1 z-10">
+<svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div class="bg-white h-32 relative flex justify-center items-center overflow-hidden">
+<img alt="Barbell Row Alternative" class="object-contain h-full w-full opacity-90 scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvzDw-XMb6iHoEapgIBFx_hVDq3zSYlQPag6q6KPe8SNjiUrugVfeq7Iu7Ln75NN1aHRMWE-SHF6LIb6lcOPgM5EPvn6h0THvKnRRP47cRr5kHKhMMkLxwdd-REN0ihUNO4BqZL5AaBsoVoB4lzMHWxXquPp_d2tvR_XbtROIQsC3wWOTqXPeVUCOAAwHPwimENIVJiNZ83MAGNjZrI8cOfmCBMaeQijWXQkYnkBF26HWQaUj9gwg_MNcRmmxHV6_Eo-ViSc_ZYwM0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent"></div>
+</div>
+<div class="p-3">
+<!-- Text content omitted to mimic screenshot cutoff -->
+</div>
+</div>
+</div>
+</main>
+<!-- END: Main Content -->
+<!-- BEGIN: Bottom Navigation -->
+<nav class="fixed bottom-0 w-full bg-[#111] border-t border-gray-800 pb-safe pt-2 px-6 flex justify-between items-center z-50" data-purpose="bottom-nav">
+<a class="flex flex-col items-center justify-center text-gray-500 hover:text-gray-300 w-16" href="#">
+<svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<!-- Active Nav Item -->
+<a class="flex flex-col items-center justify-center text-brand-yellow relative w-16 group" href="#">
+<div class="absolute top-0 w-8 h-1 bg-brand-yellow rounded-b-md -mt-2"></div>
+<svg class="h-6 w-6 mb-1" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" fill-rule="evenodd"></path>
+</svg>
+<span class="text-[10px] font-bold">Program</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 hover:text-gray-300 w-16 relative" href="#">
+<div class="absolute top-0 right-2 bg-brand-yellow text-black text-[8px] font-bold h-4 w-4 flex items-center justify-center rounded-full -mt-1 border border-[#111]">5</div>
+<svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-medium">Coach</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 hover:text-gray-300 w-16" href="#">
+<svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-medium">Awards</span>
+</a>
+<a class="flex flex-col items-center justify-center text-gray-500 hover:text-gray-300 w-16" href="#">
+<svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10px] font-medium">Settings</span>
+</a>
+</nav>
+<!-- END: Bottom Navigation -->
+</body></html>

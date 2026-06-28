@@ -1,0 +1,25 @@
+2026/06/02-02:03:55.245 3f0c Reusing MANIFEST C:\Users\JLOel\Desktop\scraping\.playwright_session\Default\IndexedDB\https_my.lyfta.app_0.indexeddb.leveldb/MANIFEST-000001
+2026/06/02-02:03:55.246 3f0c Recovering log #95
+2026/06/02-02:03:55.247 3f0c Reusing old log C:\Users\JLOel\Desktop\scraping\.playwright_session\Default\IndexedDB\https_my.lyfta.app_0.indexeddb.leveldb/000095.log 
+2026/06/02-02:03:55.248 3f0c Delete type=2 #94
+2026/06/02-02:03:55.392 4a88 Level-0 table #100: started
+2026/06/02-02:03:55.395 4a88 Level-0 table #100: 2441 bytes OK
+2026/06/02-02:03:55.398 4a88 Delete type=0 #95
+2026/06/02-02:03:55.399 3f0c Manual compaction at level-0 from '\x00"\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00#\x00\x00\x00' @ 0 : 0; will stop at '\x00"\x00\x00\x05' @ 1699 : 1
+2026/06/02-02:03:55.403 3f0c Compacting 1@0 + 1@1 files
+2026/06/02-02:03:55.406 3f0c Generated table #101@0: 300 keys, 4659 bytes
+2026/06/02-02:03:55.406 3f0c Compacted 1@0 + 1@1 files => 4659 bytes
+2026/06/02-02:03:55.407 3f0c compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/06/02-02:03:55.408 3f0c Delete type=2 #100
+2026/06/02-02:03:55.409 3f0c Manual compaction at level-0 from '\x00"\x00\x00\x05' @ 1699 : 1 .. '\x00#\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/06/02-02:03:58.211 4a88 Level-0 table #103: started
+2026/06/02-02:03:58.216 4a88 Level-0 table #103: 3338 bytes OK
+2026/06/02-02:03:58.218 4a88 Delete type=2 #97
+2026/06/02-02:03:58.218 4a88 Delete type=0 #99
+2026/06/02-02:03:58.220 3f0c Manual compaction at level-0 from '\x00#\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00$\x00\x00\x00' @ 0 : 0; will stop at '\x00#\x00\x00\x05' @ 1766 : 1
+2026/06/02-02:03:58.220 3f0c Compacting 1@0 + 1@1 files
+2026/06/02-02:03:58.224 3f0c Generated table #104@0: 301 keys, 4720 bytes
+2026/06/02-02:03:58.224 3f0c Compacted 1@0 + 1@1 files => 4720 bytes
+2026/06/02-02:03:58.225 3f0c compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/06/02-02:03:58.226 3f0c Delete type=2 #103
+2026/06/02-02:03:58.227 3f0c Manual compaction at level-0 from '\x00#\x00\x00\x05' @ 1766 : 1 .. '\x00$\x00\x00\x00' @ 0 : 0; will stop at (end)

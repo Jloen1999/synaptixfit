@@ -1464,3 +1464,140 @@ consejoSmartProvider
 ### 18.3 Servicio compartido
 
 `geminiServiceProvider` expone una instancia única de `RecomendacionIaService` para todo el app. El método `generarTexto(apiKey, prompt)` envuelve `_callGemini()` y retorna texto plano.
+
+---
+
+## 19. IA para Time-Blocking Académico
+
+### 19.1 Objetivo
+
+Extender el uso de Gemini Flash al ámbito de la planificación académica semanal. El `TimeBlockIaService` (nuevo servicio, mismo modelo) genera una distribución horaria completa de 7 días que optimiza estudio, deporte y preparación de entregas respetando los compromisos fijos del usuario.
+
+### 19.2 Diferencias con el Sistema de Recomendación de Rutinas
+
+| Aspecto | Recomendación de Rutinas (§1-§18) | Time-Blocking Académico (§19) |
+|---------|-----------------------------------|-------------------------------|
+| **Dominio** | Bienestar físico (ejercicios) | Planificación académica (horas de estudio) |
+| **Output** | `{semanas: {dia: [ejercicios]}}` | `{bloques: [{dia, hora, duración, tipo, asignatura}]}` |
+| **Restricciones** | Equipamiento, IMC, periodización | Horarios fijos, reglas N1-N10, entregas |
+| **Pipeline** | 7 etapas deterministas + refinamiento IA | IA directa con validación post-IA + fallback determinista |
+| **Timeout** | 15s (rutina) / 30s (estructura completa) | 20s (plan semanal completo) |
+| **Prompt size** | ~15KB con catálogo top 60 | ~3KB (no incluye catálogo de ejercicios) |
+| **Validación** | `_validarYReparar()` ejercicio a ejercicio | `_validarPlan()`: 5 reglas estructurales |
+| **Cache** | No | No (re-generación semanal bajo demanda) |
+
+### 19.3 Reglas N1-N10 en el Prompt
+
+Las 10 reglas se inyectan como restricciones obligatorias en el prompt del sistema. La IA las recibe en lenguaje natural, estructuradas como lista numerada:
+
+```
+## RESTRICCIONES OBLIGATORIAS (DEBES cumplir TODAS):
+
+N1. NO SOLAPAR CON FIJOS: Los horarios listados como "FIJOS" son inamovibles.
+Ningún bloque que generes puede solaparse total ni parcialmente con ellos.
+
+N2. PAUSA COMIDA 12:00-14:00: Reserva obligatoria. No generes bloques en esta franja.
+
+N3. MÁXIMO 2 HORAS CONTINUAS: Ningún bloque de estudio puede durar >120 minutos.
+Si necesitas distribuir más horas, crea bloques separados con mínimo 15 min entre ellos.
+
+N4. DEPORTE NO TRASNOCHADOR: No programes bloques de deporte después de las 21:00.
+
+N5. BUFFER PRE-ENTREGA: Por cada entrega a ≤3 días, reserva 2 bloques de 60 min
+en los 2 días anteriores.
+
+N6. BUFFER PRE-EXAMEN: Por cada examen a ≤5 días, reserva bloques diarios de 90 min
+los 3-5 días previos.
+
+N7. DISTRIBUCIÓN BALANCEADA: Reparte las horas de estudio entre días hábiles.
+El día más cargado no puede tener más del doble de horas que el menos cargado.
+
+N8. ALTERNANCIA ESTUDIO/DEPORTE: No coloques deporte inmediatamente después de estudio.
+Deja al menos 30 min. Idealmente en franjas opuestas del día (estudio mañana, deporte tarde).
+
+N9. PREFERENCIA HORARIA: El usuario prefiere estudiar en franja [MAÑANA/TARDE/NOCHE].
+Prioriza esa franja para los bloques de estudio.
+
+N10. MÍNIMO 1 DÍA LIBRE: Si hay estudio 5+ días, deja al menos 1 día (sábado o domingo)
+sin bloques de estudio.
+```
+
+### 19.4 Estructura de la Respuesta Esperada
+
+```json
+{
+  "nombrePlan": "Semana del 17 al 23 de junio",
+  "bloques": [
+    {
+      "diaSemana": 1,
+      "horaInicio": "09:00",
+      "duracionMinutos": 90,
+      "tipo": "estudio",
+      "asignatura": "Cálculo I",
+      "notas": "Preparar problemas del tema 5"
+    },
+    {
+      "diaSemana": 1,
+      "horaInicio": "18:00",
+      "duracionMinutos": 60,
+      "tipo": "deporte",
+      "asignatura": null,
+      "notas": "Sesión de fuerza"
+    }
+  ],
+  "metricas": {
+    "horasEstudioTotal": 22,
+    "horasDeporteTotal": 4,
+    "diasConBloques": 5,
+    "ratioBalance": 1.3,
+    "diasLibres": 2
+  }
+}
+```
+
+### 19.5 Integración con el Pipeline Existente
+
+El `TimeBlockIaService` comparte infraestructura con el sistema de recomendación de rutinas:
+
+- **Mismo API client:** `Dio` con timeout específico (20s vs 15s)
+- **Mismo `_callGemini()`:** Con `response_mime_type: application/json` forzado
+- **Mismo `_extraerJson()`:** 3 estrategias de parsing (regex bloques código → delimitadores → fallback)
+- **Mismo `_parseError()`:** Clasificación de errores de red, auth y formato
+- **Misma API key:** Lee `EnvConfig.geminiApiKey`
+- **Mismo patrón de fallback:** Si no hay API key o Gemini falla → algoritmo determinista simple
+
+### 19.6 Algoritmo de Fallback Determinista
+
+Cuando la IA no está disponible:
+
+```dart
+List<BloquePlanificadoData> _generarFallback(InboxConfig inbox, List<HorarioAcademicoDb> fijos) {
+  // 1. Mapa de slots disponibles: 7 días × 16 horas (7:00-23:00), en intervalos de 30 min
+  final slots = _buildSlotMap(fijos);
+  
+  // 2. Calcular horas/día = inbox.horasEstudioSemana / inbox.diasHabiles
+  final horasPorDia = inbox.horasEstudioSemana / 5;
+  
+  // 3. Distribuir en franjas de 60-90 min priorizando preferencia horaria
+  for (var dia in 1..5) {  // L-V
+    var horasRestantes = horasPorDia;
+    var horaActual = (inbox.preferencia == 'mañana') ? 9 : 15;
+    while (horasRestantes > 0) {
+      final duracion = min(90, (horasRestantes * 60).round());
+      if (_slotLibre(slots, dia, horaActual, duracion)) {
+        bloques.add(BloquePlanificadoData(diaSemana: dia, horaInicio: horaActual, duracionMinutos: duracion, tipo: 'estudio'));
+        _marcarSlot(slots, dia, horaActual, duracion);
+        horasRestantes -= duracion / 60;
+      }
+      horaActual += 2;  // Siguiente bloque 2h después
+    }
+  }
+  
+  // 4. Deporte: último bloque de la tarde (18:00) en días seleccionados
+  // 5. Entregas: 2 bloques de 60 min, 2 días antes
+  
+  return bloques;
+}
+```
+
+---

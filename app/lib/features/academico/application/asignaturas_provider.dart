@@ -19,6 +19,23 @@ final asignaturasActivasProvider =
   return data.map((e) => AsignaturaDb.fromMap(e)).toList();
 });
 
+final asignaturaPorIdProvider =
+    FutureProvider.family<AsignaturaDb?, String>((ref, id) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return null;
+
+  final data = await client
+      .from('asignaturas')
+      .select()
+      .eq('id', id)
+      .eq('usuario_id', user.id)
+      .maybeSingle();
+
+  if (data == null) return null;
+  return AsignaturaDb.fromMap(data);
+});
+
 final asignaturasArchivadasProvider =
     FutureProvider<List<AsignaturaDb>>((ref) async {
   final client = Supabase.instance.client;
@@ -40,6 +57,8 @@ Future<AsignaturaDb?> crearAsignatura({
   String? codigo,
   String? descripcion,
   String? docente,
+  String? catalogoAsignaturaId,
+  bool archivado = false,
 }) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;
@@ -53,7 +72,8 @@ Future<AsignaturaDb?> crearAsignatura({
         'codigo': codigo,
         'descripcion': descripcion,
         'docente': docente,
-        'archivado': false,
+        'catalogo_asignatura_id': catalogoAsignaturaId,
+        'archivado': archivado,
       })
       .select()
       .single();

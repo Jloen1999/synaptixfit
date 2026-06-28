@@ -57,7 +57,8 @@ class DashboardData {
   }
 }
 
-final dashboardProvider = FutureProvider<DashboardData>((ref) async {
+final dashboardProvider =
+    FutureProvider.autoDispose<DashboardData>((ref) async {
   if (!EnvConfig.hasSupabase) {
     throw Exception('Supabase no configurado');
   }

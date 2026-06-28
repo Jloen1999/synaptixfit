@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "synaptixfit-r2-proxy",
+  "main": "worker.js",
+  "compatibility_date": "2025-06-23",
+  "r2_buckets": [
+    {
+      "binding": "R2_BUCKET",
+      // Ajusta este nombre al bucket R2 real de SynaptixFit.
+      // Puedes consultarlo en: Cloudflare Dashboard → R2 → nombre del bucket.
+      "bucket_name": "synaptixfit-r2"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

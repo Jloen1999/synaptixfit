@@ -16,6 +16,78 @@ class RetoResumen {
   final bool tieneHitos;
 }
 
+/// Traduce el nivel de dificultad/esfuerzo a XP (Baja 20 · Media 40 · Alta 70).
+int xpPorDificultad(String dificultad) => switch (dificultad) {
+      'baja' => 20,
+      'alta' => 70,
+      _ => 40,
+    };
+
+/// Provider que devuelve TODOS los retos del usuario (activos + completados + vencidos).
+/// Útil para la vista unificada de retos con filtros de estado.
+final todosRetosProvider = FutureProvider<List<RetoResumen>>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return [];
+
+  final retosData = await client
+      .from('retos')
+      .select(
+          'id, titulo, tipo, meta, visibilidad, esta_completado, fecha_inicio, fecha_fin, usuario_id, creado_en')
+      .eq('usuario_id', user.id)
+      .order('fecha_fin', ascending: true);
+
+  final retos = (retosData as List)
+      .map((r) => RetoDb.fromMap(r as Map<String, dynamic>))
+      .toList();
+
+  if (retos.isEmpty) return [];
+
+  final retoIds = retos.map((r) => r.id).toList();
+  final todosHitosData = await client
+      .from('hitos_de_reto')
+      .select('reto_id, porcentaje_peso, progreso_actual, esta_completado')
+      .inFilter('reto_id', retoIds);
+
+  final hitosPorReto = <String, List<Map<String, dynamic>>>{};
+  for (final h in (todosHitosData as List)) {
+    final rid = h['reto_id'] as String;
+    hitosPorReto.putIfAbsent(rid, () => []).add(h);
+  }
+
+  final result = <RetoResumen>[];
+  for (final reto in retos) {
+    final hitos = hitosPorReto[reto.id] ?? [];
+    if (hitos.isEmpty) {
+      result.add(RetoResumen(
+        reto: reto,
+        progreso: reto.estaCompletado ? 1.0 : 0.0,
+        tieneHitos: false,
+      ));
+    } else {
+      final completados =
+          hitos.where((h) => h['esta_completado'] == true).length;
+      final total = hitos.length;
+      double progresoSum = 0;
+      double pesoTotal = 0;
+      for (final h in hitos) {
+        final peso = (h['porcentaje_peso'] as num?)?.toDouble() ?? 0.0;
+        final prog = (h['progreso_actual'] as num?)?.toDouble() ?? 0.0;
+        pesoTotal += peso;
+        progresoSum += (prog / 100) * peso;
+      }
+      final progreso =
+          pesoTotal > 0 ? progresoSum / pesoTotal : completados / total;
+      result.add(RetoResumen(
+        reto: reto,
+        progreso: progreso,
+        tieneHitos: true,
+      ));
+    }
+  }
+  return result;
+});
+
 final retosProvider = FutureProvider<List<RetoResumen>>((ref) async {
   final client = Supabase.instance.client;
   final user = client.auth.currentUser;

@@ -46,28 +46,33 @@ final balanceSemanalProvider = FutureProvider<BalanceSemanalDto>((ref) async {
 
   final horariosData = await client
       .from('horarios_academicos')
-      .select('tipo_actividad, hora_inicio, hora_fin')
+      .select('tipo_actividad, hora_inicio, hora_fin, completado')
       .eq('usuario_id', user.id)
       .gte('hora_inicio', lunesStr)
       .lte('hora_inicio', domingoStr);
 
-  double estudio = 0;
-  double deporte = 0;
+  double estudioPlaneado = 0;
+  double deportePlaneado = 0;
+  double estudioReal = 0;
+  double deporteReal = 0;
 
   for (final h in (horariosData as List)) {
     final inicio = DateTime.parse(h['hora_inicio'] as String);
     final fin = DateTime.parse(h['hora_fin'] as String);
     final duracion = fin.difference(inicio).inMinutes / 60.0;
     final tipo = h['tipo_actividad'] as String? ?? 'estudio';
+    final completado = h['completado'] as bool? ?? false;
 
     if (tipo == 'deporte') {
-      deporte += duracion;
+      deportePlaneado += duracion;
+      if (completado) deporteReal += duracion;
     } else {
-      estudio += duracion;
+      estudioPlaneado += duracion;
+      if (completado) estudioReal += duracion;
     }
   }
 
-  final total = estudio + deporte;
+  final total = estudioPlaneado + deportePlaneado;
   String estado;
   String mensaje;
   String sugerencia;
@@ -76,18 +81,18 @@ final balanceSemanalProvider = FutureProvider<BalanceSemanalDto>((ref) async {
     estado = 'inactivo';
     mensaje = 'Sin bloques esta semana';
     sugerencia = 'Crea bloques de estudio y deporte para ver tu balance.';
-  } else if (deporte == 0 && estudio > 0) {
+  } else if (deportePlaneado == 0 && estudioPlaneado > 0) {
     estado = 'carga_estudio';
     mensaje = 'Semana muy densa';
     sugerencia =
-        'Tienes ${estudio.toStringAsFixed(1)}h de estudio y 0h de deporte. ¡No olvides moverte!';
-  } else if (estudio == 0 && deporte > 0) {
+        'Tienes ${estudioPlaneado.toStringAsFixed(1)}h de estudio y 0h de deporte. ¡No olvides moverte!';
+  } else if (estudioPlaneado == 0 && deportePlaneado > 0) {
     estado = 'carga_deporte';
     mensaje = '¡Excelente actividad física!';
     sugerencia =
         'No olvides dedicar tiempo al estudio para mantener el equilibrio.';
   } else {
-    final ratio = deporte / (estudio + deporte);
+    final ratio = deportePlaneado / (estudioPlaneado + deportePlaneado);
     if (ratio >= 0.3 && ratio <= 0.5) {
       estado = 'equilibrado';
       mensaje = '¡Equilibrio perfecto!';
@@ -107,10 +112,10 @@ final balanceSemanalProvider = FutureProvider<BalanceSemanalDto>((ref) async {
   }
 
   return BalanceSemanalDto(
-    horasEstudioPlaneadas: estudio,
-    horasEstudioReales: estudio * 0.9,
-    horasDeportePlaneadas: deporte,
-    horasDeporteReales: deporte * 0.85,
+    horasEstudioPlaneadas: estudioPlaneado,
+    horasEstudioReales: estudioReal,
+    horasDeportePlaneadas: deportePlaneado,
+    horasDeporteReales: deporteReal,
     estado: estado,
     mensaje: mensaje,
     sugerencia: sugerencia,

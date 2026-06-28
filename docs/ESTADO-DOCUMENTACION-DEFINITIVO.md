@@ -440,7 +440,53 @@ Solo usuarios con rol `admin`. Accede desde el avatar → "Administración".
 
 ## 6. Verificación de Consistencia
 
-### 6.1 Script `verify-docs.ps1` (Propuesto)
+### 6.1 Script `verify-docs.sh` (Propuesto)
+
+```bash
+#!/bin/bash
+# verify-docs.sh — Verificación de consistencia docs ↔ código
+# Ejecutar desde la raíz del proyecto
+
+echo -e "\033[36m=== SynaptixFit — Verificación de Documentación ===\033[0m"
+
+# 1. Conteo de migraciones
+migCount=$(ls supabase/migrations/*.sql 2>/dev/null | wc -l)
+echo -e "\n\033[33m[1] Migraciones en supabase/migrations/: $migCount\033[0m"
+echo "   AGENTS.md dice: 47"
+if [ "$migCount" -ne 47 ]; then echo -e "   \033[31m⚠️ DISCREPANCIA\033[0m"; fi
+
+# 2. Conteo de docs
+docCount=$(ls docs/*.md 2>/dev/null | wc -l)
+echo -e "\n\033[33m[2] Archivos en docs/: $docCount\033[0m"
+
+# 3. Referencias obsoletas
+echo -e "\n\033[33m[3] Buscando referencias a tablas viejas del catálogo...\033[0m"
+oldRefs=$(grep -rn "catalogo_universidades\|CatalogoUniversidad\|catalogo_carreras\|CatalogoCarrera" docs/ --include="*.md" | grep -v "00-plan-maestro.md")
+if [ -n "$oldRefs" ]; then echo -e "   \033[31m⚠️ Encontradas referencias:\033[0m"; echo "$oldRefs"; else echo -e "   \033[32m✅ 0 referencias fuera de 00-plan-maestro.md\033[0m"; fi
+
+# 4. Referencias a planificador/
+echo -e "\n\033[33m[4] Buscando referencias a 'planificador/'...\033[0m"
+planRefs=$(grep -rn "planificador/" docs/ 2>/dev/null)
+if [ -n "$planRefs" ]; then echo -e "   \033[31m⚠️ Encontradas referencias:\033[0m"; echo "$planRefs"; else echo -e "   \033[32m✅ 0 referencias\033[0m"; fi
+
+# 5. Conteos de migraciones en docs
+echo -e "\n\033[33m[5] Verificando menciones de conteo de migraciones en docs...\033[0m"
+grep -rn "[0-9]\+ archivos de migración\|[0-9]\+ migraciones consolidadas\|[0-9]\+ migraciones SQL" docs/ --include="*.md" | while IFS= read -r line; do
+    echo "   $line"
+done
+
+# 6. flutter analyze
+echo -e "\n\033[33m[6] Ejecutando flutter analyze...\033[0m"
+pushd app > /dev/null
+analyze=$(flutter analyze 2>&1 | tail -3)
+echo "   $analyze"
+popd > /dev/null
+
+echo -e "\n\033[36m=== Verificación completada ===\033[0m"
+```
+
+<details>
+<summary>Versión original para Windows (PowerShell) — `verify-docs.ps1`</summary>
 
 ```powershell
 # verify-docs.ps1 — Verificación de consistencia docs ↔ código
@@ -451,36 +497,13 @@ Write-Host "=== SynaptixFit — Verificación de Documentación ===" -Foreground
 # 1. Conteo de migraciones
 $migCount = (Get-ChildItem "supabase/migrations/*.sql").Count
 Write-Host "`n[1] Migraciones en supabase/migrations/: $migCount" -ForegroundColor Yellow
-Write-Host "   AGENTS.md dice: 17"
-if ($migCount -ne 17) { Write-Host "   ⚠️ DISCREPANCIA" -ForegroundColor Red }
+Write-Host "   AGENTS.md dice: 47"
+if ($migCount -ne 47) { Write-Host "   ⚠️ DISCREPANCIA" -ForegroundColor Red }
 
-# 2. Conteo de docs
-$docCount = (Get-ChildItem "docs/*.md").Count
-Write-Host "`n[2] Archivos en docs/: $docCount" -ForegroundColor Yellow
-
-# 3. Referencias obsoletas
-Write-Host "`n[3] Buscando referencias a tablas viejas del catálogo..." -ForegroundColor Yellow
-$oldRefs = Select-String -Path "docs/*.md" -Pattern "catalogo_universidades|CatalogoUniversidad|catalogo_carreras|CatalogoCarrera" | Where-Object { $_.Filename -ne "00-plan-maestro.md" }
-if ($oldRefs) { Write-Host "   ⚠️ Encontradas referencias en:" -ForegroundColor Red; $oldRefs } else { Write-Host "   ✅ 0 referencias fuera de 00-plan-maestro.md" -ForegroundColor Green }
-
-# 4. Referencias a planificador/
-Write-Host "`n[4] Buscando referencias a 'planificador/'..." -ForegroundColor Yellow
-$planRefs = Select-String -Path "docs/*.md" -Pattern "planificador/"
-if ($planRefs) { Write-Host "   ⚠️ Encontradas referencias:" -ForegroundColor Red; $planRefs } else { Write-Host "   ✅ 0 referencias" -ForegroundColor Green }
-
-# 5. Conteos de migraciones en docs
-Write-Host "`n[5] Verificando menciones de conteo de migraciones en docs..." -ForegroundColor Yellow
-Select-String -Path "docs/*.md" -Pattern "\d+ (archivos de migración|migraciones consolidadas|migraciones SQL)" | ForEach-Object { Write-Host "   $($_.Filename): $($_.Line.Trim())" }
-
-# 6. flutter analyze
-Write-Host "`n[6] Ejecutando flutter analyze..." -ForegroundColor Yellow
-Push-Location "app"
-$analyze = flutter analyze 2>&1 | Select-Object -Last 3
-Write-Host "   $analyze"
-Pop-Location
-
-Write-Host "`n=== Verificación completada ===" -ForegroundColor Cyan
+# ... (resto del script equivalente)
 ```
+
+</details>
 
 ### 6.2 Comandos de Verificación Rápida
 

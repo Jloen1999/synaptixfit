@@ -78,7 +78,7 @@ flowchart TD
 | `partes_cuerpo` | Todos (catálogo público) | — | — | — |
 | `musculos` | Todos (catálogo público) | — | — | — |
 | `equipamientos` | Todos (catálogo público) | — | — | — |
-| `ejercicios` | Todos (catálogo público) | — | — | — |
+| `ejercicios` | Todos (catálogo público) | — | Admin | — |
 | `ejercicio_musculo_objetivo` | Todos (catálogo público) | — | — | — |
 | `ejercicio_musculo_secundario` | Todos (catálogo público) | — | — | — |
 | `ejercicio_parte_cuerpo` | Todos (catálogo público) | — | — | — |
@@ -108,10 +108,12 @@ flowchart TD
 | `perfil_bienestar_usuario` | Solo propio | Solo propio | Solo propio | — |
 | `historial_peso` | Solo propio | Solo propio | — | — |
 | `plan_entrenamiento_semanal` | Solo propio | Solo propio | Solo propio | Solo propio |
-| `actividades_sociales` | Propio + públicos | Solo propio | — | — |
+| `actividades_sociales` | Propio + públicos | Solo propio | Admin | Admin |
 | `interacciones_sociales` | Según visibilidad de actividad | Autenticado | — | Solo propio |
+| `comentarios_feed` | Autenticado | Autenticado | Autor + Admin | Autor |
 | `amistades` | Solo propio | Solo propio | Solo propio | Solo propio |
 | `preferencias_notificacion` | Solo propio | Solo propio | Solo propio | — |
+| `admin_auditoria` | Solo admin | Solo admin | — | — |
 
 ### 2.4 Rol de administrador
 
@@ -121,12 +123,18 @@ El sistema define un rol `admin` en la tabla `usuarios` (columna `rol` con CHECK
 |---------|--------|---------------|
 | **UPDATE en `usuarios`** | Resetear nivel, XP, racha de cualquier usuario | Política RLS: `auth.uid() = id OR EXISTS(SELECT 1 FROM usuarios u WHERE u.id = auth.uid() AND u.rol = 'admin')` |
 | **Ejecutar `wipe_user_data()`** | Eliminar todo el historial de un usuario preservando datos personales | Función `SECURITY DEFINER` con verificación interna de `rol = 'admin'` |
-| **Consultar cualquier usuario** | Listar usuarios para búsqueda en panel de administración | Mediante `usuarios_seleccionar` (ya visible si nivel_privacidad = 'publico') o mediante función admin con `SECURITY DEFINER` |
+| **Consultar cualquier usuario** | Listar usuarios para búsqueda en panel de administración | `adminUsuariosPaginadosProvider` consulta con filtro, paginación vía `listarUsuariosFiltrado()` y `contarUsuarios()` |
+| **Moderar publicaciones** | Ocultar/restaurar publicaciones reportadas (`actividades_sociales`) | Políticas RLS: `Admin modera publicaciones` (UPDATE) + `Admin elimina publicaciones` (DELETE). Acción registrada en `admin_auditoria`. |
+| **Moderar comentarios** | Eliminar comentarios reportados (`comentarios_feed`) | Política RLS: `Admin modera comentarios` (UPDATE). Acción registrada en `admin_auditoria`. |
+| **Gestionar catálogo ejercicios** | Activar/desactivar ejercicios (`ejercicios.activo`) | Política RLS: `Admin actualiza ejercicios` (UPDATE). Acción registrada en `admin_auditoria` con `accion = 'ocultar_ejercicio'`. |
+| **Ver métricas globales** | Dashboard de KPIs desde `v_admin_metricas` | Vista agregada con datos de múltiples tablas. Accesible mediante `adminMetricasProvider`. |
+| **Consultar logs de auditoría** | Ver trazabilidad de todas las acciones administrativas | Tabla `admin_auditoria` con RLS solo admin (SELECT + INSERT). Índices en `admin_id`, `target_usuario_id`, `creado_en`. |
 
 **Restricciones del rol admin:**
 - Un administrador **no puede** hacer wipe de su propio usuario (validado en `wipe_user_data`).
 - El rol `admin` solo puede ser asignado manualmente por un superadmin de Supabase (no hay endpoint público de promoción).
-- Las acciones de administración deben quedar registradas en logs de auditoría (fase futura).
+- **Todas las acciones administrativas quedan registradas en `admin_auditoria`** con: `admin_id`, `target_usuario_id`, `accion` (CHECK: wipe/reset_xp/set_nivel/ocultar_ejercicio/moderar), `detalles` JSONB, `creado_en`.
+- El admin que ejecuta una acción **no puede modificar ni eliminar** los registros de auditoría (solo SELECT e INSERT).
 
 ---
 
@@ -227,4 +235,4 @@ Eventos que deben quedar registrados (según sección 10.2 del SRS):
 ---
 
 **Documento compilado:** 14-06-2026  
-**Última revisión:** v1.3 — Añadido rol admin y políticas de wipe
+**Última revisión:** v1.4 — Ampliados permisos admin (moderación, ejercicios, métricas, auditoría). Sección 2.4 actualizada con tabla `admin_auditoria`.

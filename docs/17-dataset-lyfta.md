@@ -79,7 +79,7 @@ Obtiene todas las URLs de imágenes de ejercicios desde `my.lyfta.app/exercises`
 
 **Parámetros opcionales:**
 
-```powershell
+```bash
 python scrape_exercise_images.py --headless          # Sin ventana (requiere sesión guardada)
 python scrape_exercise_images.py --max-categories 3   # Solo 3 categorías
 python scrape_exercise_images.py --reset-auth         # Borrar sesión guardada
@@ -126,6 +126,25 @@ Salida: `exercise_videos.json` con URLs de video, nombre y categoría.
 
 Con las URLs de las etapas 2 y 3, se descargan todos los archivos multimedia:
 
+```bash
+# Descarga de imágenes (preview/) — Linux / WSL / macOS
+mkdir -p preview
+while IFS= read -r url; do
+    filename=$(basename "$url")
+    curl -L -o "preview/$filename" "$url"
+done < <(jq -r '.[].url' exercise_images_clean.json)
+
+# Descarga de videos
+mkdir -p video
+while IFS= read -r url; do
+    filename=$(basename "$url")
+    curl -L -o "video/$filename" "$url"
+done < <(jq -r '.[].url' exercise_videos.json)
+```
+
+<details>
+<summary>Alternativa original en Windows (PowerShell)</summary>
+
 ```powershell
 # Descarga de imágenes (preview/)
 $images = Get-Content .\exercise_images_clean.json | ConvertFrom-Json
@@ -142,6 +161,8 @@ $videos | ForEach-Object {
 }
 ```
 
+</details>
+
 Resultado:
 - `video/` → **682 archivos `.mp4`**
 - `preview/` → **3661+ archivos `.png`**
@@ -149,6 +170,19 @@ Resultado:
 ### 2.5 Etapa 5 — Lista Numerada de Videos
 
 **Script:** `lyfta/generate_exercises_json.ps1` (primer paso)
+
+```bash
+# Linux / WSL / macOS
+i=1
+for f in video/*.mp4; do
+    basename=$(basename "$f" .mp4)
+    echo "$i. $basename"
+    ((i++))
+done > video_list.txt
+```
+
+<details>
+<summary>Alternativa original en Windows (PowerShell)</summary>
 
 ```powershell
 $videos = Get-ChildItem D:\Dataset\Deporte\lyfta\video -Filter "*.mp4" | Sort-Object Name
@@ -159,6 +193,8 @@ $lines = foreach ($v in $videos) {
 }
 $lines | Out-File D:\Dataset\Deporte\lyfta\video_list.txt -Encoding utf8
 ```
+
+</details>
 
 Salida (`video_list.txt`):
 ```
@@ -189,8 +225,9 @@ Dos scripts de refinamiento secuencial:
 
 #### Primera pasada — `polish_exercises_names.ps1`
 
-```powershell
-.\polish_exercises_names.ps1
+```bash
+# Linux / WSL / macOS (requiere PowerShell instalado: sudo apt install powershell)
+pwsh polish_exercises_names.ps1
 ```
 
 | Acción | Ejemplos |
@@ -201,8 +238,9 @@ Dos scripts de refinamiento secuencial:
 
 #### Segunda pasada — `polish_exercises_names_pass2.ps1`
 
-```powershell
-.\polish_exercises_names_pass2.ps1
+```bash
+# Linux / WSL / macOS (requiere PowerShell instalado: sudo apt install powershell)
+pwsh polish_exercises_names_pass2.ps1
 ```
 
 | Acción | Ejemplos |
@@ -217,8 +255,9 @@ Resultado: `dataset_final.json` (~28.6k líneas, **682 ejercicios**).
 
 **Script:** `lyfta/process_videos.ps1`
 
-```powershell
-.\process_videos.ps1
+```bash
+# Linux / WSL / macOS (requiere PowerShell instalado: sudo apt install powershell)
+pwsh process_videos.ps1
 ```
 
 Busca en `preview/` las imágenes cuyo nombre descriptivo coincide con algún video de `video/` (normalizando prefijos numéricos y sufijos como `_small`) y las mueve a `images/`.

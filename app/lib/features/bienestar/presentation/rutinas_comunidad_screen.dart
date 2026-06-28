@@ -5,8 +5,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
 import '../../../shared/utils/string_utils.dart';
+import '../../../shared/widgets/badge_reutilizado.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/exercise_metrics.dart';
 import '../../../shared/models/db_models.dart';
 import '../application/rutina_provider.dart';
 
@@ -23,6 +25,7 @@ class _RutinasComunidadScreenState
   int _tab = 0;
   final _busquedaCtrl = TextEditingController();
   String _busqueda = '';
+  String _filtroEstado = 'todas'; // 'todas' | 'activas' | 'completadas'
 
   @override
   void dispose() {
@@ -80,30 +83,18 @@ class _RutinasComunidadScreenState
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: SegmentedButton<int>(
               segments: const [
-                ButtonSegment(value: 0, label: Text('Comunidad')),
-                ButtonSegment(value: 1, label: Text('Mis rutinas')),
+                ButtonSegment(value: 0, label: Text('Mis rutinas')),
+                ButtonSegment(value: 1, label: Text('Comunidad')),
               ],
               selected: {_tab},
+              showSelectedIcon: false,
               onSelectionChanged: (v) => setState(() => _tab = v.first),
             ),
           ),
+          if (_tab == 0) _buildFiltroEstado(),
           Expanded(
             child: _tab == 0
-                ? comunidadAsync.when(
-                    data: (r) {
-                      final filtrados = _busqueda.isEmpty
-                          ? r
-                          : r
-                              .where((dto) => normalizeSearch(dto.rutina.nombre)
-                                  .contains(_busqueda))
-                              .toList();
-                      return _buildListaComunidad(filtrados, userId);
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text('Error: $e')),
-                  )
-                : misRutinasAsync.when(
+                ? misRutinasAsync.when(
                     data: (r) {
                       final filtrados = _busqueda.isEmpty
                           ? r
@@ -116,8 +107,52 @@ class _RutinasComunidadScreenState
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
                     error: (e, _) => Center(child: Text('Error: $e')),
+                  )
+                : comunidadAsync.when(
+                    data: (r) {
+                      final filtrados = _busqueda.isEmpty
+                          ? r
+                          : r
+                              .where((dto) => normalizeSearch(dto.rutina.nombre)
+                                  .contains(_busqueda))
+                              .toList();
+                      return _buildListaComunidad(filtrados, userId);
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text('Error: $e')),
                   ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Barra de filtros por estado para «Mis rutinas» (CLEAN UI).
+  Widget _buildFiltroEstado() {
+    Widget chip(String label, String value) {
+      final sel = _filtroEstado == value;
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          label: Text(label, style: const TextStyle(fontSize: 12)),
+          selected: sel,
+          showCheckmark: false,
+          visualDensity: VisualDensity.compact,
+          onSelected: (_) => setState(() => _filtroEstado = value),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          chip('Todas', 'todas'),
+          chip('Activas', 'activas'),
+          chip('Completadas', 'completadas'),
         ],
       ),
     );
@@ -190,193 +225,152 @@ class _RutinasComunidadScreenState
 
     final progresos = ref.watch(progresoRutinasProvider).valueOrNull ?? {};
 
+    bool estaCompletada(RutinaDb r) {
+      final esActiva = r.estado == 'activo' || r.estado == 'pausado';
+      final prog = progresos[r.id] ??
+          const ProgresoRutinaDto(diasCompletados: 0, totalDias: 0);
+      return prog.porcentaje >= 1.0 || !esActiva;
+    }
+
+    final filtradas = switch (_filtroEstado) {
+      'activas' => rutinas.where((r) => !estaCompletada(r)).toList(),
+      'completadas' => rutinas.where(estaCompletada).toList(),
+      _ => rutinas,
+    };
+
+    if (filtradas.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 32),
+        child: EmptyState(
+          icon: Icons.filter_alt_off_outlined,
+          title: 'Sin resultados',
+          message: _filtroEstado == 'activas'
+              ? 'No tienes rutinas activas.'
+              : 'No tienes rutinas completadas.',
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
-      itemCount: rutinas.length,
+      itemCount: filtradas.length,
       itemBuilder: (context, index) {
-        final r = rutinas[index];
+        final r = filtradas[index];
         final theme = Theme.of(context);
 
         final esActiva = r.estado == 'activo' || r.estado == 'pausado';
         final prog = progresos[r.id] ??
             const ProgresoRutinaDto(diasCompletados: 0, totalDias: 0);
         final progress = prog.porcentaje;
-        final colorProgreso = progress >= 1.0
+        final completada = progress >= 1.0 || !esActiva;
+        final esPrivada = r.visibilidad == 'private';
+        final colorAcento = completada
             ? Colors.green
-            : (progress > 0.5 ? Colors.blue : Colors.orange);
+            : (esPrivada ? Colors.grey : theme.colorScheme.primary);
 
         return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: esActiva ? 2 : 0.5,
-          color: esActiva ? null : theme.colorScheme.surfaceContainerLow,
+          margin: const EdgeInsets.only(bottom: 8),
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: esActiva
-                ? BorderSide(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                    width: 1)
-                : BorderSide(
-                    color:
-                        theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                    width: 1),
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+            ),
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             onTap: () => context.push('/bienestar/rutina/${r.id}'),
             child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.all(12),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: !esActiva
-                              ? Colors.green.withValues(alpha: 0.1)
-                              : (r.visibilidad == 'private'
-                                  ? Colors.grey.withValues(alpha: 0.12)
-                                  : theme.colorScheme.primaryContainer
-                                      .withValues(alpha: 0.4)),
-                          borderRadius: BorderRadius.circular(12),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colorAcento.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(
+                      completada
+                          ? Icons.check_circle_outline
+                          : (esPrivada
+                              ? Icons.lock_outline
+                              : Icons.people_outline),
+                      size: 20,
+                      color: colorAcento,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          r.nombre,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
-                        child: Icon(
-                          !esActiva
-                              ? Icons.check_circle_outline
-                              : (r.visibilidad == 'private'
-                                  ? Icons.lock_outlined
-                                  : Icons.people_outline),
-                          size: 24,
-                          color: !esActiva
-                              ? Colors.green
-                              : (r.visibilidad == 'private'
-                                  ? Colors.grey
-                                  : theme.colorScheme.primary),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${esPrivada ? 'Privada' : 'Amigos'} · ${r.cantidadEjercicios} ejercicios'
+                          '${completada ? ' · Completada' : ''}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              r.nombre,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${r.visibilidad == 'private' ? 'Privada' : 'Amigos'} · ${r.cantidadEjercicios} ejercicios',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert),
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(value: 'editar', child: Text('Editar')),
-                          PopupMenuItem(
-                              value: 'eliminar', child: Text('Eliminar')),
+                        if (r.esReutilizada) ...[
+                          const SizedBox(height: 3),
+                          const BadgeReutilizado(
+                            dense: true,
+                            etiqueta: 'Reutilizada',
+                          ),
                         ],
-                        onSelected: (v) {
-                          if (v == 'eliminar') {
-                            _eliminarRutina(r);
-                          } else if (v == 'editar') {
-                            context.push('/bienestar/rutina/${r.id}');
-                          }
-                        },
-                      ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  CircularPercentIndicator(
+                    radius: 18.0,
+                    lineWidth: 3.5,
+                    percent: progress.clamp(0.0, 1.0),
+                    center: Text(
+                      '${(progress * 100).toInt()}%',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 9),
+                    ),
+                    circularStrokeCap: CircularStrokeCap.round,
+                    progressColor: colorAcento,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 18),
+                    padding: EdgeInsets.zero,
+                    tooltip: 'Opciones',
+                    onSelected: (v) {
+                      if (v == 'eliminar') {
+                        _eliminarRutina(r);
+                      } else if (v == 'editar') {
+                        context.push('/bienestar/rutina/${r.id}');
+                      } else if (v == 'reutilizar') {
+                        _clonarRutina(r);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                          value: 'editar', child: Text('Editar')),
+                      if (completada)
+                        const PopupMenuItem(
+                            value: 'reutilizar', child: Text('Reutilizar')),
+                      const PopupMenuItem(
+                          value: 'eliminar', child: Text('Eliminar')),
                     ],
                   ),
-                  if (r.descripcion?.isNotEmpty == true) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      r.descripcion!,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      CircularPercentIndicator(
-                        radius: 20.0,
-                        lineWidth: 4.0,
-                        animation: true,
-                        percent: progress,
-                        center: Text(
-                          '${(progress * 100).toInt()}%',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 10.0),
-                        ),
-                        circularStrokeCap: CircularStrokeCap.round,
-                        progressColor: colorProgreso,
-                        backgroundColor:
-                            theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              esActiva ? 'En progreso' : 'Completada',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                color: !esActiva ? Colors.green.shade700 : null,
-                              ),
-                            ),
-                            if (esActiva && progress > 0)
-                              Text(
-                                '${prog.diasCompletados} de ${prog.totalDias} días',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (esActiva) ...[
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () =>
-                            context.push('/bienestar/rutina/${r.id}'),
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: const Text('Continuar entrenamiento'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (!esActiva) ...[
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _clonarRutina(r),
-                        icon: const Icon(Icons.restart_alt_rounded),
-                        label: const Text('Reutilizar rutina'),
-                      ),
-                    ),
-                  ]
                 ],
               ),
             ),
@@ -435,7 +429,7 @@ class _RutinasComunidadScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Rutina «${rutina.nombre}» copiada')),
       );
-      setState(() => _tab = 1);
+      setState(() => _tab = 0);
     }
   }
 }
@@ -570,10 +564,16 @@ class _RutinaDetalleSheet extends ConsumerWidget {
                                     style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600)),
-                                subtitle: Text(
-                                    '$series series · $reps reps · ${descanso}s descanso',
-                                    style: const TextStyle(
-                                        fontSize: 11, color: Colors.grey)),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: ExerciseMetricsRow(
+                                    dense: true,
+                                    categoria: ExerciseMetricCategoria.fuerza,
+                                    series: series,
+                                    repeticiones: reps,
+                                    segundosDescanso: descanso,
+                                  ),
+                                ),
                                 trailing:
                                     const Icon(Icons.chevron_right, size: 16),
                                 onTap: () {

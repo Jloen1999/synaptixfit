@@ -77,6 +77,7 @@ Future<void> publicarEnFeed(
   required String descripcion,
   String? urlImagen,
   String tipo = 'milestone_reached',
+  String? metadata,
 }) async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return;
@@ -87,12 +88,33 @@ Future<void> publicarEnFeed(
     descripcion: descripcion,
     urlImagen: urlImagen,
     tipo: tipo,
+    metadata: metadata,
   );
 
   ref.invalidate(socialFeedProvider);
 }
 
-/// Envía un comentario a una actividad y refresca los comentarios de esa
+/// Edita una publicación propia (descripción) y refresca el feed.
+Future<void> editarPublicacionMutation(
+  WidgetRef ref, {
+  required String publicacionId,
+  required String descripcion,
+}) async {
+  final repo = ref.read(socialRepositoryProvider);
+  await repo.editarPublicacion(publicacionId, descripcion);
+  ref.invalidate(socialFeedProvider);
+}
+
+/// Elimina una publicación propia y refresca el feed.
+Future<void> eliminarPublicacionMutation(
+  WidgetRef ref, {
+  required String publicacionId,
+}) async {
+  final repo = ref.read(socialRepositoryProvider);
+  await repo.eliminarPublicacion(publicacionId);
+  ref.invalidate(socialFeedProvider);
+}
+
 /// actividad y el contador en el feed.
 Future<void> enviarComentario(
   WidgetRef ref, {

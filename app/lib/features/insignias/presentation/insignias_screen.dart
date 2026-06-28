@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../application/insignias_provider.dart';
+import '../../social/infrastructure/social_repository.dart';
 import '../domain/insignia_dto.dart';
 import 'widgets/insignia_card.dart';
 import 'widgets/racha_indicator.dart';
@@ -27,6 +29,23 @@ class _InsigniasScreenState extends ConsumerState<InsigniasScreen> {
     'racha',
     'especial',
   ];
+
+  /// Textos en lenguaje natural para cada criterio.
+  /// `{n}` se reemplaza por [Insignia.criterioValor].
+  static const _criterioTextos = {
+    'sesiones_completadas': 'Completa {n} sesiones de entrenamiento',
+    'rpe_alto': 'Registra {n} sesiones con esfuerzo alto (RPE ≥ 8)',
+    'checkins_consecutivos': 'Completa {n} check-ins diarios consecutivos',
+    'bloques_estudio': 'Crea {n} bloques de estudio',
+    'planes_estudio': 'Crea {n} planes semanales',
+    'apuntes_creados': 'Crea {n} apuntes',
+    'publicaciones_feed': 'Publica {n} veces en el muro social',
+    'likes_recibidos': 'Recibe {n} likes en tus publicaciones',
+    'racha_dias': 'Mantén una racha de {n} días',
+    'retos_completados': 'Completa {n} retos',
+    'insignias_obtenidas': 'Consigue {n} insignias',
+    'semanas_plan_adherencia': 'Mantén {n} semanas con ≥80% de adherencia',
+  };
 
   String _categoriaEtiqueta(String cat) {
     switch (cat) {
@@ -241,9 +260,7 @@ class _InsigniasScreenState extends ConsumerState<InsigniasScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => InsigniaCard(
                       insignia: filtradas[index],
-                      onTap: filtradas[index].obtenida
-                          ? () => _mostrarDetalle(context, filtradas[index])
-                          : null,
+                      onTap: () => _mostrarDetalle(context, filtradas[index]),
                     ),
                     childCount: filtradas.length,
                   ),
@@ -262,6 +279,189 @@ class _InsigniasScreenState extends ConsumerState<InsigniasScreen> {
       ),
       builder: (ctx) {
         final color = Color(insignia.colorRareza);
+        final textoCriterio = _criterioTextos[insignia.criterioTipo]
+                ?.replaceAll('{n}', '${insignia.criterioValor}') ??
+            '${insignia.criterioTipo} ≥ ${insignia.criterioValor}';
+
+        if (insignia.obtenida) {
+          return _buildDetalleObtenida(ctx, insignia, color, textoCriterio);
+        } else {
+          return _buildDetalleBloqueada(ctx, insignia, color, textoCriterio);
+        }
+      },
+    );
+  }
+
+  /// Bottom sheet para insignia obtenida.
+  Widget _buildDetalleObtenida(
+    BuildContext ctx,
+    Insignia insignia,
+    Color color,
+    String textoCriterio,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Indicador de arrastre
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF334155),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Icono grande
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.3),
+                  color.withValues(alpha: 0.1),
+                ],
+              ),
+              border: Border.all(color: color.withValues(alpha: 0.5)),
+            ),
+            child: Center(
+              child: Text(insignia.icono, style: const TextStyle(fontSize: 32)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            insignia.nombre,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFFF1F5F9),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            textoCriterio,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: color.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Etiquetas
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _etiqueta(
+                _categoriaEtiqueta(insignia.categoria),
+                Icons.category_rounded,
+              ),
+              const SizedBox(width: 8),
+              _etiqueta(
+                insignia.rareza[0].toUpperCase() + insignia.rareza.substring(1),
+                Icons.diamond_rounded,
+                color: color,
+              ),
+            ],
+          ),
+          if (insignia.obtenidaEn != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Obtenida el ${insignia.obtenidaEn!.day}/${insignia.obtenidaEn!.month}/${insignia.obtenidaEn!.year}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _compartirLogro(ctx, insignia),
+              icon: const Icon(Icons.ios_share_rounded, size: 18),
+              label: const Text('Compartir logro'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Comparte el logro en el muro social con una reseña editable.
+  Future<void> _compartirLogro(BuildContext ctx, Insignia insignia) async {
+    final ctrl = TextEditingController(
+      text:
+          '¡He desbloqueado la insignia "${insignia.nombre}" ${insignia.icono}! 🎉',
+    );
+    final mensaje = await showDialog<String>(
+      context: ctx,
+      builder: (d) => AlertDialog(
+        title: const Text('Compartir logro'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          maxLines: 4,
+          minLines: 2,
+          maxLength: 280,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Escribe tu reseña…',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(d),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(d, ctrl.text.trim()),
+            icon: const Icon(Icons.ios_share_rounded, size: 16),
+            label: const Text('Compartir'),
+          ),
+        ],
+      ),
+    );
+    if (mensaje == null || mensaje.isEmpty) return;
+
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return;
+    try {
+      await SocialRepository(client).crearPublicacion(
+        usuarioId: user.id,
+        descripcion: mensaje,
+      );
+      if (!ctx.mounted) return;
+      Navigator.pop(ctx); // cierra el detalle
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        const SnackBar(content: Text('Logro compartido en tu muro')),
+      );
+    } catch (e) {
+      if (!ctx.mounted) return;
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        SnackBar(content: Text('No se pudo compartir: $e')),
+      );
+    }
+  }
+
+  /// Bottom sheet para insignia bloqueada, con progreso.
+  Widget _buildDetalleBloqueada(
+    BuildContext ctx,
+    Insignia insignia,
+    Color color,
+    String textoCriterio,
+  ) {
+    return FutureBuilder<int>(
+      future: _obtenerProgreso(insignia),
+      builder: (context, snapshot) {
+        final progreso = snapshot.data ?? 0;
+        final objetivo = insignia.criterioValor;
+        final pct = objetivo > 0 ? (progreso / objetivo).clamp(0.0, 1.0) : 0.0;
+
         return Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -277,23 +477,25 @@ class _InsigniasScreenState extends ConsumerState<InsigniasScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Icono grande
+              // Icono con candado
               Container(
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      color.withValues(alpha: 0.3),
-                      color.withValues(alpha: 0.1),
-                    ],
+                  color: const Color(0xFF334155).withValues(alpha: 0.5),
+                  border: Border.all(
+                    color: const Color(0xFF475569),
                   ),
-                  border: Border.all(color: color.withValues(alpha: 0.5)),
                 ),
                 child: Center(
-                  child: Text(insignia.icono,
-                      style: const TextStyle(fontSize: 32)),
+                  child: Text(
+                    insignia.icono,
+                    style: TextStyle(
+                      fontSize: 32,
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -302,19 +504,75 @@ class _InsigniasScreenState extends ConsumerState<InsigniasScreen> {
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFFF1F5F9),
+                  color: Color(0xFF64748B),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                insignia.descripcion,
+                textoCriterio,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF94A3B8),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: color.withValues(alpha: 0.5),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+              // Barra de progreso
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '$progreso / $objetivo',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                          ),
+                        ),
+                        Text(
+                          '${(pct * 100).round()}%',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: pct,
+                        minHeight: 6,
+                        backgroundColor: const Color(0xFF334155),
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                progreso > 0 ? 'Sigue así' : '¡Empieza hoy!',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: progreso > 0
+                      ? const Color(0xFF4ADE80)
+                      : const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(height: 12),
               // Etiquetas
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -328,26 +586,28 @@ class _InsigniasScreenState extends ConsumerState<InsigniasScreen> {
                     insignia.rareza[0].toUpperCase() +
                         insignia.rareza.substring(1),
                     Icons.diamond_rounded,
-                    color: color,
+                    color: const Color(0xFF64748B),
                   ),
                 ],
               ),
-              if (insignia.obtenidaEn != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Obtenida el ${insignia.obtenidaEn!.day}/${insignia.obtenidaEn!.month}/${insignia.obtenidaEn!.year}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
             ],
           ),
         );
       },
     );
+  }
+
+  /// Obtiene el progreso actual para una insignia bloqueada.
+  Future<int> _obtenerProgreso(Insignia insignia) async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return 0;
+      final engine = ref.read(insigniaEngineProvider);
+      return engine.obtenerProgresoMetrica(userId, insignia.criterioTipo);
+    } catch (_) {
+      return 0;
+    }
   }
 
   Widget _etiqueta(String texto, IconData icon, {Color? color}) {

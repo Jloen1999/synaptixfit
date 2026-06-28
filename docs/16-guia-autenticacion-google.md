@@ -160,3 +160,62 @@ class GoogleAuthService {
    - Tras recibir el `AuthResponse`, Supabase emitirá automáticamente un evento `AuthState.signedIn`. El `Stream` de `Supabase.instance.client.auth.onAuthStateChange` debe ser utilizado (junto a Riverpod u otro gestor de estado) para actualizar la UI del router global (GoRouter u otro).
 4. **Protección RLS:**
    - La tabla de usuarios (`public.usuarios`) debe tener un trigger configurado para insertar una fila automáticamente cuando un nuevo usuario se registre a través del esquema `auth.users` de Supabase (esto ya está implementado en la migración 0004 de SynaptixFit).
+
+---
+
+## Troubleshooting: Migración de Entorno (Nuevo SHA-1)
+
+Cuando se migra el proyecto a otra máquina o entorno (por ejemplo, de Windows a WSL/Linux, o a otro equipo), se genera un **nuevo debug keystore** con un SHA-1 diferente. Si no se actualiza, el login de Google fallará con `ApiException: 10` en Android.
+
+### Síntomas
+- `PlatformException(sign_in_failed, com.google.android.gms.common.api.ApiException: 10, null, null)`
+- El login nativo de Google abre la ventana de selección de cuenta pero falla al regresar a la app
+- Funcionaba correctamente en el entorno anterior
+
+### Solución paso a paso
+
+#### 1. Obtener el nuevo SHA-1 del keystore del nuevo entorno
+
+```bash
+# Linux / WSL / macOS
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
+```
+
+Si `keytool` no está en el PATH, usar la ruta completa:
+
+```bash
+# Con JAVA_HOME definido
+$JAVA_HOME/bin/keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
+```
+
+Alternativa con `gradlew` (funciona en cualquier SO):
+
+```bash
+cd app/android
+./gradlew signingReport
+```
+
+#### 2. Registrar el nuevo SHA-1 en **DOS lugares** (ambos obligatorios)
+
+| # | Consola | Ruta |
+|---|---------|------|
+| 1 | **Firebase Console** | Project Settings → Android app → SHA certificate fingerprints → **Añadir huella digital** |
+| 2 | **Google Cloud Console** | APIs & Services → Credentials → OAuth 2.0 Client ID (tipo Android) → **SHA-1 certificate fingerprint** |
+
+⚠️ **Importante:** No basta con Firebase Console. Google Cloud Console tiene su propia copia del SHA-1 en el OAuth Client ID de tipo Android. Ambos deben coincidir con el nuevo keystore.
+
+#### 3. Re-descargar `google-services.json`
+
+Tras añadir el SHA-1 en Firebase Console:
+1. Ir a Firebase Console → Project Settings → Android app
+2. Descargar `google-services.json` actualizado
+3. Reemplazar `app/android/app/google-services.json` con el nuevo archivo
+
+#### 4. Limpiar y reconstruir
+
+```bash
+cd app
+flutter clean
+flutter pub get
+flutter run
+```

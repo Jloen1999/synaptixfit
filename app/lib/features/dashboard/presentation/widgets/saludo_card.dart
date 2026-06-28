@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/design_system/sv_colors.dart';
+import '../../../../shared/utils/image_utils.dart';
 import '../../../admin/application/admin_provider.dart';
+import '../../../auth/presentation/auth_controller.dart';
 import '../../../bienestar/application/rutina_provider.dart';
+import '../../../perfil/application/perfil_provider.dart';
 import 'streak_badge.dart';
 
 /// Tarjeta de saludo premium con gradiente, avatar, XP y racha.
@@ -34,14 +37,14 @@ class SaludoCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/perfil'),
       child: Container(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [Color(0xFF002546), Color(0xFF0D3B66), Color(0xFF153E5C)],
           ),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF002546).withValues(alpha: 0.35),
@@ -57,10 +60,10 @@ class SaludoCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.2),
                       width: 2,
@@ -74,12 +77,12 @@ class SaludoCard extends StatelessWidget {
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(10),
                     child: tieneAvatar
                         ? Image.network(
-                            usuario.urlAvatar!,
-                            width: 52,
-                            height: 52,
+                            normalizarUrlAvatar(usuario.urlAvatar!),
+                            width: 44,
+                            height: 44,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => _avatarFallback(
                                 nombre, Colors.white.withValues(alpha: 0.18)),
@@ -88,7 +91,7 @@ class SaludoCard extends StatelessWidget {
                             nombre, Colors.white.withValues(alpha: 0.18)),
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +100,7 @@ class SaludoCard extends StatelessWidget {
                         'Hola, $nombre 👋',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 22,
+                          fontSize: 18,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.4,
                           height: 1.2,
@@ -158,9 +161,27 @@ class SaludoCard extends StatelessWidget {
                     );
                   },
                 ),
+                // Botón de cerrar sesión
+                Consumer(
+                  builder: (context, ref, _) => IconButton(
+                    onPressed: () async {
+                      try {
+                        await ref
+                            .read(authControllerProvider.notifier)
+                            .logout();
+                      } catch (_) {}
+                      if (!context.mounted) return;
+                      context.go('/acceso');
+                    },
+                    icon: const Icon(Icons.logout_rounded,
+                        size: 20, color: Colors.redAccent),
+                    tooltip: 'Cerrar sesión',
+                    splashRadius: 18,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
             // Barra de XP
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +193,7 @@ class SaludoCard extends StatelessWidget {
                       '${data.usuario.xpTotal} / ${data.xpParaSiguienteNivel} XP',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.2,
                       ),
@@ -181,15 +202,15 @@ class SaludoCard extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.lock_open_rounded,
-                          size: 11,
+                          size: 10,
                           color: Colors.white.withValues(alpha: 0.4),
                         ),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: 2),
                         Text(
                           'Nivel ${data.usuario.nivel + 1}',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.45),
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -197,12 +218,12 @@ class SaludoCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: data.xpProgreso.clamp(0.0, 1.0),
-                    minHeight: 8,
+                    minHeight: 6,
                     backgroundColor: Colors.white.withValues(alpha: 0.12),
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       Color(0xFF72FE8F),
@@ -214,27 +235,52 @@ class SaludoCard extends StatelessWidget {
             if (rachaEntrenamiento > 0 ||
                 (diasEstudio != null && diasEstudio! > 0) ||
                 diasEstudio == null) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               StreakRow(
                 rachaEntrenamiento: rachaEntrenamiento,
                 diasEstudio: diasEstudio ?? 0,
                 isLoadingEstudio: diasEstudio == null,
               ),
             ],
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _KpiChip(
-                    icon: Icons.local_fire_department_rounded,
-                    label: '${data.calorias} kcal'),
-                const SizedBox(width: 12),
-                _KpiChip(
-                    icon: Icons.fitness_center_rounded,
-                    label: '${data.sesiones} sesiones'),
-              ],
+            const SizedBox(height: 10),
+            // Stats: sesiones, calorías, retos (XP ya arriba en barra)
+            Consumer(
+              builder: (context, ref, _) {
+                final act = ref.watch(perfilActividadProvider).valueOrNull;
+                if (act == null) return const SizedBox.shrink();
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _StatItem(
+                        icon: Icons.fitness_center_rounded,
+                        value: '${act.sesiones}',
+                        label: 'Sesiones',
+                      ),
+                    ),
+                    _StatDivider(),
+                    Expanded(
+                      child: _StatItem(
+                        icon: Icons.local_fire_department_rounded,
+                        value: act.caloriasAcumuladas >= 1000
+                            ? '${(act.caloriasAcumuladas / 1000).toStringAsFixed(1)}k'
+                            : '${act.caloriasAcumuladas}',
+                        label: 'Calorías',
+                      ),
+                    ),
+                    _StatDivider(),
+                    Expanded(
+                      child: _StatItem(
+                        icon: Icons.emoji_events_rounded,
+                        value: '${act.logros}',
+                        label: 'Retos',
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             if (data.notificacionesNoLeidas.isNotEmpty) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -291,31 +337,53 @@ class SaludoCard extends StatelessWidget {
   }
 }
 
-class _KpiChip extends StatelessWidget {
-  const _KpiChip({required this.icon, required this.label});
+class _StatItem extends StatelessWidget {
+  const _StatItem({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
   final IconData icon;
+  final String value;
   final String label;
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.7)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            height: 1.1,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: Colors.white70),
-          const SizedBox(width: 5),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white70)),
-        ],
-      ),
+      width: 1,
+      height: 36,
+      color: Colors.white.withValues(alpha: 0.12),
     );
   }
 }

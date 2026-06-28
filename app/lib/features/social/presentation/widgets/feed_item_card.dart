@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../application/social_provider.dart';
 import '../../domain/social_dto.dart';
@@ -66,6 +70,47 @@ class _FeedItemCardState extends ConsumerState<FeedItemCard> {
     return '${widget.publicacion.fecha.day}/${widget.publicacion.fecha.month}';
   }
 
+  /// Parsea la entidad vinculada (insignia / rutina / reto) desde la metadata
+  /// JSON de la publicación. Devuelve null si no hay entidad asociada.
+  Map<String, dynamic>? get _entidadMeta {
+    final raw = widget.publicacion.metadata;
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic> &&
+          decoded['entidad_nombre'] != null) {
+        return decoded;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Indica si la publicación pertenece al usuario autenticado.
+  bool get _esMia {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    return uid != null && uid == widget.publicacion.usuarioId;
+  }
+
+  /// Navega a la entidad vinculada (rutina / reto / insignia). El control de
+  /// permisos (acciones de propietario vs. visitante) se resuelve en la
+  /// pantalla de destino y por RLS.
+  void _navegarAEntidad() {
+    final meta = _entidadMeta;
+    if (meta == null) return;
+    final tipo = meta['entidad_tipo'] as String?;
+    final id = meta['entidad_id'] as String?;
+    switch (tipo) {
+      case 'rutina':
+        if (id != null) context.push('/bienestar/rutina/$id');
+        break;
+      case 'reto':
+        if (id != null) context.push('/retos/$id');
+        break;
+      default:
+        context.push('/insignias');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -118,13 +163,32 @@ class _FeedItemCardState extends ConsumerState<FeedItemCard> {
                             children: [
                               Icon(_iconoActividad, size: 14, color: color),
                               const SizedBox(width: 4),
-                              Text(
-                                _etiquetaActividad,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: color,
-                                  fontWeight: FontWeight.w600,
+                              Flexible(
+                                child: Text(
+                                  _etiquetaActividad,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
+                              if (pub.fueEditada) ...[
+                                const SizedBox(width: 6),
+                                Icon(Icons.edit_outlined,
+                                    size: 11,
+                                    color: theme.colorScheme.onSurfaceVariant),
+                                const SizedBox(width: 2),
+                                Text(
+                                  'editado',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ],
@@ -136,6 +200,7 @@ class _FeedItemCardState extends ConsumerState<FeedItemCard> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    if (_esMia) _buildMenuPropietario(theme),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -144,6 +209,11 @@ class _FeedItemCardState extends ConsumerState<FeedItemCard> {
                   pub.descripcion,
                   style: theme.textTheme.bodyMedium,
                 ),
+                // Entidad vinculada (insignia / rutina / reto)
+                if (_entidadMeta != null) ...[
+                  const SizedBox(height: 10),
+                  _buildEntidadChip(theme, color),
+                ],
                 // Imagen si tiene
                 if (pub.urlImagen != null) ...[
                   const SizedBox(height: 10),
@@ -205,6 +275,167 @@ class _FeedItemCardState extends ConsumerState<FeedItemCard> {
         ],
       ),
     );
+  }
+
+  Widget _buildEntidadChip(ThemeData theme, Color color) {
+    final meta = _entidadMeta!;
+    final nombre = meta['entidad_nombre'] as String? ?? '';
+    final emoji = meta['entidad_icono'] as String?;
+    final tipo = meta['entidad_tipo'] as String? ?? 'insignia';
+    final icon = switch (tipo) {
+      'rutina' => Icons.fitness_center_rounded,
+      'reto' => Icons.flag_rounded,
+      _ => Icons.workspace_premium_rounded,
+    };
+    return Row(
+      children: [
+        Flexible(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _navegarAEntidad,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (emoji != null && emoji.isNotEmpty)
+                      Text(emoji, style: const TextStyle(fontSize: 16))
+                    else
+                      Icon(icon, size: 16, color: color),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        nombre,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.chevron_right_rounded, size: 18, color: color),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuPropietario(ThemeData theme) {
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_horiz_rounded,
+          size: 20, color: theme.colorScheme.onSurfaceVariant),
+      padding: EdgeInsets.zero,
+      splashRadius: 18,
+      tooltip: 'Opciones',
+      onSelected: (v) {
+        if (v == 'editar') _mostrarDialogoEditarPublicacion();
+        if (v == 'eliminar') _confirmarEliminarPublicacion();
+      },
+      itemBuilder: (_) => [
+        const PopupMenuItem(
+          value: 'editar',
+          child: Row(children: [
+            Icon(Icons.edit_outlined, size: 18),
+            SizedBox(width: 10),
+            Text('Editar'),
+          ]),
+        ),
+        PopupMenuItem(
+          value: 'eliminar',
+          child: Row(children: [
+            Icon(Icons.delete_outline,
+                size: 18, color: theme.colorScheme.error),
+            const SizedBox(width: 10),
+            Text('Eliminar', style: TextStyle(color: theme.colorScheme.error)),
+          ]),
+        ),
+      ],
+    );
+  }
+
+  void _mostrarDialogoEditarPublicacion() {
+    final controller =
+        TextEditingController(text: widget.publicacion.descripcion);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Editar publicación'),
+        content: TextField(
+          controller: controller,
+          maxLength: 500,
+          maxLines: 4,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: '¿Qué quieres compartir?',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final texto = controller.text.trim();
+              if (texto.isEmpty || texto.length > 500) return;
+              await editarPublicacionMutation(
+                ref,
+                publicacionId: widget.publicacion.id,
+                descripcion: texto,
+              );
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmarEliminarPublicacion() async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar publicación'),
+        content: const Text(
+            '¿Seguro que quieres eliminar esta publicación? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado == true) {
+      await eliminarPublicacionMutation(
+        ref,
+        publicacionId: widget.publicacion.id,
+      );
+    }
   }
 
   Widget _seccionComentarios() {
