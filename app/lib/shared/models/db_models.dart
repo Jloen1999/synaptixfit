@@ -905,6 +905,8 @@ class HorarioAcademicoDb {
     this.semanaRutinaId,
     this.esHitoInamovible = false,
     this.icsUid,
+    this.isPrivate = false,
+    this.tipoClase,
   });
 
   final String id;
@@ -933,6 +935,8 @@ class HorarioAcademicoDb {
   final String? semanaRutinaId;
   final bool esHitoInamovible;
   final String? icsUid;
+  final bool isPrivate;
+  final String? tipoClase;
 
   factory HorarioAcademicoDb.fromMap(Map<String, dynamic> map) {
     return HorarioAcademicoDb(
@@ -968,6 +972,8 @@ class HorarioAcademicoDb {
       semanaRutinaId: map['semana_rutina_id'] as String?,
       esHitoInamovible: _parseBool(map['es_hito_inamovible']),
       icsUid: map['ics_uid'] as String?,
+      isPrivate: _parseBool(map['is_private']),
+      tipoClase: map['tipo_clase'] as String?,
     );
   }
 
@@ -991,6 +997,8 @@ class HorarioAcademicoDb {
         'asistencia_registrada_en': asistenciaRegistradaEn!.toIso8601String(),
       'es_hito_inamovible': esHitoInamovible,
       if (icsUid != null) 'ics_uid': icsUid,
+      'is_private': isPrivate,
+      if (tipoClase != null) 'tipo_clase': tipoClase,
     };
   }
 }
@@ -2558,22 +2566,18 @@ class MaterialEstudioDb {
       origenId: map['origen_id'] as String,
       titulo: (map['titulo'] as String?) ?? '',
       creadoEn: _parseDateTime(map['creado_en']),
-      estadoDominio:
-          (map['estado_dominio'] as String?) ?? 'sin_evaluar',
+      estadoDominio: (map['estado_dominio'] as String?) ?? 'sin_evaluar',
       ultimoRepasoEn: map['ultimo_repaso_en'] != null
           ? _parseDateTime(map['ultimo_repaso_en'])
           : null,
       siguienteRepasoEn: map['siguiente_repaso_en'] != null
           ? _parseDateTime(map['siguiente_repaso_en'])
           : null,
-      intervaloActualDias:
-          _parseInt(map['intervalo_actual_dias']),
+      intervaloActualDias: _parseInt(map['intervalo_actual_dias']),
       facilidad: _parseDouble(map['facilidad'], fallback: 2.5),
-      repasosCompletados:
-          _parseInt(map['repasos_completados']),
+      repasosCompletados: _parseInt(map['repasos_completados']),
       repasosFallidos: _parseInt(map['repasos_fallidos']),
-      xpPracticaOtorgado:
-          _parseBool(map['xp_practica_otorgado']),
+      xpPracticaOtorgado: _parseBool(map['xp_practica_otorgado']),
     );
   }
 
@@ -2664,8 +2668,7 @@ class PreguntaDb {
       opciones: (map['opciones'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList(),
-      respuestaCorrecta:
-          (map['respuesta_correcta'] as String?) ?? '',
+      respuestaCorrecta: (map['respuesta_correcta'] as String?) ?? '',
       explicacion: map['explicacion'] as String?,
       orden: _parseInt(map['orden']),
     );
@@ -2717,6 +2720,81 @@ class IntentoPreguntaDb {
       'pregunta_id': preguntaId,
       'es_correcta': esCorrecta,
       'respondido_en': respondidoEn.toIso8601String(),
+    };
+  }
+}
+
+class TestSessionDb {
+  const TestSessionDb({
+    required this.id,
+    required this.usuarioId,
+    required this.materialId,
+    required this.preguntasIds,
+    required this.respuestas,
+    required this.resultados,
+    required this.indiceActual,
+    required this.status,
+    required this.score,
+    required this.totalPreguntas,
+    required this.iniciadoEn,
+    this.completadoEn,
+    required this.xpOtorgado,
+  });
+
+  final String id;
+  final String usuarioId;
+  final String materialId;
+  final List<String> preguntasIds;
+  final Map<String, dynamic> respuestas;
+  final Map<String, dynamic> resultados;
+  final int indiceActual;
+  final String status;
+  final int score;
+  final int totalPreguntas;
+  final DateTime iniciadoEn;
+  final DateTime? completadoEn;
+  final bool xpOtorgado;
+
+  factory TestSessionDb.fromMap(Map<String, dynamic> map) {
+    final preguntasRaw = map['preguntas_ids'];
+    final preguntasIds = preguntasRaw is List
+        ? preguntasRaw.map((e) => e.toString()).toList()
+        : <String>[];
+
+    return TestSessionDb(
+      id: map['id'] as String,
+      usuarioId: map['usuario_id'] as String,
+      materialId: map['material_id'] as String,
+      preguntasIds: preguntasIds,
+      respuestas: (map['respuestas'] as Map<String, dynamic>?) ?? {},
+      resultados: (map['resultados'] as Map<String, dynamic>?) ?? {},
+      indiceActual: _parseInt(map['indice_actual']),
+      status: (map['status'] as String?) ?? 'in_progress',
+      score: _parseInt(map['score']),
+      totalPreguntas: _parseInt(map['total_preguntas']),
+      iniciadoEn: _parseDateTime(map['iniciado_en']),
+      completadoEn: map['completado_en'] != null
+          ? _parseDateTime(map['completado_en'])
+          : null,
+      xpOtorgado: _parseBool(map['xp_otorgado']),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'usuario_id': usuarioId,
+      'material_id': materialId,
+      'preguntas_ids': preguntasIds,
+      'respuestas': respuestas,
+      'resultados': resultados,
+      'indice_actual': indiceActual,
+      'status': status,
+      'score': score,
+      'total_preguntas': totalPreguntas,
+      'iniciado_en': iniciadoEn.toIso8601String(),
+      'completado_en': completadoEn?.toIso8601String(),
+      'xp_otorgado': xpOtorgado,
     };
   }
 }

@@ -11,6 +11,60 @@ import '../../application/tareas_asignatura_provider.dart';
 
 enum _Estado { completado, pasado, actual, futuro }
 
+class _ItemAgrupado {
+  final TimelineItem principal;
+  final List<TimelineItem> items;
+  final DateTime horaInicio;
+  final DateTime horaFin;
+  final String? tipoClase;
+
+  const _ItemAgrupado({
+    required this.principal,
+    required this.items,
+    required this.horaInicio,
+    required this.horaFin,
+    this.tipoClase,
+  });
+
+  bool get esAgrupado => items.length > 1;
+  TimelineTipo get tipo => principal.tipo;
+  String get titulo => principal.titulo;
+  ClassType? get classType => principal.classType;
+
+  Duration get duracion => horaFin.difference(horaInicio);
+  int get duracionMinutos => duracion.inMinutes;
+}
+
+List<_ItemAgrupado> _agruparItems(List<TimelineItem> items) {
+  final result = <_ItemAgrupado>[];
+  for (final item in items) {
+    if (item.tipo == TimelineTipo.clase && result.isNotEmpty) {
+      final anterior = result.last;
+      if (anterior.tipo == TimelineTipo.clase &&
+          anterior.titulo == item.titulo &&
+          anterior.tipoClase == item.tipoClase &&
+          anterior.horaFin == item.horaInicio) {
+        result[result.length - 1] = _ItemAgrupado(
+          principal: anterior.principal,
+          items: [...anterior.items, item],
+          horaInicio: anterior.horaInicio,
+          horaFin: item.horaFin,
+          tipoClase: item.tipoClase,
+        );
+        continue;
+      }
+    }
+    result.add(_ItemAgrupado(
+      principal: item,
+      items: [item],
+      horaInicio: item.horaInicio,
+      horaFin: item.horaFin,
+      tipoClase: item.tipoClase,
+    ));
+  }
+  return result;
+}
+
 /// Pestaña que muestra las tareas (bloques + entregas/exámenes) de una
 /// asignatura concreta, siguiendo el mismo esquema visual que el timeline de
 /// la pantalla de inicio: hora a la izquierda, conector con punto/línea y
@@ -62,32 +116,7 @@ class _TareasAsignaturaTabState extends ConsumerState<TareasAsignaturaTab> {
     HapticFeedback.selectionClick();
 
     try {
-      final client = Supabase.instance.client;
-      final user = client.auth.currentUser;
-      if (user == null) return;
-
-      switch (item.tipo) {
-        case TimelineTipo.estudio:
-        case TimelineTipo.clase:
-        case TimelineTipo.deporte:
-          final dur = (item.duracionMinutos ??
-                  item.horaFin.difference(item.horaInicio).inMinutes)
-              .clamp(1, 480);
-          await toggleBloqueCompletado(
-            bloqueId: item.id,
-            completado: nuevo,
-            duracionMinutos: dur,
-            ref: ref,
-          );
-        case TimelineTipo.entrega:
-          await client
-              .from('entregas_examenes')
-              .update({'esta_completado': nuevo})
-              .eq('id', item.id)
-              .eq('usuario_id', user.id);
-        default:
-          break;
-      }
+      await _persistirToggle(item, nuevo);
       if (mounted) {
         ref.invalidate(tareasAsignaturaProvider(widget.asignaturaId));
       }
@@ -98,6 +127,68 @@ class _TareasAsignaturaTabState extends ConsumerState<TareasAsignaturaTab> {
           SnackBar(content: Text('No se pudo actualizar: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _persistirToggle(TimelineItem item, bool nuevo) async {
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return;
+
+    switch (item.tipo) {
+      case TimelineTipo.estudio:
+      case TimelineTipo.clase:
+      case TimelineTipo.deporte:
+        final dur = (item.duracionMinutos ??
+                item.horaFin.difference(item.horaInicio).inMinutes)
+            .clamp(1, 480);
+        await toggleBloqueCompletado(
+          bloqueId: item.id,
+          completado: nuevo,
+          duracionMinutos: dur,
+          ref: ref,
+        );
+      case TimelineTipo.entrega:
+        await client
+            .from('entregas_examenes')
+            .update({'esta_completado': nuevo})
+            .eq('id', item.id)
+            .eq('usuario_id', user.id);
+      default:
+        break;
+    }
+  }
+
+  Future<void> _toggleGrupo(_ItemAgrupado grupo) async {
+    final primero = grupo.principal;
+    if (!_completable(primero.tipo)) return;
+    final actual = _overlay[primero.id] ?? primero.completado;
+    final nuevo = !actual;
+
+    for (final item in grupo.items) {
+      setState(() => _overlay = {..._overlay, item.id: nuevo});
+    }
+    HapticFeedback.selectionClick();
+
+    try {
+      for (final item in grupo.items) {
+        await _persistirToggle(item, nuevo);
+      }
+    } catch (e) {
+      for (final item in grupo.items) {
+        if (mounted) {
+          setState(() => _overlay = {..._overlay, item.id: actual});
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo actualizar: $e')),
+        );
+      }
+      return;
+    }
+    if (mounted) {
+      ref.invalidate(tareasAsignaturaProvider(widget.asignaturaId));
     }
   }
 
@@ -115,18 +206,20 @@ class _TareasAsignaturaTabState extends ConsumerState<TareasAsignaturaTab> {
               'Los bloques y entregas de esta asignatura aparecerán aquí.');
         }
 
+        final agrupados = _agruparItems(items);
         final widgets = <Widget>[];
         DateTime? diaPrevio;
-        for (var i = 0; i < items.length; i++) {
-          final item = items[i];
-          final refTemporal = item.referenciaTemporal;
+        for (var i = 0; i < agrupados.length; i++) {
+          final grupo = agrupados[i];
+          final refTemporal = grupo.horaInicio;
           final dia =
               DateTime(refTemporal.year, refTemporal.month, refTemporal.day);
           if (diaPrevio == null || dia != diaPrevio) {
             widgets.add(_encabezadoDia(dia, primero: diaPrevio == null));
             diaPrevio = dia;
           }
-          widgets.add(_fila(item, esUltimo: i == items.length - 1));
+          widgets
+              .add(_filaAgrupado(grupo, esUltimo: i == agrupados.length - 1));
         }
 
         return ListView(
@@ -290,6 +383,12 @@ class _TareasAsignaturaTabState extends ConsumerState<TareasAsignaturaTab> {
                           ),
                         ),
                         const SizedBox(width: 6),
+                        if (item.isPrivate == true)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 4),
+                            child: Icon(Icons.lock_outline,
+                                size: 14, color: SVColors.onSurfaceMuted),
+                          ),
                         _badgeTipo(item, esActual, completado, color),
                       ],
                     ),
@@ -301,6 +400,180 @@ class _TareasAsignaturaTabState extends ConsumerState<TareasAsignaturaTab> {
         ),
       ),
     );
+  }
+
+  Widget _filaAgrupado(_ItemAgrupado grupo, {required bool esUltimo}) {
+    final item = grupo.principal;
+    final completado = _overlay[item.id] ?? item.completado;
+    final estado = _estadoDe(item, completado);
+    final color = item.tipo.color;
+    final esActual = estado == _Estado.actual;
+    final completable = _completable(item.tipo);
+    final tieneHora = item.tipo != TimelineTipo.entrega;
+
+    final double opacidad = completado
+        ? 0.5
+        : estado == _Estado.pasado
+            ? 0.65
+            : 1.0;
+
+    return Opacity(
+      opacity: opacidad,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 56,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  tieneHora
+                      ? grupo.esAgrupado
+                          ? '${_fmtHora(grupo.horaInicio)}\n -\n${_fmtHora(grupo.horaFin)}'
+                          : _fmtHora(grupo.horaInicio)
+                      : '',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: esActual ? FontWeight.w800 : FontWeight.w500,
+                    color: esActual ? color : SVColors.onSurfaceMuted,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 26,
+              child: Column(
+                children: [
+                  const SizedBox(height: 13),
+                  GestureDetector(
+                    onTap: grupo.esAgrupado
+                        ? () => _toggleGrupo(grupo)
+                        : completable
+                            ? () => _toggle(item)
+                            : null,
+                    behavior: HitTestBehavior.opaque,
+                    child: _punto(estado, color),
+                  ),
+                  if (!esUltimo)
+                    Expanded(
+                      child: Container(
+                        width: 1.5,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        color: SVColors.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: GestureDetector(
+                  onTap: grupo.esAgrupado
+                      ? () => _toggleGrupo(grupo)
+                      : completable
+                          ? () => _toggle(item)
+                          : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: completado
+                          ? SVColors.surfaceContainerLow
+                          : esActual
+                              ? color.withValues(alpha: 0.08)
+                              : SVColors.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: esActual && !completado
+                          ? Border.all(color: color, width: 1.5)
+                          : Border.all(
+                              color: SVColors.outlineVariant
+                                  .withValues(alpha: 0.6)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: completado
+                                ? const Color(0xFF27AE60)
+                                    .withValues(alpha: 0.12)
+                                : color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: Icon(
+                            completado ? Icons.check_rounded : item.tipo.icono,
+                            size: 17,
+                            color: completado ? const Color(0xFF27AE60) : color,
+                          ),
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.titulo,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: SVColors.onSurface,
+                                  decoration: completado
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                  decorationColor: SVColors.onSurfaceMuted,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  _subtituloAgrupado(grupo, item),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: SVColors.onSurfaceMuted,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        if (item.isPrivate == true)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 4),
+                            child: Icon(Icons.lock_outline,
+                                size: 14, color: SVColors.onSurfaceMuted),
+                          ),
+                        _badgeTipo(item, esActual, completado, color),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _subtituloAgrupado(_ItemAgrupado grupo, TimelineItem item) {
+    if (item.subtitulo.isNotEmpty) return item.subtitulo;
+    final dur = grupo.duracionMinutos;
+    if (dur <= 0) return '';
+    if (dur >= 60 && dur % 60 == 0) return '${dur ~/ 60}h';
+    if (dur >= 60) return '${dur ~/ 60}h ${dur % 60}min';
+    return '${dur}min';
   }
 
   Widget _punto(_Estado estado, Color color) {
@@ -343,16 +616,26 @@ class _TareasAsignaturaTabState extends ConsumerState<TareasAsignaturaTab> {
                 letterSpacing: 0.5)),
       );
     }
+    final (label, badgeColor) = switch (item.tipo) {
+      TimelineTipo.clase => _claseBadge(item),
+      _ => (item.tipo.label, color),
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: badgeColor.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(item.tipo.label,
+      child: Text(label,
           style: TextStyle(
-              fontSize: 9.5, fontWeight: FontWeight.w700, color: color)),
+              fontSize: 9.5, fontWeight: FontWeight.w700, color: badgeColor)),
     );
+  }
+
+  (String, Color) _claseBadge(TimelineItem item) {
+    final ct = item.classType;
+    if (ct != null) return (ct.label, ct.color);
+    return ('Clase', const Color(0xFF8B5CF6));
   }
 
   Widget _vacio(IconData icono, String titulo, String subtitulo) {

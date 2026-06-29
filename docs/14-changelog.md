@@ -5,6 +5,83 @@
 
 ---
 
+## [7.5.0] — 29-06-2026
+
+### Refactor de Timeline: Enum ClassType + Metadatos de Clase + UI compacta
+
+- **Nuevo enum `ClassType`** (`app/lib/shared/models/timeline_item.dart`, líneas 60-79): Tipado de clases académicas con 2 valores (`theory`/`practice`), getters `label` (`'Teoría'`/`'Práctica'`) y `color` (púrpura pastel `#8B5CF6` / verde pastel `#4CAF50`), y `fromString()` que acepta español e inglés.
+- **Getter `classType` en `TimelineItem`** (línea 115): Conveniencia que parsea `tipoClase` al enum `ClassType`.
+- **Campos `isPrivate` y `tipoClase`** en `TimelineItem`: Pasados desde `desdeHorario()` (que ya los lee de `horarios_academicos`).
+- **Agrupación inteligente mejorada** (`_agruparItems` en `tareas_asignatura_tab.dart`): `_ItemAgrupado` ahora incluye `tipoClase` y getter `classType`. La condición de merge ahora también verifica igualdad de `tipoClase`, impidiendo fusionar bloques de teoría y práctica con el mismo título.
+- **Badges de tipo usan `ClassType`** (`_claseBadge` en `tareas_asignatura_tab.dart`): Usa `item.classType` en vez de comparaciones de strings. Teoría = púrpura `#8B5CF6`, Práctica = verde `#4CAF50`.
+- **Mastery card compactado** (`_DominioRealWidget` en `dashboard_asignatura_tab.dart`): `MetricGauge` reducido de 72→40px, padding horizontal/vertical reducido de 14/10→10/6, espaciados internos comprimidos (4→2, 6→4).
+- **Método `_fila` deprecado** en `tareas_asignatura_tab.dart` (línea 248): No se usa; el renderizado usa `_filaAgrupado()` exclusivamente.
+
+### Migraciones de BD
+
+- **`20260628000025_test_sessions.sql`:** Tabla `test_sessions` para sesiones de práctica persistentes con subconjunto del banco de preguntas (43 líneas).
+- **`20260629000026_horarios_metadata.sql`:** Columnas `is_private BOOLEAN` + `tipo_clase VARCHAR` en `horarios_academicos` (13 líneas).
+- **Total migraciones:** 50 → 53.
+
+### Documentación actualizada
+
+- `AGENTS.md`: `timeline_item.dart` actualizado con `ClassType` enum, `classType` getter, `isPrivate`/`tipoClase`. Migraciones 50→53, añadidas entradas 0025 y 0026.
+- `docs/06-frontend.md` (v7.3 → v7.4): Tabla `TimelineItem` ampliada con `isPrivate`, `tipoClase`, `classType`. Nueva sección `ClassType — Enum de tipo de clase`. Factory `desdeHorario()` actualizado.
+- `docs/04-data-model.md` (v5.9 → v6.0): Columnas `is_private` y `tipo_clase` añadidas a la definición de `horarios_academicos`.
+- `docs/07-backend.md` (v3.4 → v3.5): Migraciones 50→53, añadidas entradas 0025 y 0026.
+- `docs/14-changelog.md`: Esta entrada.
+
+---
+
+## [7.4.0] — 28-06-2026
+
+### Sistema de Repaso Espaciado SM-2 con Tests Generados por IA
+
+#### Fase 1 — Fundación SM-2: Tabla `materiales_estudio`
+
+- **Nueva migración `20260628000022_materiales_estudio.sql`:** Crea la tabla wrapper `materiales_estudio` que unifica apuntes y archivos bajo una jerarquía de repaso espaciado con 9 columnas SM-2: `estado_dominio` (5 estados: sin_evaluar, en_progreso, necesita_repaso, dominado, abandonado), `ultimo_repaso_en`, `siguiente_repaso_en`, `intervalo_actual_dias`, `facilidad` (default 2.5), `repasos_completados`, `repasos_fallidos`, `xp_practica_otorgado`. UNIQUE por `(usuario_id, tipo_origen, origen_id)`. RLS dueño + admin.
+- **CHECKs ampliados:** `tipo_actividad` en `horarios_academicos` acepta `'repaso'` (9 valores). `tipo` en `documentos_ia` acepta `'practica'` (4 valores). `fuente_tipo` en `documentos_ia` acepta `'practica'` y `'guia_docente'`.
+- **Nuevo modelo `MaterialEstudioDb`** en `db_models.dart`: 15 campos con `fromMap`/`toMap`, incluyendo todos los parámetros SM-2. El wrapper permite que un mismo apunte/archivo tenga su propio ciclo de repaso espaciado independiente del contenido original.
+
+#### Fase 2 — Tests Generados por IA: `bancos_preguntas`, `preguntas`, `intentos_pregunta`
+
+- **Nueva migración `20260628000023_bancos_preguntas.sql`:** Crea 3 tablas para alojar tests generados por IA asociados a materiales de estudio:
+  - `bancos_preguntas`: cabecera del test (`material_id FK`, `usuario_id FK`, `xp_otorgado` flag anti-farmeo).
+  - `preguntas`: preguntas individuales con `tipo` (opcion_multiple o rellenar_hueco), `enunciado`, `opciones` JSONB, `respuesta_correcta`, `explicacion`, `orden`.
+  - `intentos_pregunta`: historial de respuestas del usuario (`es_correcta BOOLEAN`, `respondido_en TIMESTAMP`).
+- **RLS:** dueño gestiona bancos e intentos; preguntas visibles solo vía banco del dueño (heredado vía JOIN a bancos_preguntas).
+- **Nuevos modelos Dart:** `BancoPreguntasDb`, `PreguntaDb`, `IntentoPreguntaDb` en `db_models.dart` con `fromMap`/`toMap`.
+
+#### Fase 3 — Fix RLS en Preguntas
+
+- **Nueva migración `20260628000024_fix_rls_preguntas.sql`:** Reemplaza la política de `SELECT` en `preguntas` por `FOR ALL` para permitir INSERT de preguntas generadas por IA (la política original solo cubría lectura). Añade políticas admin SELECT en `preguntas` e `intentos_pregunta` para consistencia con el resto del schema.
+
+#### Fase 4 — Algoritmo SM-2 y Pantalla de Práctica
+
+- **`Sm2Calculator`** (`app/lib/features/academico/infrastructure/sm2_calculator.dart`, 75 líneas): Implementación canónica del algoritmo SuperMemo 2 con parámetros EF (facilidad, rango 1.3–2.5), I (intervalo en días) y n (repasos correctos consecutivos). Calidad de respuesta en 3 niveles: 0 = "Toca repasar", 1 = "Me cuesta", 2 = "Dominio absoluto". La fórmula de facilidad sigue el estándar: `EF' = EF + (0.1 - (5-q) * (0.08 + (5-q) * 0.02))`. Intervalos: 1 → 3 → 7 → `ceil(I * EF)`. Estado de dominio: necesita_repaso (calidad 0), en_progreso (calidad 1 o <3 repasos), dominado (≥3 repasos consecutivos con calidad 2).
+- **`PracticaScreen`** (`app/lib/features/academico/presentation/practica_screen.dart`, 692 líneas): `ConsumerStatefulWidget` con ruta `/academico/practica/:materialId`. Flujo de preguntas secuenciales con feedback inmediato (correcto/incorrecto), modal de autoevaluación SM-2 con 3 niveles al finalizar, inyección de repaso en timeline vía `horarios_academicos` con `tipo_actividad='repaso'` y `es_fijo=false`. Barra de progreso superior, chip de estado de dominio, contador de correctas/totales.
+- **`PracticaRepository`** (`app/lib/features/academico/application/practica_provider.dart`, 173 líneas): 5 operaciones: `obtenerOCrearBanco()`, `obtenerOCrearBancoPorFuente()`, `obtenerPreguntas()`, `guardarPreguntas()` (para IA), `registrarIntento()`, `otorgarXpSiProcede()` (anti-farmeo), `estadisticasBanco()`.
+- **`MaterialesEstudioRepository`** (`app/lib/features/academico/application/materiales_estudio_provider.dart`, 143 líneas): `obtenerPorAsignatura()`, `obtenerPorFuente()`, `vincular()` (upsert), `actualizarEstadoSm2()`. Providers: `materialesAsignaturaProvider.family`, `materialPorFuenteProvider.family`, `metricasRetencionProvider.family`.
+- **Entrada desde `AsignaturaDetalleScreen`:** Los apuntes y archivos en la pestaña Temario ahora muestran un botón "Practicar" que navega a `/academico/practica/$materialId`. El material se crea automáticamente vía `obtenerOCrearBancoPorFuente()` si no existe.
+
+### Migraciones de BD
+
+- **`20260628000022_materiales_estudio.sql`:** Tabla `materiales_estudio` + ampliación de CHECKs en `horarios_academicos` y `documentos_ia` (87 líneas).
+- **`20260628000023_bancos_preguntas.sql`:** Tablas `bancos_preguntas`, `preguntas`, `intentos_pregunta` (83 líneas).
+- **`20260628000024_fix_rls_preguntas.sql`:** Reemplaza política SELECT → FOR ALL en `preguntas` + admin policies (34 líneas).
+- **Total migraciones:** 47 → 50.
+
+### Documentación actualizada
+
+- `AGENTS.md`: Añadida sección del Sistema de Repaso Espaciado SM-2 con `sm2_calculator.dart`, `practica_screen.dart`, providers y ruta `/academico/practica/:materialId`. Migraciones 47→50, añadidas entradas 0022, 0023, 0024.
+- `docs/14-changelog.md`: Esta entrada.
+- `docs/04-data-model.md`: Nuevas tablas `materiales_estudio`, `bancos_preguntas`, `preguntas`, `intentos_pregunta` con SQL, RLS y modelos Dart. Versión 5.8 → 5.9.
+- `docs/06-frontend.md`: Añadida ruta `/academico/practica/:materialId`, sección 5.9 Sistema de Repaso Espaciado con PracticaScreen, Sm2Calculator y providers. Versión 7.2 → 7.3.
+- `docs/07-backend.md`: Migraciones 47→50, añadidas entradas 0022, 0023, 0024. Nueva sección §14 con el algoritmo SM-2. Versión 3.3 → 3.4.
+- `docs/16-guia-autenticacion-google.md`: Añadida sección Troubleshooting: Loopback Server para escritorio Linux.
+
+---
+
 ## [7.3.0] — 27-06-2026
 
 ### Sistema de Cálculo Calórico MET (Compendio Adultos 2024)

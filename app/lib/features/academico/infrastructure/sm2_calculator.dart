@@ -60,8 +60,8 @@ class Sm2Calculator {
       estadoDominio = nuevosRepasos >= 3 ? 'dominado' : 'en_progreso';
     }
 
-    double nuevaFacilidad = facilidad +
-        (0.1 - (2 - calidad) * (0.08 + (2 - calidad) * 0.02));
+    double nuevaFacilidad =
+        facilidad + (0.1 - (2 - calidad) * (0.08 + (2 - calidad) * 0.02));
     if (nuevaFacilidad > _facilidadInicial) nuevaFacilidad = _facilidadInicial;
     if (nuevaFacilidad < _facilidadMinima) nuevaFacilidad = _facilidadMinima;
 

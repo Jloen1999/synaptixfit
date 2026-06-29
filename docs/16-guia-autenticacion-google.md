@@ -219,3 +219,122 @@ flutter clean
 flutter pub get
 flutter run
 ```
+
+---
+
+## Troubleshooting: Loopback Server para Escritorio Linux
+
+Cuando se ejecuta la app Flutter en escritorio Linux (no web), el flujo de autenticación con Google usa un **servidor loopback HTTP** en lugar de WebView o redirección de navegador. Este mecanismo es necesario porque los entornos de escritorio Linux no tienen un navegador embebido estándar como Android (Chrome Custom Tabs) o iOS (SFSafariViewController).
+
+### Arquitectura del Loopback Server
+
+El proyecto usa dos archivos con compilación condicional:
+
+| Archivo | Plataforma | Propósito |
+|---------|-----------|-----------|
+| `app/lib/features/auth/infrastructure/loopback_auth_io.dart` | Linux, macOS, Windows (`dart:io`) | Implementación real: crea un `HttpServer` en `InternetAddress.loopbackIPv4` que escucha en un puerto aleatorio y espera el callback de Google OAuth |
+| `app/lib/features/auth/infrastructure/loopback_auth_stub.dart` | Web | Stub que lanza `UnimplementedError` (en web se usa redirección estándar, no loopback) |
+
+**Importación condicional en `auth_repository.dart`:**
+```dart
+import 'loopback_auth_stub.dart'
+    if (dart.library.io) 'loopback_auth_io.dart';
+```
+
+### Funcionamiento del Servidor
+
+1. Al iniciar el flujo de Google Sign-In, se llama a `iniciarServidorLoopback(puerto: 0)`.
+2. El sistema operativo asigna un puerto aleatorio disponible en `127.0.0.1`.
+3. Se construye una URL de redirección `http://127.0.0.1:{puerto}/callback` y se pasa a Google OAuth como `redirect_uri`.
+4. Google abre el navegador del sistema, el usuario autoriza, y Google redirige al `localhost:{puerto}/callback`.
+5. El servidor loopback recibe la petición en `/callback`, captura el `Uri` (con los tokens en los query params), devuelve una página HTML de confirmación y cierra.
+6. La app extrae los tokens del `Uri` y continúa con `signInWithIdToken()`.
+
+### Síntomas de Fallo en Linux
+
+- El login de Google abre el navegador pero nunca retorna a la app (se queda esperando).
+- Error en consola: `No se pudo iniciar servidor loopback: ...`
+- Timeout después de 2 minutos sin respuesta.
+
+### Causas Comunes y Soluciones
+
+#### 1. Puerto en uso
+
+Si otro proceso está usando puertos en el rango efímero, el loopback no puede bindear:
+
+```bash
+# Verificar puertos en uso
+ss -tlnp | grep 127.0.0.1
+
+# Solución: cerrar procesos que ocupen puertos o reiniciar
+```
+
+#### 2. Firewall bloqueando loopback
+
+En algunas distribuciones Linux, `iptables` o `ufw` pueden bloquear conexiones loopback:
+
+```bash
+# Verificar reglas de loopback
+sudo iptables -L INPUT -v -n | grep 127.0.0.1
+
+# Asegurar que loopback está permitido (debería estarlo por defecto)
+sudo iptables -A INPUT -i lo -j ACCEPT
+```
+
+#### 3. Navegador no redirige a localhost
+
+Algunos navegadores (especialmente Firefox con configuraciones de privacidad estrictas) bloquean redirecciones a `localhost`:
+
+- **Chrome/Chromium:** Funciona correctamente con `http://127.0.0.1:*`.
+- **Firefox:** Verificar `network.proxy.allow_hijacking_localhost` en `about:config`.
+- **Solución:** Usar Chromium como navegador predeterminado durante el desarrollo, o configurar Firefox para permitir `localhost`.
+
+#### 4. WSL sin soporte de loopback
+
+Si se ejecuta Flutter desde WSL (Windows Subsystem for Linux) pero el navegador está en Windows:
+
+```bash
+# WSL2 usa una IP virtual, no 127.0.0.1 real
+# Solución: ejecutar la app con `flutter run -d linux` desde una terminal nativa de Linux,
+# no desde WSL, o configurar el reenvío de puertos de WSL a Windows.
+```
+
+#### 5. Timeout de 2 minutos
+
+El servidor loopback tiene un timeout de 2 minutos (`Duration(minutes: 2)`). Si el usuario tarda más de 2 minutos en completar la autenticación en el navegador, el `Completer` se completa con `null` y el flujo falla:
+
+```dart
+// En loopback_auth_io.dart
+callback: completer.future.timeout(
+  const Duration(minutes: 2),
+  onTimeout: () => null,
+),
+```
+
+**Solución:** Reintentar el login. La ventana de 2 minutos es suficiente para el 99% de los casos.
+
+#### 6. Dependencia de `dart:io`
+
+En entornos que no tienen `dart:io` (como Flutter Web), se usa automáticamente el stub. No es necesario configurar nada — la compilación condicional maneja esto:
+
+```dart
+// El stub lanza UnimplementedError si se invoca en web
+Future<LoopbackServer> iniciarServidorLoopback({int puerto = 0}) async {
+  throw UnimplementedError(
+      'El servidor loopback no esta disponible en esta plataforma');
+}
+```
+
+### Verificación Manual
+
+Para verificar que el loopback server funciona correctamente en Linux:
+
+```bash
+# En una terminal, iniciar un servidor de prueba
+python3 -c "import http.server; http.server.HTTPServer(('127.0.0.1', 8765), http.server.SimpleHTTPRequestHandler).serve_forever()"
+
+# En otra terminal, verificar que responde
+curl http://127.0.0.1:8765/
+```
+
+Si esto funciona, el loopback server de Flutter también debería funcionar, ya que ambos usan el mismo mecanismo de `127.0.0.1`.

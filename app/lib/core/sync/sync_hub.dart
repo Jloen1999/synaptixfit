@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/academico/application/entregas_examenes_provider.dart';
 import '../../features/academico/application/inbox_config_provider.dart'
     show horariosFijosProvider;
+import '../../features/academico/application/materiales_estudio_provider.dart'
+    show metricasRetencionProvider, repasoUrgenteGlobalProvider;
 import '../../features/academico/application/planes_estudio_provider.dart';
 import '../../features/bienestar/application/rutina_provider.dart';
 import '../../features/dashboard/application/dashboard_provider.dart';
@@ -101,6 +103,8 @@ class SyncHub {
         _ref.invalidate(estadoEnergeticoProvider);
         _ref.invalidate(contextoAcademicoProvider);
         _ref.invalidate(horariosSemanaActualProvider);
+        _ref.invalidate(metricasRetencionProvider);
+        _ref.invalidate(repasoUrgenteGlobalProvider);
     }
   }
 }

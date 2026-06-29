@@ -3,30 +3,33 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pdfx/pdfx.dart' as pdfx;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/design_system/sv_colors.dart';
 import '../../../core/design_system/sv_shapes.dart';
+import '../application/documento_ia_provider.dart';
 import '../domain/archivo_asignatura_dto.dart';
 import '../domain/fuente_estudio.dart';
+import 'mapa_mental_screen.dart';
 import 'widgets/asistente_ia_sheet.dart';
 
 /// Visor completo de archivos (Clean UI — fondo claro).
 ///
 /// Soporta previsualización en-app de imágenes y PDFs, más apertura externa
 /// para cualquier tipo de archivo.
-class ArchivoVisorScreen extends StatefulWidget {
+class ArchivoVisorScreen extends ConsumerStatefulWidget {
   const ArchivoVisorScreen({required this.archivo, super.key});
 
   final ArchivoAsignaturaDto archivo;
 
   @override
-  State<ArchivoVisorScreen> createState() => _ArchivoVisorScreenState();
+  ConsumerState<ArchivoVisorScreen> createState() => _ArchivoVisorScreenState();
 }
 
-class _ArchivoVisorScreenState extends State<ArchivoVisorScreen> {
+class _ArchivoVisorScreenState extends ConsumerState<ArchivoVisorScreen> {
   // Nullable (NO `late`): durante la carga asíncrona del PDF, `build` lee este
   // campo antes de asignarlo. Con `late final` eso lanzaba un
   // LateInitializationError temporal. Como nullable arranca en null y se asigna
@@ -116,12 +119,34 @@ class _ArchivoVisorScreenState extends State<ArchivoVisorScreen> {
     );
   }
 
+  void _irMapaMental(String mime) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => MapaMentalScreen(
+        fuente: FuenteArchivo(
+          titulo: widget.archivo.nombreArchivo,
+          fuenteId: widget.archivo.id,
+          asignaturaId: widget.archivo.asignaturaId,
+          url: widget.archivo.urlPublica,
+          mimeType: mime,
+        ),
+      ),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final a = widget.archivo;
     final tipo = a.tipo;
     final color = tipo.color;
     final iaMime = _mimeIaSoportado();
+
+    final docs = ref
+        .watch(docsGuardadosProvider((
+          fuenteTipo: 'archivo',
+          fuenteId: a.id,
+        )))
+        .valueOrNull;
+    final tieneMapa = docs?.mapa == true;
 
     return Scaffold(
       backgroundColor: SVColors.background,
@@ -134,6 +159,9 @@ class _ArchivoVisorScreenState extends State<ArchivoVisorScreen> {
               color: color,
               onAbrirExternamente: _abrirExternamente,
               onIa: iaMime != null ? () => _asistenteIa(iaMime) : null,
+              onMapaMental: tieneMapa && iaMime != null
+                  ? () => _irMapaMental(iaMime!)
+                  : null,
             ),
             Expanded(child: _buildContenido(tipo, color)),
           ],
@@ -172,6 +200,7 @@ class _BarraSuperior extends StatelessWidget {
     required this.color,
     required this.onAbrirExternamente,
     this.onIa,
+    this.onMapaMental,
   });
 
   final String nombre;
@@ -179,6 +208,7 @@ class _BarraSuperior extends StatelessWidget {
   final Color color;
   final VoidCallback onAbrirExternamente;
   final VoidCallback? onIa;
+  final VoidCallback? onMapaMental;
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +260,13 @@ class _BarraSuperior extends StatelessWidget {
               ],
             ),
           ),
+          if (onMapaMental != null)
+            IconButton(
+              onPressed: onMapaMental,
+              icon: const Icon(Icons.account_tree_outlined,
+                  color: SVColors.primary),
+              tooltip: 'Ver mapa mental',
+            ),
           if (onIa != null)
             IconButton(
               onPressed: onIa,

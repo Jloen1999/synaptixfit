@@ -17,8 +17,7 @@ class LoopbackServer {
 }
 
 Future<LoopbackServer> iniciarServidorLoopback({int puerto = 0}) async {
-  final server =
-      await HttpServer.bind(InternetAddress.loopbackIPv4, puerto);
+  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, puerto);
   final completer = Completer<Uri?>();
 
   final subscription = server.listen((request) {

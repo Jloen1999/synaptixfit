@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit
-**Versión:** 3.3
-**Fecha:** 27-06-2026
+**Versión:** 3.5
+**Fecha:** 29-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -13,7 +13,7 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (47 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix + 0001 dias_disponibles_array + 0002 fix_nivel_umbral + 0003 xp_overflow_multinivel + 20260622000004 visibilidad_rls + 20260622000005 carga_xp_estudio_otorgado + 20260622000006 retos_sinergia_v2 + 20260622000007 retos_xp_tracking + 20260622000008 retos_deep_linking + 20260622000009 social_realtime + 20260622000010 perfil_fechas_semestre + 20260622000011 social_publicaciones_v2 + 20260622000012 procedencia_clones + 20260622000013 archivos_asignatura + 20260622000014 apuntes_actualizado_en + 20260622000015 apuntes_visibilidad_fix + 20260622000016 documentos_ia + 20260622000017 documentos_ia_ampliar_check + 20260625000018 perfil_academico_rls + 20260625000019 usuario_insignias_update_asignaturas_rls + 20260626000020 valor_met_ejercicios + 20260626000021 duracion_real) |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (53 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix + 0001 dias_disponibles_array + 0002 fix_nivel_umbral + 0003 xp_overflow_multinivel + 20260622000004 visibilidad_rls + 20260622000005 carga_xp_estudio_otorgado + 20260622000006 retos_sinergia_v2 + 20260622000007 retos_xp_tracking + 20260622000008 retos_deep_linking + 20260622000009 social_realtime + 20260622000010 perfil_fechas_semestre + 20260622000011 social_publicaciones_v2 + 20260622000012 procedencia_clones + 20260622000013 archivos_asignatura + 20260622000014 apuntes_actualizado_en + 20260622000015 apuntes_visibilidad_fix + 20260622000016 documentos_ia + 20260622000017 documentos_ia_ampliar_check + 20260625000018 perfil_academico_rls + 20260625000019 usuario_insignias_update_asignaturas_rls + 20260626000020 valor_met_ejercicios + 20260626000021 duracion_real + 20260628000022 materiales_estudio + 20260628000023 bancos_preguntas + 20260628000024 fix_rls_preguntas + 20260628000025 test_sessions + 20260629000026 horarios_metadata) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
@@ -36,7 +36,7 @@ Para MVP/TFG, la simplicidad y latencia del enfoque cliente-side son preferibles
 
 ## 2. Migraciones — Esquema Consolidado
 
-Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **47 archivos de migración**:
+Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **53 archivos de migración**:
 
 | # | Archivo | Fecha | Descripción |
 |---|---------|-------|-------------|
@@ -87,6 +87,11 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 20260625000019 | `20260625000019_usuario_insignias_update_asignaturas_rls.sql` | 25-06-2026 | UPDATE policy en `usuario_insignias` + RLS en `asignaturas`.
 | 20260626000020 | `20260626000020_valor_met_ejercicios.sql` | 26-06-2026 | Columna `valor_met` en `ejercicios` (MET Compendio Adultos 2024) + recrea `v_ejercicios_completos`.
 | 20260626000021 | `20260626000021_duracion_real.sql` | 26-06-2026 | RENAME `duracion_segundos` → `duracion_objetivo_segundos` + ADD `duracion_real_segundos` en `seleccion_de_ejercicios`.
+| 20260628000022 | `20260628000022_materiales_estudio.sql` | 28-06-2026 | **Sistema SM-2 Fase 1:** Tabla `materiales_estudio` (wrapper de apuntes+archivos con 9 columnas SM-2: estado_dominio, intervalo, facilidad, repasos). Amplía CHECKs de `tipo_actividad` en `horarios_academicos` para `'repaso'` y de `tipo`/`fuente_tipo` en `documentos_ia` para `'practica'`. RLS dueño + admin.
+| 20260628000023 | `20260628000023_bancos_preguntas.sql` | 28-06-2026 | **Sistema SM-2 Fase 2:** Tablas `bancos_preguntas` (cabecera de test IA), `preguntas` (opcion_multiple/rellenar_hueco con JSONB opciones) y `intentos_pregunta` (historial de respuestas). RLS: dueño gestiona bancos + intentos; preguntas visibles vía JOIN con banco del dueño.
+| 20260628000024 | `20260628000024_fix_rls_preguntas.sql` | 28-06-2026 | **Sistema SM-2 Fase 3:** Extiende política RLS de `preguntas` de SELECT a FOR ALL (necesario para INSERT de preguntas generadas por IA). Añade políticas admin SELECT en `preguntas` e `intentos_pregunta`.
+| 20260628000025 | `20260628000025_test_sessions.sql` | 28-06-2026 | **Sistema SM-2 Fase 4:** Tabla `test_sessions` para sesiones de práctica persistentes con subconjunto JSONB del banco de preguntas, respuestas, resultados, índice y status (`in_progress`/`completed`/`abandoned`). RLS dueño + admin.
+| 20260629000026 | `20260629000026_horarios_metadata.sql` | 29-06-2026 | **Metadatos de timeline:** Columnas `is_private BOOLEAN NOT NULL DEFAULT false` (visibilidad solo dueño) y `tipo_clase VARCHAR` (`'teoria'`/`'practica'`) en `horarios_academicos`. Soportan el enum `ClassType` en `TimelineItem`.
 
 > **Nota histórica:** Las migraciones intermedias 0001–0048 fueron consolidadas en `202606060049_esquema_base.sql` durante la Fase 3. Las migraciones 0050 anteriores (0050–0052 de xp_estudio_flag, retos_racha, etc.) también fueron absorbidas. El orden de aplicación real es cronológico por timestamp del nombre del archivo, no por el número de secuencia en el nombre.
 
@@ -993,5 +998,101 @@ CREATE INDEX idx_archivos_asignatura ON archivos_asignatura(asignatura_id, subid
 
 ---
 
-**Documento compilado:** 27-06-2026
-**Última revisión:** v3.3 — Migraciones 47 (0020 `valor_met_ejercicios` + 0021 `duracion_real`), `CalorieCalculatorService` documentado como nuevo servicio de infraestructura.
+## 14. Algoritmo SM-2 — Repaso Espaciado
+
+**Archivo:** `app/lib/features/academico/infrastructure/sm2_calculator.dart` (75 líneas)
+
+### 14.1 Propósito
+
+Implementar el algoritmo SuperMemo 2 (SM-2) para programar repasos espaciados de materiales de estudio. El algoritmo calcula el intervalo óptimo hasta el próximo repaso basándose en la calidad de la respuesta del usuario, maximizando la retención a largo plazo.
+
+### 14.2 Parámetros del Algoritmo
+
+| Parámetro | Variable | Inicial | Rango | Descripción |
+|-----------|----------|---------|-------|-------------|
+| Calidad | `q` | — | 0–2 | 0 = "Toca repasar", 1 = "Me cuesta", 2 = "Dominio absoluto" |
+| Facilidad | `EF` | 2.5 | [1.3, 2.5] | Factor de facilidad del material (más alto = más fácil de recordar) |
+| Intervalo | `I` | variable | ≥1 | Días hasta el próximo repaso |
+| Repasos OK | `n` | variable | ≥0 | Repasos correctos consecutivos |
+
+### 14.3 Fórmulas
+
+**Cálculo del nuevo intervalo (I'):**
+
+```
+Si calidad < 2:  I' = 1  (reset)
+Si calidad = 2:
+  n=0 → I' = 1
+  n=1 → I' = 3
+  n=2 → I' = 7
+  n≥3 → I' = ceil(I × EF)
+```
+
+**Cálculo de la nueva facilidad (EF'):**
+
+```
+EF' = EF + (0.1 - (5-q) × (0.08 + (5-q) × 0.02))
+```
+
+Donde `q` es la calidad original (0, 1 o 2) y `5-q` es la "dificultad" invertida (3, 4 o 5). La fórmula estándar de SM-2 usa calidad 0-5, pero SynaptixFit la adapta a 3 niveles (0, 1, 2) mapeando internamente: calidad 0→q=0, calidad 1→q=3, calidad 2→q=5.
+
+**Clampeo de EF:**
+```
+Si EF' > 2.5 → EF' = 2.5
+Si EF' < 1.3 → EF' = 1.3
+```
+
+### 14.4 Estados de Dominio
+
+| Estado | Condición | Significado |
+|--------|-----------|-------------|
+| `sin_evaluar` | Nunca se ha practicado | Material nuevo, pendiente de primer repaso |
+| `necesita_repaso` | calidad = 0 | El usuario no recuerda el material; reiniciar desde I=1 |
+| `en_progreso` | calidad = 1 o n < 3 | El usuario está aprendiendo; intervalos cortos |
+| `dominado` | n ≥ 3 con calidad = 2 | Material consolidado; intervalos largos |
+| `abandonado` | Manual | El usuario decide no seguir repasando este material |
+
+### 14.5 Clase `Sm2Calculator`
+
+```dart
+class Sm2Calculator {
+  static const _facilidadInicial = 2.5;
+  static const _facilidadMinima = 1.3;
+
+  static Sm2Resultado calcular({
+    required int calidad,             // 0, 1 o 2
+    required int intervaloActualDias,
+    required double facilidad,
+    required int repasosCompletados,
+  }) { ... }
+}
+```
+
+**DTO `Sm2Resultado`:**
+```dart
+class Sm2Resultado {
+  final int intervaloDias;         // Días hasta el próximo repaso
+  final double facilidad;          // Nueva facilidad
+  final int repasosCompletados;    // Nuevo conteo de repasos OK
+  final String estadoDominio;      // Nuevo estado de dominio
+}
+```
+
+### 14.6 Integración con la Práctica
+
+El flujo de práctica (en `PracticaScreen`) sigue estos pasos:
+
+1. **Carga:** `bancoPreguntasProvider(materialId)` obtiene/crea banco y preguntas.
+2. **Preguntas secuenciales:** El usuario responde cada pregunta (opción múltiple o rellenar hueco). Cada respuesta se registra en `intentos_pregunta`.
+3. **Autoevaluación SM-2:** Al finalizar todas las preguntas, se muestra un modal con 3 botones de calidad:
+   - "Toca repasar" (rojo) → calidad 0, estado `necesita_repaso`, I=1
+   - "Me cuesta" (naranja) → calidad 1, estado `en_progreso`, I=1
+   - "Dominio absoluto" (verde) → calidad 2, aplica algoritmo SM-2 completo
+4. **Actualización SM-2:** `MaterialesEstudioRepository.actualizarEstadoSm2()` persiste el nuevo estado en `materiales_estudio`.
+5. **Inyección en timeline:** Si el material pasa a `necesita_repaso` o `en_progreso` con `siguiente_repaso_en` en ≤7 días, se inserta un bloque de `tipo_actividad='repaso'` en `horarios_academicos` con `es_fijo=false`.
+6. **XP de práctica:** `PracticaRepository.otorgarXpSiProcede()` otorga XP la primera vez que se completa un banco (flag `xp_otorgado`), evitando farmeo.
+
+---
+
+**Documento compilado:** 29-06-2026
+**Última revisión:** v3.5 — Migraciones 53 (añadidas 0025 `test_sessions` + 0026 `horarios_metadata` con columnas `is_private` y `tipo_clase`), enum `ClassType` en DTO `TimelineItem`.

@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'dart:math' as math;
 
+import '../../../core/design_system/sv_colors.dart';
+import '../../../core/design_system/sv_shapes.dart';
 import '../../../shared/utils/image_utils.dart';
 import '../../../shared/widgets/dashboard_dialogs.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../bienestar/application/rutina_provider.dart';
+import '../../academico/application/materiales_estudio_provider.dart';
 import '../../admin/application/admin_provider.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../perfil/application/perfil_provider.dart';
@@ -45,6 +48,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return Column(
             children: [
               _WelcomeCard(data: value),
+              const _RepasoUrgenteCard(),
               const Expanded(child: DailyTimelineWidget()),
             ],
           );
@@ -57,6 +61,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return Column(
             children: [
               _WelcomeCard(data: value),
+              const _RepasoUrgenteCard(),
               const Expanded(child: DailyTimelineWidget()),
             ],
           );
@@ -83,6 +88,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return Column(
           children: [
             _WelcomeCard(data: value),
+            const _RepasoUrgenteCard(),
             const Expanded(child: DailyTimelineWidget()),
           ],
         );
@@ -553,6 +559,82 @@ class _LoadingDashboard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RepasoUrgenteCard extends ConsumerWidget {
+  const _RepasoUrgenteCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final urgente = ref.watch(repasoUrgenteGlobalProvider(null));
+
+    return urgente.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (material) {
+        if (material == null) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Material(
+            color: SVColors.surfaceContainerLowest,
+            borderRadius: SVShapes.standard12,
+            elevation: 1,
+            child: InkWell(
+              borderRadius: SVShapes.standard12,
+              onTap: () => context.push('/academico/practica/${material.id}'),
+              child: Container(
+                decoration: const BoxDecoration(
+                  borderRadius: SVShapes.standard12,
+                  border: Border(
+                      left: BorderSide(color: Color(0xFFEF5350), width: 4)),
+                ),
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF5350).withValues(alpha: 0.12),
+                        borderRadius: SVShapes.standard,
+                      ),
+                      child: const Icon(Icons.psychology_rounded,
+                          color: Color(0xFFEF5350), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Toca repasar: ${material.titulo}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: SVColors.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Repaso pendiente · EF ${material.facilidad.toStringAsFixed(1)}',
+                            style: const TextStyle(
+                                color: SVColors.onSurfaceMuted, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_ios,
+                        size: 16, color: SVColors.onSurfaceMuted),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

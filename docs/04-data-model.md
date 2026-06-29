@@ -1,8 +1,8 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 5.8
+**Versión:** 6.0
 **Estado:** VIGENTE
-**Fecha:** 27-06-2026
+**Fecha:** 29-06-2026
 **Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, función `delete_user` para eliminación hard de usuarios, columna `rol` en `usuarios`, tabla `asignaturas_usuario_semestre` para mapeo de transversales, tabla `admin_auditoria` para trazabilidad administrativa, vista `v_admin_metricas` para KPIs globales, columnas de moderación en `actividades_sociales`, `comentarios_feed` y `ejercicios`, columna `valor_met` (MET del Compendio de Adultos 2024) en `ejercicios`, y dualidad planificación vs ejecución real (`duracion_objetivo_segundos`/`duracion_real_segundos`) en `seleccion_de_ejercicios`. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
 
 **Mapeo canónico entre documentos:**
@@ -1464,6 +1464,9 @@ CREATE TABLE horarios_academicos (
   dia_semana INT CHECK (dia_semana BETWEEN 1 AND 7),  -- 1=Lunes..7=Domingo, anclaje a día semanal
   -- Migración 0023: hitos inamovibles
   es_hito_inamovible BOOLEAN NOT NULL DEFAULT false,  -- bloques que no se pueden arrastrar (exámenes, entregas)
+  -- Migración 20260629000026: metadatos de privacidad y tipo de clase
+  is_private BOOLEAN NOT NULL DEFAULT false,  -- si es true, el bloque solo es visible para el dueño
+  tipo_clase VARCHAR,  -- 'teoria' (teórica) o 'practica' (práctica). Nulo si no es clase
   
   creado_en TIMESTAMP DEFAULT now(),
   
@@ -2109,6 +2112,212 @@ GROUP BY s.usuario_id, date_trunc('week', s.completada_en)::date;
 
 ---
 
+### 2.11.9 MATERIALES_ESTUDIO (wrapper SM-2 para repaso espaciado)
+
+**Migración:** `20260628000022_materiales_estudio.sql`
+
+```sql
+CREATE TABLE materiales_estudio (
+    id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id            UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    asignatura_id         UUID NOT NULL REFERENCES asignaturas(id) ON DELETE CASCADE,
+
+    tipo_origen           TEXT NOT NULL CHECK (tipo_origen IN ('archivo', 'apunte')),
+    origen_id             UUID NOT NULL,
+    titulo                TEXT NOT NULL,
+    creado_en             TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    -- SM-2 Spaced Repetition
+    estado_dominio        TEXT NOT NULL DEFAULT 'sin_evaluar'
+        CHECK (estado_dominio IN (
+            'sin_evaluar', 'dominado', 'en_progreso', 'necesita_repaso', 'abandonado'
+        )),
+    ultimo_repaso_en      TIMESTAMPTZ,
+    siguiente_repaso_en   TIMESTAMPTZ,
+    intervalo_actual_dias INTEGER DEFAULT 0,
+    facilidad             REAL DEFAULT 2.5,
+    repasos_completados   INTEGER DEFAULT 0,
+    repasos_fallidos      INTEGER DEFAULT 0,
+    xp_practica_otorgado  BOOLEAN NOT NULL DEFAULT false,
+
+    UNIQUE (usuario_id, tipo_origen, origen_id)
+);
+```
+
+**Índices:**
+```sql
+CREATE INDEX idx_materiales_usuario_asignatura
+    ON materiales_estudio(usuario_id, asignatura_id);
+
+CREATE INDEX idx_materiales_siguiente_repaso
+    ON materiales_estudio(usuario_id, siguiente_repaso_en)
+    WHERE siguiente_repaso_en IS NOT NULL;
+```
+
+**Propósito:** Tabla wrapper que unifica apuntes y archivos de asignatura bajo una jerarquía de repaso espaciado con el algoritmo SM-2 (SuperMemo 2). Cada material (apunte o archivo) obtiene su propio ciclo de repaso independiente del contenido original.
+
+**Campos SM-2:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `estado_dominio` | `TEXT` | `sin_evaluar` → `en_progreso` → `dominado` / `necesita_repaso` / `abandonado` |
+| `ultimo_repaso_en` | `TIMESTAMPTZ` | Fecha del último repaso completado |
+| `siguiente_repaso_en` | `TIMESTAMPTZ` | Próxima fecha recomendada de repaso (calculada por SM-2) |
+| `intervalo_actual_dias` | `INTEGER` | Días hasta el próximo repaso (I en SM-2) |
+| `facilidad` | `REAL` | Factor de facilidad EF (rango 1.3–2.5, inicial 2.5) |
+| `repasos_completados` | `INTEGER` | Repasos correctos consecutivos (n en SM-2) |
+| `repasos_fallidos` | `INTEGER` | Repasos con calidad < 2 |
+| `xp_practica_otorgado` | `BOOLEAN` | Flag anti-farmeo: XP de práctica otorgado solo la primera vez |
+
+**RLS:**
+```sql
+ALTER TABLE materiales_estudio ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Dueño gestiona sus materiales" ON materiales_estudio
+    FOR ALL USING (auth.uid() = usuario_id);
+
+CREATE POLICY "Admin ve todos los materiales" ON materiales_estudio
+    FOR SELECT USING (EXISTS (
+        SELECT 1 FROM usuarios WHERE usuarios.id = auth.uid() AND usuarios.rol = 'admin'
+    ));
+```
+
+**Modelo Dart `MaterialEstudioDb`** (`app/lib/shared/models/db_models.dart`):
+```dart
+class MaterialEstudioDb {
+  final String id;
+  final String usuarioId;
+  final String asignaturaId;
+  final String tipoOrigen;       // 'archivo' | 'apunte'
+  final String origenId;
+  final String titulo;
+  final DateTime creadoEn;
+
+  // SM-2
+  final String estadoDominio;    // 'sin_evaluar' | 'en_progreso' | 'necesita_repaso' | 'dominado' | 'abandonado'
+  final DateTime? ultimoRepasoEn;
+  final DateTime? siguienteRepasoEn;
+  final int intervaloActualDias;
+  final double facilidad;
+  final int repasosCompletados;
+  final int repasosFallidos;
+  final bool xpPracticaOtorgado;
+
+  factory MaterialEstudioDb.fromMap(Map<String, dynamic> map);
+}
+```
+
+**Ampliaciones de CHECK en otras tablas (misma migración):**
+- `horarios_academicos.tipo_actividad`: añade `'repaso'` (total 9 valores: estudio, deporte, clase, descanso, comida, sueno, examen, entrega, repaso)
+- `documentos_ia.tipo`: añade `'practica'` (total 4 valores: resumen, mapa_mental, guia_docente, practica)
+- `documentos_ia.fuente_tipo`: añade `'practica'` (total 4 valores: apunte, archivo, guia_docente, practica)
+
+---
+
+### 2.11.10 BANCOS_PREGUNTAS (tests generados por IA)
+
+**Migración:** `20260628000023_bancos_preguntas.sql`
+
+```sql
+CREATE TABLE bancos_preguntas (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    material_id       UUID NOT NULL REFERENCES materiales_estudio(id) ON DELETE CASCADE,
+    usuario_id        UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    xp_otorgado       BOOLEAN NOT NULL DEFAULT false,
+    generado_en       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_bancos_material ON bancos_preguntas(material_id);
+```
+
+**Propósito:** Cabecera de un test de preguntas generado por IA y asociado a un material de estudio. Cada material puede tener un banco de preguntas. El flag `xp_otorgado` evita farmeo de XP (solo se otorga XP la primera vez que se completa el banco).
+
+**RLS:** Dueño gestiona sus bancos. Admin ve todos (SELECT).
+
+---
+
+### 2.11.11 PREGUNTAS (preguntas de un banco)
+
+```sql
+CREATE TABLE preguntas (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    banco_id            UUID NOT NULL REFERENCES bancos_preguntas(id) ON DELETE CASCADE,
+    tipo                TEXT NOT NULL CHECK (tipo IN ('opcion_multiple', 'rellenar_hueco')),
+    enunciado           TEXT NOT NULL,
+    opciones            JSONB,
+    respuesta_correcta  TEXT NOT NULL,
+    explicacion         TEXT,
+    orden               INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_preguntas_banco ON preguntas(banco_id);
+```
+
+**Propósito:** Pregunta individual dentro de un banco. Soporta dos tipos:
+- `opcion_multiple`: `opciones` contiene un array JSON con las alternativas (ej: `["Opción A", "Opción B", "Opción C", "Opción D"]`), y `respuesta_correcta` contiene el texto de la opción correcta.
+- `rellenar_hueco`: `opciones` es null, y `respuesta_correcta` contiene la palabra o frase exacta esperada.
+
+**RLS (migración 0024):** Dueño gestiona sus preguntas vía banco (FOR ALL, heredado vía JOIN a `bancos_preguntas`). Admin ve todas (SELECT).
+
+---
+
+### 2.11.12 INTENTOS_PREGUNTA (historial de respuestas)
+
+```sql
+CREATE TABLE intentos_pregunta (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id        UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    pregunta_id       UUID NOT NULL REFERENCES preguntas(id) ON DELETE CASCADE,
+    es_correcta       BOOLEAN NOT NULL,
+    respondido_en     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_intentos_usuario_pregunta
+    ON intentos_pregunta(usuario_id, pregunta_id);
+```
+
+**Propósito:** Registro histórico de cada intento del usuario en una pregunta. Alimenta el cálculo de estadísticas (`estadisticasBanco()`) y la autoevaluación SM-2 al finalizar la práctica (porcentaje de aciertos determina la calidad).
+
+**RLS:** Dueño gestiona sus intentos (FOR ALL). Admin ve todos (SELECT, añadido en migración 0024).
+
+**Modelos Dart adicionales:**
+```dart
+class BancoPreguntasDb {
+  final String id;
+  final String materialId;
+  final String usuarioId;
+  final bool xpOtorgado;
+  final DateTime generadoEn;
+
+  factory BancoPreguntasDb.fromMap(Map<String, dynamic> map);
+}
+
+class PreguntaDb {
+  final String id;
+  final String bancoId;
+  final String tipo;            // 'opcion_multiple' | 'rellenar_hueco'
+  final String enunciado;
+  final List<String>? opciones;
+  final String respuestaCorrecta;
+  final String? explicacion;
+  final int orden;
+
+  factory PreguntaDb.fromMap(Map<String, dynamic> map);
+}
+
+class IntentoPreguntaDb {
+  final String id;
+  final String usuarioId;
+  final String preguntaId;
+  final bool esCorrecta;
+  final DateTime respondidoEn;
+
+  factory IntentoPreguntaDb.fromMap(Map<String, dynamic> map);
+}
+```
+
+---
+
 ### 2.12 ACTIVIDADES SOCIALES (actividad social)
 
 ```sql
@@ -2693,6 +2902,10 @@ CREATE POLICY "Admin actualiza ejercicios" ON ejercicios
 | **recomendaciones_pendientes** | Propio | Propio | Propio | - |
 | **insights_analitica** | Propio | Propio | Propio | - |
 | **sesiones_focus** | Propio | Propio | Propio | - |
+| **materiales_estudio** | Propio | Propio | Propio | Propio |
+| **bancos_preguntas** | Propio | Propio | Propio | Propio |
+| **preguntas** | Hereda de banco | Hereda de banco | Hereda de banco | Hereda de banco |
+| **intentos_pregunta** | Propio | Propio | — | — |
 | **actividades_sociales** | Propio + público | Propio | Admin | Admin |
 | **interacciones_sociales** | Propio + público | Propio | - | Propio |
 | **comentarios_feed** | Autenticado | Autenticado | Autor + Admin | Autor |
@@ -2770,9 +2983,9 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ---
 
-**Documento compilado:** 27-06-2026
-**Versión:** 5.8
-**Referencia:** RFC v5.1 - Motor de Recomendaciones, Pipeline Académico v5.0, Sprint 7 - Retos Complejos y Sincronización Offline, Migración 0004 - Consolidación de Correcciones, Fase 3 - Panel de Administración, Migración 0020 - valor_met (MET Compendio Adultos 2024), Migración 0021 - dualidad planificación vs ejecución real.
+**Documento compilado:** 29-06-2026
+**Versión:** 6.0
+**Referencia:** RFC v5.1 - Motor de Recomendaciones, Pipeline Académico v5.0, Sprint 7 - Retos Complejos y Sincronización Offline, Migración 0004 - Consolidación de Correcciones, Fase 3 - Panel de Administración, Migración 0020 - valor_met (MET Compendio Adultos 2024), Migración 0021 - dualidad planificación vs ejecución real, Migraciones 0022-0024 - Sistema de Repaso Espaciado SM-2 con tests generados por IA, Migración 0025 - test_sessions, Migración 0026 - horarios_metadata (is_private, tipo_clase).
 **Validador:** Tech Lead + DBA
 
 

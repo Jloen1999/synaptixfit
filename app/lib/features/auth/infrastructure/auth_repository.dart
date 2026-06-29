@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'loopback_auth_stub.dart'
-    if (dart.library.io) 'loopback_auth_io.dart';
+import 'loopback_auth_stub.dart' if (dart.library.io) 'loopback_auth_io.dart';
 
 import '../../../core/config/env_config.dart';
 

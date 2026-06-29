@@ -57,6 +57,27 @@ extension TimelineTipoX on TimelineTipo {
       };
 }
 
+enum ClassType {
+  theory,
+  practice;
+
+  static ClassType? fromString(String? value) => switch (value) {
+        'teoria' || 'theory' => ClassType.theory,
+        'practica' || 'practice' => ClassType.practice,
+        _ => null,
+      };
+
+  String get label => switch (this) {
+        ClassType.theory => 'Teoría',
+        ClassType.practice => 'Práctica',
+      };
+
+  Color get color => switch (this) {
+        ClassType.theory => const Color(0xFF8B5CF6),
+        ClassType.practice => const Color(0xFF4CAF50),
+      };
+}
+
 /// Item unificado de la linea de tiempo.
 class TimelineItem {
   final String id;
@@ -71,6 +92,8 @@ class TimelineItem {
   final int? rpe;
   final int? diasRestantes;
   final String? rutinaId;
+  final bool isPrivate;
+  final String? tipoClase;
 
   const TimelineItem({
     required this.id,
@@ -85,7 +108,11 @@ class TimelineItem {
     this.rpe,
     this.diasRestantes,
     this.rutinaId,
+    this.isPrivate = false,
+    this.tipoClase,
   });
+
+  ClassType? get classType => ClassType.fromString(tipoClase);
 
   /// Punto temporal de referencia para ordenacion.
   DateTime get referenciaTemporal =>
@@ -117,6 +144,8 @@ class TimelineItem {
       datosOriginales: h,
       duracionMinutos: h.horaFin.difference(h.horaInicio).inMinutes,
       rutinaId: h.rutinaId,
+      isPrivate: h.isPrivate,
+      tipoClase: h.tipoClase,
     );
   }
 

@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit
-**Versión:** 7.2
-**Fecha:** 27-06-2026
+**Versión:** 7.4
+**Fecha:** 29-06-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -35,6 +35,7 @@ flowchart LR
 | `/academico` | `PlanAcademicoScreen` | Plan académico semanal con horarios |
 | `/academico/planificar` | `CanvasScreen` | Lienzo Time-Blocking (grid 7×16h, DnD libre, asistente IA) |
 | `/academico/planificar/inbox` | `InboxScreen` | Configuración de carga académica semanal (legacy) |
+| `/academico/practica/:materialId` | `PracticaScreen` | **Práctica de repaso espaciado SM-2** con preguntas generadas por IA. Recibe `materialId` vía parámetro de ruta. Feedback inmediato, autoevaluación 3 niveles, inyección de repaso en timeline |
 | `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera + carga masiva |
 | `/academico/apuntes` | `ApuntesScreen` | Editor Markdown + explorador |
 | `/academico/apuntes/editor` | `ApuntesEditorScreen` | Editor Markdown a pantalla completa |
@@ -1498,9 +1499,21 @@ final diaPendienteProvider = FutureProvider<Map<String, String>?>((ref) async {
 | `rpe` | `int?` | RPE de la sesión (si aplica) |
 | `diasRestantes` | `int?` | Días hasta el vencimiento (entregas, retos) |
 | `rutinaId` | `String?` | ID de la rutina asociada |
+| `isPrivate` | `bool` | Si el bloque horario es privado (visible solo para el dueño) |
+| `tipoClase` | `String?` | Tipo de clase: `'teoria'` o `'practica'`. Nulo si no es clase |
+| `classType` | `ClassType?` | Getter de conveniencia que parsea `tipoClase` al enum (theory/practice) |
+
+#### ClassType — Enum de tipo de clase
+
+| Valor | Label | Color |
+|-------|-------|-------|
+| `ClassType.theory` | `'Teoría'` | Púrpura pastel `#8B5CF6` |
+| `ClassType.practice` | `'Práctica'` | Verde pastel `#4CAF50` |
+
+El enum incluye `fromString()` que acepta tanto español (`'teoria'`, `'practica'`) como inglés (`'theory'`, `'practice'`).
 
 **Factory constructors:**
-- `TimelineItem.desdeHorario(HorarioAcademicoDb)` — tipo según `tipoActividad`
+- `TimelineItem.desdeHorario(HorarioAcademicoDb)` — tipo según `tipoActividad`. Pasa `isPrivate` y `tipoClase` desde `horarios_academicos`
 - `TimelineItem.desdeSesion(SesionRegistradaDb)` — tipo `deporte`, completado=true
 - `TimelineItem.desdeEntrega(EntregaExamenDb)` — tipo `entrega`, subtítulo "Vence en X días"
 - `TimelineItem.desdeReto(RetoDb)` — tipo `reto`, subtítulo "Quedan X días"
@@ -2752,6 +2765,149 @@ Tras guardar la semana desde el canvas:
 
 ---
 
-**Documento compilado:** 27-06-2026
-**Última revisión:** v7.2 — Añadido §8.0.2 (calorie chips: SemantiCalorieChip, buildCalorieChip), §8.0.3 (CalorieCalculatorService), §6.2-6.3 actualizados (sistema de laps por timestamp, timer bar "Objetivo: HH:MM:SS", duracionRealPorEjercicio en finalizarSesion).
+## 22. Sistema de Repaso Espaciado SM-2 con Tests IA (v7.3)
+
+### 22.1 Pantalla de Práctica (`PracticaScreen`)
+
+**Archivo:** `app/lib/features/academico/presentation/practica_screen.dart` (692 líneas)
+**Ruta:** `/academico/practica/:materialId`
+
+`ConsumerStatefulWidget` que implementa un flujo de práctica secuencial con preguntas generadas por IA para un material de estudio.
+
+```
+┌─────────────────────────────────────────────────┐
+│ ← Practicar                        SM-2: ●●●○○  │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ Pregunta 3 de 12                  ✅ 2/2    │ │
+│ │ ▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░  25% completado   │ │
+│ └─────────────────────────────────────────────┘ │
+│                                                 │
+│  ¿Cuál es la fórmula de la derivada de ln(x)?   │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │ ○  1/x²                                 │   │
+│  │ ●  1/x                                  │   │
+│  │ ○  ln(x)                                │   │
+│  │ ○  eˣ                                   │   │
+│  └─────────────────────────────────────────┘   │
+│                                                 │
+│  ✅ ¡Correcto! La derivada de ln(x) es 1/x     │
+│                                                 │
+│              [ Siguiente pregunta ]              │
+└─────────────────────────────────────────────────┘
+```
+
+#### 22.1.1 Flujo de Práctica
+
+```mermaid
+flowchart TD
+    A["Entrada desde AsignaturaDetalle\nTap en 'Practicar' de apunte/archivo"] --> B["PracticaScreen(materialId)"]
+    B --> C["bancoPreguntasProvider(materialId)\nObtiene o crea banco + preguntas"]
+    C --> D{"¿Hay preguntas\ngeneradas?"}
+    D -->|Sí| E["Mostrar pregunta actual\n_barraProgreso + _preguntaWidget"]
+    D -->|No| F["Mostrar estado vacío:\n'No hay preguntas aún.\nGenera un test con IA.'"]
+    E --> G{"¿Tipo de\npregunta?"}
+    G -->|opcion_multiple| H["_buildOpcionMultiple()\n4 opciones con RadioListTile\nAnimación de selección"]
+    G -->|rellenar_hueco| I["_buildRellenarHueco()\nTextField con validación\nBotón 'Comprobar'"]
+    H --> J["_responder(esCorrecta)"]
+    I --> J
+    J --> K["_respuestas[indice] = esCorrecta\n_registrarIntento() en BD"]
+    K --> L["_mostrarFeedback 2s\n✅ verde o ❌ rojo con explicación"]
+    L --> M{"¿Última\npregunta?"}
+    M -->|No| N["_indice++ → siguiente pregunta"]
+    M -->|Sí| O["_mostrarAutoevaluacion()"]
+    N --> E
+    O --> P["Modal con 3 botones:\n🔴 Toca repasar\n🟠 Me cuesta\n🟢 Dominio absoluto"]
+    P --> Q["Sm2Calculator.calcular(calidad, ...)"]
+    Q --> R["actualizarEstadoSm2() en BD"]
+    R --> S["Inyectar repaso en timeline\n(si necesita_repaso o en_progreso)"]
+    S --> T["otorgarXpSiProcede()\n+150 XP si primer banco completado"]
+    T --> U["Navigator.pop() → AsignaturaDetalle"]
+```
+
+#### 22.1.2 Autoevaluación SM-2
+
+Al completar todas las preguntas, se muestra un modal con 3 niveles de autoevaluación:
+
+| Nivel | Calidad | Color | Efecto SM-2 |
+|-------|---------|-------|-------------|
+| "Toca repasar" | 0 | Rojo 🔴 | `estado='necesita_repaso'`, I=1, n=0 |
+| "Me cuesta" | 1 | Naranja 🟠 | `estado='en_progreso'`, I=1, n=0 |
+| "Dominio absoluto" | 2 | Verde 🟢 | Aplica SM-2 completo: I según n, EF recalculado |
+
+La autoevaluación muestra estadísticas de la sesión: correctas/totales, porcentaje de acierto.
+
+#### 22.1.3 Inyección de Repaso en Timeline
+
+Si tras la autoevaluación el material queda en `necesita_repaso` o `en_progreso` con `siguiente_repaso_en` en ≤7 días, se inserta automáticamente un bloque en `horarios_academicos`:
+- `tipo_actividad = 'repaso'`
+- `es_fijo = false`
+- `hora_inicio` = `siguiente_repaso_en` a las 09:00
+- `hora_fin` = `hora_inicio + 30 min`
+- Se asigna a la `asignatura_id` del material
+
+Esto hace que el repaso aparezca visible en el timeline del dashboard y en el lienzo de time-blocking.
+
+### 22.2 Proveedores del Sistema de Práctica
+
+#### 22.2.1 `practica_provider.dart`
+
+**Archivo:** `app/lib/features/academico/application/practica_provider.dart` (173 líneas)
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `practicaRepositoryProvider` | `Provider<PracticaRepository>` | Repositorio para bancos, preguntas e intentos |
+| `bancoPreguntasProvider` | `FutureProvider.autoDispose.family<({BancoPreguntasDb banco, List<PreguntaDb> preguntas}), String>` | Obtiene/crea banco y sus preguntas para un material. La clave es `materialId`. |
+
+**`PracticaRepository` — 6 operaciones:**
+
+| Método | Operación SQL | Propósito |
+|--------|--------------|-----------|
+| `obtenerOCrearBanco(materialId)` | SELECT → INSERT `bancos_preguntas` | Idempotente: si existe, devuelve; si no, crea |
+| `obtenerOCrearBancoPorFuente({tipoOrigen, origenId, asignaturaId?, titulo})` | SELECT/INSERT `materiales_estudio` → SELECT/INSERT `bancos_preguntas` | Busca o crea material + banco desde fuente original (apunte/archivo) |
+| `obtenerPreguntas(bancoId)` | SELECT `preguntas` ORDER BY `orden` | Lista de preguntas del banco |
+| `guardarPreguntas(bancoId, preguntas)` | INSERT múltiple `preguntas` | Persiste preguntas generadas por IA |
+| `registrarIntento({preguntaId, esCorrecta})` | INSERT `intentos_pregunta` | Registra cada respuesta del usuario |
+| `otorgarXpSiProcede(bancoId)` | SELECT → UPDATE `xp_otorgado = true` | Anti-farmeo: otorga XP solo la primera vez |
+| `estadisticasBanco(bancoId)` | SELECT `preguntas` + `intentos_pregunta` | Cuenta correctas/totales para la UI de progreso |
+
+#### 22.2.2 `materiales_estudio_provider.dart`
+
+**Archivo:** `app/lib/features/academico/application/materiales_estudio_provider.dart` (143 líneas)
+
+| Provider | Tipo | Propósito |
+|----------|------|-----------|
+| `materialesEstudioRepositoryProvider` | `Provider<MaterialesEstudioRepository>` | Repositorio ligero para CRUD de materiales |
+| `materialesAsignaturaProvider` | `FutureProvider.autoDispose.family<List<MaterialEstudioDb>, String>` | Materiales de una asignatura, ordenados por `creado_en DESC`. Clave: `asignaturaId` |
+| `materialPorFuenteProvider` | `FutureProvider.autoDispose.family<MaterialEstudioDb?, ({String tipoOrigen, String origenId})>` | Busca material por su origen (apunte/archivo). Clave: record `(tipoOrigen, origenId)` |
+| `metricasRetencionProvider` | `FutureProvider.autoDispose.family<({int dominados, int enCurso, int necesitaRepaso, int sinEvaluar, int total}), String>` | Métricas agregadas de retención para una asignatura: conteo por estado de dominio |
+
+### 22.3 Integración con `AsignaturaDetalleScreen`
+
+En la pestaña **Temario** de `AsignaturaDetalleScreen`, cada apunte y archivo muestra ahora un botón "Practicar" con icono `quiz` que navega a `/academico/practica/$materialId`. La navegación se realiza mediante:
+
+```dart
+// En asignatura_detalle_screen.dart (línea 969)
+context.push('/academico/practica/$materialId');
+```
+
+El material se crea automáticamente vía `obtenerOCrearBancoPorFuente()` si no existe previamente, vinculando el apunte o archivo a su nuevo wrapper `materiales_estudio`.
+
+### 22.4 Fisión de Tabs en `AsignaturaDetalleScreen` (4→2)
+
+Como parte de la integración del sistema SM-2, las pestañas de `AsignaturaDetalleScreen` se fusionaron de 4 a 2:
+
+| Antes (4 tabs) | Ahora (2 tabs) |
+|----------------|-----------------|
+| Dashboard | **Progreso** (Dashboard + Tareas unificados) |
+| Tareas | ↑ fusionado |
+| Apuntes | **Temario** (Apuntes + Archivos unificados) |
+| Archivos | ↑ fusionado |
+
+La pestaña **Progreso** incluye: rastreador de temario, timeline de la asignatura, simulador de calificaciones, directorio docente. La pestaña **Temario** incluye: lista de apuntes/archivos con botón IA y botón "Practicar" para SM-2.
+
+---
+
+**Documento compilado:** 29-06-2026
+**Última revisión:** v7.4 — Añadido enum `ClassType` (theory/practice), campos `isPrivate`/`tipoClase` en `TimelineItem`, agrupación inteligente con `tipoClase` en `_ItemAgrupado`, badges de tipo usando `ClassType`, mastery card compactado.
 **Referencia:** Alineado con SRS v5.2, Arquitectura v5.3, Plan Maestro v2.0

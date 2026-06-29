@@ -319,20 +319,22 @@ class _ProgresoTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DashboardAsignaturaTab(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 1,
+          child: DashboardAsignaturaTab(
             asignaturaId: asignaturaId,
             asignaturaNombre: asignaturaNombre,
             color: color,
           ),
-          const SizedBox(height: 8),
-          TareasAsignaturaTab(asignaturaId: asignaturaId, color: color),
-        ],
-      ),
+        ),
+        Expanded(
+          flex: 2,
+          child: TareasAsignaturaTab(asignaturaId: asignaturaId, color: color),
+        ),
+      ],
     );
   }
 }
@@ -402,7 +404,9 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
           children: [
             _SeccionTitulo(
-                icono: Icons.notes_rounded, texto: 'Apuntes', color: widget.color),
+                icono: Icons.notes_rounded,
+                texto: 'Apuntes',
+                color: widget.color),
             const SizedBox(height: 6),
             apuntesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -414,13 +418,15 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
                       'Pulsa + para crear tu primera nota.');
                 }
                 return Column(
-                  children: apuntes.map((a) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _ApunteRow(
-                      apunte: a,
-                      onTap: () => _abrirVisor(a),
-                    ),
-                  )).toList(),
+                  children: apuntes
+                      .map((a) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _ApunteRow(
+                              apunte: a,
+                              onTap: () => _abrirVisor(a),
+                            ),
+                          ))
+                      .toList(),
                 );
               },
             ),
@@ -436,23 +442,19 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
                 onPressed: _subirArchivo,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: widget.color,
-                  side: BorderSide(
-                      color: widget.color.withValues(alpha: 0.5)),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 14),
+                  side: BorderSide(color: widget.color.withValues(alpha: 0.5)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: const RoundedRectangleBorder(
                       borderRadius: SVShapes.standard12),
                 ),
-                icon: const Icon(Icons.upload_file_outlined,
-                    size: 20),
+                icon: const Icon(Icons.upload_file_outlined, size: 20),
                 label: const Text('Subir archivo',
                     style: TextStyle(fontWeight: FontWeight.w700)),
               ),
             ),
             const SizedBox(height: 8),
             archivosAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => _vacio(Icons.error_outline,
                   'No se pudieron cargar los archivos', '$e'),
               data: (archivos) {
@@ -464,16 +466,17 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
                   );
                 }
                 return Column(
-                  children: archivos.map((a) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: ArchivoTile(
-                      archivo: a,
-                      onAbrir: () => context.push(
-                          '/academico/archivo/visor',
-                          extra: a),
-                      onEliminar: () => _eliminarArchivo(a),
-                    ),
-                  )).toList(),
+                  children: archivos
+                      .map((a) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: ArchivoTile(
+                              archivo: a,
+                              onAbrir: () => context
+                                  .push('/academico/archivo/visor', extra: a),
+                              onEliminar: () => _eliminarArchivo(a),
+                            ),
+                          ))
+                      .toList(),
                 );
               },
             ),
@@ -486,8 +489,8 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
             backgroundColor: widget.color,
             foregroundColor: SVColors.onPrimary,
             elevation: 2,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             onPressed: _crearApunte,
             child: const Icon(Icons.add),
           ),
@@ -785,6 +788,15 @@ class _ApunteRow extends ConsumerWidget {
     final tieneMapa = docs?.mapa == true;
     final colorBorde = _colorSemaforo(material);
 
+    final bancoData = material != null
+        ? ref.watch(bancoPreguntasProvider(material.id))
+        : null;
+    final tienePreguntas = bancoData != null &&
+        bancoData.hasValue &&
+        bancoData.requireValue.total > 0;
+    final totalPreguntas =
+        bancoData?.hasValue == true ? bancoData!.requireValue.total : 0;
+
     return Material(
       color: SVColors.surfaceContainerLowest,
       borderRadius: SVShapes.standard12,
@@ -802,112 +814,71 @@ class _ApunteRow extends ConsumerWidget {
                 : null,
           ),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
-            children: [
-              const Icon(Icons.sticky_note_2_outlined,
-                  color: SVColors.onSurfaceMuted, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(apunte.titulo,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: SVColors.onSurface,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 2),
-                    Text(fecha,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: SVColors.onSurfaceMuted, fontSize: 11.5)),
-                  ],
+              children: [
+                const Icon(Icons.sticky_note_2_outlined,
+                    color: SVColors.onSurfaceMuted, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(apunte.titulo,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: SVColors.onSurface,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 2),
+                      Text(fecha,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: SVColors.onSurfaceMuted, fontSize: 11.5)),
+                      if (material?.siguienteRepasoEn != null)
+                        Text(
+                          'Próximo repaso: ${DateFormat('d MMM', 'es').format(material!.siguienteRepasoEn!)} · EF ${material.facilidad.toStringAsFixed(1)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: SVColors.onSurfaceMuted,
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-              _iaBadge(Icons.article_outlined, 'Ver resumen',
-                  visible: tieneResumen, onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ResumenIaScreen(
-                      fuente: FuenteTexto(
-                        titulo: apunte.titulo,
-                        fuenteId: apunte.id,
-                        asignaturaId: apunte.asignaturaId,
-                        contenido: apunte.contenido,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              _iaBadge(Icons.account_tree_outlined, 'Ver mapa mental',
-                  visible: tieneMapa, onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => MapaMentalScreen(
-                      fuente: FuenteTexto(
-                        titulo: apunte.titulo,
-                        fuenteId: apunte.id,
-                        asignaturaId: apunte.asignaturaId,
-                        contenido: apunte.contenido,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              _iaBadge(Icons.checklist_rounded, 'Generar Práctica',
-                  visible: true, onTap: () {
-                _generarPracticaDesdeApunte(context, ref, apunte);
-              }),
-              const Icon(Icons.chevron_right,
-                  color: SVColors.outlineVariant, size: 20),
-            ],
+                _buildMenuAcciones(
+                  context: context,
+                  ref: ref,
+                  fuente: FuenteTexto(
+                      titulo: apunte.titulo,
+                      fuenteId: apunte.id,
+                      asignaturaId: apunte.asignaturaId,
+                      contenido: apunte.contenido),
+                  tieneResumen: tieneResumen,
+                  tieneMapa: tieneMapa,
+                  tienePreguntas: tienePreguntas,
+                  totalPreguntas: totalPreguntas,
+                ),
+                const Icon(Icons.chevron_right,
+                    color: SVColors.outlineVariant, size: 20),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }
 
-Widget _iaBadge(
-  IconData icono,
-  String tooltip, {
-  required bool visible,
-  required VoidCallback onTap,
-}) {
-  return SizedBox(
-    width: 32,
-    height: 28,
-    child: visible
-        ? Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: GestureDetector(
-              onTap: onTap,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: SVColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(icono, size: 16, color: SVColors.primary),
-              ),
-            ),
-          )
-        : const SizedBox.shrink(),
-  );
-}
-
-Future<void> _generarPracticaDesdeApunte(
+Future<void> _generarPreguntas(
   BuildContext context,
   WidgetRef ref,
-  ApunteDb apunte,
+  FuenteEstudio fuente,
 ) async {
   final messenger = ScaffoldMessenger.of(context);
   try {
@@ -922,64 +893,274 @@ Future<void> _generarPracticaDesdeApunte(
 
     messenger.showSnackBar(const SnackBar(
       content: Row(children: [
-        SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+        SizedBox(
+            width: 18,
+            height: 18,
+            child:
+                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
         SizedBox(width: 12),
         Text('Generando preguntas de práctica...'),
       ]),
       duration: Duration(seconds: 30),
     ));
 
-    final preguntas = await iaService.generarPractica(FuenteTexto(
-      titulo: apunte.titulo,
-      fuenteId: apunte.id,
-      asignaturaId: apunte.asignaturaId,
-      contenido: apunte.contenido,
-    ));
+    final preguntas = await iaService.generarPractica(fuente);
 
     final repo = ref.read(practicaRepositoryProvider);
+    final tipoFuente = fuente is FuenteTexto ? 'apunte' : 'archivo';
     final banco = await repo.obtenerOCrearBancoPorFuente(
-      tipoOrigen: 'apunte',
-      origenId: apunte.id,
-      asignaturaId: apunte.asignaturaId,
-      titulo: apunte.titulo,
+      tipoOrigen: tipoFuente,
+      origenId: fuente.fuenteId,
+      asignaturaId: fuente.asignaturaId,
+      titulo: fuente.titulo,
     );
     await repo.guardarPreguntas(banco.id, preguntas);
 
     final docRepo = ref.read(documentoIaRepositoryProvider);
     await docRepo.guardar(
-      fuenteTipo: 'apunte',
-      fuenteId: apunte.id,
-      asignaturaId: apunte.asignaturaId,
-      fuenteTitulo: apunte.titulo,
+      fuenteTipo: tipoFuente,
+      fuenteId: fuente.fuenteId,
+      asignaturaId: fuente.asignaturaId,
+      fuenteTitulo: fuente.titulo,
       tipo: TipoDocumentoIa.practica,
       contenido: '',
     );
 
-    ref.invalidate(docsGuardadosProvider((fuenteTipo: 'apunte', fuenteId: apunte.id)));
-    ref.invalidate(bancoPreguntasProvider(banco.id));
+    ref.invalidate(docsGuardadosProvider(
+        (fuenteTipo: tipoFuente, fuenteId: fuente.fuenteId)));
 
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(SnackBar(
-      content: Text('¡Práctica generada! ${preguntas.length} preguntas listas.'),
+      content:
+          Text('¡Preguntas generadas! ${preguntas.length} añadidas al banco.'),
       backgroundColor: const Color(0xFF2E7D32),
     ));
-
-    final materialId = await _obtenerMaterialId(apunte);
-    if (materialId != null && context.mounted) {
-      context.push('/academico/practica/$materialId');
-    }
   } on EstudioIaException catch (e) {
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(SnackBar(
-      content: Text(e.message),
-      backgroundColor: const Color(0xFFC62828),
-    ));
+        content: Text(e.message), backgroundColor: const Color(0xFFC62828)));
   } catch (e) {
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(SnackBar(
-      content: Text('Error al generar la práctica: $e'),
-      backgroundColor: const Color(0xFFC62828),
+        content: Text('Error al generar preguntas: $e'),
+        backgroundColor: const Color(0xFFC62828)));
+  }
+}
+
+Future<void> _iniciarPractica(
+  BuildContext context,
+  WidgetRef ref,
+  FuenteEstudio fuente,
+) async {
+  final materialId = await _obtenerMaterialIdPorFuente(fuente);
+  if (materialId == null) return;
+
+  try {
+    final repo = ref.read(practicaRepositoryProvider);
+    final banco = await repo.obtenerOCrearBanco(materialId);
+    final session =
+        await repo.crearSesion(materialId: materialId, bancoId: banco.id);
+    if (context.mounted) {
+      ref.invalidate(sesionActivaProvider(materialId));
+      context.push('/academico/practica/$materialId?sessionId=${session.id}');
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error al iniciar práctica: $e'),
+          backgroundColor: const Color(0xFFC62828)));
+    }
+  }
+}
+
+Future<String?> _obtenerMaterialIdPorFuente(FuenteEstudio fuente) async {
+  try {
+    final tipo = fuente is FuenteTexto ? 'apunte' : 'archivo';
+    final result = await Supabase.instance.client
+        .from('materiales_estudio')
+        .select('id')
+        .eq('tipo_origen', tipo)
+        .eq('origen_id', fuente.fuenteId)
+        .maybeSingle();
+    return result?['id'] as String?;
+  } catch (_) {
+    return null;
+  }
+}
+
+Widget _buildMenuAcciones({
+  required BuildContext context,
+  required WidgetRef ref,
+  required FuenteEstudio fuente,
+  required bool tieneResumen,
+  required bool tieneMapa,
+  required bool tienePreguntas,
+  required int totalPreguntas,
+}) {
+  return PopupMenuButton<String>(
+    icon:
+        const Icon(Icons.more_vert, color: SVColors.onSurfaceVariant, size: 22),
+    padding: EdgeInsets.zero,
+    constraints: const BoxConstraints(),
+    color: SVColors.surfaceContainerLowest,
+    shape: RoundedRectangleBorder(borderRadius: SVShapes.standard12),
+    onSelected: (action) {
+      switch (action) {
+        case 'resumen':
+          _abrirResumen(context, fuente);
+        case 'mapa':
+          _abrirMapa(context, fuente);
+        case 'generar-resumen':
+          _generarResumen(context, ref, fuente);
+        case 'generar-mapa':
+          _generarMapa(context, ref, fuente);
+        case 'generar':
+          _generarPreguntas(context, ref, fuente);
+        case 'practica':
+          _iniciarPractica(context, ref, fuente);
+      }
+    },
+    itemBuilder: (_) => [
+      if (tieneResumen)
+        _menuItem('resumen', Icons.article_outlined, 'Ver resumen')
+      else
+        _menuItem('generar-resumen', Icons.article_outlined, 'Generar resumen'),
+      if (tieneMapa)
+        _menuItem('mapa', Icons.account_tree_outlined, 'Ver mapa mental')
+      else
+        _menuItem(
+            'generar-mapa', Icons.account_tree_outlined, 'Generar mapa mental'),
+      _menuItem('generar', Icons.auto_awesome_rounded,
+          totalPreguntas > 0 ? 'Generar más preguntas' : 'Generar preguntas'),
+      if (tienePreguntas)
+        _menuItem('practica', Icons.play_arrow_rounded,
+            'Iniciar práctica ($totalPreguntas)'),
+    ],
+  );
+}
+
+PopupMenuItem<String> _menuItem(String value, IconData icon, String text) {
+  return PopupMenuItem<String>(
+    value: value,
+    child: Row(
+      children: [
+        Icon(icon, size: 18, color: SVColors.primary),
+        const SizedBox(width: 12),
+        Text(text,
+            style: const TextStyle(
+                color: SVColors.onSurface,
+                fontSize: 14,
+                fontWeight: FontWeight.w500)),
+      ],
+    ),
+  );
+}
+
+void _abrirResumen(BuildContext context, FuenteEstudio fuente) {
+  Navigator.of(context).push(MaterialPageRoute(
+    builder: (_) => ResumenIaScreen(fuente: fuente),
+  ));
+}
+
+void _abrirMapa(BuildContext context, FuenteEstudio fuente) {
+  Navigator.of(context).push(MaterialPageRoute(
+    builder: (_) => MapaMentalScreen(fuente: fuente),
+  ));
+}
+
+Future<void> _generarResumen(
+    BuildContext context, WidgetRef ref, FuenteEstudio fuente) async {
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final ia = EstudioIaService();
+    if (!ia.disponible) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('IA no configurada.'),
+          backgroundColor: Color(0xFFC62828)));
+      return;
+    }
+    messenger.showSnackBar(const SnackBar(
+      content: Row(children: [
+        SizedBox(
+            width: 18,
+            height: 18,
+            child:
+                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+        SizedBox(width: 12),
+        Text('Generando resumen...'),
+      ]),
+      duration: Duration(seconds: 30),
     ));
+    final resumen = await ia.resumir(fuente);
+    final docRepo = ref.read(documentoIaRepositoryProvider);
+    await docRepo.guardar(
+      fuenteTipo: fuente is FuenteTexto ? 'apunte' : 'archivo',
+      fuenteId: fuente.fuenteId,
+      asignaturaId: fuente.asignaturaId,
+      fuenteTitulo: fuente.titulo,
+      tipo: TipoDocumentoIa.resumen,
+      contenido: resumen,
+    );
+    ref.invalidate(docsGuardadosProvider((
+      fuenteTipo: fuente is FuenteTexto ? 'apunte' : 'archivo',
+      fuenteId: fuente.fuenteId
+    )));
+    messenger.hideCurrentSnackBar();
+    if (context.mounted) {
+      _abrirResumen(context, fuente);
+    }
+  } catch (e) {
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+        content: Text('Error: $e'), backgroundColor: const Color(0xFFC62828)));
+  }
+}
+
+Future<void> _generarMapa(
+    BuildContext context, WidgetRef ref, FuenteEstudio fuente) async {
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final ia = EstudioIaService();
+    if (!ia.disponible) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('IA no configurada.'),
+          backgroundColor: Color(0xFFC62828)));
+      return;
+    }
+    messenger.showSnackBar(const SnackBar(
+      content: Row(children: [
+        SizedBox(
+            width: 18,
+            height: 18,
+            child:
+                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+        SizedBox(width: 12),
+        Text('Generando mapa mental...'),
+      ]),
+      duration: Duration(seconds: 30),
+    ));
+    final mapa = await ia.mapaMental(fuente);
+    final docRepo = ref.read(documentoIaRepositoryProvider);
+    await docRepo.guardar(
+      fuenteTipo: fuente is FuenteTexto ? 'apunte' : 'archivo',
+      fuenteId: fuente.fuenteId,
+      asignaturaId: fuente.asignaturaId,
+      fuenteTitulo: fuente.titulo,
+      tipo: TipoDocumentoIa.mapaMental,
+      contenido: mapa.toJson().toString(),
+    );
+    ref.invalidate(docsGuardadosProvider((
+      fuenteTipo: fuente is FuenteTexto ? 'apunte' : 'archivo',
+      fuenteId: fuente.fuenteId
+    )));
+    messenger.hideCurrentSnackBar();
+    if (context.mounted) {
+      _abrirMapa(context, fuente);
+    }
+  } catch (e) {
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+        content: Text('Error: $e'), backgroundColor: const Color(0xFFC62828)));
   }
 }
 
@@ -996,20 +1177,6 @@ Color? _colorSemaforo(MaterialEstudioDb? material) {
     'necesita_repaso' => const Color(0xFFEF5350), // rojo
     _ => null,
   };
-}
-
-Future<String?> _obtenerMaterialId(ApunteDb apunte) async {
-  try {
-    final result = await Supabase.instance.client
-        .from('materiales_estudio')
-        .select('id')
-        .eq('tipo_origen', 'apunte')
-        .eq('origen_id', apunte.id)
-        .maybeSingle();
-    return result?['id'] as String?;
-  } catch (_) {
-    return null;
-  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

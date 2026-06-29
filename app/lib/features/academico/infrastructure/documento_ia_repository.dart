@@ -102,7 +102,8 @@ class DocumentoIaRepository {
     required String fuenteId,
   }) async {
     final user = _client.auth.currentUser;
-    if (user == null) return (resumen: false, mapa: false, guiaDocente: false, practica: false);
+    if (user == null)
+      return (resumen: false, mapa: false, guiaDocente: false, practica: false);
     final data = await _client
         .from('documentos_ia')
         .select('tipo')

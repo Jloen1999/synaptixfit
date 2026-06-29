@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/design_system/sv_colors.dart';
 import '../../../../core/design_system/sv_shapes.dart';
+import '../../../../shared/widgets/metric_gauge.dart';
 import '../../application/guia_docente_provider.dart';
 import '../../application/materiales_estudio_provider.dart';
 import '../../domain/guia_docente_dto.dart';
@@ -486,65 +487,126 @@ class _DominioRealWidget extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (m) {
         if (m.total == 0) return const SizedBox.shrink();
-        final pct = m.total > 0
-            ? (m.dominados / m.total * 100).round()
-            : 0;
-        final pendientes = m.necesitaRepaso + m.sinEvaluar;
+        final pctRaw = (m.dominados + m.enCurso * 0.5) / m.total * 100;
+        final pct = pctRaw.round();
+        final urgentes = m.necesitaRepaso + m.sinEvaluar;
+
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: SVColors.surfaceContainerLowest,
             borderRadius: SVShapes.standard12,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.psychology_outlined,
-                      size: 18, color: color),
-                  const SizedBox(width: 8),
-                  const Text('Dominio del temario',
-                      style: TextStyle(
-                        color: SVColors.onSurface,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      )),
-                  const Spacer(),
-                  Text('$pct%',
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      )),
-                ],
+              MetricGauge(
+                value: pctRaw,
+                label: '$pct%',
+                size: 40,
               ),
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: m.total > 0 ? m.dominados / m.total : 0,
-                  backgroundColor: SVColors.surfaceContainerHighest,
-                  color: const Color(0xFF4CAF50),
-                  minHeight: 6,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.psychology_outlined, size: 14, color: color),
+                        const SizedBox(width: 4),
+                        const Text('Dominio del temario',
+                            style: TextStyle(
+                              color: SVColors.onSurface,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            )),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${m.dominados}/${m.total} temas dominados',
+                      style: const TextStyle(
+                        color: SVColors.onSurfaceMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (urgentes > 0)
+                      Text(
+                        '$urgentes requieren repaso',
+                        style: const TextStyle(
+                          color: Color(0xFFEF5350),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    const SizedBox(height: 4),
+                    _barraCromatica(m),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 1,
+                      children: [
+                        _miniChip('${m.dominados} dominados',
+                            const Color(0xFF4CAF50)),
+                        _miniChip(
+                            '${m.enCurso} en curso', const Color(0xFFFFC107)),
+                        _miniChip('${m.necesitaRepaso} repaso',
+                            const Color(0xFFEF5350)),
+                        _miniChip(
+                            '${m.sinEvaluar} nuevos', SVColors.outlineVariant),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _miniChip('${m.dominados} dominados',
-                      const Color(0xFF4CAF50)),
-                  _miniChip('${m.enCurso} en curso',
-                      const Color(0xFFFFC107)),
-                  _miniChip('$pendientes pendientes',
-                      const Color(0xFFEF5350)),
-                ],
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _barraCromatica(
+    ({
+      int dominados,
+      int enCurso,
+      int necesitaRepaso,
+      int sinEvaluar,
+      int total
+    }) m,
+  ) {
+    if (m.total == 0) return const SizedBox.shrink();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        height: 8,
+        child: Row(
+          children: [
+            if (m.dominados > 0)
+              Expanded(
+                flex: m.dominados,
+                child: Container(color: const Color(0xFF4CAF50)),
+              ),
+            if (m.enCurso > 0)
+              Expanded(
+                flex: m.enCurso,
+                child: Container(color: const Color(0xFFFFC107)),
+              ),
+            if (m.necesitaRepaso > 0)
+              Expanded(
+                flex: m.necesitaRepaso,
+                child: Container(color: const Color(0xFFEF5350)),
+              ),
+            if (m.sinEvaluar > 0)
+              Expanded(
+                flex: m.sinEvaluar,
+                child: Container(color: SVColors.surfaceContainerHighest),
+              ),
+          ],
+        ),
+      ),
     );
   }
 

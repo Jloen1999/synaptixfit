@@ -220,6 +220,8 @@ final GoRouter appRouter = GoRouter(
       path: '/academico/practica/:materialId',
       builder: (context, state) => PracticaScreen(
         materialId: state.pathParameters['materialId'] ?? '',
+        sessionId: state.uri.queryParameters['sessionId'],
+        modoRevision: state.uri.queryParameters['revision'] == 'true',
       ),
     ),
     GoRoute(
