@@ -45,7 +45,7 @@ class AdminUsuarioStatsRepository {
     final desde = DateTime.now().subtract(Duration(days: semanas * 7));
     final data = await _client
         .from('v_analitica_semanal')
-        .select('semana_inicio, volumen_minutos')
+        .select('semana_inicio, minutos_totales')
         .eq('usuario_id', usuarioId)
         .gte('semana_inicio', desde.toIso8601String().substring(0, 10))
         .order('semana_inicio')
@@ -55,7 +55,7 @@ class AdminUsuarioStatsRepository {
       final map = r as Map<String, dynamic>;
       return AdminDataPoint(
         fecha: DateTime.parse(map['semana_inicio'] as String),
-        valor: (map['volumen_minutos'] as num?)?.toDouble() ?? 0,
+        valor: (map['minutos_totales'] as num?)?.toDouble() ?? 0,
         etiqueta: 'Minutos',
       );
     }).toList();

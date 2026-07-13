@@ -33,7 +33,7 @@ class AuditoriaRegistro {
       entidad: map['entidad'] as String,
       entidadId: map['entidad_id'] as String?,
       detalle: (map['detalle'] as Map?)?.cast<String, dynamic>() ?? {},
-      creadoEn: DateTime.parse(map['creado_en'] as String),
+      creadoEn: DateTime.parse(map['creado_en'] as String).toLocal(),
       adminNombre: map['admin_nombre'] as String?,
     );
   }

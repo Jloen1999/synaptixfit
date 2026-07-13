@@ -5,6 +5,92 @@
 
 ---
 
+## [v8.0] — 01-07-2026
+
+### Integración de Fórmulas Neurofisiológicas (Plan v7 — Fases 1-5)
+
+#### Fórmula 1: Gasto Calórico del Estudio (Mifflin-St Jeor + MET Cognitivo)
+
+- **Nuevo servicio `StudyCalorieService`** (`bienestar/infrastructure/study_calorie_service.dart`): Calcula RMR vía Mifflin-St Jeor (1990) y gasto calórico de bloques académicos. MET cognitivo del Compendio de Adultos 2024: 1.3 (lectura/escritura), 1.8 (clase con apuntes). 3 métodos estáticos.
+- **Nuevo provider `caloriasEstudioHoyProvider`:** SUM en tiempo real de `calorias_quemadas` desde `horarios_academicos` para el día actual. Límites de día local (no UTC hacks).
+- **Nueva columna `calorias_quemadas`** (`NUMERIC(6,2)`) en `horarios_academicos`. Poblada al completar un bloque de estudio vía `completarBloqueEstudio()`.
+- **Nueva columna `met_value`** (`NUMERIC(4,2) DEFAULT 1.30`) en `horarios_academicos`. Almacena el coeficiente MET usado.
+
+#### Fórmula 2: Carga Cognitiva Acumulada (C_acum exponencial)
+
+- **Nuevo servicio `CognitiveLoadCalculatorService`** (`bienestar/infrastructure/cognitive_load_calculator_service.dart`): Modelo híbrido de desintegración exponencial y acumulación logarítmica. C_acum(n) = Σ(1−e^(−ρ·D))·μ·e^(−λ·R) con ρ=0.1, λ=0.05. A(t)=A₀·e^(−β·t) con β=0.02. Dificultad por asignatura (1.0 baja, 1.3 media, 1.8 alta). 3 métodos estáticos.
+- **Nueva tabla `estado_cognitivo_usuario`** (1:1 con `usuarios`): Columnas `carga_cognitiva_actual` (0-1 acumulado), `capacidad_atencion_actual` (0-1 decaimiento), `duracion_ultimo_bloque_min`, `fecha_ultimo_descanso`, `rmr_base`. Trigger `trg_inicializar_estado_cognitivo` inicializa al crear usuario.
+- **Nueva columna `carga_cognitiva_generada`** (`NUMERIC(6,4)`) en `horarios_academicos`. Poblada al completar un bloque de estudio.
+
+#### Fórmula 3: Regulación Cruzada (Gobernador Central + ACWR)
+
+- **Nuevo servicio `CrossRegulationService`** (`bienestar/infrastructure/cross_regulation_service.dart`): Teoría del Gobernador Central + Modelo ACWR de Gabbett. V_mod = V_base·(1−λ_s·min(1, (C/C_max)·e^(−σ·D_exam))) con σ=0.15, λ_s=0.40. T_max por tramos ACWR: ≤1.3 sin penalización, 1.3-2.0 logarítmico, >2.0 hard cap al 50%. Constante α=0.5.
+- **Nueva tabla `estado_regulacion_cruzada`** (1:1 con `usuarios`): `carga_aguda_7d`, `carga_cronica_28d`, `acwr_actual` (GENERATED ALWAYS AS), `min_estudio_max_recomendado`, `dias_proximo_examen`.
+- **Nueva tabla `registros_carga_fisica`**: Eventos atómicos insert-only con `carga_diaria` (GENERATED ALWAYS AS rpe×duración). Trigger bidireccional `trg_insertar_carga_fisica` en `sesiones_registradas`.
+- **Nueva RPC `recalcular_regulacion_cruzada(p_usuario_id)`**: Recalcula carga aguda 7d, carga crónica 28d y días hasta próximo examen.
+- **Nuevo provider `estadoRegulacionCruzadaProvider`** + `tMaxEstudioProvider` (derivado).
+- **Nuevos widgets:** `CrossRegulationIndicator` (48px Flat Design, alertas ACWR>1.3 o examen<7d), `_EstudioCaloriasChip` en Dashboard.
+
+#### Fórmula 4: SM-2-Physio (Q_adj por fatiga serotoninérgica)
+
+- **Nuevo servicio `Sm2PhysioService`** (`academico/infrastructure/sm2_physio_service.dart`): Q_adj = Q_real + η·(carga_hoy/carga_max) con η=0.5. Hipótesis de Fatiga Central de Meeusen/Newsholme. Retorna double sin redondeo.
+- **`Sm2Calculator` modificado a escala 0-5:** Parámetro `calidad` como `double` (sin validación discreta). Fórmula EF: `(5−q)` en lugar de `(2−q)`. Umbral fallo: `calidad.round() < 3`. Clamp EF [1.3, 3.0]. Estado dominio: 0-1 necesita_repaso, 2-3 en_progreso, 4-5 dominado.
+- **Nueva tabla `registros_repaso_srs`**: Auditoría inmutable de repasos con `q_real` (0-5), `q_ajustado` (NUMERIC), `coeficiente_fatiga` (carga_hoy/carga_max). Insert-only.
+- **`PracticaScreen` actualizada:** Modal de 5 niveles (0-5) con etiquetas "Olvido total" → "Perfecto". Intervalos pre-calculados por `Sm2PhysioService` + `Sm2Calculator` para cada botón. Auditoría en `registros_repaso_srs`.
+
+#### Nuevos providers neurofisiológicos
+
+- **Archivo `neurofisiologia_provider.dart`** (`bienestar/application/`): 6 providers nuevos con patrón de límites de día local:
+  - `estadoCognitivoProvider` — `FutureProvider<EstadoCognitivoUsuarioDb?>`
+  - `estadoRegulacionCruzadaProvider` — `FutureProvider<EstadoRegulacionCruzadaDb?>`
+  - `caloriasEstudioHoyProvider` — `FutureProvider<double>` (SUM en tiempo real)
+  - `cargaFisicaHoyProvider` — `FutureProvider<double>`
+  - `cargaFisicaMaximaProvider` — `FutureProvider<double>` (MAX histórica)
+  - `tMaxEstudioProvider` — `Provider<int>` (derivado de CrossRegulationService)
+
+#### Nuevos DTOs en `db_models.dart`
+
+- `EstadoCognitivoUsuarioDb` — 8 campos con `fromMap`/`toMap`
+- `EstadoRegulacionCruzadaDb` — 8 campos con `fromMap`/`toMap`
+- `RegistroRepasoSrsDb` — 7 campos con `fromMap`/`toMap`
+- `RegistroCargaFisicaDb` — 8 campos con `fromMap`/`toMap`
+
+#### Protocolo de Reversibilidad Estricto
+
+- **Trigger bidireccional `trg_insertar_carga_fisica`:** INSERT cuando `completada_en` pasa NULL→fecha, DELETE cuando pasa fecha→NULL. Usa `NEW.duracion_minutos` (cronómetro real del cliente), no timestamps.
+- **Nuevos métodos en `rutina_provider.dart`:**
+  - `finalizarSesion()` ahora llama RPC `recalcular_regulacion_cruzada` tras persistir.
+  - `desmarcarSesion()` — revierte sesión completada, trigger SQL elimina carga, recalcula ACWR.
+  - `completarBloqueEstudio()` — persiste calorías, carga cognitiva, met_value; actualiza `estado_cognitivo_usuario`.
+  - `desmarcarBloqueEstudio()` — resta carga cognitiva, resetea bloque, revierte XP si procede.
+- **Nuevos eventos SyncHub:** `bloqueEstudioDesmarcado`, `sesionDesmarcada` con `EventoPayload` ampliado (campo `horarioId`).
+- **SyncHub invalidación simétrica:** Eventos de ida y vuelta invalidan los mismos providers (neurofisiológicos + retos + timeline + dashboard). Invalidación añadida al `auth_controller.dart` en logout.
+
+#### UI — Flat Design (Fase 5)
+
+- **`CrossRegulationIndicator`** (`dashboard/presentation/widgets/`): Consume `estadoRegulacionCruzadaProvider`. Visible si ACWR>1.3 o examen<7d. 48px, colores semafóricos, textos en español.
+- **`_EstudioCaloriasChip`** en `DashboardScreen`: "🧠 Tu cerebro también entrena: +N kcal hoy". Flat Design, sin sombras.
+- **`CognitiveLoadBar`** actualizado: Lee `capacidadAtencionActual` desde `estadoCognitivoProvider` (antes `cargaCognitivaProvider`).
+- **`PerfilScreen`** — tarjeta `🔥 Gasto calórico hoy` con desglose `🏋️ Entrenamiento` / `🧠 Estudio` desde `caloriasEstudioHoyProvider`.
+
+#### Migraciones de BD
+
+- **`20260701000027_cognitive_study_cost.sql`:** Extiende `horarios_academicos` con `met_value`, `calorias_quemadas`, `carga_cognitiva_generada`. Crea tabla `estado_cognitivo_usuario`. Trigger `trg_inicializar_estado_cognitivo`. RLS + índices. (103 líneas)
+- **`20260701000028_physical_workload_and_srs.sql`:** Crea tablas `registros_carga_fisica`, `estado_regulacion_cruzada`, `registros_repaso_srs`. Trigger `trg_insertar_carga_fisica`. RPC `recalcular_regulacion_cruzada`. RLS + índices. (249 líneas)
+- **Eliminada:** migración duplicada `20260629000026_timeline_metadata.sql` (contenido ya estaba en `20260629000026_horarios_metadata.sql`).
+- **Total migraciones:** 53 → 54.
+
+### Documentación actualizada
+
+- `AGENTS.md`: Añadidas secciones de Fórmulas Neurofisiológicas (Fases 1-5): 4 nuevos servicios, `neurofisiologia_provider.dart` con 6 providers, 4 DTOs, Sm2Calculator escala 0-5, 2 nuevos eventos SyncHub, `CrossRegulationIndicator`, `_EstudioCaloriasChip`, desmarcar/completar métodos. Migraciones 53→54.
+- `docs/22-plan-formulas-neurofisiologicas.md`: Añadida sección 11 "Estado de Implementación" con Fases 1-5 completadas y métricas. Tabla de archivos actualizada con columna de estado.
+- `docs/14-changelog.md`: Esta entrada.
+- `docs/04-data-model.md`: 4 nuevas tablas (`estado_cognitivo_usuario`, `estado_regulacion_cruzada`, `registros_carga_fisica`, `registros_repaso_srs`) + 3 columnas nuevas en `horarios_academicos`. Nueva RPC `recalcular_regulacion_cruzada`.
+- `docs/03-architecture.md`: 4 nuevos servicios en `bienestar/infrastructure/` + 1 en `academico/infrastructure/`. `neurofisiologia_provider.dart` con 6 providers. Nuevos widgets en `dashboard/presentation/widgets/`.
+- `docs/06-frontend.md`: `CrossRegulationIndicator`, `_EstudioCaloriasChip`, `CognitiveLoadBar` actualizado, `PracticaScreen` 5 niveles, `PerfilScreen` con gasto calórico desglosado.
+
+---
+
 ## [7.5.0] — 29-06-2026
 
 ### Refactor de Timeline: Enum ClassType + Metadatos de Clase + UI compacta

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../shared/models/db_models.dart';
+import '../../perfil/application/perfil_provider.dart';
 
 final _cliente = Provider<SupabaseClient>((ref) => Supabase.instance.client);
 
@@ -148,10 +149,13 @@ final metricasRetencionProvider = FutureProvider.autoDispose.family<
 /// a nivel global (todas las asignaturas). Nulo si no hay repasos urgentes.
 final repasoUrgenteGlobalProvider =
     FutureProvider.autoDispose.family<MaterialEstudioDb?, void>((ref, _) async {
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) return null;
   final client = Supabase.instance.client;
   final row = await client
       .from('materiales_estudio')
       .select()
+      .eq('usuario_id', userId)
       .lt('siguiente_repaso_en', DateTime.now().toIso8601String())
       .order('siguiente_repaso_en')
       .limit(1)

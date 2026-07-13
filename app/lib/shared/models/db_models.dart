@@ -2739,6 +2739,7 @@ class TestSessionDb {
     required this.iniciadoEn,
     this.completadoEn,
     required this.xpOtorgado,
+    this.metadata,
   });
 
   final String id;
@@ -2754,6 +2755,7 @@ class TestSessionDb {
   final DateTime iniciadoEn;
   final DateTime? completadoEn;
   final bool xpOtorgado;
+  final Map<String, dynamic>? metadata;
 
   factory TestSessionDb.fromMap(Map<String, dynamic> map) {
     final preguntasRaw = map['preguntas_ids'];
@@ -2777,6 +2779,7 @@ class TestSessionDb {
           ? _parseDateTime(map['completado_en'])
           : null,
       xpOtorgado: _parseBool(map['xp_otorgado']),
+      metadata: map['metadata'] as Map<String, dynamic>?,
     );
   }
 
@@ -2795,6 +2798,170 @@ class TestSessionDb {
       'iniciado_en': iniciadoEn.toIso8601String(),
       'completado_en': completadoEn?.toIso8601String(),
       'xp_otorgado': xpOtorgado,
+      if (metadata != null) 'metadata': metadata,
     };
+  }
+}
+
+// =============================================================================
+// DTOs — Fase 3: Fórmulas Neurofisiológicas
+// =============================================================================
+
+/// Estado cognitivo del usuario (tabla: estado_cognitivo_usuario).
+///
+/// Registro mutable 1:1 con usuarios. Contiene el nivel de desgaste atencional
+/// actual, la capacidad de atención y el RMR calculado vía Mifflin-St Jeor.
+class EstadoCognitivoUsuarioDb {
+  const EstadoCognitivoUsuarioDb({
+    required this.usuarioId,
+    required this.cargaCognitivaActual,
+    required this.capacidadAtencionActual,
+    required this.duracionUltimoBloqueMin,
+    this.fechaUltimoDescanso,
+    this.rmrBase,
+    required this.creadoEn,
+    required this.actualizadoEn,
+  });
+
+  final String usuarioId;
+  final double cargaCognitivaActual;
+  final double capacidadAtencionActual;
+  final int duracionUltimoBloqueMin;
+  final DateTime? fechaUltimoDescanso;
+  final double? rmrBase;
+  final DateTime creadoEn;
+  final DateTime actualizadoEn;
+
+  factory EstadoCognitivoUsuarioDb.fromMap(Map<String, dynamic> map) {
+    return EstadoCognitivoUsuarioDb(
+      usuarioId: map['usuario_id'] as String,
+      cargaCognitivaActual: (map['carga_cognitiva_actual'] as num).toDouble(),
+      capacidadAtencionActual:
+          (map['capacidad_atencion_actual'] as num).toDouble(),
+      duracionUltimoBloqueMin: map['duracion_ultimo_bloque_min'] as int,
+      fechaUltimoDescanso: map['fecha_ultimo_descanso'] != null
+          ? DateTime.parse(map['fecha_ultimo_descanso'] as String)
+          : null,
+      rmrBase: (map['rmr_base'] as num?)?.toDouble(),
+      creadoEn: DateTime.parse(map['creado_en'] as String),
+      actualizadoEn: DateTime.parse(map['actualizado_en'] as String),
+    );
+  }
+}
+
+/// Estado de regulación cruzada (tabla: estado_regulacion_cruzada).
+///
+/// Cache materializado 1:1 con usuarios. Contiene las medias de carga aguda
+/// (7d) y crónica (28d), el ACWR actual, el tope de estudio recomendado en
+/// minutos y los días hasta el próximo examen.
+class EstadoRegulacionCruzadaDb {
+  const EstadoRegulacionCruzadaDb({
+    required this.usuarioId,
+    this.cargaAguda7d,
+    this.cargaCronica28d,
+    required this.acwrActual,
+    required this.minEstudioMaxRecomendado,
+    this.diasProximoExamen,
+    required this.creadoEn,
+    required this.actualizadoEn,
+  });
+
+  final String usuarioId;
+  final double? cargaAguda7d;
+  final double? cargaCronica28d;
+  final double acwrActual;
+  final int minEstudioMaxRecomendado;
+  final int? diasProximoExamen;
+  final DateTime creadoEn;
+  final DateTime actualizadoEn;
+
+  factory EstadoRegulacionCruzadaDb.fromMap(Map<String, dynamic> map) {
+    return EstadoRegulacionCruzadaDb(
+      usuarioId: map['usuario_id'] as String,
+      cargaAguda7d: (map['carga_aguda_7d'] as num?)?.toDouble(),
+      cargaCronica28d: (map['carga_cronica_28d'] as num?)?.toDouble(),
+      acwrActual: (map['acwr_actual'] as num).toDouble(),
+      minEstudioMaxRecomendado: map['min_estudio_max_recomendado'] as int,
+      diasProximoExamen: map['dias_proximo_examen'] as int?,
+      creadoEn: DateTime.parse(map['creado_en'] as String),
+      actualizadoEn: DateTime.parse(map['actualizado_en'] as String),
+    );
+  }
+}
+
+/// Registro de repaso SRS (tabla: registros_repaso_srs).
+///
+/// Auditoría inmutable del sistema SM-2-Physio. Almacena la respuesta cruda
+/// del usuario (q_real), la calidad ajustada por fatiga física (q_ajustado),
+/// y el coeficiente que provocó el perdón (ratio carga_hoy / carga_max).
+class RegistroRepasoSrsDb {
+  const RegistroRepasoSrsDb({
+    required this.id,
+    required this.materialEstudioId,
+    required this.fechaRepaso,
+    required this.qReal,
+    required this.qAjustado,
+    required this.coeficienteFatiga,
+    required this.creadoEn,
+  });
+
+  final String id;
+  final String materialEstudioId;
+  final DateTime fechaRepaso;
+  final int qReal;
+  final double qAjustado;
+  final double coeficienteFatiga;
+  final DateTime creadoEn;
+
+  factory RegistroRepasoSrsDb.fromMap(Map<String, dynamic> map) {
+    return RegistroRepasoSrsDb(
+      id: map['id'] as String,
+      materialEstudioId: map['material_estudio_id'] as String,
+      fechaRepaso: DateTime.parse(map['fecha_repaso'] as String),
+      qReal: map['q_real'] as int,
+      qAjustado: (map['q_ajustado'] as num).toDouble(),
+      coeficienteFatiga: (map['coeficiente_fatiga'] as num).toDouble(),
+      creadoEn: DateTime.parse(map['creado_en'] as String),
+    );
+  }
+}
+
+/// Registro de carga física diaria (tabla: registros_carga_fisica).
+///
+/// Eventos atómicos insertados por el trigger trg_insertar_carga_fisica al
+/// completar una sesión. La columna carga_diaria es generada (STORED) como
+/// rpe_sesion * duracion_minutos. Sirve como fuente para el cálculo del ACWR.
+class RegistroCargaFisicaDb {
+  const RegistroCargaFisicaDb({
+    required this.id,
+    required this.usuarioId,
+    required this.fechaRegistro,
+    required this.rpeSesion,
+    required this.duracionMinutos,
+    required this.cargaDiaria,
+    this.sesionId,
+    required this.creadoEn,
+  });
+
+  final String id;
+  final String usuarioId;
+  final DateTime fechaRegistro;
+  final int rpeSesion;
+  final int duracionMinutos;
+  final double cargaDiaria;
+  final String? sesionId;
+  final DateTime creadoEn;
+
+  factory RegistroCargaFisicaDb.fromMap(Map<String, dynamic> map) {
+    return RegistroCargaFisicaDb(
+      id: map['id'] as String,
+      usuarioId: map['usuario_id'] as String,
+      fechaRegistro: DateTime.parse(map['fecha_registro'] as String),
+      rpeSesion: map['rpe_sesion'] as int,
+      duracionMinutos: map['duracion_minutos'] as int,
+      cargaDiaria: (map['carga_diaria'] as num).toDouble(),
+      sesionId: map['sesion_id'] as String?,
+      creadoEn: DateTime.parse(map['creado_en'] as String),
+    );
   }
 }

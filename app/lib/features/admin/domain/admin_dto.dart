@@ -11,6 +11,7 @@ class UsuarioAdmin {
   final int nivel;
   final int xpTotal;
   final int rachaActual;
+  final bool isShadowbanned;
   final DateTime creadoEn;
 
   const UsuarioAdmin({
@@ -22,6 +23,7 @@ class UsuarioAdmin {
     required this.nivel,
     required this.xpTotal,
     required this.rachaActual,
+    required this.isShadowbanned,
     required this.creadoEn,
   });
 
@@ -36,6 +38,7 @@ class UsuarioAdmin {
       nivel: (map['nivel'] as num?)?.toInt() ?? 1,
       xpTotal: (map['xp_total'] as num?)?.toInt() ?? 0,
       rachaActual: (map['racha_actual'] as num?)?.toInt() ?? 0,
+      isShadowbanned: map['is_shadowbanned'] == true,
       creadoEn: DateTime.parse(map['creado_en'] as String),
     );
   }

@@ -18,6 +18,8 @@ import '../../perfil/application/perfil_provider.dart';
 import '../application/dashboard_provider.dart';
 import '../application/smart_banner_provider.dart';
 import 'widgets/timeline_section.dart';
+import 'widgets/cross_regulation_indicator.dart';
+import '../../bienestar/application/neurofisiologia_provider.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -39,7 +41,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     final data = ref.watch(dashboardProvider);
-    if (usuarioCambio) return const _LoadingDashboard();
+    if (usuarioCambio) {
+      ref.invalidate(repasoUrgenteGlobalProvider(null));
+      return const _LoadingDashboard();
+    }
 
     return data.when(
       loading: () {
@@ -48,7 +53,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return Column(
             children: [
               _WelcomeCard(data: value),
+              const CrossRegulationIndicator(),
               const _RepasoUrgenteCard(),
+              const _EstudioCaloriasChip(),
               const Expanded(child: DailyTimelineWidget()),
             ],
           );
@@ -61,7 +68,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return Column(
             children: [
               _WelcomeCard(data: value),
+              const CrossRegulationIndicator(),
               const _RepasoUrgenteCard(),
+              const _EstudioCaloriasChip(),
               const Expanded(child: DailyTimelineWidget()),
             ],
           );
@@ -88,7 +97,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         return Column(
           children: [
             _WelcomeCard(data: value),
+            const CrossRegulationIndicator(),
             const _RepasoUrgenteCard(),
+            const _EstudioCaloriasChip(),
             const Expanded(child: DailyTimelineWidget()),
           ],
         );
@@ -103,6 +114,11 @@ class _WelcomeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserId = sb.Supabase.instance.client.auth.currentUser?.id;
+    if (currentUserId != null && data.usuario.id != currentUserId) {
+      return const _SkeletonWelcomeCard();
+    }
+
     final usuario = data.usuario;
     final nombre = usuario.nombreCompleto.split(' ').first;
     final tieneAvatar =
@@ -238,8 +254,6 @@ class _WelcomeCard extends ConsumerWidget {
                                 .read(authControllerProvider.notifier)
                                 .logout();
                           } catch (_) {}
-                          if (!context.mounted) return;
-                          context.go('/acceso');
                         },
                         icon: const Icon(Icons.logout_rounded, size: 18),
                         color: Colors.redAccent.withValues(alpha: 0.7),
@@ -563,6 +577,43 @@ class _LoadingDashboard extends StatelessWidget {
   }
 }
 
+/// Chip motivacional que muestra las calorías quemadas estudiando hoy.
+///
+/// Usa el getter SUM en tiempo real de calorias_quemadas desde
+/// horarios_academicos. Flat Design: sin sombras, fondo naranja
+/// de baja opacidad, solo visible cuando hay kcal > 0.
+class _EstudioCaloriasChip extends ConsumerWidget {
+  const _EstudioCaloriasChip();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final kcal = ref.watch(caloriasEstudioHoyProvider).valueOrNull ?? 0;
+    if (kcal <= 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🧠', style: TextStyle(fontSize: 14)),
+            const SizedBox(width: 6),
+            Text(
+              'Tu cerebro también entrena: +${kcal.round()} kcal hoy estudiando',
+              style: TextStyle(fontSize: 12, color: Colors.orange.shade300),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RepasoUrgenteCard extends ConsumerWidget {
   const _RepasoUrgenteCard();
 
@@ -635,6 +686,42 @@ class _RepasoUrgenteCard extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _SkeletonWelcomeCard extends StatelessWidget {
+  const _SkeletonWelcomeCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Container(
+          height: 200,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF002546), Color(0xFF0D3B66), Color(0xFF153E5C)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: const Center(
+            child: SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Colors.white54,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

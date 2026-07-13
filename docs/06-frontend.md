@@ -1,8 +1,8 @@
 # 06 - Frontend (Estructura UI, Componentes y Pantallas)
 
 **Proyecto:** SynaptixFit
-**Versión:** 7.4
-**Fecha:** 29-06-2026
+**Versión:** 7.5
+**Fecha:** 01-07-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [02-requirements.md](02-requirements.md), [15-ia-recomendacion-sistema.md](15-ia-recomendacion-sistema.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -35,7 +35,7 @@ flowchart LR
 | `/academico` | `PlanAcademicoScreen` | Plan académico semanal con horarios |
 | `/academico/planificar` | `CanvasScreen` | Lienzo Time-Blocking (grid 7×16h, DnD libre, asistente IA) |
 | `/academico/planificar/inbox` | `InboxScreen` | Configuración de carga académica semanal (legacy) |
-| `/academico/practica/:materialId` | `PracticaScreen` | **Práctica de repaso espaciado SM-2** con preguntas generadas por IA. Recibe `materialId` vía parámetro de ruta. Feedback inmediato, autoevaluación 3 niveles, inyección de repaso en timeline |
+| `/academico/practica/:materialId` | `PracticaScreen` | **Práctica de repaso espaciado SM-2** con preguntas generadas por IA. Recibe `materialId` vía parámetro de ruta. Feedback inmediato, autoevaluación **5 niveles** (0-"Olvido total" a 5-"Perfecto"), intervalos pre-calculados por `Sm2PhysioService`, auditoría en `registros_repaso_srs`, inyección de repaso en timeline |
 | `/academico/configuracion` | `ConfiguracionAcademicaScreen` | Selección universidad/carrera + carga masiva |
 | `/academico/apuntes` | `ApuntesScreen` | Editor Markdown + explorador |
 | `/academico/apuntes/editor` | `ApuntesEditorScreen` | Editor Markdown a pantalla completa |
@@ -1367,7 +1367,97 @@ if (widget.esCircuito) {
 
 Esta lógica ya existía en versiones anteriores y se verificó su correcto funcionamiento.
 
-## 9. Dashboard Rediseñado (v6.0)
+## 9. Widgets Neurofisiológicos (★ Fórmulas v8.0 — Fase 5)
+
+### 9.0.1 `CrossRegulationIndicator` — Alerta de regulación cruzada
+
+**Archivo:** `app/lib/features/dashboard/presentation/widgets/cross_regulation_indicator.dart` (~90 líneas)
+**Nuevo widget. ConsumerWidget.**
+
+Widget de cabecera fija en el Dashboard con `SizedBox(height: 48)`, ubicado **fuera** de cualquier scroll. Consume `estadoRegulacionCruzadaProvider`. Visible solo si `ACWR > 1.3` o `diasProximoExamen < 7`.
+
+```dart
+final cross = ref.watch(estadoRegulacionCruzadaProvider).valueOrNull;
+if (cross == null) return const SizedBox.shrink();
+if (cross.acwrActual <= 1.3 && (cross.diasProximoExamen ?? 999) >= 7) {
+  return const SizedBox.shrink();
+}
+```
+
+**Estados visuales:**
+
+| Condición | Color de fondo | Icono | Texto |
+|-----------|---------------|-------|-------|
+| `ACWR ≤ 1.3` | Verde al 8% | `check_circle` | "Carga óptima" |
+| `1.3 < ACWR ≤ 1.5` | Ámbar al 8% | `warning_amber` | "Fatiga detectada" |
+| `ACWR > 1.5` | Rojo al 8% | `error` | "Riesgo de lesión" |
+| `diasProximoExamen < 7` | Púrpura al 8% | `school` | "Examen en X días" |
+| `T_max < 90` | Naranja al 8% | `timer` | "Tope de estudio: X min" |
+
+**Flat Design:** `Container` sin `boxShadow`, `elevation: 0`, `margin: EdgeInsets.symmetric(horizontal: 16)`, `borderRadius: 8`.
+
+### 9.0.2 `_EstudioCaloriasChip` — Chip "Tu cerebro también entrena"
+
+**Ubicación:** `DashboardScreen` (widget privado `_EstudioCaloriasChip`)
+
+Chip informativo que muestra el gasto calórico del estudio del día actual, consumiendo `caloriasEstudioHoyProvider`:
+
+```dart
+final kcal = ref.watch(caloriasEstudioHoyProvider).valueOrNull ?? 0;
+if (kcal > 0) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.orange.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(
+      '🧠 Tu cerebro también entrena: +${kcal.round()} kcal hoy estudiando',
+      style: TextStyle(fontSize: 12, color: Colors.orange.shade300),
+    ),
+  );
+}
+```
+
+Flat Design estricto: sin sombras, sin elevación, fondo naranja al 8%.
+
+### 9.0.3 `CognitiveLoadBar` — Nueva fuente de datos
+
+**Archivo:** `app/lib/features/dashboard/presentation/widgets/cognitive_load_bar.dart`
+**Modificado en Fase 5.**
+
+El widget ahora lee de `estadoCognitivoProvider` en lugar del provider anterior:
+
+```dart
+final cogState = ref.watch(estadoCognitivoProvider).valueOrNull;
+final valor = (cogState?.capacidadAtencionActual ?? 1.0) * 100;
+// valor mapeado de 0.000–1.000 a 0–100
+```
+
+**Etiquetas:** `'Baja'` (verde), `'Moderada'` (ámbar), `'Alta'` (naranja), `'Crítica'` (rojo).
+
+### 9.0.4 `PerfilScreen` — Gasto calórico diario desglosado
+
+**Archivo:** `app/lib/features/perfil/presentation/perfil_screen.dart`
+**Modificado en Fase 5.**
+
+Nueva tarjeta `🔥 Gasto calórico hoy` en la pestaña de Estadísticas que muestra el desglose de calorías del día:
+
+```
+┌─────────────────────────────────────┐
+│ 🔥 Gasto calórico hoy               │
+│           847 kcal                   │
+│ ─────────────────────────────────── │
+│ 🏋️ Entrenamiento:  623 kcal         │
+│ 🧠 Estudio:         224 kcal         │
+└─────────────────────────────────────┘
+```
+
+Consume `caloriasEstudioHoyProvider` para el componente de estudio y `perfilActividadProvider.caloriasAcumuladas` para el de entrenamiento. Flat Design: `Card(elevation: 0)` con `Divider(height: 1)` entre el total y el desglose.
+
+---
+
+## 9. Dashboard Rediseñado (v6.0) [OBSOLETO — ver §9.0]
 
 ### 9.1 Widgets nuevos
 
@@ -1377,10 +1467,12 @@ Esta lógica ya existía en versiones anteriores y se verificó su correcto func
 | `SmartBannerCard` | ConsumerWidget | `consejoSmartProvider` | `widgets/smart_banner_card.dart` |
 | `QuickActionsRow` | ConsumerWidget | `diaPendienteProvider` | `widgets/quick_actions_row.dart` |
 | `PlanWeekBar` | ConsumerWidget | `rutinaActivaSeleccionadaProvider` | `widgets/plan_week_bar.dart` |
-| `CognitiveLoadBar` | ConsumerWidget | `cargaCognitivaProvider` | `widgets/cognitive_load_bar.dart` |
+| `CognitiveLoadBar` | ConsumerWidget | `estadoCognitivoProvider` ★ (antes `cargaCognitivaProvider`) | `widgets/cognitive_load_bar.dart` |
 | `StreakRow` | StatelessWidget | recibe params | `widgets/streak_badge.dart` |
 | `KpiGrid` | StatelessWidget | recibe `DashboardData` | `widgets/kpi_grid.dart` |
 | `TimelineSection` | ConsumerStatefulWidget | `timelineHoyProvider` + `retosProvider` | `widgets/timeline_section.dart` |
+| `CrossRegulationIndicator` ★ | ConsumerWidget | `estadoRegulacionCruzadaProvider` | `widgets/cross_regulation_indicator.dart` |
+| `_EstudioCaloriasChip` ★ | ConsumerWidget (privado) | `caloriasEstudioHoyProvider` | `dashboard_screen.dart` |
 
 ### 9.1.1 TimelineSection — 3 Tabs (NUEVO v6.2)
 

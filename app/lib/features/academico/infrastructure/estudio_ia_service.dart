@@ -7,7 +7,6 @@ import '../../../core/config/env_config.dart';
 import '../domain/fuente_estudio.dart';
 import '../domain/mapa_mental.dart';
 
-/// Excepción del asistente de estudio con IA (resúmenes y mapas mentales).
 class EstudioIaException implements Exception {
   const EstudioIaException(this.message);
   final String message;
@@ -16,11 +15,6 @@ class EstudioIaException implements Exception {
   String toString() => message;
 }
 
-/// Servicio que usa Gemini para asistir el estudio: genera resúmenes y mapas
-/// mentales a partir de apuntes (texto) o archivos (PDF/imagen).
-///
-/// Reutiliza el mismo endpoint y patrón multimodal (`inline_data` base64) que
-/// [AiScheduleParserService].
 class EstudioIaService {
   EstudioIaService([Dio? dio])
       : _dio = dio ??
@@ -37,136 +31,265 @@ class EstudioIaService {
 
   bool get disponible => EnvConfig.hasGeminiApiKey;
 
-  // ── API pública ────────────────────────────────────────────────────────────
+  static const _systemInstruction = '''
+Eres un motor de generación académica. Responde ÚNICAMENTE con el objeto JSON
+solicitado. NO incluyas saludos, introducciones, conclusiones, ni texto de
+relleno conversacional antes o después del JSON. NO uses frases como "Aquí
+está", "Espero que te sirva", "Claro, aquí tienes". Solo devuelve el JSON puro.
+''';
 
-  /// Genera un resumen en Markdown de la [fuente].
-  Future<String> resumir(FuenteEstudio fuente) async {
-    _verificarClave();
-    final parts =
-        await _partsDesdeFuente(fuente, _promptResumen(fuente.titulo));
-    final texto = await _generarTexto(parts, jsonMode: false);
-    return texto.trim();
-  }
-
-  /// Genera un mapa mental jerárquico de la [fuente].
-  Future<MapaMental> mapaMental(FuenteEstudio fuente) async {
-    _verificarClave();
-    final parts = await _partsDesdeFuente(fuente, _promptMapa(fuente.titulo));
-    final texto = await _generarTexto(parts, jsonMode: true);
-    final json = _decodificarJson(texto);
-    final mapa = MapaMental.fromJson(json);
-    if (mapa.vacio) {
-      throw const EstudioIaException(
-          'No se pudo generar el mapa mental a partir del material.');
+  String _contextoBloque(List<FuenteEstudio> fuentes) {
+    final buf = StringBuffer();
+    buf.writeln('[CONTEXTO DE FUENTES COMBINADAS]');
+    for (var i = 0; i < fuentes.length; i++) {
+      final f = fuentes[i];
+      buf.writeln('Fuente ${i + 1}: "${f.titulo}"');
     }
-    return mapa;
+    buf.writeln();
+    buf.writeln(
+        'Sintetiza TODAS las fuentes anteriores. Conecta los conceptos de forma');
+    buf.writeln(
+        'transversal. No trates cada fuente por separado; el objetivo es una');
+    buf.writeln('visión integrada del material combinado.');
+    return buf.toString();
   }
 
-  /// Genera un banco de preguntas de práctica (opción múltiple y rellenar
-  /// huecos) a partir de la [fuente] de estudio.
-  /// Devuelve un mapa con clave 'preguntas' → lista de objetos pregunta.
+  static const _directivaTitulo =
+      'titulo_personalizado: descriptivo, directo y conciso. NUNCA incluyas fechas, horas ni palabras redundantes como "Resumen", "Mapa" o "Cuestionario".';
+
+  String _promptResumen(List<FuenteEstudio> fuentes) => '''
+$_systemInstruction
+
+TAREA: Genera un resumen académico sintetizando todas las fuentes del contexto.
+
+ESQUEMA JSON EXACTO (responde SOLO este JSON):
+{
+  "titulo_personalizado": "$_directivaTitulo",
+  "contenido_markdown": "# Desarrollo del tema\\n\\n..."
+}
+
+REGLAS DEL RESUMEN:
+- Sintetiza y conecta los conceptos de TODAS las fuentes combinadas.
+- Estructura el contenido en secciones con encabezados ##.
+- Usa listas con viñetas para las ideas clave.
+- Usa **negrita** en conceptos importantes.
+- Termina con sección "## Puntos clave" (3-5 viñetas).
+- No inventes información que no esté en las fuentes.
+- Escribe en español.
+$_contextoBloque(fuentes)''';
+
+  String _promptMapaMental(List<FuenteEstudio> fuentes) => '''
+$_systemInstruction
+
+TAREA: Genera un mapa mental jerárquico sintetizando todas las fuentes.
+
+ESQUEMA JSON EXACTO (responde SOLO este JSON):
+{
+  "titulo_personalizado": "$_directivaTitulo",
+  "contenido_markdown": "Formato indentado con guiones (2 espacios por nivel):\\n- Nodo Central\\n  - Rama 1\\n    - Subidea 1.1\\n  - Rama 2\\n    - Subidea 2.1"
+}
+
+REGLAS DEL MAPA:
+- El nodo central resume el tema transversal de todas las fuentes.
+- Entre 4 y 8 ramas principales a partir del nodo central.
+- Cada rama con 2 a 5 subnodos. Profundidad máxima: 3 niveles.
+- Etiquetas MUY concisas (máximo 6 palabras por nodo).
+- Cada línea del markdown es un nodo indentado con "  - ".
+- Conecta conceptos de diferentes fuentes cuando sea relevante.
+- Solo conceptos de las fuentes. En español.
+$_contextoBloque(fuentes)''';
+
+  String _promptCuestionario(List<FuenteEstudio> fuentes) => '''
+$_systemInstruction
+
+TAREA: Genera tarjetas de estudio (pregunta/respuesta) a partir de todas las fuentes.
+
+ESQUEMA JSON EXACTO (responde SOLO este JSON):
+{
+  "titulo_personalizado": "$_directivaTitulo",
+  "tarjetas": [
+    {"pregunta": "¿Qué establece...?", "respuesta": "Establece que..."}
+  ]
+}
+
+REGLAS:
+- Exactamente 10 tarjetas.
+- Las preguntas deben cubrir TODAS las fuentes combinadas, no solo una.
+- Preguntas variadas: definiciones, relaciones, causas, consecuencias, comparaciones.
+- Respuestas claras y concisas (1-3 frases).
+- En español. Solo conceptos de las fuentes.
+- Ordena de más sencillo a más difícil.
+$_contextoBloque(fuentes)''';
+
+  String _promptPractica(List<FuenteEstudio> fuentes) => '''
+$_systemInstruction
+
+TAREA: Genera un test de práctica a partir de todas las fuentes.
+
+ESQUEMA JSON EXACTO (responde SOLO este JSON):
+{
+  "titulo_personalizado": "$_directivaTitulo",
+  "preguntas": [
+    {
+      "tipo": "opcion_multiple",
+      "enunciado": "¿Qué establece...?",
+      "opciones": ["A", "B", "C", "D"],
+      "respuesta_correcta": "A",
+      "explicacion": "Porque..."
+    }
+  ]
+}
+
+REGLAS:
+- Exactamente 10 preguntas: 5 de opción múltiple (4 opciones) y 5 de rellenar hueco.
+- Cubre TODAS las fuentes combinadas proporcionalmente.
+- Opciones verosímiles. Respuestas de hueco: máx. 3 palabras.
+- Enunciados claros. Explicaciones de 1-2 frases.
+- En español. Solo conceptos de las fuentes.
+- Ordena de más sencilla a más difícil.
+$_contextoBloque(fuentes)''';
+
+  Future<Map<String, dynamic>> resumirMulti(List<FuenteEstudio> fuentes) async {
+    _verificarClave();
+    if (fuentes.isEmpty) {
+      throw const EstudioIaException('Sin fuentes para resumir.');
+    }
+    final parts = await _partsMulti(fuentes, _promptResumen(fuentes));
+    final texto = await _generarTextoConReintento(parts);
+    return _decodificarJsonConReintento(texto);
+  }
+
+  Future<Map<String, dynamic>> mapaMentalMulti(
+      List<FuenteEstudio> fuentes) async {
+    _verificarClave();
+    if (fuentes.isEmpty) {
+      throw const EstudioIaException('Sin fuentes para el mapa.');
+    }
+    final parts = await _partsMulti(fuentes, _promptMapaMental(fuentes));
+    final texto = await _generarTextoConReintento(parts);
+    return _decodificarJsonConReintento(texto);
+  }
+
+  Future<Map<String, dynamic>> generarCuestionarioMulti(
+      List<FuenteEstudio> fuentes) async {
+    _verificarClave();
+    if (fuentes.isEmpty) {
+      throw const EstudioIaException('Sin fuentes para el cuestionario.');
+    }
+    final parts = await _partsMulti(fuentes, _promptCuestionario(fuentes));
+    final texto = await _generarTextoConReintento(parts);
+    return _decodificarJsonConReintento(texto);
+  }
+
+  Future<Map<String, dynamic>> generarPracticaMulti(
+      List<FuenteEstudio> fuentes) async {
+    _verificarClave();
+    if (fuentes.isEmpty) {
+      throw const EstudioIaException('Sin fuentes para la práctica.');
+    }
+    final parts = await _partsMulti(fuentes, _promptPractica(fuentes));
+    final texto = await _generarTextoConReintento(parts);
+    return _decodificarJsonConReintento(texto);
+  }
+
+  Future<String> resumir(FuenteEstudio fuente) async {
+    final json = await resumirMulti([fuente]);
+    return (json['contenido_markdown'] as String?) ?? '';
+  }
+
+  Future<MapaMental> mapaMental(FuenteEstudio fuente) async {
+    final json = await mapaMentalMulti([fuente]);
+    return parsearMarkdownAMapaMental(
+        json['contenido_markdown'] as String? ?? '',
+        json['titulo_personalizado'] as String? ?? 'Mapa mental');
+  }
+
+  MapaMental parsearMarkdownAMapaMental(String markdown, String titulo) {
+    final lineas = markdown.split('\n');
+    var idx = 0;
+
+    NodoMental? parsearNodo(int nivelEsperado) {
+      final hijos = <NodoMental>[];
+      while (idx < lineas.length) {
+        final linea = lineas[idx];
+        final trimmed = linea.trimLeft();
+        if (trimmed.isEmpty) {
+          idx++;
+          continue;
+        }
+        final espacios = linea.length - trimmed.length;
+        final nivel = espacios ~/ 2;
+        if (nivel < nivelEsperado) break;
+        if (nivel > nivelEsperado) {
+          idx++;
+          continue;
+        }
+        final contenido =
+            trimmed.startsWith('- ') ? trimmed.substring(2).trim() : trimmed;
+        if (contenido.isEmpty) {
+          idx++;
+          continue;
+        }
+        idx++;
+        final nodoHijos = nivelEsperado < 3
+            ? (parsearNodo(nivelEsperado + 1)?.hijos ?? <NodoMental>[])
+            : <NodoMental>[];
+        hijos.add(NodoMental(
+          id: 'n$idx',
+          titulo: contenido.length > 40
+              ? '${contenido.substring(0, 40)}…'
+              : contenido,
+          hijos: nodoHijos,
+        ));
+      }
+      return NodoMental(
+        id: 'n$idx',
+        titulo: '',
+        hijos: hijos,
+      );
+    }
+
+    idx = 0;
+    final root = parsearNodo(0);
+    return MapaMental(central: titulo, ramas: root?.hijos ?? []);
+  }
+
   Future<List<Map<String, dynamic>>> generarPractica(
       FuenteEstudio fuente) async {
-    _verificarClave();
-    final parts =
-        await _partsDesdeFuente(fuente, _promptPractica(fuente.titulo));
-    final texto = await _generarTexto(parts, jsonMode: true);
-    final json = _decodificarJson(texto);
+    final json = await generarPracticaMulti([fuente]);
     final preguntas = json['preguntas'];
     if (preguntas is! List || preguntas.isEmpty) {
-      throw const EstudioIaException(
-          'No se pudieron generar preguntas a partir del material.');
+      throw const EstudioIaException('No se pudieron generar preguntas.');
     }
     return preguntas.cast<Map<String, dynamic>>();
   }
 
-  // ── Prompts ──────────────────────────────────────────────────────────────
-
-  String _promptResumen(String titulo) => '''
-Eres un asistente de estudio para estudiantes universitarios. Resume el siguiente material titulado "$titulo".
-Devuelve un resumen claro y bien estructurado en español usando Markdown:
-- Un párrafo introductorio breve que sitúe el tema.
-- Secciones con encabezados de nivel 2 (##) para los temas principales.
-- Listas con viñetas para las ideas clave.
-- Usa **negrita** en los conceptos y términos importantes.
-- Termina con una sección "## Puntos clave" con 3 a 5 viñetas que resuman lo esencial.
-No inventes información que no esté en el material. Sé conciso pero completo.''';
-
-  String _promptMapa(String titulo) => '''
-Eres un asistente de estudio. Crea un MAPA MENTAL jerárquico del material titulado "$titulo" para ayudar a memorizar y comprender.
-Devuelve EXCLUSIVAMENTE un objeto JSON (sin markdown, sin texto adicional) con esta forma exacta:
-{
-  "central": "Tema central, máximo 5 palabras",
-  "ramas": [
-    {
-      "titulo": "Idea principal, máximo 6 palabras",
-      "hijos": [
-        { "titulo": "Subidea concisa", "hijos": [] }
-      ]
-    }
-  ]
-}
-Reglas estrictas:
-- Entre 3 y 7 ramas principales.
-- Cada rama puede tener entre 0 y 5 hijos. Profundidad máxima: 3 niveles.
-- Etiquetas MUY concisas: palabras clave, no frases largas.
-- En español. Solo conceptos presentes en el material; no inventes.''';
-
-  String _promptPractica(String titulo) => '''
-Eres un asistente de estudio para universitarios. Genera un banco de preguntas basado EXCLUSIVAMENTE en el material titulado "$titulo".
-Devuelve SOLO un objeto JSON (sin markdown, sin texto adicional) con esta forma exacta:
-{
-  "preguntas": [
-    {
-      "tipo": "opcion_multiple",
-      "enunciado": "¿Qué establece la primera ley de Newton?",
-      "opciones": ["Inercia", "Acción y reacción", "Fuerza y aceleración", "Gravedad"],
-      "respuesta_correcta": "Inercia",
-      "explicacion": "La primera ley de Newton o ley de la inercia establece que un cuerpo permanece en reposo o en movimiento rectilíneo uniforme a menos que una fuerza externa actúe sobre él."
-    },
-    {
-      "tipo": "rellenar_hueco",
-      "enunciado": "La fórmula de la segunda ley de Newton es F = ___ × a",
-      "respuesta_correcta": "m",
-      "explicacion": "La fuerza neta es igual a la masa por la aceleración (F = m·a)."
-    }
-  ]
-}
-Reglas estrictas:
-- Exactamente 10 preguntas: 5 de opción múltiple y 5 de rellenar hueco.
-- Cada opción múltiple debe tener 4 opciones, todas verosímiles pero solo una correcta.
-- Las respuestas de rellenar hueco deben ser palabras o frases cortas (máx. 3 palabras).
-- Enunciados claros y concisos en español. Explicaciones de 1-2 frases.
-- Solo conceptos del material proporcionado. No inventes información externa.
-- Ordena las preguntas de más sencilla a más difícil.''';
-
-  // ── Construcción de la petición ────────────────────────────────────────────
-
-  Future<List<Map<String, dynamic>>> _partsDesdeFuente(
-    FuenteEstudio fuente,
+  Future<List<Map<String, dynamic>>> _partsMulti(
+    List<FuenteEstudio> fuentes,
     String prompt,
   ) async {
-    switch (fuente) {
-      case FuenteTexto(:final contenido):
-        final recortado = contenido.length > 24000
-            ? contenido.substring(0, 24000)
-            : contenido;
-        return [
-          {'text': prompt},
-          {'text': '\n\n--- MATERIAL ---\n$recortado'},
-        ];
-      case FuenteArchivo(:final url, :final mimeType):
-        final bytes = await _descargar(url);
-        return [
-          {'text': prompt},
-          {
+    final parts = <Map<String, dynamic>>[
+      {'text': prompt}
+    ];
+    for (final fuente in fuentes) {
+      switch (fuente) {
+        case FuenteTexto(:final contenido):
+          final recortado = contenido.length > 18000
+              ? contenido.substring(0, 18000)
+              : contenido;
+          parts.add(
+              {'text': '\n\n--- FUENTE: ${fuente.titulo} ---\n$recortado'});
+        case FuenteArchivo(:final url, :final mimeType):
+          final bytes = await _descargar(url);
+          parts.add({
             'inline_data': {
               'mime_type': mimeType,
               'data': base64Encode(bytes),
             }
-          },
-        ];
+          });
+      }
     }
+    return parts;
   }
 
   Future<Uint8List> _descargar(String url) async {
@@ -185,10 +308,21 @@ Reglas estrictas:
     }
   }
 
+  Future<String> _generarTextoConReintento(
+    List<Map<String, dynamic>> parts,
+  ) async {
+    try {
+      return await _generarTexto(parts);
+    } on EstudioIaException {
+      rethrow;
+    } catch (e) {
+      return await _generarTexto(parts);
+    }
+  }
+
   Future<String> _generarTexto(
-    List<Map<String, dynamic>> parts, {
-    required bool jsonMode,
-  }) async {
+    List<Map<String, dynamic>> parts,
+  ) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(
         _endpoint,
@@ -201,8 +335,8 @@ Reglas estrictas:
             {'parts': parts}
           ],
           'generationConfig': {
-            if (jsonMode) 'response_mime_type': 'application/json',
-            'temperature': jsonMode ? 0.2 : 0.4,
+            'response_mime_type': 'application/json',
+            'temperature': 0.2,
           },
         },
       );
@@ -220,8 +354,6 @@ Reglas estrictas:
     }
   }
 
-  // ── Parseo de la respuesta ─────────────────────────────────────────────────
-
   String? _extraerTexto(Map<String, dynamic>? data) {
     final candidates =
         (data?['candidates'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
@@ -229,27 +361,45 @@ Reglas estrictas:
     if (candidates.isEmpty) return null;
     final content = candidates.first['content'];
     if (content is! Map<String, dynamic>) return null;
-    final parts = content['parts'] as List<dynamic>?;
-    if (parts == null || parts.isEmpty) return null;
-    return parts.first['text']?.toString();
+    final responseParts = content['parts'] as List<dynamic>?;
+    if (responseParts == null || responseParts.isEmpty) return null;
+    return responseParts.first['text']?.toString();
+  }
+
+  Map<String, dynamic> _decodificarJsonConReintento(String raw) {
+    try {
+      return _decodificarJson(raw);
+    } on EstudioIaException {
+      try {
+        return _decodificarJson(raw);
+      } catch (_) {
+        rethrow;
+      }
+    }
   }
 
   Map<String, dynamic> _decodificarJson(String raw) {
     var s = raw
         .trim()
-        .replaceAll(RegExp(r'^```(json)?', caseSensitive: false), '')
-        .replaceAll(RegExp(r'```$'), '')
+        .replaceAll(RegExp(r'^```(json)?\s*', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s*```$'), '')
         .trim();
+
     final start = s.indexOf('{');
     final end = s.lastIndexOf('}');
     if (start != -1 && end > start) {
       s = s.substring(start, end + 1);
     }
-    final decoded = jsonDecode(s);
-    if (decoded is! Map<String, dynamic>) {
-      throw const EstudioIaException('La IA no devolvió un JSON válido.');
+
+    try {
+      final decoded = jsonDecode(s);
+      if (decoded is Map<String, dynamic>) return decoded;
+    } on FormatException {
+      throw const EstudioIaException(
+          'La IA devolvió un formato inválido. Intenta de nuevo.');
     }
-    return decoded;
+
+    throw const EstudioIaException('La IA no devolvió un JSON válido.');
   }
 
   void _verificarClave() {

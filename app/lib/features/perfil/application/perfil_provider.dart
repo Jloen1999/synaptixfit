@@ -46,21 +46,35 @@ class PerfilActividad {
 // Proveedores enfocados — invalidación selectiva sin recargar todo el perfil
 // ───────────────────────────────────────────────────────────────────────────
 
+/// Proveedor del ID del usuario autenticado actual.
+///
+/// Retorna null cuando no hay sesion activa. Al cambiar de usuario
+/// (logout + login), el valor cambia de id_A → null → id_B, forzando
+/// que cualquier FutureProvider que lo observe se re-evalue desde cero.
+final currentUserIdProvider = Provider<String?>((ref) {
+  return Supabase.instance.client.auth.currentUser?.id;
+});
+
 /// Usuario + perfil bienestar (usados juntos en HeroHeader).
+///
+/// Observa [currentUserIdProvider] para auto-reconstruirse cuando
+/// cambia el usuario autenticado, sin necesidad de invalidar manualmente.
 final perfilUsuarioProvider = FutureProvider<PerfilUsuario>((ref) async {
   final client = Supabase.instance.client;
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) throw Exception('Sesión no activa');
+
   final user = client.auth.currentUser;
-  if (user == null) throw Exception('Sesión no activa');
 
   final usuarioMap =
-      await client.from('usuarios').select().eq('id', user.id).maybeSingle();
+      await client.from('usuarios').select().eq('id', userId).maybeSingle();
   final usuario = usuarioMap != null
       ? UsuarioDb.fromMap(usuarioMap)
       : UsuarioDb(
-          id: user.id,
-          email: user.email ?? '',
-          nombreCompleto: user.userMetadata?['full_name']?.toString() ?? '—',
-          urlAvatar: user.userMetadata?['avatar_url']?.toString(),
+          id: userId,
+          email: user?.email ?? '',
+          nombreCompleto: user?.userMetadata?['full_name']?.toString() ?? '—',
+          urlAvatar: user?.userMetadata?['avatar_url']?.toString(),
           nivel: 1,
           xpTotal: 0,
           rachaActual: 0,
@@ -72,13 +86,13 @@ final perfilUsuarioProvider = FutureProvider<PerfilUsuario>((ref) async {
   final perfilMap = await client
       .from('perfil_bienestar_usuario')
       .select()
-      .eq('usuario_id', user.id)
+      .eq('usuario_id', userId)
       .maybeSingle();
   final perfil = perfilMap != null
       ? PerfilBienestarDb.fromMap(perfilMap)
       : PerfilBienestarDb(
           id: '',
-          usuarioId: user.id,
+          usuarioId: userId,
           edad: 0,
           sexo: 'prefiero_no_decirlo',
           pesoKg: 0,

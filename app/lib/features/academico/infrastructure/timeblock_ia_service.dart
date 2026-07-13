@@ -134,7 +134,7 @@ N10. EQUILIBRIO CARGA: La carga diaria total no debe superar las 6 horas en ning
 === REGLAS ADICIONALES ===
 H1. No solapes bloques de estudio con bloques de deporte si la carga diaria supera las 4 horas.
 H2. Si una entrega tiene dificultad "alta", asigna al menos 3 bloques de estudio para esa asignatura.
-H3. Prioriza bloques de 90 minutos para estudio profundo; usa bloques de 60 minutos para repaso ligero.
+H3. Prioriza bloques de ${config.tMaxEstudioMinutos} minutos para estudio profundo; usa bloques de ${(config.tMaxEstudioMinutos * 0.6).round()} minutos para repaso ligero.
 H4. Las sesiones deportivas deben espaciarse al menos 48 horas entre sí.
 H5. Los sábados prioriza repaso ligero (60 min); los domingos evita colocar bloques de estudio.
 
@@ -194,7 +194,8 @@ H5. Los sábados prioriza repaso ligero (60 min); los domingos evita colocar blo
         final cantidadBloques = (horasPorDia / 1.5).ceil().clamp(1, 2);
         var hora = 16;
         for (var b = 0; b < cantidadBloques; b++) {
-          final duracion = (horasPorDia / cantidadBloques).clamp(1.0, 2.0);
+          final maxHoras = config.tMaxEstudioMinutos / 60.0;
+          final duracion = (horasPorDia / cantidadBloques).clamp(0.5, maxHoras);
           final hInicio = hora;
           final hFin = hora + duracion.toInt();
           final mFin = ((duracion - duracion.toInt()) * 60).toInt();

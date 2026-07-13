@@ -13,6 +13,7 @@ import '../../academico/application/asignaturas_provider.dart';
 import '../../academico/application/catalogo_provider.dart';
 import '../../academico/infrastructure/ics_sync_service.dart';
 import '../../bienestar/application/rutina_provider.dart';
+import '../../bienestar/application/neurofisiologia_provider.dart';
 import '../../bienestar/application/ejercicios_provider.dart';
 import '../../../core/design_system/sv_colors.dart';
 import '../../dashboard/application/dashboard_provider.dart';
@@ -384,8 +385,6 @@ class _ProfileHeaderState extends State<_ProfileHeader> {
                   try {
                     await ref.read(authControllerProvider.notifier).logout();
                   } catch (_) {}
-                  if (!context.mounted) return;
-                  context.go('/acceso');
                 },
                 icon: const Icon(Icons.logout_rounded, size: 20),
                 color: cs.onPrimary.withValues(alpha: 0.8),
@@ -947,6 +946,9 @@ class _BienestarTabState extends ConsumerState<_BienestarTab> {
           ],
         ),
 
+        // ── Gasto calórico hoy ──
+        const _CaloriasDiariasCard(),
+
         // ── Entrenamiento ──
         _sectionCard(
           context,
@@ -1389,6 +1391,82 @@ class _BienestarTabState extends ConsumerState<_BienestarTab> {
       ),
     );
   }
+}
+
+// =============================================================================
+// _CaloriasDiariasCard — Gasto calórico diario (estudio + entrenamiento)
+// =============================================================================
+class _CaloriasDiariasCard extends ConsumerWidget {
+  const _CaloriasDiariasCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final kcalEstudio = ref.watch(caloriasEstudioHoyProvider).valueOrNull ?? 0;
+    final data = ref.watch(dashboardProvider).valueOrNull;
+    final kcalEjercicio = (data?.calorias ?? 0).toDouble();
+
+    final total = kcalEstudio + kcalEjercicio;
+    if (total <= 0) return const SizedBox.shrink();
+
+    final cs = Theme.of(context).colorScheme;
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(top: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_fire_department_rounded,
+                    size: 18, color: Colors.orange.shade300),
+                const SizedBox(width: 8),
+                Text(
+                  'Gasto calórico hoy',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${total.round()} kcal',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: cs.onSurface,
+              ),
+            ),
+            const Divider(height: 16),
+            if (kcalEjercicio > 0)
+              _fila('🏋️ Entrenamiento', '${kcalEjercicio.round()} kcal'),
+            const SizedBox(height: 4),
+            if (kcalEstudio > 0)
+              _fila('🧠 Estudio', '${kcalEstudio.round()} kcal'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _fila(String label, String valor) => Row(
+        children: [
+          Text(label,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade400)),
+          const Spacer(),
+          Text(valor,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.orange.shade300)),
+        ],
+      );
 }
 
 // =============================================================================
@@ -2087,11 +2165,6 @@ class _AjustesTab extends ConsumerWidget {
             onPressed: () async {
               try {
                 await ref.read(authControllerProvider.notifier).logout();
-                ref.invalidate(perfilUsuarioProvider);
-                ref.invalidate(dashboardProvider);
-                ref.invalidate(rutinasUsuarioProvider);
-                if (!context.mounted) return;
-                context.go('/acceso');
               } catch (_) {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(

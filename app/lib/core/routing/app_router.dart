@@ -12,6 +12,8 @@ import '../../features/academico/presentation/plan_semanal_screen.dart';
 import '../../features/academico/presentation/inbox_screen.dart';
 import '../../features/academico/presentation/canvas_screen.dart';
 import '../../features/academico/presentation/practica_screen.dart';
+import '../../features/academico/presentation/flashcards_screen.dart';
+import '../../features/academico/presentation/flashcards_results_screen.dart';
 import '../../shared/models/db_models.dart';
 import '../../features/analitica/presentation/analitica_screen.dart';
 import '../../features/auth/presentation/acceso_screen.dart';
@@ -41,13 +43,24 @@ import '../../features/admin/presentation/admin_hub_screen.dart';
 import '../../features/admin/presentation/admin_usuario_detalle.dart';
 import 'shell_route.dart';
 
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier() {
+    Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+      notifyListeners();
+    });
+  }
+}
+
+final _authListenable = _AuthChangeNotifier();
+
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
+  refreshListenable: _authListenable,
   redirect: (context, state) {
     final autenticado = Supabase.instance.client.auth.currentUser != null;
     final location = state.uri.toString();
 
-    // Rutas públicas (sin autenticación requerida)
+    // Rutas publicas (sin autenticacion requerida)
     final esRutaPublica = location == '/' ||
         location == '/splash' ||
         location == '/acceso' ||
@@ -223,6 +236,39 @@ final GoRouter appRouter = GoRouter(
         sessionId: state.uri.queryParameters['sessionId'],
         modoRevision: state.uri.queryParameters['revision'] == 'true',
       ),
+    ),
+    GoRoute(
+      path: '/academico/flashcards/:materialId',
+      builder: (context, state) => FlashcardScreen(
+        materialId: state.pathParameters['materialId'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/academico/flashcards/:materialId/revision',
+      builder: (context, state) {
+        final extra = state.extra as List<int>?;
+        return FlashcardScreen(
+          materialId: state.pathParameters['materialId'] ?? '',
+          revisionIds: extra,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/academico/flashcards/:materialId/resultados',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return FlashcardResultsScreen(
+          materialId: state.pathParameters['materialId'] ?? '',
+          dominadas: extra['dominadas'] as int,
+          dudosas: extra['dudosas'] as int,
+          falladas: extra['falladas'] as int,
+          total: extra['total'] as int,
+          falladasIds:
+              (extra['falladasIds'] as List).map((e) => e as int).toList(),
+          preguntas:
+              (extra['preguntas'] as List).map((e) => e as PreguntaDb).toList(),
+        );
+      },
     ),
     GoRoute(
       path: '/notificaciones',

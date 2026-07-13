@@ -24,13 +24,25 @@ class AdminGraficosUsuario extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Gráfico RPE
-          _buildSeccionGrafico(context, 'RPE Promedio Semanal', rpeAsync,
-              (data) => _buildLineChart(context, data)),
+          _buildSeccionGrafico(
+            context,
+            'RPE Promedio Semanal',
+            'Percepción subjetiva del esfuerzo (escala 1-10) reportada tras cada '
+                'sesión, promediada por semana. Refleja la intensidad del entrenamiento.',
+            rpeAsync,
+            (data) => _buildLineChart(context, data),
+          ),
           const SizedBox(height: 24),
 
           // Gráfico Volumen
-          _buildSeccionGrafico(context, 'Volumen Semanal (minutos)',
-              volumenAsync, (data) => _buildBarChart(context, data)),
+          _buildSeccionGrafico(
+            context,
+            'Volumen Semanal (minutos)',
+            'Minutos totales de entrenamiento acumulados cada semana. Indica la '
+                'carga de trabajo físico del usuario en el tiempo.',
+            volumenAsync,
+            (data) => _buildBarChart(context, data),
+          ),
         ],
       ),
     );
@@ -39,16 +51,23 @@ class AdminGraficosUsuario extends ConsumerWidget {
   Widget _buildSeccionGrafico(
     BuildContext context,
     String titulo,
+    String descripcion,
     AsyncValue<List<dynamic>> asyncData,
     Widget Function(List<dynamic> data) chartBuilder,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          titulo,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+        Text(titulo,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text(descripcion,
+            style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.5))),
         const SizedBox(height: 12),
         SizedBox(
           height: 220,
@@ -129,6 +148,33 @@ class AdminGraficosUsuario extends ConsumerWidget {
               const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchSpotThreshold: 30,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => color.withValues(alpha: 0.92),
+            tooltipRoundedRadius: 8,
+            tooltipPadding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            fitInsideHorizontally: true,
+            fitInsideVertically: true,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final idx = spot.spotIndex;
+                if (idx < 0 || idx >= data.length) return null;
+                final fecha = data[idx].fecha as DateTime;
+                return LineTooltipItem(
+                  '${fecha.day}/${fecha.month}\nRPE ${spot.y.toStringAsFixed(1)}',
+                  const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12),
+                );
+              }).toList();
+            },
+          ),
+          handleBuiltInTouches: true,
+        ),
         lineBarsData: [
           LineChartBarData(
             spots: spots,

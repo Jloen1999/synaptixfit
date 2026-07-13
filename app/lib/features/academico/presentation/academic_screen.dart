@@ -124,14 +124,14 @@ class _SemestreBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 2),
+      padding: const EdgeInsets.fromLTRB(20, 2, 20, 6),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
                 color: SVColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(6)),
+                borderRadius: SVShapes.pill),
             child: Text('${p.semestreEnCurso}° Semestre',
                 style: const TextStyle(
                     color: SVColors.primary,
@@ -149,32 +149,60 @@ class _SemestreBar extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w500))),
           ],
-          if (cursosOrdenados.isNotEmpty)
+          if (cursosOrdenados.isNotEmpty) ...[
+            const SizedBox(width: 8),
             Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                reverse: true,
-                child: Row(
-                  children: cursosOrdenados
-                      .map((c) => Padding(
-                            padding: const EdgeInsets.only(left: 6),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 3),
-                              decoration: BoxDecoration(
-                                  color: SVColors.surfaceContainer,
-                                  borderRadius: BorderRadius.circular(6)),
-                              child: Text('$c° Curso · ${cursoCount[c]} asig.',
-                                  style: const TextStyle(
-                                      color: SVColors.onSurfaceVariant,
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w600)),
-                            ),
-                          ))
-                      .toList(),
-                ),
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [
+                        ...cursosOrdenados.map((c) => Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                    color: SVColors.surfaceContainer,
+                                    borderRadius: SVShapes.pill),
+                                child: Text(
+                                    '${c}° Curso · ${cursoCount[c]} asig.',
+                                    style: const TextStyle(
+                                        color: SVColors.onSurfaceVariant,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                            )),
+                        const SizedBox(width: 20),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: IgnorePointer(
+                      child: Container(
+                        width: 32,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerRight,
+                            end: Alignment.centerLeft,
+                            colors: [
+                              SVColors.background,
+                              SVColors.background.withValues(alpha: 0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ],
         ],
       ),
     );

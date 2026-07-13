@@ -1,16 +1,17 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../application/admin_metricas_provider.dart';
+import '../../application/admin_provider.dart'
+    show lockdownStateProvider, toggleLockdown;
 import 'admin_kpi_card.dart';
 
-/// Dashboard de KPIs globales para el panel de administración.
+/// Dashboard de KPIs globales con diseno Clean UI.
 ///
-/// Muestra una cuadrícula de 6 tarjetas con las métricas principales
-/// del sistema: usuarios, actividad diaria, rutinas, retos y contenido
-/// reportado. Debajo del grid muestra un gráfico de línea con los
-/// registros diarios de los últimos 30 días.
+/// Cabecera con fecha del sistema, grid de 2 columnas con 6 tarjetas KPI
+/// y grafico de tendencia diaria de los ultimos 30 dias con tooltips.
 class AdminKpiDashboard extends ConsumerWidget {
   const AdminKpiDashboard({super.key});
 
@@ -18,6 +19,8 @@ class AdminKpiDashboard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final metricasAsync = ref.watch(adminMetricasProvider);
     final registrosDiariosAsync = ref.watch(adminRegistrosDiariosProvider(30));
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return metricasAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -25,19 +28,34 @@ class AdminKpiDashboard extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 12),
-            Text('Error al cargar métricas: $err'),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              icon: const Icon(Icons.refresh),
+            Icon(Icons.error_outline_rounded,
+                size: 48, color: Colors.red.shade300),
+            const SizedBox(height: 16),
+            Text('Error al cargar metricas',
+                style: TextStyle(
+                    fontSize: 15, color: cs.onSurface.withValues(alpha: 0.6))),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Reintentar'),
-              onPressed: () => ref.invalidate(adminMetricasProvider),
+              onPressed: () {
+                ref.invalidate(adminMetricasProvider);
+                ref.invalidate(adminRegistrosDiariosProvider(30));
+              },
             ),
           ],
         ),
       ),
       data: (m) {
+        List<double>? sparklineSesiones;
+        registrosDiariosAsync.whenOrNull(data: (registros) {
+          if (registros.isNotEmpty) {
+            sparklineSesiones = registros
+                .map((r) => (r['count'] as num?)?.toDouble() ?? 0.0)
+                .toList();
+          }
+        });
+
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(adminMetricasProvider);
@@ -47,64 +65,118 @@ class AdminKpiDashboard extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Grid de KPIs
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D3B66),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Resumen General',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      DateFormat('d MMM yyyy', 'es').format(DateTime.now()),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurface.withValues(alpha: 0.45),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildLockdownBanner(context, ref, cs),
+                const SizedBox(height: 16),
                 GridView.count(
                   crossAxisCount: 2,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.5,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.65,
                   children: [
                     AdminKpiCard(
-                      icon: Icons.people,
+                      icon: Icons.people_rounded,
                       label: 'Total usuarios',
-                      value: '${m.totalUsuarios}',
-                      color: Colors.blue,
+                      value: _formatearNumero(m.totalUsuarios),
+                      color: const Color(0xFF0D3B66),
+                      sparklineValues: null,
                     ),
                     AdminKpiCard(
-                      icon: Icons.how_to_reg,
+                      icon: Icons.how_to_reg_rounded,
                       label: 'Activos hoy',
-                      value: '${m.usuariosActivosHoy}',
-                      color: Colors.green,
+                      value: _formatearNumero(m.usuariosActivosHoy),
+                      color: const Color(0xFF006E2D),
                     ),
                     AdminKpiCard(
-                      icon: Icons.fitness_center,
+                      icon: Icons.fitness_center_rounded,
                       label: 'Sesiones hoy',
-                      value: '${m.sesionesHoy}',
-                      color: Colors.orange,
+                      value: _formatearNumero(m.sesionesHoy),
+                      color: const Color(0xFF00A896),
+                      sparklineValues: sparklineSesiones,
                     ),
                     AdminKpiCard(
-                      icon: Icons.list_alt,
+                      icon: Icons.list_alt_rounded,
                       label: 'Rutinas activas',
-                      value: '${m.rutinasActivas}',
-                      color: Colors.purple,
+                      value: _formatearNumero(m.rutinasActivas),
+                      color: const Color(0xFF7B2D8E),
                     ),
                     AdminKpiCard(
-                      icon: Icons.emoji_events,
+                      icon: Icons.emoji_events_rounded,
                       label: 'Retos activos',
-                      value: '${m.retosActivos}',
-                      color: Colors.amber,
+                      value: _formatearNumero(m.retosActivos),
+                      color: const Color(0xFFE67E22),
                     ),
                     AdminKpiCard(
-                      icon: Icons.flag,
+                      icon: Icons.flag_rounded,
                       label: 'Reportado pendiente',
                       value: m.contenidoReportadoPendiente > 0
                           ? '${m.contenidoReportadoPendiente}'
-                          : '0',
-                      color: Colors.red,
+                          : '—',
+                      color: const Color(0xFFC0392B),
                       badge: m.contenidoReportadoPendiente > 0
                           ? '${m.contenidoReportadoPendiente}'
                           : null,
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 24),
-
-                // Gráfico de tendencia diaria
-                _buildTendenciaChart(context, registrosDiariosAsync),
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00A896),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Tendencia de Sesiones',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildTrendChart(context, cs, registrosDiariosAsync),
               ],
             ),
           ),
@@ -113,54 +185,185 @@ class AdminKpiDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildTendenciaChart(
+  Widget _buildLockdownBanner(
     BuildContext context,
+    WidgetRef ref,
+    ColorScheme cs,
+  ) {
+    final lockdownAsync = ref.watch(lockdownStateProvider);
+
+    return lockdownAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (enLockdown) {
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: enLockdown
+                  ? const Color(0xFFC0392B).withValues(alpha: 0.5)
+                  : Colors.grey.shade200,
+            ),
+          ),
+          color: enLockdown
+              ? const Color(0xFFC0392B).withValues(alpha: 0.06)
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: enLockdown
+                        ? const Color(0xFFC0392B).withValues(alpha: 0.12)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    enLockdown ? Icons.shield_rounded : Icons.shield_outlined,
+                    color: enLockdown
+                        ? const Color(0xFFC0392B)
+                        : Colors.grey.shade400,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        enLockdown ? 'Modo Pánico ACTIVO' : 'Modo Pánico',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: enLockdown
+                              ? const Color(0xFFC0392B)
+                              : cs.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        enLockdown
+                            ? 'Nuevo contenido social bloqueado'
+                            : 'Interruptor maestro de emergencia',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: enLockdown
+                              ? const Color(0xFFC0392B).withValues(alpha: 0.7)
+                              : cs.onSurface.withValues(alpha: 0.45),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: enLockdown,
+                  activeColor: const Color(0xFFC0392B),
+                  inactiveTrackColor: Colors.grey.shade300,
+                  onChanged: (val) async {
+                    try {
+                      await toggleLockdown(ref, val);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              val
+                                  ? 'Modo Pánico ACTIVADO'
+                                  : 'Modo Pánico DESACTIVADO',
+                            ),
+                            backgroundColor:
+                                val ? const Color(0xFFC0392B) : Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatearNumero(int n) {
+    if (n >= 1000000) {
+      return '${(n / 1000000).toStringAsFixed(1)}M';
+    }
+    if (n >= 1000) {
+      return '${(n / 1000).toStringAsFixed(1)}k';
+    }
+    return '$n';
+  }
+
+  Widget _buildTrendChart(
+    BuildContext context,
+    ColorScheme cs,
     AsyncValue<List<Map<String, dynamic>>> registrosAsync,
   ) {
+    const colorTeal = Color(0xFF00A896);
+    const colorDark = Color(0xFF0D3B66);
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.trending_up, size: 20, color: Colors.indigo),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Sesiones diarias (últimos 30 días)',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                Icon(Icons.show_chart_rounded,
+                    size: 18, color: colorTeal.withValues(alpha: 0.7)),
+                const SizedBox(width: 8),
+                Text(
+                  'Sesiones diarias (ultimos 30 dias)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             SizedBox(
               height: 220,
               child: registrosAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2)),
                 error: (err, _) => Center(
-                  child: Text(
-                    'Error al cargar datos',
-                    style: TextStyle(color: Colors.red.shade400),
-                  ),
+                  child: Text('Error al cargar',
+                      style: TextStyle(
+                          color: cs.error, fontWeight: FontWeight.w500)),
                 ),
                 data: (registros) {
                   if (registros.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Sin datos de sesiones',
-                        style: TextStyle(color: Colors.grey),
-                      ),
+                    return Center(
+                      child: Text('Sin datos de sesiones',
+                          style: TextStyle(
+                              color: cs.onSurface.withValues(alpha: 0.4))),
                     );
                   }
-                  return _buildLineChart(context, registros);
+                  return _buildLineChart(registros, colorTeal, colorDark);
                 },
               ),
             ),
@@ -171,16 +374,15 @@ class AdminKpiDashboard extends ConsumerWidget {
   }
 
   Widget _buildLineChart(
-      BuildContext context, List<Map<String, dynamic>> data) {
-    final color = Theme.of(context).colorScheme.primary;
-
-    // Crear spots: índice en X, count en Y
+    List<Map<String, dynamic>> data,
+    Color lineColor,
+    Color tooltipColor,
+  ) {
     final spots = List.generate(data.length, (i) {
       final count = (data[i]['count'] as num?)?.toDouble() ?? 0;
       return FlSpot(i.toDouble(), count);
     });
 
-    // Calcular maxY con margen
     double maxY = 0;
     for (final spot in spots) {
       if (spot.y > maxY) maxY = spot.y;
@@ -196,6 +398,7 @@ class AdminKpiDashboard extends ConsumerWidget {
           getDrawingHorizontalLine: (value) => FlLine(
             color: Colors.grey.shade200,
             strokeWidth: 1,
+            dashArray: [4, 4],
           ),
         ),
         titlesData: FlTitlesData(
@@ -205,7 +408,10 @@ class AdminKpiDashboard extends ConsumerWidget {
               reservedSize: 32,
               getTitlesWidget: (value, meta) => Text(
                 value >= 0 ? '${value.toInt()}' : '',
-                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500),
               ),
             ),
           ),
@@ -218,16 +424,16 @@ class AdminKpiDashboard extends ConsumerWidget {
                 final idx = value.toInt();
                 if (idx < 0 || idx >= data.length) return const SizedBox();
                 final fechaStr = data[idx]['fecha'] as String? ?? '';
-                // Mostrar solo día/mes
                 final partes = fechaStr.split('-');
                 final label =
                     partes.length >= 3 ? '${partes[2]}/${partes[1]}' : fechaStr;
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    label,
-                    style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
-                  ),
+                  child: Text(label,
+                      style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.w500)),
                 );
               },
             ),
@@ -238,26 +444,58 @@ class AdminKpiDashboard extends ConsumerWidget {
               const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => tooltipColor.withValues(alpha: 0.92),
+            tooltipRoundedRadius: 8,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final idx = spot.spotIndex;
+                final fechaStr = data[idx]['fecha'] as String? ?? '';
+                final partes = fechaStr.split('-');
+                final label =
+                    partes.length >= 3 ? '${partes[2]}/${partes[1]}' : fechaStr;
+                return LineTooltipItem(
+                  '$label\n${spot.y.toInt()} sesiones',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+          handleBuiltInTouches: true,
+        ),
         lineBarsData: [
           LineChartBarData(
             spots: spots,
             isCurved: true,
             preventCurveOverShooting: true,
-            color: color,
+            color: lineColor,
             barWidth: 2.5,
             isStrokeCapRound: true,
             dotData: FlDotData(
               show: data.length <= 14,
               getDotPainter: (spot, percent, barData, index) =>
                   FlDotCirclePainter(
-                radius: 3,
-                color: color,
+                radius: 3.5,
+                color: lineColor,
                 strokeWidth: 0,
               ),
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: color.withValues(alpha: 0.12),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  lineColor.withValues(alpha: 0.22),
+                  lineColor.withValues(alpha: 0.01),
+                ],
+              ),
             ),
           ),
         ],

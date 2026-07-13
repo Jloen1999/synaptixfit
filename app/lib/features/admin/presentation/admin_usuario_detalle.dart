@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,18 +11,11 @@ import 'widgets/admin_graficos_usuario.dart';
 import 'widgets/admin_timeline_usuario.dart';
 import 'widgets/admin_wipe_dialog.dart';
 
-/// Pantalla de detalle de un usuario desde el panel de administración.
-///
-/// Muestra datos de perfil, bienestar, académico, conteos de actividad,
-/// actividad reciente y un bloque de configuración de usuario. Incluye
-/// un TabBar interno con tres sub-pestañas: Perfil, Estadísticas y Timeline.
+/// Detalle de usuario — Clean UI profesional con secciones expandibles.
 class AdminUsuarioDetalleScreen extends ConsumerWidget {
   final String usuarioId;
 
-  const AdminUsuarioDetalleScreen({
-    required this.usuarioId,
-    super.key,
-  });
+  const AdminUsuarioDetalleScreen({required this.usuarioId, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,32 +26,27 @@ class AdminUsuarioDetalleScreen extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Detalle de Usuario'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Perfil'),
-              Tab(text: 'Estadísticas'),
-              Tab(text: 'Timeline'),
-            ],
-          ),
+          bottom: const TabBar(tabs: [
+            Tab(text: 'Perfil'),
+            Tab(text: 'Estadísticas'),
+            Tab(text: 'Timeline'),
+          ]),
         ),
         body: detalleAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 12),
-                Text('Error: $err'),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reintentar'),
-                  onPressed: () =>
-                      ref.invalidate(adminUsuarioDetalleProvider(usuarioId)),
-                ),
-              ],
-            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+              const SizedBox(height: 12),
+              Text('Error: $err'),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+                onPressed: () =>
+                    ref.invalidate(adminUsuarioDetalleProvider(usuarioId)),
+              ),
+            ]),
           ),
           data: (data) => _buildTabContent(context, ref, data),
         ),
@@ -64,27 +55,20 @@ class AdminUsuarioDetalleScreen extends ConsumerWidget {
   }
 
   Widget _buildTabContent(
-    BuildContext context,
-    WidgetRef ref,
-    Map<String, dynamic> data,
-  ) {
-    return TabBarView(
-      children: [
-        // Tab 0: Perfil
-        _buildContent(context, ref, data),
-        // Tab 1: Estadísticas
-        AdminGraficosUsuario(usuarioId: usuarioId),
-        // Tab 2: Timeline
-        AdminTimelineUsuario(usuarioId: usuarioId),
-      ],
-    );
+      BuildContext context, WidgetRef ref, Map<String, dynamic> data) {
+    return TabBarView(children: [
+      _buildPerfilTab(context, ref, data),
+      AdminGraficosUsuario(usuarioId: usuarioId),
+      AdminTimelineUsuario(usuarioId: usuarioId),
+    ]);
   }
 
-  Widget _buildContent(
-    BuildContext context,
-    WidgetRef ref,
-    Map<String, dynamic> data,
-  ) {
+  // ═══════════════════════════════════════════════════════════════════════
+  // Pestaña Perfil
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Widget _buildPerfilTab(
+      BuildContext context, WidgetRef ref, Map<String, dynamic> data) {
     final nombre = data['nombre_completo'] as String? ?? '—';
     final email = data['email'] as String? ?? '—';
     final avatar = data['url_avatar'] as String?;
@@ -92,1005 +76,934 @@ class AdminUsuarioDetalleScreen extends ConsumerWidget {
     final nivel = (data['nivel'] as num?)?.toInt() ?? 1;
     final xpTotal = (data['xp_total'] as num?)?.toInt() ?? 0;
     final racha = (data['racha_actual'] as num?)?.toInt() ?? 0;
+    final isShadowbanned = data['is_shadowbanned'] == true;
     final creadoEn = data['creado_en'] as String?;
 
-    final perfilBienestar =
-        data['perfil_bienestar_usuario'] as Map<String, dynamic>?;
-    final perfilAcademico =
-        data['perfil_academico_usuario'] as Map<String, dynamic>?;
+    final bienestarData = data['perfil_bienestar_usuario'];
+    final bienestar =
+        bienestarData is Map ? bienestarData.cast<String, dynamic>() : null;
+    final academicoData = data['perfil_academico_usuario'];
+    final academico =
+        academicoData is Map ? academicoData.cast<String, dynamic>() : null;
     final conteos = data['_conteos'] as Map<String, dynamic>? ?? {};
 
-    // Datos de actividad reciente (Tarea 3b)
-    final sesionesRecientes =
-        (data['_sesiones_recientes'] as List<dynamic>?) ?? [];
-    final retosRecientes = (data['_retos_recientes'] as List<dynamic>?) ?? [];
-    final insigniasRecientes =
-        (data['_insignias_recientes'] as List<dynamic>?) ?? [];
-    final rutinasRecientes =
-        (data['_rutinas_recientes'] as List<dynamic>?) ?? [];
+    final sesiones = (data['_sesiones_recientes'] as List<dynamic>?) ?? [];
+    final retos = (data['_retos_recientes'] as List<dynamic>?) ?? [];
+    final rutinas = (data['_rutinas_recientes'] as List<dynamic>?) ?? [];
+    final insignias = (data['_insignias_recientes'] as List<dynamic>?) ?? [];
 
+    final cs = Theme.of(context).colorScheme;
     final rolColor = rol == 'admin' ? Colors.amber.shade700 : Colors.blueGrey;
+    final carrera = academico?['carrera'] as String?;
+    final universidad = academico?['universidad'] as String?;
+    final adherencia = data['_adherencia'] as Map<String, dynamic>? ?? {};
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Header ──
-          _buildHeader(nombre, email, avatar, rol, rolColor, creadoEn),
-          const SizedBox(height: 20),
-
-          // ── Cards de perfil ──
-          _buildPerfilCard(nivel, xpTotal, racha),
+          _buildHeader(nombre, email, avatar, rol, rolColor, carrera,
+              universidad, creadoEn, cs),
           const SizedBox(height: 12),
-
-          if (perfilBienestar != null) ...[
-            _buildBienestarCard(perfilBienestar),
-            const SizedBox(height: 12),
-          ],
-
-          if (perfilAcademico != null) ...[
-            _buildAcademicoCard(perfilAcademico),
-            const SizedBox(height: 12),
-          ],
-
-          // ── Conteos ──
-          _buildConteosCard(conteos),
-          const SizedBox(height: 20),
-
-          // ── Actividad reciente (Tarea 3b) ──
-          if (sesionesRecientes.isNotEmpty) ...[
-            _buildSesionesRecientes(sesionesRecientes),
-            const SizedBox(height: 12),
-          ],
-
-          if (retosRecientes.isNotEmpty) ...[
-            _buildRetosRecientes(retosRecientes),
-            const SizedBox(height: 12),
-          ],
-
-          if (rutinasRecientes.isNotEmpty) ...[
-            _buildRutinasRecientes(rutinasRecientes),
-            const SizedBox(height: 12),
-          ],
-
-          if (insigniasRecientes.isNotEmpty) ...[
-            _buildInsigniasRecientes(insigniasRecientes),
-            const SizedBox(height: 12),
-          ],
-
-          const SizedBox(height: 8),
-
-          // ── Bloque de configuración (Tarea 3c) ──
-          _buildConfiguracionUsuario(context, ref, nombre, email, nivel),
-
+          _buildMetricas(
+              nivel, xpTotal, racha, bienestar, academico, adherencia, cs),
           const SizedBox(height: 12),
-
-          // ── Botón de wipe ──
-          SizedBox(
-            height: 48,
-            child: FilledButton.icon(
-              onPressed: () => _confirmarWipe(context, ref, nombre),
-              icon: const Icon(Icons.delete_forever),
-              label: const Text('Eliminar todos los datos (Wipe)'),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // ── Botón de eliminación permanente (Tarea 2d) ──
-          SizedBox(
-            height: 48,
-            child: OutlinedButton.icon(
-              onPressed: () => _confirmarEliminar(context, ref, nombre, email),
-              icon: const Icon(Icons.person_remove, color: Colors.red),
-              label: const Text('Eliminar usuario permanentemente',
-                  style: TextStyle(color: Colors.red)),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.red),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-
+          _buildConteos(conteos, cs),
+          if (sesiones.isNotEmpty ||
+              retos.isNotEmpty ||
+              rutinas.isNotEmpty ||
+              insignias.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildActividad(sesiones, retos, rutinas, insignias, cs),
+          ],
+          const SizedBox(height: 12),
+          _buildShadowbanToggle(context, ref, isShadowbanned),
+          const SizedBox(height: 12),
+          _buildExpansionConfiguracion(context, ref, nombre, email, nivel),
+          const SizedBox(height: 12),
+          _buildAdministracion(context, ref, nombre, email),
           const SizedBox(height: 8),
           Center(
-            child: Text(
-              'ID: $usuarioId',
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.grey,
-                fontFamily: 'monospace',
-              ),
-            ),
+            child: Text('ID: $usuarioId',
+                style: TextStyle(
+                    fontSize: 10,
+                    color: cs.onSurface.withValues(alpha: 0.3),
+                    fontFamily: 'monospace')),
           ),
         ],
       ),
     );
   }
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Header
-  // ───────────────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════
+  // Header — avatar + nombre + email + carrera + chip rol
+  // ═══════════════════════════════════════════════════════════════════════
 
   Widget _buildHeader(
-    String nombre,
-    String email,
-    String? avatar,
-    String rol,
-    Color rolColor,
-    String? creadoEn,
-  ) {
+      String nombre,
+      String email,
+      String? avatar,
+      String rol,
+      Color rolColor,
+      String? carrera,
+      String? universidad,
+      String? creadoEn,
+      ColorScheme cs) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            ClipOval(
-              child: SizedBox(
-                width: 80,
-                height: 80,
-                child: avatar != null && avatar.isNotEmpty
-                    ? Image.network(
-                        normalizarUrlAvatar(avatar),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _avatarFallback(nombre),
-                      )
-                    : _avatarFallback(nombre),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              nombre,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              email,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: rolColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                rol.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: rolColor,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-            if (creadoEn != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Miembro desde ${_formatearFecha(creadoEn)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Cards de perfil básico
-  // ───────────────────────────────────────────────────────────────────────────
-
-  Widget _buildPerfilCard(int nivel, int xpTotal, int racha) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.person, size: 20, color: Colors.indigo),
-                SizedBox(width: 8),
-                Text(
-                  'Perfil',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
+        child: Row(children: [
+          ClipOval(
+            child: SizedBox(
+              width: 56,
+              height: 56,
+              child: avatar != null && avatar.isNotEmpty
+                  ? Image.network(normalizarUrlAvatar(avatar),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _avatarFallback(nombre, 24))
+                  : _avatarFallback(nombre, 24),
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _StatItem(
-                    icon: Icons.stars_rounded,
-                    label: 'Nivel',
-                    value: '$nivel',
-                    color: Colors.amber),
-                _StatItem(
-                    icon: Icons.emoji_events_outlined,
-                    label: 'XP',
-                    value: '$xpTotal',
-                    color: Colors.purple),
-                _StatItem(
-                    icon: Icons.local_fire_department_rounded,
-                    label: 'Racha',
-                    value: '$racha',
-                    color: Colors.deepOrange),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBienestarCard(Map<String, dynamic> perfil) {
-    final peso = perfil['peso_kg'];
-    final altura = perfil['altura_cm'];
-    final objetivo = perfil['objetivo_principal'];
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.favorite, size: 20, color: Colors.red),
-                SizedBox(width: 8),
-                Text(
-                  'Bienestar',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 24,
-              runSpacing: 8,
-              children: [
-                if (peso != null)
-                  _StatItem(
-                      icon: Icons.monitor_weight_outlined,
-                      label: 'Peso',
-                      value: '$peso kg',
-                      color: Colors.teal),
-                if (altura != null)
-                  _StatItem(
-                      icon: Icons.height,
-                      label: 'Altura',
-                      value: '$altura cm',
-                      color: Colors.blue),
-                if (objetivo != null)
-                  _StatItem(
-                      icon: Icons.flag_outlined,
-                      label: 'Objetivo',
-                      value: '$objetivo',
-                      color: Colors.orange),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAcademicoCard(Map<String, dynamic> perfil) {
-    final carrera = perfil['carrera'];
-    final semestre = perfil['semestre_actual'];
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.school, size: 20, color: Colors.indigo),
-                SizedBox(width: 8),
-                Text(
-                  'Académico',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 24,
-              runSpacing: 8,
-              children: [
-                if (carrera != null)
-                  _StatItem(
-                      icon: Icons.book,
-                      label: 'Carrera',
-                      value: '$carrera',
-                      color: Colors.deepPurple),
-                if (semestre != null)
-                  _StatItem(
-                      icon: Icons.calendar_today,
-                      label: 'Semestre',
-                      value: '$semestre',
-                      color: Colors.cyan),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConteosCard(Map<String, dynamic> conteos) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.analytics, size: 20, color: Colors.green),
-                SizedBox(width: 8),
-                Text(
-                  'Actividad',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _StatItem(
-                    icon: Icons.fitness_center,
-                    label: 'Sesiones',
-                    value: '${conteos['sesiones'] ?? 0}',
-                    color: Colors.green),
-                _StatItem(
-                    icon: Icons.list_alt,
-                    label: 'Rutinas',
-                    value: '${conteos['rutinas'] ?? 0}',
-                    color: Colors.blue),
-                _StatItem(
-                    icon: Icons.emoji_events,
-                    label: 'Retos',
-                    value: '${conteos['retos'] ?? 0}',
-                    color: Colors.amber),
-                _StatItem(
-                    icon: Icons.military_tech,
-                    label: 'Insignias',
-                    value: '${conteos['insignias'] ?? 0}',
-                    color: Colors.purple),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Actividad reciente (Tarea 3b)
-  // ───────────────────────────────────────────────────────────────────────────
-
-  Widget _buildSesionesRecientes(List<dynamic> sesiones) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.fitness_center, size: 20, color: Colors.green),
-                SizedBox(width: 8),
-                Text(
-                  'Últimas sesiones',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...sesiones.take(5).map((s) {
-              final fecha = s['completada_en'] as String?;
-              final duracion = s['duracion_minutos'];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    const Icon(Icons.circle, size: 6, color: Colors.green),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        fecha != null ? _formatearFecha(fecha) : '—',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                    Text(
-                      '${duracion ?? '?'} min',
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRetosRecientes(List<dynamic> retos) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.emoji_events, size: 20, color: Colors.amber),
-                SizedBox(width: 8),
-                Text(
-                  'Retos completados',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: retos.take(5).map<Widget>((r) {
-                return Chip(
-                  avatar: const Icon(Icons.check_circle,
-                      size: 14, color: Colors.amber),
-                  label: Text(
-                    r['titulo'] as String? ?? '—',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: Colors.amber.withValues(alpha: 0.1),
-                  side: BorderSide.none,
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRutinasRecientes(List<dynamic> rutinas) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.list_alt, size: 20, color: Colors.blue),
-                SizedBox(width: 8),
-                Text(
-                  'Rutinas activas',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: rutinas.take(5).map<Widget>((r) {
-                return Chip(
-                  avatar: const Icon(Icons.fitness_center,
-                      size: 14, color: Colors.blue),
-                  label: Text(
-                    r['nombre'] as String? ?? '—',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                  side: BorderSide.none,
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInsigniasRecientes(List<dynamic> insignias) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.military_tech, size: 20, color: Colors.purple),
-                SizedBox(width: 8),
-                Text(
-                  'Insignias obtenidas',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: insignias.take(5).map<Widget>((ins) {
-                final catalogo = ins['insignias'] as Map<String, dynamic>?;
-                final nombreInsignia = catalogo?['nombre'] as String? ?? '—';
-                final iconoInsignia = catalogo?['icono'] as String?;
-                return Chip(
-                  avatar: Icon(
-                    _iconoDesdeTexto(iconoInsignia),
-                    size: 14,
-                    color: Colors.purple,
-                  ),
-                  label: Text(
-                    nombreInsignia,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: Colors.purple.withValues(alpha: 0.1),
-                  side: BorderSide.none,
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Configuración de usuario (Tarea 3c)
-  // ───────────────────────────────────────────────────────────────────────────
-
-  Widget _buildConfiguracionUsuario(
-    BuildContext context,
-    WidgetRef ref,
-    String nombre,
-    String email,
-    int nivel,
-  ) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.settings, size: 20, color: Colors.indigo),
-                SizedBox(width: 8),
-                Text(
-                  'Configuración de usuario',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Editar nombre
-            _buildConfigField(
-              label: 'Nombre completo',
-              initialValue: nombre,
-              icon: Icons.person,
-              hintText: 'Nuevo nombre',
-              onSave: (nuevoValor) async {
-                await actualizarNombreUsuario(ref, usuarioId, nuevoValor);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Nombre actualizado'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // Editar email
-            _buildConfigField(
-              label: 'Email',
-              initialValue: email,
-              icon: Icons.email,
-              hintText: 'Nuevo email',
-              onSave: (nuevoValor) async {
-                if (!nuevoValor.contains('@')) {
-                  throw Exception('Email inválido');
-                }
-                await actualizarEmailUsuario(ref, usuarioId, nuevoValor);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Email actualizado'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // Cambiar nivel
-            Row(
-              children: [
-                const Icon(Icons.stars_rounded, size: 18, color: Colors.amber),
-                const SizedBox(width: 8),
-                const Text('Nivel: ',
-                    style:
-                        TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                SizedBox(
-                  width: 100,
-                  child: DropdownButtonFormField<int>(
-                    initialValue: nivel.clamp(1, 999),
-                    isDense: true,
-                    decoration: const InputDecoration(
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      border: OutlineInputBorder(),
-                    ),
-                    items: List.generate(
-                      15,
-                      (i) => nivel - 7 + i,
-                    )
-                        .where((v) => v >= 1 && v <= 999)
-                        .map((v) => DropdownMenuItem(
-                              value: v,
-                              child: Text('$v',
-                                  style: const TextStyle(fontSize: 14)),
-                            ))
-                        .toList(),
-                    onChanged: (val) async {
-                      if (val == null) return;
-                      try {
-                        await cambiarNivelUsuario(ref, usuarioId, val);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Nivel cambiado a $val'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // Reset XP
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _confirmarResetXp(context, ref),
-                icon: const Icon(Icons.restart_alt,
-                    size: 16, color: Colors.orange),
-                label: const Text('Reset XP a 0',
-                    style: TextStyle(color: Colors.orange)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.orange),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Campo de configuración con botón de guardar inline.
-  Widget _buildConfigField({
-    required String label,
-    required String initialValue,
-    required IconData icon,
-    required String hintText,
-    required Future<void> Function(String) onSave,
-  }) {
-    final controller = TextEditingController(text: initialValue);
-    bool saving = false;
-
-    return StatefulBuilder(
-      builder: (context, setLocalState) => Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18, color: Colors.grey.shade600),
-          const SizedBox(width: 8),
+          ),
+          const SizedBox(width: 14),
           Expanded(
-            child: TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                labelText: label,
-                hintText: hintText,
-                border: const OutlineInputBorder(),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                isDense: true,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(nombre,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface),
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(email,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurface.withValues(alpha: 0.5)),
+                    overflow: TextOverflow.ellipsis),
+                if (carrera != null && carrera.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.school, size: 13, color: Colors.indigo.shade300),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                          universidad != null && universidad.isNotEmpty
+                              ? '$carrera · $universidad'
+                              : carrera,
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.indigo.shade400),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                  ]),
+                ],
+                if (creadoEn != null)
+                  Text('Miembro desde ${_formatearFecha(creadoEn)}',
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: cs.onSurface.withValues(alpha: 0.35))),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          SizedBox(
-            height: 36,
-            child: FilledButton.tonalIcon(
-              onPressed: saving
-                  ? null
-                  : () async {
-                      setLocalState(() => saving = true);
-                      try {
-                        await onSave(controller.text.trim());
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      } finally {
-                        setLocalState(() => saving = false);
-                      }
-                    },
-              icon: const Icon(Icons.save, size: 16),
-              label: const Text('Guardar', style: TextStyle(fontSize: 12)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: rolColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
             ),
+            child: Text(rol.toUpperCase(),
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: rolColor,
+                    letterSpacing: 0.5)),
           ),
+        ]),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Métricas unificadas
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Widget _buildMetricas(
+      int nivel,
+      int xpTotal,
+      int racha,
+      Map<String, dynamic>? bienestar,
+      Map<String, dynamic>? academico,
+      Map<String, dynamic> adherencia,
+      ColorScheme cs) {
+    final stats = <Widget>[
+      _miniStat('Nivel', '$nivel', Icons.stars_rounded, Colors.amber, cs),
+      _miniStat('XP', _fmtCompacto(xpTotal), Icons.emoji_events_outlined,
+          Colors.purple, cs),
+      _miniStat('Racha', '$racha', Icons.local_fire_department_rounded,
+          Colors.deepOrange, cs),
+    ];
+    if (bienestar != null && bienestar['peso_kg'] != null) {
+      stats.add(_miniStat('Peso', '${bienestar['peso_kg']} kg',
+          Icons.monitor_weight_outlined, Colors.teal, cs));
+    }
+    if (bienestar != null && bienestar['altura_cm'] != null) {
+      final imc = bienestar['imc'];
+      stats.add(_miniStat(
+          'Altura',
+          '${bienestar['altura_cm']} cm${imc != null ? ' · IMC ${(imc as num).toStringAsFixed(1)}' : ''}',
+          Icons.height,
+          Colors.blue,
+          cs));
+    }
+    if (bienestar != null && bienestar['objetivo_principal'] != null) {
+      stats.add(_miniStat('Objetivo', '${bienestar['objetivo_principal']}',
+          Icons.flag_outlined, Colors.orange, cs));
+    }
+    if (bienestar != null && bienestar['nivel_actividad'] != null) {
+      stats.add(_miniStat('Actividad', '${bienestar['nivel_actividad']}',
+          Icons.directions_run, Colors.green, cs));
+    }
+    if (bienestar != null && bienestar['edad'] != null) {
+      stats.add(_miniStat(
+          'Edad', '${bienestar['edad']}', Icons.cake, Colors.pink, cs));
+    }
+    if (academico != null && academico['semestre_actual'] != null) {
+      stats.add(_miniStat('Semestre', '${academico['semestre_actual']}',
+          Icons.calendar_today, Colors.cyan, cs));
+    }
+    if (academico != null && academico['creditos_semestre_actual'] != null) {
+      stats.add(_miniStat(
+          'Créditos',
+          '${academico['creditos_semestre_actual']}',
+          Icons.credit_score,
+          Colors.indigo,
+          cs));
+    }
+    if (adherencia['porcentaje'] != null) {
+      stats.add(_miniStat('Adherencia', '${adherencia['porcentaje']}%',
+          Icons.trending_up, Colors.teal, cs));
+    }
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        child: Wrap(
+          spacing: 2,
+          runSpacing: 8,
+          alignment: WrapAlignment.spaceAround,
+          children: stats,
+        ),
+      ),
+    );
+  }
+
+  Widget _miniStat(
+      String label, String value, IconData icon, Color color, ColorScheme cs) {
+    return SizedBox(
+      width: 78,
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 17, color: color.withValues(alpha: 0.7)),
+        const SizedBox(height: 2),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(value,
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface)),
+        ),
+        Text(label,
+            style: TextStyle(
+                fontSize: 10, color: cs.onSurface.withValues(alpha: 0.4))),
+      ]),
+    );
+  }
+
+  String _fmtCompacto(int n) {
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return '$n';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Conteos
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Widget _buildConteos(Map<String, dynamic> conteos, ColorScheme cs) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        child: Row(children: [
+          _chipConteo(Icons.fitness_center, 'Sesiones',
+              '${conteos['sesiones'] ?? 0}', Colors.green, cs),
+          _chipConteo(Icons.list_alt, 'Rutinas', '${conteos['rutinas'] ?? 0}',
+              Colors.blue, cs),
+          _chipConteo(Icons.emoji_events, 'Retos', '${conteos['retos'] ?? 0}',
+              Colors.amber, cs),
+          _chipConteo(Icons.military_tech, 'Insignias',
+              '${conteos['insignias'] ?? 0}', Colors.purple, cs),
+        ]),
+      ),
+    );
+  }
+
+  Widget _chipConteo(
+      IconData icon, String label, String count, Color color, ColorScheme cs) {
+    return Expanded(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 18, color: color.withValues(alpha: 0.6)),
+        const SizedBox(height: 2),
+        Text(count,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface)),
+        Text(label,
+            style: TextStyle(
+                fontSize: 10, color: cs.onSurface.withValues(alpha: 0.4))),
+      ]),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Actividad reciente (EXPANDIBLE)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Widget _buildActividad(List<dynamic> sesiones, List<dynamic> retos,
+      List<dynamic> rutinas, List<dynamic> insignias, ColorScheme cs) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        shape: Border(top: BorderSide.none),
+        collapsedShape: Border(top: BorderSide.none),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        leading: Icon(Icons.history_rounded,
+            size: 18, color: cs.onSurface.withValues(alpha: 0.5)),
+        title: Text('Actividad reciente',
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface)),
+        children: [
+          if (sesiones.isNotEmpty)
+            _filaAct(
+                'Sesiones',
+                sesiones.take(4).toList(),
+                cs,
+                (s) =>
+                    '${_fechaCorta(s['completada_en'])} · ${s['duracion_minutos'] ?? '?'} min'),
+          if (retos.isNotEmpty)
+            _chipsAct('Retos', retos.take(4).toList(), cs, Colors.amber,
+                (r) => r['titulo']?.toString() ?? '-'),
+          if (rutinas.isNotEmpty)
+            _chipsAct('Rutinas', rutinas.take(4).toList(), cs, Colors.blue,
+                (r) => r['nombre']?.toString() ?? '-'),
+          if (insignias.isNotEmpty)
+            _filaInsignias(insignias.take(4).toList(), cs),
         ],
       ),
     );
   }
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Diálogos de confirmación
-  // ───────────────────────────────────────────────────────────────────────────
+  Widget _filaAct(String titulo, List<dynamic> items, ColorScheme cs,
+      String Function(dynamic) labelFor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+            width: 56,
+            child: Text(titulo,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withValues(alpha: 0.5)))),
+        Expanded(
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 2,
+            children: items
+                .map((s) => Chip(
+                      label: Text(labelFor(s),
+                          style: const TextStyle(fontSize: 10)),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      side: BorderSide.none,
+                      backgroundColor:
+                          cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                    ))
+                .toList(),
+          ),
+        ),
+      ]),
+    );
+  }
 
-  void _confirmarWipe(
-    BuildContext context,
-    WidgetRef ref,
-    String nombre,
-  ) {
+  Widget _chipsAct(String titulo, List<dynamic> items, ColorScheme cs,
+      Color color, String Function(dynamic) labelFor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+            width: 56,
+            child: Text(titulo,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface.withValues(alpha: 0.5)))),
+        Expanded(
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 2,
+            children: items
+                .map((r) => Chip(
+                      label: Text(labelFor(r),
+                          style: const TextStyle(fontSize: 10)),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      side: BorderSide.none,
+                      backgroundColor: color.withValues(alpha: 0.08),
+                    ))
+                .toList(),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _filaInsignias(List<dynamic> items, ColorScheme cs) {
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(
+          width: 56,
+          child: Text('Insignias',
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withValues(alpha: 0.5)))),
+      Expanded(
+        child: Wrap(
+          spacing: 4,
+          runSpacing: 2,
+          children: items.map<Widget>((ins) {
+            final c = ins['insignias'] as Map<String, dynamic>?;
+            return Chip(
+              avatar: Icon(_iconoDesdeTexto(c?['icono'] as String?),
+                  size: 12, color: Colors.purple.shade300),
+              label: Text(c?['nombre'] ?? '-',
+                  style: const TextStyle(fontSize: 10)),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              side: BorderSide.none,
+              backgroundColor: Colors.purple.withValues(alpha: 0.06),
+            );
+          }).toList(),
+        ),
+      ),
+    ]);
+  }
+
+  String _fechaCorta(dynamic iso) {
+    if (iso == null) return '—';
+    try {
+      final f = DateTime.parse(iso.toString());
+      return '${f.day}/${f.month}';
+    } catch (_) {
+      return iso.toString();
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Shadowban toggle
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Widget _buildShadowbanToggle(
+      BuildContext context, WidgetRef ref, bool isShadowbanned) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+            color: isShadowbanned
+                ? const Color(0xFF7B2D8E).withValues(alpha: 0.5)
+                : Colors.grey.shade300),
+      ),
+      color: isShadowbanned
+          ? const Color(0xFF7B2D8E).withValues(alpha: 0.03)
+          : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(children: [
+          Icon(Icons.visibility_off_rounded,
+              size: 18,
+              color: isShadowbanned
+                  ? const Color(0xFF7B2D8E)
+                  : Colors.grey.shade500),
+          const SizedBox(width: 10),
+          const Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Shadowban',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text('Content visible solo para el autor. La comunidad no lo ve.',
+                  style: TextStyle(fontSize: 11, color: Colors.grey)),
+            ]),
+          ),
+          Switch(
+            value: isShadowbanned,
+            activeColor: const Color(0xFF7B2D8E),
+            onChanged: (val) async {
+              await toggleShadowbanUsuario(ref, usuarioId, val);
+              if (context.mounted)
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(
+                        val ? 'Shadowban activado' : 'Shadowban desactivado'),
+                    backgroundColor:
+                        val ? const Color(0xFF7B2D8E) : Colors.green));
+            },
+          ),
+        ]),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Configuración (EXPANDIBLE)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Widget _buildExpansionConfiguracion(BuildContext context, WidgetRef ref,
+      String nombre, String email, int nivel) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+            color: Theme.of(context)
+                .colorScheme
+                .outlineVariant
+                .withValues(alpha: 0.3)),
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        shape: Border(top: BorderSide.none),
+        collapsedShape: Border(top: BorderSide.none),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        leading: const Icon(Icons.settings, size: 18, color: Colors.grey),
+        title: const Text('Configuración',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        children: [
+          _buildEditField('Nombre', nombre, Icons.person, (v) async {
+            await actualizarNombreUsuario(ref, usuarioId, v);
+            if (context.mounted)
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Nombre actualizado'),
+                  backgroundColor: Colors.green));
+          }),
+          const SizedBox(height: 8),
+          _buildEditField('Email', email, Icons.email, (v) async {
+            if (!v.contains('@')) throw Exception('Email inválido');
+            await actualizarEmailUsuario(ref, usuarioId, v);
+            if (context.mounted)
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Email actualizado'),
+                  backgroundColor: Colors.green));
+          }),
+          const SizedBox(height: 8),
+          Row(children: [
+            const Icon(Icons.stars_rounded, size: 17, color: Colors.amber),
+            const SizedBox(width: 8),
+            const Text('Nivel:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            const SizedBox(width: 4),
+            SizedBox(
+              width: 90,
+              child: DropdownButtonFormField<int>(
+                initialValue: nivel.clamp(1, 999),
+                isDense: true,
+                decoration: const InputDecoration(
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    border: OutlineInputBorder()),
+                items: List.generate(15, (i) => nivel - 7 + i)
+                    .where((v) => v >= 1 && v <= 999)
+                    .map((v) => DropdownMenuItem(
+                        value: v,
+                        child:
+                            Text('$v', style: const TextStyle(fontSize: 13))))
+                    .toList(),
+                onChanged: (val) async {
+                  if (val == null) return;
+                  await cambiarNivelUsuario(ref, usuarioId, val);
+                  if (context.mounted)
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Nivel cambiado a $val'),
+                        backgroundColor: Colors.green));
+                },
+              ),
+            ),
+            const Spacer(),
+            OutlinedButton.icon(
+              onPressed: () => _confirmarResetXp(context, ref),
+              icon: const Icon(Icons.restart_alt, size: 15),
+              label: const Text('Reset XP', style: TextStyle(fontSize: 11)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.orange,
+                side: const BorderSide(color: Colors.orange),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditField(String label, String initialValue, IconData icon,
+      Future<void> Function(String) onSave) {
+    final controller = TextEditingController(text: initialValue);
+    bool saving = false;
+    return StatefulBuilder(
+      builder: (ctx, setState) => Row(children: [
+        Icon(icon, size: 15, color: Colors.grey.shade500),
+        const SizedBox(width: 6),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              border: const OutlineInputBorder(),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              isDense: true,
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        SizedBox(
+          height: 34,
+          child: FilledButton.tonal(
+            onPressed: saving
+                ? null
+                : () async {
+                    setState(() => saving = true);
+                    try {
+                      await onSave(controller.text.trim());
+                    } catch (e) {
+                      if (ctx.mounted)
+                        ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red));
+                    } finally {
+                      setState(() => saving = false);
+                    }
+                  },
+            child: const Icon(Icons.save, size: 16),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // GDPR (EXPANDIBLE)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Widget _buildAdministracion(
+      BuildContext context, WidgetRef ref, String nombre, String email) {
+    const azul = Color(0xFF0D3B66);
+    const rojo = Color(0xFFC0392B);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: rojo, width: 1.5),
+      ),
+      color: rojo.withValues(alpha: 0.03),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        // ── Encabezado con ícono ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+          child: Row(children: [
+            const Icon(Icons.admin_panel_settings, size: 20, color: rojo),
+            const SizedBox(width: 8),
+            Text('Administración',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface)),
+          ]),
+        ),
+        const Divider(height: 20, thickness: 1, endIndent: 14, indent: 14),
+        // ── GDPR ──
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(children: [
+            const Icon(Icons.shield_rounded, size: 16, color: azul),
+            const SizedBox(width: 8),
+            Text('Cumplimiento RGPD',
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: azul)),
+          ]),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _confirmarExportar(context, ref, nombre, email),
+              icon: const Icon(Icons.download_rounded, size: 16),
+              label: const Text('Exportar datos (JSON)',
+                  style: TextStyle(fontSize: 11)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: azul,
+                side: const BorderSide(color: azul),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () =>
+                  _confirmarAnonimizar(context, ref, nombre, email),
+              icon: const Icon(Icons.auto_delete_rounded, size: 16),
+              label: const Text('Anonimizar (RGPD)',
+                  style: TextStyle(fontSize: 11)),
+              style: FilledButton.styleFrom(
+                backgroundColor: azul,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
+          child: Text(
+            'Preserva métricas anónimas. Destruye identidad, perfiles, contenido social y auth.',
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+          ),
+        ),
+        const Divider(height: 20, thickness: 1, endIndent: 14, indent: 14),
+        // ── Peligro ──
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(children: [
+            const Icon(Icons.dangerous_outlined, size: 16, color: rojo),
+            const SizedBox(width: 8),
+            Text('Acciones destructivas',
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: rojo)),
+          ]),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _confirmarWipe(context, ref, nombre),
+              icon: const Icon(Icons.delete_forever, size: 16),
+              label:
+                  const Text('Wipe de datos', style: TextStyle(fontSize: 11)),
+              style: FilledButton.styleFrom(
+                backgroundColor: rojo,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
+          child: Text(
+            'Resetea historial, nivel → 1, XP → 0, racha → 0. Conserva perfiles.',
+            style: TextStyle(fontSize: 10, color: Colors.red.shade300),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _confirmarEliminar(context, ref, nombre, email),
+              icon: const Icon(Icons.person_remove, size: 16, color: rojo),
+              label: const Text('Eliminar usuario',
+                  style: TextStyle(fontSize: 11, color: rojo)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: rojo),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
+          child: Text(
+            'Borra identidad, datos personales y cuenta de auth. IRREVERSIBLE.',
+            style: TextStyle(fontSize: 10, color: Colors.red.shade300),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Diálogos de confirmación
+  // ═══════════════════════════════════════════════════════════════════════
+
+  void _confirmarWipe(BuildContext context, WidgetRef ref, String nombre) {
     showDialog<bool>(
       context: context,
-      builder: (ctx) => AdminWipeDialog(
-        nombreUsuario: nombre,
-        usuarioId: usuarioId,
+      builder: (ctx) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.warning_amber_rounded, color: Color(0xFFC0392B)),
+          SizedBox(width: 10),
+          Text('Wipe de datos — IRREVERSIBLE', style: TextStyle(fontSize: 17)),
+        ]),
+        content: Text(
+            'Eliminarás todo el historial de $nombre conservando sus perfiles.\n\n'
+            'Eliminado: sesiones, rutinas, retos, racha, historial de peso, carga académica.\n'
+            'Reseteado: nivel → 1, XP → 0, racha → 0.\n'
+            'Conservado: perfil de bienestar, perfil académico, asignaturas, cuenta.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.delete_forever, size: 18),
+            label: const Text('Ejecutar Wipe'),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFC0392B)),
+          ),
+        ],
       ),
     ).then((confirmed) async {
       if (confirmed == true) {
-        try {
-          final result = await wipeUserData(ref, usuarioId);
-          if (context.mounted) {
-            final success = result['success'] == true;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  success
-                      ? 'Wipe completado. ${result['registros_eliminados']} registros eliminados.'
-                      : 'Error: ${result['error'] ?? 'Desconocido'}',
-                ),
-                backgroundColor: success ? Colors.green : Colors.red,
-              ),
-            );
-          }
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error al ejecutar wipe: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
+        final result = await wipeUserData(ref, usuarioId);
+        if (context.mounted) {
+          final ok = result['success'] == true;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(ok
+                ? 'Wipe completado. ${result['registros_eliminados']} registros eliminados.'
+                : 'Error: ${result['error'] ?? 'Desconocido'}'),
+            backgroundColor: ok ? Colors.green : Colors.red,
+          ));
         }
       }
     });
   }
 
   void _confirmarEliminar(
-    BuildContext context,
-    WidgetRef ref,
-    String nombre,
-    String email,
-  ) {
-    final confirmController = TextEditingController();
-    bool confirmado = false;
-
+      BuildContext context, WidgetRef ref, String nombre, String email) {
+    final ctrl = TextEditingController();
+    bool ok = false;
     showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.red),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text('Eliminar usuario permanentemente',
-                    style: TextStyle(fontSize: 17)),
-              ),
-            ],
-          ),
+        builder: (ctx, setD) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.warning_amber_rounded, color: Color(0xFFC0392B)),
+            SizedBox(width: 10),
+            Expanded(
+                child: Text('Eliminar usuario — IRREVERSIBLE',
+                    style: TextStyle(fontSize: 17))),
+          ]),
           content: SizedBox(
             width: 400,
             child: SingleChildScrollView(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Vas a eliminar permanentemente a $nombre ($email).\n\n'
-                    'Esta acción es IRREVERSIBLE. Se eliminarán:\n'
-                    '• Todos los datos personales\n'
-                    '• Historial de entrenamiento\n'
-                    '• Rutinas, retos e insignias\n'
-                    '• Interacciones sociales\n'
-                    '• Apuntes y horarios\n\n'
-                    'Escribe ELIMINAR para confirmar:',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: confirmController,
-                    decoration: const InputDecoration(
-                      labelText: 'ELIMINAR',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.edit),
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                        'Vas a eliminar a $nombre ($email). Todo desaparece incluyendo auth.users.\n\n'
+                        'Escribe ELIMINAR para confirmar:',
+                        style: const TextStyle(fontSize: 13)),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: ctrl,
+                      decoration: const InputDecoration(
+                          labelText: 'ELIMINAR', border: OutlineInputBorder()),
+                      onChanged: (v) => setD(() => ok = v.trim() == 'ELIMINAR'),
                     ),
-                    onChanged: (val) => setDialogState(
-                        () => confirmado = val.trim() == 'ELIMINAR'),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'ID: $usuarioId',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ),
+                    const SizedBox(height: 4),
+                    Text('ID: $usuarioId',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade400,
+                            fontFamily: 'monospace')),
+                  ]),
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar'),
-            ),
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar')),
             FilledButton.icon(
-              onPressed: confirmado ? () => Navigator.pop(ctx, true) : null,
+              onPressed: ok ? () => Navigator.pop(ctx, true) : null,
               icon: const Icon(Icons.person_remove, size: 18),
               label: const Text('Eliminar usuario'),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
+                  backgroundColor: const Color(0xFFC0392B),
+                  foregroundColor: Colors.white),
             ),
           ],
         ),
       ),
     ).then((confirmed) async {
-      confirmController.dispose();
+      ctrl.dispose();
       if (confirmed == true) {
-        try {
-          final result = await eliminarUsuario(ref, usuarioId);
-          if (context.mounted) {
-            final success = result['success'] == true;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  success
-                      ? 'Usuario ${result['email']} eliminado permanentemente.'
-                      : 'Error: ${result['error'] ?? 'Desconocido'}',
-                ),
-                backgroundColor: success ? Colors.green : Colors.red,
-              ),
-            );
-            if (success && context.mounted) {
-              context.go('/admin');
-            }
-          }
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error al eliminar usuario: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
+        final result = await eliminarUsuario(ref, usuarioId);
+        if (context.mounted) {
+          final ok = result['success'] == true;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(ok
+                ? 'Usuario ${result['email']} eliminado.'
+                : 'Error: ${result['error'] ?? 'Desconocido'}'),
+            backgroundColor: ok ? Colors.green : Colors.red,
+          ));
+          if (ok && context.mounted) context.go('/admin');
         }
       }
     });
@@ -1102,35 +1015,19 @@ class AdminUsuarioDetalleScreen extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Reset XP'),
         content: const Text(
-            '¿Estás seguro de que quieres resetear el XP de este usuario a 0?'),
+            '¿Poner el XP de este usuario a 0? Pierde nivel si aplica.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              try {
-                await resetXpUsuario(ref, usuarioId);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('XP reseteado a 0'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
+              await resetXpUsuario(ref, usuarioId);
+              if (context.mounted)
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('XP reseteado'),
+                    backgroundColor: Colors.green));
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.orange),
             child: const Text('Reset XP'),
@@ -1140,14 +1037,125 @@ class AdminUsuarioDetalleScreen extends ConsumerWidget {
     );
   }
 
-  // ───────────────────────────────────────────────────────────────────────────
+  void _confirmarExportar(
+      BuildContext context, WidgetRef ref, String nombre, String email) {
+    showDialog(
+      context: context,
+      builder: (ctx) =>
+          _ExportarDialog(usuarioId: usuarioId, nombre: nombre, email: email),
+    );
+  }
+
+  void _mostrarJson(
+      BuildContext context, String nombre, String email, String jsonStr) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.data_object_rounded, size: 20),
+          SizedBox(width: 8),
+          Text('Datos exportados', style: TextStyle(fontSize: 17)),
+        ]),
+        content: SizedBox(
+          width: 600,
+          height: 500,
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('$nombre ($email)',
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(
+                '${jsonStr.length} caracteres · ${jsonStr.split('\n').length} líneas',
+                style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300)),
+                child: SelectableText(jsonStr,
+                    style: const TextStyle(
+                        fontSize: 11, fontFamily: 'monospace', height: 1.4)),
+              ),
+            ),
+          ]),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar')),
+          FilledButton.icon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: jsonStr));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('JSON copiado al portapapeles'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2)));
+            },
+            icon: const Icon(Icons.copy_rounded, size: 16),
+            label: const Text('Copiar JSON'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarAnonimizar(
+      BuildContext context, WidgetRef ref, String nombre, String email) {
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.warning_amber_rounded, color: Color(0xFF0D3B66)),
+          SizedBox(width: 10),
+          Text('Anonimizar (RGPD)', style: TextStyle(fontSize: 17)),
+        ]),
+        content: Text('Anonimizarás permanentemente a $nombre ($email).\n\n'
+            'Fase 1 — ANONIMIZAR: las métricas agregadas (sesiones, carga académica, '
+            'gasto calórico) se preservan bajo un UUID anónimo para Business Intelligence.\n\n'
+            'Fase 2 — ELIMINAR: se destruyen datos personales, perfiles, contenido social, '
+            'rutinas y retos.\n\n'
+            'Fase 3: se elimina la cuenta de usuarios y auth.users.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.shield_rounded, size: 18),
+            label: const Text('Anonimizar'),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0D3B66)),
+          ),
+        ],
+      ),
+    ).then((confirmed) async {
+      if (confirmed == true) {
+        final result = await anonimizarUsuario(ref, usuarioId);
+        if (context.mounted) {
+          final ok = result['success'] == true;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(ok
+                ? 'Usuario ${result['email']} anonimizado. ${result['anonimizados']} registros preservados.'
+                : 'Error: ${result['error'] ?? ''}'),
+            backgroundColor: ok ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 4),
+          ));
+          if (ok && context.mounted) context.go('/admin');
+        }
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Helpers
-  // ───────────────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════
 
   String _formatearFecha(String iso) {
     try {
-      final fecha = DateTime.parse(iso);
-      final meses = [
+      final f = DateTime.parse(iso);
+      const m = [
         'enero',
         'febrero',
         'marzo',
@@ -1159,15 +1167,14 @@ class AdminUsuarioDetalleScreen extends ConsumerWidget {
         'septiembre',
         'octubre',
         'noviembre',
-        'diciembre',
+        'diciembre'
       ];
-      return '${fecha.day} de ${meses[fecha.month - 1]} de ${fecha.year}';
+      return '${f.day} de ${m[f.month - 1]} de ${f.year}';
     } catch (_) {
       return iso;
     }
   }
 
-  /// Mapea un nombre de icono textual a un [IconData] de Material Icons.
   IconData _iconoDesdeTexto(String? texto) {
     if (texto == null) return Icons.military_tech;
     switch (texto) {
@@ -1194,58 +1201,140 @@ class AdminUsuarioDetalleScreen extends ConsumerWidget {
     }
   }
 
-  Widget _avatarFallback(String nombre) {
+  Widget _avatarFallback(String nombre, [double fs = 32]) {
     return Container(
       color: Colors.grey.shade200,
       alignment: Alignment.center,
-      child: Text(
-        nombre.isNotEmpty ? nombre[0].toUpperCase() : '?',
-        style: const TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+      child: Text(nombre.isNotEmpty ? nombre[0].toUpperCase() : '?',
+          style: TextStyle(fontSize: fs, fontWeight: FontWeight.w700)),
     );
   }
 }
 
-/// Widget reutilizable para mostrar una estadística individual.
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
+/// Dialogo de exportación con estado de carga y manejo de errores.
+class _ExportarDialog extends ConsumerStatefulWidget {
+  final String usuarioId;
+  final String nombre;
+  final String email;
 
-  const _StatItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const _ExportarDialog(
+      {required this.usuarioId,
+      required this.nombre,
+      required this.email,
+      super.key});
+
+  @override
+  ConsumerState<_ExportarDialog> createState() => _ExportarDialogState();
+}
+
+class _ExportarDialogState extends ConsumerState<_ExportarDialog> {
+  bool _cargando = false;
+  String? _error;
+  String? _jsonStr;
+
+  Future<void> _exportar() async {
+    setState(() {
+      _cargando = true;
+      _error = null;
+      _jsonStr = null;
+    });
+    try {
+      final result = await exportarDatosUsuario(ref, widget.usuarioId);
+      if (!mounted) return;
+      if (result['success'] != true) {
+        setState(() {
+          _cargando = false;
+          _error = 'Error: ${result['error'] ?? 'Desconocido'}';
+        });
+        return;
+      }
+      setState(() {
+        _cargando = false;
+        _jsonStr = const JsonEncoder.withIndent('  ').convert(result['datos']);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _cargando = false;
+        _error = 'Error: $e';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, size: 22, color: color),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
+    if (_jsonStr != null) {
+      return AlertDialog(
+        title: const Text('Datos exportados', style: TextStyle(fontSize: 17)),
+        content: SizedBox(
+          width: 600,
+          height: 500,
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('${widget.nombre} (${widget.email})',
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(
+                '${_jsonStr!.length} car. · ${_jsonStr!.split('\n').length} líneas',
+                style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300)),
+                child: SelectableText(_jsonStr!,
+                    style: const TextStyle(
+                        fontSize: 11, fontFamily: 'monospace', height: 1.4)),
+              ),
             ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade600,
-            ),
+          ]),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar')),
+          FilledButton.icon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: _jsonStr!));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('JSON copiado'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2)));
+            },
+            icon: const Icon(Icons.copy_rounded, size: 16),
+            label: const Text('Copiar JSON'),
           ),
         ],
-      ),
+      );
+    }
+
+    return AlertDialog(
+      title:
+          const Text('Exportar datos (GDPR)', style: TextStyle(fontSize: 17)),
+      content: _error != null
+          ? Text(_error!,
+              style: const TextStyle(color: Colors.red, fontSize: 13))
+          : Text('Generarás un JSON completo de ${widget.nombre}.\n'
+              'Incluye perfil, métricas, sesiones, carga académica, rutinas, retos y más.'),
+      actions: [
+        TextButton(
+            onPressed: _cargando ? null : () => Navigator.pop(context),
+            child: const Text('Cancelar')),
+        FilledButton.icon(
+          onPressed: _cargando ? null : _exportar,
+          icon: _cargando
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.download, size: 18),
+          label: Text(_cargando ? 'Exportando...' : 'Exportar'),
+        ),
+      ],
     );
   }
 }

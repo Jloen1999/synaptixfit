@@ -170,8 +170,6 @@ class SaludoCard extends StatelessWidget {
                             .read(authControllerProvider.notifier)
                             .logout();
                       } catch (_) {}
-                      if (!context.mounted) return;
-                      context.go('/acceso');
                     },
                     icon: const Icon(Icons.logout_rounded,
                         size: 20, color: Colors.redAccent),

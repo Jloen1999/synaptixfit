@@ -175,66 +175,74 @@ class PracticaRepository {
 
   /// Crea una nueva sesión de práctica con N preguntas del banco,
   /// priorizando las falladas anteriormente.
+  /// Si se pasan [preguntasPersonalizadas], las usa directamente (multi-tema).
   Future<TestSessionDb> crearSesion({
     required String materialId,
     required String bancoId,
     int n = 10,
+    List<String>? preguntasPersonalizadas,
+    Map<String, dynamic>? metadata,
   }) async {
-    final todas = await obtenerPreguntas(bancoId);
-    if (todas.isEmpty) {
-      throw Exception('El banco de preguntas está vacío.');
-    }
+    late final List<PreguntaDb> seleccionadas;
 
-    final intentos = await _client
-        .from('intentos_pregunta')
-        .select()
-        .inFilter('pregunta_id', todas.map((p) => p.id).toList());
-
-    final intentosPorPregunta = <String, List<Map<String, dynamic>>>{};
-    for (final i in (intentos as List<dynamic>)) {
-      final pid = i['pregunta_id'] as String;
-      intentosPorPregunta.putIfAbsent(pid, () => []);
-      intentosPorPregunta[pid]!.add(i as Map<String, dynamic>);
-    }
-
-    final falladas = <PreguntaDb>[];
-    final noIntentadas = <PreguntaDb>[];
-    final acertadas = <PreguntaDb>[];
-
-    for (final p in todas) {
-      final intentosP = intentosPorPregunta[p.id] ?? [];
-      if (intentosP.isEmpty) {
-        noIntentadas.add(p);
-      } else if (intentosP.any((i) => i['es_correcta'] == true)) {
-        acertadas.add(p);
-      } else {
-        falladas.add(p);
+    if (preguntasPersonalizadas != null && preguntasPersonalizadas.isNotEmpty) {
+      seleccionadas = await obtenerPreguntasDeSesion(preguntasPersonalizadas);
+    } else {
+      final todas = await obtenerPreguntas(bancoId);
+      if (todas.isEmpty) {
+        throw Exception('El banco de preguntas está vacío.');
       }
+
+      final intentos = await _client
+          .from('intentos_pregunta')
+          .select()
+          .inFilter('pregunta_id', todas.map((p) => p.id).toList());
+
+      final intentosPorPregunta = <String, List<Map<String, dynamic>>>{};
+      for (final i in (intentos as List<dynamic>)) {
+        final pid = i['pregunta_id'] as String;
+        intentosPorPregunta.putIfAbsent(pid, () => []);
+        intentosPorPregunta[pid]!.add(i as Map<String, dynamic>);
+      }
+
+      final falladas = <PreguntaDb>[];
+      final noIntentadas = <PreguntaDb>[];
+      final acertadas = <PreguntaDb>[];
+
+      for (final p in todas) {
+        final intentosP = intentosPorPregunta[p.id] ?? [];
+        if (intentosP.isEmpty) {
+          noIntentadas.add(p);
+        } else if (intentosP.any((i) => i['es_correcta'] == true)) {
+          acertadas.add(p);
+        } else {
+          falladas.add(p);
+        }
+      }
+
+      falladas.shuffle();
+      noIntentadas.shuffle();
+      acertadas.shuffle();
+
+      seleccionadas = <PreguntaDb>[
+        ...falladas,
+        ...noIntentadas,
+        ...acertadas,
+      ].take(n).toList();
+      seleccionadas.shuffle();
     }
-
-    falladas.shuffle();
-    noIntentadas.shuffle();
-    acertadas.shuffle();
-
-    final seleccionadas = <PreguntaDb>[
-      ...falladas,
-      ...noIntentadas,
-      ...acertadas,
-    ].take(n).toList();
-    seleccionadas.shuffle();
 
     final nReal = seleccionadas.length;
     final userId = _client.auth.currentUser?.id;
-    final row = await _client
-        .from('test_sessions')
-        .insert({
-          'material_id': materialId,
-          'preguntas_ids': seleccionadas.map((p) => p.id).toList(),
-          'total_preguntas': nReal,
-          if (userId != null) 'usuario_id': userId,
-        })
-        .select()
-        .single();
+    final insertMap = <String, dynamic>{
+      'material_id': materialId,
+      'preguntas_ids': seleccionadas.map((p) => p.id).toList(),
+      'total_preguntas': nReal,
+      if (userId != null) 'usuario_id': userId,
+      if (metadata != null) 'metadata': metadata,
+    };
+    final row =
+        await _client.from('test_sessions').insert(insertMap).select().single();
 
     return TestSessionDb.fromMap(row);
   }

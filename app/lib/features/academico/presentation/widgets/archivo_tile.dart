@@ -6,14 +6,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/design_system/sv_colors.dart';
 import '../../../../core/design_system/sv_shapes.dart';
+import '../../application/artefacto_efimero_provider.dart';
 import '../../application/documento_ia_provider.dart';
+import '../../application/generacion_global_provider.dart';
 import '../../application/materiales_estudio_provider.dart';
 import '../../application/practica_provider.dart';
-import '../../infrastructure/documento_ia_repository.dart';
 import '../../infrastructure/estudio_ia_service.dart';
 import '../../../../shared/models/db_models.dart';
 import '../../domain/archivo_asignatura_dto.dart';
 import '../../domain/fuente_estudio.dart';
+import '../centro_generacion_screen.dart';
+import '../cuestionario_formato_screen.dart';
 import '../mapa_mental_screen.dart';
 import '../resumen_ia_screen.dart';
 
@@ -27,12 +30,22 @@ class ArchivoTile extends ConsumerWidget {
     required this.archivo,
     required this.onAbrir,
     required this.onEliminar,
+    this.onLongPress,
+    this.modoSeleccion = false,
+    this.seleccionado = false,
+    this.onToggleSeleccion,
+    this.materialId,
     super.key,
   });
 
   final ArchivoAsignaturaDto archivo;
   final VoidCallback onAbrir;
   final VoidCallback onEliminar;
+  final VoidCallback? onLongPress;
+  final bool modoSeleccion;
+  final bool seleccionado;
+  final VoidCallback? onToggleSeleccion;
+  final String? materialId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -79,6 +92,7 @@ class ArchivoTile extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onAbrir,
+        onLongPress: onLongPress,
         child: DecoratedBox(
           decoration: BoxDecoration(
             border: colorBorde != null
@@ -89,6 +103,32 @@ class ArchivoTile extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
+                if (modoSeleccion) ...[
+                  GestureDetector(
+                    onTap: onToggleSeleccion,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: seleccionado
+                              ? const Color(0xFF3B82F6)
+                              : SVColors.outlineVariant,
+                          width: 2,
+                        ),
+                        color: seleccionado
+                            ? const Color(0xFF3B82F6)
+                            : Colors.transparent,
+                      ),
+                      child: seleccionado
+                          ? const Icon(Icons.check,
+                              size: 14, color: Colors.white)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
                 Container(
                   width: 38,
                   height: 38,
@@ -282,13 +322,18 @@ Widget _buildMenuArchivo(
           Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => MapaMentalScreen(fuente: fuente)));
         case 'generar-resumen':
-          _generarResumenArchivo(context, ref, fuente);
+          _lanzarGeneracionArchivo(
+              context, ref, fuente, TipoGeneracion.resumen);
         case 'generar-mapa':
-          _generarMapaArchivo(context, ref, fuente);
+          _lanzarGeneracionArchivo(
+              context, ref, fuente, TipoGeneracion.mapaMental);
         case 'generar':
-          _generarPreguntasArchivo(context, ref, fuente);
+          _lanzarGeneracionArchivo(
+              context, ref, fuente, TipoGeneracion.cuestionario);
         case 'practica':
           _iniciarPracticaArchivo(context, ref, fuente);
+        case 'flashcards':
+          _iniciarFlashcards(context, ref, fuente);
       }
     },
     itemBuilder: (_) => [
@@ -378,70 +423,21 @@ Widget _buildMenuArchivo(
                     fontWeight: FontWeight.w500)),
           ]),
         ),
+      if (tienePreguntas)
+        PopupMenuItem<String>(
+          value: 'flashcards',
+          child: Row(children: [
+            const Icon(Icons.style_outlined, size: 18, color: SVColors.primary),
+            const SizedBox(width: 12),
+            const Text('Estudiar Flashcards',
+                style: TextStyle(
+                    color: SVColors.onSurface,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500)),
+          ]),
+        ),
     ],
   );
-}
-
-Future<void> _generarPreguntasArchivo(
-    BuildContext context, WidgetRef ref, FuenteArchivo fuente) async {
-  final messenger = ScaffoldMessenger.of(context);
-  try {
-    final iaService = EstudioIaService();
-    if (!iaService.disponible) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('La IA no está configurada (falta GEMINI_API_KEY).'),
-          backgroundColor: Color(0xFFC62828)));
-      return;
-    }
-    messenger.showSnackBar(const SnackBar(
-        content: Row(children: [
-          SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: Colors.white)),
-          SizedBox(width: 12),
-          Text('Generando preguntas de práctica...'),
-        ]),
-        duration: Duration(seconds: 30)));
-
-    final preguntas = await iaService.generarPractica(fuente);
-    final repo = ref.read(practicaRepositoryProvider);
-    final banco = await repo.obtenerOCrearBancoPorFuente(
-      tipoOrigen: 'archivo',
-      origenId: fuente.fuenteId,
-      asignaturaId: fuente.asignaturaId,
-      titulo: fuente.titulo,
-    );
-    await repo.guardarPreguntas(banco.id, preguntas);
-
-    final docRepo = ref.read(documentoIaRepositoryProvider);
-    await docRepo.guardar(
-        fuenteTipo: 'archivo',
-        fuenteId: fuente.fuenteId,
-        asignaturaId: fuente.asignaturaId,
-        fuenteTitulo: fuente.titulo,
-        tipo: TipoDocumentoIa.practica,
-        contenido: '');
-
-    ref.invalidate(docsGuardadosProvider(
-        (fuenteTipo: 'archivo', fuenteId: fuente.fuenteId)));
-
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text(
-            '¡Preguntas generadas! ${preguntas.length} añadidas al banco.'),
-        backgroundColor: const Color(0xFF2E7D32)));
-  } on EstudioIaException catch (e) {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text(e.message), backgroundColor: const Color(0xFFC62828)));
-  } catch (e) {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text('Error al generar preguntas: $e'),
-        backgroundColor: const Color(0xFFC62828)));
-  }
 }
 
 Future<void> _iniciarPracticaArchivo(
@@ -472,94 +468,59 @@ Future<void> _iniciarPracticaArchivo(
   }
 }
 
-Future<void> _generarResumenArchivo(
+Future<void> _iniciarFlashcards(
     BuildContext context, WidgetRef ref, FuenteArchivo fuente) async {
-  final messenger = ScaffoldMessenger.of(context);
   try {
-    final ia = EstudioIaService();
-    if (!ia.disponible) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('IA no configurada.'),
-          backgroundColor: Color(0xFFC62828)));
-      return;
-    }
-    messenger.showSnackBar(const SnackBar(
-      content: Row(children: [
-        SizedBox(
-            width: 18,
-            height: 18,
-            child:
-                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-        SizedBox(width: 12),
-        Text('Generando resumen...'),
-      ]),
-      duration: Duration(seconds: 60),
-    ));
-    final resumen = await ia.resumir(fuente);
-    final docRepo = ref.read(documentoIaRepositoryProvider);
-    await docRepo.guardar(
-        fuenteTipo: 'archivo',
-        fuenteId: fuente.fuenteId,
-        asignaturaId: fuente.asignaturaId,
-        fuenteTitulo: fuente.titulo,
-        tipo: TipoDocumentoIa.resumen,
-        contenido: resumen);
-    ref.invalidate(docsGuardadosProvider(
-        (fuenteTipo: 'archivo', fuenteId: fuente.fuenteId)));
-    messenger.hideCurrentSnackBar();
-    if (context.mounted) {
-      Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ResumenIaScreen(fuente: fuente)));
-    }
+    final result = await Supabase.instance.client
+        .from('materiales_estudio')
+        .select('id')
+        .eq('tipo_origen', 'archivo')
+        .eq('origen_id', fuente.fuenteId)
+        .maybeSingle();
+    final materialId = result?['id'] as String?;
+    if (materialId == null || !context.mounted) return;
+    context.push('/academico/flashcards/$materialId');
   } catch (e) {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text('Error: $e'), backgroundColor: const Color(0xFFC62828)));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error al abrir flashcards: $e'),
+          backgroundColor: const Color(0xFFC62828)));
+    }
   }
 }
 
-Future<void> _generarMapaArchivo(
-    BuildContext context, WidgetRef ref, FuenteArchivo fuente) async {
-  final messenger = ScaffoldMessenger.of(context);
-  try {
-    final ia = EstudioIaService();
-    if (!ia.disponible) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('IA no configurada.'),
-          backgroundColor: Color(0xFFC62828)));
-      return;
-    }
-    messenger.showSnackBar(const SnackBar(
-      content: Row(children: [
-        SizedBox(
-            width: 18,
-            height: 18,
-            child:
-                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-        SizedBox(width: 12),
-        Text('Generando mapa mental...'),
-      ]),
-      duration: Duration(seconds: 60),
-    ));
-    final mapa = await ia.mapaMental(fuente);
-    final docRepo = ref.read(documentoIaRepositoryProvider);
-    await docRepo.guardar(
-        fuenteTipo: 'archivo',
-        fuenteId: fuente.fuenteId,
-        asignaturaId: fuente.asignaturaId,
-        fuenteTitulo: fuente.titulo,
-        tipo: TipoDocumentoIa.mapaMental,
-        contenido: mapa.toJson().toString());
-    ref.invalidate(docsGuardadosProvider(
-        (fuenteTipo: 'archivo', fuenteId: fuente.fuenteId)));
-    messenger.hideCurrentSnackBar();
-    if (context.mounted) {
-      Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => MapaMentalScreen(fuente: fuente)));
-    }
-  } catch (e) {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text('Error: $e'), backgroundColor: const Color(0xFFC62828)));
+void _lanzarGeneracionArchivo(
+  BuildContext context,
+  WidgetRef ref,
+  FuenteArchivo fuente,
+  TipoGeneracion tipo,
+) {
+  final ia = EstudioIaService();
+  if (!ia.disponible) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('IA no configurada.'),
+        backgroundColor: Color(0xFFC62828)));
+    return;
   }
+  final notifier = ref.read(artefactoEfimeroProvider.notifier);
+  notifier.limpiar();
+
+  final tarea = ref.read(generacionGlobalProvider).registrar(
+        titulo: fuente.titulo,
+        tipo: tipo.name,
+        onNavigate: () {},
+      );
+
+  notifier.iniciarYGenerar([fuente], tipo,
+      asignaturaId: fuente.asignaturaId, tareaGlobalId: tarea.id);
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => tipo == TipoGeneracion.cuestionario
+          ? const CuestionarioFormatoScreen()
+          : CentroGeneracionScreen(
+              tipo: tipo,
+              asignaturaId: fuente.asignaturaId ?? '',
+            ),
+    ),
+  );
 }

@@ -1,5 +1,6 @@
 import '../../../shared/models/db_models.dart';
 import '../application/rutina_provider.dart';
+import 'cross_regulation_service.dart';
 import 'parametros_objetivo.dart';
 
 // ---------------------------------------------------------------------------
@@ -135,6 +136,7 @@ class RecomendacionContextoService {
     required ContextoAcademico academico,
     required ContextoFisiologico fisiologico,
     EstadoDiarioDb? estadoDiario,
+    int? diasProximoExamen,
   }) {
     double factorVolumen = 1.0;
     int deltaSeries = 0;
@@ -142,6 +144,21 @@ class RecomendacionContextoService {
     final motivos = <String>[];
 
     final fct = calcularFCT(academico, estadoDiario);
+
+    // ── Capa de regulación cruzada asintótica (Fase 3: Fórmulas Neurofisiológicas) ──
+    if (diasProximoExamen != null) {
+      final vMod = CrossRegulationService.calcularVolumenModificado(
+        volumenBase: 1.0,
+        cargaCognitiva: fct,
+        cargaMaxima: 1.0,
+        diasHastaExamen: diasProximoExamen,
+      );
+      final ajusteAsintotico = vMod.clamp(0.4, 1.0);
+      if (ajusteAsintotico < factorVolumen) {
+        factorVolumen = ajusteAsintotico;
+        motivos.add('Regulación cruzada: examen en $diasProximoExamen días');
+      }
+    }
 
     if (fisiologico.modoExamenes || academico.tieneExamenesProximos) {
       factorVolumen *= 0.70;

@@ -13,9 +13,11 @@ import '../../academico/application/inbox_config_provider.dart';
 import '../domain/ejercicio_recomendado_dto.dart';
 import '../domain/historial_sesion_dto.dart';
 import '../infrastructure/calorie_calculator_service.dart';
+import '../infrastructure/cognitive_load_calculator_service.dart';
 import '../infrastructure/parametros_objetivo.dart';
 import '../infrastructure/recomendacion_contexto_service.dart';
 import '../infrastructure/recomendacion_ia_service.dart';
+import '../infrastructure/study_calorie_service.dart';
 
 export '../domain/historial_sesion_dto.dart' show HistorialSesionDto;
 export '../infrastructure/recomendacion_ia_service.dart'
@@ -868,6 +870,15 @@ Future<XpResultado?> finalizarSesion({
 
   if (user == null) return null;
 
+  // ── Fase 4: Recalcular estado de regulación cruzada (ACWR) ──
+  try {
+    await client.rpc('recalcular_regulacion_cruzada', params: {
+      'p_usuario_id': user.id,
+    });
+  } catch (_) {
+    debugPrint('[finalizarSesion] Error al recalcular regulación cruzada');
+  }
+
   final xpGanado = 50 + duracionMin.clamp(0, 90) + (rpe * 5);
   final xpResult = await otorgarXp(client, user.id, xpGanado);
 
@@ -879,6 +890,221 @@ Future<XpResultado?> finalizarSesion({
       );
 
   return xpResult;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reversibilidad de sesión física (Fase 4: Fórmulas Neurofisiológicas)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Revierte una sesión completada: desmarca, activa trigger de eliminación
+/// de carga física, recalcula ACWR y emite evento inverso al SyncHub.
+Future<void> desmarcarSesion({
+  required String sesionId,
+  required String diaId,
+  required String rutinaId,
+  required WidgetRef ref,
+}) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return;
+
+  await client.from('sesiones_registradas').update({
+    'completada_en': null,
+    'rpe': null,
+    'duracion_minutos': 0,
+    'calorias_quemadas': null,
+  }).eq('id', sesionId);
+
+  await actualizarEstadoDia(diaId, 'pendiente', ref);
+
+  // El trigger trg_insertar_carga_fisica elimina automáticamente el registro
+  try {
+    await client.rpc('recalcular_regulacion_cruzada', params: {
+      'p_usuario_id': user.id,
+    });
+  } catch (_) {
+    debugPrint('[desmarcarSesion] Error al recalcular regulación cruzada');
+  }
+
+  ref.invalidate(diasDeSemanaProvider);
+  ref.invalidate(semanasDeRutinaProvider(rutinaId));
+  ref.invalidate(perfilActividadProvider);
+
+  ref.read(syncHubProvider).dispatch(
+        DominioEvento.sesionDesmarcada,
+        payload: EventoPayload(sesionId: sesionId),
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Completar / desmarcar bloque de estudio (Fase 4: Fórmulas Neurofisiológicas)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Marca un horario_academico como completado, calcula gasto calórico
+/// (Mifflin-St Jeor), carga cognitiva generada y actualiza estado_cognitivo_usuario.
+Future<void> completarBloqueEstudio({
+  required String horarioId,
+  required WidgetRef ref,
+}) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return;
+
+  // 1. Obtener datos del bloque y asignatura
+  final bloque = await client
+      .from('horarios_academicos')
+      .select('hora_inicio, hora_fin, tipo_actividad, asignatura_id')
+      .eq('id', horarioId)
+      .maybeSingle();
+  if (bloque == null) return;
+
+  final asignatura = bloque['asignatura_id'] != null
+      ? await client
+          .from('asignaturas')
+          .select('dificultad')
+          .eq('id', bloque['asignatura_id'])
+          .maybeSingle()
+      : null;
+
+  // 2. RMR desde perfil_bienestar_usuario
+  final perfil = await client
+      .from('perfil_bienestar_usuario')
+      .select('peso_kg, altura_cm, edad, sexo')
+      .eq('usuario_id', user.id)
+      .maybeSingle();
+  if (perfil == null) return;
+
+  final rmr = StudyCalorieService.calcularRMR(
+    pesoKg: (perfil['peso_kg'] as num).toDouble(),
+    alturaCm: (perfil['altura_cm'] as num).toDouble(),
+    edad: perfil['edad'] as int,
+    sexo: perfil['sexo'] as String,
+  );
+
+  // 3. Calcular duración, calorías y carga cognitiva
+  final inicio = DateTime.parse(bloque['hora_inicio'] as String);
+  final fin = DateTime.parse(bloque['hora_fin'] as String);
+  final duracionSeg = fin.difference(inicio).inSeconds.clamp(30, 86400);
+  final met = StudyCalorieService.metCognitivoParaActividad(
+    bloque['tipo_actividad'] as String? ?? 'estudio',
+  );
+  final calorias = StudyCalorieService.calcularGastoEstudio(
+    rmr: rmr,
+    duracionSegundos: duracionSeg,
+    metValue: met,
+  );
+  final mu = CognitiveLoadCalculatorService.dificultadAsignatura(
+    asignatura?['dificultad'] as String?,
+  );
+  final carga = CognitiveLoadCalculatorService.calcularCargaAcumulada(bloques: [
+    (duracionMin: duracionSeg / 60, dificultad: mu, descansoMin: 0),
+  ]);
+
+  // 4. Persistir en horarios_academicos
+  await client.from('horarios_academicos').update({
+    'completado': true,
+    'calorias_quemadas': calorias,
+    'carga_cognitiva_generada': carga,
+    'met_value': met,
+  }).eq('id', horarioId);
+
+  // 5. Actualizar estado cognitivo del usuario
+  final estadoAnterior = await client
+      .from('estado_cognitivo_usuario')
+      .select('carga_cognitiva_actual, capacidad_atencion_actual')
+      .eq('usuario_id', user.id)
+      .maybeSingle();
+
+  final cargaPrevia = estadoAnterior != null
+      ? (estadoAnterior['carga_cognitiva_actual'] as num).toDouble()
+      : 0.0;
+  final capacidadPrevia = estadoAnterior != null
+      ? (estadoAnterior['capacidad_atencion_actual'] as num).toDouble()
+      : 1.0;
+
+  final nuevaCarga = (cargaPrevia + carga).clamp(0.0, 1.0);
+  final nuevaCapacidad = CognitiveLoadCalculatorService.capacidadAtencional(
+    capacidadInicial: capacidadPrevia,
+    minutosTranscurridos: duracionSeg ~/ 60,
+  );
+
+  await client.from('estado_cognitivo_usuario').update({
+    'carga_cognitiva_actual': nuevaCarga,
+    'capacidad_atencion_actual': nuevaCapacidad,
+    'duracion_ultimo_bloque_min': duracionSeg ~/ 60,
+    'rmr_base': rmr,
+  }).eq('usuario_id', user.id);
+
+  ref.read(syncHubProvider).dispatch(
+        DominioEvento.bloqueEstudioCompletado,
+        payload: EventoPayload(horarioId: horarioId),
+      );
+}
+
+/// Revierte un bloque de estudio completado: resta carga cognitiva,
+/// resetea calorías y met_value, y revierte XP si se otorgó.
+Future<void> desmarcarBloqueEstudio({
+  required String horarioId,
+  required WidgetRef ref,
+}) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return;
+
+  // 1. Leer carga cognitiva previa y flag XP de este bloque
+  final bloque = await client
+      .from('horarios_academicos')
+      .select('carga_cognitiva_generada, xp_bloque_otorgado')
+      .eq('id', horarioId)
+      .maybeSingle();
+  if (bloque == null) return;
+
+  final cargaPrevia =
+      (bloque['carga_cognitiva_generada'] as num?)?.toDouble() ?? 0;
+
+  // 2. Restar carga cognitiva del estado (clamp evita negativos)
+  if (cargaPrevia > 0) {
+    final estado = await client
+        .from('estado_cognitivo_usuario')
+        .select('carga_cognitiva_actual')
+        .eq('usuario_id', user.id)
+        .maybeSingle();
+    if (estado != null) {
+      await client.from('estado_cognitivo_usuario').update({
+        'carga_cognitiva_actual':
+            ((estado['carga_cognitiva_actual'] as num).toDouble() - cargaPrevia)
+                .clamp(0.0, 1.0),
+      }).eq('usuario_id', user.id);
+    }
+  }
+
+  // 3. Resetear el bloque (calorías y carga a null)
+  await client.from('horarios_academicos').update({
+    'completado': false,
+    'calorias_quemadas': null,
+    'carga_cognitiva_generada': null,
+    'met_value': null,
+  }).eq('id', horarioId);
+
+  // 4. Reversibilidad de XP si ya se otorgó por este bloque
+  if (bloque['xp_bloque_otorgado'] == true) {
+    try {
+      await client.rpc('restar_xp', params: {
+        'p_usuario_id': user.id,
+        'p_cantidad': 15,
+      });
+    } catch (_) {
+      debugPrint('[desmarcarBloqueEstudio] Error al restar XP');
+    }
+    await client.from('horarios_academicos').update({
+      'xp_bloque_otorgado': false,
+    }).eq('id', horarioId);
+  }
+
+  ref.read(syncHubProvider).dispatch(
+        DominioEvento.bloqueEstudioDesmarcado,
+        payload: EventoPayload(horarioId: horarioId),
+      );
 }
 
 Future<void> registrarSerie({

@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 6.0
+**Versión:** 6.1
 **Estado:** VIGENTE
-**Fecha:** 29-06-2026
-**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, función `delete_user` para eliminación hard de usuarios, columna `rol` en `usuarios`, tabla `asignaturas_usuario_semestre` para mapeo de transversales, tabla `admin_auditoria` para trazabilidad administrativa, vista `v_admin_metricas` para KPIs globales, columnas de moderación en `actividades_sociales`, `comentarios_feed` y `ejercicios`, columna `valor_met` (MET del Compendio de Adultos 2024) en `ejercicios`, y dualidad planificación vs ejecución real (`duracion_objetivo_segundos`/`duracion_real_segundos`) en `seleccion_de_ejercicios`. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
+**Fecha:** 01-07-2026
+**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, función `delete_user` para eliminación hard de usuarios, columna `rol` en `usuarios`, tabla `asignaturas_usuario_semestre` para mapeo de transversales, tabla `admin_auditoria` para trazabilidad administrativa, vista `v_admin_metricas` para KPIs globales, columnas de moderación en `actividades_sociales`, `comentarios_feed` y `ejercicios`, columna `valor_met` (MET del Compendio de Adultos 2024) en `ejercicios`, dualidad planificación vs ejecución real (`duracion_objetivo_segundos`/`duracion_real_segundos`) en `seleccion_de_ejercicios`, y ★ Fórmulas Neurofisiológicas v8.0: tablas `estado_cognitivo_usuario`, `estado_regulacion_cruzada`, `registros_carga_fisica`, `registros_repaso_srs` + columnas `met_value`/`calorias_quemadas`/`carga_cognitiva_generada` en `horarios_academicos`. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -50,6 +50,10 @@ erDiagram
     USUARIOS ||--o{ USUARIO_CARRERAS : vincula
     USUARIOS ||--o{ HISTORIAL_OBJETIVOS : registra_cambio
     USUARIOS ||--o{ RECOMENDACIONES_PENDIENTES : recibe
+    USUARIOS ||--|| ESTADO_COGNITIVO_USUARIO : tiene
+    USUARIOS ||--|| ESTADO_REGULACION_CRUZADA : tiene
+    USUARIOS ||--o{ REGISTROS_CARGA_FISICA : acumula
+    USUARIOS ||--o{ REGISTROS_REPASO_SRS : audita
 
    EJERCICIOS ||--o{ SELECCION_DE_EJERCICIOS : incluye
    EJERCICIOS ||--o{ EJERCICIO_MUSCULO_OBJETIVO : tiene
@@ -406,6 +410,49 @@ erDiagram
         string tipo_interaccion
         text texto_comentario
         timestamp created_at
+    }
+
+    ESTADO_COGNITIVO_USUARIO {
+        uuid usuario_id PK,FK
+        numeric carga_cognitiva_actual
+        numeric capacidad_atencion_actual
+        integer duracion_ultimo_bloque_min
+        timestamptz fecha_ultimo_descanso
+        numeric rmr_base
+        timestamptz creado_en
+        timestamptz actualizado_en
+    }
+
+    ESTADO_REGULACION_CRUZADA {
+        uuid usuario_id PK,FK
+        numeric carga_aguda_7d
+        numeric carga_cronica_28d
+        numeric acwr_actual "GENERATED ALWAYS"
+        integer min_estudio_max_recomendado
+        integer dias_proximo_examen
+        timestamptz creado_en
+        timestamptz actualizado_en
+    }
+
+    REGISTROS_CARGA_FISICA {
+        uuid id PK
+        uuid usuario_id FK
+        date fecha_registro
+        smallint rpe_sesion
+        integer duracion_minutos
+        numeric carga_diaria "GENERATED ALWAYS AS rpe*duracion"
+        uuid sesion_id FK
+        timestamptz creado_en
+    }
+
+    REGISTROS_REPASO_SRS {
+        uuid id PK
+        uuid material_estudio_id FK
+        timestamptz fecha_repaso
+        smallint q_real
+        numeric q_ajustado
+        numeric coeficiente_fatiga
+        timestamptz creado_en
     }
 ```
 
@@ -1467,6 +1514,10 @@ CREATE TABLE horarios_academicos (
   -- Migración 20260629000026: metadatos de privacidad y tipo de clase
   is_private BOOLEAN NOT NULL DEFAULT false,  -- si es true, el bloque solo es visible para el dueño
   tipo_clase VARCHAR,  -- 'teoria' (teórica) o 'practica' (práctica). Nulo si no es clase
+  -- ★ Migración 20260701000027: Fórmulas Neurofisiológicas 1 y 2
+  met_value               NUMERIC(4,2)  DEFAULT 1.30,   -- MET cognitivo del bloque (1.3 lectura, 1.8 clase)
+  calorias_quemadas       NUMERIC(6,2),                  -- kcal del bloque (Mifflin-St Jeor + MET)
+  carga_cognitiva_generada NUMERIC(6,4),                 -- carga cognitiva generada (C_acum por bloque)
   
   creado_en TIMESTAMP DEFAULT now(),
   
@@ -2401,6 +2452,291 @@ CREATE POLICY "interacciones_sociales_insertar" ON interacciones_sociales
 CREATE POLICY "interacciones_sociales_eliminar" ON interacciones_sociales
   FOR DELETE USING (auth.uid() = usuario_id);
 ```
+
+---
+
+### 2.14 ESTADO_COGNITIVO_USUARIO (★ Fórmulas 1 y 2 — Neurofisiología v8.0)
+
+**Migración:** `20260701000027_cognitive_study_cost.sql`
+
+```sql
+CREATE TABLE IF NOT EXISTS public.estado_cognitivo_usuario (
+  usuario_id                    UUID PRIMARY KEY REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  carga_cognitiva_actual        NUMERIC(6,4) NOT NULL DEFAULT 0,
+  capacidad_atencion_actual     NUMERIC(4,3) NOT NULL DEFAULT 1.000
+    CHECK (capacidad_atencion_actual BETWEEN 0 AND 1),
+  duracion_ultimo_bloque_min    INTEGER NOT NULL DEFAULT 0,
+  fecha_ultimo_descanso         TIMESTAMPTZ,
+  rmr_base                      NUMERIC(6,2),
+  creado_en                     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_en                TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+**Propósito:** Estado mutable 1:1 con `usuarios` que almacena la carga cognitiva acumulada del día y la capacidad atencional actual. Se actualiza en cada `completarBloqueEstudio()` y `desmarcarBloqueEstudio()` vía Dart, usando `CognitiveLoadCalculatorService`.
+
+**Campos:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `usuario_id` | `UUID PK,FK` | Usuario propietario |
+| `carga_cognitiva_actual` | `NUMERIC(6,4)` | C_acum actual [0, 1]. Acumula carga de cada bloque completado |
+| `capacidad_atencion_actual` | `NUMERIC(4,3)` | A(t) = A₀·e^(−β·t). Decae exponencialmente con la duración del bloque |
+| `duracion_ultimo_bloque_min` | `INTEGER` | Duración del último bloque completado en minutos |
+| `fecha_ultimo_descanso` | `TIMESTAMPTZ` | Marca de tiempo del último descanso registrado |
+| `rmr_base` | `NUMERIC(6,2)` | RMR calculado vía Mifflin-St Jeor, cacheado para eficiencia |
+
+**Trigger `trg_inicializar_estado_cognitivo`:**
+```sql
+CREATE OR REPLACE FUNCTION public.trg_inicializar_estado_cognitivo()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.estado_cognitivo_usuario (usuario_id) VALUES (NEW.id)
+    ON CONFLICT (usuario_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trg_inicializar_estado_cognitivo
+  AFTER INSERT ON public.usuarios
+  FOR EACH ROW EXECUTE FUNCTION public.trg_inicializar_estado_cognitivo();
+```
+
+**RLS:**
+```sql
+ALTER TABLE public.estado_cognitivo_usuario ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Owner select" ON public.estado_cognitivo_usuario
+  FOR SELECT USING (auth.uid() = usuario_id);
+CREATE POLICY "Owner update" ON public.estado_cognitivo_usuario
+  FOR UPDATE USING (auth.uid() = usuario_id);
+CREATE POLICY "Admin all" ON public.estado_cognitivo_usuario
+  FOR ALL USING (public.es_admin(auth.uid()));
+```
+
+**Modelo Dart `EstadoCognitivoUsuarioDb`:**
+```dart
+class EstadoCognitivoUsuarioDb {
+  final String usuarioId;
+  final double cargaCognitivaActual;    // [0, 1]
+  final double capacidadAtencionActual; // [0, 1]
+  final int duracionUltimoBloqueMin;
+  final DateTime? fechaUltimoDescanso;
+  final double? rmrBase;
+  final DateTime creadoEn;
+  final DateTime actualizadoEn;
+
+  factory EstadoCognitivoUsuarioDb.fromMap(Map<String, dynamic> map);
+}
+```
+
+---
+
+### 2.15 ESTADO_REGULACION_CRUZADA (★ Fórmula 3 — Neurofisiología v8.0)
+
+**Migración:** `20260701000028_physical_workload_and_srs.sql`
+
+```sql
+CREATE TABLE IF NOT EXISTS public.estado_regulacion_cruzada (
+  usuario_id                    UUID PRIMARY KEY REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  carga_aguda_7d                NUMERIC(8,2),
+  carga_cronica_28d             NUMERIC(8,2),
+  acwr_actual                   NUMERIC(4,2) GENERATED ALWAYS AS (
+    carga_aguda_7d / NULLIF(carga_cronica_28d, 0)
+  ) STORED,
+  min_estudio_max_recomendado   INTEGER NOT NULL DEFAULT 90,
+  dias_proximo_examen           INTEGER,
+  creado_en                     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_en                TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+**Propósito:** Cache materializado 1:1 que agrega la carga física (ACWR) y determina el tope de minutos de estudio (`T_max`) y la modulación de volumen deportivo (`V_mod`). Recalculado por la RPC `recalcular_regulacion_cruzada`.
+
+**Campos:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `usuario_id` | `UUID PK,FK` | Usuario propietario |
+| `carga_aguda_7d` | `NUMERIC(8,2)` | Suma de carga_diaria últimos 7 días |
+| `carga_cronica_28d` | `NUMERIC(8,2)` | Promedio de carga_diaria últimos 28 días |
+| `acwr_actual` | `NUMERIC(4,2)` | Acute:Chronic Workload Ratio (GENERATED ALWAYS) |
+| `min_estudio_max_recomendado` | `INTEGER` | T_max en minutos (default 90, reducido por ACWR>1.3) |
+| `dias_proximo_examen` | `INTEGER` | Días hasta el próximo examen no completado (null si ninguno) |
+
+**RLS:**
+```sql
+ALTER TABLE public.estado_regulacion_cruzada ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Owner select" ON public.estado_regulacion_cruzada
+  FOR SELECT USING (auth.uid() = usuario_id);
+```
+
+**Modelo Dart `EstadoRegulacionCruzadaDb`:**
+```dart
+class EstadoRegulacionCruzadaDb {
+  final String usuarioId;
+  final double? cargaAguda7d;
+  final double? cargaCronica28d;
+  final double? acwrActual;            // GENERATED, puede ser null si cargaCronica28d=0
+  final int minEstudioMaxRecomendado;   // default 90
+  final int? diasProximoExamen;
+  final DateTime creadoEn;
+  final DateTime actualizadoEn;
+
+  factory EstadoRegulacionCruzadaDb.fromMap(Map<String, dynamic> map);
+}
+```
+
+---
+
+### 2.16 REGISTROS_CARGA_FISICA (★ Fórmula 3 — carga física diaria)
+
+**Migración:** `20260701000028_physical_workload_and_srs.sql`
+
+```sql
+CREATE TABLE IF NOT EXISTS public.registros_carga_fisica (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id       UUID NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  fecha_registro   DATE NOT NULL DEFAULT CURRENT_DATE,
+  rpe_sesion       SMALLINT NOT NULL CHECK (rpe_sesion BETWEEN 1 AND 10),
+  duracion_minutos INTEGER NOT NULL CHECK (duracion_minutos > 0),
+  carga_diaria     NUMERIC(7,2) GENERATED ALWAYS AS
+    (rpe_sesion * duracion_minutos) STORED,
+  sesion_id        UUID REFERENCES public.sesiones_registradas(id),
+  creado_en        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+**Propósito:** Registro de eventos atómicos de carga física (AU = Arbitrary Units = RPE × duración). Es insert-only desde el trigger `trg_insertar_carga_fisica`. La columna `carga_diaria` es GENERATED ALWAYS (no se inserta manualmente).
+
+**Trigger bidireccional `trg_insertar_carga_fisica`:**
+- **IDA:** Cuando `sesiones_registradas.completada_en` pasa de NULL a fecha → INSERT en `registros_carga_fisica`.
+- **VUELTA:** Cuando `completada_en` pasa de fecha a NULL → DELETE de `registros_carga_fisica WHERE sesion_id = NEW.id`.
+- Usa `NEW.duracion_minutos` (cronómetro real del cliente), no timestamps.
+
+**RLS:**
+```sql
+ALTER TABLE public.registros_carga_fisica ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Owner all" ON public.registros_carga_fisica
+  FOR ALL USING (auth.uid() = usuario_id);
+```
+
+**Modelo Dart `RegistroCargaFisicaDb`:**
+```dart
+class RegistroCargaFisicaDb {
+  final String id;
+  final String usuarioId;
+  final DateTime fechaRegistro;
+  final int rpeSesion;          // 1-10
+  final int duracionMinutos;
+  final double cargaDiaria;     // GENERATED = rpe × duración
+  final String? sesionId;
+  final DateTime creadoEn;
+
+  factory RegistroCargaFisicaDb.fromMap(Map<String, dynamic> map);
+}
+```
+
+---
+
+### 2.17 REGISTROS_REPASO_SRS (★ Fórmula 4 — auditoría SM-2-Physio)
+
+**Migración:** `20260701000028_physical_workload_and_srs.sql`
+
+```sql
+CREATE TABLE IF NOT EXISTS public.registros_repaso_srs (
+  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  material_estudio_id  UUID NOT NULL REFERENCES public.materiales_estudio(id) ON DELETE CASCADE,
+  fecha_repaso         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  q_real               SMALLINT NOT NULL CHECK (q_real BETWEEN 0 AND 5),
+  q_ajustado           NUMERIC(3,2) NOT NULL,
+  coeficiente_fatiga   NUMERIC(4,3) NOT NULL DEFAULT 0,
+  creado_en            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+**Propósito:** Auditoría inmutable (insert-only) de cada repaso SRS. Registra la calidad real del usuario (`q_real` 0-5), la calidad ajustada por fatiga serotoninérgica (`q_ajustado`), y el coeficiente de fatiga (`carga_hoy / carga_max`). Permite análisis retrospectivo de la eficacia del perdón mnemotécnico post-ejercicio.
+
+**Campos:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `material_estudio_id` | `UUID FK` | Material evaluado |
+| `fecha_repaso` | `TIMESTAMPTZ` | Momento del repaso |
+| `q_real` | `SMALLINT 0-5` | Calidad real reportada por el usuario |
+| `q_ajustado` | `NUMERIC(3,2)` | Q_adj = Q_real + η·(carga_hoy/carga_max), η=0.5 |
+| `coeficiente_fatiga` | `NUMERIC(4,3)` | carga_hoy / carga_max (0 si carga_max=0) |
+
+**RLS:**
+```sql
+ALTER TABLE public.registros_repaso_srs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Owner insert" ON public.registros_repaso_srs FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM public.materiales_estudio
+          WHERE id = material_estudio_id AND usuario_id = auth.uid())
+);
+CREATE POLICY "Owner select" ON public.registros_repaso_srs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.materiales_estudio
+          WHERE id = material_estudio_id AND usuario_id = auth.uid())
+);
+```
+
+**Modelo Dart `RegistroRepasoSrsDb`:**
+```dart
+class RegistroRepasoSrsDb {
+  final String id;
+  final String materialEstudioId;
+  final DateTime fechaRepaso;
+  final int qReal;              // 0-5
+  final double qAjustado;       // Q_adj sin redondeo
+  final double coeficienteFatiga;
+  final DateTime creadoEn;
+
+  factory RegistroRepasoSrsDb.fromMap(Map<String, dynamic> map);
+}
+```
+
+---
+
+### 2.18 RPC `recalcular_regulacion_cruzada`
+
+**Migración:** `20260701000028_physical_workload_and_srs.sql`
+
+```sql
+CREATE OR REPLACE FUNCTION public.recalcular_regulacion_cruzada(p_usuario_id UUID)
+RETURNS void AS $$
+DECLARE
+  v_aguda    NUMERIC(8,2);
+  v_cronica  NUMERIC(8,2);
+  v_dias     INTEGER;
+BEGIN
+  SELECT COALESCE(SUM(carga_diaria), 0) INTO v_aguda
+  FROM public.registros_carga_fisica
+  WHERE usuario_id = p_usuario_id
+    AND fecha_registro >= CURRENT_DATE - INTERVAL '7 days';
+
+  SELECT COALESCE(SUM(carga_diaria) / 28.0, 0) INTO v_cronica
+  FROM public.registros_carga_fisica
+  WHERE usuario_id = p_usuario_id
+    AND fecha_registro >= CURRENT_DATE - INTERVAL '28 days';
+
+  SELECT EXTRACT(DAY FROM (MIN(fecha_limite) - CURRENT_DATE))::int INTO v_dias
+  FROM public.entregas_examenes
+  WHERE usuario_id = p_usuario_id
+    AND esta_completado = false
+    AND fecha_limite >= CURRENT_DATE;
+
+  INSERT INTO public.estado_regulacion_cruzada (
+    usuario_id, carga_aguda_7d, carga_cronica_28d, dias_proximo_examen
+  ) VALUES (p_usuario_id, v_aguda, v_cronica, v_dias)
+  ON CONFLICT (usuario_id) DO UPDATE SET
+    carga_aguda_7d     = EXCLUDED.carga_aguda_7d,
+    carga_cronica_28d  = EXCLUDED.carga_cronica_28d,
+    dias_proximo_examen = EXCLUDED.dias_proximo_examen,
+    actualizado_en     = now();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+**Llamada desde Dart:** `finalizarSesion()` y `desmarcarSesion()` invocan esta RPC tras persistir/revertir la sesión. El trigger `trg_insertar_carga_fisica` ya insertó/eliminó el registro de carga física antes de que la RPC se ejecute.
 
 ---
 

@@ -32,6 +32,7 @@ class InboxConfig {
   final double horasEstudioObjetivo;
   final int sesionesDeporteObjetivo;
   final int minutosPorSesionDeporte;
+  final int tMaxEstudioMinutos;
   final List<EntregaItem> entregas;
   final List<HorarioFijoItem> horariosFijos;
   final List<AsignaturaActivaItem> asignaturasActivas;
@@ -41,6 +42,7 @@ class InboxConfig {
     this.horasEstudioObjetivo = 20.0,
     this.sesionesDeporteObjetivo = 3,
     this.minutosPorSesionDeporte = 60,
+    this.tMaxEstudioMinutos = 90,
     this.entregas = const [],
     this.horariosFijos = const [],
     this.asignaturasActivas = const [],
@@ -54,6 +56,7 @@ class InboxConfig {
     double? horasEstudioObjetivo,
     int? sesionesDeporteObjetivo,
     int? minutosPorSesionDeporte,
+    int? tMaxEstudioMinutos,
     List<EntregaItem>? entregas,
     List<HorarioFijoItem>? horariosFijos,
     List<AsignaturaActivaItem>? asignaturasActivas,
@@ -65,6 +68,7 @@ class InboxConfig {
           sesionesDeporteObjetivo ?? this.sesionesDeporteObjetivo,
       minutosPorSesionDeporte:
           minutosPorSesionDeporte ?? this.minutosPorSesionDeporte,
+      tMaxEstudioMinutos: tMaxEstudioMinutos ?? this.tMaxEstudioMinutos,
       entregas: entregas ?? this.entregas,
       horariosFijos: horariosFijos ?? this.horariosFijos,
       asignaturasActivas: asignaturasActivas ?? this.asignaturasActivas,

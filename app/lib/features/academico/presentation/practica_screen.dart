@@ -12,6 +12,8 @@ import '../../../../shared/models/db_models.dart';
 import '../application/materiales_estudio_provider.dart';
 import '../application/practica_provider.dart';
 import '../infrastructure/sm2_calculator.dart';
+import '../infrastructure/sm2_physio_service.dart';
+import '../../bienestar/application/neurofisiologia_provider.dart';
 
 class PracticaScreen extends ConsumerStatefulWidget {
   const PracticaScreen({
@@ -35,6 +37,7 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
   String? _seleccionada;
   bool _mostrandoFeedback = false;
   bool _completado = false;
+  bool _mostrandoTransicion = false;
   int _correctas = 0;
   TestSessionDb? _session;
   int _totalPreguntas = 0;
@@ -78,6 +81,7 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
             _banco = data.banco;
             if (_preguntas.isEmpty) _preguntas = data.preguntas;
             if (_preguntas.isEmpty) return _vacio();
+            if (_mostrandoTransicion) return _buildTransicion();
             return _completado ? _buildResumen() : _buildPregunta();
           },
         ),
@@ -169,6 +173,40 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
           ],
         ),
       );
+
+  Widget _buildTransicion() {
+    return Center(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.elasticOut,
+        builder: (_, v, __) => Transform.scale(
+          scale: v,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_rounded,
+                  color: Color(0xFF4CAF50), size: 44),
+            ),
+            const SizedBox(height: 20),
+            const Text('¡Sesión completada!',
+                style: TextStyle(
+                    color: SVColors.onSurface,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            const Text('Preparando tus resultados...',
+                style: TextStyle(color: SVColors.onSurfaceMuted, fontSize: 14)),
+          ]),
+        ),
+      ),
+    );
+  }
 
   Widget _buildPregunta() {
     final p = _preguntas[_indice];
@@ -566,7 +604,15 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
     if (next >= _preguntas.length) {
       if (_respuestas.length >= _preguntas.length) {
         _correctas = _respuestas.values.where((v) => v).length;
-        setState(() => _completado = true);
+        HapticFeedback.heavyImpact();
+        setState(() => _mostrandoTransicion = true);
+        Future.delayed(const Duration(milliseconds: 1800), () {
+          if (!mounted) return;
+          setState(() {
+            _mostrandoTransicion = false;
+            _completado = true;
+          });
+        });
         return;
       }
       next = _preguntas.length - 1;
@@ -611,92 +657,27 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
     _correctas = _respuestas.values.where((v) => v).length;
     final total = _totalPreguntas > 0 ? _totalPreguntas : _preguntas.length;
     final pct = total > 0 ? (_correctas / total * 100).round() : 0;
+    final incorrectas =
+        _respuestas.values.where((v) => !v).length - _omitidas();
+    final omitidas = _omitidas();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Column(children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const SizedBox(height: 32),
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: pct / 100),
-          duration: const Duration(milliseconds: 800),
-          curve: Curves.easeOutCubic,
-          builder: (_, v, __) => SizedBox(
-              width: 120,
-              height: 120,
-              child: Stack(alignment: Alignment.center, children: [
-                CircularProgressIndicator(
-                    value: 1,
-                    strokeWidth: 8,
-                    color: SVColors.surfaceContainerHighest),
-                CircularProgressIndicator(
-                    value: v,
-                    strokeWidth: 8,
-                    color: pct >= 80
-                        ? const Color(0xFF4CAF50)
-                        : pct >= 50
-                            ? const Color(0xFF3B82F6)
-                            : const Color(0xFFEF5350),
-                    strokeCap: StrokeCap.round),
-                Text('$pct%',
-                    style: TextStyle(
-                        color: pct >= 80
-                            ? const Color(0xFF4CAF50)
-                            : pct >= 50
-                                ? const Color(0xFF3B82F6)
-                                : const Color(0xFFEF5350),
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800)),
-              ])),
-        ),
-        const SizedBox(height: 20),
-        Text('$_correctas/$total correctas',
-            style: const TextStyle(
-                color: SVColors.onSurface,
-                fontSize: 22,
-                fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        _buildEstrellas(pct),
+        _buildHeaderRendimiento(pct, _correctas, incorrectas, omitidas, total),
+        const SizedBox(height: 32),
+        _buildDesgloseNota(pct),
+        const SizedBox(height: 32),
+        _buildTemasTratados(),
+        if (_tieneFalladas()) ...[
+          const SizedBox(height: 20),
+          _buildReintentarFallidas(),
+        ],
         const SizedBox(height: 28),
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.elasticOut,
-          builder: (_, v, __) => Transform.scale(
-              scale: v,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
-                    borderRadius: SVShapes.standard12,
-                    border: Border.all(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.3))),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 24),
-                  SizedBox(width: 8),
-                  Text('+20 XP',
-                      style: TextStyle(
-                          color: Color(0xFFF59E0B),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800)),
-                ]),
-              )),
-        ),
+        _buildXpBanner(),
         const SizedBox(height: 28),
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _mostrarEvaluacion,
-            style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
-                foregroundColor: Colors.white,
-                shape:
-                    RoundedRectangleBorder(borderRadius: SVShapes.standard12)),
-            child: const Text('Evaluar dominio',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-          ),
-        ),
+        _buildBotonEvaluar(),
         const SizedBox(height: 12),
         TextButton(
             onPressed: () => context.pop(),
@@ -706,31 +687,327 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
     );
   }
 
-  Widget _buildEstrellas(int pct) {
-    final n = pct >= 90
+  int _omitidas() {
+    final total = _totalPreguntas > 0 ? _totalPreguntas : _preguntas.length;
+    return total - _respuestas.length;
+  }
+
+  bool _tieneFalladas() => _respuestas.values.any((v) => !v);
+
+  Widget _buildHeaderRendimiento(
+      int pct, int correctas, int incorrectas, int omitidas, int total) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: SVColors.surfaceContainerLowest,
+        borderRadius: SVShapes.large16,
+      ),
+      child: Row(children: [
+        SizedBox(
+          width: 100,
+          height: 100,
+          child: Stack(alignment: Alignment.center, children: [
+            CircularProgressIndicator(
+                value: 1,
+                strokeWidth: 8,
+                color: SVColors.surfaceContainerHighest),
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: pct / 100),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutCubic,
+              builder: (_, v, __) => CircularProgressIndicator(
+                  value: v,
+                  strokeWidth: 8,
+                  color: pct >= 80
+                      ? const Color(0xFF4CAF50)
+                      : pct >= 50
+                          ? const Color(0xFF3B82F6)
+                          : const Color(0xFFEF5350),
+                  strokeCap: StrokeCap.round),
+            ),
+            Text('$pct%',
+                style: TextStyle(
+                    color: pct >= 80
+                        ? const Color(0xFF4CAF50)
+                        : pct >= 50
+                            ? const Color(0xFF3B82F6)
+                            : const Color(0xFFEF5350),
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800)),
+          ]),
+        ),
+        const SizedBox(width: 20),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Resultados',
+                  style: TextStyle(
+                      color: SVColors.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              _filaResultado(
+                  'Correctas', '$correctas', const Color(0xFF4CAF50)),
+              _filaResultado(
+                  'Incorrectas', '$incorrectas', const Color(0xFFEF5350)),
+              _filaResultado('Omitidas', '$omitidas', SVColors.outlineVariant),
+            ],
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _filaResultado(String label, String valor, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(label,
+            style: const TextStyle(
+                color: SVColors.onSurfaceMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w500)),
+        const Spacer(),
+        Text(valor,
+            style: TextStyle(
+                color: color, fontSize: 14, fontWeight: FontWeight.w800)),
+      ]),
+    );
+  }
+
+  Widget _buildDesgloseNota(int pct) {
+    final estrellas = pct >= 90
         ? 3
         : pct >= 60
             ? 2
             : pct >= 30
                 ? 1
                 : 0;
-    return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(
-            3,
-            (i) => AnimatedOpacity(
-                  duration: Duration(milliseconds: 300 + i * 150),
-                  opacity: i < n ? 1.0 : 0.2,
-                  child: Icon(
-                      i < n ? Icons.star_rounded : Icons.star_outline_rounded,
-                      color: const Color(0xFFF59E0B),
-                      size: 32),
-                )));
+    final mensaje = pct >= 90
+        ? '¡Excelente! Dominio sobresaliente del tema.'
+        : pct >= 60
+            ? 'Buen trabajo. Sigue repasando para consolidar.'
+            : pct >= 30
+                ? 'Vas por buen camino. Necesitas más práctica.'
+                : 'No te rindas. Repasa los conceptos e inténtalo de nuevo.';
+    return Column(children: [
+      Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+              3,
+              (i) => AnimatedOpacity(
+                    duration: Duration(milliseconds: 300 + i * 150),
+                    opacity: i < estrellas ? 1.0 : 0.2,
+                    child: Icon(
+                        i < estrellas
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        color: const Color(0xFFF59E0B),
+                        size: 32),
+                  ))),
+      const SizedBox(height: 8),
+      Text(mensaje,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+              color: SVColors.onSurfaceMuted, fontSize: 13, height: 1.4)),
+    ]);
   }
 
-  void _mostrarEvaluacion() {
+  Widget _buildTemasTratados() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: SVColors.surfaceContainerLowest,
+        borderRadius: SVShapes.standard12,
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.menu_book_outlined,
+              size: 18, color: SVColors.onSurfaceVariant),
+          const SizedBox(width: 8),
+          const Text('Temas tratados',
+              style: TextStyle(
+                  color: SVColors.onSurface,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700)),
+        ]),
+        const SizedBox(height: 10),
+        FutureBuilder<String>(
+            future: _obtenerTituloMaterial(),
+            builder: (_, snap) {
+              final titulo = snap.data ?? 'Material de estudio';
+              final correctas = _respuestas.values.where((v) => v).length;
+              final total =
+                  _totalPreguntas > 0 ? _totalPreguntas : _preguntas.length;
+              final pctTema = total > 0 ? (correctas / total * 100).round() : 0;
+              return _filaResultado(
+                  titulo,
+                  '$pctTema%',
+                  pctTema >= 50
+                      ? const Color(0xFF4CAF50)
+                      : const Color(0xFFEF5350));
+            }),
+      ]),
+    );
+  }
+
+  Future<String> _obtenerTituloMaterial() async {
+    try {
+      final result = await Supabase.instance.client
+          .from('materiales_estudio')
+          .select('titulo')
+          .eq('id', widget.materialId)
+          .maybeSingle();
+      return (result?['titulo'] as String?) ?? 'Material de estudio';
+    } catch (_) {
+      return 'Material de estudio';
+    }
+  }
+
+  Widget _buildReintentarFallidas() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF5350).withValues(alpha: 0.06),
+        borderRadius: SVShapes.standard12,
+        border:
+            Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.2)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFFEF5350)),
+          const SizedBox(width: 8),
+          const Text('Seguir aprendiendo',
+              style: TextStyle(
+                  color: SVColors.onSurface,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700)),
+        ]),
+        const SizedBox(height: 6),
+        const Text(
+          'Practica de nuevo solo las preguntas que fallaste para reforzar tu aprendizaje.',
+          style: TextStyle(
+              color: SVColors.onSurfaceMuted, fontSize: 12, height: 1.4),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 44,
+          child: OutlinedButton.icon(
+            onPressed: _reintentarFallidas,
+            icon: const Icon(Icons.replay_rounded, size: 18),
+            label: const Text('Reintentar fallidas',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFEF5350),
+              side: const BorderSide(color: Color(0xFFEF5350)),
+              shape: RoundedRectangleBorder(borderRadius: SVShapes.standard12),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  void _reintentarFallidas() {
+    final falladas = _respuestas.entries
+        .where((e) => !e.value)
+        .map((e) => _preguntas[e.key].id)
+        .toList();
+    if (falladas.isEmpty) return;
+
+    if (_session != null) {
+      context.pop();
+      context.pushReplacement(
+          '/academico/practica/${widget.materialId}?sessionId=${_session!.id}&revision=true');
+    } else {
+      context.pop();
+      context.push('/academico/practica/${widget.materialId}?revision=true');
+    }
+  }
+
+  Widget _buildXpBanner() {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.elasticOut,
+      builder: (_, v, __) => Transform.scale(
+          scale: v,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                borderRadius: SVShapes.standard12,
+                border: Border.all(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.3))),
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 24),
+              SizedBox(width: 8),
+              Text('+20 XP',
+                  style: TextStyle(
+                      color: Color(0xFFF59E0B),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800)),
+            ]),
+          )),
+    );
+  }
+
+  Widget _buildBotonEvaluar() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _mostrarEvaluacion,
+        style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF3B82F6),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: SVShapes.standard12)),
+        child: const Text('Evaluar dominio',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+      ),
+    );
+  }
+
+  Future<void> _mostrarEvaluacion() async {
     if (_mostroEvaluacion) return;
     _mostroEvaluacion = true;
+
+    final existing = await Supabase.instance.client
+        .from('materiales_estudio')
+        .select()
+        .eq('id', widget.materialId)
+        .maybeSingle();
+    if (existing == null || !mounted) return;
+    final material = MaterialEstudioDb.fromMap(existing);
+
+    final cargaHoy = ref.read(cargaFisicaHoyProvider).valueOrNull ?? 0;
+    final cargaMax = ref.read(cargaFisicaMaximaProvider).valueOrNull ?? 0;
+
+    // Pre-calcular intervalo final para cada nivel 0-5
+    final intervalos = <int>[];
+    for (var q = 0; q <= 5; q++) {
+      final qAdj = Sm2PhysioService.calcularQAdj(
+        qReal: q,
+        cargaFisicaHoy: cargaHoy,
+        cargaFisicaMaxima: cargaMax,
+      );
+      final res = Sm2Calculator.calcular(
+        calidad: qAdj,
+        intervaloActualDias: material.intervaloActualDias,
+        facilidad: material.facilidad,
+        repasosCompletados: material.repasosCompletados,
+      );
+      intervalos.add(res.intervaloDias);
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: SVColors.surfaceContainerLowest,
@@ -739,24 +1016,40 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
               topLeft: Radius.circular(16), topRight: Radius.circular(16))),
       isScrollControlled: true,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => _EvaluacionSheet(onSeleccion: _aplicarEvaluacion),
+      builder: (_) => _EvaluacionSheet(
+        onSeleccion: _aplicarEvaluacion,
+        intervalos: intervalos,
+      ),
     );
   }
 
   Future<void> _aplicarEvaluacion(int calidad) async {
     final repo = ref.read(materialesEstudioRepositoryProvider);
-    final existing = await Supabase.instance.client
+    final client = Supabase.instance.client;
+    final existing = await client
         .from('materiales_estudio')
         .select()
         .eq('id', widget.materialId)
         .maybeSingle();
     if (existing == null || !mounted) return;
     final material = MaterialEstudioDb.fromMap(existing);
+
+    // SM-2-Physio: Q_adj por fatiga física (sin mapeo a 0-2)
+    final cargaHoy = ref.read(cargaFisicaHoyProvider).valueOrNull ?? 0;
+    final cargaMax = ref.read(cargaFisicaMaximaProvider).valueOrNull ?? 0;
+    final qAdj = Sm2PhysioService.calcularQAdj(
+      qReal: calidad,
+      cargaFisicaHoy: cargaHoy,
+      cargaFisicaMaxima: cargaMax,
+    );
+
     final sm2 = Sm2Calculator.calcular(
-        calidad: calidad,
-        intervaloActualDias: material.intervaloActualDias,
-        facilidad: material.facilidad,
-        repasosCompletados: material.repasosCompletados);
+      calidad: qAdj,
+      intervaloActualDias: material.intervaloActualDias,
+      facilidad: material.facilidad,
+      repasosCompletados: material.repasosCompletados,
+    );
+
     final siguiente = DateTime.now().add(Duration(days: sm2.intervaloDias));
     await repo.actualizarEstadoSm2(
         materialId: widget.materialId,
@@ -766,6 +1059,20 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
         repasosCompletados: sm2.repasosCompletados,
         siguienteRepasoEn: siguiente,
         ultimoRepasoEn: DateTime.now());
+
+    // Auditoría inmutable SM-2-Physio
+    try {
+      await client.from('registros_repaso_srs').insert({
+        'material_estudio_id': widget.materialId,
+        'fecha_repaso': DateTime.now().toIso8601String(),
+        'q_real': calidad,
+        'q_ajustado': qAdj,
+        'coeficiente_fatiga': cargaMax > 0 ? cargaHoy / cargaMax : 0,
+      });
+    } catch (_) {
+      // No bloqueante: la auditoría es best-effort
+    }
+
     await _inyectarRepaso(material, siguiente);
     if (_session != null) {
       _correctas = _respuestas.values.where((v) => v).length;
@@ -837,8 +1144,28 @@ class _PracticaScreenState extends ConsumerState<PracticaScreen> {
 }
 
 class _EvaluacionSheet extends StatelessWidget {
-  const _EvaluacionSheet({required this.onSeleccion});
+  const _EvaluacionSheet({required this.onSeleccion, required this.intervalos});
   final void Function(int) onSeleccion;
+  final List<int> intervalos;
+
+  static const _etiquetas = [
+    'Olvido total',
+    'Casi nada',
+    'Con dificultad',
+    'Con esfuerzo',
+    'Casi perfecto',
+    'Perfecto',
+  ];
+
+  static const _colores = [
+    Color(0xFFEF5350),
+    Color(0xFFFF7043),
+    Color(0xFFFFC107),
+    Color(0xFF8BC34A),
+    Color(0xFF4CAF50),
+    Color(0xFF2E7D32),
+  ];
+
   @override
   Widget build(BuildContext c) => Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
@@ -856,20 +1183,24 @@ class _EvaluacionSheet extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 20),
-          _chip(Icons.check_circle, 'Dominio absoluto', const Color(0xFF4CAF50),
-              () => onSeleccion(2)),
-          const SizedBox(height: 10),
-          _chip(Icons.trending_up, 'Me cuesta', const Color(0xFFFFC107),
-              () => onSeleccion(1)),
-          const SizedBox(height: 10),
-          _chip(Icons.refresh, 'Toca repasar', const Color(0xFFEF5350),
-              () => onSeleccion(0)),
+          for (var q = 5; q >= 0; q--) ...[
+            if (q < 5) const SizedBox(height: 10),
+            _chip(
+              _colores[q],
+              '${_etiquetas[q]} — ${intervalos[q]} d',
+              () {
+                Navigator.of(c).pop();
+                onSeleccion(q);
+              },
+            ),
+          ],
         ]),
       );
-  Widget _chip(IconData i, String l, Color co, VoidCallback t) => SizedBox(
+
+  Widget _chip(Color co, String label, VoidCallback onTap) => SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: t,
+          onPressed: onTap,
           style: ElevatedButton.styleFrom(
               backgroundColor: co.withValues(alpha: 0.1),
               foregroundColor: co,
@@ -879,9 +1210,7 @@ class _EvaluacionSheet extends StatelessWidget {
                   borderRadius: SVShapes.standard12,
                   side: BorderSide(color: co.withValues(alpha: 0.3)))),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(i, size: 22),
-            const SizedBox(width: 10),
-            Text(l,
+            Text(label,
                 style:
                     const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
           ]),

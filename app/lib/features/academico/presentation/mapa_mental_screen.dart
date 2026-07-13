@@ -1,24 +1,19 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sv_colors.dart';
-import '../application/documento_ia_provider.dart';
-import '../application/estudio_ia_provider.dart';
+import '../application/generacion_background_provider.dart';
 import '../domain/fuente_estudio.dart';
 import '../domain/mapa_mental.dart';
-import '../infrastructure/documento_ia_repository.dart';
 import '../infrastructure/estudio_ia_service.dart';
 
-// Dimensiones fijas del nodo y separaciones (el layout asume altura fija).
 const double _nodeW = 170.0;
 const double _nodeH = 58.0;
 const double _hGap = 64.0;
 const double _vGap = 18.0;
 
-// Paleta para diferenciar visualmente cada rama principal (estilo NotebookLM).
 const List<Color> _paleta = [
   Color(0xFF3B82F6),
   Color(0xFFEF4444),
@@ -29,8 +24,6 @@ const List<Color> _paleta = [
   Color(0xFF14B8A6),
 ];
 
-/// Pantalla que genera y muestra un mapa mental interactivo del material
-/// (Clean UI, estilo NotebookLM: pan/zoom y nodos expandibles/colapsables).
 class MapaMentalScreen extends ConsumerStatefulWidget {
   const MapaMentalScreen({required this.fuente, super.key});
 
@@ -51,65 +44,72 @@ class _MapaMentalScreenState extends ConsumerState<MapaMentalScreen> {
     _cargar();
   }
 
-  /// Carga el mapa guardado si existe; si no, lo genera y lo guarda.
   Future<void> _cargar() async {
     setState(() {
       _cargando = true;
       _error = null;
     });
-    try {
-      final repo = ref.read(documentoIaRepositoryProvider);
-      final guardado = await repo.obtener(
-        fuenteTipo: widget.fuente.fuenteTipo,
-        fuenteId: widget.fuente.fuenteId,
-        tipo: TipoDocumentoIa.mapaMental,
-      );
+
+    final bg = ref.read(backgroundIaGeneratorProvider);
+    if (bg.tieneMapaEnVuelo(widget.fuente)) {
       if (!mounted) return;
-      if (guardado != null && guardado.contenido.trim().isNotEmpty) {
-        final json = jsonDecode(guardado.contenido) as Map<String, dynamic>;
-        final mapa = MapaMental.fromJson(json);
-        if (!mapa.vacio) {
-          setState(() {
-            _mapa = mapa;
-            _cargando = false;
-          });
-          return;
-        }
+      setState(() {});
+      try {
+        final mapa = await bg.generarMapa(widget.fuente, ref: ref);
+        if (!mounted) return;
+        setState(() {
+          _mapa = mapa;
+          _cargando = false;
+        });
+      } on EstudioIaException catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _error = e.message;
+          _cargando = false;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _error = 'No se pudo generar el mapa mental: $e';
+          _cargando = false;
+        });
       }
-    } catch (_) {
-      // Si falla la lectura/parseo del documento, se genera de nuevo.
+      return;
     }
-    if (!mounted) return;
-    await _generarYGuardar();
+
+    try {
+      final mapa = await bg.generarMapa(widget.fuente, ref: ref);
+      if (!mounted) return;
+      setState(() {
+        _mapa = mapa;
+        _cargando = false;
+      });
+    } on EstudioIaException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _cargando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'No se pudo generar el mapa mental: $e';
+        _cargando = false;
+      });
+    }
   }
 
-  /// Genera el mapa con la IA y lo persiste (sobrescribe el guardado).
   Future<void> _generarYGuardar() async {
     setState(() {
       _cargando = true;
       _error = null;
     });
+
+    final bg = ref.read(backgroundIaGeneratorProvider);
+    bg.limpiarCacheMapa(widget.fuente);
+
     try {
-      final servicio = ref.read(estudioIaServiceProvider);
-      final mapa = await servicio.mapaMental(widget.fuente);
-
-      try {
-        await ref.read(documentoIaRepositoryProvider).guardar(
-              fuenteTipo: widget.fuente.fuenteTipo,
-              fuenteId: widget.fuente.fuenteId,
-              asignaturaId: widget.fuente.asignaturaId,
-              fuenteTitulo: widget.fuente.titulo,
-              tipo: TipoDocumentoIa.mapaMental,
-              contenido: jsonEncode(mapa.toJson()),
-            );
-        ref.invalidate(docsGuardadosProvider((
-          fuenteTipo: widget.fuente.fuenteTipo,
-          fuenteId: widget.fuente.fuenteId,
-        )));
-      } catch (_) {
-        // Si el guardado falla, mostramos igualmente el mapa generado.
-      }
-
+      final mapa = await bg.generarMapa(widget.fuente, ref: ref);
       if (!mounted) return;
       setState(() {
         _mapa = mapa;
@@ -349,8 +349,6 @@ class _MapaMentalVistaState extends State<_MapaMentalVista> {
   }
 }
 
-// ── Datos de layout ─────────────────────────────────────────────────────────
-
 class _NodoLayout {
   const _NodoLayout({
     required this.id,
@@ -379,8 +377,6 @@ class _Arista {
   final String hijo;
   final Color color;
 }
-
-// ── Pintor de aristas ───────────────────────────────────────────────────────
 
 class _AristasPainter extends CustomPainter {
   _AristasPainter({required this.nodos, required this.aristas});
@@ -415,8 +411,6 @@ class _AristasPainter extends CustomPainter {
   bool shouldRepaint(_AristasPainter old) =>
       old.aristas.length != aristas.length || old.nodos.length != nodos.length;
 }
-
-// ── Nodo ────────────────────────────────────────────────────────────────────
 
 class _NodoCard extends StatelessWidget {
   const _NodoCard({required this.layout, required this.onTap});
@@ -513,8 +507,6 @@ class _Insignia extends StatelessWidget {
   }
 }
 
-// ── Overlays ────────────────────────────────────────────────────────────────
-
 class _HintChip extends StatelessWidget {
   const _HintChip();
 
@@ -566,8 +558,6 @@ class _BotonReiniciar extends StatelessWidget {
     );
   }
 }
-
-// ── Estados de carga / error ────────────────────────────────────────────────
 
 class _CargandoMapa extends StatelessWidget {
   const _CargandoMapa({required this.titulo});

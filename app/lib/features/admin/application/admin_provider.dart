@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/admin_dto.dart';
 import '../infrastructure/admin_repository.dart';
 import 'admin_auditoria_provider.dart';
+import 'admin_metricas_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Repositorio
@@ -234,4 +235,84 @@ Future<void> cambiarNivelUsuario(
     entidadId: usuarioId,
     detalle: {'nivel': nuevoNivel},
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shadowban (Trust & Safety)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Activa o desactiva el shadowban para un usuario.
+Future<void> toggleShadowbanUsuario(
+  WidgetRef ref,
+  String usuarioId,
+  bool activar,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  await repo.toggleShadowban(usuarioId, activar);
+  ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  ref.invalidate(adminUsuariosProvider);
+  await registrarAuditoria(
+    ref,
+    accion: activar ? 'activar_shadowban' : 'desactivar_shadowban',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Lockdown Mode (Modo Pánico)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Provedor del estado de lockdown.
+final lockdownStateProvider = FutureProvider<bool>((ref) async {
+  final repo = ref.watch(adminRepositoryProvider);
+  return repo.getLockdownState();
+});
+
+/// Activa o desactiva el modo lockdown global.
+Future<void> toggleLockdown(
+  WidgetRef ref,
+  bool activar,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  await repo.toggleLockdown(activar);
+  ref.invalidate(lockdownStateProvider);
+  ref.invalidate(adminMetricasProvider);
+  await registrarAuditoria(
+    ref,
+    accion: activar ? 'activar_lockdown' : 'desactivar_lockdown',
+    entidad: 'configuracion_global',
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GDPR: Anonimización y Exportación
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Anonimiza permanentemente a un usuario preservando datos analíticos.
+Future<Map<String, dynamic>> anonimizarUsuario(
+  WidgetRef ref,
+  String usuarioId,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  final result = await repo.anonymizeUser(usuarioId);
+  ref.invalidate(adminUsuariosProvider);
+  ref.invalidate(adminUsuarioDetalleProvider(usuarioId));
+  await registrarAuditoria(
+    ref,
+    accion: 'anonimizar_usuario',
+    entidad: 'usuarios',
+    entidadId: usuarioId,
+    detalle: {'email': result['email']},
+  );
+  return result;
+}
+
+/// Exporta todos los datos de un usuario en formato JSON.
+Future<Map<String, dynamic>> exportarDatosUsuario(
+  WidgetRef ref,
+  String usuarioId,
+) async {
+  final repo = ref.read(adminRepositoryProvider);
+  return repo.exportUserData(usuarioId);
 }

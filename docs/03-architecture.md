@@ -1,8 +1,8 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 5.3
+**Versión:** 5.4
 **Estado:** APROBADO
-**Fecha:** 27-06-2026
+**Fecha:** 01-07-2026
 **Autor:** Arquitectura
 **Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.4)
 
@@ -129,7 +129,7 @@ synaptixfit/
 │       │       └── shell_route.dart        # StatefulShellRoute (5 tabs)
 │       ├── shared/
 │       │   ├── models/
-│       │   │   └── db_models.dart          # 42+ modelos (~2515 líneas, incl. EjercicioDb con valorMet, SeleccionEjercicioDb con duracionObjetivoSegundos/duracionRealSegundos, AsignaturaUsuarioSemestreDb)
+│       │   │   └── db_models.dart          # 46+ modelos (~2935 líneas, incl. EjercicioDb con valorMet, SeleccionEjercicioDb con duracionObjetivoSegundos/duracionRealSegundos, AsignaturaUsuarioSemestreDb, ★ EstadoCognitivoUsuarioDb, EstadoRegulacionCruzadaDb, RegistroRepasoSrsDb, RegistroCargaFisicaDb)
 │       │   ├── utils/
 │       │   │   └── string_utils.dart       # ★ finalidadesEstandar + sanitizarObjetivo() (Fase 0)
 │       │   └── widgets/
@@ -146,6 +146,9 @@ synaptixfit/
 │       │   │   ├── infrastructure/
 │       │   │   │   ├── recomendacion_ia_service.dart        # ★ IA (1357 líneas) + refinarRutina() (Fase 6)
 │       │   │   │   ├── calorie_calculator_service.dart       # ★ Cálculo calórico MET (116 líneas, Compendio Adultos 2024)
+│       │   │   │   ├── study_calorie_service.dart             # ★ Fórmula 1: Gasto calórico estudio (Mifflin-St Jeor + MET Cognitivo)
+│       │   │   │   ├── cognitive_load_calculator_service.dart # ★ Fórmula 2: Carga cognitiva acumulada (C_acum exponencial)
+│       │   │   │   ├── cross_regulation_service.dart          # ★ Fórmula 3: Regulación cruzada (Gobernador Central + ACWR)
 │       │   │   │   ├── recomendacion_reglas_service.dart    # ★ Motor de reglas determinista (Fase 2, 710 líneas)
 │       │   │   │   ├── recomendacion_contexto_service.dart  # ★ Capa de contexto academia+fisiología (Fase 3, 381 líneas)
 │       │   │   │   ├── recomendacion_orquestador_service.dart # ★ Orquestador del pipeline (Fase 8, 412 líneas)
@@ -155,7 +158,8 @@ synaptixfit/
 │       │   │   │   ├── feedback_engine.dart                 # ★ Feedback post-sesión (Fase 7, 130 líneas)
 │       │   │   │   └── ejercicios_repository.dart
 │       │   │   └── application/
-│       │   │       ├── rutina_provider.dart                 # ★ 50+ providers incl. académicos y energéticos (~1912 líneas, finalizarSesion con duracionRealPorEjercicio, EjercicioInput con duracionObjetivoSegundos/duracionRealSegundos)
+│       │   │       ├── rutina_provider.dart                 # ★ 50+ providers incl. académicos y energéticos (~1912 líneas, finalizarSesion con recalcular_regulacion_cruzada, desmarcarSesion, completarBloqueEstudio, desmarcarBloqueEstudio)
+│       │   │       ├── neurofisiologia_provider.dart         # ★ 6 providers neurofisiológicos: estadoCognitivo, estadoRegulacionCruzada, caloriasEstudioHoy, cargaFisicaHoy, cargaFisicaMaxima, tMaxEstudio
 │       │   │       ├── ejercicios_provider.dart
 │       │   │       └── sesion_provider.dart
 │       │   ├── social/                     # Muro, likes, comentarios
@@ -169,8 +173,8 @@ synaptixfit/
 │       │   ├── insignias/                  # Sistema de insignias y rachas (15 insignias, InsigniaEngine, RachaService)
 │       │   ├── academico/                  # ★ Time-Blocking académico — Custom Grid nativo, DnD libre, IA (Gemini Flash), arrastre entre semanas
 │       │   │   ├── domain/                  # DTOs: TimeBlock, InboxConfig, CalendarGridState, TimeBlockTipo (8 valores), SemanaGenerada
-│       │   │   ├── infrastructure/          # TimeBlockIaService + AiScheduleParserService (Gemini multimodal, parseo de horarios PDF/imagen)
-│       │   │   ├── application/             # Providers: inboxConfig, calendarGrid (moveBlock sin restricciones, resizeBlock min 30min), horariosFijos, bloqueEstudio, escanear_horario
+│       │   │   ├── infrastructure/          # TimeBlockIaService + AiScheduleParserService (Gemini multimodal, parseo de horarios PDF/imagen) + Sm2Calculator (escala 0-5) + Sm2PhysioService (Fórmula 4: Q_adj por fatiga serotoninérgica)
+│       │   │   ├── application/             # Providers: inboxConfig, calendarGrid (moveBlock sin restricciones, resizeBlock min 30min), horariosFijos, bloqueEstudio, escanear_horario, practicaProvider, materialesEstudioProvider
 │       │   │   └── presentation/            # InboxScreen, CanvasScreen (chevrons DragTarget para mover entre semanas, _moverBloqueASemana, feedback sin overflow), widgets (TimeGridPainter, TimeBlockWidget sin candado, ProgressGamificationBar), AcademicBlockSheet (pestaña Deporte integrada), escanear_horario_boton (integrado en perfil_screen)
 │       │   └── admin/                      # Panel de administración Fase 2 — 34 archivos, 5 tabs
 │       │       ├── domain/                  # 7 DTOs: AdminKpi, AdminContenido, AdminEjercicio, AdminAuditoria, AdminUsuarioEstadisticas, AdminTimelineEntry, UsuarioAdmin
@@ -179,7 +183,7 @@ synaptixfit/
 │       │       └── presentation/            # AdminHubScreen (TabBar 5 tabs) + 15 widgets/pantallas (KPI, usuarios, contenido, ejercicios, logs, gráficos, timeline, paginación)
 │       └── main.dart                       # Entry point, ProviderScope, Supabase.init
 ├── supabase/
-│   ├── migrations/                         # 47 archivos de migración (0049 esquema base + 46 posteriores)
+│   ├── migrations/                         # 54 archivos de migración (0049 esquema base + 53 posteriores)
 │   └── seed_catalogo_v2.py                 # Seeding del catálogo académico v2 desde grados.json
 ├── cloudflare/
 │   └── synaptixfit-r2-proxy/
@@ -806,7 +810,7 @@ features/dashboard/
 │   └── smart_banner_dto.dart      — SmartBannerContext, SmartBannerState
 └── presentation/
     ├── dashboard_screen.dart      — Pantalla principal (~355 líneas)
-    └── widgets/                   — 12 widgets (SaludoCard, KpiGrid, RetosSection, etc.)
+    └── widgets/                   — 13 widgets (SaludoCard, KpiGrid, RetosSection, CognitiveLoadBar ★ actualizado con estadoCognitivoProvider, CrossRegulationIndicator ★ nuevo, _EstudioCaloriasChip ★ nuevo, etc.)
 ```
 
 ### 15.4 Hive para cache local
@@ -1149,6 +1153,6 @@ La migración `20260617000011_timeblocking.sql` (Sprint Time-Blocking) contiene:
 
 ---
 
-**Documento compilado:** 27-06-2026
-**Versión:** 5.3
+**Documento compilado:** 01-07-2026
+**Versión:** 5.4
 **Clasificación:** PÚBLICO — Equipo jloen

@@ -1,11 +1,23 @@
+import 'dart:math' as math;
+
 /// Calculadora del algoritmo SM-2 (SuperMemo 2) para repetición espaciada.
 ///
+/// Ampliada a escala 0-5 para el sistema SM-2-Physio, con soporte de
+/// calidad continua (double) para preservar la precisión asintótica de la
+/// curva de Ebbinghaus en el cálculo del Factor de Facilidad (EF).
+///
 /// Parámetros:
-/// - EF (facilidad): inicial 2.5, rango [1.3, 2.5]
+/// - EF (facilidad): inicial 2.5, rango [1.3, 3.0]
 /// - I (intervalo): días hasta el próximo repaso
 /// - n (repasos_ok): conteo de repasos correctos consecutivos
 ///
-/// calidad: 0 = "Toca repasar", 1 = "Me cuesta", 2 = "Dominio absoluto"
+/// calidad (0.0–5.0):
+///   0.0 = "Olvido total", 1.0 = "Casi nada", 2.0 = "Con dificultad",
+///   3.0 = "Con esfuerzo", 4.0 = "Casi perfecto", 5.0 = "Perfecto"
+///
+/// IMPORTANTE: la variable `calidad` se recibe como double continuo.
+/// Solo los condicionales lógicos (fallo/éxito, estado) usan .round().
+/// La fórmula EF usa el valor double exacto sin redondeo.
 class Sm2Resultado {
   const Sm2Resultado({
     required this.intervaloDias,
@@ -21,29 +33,31 @@ class Sm2Resultado {
 }
 
 class Sm2Calculator {
-  static const _facilidadInicial = 2.5;
   static const _facilidadMinima = 1.3;
+  static const _facilidadMaxima = 3.0;
 
   /// Calcula el nuevo estado SM-2 a partir del estado anterior y la calidad
-  /// de la respuesta (0: repasar, 1: cuesta, 2: dominado).
+  /// de la respuesta.
+  ///
+  /// [calidad] — valor continuo [0.0, 5.0] (sin redondeo para la fórmula EF).
+  ///   Se usa .round() exclusivamente para condicionales lógicos.
   static Sm2Resultado calcular({
-    required int calidad,
+    required double calidad,
     required int intervaloActualDias,
     required double facilidad,
     required int repasosCompletados,
   }) {
-    if (calidad < 0 || calidad > 2) {
-      throw ArgumentError('calidad debe ser 0, 1 o 2');
-    }
+    final calidadDiscreta = calidad.round().clamp(0, 5);
 
     int nuevoIntervalo;
     int nuevosRepasos;
     String estadoDominio;
 
-    if (calidad < 2) {
+    // Umbral de fallo: calidad < 3 → reset de repasos
+    if (calidadDiscreta < 3) {
       nuevosRepasos = 0;
       nuevoIntervalo = 1;
-      estadoDominio = calidad == 0 ? 'necesita_repaso' : 'en_progreso';
+      estadoDominio = calidadDiscreta <= 1 ? 'necesita_repaso' : 'en_progreso';
     } else {
       switch (repasosCompletados) {
         case 0:
@@ -53,16 +67,19 @@ class Sm2Calculator {
         case 2:
           nuevoIntervalo = 7;
         default:
-          nuevoIntervalo = (intervaloActualDias * facilidad).ceil();
-          if (nuevoIntervalo < 1) nuevoIntervalo = 1;
+          nuevoIntervalo =
+              math.max(1, (intervaloActualDias * facilidad).ceil());
       }
       nuevosRepasos = repasosCompletados + 1;
       estadoDominio = nuevosRepasos >= 3 ? 'dominado' : 'en_progreso';
     }
 
-    double nuevaFacilidad =
-        facilidad + (0.1 - (2 - calidad) * (0.08 + (2 - calidad) * 0.02));
-    if (nuevaFacilidad > _facilidadInicial) nuevaFacilidad = _facilidadInicial;
+    // Fórmula EF con calidad continua (double exacto, sin redondeo):
+    // EF_new = EF + (0.1 − (5−q)·(0.08+(5−q)·0.02))
+    final deltaEf = 0.1 - (5 - calidad) * (0.08 + (5 - calidad) * 0.02);
+    double nuevaFacilidad = facilidad + deltaEf;
+
+    if (nuevaFacilidad > _facilidadMaxima) nuevaFacilidad = _facilidadMaxima;
     if (nuevaFacilidad < _facilidadMinima) nuevaFacilidad = _facilidadMinima;
 
     return Sm2Resultado(

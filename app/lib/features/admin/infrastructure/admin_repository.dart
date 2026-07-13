@@ -47,7 +47,7 @@ class AdminRepository {
     // PostgrestFilterBuilder y PostgrestTransformBuilder al encadenar .or()
     // seguido de .eq() / .order().
     dynamic select = _client.from('usuarios').select(
-          'id, email, nombre_completo, url_avatar, rol, nivel, xp_total, racha_actual, creado_en',
+          'id, email, nombre_completo, url_avatar, rol, nivel, xp_total, racha_actual, is_shadowbanned, creado_en',
         );
 
     // Filtro por búsqueda textual
@@ -93,9 +93,9 @@ class AdminRepository {
         .from('usuarios')
         .select('''
           id, email, nombre_completo, url_avatar, rol,
-          nivel, xp_total, racha_actual, creado_en, actualizado_en,
-          perfil_bienestar_usuario!left(peso_kg, altura_cm, objetivo_principal),
-          perfil_academico_usuario!left(carrera, semestre_actual)
+          nivel, xp_total, racha_actual, is_shadowbanned, creado_en, actualizado_en,
+          perfil_bienestar_usuario!left(peso_kg, altura_cm, objetivo_principal, nivel_actividad, edad, sexo, imc, dias_disponibles_semana, minutos_por_sesion),
+          perfil_academico_usuario!left(carrera, semestre_actual, universidad, modalidad, creditos_semestre_actual, horas_objetivo_estudio_semana, promedio_objetivo)
         ''')
         .eq('id', usuarioId)
         .maybeSingle()
@@ -194,6 +194,33 @@ class AdminRepository {
 
     data['_rutinas_recientes'] = rutinasRecientes;
 
+    // Adherencia académica (últimas 4 semanas)
+    try {
+      final adherencia = await _client
+          .from('carga_academica_semanal')
+          .select(
+              'semana_inicio, horas_estudio_planeadas, horas_estudio_reales')
+          .eq('usuario_id', usuarioId)
+          .order('semana_inicio', ascending: false)
+          .limit(4)
+          .timeout(const Duration(seconds: 8));
+      double totalPlaneadas = 0;
+      double totalReales = 0;
+      for (final a in adherencia) {
+        totalPlaneadas +=
+            (a['horas_estudio_planeadas'] as num?)?.toDouble() ?? 0;
+        totalReales += (a['horas_estudio_reales'] as num?)?.toDouble() ?? 0;
+      }
+      data['_adherencia'] = {
+        'porcentaje': totalPlaneadas > 0
+            ? ((totalReales / totalPlaneadas) * 100).round()
+            : null,
+        'semanas': adherencia.length,
+      };
+    } catch (_) {
+      data['_adherencia'] = {'porcentaje': null, 'semanas': 0};
+    }
+
     return data;
   }
 
@@ -278,5 +305,74 @@ class AdminRepository {
         .update({'nivel': nuevoNivel})
         .eq('id', usuarioId)
         .timeout(const Duration(seconds: 10));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Shadowban (Trust & Safety)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Activa o desactiva el shadowban para un usuario.
+  Future<void> toggleShadowban(String usuarioId, bool activar) async {
+    await _client
+        .from('usuarios')
+        .update({'is_shadowbanned': activar})
+        .eq('id', usuarioId)
+        .timeout(const Duration(seconds: 10));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Lockdown Mode (Modo Pánico)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Obtiene el estado actual del lockdown desde configuracion_global.
+  Future<bool> getLockdownState() async {
+    final data = await _client
+        .from('configuracion_global')
+        .select('lockdown_activo')
+        .eq('id', true)
+        .maybeSingle()
+        .timeout(const Duration(seconds: 10));
+    return data?['lockdown_activo'] == true;
+  }
+
+  /// Activa o desactiva el modo lockdown y registra quién lo hizo.
+  Future<void> toggleLockdown(bool activar) async {
+    await _client
+        .from('configuracion_global')
+        .update({
+          'lockdown_activo': activar,
+          'lockdown_iniciado_en':
+              activar ? DateTime.now().toUtc().toIso8601String() : null,
+          'lockdown_iniciado_por':
+              activar ? _client.auth.currentUser?.id : null,
+        })
+        .eq('id', true)
+        .timeout(const Duration(seconds: 10));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // GDPR: Anonimización y Exportación de Datos
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Invoca la RPC anonymize_user para anonimizar permanentemente a un usuario
+  /// preservando datos analíticos (GDPR Derecho al Olvido).
+  Future<Map<String, dynamic>> anonymizeUser(String usuarioId) async {
+    final result = await _client.rpc(
+      'anonymize_user',
+      params: {'p_usuario_id': usuarioId},
+    );
+    if (result == null) throw Exception('Error al anonimizar usuario');
+    return result as Map<String, dynamic>;
+  }
+
+  /// Invoca la RPC exportar_datos_usuario para obtener todos los datos
+  /// de un usuario en formato JSON (GDPR Derecho a la Portabilidad).
+  Future<Map<String, dynamic>> exportUserData(String usuarioId) async {
+    final result = await _client.rpc(
+      'exportar_datos_usuario',
+      params: {'p_usuario_id': usuarioId},
+    );
+    if (result == null) throw Exception('Error al exportar datos');
+    return result as Map<String, dynamic>;
   }
 }

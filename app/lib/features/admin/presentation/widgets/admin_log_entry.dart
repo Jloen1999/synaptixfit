@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../../domain/admin_auditoria_dto.dart';
 
-/// Entrada individual del registro de auditoría.
+/// Entrada de auditoria con diseno timeline moderno y profesional.
 ///
-/// Muestra una tarjeta compacta con icono contextual según la acción,
-/// descripción de la operación realizada, entidad afectada y fecha relativa.
+/// Columna lateral con punto coloreado por severidad y lineas conectoras,
+/// tarjeta de contenido con chip de severidad, admin, accion y hora.
 class AdminLogEntry extends StatelessWidget {
-  const AdminLogEntry({required this.registro, super.key});
+  const AdminLogEntry({
+    required this.registro,
+    this.esPrimero = false,
+    this.esUltimo = false,
+    super.key,
+  });
 
   final AuditoriaRegistro registro;
+  final bool esPrimero;
+  final bool esUltimo;
 
-  /// Traduce el nombre interno de la entidad a una etiqueta legible.
   static String _traducirEntidad(String entidad) {
     switch (entidad) {
       case 'usuarios':
@@ -19,127 +25,278 @@ class AdminLogEntry extends StatelessWidget {
       case 'ejercicios':
         return 'Ejercicio';
       case 'actividades_sociales':
-        return 'Publicación';
+        return 'Publicacion';
       case 'comentarios_feed':
         return 'Comentario';
+      case 'configuracion_global':
+        return 'Config. Global';
       default:
         return entidad;
     }
   }
 
-  /// Devuelve el icono y color correspondientes a la [accion].
-  static (IconData, Color) _iconoParaAccion(String accion) {
+  Severidad _severidadParaAccion(String accion) {
     switch (accion) {
       case 'wipe':
-        return (Icons.delete_forever, Colors.red);
+      case 'eliminar_usuario':
+      case 'anonimizar_usuario':
+        return Severidad.critica;
+      case 'activar_lockdown':
+      case 'desactivar_lockdown':
+      case 'reset_xp':
+      case 'resetear_xp':
+      case 'cambiar_nivel':
       case 'cambiar_rol':
-        return (Icons.shield, Colors.blue);
-      case 'activar_ejercicio':
-      case 'desactivar_ejercicio':
-        return (Icons.fitness_center, Colors.green);
-      case 'aprobar_contenido':
+        return Severidad.alta;
+      case 'activar_shadowban':
+      case 'desactivar_shadowban':
       case 'eliminar_contenido':
-        return (Icons.flag, Colors.orange);
+      case 'aprobar_contenido':
+      case 'moderar':
+        return Severidad.media;
       default:
-        return (Icons.history, Colors.grey);
+        return Severidad.baja;
     }
   }
 
-  /// Genera una cadena de fecha relativa en español.
-  static String _fechaRelativa(DateTime fecha) {
-    final ahora = DateTime.now();
-    final diferencia = ahora.difference(fecha);
-
-    if (diferencia.inDays == 0) return 'Hoy';
-    if (diferencia.inDays == 1) return 'Ayer';
-    if (diferencia.inDays < 7) return 'Hace ${diferencia.inDays} días';
-
-    final meses = [
-      'ene',
-      'feb',
-      'mar',
-      'abr',
-      'may',
-      'jun',
-      'jul',
-      'ago',
-      'sep',
-      'oct',
-      'nov',
-      'dic',
-    ];
-    return '${fecha.day} ${meses[fecha.month - 1]}';
+  static String _horaRelativa(DateTime fecha) {
+    return '${fecha.day}/${fecha.month} ${fecha.hour.toString().padLeft(2, '0')}:${fecha.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final (icono, color) = _iconoParaAccion(registro.accion);
+    final cs = Theme.of(context).colorScheme;
+    final severidad = _severidadParaAccion(registro.accion);
     final admin = registro.adminNombre ?? 'Admin';
     final entidadTraducida = _traducirEntidad(registro.entidad);
-    final relativo = _fechaRelativa(registro.creadoEn);
 
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            // Icono de la acción
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icono, size: 20, color: color),
-            ),
-            const SizedBox(width: 12),
-
-            // Texto descriptivo
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 48,
+            child: Column(
+              children: [
+                if (!esPrimero)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      color: _colorSeveridad(severidad).withValues(alpha: 0.15),
+                    ),
+                  ),
+                Container(
+                  width: 16,
+                  height: 16,
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _colorSeveridad(severidad),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.8), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            _colorSeveridad(severidad).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        spreadRadius: 1,
                       ),
-                      children: [
-                        TextSpan(
-                          text: admin,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        TextSpan(
-                          text: ' · ${registro.accion} en $entidadTraducida',
-                          style: TextStyle(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.7),
+                    ],
+                  ),
+                ),
+                if (!esUltimo)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      color: _colorSeveridad(severidad).withValues(alpha: 0.15),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16, bottom: 6),
+              child: Card(
+                elevation: 0,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: _colorSeveridad(severidad).withValues(alpha: 0.1),
+                  ),
+                ),
+                color: severidad == Severidad.critica
+                    ? const Color(0xFFC0392B).withValues(alpha: 0.03)
+                    : cs.surface,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _buildChipSeveridad(severidad),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              admin,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: cs.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainerHighest
+                                  .withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _horaRelativa(registro.creadoEn),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface.withValues(alpha: 0.45),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${_formatearAccion(registro.accion)} $entidadTraducida',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface.withValues(alpha: 0.65),
+                        ),
+                      ),
+                      if (registro.detalle.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatearDetalle(registro.detalle),
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            color: cs.onSurface.withValues(alpha: 0.4),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    relativo,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatearAccion(String accion) {
+    switch (accion) {
+      case 'wipe':
+        return 'Wipeo de datos de';
+      case 'eliminar_usuario':
+        return 'Elimino';
+      case 'reset_xp':
+      case 'resetear_xp':
+        return 'Reseteo XP de';
+      case 'cambiar_nivel':
+        return 'Cambio nivel de';
+      case 'cambiar_rol':
+        return 'Cambio rol de';
+      case 'eliminar_contenido':
+        return 'Elimino';
+      case 'aprobar_contenido':
+        return 'Aprobo';
+      case 'toggle_ejercicio':
+        return 'Cambio estado de';
+      case 'editar_ejercicio':
+        return 'Edito';
+      case 'activar_shadowban':
+        return 'Shadowban activado en';
+      case 'desactivar_shadowban':
+        return 'Shadowban desactivado en';
+      case 'activar_lockdown':
+        return 'Modo Panico ACTIVADO';
+      case 'desactivar_lockdown':
+        return 'Modo Panico desactivado';
+      case 'anonimizar_usuario':
+        return 'Usuario anonimizado';
+      case 'actualizar_nombre':
+        return 'Cambio nombre de';
+      case 'actualizar_email':
+        return 'Cambio email de';
+      default:
+        return accion;
+    }
+  }
+
+  Widget _buildChipSeveridad(Severidad severidad) {
+    final color = _colorSeveridad(severidad);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        _etiquetaSeveridad(severidad),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: color,
+          fontFamily: 'monospace',
+          letterSpacing: 0.5,
         ),
       ),
     );
   }
+
+  String _formatearDetalle(Map<String, dynamic> detalle) {
+    final partes = <String>[];
+    detalle.forEach((k, v) {
+      if (v != null) partes.add('$k: $v');
+    });
+    return partes.join(' | ');
+  }
+
+  Color _colorSeveridad(Severidad s) {
+    switch (s) {
+      case Severidad.critica:
+        return const Color(0xFFC0392B);
+      case Severidad.alta:
+        return const Color(0xFFE67E22);
+      case Severidad.media:
+        return const Color(0xFFF39C12);
+      case Severidad.baja:
+        return const Color(0xFF5D6D7E);
+    }
+  }
+
+  String _etiquetaSeveridad(Severidad s) {
+    switch (s) {
+      case Severidad.critica:
+        return 'CRÍTICO';
+      case Severidad.alta:
+        return 'ALTO';
+      case Severidad.media:
+        return 'MEDIO';
+      case Severidad.baja:
+        return 'INFO';
+    }
+  }
 }
+
+enum Severidad { critica, alta, media, baja }

@@ -4,14 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sv_colors.dart';
 import '../../../core/design_system/sv_shapes.dart';
-import '../application/documento_ia_provider.dart';
-import '../application/estudio_ia_provider.dart';
+import '../application/generacion_background_provider.dart';
 import '../domain/fuente_estudio.dart';
-import '../infrastructure/documento_ia_repository.dart';
 import '../infrastructure/estudio_ia_service.dart';
 import 'mapa_mental_screen.dart';
 
-/// Pantalla que muestra un resumen del material generado por la IA (Clean UI).
 class ResumenIaScreen extends ConsumerStatefulWidget {
   const ResumenIaScreen({required this.fuente, super.key});
 
@@ -33,62 +30,74 @@ class _ResumenIaScreenState extends ConsumerState<ResumenIaScreen> {
     _cargar();
   }
 
-  /// Carga el resumen guardado si existe; si no, lo genera y lo guarda.
   Future<void> _cargar() async {
     setState(() {
       _cargando = true;
       _error = null;
     });
-    try {
-      final repo = ref.read(documentoIaRepositoryProvider);
-      final guardado = await repo.obtener(
-        fuenteTipo: widget.fuente.fuenteTipo,
-        fuenteId: widget.fuente.fuenteId,
-        tipo: TipoDocumentoIa.resumen,
-      );
+
+    final bg = ref.read(backgroundIaGeneratorProvider);
+    if (bg.tieneResumenEnVuelo(widget.fuente)) {
       if (!mounted) return;
-      if (guardado != null && guardado.contenido.trim().isNotEmpty) {
+      setState(() {});
+      try {
+        final resumen = await bg.generarResumen(widget.fuente, ref: ref);
+        if (!mounted) return;
         setState(() {
-          _resumen = guardado.contenido;
-          _fecha = guardado.actualizadoEn;
+          _resumen = resumen;
+          _fecha = DateTime.now();
           _cargando = false;
         });
-        return;
+      } on EstudioIaException catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _error = e.message;
+          _cargando = false;
+        });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _error = 'No se pudo generar el resumen: $e';
+          _cargando = false;
+        });
       }
-    } catch (_) {
-      // Si falla la lectura del documento, se genera igualmente.
+      return;
     }
-    if (!mounted) return;
-    await _generarYGuardar();
+
+    try {
+      final resumen = await bg.generarResumen(widget.fuente, ref: ref);
+      if (!mounted) return;
+      setState(() {
+        _resumen = resumen;
+        _fecha = DateTime.now();
+        _cargando = false;
+      });
+    } on EstudioIaException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _cargando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'No se pudo generar el resumen: $e';
+        _cargando = false;
+      });
+    }
   }
 
-  /// Genera el resumen con la IA y lo persiste (sobrescribe el guardado).
   Future<void> _generarYGuardar() async {
     setState(() {
       _cargando = true;
       _error = null;
     });
+
+    final bg = ref.read(backgroundIaGeneratorProvider);
+    bg.limpiarCacheResumen(widget.fuente);
+
     try {
-      final servicio = ref.read(estudioIaServiceProvider);
-      final resumen = await servicio.resumir(widget.fuente);
-
-      try {
-        await ref.read(documentoIaRepositoryProvider).guardar(
-              fuenteTipo: widget.fuente.fuenteTipo,
-              fuenteId: widget.fuente.fuenteId,
-              asignaturaId: widget.fuente.asignaturaId,
-              fuenteTitulo: widget.fuente.titulo,
-              tipo: TipoDocumentoIa.resumen,
-              contenido: resumen,
-            );
-        ref.invalidate(docsGuardadosProvider((
-          fuenteTipo: widget.fuente.fuenteTipo,
-          fuenteId: widget.fuente.fuenteId,
-        )));
-      } catch (_) {
-        // Si el guardado falla, mostramos igualmente el resumen generado.
-      }
-
+      final resumen = await bg.generarResumen(widget.fuente, ref: ref);
       if (!mounted) return;
       setState(() {
         _resumen = resumen;

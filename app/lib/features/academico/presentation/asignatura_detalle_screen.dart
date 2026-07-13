@@ -14,20 +14,26 @@ import '../application/archivos_asignatura_provider.dart';
 import '../application/asignaturas_provider.dart';
 import '../application/conteos_asignatura_provider.dart';
 import '../application/documento_ia_provider.dart';
+import '../application/generacion_global_provider.dart';
+
 import '../application/materiales_estudio_provider.dart';
+import '../application/multi_tema_provider.dart';
 import '../application/practica_provider.dart';
 import '../application/tareas_asignatura_provider.dart';
 import '../domain/archivo_asignatura_dto.dart';
 import '../domain/asignatura_visual.dart';
 import '../domain/fuente_estudio.dart';
-import '../infrastructure/documento_ia_repository.dart';
 import '../infrastructure/estudio_ia_service.dart';
+import '../application/artefacto_efimero_provider.dart';
 import 'apunte_visor_screen.dart';
+import 'centro_generacion_screen.dart';
+import 'cuestionario_formato_screen.dart';
 import 'mapa_mental_screen.dart';
 import 'resumen_ia_screen.dart';
 import 'widgets/archivo_tile.dart';
 import 'widgets/dashboard_asignatura_tab.dart';
 import 'widgets/tareas_asignatura_tab.dart';
+import 'widgets/seleccion_fuentes_sheet.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // AsignaturaDetalleScreen
@@ -105,6 +111,8 @@ class _AsignaturaDetalleScreenState
               apuntes: conteos?.apuntes,
               archivos: conteos?.archivos,
               pendientesHoy: pendientesHoy,
+              ref: ref,
+              asignaturaId: widget.asignaturaId,
             ),
             _FlatTabBar(controller: _tab, color: color),
             Expanded(
@@ -140,6 +148,8 @@ class _Header extends StatelessWidget {
     this.apuntes,
     this.archivos,
     this.pendientesHoy,
+    required this.ref,
+    required this.asignaturaId,
   });
 
   final String siglas;
@@ -148,6 +158,8 @@ class _Header extends StatelessWidget {
   final int? apuntes;
   final int? archivos;
   final int? pendientesHoy;
+  final WidgetRef ref;
+  final String asignaturaId;
 
   String _metricas() {
     final partes = <String>[
@@ -165,63 +177,141 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(6, 8, 16, 10),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon:
-                const Icon(Icons.arrow_back, color: SVColors.onSurfaceVariant),
-            tooltip: 'Volver',
-          ),
-          Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              borderRadius: SVShapes.standard12,
-            ),
-            child: Text(
-              siglas,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-                letterSpacing: 0.5,
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => context.pop(),
+                icon: const Icon(Icons.arrow_back,
+                    color: SVColors.onSurfaceVariant),
+                tooltip: 'Volver',
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  nombre,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: SVColors.onSurface,
-                    fontSize: 19,
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  borderRadius: SVShapes.standard12,
+                ),
+                child: Text(
+                  siglas,
+                  style: TextStyle(
+                    color: color,
                     fontWeight: FontWeight.w800,
-                    height: 1.2,
+                    fontSize: 15,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                if (apuntes != null && archivos != null) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    _metricas(),
-                    style: const TextStyle(
-                      color: SVColors.onSurfaceMuted,
-                      fontSize: 12.5,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      nombre,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: SVColors.onSurface,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
                     ),
-                  ),
-                ],
+                    if (apuntes != null && archivos != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        _metricas(),
+                        style: const TextStyle(
+                          color: SVColors.onSurfaceMuted,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: Row(
+              children: [
+                _BotonGeneracion(
+                  onTap: () => _generarGlobal(context, TipoGeneracion.resumen),
+                  color: color,
+                  child: const Text('Resumen',
+                      style: TextStyle(
+                          fontSize: 11.5, fontWeight: FontWeight.w700)),
+                ),
+                const SizedBox(width: 8),
+                _BotonGeneracion(
+                  onTap: () =>
+                      _generarGlobal(context, TipoGeneracion.mapaMental),
+                  color: color,
+                  child: const Text('Mapa mental',
+                      style: TextStyle(
+                          fontSize: 11.5, fontWeight: FontWeight.w700)),
+                ),
+                const SizedBox(width: 8),
+                _BotonGeneracion(
+                  onTap: () =>
+                      _generarGlobal(context, TipoGeneracion.cuestionario),
+                  color: color,
+                  child: const Text('Cuestionario',
+                      style: TextStyle(
+                          fontSize: 11.5, fontWeight: FontWeight.w700)),
+                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _generarGlobal(BuildContext context, TipoGeneracion tipo) {
+    mostrarSeleccionFuentes(
+      context,
+      ref: ref,
+      asignaturaId: asignaturaId,
+      color: color,
+      tipoGeneracion: tipo,
+    );
+  }
+}
+
+class _BotonGeneracion extends StatelessWidget {
+  const _BotonGeneracion({
+    required this.onTap,
+    required this.color,
+    required this.child,
+  });
+
+  final VoidCallback onTap;
+  final Color color;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: SVShapes.standard12,
+        ),
+        child: DefaultTextStyle(
+          style: TextStyle(color: color),
+          child: child,
+        ),
       ),
     );
   }
@@ -384,6 +474,34 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
     ref.invalidate(apuntesProvider);
   }
 
+  Future<String?> _obtenerMaterialId(ApunteDb apunte) async {
+    try {
+      final result = await Supabase.instance.client
+          .from('materiales_estudio')
+          .select('id')
+          .eq('tipo_origen', 'apunte')
+          .eq('origen_id', apunte.id)
+          .maybeSingle();
+      return result?['id'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String?> _obtenerMaterialIdArchivo(ArchivoAsignaturaDto a) async {
+    try {
+      final result = await Supabase.instance.client
+          .from('materiales_estudio')
+          .select('id')
+          .eq('tipo_origen', 'archivo')
+          .eq('origen_id', a.id)
+          .maybeSingle();
+      return result?['id'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   void dispose() {
     _scrollCtrl.dispose();
@@ -396,17 +514,62 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
         ref.watch(apuntesPorAsignaturaProvider(widget.asignaturaId));
     final archivosAsync =
         ref.watch(archivosAsignaturaProvider(widget.asignaturaId));
+    final modoSeleccion = ref.watch(modoSeleccionActivoProvider);
+    final seleccionados = ref.watch(seleccionMaterialesProvider);
+    final itemsSeleccionados = ref.watch(seleccionItemsProvider);
 
     return Stack(
       children: [
         ListView(
           controller: _scrollCtrl,
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
+          padding: EdgeInsets.fromLTRB(16, 4, 16,
+              modoSeleccion && itemsSeleccionados.isNotEmpty ? 140 : 90),
           children: [
-            _SeccionTitulo(
-                icono: Icons.notes_rounded,
-                texto: 'Apuntes',
-                color: widget.color),
+            Row(children: [
+              Expanded(
+                child: _SeccionTitulo(
+                    icono: Icons.notes_rounded,
+                    texto: modoSeleccion
+                        ? 'Apuntes (${_contarApuntes(itemsSeleccionados, apuntesAsync)})'
+                        : 'Apuntes',
+                    color: widget.color),
+              ),
+              if (modoSeleccion)
+                GestureDetector(
+                  onTap: () => _seleccionarTodosApuntes(ref, apuntesAsync),
+                  child: Text(
+                    _todosSeleccionadosApuntes(itemsSeleccionados, apuntesAsync)
+                        ? 'Deseleccionar todos'
+                        : 'Seleccionar todos',
+                    style: TextStyle(
+                        color: widget.color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+              const SizedBox(width: 4),
+              TextButton.icon(
+                onPressed: () {
+                  ref.read(modoSeleccionActivoProvider.notifier).state =
+                      !modoSeleccion;
+                  if (modoSeleccion) {
+                    ref.read(seleccionMaterialesProvider.notifier).state = {};
+                    ref.read(seleccionItemsProvider.notifier).state = {};
+                  }
+                },
+                icon: Icon(
+                    modoSeleccion ? Icons.close : Icons.checklist_outlined,
+                    size: 18),
+                label: Text(modoSeleccion ? 'Cancelar' : 'Seleccionar',
+                    style: const TextStyle(fontSize: 12)),
+                style: TextButton.styleFrom(
+                  foregroundColor: widget.color,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ]),
             const SizedBox(height: 6),
             apuntesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -423,7 +586,20 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: _ApunteRow(
                               apunte: a,
-                              onTap: () => _abrirVisor(a),
+                              onTap: () {
+                                if (modoSeleccion) {
+                                  _toggleSeleccionMaterial(a.id, ref, a);
+                                } else {
+                                  _abrirVisor(a);
+                                }
+                              },
+                              onLongPress: () =>
+                                  _entrarModoSeleccion(ref, a.id, a),
+                              modoSeleccion: modoSeleccion,
+                              seleccionado: itemsSeleccionados.contains(a.id),
+                              onToggleSeleccion: () {
+                                _toggleSeleccionMaterial(a.id, ref, a);
+                              },
                             ),
                           ))
                       .toList(),
@@ -433,8 +609,27 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
             const SizedBox(height: 20),
             _SeccionTitulo(
                 icono: Icons.folder_outlined,
-                texto: 'Archivos',
+                texto: modoSeleccion
+                    ? 'Archivos (${_contarArchivos(itemsSeleccionados, archivosAsync)})'
+                    : 'Archivos',
                 color: widget.color),
+            if (modoSeleccion)
+              GestureDetector(
+                onTap: () => _seleccionarTodosArchivos(ref, archivosAsync),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    _todosSeleccionadosArchivos(
+                            itemsSeleccionados, archivosAsync)
+                        ? 'Deseleccionar todos'
+                        : 'Seleccionar todos',
+                    style: TextStyle(
+                        color: widget.color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
             const SizedBox(height: 6),
             SizedBox(
               width: double.infinity,
@@ -471,9 +666,22 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: ArchivoTile(
                               archivo: a,
-                              onAbrir: () => context
-                                  .push('/academico/archivo/visor', extra: a),
+                              onAbrir: () {
+                                if (modoSeleccion) {
+                                  _toggleSeleccionMaterialArchivo(a.id, ref, a);
+                                } else {
+                                  context.push('/academico/archivo/visor',
+                                      extra: a);
+                                }
+                              },
+                              onLongPress: () =>
+                                  _entrarModoSeleccionArchivo(ref, a.id, a),
                               onEliminar: () => _eliminarArchivo(a),
+                              modoSeleccion: modoSeleccion,
+                              seleccionado: itemsSeleccionados.contains(a.id),
+                              onToggleSeleccion: () {
+                                _toggleSeleccionMaterialArchivo(a.id, ref, a);
+                              },
                             ),
                           ))
                       .toList(),
@@ -482,24 +690,89 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
             ),
           ],
         ),
-        Positioned(
-          right: 20,
-          bottom: 20,
-          child: FloatingActionButton(
-            backgroundColor: widget.color,
-            foregroundColor: SVColors.onPrimary,
-            elevation: 2,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            onPressed: _crearApunte,
-            child: const Icon(Icons.add),
+        if (modoSeleccion && itemsSeleccionados.isNotEmpty)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _BarraAccionesSeleccion(
+              seleccionadosCount: itemsSeleccionados.length,
+              onEliminar: () => _eliminarSeleccionados(context, ref),
+              onCuestionario: seleccionados.length >= 2
+                  ? () => _generarCuestionarioCombinado(context, ref)
+                  : null,
+              color: widget.color,
+              onCancelar: () {
+                ref.read(modoSeleccionActivoProvider.notifier).state = false;
+                ref.read(seleccionItemsProvider.notifier).state = {};
+                ref.read(seleccionMaterialesProvider.notifier).state = {};
+              },
+            ),
+          )
+        else
+          Positioned(
+            right: 20,
+            bottom: 20,
+            child: FloatingActionButton(
+              backgroundColor: widget.color,
+              foregroundColor: SVColors.onPrimary,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              onPressed: _crearApunte,
+              child: const Icon(Icons.add),
+            ),
           ),
-        ),
       ],
     );
   }
 
   // TODO(Fase2): mostrar barra de progreso durante la subida
+
+  void _toggleSeleccionMaterial(
+      String id, WidgetRef ref, ApunteDb apunte) async {
+    final materialNotifier = ref.read(seleccionMaterialesProvider.notifier);
+    final itemsNotifier = ref.read(seleccionItemsProvider.notifier);
+    final current = ref.read(seleccionMaterialesProvider);
+    final currentItems = ref.read(seleccionItemsProvider);
+
+    if (currentItems.contains(id)) {
+      itemsNotifier.state = currentItems.difference({id});
+      final materialId = await _obtenerMaterialId(apunte);
+      if (materialId != null) {
+        materialNotifier.state = current.difference({materialId});
+      }
+    } else {
+      itemsNotifier.state = {...currentItems, id};
+      final materialId = await _obtenerMaterialId(apunte);
+      if (materialId != null) {
+        materialNotifier.state = {...current, materialId};
+      }
+    }
+  }
+
+  void _toggleSeleccionMaterialArchivo(
+      String id, WidgetRef ref, ArchivoAsignaturaDto a) async {
+    final materialNotifier = ref.read(seleccionMaterialesProvider.notifier);
+    final itemsNotifier = ref.read(seleccionItemsProvider.notifier);
+    final current = ref.read(seleccionMaterialesProvider);
+    final currentItems = ref.read(seleccionItemsProvider);
+
+    if (currentItems.contains(id)) {
+      itemsNotifier.state = currentItems.difference({id});
+      final materialId = await _obtenerMaterialIdArchivo(a);
+      if (materialId != null) {
+        materialNotifier.state = current.difference({materialId});
+      }
+    } else {
+      itemsNotifier.state = {...currentItems, id};
+      final materialId = await _obtenerMaterialIdArchivo(a);
+      if (materialId != null) {
+        materialNotifier.state = {...current, materialId};
+      }
+    }
+  }
+
   // ignore: unused_field
   String? _subiendoNombre;
   // ignore: unused_field
@@ -588,6 +861,246 @@ class _TemarioTabState extends ConsumerState<_TemarioTab> {
       content: Text(msg),
       backgroundColor: error ? const Color(0xFFC62828) : null,
     ));
+  }
+
+  void _entrarModoSeleccion(WidgetRef ref, String id, ApunteDb apunte) {
+    ref.read(modoSeleccionActivoProvider.notifier).state = true;
+    _toggleSeleccionMaterial(id, ref, apunte);
+  }
+
+  void _entrarModoSeleccionArchivo(
+      WidgetRef ref, String id, ArchivoAsignaturaDto a) {
+    ref.read(modoSeleccionActivoProvider.notifier).state = true;
+    _toggleSeleccionMaterialArchivo(id, ref, a);
+  }
+
+  int _contarApuntes(Set<String> items, AsyncValue<List<ApunteDb>> async) {
+    return async.whenOrNull(data: (apuntes) {
+          return apuntes.where((a) => items.contains(a.id)).length;
+        }) ??
+        0;
+  }
+
+  int _contarArchivos(
+      Set<String> items, AsyncValue<List<ArchivoAsignaturaDto>> async) {
+    return async.whenOrNull(data: (archivos) {
+          return archivos.where((a) => items.contains(a.id)).length;
+        }) ??
+        0;
+  }
+
+  bool _todosSeleccionadosApuntes(
+      Set<String> items, AsyncValue<List<ApunteDb>> async) {
+    return async.whenOrNull(data: (apuntes) {
+          return apuntes.isNotEmpty &&
+              apuntes.every((a) => items.contains(a.id));
+        }) ??
+        false;
+  }
+
+  bool _todosSeleccionadosArchivos(
+      Set<String> items, AsyncValue<List<ArchivoAsignaturaDto>> async) {
+    return async.whenOrNull(data: (archivos) {
+          return archivos.isNotEmpty &&
+              archivos.every((a) => items.contains(a.id));
+        }) ??
+        false;
+  }
+
+  void _seleccionarTodosApuntes(
+      WidgetRef ref, AsyncValue<List<ApunteDb>> async) {
+    final items = ref.read(seleccionItemsProvider);
+    async.whenData((apuntes) {
+      if (_todosSeleccionadosApuntes(items, async)) {
+        final ids = apuntes.map((a) => a.id).toSet();
+        ref.read(seleccionItemsProvider.notifier).state = items.difference(ids);
+        _syncMaterialesTrasDeseleccionar(ref, apuntes);
+      } else {
+        final nuevos = {...items, ...apuntes.map((a) => a.id)};
+        ref.read(seleccionItemsProvider.notifier).state = nuevos;
+        _syncMaterialesTrasSeleccionarApuntes(ref, apuntes, nuevos);
+      }
+    });
+  }
+
+  void _seleccionarTodosArchivos(
+      WidgetRef ref, AsyncValue<List<ArchivoAsignaturaDto>> async) {
+    final items = ref.read(seleccionItemsProvider);
+    async.whenData((archivos) {
+      if (_todosSeleccionadosArchivos(items, async)) {
+        final ids = archivos.map((a) => a.id).toSet();
+        ref.read(seleccionItemsProvider.notifier).state = items.difference(ids);
+        _syncMaterialesTrasDeseleccionarArchivos(ref, archivos);
+      } else {
+        final nuevos = {...items, ...archivos.map((a) => a.id)};
+        ref.read(seleccionItemsProvider.notifier).state = nuevos;
+        _syncMaterialesTrasSeleccionarArchivos(ref, archivos, nuevos);
+      }
+    });
+  }
+
+  void _syncMaterialesTrasDeseleccionar(WidgetRef ref, List<ApunteDb> apuntes) {
+    final matNotifier = ref.read(seleccionMaterialesProvider.notifier);
+    matNotifier.state = {};
+  }
+
+  void _syncMaterialesTrasDeseleccionarArchivos(
+      WidgetRef ref, List<ArchivoAsignaturaDto> archivos) {
+    final matNotifier = ref.read(seleccionMaterialesProvider.notifier);
+    matNotifier.state = {};
+  }
+
+  void _syncMaterialesTrasSeleccionarApuntes(
+      WidgetRef ref, List<ApunteDb> apuntes, Set<String> nuevosIds) {
+    // Material sync happens lazily when quiz is generated
+  }
+
+  void _syncMaterialesTrasSeleccionarArchivos(WidgetRef ref,
+      List<ArchivoAsignaturaDto> archivos, Set<String> nuevosIds) {
+    // Material sync happens lazily when quiz is generated
+  }
+
+  Future<void> _eliminarSeleccionados(
+      BuildContext context, WidgetRef ref) async {
+    final items = ref.read(seleccionItemsProvider);
+    if (items.isEmpty) return;
+
+    final count = items.length;
+    final confirma = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: SVColors.surfaceContainerLowest,
+        title: const Text('Eliminar elementos',
+            style: TextStyle(color: SVColors.onSurface)),
+        content: Text(
+          '¿Eliminar $count elemento${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}? Esta acción no se puede deshacer.',
+          style: const TextStyle(color: SVColors.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Eliminar',
+                  style: TextStyle(color: SVColors.error))),
+        ],
+      ),
+    );
+    if (confirma != true) return;
+
+    final apuntesAsync =
+        ref.read(apuntesPorAsignaturaProvider(widget.asignaturaId));
+    final archivosAsync =
+        ref.read(archivosAsignaturaProvider(widget.asignaturaId));
+    final apunteIds = apuntesAsync.whenOrNull(
+            data: (list) => list.map((a) => a.id).toSet()) ??
+        {};
+    final archivoIds = archivosAsync.whenOrNull(
+            data: (list) => list.map((a) => a.id).toSet()) ??
+        {};
+
+    int eliminados = 0;
+    for (final id in items) {
+      try {
+        if (apunteIds.contains(id)) {
+          await eliminarApunte(id);
+          eliminados++;
+        } else if (archivoIds.contains(id)) {
+          final archivo = archivosAsync.whenOrNull(
+              data: (list) => list.firstWhere((a) => a.id == id));
+          if (archivo != null) {
+            await ref.read(archivosRepositoryProvider).eliminarArchivo(archivo);
+            eliminados++;
+          }
+        }
+      } catch (_) {}
+    }
+
+    ref.invalidate(apuntesPorAsignaturaProvider(widget.asignaturaId));
+    ref.invalidate(archivosAsignaturaProvider(widget.asignaturaId));
+    ref.invalidate(conteosAsignaturaProvider(widget.asignaturaId));
+    ref.invalidate(apuntesProvider);
+
+    ref.read(modoSeleccionActivoProvider.notifier).state = false;
+    ref.read(seleccionItemsProvider.notifier).state = {};
+    ref.read(seleccionMaterialesProvider.notifier).state = {};
+
+    if (mounted) {
+      _snack(
+          '$eliminados elemento${eliminados != 1 ? 's' : ''} eliminado${eliminados != 1 ? 's' : ''}');
+    }
+  }
+
+  Future<void> _generarCuestionarioCombinado(
+      BuildContext context, WidgetRef ref) async {
+    final itemsSeleccionados = ref.read(seleccionItemsProvider).toList();
+    final apuntesAsync =
+        ref.read(apuntesPorAsignaturaProvider(widget.asignaturaId));
+    final archivosAsync =
+        ref.read(archivosAsignaturaProvider(widget.asignaturaId));
+
+    final materialIds = <String>[];
+    for (final id in itemsSeleccionados) {
+      final apunteIds = apuntesAsync.whenOrNull(
+              data: (list) => list.map((a) => a.id).toSet()) ??
+          {};
+      final archivoIds = archivosAsync.whenOrNull(
+              data: (list) => list.map((a) => a.id).toSet()) ??
+          {};
+      if (apunteIds.contains(id)) {
+        final apunte = apuntesAsync.whenOrNull(
+            data: (list) => list.firstWhere((a) => a.id == id));
+        if (apunte != null) {
+          final mId = await _obtenerMaterialId(apunte);
+          if (mId != null) materialIds.add(mId);
+        }
+      } else if (archivoIds.contains(id)) {
+        final archivo = archivosAsync.whenOrNull(
+            data: (list) => list.firstWhere((a) => a.id == id));
+        if (archivo != null) {
+          final mId = await _obtenerMaterialIdArchivo(archivo);
+          if (mId != null) materialIds.add(mId);
+        }
+      }
+    }
+
+    if (materialIds.length < 2) {
+      _snack('Selecciona al menos 2 elementos con preguntas generadas',
+          error: true);
+      return;
+    }
+
+    ref.read(modoSeleccionActivoProvider.notifier).state = false;
+    final sessionFuture =
+        ref.read(crearSesionCombinadaProvider(materialIds).future);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Row(children: [
+          SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Colors.white)),
+          SizedBox(width: 12),
+          Text('Generando cuestionario combinado...'),
+        ]),
+        duration: Duration(seconds: 10)));
+
+    try {
+      final session = await sessionFuture;
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        context.push(
+            '/academico/practica/${materialIds.first}?sessionId=${session.id}');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFC62828)));
+      }
+    }
   }
 }
 
@@ -764,10 +1277,21 @@ class _ApuntesTab extends ConsumerWidget {
 }
 
 class _ApunteRow extends ConsumerWidget {
-  const _ApunteRow({required this.apunte, required this.onTap});
+  const _ApunteRow({
+    required this.apunte,
+    required this.onTap,
+    this.onLongPress,
+    this.modoSeleccion = false,
+    this.seleccionado = false,
+    this.onToggleSeleccion,
+  });
 
   final ApunteDb apunte;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool modoSeleccion;
+  final bool seleccionado;
+  final VoidCallback? onToggleSeleccion;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -805,6 +1329,7 @@ class _ApunteRow extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: DecoratedBox(
           decoration: BoxDecoration(
             border: colorBorde != null
@@ -817,6 +1342,32 @@ class _ApunteRow extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
+                if (modoSeleccion) ...[
+                  GestureDetector(
+                    onTap: onToggleSeleccion,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: seleccionado
+                              ? const Color(0xFF3B82F6)
+                              : SVColors.outlineVariant,
+                          width: 2,
+                        ),
+                        color: seleccionado
+                            ? const Color(0xFF3B82F6)
+                            : Colors.transparent,
+                      ),
+                      child: seleccionado
+                          ? const Icon(Icons.check,
+                              size: 14, color: Colors.white)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
                 const Icon(Icons.sticky_note_2_outlined,
                     color: SVColors.onSurfaceMuted, size: 20),
                 const SizedBox(width: 12),
@@ -875,78 +1426,6 @@ class _ApunteRow extends ConsumerWidget {
   }
 }
 
-Future<void> _generarPreguntas(
-  BuildContext context,
-  WidgetRef ref,
-  FuenteEstudio fuente,
-) async {
-  final messenger = ScaffoldMessenger.of(context);
-  try {
-    final iaService = EstudioIaService();
-    if (!iaService.disponible) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('La IA no está configurada (falta GEMINI_API_KEY).'),
-        backgroundColor: Color(0xFFC62828),
-      ));
-      return;
-    }
-
-    messenger.showSnackBar(const SnackBar(
-      content: Row(children: [
-        SizedBox(
-            width: 18,
-            height: 18,
-            child:
-                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-        SizedBox(width: 12),
-        Text('Generando preguntas de práctica...'),
-      ]),
-      duration: Duration(seconds: 30),
-    ));
-
-    final preguntas = await iaService.generarPractica(fuente);
-
-    final repo = ref.read(practicaRepositoryProvider);
-    final tipoFuente = fuente is FuenteTexto ? 'apunte' : 'archivo';
-    final banco = await repo.obtenerOCrearBancoPorFuente(
-      tipoOrigen: tipoFuente,
-      origenId: fuente.fuenteId,
-      asignaturaId: fuente.asignaturaId,
-      titulo: fuente.titulo,
-    );
-    await repo.guardarPreguntas(banco.id, preguntas);
-
-    final docRepo = ref.read(documentoIaRepositoryProvider);
-    await docRepo.guardar(
-      fuenteTipo: tipoFuente,
-      fuenteId: fuente.fuenteId,
-      asignaturaId: fuente.asignaturaId,
-      fuenteTitulo: fuente.titulo,
-      tipo: TipoDocumentoIa.practica,
-      contenido: '',
-    );
-
-    ref.invalidate(docsGuardadosProvider(
-        (fuenteTipo: tipoFuente, fuenteId: fuente.fuenteId)));
-
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-      content:
-          Text('¡Preguntas generadas! ${preguntas.length} añadidas al banco.'),
-      backgroundColor: const Color(0xFF2E7D32),
-    ));
-  } on EstudioIaException catch (e) {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text(e.message), backgroundColor: const Color(0xFFC62828)));
-  } catch (e) {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text('Error al generar preguntas: $e'),
-        backgroundColor: const Color(0xFFC62828)));
-  }
-}
-
 Future<void> _iniciarPractica(
   BuildContext context,
   WidgetRef ref,
@@ -971,6 +1450,49 @@ Future<void> _iniciarPractica(
           backgroundColor: const Color(0xFFC62828)));
     }
   }
+}
+
+Future<void> _iniciarFlashcardsApunte(
+    BuildContext context, WidgetRef ref, FuenteEstudio fuente) async {
+  final materialId = await _obtenerMaterialIdPorFuente(fuente);
+  if (materialId == null || !context.mounted) return;
+  context.push('/academico/flashcards/$materialId');
+}
+
+void _lanzarGeneracionIndividual(
+  BuildContext context,
+  WidgetRef ref,
+  FuenteEstudio fuente,
+  TipoGeneracion tipo,
+) {
+  final ia = EstudioIaService();
+  if (!ia.disponible) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('IA no configurada.'),
+        backgroundColor: Color(0xFFC62828)));
+    return;
+  }
+  final notifier = ref.read(artefactoEfimeroProvider.notifier);
+  notifier.limpiar();
+
+  final tarea = ref.read(generacionGlobalProvider).registrar(
+        titulo: fuente.titulo,
+        tipo: tipo.name,
+        onNavigate: () {},
+      );
+
+  notifier.iniciarYGenerar([fuente], tipo,
+      asignaturaId: fuente.asignaturaId, tareaGlobalId: tarea.id);
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => tipo == TipoGeneracion.cuestionario
+          ? const CuestionarioFormatoScreen()
+          : CentroGeneracionScreen(
+              tipo: tipo,
+              asignaturaId: fuente.asignaturaId ?? '',
+            ),
+    ),
+  );
 }
 
 Future<String?> _obtenerMaterialIdPorFuente(FuenteEstudio fuente) async {
@@ -1011,13 +1533,18 @@ Widget _buildMenuAcciones({
         case 'mapa':
           _abrirMapa(context, fuente);
         case 'generar-resumen':
-          _generarResumen(context, ref, fuente);
+          _lanzarGeneracionIndividual(
+              context, ref, fuente, TipoGeneracion.resumen);
         case 'generar-mapa':
-          _generarMapa(context, ref, fuente);
+          _lanzarGeneracionIndividual(
+              context, ref, fuente, TipoGeneracion.mapaMental);
         case 'generar':
-          _generarPreguntas(context, ref, fuente);
+          _lanzarGeneracionIndividual(
+              context, ref, fuente, TipoGeneracion.cuestionario);
         case 'practica':
           _iniciarPractica(context, ref, fuente);
+        case 'flashcards':
+          _iniciarFlashcardsApunte(context, ref, fuente);
       }
     },
     itemBuilder: (_) => [
@@ -1035,6 +1562,8 @@ Widget _buildMenuAcciones({
       if (tienePreguntas)
         _menuItem('practica', Icons.play_arrow_rounded,
             'Iniciar práctica ($totalPreguntas)'),
+      if (tienePreguntas)
+        _menuItem('flashcards', Icons.style_outlined, 'Estudiar Flashcards'),
     ],
   );
 }
@@ -1066,102 +1595,6 @@ void _abrirMapa(BuildContext context, FuenteEstudio fuente) {
   Navigator.of(context).push(MaterialPageRoute(
     builder: (_) => MapaMentalScreen(fuente: fuente),
   ));
-}
-
-Future<void> _generarResumen(
-    BuildContext context, WidgetRef ref, FuenteEstudio fuente) async {
-  final messenger = ScaffoldMessenger.of(context);
-  try {
-    final ia = EstudioIaService();
-    if (!ia.disponible) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('IA no configurada.'),
-          backgroundColor: Color(0xFFC62828)));
-      return;
-    }
-    messenger.showSnackBar(const SnackBar(
-      content: Row(children: [
-        SizedBox(
-            width: 18,
-            height: 18,
-            child:
-                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-        SizedBox(width: 12),
-        Text('Generando resumen...'),
-      ]),
-      duration: Duration(seconds: 30),
-    ));
-    final resumen = await ia.resumir(fuente);
-    final docRepo = ref.read(documentoIaRepositoryProvider);
-    await docRepo.guardar(
-      fuenteTipo: fuente is FuenteTexto ? 'apunte' : 'archivo',
-      fuenteId: fuente.fuenteId,
-      asignaturaId: fuente.asignaturaId,
-      fuenteTitulo: fuente.titulo,
-      tipo: TipoDocumentoIa.resumen,
-      contenido: resumen,
-    );
-    ref.invalidate(docsGuardadosProvider((
-      fuenteTipo: fuente is FuenteTexto ? 'apunte' : 'archivo',
-      fuenteId: fuente.fuenteId
-    )));
-    messenger.hideCurrentSnackBar();
-    if (context.mounted) {
-      _abrirResumen(context, fuente);
-    }
-  } catch (e) {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text('Error: $e'), backgroundColor: const Color(0xFFC62828)));
-  }
-}
-
-Future<void> _generarMapa(
-    BuildContext context, WidgetRef ref, FuenteEstudio fuente) async {
-  final messenger = ScaffoldMessenger.of(context);
-  try {
-    final ia = EstudioIaService();
-    if (!ia.disponible) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('IA no configurada.'),
-          backgroundColor: Color(0xFFC62828)));
-      return;
-    }
-    messenger.showSnackBar(const SnackBar(
-      content: Row(children: [
-        SizedBox(
-            width: 18,
-            height: 18,
-            child:
-                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-        SizedBox(width: 12),
-        Text('Generando mapa mental...'),
-      ]),
-      duration: Duration(seconds: 30),
-    ));
-    final mapa = await ia.mapaMental(fuente);
-    final docRepo = ref.read(documentoIaRepositoryProvider);
-    await docRepo.guardar(
-      fuenteTipo: fuente is FuenteTexto ? 'apunte' : 'archivo',
-      fuenteId: fuente.fuenteId,
-      asignaturaId: fuente.asignaturaId,
-      fuenteTitulo: fuente.titulo,
-      tipo: TipoDocumentoIa.mapaMental,
-      contenido: mapa.toJson().toString(),
-    );
-    ref.invalidate(docsGuardadosProvider((
-      fuenteTipo: fuente is FuenteTexto ? 'apunte' : 'archivo',
-      fuenteId: fuente.fuenteId
-    )));
-    messenger.hideCurrentSnackBar();
-    if (context.mounted) {
-      _abrirMapa(context, fuente);
-    }
-  } catch (e) {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-        content: Text('Error: $e'), backgroundColor: const Color(0xFFC62828)));
-  }
 }
 
 Color? _colorSemaforo(MaterialEstudioDb? material) {
@@ -1981,5 +2414,86 @@ class _ArchivosTabState extends ConsumerState<_ArchivosTab> {
                 const TextStyle(color: SVColors.onSurfaceMuted, fontSize: 13)),
       ),
     ]);
+  }
+}
+
+class _BarraAccionesSeleccion extends StatelessWidget {
+  const _BarraAccionesSeleccion({
+    required this.seleccionadosCount,
+    required this.onEliminar,
+    this.onCuestionario,
+    required this.color,
+    required this.onCancelar,
+  });
+
+  final int seleccionadosCount;
+  final VoidCallback onEliminar;
+  final VoidCallback? onCuestionario;
+  final Color color;
+  final VoidCallback onCancelar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+      decoration: BoxDecoration(
+        color: SVColors.surfaceContainerLowest,
+        border: const Border(
+          top: BorderSide(color: SVColors.outlineVariant, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: SVColors.outlineVariant.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: onCancelar,
+              child: const Icon(Icons.close,
+                  color: SVColors.onSurfaceMuted, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '$seleccionadosCount seleccionado${seleccionadosCount != 1 ? 's' : ''}',
+              style: const TextStyle(
+                color: SVColors.onSurface,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            IconButton(
+              onPressed: onEliminar,
+              icon: const Icon(Icons.delete_outline,
+                  color: SVColors.error, size: 22),
+              tooltip: 'Eliminar',
+            ),
+            const SizedBox(width: 4),
+            if (onCuestionario != null)
+              FilledButton.icon(
+                onPressed: onCuestionario,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF3B82F6),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                label: const Text('Cuestionario',
+                    style:
+                        TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

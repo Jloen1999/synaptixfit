@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/insignias/application/insignias_provider.dart';
 import '../../features/sync/presentation/widgets/offline_indicator.dart';
+import '../../shared/widgets/badge_generacion_widget.dart';
 import '../../shared/widgets/bottom_nav_bar.dart';
 
 class SynaptixShellRoute extends ConsumerWidget {
@@ -28,14 +29,20 @@ class SynaptixShellRoute extends ConsumerWidget {
           Expanded(child: navigationShell),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: navigationShell.currentIndex,
-        onTap: (index) {
-          navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          );
-        },
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const BadgeGeneracionWidget(),
+          BottomNavBar(
+            currentIndex: navigationShell.currentIndex,
+            onTap: (index) {
+              navigationShell.goBranch(
+                index,
+                initialLocation: index == navigationShell.currentIndex,
+              );
+            },
+          ),
+        ],
       ),
     );
   }
