@@ -24,7 +24,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
   String _vista = 'mios'; // 'mios' | 'comunidad'
   String? _filtroEstado = 'activos'; // 'activos' | 'completados' | null (todos)
   String? _filtroTipo; // null | 'fitness' | 'academic'
-  String? _filtroComplejidad; // null | 'simple' | 'complejo'
+  String? _filtroTareas; // null | 'con' | 'sin'
 
   @override
   void dispose() {
@@ -322,18 +322,17 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
       filtrados = filtrados.where((r) => r.reto.tipo == _filtroTipo).toList();
     }
 
-    // Complejidad
-    if (_filtroComplejidad == 'simple') {
-      filtrados = filtrados.where((r) => !r.tieneHitos).toList();
-    } else if (_filtroComplejidad == 'complejo') {
+    // Tareas
+    if (_filtroTareas == 'con') {
       filtrados = filtrados.where((r) => r.tieneHitos).toList();
+    } else if (_filtroTareas == 'sin') {
+      filtrados = filtrados.where((r) => !r.tieneHitos).toList();
     }
 
     return filtrados;
   }
 
-  bool get _hayFiltrosAvanzados =>
-      _filtroTipo != null || _filtroComplejidad != null;
+  bool get _hayFiltrosAvanzados => _filtroTipo != null || _filtroTareas != null;
 
   void _abrirFiltros() {
     showModalBottomSheet(
@@ -373,7 +372,7 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                       TextButton(
                         onPressed: () {
                           _filtroTipo = null;
-                          _filtroComplejidad = null;
+                          _filtroTareas = null;
                           setSheet(() {});
                           setState(() {});
                         },
@@ -394,17 +393,17 @@ class _RetosScreenState extends ConsumerState<RetosScreen> {
                       () => _filtroTipo = 'academic'),
                 ]),
                 const SizedBox(height: 10),
-                const Text('Complejidad',
+                const Text('Tareas',
                     style:
                         TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 6),
                 Wrap(children: [
-                  chip('Todas', _filtroComplejidad == null,
-                      () => _filtroComplejidad = null),
-                  chip('Simple', _filtroComplejidad == 'simple',
-                      () => _filtroComplejidad = 'simple'),
-                  chip('Complejo', _filtroComplejidad == 'complejo',
-                      () => _filtroComplejidad = 'complejo'),
+                  chip('Todas', _filtroTareas == null,
+                      () => _filtroTareas = null),
+                  chip('Con tareas', _filtroTareas == 'con',
+                      () => _filtroTareas = 'con'),
+                  chip('Sin tareas', _filtroTareas == 'sin',
+                      () => _filtroTareas = 'sin'),
                 ]),
               ],
             ),
@@ -931,8 +930,7 @@ class _RetoComunidadCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${reto.tipo == 'fitness' ? 'Fitness' : 'Académico'}'
-                      '${item.tieneHitos ? ' · Complejo' : ''}',
+                      reto.tipo == 'fitness' ? 'Fitness' : 'Académico',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(

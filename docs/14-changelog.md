@@ -5,6 +5,263 @@
 
 ---
 
+---
+
+## [v8.2.6] — 31-08-2026
+
+### Fix: Generación IA rota por modelos de Gemini retirados (error 404)
+
+#### Causa raíz
+
+- Todos los servicios de IA hardcodeaban modelos que Google ha retirado de la API: `gemini-2.0-flash` (`recomendacion_ia_service.dart`), `gemini-2.5-flash` (`estudio_ia_service.dart`, `timeblock_ia_service.dart`, `ai_schedule_parser_service.dart`, `guia_docente_ia_service.dart`) y `gemini-flash-latest` (`objetivo_ia_service.dart`, además con cuota agotada). La API devolvía **404** y toda la generación IA (rutinas, resúmenes, mapas mentales, parseo de horarios, guías docentes, objetivos de onboarding) fallaba.
+- Verificado contra la API real de Gemini: el modelo funcional recomendado es **`gemini-3.6-flash`**. La `GEMINI_API_KEY` era válida — no era el problema.
+
+#### Solución: modelo unificado y configurable
+
+- **`EnvConfig.geminiModel`** (`app/lib/core/config/env_config.dart`): nuevo getter que lee `GEMINI_MODEL` de `.env` (o `--dart-define`), default `'gemini-3.6-flash'`.
+- Los 6 servicios construyen ahora la URL dinámicamente (`https://generativelanguage.googleapis.com/v1beta/models/${EnvConfig.geminiModel}:generateContent`):
+  - `recomendacion_ia_service.dart` — generación/refinado de rutinas + SmartBanner
+  - `objetivo_ia_service.dart` — sugerencia de objetivos en onboarding
+  - `timeblock_ia_service.dart` — planificación semanal IA (reglas N1-N10)
+  - `estudio_ia_service.dart` — resúmenes + mapas mentales del asistente IA
+  - `ai_schedule_parser_service.dart` — parseo de horarios PDF/imagen
+  - `guia_docente_ia_service.dart` — guía docente
+- **`_parseError()`** en `recomendacion_ia_service.dart`: ante errores 404/429/5xx ahora incluye el mensaje real de la API (`Gemini: <mensaje>` extraído por `_mensajeApi()`), visible en la UI y el log para diagnóstico sin volcar el log completo.
+- **`app/.env.example`**: añadida la variable `GEMINI_MODEL=gemini-3.6-flash`.
+
+#### Docs
+
+- `07-backend.md` (§3 modelo/endpoint dinámicos, §3.1 configuración, §3.5 tabla de errores, §12), `03-architecture.md` (§5 diagrama de secuencia), `02-requirements.md` (§5.8), `06-frontend.md` (§3.2.1 nota de `GEMINI_MODEL`, §21.1), `15-ia-recomendacion-sistema.md` (§2.1): modelo actualizado a `EnvConfig.geminiModel` (default `gemini-3.6-flash`) y `GEMINI_MODEL` documentado.
+
+---
+
+## [v8.2.5] — 31-08-2026
+
+### Lienzo: Guardar sin salir, horas pasadas, examen con hora de inicio y retos vinculados desde el lienzo
+
+#### Eliminación de la pantalla «Plan Semanal» y su ruta
+
+- **Eliminados** `plan_semanal_screen.dart` (`PlanSemanalScreen`) y la ruta `/plan-semanal` de `app_router.dart` — obsoletos desde el lienzo continuo.
+- Al pulsar **Guardar** en `CanvasScreen` (`/academico/planificar`, título «Mi Plan Semanal») el usuario **ya no navega a otra pantalla**: permanece en el lienzo para seguir añadiendo bloques (botón inferior «Guardar» + `_despuesDeGuardar`). El diálogo «Cambios sin guardar» solo aparece si el flag `cambiosSinGuardar` del notifier es `true`.
+
+#### Restricción de bloques en horas pasadas
+
+- **`canvas_screen.dart`:** nuevos helpers `_esFechaHoraFutura(fecha, hora)` y `_avisoHoraPasada()` (SnackBar «No puedes añadir bloques en una hora o fecha pasada.»); se aplican en `_onCellTap` (tap de celda), en el `DragTarget` de creación/movimiento y en `_moverBloqueASemana` (no se mueven bloques a una semana pasada).
+- **`academic_block_sheet.dart`:** `_crearBloque` valida que fecha + `_inicio` sea futuro (cubre cambios de hora en Clase/Examen).
+
+#### Examen con hora de inicio
+
+- **`academic_block_sheet.dart`:** el picker de hora del examen fija `_horaInicioOverride`; `_crearBloque` usa `_inicio`/`_horaFin` tanto para `placeBlock` como para la fecha límite de la entrega — la hora indicada es la **hora de inicio** del bloque (como Clase).
+
+#### Reto vinculado desde el lienzo (sin duración)
+
+- **`academic_block_sheet.dart`:** la sección Duración queda oculta para el tipo Reto (bloque de 1 h por defecto). En modo creación, el botón principal es **«Crear reto»** → `_crearRetoYVincular()` abre `mostrarCrearRetoSimpleSheet()` y, al crearse el reto, coloca automáticamente el bloque con `retoId`/`retoTitulo` (tipo `deporte` si fitness, `estudio` si académico) + SnackBar «Reto creado y vinculado al bloque». En edición se conserva el picker de retos existente.
+
+#### Sheet de reto reutilizable
+
+- **`crear_reto_simple_sheet.dart`:** `mostrarCrearRetoSimpleSheet` ahora devuelve `Future<RetoDb?>` (el reto creado; `null` en edición/cancelación) y acepta `prefilledTitle`/`prefilledSubjectId`/`prefilledSubjectName` para acoplarse al contexto; en creación hace `.select().single()` y `Navigator.pop(context, RetoDb.fromMap(data))` + SnackBar.
+
+#### Docs
+
+- `06-frontend.md`: nueva §21.12; actualizadas §9.1.1 (botón «Plan» → `/academico/planificar`), §21.6.2, §21.6.5 y §13.2b; eliminadas las referencias a la antigua pantalla de plan semanal y su ruta.
+- `12-user-guide.md`: §4.5.4/§4.5.5 (Guardar permanece en el lienzo, horas pasadas, examen con hora de inicio, retos desde el lienzo).
+
+---
+
+## [v8.2.0] — 31-08-2026
+
+### Rediseño del Flujo de Creación de Retos (Unificado)
+
+#### Flujo unificado «Nuevo reto» (CLEAN UI)
+
+- **`CrearRetoScreen` reescrita por completo** (`features/retos/presentation/crear_reto_screen.dart`): pantalla unificada «Nuevo reto» que sustituye a los antiguos flujos «Reto simple» y «Reto con tareas». CLEAN UI con el design system SV (SVColors/SVShapes, fondo claro, tarjetas blancas). Secciones: Título, Detalles (asignatura, dificultad con XP +20/+40/+70, vínculo a examen/entrega), Fechas, Visibilidad, Tareas.
+- **Tareas opcionales** (máx. 12): si el usuario añade tareas se insertan en `hitos_de_reto` con peso uniforme `100/n`; si no, el reto se crea sin hitos. El usuario nunca ve la distinción simple/complejo. Chips por tarea de dificultad y asignatura con herencia de la asignatura del reto.
+- **Nuevo constructor** `CrearRetoScreen({String? prefilledSubjectId, String? prefilledTitle})`; la ruta `/retos/crear` lee ambos valores desde `extra`.
+- **Barra inferior fija** «Crear reto» (SafeArea) que no queda tapada por el teclado.
+- **Mapeo BD inalterado:** insert en `retos` y, si hay tareas, en `hitos_de_reto`.
+
+#### Sheet express mejorado
+
+- **`crear_reto_simple_sheet.dart`**: sheet más grande (`isScrollControlled` + `useSafeArea` + `SingleChildScrollView` + `viewInsets`), botón «Crear reto» a ancho completo, chips rápidos con XP, y enlace neutro «Añadir tareas» que abre `/retos/crear` conservando el título vía `extra: {'prefilledTitle': ...}`. Mantiene modo edición (`retoId` → `editarRetoSimple()`). Eliminado el texto «Crear reto con tareas» de la UI.
+
+#### RetosScreen
+
+- **Filtro «Complejidad» (Simple/Complejo) renombrado a «Tareas»** (Todas / Con tareas / Sin tareas). Subtítulo de la card de comunidad sin «· Complejo».
+
+#### Código legacy eliminado
+
+- **Eliminados** `crear_reto_simple_screen.dart` (`CrearRetoSimpleScreen`) y `crear_reto_complejo_screen.dart` (`CrearRetoComplejoScreen`) — código muerto sin ruta en el router.
+
+---
+
+## [v8.2.1] — 31-08-2026
+
+### Retos: Terminología de Esfuerzo, Adjuntos en Tareas y Preselección de Asignatura
+
+#### Terminología de esfuerzo estándar
+
+- **`retos_core.dart`:** nuevo mapa `etiquetasEsfuerzo` = `{baja: 'Tranquilo', media: 'Equilibrado', alta: 'Intenso'}` y helper `etiquetaEsfuerzo()` (fuente única de verdad para todas las pantallas de retos). El mapeo interno a `baja`/`media`/`alta` permanece intacto (BD sin cambios).
+- **`crear_reto_screen.dart`:** la fila «Dificultad» pasa a llamarse **«Esfuerzo»**; las píldoras muestran solo la etiqueta amigable (**sin XP visible**).
+- **`crear_reto_simple_sheet.dart`:** el chip rápido de esfuerzo y el mini-chip de cada tarea muestran solo la etiqueta.
+
+#### Adjuntos en tareas de reto
+
+- **Nueva migración `20260831000034_hitos_adjuntos.sql`:** columnas `apunte_id` (FK → `apuntes` ON DELETE SET NULL) y `archivo_id` (FK → `archivos_asignatura` ON DELETE SET NULL) en `hitos_de_reto`, CHECK `ck_hitos_adjunto_unico` (solo un adjunto a la vez) + índices `idx_hitos_de_reto_apunte`/`idx_hitos_de_reto_archivo`.
+- **`HitoRetoDb`** (`shared/models/db_models.dart`): nuevos campos `apunteId`/`archivoId` + getter `tieneAdjunto`; `fromMap`/`toMap` actualizados.
+- **Nuevo `adjuntar_tarea_sheet.dart`:** `mostrarAdjuntarTareaSheet(context, {asignaturaId})` + DTO `AdjuntoTarea` (`apunteId`/`archivoId` mutuamente excluyentes) + `AdjuntarTareaSheet` con pestañas Apuntes/Archivos (50 más recientes de cada uno) y botón **«Subir archivo nuevo»** que usa `ArchivosAsignaturaRepository.subirArchivo` con la asignatura efectiva de la tarea → el archivo queda registrado en `archivos_asignatura` (visible en la pestaña Archivos de Académico); invalida `archivosAsignaturaProvider`.
+- **`crear_reto_screen.dart`:** botón de clip por tarea (`_adjuntarTarea`/`_quitarAdjuntoTarea`), chip `_ChipAdjunto` con quitar, `_TareaDraft` con `apunteId`/`apunteTitulo`/`archivoId`/`archivoNombre`; el insert en `hitos_de_reto` incluye `apunte_id`/`archivo_id` cuando existen.
+- **`detalle_reto_screen.dart`:** chips «Apunte adjunto»/«Archivo adjunto» (`_ChipAdjuntoHito`) con helper `_abrirAdjunto` → `ApunteVisorScreen` (MaterialPageRoute) o `/academico/archivo/visor` con `ArchivoAsignaturaDto`.
+- **`tareasDeRetoProvider`** selecciona ahora `apunte_id, archivo_id`.
+
+#### Preselección de asignatura (sheet → editor)
+
+- **`crear_reto_simple_sheet.dart`:** «Añadir tareas» pasa `extra: {'prefilledTitle', 'prefilledSubjectId', 'prefilledSubjectName'}` conservando título y asignatura.
+- **`app_router.dart`** (`/retos/crear`): lee los tres extras y los entrega a `CrearRetoScreen`.
+- **`CrearRetoScreen`:** nuevo constructor con `prefilledSubjectName` y `asignaturaFija = false` por defecto — la asignatura llega **seleccionada pero modificable**; `asignaturaFija: true` solo si se indica explícitamente.
+
+---
+
+## [v8.2.2] — 31-08-2026
+
+### Correcciones de Retos y Planificación + Vinculación a Bloques de Estudio
+
+#### Fix: listas de asignaturas/entregas vacías al primer clic
+
+- **`crear_reto_screen.dart`** (`_pickAsignatura`) y **`crear_reto_simple_sheet.dart`** (`_seleccionarAsignatura`): ahora hacen `await ref.read(asignaturasActivasProvider.future)` **antes** de abrir el bottom sheet. Antes se leía `.valueOrNull` sin esperar la carga asíncrona y el primer clic mostraba la lista vacía. Ambas guardan `mounted` tras el await.
+
+#### Fix: bloques del plan que desaparecían al recargar
+
+- **Causa:** `horarios_academicos.asignatura_id` era NOT NULL en BD; los bloques sin asignatura (deporte, retos fitness, etc.) fallaban su insert silenciosamente y no sobrevivían al recargar el plan.
+- **Nueva migración `20260831000035_horarios_nullable_y_bloques.sql`:** `ALTER COLUMN asignatura_id DROP NOT NULL` en `horarios_academicos` + amplía los CHECKs `ck_retos_entidad_tipo` y `ck_hitos_entidad_tipo` para aceptar `'bloque'`.
+- **`HorarioAcademicoDb.asignaturaId`** (`shared/models/db_models.dart`) ahora es `String?` (antes `required String` con `as String`, que crasheaba con NULL); `toMap` condicional.
+- **`calendar_grid_provider.dart`:** `cargarBloquesGuardados` mapea `'repaso' → TimeBlockTipo.repaso`; `guardarPlan` mapea **todos** los tipos con `b.tipo.name` y persiste `asignatura_id` condicionalmente; `_persistInsert`/`_persistUpdate`/`_persistDelete` registran errores con `debugPrint` (ya no fallan en silencio).
+- **`plan_semanal_screen.dart`:** `_nombreBloque` con fallback `'Bloque'` cuando el bloque no tiene asignatura.
+
+#### Feature: vinculación de retos a bloques de estudio
+
+- **Nuevo `vincular_sheet.dart`** (`features/retos/presentation/`): `mostrarVincularSheet(context, {asignaturaId})` + DTO `Vinculo` (`id`/`tipo`/`titulo` con `tipo ∈ examen|entrega|bloque`; `Vinculo.vacio()` quita la vinculación).
+- El sheet muestra: «Sin vincular», sección «Exámenes y entregas» (usa `entregasPendientesProvider.future` —await— y prioriza/filtra por la asignatura del reto) y sección «Bloques de estudio» (query a `horarios_academicos` con `tipo_actividad` estudio/repaso futuros + join `asignaturas(nombre)`).
+- **`crear_reto_screen.dart`:** `_seleccionarEntidad` usa `mostrarVincularSheet` (ya no usa `EntregaExamenDb` directamente; import de `entregas_examenes_provider` eliminado de esa pantalla).
+
+---
+
+## [v8.2.3] — 31-08-2026
+
+### Fix del Lienzo (Mi Plan Semanal): Guardado Robusto, Carga Resiliente y Persistencia en UTC
+
+#### Fix: diálogo «Cambios sin guardar» que reaparecía tras guardar
+
+- **Causa:** `CanvasScreen._tieneModificaciones` comparaba un contador local (`_bloquesInicialesCount`) que no se reseteaba al guardar sin cambios.
+- **Solución:** nuevo flag determinista **`cambiosSinGuardar`** (`CalendarGridState`, default `false` + `copyWith`). Se activa en todos los mutadores (`placeBlock`, `moveBlock`, `resizeBlock`, `updateBlock`, `removeBlock`, `acceptSuggestion`, `placeRetoTarea`, `placeRutinaDistribuida`) y se resetea en `inicializar()` y tras un `guardarPlan()` exitoso. `_bloquesInicialesCount` eliminado.
+- **`_handleBack()`:** «Guardar y salir» solo hace `pop` si `guardarPlan()` devuelve `planId`; si falla, SnackBar de error y no sale.
+- **Nuevo helper `_despuesDeGuardar(planId)`** compartido entre el botón Guardar (que navega a `/plan-semanal`) y el diálogo de salida: `syncCargaAcademicaSemanal` + evento SyncHub `planGuardado` + XP de planificación (`100 + 5×bloquesAceptados`) + SnackBar + reset del inbox.
+
+#### Fix: `guardarPlan()` robusto (sin duplicar planes ni perder bloques)
+
+- **Reutiliza el plan existente de la sesión** (solo inserta en `planes_estudio` si `planId == null`) — pulsar Guardar varias veces ya no duplica filas.
+- **Inserta TODOS los bloques aceptados sin `dbId`** mediante el nuevo helper **`_rowDeBloque()`** (mapeo completo de tipos `b.tipo.name`, `asignatura_id` condicional, FK opcionales de rutina/reto/hito), fijando el `dbId` devuelto en el estado.
+- Al éxito resetea `cambiosSinGuardar: false` y `fase: completado`; **solo borra el plan recién creado si falla** (nunca un plan previo).
+
+#### Fix: carga resiliente del lienzo
+
+- **`cargarBloquesGuardados()`:** si la consulta con joins (`asignaturas(nombre), rutinas(nombre)`) falla, **reintenta sin joins**; **parseo por fila** con try/catch + `debugPrint` (una fila rota ya no descarta todos los bloques); mapea `'repaso' → TimeBlockTipo.repaso`.
+
+#### Fix: persistencia en UTC (bloques nocturnos desplazados de día)
+
+- `_rowDeBloque()`, `_persistUpdate()` y `_doPersist()` escriben `hora_inicio`/`hora_fin` con `.toUtc().toIso8601String()` — la hora local (España, UTC+2) ya no desplaza bloques nocturnos al día siguiente.
+- **`_fechaFinDe()` suma un día** si el bloque cruza la medianoche (p. ej. 23:30 → 00:30) para respetar el CHECK `hora_fin > hora_inicio` de `horarios_academicos`.
+- `_persistInsert`/`_persistUpdate`/`_persistDelete` registran fallos con `debugPrint('[calendarGrid] …')`.
+
+#### Docs
+
+- `docs/06-frontend.md`: nueva §21.10 (guardado robusto + carga resiliente + UTC), §21.5/§21.6.2 actualizadas (diálogo «Cambios sin guardar», flujo de salida, botón Guardar → `/plan-semanal`).
+
+---
+
+## [v8.2.4] — 31-08-2026
+
+### Fix del Guardado del Lienzo: CHECKs Legacy en Español + Error Visible al Usuario
+
+#### Causa raíz: divergencia de esquema heredada de la BD remota
+
+- **`planes_estudio.visibilidad`** conservaba un CHECK legacy que solo aceptaba `'publico'`/`'privado'`/`'solo_amigos'`; la app envía `'private'` → **el INSERT del plan fallaba SIEMPRE** al pulsar Guardar en el lienzo (error «No se pudo guardar»). Mismo patrón que `apuntes_visibilidad_fix` (migración 20260622000015): el `CREATE TABLE IF NOT EXISTS` posterior no sustituyó el CHECK creado por las migraciones antiguas en español.
+- **`horarios_academicos`** conservaba el CHECK legacy `horarios_academicos_tipo_actividad_check` (solo clase/estudio/deporte/otro), que rechazaba **silenciosamente** los bloques `descanso`/`comida`/`sueno`/`examen`/`entrega`/`repaso`.
+
+#### Nueva migración `20260831000036_fix_legacy_checks.sql` (aplicada en remoto)
+
+- Normaliza los datos existentes de `planes_estudio.visibilidad` (`privado`→`private`, `publico`→`public`, `solo_amigos`→`friends`), reemplaza el CHECK por `('private','friends','public')` y fija `DEFAULT 'private'`.
+- Elimina el CHECK legacy de tipos en `horarios_academicos`; permanece el canónico `ck_horarios_tipo_actividad` con los 9 tipos.
+
+#### Frontend: error real en el SnackBar de Guardar
+
+- **`canvas_screen.dart`:** los SnackBar de error al fallar Guardar (botón «Guardar» y diálogo «Guardar y salir») muestran ahora el error real registrado en `CalendarGridState.errorGuardado` en lugar del mensaje genérico.
+- **`_despuesDeGuardar(planId)`:** envuelve `syncCargaAcademicaSemanal` y `otorgarXp` en try/catch — un fallo secundario tras el guardado ya no hace parecer que el plan no se guardó (sin cambios de firma).
+
+#### Docs
+
+- `07-backend.md` (conteo 62 + fila 00036), `03-architecture.md` (conteo), `04-data-model.md` (`planes_estudio` con visibilidad canónica + nota en `horarios_academicos`), `06-frontend.md` (§21.11).
+
+---
+
+## [v8.1.0] — 13-07-2026
+
+### Expansión del Módulo Académico + Trust & Safety + GDPR
+
+#### Academico: Flashcards + Simulacro + Tarjetas de Estudio
+
+- **Nuevas pantallas:** `FlashcardScreen` (clasificación dominadas/dudosas/falladas), `FlashcardResultsScreen` (estadísticas), `SimulacroTestScreen` (test cronometrado), `ResultadosSimulacroScreen` (resultados detallados), `TarjetasEstudioScreen` (visor de tarjetas), `CuestionarioFormatoScreen` (selector de formato de preguntas).
+- **Nuevo provider `flashcardsProvider`** para datos de flashcards.
+- **Nuevas rutas:** `/academico/flashcards/:materialId`, `/academico/flashcards/:materialId/revision`, `/academico/flashcards/:materialId/resultados`.
+
+#### Academico: Centro de Generación Multi-Fuente
+
+- **Nueva pantalla `CentroGeneracionScreen`** (908 líneas): generación IA unificada de resúmenes, mapas mentales y cuestionarios desde múltiples fuentes con estados de carga/error/completado.
+- **Nuevo widget `SeleccionFuentesSheet`**: bottom sheet con checkboxes de apuntes/archivos para selección multi-fuente.
+- **Nuevos providers:** `artefactoEfimeroProvider` (estado de generación con enums `TipoGeneracion`/`EstadoGeneracion`), `generacionBackgroundProvider` (colas en segundo plano), `generacionGlobalProvider` (estado global), `multiTemaProvider` (generación multi-tema).
+- **`EstudioIaService` ampliado:** métodos `resumirMulti()`, `mapaMentalMulti()`, `generarPracticaMulti()`.
+
+#### Academico: Sesiones de Práctica Persistentes
+
+- **Nueva tabla `test_sessions`** (migración 20260628000025): sesiones de práctica con subconjunto JSONB de preguntas, respuestas, resultados, índice actual, estado (`in_progress`/`completed`/`abandoned`), score, XP. RLS owner + admin.
+- **`PracticaScreen` actualizada:** soporte para reanudar sesiones existentes vía parámetro `sessionId` y `modoRevision`.
+- **Nuevas columnas en `horarios_academicos`** (migración 20260629000026): `is_private` (BOOLEAN, visibilidad) y `tipo_clase` (VARCHAR, teoría/práctica).
+- **Nuevo enum `ClassType`** en `TimelineItem` con getters `label` y `color`.
+
+#### Shadowban + Lockdown (Trust & Safety)
+
+- **Nueva columna `usuarios.is_shadowbanned`** (migración 20260701000029): permite shadowban sin notificar al usuario.
+- **Nueva tabla `configuracion_global`** (migración 20260701000029): fila única con `lockdown_activo`, `lockdown_iniciado_en`, `lockdown_iniciado_por`.
+- **RLS de 6 tablas actualizadas** con filtro de shadowbanned para ocultar contenido.
+- **Trigger `trg_lockdown_shadowban_nuevo`**: auto-shadowbanea cuentas nuevas durante lockdown.
+- **`AdminRepository` ampliado** con `toggleShadowban()`, `getLockdownState()`, `toggleLockdown()`.
+- **`AdminProvider` ampliado** con `lockdownStateProvider`.
+- **`AdminHubScreen`**: toggle de Lockdown + indicador visual.
+- **`AdminUsuarioDetalle`**: switch de shadowban en perfil de usuario.
+
+#### GDPR: Derecho al Olvido + Exportación de Datos
+
+- **RPC `anonymize_user(p_usuario_id)`** (migración 20260701000030): 3 fases — ANONYMIZE (nombre/email/avatar a nulos), DELETE (registros personales), DESTROY (cuenta auth).
+- **RPC `exportar_datos_usuario(p_usuario_id)`** (migración 20260701000030): exportación completa JSON con 22+ secciones de tablas.
+- **RPC `delete_user` mejorada**: cascada completa incluyendo tablas nuevas.
+- **Migrations 0031-0033**: correcciones de columnas en RPCs GDPR (fix_gdpr_rpcs, fix_export_rpc, fix_insignias_column).
+- **`AdminRepository` ampliado** con `anonymizeUser()` y `exportUserData()`.
+
+#### UI & Core
+
+- **Nuevo widget `BadgeGeneracionWidget`** (`shared/widgets/`): badge persistente en el shell inferior que muestra estado de generaciones IA en segundo plano (pulsa/animación al completar). Integrado en `shell_route.dart`.
+- **Nuevo `session_reset.dart`** (`core/`): utilidad para destruir y recrear `ProviderScope` al logout, asegurando reinicio limpio de providers.
+- **`auth_controller.dart`**: logout ahora invalida providers neurofisiológicos y ejecuta session reset.
+- **SyncHub ampliado**: nuevos eventos `shadowbanToggled`, `lockdownToggled`. `EventoPayload` con campo `horarioId`. Invalidación simétrica completa.
+- **`AsignaturaDetalleScreen` refactorizada** (1221 líneas): dashboard integrado + multi-tab rediseñado con Flat Design.
+- **Admin widgets refactorizados** (16 archivos): migración completa a Flat Design (elevation: 0), esquemas de color actualizados, Shadowban/GDPR integrados.
+
+#### Refactor y correcciones
+
+- **`Sm2Calculator`** escala 0-5: parámetro `calidad` como `double`, fórmula EF `(5−q)`, umbral fallo `calidad.round() < 3`, clamp EF [1.3, 3.0].
+- **`PracticaScreen`** (1634 líneas): modal de 5 niveles (0-"Olvido total" a 5-"Perfecto"), intervalos pre-calculados SM-2-Physio, auditoría `registros_repaso_srs`.
+
+---
+
 ## [v8.0] — 01-07-2026
 
 ### Integración de Fórmulas Neurofisiológicas (Plan v7 — Fases 1-5)

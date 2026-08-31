@@ -485,6 +485,10 @@ class CalendarGridState {
   final DateTime fechaInicioPantalla;
   final bool sincronizando;
 
+  /// Indica si hay cambios del usuario sin guardar (crear/mover/editar/borrar).
+  /// Se resetea al inicializar y tras un `guardarPlan()` exitoso.
+  final bool cambiosSinGuardar;
+
   CalendarGridState({
     this.fase = PlanificadorFase.inbox,
     this.config = const InboxConfig(),
@@ -502,6 +506,7 @@ class CalendarGridState {
     this.semanaOffset = 0,
     DateTime? fechaInicioPantalla,
     this.sincronizando = false,
+    this.cambiosSinGuardar = false,
   }) : fechaInicioPantalla = fechaInicioPantalla ?? DateTime.now();
 
   DateTime get fechaFinPantalla =>
@@ -544,6 +549,7 @@ class CalendarGridState {
     int? semanaOffset,
     DateTime? fechaInicioPantalla,
     bool? sincronizando,
+    bool? cambiosSinGuardar,
   }) {
     return CalendarGridState(
       fase: fase ?? this.fase,
@@ -563,6 +569,7 @@ class CalendarGridState {
       semanaOffset: semanaOffset ?? this.semanaOffset,
       fechaInicioPantalla: fechaInicioPantalla ?? this.fechaInicioPantalla,
       sincronizando: sincronizando ?? this.sincronizando,
+      cambiosSinGuardar: cambiosSinGuardar ?? this.cambiosSinGuardar,
     );
   }
 }

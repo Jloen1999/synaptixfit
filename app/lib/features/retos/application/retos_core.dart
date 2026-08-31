@@ -23,6 +23,21 @@ int xpPorDificultad(String dificultad) => switch (dificultad) {
       _ => 40,
     };
 
+/// Etiquetas de esfuerzo que ve el usuario final en los retos.
+///
+/// El usuario nunca ve los valores técnicos `baja`/`media`/`alta`: se muestran
+/// expresiones sencillas y el sistema mantiene el mapeo interno intacto.
+/// Fuente única de verdad para TODAS las pantallas de retos.
+const Map<String, String> etiquetasEsfuerzo = {
+  'baja': 'Tranquilo',
+  'media': 'Equilibrado',
+  'alta': 'Intenso',
+};
+
+/// Traduce el valor interno de dificultad a su etiqueta de esfuerzo.
+String etiquetaEsfuerzo(String dificultad) =>
+    etiquetasEsfuerzo[dificultad] ?? 'Equilibrado';
+
 /// Provider que devuelve TODOS los retos del usuario (activos + completados + vencidos).
 /// Útil para la vista unificada de retos con filtros de estado.
 final todosRetosProvider = FutureProvider<List<RetoResumen>>((ref) async {

@@ -8,7 +8,6 @@ import '../../features/academico/presentation/archivo_visor_screen.dart';
 import '../../features/academico/presentation/asignatura_detalle_screen.dart';
 import '../../features/academico/presentation/configuracion_academica_screen.dart';
 import '../../features/academico/presentation/apuntes_screen.dart';
-import '../../features/academico/presentation/plan_semanal_screen.dart';
 import '../../features/academico/presentation/inbox_screen.dart';
 import '../../features/academico/presentation/canvas_screen.dart';
 import '../../features/academico/presentation/practica_screen.dart';
@@ -179,7 +178,15 @@ final GoRouter appRouter = GoRouter(
         final extra = state.extra;
         final prefilledSubjectId =
             extra is Map ? extra['prefilledSubjectId'] as String? : null;
-        return CrearRetoScreen(prefilledSubjectId: prefilledSubjectId);
+        final prefilledSubjectName =
+            extra is Map ? extra['prefilledSubjectName'] as String? : null;
+        final prefilledTitle =
+            extra is Map ? extra['prefilledTitle'] as String? : null;
+        return CrearRetoScreen(
+          prefilledSubjectId: prefilledSubjectId,
+          prefilledSubjectName: prefilledSubjectName,
+          prefilledTitle: prefilledTitle,
+        );
       },
     ),
     GoRoute(
@@ -188,11 +195,7 @@ final GoRouter appRouter = GoRouter(
         id: state.pathParameters['id'] ?? 'sin-id',
       ),
     ),
-    GoRoute(
-      path: '/plan-semanal',
-      builder: (context, state) => const PlanSemanalScreen(),
-    ),
-    // CanvasScreen — planificador autosuficiente
+    // CanvasScreen — planificador autosuficiente (lienzo «Mi Plan Semanal»)
     GoRoute(
       path: '/academico/planificar',
       builder: (context, state) => const CanvasScreen(),

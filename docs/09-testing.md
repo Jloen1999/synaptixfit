@@ -39,16 +39,18 @@
 
 **Ejemplo de test:**
 ```dart
-test('El progreso de reto complejo se calcula ponderando por orden de hitos', () {
-  final reto = RetoComplejo(
-    hitos: [
-      Hito(orden: 1, progreso: 100), // completado
-      Hito(orden: 2, progreso: 50),  // parcial
-      Hito(orden: 3, progreso: 0),   // sin empezar
-    ],
+test('El progreso de un reto con tareas se calcula ponderando por pesos', () {
+  // Lógica real de retoDetalleProvider: Σ (porcentaje_peso / 100) × (progreso_actual / 100)
+  final hitos = [
+    HitoRetoDb(porcentajePeso: 50, progresoActual: 100), // completada
+    HitoRetoDb(porcentajePeso: 30, progresoActual: 50),  // parcial
+    HitoRetoDb(porcentajePeso: 20, progresoActual: 0),   // sin empezar
+  ];
+  final progreso = hitos.fold<double>(
+    0,
+    (t, h) => t + (h.porcentajePeso / 100) * (h.progresoActual / 100),
   );
-  // Pesos automáticos: 3/6=50%, 2/6=33%, 1/6=17%
-  expect(reto.progresoGlobal, closeTo(66.5, 0.5));
+  expect(progreso, closeTo(0.65, 0.01)); // 50% + 15% + 0%
 });
 ```
 
@@ -81,7 +83,7 @@ test('El progreso de reto complejo se calcula ponderando por orden de hitos', ()
 | Explorador de Ejercicios | Con resultados, sin resultados, cargando |
 | Detalle de Ejercicio | Con video R2, con fallback texto |
 | Constructor de Rutina | Vacío, <3 ejercicios, completo |
-| Crear Reto Complejo | Suma = 100%, suma < 100% |
+| Crear reto (pantalla unificada) | Sin tareas, con tareas (peso uniforme 100/n) |
 
 ### 2.4 Tests de Rendimiento
 

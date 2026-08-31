@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/config/env_config.dart';
+
 class ObjetivoIaResult {
   const ObjetivoIaResult({required this.sugerencias, this.error});
 
@@ -42,7 +44,7 @@ Contexto del usuario:
 
     try {
       final response = await _dio.post<Map<String, dynamic>>(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/${EnvConfig.geminiModel}:generateContent',
         options: Options(
           headers: {
             'Content-Type': 'application/json',

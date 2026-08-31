@@ -609,6 +609,8 @@ class HitoRetoDb {
     this.dificultad = 'media',
     this.entidadVinculadaId,
     this.entidadVinculadaTipo,
+    this.apunteId,
+    this.archivoId,
   });
 
   final String id;
@@ -626,6 +628,11 @@ class HitoRetoDb {
   final String dificultad;
   final String? entidadVinculadaId;
   final String? entidadVinculadaTipo;
+  final String? apunteId;
+  final String? archivoId;
+
+  /// Indica si la tarea tiene algún adjunto académico (apunte o archivo).
+  bool get tieneAdjunto => apunteId != null || archivoId != null;
 
   factory HitoRetoDb.fromMap(Map<String, dynamic> map) {
     final depsRaw = map['dependencias'];
@@ -660,6 +667,8 @@ class HitoRetoDb {
       dificultad: (map['dificultad'] as String?) ?? 'media',
       entidadVinculadaId: map['entidad_vinculada_id'] as String?,
       entidadVinculadaTipo: map['entidad_vinculada_tipo'] as String?,
+      apunteId: map['apunte_id'] as String?,
+      archivoId: map['archivo_id'] as String?,
     );
   }
 
@@ -682,6 +691,8 @@ class HitoRetoDb {
         'entidad_vinculada_id': entidadVinculadaId,
       if (entidadVinculadaTipo != null)
         'entidad_vinculada_tipo': entidadVinculadaTipo,
+      if (apunteId != null) 'apunte_id': apunteId,
+      if (archivoId != null) 'archivo_id': archivoId,
     };
   }
 }
@@ -881,7 +892,7 @@ class HorarioAcademicoDb {
   const HorarioAcademicoDb({
     required this.id,
     required this.usuarioId,
-    required this.asignaturaId,
+    this.asignaturaId,
     required this.horaInicio,
     required this.horaFin,
     this.ubicacion,
@@ -911,7 +922,7 @@ class HorarioAcademicoDb {
 
   final String id;
   final String usuarioId;
-  final String asignaturaId;
+  final String? asignaturaId;
   final DateTime horaInicio;
   final DateTime horaFin;
   final String? ubicacion;
@@ -942,7 +953,7 @@ class HorarioAcademicoDb {
     return HorarioAcademicoDb(
       id: map['id'] as String,
       usuarioId: map['usuario_id'] as String,
-      asignaturaId: map['asignatura_id'] as String,
+      asignaturaId: map['asignatura_id'] as String?,
       horaInicio: _parseDateTime(map['hora_inicio']),
       horaFin: _parseDateTime(map['hora_fin']),
       ubicacion: map['ubicacion'] as String?,
@@ -981,7 +992,7 @@ class HorarioAcademicoDb {
     return {
       'id': id,
       'usuario_id': usuarioId,
-      'asignatura_id': asignaturaId,
+      if (asignaturaId != null) 'asignatura_id': asignaturaId,
       'hora_inicio': horaInicio.toIso8601String(),
       'hora_fin': horaFin.toIso8601String(),
       'ubicacion': ubicacion,

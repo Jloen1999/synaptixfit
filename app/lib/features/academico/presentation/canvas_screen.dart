@@ -33,7 +33,6 @@ class CanvasScreen extends ConsumerStatefulWidget {
 
 class _CanvasScreenState extends ConsumerState<CanvasScreen> {
   bool _cargando = true;
-  int _bloquesInicialesCount = 0;
 
   @override
   void initState() {
@@ -86,22 +85,13 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     gridNotifier.inicializar(config);
     await gridNotifier.cargarBloquesGuardados();
 
-    _bloquesInicialesCount = ref
-        .read(calendarGridProvider)
-        .bloques
-        .where((b) => !b.esFijo && !b.esSugerencia)
-        .length;
-
     setState(() => _cargando = false);
   }
 
   bool get _tieneModificaciones {
-    final bloquesActuales = ref
-        .read(calendarGridProvider)
-        .bloques
-        .where((b) => !b.esFijo && !b.esSugerencia)
-        .length;
-    return bloquesActuales != _bloquesInicialesCount;
+    // Flag determinista mantenido por el notifier: se activa al crear/mover/
+    // editar/borrar bloques y se resetea al inicializar y tras guardar.
+    return ref.read(calendarGridProvider).cambiosSinGuardar;
   }
 
   Future<void> _handleBack(BuildContext context) async {
@@ -130,11 +120,66 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     if (!context.mounted) return;
     if (resultado == 'guardar') {
       final notifier = ref.read(calendarGridProvider.notifier);
-      await notifier.guardarPlan();
-      if (context.mounted) context.pop();
+      final planId = await notifier.guardarPlan();
+      if (!context.mounted) return;
+      if (planId != null) {
+        await _despuesDeGuardar(planId);
+        if (context.mounted) context.pop();
+      } else {
+        final errorGuardado =
+            ref.read(calendarGridProvider).errorGuardado ?? '';
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(errorGuardado.isNotEmpty
+                  ? 'No se pudo guardar el plan: $errorGuardado'
+                  : 'No se pudo guardar el plan. Inténtalo de nuevo.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+      }
     } else if (resultado == 'descartar') {
       context.pop();
     }
+  }
+
+  /// Acciones comunes tras un guardado exitoso: recarga de carga académica,
+  /// evento de SyncHub, XP de planificación, snackbar y reseteo del inbox.
+  /// Ningún fallo secundario debe hacer parecer que el guardado fracasó.
+  Future<void> _despuesDeGuardar(String planId) async {
+    try {
+      await syncCargaAcademicaSemanal(ref);
+    } catch (_) {}
+    ref.read(syncHubProvider).dispatch(
+          DominioEvento.planGuardado,
+          payload: EventoPayload(planId: planId),
+        );
+    var xpPlanificacion = 0;
+    XpResultado? xpResult;
+    try {
+      final bloquesAceptados =
+          ref.read(calendarGridProvider).bloquesAceptados.length;
+      xpPlanificacion = 100 + (5 * bloquesAceptados).clamp(0, 100);
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+      xpResult = user != null
+          ? await otorgarXp(client, user.id, xpPlanificacion)
+          : null;
+    } catch (_) {
+      xpResult = null;
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(xpResult != null && xpResult.subeNivel
+              ? '¡Semana guardada! +$xpPlanificacion XP · ¡Subiste de nivel! 🎉'
+              : '¡Semana guardada! +$xpPlanificacion XP'),
+          backgroundColor: const Color(0xFF10B981),
+        ),
+      );
+    }
+    ref.read(inboxConfigProvider.notifier).reset();
   }
 
   @override
@@ -792,14 +837,19 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
           onWillAcceptWithDetails: (_) => true,
           onAcceptWithDetails: (details) {
             final data = details.data;
+            final horaDestino =
+                GridMath.offsetYToHora(slot * GridConstants.snapHalfHour);
+            if (!_esFechaHoraFutura(fechaColumna, horaDestino)) {
+              _avisoHoraPasada();
+              return;
+            }
             if (data is Map<String, dynamic>) {
               final tipo = data['tipo'] as String? ?? 'estudio';
               ref.read(calendarGridProvider.notifier).placeBlock(
                     asignaturaId: data['asignaturaId'] as String?,
                     asignaturaNombre: data['asignaturaNombre'] as String?,
                     diaSemana: fechaColumna.weekday,
-                    horaInicio: GridMath.offsetYToHora(
-                        slot * GridConstants.snapHalfHour),
+                    horaInicio: horaDestino,
                     tipo: tipo == 'deporte'
                         ? TimeBlockTipo.deporte
                         : TimeBlockTipo.estudio,
@@ -812,7 +862,7 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
               ref.read(calendarGridProvider.notifier).moveBlock(
                     data.idLocal,
                     fechaColumna.weekday,
-                    GridMath.offsetYToHora(slot * GridConstants.snapHalfHour),
+                    horaDestino,
                     nuevaFecha: fechaColumna,
                   );
             }
@@ -861,6 +911,14 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
     final base = DateTime(fechaActual.year, fechaActual.month, fechaActual.day);
     final nuevaFecha = base.add(Duration(days: 7 * delta));
 
+    // No se puede recolocar un bloque en una semana pasada.
+    final inicioBloque = DateTime(nuevaFecha.year, nuevaFecha.month,
+        nuevaFecha.day, block.horaInicio.hour, block.horaInicio.minute);
+    if (inicioBloque.isBefore(DateTime.now())) {
+      _avisoHoraPasada();
+      return;
+    }
+
     ref.read(calendarGridProvider.notifier).moveBlock(
           block.idLocal,
           block.diaSemana,
@@ -883,6 +941,10 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
 
   void _onCellTap(DateTime fecha, int slot) {
     final hora = GridMath.offsetYToHora(slot * GridConstants.snapHalfHour);
+    if (!_esFechaHoraFutura(fecha, hora)) {
+      _avisoHoraPasada();
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -891,6 +953,25 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
       ),
       builder: (_) => AcademicBlockSheet(fecha: fecha, horaInicio: hora),
     );
+  }
+
+  /// Indica si la combinación fecha + hora es estrictamente futura.
+  bool _esFechaHoraFutura(DateTime fecha, TimeOfDay hora) {
+    final inicio =
+        DateTime(fecha.year, fecha.month, fecha.day, hora.hour, hora.minute);
+    return inicio.isAfter(DateTime.now());
+  }
+
+  void _avisoHoraPasada() {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('No puedes añadir bloques en una hora o fecha pasada.'),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
   }
 
   void _showEditBlockSheet(TimeBlock block) {
@@ -1222,38 +1303,23 @@ class _CanvasScreenState extends ConsumerState<CanvasScreen> {
                       try {
                         final planId = await notifier.guardarPlan();
                         if (planId != null && mounted) {
-                          await syncCargaAcademicaSemanal(ref);
-                          ref.read(syncHubProvider).dispatch(
-                                DominioEvento.planGuardado,
-                                payload: EventoPayload(planId: planId),
-                              );
-                          final bloquesAceptados = ref
-                              .read(calendarGridProvider)
-                              .bloquesAceptados
-                              .length;
-                          final xpPlanificacion =
-                              100 + (5 * bloquesAceptados).clamp(0, 100);
-                          final client = Supabase.instance.client;
-                          final user = client.auth.currentUser;
-                          final xpResult = user != null
-                              ? await otorgarXp(
-                                  client, user.id, xpPlanificacion)
-                              : null;
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                          await _despuesDeGuardar(planId);
+                          // El usuario permanece en el lienzo para seguir
+                          // añadiendo bloques si lo desea.
+                        } else if (mounted) {
+                          final errorGuardado =
+                              ref.read(calendarGridProvider).errorGuardado ??
+                                  '';
+                          ScaffoldMessenger.of(context)
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(
                               SnackBar(
-                                content: Text(xpResult != null &&
-                                        xpResult.subeNivel
-                                    ? '¡Semana guardada! +$xpPlanificacion XP · ¡Subiste de nivel! 🎉'
-                                    : '¡Semana guardada! +$xpPlanificacion XP'),
-                                backgroundColor: const Color(0xFF10B981),
+                                content: Text(errorGuardado.isNotEmpty
+                                    ? 'No se pudo guardar el plan: $errorGuardado'
+                                    : 'No se pudo guardar el plan. Inténtalo de nuevo.'),
+                                backgroundColor: Colors.red,
                               ),
                             );
-                          }
-                          ref.read(inboxConfigProvider.notifier).reset();
-                          if (mounted) {
-                            context.go('/plan-semanal');
-                          }
                         }
                       } catch (e) {
                         if (mounted) {

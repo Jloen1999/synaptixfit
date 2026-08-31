@@ -3,29 +3,47 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/design_system/sv_colors.dart';
+import '../../../core/design_system/sv_shapes.dart';
 import '../../../shared/models/db_models.dart';
 import '../../academico/application/asignaturas_provider.dart';
 import '../application/retos_provider.dart';
 
-/// Creación express de un reto Simple en un Modal Inferior minimalista.
-/// Un único campo de texto + iconos rápidos (asignatura · dificultad · fecha).
+/// Creación express de un reto en un Modal Inferior.
+///
+/// Un único flujo para todos los retos: desde aquí se puede crear el reto
+/// directamente o saltar al editor completo con «Añadir tareas». El usuario
+/// nunca ve la distinción simple/complejo.
+///
+/// Widget REUTILIZABLE: devuelve el `RetoDb` creado (útil para vincularlo a
+/// otros flujos, p. ej. bloques del lienzo) y acepta [prefilledTitle],
+/// [prefilledSubjectId] y [prefilledSubjectName] para acoplarse al contexto.
 ///
 /// Si se pasa [retoId] el modal entra en modo edición y precarga los datos del
-/// reto para actualizarlo en lugar de crear uno nuevo.
-Future<void> mostrarCrearRetoSimpleSheet(BuildContext context,
-    {String? retoId}) {
-  return showModalBottomSheet<void>(
+/// reto para actualizarlo en lugar de crear uno nuevo (devuelve null).
+Future<RetoDb?> mostrarCrearRetoSimpleSheet(
+  BuildContext context, {
+  String? retoId,
+  String? prefilledTitle,
+  String? prefilledSubjectId,
+  String? prefilledSubjectName,
+}) {
+  return showModalBottomSheet<RetoDb?>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
+    useSafeArea: true,
+    backgroundColor: SVColors.surfaceContainerLowest,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
-    builder: (_) => _CrearRetoSimpleSheet(retoId: retoId),
+    builder: (_) => _CrearRetoSimpleSheet(
+      retoId: retoId,
+      prefilledTitle: prefilledTitle,
+      prefilledSubjectId: prefilledSubjectId,
+      prefilledSubjectName: prefilledSubjectName,
+    ),
   );
 }
-
-const _difLabels = {'baja': 'Baja', 'media': 'Media', 'alta': 'Alta'};
 
 Color _difColor(String d) => switch (d) {
       'baja' => const Color(0xFF10B981),
@@ -34,9 +52,17 @@ Color _difColor(String d) => switch (d) {
     };
 
 class _CrearRetoSimpleSheet extends ConsumerStatefulWidget {
-  const _CrearRetoSimpleSheet({this.retoId});
+  const _CrearRetoSimpleSheet({
+    this.retoId,
+    this.prefilledTitle,
+    this.prefilledSubjectId,
+    this.prefilledSubjectName,
+  });
 
   final String? retoId;
+  final String? prefilledTitle;
+  final String? prefilledSubjectId;
+  final String? prefilledSubjectName;
 
   @override
   ConsumerState<_CrearRetoSimpleSheet> createState() =>
@@ -57,7 +83,18 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
   @override
   void initState() {
     super.initState();
-    if (_esEdicion) _cargarRetoEditar();
+    if (_esEdicion) {
+      _cargarRetoEditar();
+    } else {
+      // Pre-llenado desde el contexto (título y asignatura preseleccionada).
+      if (widget.prefilledTitle != null) {
+        _tituloCtrl.text = widget.prefilledTitle!;
+      }
+      if (widget.prefilledSubjectId != null) {
+        _asignaturaId = widget.prefilledSubjectId;
+        _asignaturaNombre = widget.prefilledSubjectName;
+      }
+    }
   }
 
   Future<void> _cargarRetoEditar() async {
@@ -119,12 +156,15 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
   }
 
   Future<void> _seleccionarAsignatura() async {
-    final asignaturas =
-        ref.read(asignaturasActivasProvider).valueOrNull ?? const [];
+    // Esperamos a que el provider resuelva para que la lista aparezca al
+    // primer clic (antes el future aún no había cargado).
+    final asignaturas = await ref.read(asignaturasActivasProvider.future);
+    if (!mounted) return;
     final result = await showModalBottomSheet<AsignaturaDb?>(
       context: context,
+      backgroundColor: SVColors.surfaceContainerLowest,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -132,8 +172,17 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
             shrinkWrap: true,
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 12, 20, 8),
+                child: Text('Elegir asignatura',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: SVColors.onSurface)),
+              ),
               ListTile(
-                leading: const Icon(Icons.block, size: 20),
+                leading: const Icon(Icons.block,
+                    size: 20, color: SVColors.onSurfaceMuted),
                 title: const Text('Sin asignatura'),
                 onTap: () => Navigator.pop(ctx, null),
               ),
@@ -141,7 +190,7 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
                 const Padding(
                   padding: EdgeInsets.all(16),
                   child: Text('No tienes asignaturas activas.',
-                      style: TextStyle(color: Colors.grey)),
+                      style: TextStyle(color: SVColors.onSurfaceMuted)),
                 )
               else
                 ...asignaturas.map((a) => ListTile(
@@ -155,8 +204,6 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
         );
       },
     );
-    // result == null puede significar "Sin asignatura" o cerrar; tratamos el
-    // tap explícito en "Sin asignatura" reseteando.
     if (!mounted) return;
     setState(() {
       _asignaturaId = result?.id;
@@ -177,6 +224,16 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
     if (sel != null && mounted) {
       setState(() => _fecha = DateTime(sel.year, sel.month, sel.day));
     }
+  }
+
+  /// Salta al editor completo conservando el título y la asignatura elegidos.
+  void _abrirEditorCompleto() {
+    Navigator.pop(context);
+    context.push('/retos/crear', extra: {
+      'prefilledTitle': _tituloCtrl.text.trim(),
+      if (_asignaturaId != null) 'prefilledSubjectId': _asignaturaId,
+      if (_asignaturaNombre != null) 'prefilledSubjectName': _asignaturaNombre,
+    });
   }
 
   Future<void> _crear() async {
@@ -203,20 +260,38 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
           ref: ref,
         );
       } else {
-        await client.from('retos').insert({
-          'usuario_id': user.id,
-          'titulo': titulo,
-          'tipo': _asignaturaId != null ? 'academic' : 'fitness',
-          'meta': titulo,
-          'visibilidad': 'private',
-          'dificultad': _dificultad,
-          if (_asignaturaId != null) 'asignatura_id': _asignaturaId,
-          'fecha_inicio': fechaInicio.toIso8601String(),
-          'fecha_fin': fechaFin.toIso8601String(),
-        });
+        final data = await client
+            .from('retos')
+            .insert({
+              'usuario_id': user.id,
+              'titulo': titulo,
+              'tipo': _asignaturaId != null ? 'academic' : 'fitness',
+              'meta': titulo,
+              'visibilidad': 'private',
+              'dificultad': _dificultad,
+              if (_asignaturaId != null) 'asignatura_id': _asignaturaId,
+              'fecha_inicio': fechaInicio.toIso8601String(),
+              'fecha_fin': fechaFin.toIso8601String(),
+            })
+            .select()
+            .single();
 
         ref.invalidate(retosProvider);
         ref.invalidate(todosRetosProvider);
+
+        if (!mounted) return;
+        // Devolvemos el reto creado para que el llamador pueda vincularlo.
+        Navigator.pop(context, RetoDb.fromMap(data));
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Reto creado'),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        return;
       }
 
       if (!mounted) return;
@@ -243,7 +318,6 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -251,30 +325,32 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
         top: 12,
         bottom: MediaQuery.of(context).viewInsets.bottom + 16,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 14),
-              decoration: BoxDecoration(
-                color: cs.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: SVColors.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          if (_esEdicion) ...[
             Row(
               children: [
-                Text(
-                  'Editar reto',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurfaceVariant,
+                Expanded(
+                  child: Text(
+                    _esEdicion ? 'Editar reto' : 'Nuevo reto',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: SVColors.onSurface,
+                    ),
                   ),
                 ),
                 if (_cargandoEdicion) ...[
@@ -287,74 +363,106 @@ class _CrearRetoSimpleSheetState extends ConsumerState<_CrearRetoSimpleSheet> {
                 ],
               ],
             ),
-            const SizedBox(height: 8),
-          ],
-          // Campo de texto sin bordes (express)
-          TextField(
-            controller: _tituloCtrl,
-            autofocus: !_esEdicion,
-            textCapitalization: TextCapitalization.sentences,
-            maxLength: 80,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            decoration: const InputDecoration.collapsed(
-              hintText: 'Escribe tu reto…',
+            const SizedBox(height: 10),
+            // Campo de título sin bordes
+            TextField(
+              controller: _tituloCtrl,
+              autofocus: !_esEdicion,
+              textCapitalization: TextCapitalization.sentences,
+              maxLength: 80,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: SVColors.onSurface),
+              cursorColor: SVColors.secondary,
+              decoration: const InputDecoration(
+                filled: false,
+                hintText: '¿Qué reto quieres cumplir?',
+                hintStyle: TextStyle(color: SVColors.onSurfaceMuted),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                counterStyle:
+                    TextStyle(color: SVColors.onSurfaceMuted, fontSize: 11),
+              ),
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) => _crear(),
             ),
-            onChanged: (_) => setState(() {}),
-            onSubmitted: (_) => _crear(),
-          ),
-          const SizedBox(height: 8),
-          // Fila de iconos rápidos
-          Row(
-            children: [
-              _QuickChip(
-                icon: Icons.label_outline,
-                label: _asignaturaNombre ?? 'Asignatura',
-                activo: _asignaturaId != null,
-                color: cs.primary,
-                onTap: _seleccionarAsignatura,
+            const SizedBox(height: 10),
+            // Chips rápidos
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _QuickChip(
+                  icon: Icons.label_outline,
+                  label: _asignaturaNombre ?? 'Asignatura',
+                  activo: _asignaturaId != null,
+                  color: SVColors.secondary,
+                  onTap: _seleccionarAsignatura,
+                ),
+                _QuickChip(
+                  icon: Icons.local_fire_department_rounded,
+                  label: etiquetaEsfuerzo(_dificultad),
+                  activo: true,
+                  color: _difColor(_dificultad),
+                  onTap: _ciclarDificultad,
+                ),
+                _QuickChip(
+                  icon: Icons.event_outlined,
+                  label: _fechaLabel(),
+                  activo: !_esHoy(_fecha),
+                  color: SVColors.secondary,
+                  onTap: _seleccionarFecha,
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            // CTA principal a ancho completo
+            FilledButton.icon(
+              onPressed: _tituloValido && !_guardando ? _crear : null,
+              icon: _guardando
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : Icon(_esEdicion ? Icons.save_rounded : Icons.flag_rounded,
+                      size: 18),
+              label: Text(
+                _guardando
+                    ? (_esEdicion ? 'Guardando…' : 'Creando…')
+                    : (_esEdicion ? 'Guardar cambios' : 'Crear reto'),
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               ),
-              const SizedBox(width: 8),
-              _QuickChip(
-                icon: Icons.local_fire_department_rounded,
-                label: _difLabels[_dificultad]!,
-                activo: true,
-                color: _difColor(_dificultad),
-                onTap: _ciclarDificultad,
+              style: FilledButton.styleFrom(
+                backgroundColor: SVColors.secondary,
+                foregroundColor: SVColors.onSecondary,
+                disabledBackgroundColor: SVColors.surfaceContainerHighest,
+                disabledForegroundColor: SVColors.onSurfaceMuted,
+                minimumSize: const Size.fromHeight(50),
+                shape: const RoundedRectangleBorder(
+                    borderRadius: SVShapes.standard12),
               ),
-              const SizedBox(width: 8),
-              _QuickChip(
-                icon: Icons.event_outlined,
-                label: _fechaLabel(),
-                activo: !_esHoy(_fecha),
-                color: cs.primary,
-                onTap: _seleccionarFecha,
-              ),
-              const Spacer(),
-              _BotonCrear(
-                habilitado: _tituloValido && !_guardando,
-                cargando: _guardando,
-                onTap: _crear,
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          if (!_esEdicion)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  context.push('/retos/crear');
-                },
-                icon: const Icon(Icons.checklist_rtl_rounded, size: 16),
-                label: const Text('Crear reto con tareas'),
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+            ),
+            if (!_esEdicion) ...[
+              const SizedBox(height: 6),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _abrirEditorCompleto,
+                  icon: const Icon(Icons.checklist_rtl_rounded, size: 16),
+                  label: const Text('Añadir tareas'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: SVColors.primary,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
                 ),
               ),
-            ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -377,18 +485,18 @@ class _QuickChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final fg = activo ? color : cs.onSurfaceVariant;
+    final fg = activo ? color : SVColors.onSurfaceMuted;
     return Material(
-      color: activo ? color.withValues(alpha: 0.12) : cs.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(20),
+      color:
+          activo ? color.withValues(alpha: 0.12) : SVColors.surfaceContainerLow,
+      borderRadius: SVShapes.pill,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: SVShapes.pill,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 120),
+          constraints: const BoxConstraints(maxWidth: 160),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -401,7 +509,7 @@ class _QuickChip extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       color: fg,
                     ),
                   ),
@@ -409,46 +517,6 @@ class _QuickChip extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BotonCrear extends StatelessWidget {
-  const _BotonCrear({
-    required this.habilitado,
-    required this.cargando,
-    required this.onTap,
-  });
-
-  final bool habilitado;
-  final bool cargando;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Material(
-      color: habilitado ? cs.primary : cs.surfaceContainerHighest,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: habilitado ? onTap : null,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: cargando
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
-                )
-              : Icon(
-                  Icons.arrow_upward_rounded,
-                  size: 18,
-                  color: habilitado ? cs.onPrimary : cs.onSurfaceVariant,
-                ),
         ),
       ),
     );

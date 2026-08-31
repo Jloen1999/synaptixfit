@@ -27,8 +27,9 @@ class GuiaDocenteIaService {
 
   final Dio _dio;
 
-  static const _endpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+  /// Endpoint dinámico: el modelo se configura vía `GEMINI_MODEL`.
+  static String get _endpoint =>
+      'https://generativelanguage.googleapis.com/v1beta/models/${EnvConfig.geminiModel}:generateContent';
 
   bool get disponible => EnvConfig.hasGeminiApiKey;
 

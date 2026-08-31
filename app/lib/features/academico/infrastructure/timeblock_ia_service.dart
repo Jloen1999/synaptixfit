@@ -28,7 +28,7 @@ class TimeblockIaService {
       final prompt = _construirPrompt(config);
 
       final response = await _dio.post<Map<String, dynamic>>(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/${EnvConfig.geminiModel}:generateContent',
         options: Options(headers: {
           'Content-Type': 'application/json',
           'X-goog-api-key': EnvConfig.geminiApiKey,

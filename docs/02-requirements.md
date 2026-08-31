@@ -81,7 +81,7 @@ Proveer un MVP multiplataforma que permita planificar estudio, registrar progres
 *(Conservado de v2.9 — secciones 5.1 a 5.7 sin cambios)*
 
 ### 5.8 Investigación para integración IA
-1. **Modelo seleccionado:** Gemini Flash (`gemini-flash-latest`) por equilibrio velocidad/calidad y latencia aceptable (< 3s por prompt) para uso interactivo en entrenamiento.
+1. **Modelo seleccionado:** Gemini Flash configurable vía `GEMINI_MODEL` en `.env` (`EnvConfig.geminiModel`); default **`gemini-3.6-flash`** (verificado contra la API real el 31-08-2026). Criterio: equilibrio velocidad/calidad y latencia aceptable (< 3s por prompt) para uso interactivo en entrenamiento. Los modelos hardcodeados anteriores (`gemini-flash-latest`, `gemini-2.x-flash`) fueron retirados por Google (error 404), por lo que todos los servicios de IA construyen la URL dinámicamente.
 2. **Prompt engineering:** Se utiliza técnica de "role prompting" (entrenador personal profesional) + "constrained output" (JSON estricto sin Markdown) para garantizar respuestas parseables.
 3. **Seguridad biométrica:** El prompt incluye reglas obligatorias basadas en IMC y edad, derivadas de guías clínicas de prescripción de ejercicio (ACSM).
 4. **Periodización:** El sistema implementa periodización lineal modificada (adaptación → carga → pico → descarga) basada en literatura de ciencias del deporte (modelo de Matveyev adaptado).
@@ -332,7 +332,7 @@ Como estudiante quiero acceder rápido a Pomodoro, Workout y Nuevo Reto desde el
 El SmartBanner debe mostrar un consejo (Gemini o fallback) al cargar el dashboard sin bloquear otros widgets.
 
 ### CA-19 — QuickActions funcionales
-Workout debe navegar a sesión en vivo, Nuevo Reto a creación de reto simple. Pomodoro y Escanear muestran placeholder.
+Workout debe navegar a sesión en vivo, Nuevo Reto a la pantalla de creación de retos (`/retos/crear`). Pomodoro y Escanear muestran placeholder.
 
 ### CA-20 — PlanWeekBar condicional
 Solo se muestra si hay rutina activa. Si no, se oculta sin afectar el layout.
@@ -373,7 +373,7 @@ El tab "Retos" debe mostrar retos activos con barra de progreso porcentual y dí
 ### CU-24 Retos con dependencias entre hitos
 
 **Actor:** Usuario autenticado
-**Precondición:** Usuario en pantalla de detalle de un reto complejo con hitos
+**Precondición:** Usuario en pantalla de detalle de un reto con hitos
 **Flujo principal:**
 1. El usuario ve el grafo de dependencias de hitos con nodos coloreados por estado
 2. El sistema muestra los hitos bloqueados con candado y la condición requerida (AND/OR/X_OF_Y)

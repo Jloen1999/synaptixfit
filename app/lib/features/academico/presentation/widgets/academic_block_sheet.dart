@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../retos/application/retos_core.dart';
+import '../../../retos/presentation/crear_reto_simple_sheet.dart';
 import '../../application/calendar_grid_provider.dart';
 import '../../application/entregas_examenes_provider.dart';
 import '../../application/inbox_config_provider.dart';
@@ -282,10 +283,13 @@ class _AcademicBlockSheetState extends ConsumerState<AcademicBlockSheet> {
                 ),
               ),
             ],
-            const SizedBox(height: 18),
-            _sectionLabel('Duración'),
-            const SizedBox(height: 4),
-            _buildDuracionSlider(),
+            // Los retos no necesitan duración: el bloque usa 1 h por defecto.
+            if (_tipo != _TipoBloque.reto) ...[
+              const SizedBox(height: 18),
+              _sectionLabel('Duración'),
+              const SizedBox(height: 4),
+              _buildDuracionSlider(),
+            ],
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -517,17 +521,18 @@ class _AcademicBlockSheetState extends ConsumerState<AcademicBlockSheet> {
                 onPressed: () async {
                   final picked = await showTimePicker(
                     context: context,
-                    initialTime: widget.horaInicio,
+                    initialTime: _inicio,
                     helpText: 'Hora del examen',
                   );
                   if (picked != null) {
-                    setState(() => _horaExamen = picked);
+                    // La hora indicada es la hora de INICIO del bloque.
+                    setState(() => _horaInicioOverride = picked);
                   }
                 },
                 icon: const Icon(Icons.schedule, size: 16),
                 label: Text(
                   _horaExamen != null
-                      ? 'Hora: ${GridMath.formatTimeOfDay(_horaExamen!)}'
+                      ? 'Hora: ${GridMath.formatTimeOfDay(_inicio)}'
                       : 'Hora del examen (opcional)',
                   style: const TextStyle(fontSize: 12),
                 ),
@@ -888,6 +893,34 @@ class _AcademicBlockSheetState extends ConsumerState<AcademicBlockSheet> {
   }
 
   Widget _buildRetoPicker() {
+    // Modo creación: no se elige un reto existente; el botón principal abre
+    // directamente el widget de Nuevo reto.
+    if (!_esEdicion) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF7B1FA2).withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+              color: const Color(0xFF7B1FA2).withValues(alpha: 0.15)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.emoji_events_rounded,
+                color: Color(0xFF7B1FA2), size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Al crear el reto quedará vinculado a este bloque del calendario.',
+                style: TextStyle(fontSize: 12, height: 1.4),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final retosAsync = ref.watch(retosProvider);
 
     return retosAsync.when(
@@ -1067,7 +1100,7 @@ class _AcademicBlockSheetState extends ConsumerState<AcademicBlockSheet> {
       _TipoBloque.examen => 'Registrar examen',
       _TipoBloque.entrega => 'Registrar entrega',
       _TipoBloque.deporte => 'Crear sesión de deporte',
-      _TipoBloque.reto => 'Vincular reto',
+      _TipoBloque.reto => 'Crear reto',
     };
   }
 
@@ -1133,11 +1166,56 @@ class _AcademicBlockSheetState extends ConsumerState<AcademicBlockSheet> {
     return null;
   }
 
+  /// Abre el widget inicial de Nuevo reto (sheet reutilizable) y, si el
+  /// usuario crea un reto, lo vincula automáticamente a este bloque.
+  Future<void> _crearRetoYVincular() async {
+    setState(() => _creando = true);
+    try {
+      final reto = await mostrarCrearRetoSimpleSheet(context);
+      if (reto == null || !mounted) return;
+
+      final bloqueTipo = reto.tipo == 'fitness'
+          ? TimeBlockTipo.deporte
+          : TimeBlockTipo.estudio;
+      ref.read(calendarGridProvider.notifier).placeBlock(
+            asignaturaId: reto.asignaturaId,
+            asignaturaNombre: null,
+            diaSemana: widget.fecha.weekday,
+            horaInicio: widget.horaInicio,
+            horaFin: _horaFin,
+            tipo: bloqueTipo,
+            retoId: reto.id,
+            retoTitulo: reto.titulo,
+            fecha: widget.fecha,
+          );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Reto creado y vinculado al bloque'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => _creando = false);
+    }
+  }
+
   Future<void> _crearBloque() async {
     // Si hay un tema escrito pero sin añadir, lo añadimos automáticamente para
     // no perder la información antes de validar.
     if (_tipo == _TipoBloque.estudio && _temaInputCtrl.text.trim().isNotEmpty) {
       _agregarTema();
+    }
+
+    // El tipo Reto en modo creación abre directamente el widget de Nuevo reto
+    // y vincula el reto creado al bloque (sin duración ni validación previa).
+    if (_tipo == _TipoBloque.reto && !_esEdicion) {
+      await _crearRetoYVincular();
+      return;
     }
 
     // Validación de campos obligatorios (al crear y al editar): no se permite
@@ -1146,6 +1224,18 @@ class _AcademicBlockSheetState extends ConsumerState<AcademicBlockSheet> {
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error)),
+      );
+      return;
+    }
+
+    // No se pueden crear bloques en horas o fechas pasadas.
+    final inicioBloque = DateTime(widget.fecha.year, widget.fecha.month,
+        widget.fecha.day, _inicio.hour, _inicio.minute);
+    if (!_esEdicion && inicioBloque.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No puedes añadir bloques en una hora o fecha pasada.'),
+        ),
       );
       return;
     }
@@ -1231,9 +1321,9 @@ class _AcademicBlockSheetState extends ConsumerState<AcademicBlockSheet> {
             setState(() => _creando = false);
             return;
           }
-          final horaEx = _horaExamen ?? widget.horaInicio;
+          // La hora indicada del examen es la hora de inicio del bloque.
           final fechaLimite = DateTime(widget.fecha.year, widget.fecha.month,
-              widget.fecha.day, horaEx.hour, horaEx.minute);
+              widget.fecha.day, _inicio.hour, _inicio.minute);
           final aula = _aulaCtrl.text.trim();
           await crearEntrega(
             titulo: titulo,
@@ -1247,7 +1337,7 @@ class _AcademicBlockSheetState extends ConsumerState<AcademicBlockSheet> {
             asignaturaId: _asignaturaId,
             asignaturaNombre: _asignaturaNombre,
             diaSemana: widget.fecha.weekday,
-            horaInicio: widget.horaInicio,
+            horaInicio: _inicio,
             horaFin: _horaFin,
             tipo: TimeBlockTipo.examen,
             titulo: titulo,

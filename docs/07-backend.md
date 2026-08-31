@@ -1,8 +1,8 @@
 # 07 - Backend (Servicios y Lógica del Servidor)
 
 **Proyecto:** SynaptixFit
-**Versión:** 3.5
-**Fecha:** 29-06-2026
+**Versión:** 3.7
+**Fecha:** 31-08-2026
 **Referencia:** [03-architecture.md](03-architecture.md), [04-data-model.md](04-data-model.md)
 
 ---
@@ -13,7 +13,7 @@ SynaptixFit utiliza Supabase como backend gestionado (PostgreSQL + Auth + Realti
 
 | Capa | Tecnología | Responsabilidad |
 |------|-----------|----------------|
-| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (53 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix + 0001 dias_disponibles_array + 0002 fix_nivel_umbral + 0003 xp_overflow_multinivel + 20260622000004 visibilidad_rls + 20260622000005 carga_xp_estudio_otorgado + 20260622000006 retos_sinergia_v2 + 20260622000007 retos_xp_tracking + 20260622000008 retos_deep_linking + 20260622000009 social_realtime + 20260622000010 perfil_fechas_semestre + 20260622000011 social_publicaciones_v2 + 20260622000012 procedencia_clones + 20260622000013 archivos_asignatura + 20260622000014 apuntes_actualizado_en + 20260622000015 apuntes_visibilidad_fix + 20260622000016 documentos_ia + 20260622000017 documentos_ia_ampliar_check + 20260625000018 perfil_academico_rls + 20260625000019 usuario_insignias_update_asignaturas_rls + 20260626000020 valor_met_ejercicios + 20260626000021 duracion_real + 20260628000022 materiales_estudio + 20260628000023 bancos_preguntas + 20260628000024 fix_rls_preguntas + 20260628000025 test_sessions + 20260629000026 horarios_metadata) |
+| Base de datos | Supabase PostgreSQL 15 | Almacén relacional con 50+ tablas, RLS, vistas (62 migraciones: 0049 esquema base + 0050 dependencias retos + 0001 trigger semana + 0001 v_analitica_semanal + 0002 social_moderacion + 0003 insignias + 0004 consolidacion_fixes + 0005 fechas_coherencia + 0006 admin_rol + 0007 nivel_actividad_check + 0008 asignaturas_usuario_semestre + 0009 admin_panel_v2 + 0010 admin_delete_user + 0011 calendar_grid + 0012 xp_planificacion + 0013 bloque_xp_tracking + 0014 retos_bloques_bridge + 0015 dia_rutina_fk + 0016 rutina_fk_fix + 0017 trigger_hito_progreso + 0018 unique_dias_rutina + 0019 fix_duplicate_fk_rutina + 0022 lienzo_continuo + 0023 lienzo_continuo_v2 + 0024 ics_sync + 0025 ics_upsert_fix + 0001 dias_disponibles_array + 0002 fix_nivel_umbral + 0003 xp_overflow_multinivel + 20260622000004 visibilidad_rls + 20260622000005 carga_xp_estudio_otorgado + 20260622000006 retos_sinergia_v2 + 20260622000007 retos_xp_tracking + 20260622000008 retos_deep_linking + 20260622000009 social_realtime + 20260622000010 perfil_fechas_semestre + 20260622000011 social_publicaciones_v2 + 20260622000012 procedencia_clones + 20260622000013 archivos_asignatura + 20260622000014 apuntes_actualizado_en + 20260622000015 apuntes_visibilidad_fix + 20260622000016 documentos_ia + 20260622000017 documentos_ia_ampliar_check + 20260625000018 perfil_academico_rls + 20260625000019 usuario_insignias_update_asignaturas_rls + 20260626000020 valor_met_ejercicios + 20260626000021 duracion_real + 20260628000022 materiales_estudio + 20260628000023 bancos_preguntas + 20260628000024 fix_rls_preguntas + 20260628000025 test_sessions + 20260629000026 horarios_metadata + 20260701000027 cognitive_study_cost + 20260701000028 physical_workload_and_srs + 20260701000029 shadowban_lockdown + 20260701000030 gdpr_anonimizacion + 20260701000031 fix_gdpr_rpcs + 20260701000032 fix_export_rpc + 20260701000033 fix_insignias_column + 20260831000034 hitos_adjuntos + 20260831000035 horarios_nullable_y_bloques + 20260831000036 fix_legacy_checks) |
 | Autenticación | Supabase Auth (GoTrue) | JWT, Google OAuth, Email OTP/Magic Link |
 | Tiempo real | Supabase Realtime (WebSocket) | Streaming de cambios en 8 tablas del catálogo de ejercicios |
 | Orquestación | Supabase Edge Functions (Deno) | Lógica de negocio sensible (clonación, validación, notificaciones) |
@@ -36,7 +36,7 @@ Para MVP/TFG, la simplicidad y latencia del enfoque cliente-side son preferibles
 
 ## 2. Migraciones — Esquema Consolidado
 
-Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **53 archivos de migración**:
+Todas las migraciones en `supabase/migrations/` se aplican en orden numérico con `supabase db push`. Tras la consolidación (Fase 3 del Plan Maestro, 11-06-2026) y las ampliaciones posteriores, el proyecto tiene **62 archivos de migración**:
 
 | # | Archivo | Fecha | Descripción |
 |---|---------|-------|-------------|
@@ -92,6 +92,16 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 | 20260628000024 | `20260628000024_fix_rls_preguntas.sql` | 28-06-2026 | **Sistema SM-2 Fase 3:** Extiende política RLS de `preguntas` de SELECT a FOR ALL (necesario para INSERT de preguntas generadas por IA). Añade políticas admin SELECT en `preguntas` e `intentos_pregunta`.
 | 20260628000025 | `20260628000025_test_sessions.sql` | 28-06-2026 | **Sistema SM-2 Fase 4:** Tabla `test_sessions` para sesiones de práctica persistentes con subconjunto JSONB del banco de preguntas, respuestas, resultados, índice y status (`in_progress`/`completed`/`abandoned`). RLS dueño + admin.
 | 20260629000026 | `20260629000026_horarios_metadata.sql` | 29-06-2026 | **Metadatos de timeline:** Columnas `is_private BOOLEAN NOT NULL DEFAULT false` (visibilidad solo dueño) y `tipo_clase VARCHAR` (`'teoria'`/`'practica'`) en `horarios_academicos`. Soportan el enum `ClassType` en `TimelineItem`.
+| 20260701000027 | `20260701000027_cognitive_study_cost.sql` | 01-07-2026 | **★ Fórmulas 1 y 2:** Extiende `horarios_academicos` con `met_value`, `calorias_quemadas`, `carga_cognitiva_generada`. Crea tabla `estado_cognitivo_usuario` (1:1 con usuarios, carga_cognitiva_actual, capacidad_atencion_actual) con trigger `trg_inicializar_estado_cognitivo`.
+| 20260701000028 | `20260701000028_physical_workload_and_srs.sql` | 01-07-2026 | **★ Fórmulas 3 y 4:** Crea tablas `registros_carga_fisica` (carga_diaria GENERATED AS rpe×duración), `estado_regulacion_cruzada` (acwr_actual GENERATED, 1:1 con usuarios) y `registros_repaso_srs` (auditoría SM-2-Physio). Trigger bidireccional `trg_insertar_carga_fisica`. RPC `recalcular_regulacion_cruzada`.
+| 20260701000029 | `20260701000029_shadowban_lockdown.sql` | 01-07-2026 | **Shadowban + Lockdown:** Columna `is_shadowbanned` en `usuarios`. Tabla `configuracion_global` (fila única con `lockdown_activo`). RLS de 6 tablas con filtro shadowbanned. Trigger `trg_lockdown_shadowban_nuevo` para auto-shadowban en lockdown.
+| 20260701000030 | `20260701000030_gdpr_anonimizacion.sql` | 01-07-2026 | **GDPR:** RPC `anonymize_user` (3 fases: ANONYMIZE → DELETE → DESTROY), RPC `exportar_datos_usuario` (22+ secciones JSON), RPC `delete_user` mejorada con cascada completa.
+| 20260701000031 | `20260701000031_fix_gdpr_rpcs.sql` | 01-07-2026 | **Fix RPCs GDPR:** Corrige columnas mal referenciadas en `anonymize_user` y `exportar_datos_usuario`.
+| 20260701000032 | `20260701000032_fix_export_rpc.sql` | 01-07-2026 | **Fix export RPC:** Corrige ORDER BY en `exportar_datos_usuario`.
+| 20260701000033 | `20260701000033_fix_insignias_column.sql` | 01-07-2026 | **Fix insignias column:** Usa `obtenida_en` en lugar de `creado_en` en `exportar_datos_usuario`.
+| 20260831000034 | `20260831000034_hitos_adjuntos.sql` | 31-08-2026 | **Adjuntos a tareas de reto:** columnas `apunte_id` (FK → `apuntes` ON DELETE SET NULL) y `archivo_id` (FK → `archivos_asignatura` ON DELETE SET NULL) en `hitos_de_reto` + CHECK `ck_hitos_adjunto_unico` (solo uno de los dos adjuntos a la vez) + índices `idx_hitos_de_reto_apunte`/`idx_hitos_de_reto_archivo`. |
+| 20260831000035 | `20260831000035_horarios_nullable_y_bloques.sql` | 31-08-2026 | **Fix persistencia de bloques:** `ALTER COLUMN asignatura_id DROP NOT NULL` en `horarios_academicos` (los bloques sin asignatura —deporte, retos fitness, etc.— fallaban su insert silenciosamente y desaparecían al recargar el plan) + amplía los CHECKs `ck_retos_entidad_tipo`/`ck_hitos_entidad_tipo` para aceptar `'bloque'` como vinculación a bloques de estudio del calendario. |
+| 20260831000036 | `20260831000036_fix_legacy_checks.sql` | 31-08-2026 | **Fix CHECKs legacy de la BD remota:** normaliza `planes_estudio.visibilidad` (`privado`→`private`, `publico`→`public`, `solo_amigos`→`friends`) y reemplaza el CHECK por `('private','friends','public')` con `DEFAULT 'private'` —el INSERT del plan fallaba SIEMPRE al guardar el lienzo, mismo patrón que `apuntes_visibilidad_fix`— + elimina el CHECK legacy `horarios_academicos_tipo_actividad_check` (solo clase/estudio/deporte/otro) que rechazaba `descanso`/`comida`/`sueno`/`examen`/`entrega`/`repaso`; permanece el canónico `ck_horarios_tipo_actividad` con los 9 tipos. |
 
 > **Nota histórica:** Las migraciones intermedias 0001–0048 fueron consolidadas en `202606060049_esquema_base.sql` durante la Fase 3. Las migraciones 0050 anteriores (0050–0052 de xp_estudio_flag, retos_racha, etc.) también fueron absorbidas. El orden de aplicación real es cronológico por timestamp del nombre del archivo, no por el número de secuencia en el nombre.
 
@@ -99,8 +109,8 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 
 **Archivo:** `app/lib/features/bienestar/infrastructure/recomendacion_ia_service.dart` (~1357 líneas)
 
-**Modelo:** Gemini Flash (`gemini-flash-latest`) vía REST API.
-**Endpoint:** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`
+**Modelo:** Gemini Flash configurable vía `GEMINI_MODEL` en `.env` → `EnvConfig.geminiModel` (default **`gemini-3.6-flash`**, verificado contra la API real el 31-08-2026). Los modelos hardcodeados anteriores (`gemini-flash-latest`, `gemini-2.x-flash`) fueron retirados por Google y causaban error 404.
+**Endpoint (dinámico):** `POST https://generativelanguage.googleapis.com/v1beta/models/${EnvConfig.geminiModel}:generateContent`
 **Autenticación:** `X-goog-api-key` header (API key desde `.env`)
 **Timeout:** 15 segundos (configurado en `Dio`)
 
@@ -108,10 +118,16 @@ Todas las migraciones en `supabase/migrations/` se aplican en orden numérico co
 
 ```dart
 // EnvConfig (app/lib/core/config/env_config.dart)
-static String get geminiApiKey => dotenv.get('GEMINI_API_KEY', fallback: '');
+static String get geminiApiKey =>
+    dotenv.env['GEMINI_API_KEY'] ??
+    const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+static String get geminiModel =>
+    dotenv.env['GEMINI_MODEL'] ??
+    const String.fromEnvironment('GEMINI_MODEL', defaultValue: 'gemini-3.6-flash');
 
-// Uso en el servicio
+// Uso en el servicio — la URL se construye dinámicamente
 final apiKey = EnvConfig.geminiApiKey;
+final endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/${EnvConfig.geminiModel}:generateContent';
 if (apiKey.trim().isEmpty) {
   return RecomendacionRutinaResult(..., error: 'Falta GEMINI_API_KEY...');
 }
@@ -269,7 +285,8 @@ Esto es necesario porque Gemini a veces envuelve el JSON en bloques de código M
 | Tipo de error | Mensaje al usuario |
 |--------------|-------------------|
 | `DioException` con status 400/401/403 | "Error de autenticación con Gemini. Revisa GEMINI_API_KEY." |
-| `DioException` (otros) | "No se pudo conectar con Gemini en este momento." |
+| `DioException` (otros: 404/429/5xx…) | `"Gemini: {mensaje real de la API}"` — extraído del cuerpo de la respuesta por `_mensajeApi()` (p. ej. modelo retirado) para diagnosticar sin volcar el log completo |
+| `DioException` sin detalle extraíble | "No se pudo conectar con Gemini en este momento." |
 | `FormatException` | "Gemini generó una respuesta con formato no válido. Inténtalo de nuevo." |
 | Otros | "Error inesperado: {primeros 100 caracteres}" |
 
@@ -681,7 +698,7 @@ Contratos de la capa de infraestructura:
 | 4 | `AuthRepository` | `auth/infrastructure/auth_repository.dart` | `signInWithGoogle()`, `signInWithEmail()`, `signUp()`, `signOut()` |
 | 5 | `RepositorioPlanesEstudio` | `academico/` | `crearPlan()`, `actualizarPlan()`, `eliminarPlan()`, `listarPlanesVisibles()` |
 | 6 | `RepositorioApuntes` | `academico/` | `crearApunte()`, `actualizarApunte()`, `eliminarApunte()`, `listarApuntesVisibles()` |
-| 7 | `RepositorioRetos` | `retos/` | `crearRetoSimple()`, `crearRetoComplejo()`, `actualizarProgreso()`, `clonarRetoPublico()` |
+| 7 | `retos_provider.dart` (sin repositorio dedicado) | `retos/application/` | Mutaciones: `completarReto()`, `descompletarReto()`, `eliminarReto()`, `editarRetoSimple()`, `toggleTareaCompletada()`, `reordenarTareas()`, `clonarReto()`. Creación: insert directo en `retos` + `hitos_de_reto` desde `crear_reto_screen.dart` y `crear_reto_simple_sheet.dart` |
 | 8 | `RepositorioMuro` | `social/` | `listarMuro()`, `darMeGusta()`, `quitarMeGusta()` |
 
 ## 8. Vista de Ejercicios Completos
@@ -724,7 +741,7 @@ final data = await supabase
 ## 12. Servicio de IA para Time-Blocking — `TimeBlockIaService`
 
 **Archivo:** `app/lib/features/academico/infrastructure/timeblock_ia_service.dart`
-**Modelo:** Gemini Flash (`gemini-flash-latest`) — mismo endpoint y autenticación que `RecomendacionIaService`
+**Modelo:** `EnvConfig.geminiModel` (default `gemini-3.6-flash`) — mismo endpoint dinámico y autenticación que `RecomendacionIaService`
 **Timeout:** 20 segundos (respuesta más larga por la complejidad del scheduling)
 
 ### 12.1 Propósito
@@ -1094,5 +1111,5 @@ El flujo de práctica (en `PracticaScreen`) sigue estos pasos:
 
 ---
 
-**Documento compilado:** 29-06-2026
-**Última revisión:** v3.5 — Migraciones 53 (añadidas 0025 `test_sessions` + 0026 `horarios_metadata` con columnas `is_private` y `tipo_clase`), enum `ClassType` en DTO `TimelineItem`.
+**Documento compilado:** 13-07-2026
+**Última revisión:** v3.7 — Migraciones 60 (añadidas 0025 `test_sessions`, 0026 `horarios_metadata`, 0027-0028 ★ Fórmulas Neurofisiológicas, 0029 shadowban_lockdown, 0030 gdpr_anonimizacion, 0031-0033 fix RPCs GDPR, 0034 `hitos_adjuntos` con `apunte_id`/`archivo_id` en `hitos_de_reto`). Nuevas RPCs: `recalcular_regulacion_cruzada`, `anonymize_user`, `exportar_datos_usuario`. Nueva tabla `configuracion_global`. Columna `is_shadowbanned` en `usuarios`.

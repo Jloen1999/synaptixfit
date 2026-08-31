@@ -1,9 +1,9 @@
 # 04 - Modelo de Datos (Supabase)
 
-**Versión:** 6.1
+**Versión:** 6.4
 **Estado:** VIGENTE
-**Fecha:** 01-07-2026
-**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, función `delete_user` para eliminación hard de usuarios, columna `rol` en `usuarios`, tabla `asignaturas_usuario_semestre` para mapeo de transversales, tabla `admin_auditoria` para trazabilidad administrativa, vista `v_admin_metricas` para KPIs globales, columnas de moderación en `actividades_sociales`, `comentarios_feed` y `ejercicios`, columna `valor_met` (MET del Compendio de Adultos 2024) en `ejercicios`, dualidad planificación vs ejecución real (`duracion_objetivo_segundos`/`duracion_real_segundos`) en `seleccion_de_ejercicios`, y ★ Fórmulas Neurofisiológicas v8.0: tablas `estado_cognitivo_usuario`, `estado_regulacion_cruzada`, `registros_carga_fisica`, `registros_repaso_srs` + columnas `met_value`/`calorias_quemadas`/`carga_cognitiva_generada` en `horarios_academicos`. Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
+**Fecha:** 31-08-2026
+**Propósito:** Definición completa de las 50+ tablas, relaciones, RLS, índices, vistas, triggers y políticas Supabase. Incluye sistema de XP con level-up, trigger de cascada días→semanas, historial de objetivos, feedback post-entrenamiento, pipeline académico, motor de recomendaciones, dependencias entre hitos (AND/OR/X_OF_Y), adjuntos académicos en tareas de reto (`apunte_id`/`archivo_id` con CHECK `ck_hitos_adjunto_unico`), tabla de insights de analítica, vista semanal de sesiones, infraestructura offline, planes de estudio, apuntes, sesiones focus (Pomodoro), migración de consolidación 0004, función `wipe_user_data` para panel de administración, función `delete_user` para eliminación hard de usuarios, columna `rol` en `usuarios`, tabla `asignaturas_usuario_semestre` para mapeo de transversales, tabla `admin_auditoria` para trazabilidad administrativa, vista `v_admin_metricas` para KPIs globales, columnas de moderación en `actividades_sociales`, `comentarios_feed` y `ejercicios`, columna `valor_met` (MET del Compendio de Adultos 2024) en `ejercicios`, dualidad planificación vs ejecución real (`duracion_objetivo_segundos`/`duracion_real_segundos`) en `seleccion_de_ejercicios`, ★ Fórmulas Neurofisiológicas v8.0: tablas `estado_cognitivo_usuario`, `estado_regulacion_cruzada`, `registros_carga_fisica`, `registros_repaso_srs` + columnas `met_value`/`calorias_quemadas`/`carga_cognitiva_generada` en `horarios_academicos`, asignatura_id NULLABLE en `horarios_academicos` (migración `20260831000035`) y vinculación de retos/tareas a bloques de estudio (`'bloque'` en `entidad_vinculada_tipo`). Catálogo actual: ~909 ejercicios, 93 músculos, 13 partes del cuerpo, 24 equipamientos (dataset final).
 
 **Mapeo canónico entre documentos:**
 - `usuarios` corresponde a los modelos funcionales de inicio de sesión, perfil físico, tablero principal, perfil de usuario y configuración de usuario.
@@ -240,7 +240,7 @@ erDiagram
     HORARIOS_ACADEMICOS {
         uuid id PK
         uuid usuario_id FK
-        uuid asignatura_id FK
+        uuid asignatura_id FK "NULLABLE desde migración 20260831000035"
         timestamp hora_inicio
         timestamp hora_fin
         string location
@@ -381,7 +381,7 @@ erDiagram
       HORARIOS_ACADEMICOS {
           uuid id PK
           uuid usuario_id FK
-          uuid asignatura_id FK
+          uuid asignatura_id FK "NULLABLE desde migración 20260831000035"
           uuid plan_estudio_id FK
           string prioridad
           timestamp hora_inicio
@@ -475,6 +475,7 @@ CREATE TABLE usuarios (
     CHECK (rol IN ('usuario', 'admin')),
   nivel_privacidad TEXT NOT NULL DEFAULT 'privado'
     CHECK (nivel_privacidad IN ('publico', 'privado', 'amigos')),
+  is_shadowbanned BOOLEAN NOT NULL DEFAULT false,
   id_perfil_fisico UUID,
   
   -- Metadatos
@@ -1334,6 +1335,21 @@ CREATE POLICY "retos_modificar" ON retos
 
 ---
 
+### 2.6.1 Vinculación a examen/entrega/bloque (migraciones `20260622000006` + `20260831000035`)
+
+Los retos y sus tareas pueden vincularse a una entidad del calendario académico:
+
+| Columna | Tablas | Tipo | Descripción |
+|---------|--------|------|-------------|
+| `entidad_vinculada_id` | `retos` / `hitos_de_reto` | `UUID NULL` | ID de la entidad vinculada (examen/entrega de `entregas_examenes` o bloque de `horarios_academicos`) |
+| `entidad_vinculada_tipo` | `retos` / `hitos_de_reto` | `TEXT NULL` | Tipo de entidad. CHECK `ck_retos_entidad_tipo` / `ck_hitos_entidad_tipo`: `'examen'`, `'entrega'` y, desde la migración `20260831000035`, `'bloque'` |
+
+- **Examen/entrega:** la sincronización bidireccional reto/tarea ⇄ examen/entrega la gestionan los triggers SECURITY DEFINER de la migración `20260622000008` (ajuste de XP coherente vía guarda `xp_otorgado` y anti-bucle `IS DISTINCT FROM`).
+- **Bloque:** la vinculación `'bloque'` apunta a una fila de `horarios_academicos` con `tipo_actividad` `estudio` o `repaso`. Es posible que el bloque no tenga asignatura desde que `asignatura_id` es NULLABLE (migración `20260831000035`).
+- **Consumo en Flutter:** `mostrarVincularSheet()` (`features/retos/presentation/vincular_sheet.dart`) devuelve un `Vinculo` con `tipo ∈ {'examen', 'entrega', 'bloque'}`; `Vinculo.vacio()` despeja la vinculación (`entidad_vinculada_id = null`).
+
+---
+
 ### 2.7 HITOS DE RETO (hitos de reto)
 
 ```sql
@@ -1354,12 +1370,21 @@ CREATE TABLE hitos_de_reto (
   condicion_n INTEGER NOT NULL DEFAULT 1
     CHECK (condicion_n >= 1),
   
+  -- Migración 20260831000034: adjunto académico único (apunte o archivo)
+  apunte_id UUID REFERENCES apuntes(id) ON DELETE SET NULL,
+  archivo_id UUID REFERENCES archivos_asignatura(id) ON DELETE SET NULL,
+  
   CONSTRAINT titulo_length CHECK (char_length(titulo) BETWEEN 3 AND 50),
-  CONSTRAINT valid_weight CHECK (porcentaje_peso BETWEEN 5 AND 100)
+  CONSTRAINT valid_weight CHECK (porcentaje_peso BETWEEN 5 AND 100),
+  CONSTRAINT ck_hitos_adjunto_unico CHECK (
+    (apunte_id IS NULL) OR (archivo_id IS NULL)
+  )
 );
 
 CREATE INDEX idx_hitos_de_reto_reto_id ON hitos_de_reto(reto_id);
 CREATE UNIQUE INDEX idx_hitos_de_reto_orden ON hitos_de_reto(reto_id, indice_orden);
+CREATE INDEX idx_hitos_de_reto_apunte ON hitos_de_reto(apunte_id);
+CREATE INDEX idx_hitos_de_reto_archivo ON hitos_de_reto(archivo_id);
 ```
 
 #### 2.7.1 Sistema de dependencias entre hitos (Sprint 7)
@@ -1391,6 +1416,20 @@ CREATE UNIQUE INDEX idx_hitos_de_reto_orden ON hitos_de_reto(reto_id, indice_ord
 
 Los hitos que satisfacen su condición pasan automáticamente a `estado = 'disponible'`.
 
+#### 2.7.2 Adjuntos académicos en tareas (migración `20260831000034`)
+
+Cada tarea (hito) puede llevar **un único adjunto académico**: o un apunte (`apuntes`) o un archivo de asignatura (`archivos_asignatura`).
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `apunte_id` | `UUID NULL` | FK → `apuntes(id)` ON DELETE SET NULL. Apunte adjunto a la tarea. |
+| `archivo_id` | `UUID NULL` | FK → `archivos_asignatura(id)` ON DELETE SET NULL. Archivo adjunto a la tarea. |
+
+- **CHECK `ck_hitos_adjunto_unico`:** `(apunte_id IS NULL) OR (archivo_id IS NULL)` — garantiza que solo uno de los dos adjuntos esté presente a la vez.
+- **Índices:** `idx_hitos_de_reto_apunte` e `idx_hitos_de_reto_archivo` para consultas por adjunto.
+- **Trazabilidad con Académico:** los archivos nuevos subidos desde el flujo de retos se registran en `archivos_asignatura` vinculados a la asignatura efectiva de la tarea, por lo que también aparecen en la pestaña Archivos de la asignatura en Académico.
+- **Modelo Dart:** `HitoRetoDb` con campos `apunteId`/`archivoId` + getter `tieneAdjunto` (`shared/models/db_models.dart`); `tareasDeRetoProvider` selecciona `apunte_id, archivo_id`.
+
 -- Validar que la suma de pesos de hitos sea exactamente 100%
 CREATE FUNCTION validar_pesos_de_hitos()
 RETURNS TRIGGER AS $$
@@ -1416,7 +1455,7 @@ FOR EACH ROW EXECUTE FUNCTION validar_pesos_de_hitos();
 CREATE TABLE progreso_de_reto (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reto_id UUID NOT NULL REFERENCES retos(id) ON DELETE CASCADE,
-  hito_id UUID REFERENCES hitos_de_reto(id) ON DELETE CASCADE, -- NULL si reto simple
+  hito_id UUID REFERENCES hitos_de_reto(id) ON DELETE CASCADE, -- NULL si el reto no tiene tareas
   usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   cantidad_completada DOUBLE PRECISION NOT NULL,
   
@@ -1493,7 +1532,7 @@ CREATE POLICY "notificaciones_actualizar" ON notificaciones
 CREATE TABLE horarios_academicos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-  asignatura_id UUID NOT NULL REFERENCES asignaturas(id) ON DELETE CASCADE,
+  asignatura_id UUID REFERENCES asignaturas(id) ON DELETE CASCADE,  -- NULLABLE desde migración 20260831000035: bloques sin asignatura (deporte, retos fitness, etc.)
   hora_inicio TIMESTAMP NOT NULL,
   hora_fin TIMESTAMP NOT NULL,
   ubicacion TEXT,
@@ -1530,6 +1569,8 @@ CREATE INDEX idx_horarios_academicos_hora_inicio ON horarios_academicos(hora_ini
 -- Migración 0023: índice para navegación por fechas
 CREATE INDEX idx_horarios_fecha_rango ON horarios_academicos(usuario_id, hora_inicio);
 ```
+
+> **Fix v8.2.4 (migración `20260831000036`):** La BD remota conservaba el CHECK legacy `horarios_academicos_tipo_actividad_check` (solo `clase`/`estudio`/`deporte`/`otro`) que rechazaba **silenciosamente** los bloques `descanso`/`comida`/`sueno`/`examen`/`entrega`/`repaso`. La migración lo elimina; permanece únicamente el CHECK canónico `ck_horarios_tipo_actividad` con los 9 valores (`estudio`, `deporte`, `clase`, `descanso`, `comida`, `sueno`, `examen`, `entrega`, `repaso`).
 
 **Políticas RLS:**
 ```sql
@@ -1801,8 +1842,8 @@ CREATE TABLE planes_estudio (
   nombre TEXT NOT NULL,
   semana_inicio DATE NOT NULL,
   semana_fin DATE NOT NULL,
-  visibilidad TEXT NOT NULL DEFAULT 'privado'
-    CHECK (visibilidad IN ('publico', 'privado', 'solo_amigos')),
+  visibilidad TEXT NOT NULL DEFAULT 'private'
+    CHECK (visibilidad IN ('private', 'friends', 'public')),
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT ck_planes_fechas CHECK (semana_fin >= semana_inicio),
@@ -1812,6 +1853,8 @@ CREATE TABLE planes_estudio (
 CREATE INDEX idx_planes_estudio_usuario ON planes_estudio(usuario_id);
 CREATE INDEX idx_planes_estudio_semana ON planes_estudio(semana_inicio, semana_fin);
 ```
+
+> **Fix v8.2.4 (migración `20260831000036`):** La BD remota conservaba un CHECK heredado en español (`publico`/`privado`/`solo_amigos`) que el `CREATE TABLE IF NOT EXISTS` posterior no sustituyó —mismo patrón que `apuntes_visibilidad_fix`—. Como la app envía `'private'`/`'friends'`/`'public'`, **el INSERT del plan fallaba SIEMPRE al pulsar Guardar en el lienzo**. La migración normaliza los datos existentes y deja el CHECK canónico `('private','friends','public')` con `DEFAULT 'private'`.
 
 **Nota:** Los `horarios_academicos` se vinculan a un plan mediante `plan_estudio_id` (FK opcional) y usan el campo `prioridad` para ordenar bloques dentro del plan.
 
@@ -1826,9 +1869,9 @@ ALTER TABLE horarios_academicos
 ```sql
 CREATE POLICY planes_estudio_select ON planes_estudio
   FOR SELECT USING (
-    visibilidad = 'publico'
+    visibilidad = 'public'
     OR usuario_id = auth.uid()
-    OR (visibilidad = 'solo_amigos' AND EXISTS(
+    OR (visibilidad = 'friends' AND EXISTS(
       SELECT 1 FROM amistades
       WHERE ((solicitante_id = auth.uid() AND receptor_id = usuario_id)
          OR (receptor_id = auth.uid() AND solicitante_id = usuario_id))
@@ -2369,6 +2412,36 @@ class IntentoPreguntaDb {
 
 ---
 
+### 2.11.13 TEST_SESSIONS (sesiones de práctica persistentes)
+
+```sql
+CREATE TABLE test_sessions (
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id        UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    material_id       UUID NOT NULL REFERENCES materiales_estudio(id) ON DELETE CASCADE,
+    preguntas_ids     JSONB NOT NULL,
+    respuestas        JSONB DEFAULT '{}'::jsonb,
+    resultados        JSONB DEFAULT '{}'::jsonb,
+    indice_actual     INT DEFAULT 0,
+    status            VARCHAR NOT NULL DEFAULT 'in_progress'
+        CHECK (status IN ('in_progress', 'completed', 'abandoned')),
+    score             NUMERIC(5,2) DEFAULT 0,
+    total_preguntas   INT NOT NULL DEFAULT 0,
+    iniciado_en       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    completado_en     TIMESTAMPTZ,
+    xp_otorgado       INT DEFAULT 0
+);
+
+CREATE INDEX idx_test_sessions_usuario_material
+    ON test_sessions(usuario_id, material_id);
+```
+
+**Propósito:** Permite al usuario iniciar una práctica, salir y reanudarla después sin perder el progreso. Almacena el subconjunto de preguntas del banco como JSONB, las respuestas, los resultados y el índice actual. Usada por `PracticaScreen` con parámetro `sessionId` y `modoRevision`.
+
+**RLS:** Dueño gestiona sus sesiones (FOR ALL). Admin ve todas (SELECT).
+
+---
+
 ### 2.12 ACTIVIDADES SOCIALES (actividad social)
 
 ```sql
@@ -2782,7 +2855,7 @@ DECLARE
   v_cantidad_hitos INT;
   v_progreso DOUBLE PRECISION;
 BEGIN
-  -- Si es reto simple
+  -- Si el reto no tiene hitos
   IF NOT EXISTS(SELECT 1 FROM hitos_de_reto WHERE reto_id = p_reto_id) THEN
     RETURN COALESCE((
       SELECT SUM(cantidad_completada) 
@@ -2791,7 +2864,7 @@ BEGIN
     ), 0);
   END IF;
   
-  -- Si es reto complejo: ponderado por pesos
+  -- Si tiene hitos: ponderado por pesos
   RETURN COALESCE((
     SELECT SUM(
       (cm.porcentaje_peso / 100) * (
@@ -3307,6 +3380,29 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ---
 
+### 2.19 CONFIGURACION_GLOBAL (configuración del sistema)
+
+```sql
+CREATE TABLE configuracion_global (
+    id                        INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    lockdown_activo           BOOLEAN NOT NULL DEFAULT false,
+    lockdown_iniciado_en      TIMESTAMPTZ,
+    lockdown_iniciado_por     UUID REFERENCES usuarios(id)
+);
+
+-- Función helper
+CREATE OR REPLACE FUNCTION lockdown_activo()
+RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
+  SELECT COALESCE((SELECT lockdown_activo FROM configuracion_global WHERE id = 1), false);
+$$;
+```
+
+**Propósito:** Tabla de una sola fila (CHECK id=1) que controla el estado global del sistema. Cuando `lockdown_activo` es true, se bloquean las interacciones sociales y nuevas cuentas se crean automáticamente como shadowbaneadas vía trigger.
+
+**Trigger asociado:** `trg_lockdown_shadowban_nuevo` shadowbanea automáticamente a nuevos usuarios creados durante un lockdown activo.
+
+---
+
 ## 7. Próximas Fases
 
 - [ ] Particionamiento de sesiones_registradas por usuario (optimizar consultas grandes)
@@ -3319,9 +3415,9 @@ Estado actual: pipeline de ingesta batch activo con 3 fuentes (Demic, ExerciseDB
 
 ---
 
-**Documento compilado:** 29-06-2026
-**Versión:** 6.0
-**Referencia:** RFC v5.1 - Motor de Recomendaciones, Pipeline Académico v5.0, Sprint 7 - Retos Complejos y Sincronización Offline, Migración 0004 - Consolidación de Correcciones, Fase 3 - Panel de Administración, Migración 0020 - valor_met (MET Compendio Adultos 2024), Migración 0021 - dualidad planificación vs ejecución real, Migraciones 0022-0024 - Sistema de Repaso Espaciado SM-2 con tests generados por IA, Migración 0025 - test_sessions, Migración 0026 - horarios_metadata (is_private, tipo_clase).
+**Documento compilado:** 13-07-2026
+**Versión:** 6.2
+**Referencia:** RFC v5.1 - Motor de Recomendaciones, Pipeline Académico v5.0, Sprint 7 - Retos Complejos y Sincronización Offline, Migración 0004 - Consolidación de Correcciones, Fase 3 - Panel de Administración, Migración 0020 - valor_met (MET Compendio Adultos 2024), Migración 0021 - dualidad planificación vs ejecución real, Migraciones 0022-0024 - Sistema de Repaso Espaciado SM-2 con tests generados por IA, Migración 0025 - test_sessions, Migración 0026 - horarios_metadata (is_private, tipo_clase), Migraciones 0027-0028 - Fórmulas Neurofisiológicas (★ v8.0), Migraciones 0029-0033 - Shadowban, Lockdown, GDPR (anonymize/export/fix).
 **Validador:** Tech Lead + DBA
 
 

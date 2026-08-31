@@ -175,9 +175,8 @@ Perfil NO es un tab. Es una ruta separada `/perfil`, accesible desde el avatar.
 
 | Término | Definición |
 |---------|-----------|
-| **Reto simple** | Objetivo con meta medible y fecha límite, sin subdivisiones. |
-| **Reto complejo** | Objetivo dividido en hitos secuenciales con pesos porcentuales. |
-| **Hito** | Subdivisión de un reto complejo con su propio progreso y fecha objetivo. |
+| **Reto** | Objetivo personal con meta medible, dificultad (baja/media/alta) y fecha límite. Puede crearse con o sin tareas. |
+| **Hito (tarea)** | Subdivisión opcional de un reto con su propio progreso, dificultad y peso porcentual. |
 | **RPE** | Rate of Perceived Exertion. Escala 1-10 de esfuerzo percibido. |
 | **Racha** | Días consecutivos completando al menos una acción (estudio, rutina o reto). |
 | **XP** | Puntos de experiencia obtenidos al completar acciones. |
@@ -200,7 +199,7 @@ Perfil NO es un tab. Es una ruta separada `/perfil`, accesible desde el avatar.
 | Variables Dart | camelCase | `currentStreak`, `routineId` |
 | Funciones Dart | camelCase | `calculateProgress()` |
 | Archivos Dart | snake_case | `routine_builder_screen.dart` |
-| Rutas API | kebab-case en español | `/plan-semanal/integrado` |
+| Rutas API | kebab-case en español | `/academico/planificar` |
 
 ### 7.2 Idioma
 

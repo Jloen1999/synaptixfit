@@ -3,30 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/design_system/sv_colors.dart';
+import '../../../core/design_system/sv_shapes.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/feature_scaffold.dart';
 import '../../academico/application/asignaturas_provider.dart';
-import '../../academico/application/entregas_examenes_provider.dart';
 import '../application/retos_provider.dart';
+import 'adjuntar_tarea_sheet.dart';
+import 'vincular_sheet.dart';
 
 // =============================================================================
-// Paleta y helpers (Flat / Clean UI sobre fondo #1A1A2E)
+// Paleta local (CLEAN UI · Flat Design sobre el sistema de diseño SV)
 // =============================================================================
-const _kFondo = Color(0xFF1A1A2E);
-const _kCampo = Color(0x14FFFFFF); // blanco 8%
-const _kTexto = Colors.white;
-const _kTextoTenue = Color(0xB3FFFFFF); // blanco 70%
-
-const _difLabels = {'baja': 'Baja', 'media': 'Media', 'alta': 'Alta'};
 Color _difColor(String d) => switch (d) {
       'baja' => const Color(0xFF10B981),
       'alta' => const Color(0xFFEF4444),
       _ => const Color(0xFFF59E0B),
-    };
-String _difCiclo(String d) => switch (d) {
-      'baja' => 'media',
-      'media' => 'alta',
-      _ => 'baja',
     };
 
 const _paletaAsig = [
@@ -41,17 +33,42 @@ const _paletaAsig = [
 Color _colorAsignatura(String key) =>
     _paletaAsig[key.hashCode.abs() % _paletaAsig.length];
 
-/// Pantalla de creación de retos con tareas (flujo Complejo).
+const _sombraSuave = [
+  BoxShadow(
+    color: Color(0x0F000000),
+    blurRadius: 14,
+    offset: Offset(0, 4),
+  ),
+];
+
+/// Pantalla unificada de creación de retos.
+///
+/// Un único flujo para todos los retos: las tareas son opcionales. Si el
+/// usuario añade tareas se persisten como hitos (`hitos_de_reto`); si no,
+/// el reto se crea sin hitos. El usuario nunca ve la distinción simple/complejo.
 class CrearRetoScreen extends ConsumerStatefulWidget {
-  const CrearRetoScreen({this.prefilledSubjectId, super.key});
+  const CrearRetoScreen({
+    this.prefilledSubjectId,
+    this.prefilledSubjectName,
+    this.prefilledTitle,
+    this.asignaturaFija = false,
+    super.key,
+  });
 
   final String? prefilledSubjectId;
+  final String? prefilledSubjectName;
+  final String? prefilledTitle;
+
+  /// Si `true`, la asignatura pre-rellenada no se puede cambiar.
+  final bool asignaturaFija;
 
   @override
   ConsumerState<CrearRetoScreen> createState() => _CrearRetoScreenState();
 }
 
 class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
+  static const _maxTareas = 12;
+
   final _tituloCtrl = TextEditingController();
   String _dificultad = 'media';
   String? _asignaturaId;
@@ -65,27 +82,32 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
   DateTime _fechaFin = DateTime.now().add(const Duration(days: 7));
   bool _guardando = false;
 
-  final List<_TareaDraft> _tareas = [
-    _TareaDraft(titulo: ''),
-    _TareaDraft(titulo: ''),
-  ];
+  final List<_TareaDraft> _tareas = [];
+
+  bool get _tituloValido => _tituloCtrl.text.trim().length >= 5;
 
   @override
   void initState() {
     super.initState();
+    if (widget.prefilledTitle != null) {
+      _tituloCtrl.text = widget.prefilledTitle!;
+    }
     if (widget.prefilledSubjectId != null) {
       _asignaturaId = widget.prefilledSubjectId;
-      _asignaturaFija = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final asignaturas =
-            ref.read(asignaturasActivasProvider).valueOrNull ?? [];
-        final match = asignaturas
-            .where((a) => a.id == widget.prefilledSubjectId)
-            .firstOrNull;
-        if (match != null && mounted) {
-          setState(() => _asignaturaNombre = match.nombre);
-        }
-      });
+      _asignaturaNombre = widget.prefilledSubjectName;
+      _asignaturaFija = widget.asignaturaFija;
+      if (_asignaturaNombre == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final asignaturas =
+              ref.read(asignaturasActivasProvider).valueOrNull ?? [];
+          final match = asignaturas
+              .where((a) => a.id == widget.prefilledSubjectId)
+              .firstOrNull;
+          if (match != null && mounted) {
+            setState(() => _asignaturaNombre = match.nombre);
+          }
+        });
+      }
     }
   }
 
@@ -102,56 +124,69 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
   // Acciones
   // ---------------------------------------------------------------------------
   void _agregarTarea() {
-    if (_tareas.length >= 12) return;
-    setState(() => _tareas.add(_TareaDraft(titulo: '')));
+    if (_tareas.length >= _maxTareas) return;
+    setState(() => _tareas.add(_TareaDraft()));
+    _enfocarUltimaTarea();
+  }
+
+  void _enfocarUltimaTarea() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final last = _tareas.isNotEmpty ? _tareas.last : null;
+      last?.focusNode.requestFocus();
+    });
   }
 
   void _eliminarTarea(int index) {
-    if (_tareas.length <= 1) return;
     setState(() {
-      _tareas[index].controller.dispose();
+      _tareas[index].dispose();
       _tareas.removeAt(index);
     });
   }
 
-  Future<(String, String)?> _pickAsignatura() async {
-    final asignaturas =
-        ref.read(asignaturasActivasProvider).valueOrNull ?? const [];
-    return showModalBottomSheet<(String, String)?>(
-      context: context,
-      backgroundColor: _kFondo,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          children: [
-            ListTile(
-              leading: const Icon(Icons.block, size: 20, color: _kTextoTenue),
-              title: const Text('Sin asignatura',
-                  style: TextStyle(color: _kTexto)),
-              onTap: () => Navigator.pop(ctx, ('', '')),
-            ),
-            if (asignaturas.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No tienes asignaturas activas.',
-                    style: TextStyle(color: _kTextoTenue)),
-              )
-            else
-              ...asignaturas.map((AsignaturaDb a) => ListTile(
-                    leading: Icon(Icons.label_outline,
-                        size: 20, color: _colorAsignatura(a.id)),
-                    title:
-                        Text(a.nombre, style: const TextStyle(color: _kTexto)),
-                    onTap: () => Navigator.pop(ctx, (a.id, a.nombre)),
-                  )),
-          ],
-        ),
-      ),
+  void _ciclarDificultadTarea(int index) {
+    setState(() {
+      final t = _tareas[index];
+      t.dificultad = switch (t.dificultad) {
+        'baja' => 'media',
+        'media' => 'alta',
+        _ => 'baja',
+      };
+    });
+  }
+
+  Future<void> _adjuntarTarea(int index) async {
+    final tarea = _tareas[index];
+    // Asignatura efectiva: la propia de la tarea o, si no, la del reto.
+    final asignaturaEfectiva = tarea.asignaturaId ?? _asignaturaId;
+    final res = await mostrarAdjuntarTareaSheet(
+      context,
+      asignaturaId: asignaturaEfectiva,
     );
+    if (res == null || !mounted) return;
+    setState(() {
+      final t = _tareas[index];
+      if (res.apunteId != null) {
+        t.apunteId = res.apunteId;
+        t.apunteTitulo = res.titulo;
+        t.archivoId = null;
+        t.archivoNombre = null;
+      } else if (res.archivoId != null) {
+        t.archivoId = res.archivoId;
+        t.archivoNombre = res.titulo;
+        t.apunteId = null;
+        t.apunteTitulo = null;
+      }
+    });
+  }
+
+  void _quitarAdjuntoTarea(int index) {
+    setState(() {
+      _tareas[index]
+        ..apunteId = null
+        ..apunteTitulo = null
+        ..archivoId = null
+        ..archivoNombre = null;
+    });
   }
 
   Future<void> _seleccionarAsignaturaReto() async {
@@ -172,14 +207,16 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
     });
   }
 
-  Future<void> _seleccionarEntidad() async {
-    final entregas = ref.read(entregasPendientesProvider).valueOrNull ??
-        const <EntregaExamenDb>[];
-    final result = await showModalBottomSheet<EntregaExamenDb?>(
+  Future<(String, String)?> _pickAsignatura() async {
+    // Esperamos a que el provider resuelva: antes, el primer clic mostraba
+    // la lista vacía porque el future aún no había cargado.
+    final asignaturas = await ref.read(asignaturasActivasProvider.future);
+    if (!mounted) return null;
+    return showModalBottomSheet<(String, String)?>(
       context: context,
-      backgroundColor: _kFondo,
+      backgroundColor: SVColors.surfaceContainerLowest,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => SafeArea(
         child: ListView(
@@ -187,54 +224,61 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
             const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text('Vincular a examen o entrega',
-                  style:
-                      TextStyle(color: _kTexto, fontWeight: FontWeight.w700)),
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 8),
+              child: Text('Elegir asignatura',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: SVColors.onSurface)),
             ),
             ListTile(
-              leading: const Icon(Icons.link_off_rounded,
-                  size: 20, color: _kTextoTenue),
-              title:
-                  const Text('Sin vincular', style: TextStyle(color: _kTexto)),
-              onTap: () => Navigator.pop(ctx, null),
+              leading: const Icon(Icons.block,
+                  size: 20, color: SVColors.onSurfaceMuted),
+              title: const Text('Sin asignatura'),
+              onTap: () => Navigator.pop(ctx, ('', '')),
             ),
-            if (entregas.isEmpty)
+            if (asignaturas.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('No tienes exámenes ni entregas pendientes.',
-                    style: TextStyle(color: _kTextoTenue)),
+                child: Text('No tienes asignaturas activas.',
+                    style: TextStyle(color: SVColors.onSurfaceMuted)),
               )
             else
-              ...entregas.map((e) => ListTile(
-                    leading: Icon(
-                        e.tipo == 'examen'
-                            ? Icons.quiz_outlined
-                            : Icons.assignment_outlined,
-                        size: 20,
-                        color: const Color(0xFF06B6D4)),
-                    title:
-                        Text(e.titulo, style: const TextStyle(color: _kTexto)),
-                    subtitle: Text(
-                      '${e.tipo == 'examen' ? 'Examen' : 'Entrega'} · ${e.fechaLimite.day}/${e.fechaLimite.month}',
-                      style: const TextStyle(color: _kTextoTenue, fontSize: 11),
+              ...asignaturas.map((AsignaturaDb a) => ListTile(
+                    leading: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: _colorAsignatura(a.id).withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.label_outline,
+                          size: 12, color: _colorAsignatura(a.id)),
                     ),
-                    onTap: () => Navigator.pop(ctx, e),
+                    title: Text(a.nombre),
+                    onTap: () => Navigator.pop(ctx, (a.id, a.nombre)),
                   )),
           ],
         ),
       ),
     );
-    if (!mounted) return;
+  }
+
+  Future<void> _seleccionarEntidad() async {
+    final vinculo = await mostrarVincularSheet(
+      context,
+      asignaturaId: _asignaturaId,
+    );
+    if (vinculo == null || !mounted) return;
     setState(() {
-      if (result == null) {
+      if (vinculo.esVacio) {
         _entidadVincId = null;
         _entidadVincTipo = null;
         _entidadVincTitulo = null;
       } else {
-        _entidadVincId = result.id;
-        _entidadVincTipo = result.tipo == 'examen' ? 'examen' : 'entrega';
-        _entidadVincTitulo = result.titulo;
+        _entidadVincId = vinculo.id;
+        _entidadVincTipo = vinculo.tipo;
+        _entidadVincTitulo = vinculo.titulo;
       }
     });
   }
@@ -248,6 +292,7 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
       initialDate: base.isBefore(min) ? min : base,
       firstDate: min,
       lastDate: DateTime(2100),
+      helpText: inicio ? 'Fecha de inicio' : 'Fecha de fin',
     );
     if (sel == null || !mounted) return;
     setState(() {
@@ -262,17 +307,25 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Persistencia (mapeo directo a `retos` + `hitos_de_reto`)
+  // ---------------------------------------------------------------------------
   Future<void> _crearReto() async {
     if (_guardando) return;
+
     final titulo = _tituloCtrl.text.trim();
     if (titulo.length < 5) {
       _aviso('El título debe tener al menos 5 caracteres.');
       return;
     }
-    final tareasValidas = _tareas.where((t) => t.titulo.length >= 3).toList();
-    if (tareasValidas.isEmpty) {
-      _aviso('Añade al menos una tarea (mínimo 3 caracteres).');
-      return;
+
+    // Solo cuentan las tareas con texto; el resto se descarta.
+    final tareasValidas = _tareas.where((t) => t.titulo.isNotEmpty).toList();
+    for (final t in tareasValidas) {
+      if (t.titulo.length < 3) {
+        _aviso('Cada tarea debe tener al menos 3 caracteres.');
+        return;
+      }
     }
     if (!_fechaFin.isAfter(_fechaInicio)) {
       _aviso('La fecha de fin debe ser posterior al inicio.');
@@ -305,24 +358,29 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
           .single();
       final retoId = retoMap['id'] as String;
 
-      final peso = 100.0 / tareasValidas.length;
-      final hitos = <Map<String, dynamic>>[];
-      for (var i = 0; i < tareasValidas.length; i++) {
-        final t = tareasValidas[i];
-        // Herencia: si la tarea no tiene asignatura, hereda la del reto.
-        final asigId = t.asignaturaId ?? _asignaturaId;
-        hitos.add({
-          'reto_id': retoId,
-          'titulo': t.titulo,
-          'porcentaje_peso': double.parse(peso.toStringAsFixed(2)),
-          'indice_orden': i + 1,
-          'progreso_actual': 0,
-          'esta_completado': false,
-          'dificultad': t.dificultad,
-          if (asigId != null) 'asignatura_id': asigId,
-        });
+      // Si el usuario añadió tareas → hitos con peso uniforme.
+      if (tareasValidas.isNotEmpty) {
+        final peso = 100.0 / tareasValidas.length;
+        final hitos = <Map<String, dynamic>>[];
+        for (var i = 0; i < tareasValidas.length; i++) {
+          final t = tareasValidas[i];
+          // Herencia: si la tarea no tiene asignatura, hereda la del reto.
+          final asigId = t.asignaturaId ?? _asignaturaId;
+          hitos.add({
+            'reto_id': retoId,
+            'titulo': t.titulo,
+            'porcentaje_peso': double.parse(peso.toStringAsFixed(2)),
+            'indice_orden': i + 1,
+            'progreso_actual': 0,
+            'esta_completado': false,
+            'dificultad': t.dificultad,
+            if (asigId != null) 'asignatura_id': asigId,
+            if (t.apunteId != null) 'apunte_id': t.apunteId,
+            if (t.archivoId != null) 'archivo_id': t.archivoId,
+          });
+        }
+        await client.from('hitos_de_reto').insert(hitos);
       }
-      await client.from('hitos_de_reto').insert(hitos);
 
       ref.invalidate(retosProvider);
       ref.invalidate(todosRetosProvider);
@@ -340,7 +398,9 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
   }
 
   void _aviso(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(msg)));
   }
 
   // ---------------------------------------------------------------------------
@@ -349,115 +409,197 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
   @override
   Widget build(BuildContext context) {
     return FeatureScaffold(
-      title: 'Reto con tareas',
+      title: 'Nuevo reto',
       backPath: '/retos',
-      child: ColoredBox(
-        color: _kFondo,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          children: [
-            // Título del reto (campo plano)
-            TextField(
-              controller: _tituloCtrl,
-              textCapitalization: TextCapitalization.sentences,
-              maxLength: 80,
-              style: const TextStyle(
-                  color: _kTexto, fontSize: 20, fontWeight: FontWeight.w700),
-              cursorColor: Colors.white,
-              decoration: const InputDecoration(
-                hintText: 'Nombre del reto…',
-                hintStyle: TextStyle(color: Color(0x66FFFFFF), fontSize: 20),
-                border: InputBorder.none,
-                counterStyle: TextStyle(color: _kTextoTenue),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Asignatura del reto + Dificultad
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               children: [
-                _ChipPlano(
-                  icon: Icons.label_outline,
-                  label: _asignaturaNombre ?? 'Asignatura',
-                  color: _asignaturaId != null
-                      ? _colorAsignatura(_asignaturaId!)
-                      : null,
-                  activo: _asignaturaId != null,
-                  bloqueado: _asignaturaFija,
-                  onTap: _asignaturaFija ? null : _seleccionarAsignaturaReto,
-                ),
-                _ChipDificultad(
-                  dificultad: _dificultad,
-                  onTap: () =>
-                      setState(() => _dificultad = _difCiclo(_dificultad)),
-                ),
-                _ChipPlano(
-                  icon: Icons.link_rounded,
-                  label: _entidadVincTitulo ?? 'Vincular',
-                  color: const Color(0xFF06B6D4),
-                  activo: _entidadVincId != null,
-                  onTap: _seleccionarEntidad,
-                ),
+                _buildTituloCard(),
+                const SizedBox(height: 20),
+                const _SectionHeader(
+                    icon: Icons.tune_rounded, label: 'Detalles'),
+                const SizedBox(height: 8),
+                _buildDetallesCard(),
+                const SizedBox(height: 20),
+                const _SectionHeader(
+                    icon: Icons.event_rounded, label: 'Fechas'),
+                const SizedBox(height: 8),
+                _buildFechasCard(),
+                const SizedBox(height: 20),
+                const _SectionHeader(
+                    icon: Icons.visibility_outlined, label: 'Visibilidad'),
+                const SizedBox(height: 8),
+                _buildVisibilidadCard(),
+                const SizedBox(height: 20),
+                const _SectionHeader(
+                    icon: Icons.checklist_rounded,
+                    label: 'Tareas',
+                    trailing: 'Opcional'),
+                const SizedBox(height: 8),
+                _buildTareasCard(),
               ],
             ),
-            const SizedBox(height: 16),
+          ),
+          _BarraCrear(
+            habilitado: _tituloValido && !_guardando,
+            guardando: _guardando,
+            onCrear: _crearReto,
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Fechas (planas)
-            Row(
-              children: [
-                Expanded(
-                  child: _BotonFecha(
-                    label: 'Inicio',
-                    fecha: _fechaInicio,
-                    onTap: () => _seleccionarFecha(inicio: true),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _BotonFecha(
-                    label: 'Fin',
-                    fecha: _fechaFin,
-                    onTap: () => _seleccionarFecha(inicio: false),
-                  ),
-                ),
-              ],
+  // ---------------------------------------------------------------------------
+  // Secciones
+  // ---------------------------------------------------------------------------
+  Widget _buildTituloCard() {
+    return _Card(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+      child: TextField(
+        controller: _tituloCtrl,
+        textCapitalization: TextCapitalization.sentences,
+        maxLength: 80,
+        style: const TextStyle(
+          color: SVColors.onSurface,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          height: 1.3,
+        ),
+        cursorColor: SVColors.secondary,
+        onChanged: (_) => setState(() {}),
+        decoration: const InputDecoration(
+          hintText: '¿Qué quieres conseguir?',
+          hintStyle: TextStyle(color: SVColors.onSurfaceMuted, fontSize: 18),
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          counterStyle: TextStyle(color: SVColors.onSurfaceMuted, fontSize: 11),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetallesCard() {
+    return _Card(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Column(
+        children: [
+          _OpcionFila(
+            icon: Icons.label_outline,
+            label: 'Asignatura',
+            child: _ChipOpcion(
+              icon: Icons.label_outline,
+              label: _asignaturaNombre ?? 'Sin asignatura',
+              color: _asignaturaId != null
+                  ? _colorAsignatura(_asignaturaId!)
+                  : null,
+              activo: _asignaturaId != null,
+              bloqueado: _asignaturaFija,
+              onTap: _asignaturaFija ? null : _seleccionarAsignaturaReto,
             ),
-            const SizedBox(height: 16),
-
-            // Visibilidad (chips planos)
-            Wrap(
-              spacing: 8,
-              children: [
-                _ChipVisibilidad(
-                  label: 'Privado',
-                  icon: Icons.lock_outline,
-                  sel: _visibilidad == 'private',
-                  onTap: () => setState(() => _visibilidad = 'private'),
-                ),
-                _ChipVisibilidad(
-                  label: 'Amigos',
-                  icon: Icons.group_outlined,
-                  sel: _visibilidad == 'friends',
-                  onTap: () => setState(() => _visibilidad = 'friends'),
-                ),
-                _ChipVisibilidad(
-                  label: 'Público',
-                  icon: Icons.public,
-                  sel: _visibilidad == 'public',
-                  onTap: () => setState(() => _visibilidad = 'public'),
-                ),
-              ],
+          ),
+          const Divider(height: 1),
+          _OpcionFila(
+            icon: Icons.local_fire_department_rounded,
+            label: 'Esfuerzo',
+            child: _EsfuerzoSelector(
+              dificultad: _dificultad,
+              onSeleccion: (d) => setState(() => _dificultad = d),
             ),
-            const SizedBox(height: 22),
+          ),
+          const Divider(height: 1),
+          _OpcionFila(
+            icon: Icons.link_rounded,
+            label: 'Vincular',
+            child: _ChipOpcion(
+              icon: Icons.link_rounded,
+              label: _entidadVincTitulo ?? 'Examen o entrega',
+              color: const Color(0xFF06B6D4),
+              activo: _entidadVincId != null,
+              onTap: _seleccionarEntidad,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            const Text('Tareas',
-                style: TextStyle(
-                    color: _kTexto, fontSize: 15, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 10),
+  Widget _buildFechasCard() {
+    return _Card(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Expanded(
+            child: _BotonFecha(
+              icon: Icons.play_circle_outline,
+              label: 'Inicio',
+              fecha: _fechaInicio,
+              onTap: () => _seleccionarFecha(inicio: true),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(Icons.arrow_forward_rounded,
+                size: 16, color: SVColors.onSurfaceMuted),
+          ),
+          Expanded(
+            child: _BotonFecha(
+              icon: Icons.flag_outlined,
+              label: 'Fin',
+              fecha: _fechaFin,
+              onTap: () => _seleccionarFecha(inicio: false),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Lista de tareas (filas planas)
+  Widget _buildVisibilidadCard() {
+    return _Card(
+      padding: const EdgeInsets.all(6),
+      child: Row(
+        children: [
+          _OpcionVisibilidad(
+            icon: Icons.lock_outline,
+            label: 'Privado',
+            sel: _visibilidad == 'private',
+            onTap: () => setState(() => _visibilidad = 'private'),
+          ),
+          _OpcionVisibilidad(
+            icon: Icons.group_outlined,
+            label: 'Amigos',
+            sel: _visibilidad == 'friends',
+            onTap: () => setState(() => _visibilidad = 'friends'),
+          ),
+          _OpcionVisibilidad(
+            icon: Icons.public_rounded,
+            label: 'Público',
+            sel: _visibilidad == 'public',
+            onTap: () => setState(() => _visibilidad = 'public'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTareasCard() {
+    return _Card(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_tareas.isEmpty)
+            _TareasVacio(
+              onAgregar: _agregarTarea,
+            )
+          else
             ..._tareas.asMap().entries.map((entry) {
               final i = entry.key;
               final t = entry.value;
@@ -468,50 +610,24 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
                 asignaturaRetoNombre: _asignaturaNombre,
                 asignaturaRetoId: _asignaturaId,
                 onChanged: () => setState(() {}),
-                onDificultad: () =>
-                    setState(() => t.dificultad = _difCiclo(t.dificultad)),
+                onDificultad: () => _ciclarDificultadTarea(i),
                 onAsignatura: () => _seleccionarAsignaturaTarea(i),
-                onEliminar: _tareas.length > 1 ? () => _eliminarTarea(i) : null,
+                onAdjuntar: () => _adjuntarTarea(i),
+                onQuitarAdjunto: () => _quitarAdjuntoTarea(i),
+                onEliminar: () => _eliminarTarea(i),
               );
             }),
-
-            // Botón "Añadir tarea" plano, siempre al final
-            const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _agregarTarea,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Añadir tarea'),
-                style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF72FE8F),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _guardando ? null : _crearReto,
-                icon: _guardando
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.flag_rounded),
-                label: Text(_guardando ? 'Creando…' : 'Crear reto'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF006E2D),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(50),
-                ),
-              ),
+          if (_tareas.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _BotonAgregarTarea(
+              texto: _tareas.length >= _maxTareas
+                  ? 'Máximo $_maxTareas tareas'
+                  : 'Añadir tarea',
+              habilitado: _tareas.length < _maxTareas,
+              onTap: _agregarTarea,
             ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -521,134 +637,199 @@ class _CrearRetoScreenState extends ConsumerState<CrearRetoScreen> {
 // Modelo de borrador de tarea
 // =============================================================================
 class _TareaDraft {
-  _TareaDraft({required String titulo})
+  _TareaDraft()
       : key = UniqueKey(),
-        controller = TextEditingController(text: titulo);
+        controller = TextEditingController(),
+        focusNode = FocusNode();
 
   final UniqueKey key;
   final TextEditingController controller;
+  final FocusNode focusNode;
   String dificultad = 'media';
   String? asignaturaId;
   String? asignaturaNombre;
+  String? apunteId;
+  String? apunteTitulo;
+  String? archivoId;
+  String? archivoNombre;
 
   String get titulo => controller.text.trim();
+
+  bool get tieneAdjunto => apunteId != null || archivoId != null;
+
+  void dispose() {
+    controller.dispose();
+    focusNode.dispose();
+  }
 }
 
 // =============================================================================
-// Fila de tarea (flat, con micro-chip de asignatura y selector de dificultad)
+// Barra inferior de creación (fija, nunca tapada por el teclado)
 // =============================================================================
-class _TareaRow extends StatelessWidget {
-  const _TareaRow({
-    required this.index,
-    required this.tarea,
-    required this.asignaturaRetoNombre,
-    required this.asignaturaRetoId,
-    required this.onChanged,
-    required this.onDificultad,
-    required this.onAsignatura,
-    required this.onEliminar,
-    super.key,
+class _BarraCrear extends StatelessWidget {
+  const _BarraCrear({
+    required this.habilitado,
+    required this.guardando,
+    required this.onCrear,
   });
 
-  final int index;
-  final _TareaDraft tarea;
-  final String? asignaturaRetoNombre;
-  final String? asignaturaRetoId;
-  final VoidCallback onChanged;
-  final VoidCallback onDificultad;
-  final VoidCallback onAsignatura;
-  final VoidCallback? onEliminar;
+  final bool habilitado;
+  final bool guardando;
+  final VoidCallback onCrear;
 
   @override
   Widget build(BuildContext context) {
-    // Herencia visual: si la tarea no tiene asignatura propia, muestra la del
-    // reto (heredada). El id usado para el color sigue esa misma lógica.
-    final asigNombre = tarea.asignaturaNombre ?? asignaturaRetoNombre;
-    final asigIdColor = tarea.asignaturaId ?? asignaturaRetoId;
-    final heredada = tarea.asignaturaId == null && asignaturaRetoId != null;
-
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(12, 6, 6, 10),
-      decoration: BoxDecoration(
-        color: _kCampo,
-        borderRadius: BorderRadius.circular(12),
+      decoration: const BoxDecoration(
+        color: SVColors.surfaceContainerLowest,
+        border: Border(
+          top: BorderSide(color: SVColors.surfaceContainerHighest),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('${index + 1}.',
-                  style: const TextStyle(
-                      color: _kTextoTenue, fontWeight: FontWeight.w700)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: tarea.controller,
-                  style: const TextStyle(color: _kTexto, fontSize: 14),
-                  cursorColor: Colors.white,
-                  textCapitalization: TextCapitalization.sentences,
-                  maxLength: 80,
-                  onChanged: (_) => onChanged(),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    counterText: '',
-                    hintText: 'Describe la tarea…',
-                    hintStyle: TextStyle(color: Color(0x66FFFFFF)),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-              if (onEliminar != null)
-                IconButton(
-                  onPressed: onEliminar,
-                  icon: const Icon(Icons.close_rounded,
-                      size: 18, color: Color(0x99FFFFFF)),
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints(minWidth: 32, minHeight: 32),
-                ),
-            ],
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: SafeArea(
+        top: false,
+        child: FilledButton.icon(
+          onPressed: habilitado ? onCrear : null,
+          icon: guardando
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.flag_rounded, size: 20),
+          label: Text(
+            guardando ? 'Creando…' : 'Crear reto',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: 22, top: 2),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                _ChipDificultad(
-                    dificultad: tarea.dificultad, onTap: onDificultad),
-                if (asigNombre != null)
-                  _MicroChipAsignatura(
-                    nombre: asigNombre,
-                    colorKey: asigIdColor ?? asigNombre,
-                    heredada: heredada,
-                    onTap: onAsignatura,
-                  )
-                else
-                  _ChipPlano(
-                    icon: Icons.label_outline,
-                    label: 'Asignatura',
-                    activo: false,
-                    onTap: onAsignatura,
-                  ),
-              ],
-            ),
+          style: FilledButton.styleFrom(
+            backgroundColor: SVColors.secondary,
+            foregroundColor: SVColors.onSecondary,
+            disabledBackgroundColor: SVColors.surfaceContainerHighest,
+            disabledForegroundColor: SVColors.onSurfaceMuted,
+            minimumSize: const Size.fromHeight(52),
+            shape:
+                const RoundedRectangleBorder(borderRadius: SVShapes.standard12),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // =============================================================================
-// Componentes planos reutilizables
+// Componentes CLEAN UI
 // =============================================================================
-class _ChipPlano extends StatelessWidget {
-  const _ChipPlano({
+class _Card extends StatelessWidget {
+  const _Card({required this.child, this.padding = const EdgeInsets.all(14)});
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: const BoxDecoration(
+        color: SVColors.surfaceContainerLowest,
+        borderRadius: SVShapes.large16,
+        boxShadow: _sombraSuave,
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.icon,
+    required this.label,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: SVColors.secondary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: SVColors.onSurface,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const Spacer(),
+          if (trailing != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: const BoxDecoration(
+                color: SVColors.surfaceContainerLow,
+                borderRadius: SVShapes.pill,
+              ),
+              child: Text(
+                trailing!,
+                style: const TextStyle(
+                  color: SVColors.onSurfaceMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OpcionFila extends StatelessWidget {
+  const _OpcionFila({
+    required this.icon,
+    required this.label,
+    required this.child,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: SVColors.onSurfaceMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: SVColors.onSurface,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _ChipOpcion extends StatelessWidget {
+  const _ChipOpcion({
     required this.icon,
     required this.label,
     required this.activo,
@@ -666,35 +847,36 @@ class _ChipPlano extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? const Color(0xFF72FE8F);
-    final fg = activo ? c : _kTextoTenue;
+    final c = color ?? SVColors.secondary;
+    final fg = activo ? c : SVColors.onSurfaceMuted;
     return Material(
-      color: activo ? c.withValues(alpha: 0.15) : _kCampo,
-      borderRadius: BorderRadius.circular(20),
+      color: activo ? c.withValues(alpha: 0.12) : SVColors.surfaceContainerLow,
+      borderRadius: SVShapes.pill,
       child: InkWell(
         onTap: bloqueado ? null : onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: SVShapes.pill,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 150),
+          constraints: const BoxConstraints(maxWidth: 170),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(icon, size: 15, color: fg),
-                const SizedBox(width: 5),
+                const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        color: fg, fontWeight: FontWeight.w600, fontSize: 12),
+                        color: fg, fontWeight: FontWeight.w700, fontSize: 12),
                   ),
                 ),
                 if (bloqueado) ...[
                   const SizedBox(width: 4),
-                  const Icon(Icons.lock, size: 12, color: _kTextoTenue),
+                  const Icon(Icons.lock,
+                      size: 12, color: SVColors.onSurfaceMuted),
                 ],
               ],
             ),
@@ -705,32 +887,113 @@ class _ChipPlano extends StatelessWidget {
   }
 }
 
-class _ChipDificultad extends StatelessWidget {
-  const _ChipDificultad({required this.dificultad, required this.onTap});
+class _EsfuerzoSelector extends StatelessWidget {
+  const _EsfuerzoSelector({
+    required this.dificultad,
+    required this.onSeleccion,
+  });
 
   final String dificultad;
+  final ValueChanged<String> onSeleccion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final d in ['baja', 'media', 'alta']) ...[
+          _PildoraEsfuerzo(
+            dificultad: d,
+            seleccionada: dificultad == d,
+            onTap: () => onSeleccion(d),
+          ),
+          if (d != 'alta') const SizedBox(width: 6),
+        ],
+      ],
+    );
+  }
+}
+
+class _PildoraEsfuerzo extends StatelessWidget {
+  const _PildoraEsfuerzo({
+    required this.dificultad,
+    required this.seleccionada,
+    required this.onTap,
+  });
+
+  final String dificultad;
+  final bool seleccionada;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = _difColor(dificultad);
-    final xp = xpPorDificultad(dificultad);
     return Material(
-      color: c.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(20),
+      color: seleccionada
+          ? c.withValues(alpha: 0.14)
+          : SVColors.surfaceContainerLow,
+      borderRadius: SVShapes.pill,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: SVShapes.pill,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Text(
+            etiquetaEsfuerzo(dificultad),
+            style: TextStyle(
+              color: seleccionada ? c : SVColors.onSurfaceMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BotonFecha extends StatelessWidget {
+  const _BotonFecha({
+    required this.icon,
+    required this.label,
+    required this.fecha,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final DateTime fecha;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = fecha.day.toString().padLeft(2, '0');
+    final m = fecha.month.toString().padLeft(2, '0');
+    return Material(
+      color: SVColors.surfaceContainerLow,
+      borderRadius: SVShapes.standard12,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: SVShapes.standard12,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.local_fire_department_rounded, size: 15, color: c),
-              const SizedBox(width: 5),
-              Text('${_difLabels[dificultad]} · +$xp XP',
-                  style: TextStyle(
-                      color: c, fontSize: 12, fontWeight: FontWeight.w600)),
+              Icon(icon, size: 16, color: SVColors.secondary),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          color: SVColors.onSurfaceMuted, fontSize: 10)),
+                  Text('$d/$m/${fecha.year}',
+                      style: const TextStyle(
+                          color: SVColors.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700)),
+                ],
+              ),
             ],
           ),
         ),
@@ -739,8 +1002,325 @@ class _ChipDificultad extends StatelessWidget {
   }
 }
 
-class _MicroChipAsignatura extends StatelessWidget {
-  const _MicroChipAsignatura({
+class _OpcionVisibilidad extends StatelessWidget {
+  const _OpcionVisibilidad({
+    required this.icon,
+    required this.label,
+    required this.sel,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool sel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = sel ? SVColors.secondary : SVColors.onSurfaceMuted;
+    return Expanded(
+      child: Material(
+        color: sel
+            ? SVColors.secondary.withValues(alpha: 0.1)
+            : Colors.transparent,
+        borderRadius: SVShapes.standard12,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: SVShapes.standard12,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Column(
+              children: [
+                Icon(icon, size: 18, color: fg),
+                const SizedBox(height: 4),
+                Text(label,
+                    style: TextStyle(
+                        color: fg, fontSize: 11, fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TareasVacio extends StatelessWidget {
+  const _TareasVacio({required this.onAgregar});
+
+  final VoidCallback onAgregar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: SVColors.secondary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.checklist_rounded,
+              size: 22, color: SVColors.secondary),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          '¿Quieres dividirlo en pasos?',
+          style: TextStyle(
+            color: SVColors.onSurface,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Puedes crear el reto tal cual o añadir tareas para seguir tu progreso paso a paso.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: SVColors.onSurfaceMuted,
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _BotonAgregarTarea(texto: 'Añadir tarea', onTap: onAgregar),
+      ],
+    );
+  }
+}
+
+class _BotonAgregarTarea extends StatelessWidget {
+  const _BotonAgregarTarea({
+    required this.texto,
+    required this.onTap,
+    this.habilitado = true,
+  });
+
+  final String texto;
+  final VoidCallback onTap;
+  final bool habilitado;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Material(
+        color: habilitado
+            ? SVColors.secondary.withValues(alpha: 0.08)
+            : SVColors.surfaceContainerLow,
+        borderRadius: SVShapes.pill,
+        child: InkWell(
+          onTap: habilitado ? onTap : null,
+          borderRadius: SVShapes.pill,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.add_rounded,
+                  size: 16,
+                  color:
+                      habilitado ? SVColors.secondary : SVColors.onSurfaceMuted,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  texto,
+                  style: TextStyle(
+                    color: habilitado
+                        ? SVColors.secondary
+                        : SVColors.onSurfaceMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TareaRow extends StatelessWidget {
+  const _TareaRow({
+    required this.index,
+    required this.tarea,
+    required this.asignaturaRetoNombre,
+    required this.asignaturaRetoId,
+    required this.onChanged,
+    required this.onDificultad,
+    required this.onAsignatura,
+    required this.onAdjuntar,
+    required this.onQuitarAdjunto,
+    required this.onEliminar,
+    super.key,
+  });
+
+  final int index;
+  final _TareaDraft tarea;
+  final String? asignaturaRetoNombre;
+  final String? asignaturaRetoId;
+  final VoidCallback onChanged;
+  final VoidCallback onDificultad;
+  final VoidCallback onAsignatura;
+  final VoidCallback onAdjuntar;
+  final VoidCallback onQuitarAdjunto;
+  final VoidCallback onEliminar;
+
+  @override
+  Widget build(BuildContext context) {
+    // Herencia visual: si la tarea no tiene asignatura propia, muestra la del
+    // reto (heredada). El id usado para el color sigue esa misma lógica.
+    final asigNombre = tarea.asignaturaNombre ?? asignaturaRetoNombre;
+    final asigIdColor = tarea.asignaturaId ?? asignaturaRetoId;
+    final heredada = tarea.asignaturaId == null && asignaturaRetoId != null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(12, 4, 6, 10),
+      decoration: const BoxDecoration(
+        color: SVColors.surfaceContainerLow,
+        borderRadius: SVShapes.standard12,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: SVColors.secondary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(
+                    color: SVColors.secondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: tarea.controller,
+                  focusNode: tarea.focusNode,
+                  style: const TextStyle(
+                      color: SVColors.onSurface,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600),
+                  cursorColor: SVColors.secondary,
+                  textCapitalization: TextCapitalization.sentences,
+                  maxLength: 80,
+                  onChanged: (_) => onChanged(),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    filled: false,
+                    counterText: '',
+                    hintText: 'Describe la tarea…',
+                    hintStyle: TextStyle(color: SVColors.onSurfaceMuted),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: onAdjuntar,
+                icon: Icon(Icons.attach_file_rounded,
+                    size: 18,
+                    color: tarea.tieneAdjunto
+                        ? SVColors.secondary
+                        : SVColors.onSurfaceMuted),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Adjuntar apunte o archivo',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
+              IconButton(
+                onPressed: onEliminar,
+                icon: const Icon(Icons.close_rounded,
+                    size: 18, color: SVColors.onSurfaceMuted),
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 34, top: 2),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _MiniChipDificultad(
+                  dificultad: tarea.dificultad,
+                  onTap: onDificultad,
+                ),
+                if (asigNombre != null)
+                  _MiniChipAsignatura(
+                    nombre: asigNombre,
+                    colorKey: asigIdColor ?? asigNombre,
+                    heredada: heredada,
+                    onTap: onAsignatura,
+                  )
+                else
+                  _MiniChipEtiqueta(
+                    icon: Icons.label_outline,
+                    label: 'Asignatura',
+                    onTap: onAsignatura,
+                  ),
+                if (tarea.tieneAdjunto)
+                  _ChipAdjunto(
+                    esApunte: tarea.apunteId != null,
+                    nombre:
+                        tarea.apunteTitulo ?? tarea.archivoNombre ?? 'Adjunto',
+                    onQuitar: onQuitarAdjunto,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniChipDificultad extends StatelessWidget {
+  const _MiniChipDificultad({required this.dificultad, required this.onTap});
+
+  final String dificultad;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _difColor(dificultad);
+    return _MiniChipBase(
+      color: c,
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.local_fire_department_rounded, size: 13, color: c),
+          const SizedBox(width: 4),
+          Text(etiquetaEsfuerzo(dificultad),
+              style: TextStyle(
+                  color: c, fontSize: 11, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniChipAsignatura extends StatelessWidget {
+  const _MiniChipAsignatura({
     required this.nombre,
     required this.colorKey,
     required this.heredada,
@@ -755,121 +1335,136 @@ class _MicroChipAsignatura extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = _colorAsignatura(colorKey);
-    return Material(
-      color: c.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 160),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(heredada ? Icons.subdirectory_arrow_right : Icons.label,
-                    size: 13, color: c),
-                const SizedBox(width: 5),
-                Flexible(
-                  child: Text(nombre,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: c, fontSize: 11, fontWeight: FontWeight.w700)),
-                ),
-              ],
-            ),
+    return _MiniChipBase(
+      color: c,
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(heredada ? Icons.subdirectory_arrow_right : Icons.label_outline,
+              size: 13, color: c),
+          const SizedBox(width: 4),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 140),
+            child: Text(nombre,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    color: c, fontSize: 11, fontWeight: FontWeight.w700)),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _ChipVisibilidad extends StatelessWidget {
-  const _ChipVisibilidad({
-    required this.label,
+class _MiniChipEtiqueta extends StatelessWidget {
+  const _MiniChipEtiqueta({
     required this.icon,
-    required this.sel,
+    required this.label,
     required this.onTap,
   });
 
-  final String label;
   final IconData icon;
-  final bool sel;
+  final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    const accent = Color(0xFF72FE8F);
-    final fg = sel ? accent : _kTextoTenue;
+    return _MiniChipBase(
+      color: SVColors.onSurfaceMuted,
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: SVColors.onSurfaceMuted),
+          const SizedBox(width: 4),
+          Text(label,
+              style: const TextStyle(
+                  color: SVColors.onSurfaceMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniChipBase extends StatelessWidget {
+  const _MiniChipBase({
+    required this.color,
+    required this.child,
+    required this.onTap,
+  });
+
+  final Color color;
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return Material(
-      color: sel ? accent.withValues(alpha: 0.15) : _kCampo,
-      borderRadius: BorderRadius.circular(20),
+      color: color.withValues(alpha: 0.12),
+      borderRadius: SVShapes.pill,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: SVShapes.pill,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 15, color: fg),
-              const SizedBox(width: 5),
-              Text(label,
-                  style: TextStyle(
-                      color: fg, fontSize: 12, fontWeight: FontWeight.w600)),
-            ],
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: child,
         ),
       ),
     );
   }
 }
 
-class _BotonFecha extends StatelessWidget {
-  const _BotonFecha({
-    required this.label,
-    required this.fecha,
-    required this.onTap,
+/// Chip del adjunto académico de una tarea (apunte o archivo) con quitar.
+class _ChipAdjunto extends StatelessWidget {
+  const _ChipAdjunto({
+    required this.esApunte,
+    required this.nombre,
+    required this.onQuitar,
   });
 
-  final String label;
-  final DateTime fecha;
-  final VoidCallback onTap;
+  final bool esApunte;
+  final String nombre;
+  final VoidCallback onQuitar;
 
   @override
   Widget build(BuildContext context) {
-    final d = fecha.day.toString().padLeft(2, '0');
-    final m = fecha.month.toString().padLeft(2, '0');
+    final c = esApunte ? const Color(0xFF3B82F6) : const Color(0xFF7C4DFF);
+    final icon =
+        esApunte ? Icons.description_outlined : Icons.attach_file_rounded;
     return Material(
-      color: _kCampo,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              const Icon(Icons.event_outlined, size: 16, color: _kTextoTenue),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style:
-                          const TextStyle(color: _kTextoTenue, fontSize: 10)),
-                  Text('$d/$m/${fecha.year}',
-                      style: const TextStyle(
-                          color: _kTexto,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600)),
-                ],
+      color: c.withValues(alpha: 0.1),
+      borderRadius: SVShapes.pill,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 10, right: 2, top: 3, bottom: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: c),
+            const SizedBox(width: 4),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 130),
+              child: Text(
+                esApunte ? 'Apunte · $nombre' : 'Archivo · $nombre',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    color: c, fontSize: 11, fontWeight: FontWeight.w700),
               ),
-            ],
-          ),
+            ),
+            InkWell(
+              onTap: onQuitar,
+              customBorder: const CircleBorder(),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(Icons.close_rounded,
+                    size: 13, color: c.withValues(alpha: 0.7)),
+              ),
+            ),
+          ],
         ),
       ),
     );

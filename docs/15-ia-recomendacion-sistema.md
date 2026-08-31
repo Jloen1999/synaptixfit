@@ -116,7 +116,7 @@ El campo `minutos_por_sesion` ya no es un factor primario del motor determinista
 | **Cliente Flutter** (actual) | Sin latencia extra, sin coste de Edge Function, respuesta directa al UI | API key en request HTTPS |
 | Edge Function Supabase | API key oculta | Doble latencia, coste adicional |
 
-**Modelo:** `gemini-flash-latest` (~2-3s de latencia, capa gratuita 15 RPM).
+**Modelo:** Configurable vía `GEMINI_MODEL` en `.env` → `EnvConfig.geminiModel`; default **`gemini-3.6-flash`** (verificado contra la API real el 31-08-2026; ~2-3s de latencia, capa gratuita 15 RPM). Todos los servicios de IA construyen la URL dinámicamente: `https://generativelanguage.googleapis.com/v1beta/models/${EnvConfig.geminiModel}:generateContent`. Los modelos hardcodeados anteriores (`gemini-flash-latest`, `gemini-2.x-flash`) fueron retirados por Google y causaban error 404.
 
 ---
 

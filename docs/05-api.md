@@ -289,7 +289,7 @@ Funciones existentes (definidas en migraciones):
 | IA | Llamada desde Edge Function | Llamada directa Flutter → Gemini (Dio) |
 | Multimedia | Edge Function genera signed URLs | R2 Worker proxy con CORS |
 | Notificaciones | Edge Functions + ? | No implementado en MVP |
-| Retos | POST /retos/simple, /retos/complejo | `supabase.from('retos').insert(...)` |
+| Retos | Flujo unificado `/retos/crear` (`CrearRetoScreen`) + sheet express | `supabase.from('retos').insert(...)` + `supabase.from('hitos_de_reto').insert(...)` si hay tareas |
 
 ---
 

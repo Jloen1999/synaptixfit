@@ -26,8 +26,11 @@ class EstudioIaService {
 
   final Dio _dio;
 
-  static const _endpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+  static const _base =
+      'https://generativelanguage.googleapis.com/v1beta/models/';
+
+  /// Endpoint dinámico: el modelo se configura vía `GEMINI_MODEL`.
+  String get _endpoint => '$_base${EnvConfig.geminiModel}:generateContent';
 
   bool get disponible => EnvConfig.hasGeminiApiKey;
 

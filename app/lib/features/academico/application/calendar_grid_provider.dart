@@ -53,6 +53,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
       planNombre: 'Mi plan semanal',
       fechaInicioPantalla: semanaInicio,
       semanaOffset: 0,
+      cambiosSinGuardar: false,
     );
   }
 
@@ -62,60 +63,79 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
       final user = client.auth.currentUser;
       if (user == null) return;
 
-      final data = await client
-          .from('horarios_academicos')
-          .select('*, asignaturas(nombre), rutinas(nombre)')
-          .eq('usuario_id', user.id)
-          .eq('es_fijo', false)
-          .order('hora_inicio', ascending: true);
+      // Consulta con joins; si falla (p. ej. por RLS de los embeds), se
+      // reintenta sin ellos para no perder TODOS los bloques.
+      List<dynamic> data;
+      try {
+        data = await client
+            .from('horarios_academicos')
+            .select('*, asignaturas(nombre), rutinas(nombre)')
+            .eq('usuario_id', user.id)
+            .eq('es_fijo', false)
+            .order('hora_inicio', ascending: true);
+      } catch (e) {
+        debugPrint('[calendarGrid] Carga con joins falló ($e); '
+            'reintentando sin joins');
+        data = await client
+            .from('horarios_academicos')
+            .select()
+            .eq('usuario_id', user.id)
+            .eq('es_fijo', false)
+            .order('hora_inicio', ascending: true);
+      }
 
       final bloquesCargados = <TimeBlock>[];
-      for (final map in (data as List)) {
-        final row = map as Map<String, dynamic>;
-        final horaInicio = DateTime.parse(row['hora_inicio'] as String);
-        final horaFin = DateTime.parse(row['hora_fin'] as String);
-        final tipoStr = row['tipo_actividad'] as String? ?? 'estudio';
-        final tipo = switch (tipoStr) {
-          'deporte' => TimeBlockTipo.deporte,
-          'examen' => TimeBlockTipo.examen,
-          'entrega' => TimeBlockTipo.entrega,
-          'clase' => TimeBlockTipo.clase,
-          'descanso' => TimeBlockTipo.descanso,
-          'comida' => TimeBlockTipo.comida,
-          'sueno' => TimeBlockTipo.sueno,
-          _ => TimeBlockTipo.estudio,
-        };
+      for (final raw in data) {
+        try {
+          final row = raw as Map<String, dynamic>;
+          final horaInicio = DateTime.parse(row['hora_inicio'] as String);
+          final horaFin = DateTime.parse(row['hora_fin'] as String);
+          final tipoStr = row['tipo_actividad'] as String? ?? 'estudio';
+          final tipo = switch (tipoStr) {
+            'deporte' => TimeBlockTipo.deporte,
+            'examen' => TimeBlockTipo.examen,
+            'entrega' => TimeBlockTipo.entrega,
+            'clase' => TimeBlockTipo.clase,
+            'descanso' => TimeBlockTipo.descanso,
+            'comida' => TimeBlockTipo.comida,
+            'sueno' => TimeBlockTipo.sueno,
+            'repaso' => TimeBlockTipo.repaso,
+            _ => TimeBlockTipo.estudio,
+          };
 
-        final asigJoin = row['asignaturas'];
-        final rutJoin = row['rutinas'];
+          final asigJoin = row['asignaturas'];
+          final rutJoin = row['rutinas'];
 
-        bloquesCargados.add(TimeBlock(
-          idLocal: 'db_${row['id']}',
-          dbId: row['id'] as String?,
-          diaSemana: (row['dia_semana'] as int?) ?? horaInicio.weekday,
-          horaInicio: TimeOfDay.fromDateTime(horaInicio),
-          horaFin: TimeOfDay.fromDateTime(horaFin),
-          tipo: tipo,
-          titulo: row['temas'] as String?,
-          asignaturaId: row['asignatura_id'] as String?,
-          asignaturaNombre:
-              asigJoin is Map ? asigJoin['nombre'] as String? : null,
-          rutinaId: row['rutina_id'] as String?,
-          rutinaNombre: rutJoin is Map ? rutJoin['nombre'] as String? : null,
-          temas: row['temas'] as String?,
-          ubicacion: row['ubicacion'] as String?,
-          color: _colorParaTipo(tipo),
-          esFijo: false,
-          esSugerencia: false,
-          fecha: DateTime(horaInicio.year, horaInicio.month, horaInicio.day),
-          diaRutinaId: row['dia_rutina_id'] as String?,
-          semanaRutinaId: row['semana_rutina_id'] as String?,
-          retoId: row['reto_id'] as String?,
-          hitoId: row['hito_id'] as String?,
-          esHitoInamovible: (row['es_hito_inamovible'] as bool?) ?? false,
-          completado: (row['completado'] as bool?) ?? false,
-          aceptado: true,
-        ));
+          bloquesCargados.add(TimeBlock(
+            idLocal: 'db_${row['id']}',
+            dbId: row['id'] as String?,
+            diaSemana: (row['dia_semana'] as int?) ?? horaInicio.weekday,
+            horaInicio: TimeOfDay.fromDateTime(horaInicio),
+            horaFin: TimeOfDay.fromDateTime(horaFin),
+            tipo: tipo,
+            titulo: row['temas'] as String?,
+            asignaturaId: row['asignatura_id'] as String?,
+            asignaturaNombre:
+                asigJoin is Map ? asigJoin['nombre'] as String? : null,
+            rutinaId: row['rutina_id'] as String?,
+            rutinaNombre: rutJoin is Map ? rutJoin['nombre'] as String? : null,
+            temas: row['temas'] as String?,
+            ubicacion: row['ubicacion'] as String?,
+            color: _colorParaTipo(tipo),
+            esFijo: false,
+            esSugerencia: false,
+            fecha: DateTime(horaInicio.year, horaInicio.month, horaInicio.day),
+            diaRutinaId: row['dia_rutina_id'] as String?,
+            semanaRutinaId: row['semana_rutina_id'] as String?,
+            retoId: row['reto_id'] as String?,
+            hitoId: row['hito_id'] as String?,
+            esHitoInamovible: (row['es_hito_inamovible'] as bool?) ?? false,
+            completado: (row['completado'] as bool?) ?? false,
+            aceptado: true,
+          ));
+        } catch (e) {
+          debugPrint('[calendarGrid] Fila de bloque ignorada: $e');
+        }
       }
 
       if (bloquesCargados.isNotEmpty) {
@@ -123,7 +143,9 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
           bloques: [...state.bloques, ...bloquesCargados],
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[calendarGrid] No se pudieron cargar los bloques: $e');
+    }
   }
 
   void navegarSemana(int delta) {
@@ -209,6 +231,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
     state = state.copyWith(
       bloques: [...state.bloques, bloque],
       metadata: _calcularMetadata(),
+      cambiosSinGuardar: true,
     );
 
     _persistInsert(bloque);
@@ -242,6 +265,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
     state = state.copyWith(
       bloques: nuevosBloques,
       metadata: _calcularMetadata(),
+      cambiosSinGuardar: true,
     );
 
     if (nuevo.dbId != null) {
@@ -267,6 +291,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
     state = state.copyWith(
       bloques: nuevosBloques,
       metadata: _calcularMetadata(),
+      cambiosSinGuardar: true,
     );
 
     if (resized.dbId != null) {
@@ -332,6 +357,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
     state = state.copyWith(
       bloques: nuevosBloques,
       metadata: _calcularMetadata(),
+      cambiosSinGuardar: true,
     );
 
     _persistUpdate(actualizado);
@@ -349,6 +375,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
     state = state.copyWith(
       bloques: nuevosBloques,
       metadata: _calcularMetadata(),
+      cambiosSinGuardar: true,
     );
 
     if (dbId != null) _persistDelete(dbId);
@@ -368,6 +395,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
     state = state.copyWith(
       bloques: nuevosBloques,
       metadata: _calcularMetadata(),
+      cambiosSinGuardar: true,
     );
   }
 
@@ -509,6 +537,14 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
   // ===========================================================================
 
   /// Guarda el plan completo en Supabase.
+  ///
+  /// - Reutiliza el plan existente si ya se creó en esta sesión (evita
+  ///   duplicados de `planes_estudio` al pulsar Guardar varias veces).
+  /// - Garantiza que TODOS los bloques aceptados no fijos tengan su fila en
+  ///   `horarios_academicos` (aunque el insert instantáneo fallara antes),
+  ///   fijando su `dbId` en el estado.
+  /// - Marca `cambiosSinGuardar = false` para que salir no vuelva a pedir
+  ///   guardar.
   Future<String?> guardarPlan() async {
     state = state.copyWith(guardando: true, errorGuardado: null);
 
@@ -520,65 +556,52 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
       final semanaInicio = state.semanaInicio ?? _calcularLunes();
       final semanaFin =
           state.semanaFin ?? semanaInicio.add(const Duration(days: 6));
-      final nombre =
-          state.planNombre ?? 'Plan ${semanaInicio.day}/${semanaInicio.month}';
 
-      final planData = await client
-          .from('planes_estudio')
-          .insert({
-            'usuario_id': user.id,
-            'nombre': nombre,
-            'semana_inicio': semanaInicio.toIso8601String().split('T')[0],
-            'semana_fin': semanaFin.toIso8601String().split('T')[0],
-            'visibilidad': 'private',
-          })
-          .select('id')
-          .single();
-
-      final planId = planData['id'] as String;
+      // 1. Plan (crear solo si aún no existe en esta sesión).
+      String? planId = state.planId;
+      var planCreadoAhora = false;
+      if (planId == null) {
+        final nombre = state.planNombre ??
+            'Plan ${semanaInicio.day}/${semanaInicio.month}';
+        final planData = await client
+            .from('planes_estudio')
+            .insert({
+              'usuario_id': user.id,
+              'nombre': nombre,
+              'semana_inicio': semanaInicio.toIso8601String().split('T')[0],
+              'semana_fin': semanaFin.toIso8601String().split('T')[0],
+              'visibilidad': 'private',
+            })
+            .select('id')
+            .single();
+        planId = planData['id'] as String;
+        planCreadoAhora = true;
+      }
 
       try {
-        final bloquesAGuardar = state.bloques
+        // 2. Bloques: insertar los que aún no tengan fila en BD.
+        final bloquesPendientes = state.bloques
             .where((b) => !b.esFijo && b.aceptado && b.dbId == null)
             .toList();
 
-        if (bloquesAGuardar.isNotEmpty) {
-          final rows = bloquesAGuardar.map((b) {
-            final fechaBase = b.fecha ??
-                _fechaDesdeDiaYHora(semanaInicio, b.diaSemana, b.horaInicio);
-            final fechaInicio = DateTime(fechaBase.year, fechaBase.month,
-                fechaBase.day, b.horaInicio.hour, b.horaInicio.minute);
-            final fechaFin = DateTime(fechaBase.year, fechaBase.month,
-                fechaBase.day, b.horaFin.hour, b.horaFin.minute);
-            return {
-              'usuario_id': user.id,
-              'plan_estudio_id': planId,
-              'asignatura_id': b.asignaturaId,
-              'hora_inicio': fechaInicio.toIso8601String(),
-              'hora_fin': fechaFin.toIso8601String(),
-              'prioridad': 'media',
-              'tipo_actividad': b.tipo == TimeBlockTipo.deporte
-                  ? 'deporte'
-                  : b.tipo == TimeBlockTipo.examen
-                      ? 'examen'
-                      : b.tipo == TimeBlockTipo.entrega
-                          ? 'entrega'
-                          : 'estudio',
-              'es_fijo': false,
-              'dia_semana': b.diaSemana,
-              if (b.rutinaId != null) 'rutina_id': b.rutinaId,
-              if (b.temas != null) 'temas': b.temas,
-              if (b.diaRutinaId != null) 'dia_rutina_id': b.diaRutinaId,
-              if (b.semanaRutinaId != null)
-                'semana_rutina_id': b.semanaRutinaId,
-              if (b.retoId != null) 'reto_id': b.retoId,
-              if (b.hitoId != null) 'hito_id': b.hitoId,
-            };
-          }).toList();
-
-          await client.from('horarios_academicos').insert(rows);
+        final nuevosBloques = [...state.bloques];
+        for (final b in bloquesPendientes) {
+          final row = await client
+              .from('horarios_academicos')
+              .insert(_rowDeBloque(b, user.id, planId))
+              .select('id')
+              .single();
+          final nuevoDbId = row['id'] as String;
+          final idx = nuevosBloques.indexWhere((x) => x.idLocal == b.idLocal);
+          if (idx != -1) {
+            nuevosBloques[idx] = nuevosBloques[idx].copyWith(dbId: nuevoDbId);
+          }
+        }
+        if (bloquesPendientes.isNotEmpty) {
+          state = state.copyWith(bloques: nuevosBloques);
         }
 
+        // 3. Entregas del inbox → asociar al plan.
         if (state.config.entregas.isNotEmpty) {
           for (final entrega in state.config.entregas) {
             await client
@@ -592,16 +615,20 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
         state = state.copyWith(
           planId: planId,
           guardando: false,
+          errorGuardado: null,
           fase: PlanificadorFase.completado,
+          cambiosSinGuardar: false,
         );
 
         return planId;
       } catch (_) {
-        await client
-            .from('planes_estudio')
-            .delete()
-            .eq('id', planId)
-            .eq('usuario_id', user.id);
+        if (planCreadoAhora) {
+          await client
+              .from('planes_estudio')
+              .delete()
+              .eq('id', planId)
+              .eq('usuario_id', user.id);
+        }
         rethrow;
       }
     } catch (e) {
@@ -611,6 +638,34 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
       );
       return null;
     }
+  }
+
+  /// Construye el mapa de columnas de un bloque para `horarios_academicos`.
+  Map<String, dynamic> _rowDeBloque(
+      TimeBlock b, String userId, String? planId) {
+    final fechaInicio = _fechaInicioDe(b);
+    final fechaFin = _fechaFinDe(b);
+    return {
+      'usuario_id': userId,
+      if (planId != null) 'plan_estudio_id': planId,
+      if (b.asignaturaId != null) 'asignatura_id': b.asignaturaId,
+      // Se guarda en UTC para que la hora local (p. ej. España, UTC+2) no
+      // desplace el bloque al día siguiente al leerlo de vuelta.
+      'hora_inicio': fechaInicio.toUtc().toIso8601String(),
+      'hora_fin': fechaFin.toUtc().toIso8601String(),
+      'prioridad': 'media',
+      'tipo_actividad': b.tipo.name,
+      'es_fijo': false,
+      'dia_semana': b.diaSemana,
+      if (b.titulo != null) 'temas': b.titulo,
+      if (b.ubicacion != null) 'ubicacion': b.ubicacion,
+      if (b.rutinaId != null) 'rutina_id': b.rutinaId,
+      if (b.temas != null && b.titulo == null) 'temas': b.temas,
+      if (b.diaRutinaId != null) 'dia_rutina_id': b.diaRutinaId,
+      if (b.semanaRutinaId != null) 'semana_rutina_id': b.semanaRutinaId,
+      if (b.retoId != null) 'reto_id': b.retoId,
+      if (b.hitoId != null) 'hito_id': b.hitoId,
+    };
   }
 
   // ===========================================================================
@@ -648,13 +703,16 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
       await client
           .from('horarios_academicos')
           .update({
-            'hora_inicio': fechaInicio.toIso8601String(),
-            'hora_fin': fechaFin.toIso8601String(),
+            'hora_inicio': fechaInicio.toUtc().toIso8601String(),
+            'hora_fin': fechaFin.toUtc().toIso8601String(),
             'dia_semana': block.diaSemana,
           })
           .eq('id', block.dbId!)
           .eq('usuario_id', user.id);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+          '[calendarGrid] No se pudo mover el bloque (${block.dbId}): $e');
+    }
     if (!mounted) return;
     state = state.copyWith(sincronizando: false);
   }
@@ -876,6 +934,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
       state = state.copyWith(
         bloques: [...state.bloques, ...nuevosBloques],
         metadata: _calcularMetadata(),
+        cambiosSinGuardar: true,
       );
       for (final b in nuevosBloques) {
         _persistInsert(b);
@@ -925,6 +984,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
     state = state.copyWith(
       bloques: [...state.bloques, bloque],
       metadata: _calcularMetadata(),
+      cambiosSinGuardar: true,
     );
 
     _persistInsert(bloque);
@@ -946,8 +1006,16 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
     final base = b.fecha ??
         _fechaDesdeDiaYHora(
             state.fechaInicioPantalla, b.diaSemana, b.horaInicio);
-    return DateTime(
+    var fin = DateTime(
         base.year, base.month, base.day, b.horaFin.hour, b.horaFin.minute);
+    // Bloque que cruza la medianoche (p. ej. 23:30 → 00:30): la hora de fin
+    // cae al día siguiente para no violar el CHECK hora_fin > hora_inicio.
+    final inicio = DateTime(base.year, base.month, base.day, b.horaInicio.hour,
+        b.horaInicio.minute);
+    if (!fin.isAfter(inicio)) {
+      fin = fin.add(const Duration(days: 1));
+    }
+    return fin;
   }
 
   /// Inserta un bloque nuevo en `horarios_academicos` y fija su `dbId` en el
@@ -961,23 +1029,7 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
 
       final row = await client
           .from('horarios_academicos')
-          .insert({
-            'usuario_id': user.id,
-            if (b.asignaturaId != null) 'asignatura_id': b.asignaturaId,
-            'hora_inicio': _fechaInicioDe(b).toIso8601String(),
-            'hora_fin': _fechaFinDe(b).toIso8601String(),
-            'prioridad': 'media',
-            'tipo_actividad': b.tipo.name,
-            'es_fijo': false,
-            'dia_semana': b.diaSemana,
-            if (b.rutinaId != null) 'rutina_id': b.rutinaId,
-            if (b.temas != null) 'temas': b.temas,
-            if (b.ubicacion != null) 'ubicacion': b.ubicacion,
-            if (b.diaRutinaId != null) 'dia_rutina_id': b.diaRutinaId,
-            if (b.semanaRutinaId != null) 'semana_rutina_id': b.semanaRutinaId,
-            if (b.retoId != null) 'reto_id': b.retoId,
-            if (b.hitoId != null) 'hito_id': b.hitoId,
-          })
+          .insert(_rowDeBloque(b, user.id, null))
           .select('id')
           .single();
 
@@ -989,7 +1041,10 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
         nuevos[idx] = nuevos[idx].copyWith(dbId: newId);
         state = state.copyWith(bloques: nuevos);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[calendarGrid] No se pudo insertar el bloque '
+          '(${b.tipo.name}): $e');
+    }
   }
 
   Future<void> _persistUpdate(TimeBlock b) async {
@@ -1002,8 +1057,8 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
           .from('horarios_academicos')
           .update({
             'asignatura_id': b.asignaturaId,
-            'hora_inicio': _fechaInicioDe(b).toIso8601String(),
-            'hora_fin': _fechaFinDe(b).toIso8601String(),
+            'hora_inicio': _fechaInicioDe(b).toUtc().toIso8601String(),
+            'hora_fin': _fechaFinDe(b).toUtc().toIso8601String(),
             'tipo_actividad': b.tipo.name,
             'dia_semana': b.diaSemana,
             'rutina_id': b.rutinaId,
@@ -1013,7 +1068,10 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
           })
           .eq('id', b.dbId!)
           .eq('usuario_id', user.id);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[calendarGrid] No se pudo actualizar el bloque '
+          '(${b.dbId}): $e');
+    }
   }
 
   Future<void> _persistDelete(String dbId) async {
@@ -1026,7 +1084,9 @@ class CalendarGridNotifier extends StateNotifier<CalendarGridState> {
           .delete()
           .eq('id', dbId)
           .eq('usuario_id', user.id);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[calendarGrid] No se pudo eliminar el bloque ($dbId): $e');
+    }
   }
 
   DateTime _calcularLunes() {

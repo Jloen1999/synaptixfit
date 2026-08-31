@@ -434,7 +434,7 @@ final tareasDeRetoProvider =
   final data = await client
       .from('hitos_de_reto')
       .select(
-          'id, reto_id, titulo, porcentaje_peso, indice_orden, progreso_actual, esta_completado')
+          'id, reto_id, titulo, porcentaje_peso, indice_orden, progreso_actual, esta_completado, apunte_id, archivo_id')
       .eq('reto_id', retoId)
       .order('indice_orden', ascending: true);
   return (data as List)

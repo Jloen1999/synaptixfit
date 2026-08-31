@@ -9,6 +9,8 @@ import '../../../core/design_system/sv_colors.dart';
 import '../../../core/design_system/sv_shapes.dart';
 import '../../../shared/models/db_models.dart';
 import '../../../shared/widgets/exercise_metrics.dart';
+import '../../academico/domain/archivo_asignatura_dto.dart';
+import '../../academico/presentation/apunte_visor_screen.dart';
 import '../../bienestar/infrastructure/calorie_calculator_service.dart';
 import '../../perfil/application/perfil_provider.dart';
 import '../application/retos_provider.dart';
@@ -157,6 +159,9 @@ class DetalleRetoScreen extends ConsumerWidget {
                                       ref: ref,
                                     );
                                   }
+                                : null,
+                            onAbrirAdjunto: hito.tieneAdjunto
+                                ? () => _abrirAdjunto(context, hito)
                                 : null,
                           );
                         }),
@@ -476,6 +481,7 @@ class _TareaDeslizable extends StatefulWidget {
     required this.color,
     required this.editable,
     this.onToggle,
+    this.onAbrirAdjunto,
     super.key,
   });
 
@@ -483,6 +489,7 @@ class _TareaDeslizable extends StatefulWidget {
   final Color color;
   final bool editable;
   final VoidCallback? onToggle;
+  final VoidCallback? onAbrirAdjunto;
 
   @override
   State<_TareaDeslizable> createState() => _TareaDeslizableState();
@@ -572,6 +579,13 @@ class _TareaDeslizableState extends State<_TareaDeslizable> {
                         fontSize: 11,
                       ),
                     ),
+                    if (widget.onAbrirAdjunto != null) ...[
+                      const SizedBox(height: 8),
+                      _ChipAdjuntoHito(
+                        esApunte: widget.hito.apunteId != null,
+                        onTap: widget.onAbrirAdjunto!,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -646,6 +660,107 @@ class _FilaCaloriasEstimadas extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: SemantiCalorieChip(calorias: totalKcal),
+    );
+  }
+}
+
+// =============================================================================
+// Adjuntos de tareas
+// =============================================================================
+
+/// Abre el adjunto académico de una tarea (apunte o archivo de asignatura).
+Future<void> _abrirAdjunto(BuildContext context, HitoRetoDb hito) async {
+  // Capturados antes de los awaits para no cruzar gaps asíncronos.
+  final navigator = Navigator.of(context);
+  final router = GoRouter.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+  void aviso() {
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir el adjunto.')),
+      );
+  }
+
+  try {
+    final client = Supabase.instance.client;
+    if (hito.apunteId != null) {
+      final row = await client
+          .from('apuntes')
+          .select()
+          .eq('id', hito.apunteId!)
+          .maybeSingle();
+      if (row == null) {
+        aviso();
+        return;
+      }
+      final apunte = ApunteDb.fromMap(row);
+      await navigator.push(
+        MaterialPageRoute(builder: (_) => ApunteVisorScreen(apunte: apunte)),
+      );
+    } else if (hito.archivoId != null) {
+      final row = await client
+          .from('archivos_asignatura')
+          .select()
+          .eq('id', hito.archivoId!)
+          .maybeSingle();
+      if (row == null) {
+        aviso();
+        return;
+      }
+      final dto = ArchivoAsignaturaDto.fromMap(row);
+      router.push('/academico/archivo/visor', extra: dto);
+    }
+  } catch (_) {
+    aviso();
+  }
+}
+
+/// Chip informativo del adjunto de una tarea en el detalle del reto.
+class _ChipAdjuntoHito extends StatelessWidget {
+  const _ChipAdjuntoHito({
+    required this.esApunte,
+    required this.onTap,
+  });
+
+  final bool esApunte;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = esApunte ? const Color(0xFF3B82F6) : const Color(0xFF7C4DFF);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: SVShapes.pill,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: c.withValues(alpha: 0.1),
+          borderRadius: SVShapes.pill,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              esApunte ? Icons.description_outlined : Icons.attach_file_rounded,
+              size: 13,
+              color: c,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              esApunte ? 'Apunte adjunto' : 'Archivo adjunto',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: c,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.open_in_new_rounded,
+                size: 12, color: SVColors.onSurfaceMuted),
+          ],
+        ),
+      ),
     );
   }
 }

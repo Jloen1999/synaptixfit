@@ -1,8 +1,8 @@
 # 03 - Arquitectura del Sistema (SynaptixFit)
 
-**Versión:** 5.4
+**Versión:** 5.5
 **Estado:** APROBADO
-**Fecha:** 01-07-2026
+**Fecha:** 13-07-2026
 **Autor:** Arquitectura
 **Referencia:** [02-requirements.md](02-requirements.md) (SRS v3.4)
 
@@ -10,7 +10,7 @@
 
 Definir la arquitectura completa de SynaptixFit (Flutter móvil/web + Supabase + Gemini IA + Motor de Reglas Determinista), cubriendo:
 1. Estructura de carpetas y módulos (incluyendo Fases 0-10 del Motor de Recomendaciones).
-2. Modelo de datos y permisos (RLS) — 29 tablas.
+2. Modelo de datos y permisos (RLS) — 50+ tablas.
 3. Contratos de servicios (7 servicios de infraestructura nuevos).
 4. Arquitectura del servicio de IA (Gemini Flash) + Motor de Reglas Determinista.
 5. Sistema de check-in diario, periodización y feedback post-entrenamiento.
@@ -69,7 +69,7 @@ flowchart TB
     subgraph Nube["Infraestructura Cloud"]
         subgraph Supabase["Supabase"]
             Auth["Auth (JWT)"]
-            PG["PostgreSQL 15\n(29+ tablas + RLS)"]
+            PG["PostgreSQL 15\n(50+ tablas + RLS)"]
             RT["Realtime (WebSocket)"]
             EF["Edge Functions\n(Deno)"]
         end
@@ -118,30 +118,32 @@ flowchart TB
 
 ```
 synaptixfit/
-├── docs/                          # 22 archivos de documentación (00-plan-maestro → 21-plan-definitivo)
+├── docs/                          # 25 archivos de documentación (00-plan-maestro → 23-plan-backoffice-hibrido)
 ├── app/
 │   └── lib/
 │       ├── core/                  # Errores, utils, config, routing, design system, sync
 │       │   ├── config/
 │       │   │   └── env_config.dart        # Lectura de .env (Supabase, Gemini, R2, Google)
 │       │   └── routing/
-│       │       ├── app_router.dart         # GoRouter con 20+ rutas
-│       │       └── shell_route.dart        # StatefulShellRoute (5 tabs)
+│       │       ├── app_router.dart         # GoRouter con 25+ rutas (incl. 3 rutas flashcards)
+│       │       ├── shell_route.dart        # StatefulShellRoute (5 tabs) + BadgeGeneracionWidget
+│       │       └── session_reset.dart       # ★ Destruye/recrea ProviderScope al logout, reinicia providers
 │       ├── shared/
 │       │   ├── models/
-│       │   │   └── db_models.dart          # 46+ modelos (~2935 líneas, incl. EjercicioDb con valorMet, SeleccionEjercicioDb con duracionObjetivoSegundos/duracionRealSegundos, AsignaturaUsuarioSemestreDb, ★ EstadoCognitivoUsuarioDb, EstadoRegulacionCruzadaDb, RegistroRepasoSrsDb, RegistroCargaFisicaDb)
+│       │   │   └── db_models.dart          # 50+ modelos (~2935 líneas, incl. EjercicioDb con valorMet, SeleccionEjercicioDb con duracionObjetivoSegundos/duracionRealSegundos, AsignaturaUsuarioSemestreDb, TestSessionDb, ★ EstadoCognitivoUsuarioDb, EstadoRegulacionCruzadaDb, RegistroRepasoSrsDb, RegistroCargaFisicaDb)
 │       │   ├── utils/
 │       │   │   └── string_utils.dart       # ★ finalidadesEstandar + sanitizarObjetivo() (Fase 0)
 │       │   └── widgets/
 │       │       ├── metric_gauge.dart        # ★ Gauge radial animado (248 líneas)
-│       │       └── exercise_metrics.dart    # ★ SemanticMicroChip, ExerciseMetricsRow, SemantiCalorieChip, buildCalorieChip(), ExerciseMetricCategoria
+│       │       ├── exercise_metrics.dart    # ★ SemanticMicroChip, ExerciseMetricsRow, SemantiCalorieChip, buildCalorieChip(), ExerciseMetricCategoria
+│       │       └── badge_generacion_widget.dart  # ★ Widget persistente en shell inferior que muestra generaciones IA en background (pulsa/animación al completar)
 │       ├── features/
 │       │   ├── auth/                       # Login, registro, onboarding
 │       │   │   └── infrastructure/
 │       │   │       ├── auth_repository.dart
 │       │   │       └── bienestar_repository.dart  # CRUD perfil bienestar
 │       │   ├── academico/                  # Planes, time-blocking (lienzo continuo), escaneo IA, apuntes
-│       │   ├── retos/                      # Retos simples y complejos
+│       │   ├── retos/                      # Retos (flujo unificado v8.2 «Nuevo reto» + adjuntos académicos en tareas)
 │       │   ├── bienestar/
 │       │   │   ├── infrastructure/
 │       │   │   │   ├── recomendacion_ia_service.dart        # ★ IA (1357 líneas) + refinarRutina() (Fase 6)
@@ -174,16 +176,16 @@ synaptixfit/
 │       │   ├── academico/                  # ★ Time-Blocking académico — Custom Grid nativo, DnD libre, IA (Gemini Flash), arrastre entre semanas
 │       │   │   ├── domain/                  # DTOs: TimeBlock, InboxConfig, CalendarGridState, TimeBlockTipo (8 valores), SemanaGenerada
 │       │   │   ├── infrastructure/          # TimeBlockIaService + AiScheduleParserService (Gemini multimodal, parseo de horarios PDF/imagen) + Sm2Calculator (escala 0-5) + Sm2PhysioService (Fórmula 4: Q_adj por fatiga serotoninérgica)
-│       │   │   ├── application/             # Providers: inboxConfig, calendarGrid (moveBlock sin restricciones, resizeBlock min 30min), horariosFijos, bloqueEstudio, escanear_horario, practicaProvider, materialesEstudioProvider
-│       │   │   └── presentation/            # InboxScreen, CanvasScreen (chevrons DragTarget para mover entre semanas, _moverBloqueASemana, feedback sin overflow), widgets (TimeGridPainter, TimeBlockWidget sin candado, ProgressGamificationBar), AcademicBlockSheet (pestaña Deporte integrada), escanear_horario_boton (integrado en perfil_screen)
-│       │   └── admin/                      # Panel de administración Fase 2 — 34 archivos, 5 tabs
+│       │   │   ├── application/             # Providers: inboxConfig, calendarGrid (moveBlock sin restricciones, resizeBlock min 30min), horariosFijos, bloqueEstudio, escanear_horario, practicaProvider (test_sessions, sessionId), materialesEstudioProvider, flashcardsProvider, artefactoEfimeroProvider (TipoGeneracion/EstadoGeneracion), generacionBackgroundProvider (colas en segundo plano), generacionGlobalProvider, multiTemaProvider
+│       │   │   └── presentation/            # InboxScreen, CanvasScreen (chevrons DragTarget para mover entre semanas, _moverBloqueASemana, feedback sin overflow), AcademicBlockSheet (pestaña Deporte integrada), escanear_horario_boton (integrado en perfil_screen), FlashcardScreen, FlashcardResultsScreen, SimulacroTestScreen (test cronometrado), ResultadosSimulacroScreen, TarjetasEstudioScreen, CuestionarioFormatoScreen (selector formato preguntas), CentroGeneracionScreen (908 líneas, generación multi-fuente), SeleccionFuentesSheet (bottom sheet con checkboxes), MapaMentalScreen (árbol interactivo), ResumenIaScreen
+│       │   └── admin/                      # Panel de administración Fase 3 (final) — 34 archivos, 5 tabs, shadowban, lockdown, GDPR (anonymize/export)
 │       │       ├── domain/                  # 7 DTOs: AdminKpi, AdminContenido, AdminEjercicio, AdminAuditoria, AdminUsuarioEstadisticas, AdminTimelineEntry, UsuarioAdmin
 │       │       ├── infrastructure/          # 6 repositorios: admin, metricas, auditoria, contenido, ejercicios, usuario stats
 │       │       ├── application/             # 6 provider files: admin, metricas, auditoria, contenido, ejercicios, usuario stats
 │       │       └── presentation/            # AdminHubScreen (TabBar 5 tabs) + 15 widgets/pantallas (KPI, usuarios, contenido, ejercicios, logs, gráficos, timeline, paginación)
 │       └── main.dart                       # Entry point, ProviderScope, Supabase.init
 ├── supabase/
-│   ├── migrations/                         # 54 archivos de migración (0049 esquema base + 53 posteriores)
+│   ├── migrations/                         # 62 archivos de migración (0049 esquema base + 56 posteriores)
 │   └── seed_catalogo_v2.py                 # Seeding del catálogo académico v2 desde grados.json
 ├── cloudflare/
 │   └── synaptixfit-r2-proxy/
@@ -235,7 +237,8 @@ sequenceDiagram
         IA->>IA: 5. Construir prompt con:<br/>- Perfil completo<br/>- Catálogo filtrado<br/>- Reglas de seguridad<br/>- Reglas de periodización<br/>- Formato JSON esperado
     end
 
-    IA->>Gemini: POST /v1beta/models/gemini-flash-latest:generateContent
+    IA->>Gemini: POST /v1beta/models/{EnvConfig.geminiModel}:generateContent
+    Note over Gemini: EnvConfig.geminiModel = GEMINI_MODEL de .env<br/>(default gemini-3.6-flash, v8.2.6)
     Note over Gemini: Body: {contents: [{parts: [{text: prompt}]}]}<br/>Headers: X-goog-api-key
     Gemini-->>IA: Response (JSON con candidates[0].content.parts[0].text)
 
@@ -413,6 +416,8 @@ flowchart TD
     
     C -->|"Redimensionar\n(drag en borde)"| R["resizeBlock()\nMínimo 30 minutos\nPermite solapes"]
 ```
+
+> **Persistencia (v8.2.3):** los mutadores del `calendarGridProvider` marcan el flag `cambiosSinGuardar` (reseteado por `inicializar()` y por `guardarPlan()` exitoso, que reutiliza el `planes_estudio` de la sesión e inserta los bloques pendientes). `hora_inicio`/`hora_fin` se escriben **en UTC** (`.toUtc()`); los bloques que cruzan la medianoche suman un día a su hora de fin para respetar el CHECK `hora_fin > hora_inicio`.
 
 ## 7. Modelo de Datos Relacional (Resumen)
 
@@ -832,6 +837,17 @@ Se inicializa en `main.dart` vía `HiveConfig.init()`. Se usan 2 boxes:
 | `tipo_condicion` | `TEXT` | `AND` (todos), `OR` (al menos uno), `X_OF_Y` (n de m) |
 | `condicion_n` | `INTEGER` | Para `X_OF_Y`: número requerido de predecesores completados |
 
+### 16.1b Adjuntos académicos en tareas (migración 20260831000034)
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `apunte_id` | `UUID NULL` | FK → `apuntes(id)` ON DELETE SET NULL. Apunte adjunto a la tarea. |
+| `archivo_id` | `UUID NULL` | FK → `archivos_asignatura(id)` ON DELETE SET NULL. Archivo adjunto a la tarea. |
+
+- **CHECK `ck_hitos_adjunto_unico`:** `(apunte_id IS NULL) OR (archivo_id IS NULL)` — cada tarea lleva un único adjunto (o apunte, o archivo, o ninguno).
+- **Índices:** `idx_hitos_de_reto_apunte` e `idx_hitos_de_reto_archivo`.
+- **Consumo en Flutter:** `HitoRetoDb` (campos `apunteId`/`archivoId` + getter `tieneAdjunto`), insert desde `crear_reto_screen.dart`, chips «Apunte adjunto»/«Archivo adjunto» en `detalle_reto_screen.dart`, select ampliado en `tareasDeRetoProvider` (`apunte_id, archivo_id`).
+
 ### 16.2 Trigger `trg_hito_completado`
 
 ```sql
@@ -877,7 +893,7 @@ CREATE TRIGGER trg_hito_completado
 
 ```mermaid
 flowchart LR
-    subgraph Reto["Reto Complejo"]
+    subgraph Reto["Reto con hitos"]
         H1["Hito 1<br/>✅ completado"]
         H2["Hito 2<br/>🔵 disponible<br/>AND(H1)"]
         H3["Hito 3<br/>🔒 bloqueado<br/>AND(H1,H2)"]
@@ -895,7 +911,7 @@ flowchart LR
 
 | Provider | Tipo | Propósito |
 |----------|------|-----------|
-| `grafoRetoProvider` | `FutureProvider.family<GrafoDependencias, String>` | Construye el grafo completo de dependencias para un reto (nodos + aristas) |
+| `grafoRetoProvider` | `FutureProvider.family<GrafoReto?, String>` | Construye el grafo completo de dependencias para un reto (nodos + aristas) |
 | `puedeIniciarHitoProvider` | `FutureProvider.family<bool, ({String retoId, String hitoId})>` | Verifica si un hito específico está en estado `disponible` y puede iniciarse |
 | `hitosDesbloqueadosProvider` | `FutureProvider.family<List<HitoDb>, String>` | Lista los hitos actualmente desbloqueados (`estado = 'disponible'`) para un reto |
 

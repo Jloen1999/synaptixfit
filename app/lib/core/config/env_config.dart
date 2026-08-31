@@ -22,6 +22,13 @@ class EnvConfig {
       dotenv.env['GEMINI_API_KEY'] ??
       const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
 
+  /// Modelo de Gemini usado por todos los servicios de IA de la app.
+  /// Configurable vía `GEMINI_MODEL` en .env (p. ej. `gemini-3.6-flash`).
+  static String get geminiModel =>
+      dotenv.env['GEMINI_MODEL'] ??
+      const String.fromEnvironment('GEMINI_MODEL',
+          defaultValue: 'gemini-3.6-flash');
+
   static bool get hasSupabase =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 

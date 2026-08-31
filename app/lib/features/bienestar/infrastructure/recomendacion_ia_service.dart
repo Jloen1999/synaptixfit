@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../core/config/env_config.dart';
 import '../../../shared/models/db_models.dart';
 import '../application/ejercicios_provider.dart';
 import '../domain/ejercicio_recomendado_dto.dart';
@@ -1216,7 +1217,7 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
     final genConfig = <String, dynamic>{};
     if (useJsonMode) genConfig['response_mime_type'] = 'application/json';
     final response = await _dio.post<Map<String, dynamic>>(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/${EnvConfig.geminiModel}:generateContent',
       options: Options(
         headers: {
           'Content-Type': 'application/json',
@@ -1301,6 +1302,10 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
       if (status == 400 || status == 401 || status == 403) {
         return 'Error de autenticacion con Gemini. Revisa GEMINI_API_KEY.';
       }
+      // Se incluye el mensaje real de la API (p. ej. modelo retirado) para
+      // poder diagnosticar sin volcar el log completo.
+      final detalle = _mensajeApi(e);
+      if (detalle.isNotEmpty) return 'Gemini: $detalle';
       return 'No se pudo conectar con Gemini en este momento.';
     }
     if (e is FormatException) {
@@ -1308,5 +1313,24 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
     }
     final msg = e.toString();
     return 'Error inesperado: ${msg.length > 100 ? msg.substring(0, 100) : msg}';
+  }
+
+  /// Extrae el mensaje de error del cuerpo de la respuesta de Gemini.
+  String _mensajeApi(DioException e) {
+    try {
+      final data = e.response?.data;
+      if (data is Map) {
+        final error = data['error'];
+        if (error is Map) {
+          final msg = error['message'];
+          if (msg is String && msg.trim().isNotEmpty) {
+            return msg.trim().length > 180
+                ? msg.trim().substring(0, 180)
+                : msg.trim();
+          }
+        }
+      }
+    } catch (_) {}
+    return '';
   }
 }

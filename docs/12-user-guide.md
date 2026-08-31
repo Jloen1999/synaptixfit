@@ -184,6 +184,9 @@ El Canvas muestra tu semana en una cuadrícula de 7 columnas (días) × 16 filas
    - Pulsa en un hueco vacío del canvas para abrir el `AcademicBlockSheet`.
    - Selecciona el tipo de bloque: Estudio, Examen, Entrega, Deporte, o Reto.
    - En la pestaña **Deporte**, puedes seleccionar una rutina y activar "Distribuir rutina completa" para colocar automáticamente todos los días de entrenamiento en el canvas.
+   - En **Examen**, la hora que elijas será la **hora de inicio** del bloque (igual que en Clase).
+   - En **Reto** no se elige duración (el bloque ocupa 1 hora por defecto): el botón **«Crear reto»** abre el formulario de Nuevo reto y, al crearlo, el bloque queda colocado y vinculado automáticamente (como bloque de deporte si el reto es de fitness, o de estudio si es académico).
+   - ⛔ **Horas pasadas:** no puedes crear ni mover bloques a una hora o fecha ya pasada; la app te lo avisa con el mensaje «No puedes añadir bloques en una hora o fecha pasada.»
 
 3. **Ajusta con drag & drop:**
    - Mantén presionado cualquier bloque (excepto los grises de clase y los rojos inamovibles) y arrástralo a otro día u hora.
@@ -200,28 +203,27 @@ El Canvas muestra tu semana en una cuadrícula de 7 columnas (días) × 16 filas
 
 #### 4.5.5 Guardar y Visualizar
 
-1. Cuando estés satisfecho con tu plan, pulsa **"Guardar plan"** en la barra inferior del canvas.
-2. La app guarda todos los bloques generados en tu base de datos.
-3. Serás redirigido a la pantalla de **Plan Semanal** donde verás:
-   - Tus bloques del día en la timeline.
-   - Cada bloque muestra su tipo, asignatura y duración.
-   - Puedes **marcar bloques como completados** ✅ para seguir tu adherencia y ganar XP.
-4. La **barra de progreso** en el Canvas te muestra cuántas horas de estudio y sesiones de deporte has planificado.
-5. Si cumples ≥80% de tu plan 4 semanas seguidas, desbloquearás la insignia **"Planificador Maestro"** 🏆.
+1. Cuando estés satisfecho con tu plan, pulsa **«Guardar»** en la barra inferior del canvas (junto a «← Volver»).
+2. La app guarda todos los bloques generados en tu base de datos y muestra la confirmación «¡Semana guardada! +XP».
+3. **Sigues en el lienzo:** al guardar ya no sales a otra pantalla. Puedes seguir añadiendo o ajustando bloques y volver a guardar cuando quieras (no se duplica el plan).
+4. Si intentas salir con **cambios sin guardar**, la app te pregunta si quieres «Guardar y salir» o «Descartar».
+5. Tus bloques del día aparecen en la timeline del dashboard, donde puedes **marcar bloques como completados** ✅ para seguir tu adherencia y ganar XP.
+6. La **barra de progreso** del canvas te muestra cuántas horas de estudio y sesiones de deporte has planificado.
+7. Si cumples ≥80% de tu plan 4 semanas seguidas, desbloquearás la insignia **"Planificador Maestro"** 🏆.
 
 > 💡 Puedes volver al canvas en cualquier momento desde el Inbox. Los bloques se guardan automáticamente al moverlos o redimensionarlos.
 
 ### 4.6 Crear un Reto
 
-**Reto simple:**
-1. Ve a **Retos → Crear Reto**.
-2. Completa: título, tipo (fitness/académico), meta, fechas y visibilidad.
-3. Toca "Publicar".
+Todos los retos se crean desde el mismo flujo «Nuevo reto» (sin distinción entre simple y complejo):
 
-**Reto complejo:**
-1. Igual que el simple, pero añade hitos con pesos.
-2. La app valida que la suma de pesos sea exactamente 100%.
-3. Los hitos se pueden reordenar arrastrándolos.
+1. Ve a **Retos → Crear Reto** (o usa el acceso rápido «Nuevo reto»).
+2. Completa el **título** y, en Detalles, elige la asignatura (opcional), el **esfuerzo** —Tranquilo, Equilibrado o Intenso— y, si quieres, vincúlalo a un examen, a una entrega o a un bloque de estudio de tu calendario.
+3. Define las **fechas** y la **visibilidad** (privado, amigos o público).
+4. Las **tareas son opcionales** (máx. 12): añade las que quieras y, si te sirve, **adjunta un apunte o un archivo** a cada tarea tocando el icono de clip (puedes elegir uno existente o subir un archivo nuevo, que quedará guardado también en tu asignatura dentro de Académico).
+5. Toca **«Crear reto»**.
+
+> 💡 En el detalle del reto, las tareas con adjunto muestran un chip «Apunte adjunto» o «Archivo adjunto»: tócalo para abrir el material.
 
 ### 4.7 Interactuar en el Muro Social
 
@@ -239,8 +241,8 @@ SynaptixFit premia tu consistencia con experiencia (XP) que te hace subir de niv
 | Actividad | XP | Cuándo |
 |-----------|-----|--------|
 | **Completar una sesión de entrenamiento** | 56–190 XP | Al finalizar sesión en vivo. Depende de duración (máx 90 min) y RPE (esfuerzo percibido). |
-| **Completar un reto simple** | 200 XP | Al marcar el reto como completado. |
-| **Completar un reto complejo** | 400–1300 XP | Según la cantidad de hitos del reto. |
+| **Completar un reto** | 20 / 40 / 70 XP | Según el esfuerzo (Tranquilo/Equilibrado/Intenso). Al marcar el reto como completado (si tiene tareas, suma el XP de cada tarea). |
+| **Completar una tarea de reto** | 20 / 40 / 70 XP | Según el esfuerzo de la tarea, al marcarla completada. |
 | **Cumplir meta de estudio semanal** | 150 XP | Al alcanzar ≥80% de tus horas de estudio planeadas. Único por semana. |
 
 #### Subir de nivel
@@ -298,4 +300,4 @@ Mínimo 3 ejercicios para poder guardarla.
 ---
 
 **Documento compilado:** 21-06-2026  
-**Última revisión:** v4.3 — §4.5.3 actualizado: eliminado botón "Generar mi semana", reemplazado por "Ir al Canvas". §4.5.4 actualizado con distribución de rutina desde pestaña Deporte, indicador visual de rutina en bloques, y bloqueos inamovibles (exámenes/entregas). §4.5.5 actualizado: barra inferior "Guardar plan" en vez de "Guardar semana" en AppBar. Insignia "Planificador Maestro" ya implementada.
+**Última revisión:** v4.6 — v8.2.5: §4.5.4 y §4.5.5 actualizados — Guardar permanece en el lienzo (ya no se sale a otra pantalla), restricción de bloques en horas pasadas, examen con hora de inicio y flujo de retos desde el lienzo («Crear reto» → sheet → vínculo automático al bloque).
