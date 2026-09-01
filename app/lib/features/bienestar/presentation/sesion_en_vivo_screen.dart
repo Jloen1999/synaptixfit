@@ -378,6 +378,14 @@ class _LiveSessionScreenState extends ConsumerState<LiveSessionScreen> {
             const SizedBox(height: 16),
             const Text('¿Listo para entrenar?',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            if (diaNombre != null && diaNombre.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(diaNombre,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade600)),
+            ],
             const SizedBox(height: 24),
             FilledButton.icon(
                 onPressed: _iniciarSesion,

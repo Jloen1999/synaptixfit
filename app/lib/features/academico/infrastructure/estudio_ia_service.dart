@@ -316,9 +316,16 @@ $_contextoBloque(fuentes)''';
   ) async {
     try {
       return await _generarTexto(parts);
-    } on EstudioIaException {
+    } on EstudioIaException catch (e) {
+      // Cuota agotada (429): una pausa corta puede encajar en la siguiente
+      // ventana de rate-limit y salvar la petición.
+      if (e.message.startsWith('Límite de peticiones')) {
+        await Future<void>.delayed(const Duration(seconds: 6));
+        return await _generarTexto(parts);
+      }
       rethrow;
     } catch (e) {
+      await Future<void>.delayed(const Duration(seconds: 3));
       return await _generarTexto(parts);
     }
   }
@@ -428,7 +435,42 @@ $_contextoBloque(fuentes)''';
       case DioExceptionType.connectionError:
         return 'No se pudo conectar con el servicio de IA.';
       default:
-        return 'Error de IA${status != null ? ' ($status)' : ''}.';
+        // Se incluye el mensaje real de la API (modelo retirado, cuota, etc.)
+        // para poder diagnosticar el error sin leer los logs.
+        final detalle = _mensajeApi(e);
+        return detalle.isNotEmpty
+            ? 'Error de IA: $detalle'
+            : 'Error de IA${status != null ? ' ($status)' : ''}.';
     }
+  }
+
+  /// Extrae el mensaje de error del cuerpo de la respuesta de Gemini.
+  String _mensajeApi(DioException e) {
+    try {
+      final data = e.response?.data;
+      if (data is Map) {
+        final error = data['error'];
+        if (error is Map) {
+          final msg = error['message'];
+          if (msg is String && msg.trim().isNotEmpty) {
+            return msg.trim().length > 200
+                ? msg.trim().substring(0, 200)
+                : msg.trim();
+          }
+        }
+      }
+      // Algunos gateways responden errores no-JSON (texto plano/HTML).
+      if (data is String && data.trim().isNotEmpty) {
+        final plano = data
+            .trim()
+            .replaceAll(RegExp(r'<[^>]+>'), ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+        if (plano.isNotEmpty) {
+          return plano.length > 200 ? plano.substring(0, 200) : plano;
+        }
+      }
+    } catch (_) {}
+    return '';
   }
 }

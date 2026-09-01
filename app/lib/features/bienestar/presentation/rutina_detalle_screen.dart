@@ -619,6 +619,7 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
                   controller: nombreCtrl,
@@ -631,18 +632,33 @@ class _RutinaDetalleScreenState extends ConsumerState<RutinaDetalleScreen> {
                   decoration: const InputDecoration(labelText: 'Descripción'),
                 ),
                 const SizedBox(height: 12),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'private', label: Text('Privada')),
-                    ButtonSegment(value: 'friends', label: Text('Amigos')),
-                    ButtonSegment(value: 'public', label: Text('Pública')),
+                // Chips en Wrap: el SegmentedButton desbordaba el ancho del
+                // diálogo en pantallas estrechas.
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final opcion in const [
+                      ('private', 'Privada', Icons.lock_outline_rounded),
+                      ('friends', 'Amigos', Icons.people_outline_rounded),
+                      ('public', 'Pública', Icons.public_rounded),
+                    ])
+                      ChoiceChip(
+                        avatar: Icon(opcion.$3,
+                            size: 16,
+                            color: visibilidad == opcion.$1
+                                ? Theme.of(ctx).colorScheme.onSecondaryContainer
+                                : Theme.of(ctx).colorScheme.onSurfaceVariant),
+                        label: Text(opcion.$2),
+                        selected: visibilidad == opcion.$1,
+                        onSelected: (_) => setD(() => visibilidad = opcion.$1),
+                      ),
                   ],
-                  selected: {visibilidad},
-                  onSelectionChanged: (v) => setD(() => visibilidad = v.first),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: objetivo,
+                  isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Objetivo'),
                   items: finalidadesEstandar
                       .map((f) => DropdownMenuItem(value: f, child: Text(f)))

@@ -38,6 +38,11 @@ class ResultadoGeneracion {
   final MetadatosGeneracion metadatos;
   final String? error;
 
+  /// Nombres personalizados de semanas y días sugeridos por la IA
+  /// (claves: número de semana y de día).
+  final Map<int, String> nombresSemanas;
+  final Map<int, Map<int, String>> nombresDias;
+
   const ResultadoGeneracion({
     required this.nombre,
     required this.descripcion,
@@ -46,6 +51,8 @@ class ResultadoGeneracion {
     required this.estructura,
     required this.metadatos,
     this.error,
+    this.nombresSemanas = const {},
+    this.nombresDias = const {},
   });
 
   bool get tieneError => error != null;
@@ -202,7 +209,7 @@ class RecomendacionOrquestadorService {
               contextoAcademico: contextoAcademico,
               motivoAjustes: motivoAjustes,
             )
-            .timeout(const Duration(seconds: 30));
+            .timeout(const Duration(seconds: 40));
       } on TimeoutException {
         motivoAjustes = motivoAjustes != null
             ? '$motivoAjustes | IA no disponible (timeout)'
@@ -238,6 +245,8 @@ class RecomendacionOrquestadorService {
             factorCargaTotal: fct,
             iaRefinada: true,
           ),
+          nombresSemanas: resultadoIA.nombresSemanas,
+          nombresDias: resultadoIA.nombresDias,
         );
       }
     }
@@ -334,7 +343,8 @@ class RecomendacionOrquestadorService {
   }
 
   String _generarNombreRutina(String obj, String splitLabel, int semanas) {
-    return '$obj · $splitLabel · $semanas semanas';
+    final duracion = semanas == 1 ? '1 semana' : '$semanas semanas';
+    return '$obj · $splitLabel · $duracion';
   }
 
   String _generarDescripcionRutina(

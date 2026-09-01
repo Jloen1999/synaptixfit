@@ -579,6 +579,7 @@ ${json.encode(catalogoFiltrado)}
 REGLAS DE REFINAMIENTO:
 
 1. MEJORA EL NOMBRE: Hazlo mas personal y motivador. Ej: en vez de "Rutina de Fuerza", algo como "Potencia Total — Fase de Carga".
+   IMPORTANTE: la rutina dura EXACTAMENTE $duracionSemanas semana(s). El nombre NO debe incluir numeros de semanas ni de dias (nunca escribas "4 semanas" ni cantidades que no coincidan con la duracion real).
 
 2. MEJORA LA DESCRIPCION: Explica el enfoque de forma inspiradora, SIN mencionar numeros (dias/semanas).
    ${motivoAjustes != null ? 'Menciona sutilmente que se adapto la intensidad por el contexto actual del usuario.' : ''}
@@ -626,7 +627,10 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
       final rawJson = await _callGemini(apiKey, prompt);
       final parsed = _parseMapa(rawJson);
 
-      final nombre = parsed['nombre'] as String? ?? nombreRutina;
+      final nombre = _sanitizarNombreRutina(
+        parsed['nombre'] as String? ?? nombreRutina,
+        duracionSemanas,
+      );
       final descripcion = parsed['descripcion'] as String? ?? descripcionRutina;
       final estructuraRaw = parsed['estructura'] as Map<String, dynamic>?;
 
@@ -690,6 +694,16 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
         error: 'IA no disponible: ${_parseError(e)}',
       );
     }
+  }
+
+  /// Corrige menciones erróneas de duración en el nombre generado por la IA
+  /// (p. ej. «4 semanas» cuando la rutina solo dura 1 semana).
+  String _sanitizarNombreRutina(String nombre, int duracionSemanas) {
+    final re = RegExp(r'\d+\s*semanas?', caseSensitive: false);
+    if (!nombre.contains(re)) return nombre;
+    final correcto =
+        duracionSemanas == 1 ? '1 semana' : '$duracionSemanas semanas';
+    return nombre.replaceAll(re, correcto);
   }
 
   Map<int, Map<int, List<EjercicioRecomendado>>> _validarYReparar(
@@ -1302,6 +1316,9 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
       if (status == 400 || status == 401 || status == 403) {
         return 'Error de autenticacion con Gemini. Revisa GEMINI_API_KEY.';
       }
+      if (status == 429) {
+        return 'Cuota de Gemini agotada. Inténtalo más tarde.';
+      }
       // Se incluye el mensaje real de la API (p. ej. modelo retirado) para
       // poder diagnosticar sin volcar el log completo.
       final detalle = _mensajeApi(e);
@@ -1328,6 +1345,17 @@ El JSON debe contener TODOS los dias y ejercicios de la estructura base. Si sust
                 ? msg.trim().substring(0, 180)
                 : msg.trim();
           }
+        }
+      }
+      // Algunos gateways responden errores no-JSON (texto plano/HTML).
+      if (data is String && data.trim().isNotEmpty) {
+        final plano = data
+            .trim()
+            .replaceAll(RegExp(r'<[^>]+>'), ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+        if (plano.isNotEmpty) {
+          return plano.length > 180 ? plano.substring(0, 180) : plano;
         }
       }
     } catch (_) {}

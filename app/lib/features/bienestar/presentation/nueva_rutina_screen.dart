@@ -1219,6 +1219,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
                   _estructura[semanaActual]![diaNum]!.removeAt(idx);
                   _hayCambios = true;
                 }),
+                onEjerciciosReordered: () => setState(() => _hayCambios = true),
                 onEjercicioUpdated: (idx, e) => setState(
                     () => _estructura[semanaActual]![diaNum]![idx] = e),
                 onSugerirEjerciciosIA: EnvConfig.hasGeminiApiKey
@@ -2019,7 +2020,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       final resultado = await ref
           .read(generarRutinaProvider(
               (conIA: conIA, duracionSemanas: _duracionSemanas)).future)
-          .timeout(const Duration(seconds: 45));
+          .timeout(const Duration(seconds: 75));
       final catalogo = await catalogoAsync;
       if (!mounted) return;
       if (!_loadingIA) return;
@@ -2045,6 +2046,15 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         _diasDisponibles = List.from(diasIA)..sort();
       }
       _syncEstructura();
+
+      // Conserva los nombres de semanas y días sugeridos por la IA para
+      // mostrarlos durante la creación y persistirlos al guardar.
+      _nombresSemanas
+        ..clear()
+        ..addAll(resultado.nombresSemanas);
+      _nombresDias
+        ..clear()
+        ..addAll(resultado.nombresDias);
 
       setState(() {
         _estructura.clear();
@@ -2091,7 +2101,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
       });
 
       if (mounted && !resultado.tieneError) {
-        final motivoIA = resultado.metadatos.motivoAjustes;
+        final motivoIA = _acortarMotivo(resultado.metadatos.motivoAjustes);
         final mensaje = resultado.metadatos.iaRefinada
             ? '¡Rutina generada con IA! Configúrala a tu gusto.'
             : motivoIA != null
@@ -2107,12 +2117,34 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         _terminarCargaIA();
         final msg = e is TimeoutException
             ? 'La generación tardó demasiado. Inténtalo de nuevo.'
-            : 'Error al generar rutina. Verifica tu conexión.';
+            : 'Error al generar rutina: ${_resumenError(e)}';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
+          SnackBar(content: Text(msg), duration: const Duration(seconds: 6)),
         );
       }
     }
+  }
+
+  /// Resume el mensaje de una excepción para mostrarlo en un SnackBar sin
+  /// ocultar la causa real del fallo (cuota de IA, red, esquema, etc.).
+  String _resumenError(Object e) {
+    var s = e.toString().trim();
+    s = s
+        .replaceAll(
+            RegExp(r'^(Exception|DioException|EstudioIaException|Bad state): '),
+            '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (s.isEmpty) s = 'Error desconocido';
+    return s.length > 180 ? '${s.substring(0, 180)}…' : s;
+  }
+
+  /// Acorta el motivo de ajustes para el SnackBar (evita volcar mensajes
+  /// completos de la API de IA, p. ej. errores de cuota de Gemini).
+  String? _acortarMotivo(String? motivo) {
+    if (motivo == null || motivo.trim().isEmpty) return null;
+    final s = motivo.trim();
+    return s.length > 110 ? '${s.substring(0, 110)}…' : s;
   }
 
   Future<T?> _obtenerOConTimeout<T>(
@@ -2211,7 +2243,7 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
             historial: historial,
             estadoDiario: estadoDiario,
           )
-          .timeout(const Duration(seconds: 45));
+          .timeout(const Duration(seconds: 75));
 
       if (!mounted) return;
       if (!_loadingIA) return;
@@ -2304,9 +2336,9 @@ class _NuevaRutinaScreenState extends ConsumerState<NuevaRutinaScreen> {
         _terminarCargaIA();
         final msg = e is TimeoutException
             ? 'La IA tardó demasiado en sugerir ejercicios. Inténtalo de nuevo.'
-            : 'Error al sugerir ejercicios. Verifica tu conexión e inténtalo de nuevo.';
+            : 'Error al sugerir ejercicios: ${_resumenError(e)}';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
+          SnackBar(content: Text(msg), duration: const Duration(seconds: 6)),
         );
       }
     }
@@ -2512,6 +2544,7 @@ class _DiaEditorCard extends StatefulWidget {
       required this.onEjercicioAdded,
       required this.onEjercicioRemoved,
       required this.onEjercicioUpdated,
+      required this.onEjerciciosReordered,
       this.onSugerirEjerciciosIA,
       this.labelSugerirIA = 'Sugerir ejercicios con IA',
       this.loadingIA = false,
@@ -2525,6 +2558,7 @@ class _DiaEditorCard extends StatefulWidget {
   final void Function(_EjercicioPlan) onEjercicioAdded;
   final void Function(int) onEjercicioRemoved;
   final void Function(int, _EjercicioPlan) onEjercicioUpdated;
+  final VoidCallback onEjerciciosReordered;
   final VoidCallback? onSugerirEjerciciosIA;
   final String labelSugerirIA;
   final bool loadingIA;
@@ -2588,26 +2622,30 @@ class _DiaEditorCardState extends State<_DiaEditorCard> {
           ]),
           if (widget.ejercicios.isNotEmpty) ...[
             const SizedBox(height: 8),
-            ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: widget.ejercicios.length,
-              onReorder: (oldIndex, newIndex) {
-                if (oldIndex < newIndex) newIndex--;
-                final item = widget.ejercicios.removeAt(oldIndex);
-                widget.ejercicios.insert(newIndex, item);
-                setState(() {});
-              },
-              itemBuilder: (context, index) {
-                final entry = widget.ejercicios[index];
-                return _EjercicioCompacto(
-                  key: ValueKey(entry.ejercicioId),
-                  ejercicio: entry,
-                  onRemove: () => widget.onEjercicioRemoved(index),
-                  onChanged: (nuevo) => widget.onEjercicioUpdated(index, nuevo),
-                );
-              },
-            ),
+            // Lista simple con botones de reorden: evita el conflicto de
+            // gestos del ReorderableListView con el scroll vertical de la
+            // pantalla (el swipe sobre las tarjetas se atascaba).
+            ...List.generate(widget.ejercicios.length, (index) {
+              final entry = widget.ejercicios[index];
+              return _EjercicioCompacto(
+                key: ValueKey(entry.ejercicioId),
+                ejercicio: entry,
+                puedeSubir: index > 0,
+                puedeBajar: index < widget.ejercicios.length - 1,
+                onMover: (delta) {
+                  final destino = index + delta;
+                  if (destino < 0 || destino >= widget.ejercicios.length) {
+                    return;
+                  }
+                  final item = widget.ejercicios.removeAt(index);
+                  widget.ejercicios.insert(destino, item);
+                  setState(() {});
+                  widget.onEjerciciosReordered();
+                },
+                onRemove: () => widget.onEjercicioRemoved(index),
+                onChanged: (nuevo) => widget.onEjercicioUpdated(index, nuevo),
+              );
+            }),
           ],
           const SizedBox(height: 8),
           if (widget.onSugerirEjerciciosIA != null)
@@ -2741,10 +2779,18 @@ class _EjercicioCompacto extends StatefulWidget {
       {required this.ejercicio,
       required this.onRemove,
       required this.onChanged,
+      required this.puedeSubir,
+      required this.puedeBajar,
+      required this.onMover,
       super.key});
   final _EjercicioPlan ejercicio;
   final VoidCallback onRemove;
   final void Function(_EjercicioPlan) onChanged;
+  final bool puedeSubir;
+  final bool puedeBajar;
+
+  /// Mueve el ejercicio dentro del día: -1 sube, +1 baja.
+  final void Function(int delta) onMover;
   @override
   State<_EjercicioCompacto> createState() => _EjercicioCompactoState();
 }
@@ -2903,11 +2949,35 @@ class _EjercicioCompactoState extends State<_EjercicioCompacto> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Icon(
-                    Icons.drag_indicator_rounded,
-                    size: 20,
-                    color: cs.outlineVariant.withValues(alpha: 0.5),
+                  padding: const EdgeInsets.only(right: 2),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      InkWell(
+                        onTap:
+                            widget.puedeSubir ? () => widget.onMover(-1) : null,
+                        borderRadius: BorderRadius.circular(6),
+                        child: Icon(
+                          Icons.keyboard_arrow_up_rounded,
+                          size: 22,
+                          color: widget.puedeSubir
+                              ? cs.onSurfaceVariant
+                              : cs.outlineVariant.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      InkWell(
+                        onTap:
+                            widget.puedeBajar ? () => widget.onMover(1) : null,
+                        borderRadius: BorderRadius.circular(6),
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 22,
+                          color: widget.puedeBajar
+                              ? cs.onSurfaceVariant
+                              : cs.outlineVariant.withValues(alpha: 0.35),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (widget.ejercicio.urlGif != null ||

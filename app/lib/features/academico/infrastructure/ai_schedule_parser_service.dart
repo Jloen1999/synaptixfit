@@ -221,7 +221,39 @@ Devuelve solo JSON, sin markdown. Formato exigido:
       case DioExceptionType.connectionError:
         return 'No se pudo conectar con el servicio de IA.';
       default:
-        return 'Error de IA${status != null ? ' ($status)' : ''}.';
+        final detalle = _mensajeApi(e);
+        return detalle.isNotEmpty
+            ? 'Error de IA: $detalle'
+            : 'Error de IA${status != null ? ' ($status)' : ''}.';
     }
+  }
+
+  /// Extrae el mensaje de error del cuerpo de la respuesta de Gemini.
+  String _mensajeApi(DioException e) {
+    try {
+      final data = e.response?.data;
+      if (data is Map) {
+        final error = data['error'];
+        if (error is Map) {
+          final msg = error['message'];
+          if (msg is String && msg.trim().isNotEmpty) {
+            return msg.trim().length > 200
+                ? msg.trim().substring(0, 200)
+                : msg.trim();
+          }
+        }
+      }
+      if (data is String && data.trim().isNotEmpty) {
+        final plano = data
+            .trim()
+            .replaceAll(RegExp(r'<[^>]+>'), ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+        if (plano.isNotEmpty) {
+          return plano.length > 200 ? plano.substring(0, 200) : plano;
+        }
+      }
+    } catch (_) {}
+    return '';
   }
 }
