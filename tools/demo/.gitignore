@@ -1,0 +1,3 @@
+# Registros de cada ejecución del seed (ids, rondas y resumen): se generan, no se versionan.
+runs/
+__pycache__/

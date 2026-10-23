@@ -1,0 +1,554 @@
+{
+  "@@locale": "es",
+  "plannerTitle": "Planificador",
+  "plannerCalendarTitle": "Calendario semanal",
+  "plannerPrevWeek": "Semana anterior",
+  "plannerNextWeek": "Semana siguiente",
+  "plannerToday": "Hoy",
+  "plannerWeekRange": "{start} – {end}",
+  "@plannerWeekRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerSavePlan": "Guardar plan",
+  "plannerPlanSaved": "{count, plural, =0{Plan guardado} =1{Plan guardado con 1 bloque} other{Plan guardado con {count} bloques}}",
+  "@plannerPlanSaved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPlanSavedXp": "Plan guardado · +{xp} XP",
+  "@plannerPlanSavedXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerBlockCompleted": "Bloque completado",
+  "plannerBlockCompletedXp": "Bloque completado · +{xp} XP",
+  "@plannerBlockCompletedXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerBlockUncompleted": "Bloque desmarcado",
+  "plannerBlockUncompletedXp": "Bloque desmarcado · −{xp} XP",
+  "@plannerBlockUncompletedXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerOverlapWarning": "{count, plural, =1{Atención: se solapa con otro bloque} other{Atención: se solapa con {count} bloques}}",
+  "@plannerOverlapWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerBlockLocked": "Este bloque es fijo y no se puede mover.",
+  "plannerCompletedLocked": "Desmarca el bloque como completado antes de moverlo.",
+  "plannerInPast": "No puedes colocar bloques en una hora o fecha pasada.",
+  "plannerConflictsBanner": "{count, plural, =1{1 solape esta semana} other{{count} solapes esta semana}}",
+  "@plannerConflictsBanner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerConflictsTitle": "Bloques solapados",
+  "plannerConflictPair": "{first} y {second}",
+  "@plannerConflictPair": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerConflictsHint": "Toca un bloque para editarlo o muévelo a otra franja.",
+  "plannerDeadlinesThisWeek": "Entregas de la semana",
+  "plannerMenuDeadlines": "Entregas y exámenes",
+  "plannerMenuSuggestions": "Sugerencias con IA",
+  "plannerMenuPomodoro": "Pomodoro",
+  "plannerMenuScheduleImport": "Importar o exportar horario",
+  "plannerMoreOptions": "Más opciones",
+  "plannerAddBlock": "Nuevo bloque",
+  "plannerEmptyWeekHint": "Semana libre: toca una franja para añadir un bloque o pide sugerencias a la IA.",
+  "plannerDragHint": "Mantén pulsado un bloque para moverlo y arrastra su borde inferior para cambiar la duración.",
+  "plannerResizeHandle": "Cambiar duración",
+  "plannerBlockSemantics": "{type}, de {start} a {end}",
+  "@plannerBlockSemantics": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerCompletedLabel": "Completado",
+  "plannerFixedLabel": "Fijo",
+  "plannerPrivateLabel": "Privado",
+  "plannerTimeRange": "{start} – {end}",
+  "@plannerTimeRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerTypeStudy": "Estudio",
+  "plannerTypeSport": "Deporte",
+  "plannerTypeClass": "Clase",
+  "plannerTypeRest": "Descanso",
+  "plannerTypeMeal": "Comida",
+  "plannerTypeSleep": "Sueño",
+  "plannerTypeExam": "Examen",
+  "plannerTypeDelivery": "Entrega",
+  "plannerTypeReview": "Repaso",
+  "plannerPriorityLow": "Baja",
+  "plannerPriorityMedium": "Media",
+  "plannerPriorityHigh": "Alta",
+  "plannerClassTheory": "Teoría",
+  "plannerClassPractice": "Práctica",
+  "plannerDeadlineTypeExam": "Examen",
+  "plannerDeadlineTypeAssignment": "Trabajo",
+  "plannerDeadlineTypePresentation": "Presentación",
+  "plannerDeadlineTypeOther": "Otro",
+  "plannerBalanceInactive": "Sin actividad",
+  "plannerBalanceBalanced": "Equilibrada",
+  "plannerBalanceStudyHeavy": "Mucho estudio",
+  "plannerBalanceSportHeavy": "Mucho deporte",
+  "plannerWeekSummary": "Resumen de la semana",
+  "plannerStudyHours": "Estudio",
+  "plannerSportHours": "Deporte",
+  "plannerHoursProgress": "{actual} / {planned} h",
+  "@plannerHoursProgress": {
+    "placeholders": {
+      "actual": {
+        "type": "String"
+      },
+      "planned": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerOpenWeeklyLoad": "Ver carga semanal",
+  "plannerWeeklyLoadTitle": "Carga semanal",
+  "plannerPlannedHours": "Horas planificadas",
+  "plannerActualHours": "Horas reales",
+  "plannerExamsCount": "Exámenes",
+  "plannerDeliveriesCount": "Entregas",
+  "plannerStressLevel": "Nivel de estrés",
+  "plannerStressValue": "{value}/10",
+  "@plannerStressValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerSleepHours": "Sueño medio",
+  "plannerSleepValue": "{value} h",
+  "@plannerSleepValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerNotes": "Notas de la semana",
+  "plannerWellbeingSaved": "Datos de la semana guardados",
+  "plannerSync": "Recalcular carga",
+  "plannerSynced": "Carga recalculada",
+  "plannerSyncedXp": "Carga recalculada · +{xp} XP",
+  "@plannerSyncedXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerNoLoadYet": "Aún no hay carga registrada para esta semana. Recalcúlala para generarla.",
+  "plannerNewBlockTitle": "Nuevo bloque",
+  "plannerEditBlockTitle": "Editar bloque",
+  "plannerTabBlock": "Bloque",
+  "plannerTabRoutine": "Distribuir rutina",
+  "plannerFieldType": "Tipo",
+  "plannerFieldSubject": "Asignatura",
+  "plannerNoSubject": "Sin asignatura",
+  "plannerFieldDate": "Día",
+  "plannerFieldStart": "Inicio",
+  "plannerFieldEnd": "Fin",
+  "plannerFieldTopics": "Temas",
+  "plannerFieldTopicsHint": "Qué vas a trabajar",
+  "plannerFieldLocation": "Ubicación",
+  "plannerFieldPriority": "Prioridad",
+  "plannerFieldPrivate": "Bloque privado",
+  "plannerFieldPrivateHint": "Solo tú lo verás",
+  "plannerFieldClassKind": "Tipo de clase",
+  "plannerFieldRoutine": "Rutina",
+  "plannerNoRoutine": "Sin rutina",
+  "plannerFieldChallenge": "Reto vinculado",
+  "plannerNoChallenge": "Sin reto",
+  "plannerFieldDeadline": "Entrega vinculada",
+  "plannerNoDeadline": "Crear una entrega nueva",
+  "plannerNoDeadlineLink": "Sin entrega",
+  "plannerFieldDeadlineTitle": "Título de la entrega",
+  "plannerFieldDeadlineTitleHint": "Si lo dejas vacío se usan los temas",
+  "plannerFieldDifficulty": "Dificultad",
+  "plannerLinks": "Vínculos",
+  "plannerDetails": "Detalles",
+  "plannerSchedule": "Horario",
+  "plannerCreateBlock": "Crear bloque",
+  "plannerSaveChanges": "Guardar cambios",
+  "plannerDeleteBlock": "Eliminar bloque",
+  "plannerMarkCompleted": "Marcar completado",
+  "plannerMarkPending": "Desmarcar completado",
+  "plannerBlockLockedHint": "Bloque fijo: el horario no se puede cambiar.",
+  "plannerIssueTooShort": "El bloque debe durar al menos 30 minutos.",
+  "plannerIssueNoWeekdays": "Elige al menos un día de la semana.",
+  "plannerOptionsError": "No se han podido cargar todas las opciones.",
+  "plannerBlockCreated": "Bloque creado",
+  "plannerBlockUpdated": "Bloque actualizado",
+  "plannerBlockDeleted": "Bloque eliminado",
+  "plannerRoutineDistributed": "{count, plural, =0{No se ha añadido ninguna sesión} =1{1 sesión añadida al calendario} other{{count} sesiones añadidas al calendario}}",
+  "@plannerRoutineDistributed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerDistributeIntro": "Reparte todos los días de una rutina en el calendario a partir de la fecha que elijas.",
+  "plannerFieldWeekdays": "Días de entrenamiento",
+  "plannerFieldStartDate": "Empezar el",
+  "plannerFieldPreferredTime": "Hora",
+  "plannerFieldDuration": "Duración de cada sesión",
+  "plannerDurationMinutes": "{minutes} min",
+  "@plannerDurationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerDistributeAction": "Distribuir rutina",
+  "plannerNoRoutinesTitle": "No tienes rutinas",
+  "plannerNoRoutinesMessage": "Crea una rutina en la pestaña Rutinas para poder distribuirla.",
+  "plannerDeadlinesTitle": "Entregas y exámenes",
+  "plannerFilterPending": "Pendientes",
+  "plannerFilterAll": "Todas",
+  "plannerFilterSubjectAll": "Todas las asignaturas",
+  "plannerNewDeadline": "Nueva entrega",
+  "plannerEditDeadline": "Editar entrega",
+  "plannerDeadlinesEmptyTitle": "Sin entregas",
+  "plannerDeadlinesEmptyMessage": "Añade tus entregas y exámenes para planificar el estudio con tiempo.",
+  "plannerFieldTitle": "Título",
+  "plannerFieldDueDate": "Fecha límite",
+  "plannerFieldDueTime": "Hora",
+  "plannerFieldDescription": "Descripción",
+  "plannerDeadlineCreated": "Entrega creada",
+  "plannerDeadlineUpdated": "Entrega actualizada",
+  "plannerDeadlineDeleted": "Entrega eliminada",
+  "plannerDeadlineCompleted": "Entrega completada",
+  "plannerDeadlineCompletedXp": "Entrega completada · +{xp} XP",
+  "@plannerDeadlineCompletedXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerDeadlinePending": "Entrega marcada como pendiente",
+  "plannerDueOn": "Vence el {date}",
+  "@plannerDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerOverdue": "Vencida",
+  "plannerImported": "Importada",
+  "plannerLoadMore": "Cargar más",
+  "plannerMarkDone": "Marcar como completada",
+  "plannerMarkUndone": "Marcar como pendiente",
+  "plannerSuggestionsTitle": "Sugerencias con IA",
+  "plannerSuggestionsIntro": "Indica tus objetivos y te propondremos bloques de estudio y deporte en los huecos libres de la semana.",
+  "plannerThisWeek": "Esta semana",
+  "plannerNextWeekShort": "Próxima semana",
+  "plannerStudyHoursGoal": "Horas de estudio",
+  "plannerSportSessionsGoal": "Sesiones de deporte",
+  "plannerHoursValue": "{hours} h",
+  "@plannerHoursValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerSessionsValue": "{count, plural, =0{Ninguna} =1{1 sesión} other{{count} sesiones}}",
+  "@plannerSessionsValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerGenerate": "Generar propuesta",
+  "plannerRegenerate": "Generar de nuevo",
+  "plannerSourceAi": "Propuesta de la IA",
+  "plannerSourceHeuristic": "Propuesta automática (la IA no estaba disponible)",
+  "plannerSelectAll": "Seleccionar todo",
+  "plannerSelectNone": "Quitar selección",
+  "plannerAcceptSelected": "{count, plural, =0{Elige bloques} =1{Añadir 1 bloque} other{Añadir {count} bloques}}",
+  "@plannerAcceptSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerAccepted": "{count, plural, =1{1 bloque añadido al calendario} other{{count} bloques añadidos al calendario}}",
+  "@plannerAccepted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerAcceptedPartial": "{created} añadidos; {failed} no se pudieron añadir",
+  "@plannerAcceptedPartial": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerSuggestionExpired": "Ya ha empezado",
+  "plannerNoSuggestionsTitle": "Sin propuestas",
+  "plannerNoSuggestionsMessage": "No quedan bloques que proponer con estos objetivos.",
+  "plannerOpenCalendar": "Ver calendario",
+  "plannerScheduleTitle": "Importar horario",
+  "plannerScanSection": "Escanear horario con IA",
+  "plannerScanIntro": "Sube el PDF o una foto de tu horario y crearemos las clases de todo el semestre.",
+  "plannerPickFile": "Elegir PDF o imagen",
+  "plannerUploading": "Subiendo… {percent} %",
+  "@plannerUploading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerAnalyzing": "Analizando el horario…",
+  "plannerScanResultTitle": "Horario sincronizado",
+  "plannerScanResultSummary": "{classes} clases detectadas · {created} bloques creados · {updated} actualizados",
+  "@plannerScanResultSummary": {
+    "placeholders": {
+      "classes": {
+        "type": "int"
+      },
+      "created": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerUnmatchedSubjects": "No hemos encontrado estas asignaturas:",
+  "plannerUnmatchedHint": "Créalas en Académico y vuelve a escanear el horario.",
+  "plannerSemesterDatesTitle": "Fechas del semestre",
+  "plannerSemesterDatesIntro": "Para repetir tus clases cada semana necesitamos saber cuándo empiezan y terminan.",
+  "plannerClassesStart": "Inicio de clases",
+  "plannerClassesEnd": "Fin de clases",
+  "plannerSaveAndScan": "Guardar y escanear",
+  "plannerDatesInvalid": "La fecha de fin debe ser posterior a la de inicio.",
+  "plannerPickDate": "Elegir fecha",
+  "plannerIcsSection": "Calendario ICS de una asignatura",
+  "plannerIcsIntro": "Importa clases, exámenes y entregas desde el enlace ICS del campus virtual.",
+  "plannerIcsUrl": "URL del calendario (opcional)",
+  "plannerIcsUrlHint": "Vacía: se usa la guardada en la asignatura",
+  "plannerIcsImport": "Importar",
+  "plannerIcsResult": "{created} creados · {updated} actualizados de {total} eventos",
+  "@plannerIcsResult": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerIcsNotImported": "El calendario no parece de esta asignatura: coinciden {matching} de {total} eventos.",
+  "@plannerIcsNotImported": {
+    "placeholders": {
+      "matching": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerIcsForce": "Importar igualmente",
+  "plannerIcsNoSubjects": "Añade asignaturas en Académico para importar su calendario.",
+  "plannerExportSection": "Exportar mi calendario",
+  "plannerExportIntro": "Descarga tus bloques y entregas en un archivo .ics para Google Calendar, Outlook o Apple Calendar.",
+  "plannerExportAction": "Exportar .ics",
+  "plannerExported": "Calendario exportado",
+  "plannerPomodoroTitle": "Pomodoro",
+  "plannerPhaseFocus": "Concentración",
+  "plannerPhaseShortBreak": "Descanso corto",
+  "plannerPhaseLongBreak": "Descanso largo",
+  "plannerPomodoroStart": "Iniciar",
+  "plannerPomodoroPause": "Pausar",
+  "plannerPomodoroResume": "Reanudar",
+  "plannerPomodoroReset": "Reiniciar",
+  "plannerPomodoroSkip": "Saltar fase",
+  "plannerPomodoroCycle": "Ciclo {current} de {total}",
+  "@plannerPomodoroCycle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroFocusDone": "¡Buen trabajo! Toca descansar.",
+  "plannerPomodoroBreakDone": "Descanso terminado. ¡A por el siguiente ciclo!",
+  "plannerPomodoroRecordFailed": "No se ha podido guardar la sesión.",
+  "plannerPomodoroXpEarned": "¡Buen trabajo! +{xp} XP por tu concentración",
+  "@plannerPomodoroXpEarned": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroXpLimitReached": "¡Buen trabajo! Ya has ganado hoy toda la XP de concentración; el Pomodoro sigue contando en tus estadísticas.",
+  "plannerStatsToday": "Hoy",
+  "plannerStatsWeek": "Esta semana",
+  "plannerFocusMinutesLabel": "Min. de foco",
+  "plannerBreakMinutesLabel": "Min. de pausa",
+  "plannerFocusCyclesLabel": "Ciclos",
+  "plannerStatsUnavailable": "No se han podido cargar las estadísticas.",
+  "plannerTimeRemaining": "{phase}: quedan {time}",
+  "@plannerTimeRemaining": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerErrorBlockNotFound": "No encontramos ese bloque.",
+  "plannerErrorBlockInPast": "No puedes colocar bloques en una hora o fecha pasada.",
+  "plannerErrorBlockLocked": "Este bloque es fijo y no se puede mover.",
+  "plannerErrorBlockCompletedLocked": "Desmarca el bloque como completado antes de cambiarlo.",
+  "plannerErrorBlockInvalidTimeRange": "El bloque debe durar al menos 30 minutos.",
+  "plannerErrorDeadlineNotFound": "No encontramos esa entrega o examen.",
+  "plannerErrorPlanNotFound": "No encontramos ese plan.",
+  "plannerErrorSubjectNotFound": "No encontramos esa asignatura.",
+  "plannerErrorRoutineNotFound": "No encontramos esa rutina.",
+  "plannerErrorChallengeNotFound": "No encontramos ese reto.",
+  "plannerErrorRoutineEmpty": "La rutina no tiene días que añadir al calendario.",
+  "plannerErrorRangeTooLarge": "El rango de fechas no es válido.",
+  "plannerErrorIcsUrlMissing": "Añade la URL del calendario de la asignatura.",
+  "plannerErrorIcsUrlInvalid": "La URL del calendario no es válida.",
+  "plannerErrorIcsUnavailable": "No hemos podido descargar el calendario. Inténtalo más tarde.",
+  "plannerErrorSemesterDatesMissing": "Indica primero las fechas de inicio y fin de clases.",
+  "plannerErrorScheduleNothingFound": "No hemos encontrado tus asignaturas en el documento.",
+  "plannerErrorScheduleUnsupportedFile": "Sube un PDF o una imagen.",
+  "plannerErrorScheduleFileTooLarge": "El archivo supera 10 MB.",
+  "plannerPomodoroStudying": "Estudiando: {name}",
+  "@plannerPomodoroStudying": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerPomodoroMinutes": "{minutes} min",
+  "@plannerPomodoroMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroPlanHint": "Recomendado para hoy, con pausas de {minutes} min",
+  "@plannerPomodoroPlanHint": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroPlanFatigue": "Hoy, bloques más cortos por tu carga física; pausas de {minutes} min",
+  "@plannerPomodoroPlanFatigue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerFocusOnBlock": "Concentrarme",
+  "plannerRepeatWeekly": "Repetir cada semana",
+  "plannerRepeatWeeklyHint": "El mismo día y a la misma hora",
+  "plannerRepeatWeeks": "{weeks} semanas",
+  "@plannerRepeatWeeks": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerBlockCreatedRepeated": "Bloque creado para las próximas {weeks} semanas",
+  "@plannerBlockCreatedRepeated": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroBlockLabel": "Duración del bloque",
+  "plannerRepeatWeeksLabel": "Semanas en total"
+}

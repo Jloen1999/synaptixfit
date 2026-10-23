@@ -1,0 +1,106 @@
+package com.synaptixfit.infrastructure.adapter.input.rest.academic;
+
+import com.synaptixfit.application.port.input.academic.CreateNoteUseCase;
+import com.synaptixfit.application.port.input.academic.DeleteNoteUseCase;
+import com.synaptixfit.application.port.input.academic.GetNoteUseCase;
+import com.synaptixfit.application.port.input.academic.ListNotesUseCase;
+import com.synaptixfit.application.port.input.academic.ListSharedNotesUseCase;
+import com.synaptixfit.application.port.input.academic.UpdateNoteUseCase;
+import com.synaptixfit.domain.model.shared.PageRequest;
+import com.synaptixfit.domain.model.shared.Visibility;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.CreateNoteRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.NoteResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.ScannedNoteRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.SharedNoteResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.UpdateNoteRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
+import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+/** Apuntes en Markdown (propios y compartidos). */
+@Tag(name = "Academic - Notes")
+@RestController
+@RequestMapping("/api/v1/notes")
+public class NoteController {
+
+    private final ListNotesUseCase listNotes;
+    private final ListSharedNotesUseCase listShared;
+    private final GetNoteUseCase getNote;
+    private final CreateNoteUseCase createNote;
+    private final UpdateNoteUseCase updateNote;
+    private final DeleteNoteUseCase deleteNote;
+
+    public NoteController(ListNotesUseCase listNotes, ListSharedNotesUseCase listShared, GetNoteUseCase getNote,
+                          CreateNoteUseCase createNote, UpdateNoteUseCase updateNote, DeleteNoteUseCase deleteNote) {
+        this.listNotes = listNotes;
+        this.listShared = listShared;
+        this.getNote = getNote;
+        this.createNote = createNote;
+        this.updateNote = updateNote;
+        this.deleteNote = deleteNote;
+    }
+
+    @GetMapping
+    public PageResponse<NoteResponse> list(@CurrentUserId UUID userId,
+                                           @RequestParam(required = false) UUID subjectId,
+                                           @RequestParam(defaultValue = "false") boolean quickOnly,
+                                           @RequestParam(defaultValue = "false") boolean unassignedOnly,
+                                           @RequestParam(defaultValue = "0") int page,
+                                           @RequestParam(defaultValue = "20") int size) {
+        return PageResponse.from(listNotes.listNotes(new ListNotesUseCase.Query(userId, subjectId, quickOnly,
+                unassignedOnly, new PageRequest(page, size))), NoteResponse::from);
+    }
+
+    @GetMapping("/shared")
+    public PageResponse<SharedNoteResponse> shared(@CurrentUserId UUID userId,
+                                                   @RequestParam(defaultValue = "0") int page,
+                                                   @RequestParam(defaultValue = "20") int size) {
+        return PageResponse.from(listShared.listSharedNotes(userId, new PageRequest(page, size)),
+                SharedNoteResponse::from);
+    }
+
+    @GetMapping("/{noteId}")
+    public NoteResponse get(@CurrentUserId UUID userId, @PathVariable UUID noteId) {
+        return NoteResponse.from(getNote.getNote(userId, noteId));
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public NoteResponse create(@CurrentUserId UUID userId, @Valid @RequestBody CreateNoteRequest r) {
+        return NoteResponse.from(createNote.createNote(new CreateNoteUseCase.Command(userId, r.subjectId(),
+                r.title(), r.content(), r.visibility(), Boolean.TRUE.equals(r.quickNote()))));
+    }
+
+    @PostMapping("/from-scan")
+    @ResponseStatus(HttpStatus.CREATED)
+    public NoteResponse fromScan(@CurrentUserId UUID userId, @Valid @RequestBody ScannedNoteRequest r) {
+        return NoteResponse.from(createNote.createNote(new CreateNoteUseCase.Command(userId, r.subjectId(),
+                r.title(), r.text(), Visibility.PRIVATE, false)));
+    }
+
+    @PatchMapping("/{noteId}")
+    public NoteResponse update(@CurrentUserId UUID userId, @PathVariable UUID noteId,
+                               @Valid @RequestBody UpdateNoteRequest r) {
+        return NoteResponse.from(updateNote.updateNote(new UpdateNoteUseCase.Command(userId, noteId, r.title(),
+                r.content(), r.subjectId(), Boolean.TRUE.equals(r.detachSubject()), r.visibility(), r.quickNote())));
+    }
+
+    @DeleteMapping("/{noteId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@CurrentUserId UUID userId, @PathVariable UUID noteId) {
+        deleteNote.deleteNote(userId, noteId);
+    }
+}

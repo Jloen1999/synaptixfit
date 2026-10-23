@@ -1,0 +1,463 @@
+{
+  "@@locale": "es",
+  "challengesTitle": "Retos",
+  "challengesTabMine": "Mis retos",
+  "challengesTabCommunity": "Comunidad",
+  "challengesNew": "Nuevo reto",
+  "challengesSummaryActive": "Activos",
+  "challengesSummaryCompleted": "Completados",
+  "challengesSummaryExpired": "Vencidos",
+  "challengesPendingTitle": "Tareas pendientes",
+  "challengesPendingComplete": "Marcar «{title}» como hecha",
+  "@challengesPendingComplete": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesListTitle": "Tus retos",
+  "challengesSearchHint": "Buscar retos",
+  "challengesSearchClear": "Borrar búsqueda",
+  "challengesFilterAll": "Todos",
+  "challengesFilterWithTasks": "Con tareas",
+  "challengesFilterWithoutTasks": "Sin tareas",
+  "challengesFilterWithCount": "{label} ({count})",
+  "@challengesFilterWithCount": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesFilterClear": "Quitar filtros",
+  "challengesFilters": "Filtros",
+  "challengesStatusActive": "Activo",
+  "challengesStatusCompleted": "Completado",
+  "challengesStatusExpired": "Vencido",
+  "challengesTypeAcademic": "Académico",
+  "challengesTypeFitness": "Físico",
+  "challengesEffortLabel": "Esfuerzo",
+  "challengesEffortLow": "Tranquilo",
+  "challengesEffortMedium": "Equilibrado",
+  "challengesEffortHigh": "Intenso",
+  "challengesEmptyTitle": "Aún no tienes retos",
+  "challengesEmptyMessage": "Crea tu primer reto y, si quieres, divídelo en tareas.",
+  "challengesEmptyFilteredTitle": "Sin resultados",
+  "challengesEmptyFilteredMessage": "Ningún reto coincide con los filtros.",
+  "challengesCommunityEmptyTitle": "No hay retos de la comunidad",
+  "challengesCommunityEmptyMessage": "Cuando otros compartan retos aparecerán aquí.",
+  "challengesEndsOn": "Termina el {date}",
+  "@challengesEndsOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesEndedOn": "Terminó el {date}",
+  "@challengesEndedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesDaysLeft": "{count, plural, =0{Termina hoy} =1{Queda 1 día} other{Quedan {count} días}}",
+  "@challengesDaysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesMilestonesProgress": "{done}/{total} tareas",
+  "@challengesMilestonesProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesStreakDays": "{count, plural, =1{1 día de racha} other{{count} días de racha}}",
+  "@challengesStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesProgressPercent": "{percent} %",
+  "@challengesProgressPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesProgressSemantics": "Progreso del {percent} %",
+  "@challengesProgressSemantics": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesByAuthor": "De {name}",
+  "@challengesByAuthor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesUnknownAuthor": "Otro usuario",
+  "challengesClonedFrom": "Copiado de {name}",
+  "@challengesClonedFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesClone": "Clonar",
+  "challengesCloneTooltip": "Clonar en mis retos",
+  "challengesCloned": "Reto clonado en tus retos",
+  "challengesViewCloned": "Ver",
+  "challengesXpGain": "+{xp} XP",
+  "@challengesXpGain": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesXpLoss": "−{xp} XP",
+  "@challengesXpLoss": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesMilestoneDone": "Tarea completada",
+  "challengesMilestoneUndone": "Tarea marcada como pendiente",
+  "challengesChallengeDone": "¡Reto completado!",
+  "challengesChallengeUndone": "Reto marcado como pendiente",
+  "challengesProgressSaved": "Progreso registrado",
+  "challengesUnlocked": "{count, plural, =1{Se ha desbloqueado 1 tarea} other{Se han desbloqueado {count} tareas}}",
+  "@challengesUnlocked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesUnlockedNamed": "Desbloqueada: {titles}",
+  "@challengesUnlockedNamed": {
+    "placeholders": {
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesFeedbackJoin": "{first} · {second}",
+  "@challengesFeedbackJoin": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesDetailTitle": "Reto",
+  "challengesDetailProgress": "Progreso",
+  "challengesDetailTasks": "Tareas",
+  "challengesDetailGraph": "Dependencias",
+  "challengesDetailGraphSummary": "{count, plural, =1{1 tarea depende de otras} other{{count} tareas dependen de otras}}",
+  "@challengesDetailGraphSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesDetailHistory": "Historial de progreso",
+  "challengesDetailHistoryEmpty": "Aún no has registrado progreso manual.",
+  "challengesDetailHistoryEntry": "+{amount} %",
+  "@challengesDetailHistoryEntry": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesDetailHistoryGeneral": "Progreso general",
+  "challengesDetailStreak": "Racha",
+  "challengesDetailBestStreak": "Mejor racha",
+  "challengesDetailDaysValue": "{count, plural, =1{1 día} other{{count} días}}",
+  "@challengesDetailDaysValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesDetailDates": "{start} – {end}",
+  "@challengesDetailDates": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesDetailReward": "Recompensa",
+  "challengesDetailComplete": "Completar reto",
+  "challengesDetailUncomplete": "Marcar como pendiente",
+  "challengesDetailRecordProgress": "Registrar progreso",
+  "challengesDetailEdit": "Editar reto",
+  "challengesDetailEditTasks": "Editar tareas",
+  "challengesDetailAddTasks": "Añadir tareas",
+  "challengesDetailReorder": "Reordenar tareas",
+  "challengesDetailDelete": "Eliminar reto",
+  "challengesDetailVisibility": "Visibilidad",
+  "challengesDetailMore": "Más opciones",
+  "challengesDetailNoTasks": "Este reto no tiene tareas: regístralo con progreso manual o complétalo directamente.",
+  "challengesDetailReadOnly": "Reto de {name}. Clónalo para hacerlo tuyo.",
+  "@challengesDetailReadOnly": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesDeleteTitle": "¿Eliminar este reto?",
+  "challengesDeleteMessage": "Se borrarán sus tareas y su progreso. Esta acción no se puede deshacer.",
+  "challengesDeleteXpWarning": "Se restarán los {xp} XP que te había dado.",
+  "@challengesDeleteXpWarning": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesDeleted": "Reto eliminado",
+  "challengesUncompleteTitle": "¿Marcar como pendiente?",
+  "challengesUncompleteMessage": "Se restará la XP que te dio completarlo.",
+  "challengesLinkExam": "Vinculado a un examen",
+  "challengesLinkDelivery": "Vinculado a una entrega",
+  "challengesLinkBlock": "Vinculado a un bloque de estudio",
+  "challengesLinkOpen": "Ver en el planificador",
+  "challengesMilestoneNote": "Apunte adjunto",
+  "challengesMilestoneFile": "Archivo adjunto",
+  "challengesMilestoneLocked": "Bloqueada",
+  "challengesMilestoneAvailable": "Disponible",
+  "challengesMilestoneInProgress": "En curso",
+  "challengesMilestoneCompleted": "Completada",
+  "challengesMilestoneWeight": "Peso {weight} %",
+  "@challengesMilestoneWeight": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesMilestoneDependsOn": "Depende de: {titles}",
+  "@challengesMilestoneDependsOn": {
+    "placeholders": {
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesMilestoneComplete": "Completar «{title}»",
+  "@challengesMilestoneComplete": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesMilestoneUncomplete": "Desmarcar «{title}»",
+  "@challengesMilestoneUncomplete": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesMilestoneLockedHint": "Completa antes las tareas de las que depende",
+  "challengesConditionAll": "Todas",
+  "challengesConditionAny": "Cualquiera",
+  "challengesConditionXOfY": "{n} de {total}",
+  "@challengesConditionXOfY": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesConditionXOfYOption": "X de Y",
+  "challengesProgressTitle": "Registrar progreso",
+  "challengesProgressAmount": "Avance: {amount} %",
+  "@challengesProgressAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesProgressTask": "Tarea",
+  "challengesProgressAction": "Registrar",
+  "challengesReorderTitle": "Reordenar tareas",
+  "challengesMoveUp": "Subir",
+  "challengesMoveDown": "Bajar",
+  "challengesVisibilityPrivate": "Solo yo",
+  "challengesVisibilityFriends": "Amigos",
+  "challengesVisibilityPublic": "Comunidad",
+  "challengesQuickTitle": "Nuevo reto",
+  "challengesQuickEditTitle": "Editar reto",
+  "challengesFieldTitle": "Título",
+  "challengesFieldTitleHint": "Ej.: Repasar Álgebra cada día",
+  "challengesFieldType": "Tipo",
+  "challengesFieldStartDate": "Inicio",
+  "challengesFieldStartNow": "Hoy",
+  "challengesFieldEndDate": "Fecha de fin",
+  "challengesFieldSubject": "Asignatura",
+  "challengesFieldNoSubject": "Sin asignatura",
+  "challengesFieldGoal": "Objetivo (opcional)",
+  "challengesFieldGoalHint": "¿Qué quieres conseguir?",
+  "challengesQuickAddTasks": "Añadir tareas",
+  "challengesQuickAddTasksHint": "Divide el reto en pasos con más opciones",
+  "challengesQuickCreate": "Crear reto",
+  "challengesCreated": "Reto creado",
+  "challengesValidationTitle": "Entre 5 y 80 caracteres",
+  "challengesFormTitle": "Nuevo reto",
+  "challengesFormEditTasksTitle": "Editar tareas",
+  "challengesFormSectionDetails": "Detalles",
+  "challengesFormSectionDates": "Fechas",
+  "challengesFormSectionVisibility": "Visibilidad",
+  "challengesFormSectionTasks": "Tareas",
+  "challengesFormSectionLink": "Vínculo",
+  "challengesFormTasksHint": "Opcional. Divide el reto en hasta 12 tareas; cada una da su propia XP.",
+  "challengesFormTasksCount": "{count}/12",
+  "@challengesFormTasksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesFormAddTask": "Añadir tarea",
+  "challengesFormNoTasks": "Sin tareas: completarás el reto de una vez.",
+  "challengesFormManualWeights": "Pesos manuales",
+  "challengesFormManualWeightsHint": "Si no, el progreso se reparte a partes iguales.",
+  "challengesFormWeightSum": "Suma: {sum} %",
+  "@challengesFormWeightSum": {
+    "placeholders": {
+      "sum": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesFormDistribute": "Repartir por igual",
+  "challengesFormLinkHint": "Vincula el reto a una entrega, examen o bloque: al completar uno se marca el otro.",
+  "challengesFormAddLink": "Vincular",
+  "challengesFormRemoveLink": "Quitar vínculo",
+  "challengesFormSave": "Guardar reto",
+  "challengesFormSaveTasks": "Guardar tareas",
+  "challengesFormTasksSaved": "Tareas guardadas",
+  "challengesFormEditTaskTooltip": "Editar tarea",
+  "challengesFormRemoveTaskTooltip": "Eliminar tarea",
+  "challengesIssueTitle": "El título debe tener entre 5 y 80 caracteres.",
+  "challengesIssueDates": "La fecha de fin debe ser posterior a la de inicio.",
+  "challengesIssueTooMany": "Un reto puede tener como máximo 12 tareas.",
+  "challengesIssueTaskTitle": "Cada tarea necesita un título de entre 3 y 80 caracteres.",
+  "challengesIssueWeightsIncomplete": "Indica el peso de todas las tareas.",
+  "challengesIssueWeightRange": "Cada peso debe ser mayor que 0 y como máximo 100.",
+  "challengesIssueWeightsSum": "Los pesos deben sumar 100 % (ahora suman {sum} %).",
+  "@challengesIssueWeightsSum": {
+    "placeholders": {
+      "sum": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesIssueDependency": "Revisa las dependencias entre tareas.",
+  "challengesIssueCycle": "Las dependencias no pueden formar un ciclo.",
+  "challengesIssueCondition": "En «X de Y», X debe estar entre 1 y el número de dependencias.",
+  "challengesIssueAttachment": "Una tarea solo puede tener un apunte o un archivo.",
+  "challengesIssueSessionTarget": "Indica entre 1 y 365 sesiones.",
+  "challengesFieldSessionTarget": "Objetivo de sesiones de entrenamiento",
+  "challengesFieldSessionTargetHint": "Opcional, p. ej. 12",
+  "challengesFieldSessionTargetHelper": "Las sesiones que completes en Rutinas cuentan solas.",
+  "challengesSessionsProgress": "{target, plural, =1{{done} / 1 sesión} other{{done} / {target} sesiones}}",
+  "@challengesSessionsProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesDetailSessionsInfo": "Las sesiones de entrenamiento que completes en Rutinas dentro de las fechas del reto cuentan automáticamente. Al llegar al objetivo, el reto se completa solo.",
+  "challengesTaskNew": "Nueva tarea",
+  "challengesTaskEdit": "Editar tarea",
+  "challengesTaskTitle": "Título de la tarea",
+  "challengesTaskWeight": "Peso (%)",
+  "challengesTaskDependencies": "Depende de",
+  "challengesTaskNoOtherTasks": "Añade más tareas para crear dependencias.",
+  "challengesTaskCondition": "Se desbloquea cuando se completen",
+  "challengesTaskConditionN": "Tareas necesarias",
+  "challengesTaskCycleDisabled": "Crearía un ciclo",
+  "challengesTaskAttachment": "Material",
+  "challengesTaskAttach": "Adjuntar apunte o archivo",
+  "challengesTaskRemoveAttachment": "Quitar adjunto",
+  "challengesTaskLink": "Vínculo",
+  "challengesTaskSave": "Guardar tarea",
+  "challengesTaskCompletedHint": "Completada: conserva su progreso al guardar.",
+  "challengesAttachTitle": "Adjuntar material",
+  "challengesAttachNotes": "Apuntes",
+  "challengesAttachFiles": "Archivos",
+  "challengesAttachEmpty": "No hay apuntes ni archivos aquí.",
+  "challengesAttachUnassigned": "Apuntes sin asignatura",
+  "challengesLinkTitle": "Vincular",
+  "challengesLinkDeadlines": "Entregas y exámenes",
+  "challengesLinkBlocks": "Bloques de estudio",
+  "challengesLinkEmpty": "No hay entregas pendientes ni bloques de estudio próximos.",
+  "challengesLinkExamLabel": "Examen",
+  "challengesLinkDeliveryLabel": "Entrega",
+  "challengesLinkBlockLabel": "Bloque de estudio",
+  "challengesErrorNotFound": "No encontramos este reto.",
+  "challengesErrorMilestoneNotFound": "No encontramos esta tarea.",
+  "challengesErrorSubjectNotFound": "La asignatura seleccionada no existe.",
+  "challengesErrorLinkNotFound": "El examen, entrega o bloque vinculado no existe.",
+  "challengesErrorAttachmentNotFound": "El apunte o archivo adjunto no existe.",
+  "challengesErrorInvalidDates": "La fecha de fin debe ser posterior a la de inicio.",
+  "challengesErrorTypeOutsideFocus": "Ese tipo de reto no está activo en tu cuenta. Cámbialo en tu perfil si quieres usarlo.",
+  "challengesErrorAttachmentConflict": "Una tarea solo puede tener un apunte o un archivo.",
+  "challengesErrorTooManyMilestones": "Un reto puede tener como máximo 12 tareas.",
+  "challengesErrorWeightsInvalid": "Los pesos de las tareas deben sumar 100 %.",
+  "challengesErrorDependencyInvalid": "Las dependencias entre tareas no son válidas.",
+  "challengesErrorMilestoneLocked": "Completa antes las tareas de las que depende.",
+  "challengesErrorOrderInvalid": "El nuevo orden no es válido.",
+  "challengesErrorProgressMilestoneRequired": "Elige la tarea en la que registrar el progreso.",
+  "challengesErrorMilestoneAlreadyCompleted": "Esta tarea ya está completada.",
+  "challengesErrorAlreadyCompleted": "Este reto ya está completado."
+}

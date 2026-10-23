@@ -1,0 +1,132 @@
+{
+  "@@locale": "es",
+  "appName": "SynaptixFit",
+  "commonRetry": "Reintentar",
+  "commonCancel": "Cancelar",
+  "commonSave": "Guardar",
+  "commonDelete": "Eliminar",
+  "commonEdit": "Editar",
+  "commonClose": "Cerrar",
+  "commonConfirm": "Confirmar",
+  "commonContinue": "Continuar",
+  "commonBack": "Volver",
+  "commonOr": "o",
+  "commonYes": "Sí",
+  "commonNo": "No",
+  "commonSeeAll": "Ver todo",
+  "commonComingSoon": "Esta sección se está preparando.",
+  "commonSaved": "Cambios guardados",
+  "commonLevel": "Nivel {level}",
+  "@commonLevel": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "commonXpProgress": "{current} / {total} XP",
+  "@commonXpProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "commonWeekdayInitial": "{weekday, select, mon{L} tue{M} wed{X} thu{J} fri{V} sat{S} other{D}}",
+  "@commonWeekdayInitial": {
+    "description": "Inicial del día de la semana (X para miércoles, para no repetir la M del martes).",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "tabHome": "Inicio",
+  "tabAcademic": "Académico",
+  "tabTraining": "Rutinas",
+  "tabChallenges": "Retos",
+  "tabProgress": "Progreso",
+  "fieldEmail": "Email",
+  "fieldPassword": "Contraseña",
+  "fieldPasswordHint": "Mínimo 8 caracteres, con letras y números",
+  "fieldFullName": "Nombre completo",
+  "validationRequired": "Este campo es obligatorio",
+  "validationInvalidEmail": "Introduce un email válido",
+  "validationWeakPassword": "Mínimo 8 caracteres, con al menos una letra y un número",
+  "validationTooShort": "Es demasiado corto",
+  "loginTitle": "Bienvenido de nuevo",
+  "loginSubtitle": "Equilibra estudio y entrenamiento en un solo lugar",
+  "loginAction": "Iniciar sesión",
+  "loginWithGoogle": "Continuar con Google",
+  "loginGoToRegister": "¿No tienes cuenta? Regístrate",
+  "registerTitle": "Crea tu cuenta",
+  "registerSubtitle": "Empieza a cuidar tu rendimiento académico y físico",
+  "registerAction": "Crear cuenta",
+  "registerGoToLogin": "¿Ya tienes cuenta? Inicia sesión",
+  "authBrandTitle": "Tu mente y tu cuerpo, en el mismo plan",
+  "authBrandPointLoad": "Lo que entrenas ajusta cuánto estudias, y al revés",
+  "authBrandPointReview": "Repaso espaciado con IA a partir de tus apuntes",
+  "authBrandPointProgress": "Retos, insignias y racha que suman en los dos frentes",
+  "splashLoading": "Preparando tu espacio",
+  "errorServer": "Algo ha fallado en el servidor. Inténtalo de nuevo en unos minutos.",
+  "errorValidation": "Revisa los datos marcados.",
+  "errorUnauthorized": "Tu sesión ha caducado. Vuelve a iniciar sesión.",
+  "errorForbidden": "No tienes permiso para hacer esto.",
+  "errorNotFound": "No hemos encontrado lo que buscas.",
+  "errorConflict": "Esto choca con datos que ya existen.",
+  "errorNetwork": "No hay conexión. Comprueba tu red e inténtalo de nuevo.",
+  "errorUnknown": "Ha ocurrido un error inesperado.",
+  "errorAuthInvalidCredentials": "Email o contraseña incorrectos.",
+  "errorAuthAccountDisabled": "Esta cuenta está desactivada.",
+  "errorAuthEmailAlreadyRegistered": "Ya existe una cuenta con ese email.",
+  "errorAuthWeakPassword": "La contraseña debe tener al menos 8 caracteres, con letras y números.",
+  "errorAuthGoogleCancelled": "Has cancelado el inicio de sesión con Google.",
+  "errorAuthGoogleFailed": "No se ha podido iniciar sesión con Google.",
+  "errorAiUnavailable": "El asistente de IA no está disponible ahora mismo. Inténtalo más tarde.",
+  "errorAiQuotaExceeded": "Se ha alcanzado el límite de uso de la IA. Inténtalo dentro de un rato.",
+  "errorStorageUnavailable": "No se ha podido acceder a los archivos. Inténtalo de nuevo.",
+  "errorAiAttachmentUnsupported": "La IA solo puede leer PDF con texto. Las imágenes y los PDF escaneados no se pueden analizar.",
+  "achievementLevelTitle": "¡Nivel {level}!",
+  "@achievementLevelTitle": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "achievementLevelMessage": "Todo lo que estudias y entrenas suma. Sigue así.",
+  "achievementBadgesTitle": "{count, plural, =1{¡Nueva insignia!} other{¡{count} insignias nuevas!}}",
+  "@achievementBadgesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "achievementBadgesMessage": "Tu constancia tiene recompensa.",
+  "achievementSeeBadges": "Ver insignias",
+  "achievementClose": "¡Genial!",
+  "commonLoading": "Cargando",
+  "fieldShowPassword": "Mostrar contraseña",
+  "fieldHidePassword": "Ocultar contraseña",
+  "commonUndo": "Deshacer",
+  "commonDecrease": "Reducir {label}",
+  "@commonDecrease": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "commonIncrease": "Aumentar {label}",
+  "@commonIncrease": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  }
+}

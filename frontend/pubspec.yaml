@@ -1,0 +1,73 @@
+name: synaptixfit
+description: "SynaptixFit — bienestar académico y físico para estudiantes universitarios."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Estado e inyección de dependencias
+  flutter_bloc: ^9.1.1
+  bloc: ^9.2.1
+  get_it: ^9.3.0
+
+  # Navegación
+  go_router: ^18.1.0
+
+  # Modelos inmutables y JSON (generados con build_runner)
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+
+  # Red y almacenamiento local
+  dio: ^5.11.1
+  flutter_secure_storage: ^11.2.0
+  shared_preferences: ^2.5.6
+  connectivity_plus: ^7.3.2
+
+  # Autenticación con Google
+  google_sign_in: ^7.2.0
+
+  # Interfaz
+  intl: ^0.20.2
+  google_fonts: ^8.2.1
+  fl_chart: ^1.2.0
+  cached_network_image: ^4.0.3
+  shimmer: ^4.0.0
+  flutter_markdown_plus: ^1.0.12
+
+  # Multimedia y archivos
+  video_player: ^2.14.1
+  file_picker: ^13.1.0
+  url_launcher: ^6.3.3
+  pdfx: ^2.11.0
+  google_sign_in_web: ^1.1.3
+  cupertino_icons: ^2.0.0
+
+  # Recordatorios locales en el móvil (repasos y bloques del planificador)
+  flutter_local_notifications: ^22.3.2
+  timezone: ^0.11.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.15.1
+  freezed: ^3.2.5
+  json_serializable: ^6.14.1
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.5
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/images/
+    # Manrope y DM Sans empaquetadas (OFL): google_fonts las toma por nombre
+    # de archivo y no las descarga en tiempo de ejecución.
+    - assets/google_fonts/

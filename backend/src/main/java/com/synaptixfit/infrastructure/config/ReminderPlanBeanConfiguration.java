@@ -1,0 +1,58 @@
+package com.synaptixfit.infrastructure.config;
+
+import com.synaptixfit.application.port.input.notification.GetReminderPlanUseCase;
+import com.synaptixfit.application.service.notification.ReminderPlanService;
+import com.synaptixfit.domain.model.notification.ReminderPlanner;
+import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
+import com.synaptixfit.domain.port.output.notification.NotificationPreferencesRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
+import com.synaptixfit.domain.port.output.user.UsageFocusPort;
+import java.time.Clock;
+import java.time.ZoneId;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Composición del plan de recordatorios del móvil. Usa la misma zona que las horas de silencio del
+ * centro de notificaciones ({@code synaptixfit.notifications.zone}).
+ */
+@Configuration
+public class ReminderPlanBeanConfiguration {
+
+    private final TransactionalUseCaseFactory tx;
+    private final NotificationPreferencesRepositoryPort preferences;
+    private final UsageFocusPort focus;
+    private final StudyMaterialRepositoryPort materials;
+    private final CalendarBlockRepositoryPort blocks;
+    private final SubjectDirectoryPort subjects;
+    private final Clock clock;
+    private final ZoneId zone;
+
+    public ReminderPlanBeanConfiguration(TransactionalUseCaseFactory tx,
+                                         NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
+                                         StudyMaterialRepositoryPort materials, CalendarBlockRepositoryPort blocks,
+                                         SubjectDirectoryPort subjects, Clock clock,
+                                         @Value("${synaptixfit.notifications.zone:Europe/Madrid}") String zone) {
+        this.tx = tx;
+        this.preferences = preferences;
+        this.focus = focus;
+        this.materials = materials;
+        this.blocks = blocks;
+        this.subjects = subjects;
+        this.clock = clock;
+        this.zone = ZoneId.of(zone);
+    }
+
+    @Bean(autowireCandidate = false)
+    ReminderPlanService reminderPlanService() {
+        return new ReminderPlanService(preferences, focus, materials, blocks, subjects, new ReminderPlanner(), clock,
+                zone);
+    }
+
+    @Bean
+    GetReminderPlanUseCase getReminderPlanUseCase() {
+        return tx.wrap(GetReminderPlanUseCase.class, reminderPlanService());
+    }
+}

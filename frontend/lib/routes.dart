@@ -1,0 +1,91 @@
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
+
+import 'domain/enums/usage_focus.dart';
+
+import 'presentation/screens/auth/login/page/login_page.dart';
+import 'presentation/screens/auth/register/page/register_page.dart';
+import 'presentation/screens/auth/session/bloc/session_bloc.dart';
+import 'presentation/screens/shell/page/main_shell_page.dart';
+import 'presentation/screens/splash/page/splash_page.dart';
+import 'presentation/screens/home/home_routes.dart';
+import 'presentation/screens/academic/academic_routes.dart';
+import 'presentation/screens/training/training_routes.dart';
+import 'presentation/screens/challenges/challenges_routes.dart';
+import 'presentation/screens/progress/progress_routes.dart';
+import 'presentation/screens/profile/profile_routes.dart';
+import 'presentation/screens/planner/planner_routes.dart';
+import 'presentation/screens/social/social_routes.dart';
+import 'presentation/screens/admin/admin_routes.dart';
+
+/// Navegación de la app. Cada módulo declara sus rutas en `<modulo>_routes.dart`.
+GoRouter buildRouter(SessionBloc session) {
+  const publicPaths = {LoginPage.path, RegisterPage.path};
+  return GoRouter(
+    initialLocation: SplashPage.path,
+    refreshListenable: _StreamListenable(session.stream),
+    redirect: (context, state) {
+      final location = state.matchedLocation;
+      return switch (session.state) {
+        SessionUnknown() =>
+          location == SplashPage.path ? null : SplashPage.path,
+        SessionUnauthenticated() =>
+          publicPaths.contains(location) ? null : LoginPage.path,
+        SessionAuthenticatedState(:final account) =>
+          publicPaths.contains(location) ||
+                  location == SplashPage.path ||
+                  _hiddenByFocus(location, account.usageFocus)
+              ? HomePaths.root
+              : null,
+      };
+    },
+    routes: [
+      GoRoute(path: SplashPage.path, builder: (_, _) => const SplashPage()),
+      GoRoute(path: LoginPage.path, builder: (_, _) => const LoginPage()),
+      GoRoute(path: RegisterPage.path, builder: (_, _) => const RegisterPage()),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => MainShellPage(shell: shell),
+        branches: [
+          StatefulShellBranch(routes: homeBranchRoutes()),
+          StatefulShellBranch(routes: academicBranchRoutes()),
+          StatefulShellBranch(routes: trainingBranchRoutes()),
+          StatefulShellBranch(routes: challengesBranchRoutes()),
+          StatefulShellBranch(routes: progressBranchRoutes()),
+        ],
+      ),
+      ...homeRoutes(),
+      ...academicRoutes(),
+      ...trainingRoutes(),
+      ...challengesRoutes(),
+      ...progressRoutes(),
+      ...profileRoutes(),
+      ...plannerRoutes(),
+      ...socialRoutes(),
+      ...adminRoutes(),
+    ],
+  );
+}
+
+/// Rutas del ámbito que la persona no usa: con solo deporte, lo académico;
+/// con solo estudios, las rutinas. El planificador sigue abierto a todos (también
+/// planifica entrenamientos y descansos).
+bool _hiddenByFocus(String location, UsageFocus focus) =>
+    (!focus.includesAcademic && location.startsWith('/academic')) ||
+    (!focus.includesFitness && location.startsWith('/training'));
+
+/// Adapta un Stream a Listenable para que GoRouter reevalúe las redirecciones.
+class _StreamListenable extends ChangeNotifier {
+  _StreamListenable(Stream<dynamic> stream) {
+    _subscription = stream.listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    unawaited(_subscription.cancel());
+    super.dispose();
+  }
+}

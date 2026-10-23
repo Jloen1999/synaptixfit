@@ -1,0 +1,35 @@
+{
+  "@@locale": "es",
+  "remindersChannelName": "Recordatorios",
+  "remindersDueReviewsTitle": "Hora de repasar",
+  "remindersDueReviewsBody": "{count, plural, =1{Tienes 1 repaso pendiente} other{Tienes {count} repasos pendientes}}",
+  "@remindersDueReviewsBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersSportTitle": "Hora de entrenar",
+  "remindersStudyTitle": "Hora de estudiar",
+  "remindersBlockBody": "{name} empieza a las {time}",
+  "@remindersBlockBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersSportFallbackName": "Tu entrenamiento",
+  "remindersStudyFallbackName": "Tu bloque de estudio",
+  "remindersDeviceSectionTitle": "Recordatorios",
+  "remindersDeviceToggle": "En este móvil",
+  "remindersDeviceHint": "Repasos pendientes y 15 min antes de cada bloque",
+  "remindersAppliesNow": "Se aplica al momento",
+  "remindersPermissionDeniedTitle": "Permiso desactivado en el sistema",
+  "remindersPermissionDeniedBody": "Actívalo en los ajustes del teléfono, en Notificaciones de SynaptixFit.",
+  "remindersPermissionRetry": "Volver a pedir"
+}

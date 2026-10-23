@@ -1,0 +1,68 @@
+# Producción en Coolify (recurso «Docker Compose» en el destination infra-app-db).
+# Las imágenes se compilan en GitHub Actions (job `images` de .github/workflows/ci.yml) y se publican en GHCR:
+# el VPS no compila nada, solo descarga y arranca. Los valores ${...} son variables de entorno de la
+# aplicación en Coolify (las secretas, marcadas como tal). Ver docs/06-ops/deploy.md.
+services:
+  backend:
+    image: ghcr.io/jloen1999/synaptixfit-backend:${IMAGE_TAG:-latest}
+    # IMAGE_TAG es el commit desplegado: cada etiqueta es inmutable, así que solo se descarga si
+    # no está ya en el servidor.
+    pull_policy: missing
+    restart: unless-stopped
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-30d}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://synaptixfit.jloenit.dev}
+      GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      # Sin token de R2 la app arranca igual (solo falla la subida de archivos). Una variable vacía
+      # anularía el valor por defecto de application.yml, por eso se repite aquí.
+      R2_ENDPOINT: ${R2_ENDPOINT:-https://r2-no-configurado.invalid}
+      R2_BUCKET: ${R2_BUCKET:-synaptixfit}
+      R2_ACCESS_KEY: ${R2_ACCESS_KEY:-}
+      R2_SECRET_KEY: ${R2_SECRET_KEY:-}
+      R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL:-}
+      # El VPS es compartido (3,7 GB): la JVM usa el 75 % del límite de abajo.
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
+    mem_limit: 700m
+    networks:
+      infra-app-db:
+        # Alias único: la red la comparten otras apps del servidor y varias llaman «backend» a su
+        # servicio; con el alias genérico, nginx repartía las peticiones entre backends ajenos.
+        aliases: [synaptixfit-backend]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
+
+  web:
+    image: ghcr.io/jloen1999/synaptixfit-web:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    restart: unless-stopped
+    environment:
+      BACKEND_UPSTREAM: http://synaptixfit-backend:8080
+    mem_limit: 64m
+    networks: [infra-app-db]
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+# Red del destination de Coolify donde viven la BD (por su uuid) y Traefik. Se declara aquí porque
+# Coolify, por sí solo, deja el servicio en una red propia sin acceso a la BD.
+networks:
+  infra-app-db:
+    external: true

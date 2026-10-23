@@ -1,0 +1,17 @@
+build/
+.dart_tool/
+.idea/
+.vscode/
+config/*.json
+coverage/
+**/*.g.dart
+!lib/presentation/theme/tokens.g.dart
+**/*.freezed.dart
+lib/presentation/l10n/gen_l10n/
+lib/presentation/l10n/app_es.arb
+android/
+ios/
+linux/
+macos/
+windows/
+test/

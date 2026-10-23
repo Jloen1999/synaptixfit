@@ -1,0 +1,60 @@
+part of 'block_editor_bloc.dart';
+
+enum BlockEditorStatus { loading, ready }
+
+/// Problemas de validación que se detectan antes de llamar a la API.
+enum BlockEditorIssue { inPast, tooShort, noWeekdays }
+
+@freezed
+abstract class BlockEditorState with _$BlockEditorState {
+  const factory BlockEditorState({
+    /// Bloque en edición (`null` al crear).
+    CalendarBlock? block,
+    @Default(BlockEditorStatus.loading) BlockEditorStatus status,
+    @Default(<SubjectOption>[]) List<SubjectOption> subjects,
+    @Default(<RoutineOption>[]) List<RoutineOption> routines,
+    @Default(<ChallengeOption>[]) List<ChallengeOption> challenges,
+    @Default(<Deadline>[]) List<Deadline> deadlines,
+
+    /// Fallo al cargar alguno de los catálogos (el formulario sigue disponible).
+    AppError? optionsError,
+    @Default(false) bool submitting,
+    AppError? error,
+    BlockEditorIssue? issue,
+    @Default(0) int feedbackId,
+
+    /// Resultado final: la página cierra la hoja devolviéndolo.
+    BlockEditorOutcome? outcome,
+  }) = _BlockEditorState;
+
+  const BlockEditorState._();
+
+  bool get isEditing => block != null;
+}
+
+/// Lo que ha pasado en la hoja; el calendario recarga y lo comunica.
+@freezed
+sealed class BlockEditorOutcome with _$BlockEditorOutcome {
+  const factory BlockEditorOutcome.created({
+    required int overlaps,
+    @Default(0) int weeklyCopies,
+  }) = BlockEditorCreated;
+
+  const factory BlockEditorOutcome.updated() = BlockEditorUpdated;
+
+  /// El usuario quiere borrar el bloque: lo borra el calendario, que permite
+  /// deshacerlo unos segundos.
+  const factory BlockEditorOutcome.deleteRequested(CalendarBlock block) =
+      BlockEditorDeleteRequested;
+
+  const factory BlockEditorOutcome.distributed(int count) =
+      BlockEditorDistributed;
+
+  /// El usuario quiere concentrarse en este bloque ahora (abre el Pomodoro).
+  const factory BlockEditorOutcome.focusRequested(CalendarBlock block) =
+      BlockEditorFocusRequested;
+
+  /// El usuario pide marcar/desmarcar el bloque (lo resuelve el calendario).
+  const factory BlockEditorOutcome.completionRequested(String blockId) =
+      BlockEditorCompletionRequested;
+}

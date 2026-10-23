@@ -1,0 +1,8 @@
+# Traducciones. app_es.arb se GENERA con `dart run tool/merge_arb.dart` a partir de
+# lib/presentation/l10n/parts/*.arb (un fragmento por módulo). No editar app_es.arb a mano.
+arb-dir: lib/presentation/l10n
+template-arb-file: app_es.arb
+output-dir: lib/presentation/l10n/gen_l10n
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

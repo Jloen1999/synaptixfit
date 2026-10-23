@@ -1,0 +1,114 @@
+import 'package:get_it/get_it.dart';
+
+import '../screens/training/exercise_alternatives/bloc/exercise_alternatives_bloc.dart';
+import '../screens/training/check_in/bloc/check_in_bloc.dart';
+import '../screens/training/community/bloc/community_bloc.dart';
+import '../screens/training/exercise_detail/bloc/exercise_detail_bloc.dart';
+import '../screens/training/exercise_explorer/bloc/exercise_explorer_bloc.dart';
+import '../screens/training/live_session/bloc/live_session_bloc.dart';
+import '../screens/training/routine_detail/bloc/routine_detail_bloc.dart';
+import '../screens/training/routine_editor/bloc/routine_editor_bloc.dart';
+import '../screens/training/session_completed/bloc/session_completed_bloc.dart';
+import '../screens/training/session_history/bloc/session_history_bloc.dart';
+import '../screens/training/training_home/bloc/training_home_bloc.dart';
+import '../screens/training/weekly_plan/bloc/weekly_plan_bloc.dart';
+
+/// Blocs del módulo training.
+void registerTrainingPresentation(GetIt getIt) {
+  getIt
+    ..registerFactory(() => ExerciseAlternativesBloc(getAlternatives: getIt()))
+    ..registerFactory(
+      () => TrainingHomeBloc(
+        getPendingDay: getIt(),
+        getMyRoutines: getIt(),
+        getTodayCheckIn: getIt(),
+        getRecommendations: getIt(),
+        applyRecommendation: getIt(),
+        discardRecommendation: getIt(),
+        startSession: getIt(),
+        watchChanges: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => RoutineEditorBloc(
+        generate: getIt(),
+        refine: getIt(),
+        create: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => RoutineDetailBloc(
+        RoutineDetailUseCases(
+          getRoutine: getIt(),
+          getBodyWeight: getIt(),
+          updateRoutine: getIt(),
+          changeStatus: getIt(),
+          deleteRoutine: getIt(),
+          duplicateRoutine: getIt(),
+          cloneRoutine: getIt(),
+          addWeek: getIt(),
+          updateWeek: getIt(),
+          deleteWeek: getIt(),
+          addDay: getIt(),
+          renameDay: getIt(),
+          deleteDay: getIt(),
+          addExercise: getIt(),
+          reorderExercises: getIt(),
+          updateExercise: getIt(),
+          removeExercise: getIt(),
+          startSession: getIt(),
+        ),
+      ),
+    )
+    ..registerFactory(
+      () => ExerciseExplorerBloc(search: getIt(), getFilters: getIt()),
+    )
+    ..registerFactory(() => ExerciseDetailBloc(getExercise: getIt()))
+    ..registerFactory(
+      () => LiveSessionBloc(
+        getSession: getIt(),
+        getRoutine: getIt(),
+        recordSet: getIt(),
+        deleteSet: getIt(),
+        finish: getIt(),
+        cancel: getIt(),
+        getAccount: getIt(),
+        getLastPerformance: getIt(),
+        getBookends: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => SessionCompletedBloc(
+        getSession: getIt(),
+        apply: getIt(),
+        discard: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => SessionHistoryBloc(
+        getHistory: getIt(),
+        getRecords: getIt(),
+        unmark: getIt(),
+        getAccount: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => CheckInBloc(
+        getToday: getIt(),
+        getHistory: getIt(),
+        submit: getIt(),
+        getAccount: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => WeeklyPlanBloc(
+        getPlan: getIt(),
+        getPlans: getIt(),
+        savePlan: getIt(),
+        deletePlan: getIt(),
+      ),
+    )
+    ..registerFactory(
+      () => CommunityBloc(getCommunity: getIt(), clone: getIt()),
+    );
+}

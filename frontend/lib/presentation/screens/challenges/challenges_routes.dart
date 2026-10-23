@@ -1,0 +1,117 @@
+import 'package:go_router/go_router.dart';
+
+import '../../../domain/enums/challenge_difficulty.dart';
+import '../../../domain/enums/challenge_type.dart';
+import 'challenge_detail/page/challenge_detail_page.dart';
+import 'challenge_form/page/challenge_form_page.dart';
+import 'challenges_list/page/challenges_page.dart';
+import 'community_challenges/page/community_challenges_page.dart';
+
+/// Rutas del módulo challenges.
+///
+/// | Ruta | Pantalla | Parámetros |
+/// |---|---|---|
+/// | `/challenges` | Pestaña Retos (Mis retos / Comunidad) | — |
+/// | `/challenges/new` | Nuevo reto completo | `extra` opcional: `Map` con `prefilledTitle`, `subjectId`, `subjectName` (y `type`, `difficulty`, `endAt`, `sessionTarget`) |
+/// | `/challenges/community` | Retos de la comunidad | — |
+/// | `/challenges/:challengeId` | Detalle del reto | — |
+/// | `/challenges/:challengeId/milestones` | Editar tareas del reto | — |
+///
+/// `/challenges/new` devuelve con `pop` el id del reto creado.
+abstract final class ChallengesPaths {
+  static const root = '/challenges';
+  static const create = '/challenges/new';
+  static const community = '/challenges/community';
+
+  static String detail(String challengeId) => '/challenges/$challengeId';
+
+  static String editMilestones(String challengeId) =>
+      '/challenges/$challengeId/milestones';
+}
+
+/// Rutas de otros módulos a las que navega este módulo.
+abstract final class ChallengesExternalPaths {
+  static String note(String noteId) => '/academic/notes/$noteId';
+  static const deadlines = '/planner/deadlines';
+  static const planner = '/planner';
+}
+
+/// Valores iniciales del formulario «Nuevo reto» recibidos por `extra`.
+class ChallengeFormArgs {
+  const ChallengeFormArgs({
+    this.title,
+    this.subjectId,
+    this.subjectName,
+    this.type,
+    this.difficulty,
+    this.endAt,
+    this.sessionTarget,
+  });
+
+  /// Acepta un `Map` (desde otros módulos) o un [ChallengeFormArgs].
+  factory ChallengeFormArgs.fromExtra(Object? extra) {
+    if (extra is ChallengeFormArgs) return extra;
+    if (extra is! Map) return const ChallengeFormArgs();
+    final type = extra['type'];
+    final difficulty = extra['difficulty'];
+    final endAt = extra['endAt'];
+    final sessionTarget = extra['sessionTarget'];
+    return ChallengeFormArgs(
+      title: extra['prefilledTitle'] as String?,
+      subjectId: extra['subjectId'] as String?,
+      subjectName: extra['subjectName'] as String?,
+      type: type is ChallengeType
+          ? type
+          : switch (type) {
+              'ACADEMIC' => ChallengeType.academic,
+              'FITNESS' => ChallengeType.fitness,
+              _ => null,
+            },
+      difficulty: difficulty is ChallengeDifficulty ? difficulty : null,
+      endAt: endAt is DateTime ? endAt : null,
+      sessionTarget: sessionTarget is int ? sessionTarget : null,
+    );
+  }
+
+  final String? title;
+  final String? subjectId;
+  final String? subjectName;
+  final ChallengeType? type;
+  final ChallengeDifficulty? difficulty;
+  final DateTime? endAt;
+  final int? sessionTarget;
+}
+
+/// Rutas dentro de la pestaña (conservan la barra inferior).
+List<RouteBase> challengesBranchRoutes() => [
+  GoRoute(
+    path: ChallengesPaths.root,
+    builder: (context, state) => const ChallengesPage(),
+  ),
+];
+
+/// Rutas a pantalla completa (sin barra inferior).
+List<RouteBase> challengesRoutes() => [
+  GoRoute(
+    path: ChallengesPaths.create,
+    builder: (context, state) =>
+        ChallengeFormPage(args: ChallengeFormArgs.fromExtra(state.extra)),
+  ),
+  GoRoute(
+    path: ChallengesPaths.community,
+    builder: (context, state) => const CommunityChallengesPage(),
+  ),
+  GoRoute(
+    path: '${ChallengesPaths.root}/:challengeId',
+    builder: (context, state) =>
+        ChallengeDetailPage(challengeId: state.pathParameters['challengeId']!),
+    routes: [
+      GoRoute(
+        path: 'milestones',
+        builder: (context, state) => ChallengeFormPage(
+          editChallengeId: state.pathParameters['challengeId'],
+        ),
+      ),
+    ],
+  ),
+];

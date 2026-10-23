@@ -1,0 +1,479 @@
+{
+  "@@locale": "es",
+  "profileTitle": "Perfil",
+  "profileStreakDays": "{days, plural, =0{Sin racha activa} =1{Racha de 1 día} other{Racha de {days} días}}",
+  "@profileStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "profileOnboardingBannerTitle": "Completa tu perfil",
+  "profileOnboardingBannerMessage": "Te quedan pasos por terminar para personalizar tus planes.",
+  "profileWellnessSection": "Perfil físico",
+  "profileAcademicSection": "Perfil académico",
+  "profileWellnessMissing": "Aún no has completado tu perfil físico.",
+  "profileAcademicMissing": "Aún no has configurado tu perfil académico.",
+  "profileCompleteAction": "Completar",
+  "profileBmiLabel": "IMC",
+  "profileKgValue": "{value} kg",
+  "@profileKgValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCmValue": "{value} cm",
+  "@profileCmValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "profileFieldWeightShort": "Peso",
+  "profileFieldHeightShort": "Altura",
+  "profileSessionLength": "Duración de sesión",
+  "profileWellnessHistoryAction": "Ver historial de peso y objetivos",
+  "profileAdminPanel": "Panel de administración",
+  "profileAdminPanelHint": "Gestionar usuarios, contenido y auditoría",
+  "profileSettingsTitle": "Ajustes",
+  "profileSettingsHint": "Contraseña, notificaciones y privacidad",
+  "profileDegreesTitle": "Mis carreras",
+  "profileDegreesNone": "No tienes carreras vinculadas",
+  "profileDegreesHint": "Las asignaturas de estas carreras aparecerán en el selector de asignaturas.",
+  "profileDegreesLinkAction": "Vincular carrera",
+  "profileDegreesLinked": "Carrera vinculada",
+  "profileDegreesUnlinked": "Carrera desvinculada",
+  "profileDegreesEmptyTitle": "Sin carreras vinculadas",
+  "profileDegreesEmptyMessage": "Vincula tu carrera para elegir tus asignaturas del plan de estudios.",
+  "profileDegreesUnlinkTitle": "¿Desvincular carrera?",
+  "profileDegreesUnlinkMessage": "«{name}» dejará de aparecer en el selector de asignaturas. Tus asignaturas ya creadas no se borran.",
+  "@profileDegreesUnlinkMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profileDegreesUnlinkAction": "Desvincular",
+  "profileDegreeCredits": "{credits} créditos",
+  "@profileDegreeCredits": {
+    "placeholders": {
+      "credits": {
+        "type": "int"
+      }
+    }
+  },
+  "profileDegreeLinkedAt": "Vinculada el {date}",
+  "@profileDegreeLinkedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileSubjectsTitle": "Elegir asignaturas",
+  "profileSubjectsHint": "Añade asignaturas desde el plan de estudios",
+  "profileSubjectsSearch": "Buscar asignatura",
+  "profileSubjectsAllCourses": "Todos los cursos",
+  "profileSubjectsCourse": "{course}º curso",
+  "@profileSubjectsCourse": {
+    "placeholders": {
+      "course": {
+        "type": "int"
+      }
+    }
+  },
+  "profileSubjectsBothSemesters": "Ambos semestres",
+  "profileSubjectsSemester": "{semester}º semestre",
+  "@profileSubjectsSemester": {
+    "placeholders": {
+      "semester": {
+        "type": "int"
+      }
+    }
+  },
+  "profileSubjectsCredits": "{credits} ECTS",
+  "@profileSubjectsCredits": {
+    "placeholders": {
+      "credits": {
+        "type": "String"
+      }
+    }
+  },
+  "profileSubjectsAlreadyAdded": "Ya la tienes añadida",
+  "profileSubjectsNoMatches": "Ninguna asignatura coincide con los filtros",
+  "profileSubjectsEmptyTitle": "No hay asignaturas que mostrar",
+  "profileSubjectsEmptyMessage": "Vincula tu carrera para ver su plan de estudios.",
+  "profileSubjectsAddAction": "{count, plural, =0{Selecciona asignaturas} =1{Añadir 1 asignatura} other{Añadir {count} asignaturas}}",
+  "@profileSubjectsAddAction": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileSubjectsAdded": "{count, plural, =0{No se ha añadido ninguna asignatura} =1{Se ha añadido 1 asignatura} other{Se han añadido {count} asignaturas}}",
+  "@profileSubjectsAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileOnboardingTitle": "Configura tu perfil",
+  "profileOnboardingStepOf": "Paso {current} de {total}",
+  "@profileOnboardingStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "profileOnboardingSkip": "Saltar este paso",
+  "profileOnboardingSkipAndFinish": "Saltar y terminar",
+  "profileOnboardingSaveAndContinue": "Guardar y continuar",
+  "profileOnboardingFinish": "Guardar y terminar",
+  "profileOnboardingAccountTitle": "Tu cuenta",
+  "profileOnboardingAccountSubtitle": "Opcional: crea una contraseña de acceso.",
+  "profileOnboardingAcademicTitle": "Tus estudios",
+  "profileOnboardingAcademicSubtitle": "Ajusta tu carga de estudio al semestre.",
+  "profileOnboardingWellnessTitle": "Tu perfil físico",
+  "profileOnboardingWellnessSubtitle": "Obligatorio: adapta rutinas y descanso.",
+  "profileOnboardingSubjectsTitle": "Tus asignaturas",
+  "profileOnboardingSubjectsSubtitle": "Marca las que cursas este semestre.",
+  "profileEditWellnessTitle": "Perfil físico",
+  "profileWellnessAboutYou": "Sobre ti",
+  "profileWellnessMeasures": "Medidas",
+  "profileFieldAge": "Edad",
+  "profileFieldSex": "Sexo",
+  "profileFieldWeight": "Peso (kg)",
+  "profileFieldHeight": "Altura (cm)",
+  "profileFieldActivityLevel": "Nivel de actividad",
+  "profileFieldGoal": "Objetivo principal",
+  "profileFieldAvailableDays": "Días disponibles",
+  "profileFieldEquipment": "Equipamiento disponible",
+  "profileFieldEquipmentHint": "Marca lo que tienes a mano; las rutinas lo tendrán en cuenta.",
+  "profileMinutesPerSession": "Minutos por sesión: {minutes}",
+  "@profileMinutesPerSession": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "profileMinutesShort": "{minutes} min",
+  "@profileMinutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "profileValidationRange": "Introduce un valor entre {min} y {max}",
+  "@profileValidationRange": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "profileValidationDays": "Elige al menos un día",
+  "profileBmiPreview": "IMC estimado: {value} · {category}",
+  "@profileBmiPreview": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBmiPreviewEmpty": "Introduce peso y altura para ver tu IMC",
+  "profileBmiPreviewHint": "Vista previa orientativa; el valor definitivo se calcula al guardar.",
+  "profileBmiUnderweight": "Bajo peso",
+  "profileBmiNormal": "Normal",
+  "profileBmiOverweight": "Sobrepeso",
+  "profileBmiObesity": "Obesidad",
+  "profileGoalSuggestAction": "Recomiéndame",
+  "profileGoalSuggestionsFromAi": "Sugerencias de la IA",
+  "profileGoalSuggestionsFromRules": "Sugerencias según tu perfil",
+  "profileGoalUseSuggestion": "Elegir",
+  "profileSexMale": "Hombre",
+  "profileSexFemale": "Mujer",
+  "profileSexNonBinary": "No binario",
+  "profileSexPreferNotToSay": "Prefiero no decirlo",
+  "profileActivitySedentary": "Sedentario",
+  "profileActivitySedentaryHint": "Poco o ningún ejercicio",
+  "profileActivityLight": "Ligero",
+  "profileActivityLightHint": "Ejercicio 1-2 días por semana",
+  "profileActivityModerate": "Moderado",
+  "profileActivityModerateHint": "Ejercicio 3-4 días por semana",
+  "profileActivityHigh": "Alto",
+  "profileActivityHighHint": "Ejercicio 5 o más días por semana",
+  "profileGoalHypertrophy": "Ganar masa muscular",
+  "profileGoalMaxStrength": "Fuerza máxima",
+  "profileGoalPower": "Potencia",
+  "profileGoalStrengthEndurance": "Resistencia muscular",
+  "profileGoalMobility": "Movilidad",
+  "profileGoalStability": "Estabilidad y equilibrio",
+  "profileGoalMetabolic": "Acondicionamiento metabólico",
+  "profileEquipmentBodyweight": "Peso corporal",
+  "profileEquipmentDumbbell": "Mancuernas",
+  "profileEquipmentBarbell": "Barra",
+  "profileEquipmentBand": "Bandas elásticas",
+  "profileEquipmentKettlebell": "Kettlebell",
+  "profileEquipmentCable": "Polea / cable",
+  "profileEquipmentMachine": "Máquinas",
+  "profileEquipmentMedicineBall": "Balón medicinal",
+  "profileWeekdayMon": "L",
+  "profileWeekdayTue": "M",
+  "profileWeekdayWed": "X",
+  "profileWeekdayThu": "J",
+  "profileWeekdayFri": "V",
+  "profileWeekdaySat": "S",
+  "profileWeekdaySun": "D",
+  "profileWeekdayMonLong": "Lunes",
+  "profileWeekdayTueLong": "Martes",
+  "profileWeekdayWedLong": "Miércoles",
+  "profileWeekdayThuLong": "Jueves",
+  "profileWeekdayFriLong": "Viernes",
+  "profileWeekdaySatLong": "Sábado",
+  "profileWeekdaySunLong": "Domingo",
+  "profileWellnessHistoryTitle": "Historial físico",
+  "profileWeightHistoryTitle": "Evolución del peso",
+  "profileWeightHistoryEmpty": "Aún no hay registros de peso",
+  "profileWeightHistoryEmptyHint": "Cada vez que actualices tu peso se guardará aquí.",
+  "profileWeightLastRecord": "Último registro: {date}",
+  "@profileWeightLastRecord": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileWeightDelta": "{delta} kg desde el inicio",
+  "@profileWeightDelta": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "profileWeightChartSemantics": "Gráfica de peso con {count} registros, de {first} kg a {last} kg",
+  "@profileWeightChartSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "first": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "profileGoalHistoryTitle": "Historial de objetivos",
+  "profileGoalHistoryEmpty": "Aún no has cambiado de objetivo",
+  "profileGoalActive": "Actual",
+  "profileGoalSince": "Desde el {date}",
+  "@profileGoalSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileGoalPeriod": "Del {start} al {end}",
+  "@profileGoalPeriod": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "profileGoalPrevious": "Antes: {goal}",
+  "@profileGoalPrevious": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "profileEditAcademicTitle": "Perfil académico",
+  "profileAcademicDegreeSection": "Carrera",
+  "profileAcademicDegreeSectionHint": "Búscala en el catálogo para importar su plan de estudios.",
+  "profileAcademicPickDegree": "Buscar mi carrera",
+  "profileAcademicClearDegree": "Quitar la carrera elegida",
+  "profileAcademicManualEntry": "No encuentro mi carrera",
+  "profileAcademicHideManual": "Ocultar la entrada manual",
+  "profileAcademicCourseSection": "Semestre actual",
+  "profileAcademicGoalsSection": "Objetivos",
+  "profileAcademicDatesSection": "Fechas de clases",
+  "profileAcademicDatesHint": "Las usamos para colocar tu horario en el calendario.",
+  "profileFieldUniversity": "Universidad",
+  "profileFieldDegree": "Carrera",
+  "profileFieldSemester": "Semestre",
+  "profileSemesterValue": "{semester}º semestre",
+  "@profileSemesterValue": {
+    "placeholders": {
+      "semester": {
+        "type": "int"
+      }
+    }
+  },
+  "profileFieldModality": "Modalidad",
+  "profileFieldCredits": "Créditos este semestre",
+  "profileFieldWeeklyHours": "Horas de estudio semanales objetivo",
+  "profileFieldTargetGpa": "Nota media objetivo",
+  "profileFieldTargetGpaHint": "Escala de 0 a 5",
+  "profileFieldClassesStart": "Inicio de clases",
+  "profileFieldClassesEnd": "Fin de clases",
+  "profileDateNotSet": "Sin fecha",
+  "profileModalityInPerson": "Presencial",
+  "profileModalityHybrid": "Híbrida",
+  "profileModalityOnline": "Online",
+  "profileCatalogPickUniversity": "Elige tu universidad",
+  "profileCatalogPickDegree": "Elige tu carrera",
+  "profileCatalogSearchUniversity": "Buscar universidad",
+  "profileCatalogSearchDegree": "Buscar carrera",
+  "profileCatalogNoUniversities": "No encontramos universidades",
+  "profileCatalogNoDegrees": "No encontramos carreras",
+  "profileCatalogNoResultsHint": "Prueba con otra búsqueda o introduce tus datos a mano.",
+  "profileEditAccountTitle": "Editar cuenta",
+  "profileFieldAvatarUrl": "URL de la foto de perfil",
+  "profileFieldAvatarUrlHint": "https://…",
+  "profileAvatarUrlInvalid": "Introduce una URL válida (https://…)",
+  "profilePrivacyTitle": "Privacidad del perfil",
+  "profilePrivacySubtitle": "Decide quién puede ver tu perfil, tus rutinas y tus retos.",
+  "profilePrivacyPublic": "Público",
+  "profilePrivacyPublicHint": "Cualquier usuario puede ver tu perfil y tu actividad compartida.",
+  "profilePrivacyFriends": "Solo amigos",
+  "profilePrivacyFriendsHint": "Solo tus amigos ven tu perfil y tu actividad.",
+  "profilePrivacyPrivate": "Privado",
+  "profilePrivacyPrivateHint": "Nadie más ve tu perfil; tus rutinas y retos pasan a ser privados.",
+  "profileSettingsAccountGroup": "Cuenta",
+  "profileSettingsNotificationsGroup": "Notificaciones",
+  "profileSettingsPrivacyGroup": "Privacidad y datos",
+  "profilePasswordChangeTitle": "Cambiar contraseña",
+  "profilePasswordCreateTitle": "Crear contraseña",
+  "profilePasswordCreateHint": "Tu cuenta es de Google. Crea una contraseña para entrar también con tu email.",
+  "profilePasswordCurrent": "Contraseña actual",
+  "profilePasswordNew": "Nueva contraseña",
+  "profilePasswordConfirm": "Repite la contraseña",
+  "profilePasswordMismatch": "Las contraseñas no coinciden",
+  "profilePasswordSaved": "Contraseña guardada",
+  "profileNotificationsTitle": "Preferencias de notificaciones",
+  "profileNotificationsHint": "Categorías, horas de silencio y límite diario",
+  "profileNotificationsModeTitle": "Modo",
+  "profileNotificationsCategoriesTitle": "Qué quieres recibir",
+  "profileNotifModeNormal": "Normal",
+  "profileNotifModeNormalHint": "Recibes todas las categorías activas.",
+  "profileNotifModeExams": "Exámenes",
+  "profileNotifModeExamsHint": "Solo lo importante para que te concentres en estudiar.",
+  "profileNotifModeRest": "Descanso",
+  "profileNotifModeRestHint": "Mínimas interrupciones mientras desconectas.",
+  "profileNotifCategoryConflict": "Conflictos de agenda",
+  "profileNotifCategoryFatigue": "Alertas de fatiga",
+  "profileNotifCategoryMilestone": "Logros e hitos",
+  "profileNotifCategorySocial": "Actividad social",
+  "profileNotifCategoryAcademic": "Avisos académicos",
+  "profileQuietHoursTitle": "Horas de silencio",
+  "profileQuietHoursHint": "No recibirás notificaciones en esta franja.",
+  "profileQuietHoursEnabled": "Activar horas de silencio",
+  "profileQuietHoursRange": "De {start} a {end}",
+  "@profileQuietHoursRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "profileQuietHoursEdit": "Cambiar franja",
+  "profileQuietHoursStart": "Inicio del silencio",
+  "profileQuietHoursEnd": "Fin del silencio",
+  "profileDailyLimitTitle": "Límite diario",
+  "profileDailyLimitHint": "Máximo de notificaciones al día. Las importantes llegan siempre.",
+  "profileDailyLimitOnlyImportant": "Solo importantes",
+  "profileDailyLimitValue": "{count} al día",
+  "@profileDailyLimitValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileExportTitle": "Exportar mis datos",
+  "profileExportHint": "Descarga un archivo JSON con toda tu información",
+  "profileExportDone": "Datos exportados",
+  "profileExportCancelled": "Exportación cancelada",
+  "profileDeleteTitle": "Eliminar mi cuenta",
+  "profileDeleteHint": "Borra tu cuenta y tus datos de forma permanente",
+  "profileDeleteMessage": "Se eliminarán tu cuenta, tu progreso y todo tu contenido. Esta acción no se puede deshacer. Si quieres conservar una copia, exporta antes tus datos.",
+  "profileDeleteUnderstand": "Entiendo que perderé todos mis datos",
+  "profileDeleteKeyword": "ELIMINAR",
+  "profileDeleteTypeKeyword": "Escribe {keyword} para confirmar",
+  "@profileDeleteTypeKeyword": {
+    "placeholders": {
+      "keyword": {
+        "type": "String"
+      }
+    }
+  },
+  "profileDeleteGoogleOnly": "Tu cuenta no tiene contraseña: confirmarás la baja de forma explícita.",
+  "profileDeleteAction": "Eliminar definitivamente",
+  "profileDeleteDone": "Tu cuenta se ha eliminado",
+  "profileLogoutTitle": "¿Cerrar sesión?",
+  "profileLogoutMessage": "Tendrás que volver a iniciar sesión para usar la app.",
+  "profileLogoutAction": "Cerrar sesión",
+  "profileAppVersion": "SynaptixFit · versión {version}",
+  "@profileAppVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "profileErrorWellnessNotFound": "Todavía no has completado tu perfil físico.",
+  "profileErrorAcademicNotFound": "Todavía no has configurado tu perfil académico.",
+  "profileErrorInvalidClassDates": "La fecha de fin de clases no puede ser anterior a la de inicio.",
+  "profileErrorOnboardingWellnessRequired": "Completa tu perfil físico antes de terminar.",
+  "profileErrorUniversityNotFound": "No encontramos esa universidad.",
+  "profileErrorCenterNotFound": "No encontramos ese centro.",
+  "profileErrorDegreeNotFound": "No encontramos esa carrera.",
+  "profileErrorCatalogSubjectNotFound": "No encontramos esa asignatura.",
+  "profileErrorGdprConfirmationRequired": "Confirma la baja con tu contraseña.",
+  "profileErrorGdprPasswordMismatch": "La contraseña no es correcta.",
+  "profileErrorGdprLastAdmin": "Eres el último administrador: nombra a otro antes de darte de baja.",
+  "profileErrorQuietHours": "Indica la hora de inicio y de fin del silencio (distintas).",
+  "profileOnboardingFocusTitle": "¿Para qué usarás SynaptixFit?",
+  "profileOnboardingFocusSubtitle": "Solo verás lo que usas. Cámbialo en Perfil.",
+  "profileFocusBoth": "Estudios y deporte",
+  "profileFocusBothHint": "Equilibra tu carga académica y física",
+  "profileFocusAcademic": "Solo estudios",
+  "profileFocusAcademicHint": "Planifica, repasa y llega a tus exámenes",
+  "profileFocusFitness": "Solo deporte",
+  "profileFocusFitnessHint": "Rutinas, progreso y récords",
+  "profileFocusTitle": "Uso de la app",
+  "profileFocusEditHint": "Muestra solo lo que usas.",
+  "profileWellnessMoreOptions": "Más opciones: actividad, días y material",
+  "profileWellnessMoreOptionsHint": "Opcional. Si no lo indicas, empezamos con un plan prudente que cambias cuando quieras en tu perfil físico.",
+  "profileWellnessLessOptions": "Menos opciones"
+}

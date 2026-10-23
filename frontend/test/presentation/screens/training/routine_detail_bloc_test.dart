@@ -1,0 +1,228 @@
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:synaptixfit/domain/errors/app_error.dart';
+import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/models/training/routine.dart';
+import 'package:synaptixfit/domain/use_cases/training/add_routine_day_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/add_routine_exercise_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/add_routine_week_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/change_routine_status_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/clone_routine_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/delete_routine_day_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/delete_routine_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/delete_routine_week_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/duplicate_routine_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_body_weight_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_routine_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/remove_routine_exercise_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/rename_routine_day_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/reorder_routine_exercises_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/start_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/update_routine_exercise_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/update_routine_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/update_routine_week_use_case.dart';
+import 'package:synaptixfit/presentation/screens/training/routine_detail/bloc/routine_detail_bloc.dart';
+import 'package:synaptixfit/presentation/screens/training/training_effect.dart';
+
+import 'training_fixtures.dart';
+
+class _GetRoutine extends Mock implements GetRoutineUseCaseContract {}
+
+class _GetWeight extends Mock implements GetBodyWeightUseCaseContract {}
+
+class _Update extends Mock implements UpdateRoutineUseCaseContract {}
+
+class _Status extends Mock implements ChangeRoutineStatusUseCaseContract {}
+
+class _Delete extends Mock implements DeleteRoutineUseCaseContract {}
+
+class _Duplicate extends Mock implements DuplicateRoutineUseCaseContract {}
+
+class _Clone extends Mock implements CloneRoutineUseCaseContract {}
+
+class _AddWeek extends Mock implements AddRoutineWeekUseCaseContract {}
+
+class _UpdateWeek extends Mock implements UpdateRoutineWeekUseCaseContract {}
+
+class _DeleteWeek extends Mock implements DeleteRoutineWeekUseCaseContract {}
+
+class _AddDay extends Mock implements AddRoutineDayUseCaseContract {}
+
+class _RenameDay extends Mock implements RenameRoutineDayUseCaseContract {}
+
+class _DeleteDay extends Mock implements DeleteRoutineDayUseCaseContract {}
+
+class _AddExercise extends Mock implements AddRoutineExerciseUseCaseContract {}
+
+class _Reorder extends Mock implements ReorderRoutineExercisesUseCaseContract {}
+
+class _UpdateExercise extends Mock
+    implements UpdateRoutineExerciseUseCaseContract {}
+
+class _RemoveExercise extends Mock
+    implements RemoveRoutineExerciseUseCaseContract {}
+
+class _Start extends Mock implements StartSessionUseCaseContract {}
+
+void main() {
+  late _GetRoutine getRoutine;
+  late _GetWeight getWeight;
+  late _Delete deleteRoutine;
+  late _Clone clone;
+  late _Reorder reorder;
+  late _RenameDay renameDay;
+  late RoutineDetailUseCases useCases;
+  final routine = TrainingFixtures.routine();
+
+  setUp(() {
+    getRoutine = _GetRoutine();
+    getWeight = _GetWeight();
+    deleteRoutine = _Delete();
+    clone = _Clone();
+    reorder = _Reorder();
+    renameDay = _RenameDay();
+    useCases = RoutineDetailUseCases(
+      getRoutine: getRoutine,
+      getBodyWeight: getWeight,
+      updateRoutine: _Update(),
+      changeStatus: _Status(),
+      deleteRoutine: deleteRoutine,
+      duplicateRoutine: _Duplicate(),
+      cloneRoutine: clone,
+      addWeek: _AddWeek(),
+      updateWeek: _UpdateWeek(),
+      deleteWeek: _DeleteWeek(),
+      addDay: _AddDay(),
+      renameDay: renameDay,
+      deleteDay: _DeleteDay(),
+      addExercise: _AddExercise(),
+      reorderExercises: reorder,
+      updateExercise: _UpdateExercise(),
+      removeExercise: _RemoveExercise(),
+      startSession: _Start(),
+    );
+  });
+
+  RoutineDetailState ready([Routine? r]) => RoutineDetailState(
+    status: RoutineDetailStatus.ready,
+    routineId: 'r1',
+    routine: r ?? routine,
+    bodyWeightKg: 80,
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'carga la rutina y el peso del perfil',
+    setUp: () {
+      when(() => getRoutine('r1')).thenAnswer((_) async => Success(routine));
+      when(() => getWeight()).thenAnswer((_) async => const Success(80.0));
+    },
+    build: () => RoutineDetailBloc(useCases),
+    act: (bloc) => bloc.add(const RoutineDetailEvent.started('r1')),
+    expect: () => [const RoutineDetailState(routineId: 'r1'), ready()],
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'si la rutina no existe muestra el error (el peso es opcional)',
+    setUp: () {
+      when(() => getRoutine('r1')).thenAnswer(
+        (_) async => const Failure(AppError.business('ROUTINE_NOT_FOUND')),
+      );
+      when(
+        () => getWeight(),
+      ).thenAnswer((_) async => const Failure(AppError.notFound()));
+    },
+    build: () => RoutineDetailBloc(useCases),
+    act: (bloc) => bloc.add(const RoutineDetailEvent.started('r1')),
+    expect: () => const [
+      RoutineDetailState(routineId: 'r1'),
+      RoutineDetailState(
+        routineId: 'r1',
+        status: RoutineDetailStatus.failure,
+        error: AppError.business('ROUTINE_NOT_FOUND'),
+      ),
+    ],
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'bajar un ejercicio envía el nuevo orden completo del día',
+    setUp: () => when(
+      () => reorder('r1', 'd1', ['p2', 'p1']),
+    ).thenAnswer((_) async => Success(routine.copyWith(name: 'Reordenada'))),
+    build: () => RoutineDetailBloc(useCases),
+    seed: ready,
+    act: (bloc) =>
+        bloc.add(const RoutineDetailEvent.exerciseMoved('d1', 'p1', up: false)),
+    expect: () => [
+      ready().copyWith(busy: true),
+      ready(routine.copyWith(name: 'Reordenada')),
+    ],
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'un error al editar se avisa sin perder la rutina',
+    setUp: () => when(() => renameDay('r1', 'd1', 'Pierna')).thenAnswer(
+      (_) async => const Failure(AppError.business('ROUTINE_DAY_NOT_FOUND')),
+    ),
+    build: () => RoutineDetailBloc(useCases),
+    seed: ready,
+    act: (bloc) =>
+        bloc.add(const RoutineDetailEvent.dayRenamed('d1', 'Pierna')),
+    expect: () => [
+      ready().copyWith(busy: true),
+      ready(),
+      ready().copyWith(
+        effect: const TrainingEffect.error(
+          AppError.business('ROUTINE_DAY_NOT_FOUND'),
+        ),
+      ),
+      ready(),
+    ],
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'eliminar la rutina avisa y cierra la pantalla',
+    setUp: () => when(
+      () => deleteRoutine('r1'),
+    ).thenAnswer((_) async => const Success(unit)),
+    build: () => RoutineDetailBloc(useCases),
+    seed: ready,
+    act: (bloc) => bloc.add(const RoutineDetailEvent.deleted()),
+    expect: () => [
+      ready().copyWith(busy: true),
+      ready(),
+      ready().copyWith(
+        effect: const TrainingEffect.message(TrainingMessage.routineDeleted),
+      ),
+      ready(),
+      ready().copyWith(effect: const TrainingEffect.close()),
+      ready(),
+    ],
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'clonar una rutina ajena abre la copia',
+    setUp: () => when(
+      () => clone('r1'),
+    ).thenAnswer((_) async => Success(routine.copyWith(id: 'r2'))),
+    build: () => RoutineDetailBloc(useCases),
+    seed: () => ready(TrainingFixtures.routine(owned: false)),
+    act: (bloc) => bloc.add(const RoutineDetailEvent.cloned()),
+    verify: (_) => verify(() => clone('r1')).called(1),
+    expect: () {
+      final base = ready(TrainingFixtures.routine(owned: false));
+      return [
+        base.copyWith(busy: true),
+        base,
+        base.copyWith(
+          effect: const TrainingEffect.message(TrainingMessage.routineCloned),
+        ),
+        base,
+        base.copyWith(
+          effect: const TrainingEffect.openRoutine('r2', replace: true),
+        ),
+        base,
+      ];
+    },
+  );
+}

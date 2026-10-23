@@ -1,0 +1,97 @@
+codigo_ruct,nombre,tipo,comunidad,web
+001,Universidad de Alicante,Pública,Comunitat Valenciana,https://www.ua.es
+002,Universidad de Extremadura,Pública,Extremadura,https://www.unex.es
+003,Universitat de les Illes Balears,Pública,Illes Balears,https://www.uib.es
+004,Universidad de Barcelona,Pública,Cataluña,https://www.ub.es
+005,Universidad de Cádiz,Pública,Andalucía,https://www.uca.es
+006,Universidad de Córdoba,Pública,Andalucía,https://www.uco.es
+007,Universidad de Santiago de Compostela,Pública,Galicia,https://www.usc.es
+008,Universidad de Granada,Pública,Andalucía,https://www.ugr.es
+009,Universidad de León,Pública,Castilla y León,https://www.unileon.es
+010,Universidad Complutense de Madrid,Pública,Comunidad de Madrid,https://www.ucm.es
+011,Universidad de Málaga,Pública,Andalucía,https://www.uma.es
+012,Universidad de Murcia,Pública,Región de Murcia,https://www.um.es
+013,Universidad de Oviedo,Pública,Principado de Asturias,https://www.uniovi.es
+014,Universidad de Salamanca,Pública,Castilla y León,https://www.usal.es
+015,Universidad de La Laguna,Pública,Canarias,https://www.ull.es
+016,Universidad de Cantabria,Pública,Cantabria,https://www.unican.es
+017,Universidad de Sevilla,Pública,Andalucía,https://www.us.es
+018,Universitat de València (Estudi General),Pública,Comunitat Valenciana,https://www.uv.es
+019,Universidad de Valladolid,Pública,Castilla y León,
+020,Universidad del País Vasco/Euskal Herriko Unibertsitatea,Pública,País Vasco,https://www.ehu.es
+021,Universidad de Zaragoza,Pública,Aragón,
+022,Universidad Autónoma de Barcelona,Pública,Cataluña,https://www.uab.es
+023,Universidad Autónoma de Madrid,Pública,Comunidad de Madrid,https://www.uam.es
+024,Universidad Politécnica de Catalunya,Pública,Cataluña,https://www.upc.es
+025,Universidad Politécnica de Madrid,Pública,Comunidad de Madrid,https://www.upm.es
+026,Universidad de Las Palmas de Gran Canaria,Pública,Canarias,https://www.ulpgc.es
+027,Universitat Politècnica de València,Pública,Comunitat Valenciana,https://www.upv.es
+028,Universidad Nacional de Educación a Distancia,Pública,Comunidad de Madrid,https://www.uned.es
+029,Universidad de Alcalá,Pública,Comunidad de Madrid,https://www.uah.es
+030,Universidad de Deusto,Privada,País Vasco,https://www.deusto.es
+031,Universidad de Navarra,Privada,Comunidad Foral de Navarra,https://www.unav.es
+032,Universidad Pontificia de Salamanca,Privada,Castilla y León,https://www.upsa.es
+033,Universidad Pontificia Comillas,Privada,Comunidad de Madrid,https://www.upcomillas.es
+034,Universidad de Castilla-La Mancha,Pública,Castilla-La Mancha,https://www.uclm.es
+035,Universidad Pública de Navarra,Pública,Comunidad Foral de Navarra,https://www.unavarra.es
+036,Universidad Carlos III de Madrid,Pública,Comunidad de Madrid,https://www.uc3m.es
+037,Universidad de A Coruña,Pública,Galicia,https://www.udc.es
+038,Universidad de Vigo,Pública,Galicia,https://www.uvigo.es
+039,Universidad Pompeu Fabra,Pública,Cataluña,https://www.upf.edu
+040,Universidad Jaume I de Castellón,Pública,Comunitat Valenciana,https://www.uji.es
+041,Universidad Ramón Llull,Privada,Cataluña,https://www.url.edu
+042,Universidad Rovira i Virgili,Pública,Cataluña,https://www.urv.cat/ca
+043,Universitat de Girona,Pública,Cataluña,
+044,Universidad de Lleida,Pública,Cataluña,https://www.udl.es/ca/es
+045,Universidad de La Rioja,Pública,La Rioja,https://www.unirioja.es
+046,Universidad San Pablo-CEU,Privada,Comunidad de Madrid,https://www.uspceu.com
+047,Universidad Alfonso X El Sabio,Privada,Comunidad de Madrid,https://www.uax.es
+048,Universidad de Almería,Pública,Andalucía,https://www.ual.es
+049,Universidad de Huelva,Pública,Andalucía,https://www.uhu.es
+050,Universidad de Jaén,Pública,Andalucía,https://www.ujaen.es
+051,Universidad de Burgos,Pública,Castilla y León,https://www.ubu.es
+052,Universidad Antonio de Nebrija,Privada,Comunidad de Madrid,https://www.nebrija.com
+053,Universidad Europea de Madrid,Privada,Comunidad de Madrid,https://madrid.universidadeuropea.es
+054,Universitat Oberta de Catalunya,Privada,Cataluña,https://www.uoc.es
+055,Universidad Miguel Hernández de Elche,Pública,Comunitat Valenciana,https://www.umh.es
+056,Universidad Rey Juan Carlos,Pública,Comunidad de Madrid,https://www.urjc.es
+057,IE Universidad,Privada,Castilla y León,https://www.ie.edu/universidad
+058,Universidad Pablo de Olavide,Pública,Andalucía,https://www.upo.es
+059,Universidad Católica Santa Teresa de Jesús de Ávila,Privada,Castilla y León,https://www.ucavila.es
+060,Universidad de Vic-Universidad Central de Catalunya,Privada,Cataluña,https://www.uvic-ucc.cat/es
+061,Mondragón Unibertsitatea,Privada,País Vasco,https://www.mondragon.edu
+062,Universitat Internacional de Catalunya,Privada,Cataluña,https://www.uic.es
+063,Universidad Internacional de Andalucía,Pública,Andalucía,
+064,Universidad Politécnica de Cartagena,Pública,Región de Murcia,https://www.upct.es
+065,Universidad Camilo José Cela,Privada,Comunidad de Madrid,https://www.ucjc.edu
+066,Universidad Católica San Antonio,Privada,Región de Murcia,https://www.ucam.edu
+067,Universidad Cardenal Herrera-CEU,Privada,Comunitat Valenciana,https://www.uchceu.es
+068,Universidad Francisco de Vitoria,Privada,Comunidad de Madrid,https://www.ufv.es
+069,Universidad Europea Miguel de Cervantes,Privada,Castilla y León,https://www.uemc.es
+070,Universitat Abat Oliba CEU,Privada,Cataluña,https://www.uao.es
+071,Universidad Internacional Menéndez Pelayo,Pública,Comunidad de Madrid,https://www.uimp.es
+072,Universidad Católica de Valencia San Vicente Mártir,Privada,Comunitat Valenciana,https://www.ucv.es
+073,Universidad San Jorge,Privada,Aragón,https://www.usj.es
+074,Universidad a Distancia de Madrid,Privada,Comunidad de Madrid,https://www.udima.es
+076,Universitat Internacional Valenciana,Privada,Comunitat Valenciana,https://www.viu.es
+077,Universidad Internacional de La Rioja,Privada,La Rioja,https://www.unir.net
+079,Universidad Europea de Canarias,Privada,Canarias,https://canarias.universidadeuropea.es
+080,Universidad Internacional Isabel I de Castilla,Privada,Castilla y León,https://www.ui1.es
+081,Universidad Loyola Andalucía,Privada,Andalucía,https://www.uloyola.es
+082,Universidad Europea de Valencia,Privada,Comunitat Valenciana,https://valencia.universidadeuropea.es
+083,Universidad Europea del Atlántico,Privada,Cantabria,https://www.uneatlantico.es
+084,Universidad Fernando Pessoa-Canarias (UFP-C),Privada,Canarias,https://www.ufpcanarias.org
+085,Universidad del Atlántico Medio,Privada,Canarias,https://www.universidadatlanticomedio.es
+087,ESIC Universidad,Privada,Comunidad de Madrid,https://www.esic.edu/university
+088,Universidad Internacional Villanueva,Privada,Comunidad de Madrid,https://www.villanueva.edu
+089,CUNEF Universidad,Privada,Comunidad de Madrid,https://www.cunef.edu
+090,Universidad de las Hespérides,Privada,Canarias,https://hesperides.edu.es
+094,Universidad Internacional de la Empresa,Privada,Comunidad de Madrid,https://www.universidadunie.com
+097,Universidad Intercontinental de la Empresa,Privada,Galicia,https://uie.edu
+098,Universidad Euneiz,Privada,País Vasco,https://www.euneiz.com
+100,"Universidad de Diseño, Innovación y Tecnología (UDIT)",Privada,Comunidad de Madrid,https://udit.es
+102,Universidad CEU Fernando III,Privada,Andalucía,https://uf3ceu.es
+103,Universidad Tecnológica Atlántico-Mediterráneo,Privada,Andalucía,https://utamed.es
+104,Universidad Tecnológica de las Islas Canarias,Privada,Canarias,
+106,Universidad Alfonso X el Sabio Mare Nostrum,Privada,Andalucía,
+107,Universidad Europea de Andalucía,Privada,Andalucía,

@@ -1,0 +1,249 @@
+package com.synaptixfit.application.service.planner;
+
+import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
+import com.synaptixfit.application.port.input.planner.BlockChange;
+import com.synaptixfit.application.port.input.planner.BlockDetailsInput;
+import com.synaptixfit.application.port.input.planner.CreateCalendarBlockUseCase;
+import com.synaptixfit.application.port.input.planner.DeleteCalendarBlockUseCase;
+import com.synaptixfit.application.port.input.planner.DeleteSubjectBlocksUseCase;
+import com.synaptixfit.application.port.input.planner.GetCalendarBlockUseCase;
+import com.synaptixfit.application.port.input.planner.GetCalendarBlocksUseCase;
+import com.synaptixfit.application.port.input.planner.GetScheduleConflictsUseCase;
+import com.synaptixfit.application.port.input.planner.RescheduleCalendarBlockUseCase;
+import com.synaptixfit.application.port.input.planner.UpdateCalendarBlockUseCase;
+import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
+import com.synaptixfit.domain.exception.FieldValidationException;
+import com.synaptixfit.domain.exception.planner.BlockAlreadyCompletedException;
+import com.synaptixfit.domain.exception.planner.CalendarBlockNotFoundException;
+import com.synaptixfit.domain.model.planner.ActivityType;
+import com.synaptixfit.domain.model.planner.CalendarBlock;
+import com.synaptixfit.domain.model.planner.Deadline;
+import com.synaptixfit.domain.model.planner.DeadlineType;
+import com.synaptixfit.domain.model.planner.PlannerZone;
+import com.synaptixfit.domain.model.planner.ScheduleConflicts;
+import com.synaptixfit.domain.model.planner.TimeRange;
+import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
+import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.ChallengeDirectoryPort;
+import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.RoutineDirectoryPort;
+import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+
+/** Bloques del calendario: consulta, alta, edición, cambio de horario, borrado y conflictos. */
+public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalendarBlockUseCase,
+        CreateCalendarBlockUseCase, UpdateCalendarBlockUseCase, RescheduleCalendarBlockUseCase,
+        DeleteCalendarBlockUseCase, GetScheduleConflictsUseCase, DeleteSubjectBlocksUseCase {
+
+    private final CalendarBlockRepositoryPort blocks;
+    private final DeadlineRepositoryPort deadlines;
+    private final RevokeExperienceUseCase revoke;
+    private final DomainEventPublisherPort events;
+    private final WeeklyLoadService weeklyLoads;
+    private final PlannerZone zone;
+    private final Clock clock;
+    private final BlockDetailsResolver resolver;
+    private final ConflictFlagger conflicts;
+
+    public CalendarBlockService(CalendarBlockRepositoryPort blocks, DeadlineRepositoryPort deadlines,
+                                SubjectDirectoryPort subjects, RoutineDirectoryPort routines,
+                                ChallengeDirectoryPort challenges, RevokeExperienceUseCase revoke,
+                                DomainEventPublisherPort events, WeeklyLoadService weeklyLoads,
+                                PlannerZone zone, Clock clock) {
+        this.blocks = blocks;
+        this.deadlines = deadlines;
+        this.revoke = revoke;
+        this.events = events;
+        this.weeklyLoads = weeklyLoads;
+        this.zone = zone;
+        this.clock = clock;
+        this.resolver = new BlockDetailsResolver(subjects, routines, challenges, deadlines);
+        this.conflicts = new ConflictFlagger(blocks);
+    }
+
+    @Override
+    public List<CalendarBlock> getBlocks(UUID userId, Instant from, Instant to, UUID subjectId) {
+        Ranges.check(from, to, Ranges.MAX_QUERY_DAYS);
+        return blocks.findOverlapping(userId, from, to, subjectId);
+    }
+
+    @Override
+    public CalendarBlock getBlock(UUID userId, UUID blockId) {
+        return owned(userId, blockId);
+    }
+
+    @Override
+    public BlockChange createBlock(CreateCalendarBlockUseCase.Command command) {
+        Instant now = clock.instant();
+        TimeRange range = new TimeRange(command.start(), command.end());
+        BlockDetailsInput input = command.details();
+        ActivityType type = input.type() == null ? ActivityType.STUDY : input.type();
+        CalendarBlock.Details details = resolver.resolve(command.userId(), input);
+        CalendarBlock block = CalendarBlock.builder()
+                .id(UUID.randomUUID())
+                .userId(command.userId())
+                .range(range)
+                .dayOfWeek(zone.dayOfWeek(range.start()))
+                .type(type)
+                .details(details)
+                .fixed(command.fixed())
+                .createdAt(now)
+                .build();
+        block.requireNotInPast(now);
+        if ((type == ActivityType.EXAM || type == ActivityType.DELIVERY) && details.deadlineId() == null) {
+            Deadline deadline = deadlines.save(linkedDeadline(command.userId(), type, range, input, now));
+            block.revise(type, withDeadline(details, deadline.id()));
+            weeklyLoads.refresh(command.userId(), zone.localDate(deadline.dueAt()));
+        }
+        CalendarBlock saved = blocks.save(block);
+        List<CalendarBlock> neighbours = conflicts.neighboursOf(saved);
+        conflicts.refresh(command.userId(), List.of(saved), neighbours);
+        int copies = type.canRepeatWeekly()
+                ? Math.max(0, Math.min(command.repeatWeeks(), CalendarBlock.MAX_WEEKLY_REPEATS)) : 0;
+        for (int week = 1; week <= copies; week++) {
+            CalendarBlock copy = blocks.save(weeklyCopy(saved, week, now));
+            conflicts.refresh(command.userId(), List.of(copy), conflicts.neighboursOf(copy));
+        }
+        return new BlockChange(saved, neighbours, copies);
+    }
+
+    /** Copia de {@code original} {@code week} semanas después, a la misma hora local. */
+    private CalendarBlock weeklyCopy(CalendarBlock original, int week, Instant now) {
+        TimeRange range = new TimeRange(zone.plusWeeks(original.range().start(), week),
+                zone.plusWeeks(original.range().end(), week));
+        return original.weeklyCopy(UUID.randomUUID(), range, zone.dayOfWeek(range.start()), now);
+    }
+
+    /** Entrega/examen que acompaña a un bloque EXAM o DELIVERY: la hora indicada de un examen es su inicio. */
+    private static Deadline linkedDeadline(UUID userId, ActivityType type, TimeRange range, BlockDetailsInput in,
+                                           Instant now) {
+        String title = firstNonBlank(in.deadlineTitle(), in.topics(), type == ActivityType.EXAM ? "Examen" : "Entrega");
+        return Deadline.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .subjectId(in.subjectId())
+                .title(title.length() > Deadline.TITLE_MAX ? title.substring(0, Deadline.TITLE_MAX) : title)
+                .type(type == ActivityType.EXAM ? DeadlineType.EXAM : DeadlineType.ASSIGNMENT)
+                .dueAt(type == ActivityType.EXAM ? range.start() : range.end())
+                .difficulty(in.deadlineDifficulty())
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+    }
+
+    @Override
+    public CalendarBlock updateBlock(UpdateCalendarBlockUseCase.Command command) {
+        CalendarBlock block = owned(command.userId(), command.blockId());
+        ActivityType type = command.details().type() == null ? block.type() : command.details().type();
+        if (block.completed() && type != block.type()) {
+            // La experiencia ya concedida depende del tipo: cambiarlo descuadraría la resta al desmarcar.
+            throw new BlockAlreadyCompletedException();
+        }
+        block.revise(type, resolver.resolve(command.userId(), command.details()));
+        return blocks.save(block);
+    }
+
+    @Override
+    public BlockChange reschedule(RescheduleCalendarBlockUseCase.Command command) {
+        CalendarBlock block = owned(command.userId(), command.blockId());
+        Instant now = clock.instant();
+        List<CalendarBlock> formerNeighbours = conflicts.neighboursOf(block);
+        LocalDate previousDay = zone.localDate(block.start());
+        if (command.start() != null) {
+            TimeRange target = command.end() == null
+                    ? block.range().shiftTo(command.start())
+                    : new TimeRange(command.start(), command.end());
+            block.moveTo(target, zone.dayOfWeek(target.start()), now);
+        } else if (command.end() != null) {
+            block.resize(command.end(), now);
+        } else {
+            throw new FieldValidationException("start", "REQUIRED", "start or end is required");
+        }
+        CalendarBlock saved = blocks.save(block);
+        followLinkedDeadline(saved, now);
+        List<CalendarBlock> neighbours = conflicts.neighboursOf(saved);
+        conflicts.refresh(command.userId(), List.of(saved),
+                java.util.stream.Stream.concat(formerNeighbours.stream(), neighbours.stream()).toList());
+        weeklyLoads.refresh(command.userId(), zone.localDate(saved.start()));
+        if (!PlannerZone.mondayOf(previousDay).equals(PlannerZone.mondayOf(zone.localDate(saved.start())))) {
+            weeklyLoads.refresh(command.userId(), previousDay);
+        }
+        return new BlockChange(saved, neighbours);
+    }
+
+    @Override
+    public void deleteBlock(UUID userId, UUID blockId) {
+        remove(owned(userId, blockId));
+    }
+
+    @Override
+    public void deleteSubjectBlocks(UUID userId, UUID subjectId) {
+        blocks.findBySubject(userId, subjectId).forEach(this::remove);
+    }
+
+    /** Borra el bloque restando su XP, avisa si estaba completado y recalcula conflictos y semana. */
+    private void remove(CalendarBlock block) {
+        UUID userId = block.userId();
+        List<CalendarBlock> neighbours = conflicts.neighboursOf(block);
+        if (block.xpAwarded()) {
+            revoke.revoke(userId, block.experienceReward());
+        }
+        blocks.delete(block.id());
+        conflicts.refresh(userId, List.of(), neighbours);
+        weeklyLoads.refresh(userId, zone.localDate(block.start()));
+        if (block.completed()) {
+            events.publish(new StudyBlockCompletionChanged(userId, block.id(), block.type().code(), block.subjectId(),
+                    block.details().milestoneId(), block.start(), block.end(), false, clock.instant()));
+        }
+    }
+
+    @Override
+    public List<ScheduleConflicts.Pair> getConflicts(UUID userId, LocalDate weekStart) {
+        Instant from = zone.weekStart(weekStart);
+        Instant to = zone.weekEnd(weekStart);
+        return ScheduleConflicts.pairs(blocks.findOverlapping(userId, from, to, null));
+    }
+
+    /** La fecha límite de la entrega/examen vinculados sigue al bloque cuando se mueve. */
+    private void followLinkedDeadline(CalendarBlock block, Instant now) {
+        boolean deadlineBlock = block.type() == ActivityType.EXAM || block.type() == ActivityType.DELIVERY;
+        if (!deadlineBlock || block.details().deadlineId() == null) {
+            return;
+        }
+        Instant dueAt = block.type() == ActivityType.EXAM ? block.start() : block.end();
+        deadlines.findById(block.details().deadlineId())
+                .filter(d -> d.userId().equals(block.userId()) && !d.dueAt().equals(dueAt))
+                .ifPresent(d -> {
+                    LocalDate previousWeek = zone.localDate(d.dueAt());
+                    d.update(null, null, dueAt, null, null, null, false, now);
+                    deadlines.save(d);
+                    weeklyLoads.refresh(block.userId(), previousWeek);
+                });
+    }
+
+    private CalendarBlock owned(UUID userId, UUID blockId) {
+        return blocks.findById(blockId)
+                .filter(b -> b.userId().equals(userId))
+                .orElseThrow(() -> new CalendarBlockNotFoundException(blockId));
+    }
+
+    private static CalendarBlock.Details withDeadline(CalendarBlock.Details d, UUID deadlineId) {
+        return new CalendarBlock.Details(d.subjectId(), d.topics(), d.location(), d.priority(), d.isPrivate(),
+                d.classKind(), d.routineId(), d.routineWeekId(), d.routineDayId(), d.challengeId(), d.milestoneId(),
+                deadlineId);
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String v : values) {
+            if (v != null && !v.isBlank()) {
+                return v.strip();
+            }
+        }
+        return Objects.requireNonNull(values[values.length - 1]);
+    }
+}

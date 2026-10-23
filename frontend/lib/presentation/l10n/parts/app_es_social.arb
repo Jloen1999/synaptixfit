@@ -1,0 +1,243 @@
+{
+  "@@locale": "es",
+  "socialFeedTitle": "Comunidad",
+  "socialFeedEmptyTitle": "Aún no hay publicaciones",
+  "socialFeedEmptyMessage": "Comparte un logro o una rutina para animar a tus compañeros.",
+  "socialPublish": "Publicar",
+  "socialPeriodAll": "Todo",
+  "socialPeriodToday": "Hoy",
+  "socialPeriodWeek": "Esta semana",
+  "socialPeriodMonth": "Este mes",
+  "socialNewPosts": "{count, plural, =1{Hay 1 publicación nueva} other{Hay {count} publicaciones nuevas}}",
+  "@socialNewPosts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialBadgeOverflow": "99+",
+  "socialLoadingMore": "Cargando más",
+  "socialMoreActions": "Más acciones",
+  "socialOpenProfileOf": "Ver el perfil de {name}",
+  "@socialOpenProfileOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialTimeNow": "ahora",
+  "socialTimeMinutes": "hace {count} min",
+  "@socialTimeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialTimeHours": "hace {count} h",
+  "@socialTimeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialTimeDays": "{count, plural, =1{hace 1 día} other{hace {count} días}}",
+  "@socialTimeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialTimeEdited": "{time} · editado",
+  "@socialTimeEdited": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "socialPostTypeSession": "Sesión completada",
+  "socialPostTypeChallengeCompleted": "Reto completado",
+  "socialPostTypeMilestone": "Logro",
+  "socialPostTypeBadge": "Insignia desbloqueada",
+  "socialPostTypeRoutine": "Rutina",
+  "socialPostTypeChallenge": "Reto",
+  "socialLike": "Me gusta",
+  "socialUnlike": "Quitar me gusta",
+  "socialLikesCount": "{count, plural, =0{Me gusta} =1{1 me gusta} other{{count} me gusta}}",
+  "@socialLikesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialCommentsCount": "{count, plural, =0{Comentar} =1{1 comentario} other{{count} comentarios}}",
+  "@socialCommentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialCreatePostTitle": "Nueva publicación",
+  "socialEditPostTitle": "Editar publicación",
+  "socialPostTypeLabel": "¿Qué quieres compartir?",
+  "socialPostDescriptionLabel": "Texto",
+  "socialPostDescriptionHint": "Cuenta a tus compañeros qué has conseguido",
+  "socialPostImageLabel": "Imagen (opcional)",
+  "socialPostImageHint": "https://…",
+  "socialPostImageInvalid": "Introduce un enlace http o https válido",
+  "socialPostImageLoadError": "No se ha podido cargar la imagen",
+  "socialPostTitle": "Publicación",
+  "socialPostDeleteTitle": "¿Eliminar la publicación?",
+  "socialPostDeleteMessage": "Se borrará junto con sus comentarios y «me gusta». No se puede deshacer.",
+  "socialReport": "Reportar",
+  "socialReportPostTitle": "¿Reportar esta publicación?",
+  "socialReportCommentTitle": "¿Reportar este comentario?",
+  "socialReportMessage": "El equipo de moderación lo revisará. Gracias por ayudar a mantener la comunidad segura.",
+  "socialCommentLabel": "Comentario",
+  "socialCommentHint": "Escribe un comentario…",
+  "socialCommentSend": "Enviar comentario",
+  "socialCommentTooLong": "Máximo {max} caracteres",
+  "@socialCommentTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "socialCommentEditTitle": "Editar comentario",
+  "socialCommentDeleteTitle": "¿Eliminar el comentario?",
+  "socialCommentDeleteMessage": "No se puede deshacer.",
+  "socialCommentsEmpty": "Sé el primero en comentar",
+  "socialCommentsEmptyMessage": "Anima a tu compañero con un comentario.",
+  "socialCommentsLoadMore": "Ver más comentarios",
+  "socialFriendsTitle": "Amigos",
+  "socialSearchUsersHint": "Buscar personas por nombre",
+  "socialSearchClear": "Borrar búsqueda",
+  "socialSearchEmptyTitle": "Sin resultados",
+  "socialSearchEmptyMessage": "No hay nadie que coincida con «{query}».",
+  "@socialSearchEmptyMessage": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "socialTabFriends": "Amigos",
+  "socialTabReceived": "Recibidas",
+  "socialTabSent": "Enviadas",
+  "socialTabBlocked": "Bloqueados",
+  "socialFriendsEmptyTitle": "Todavía no tienes amigos",
+  "socialFriendsEmptyMessage": "Busca a tus compañeros por su nombre y envíales una solicitud.",
+  "socialReceivedEmptyTitle": "No tienes solicitudes",
+  "socialReceivedEmptyMessage": "Aquí verás las solicitudes de amistad que te envíen.",
+  "socialSentEmptyTitle": "No tienes solicitudes enviadas",
+  "socialSentEmptyMessage": "Las solicitudes que envíes aparecerán aquí hasta que las respondan.",
+  "socialBlockedEmptyTitle": "No has bloqueado a nadie",
+  "socialBlockedEmptyMessage": "Los usuarios bloqueados no pueden ver tu contenido ni escribirte.",
+  "socialAddFriend": "Añadir",
+  "socialAccept": "Aceptar",
+  "socialReject": "Rechazar",
+  "socialCancelRequest": "Cancelar solicitud",
+  "socialRemoveFriend": "Eliminar amigo",
+  "socialRemoveFriendTitle": "¿Eliminar de tus amigos?",
+  "socialRemoveFriendMessage": "{name} dejará de ver el contenido que compartes solo con amigos.",
+  "@socialRemoveFriendMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialBlock": "Bloquear",
+  "socialBlockTitle": "¿Bloquear a este usuario?",
+  "socialBlockMessage": "{name} no podrá ver tu perfil ni tus publicaciones, y se eliminará la amistad si la había.",
+  "@socialBlockMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialUnblock": "Desbloquear",
+  "socialUnblockTitle": "¿Desbloquear a este usuario?",
+  "socialUnblockMessage": "{name} podrá volver a ver tu perfil público y enviarte solicitudes.",
+  "@socialUnblockMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialRelationFriends": "Sois amigos",
+  "socialRelationRequestReceived": "Te ha enviado una solicitud de amistad",
+  "socialProfileTitle": "Perfil",
+  "socialProfilePosts": "Publicaciones",
+  "socialProfilePostsEmpty": "No hay publicaciones visibles",
+  "socialProfileStreak": "Racha",
+  "socialProfilePostsCount": "Publicaciones",
+  "socialProfileFriendsCount": "Amigos",
+  "socialProfileRestricted": "Este perfil es privado. Hazte su amigo para ver su actividad.",
+  "socialProfileBlockedNotice": "Has bloqueado a este usuario.",
+  "socialProfileIsMe": "Así ven los demás tu perfil.",
+  "socialNotificationsTitle": "Notificaciones",
+  "socialNotificationsUnreadTooltip": "{count, plural, =1{Notificaciones: 1 sin leer} other{Notificaciones: {count} sin leer}}",
+  "@socialNotificationsUnreadTooltip": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialNotificationsMarkAllRead": "Marcar todas como leídas",
+  "socialNotificationsFilterAll": "Todas",
+  "socialNotificationsFilterUnread": "No leídas",
+  "socialNotificationsEmpty": "No tienes notificaciones",
+  "socialNotificationsEmptyUnread": "Lo tienes todo al día",
+  "socialNotificationsEmptyMessage": "Te avisaremos de «me gusta», comentarios, solicitudes y alertas de tu plan.",
+  "socialNotificationUnread": "No leída",
+  "socialNotificationTypeConflict": "Conflicto en tu plan",
+  "socialNotificationTypeFatigue": "Alerta de fatiga",
+  "socialNotificationTypeMilestone": "Logro",
+  "socialNotificationTypeSocial": "Social",
+  "socialNotificationTypeAcademic": "Académico",
+  "socialNotificationPriorityCritical": "Importante",
+  "socialNotificationPriorityRecommended": "Recomendado",
+  "socialNotificationDeleteTitle": "¿Eliminar la notificación?",
+  "socialNotificationDeleteMessage": "Desaparecerá de tu bandeja.",
+  "socialMsgPostCreated": "Publicación compartida",
+  "socialMsgPostUpdated": "Publicación actualizada",
+  "socialMsgPostDeleted": "Publicación eliminada",
+  "socialMsgReported": "Gracias, lo revisaremos",
+  "socialMsgCommentUpdated": "Comentario actualizado",
+  "socialMsgCommentDeleted": "Comentario eliminado",
+  "socialMsgRequestSent": "Solicitud de amistad enviada",
+  "socialMsgRequestAccepted": "Solicitud aceptada. ¡Ya sois amigos!",
+  "socialMsgRequestRejected": "Solicitud rechazada",
+  "socialMsgRequestCancelled": "Solicitud cancelada",
+  "socialMsgFriendRemoved": "Amigo eliminado",
+  "socialMsgUserBlocked": "Usuario bloqueado",
+  "socialMsgUserUnblocked": "Usuario desbloqueado",
+  "socialMsgAllNotificationsRead": "Todas las notificaciones están leídas",
+  "socialMsgNotificationDeleted": "Notificación eliminada",
+  "socialErrorPostNotFound": "Esta publicación ya no está disponible.",
+  "socialErrorPostForbidden": "Solo el autor puede modificar esta publicación.",
+  "socialErrorCommentNotFound": "Este comentario ya no está disponible.",
+  "socialErrorCommentForbidden": "Solo el autor puede modificar este comentario.",
+  "socialErrorFriendshipNotFound": "No se encontró la solicitud o amistad.",
+  "socialErrorFriendshipAlreadyExists": "Ya enviaste una solicitud o ya sois amigos.",
+  "socialErrorFriendshipSelfTarget": "No puedes hacer esto contigo mismo.",
+  "socialErrorFriendshipInvalidState": "Esta solicitud ya no se puede gestionar.",
+  "socialErrorFriendshipBlocked": "Desbloquea a este usuario antes de enviarle una solicitud.",
+  "socialErrorSocialUserNotFound": "Usuario no encontrado.",
+  "socialErrorSocialCannotReportOwn": "No puedes reportar tu propio contenido.",
+  "socialErrorNotificationNotFound": "Esta notificación ya no existe.",
+  "socialErrorNotificationQuietHours": "Indica la hora de inicio y de fin del silencio (distintas).",
+  "socialAttachedImage": "Imagen adjunta"
+}

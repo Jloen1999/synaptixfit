@@ -1,0 +1,14 @@
+{
+  "rules": [
+    {
+      "id": "synaptixfit-web",
+      "allowed": {
+        "origins": ["https://synaptixfit.jloenit.dev", "http://localhost:5173"],
+        "methods": ["GET", "PUT", "HEAD"],
+        "headers": ["content-type"]
+      },
+      "exposeHeaders": ["ETag"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}

@@ -1,0 +1,779 @@
+{
+  "@@locale": "es",
+  "academicAdd": "Añadir",
+  "academicSubjectsTitle": "Mis asignaturas",
+  "academicFilterActive": "Activas",
+  "academicFilterArchived": "Archivadas",
+  "academicOpenPlanner": "Abrir calendario",
+  "academicMoreActions": "Más acciones",
+  "academicEmptyTitle": "Aún no tienes asignaturas",
+  "academicEmptyMessage": "Sube el plan docente y la IA la crea por ti, o añádela a mano con el botón +.",
+  "academicArchivedEmptyTitle": "No tienes asignaturas archivadas",
+  "academicAddFromCatalog": "Desde el plan de estudios",
+  "academicAddFromCatalogHint": "Elige varias asignaturas de tu carrera",
+  "academicAddManual": "Asignatura a mano",
+  "academicAddManualHint": "Crea una asignatura con tus propios datos",
+  "academicQuickNote": "Nota rápida",
+  "academicQuickNoteHint": "Apunta algo sin asignarlo todavía",
+  "academicSubjectCounts": "{notes, plural, =1{1 apunte} other{{notes} apuntes}} · {files, plural, =1{1 archivo} other{{files} archivos}}",
+  "@academicSubjectCounts": {
+    "placeholders": {
+      "notes": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "academicSubjectArchivedBadge": "Archivada",
+  "academicDueReviews": "{count, plural, =1{1 repaso pendiente} other{{count} repasos pendientes}}",
+  "@academicDueReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicCourseLabel": "{course}.º curso",
+  "@academicCourseLabel": {
+    "placeholders": {
+      "course": {
+        "type": "int"
+      }
+    }
+  },
+  "academicSemesterLabel": "{semester}.º semestre",
+  "@academicSemesterLabel": {
+    "placeholders": {
+      "semester": {
+        "type": "int"
+      }
+    }
+  },
+  "academicCourseSemester": "{course}.º curso · {semester}.º semestre",
+  "@academicCourseSemester": {
+    "placeholders": {
+      "course": {
+        "type": "int"
+      },
+      "semester": {
+        "type": "int"
+      }
+    }
+  },
+  "academicSubjectNewTitle": "Nueva asignatura",
+  "academicSubjectEditTitle": "Editar asignatura",
+  "academicSubjectName": "Nombre",
+  "academicSubjectCode": "Código o siglas",
+  "academicSubjectCredits": "Créditos",
+  "academicSubjectCreditsInvalid": "Entre 1 y 30",
+  "academicSubjectTeacher": "Profesor o profesora",
+  "academicSubjectDifficulty": "Dificultad percibida: {level} de 5",
+  "@academicSubjectDifficulty": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "academicSubjectPriority": "Prioridad",
+  "academicSubjectNextAssessment": "Próxima evaluación",
+  "academicSubjectNoDate": "Sin fecha",
+  "academicSubjectClearDate": "Quitar fecha",
+  "academicSubjectCourseSemester": "Curso y semestre",
+  "academicSubjectCourse": "Curso",
+  "academicSubjectSemester": "Semestre",
+  "academicSubjectNone": "Sin asignar",
+  "academicSubjectDescription": "Descripción",
+  "academicPriorityLow": "Baja",
+  "academicPriorityMedium": "Media",
+  "academicPriorityHigh": "Alta",
+  "academicTabProgress": "Progreso",
+  "academicTabSyllabus": "Temario",
+  "academicSubjectArchive": "Archivar",
+  "academicSubjectUnarchive": "Restaurar",
+  "academicSubjectDeleteTitle": "¿Eliminar la asignatura?",
+  "academicSubjectDeleteMessage": "Se borrará «{name}» con sus apuntes, archivos y repasos. No se puede deshacer.",
+  "@academicSubjectDeleteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicSubjectDeleted": "Asignatura eliminada",
+  "academicCreditsShort": "{credits} ECTS",
+  "@academicCreditsShort": {
+    "placeholders": {
+      "credits": {
+        "type": "int"
+      }
+    }
+  },
+  "academicNextAssessment": "Evaluación: {date}",
+  "@academicNextAssessment": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "academicGuideTitle": "Plan docente",
+  "academicGuideEmptyTitle": "Importa el plan docente y tendrás temario y calculadora de nota",
+  "academicGuideRegenerate": "Importar de nuevo el plan docente",
+  "academicGuideSyllabus": "Temario",
+  "academicGuideNoTopics": "El plan docente no incluye temas.",
+  "academicGuideProfessors": "Profesorado",
+  "academicGuideBibliography": "Bibliografía",
+  "academicTopicTheory": "Teoría",
+  "academicTopicPractice": "Práctica",
+  "academicGradeSimulator": "Simulador de nota",
+  "academicGradeEstimated": "Nota estimada",
+  "academicGradeCovered": "Evaluado",
+  "academicGradeRequired": "Necesitas un {grade} de media en lo que queda para aprobar.",
+  "@academicGradeRequired": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "academicGradeNextPending": "Siguiente evaluación: {name}",
+  "@academicGradeNextPending": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicGradeNoCriteria": "El plan docente no incluye criterios de evaluación.",
+  "academicGradeWeight": "Peso: {percent} %",
+  "@academicGradeWeight": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGradeTapHint": "Toca un criterio para poner o quitar tu nota.",
+  "academicGradeLabel": "Nota (0-10)",
+  "academicGradeHint": "Por ejemplo, 7,5",
+  "academicGradeClear": "Quitar nota",
+  "academicRetentionTitle": "Retención",
+  "academicRetentionEmpty": "Registra apuntes o archivos en el repaso espaciado para ver tu retención.",
+  "academicRetentionSummary": "{percent} % dominado de {total, plural, =1{1 material} other{{total} materiales}}",
+  "@academicRetentionSummary": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicMasteryNotEvaluated": "Sin evaluar",
+  "academicMasteryInProgress": "En progreso",
+  "academicMasteryMastered": "Dominado",
+  "academicMasteryNeedsReview": "Necesita repaso",
+  "academicMasteryAbandoned": "Abandonado",
+  "academicNextReview": "Próximo repaso: {date}",
+  "@academicNextReview": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "academicTimelineTitle": "Próximos eventos",
+  "academicTimelineEmpty": "No hay bloques ni entregas de esta asignatura en los próximos tres meses.",
+  "academicTimelineStudy": "Estudio",
+  "academicTimelineClass": "Clase",
+  "academicTimelineReview": "Repaso",
+  "academicTimelineExam": "Examen",
+  "academicTimelineAssignment": "Entrega",
+  "academicTimelinePresentation": "Presentación",
+  "academicTimelineOther": "Evento",
+  "academicCompleted": "Completado",
+  "academicNotesTitle": "Apuntes ({count})",
+  "@academicNotesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicFilesTitle": "Archivos ({count})",
+  "@academicFilesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicNotesEmpty": "Todavía no hay apuntes. Crea uno o pega texto escaneado.",
+  "academicFilesEmpty": "Sube PDF, imágenes o documentos de la asignatura (máx. 25 MB).",
+  "academicFileUpload": "Subir archivo",
+  "academicFileUploading": "Subiendo… {percent} %",
+  "@academicFileUploading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "academicFileUploaded": "Archivo subido",
+  "academicFileDeleted": "Archivo eliminado",
+  "academicFileDeleteTitle": "¿Eliminar el archivo?",
+  "academicDeleteMessage": "Se borrará «{title}». No se puede deshacer.",
+  "@academicDeleteMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicActionReview": "Repasar",
+  "academicActionPractice": "Practicar",
+  "academicGenerateBanner": "Resúmenes, mapas, flashcards o tests a partir de varios apuntes y archivos.",
+  "academicNoteNew": "Nuevo apunte",
+  "academicNoteEdit": "Editar apunte",
+  "academicNotePreview": "Vista previa",
+  "academicNoteEditMode": "Editar",
+  "academicNoteTitleLabel": "Título",
+  "academicNoteTitleRequired": "Ponle un título al apunte",
+  "academicNoteContentHint": "Escribe en Markdown: # títulos, **negrita**, - listas…",
+  "academicNoteEmptyContent": "Este apunte está vacío.",
+  "academicNoteSubject": "Asignatura",
+  "academicNoteNoSubject": "Sin asignatura",
+  "academicNoteSaved": "Apunte guardado",
+  "academicNoteDeleted": "Apunte eliminado",
+  "academicNoteDeleteTitle": "¿Eliminar el apunte?",
+  "academicUpdatedAt": "Editado {date}",
+  "@academicUpdatedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "academicVisibilityPrivate": "Privado",
+  "academicVisibilityFriends": "Amigos",
+  "academicVisibilityPublic": "Público",
+  "academicSharedNotesTitle": "Apuntes de amigos",
+  "academicSharedEmptyTitle": "Nadie ha compartido apuntes todavía",
+  "academicSharedEmptyMessage": "Aquí verás los apuntes que tus amigos compartan contigo.",
+  "academicScanTitle": "Texto escaneado",
+  "academicScanHint": "Pega texto de un documento y guárdalo como apunte",
+  "academicScanExplain": "Pega o escribe el texto reconocido de tus apuntes en papel, una foto o un PDF. Lo guardaremos como apunte en Markdown.",
+  "academicScanPaste": "Pegar del portapapeles",
+  "academicScanTextHint": "Texto del documento",
+  "academicScanSave": "Guardar como apunte",
+  "academicFileOpenExternal": "Abrir fuera de la app",
+  "academicFileOpenFailed": "No se ha podido abrir el archivo.",
+  "academicFileNoPreview": "Este tipo de archivo no tiene vista previa.",
+  "academicAiAssistantTitle": "Asistente de IA",
+  "academicAiSummary": "Resumen",
+  "academicAiMindMap": "Mapa mental",
+  "academicAiPractice": "Práctica",
+  "academicAiSummaryHint": "Las ideas clave en un texto breve",
+  "academicAiMindMapHint": "Conceptos y relaciones en un árbol interactivo",
+  "academicAiPracticeHint": "Preguntas para ponerte a prueba",
+  "academicAiSaved": "Guardado",
+  "academicAiSavedAt": "Guardado · {date}",
+  "@academicAiSavedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "academicAiGenerating": "La IA está preparando el contenido. Puede tardar unos segundos…",
+  "academicAiRegenerate": "Regenerar",
+  "academicAiPracticeReady": "{count, plural, =1{1 pregunta lista} other{{count} preguntas listas}}",
+  "@academicAiPracticeReady": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicAiPracticeReadyHint": "Practica con corrección inmediata, flashcards o un simulacro.",
+  "academicMindMapExpand": "Desplegar",
+  "academicMindMapCollapse": "Plegar",
+  "academicMindMapExpandAll": "Desplegar todo",
+  "academicMindMapCollapseAll": "Plegar todo",
+  "academicGenerateTitle": "Centro de generación",
+  "academicGenerateHint": "Crea material de estudio con IA a partir de varias fuentes",
+  "academicGenerateNoSubjects": "Añade una asignatura con apuntes o archivos para generar material.",
+  "academicGenerateStepSubject": "1. Asignatura",
+  "academicGenerateStepKind": "2. ¿Qué quieres generar?",
+  "academicGenerateStepSources": "3. Fuentes",
+  "academicGeneratePickSubject": "Elige una asignatura",
+  "academicGeneratePickSubjectFirst": "Elige primero una asignatura.",
+  "academicGenerateNoSources": "Esta asignatura no tiene apuntes ni archivos que la IA pueda leer.",
+  "academicGenerateSelectedCount": "{count} de {max}",
+  "@academicGenerateSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGenerateKindTest": "Test",
+  "academicGenerateAction": "Generar",
+  "academicGenerateDiscard": "Descartar",
+  "academicGenerateSaveNote": "Guardar como apunte",
+  "academicGenerateSaveQuiz": "Guardar preguntas",
+  "academicGenerateSaveTitle": "Guardar resultado",
+  "academicGenerateSavedNote": "Guardado como apunte",
+  "academicGenerateSavedQuiz": "Preguntas guardadas para practicar",
+  "academicGenerateEphemeral": "Sin guardar: se perderá si sales",
+  "academicReviewTitle": "Repaso espaciado",
+  "academicReviewQuestion": "¿Qué tal lo recuerdas?",
+  "academicReviewInDays": "{days, plural, =0{Hoy} =1{En 1 día} other{En {days} días}}",
+  "@academicReviewInDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "academicReviewInterval": "Intervalo: {days, plural, =1{1 día} other{{days} días}}",
+  "@academicReviewInterval": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "academicReviewFatigue": "Carga de estudio hoy: {percent} %",
+  "@academicReviewFatigue": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "academicReviewHistory": "Historial",
+  "academicReviewHistoryEmpty": "Aún no has repasado este material.",
+  "academicReviewAdjusted": "Ajustada {value}",
+  "@academicReviewAdjusted": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "academicReviewOpenSource": "Abrir material",
+  "academicReviewDone": "¡Repaso registrado!",
+  "academicQuality0": "No lo recuerdo nada",
+  "academicQuality1": "Casi nada, al verlo me suena",
+  "academicQuality2": "Me costó y fallé detalles",
+  "academicQuality3": "Bien, con esfuerzo",
+  "academicQuality4": "Bien, con alguna duda",
+  "academicQuality5": "Perfecto, sin dudar",
+  "academicPracticeTitle": "Práctica",
+  "academicPracticeNoBankTitle": "Este material aún no tiene preguntas",
+  "academicPracticeNoBankMessage": "La IA generará un banco de preguntas a partir del contenido.",
+  "academicPracticeGenerate": "Generar preguntas",
+  "academicPracticeRegenerate": "Generar preguntas nuevas",
+  "academicPracticeStart": "Empezar a practicar",
+  "academicPracticeQuestions": "Preguntas",
+  "academicPracticeAttempted": "Intentadas",
+  "academicPracticeCorrect": "Acertadas",
+  "academicFreePracticeTitle": "Práctica libre",
+  "academicFreePracticeHint": "Corrección inmediata con explicación",
+  "academicFreePracticeDone": "Práctica terminada",
+  "academicFlashcardsTitle": "Flashcards",
+  "academicFlashcardsHint": "Clasifica cada tarjeta: dominada, dudosa o fallada",
+  "academicFlashcardsQuestion": "Pregunta",
+  "academicFlashcardsAnswer": "Respuesta",
+  "academicFlashcardsShowAnswer": "Ver respuesta",
+  "academicFlashcardsTapHint": "Toca la tarjeta para girarla",
+  "academicFlashcardsMastered": "Dominada",
+  "academicFlashcardsDoubtful": "Dudosa",
+  "academicFlashcardsFailed": "Fallada",
+  "academicFlashcardsDone": "Ronda terminada",
+  "academicFlashcardsAgain": "Otra ronda",
+  "academicExamTitle": "Simulacro",
+  "academicExamHint": "Test cronometrado con nota al final",
+  "academicExamResume": "Reanudar simulacro",
+  "academicExamProgress": "{answered} de {total} respondidas",
+  "@academicExamProgress": {
+    "placeholders": {
+      "answered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicExamHistory": "Simulacros anteriores",
+  "academicExamStatusInProgress": "En curso",
+  "academicExamStatusCompleted": "Terminado",
+  "academicExamStatusAbandoned": "Abandonado",
+  "academicExamScore": "{score} de {total} aciertos",
+  "@academicExamScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicExamAnswer": "Responder",
+  "academicExamAnswered": "Respuesta enviada",
+  "academicExamAbandon": "Abandonar",
+  "academicExamAbandonTitle": "¿Abandonar el simulacro?",
+  "academicExamAbandonMessage": "Se cerrará sin nota y no obtendrás XP.",
+  "academicExamAbandoned": "Simulacro abandonado",
+  "academicExamFinishTitle": "¿Terminar el simulacro?",
+  "academicExamFinishPending": "{count, plural, =1{Te queda 1 pregunta sin responder.} other{Te quedan {count} preguntas sin responder.}}",
+  "@academicExamFinishPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicExamElapsed": "Tiempo transcurrido: {time}",
+  "@academicExamElapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "academicExamResultsTitle": "Resultados",
+  "academicExamDuration": "Tiempo: {minutes} min {seconds} s",
+  "@academicExamDuration": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "academicExamRetry": "Nuevo simulacro",
+  "academicExamReview": "Revisión",
+  "academicQuestionOf": "Pregunta {current} de {total}",
+  "@academicQuestionOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicQuestionMultipleChoice": "Opción múltiple",
+  "academicQuestionFillInBlank": "Respuesta corta",
+  "academicAnswerLabel": "Tu respuesta",
+  "academicAnswerCorrect": "¡Correcto!",
+  "academicAnswerWrong": "Incorrecto",
+  "academicCorrectAnswer": "Respuesta correcta: {answer}",
+  "@academicCorrectAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "academicYourAnswer": "Tu respuesta: {answer}",
+  "@academicYourAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "academicNotAnswered": "Sin responder",
+  "academicCheck": "Comprobar",
+  "academicNext": "Siguiente",
+  "academicFinish": "Terminar",
+  "academicResultCorrect": "{correct} de {total}",
+  "@academicResultCorrect": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicXpEarned": "+{xp} XP",
+  "@academicXpEarned": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "academicXpNone": "Sin XP esta vez",
+  "academicErrorSubjectNotFound": "No encontramos esa asignatura.",
+  "academicErrorSubjectCatalogNotFound": "Esa asignatura del plan de estudios no existe.",
+  "academicErrorSubjectSemesterNotFound": "Esta asignatura no tiene curso ni semestre asignados.",
+  "academicErrorNoteNotFound": "No encontramos ese apunte.",
+  "academicErrorFileNotFound": "No encontramos ese archivo.",
+  "academicErrorFileTypeNotAllowed": "Ese tipo de archivo no está permitido.",
+  "academicErrorFileTooLarge": "El archivo es demasiado grande. Prueba con uno más pequeño.",
+  "academicErrorFileUploadInvalid": "La subida no es válida. Vuelve a intentarlo.",
+  "academicErrorFileAlreadyRegistered": "Este archivo ya estaba guardado.",
+  "academicErrorStudyDocumentNotFound": "Aún no se ha generado este documento.",
+  "academicErrorStudySourceNotSupported": "La IA solo puede analizar apuntes, PDF e imágenes.",
+  "academicErrorStudySourceWithoutSubject": "Asigna el apunte a una asignatura para poder repasarlo.",
+  "academicErrorStudyGuideEmpty": "No hemos podido leer el plan docente. Comprueba que el PDF tiene texto y no es una foto escaneada.",
+  "academicErrorStudyMaterialNotFound": "No encontramos ese material de estudio.",
+  "academicErrorQuizBankNotFound": "Este material aún no tiene preguntas.",
+  "academicErrorQuizBankEmpty": "No hay preguntas disponibles para practicar.",
+  "academicErrorQuizQuestionNotFound": "No encontramos esa pregunta.",
+  "academicErrorQuizSessionNotFound": "No encontramos esa sesión de test.",
+  "academicErrorQuizSessionNotInProgress": "Esta sesión ya ha terminado.",
+  "academicQuestionAnswered": "respondida",
+  "academicQuestionPending": "sin responder",
+  "academicGuideInfoSemester": "Semestre {semester}",
+  "@academicGuideInfoSemester": {
+    "placeholders": {
+      "semester": {
+        "type": "int"
+      }
+    }
+  },
+  "academicModeContinuous": "Continua",
+  "academicModeGlobal": "Global",
+  "academicNotRecoverable": "No recuperable",
+  "academicImportEntry": "Importar plan docente",
+  "academicImportEntryHint": "Sube el PDF y la IA crea la asignatura",
+  "academicImportTitle": "Importar plan docente",
+  "academicImportIntroTitle": "Sube el plan docente de la asignatura",
+  "academicImportIntroBody": "La IA lo lee y tú lo revisas antes de guardar.",
+  "academicImportBenefitTopics": "Temas, apartados y horas",
+  "academicImportBenefitAssessments": "Pruebas y cuánto vale cada una",
+  "academicImportBenefitDates": "Exámenes y entregas a tu agenda",
+  "academicImportPick": "Elegir PDF",
+  "academicImportPickHint": "PDF con texto, hasta 15 MB",
+  "academicImportTooLarge": "El PDF pesa más de 15 MB.",
+  "academicImportStepUpload": "Subiendo el PDF",
+  "academicImportStepRead": "Leyendo el plan docente",
+  "academicImportWaitHint": "Suele tardar menos de un minuto.",
+  "academicImportReviewTitle": "Revisa lo que hemos encontrado",
+  "academicImportReviewHint": "Corrige lo que haga falta. No se guarda nada hasta que confirmes abajo.",
+  "academicImportSubject": "Asignatura",
+  "academicImportName": "Nombre",
+  "academicImportCode": "Código",
+  "academicImportNameRequired": "Escribe el nombre de la asignatura",
+  "academicImportDestination": "¿Dónde lo guardamos?",
+  "academicImportDestinationExisting": "Completar «{name}»",
+  "@academicImportDestinationExisting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportDestinationNew": "Crear una asignatura nueva",
+  "academicImportSavedInto": "Se guardará en «{name}»",
+  "@academicImportSavedInto": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportSyllabus": "{count, plural, =0{Temario} =1{Temario · 1 tema} other{Temario · {count} temas}}",
+  "@academicImportSyllabus": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicImportSeeTopics": "Ver los temas",
+  "academicImportSubtopics": "{count, plural, =1{1 apartado} other{{count} apartados}}",
+  "@academicImportSubtopics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicImportHours": "{hours} h",
+  "@academicImportHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "academicImportRemoveTopic": "Quitar tema",
+  "academicImportEvaluation": "Evaluación",
+  "academicImportModeQuestion": "¿Cómo te vas a evaluar?",
+  "academicImportDuration": "{minutes} min",
+  "@academicImportDuration": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "academicImportTopicsCovered": "Temas {topics}",
+  "@academicImportTopicsCovered": {
+    "placeholders": {
+      "topics": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportAddDate": "Poner fecha",
+  "academicImportClearDate": "Quitar fecha",
+  "academicImportTotalWarning": "Los pesos suman {total} %. Revísalos si no cuadra con tu plan docente.",
+  "@academicImportTotalWarning": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "academicImportCreateDeadlines": "Añadir a mi agenda las pruebas con fecha",
+  "academicImportCreateDeadlinesHint": "{count, plural, =0{Pon fecha a una prueba para añadirla a Entregas y exámenes} =1{Se añadirá 1 prueba a Entregas y exámenes} other{Se añadirán {count} pruebas a Entregas y exámenes}}",
+  "@academicImportCreateDeadlinesHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicImportApplyNew": "Crear asignatura",
+  "academicImportApplyExisting": "Guardar en la asignatura",
+  "academicImportPickAnother": "Elegir otro PDF",
+  "academicImportDoneTitle": "¡Listo!",
+  "academicImportDoneCreated": "Hemos creado «{name}» con su temario y su evaluación.",
+  "@academicImportDoneCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportDoneUpdated": "Hemos completado «{name}» con su plan docente.",
+  "@academicImportDoneUpdated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportDoneDeadlines": "{count, plural, =1{Y 1 prueba ya está en tu agenda.} other{Y {count} pruebas ya están en tu agenda.}}",
+  "@academicImportDoneDeadlines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicImportOpenSubject": "Ver asignatura",
+  "academicErrorTeachingGuideImportNotFound": "No hemos encontrado ese plan docente. Vuelve a subirlo.",
+  "academicErrorTeachingGuideImportNotReady": "El plan docente aún se está analizando. Espera unos segundos.",
+  "academicErrorTeachingGuideImportAlreadyApplied": "Este plan docente ya está aplicado.",
+  "academicImportStepDone": "hecho",
+  "academicImportStepRunning": "en curso",
+  "academicImportStepPending": "pendiente",
+  "academicImportStepStatus": "{step}, {status}",
+  "@academicImportStepStatus": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportCreditsShort": "Créditos",
+  "academicImportEctsSuffix": "ECTS",
+  "academicImportRemoveTopicNamed": "Quitar tema {number}: {title}",
+  "@academicImportRemoveTopicNamed": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportTopicRemoved": "Tema quitado",
+  "academicImportUndo": "Deshacer",
+  "academicImportAddDateFor": "Poner fecha a {name}",
+  "@academicImportAddDateFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportDateOf": "Fecha de {name}: {date}. Cambiar",
+  "@academicImportDateOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportClearDateOf": "Quitar fecha de {name}",
+  "@academicImportClearDateOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicImportDiscardTitle": "¿Descartar lo revisado?",
+  "academicImportDiscardMessage": "Perderás los cambios que has hecho en este plan docente.",
+  "academicImportDiscardConfirm": "Descartar",
+  "academicGuideModeLabel": "Modalidad de evaluación",
+  "academicGradeNone": "Sin nota",
+  "academicGuideSyllabusCount": "{done} de {total} temas · {percent} %",
+  "@academicGuideSyllabusCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGuideSeeLess": "Ver menos",
+  "academicGuideReimportTitle": "¿Importar de nuevo el plan docente?",
+  "academicGuideReimportMessage": "Se conservan los temas que has marcado y las notas de las pruebas que se llamen igual.",
+  "academicGuideReimportConfirm": "Importar",
+  "academicAddGroupSubject": "Asignatura",
+  "academicAddGroupNotes": "Apuntes",
+  "academicSubjectFocus": "Concentrarme en {name}",
+  "@academicSubjectFocus": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+}

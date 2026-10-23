@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R8 no ve que el icono de los recordatorios locales se usa desde Dart
+     ("@mipmap/launcher_icon" en NotificationsReminderScheduler); sin esto lo
+     quitaría en release y los avisos fallarían en silencio. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@mipmap/launcher_icon" />

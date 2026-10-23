@@ -1,0 +1,505 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/models/account/account.dart';
+import '../../../../../domain/models/planner/calendar_block.dart';
+import '../../../../../domain/models/planner/planner_week.dart';
+import '../../../../extensions/context_extensions.dart';
+import '../../../../mixins/errors_message_mixin.dart';
+import '../../../../theme/tokens.g.dart';
+import '../../../../widgets/widgets.dart';
+import '../../../auth/session/bloc/session_bloc.dart';
+import '../../block_editor/bloc/block_editor_bloc.dart';
+import '../../block_editor/page/block_editor_sheet.dart';
+import '../../planner_routes.dart';
+import '../../weekly_load/page/weekly_load_sheet.dart';
+import '../../widgets/planner_visuals.dart';
+import '../../widgets/week_canvas.dart';
+import '../../widgets/week_overview.dart';
+import '../bloc/calendar_bloc.dart';
+
+/// Calendario semanal (`/planner`).
+class CalendarPage extends StatelessWidget {
+  const CalendarPage({super.key, this.initialWeek});
+
+  /// Cualquier día de la semana que se abre (la actual si es nulo).
+  final DateTime? initialWeek;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) =>
+          getIt<CalendarBloc>()..add(CalendarEvent.started(week: initialWeek)),
+      child: const _CalendarView(),
+    );
+  }
+}
+
+class _CalendarView extends StatefulWidget {
+  const _CalendarView();
+
+  @override
+  State<_CalendarView> createState() => _CalendarViewState();
+}
+
+class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
+  DateTime _now = DateTime.now();
+  Timer? _clock;
+
+  /// El consejo de arrastrar se da una vez, al cerrar un bloque sin cambios,
+  /// en lugar de ocupar una línea fija encima del calendario.
+  bool _dragHintShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Refresca la línea de «ahora» y la zona pasada cada minuto.
+    _clock = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => setState(() => _now = DateTime.now()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _clock?.cancel();
+    super.dispose();
+  }
+
+  CalendarBloc get _bloc => context.read<CalendarBloc>();
+
+  void _updateAccount(Account? account) {
+    if (account != null) {
+      context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
+    }
+  }
+
+  Future<void> _openEditor({CalendarBlock? block, DateTime? start}) async {
+    final outcome = await BlockEditorSheet.show(
+      context,
+      block: block,
+      start: start,
+    );
+    if (!mounted) return;
+    final l10n = context.localizations;
+    if (outcome == null) {
+      if (block != null && !_dragHintShown) {
+        _dragHintShown = true;
+        context.showSnack(l10n.plannerDragHint);
+      }
+      return;
+    }
+    switch (outcome) {
+      case BlockEditorFocusRequested(block: final focusBlock):
+        unawaited(
+          context.push<void>(
+            PlannerPaths.pomodoroFor(
+              blockId: focusBlock.id,
+              subjectId: focusBlock.subjectId,
+              title:
+                  _bloc.state.blockTitles[focusBlock.id] ?? focusBlock.topics,
+            ),
+          ),
+        );
+        return;
+      case BlockEditorCompletionRequested(:final blockId):
+        _bloc.add(CalendarEvent.completionToggled(blockId));
+        return;
+      case BlockEditorCreated(:final overlaps, :final weeklyCopies):
+        // Con copias se dice cuántas; los solapes ya los avisa la franja de
+        // «solapes esta semana».
+        context.showSnack(
+          weeklyCopies > 0
+              ? l10n.plannerBlockCreatedRepeated(weeklyCopies + 1)
+              : overlaps > 0
+              ? l10n.plannerOverlapWarning(overlaps)
+              : l10n.plannerBlockCreated,
+        );
+      case BlockEditorUpdated():
+        context.showSnack(l10n.plannerBlockUpdated);
+      case BlockEditorDeleteRequested(:final block):
+        _bloc.add(CalendarEvent.blockDeleteRequested(block));
+        return;
+      case BlockEditorDistributed(:final count):
+        context.showSnack(l10n.plannerRoutineDistributed(count));
+    }
+    _bloc.add(const CalendarEvent.refreshed());
+  }
+
+  Future<void> _openWeeklyLoad(DateTime weekStart) async {
+    await WeeklyLoadSheet.show(context, weekStart);
+    if (mounted) _bloc.add(const CalendarEvent.refreshed());
+  }
+
+  /// Próxima media hora libre para el botón «Nuevo bloque».
+  DateTime _nextSlot(DateTime weekStart) {
+    final now = DateTime.now();
+    final base = weekStart.isAfter(now)
+        ? DateTime(weekStart.year, weekStart.month, weekStart.day, 9)
+        : now;
+    final minutes = (base.minute ~/ 30 + 1) * 30;
+    return DateTime(base.year, base.month, base.day, base.hour, minutes);
+  }
+
+  void _onNotice(BuildContext context, CalendarNotice notice) {
+    final l10n = context.localizations;
+    switch (notice) {
+      case CalendarNoticeBlockXp(
+        :final completed,
+        :final xpDelta,
+        :final account,
+      ):
+        _updateAccount(account);
+        context.showSnack(
+          completed
+              ? (xpDelta > 0
+                    ? l10n.plannerBlockCompletedXp(xpDelta)
+                    : l10n.plannerBlockCompleted)
+              : (xpDelta < 0
+                    ? l10n.plannerBlockUncompletedXp(-xpDelta)
+                    : l10n.plannerBlockUncompleted),
+        );
+      case CalendarNoticePlanSaved(
+        :final xpAwarded,
+        :final blockCount,
+        :final account,
+      ):
+        _updateAccount(account);
+        context.showSnack(
+          xpAwarded > 0
+              ? l10n.plannerPlanSavedXp(xpAwarded)
+              : l10n.plannerPlanSaved(blockCount),
+        );
+      case CalendarNoticeOverlaps(:final count):
+        context.showSnack(l10n.plannerOverlapWarning(count));
+      case CalendarNoticeBlockLocked():
+        context.showSnack(l10n.plannerBlockLocked);
+      case CalendarNoticeCompletedLocked():
+        context.showSnack(l10n.plannerCompletedLocked);
+      case CalendarNoticeInPast():
+        context.showSnack(l10n.plannerInPast);
+      case CalendarNoticeCreateAt(:final start):
+        unawaited(_openEditor(start: start));
+      case CalendarNoticeFailure(:final error):
+        context.showSnack(errorMessage(context, error));
+      case CalendarNoticeBlockDeleted(:final blockId):
+        final bloc = _bloc;
+        context.showUndoSnack(
+          context.localizations.plannerBlockDeleted,
+          onUndo: () {
+            if (!bloc.isClosed) {
+              bloc.add(CalendarEvent.blockDeleteUndone(blockId));
+            }
+          },
+          // Si la pantalla ya se cerró, el bloc lo borró al cerrarse.
+          onCommit: () {
+            if (!bloc.isClosed) {
+              bloc.add(CalendarEvent.blockDeleteCommitted(blockId));
+            }
+          },
+        );
+    }
+  }
+
+  /// Ctrl+Z: deshace el último bloque borrado y quita su aviso.
+  void _undoLastDelete() {
+    final last = _bloc.state.pendingDeletionIds.lastOrNull;
+    if (last == null) return;
+    _bloc.add(CalendarEvent.blockDeleteUndone(last));
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      AppUndoShortcut(onUndo: _undoLastDelete, child: _content(context));
+
+  Widget _content(BuildContext context) {
+    final l10n = context.localizations;
+    return BlocConsumer<CalendarBloc, CalendarState>(
+      listenWhen: (a, b) => a.noticeId != b.noticeId && b.notice != null,
+      listener: (context, state) => _onNotice(context, state.notice!),
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppPageBar(
+            title: Text(l10n.plannerTitle),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    _bloc.add(const CalendarEvent.todayRequested()),
+                child: Text(l10n.plannerToday),
+              ),
+              _SavePlanButton(
+                saving: state.savingPlan,
+                enabled: state.status == CalendarStatus.ready,
+                onSave: () =>
+                    _bloc.add(const CalendarEvent.planSaveRequested()),
+              ),
+              _PlannerMenu(
+                onReturn: () => _bloc.add(const CalendarEvent.refreshed()),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            heroTag: 'planner-add-block',
+            onPressed: () => _openEditor(start: _nextSlot(state.weekStart)),
+            icon: const Icon(Icons.add_rounded),
+            label: Text(l10n.plannerAddBlock),
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                _WeekNavigator(
+                  weekStart: state.weekStart,
+                  onShift: (o) => _bloc.add(CalendarEvent.weekShifted(o)),
+                ),
+                Expanded(child: _body(context, state)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _body(BuildContext context, CalendarState state) {
+    final l10n = context.localizations;
+    switch (state.status) {
+      case CalendarStatus.loading:
+        return const _CalendarSkeleton();
+      case CalendarStatus.failure:
+        return AppErrorView(
+          error: state.error!,
+          onRetry: () => _bloc.add(const CalendarEvent.refreshed()),
+        );
+      case CalendarStatus.ready:
+        String titleOf(CalendarBlock b) =>
+            state.blockTitles[b.id] ?? b.type.label(context);
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                TokensSpacing.m,
+                0,
+                TokensSpacing.m,
+                TokensSpacing.s,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  WeekBalanceStrip(
+                    balance: state.balance,
+                    onTap: () => _openWeeklyLoad(state.weekStart),
+                  ),
+                  if (state.conflicts.isNotEmpty) ...[
+                    const SizedBox(height: TokensSpacing.s),
+                    ConflictBanner(
+                      conflicts: state.conflicts,
+                      titleOf: titleOf,
+                      onBlockTap: (b) => _openEditor(block: b),
+                    ),
+                  ],
+                  if (state.deadlines.isNotEmpty) ...[
+                    const SizedBox(height: TokensSpacing.s),
+                    WeekDeadlinesStrip(
+                      deadlines: state.deadlines,
+                      onTap: () => context.push(PlannerPaths.deadlines),
+                    ),
+                  ],
+                  if (state.visibleBlocks.isEmpty) ...[
+                    const SizedBox(height: TokensSpacing.s),
+                    Text(
+                      l10n.plannerEmptyWeekHint,
+                      style: context.textStyles.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  _bloc.add(const CalendarEvent.refreshed());
+                  await _bloc.stream.first.timeout(
+                    const Duration(seconds: 10),
+                    onTimeout: () => _bloc.state,
+                  );
+                },
+                child: WeekCanvas(
+                  key: ValueKey(state.weekStart),
+                  weekStart: state.weekStart,
+                  blocks: state.visibleBlocks,
+                  titles: state.blockTitles,
+                  busyIds: state.busyBlockIds,
+                  now: _now,
+                  onSlotTap: (start) =>
+                      _bloc.add(CalendarEvent.slotTapped(start)),
+                  onBlockTap: (b) => _openEditor(block: b),
+                  onReschedule: (b, start, end) => _bloc.add(
+                    CalendarEvent.blockRescheduled(
+                      blockId: b.id,
+                      start: start,
+                      end: end,
+                    ),
+                  ),
+                  onLockedBlockTouched: (b) =>
+                      _bloc.add(CalendarEvent.lockedBlockTouched(b.id)),
+                ),
+              ),
+            ),
+          ],
+        );
+    }
+  }
+}
+
+class _WeekNavigator extends StatelessWidget {
+  const _WeekNavigator({required this.weekStart, required this.onShift});
+
+  final DateTime weekStart;
+  final ValueChanged<int> onShift;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final end = PlannerWeek.dayOf(weekStart, 6);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.s),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: l10n.plannerPrevWeek,
+            onPressed: () => onShift(-1),
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          Expanded(
+            child: Text(
+              l10n.plannerWeekRange(
+                PlannerFormats.dayMonth(weekStart),
+                PlannerFormats.dayMonth(end),
+              ),
+              textAlign: TextAlign.center,
+              style: context.textStyles.titleMedium,
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.plannerNextWeek,
+            onPressed: () => onShift(1),
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// «Guardar plan» en la barra superior: confirma la semana (y da XP) sin
+/// competir con «Nuevo bloque», que es la acción principal de abajo.
+class _SavePlanButton extends StatelessWidget {
+  const _SavePlanButton({
+    required this.saving,
+    required this.enabled,
+    required this.onSave,
+  });
+
+  final bool saving;
+  final bool enabled;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = context.localizations.plannerSavePlan;
+    if (saving) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.m),
+        child: Semantics(
+          label: label,
+          child: const SizedBox.square(
+            dimension: TokensSize.iconS,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    return TextButton.icon(
+      onPressed: enabled ? onSave : null,
+      icon: const Icon(Icons.task_alt_rounded),
+      label: Text(label),
+    );
+  }
+}
+
+/// Accesos a las demás pantallas del planificador.
+class _PlannerMenu extends StatelessWidget {
+  const _PlannerMenu({required this.onReturn});
+
+  /// Al volver de otra pantalla se recarga la semana.
+  final VoidCallback onReturn;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final items = [
+      (
+        PlannerPaths.deadlines,
+        Icons.event_note_rounded,
+        l10n.plannerMenuDeadlines,
+      ),
+      (
+        PlannerPaths.suggestions,
+        Icons.auto_awesome_rounded,
+        l10n.plannerMenuSuggestions,
+      ),
+      (PlannerPaths.pomodoro, Icons.timer_rounded, l10n.plannerMenuPomodoro),
+      (
+        PlannerPaths.scheduleScan,
+        Icons.document_scanner_rounded,
+        l10n.plannerMenuScheduleImport,
+      ),
+    ];
+    return PopupMenuButton<String>(
+      tooltip: l10n.plannerMoreOptions,
+      icon: const Icon(Icons.more_vert_rounded),
+      onSelected: (path) async {
+        await context.push(path);
+        onReturn();
+      },
+      itemBuilder: (_) => [
+        for (final (path, icon, label) in items)
+          PopupMenuItem(
+            value: path,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(icon),
+              title: Text(label),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _CalendarSkeleton extends StatelessWidget {
+  const _CalendarSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppSkeletonGroup(
+      child: Padding(
+        padding: EdgeInsets.all(TokensSpacing.m),
+        child: Column(
+          children: [
+            AppSkeleton(height: 44),
+            SizedBox(height: TokensSpacing.m),
+            Expanded(child: AppSkeleton(height: double.infinity)),
+          ],
+        ),
+      ),
+    );
+  }
+}

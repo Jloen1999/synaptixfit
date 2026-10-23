@@ -1,0 +1,192 @@
+package com.synaptixfit.domain.model.training;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
+
+import com.synaptixfit.domain.exception.FieldValidationException;
+import com.synaptixfit.domain.exception.training.RoutineDayDuplicatedException;
+import com.synaptixfit.domain.exception.training.RoutineHasEmptyDaysException;
+import com.synaptixfit.domain.exception.training.RoutineReorderMismatchException;
+import com.synaptixfit.domain.exception.training.SessionAlreadyCompletedException;
+import com.synaptixfit.domain.model.shared.Visibility;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+
+/** Reglas del dominio de entrenamiento: estados de semana/día, sesiones, XP, calorías y check-in. */
+class TrainingDomainTest {
+
+    private static final Instant NOW = Instant.parse("2026-10-05T10:00:00Z");
+    private static final ExerciseRef REF = new ExerciseRef(UUID.randomUUID(), "Press", null, null, Modality.STRENGTH,
+            List.of(MeasurementType.REPETITIONS, MeasurementType.WEIGHT), false, 6.0, true);
+    private static final ExerciseParameters P = new ExerciseParameters(3, 10, 90, null, null, null, null, null);
+
+    private static Routine routine(RoutineDay... days) {
+        return Routine.create(UUID.randomUUID(), "Rutina", null, Visibility.PRIVATE, TrainingGoal.HYPERTROPHY, null,
+                null, List.of(RoutineWeek.create(1, null, null, List.of(days))), NOW);
+    }
+
+    @Test
+    void weekStatusIsDerivedFromItsDays() {
+        RoutineDay a = RoutineDay.create(1, null);
+        RoutineDay b = RoutineDay.create(2, null);
+        Routine r = routine(a, b);
+        RoutineWeek week = r.weeks().getFirst();
+        assertThat(week.status()).isEqualTo(ProgressStatus.PENDING);
+        r.startDay(a.id(), LocalDate.of(2026, 10, 5));
+        assertThat(week.status()).isEqualTo(ProgressStatus.IN_PROGRESS);
+        r.completeDay(a.id());
+        assertThat(week.status()).isEqualTo(ProgressStatus.IN_PROGRESS);
+        r.completeDay(b.id());
+        assertThat(week.status()).isEqualTo(ProgressStatus.COMPLETED);
+        r.resetDay(a.id());
+        assertThat(week.status()).isEqualTo(ProgressStatus.IN_PROGRESS);
+        r.resetDay(b.id());
+        assertThat(week.status()).isEqualTo(ProgressStatus.PENDING);
+        assertThat(r.startDate()).isEqualTo(LocalDate.of(2026, 10, 5));
+    }
+
+    @Test
+    void completedDayDoesNotGoBackWhenAnotherSessionStarts() {
+        RoutineDay a = RoutineDay.create(1, null);
+        Routine r = routine(a);
+        r.completeDay(a.id());
+        r.startDay(a.id(), LocalDate.now());
+        assertThat(r.day(a.id()).status()).isEqualTo(ProgressStatus.COMPLETED);
+    }
+
+    @Test
+    void weekWithoutDaysIsPendingAndDuplicatedDaysAreRejected() {
+        RoutineWeek empty = RoutineWeek.create(1, null, WeekType.LOAD, List.of());
+        assertThat(empty.status()).isEqualTo(ProgressStatus.PENDING);
+        empty.addDay(3, null);
+        assertThatThrownBy(() -> empty.addDay(3, "otro")).isInstanceOf(RoutineDayDuplicatedException.class);
+        assertThatThrownBy(() -> empty.addDay(8, null)).isInstanceOf(FieldValidationException.class);
+    }
+
+    @Test
+    void routineCanOnlyBeCompletedWithoutEmptyDays() {
+        RoutineDay a = RoutineDay.create(1, null);
+        Routine r = routine(a);
+        assertThatThrownBy(() -> r.changeStatus(RoutineStatus.COMPLETED)).isInstanceOf(RoutineHasEmptyDaysException.class);
+        r.addExercise(a.id(), REF, P);
+        r.changeStatus(RoutineStatus.COMPLETED);
+        r.addWeek(null, null);
+        assertThat(r.status()).isEqualTo(RoutineStatus.ACTIVE);
+        assertThat(r.weeks().get(1).type()).isEqualTo(WeekType.LOAD);
+    }
+
+    @Test
+    void exerciseCountAndOrderStayConsistent() {
+        RoutineDay a = RoutineDay.create(1, null);
+        Routine r = routine(a);
+        PlannedExercise x = r.addExercise(a.id(), REF, P);
+        PlannedExercise y = r.addExercise(a.id(), REF, P);
+        PlannedExercise z = r.addExercise(a.id(), REF, P);
+        assertThat(r.exerciseCount()).isEqualTo(3);
+        r.removeExercise(y.id());
+        assertThat(r.day(a.id()).exercises()).extracting(PlannedExercise::order).containsExactly(1, 2);
+        assertThatThrownBy(() -> r.reorderExercises(a.id(), List.of(z.id()))).isInstanceOf(RoutineReorderMismatchException.class);
+        assertThatThrownBy(() -> r.reorderExercises(a.id(), List.of(z.id(), z.id())))
+                .isInstanceOf(RoutineReorderMismatchException.class);
+        r.reorderExercises(a.id(), List.of(z.id(), x.id()));
+        assertThat(r.day(a.id()).exercises()).extracting(PlannedExercise::id).containsExactly(z.id(), x.id());
+    }
+
+    @Test
+    void parametersEnforceDatabaseRangesAndClampedFitsThem() {
+        assertThatThrownBy(() -> new ExerciseParameters(11, 10, 90, null, null, null, null, null))
+                .isInstanceOf(FieldValidationException.class);
+        assertThatThrownBy(() -> new ExerciseParameters(3, 10, 20, null, null, null, null, null))
+                .isInstanceOf(FieldValidationException.class);
+        ExerciseParameters c = ExerciseParameters.clamped(0, 200, 10, 41.26, List.of(20.1, 600.0), 0, null, 900);
+        assertThat(c.sets()).isEqualTo(1);
+        assertThat(c.reps()).isEqualTo(100);
+        assertThat(c.restSeconds()).isEqualTo(30);
+        assertThat(c.weightKg()).isEqualTo(41.5);
+        assertThat(c.weightsKg()).containsExactly(20.0, 500.0);
+        assertThat(c.targetDurationSeconds()).isEqualTo(1);
+        assertThat(c.isometricSeconds()).isEqualTo(600);
+    }
+
+    @Test
+    void sessionCompletionAndUnmarkKeepTheAwardedXp() {
+        TrainingSession s = TrainingSession.start(UUID.randomUUID(), null, null, NOW);
+        s.recordSet(null, 1, 10, 20.0, true, 0);
+        s.complete(89, 8, 123.456, 140, NOW.plusSeconds(3600));
+        assertThat(s.durationMinutes()).isEqualTo(1);
+        assertThat(s.calories()).isEqualTo(123.5);
+        assertThatThrownBy(() -> s.recordSet(null, 2, 10, 20.0, true, 0)).isInstanceOf(SessionAlreadyCompletedException.class);
+        TrainingSession.CompletionSnapshot snapshot = s.unmark();
+        assertThat(snapshot.xpAwarded()).isEqualTo(140);
+        assertThat(snapshot.rpe()).isEqualTo(8);
+        assertThat(s.isCompleted()).isFalse();
+        assertThat(s.xpAwarded()).isZero();
+        assertThatThrownBy(() -> s.complete(60, 11, 0, 0, NOW)).isInstanceOf(FieldValidationException.class);
+    }
+
+    @Test
+    void sessionXpFormula() {
+        assertThat(TrainingRewards.sessionXp(45, 7)).isEqualTo(50 + 45 + 35);
+        assertThat(TrainingRewards.sessionXp(200, 10)).isEqualTo(50 + 90 + 50);
+        assertThat(TrainingRewards.sessionXp(1, 1)).isEqualTo(56);
+    }
+
+    @Test
+    void caloriesUseMetPerExerciseRestAndScaleToTheSession() {
+        PlannedExercise reps = new PlannedExercise(UUID.randomUUID(), REF, P, 1, null);
+        ExerciseRef cardio = new ExerciseRef(UUID.randomUUID(), "Remo", null, null, Modality.AEROBIC,
+                List.of(MeasurementType.TIME), true, 0, true);
+        PlannedExercise timed = new PlannedExercise(UUID.randomUUID(), cardio,
+                new ExerciseParameters(1, 1, 30, null, null, 600, null, null), 2, null);
+        // Repeticiones: 3 s × 10 × 3 = 90 s a MET 6; descanso 2 × 90 s; cardio 600 s a MET 8 (circuito sin MET).
+        double expected = 6.0 * 70 * 90 / 3600 + 1.5 * 70 * 180 / 3600 + 8.0 * 70 * 600 / 3600;
+        assertThat(SessionCalories.estimate(List.of(reps, timed), Map.of(), null, 3600)).isCloseTo(expected, within(0.001));
+        // Duración real (total del ejercicio) sustituye a la estimación y la sesión limita el total.
+        double real = SessionCalories.estimate(List.of(reps), Map.of(reps.id(), 300), 80.0, 150);
+        double unscaled = 6.0 * 80 * 300 / 3600 + 1.5 * 80 * 180 / 3600;
+        assertThat(real).isCloseTo(unscaled * 150 / 480, within(0.001));
+        assertThat(SessionCalories.estimate(List.of(), Map.of(), 80.0, 1800)).isCloseTo(6.0 * 80 * 0.5, within(0.001));
+    }
+
+    @Test
+    void checkInFatigueScore() {
+        DailyCheckIn fresh = DailyCheckIn.create(UUID.randomUUID(), LocalDate.now(),
+                new DailyCheckIn.Values(5, 1, 5, 1, List.of(" piernas ", "piernas", ""), true, "  "), NOW);
+        assertThat(fresh.fatigueScore()).isEqualTo(5 + 0 + 4 + 0);
+        assertThat(fresh.painZones()).containsExactly("piernas");
+        assertThat(fresh.notes()).isNull();
+        DailyCheckIn tired = DailyCheckIn.create(UUID.randomUUID(), LocalDate.now(),
+                new DailyCheckIn.Values(1, 5, 1, 5, List.of(), false, null), NOW);
+        assertThat(tired.fatigueScore()).isEqualTo(25 + 20 + 20 + 28);
+        assertThat(tired.requiresAdaptation()).isTrue();
+        assertThatThrownBy(() -> DailyCheckIn.create(UUID.randomUUID(), LocalDate.now(),
+                new DailyCheckIn.Values(0, 1, 1, 1, null, true, null), NOW)).isInstanceOf(FieldValidationException.class);
+    }
+
+    @Test
+    void weeklyPlanNormalizesToMonday() {
+        WeeklyTrainingPlan plan = WeeklyTrainingPlan.create(UUID.randomUUID(), LocalDate.of(2026, 10, 11),
+                new WeeklyTrainingPlan.Values(3, null, 45, null, null));
+        assertThat(plan.weekStart()).isEqualTo(LocalDate.of(2026, 10, 5));
+        assertThat(plan.intensity()).isEqualTo(PlanIntensity.MODERATE);
+        assertThat(plan.compliance(5)).isEqualTo(1.0);
+        assertThatThrownBy(() -> WeeklyTrainingPlan.create(UUID.randomUUID(), LocalDate.now(),
+                new WeeklyTrainingPlan.Values(8, null, 45, null, null))).isInstanceOf(FieldValidationException.class);
+    }
+
+    @Test
+    void defaultWeekTypes() {
+        assertThat(WeekType.forPosition(1, 1)).isEqualTo(WeekType.LOAD);
+        assertThat(WeekType.forPosition(1, 3)).isEqualTo(WeekType.ADAPTATION);
+        assertThat(WeekType.forPosition(3, 3)).isEqualTo(WeekType.PEAK);
+        assertThat(WeekType.forPosition(4, 4)).isEqualTo(WeekType.DELOAD);
+        assertThat(WeekType.forPosition(2, 4)).isEqualTo(WeekType.LOAD);
+        assertThat(TrainingGoal.fromLabelOrDefault("fuerza máxima")).isEqualTo(TrainingGoal.MAX_STRENGTH);
+        assertThat(TrainingGoal.fromLabelOrDefault("fuerza")).isEqualTo(TrainingGoal.HYPERTROPHY);
+    }
+}

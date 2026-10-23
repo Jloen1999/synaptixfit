@@ -1,0 +1,59 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Ejecutar archivo",
+            "type": "shell",
+            "command": "switch ('${fileExtname}') { '.dart' { dart run '${file}' }; '.java' { javac '${file}'; if ($LASTEXITCODE -eq 0) { java -cp '${fileDirname}' '${fileBasenameNoExtension}' } }; '.py' { python '${file}' }; '.js' { node '${file}' }; default { Write-Host 'Tipo de archivo no compatible: ${fileExtname}' } }",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Android",
+            "type": "shell",
+            "command": "flutter run --dart-define=ENVIRONMENT=dev",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Web",
+            "type": "shell",
+            "command": "flutter run -d chrome --dart-define=ENVIRONMENT=dev",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Generar código",
+            "type": "shell",
+            "command": "dart run build_runner build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Analizar",
+            "type": "shell",
+            "command": "flutter analyze",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Dependencias",
+            "type": "shell",
+            "command": "flutter pub get",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Limpiar",
+            "type": "shell",
+            "command": "flutter clean; flutter pub get",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Reiniciar Android",
+            "type": "shell",
+            "command": "taskkill /F /IM emulator.exe 2>$null; taskkill /F /IM qemu-system-x86_64.exe 2>$null; adb kill-server; adb start-server",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Detener procesos",
+            "type": "shell",
+            "command": "cd android; .\\gradlew --stop; cd ..; Get-Process java,dart -ErrorAction SilentlyContinue | Stop-Process -Force",
+            "problemMatcher": []
+        }
+    ]
+}

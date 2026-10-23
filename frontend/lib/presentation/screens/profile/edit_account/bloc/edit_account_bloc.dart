@@ -1,0 +1,38 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+import '../../../../../domain/enums/usage_focus.dart';
+import '../../../../../domain/enums/visibility.dart';
+import '../../../../../domain/errors/app_error.dart';
+import '../../../../../domain/models/account/account.dart';
+import '../../../../../domain/use_cases/account/update_account_use_case.dart';
+
+part 'edit_account_bloc.freezed.dart';
+part 'edit_account_event.dart';
+part 'edit_account_state.dart';
+
+/// Edición de la cuenta: nombre, avatar y privacidad.
+class EditAccountBloc extends Bloc<EditAccountEvent, EditAccountState> {
+  EditAccountBloc({required this._updateAccount})
+    : super(const EditAccountState.idle()) {
+    on<EditAccountSubmitted>(_onSubmitted);
+  }
+
+  final UpdateAccountUseCaseContract _updateAccount;
+
+  Future<void> _onSubmitted(
+    EditAccountSubmitted event,
+    Emitter<EditAccountState> emit,
+  ) async {
+    emit(const EditAccountState.submitting());
+    final avatar = event.avatarUrl.trim();
+    final result = await _updateAccount(
+      fullName: event.fullName.trim(),
+      // Cadena vacía = quitar el avatar.
+      avatarUrl: avatar,
+      privacy: event.privacy,
+      usageFocus: event.usageFocus,
+    );
+    emit(result.fold(EditAccountState.success, EditAccountState.failure));
+  }
+}

@@ -1,0 +1,913 @@
+{
+  "@@locale": "es",
+  "trainingNewRoutine": "Nueva rutina",
+  "trainingNewRoutineAi": "Crear con IA",
+  "trainingNewRoutineAiHint": "Te proponemos una rutina según tu perfil y tu carga académica",
+  "trainingNewRoutineManual": "Crear desde cero",
+  "trainingNewRoutineManualHint": "Diseña tú las semanas, días y ejercicios",
+  "trainingMyRoutines": "Mis rutinas",
+  "trainingNoRoutinesTitle": "Aún no tienes rutinas",
+  "trainingNoRoutinesMessage": "Crea tu primera rutina con IA o desde cero con el botón «Nueva rutina».",
+  "trainingNextWorkout": "Próximo entrenamiento",
+  "trainingNoPendingDay": "No tienes días pendientes",
+  "trainingNoPendingDayHint": "Activa una rutina o haz una sesión libre.",
+  "trainingFreeSession": "Sesión libre",
+  "trainingStart": "Empezar",
+  "trainingTrain": "Entrenar",
+  "trainingCheckInCtaTitle": "¿Cómo te encuentras hoy?",
+  "trainingCheckInToday": "Check-in de hoy",
+  "trainingFatigueScore": "Fatiga {score}/100",
+  "@trainingFatigueScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingFatigueTitle": "Puntuación de fatiga",
+  "trainingFatigueAdapt": "Conviene adaptar o aligerar el entrenamiento de hoy.",
+  "trainingFatigueOk": "Estás en buena forma para entrenar.",
+  "trainingRecommendationsTitle": "Sugerencias",
+  "trainingRecommendationsCount": "{count, plural, =1{1 sugerencia} other{{count} sugerencias}}",
+  "@trainingRecommendationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRecommendationsAll": "Ver todas",
+  "trainingRecommendationsLess": "Ver menos",
+  "trainingRecommendationDetail": "Ver detalle",
+  "trainingRecommendationMoreExercises": "{count, plural, =1{y 1 ejercicio más} other{y {count} ejercicios más}}",
+  "@trainingRecommendationMoreExercises": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingMoreTools": "Más herramientas",
+  "trainingExplorerTitle": "Explorar ejercicios",
+  "trainingCommunityTitle": "Comunidad",
+  "trainingWeeklyPlanTitle": "Plan semanal",
+  "trainingHistoryTitle": "Historial de sesiones",
+  "trainingMoreActions": "Más acciones",
+  "trainingGoalHypertrophy": "Hipertrofia",
+  "trainingGoalMaxStrength": "Fuerza máxima",
+  "trainingGoalPower": "Potencia",
+  "trainingGoalStrengthEndurance": "Fuerza resistencia",
+  "trainingGoalMobility": "Movilidad",
+  "trainingGoalStability": "Estabilidad",
+  "trainingGoalMetabolic": "Acondicionamiento metabólico",
+  "trainingModalityStrength": "Fuerza",
+  "trainingModalityMobility": "Movilidad",
+  "trainingModalityMetabolic": "Metabólico",
+  "trainingModalityAerobic": "Aeróbico",
+  "trainingDifficultyBeginner": "Principiante",
+  "trainingDifficultyIntermediate": "Intermedio",
+  "trainingDifficultyAdvanced": "Avanzado",
+  "trainingStatusActive": "Activa",
+  "trainingStatusPaused": "En pausa",
+  "trainingStatusCompleted": "Completada",
+  "trainingStatusArchived": "Archivada",
+  "trainingWeekTypeAdaptation": "Adaptación",
+  "trainingWeekTypeLoad": "Carga",
+  "trainingWeekTypePeak": "Pico",
+  "trainingWeekTypeDeload": "Descarga",
+  "trainingProgressPending": "Pendiente",
+  "trainingProgressInProgress": "En curso",
+  "trainingProgressCompleted": "Completado",
+  "trainingRecommendationProgression": "Progresión",
+  "trainingRecommendationDegradation": "Ajuste a la baja",
+  "trainingRecommendationDeload": "Descarga",
+  "trainingRecommendationVariant": "Variante",
+  "trainingRecommendationAcademic": "Carga académica",
+  "trainingRecommendationApplied": "Aplicada",
+  "trainingIntensityLow": "Baja",
+  "trainingIntensityModerate": "Moderada",
+  "trainingIntensityHigh": "Alta",
+  "trainingPlanStatusActive": "Activo",
+  "trainingPlanStatusPaused": "En pausa",
+  "trainingPlanStatusCompleted": "Completado",
+  "trainingPlanStatusAdjusted": "Ajustado",
+  "trainingVisibilityPrivate": "Privada",
+  "trainingVisibilityFriends": "Amigos",
+  "trainingVisibilityPublic": "Pública",
+  "trainingWeekday1": "Lunes",
+  "trainingWeekday2": "Martes",
+  "trainingWeekday3": "Miércoles",
+  "trainingWeekday4": "Jueves",
+  "trainingWeekday5": "Viernes",
+  "trainingWeekday6": "Sábado",
+  "trainingWeekday7": "Domingo",
+  "trainingWeekNumber": "Semana {number}",
+  "@trainingWeekNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWeekShort": "S{number}",
+  "@trainingWeekShort": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipSetsReps": "{sets} × {reps}",
+  "@trainingChipSetsReps": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipSetsSeconds": "{sets} × {seconds} s",
+  "@trainingChipSetsSeconds": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipRest": "{seconds} s",
+  "@trainingChipRest": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipWeight": "{weight} kg",
+  "@trainingChipWeight": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingChipDurationSemantics": "Duración objetivo {time}",
+  "@trainingChipDurationSemantics": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingChipDistanceKm": "{km} km",
+  "@trainingChipDistanceKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingChipDistanceM": "{meters} m",
+  "@trainingChipDistanceM": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipRealDuration": "Real {time}",
+  "@trainingChipRealDuration": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingChipKcal": "≈ {kcal} kcal",
+  "@trainingChipKcal": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWeeksCount": "{count, plural, =1{1 semana} other{{count} semanas}}",
+  "@trainingWeeksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingExercisesCount": "{count, plural, =1{1 ejercicio} other{{count} ejercicios}}",
+  "@trainingExercisesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingDaysProgress": "{done}/{total} días",
+  "@trainingDaysProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingByAuthor": "De {author}",
+  "@trainingByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingParamSets": "Series",
+  "trainingParamReps": "Repeticiones",
+  "trainingParamRest": "Descanso",
+  "trainingParamWeight": "Peso (kg)",
+  "trainingParamDuration": "Duración objetivo (min)",
+  "trainingParamDistance": "Distancia (m)",
+  "trainingParamIsometric": "Isométrico (s por serie)",
+  "trainingParamOptional": "Opcional",
+  "trainingParamOutOfRange": "Debe estar entre {min} y {max}",
+  "@trainingParamOutOfRange": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingStepParameters": "Parámetros",
+  "trainingStepProposal": "Propuesta",
+  "trainingStepEdit": "Edición",
+  "trainingStepSemantics": "Paso {step} de {total}: {label}",
+  "@trainingStepSemantics": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingAiIntro": "Generaremos una rutina a partir de tu perfil de bienestar, tu equipamiento y tu carga académica. Después podrás editarla y refinarla con IA.",
+  "trainingDurationTitle": "Duración",
+  "trainingDurationWeeks": "Semanas",
+  "trainingGoalOptional": "Objetivo (opcional)",
+  "trainingGoalFromProfile": "El de mi perfil",
+  "trainingGenerate": "Generar propuesta",
+  "trainingGenerating": "Generando tu rutina…",
+  "trainingGeneratingHint": "Puede tardar hasta un minuto.",
+  "trainingAiRefined": "Propuesta refinada con IA",
+  "trainingRulesEngine": "Propuesta del motor de reglas",
+  "trainingAdjustmentReasons": "Ajustes aplicados",
+  "trainingGeneralData": "Datos generales",
+  "trainingRoutineName": "Nombre de la rutina",
+  "trainingRoutineNameTooShort": "El nombre debe tener al menos 3 caracteres",
+  "trainingRoutineDescription": "Descripción (opcional)",
+  "trainingGoal": "Objetivo",
+  "trainingGoalNone": "Sin objetivo",
+  "trainingVisibility": "Visibilidad",
+  "trainingStructure": "Semanas y días",
+  "trainingAddWeek": "Semana",
+  "trainingAddDay": "Añadir día",
+  "trainingAddExercise": "Añadir ejercicio",
+  "trainingRenameWeek": "Renombrar semana",
+  "trainingRenameDay": "Renombrar día",
+  "trainingName": "Nombre",
+  "trainingDeleteWeekTitle": "Eliminar semana",
+  "trainingDeleteWeekMessage": "Se eliminará la semana con todos sus días y ejercicios.",
+  "trainingDeleteDay": "Eliminar día",
+  "trainingDeleteDayMessage": "Se eliminará el día con todos sus ejercicios.",
+  "trainingWeekNoDays": "Esta semana no tiene días.",
+  "trainingDayNoExercises": "Sin ejercicios todavía.",
+  "trainingDayTaken": "Ya existe",
+  "trainingMoveUp": "Subir",
+  "trainingMoveDown": "Bajar",
+  "trainingEditParameters": "Editar parámetros",
+  "trainingRemoveExercise": "Quitar ejercicio",
+  "trainingRemoveExerciseMessage": "¿Quitar «{name}» de este día?",
+  "@trainingRemoveExerciseMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingExerciseInactive": "Ya no disponible",
+  "trainingRefineAi": "Refinar con IA",
+  "trainingSaveRoutine": "Guardar rutina",
+  "trainingDiscardRoutineTitle": "¿Descartar la rutina?",
+  "trainingDiscardRoutineMessage": "Perderás los cambios que no hayas guardado.",
+  "trainingDiscard": "Descartar",
+  "trainingApply": "Aplicar",
+  "trainingRoutineTitle": "Rutina",
+  "trainingEditDetails": "Editar datos",
+  "trainingChangeStatus": "Cambiar estado",
+  "trainingDuplicate": "Duplicar",
+  "trainingCopyOf": "Copia de {name}",
+  "@trainingCopyOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingDeleteRoutineTitle": "Eliminar rutina",
+  "trainingDeleteRoutineMessage": "Se eliminará «{name}». Esta acción no se puede deshacer.",
+  "@trainingDeleteRoutineMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingClone": "Clonar",
+  "trainingClonedFrom": "Clonada de {author}",
+  "@trainingClonedFrom": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingStartsOn": "Empieza el {date}",
+  "@trainingStartsOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingPickExercise": "Elegir ejercicio",
+  "trainingListView": "Ver como lista",
+  "trainingGridView": "Ver como cuadrícula",
+  "trainingSearchExercises": "Buscar ejercicios",
+  "trainingFilters": "Filtros",
+  "trainingClearFilters": "Quitar filtros",
+  "trainingApplyFilters": "Aplicar filtros",
+  "trainingFilterAny": "Cualquiera",
+  "trainingFilterBodyPart": "Parte del cuerpo",
+  "trainingFilterMuscle": "Músculo",
+  "trainingFilterEquipment": "Equipamiento",
+  "trainingFilterDifficulty": "Dificultad",
+  "trainingFilterModality": "Modalidad",
+  "trainingFilterPurpose": "Finalidad",
+  "trainingResultsCount": "{count, plural, =0{Sin resultados} =1{1 ejercicio} other{{count} ejercicios}}",
+  "@trainingResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingNoExercisesTitle": "No hay ejercicios",
+  "trainingNoExercisesMessage": "Prueba con otra búsqueda o quita algún filtro.",
+  "trainingExerciseTitle": "Ejercicio",
+  "trainingExerciseDemo": "Demostración de {name}",
+  "@trainingExerciseDemo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCircuit": "Circuito",
+  "trainingInstructions": "Instrucciones",
+  "trainingTargetMuscles": "Músculos principales",
+  "trainingSecondaryMuscles": "Músculos secundarios",
+  "trainingBodyParts": "Partes del cuerpo",
+  "trainingEquipment": "Equipamiento",
+  "trainingPurposes": "Finalidad",
+  "trainingTotalTime": "Tiempo total {time}",
+  "@trainingTotalTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingAbandon": "Abandonar",
+  "trainingAbandonTitle": "¿Abandonar la sesión?",
+  "trainingAbandonMessage": "Se descartarán las series registradas y no recibirás experiencia.",
+  "trainingRest": "Descanso",
+  "trainingRestSemantics": "Descanso: quedan {seconds} segundos",
+  "@trainingRestSemantics": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRestLess": "Quitar 15 segundos",
+  "trainingRestMore": "Añadir 15 segundos",
+  "trainingSkip": "Saltar",
+  "trainingSetsProgress": "{done}/{total} series",
+  "@trainingSetsProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetsDone": "{done} de {total} series",
+  "@trainingSetsDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingExerciseTimerActive": "Cronometrando este ejercicio: {time}",
+  "@trainingExerciseTimerActive": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingExerciseTimerPaused": "Tiempo en este ejercicio: {time}",
+  "@trainingExerciseTimerPaused": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingExtraSet": "Serie extra",
+  "trainingFreeSets": "Series libres",
+  "trainingFreeSetsHint": "Registra lo que vayas haciendo en esta sesión libre.",
+  "trainingAddSet": "Añadir serie",
+  "trainingSetNumber": "Serie {number}",
+  "@trainingSetNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetPending": "Pendiente",
+  "trainingSetReps": "{reps} reps",
+  "@trainingSetReps": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetFailed": "{failed} fallidas",
+  "@trainingSetFailed": {
+    "placeholders": {
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetNotCompleted": "No completada",
+  "trainingRepsDone": "Repeticiones hechas",
+  "trainingFailedReps": "Repeticiones fallidas",
+  "trainingSetCompleted": "Serie completada",
+  "trainingDeleteSet": "Borrar serie",
+  "trainingSessionAlreadyCompleted": "Esta sesión ya está finalizada.",
+  "trainingFinishAction": "Finalizar",
+  "trainingRpeTitle": "¿Cuánto te ha costado?",
+  "trainingRpeMessage": "Valora el esfuerzo percibido de 1 (muy fácil) a 10 (máximo).",
+  "trainingRpeEasy": "Fácil",
+  "trainingRpeModerate": "Moderado",
+  "trainingRpeHard": "Duro",
+  "trainingRpeMax": "Máximo",
+  "trainingRpeSemantics": "Esfuerzo {value} de 10",
+  "@trainingRpeSemantics": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRpeLabel": "Esfuerzo percibido (1-10)",
+  "trainingRpeValue": "Esfuerzo {value}/10",
+  "@trainingRpeValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingCompletedTitle": "Sesión completada",
+  "trainingCompletedHeadline": "¡Buen trabajo!",
+  "trainingDuration": "Duración",
+  "trainingCalories": "Calorías",
+  "trainingSetsLabel": "Series",
+  "trainingMinutes": "{minutes} min",
+  "@trainingMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingKcal": "{kcal} kcal",
+  "@trainingKcal": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingXpGained": "+{xp} XP",
+  "@trainingXpGained": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLevelUp": "¡Subes al nivel {level}!",
+  "@trainingLevelUp": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLevelXp": "{xp} XP en el nivel",
+  "@trainingLevelXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingBackToRoutines": "Volver a rutinas",
+  "trainingNoSessionsTitle": "Sin sesiones todavía",
+  "trainingNoSessionsMessage": "Cuando entrenes, verás aquí tus sesiones.",
+  "trainingSessionFree": "Sesión libre",
+  "trainingSessionRoutine": "Sesión de rutina",
+  "trainingSessionWeekly": "Sesión del plan semanal",
+  "trainingInProgress": "En curso",
+  "trainingUnmark": "Desmarcar",
+  "trainingUnmarkTitle": "¿Desmarcar la sesión?",
+  "trainingUnmarkMessage": "El día volverá a estar pendiente y se restarán {xp} XP.",
+  "@trainingUnmarkMessage": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetsCount": "{count, plural, =1{1 serie} other{{count} series}}",
+  "@trainingSetsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingCheckInTitle": "Check-in diario",
+  "trainingCheckInIntro": "Así adaptamos tu entrenamiento.",
+  "trainingCheckInUpdate": "Ya hiciste el check-in hoy. Puedes actualizarlo.",
+  "trainingCheckInXp": "¡Primer check-in del día! +{xp} XP",
+  "@trainingCheckInXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSleepQuality": "Calidad del sueño",
+  "trainingStress": "Estrés",
+  "trainingEnergy": "Energía",
+  "trainingSoreness": "Agujetas",
+  "trainingScaleBad": "Muy mala",
+  "trainingScaleGreat": "Excelente",
+  "trainingScaleLow": "Bajo",
+  "trainingScaleHigh": "Alto",
+  "trainingScaleNone": "Nada",
+  "trainingScaleValue": "{value}/5",
+  "@trainingScaleValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingScaleSemantics": "{label}: {value} de 5",
+  "@trainingScaleSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPainZones": "Zonas con dolor",
+  "trainingPainNeck": "Cuello",
+  "trainingPainShoulders": "Hombros",
+  "trainingPainUpperBack": "Espalda alta",
+  "trainingPainLowerBack": "Zona lumbar",
+  "trainingPainChest": "Pecho",
+  "trainingPainArms": "Brazos",
+  "trainingPainWrists": "Muñecas",
+  "trainingPainHips": "Caderas",
+  "trainingPainKnees": "Rodillas",
+  "trainingPainAnkles": "Tobillos",
+  "trainingPainLegs": "Piernas",
+  "trainingReadyToTrain": "Me siento listo para entrenar",
+  "trainingNotes": "Notas (opcional)",
+  "trainingCheckInSave": "Guardar check-in",
+  "trainingCheckInUpdateAction": "Actualizar check-in",
+  "trainingCheckInHistory": "Últimos check-ins",
+  "trainingCheckInHistoryLine": "Sueño {sleep} · Estrés {stress} · Energía {energy} · Agujetas {soreness}",
+  "@trainingCheckInHistoryLine": {
+    "placeholders": {
+      "sleep": {
+        "type": "int"
+      },
+      "stress": {
+        "type": "int"
+      },
+      "energy": {
+        "type": "int"
+      },
+      "soreness": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPreviousWeek": "Semana anterior",
+  "trainingNextWeek": "Semana siguiente",
+  "trainingWeekRange": "{start} – {end}",
+  "@trainingWeekRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingThisWeek": "Esta semana",
+  "trainingCompliance": "Cumplimiento",
+  "trainingPercent": "{value} %",
+  "@trainingPercent": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSessionsDone": "{done} de {total} sesiones",
+  "@trainingSessionsDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingNoPlan": "No tienes plan para esta semana. Configúralo y guárdalo.",
+  "trainingPlannedSessions": "Sesiones a la semana",
+  "trainingMinutesPerSession": "Minutos por sesión",
+  "trainingIntensity": "Intensidad",
+  "trainingPlanStatus": "Estado del plan",
+  "trainingSavePlan": "Guardar plan",
+  "trainingDeletePlanTitle": "Eliminar plan",
+  "trainingDeletePlanMessage": "Se eliminará el plan de esta semana.",
+  "trainingPlanHistory": "Planes anteriores",
+  "trainingWeekOf": "Semana del {date}",
+  "@trainingWeekOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSearchRoutines": "Buscar rutinas",
+  "trainingAllGoals": "Todas",
+  "trainingCommunityEmptyTitle": "No hay rutinas que mostrar",
+  "trainingCommunityEmptyMessage": "Prueba otra búsqueda u otro objetivo.",
+  "trainingMsgRecommendationApplied": "Sugerencia aplicada a tu rutina",
+  "trainingMsgRecommendationDiscarded": "Sugerencia descartada",
+  "trainingMsgRoutineSaved": "Rutina guardada",
+  "trainingMsgRoutineDeleted": "Rutina eliminada",
+  "trainingMsgRoutineDuplicated": "Rutina duplicada",
+  "trainingMsgRoutineCloned": "Rutina clonada en tus rutinas",
+  "trainingMsgCheckInSaved": "Check-in guardado",
+  "trainingMsgPlanSaved": "Plan semanal guardado",
+  "trainingMsgPlanDeleted": "Plan semanal eliminado",
+  "trainingMsgSessionUnmarked": "Sesión desmarcada",
+  "trainingMsgSessionAbandoned": "Sesión abandonada",
+  "trainingMsgSetSaved": "Serie registrada",
+  "trainingErrorExerciseNotFound": "Ese ejercicio no existe.",
+  "trainingErrorExerciseInactive": "Ese ejercicio ya no está disponible.",
+  "trainingErrorExerciseCatalogReferenceInvalid": "Algún músculo, parte del cuerpo o equipamiento no existe.",
+  "trainingErrorRoutineNotFound": "No encontramos esa rutina.",
+  "trainingErrorRoutineWeekNotFound": "Esa semana no existe.",
+  "trainingErrorRoutineDayNotFound": "Ese día no existe.",
+  "trainingErrorRoutineExerciseNotFound": "Ese ejercicio no está en la rutina.",
+  "trainingErrorRoutineDayDuplicated": "Esa semana ya tiene ese día.",
+  "trainingErrorRoutineWeekLimit": "Una rutina debe tener entre 1 y 52 semanas.",
+  "trainingErrorRoutineHasEmptyDays": "Añade ejercicios a todos los días antes de completar la rutina.",
+  "trainingErrorRoutineReorderMismatch": "El nuevo orden no coincide con los ejercicios del día.",
+  "trainingErrorSessionNotFound": "No encontramos esa sesión.",
+  "trainingErrorSessionSetNotFound": "Esa serie no existe.",
+  "trainingErrorSessionAlreadyCompleted": "Esta sesión ya está finalizada.",
+  "trainingErrorSessionNotCompleted": "Esta sesión no está finalizada.",
+  "trainingErrorSessionDayMismatch": "Ese día no pertenece a la rutina.",
+  "trainingErrorTrainingProfileRequired": "Completa tu perfil de bienestar para generar una rutina.",
+  "trainingErrorTrainingNoCompatibleExercises": "No hay ejercicios compatibles con tu equipamiento y nivel.",
+  "trainingErrorTrainingPlanNotFound": "No tienes plan para esa semana.",
+  "trainingErrorTrainingRecommendationNotFound": "No encontramos esa sugerencia.",
+  "trainingErrorTrainingRecommendationApplied": "Ya aplicaste esta sugerencia.",
+  "trainingVideoPlay": "Reproducir vídeo",
+  "trainingVideoPause": "Pausar vídeo",
+  "trainingRecordsTitle": "Tus récords",
+  "trainingSessionsTitle": "Sesiones",
+  "trainingRecordWeight": "{weight} kg × {reps}",
+  "@trainingRecordWeight": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRecordReps": "{reps, plural, =1{1 rep} other{{reps} reps}}",
+  "@trainingRecordReps": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRecordBroken": "Récord: {exercise}, {value}",
+  "@trainingRecordBroken": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingDayNumber": "Día {number}",
+  "@trainingDayNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingMoreOptions": "Más opciones",
+  "trainingRecordUnnamed": "Ejercicio",
+  "trainingRecordBrokenUnnamed": "Récord: {value}",
+  "@trainingRecordBrokenUnnamed": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCategoryStrength": "Fuerza",
+  "trainingCategoryCalisthenics": "Calistenia",
+  "trainingCategoryStretching": "Estiramientos",
+  "trainingCategoryMobility": "Movilidad",
+  "trainingCategoryCardio": "Cardio",
+  "trainingCategoryPlyometrics": "Pliometría",
+  "trainingCategoryYoga": "Yoga",
+  "trainingCategoryPilates": "Pilates",
+  "trainingCategoryIsometric": "Isométricos",
+  "trainingCategoryOlympic": "Halterofilia",
+  "trainingCategoryCombat": "Combate",
+  "trainingCategoryRehab": "Readaptación",
+  "trainingExerciseMoreActions": "Más opciones de {name}",
+  "@trainingExerciseMoreActions": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingReplaceExercise": "Cambiar ejercicio",
+  "trainingReplaceHint": "Ejercicios que trabajan lo mismo que «{name}». Se conservan las series y el descanso.",
+  "@trainingReplaceHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingReplaceEmpty": "No hay alternativas para este ejercicio",
+  "trainingWarmUpTitle": "Calentamiento",
+  "trainingCoolDownTitle": "Vuelta a la calma",
+  "trainingLastTimeWeight": "La última vez: {weight} kg × {reps}",
+  "@trainingLastTimeWeight": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLastTimeReps": "La última vez: {reps} repeticiones",
+  "@trainingLastTimeReps": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingCategoryAll": "Todas",
+  "trainingReplaceEmptyMessage": "Puedes elegir cualquier otro del catálogo.",
+  "trainingReplaceFromCatalog": "Buscar en el catálogo",
+  "trainingWarmUpSummary": "{count, plural, =1{1 ejercicio de movilidad} other{{count} ejercicios de movilidad}} · unos 5 min",
+  "@trainingWarmUpSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingCoolDownSummary": "{count, plural, =1{1 estiramiento} other{{count} estiramientos}} · unos 5 min",
+  "@trainingCoolDownSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLastTimeWeightSpoken": "La última vez: {weight} kilos, {reps} repeticiones",
+  "@trainingLastTimeWeightSpoken": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingMoveUpNamed": "Subir {name}",
+  "@trainingMoveUpNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingMoveDownNamed": "Bajar {name}",
+  "@trainingMoveDownNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingExerciseMovedTo": "{name}: posición {position} de {total}",
+  "@trainingExerciseMovedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingExerciseSourceOpenGym": "Datos del ejercicio: openGym (Duarte Santos), licencia AGPL-3.0."
+}

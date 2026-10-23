@@ -1,0 +1,382 @@
+{
+  "@@locale": "es",
+  "homeGreetingMorning": "Buenos días, {name}",
+  "@homeGreetingMorning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetingAfternoon": "Buenas tardes, {name}",
+  "@homeGreetingAfternoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetingEvening": "Buenas noches, {name}",
+  "@homeGreetingEvening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOpenProfile": "Abrir perfil",
+  "homeNotifications": "Notificaciones",
+  "homeNotificationsUnread": "{count, plural, =0{Notificaciones, ninguna sin leer} =1{Notificaciones, 1 sin leer} other{Notificaciones, {count} sin leer}}",
+  "@homeNotificationsUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeAdminPanel": "Panel de administración",
+  "homeStreakDays": "{days, plural, =0{Sin racha} =1{1 día} other{{days} días}}",
+  "@homeStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeStreakTooltip": "{days, plural, =0{Aún no tienes racha. ¡Empieza hoy!} =1{Racha de 1 día} other{Racha de {days} días}}",
+  "@homeStreakTooltip": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerPhysicalOverloadTitle": "Carga física elevada",
+  "homeBannerPhysicalOverloadMessage": "Esta semana has entrenado bastante más de lo habitual: prioriza recuperar y estudia como mucho {minutes} min.",
+  "@homeBannerPhysicalOverloadMessage": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerUpcomingDeadlinesTitle": "{count, plural, =1{Tienes 1 entrega próxima} other{Tienes {count} entregas próximas}}",
+  "@homeBannerUpcomingDeadlinesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerUpcomingDeadlinesMessage": "{days, plural, =0{La siguiente es hoy.} =1{La siguiente es mañana.} other{La siguiente, en {days} días.}}",
+  "@homeBannerUpcomingDeadlinesMessage": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerHighFatigueTitle": "Acumulas fatiga",
+  "homeBannerHighFatigueMessage": "Fatiga media {score}/100: hoy, sesión suave o descanso.",
+  "@homeBannerHighFatigueMessage": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerLowAdherenceTitle": "Tu plan de estudio se queda corto",
+  "homeBannerLowAdherenceMessage": "Vas al {adherence} % esta semana. Ajusta tus bloques.",
+  "@homeBannerLowAdherenceMessage": {
+    "placeholders": {
+      "adherence": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerLowEnergyTitle": "Energía baja hoy",
+  "homeBannerLowEnergyMessage": "Energía {energy}/100: elige tareas ligeras.",
+  "@homeBannerLowEnergyMessage": {
+    "placeholders": {
+      "energy": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerAttentionDepletedTitle": "Tu atención necesita una pausa",
+  "homeBannerAttentionDepletedMessage": "Atención al {attention} %: descansa antes del siguiente bloque.",
+  "@homeBannerAttentionDepletedMessage": {
+    "placeholders": {
+      "attention": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerPeakDayTitle": "Día ideal para rendir",
+  "homeBannerPeakDayMessage": "Energía {energy}/100: ataca lo más difícil.",
+  "@homeBannerPeakDayMessage": {
+    "placeholders": {
+      "energy": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerStudyStreakTitle": "{days, plural, =1{1 día seguido estudiando} other{{days} días seguidos estudiando}}",
+  "@homeBannerStudyStreakTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerStudyStreakMessage": "¡Sigue así!",
+  "homeBannerTrainingStreakTitle": "{days, plural, =1{Racha de 1 día} other{Racha de {days} días}}",
+  "@homeBannerTrainingStreakTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerTrainingStreakMessage": "No rompas la cadena.",
+  "homeBannerComebackTitle": "¡Qué bien verte de nuevo!",
+  "homeBannerComebackMessage": "{days, plural, =1{1 día sin entrenar: vuelve al {percent} % de tu carga.} other{{days} días sin entrenar: vuelve al {percent} % de tu carga.}}",
+  "@homeBannerComebackMessage": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerCheckInPendingTitle": "¿Cómo te encuentras hoy?",
+  "homeBannerCheckInPendingMessage": "Así ajustamos tus recomendaciones.",
+  "homeBannerBalanceTitle": "Mantén el equilibrio",
+  "homeBannerBalanceMessage": "Alterna estudio, movimiento y descanso.",
+  "homeBannerActionAnalytics": "Ver análisis",
+  "homeBannerActionDeadlines": "Ver entregas",
+  "homeBannerActionPlan": "Planificar",
+  "homeBannerActionPomodoro": "Descanso guiado",
+  "homeBannerActionTrain": "Entrenar",
+  "homeBannerActionCheckIn": "Hacer check-in",
+  "homeWeekTitle": "Esta semana",
+  "homeWeekSessions": "{count, plural, =1{1 sesión} other{{count} sesiones}}",
+  "@homeWeekSessions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekSessionsOfPlanned": "{count} de {planned} sesiones",
+  "@homeWeekSessionsOfPlanned": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "planned": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekStudyMinutes": "{minutes} min de estudio",
+  "@homeWeekStudyMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "homeWeekCalories": "{calories} kcal entrenando",
+  "@homeWeekCalories": {
+    "placeholders": {
+      "calories": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGaugeCognitiveLoad": "Carga cognitiva",
+  "homeGaugeCognitiveLoadHint": "Sube con lo que estudias hoy. Unas 4 h exigentes llevan a la zona crítica.",
+  "homeGaugeAttentionHint": "Baja a la mitad tras 52 min seguidos. Un descanso de 17 min la recupera.",
+  "homeGaugeEnergyHint": "Según tu sueño, recuperación y estrés de hoy.",
+  "homeGaugeEnergyNoCheckIn": "Haz el check-in para calcularla.",
+  "homeGaugeAcwr": "Carga física",
+  "homeGaugeAcwrHint": "Compara lo que has entrenado esta semana con tu media del último mes. Lo ideal es la zona óptima.",
+  "homeGaugePercent": "{value} %",
+  "@homeGaugePercent": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "homeGaugeSemantics": "{name}: {value}, {level}",
+  "@homeGaugeSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      },
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "homeLevelLow": "Baja",
+  "homeLevelModerate": "Moderada",
+  "homeLevelHigh": "Alta",
+  "homeLevelCritical": "Crítica",
+  "homeZoneNoData": "Sin datos",
+  "homeZoneUndertraining": "Por debajo",
+  "homeZoneOptimal": "Óptima",
+  "homeZoneDanger": "En riesgo",
+  "homeZoneOvertraining": "Sobrecarga",
+  "homeAgendaTitle": "Agenda",
+  "homeAgendaOpenPlanner": "Calendario",
+  "homeAgendaEmptyTitle": "Día libre",
+  "homeAgendaToday": "Hoy",
+  "homeAgendaDaySemantics": "{day}: {count, plural, =0{sin eventos} =1{1 evento} other{{count} eventos}}",
+  "@homeAgendaDaySemantics": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeAgendaPlanAction": "Planificar",
+  "homeAgendaTimeRange": "{start} – {end}",
+  "@homeAgendaTimeRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "homeAgendaCompleted": "Completado",
+  "homeAgendaReviewAction": "Repasar",
+  "homeEventStudy": "Estudio",
+  "homeEventClass": "Clase",
+  "homeEventReview": "Repaso",
+  "homeEventSport": "Deporte",
+  "homeEventRest": "Descanso",
+  "homeEventMeal": "Comida",
+  "homeEventSleep": "Sueño",
+  "homeEventExam": "Examen",
+  "homeEventDelivery": "Entrega",
+  "homeEventPresentation": "Presentación",
+  "homeEventOther": "Otro",
+  "homeTrainingTitle": "Próximo entrenamiento",
+  "homeTrainingWeekDay": "Semana {week} · Día {day}",
+  "@homeTrainingWeekDay": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTrainingInProgress": "En curso",
+  "homeTrainingStart": "Empezar",
+  "homeTrainingContinue": "Continuar",
+  "homeTrainingCheckIn": "Hacer check-in",
+  "homeTrainingCheckInDone": "Check-in de hoy hecho",
+  "homeTrainingEmptyTitle": "Sin rutina activa",
+  "homeTrainingEmptyMessage": "Crea una rutina adaptada a tu carga académica.",
+  "homeTrainingCreate": "Crear rutina",
+  "homeChallengesTitle": "Retos activos",
+  "homeChallengesEmptyTitle": "No tienes retos activos",
+  "homeChallengesEmptyMessage": "Ponte un objetivo y gana XP al completarlo.",
+  "homeChallengesCreate": "Crear reto",
+  "homeChallengeProgress": "{value} %",
+  "@homeChallengeProgress": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "homeChallengeEndsIn": "{days, plural, =0{Termina hoy} =1{Termina mañana} other{Quedan {days} días}}",
+  "@homeChallengeEndsIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeChallengeAcademic": "Reto académico",
+  "homeChallengeFitness": "Reto físico",
+  "homePlanWeekTitle": "Tu semana",
+  "homePlanWeekSummary": "{completed} de {planned} bloques completados",
+  "@homePlanWeekSummary": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "planned": {
+        "type": "int"
+      }
+    }
+  },
+  "homePlanWeekEmpty": "Aún no has planificado esta semana.",
+  "homePlanDaySemantics": "{day}: {completed} de {planned} bloques",
+  "@homePlanDaySemantics": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "planned": {
+        "type": "int"
+      }
+    }
+  },
+  "homeRefreshFailed": "No se ha podido actualizar el inicio.",
+  "homeErrorInvalidTimeZone": "La zona horaria indicada no es válida.",
+  "homeBalanceTitle": "Tu equilibrio",
+  "homeBalanceSeeAnalysis": "Ver análisis",
+  "homeBalanceAttention": "Atención: {level}",
+  "@homeBalanceAttention": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "homeBalanceEnergy": "Energía: {value}/100",
+  "@homeBalanceEnergy": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBalanceEnergyMissing": "Energía: sin check-in",
+  "homeBalanceStudyNow": "Concentrarme",
+  "homeStateTitle": "Tu estado",
+  "homeTrainingSeeRoutine": "Ver rutina",
+  "homeBalanceFocusPlan": "Hoy, bloques de {minutes} min con pausas de {breakMinutes} min",
+  "@homeBalanceFocusPlan": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "breakMinutes": {
+        "type": "int"
+      }
+    }
+  }
+}
