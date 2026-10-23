@@ -24,10 +24,6 @@ GoogleService-Info.plist
 *.pem
 *.key
 
-# Variables locales de Cloudflare Workers
-cloudflare/**/.dev.vars
-cloudflare/**/.secrets*
-
 # =============================
 # Entornos locales (no publicar)
 # =============================
@@ -36,29 +32,10 @@ cloudflare/**/.secrets*
 *.pyc
 *.pyo
 
-# =============================
-# Artefactos locales frecuentes
-# =============================
-app/.dart_tool/
-app/build/
-app/.flutter-plugins-dependencies
-
-# =============================
-# Archivos multimedia de ejercicios (pesados, no versionar)
-# =============================
-exercisedb/gifs_360x360/
-exercisedb/gifs_720x720/
-exercisedb/gifs_180x180/
-exercisedb/gifs_1080x1080/
-Gym Workout/
-
-# Archivos de video para staging de R2 (binarios grandes, no versionar)
-r2_staging/
-
-# Videos originales de Demic (binarios grandes, no versionar)
-demic/originales/
-demic/*.mp4
-demic/*.py
+# Artefactos de compilación (backend/ y frontend/ tienen además su propio .gitignore)
+**/target/
+**/build/
+**/.dart_tool/
 
 # Archivos obsoletos archivados
 _archivo/
@@ -68,3 +45,6 @@ _archivo/
 
 # IDE
 .idea/
+
+# Instaladores compilados (APK, app de escritorio): se guardan en local, no en git
+dist/
