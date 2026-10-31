@@ -190,6 +190,22 @@ class _QuickChallengeViewState extends State<_QuickChallengeView>
     if (picked != null) setState(() => _endAt = picked);
   }
 
+  /// Fin de un reto que empieza hoy y dura lo indicado (a las 23:59, como el
+  /// selector de fecha).
+  static DateTime _endIn({int days = 0, int months = 0}) {
+    final now = DateTime.now();
+    if (months == 0) {
+      return DateTime(now.year, now.month, now.day + days, 23, 59);
+    }
+    // Un 31 + 1 mes no salta al mes siguiente: se queda en su último día.
+    final lastDay = DateTime(now.year, now.month + months + 1, 0).day;
+    final day = now.day < lastDay ? now.day : lastDay;
+    return DateTime(now.year, now.month + months, day, 23, 59);
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -217,16 +233,31 @@ class _QuickChallengeViewState extends State<_QuickChallengeView>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    editing == null
-                        ? l10n.challengesQuickTitle
-                        : l10n.challengesQuickEditTitle,
-                    style: context.textStyles.titleLarge,
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      editing == null
+                          ? l10n.challengesQuickTitle
+                          : l10n.challengesQuickEditTitle,
+                      style: context.textStyles.titleLarge,
+                    ),
                   ),
+                  if (editing == null) ...[
+                    const SizedBox(height: TokensSpacing.xs),
+                    Text(
+                      l10n.challengesQuickSubtitle,
+                      style: context.textStyles.bodyMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: TokensSpacing.l),
                   AppTextField(
                     label: l10n.challengesFieldTitle,
-                    hint: l10n.challengesFieldTitleHint,
+                    // El ejemplo sigue al tipo: estudiar o entrenar.
+                    hint: _type == ChallengeType.fitness
+                        ? l10n.challengesFieldTitleHintFitness
+                        : l10n.challengesFieldTitleHint,
                     controller: _title,
                     icon: Icons.flag_outlined,
                     textInputAction: TextInputAction.done,
@@ -273,6 +304,30 @@ class _QuickChallengeViewState extends State<_QuickChallengeView>
                     text: ChallengeFormats.longDate(_endAt),
                     onTap: saving ? null : _pickEnd,
                   ),
+                  const SizedBox(height: TokensSpacing.s),
+                  // Atajos de duración: un toque en vez de abrir el calendario.
+                  Semantics(
+                    container: true,
+                    label: l10n.challengesDurationLabel,
+                    child: Wrap(
+                      spacing: TokensSpacing.s,
+                      runSpacing: TokensSpacing.xs,
+                      children: [
+                        for (final (label, end) in [
+                          (l10n.challengesDurationWeek, _endIn(days: 7)),
+                          (l10n.challengesDurationTwoWeeks, _endIn(days: 14)),
+                          (l10n.challengesDurationMonth, _endIn(months: 1)),
+                        ])
+                          ChoiceChip(
+                            label: Text(label),
+                            selected: _sameDay(_endAt, end),
+                            onSelected: saving
+                                ? null
+                                : (_) => setState(() => _endAt = end),
+                          ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: TokensSpacing.m),
                   if (state.status == QuickChallengeStatus.loading)
                     const AppSkeletonGroup(child: AppSkeleton(height: 56))
@@ -290,12 +345,7 @@ class _QuickChallengeViewState extends State<_QuickChallengeView>
                     ),
                   if (error != null) ...[
                     const SizedBox(height: TokensSpacing.m),
-                    Text(
-                      errorMessage(context, error),
-                      style: context.textStyles.bodyMedium?.copyWith(
-                        color: context.colors.error,
-                      ),
-                    ),
+                    AppInlineMessage(message: errorMessage(context, error)),
                   ],
                   const SizedBox(height: TokensSpacing.l),
                   AppPrimaryButton(

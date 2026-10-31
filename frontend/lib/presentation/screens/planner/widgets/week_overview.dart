@@ -105,9 +105,14 @@ class ConflictBanner extends StatelessWidget {
                       titleOf(c.second),
                     ),
                   ),
+                  // El rato en que coinciden (no el horario de uno solo): así se
+                  // entiende por qué es un choque.
                   subtitle: Text(
-                    '${PlannerFormats.dayShort(c.first.start)} · '
-                    '${l10n.plannerTimeRange(PlannerFormats.time(c.first.start), PlannerFormats.time(c.first.end))}',
+                    l10n.plannerConflictWhen(
+                      PlannerFormats.dayShort(c.overlapStart),
+                      PlannerFormats.time(c.overlapStart),
+                      PlannerFormats.time(c.overlapEnd),
+                    ),
                   ),
                   onTap: () {
                     Navigator.of(sheetContext).pop();

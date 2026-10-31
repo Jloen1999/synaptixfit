@@ -66,7 +66,7 @@ public class R2FileStorageAdapter implements FileStoragePort {
             PutObjectRequest put = PutObjectRequest.builder().bucket(config.bucket()).key(objectKey)
                     .contentType(contentType).contentLength(sizeBytes).build();
             var signed = presigner.presignPutObject(r -> r.signatureDuration(validity).putObjectRequest(put));
-            return new PresignedUrl(signed.url().toString(), "PUT", Map.of("Content-Type", contentType),
+            return new PresignedUrl(viaProxy(signed.url().toString()), "PUT", Map.of("Content-Type", contentType),
                     signed.expiration());
         } catch (SdkException e) {
             throw unavailable("Could not presign upload", e);
@@ -79,7 +79,7 @@ public class R2FileStorageAdapter implements FileStoragePort {
         try {
             GetObjectRequest get = GetObjectRequest.builder().bucket(config.bucket()).key(objectKey).build();
             var signed = presigner.presignGetObject(r -> r.signatureDuration(validity).getObjectRequest(get));
-            return new PresignedUrl(signed.url().toString(), "GET", Map.of(), signed.expiration());
+            return new PresignedUrl(viaProxy(signed.url().toString()), "GET", Map.of(), signed.expiration());
         } catch (SdkException e) {
             throw unavailable("Could not presign download", e);
         }
@@ -114,6 +114,22 @@ public class R2FileStorageAdapter implements FileStoragePort {
             return null;
         }
         return (base.endsWith("/") ? base : base + "/") + objectKey;
+    }
+
+    /**
+     * Cambia el origen de R2 por el proxy de la app ({@code R2_PROXY_BASE_URL}), conservando ruta y firma: nginx
+     * reenvía a R2 con su mismo Host, así que la firma sigue valiendo. En España algunos operadores bloquean
+     * las IP de R2 durante los partidos de fútbol y el móvil no podía subir ni descargar archivos; el dominio
+     * de la app no se ve afectado. Sin proxy configurado, la URL sale tal cual.
+     */
+    String viaProxy(String url) {
+        String proxy = config.proxyBaseUrl();
+        String endpoint = config.endpoint();
+        if (!present(proxy) || !present(endpoint)) {
+            return url;
+        }
+        String origin = endpoint.replaceFirst("/+$", "");
+        return url.startsWith(origin + "/") ? proxy.replaceFirst("/+$", "") + url.substring(origin.length()) : url;
     }
 
     /** ¿Hay endpoint y credenciales? Sin ellos, ninguna operación puede funcionar. */

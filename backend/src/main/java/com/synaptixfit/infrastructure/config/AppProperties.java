@@ -31,9 +31,12 @@ public record AppProperties(Jwt jwt, Cors cors, Google google, Ai ai, Storage st
     public record Ai(String apiKey, String model, String baseUrl, Duration timeout, int maxTokens) {
     }
 
-    /** Almacenamiento S3 compatible (Cloudflare R2). */
+    /**
+     * Almacenamiento S3 compatible (Cloudflare R2). {@code proxyBaseUrl}: dirección de la app por la que nginx
+     * reenvía a R2 las subidas y descargas firmadas (vacía: se usan las de R2 tal cual).
+     */
     public record Storage(String endpoint, String region, String bucket, String accessKey,
-                          String secretKey, String publicBaseUrl) {
+                          String secretKey, String publicBaseUrl, String proxyBaseUrl) {
     }
 
     /**

@@ -208,7 +208,7 @@
   "profileNotifModeExamsHint": "Only the important stuff so you can focus on studying.",
   "profileNotifModeRest": "Rest",
   "profileNotifModeRestHint": "Minimal interruptions while you unplug.",
-  "profileNotifCategoryConflict": "Calendar clashes",
+  "profileNotifCategoryConflict": "Time clashes",
   "profileNotifCategoryFatigue": "Fatigue alerts",
   "profileNotifCategoryMilestone": "Achievements and milestones",
   "profileNotifCategorySocial": "Social activity",

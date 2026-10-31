@@ -68,12 +68,14 @@ class TodayHeroCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(TokensRadius.l),
         border: Border.all(color: colors.outlineVariant),
+        // Sobre surface (no surfaceContainer): el texto secundario llega a 4,5:1
+        // también en oscuro.
         color: Color.alphaBlend(
           colors.primary.withValues(alpha: AppPill.tintAlpha),
-          colors.surfaceContainer,
+          colors.surface,
         ),
       ),
-      padding: const EdgeInsets.all(TokensSpacing.l),
+      padding: const EdgeInsets.all(TokensSpacing.m),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -84,18 +86,20 @@ class TodayHeroCard extends StatelessWidget {
               header: true,
               child: Text(
                 l10n.homeTodayTitle,
-                style: context.textStyles.titleMedium,
+                style: context.textStyles.titleSmall,
               ),
             ),
           ),
-          const SizedBox(height: TokensSpacing.m),
+          const SizedBox(height: TokensSpacing.s),
           LayoutBuilder(
             builder: (context, constraints) {
+              final wide =
+                  constraints.maxWidth >= TokensLayout.twoColumnBreakpoint;
               final summary = Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _ProgressRing(done: done, total: blocks.length),
-                  const SizedBox(width: TokensSpacing.l),
+                  const SizedBox(width: TokensSpacing.m),
                   Expanded(
                     child: _NextUp(
                       next: next,
@@ -103,14 +107,15 @@ class TodayHeroCard extends StatelessWidget {
                       action: action,
                       starting: starting,
                       onAction: () => onAction(action),
+                      showButton: wide,
                     ),
                   ),
                 ],
               );
-              final stats = _Stats(dashboard: dashboard, focus: focus);
               // En pantallas anchas, las cifras a la derecha: la tarjeta no
               // deja media fila vacía.
-              if (constraints.maxWidth >= TokensLayout.twoColumnBreakpoint) {
+              if (wide) {
+                final stats = _Stats(dashboard: dashboard, focus: focus);
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -120,12 +125,23 @@ class TodayHeroCard extends StatelessWidget {
                   ],
                 );
               }
+              // En móvil, compacta: el botón a lo ancho bajo lo que toca y las
+              // cifras en una línea fina, para que la agenda se vea sin
+              // desplazar.
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   summary,
-                  const SizedBox(height: TokensSpacing.l),
-                  stats,
+                  const SizedBox(height: TokensSpacing.s),
+                  _ActionButton(
+                    action: action,
+                    hasEvent: next != null,
+                    hasBlocks: blocks.isNotEmpty,
+                    starting: starting,
+                    onPressed: () => onAction(action),
+                  ),
+                  const SizedBox(height: TokensSpacing.s),
+                  _StatsLine(dashboard: dashboard, focus: focus),
                 ],
               );
             },
@@ -200,6 +216,7 @@ class _NextUp extends StatelessWidget {
     required this.action,
     required this.starting,
     required this.onAction,
+    this.showButton = true,
   });
 
   final HomeTodayEvent? next;
@@ -208,6 +225,9 @@ class _NextUp extends StatelessWidget {
   final bool starting;
   final VoidCallback onAction;
 
+  /// En móvil el botón va aparte, a lo ancho de la tarjeta.
+  final bool showButton;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -215,28 +235,13 @@ class _NextUp extends StatelessWidget {
     final muted = context.textStyles.bodyMedium?.copyWith(
       color: context.colors.onSurfaceVariant,
     );
-    final (label, icon) = switch (action) {
-      TodayHeroAction.focus => (l10n.homeTodayFocus, Icons.timer_outlined),
-      TodayHeroAction.train => (l10n.homeTodayTrain, Icons.play_arrow_rounded),
-      TodayHeroAction.openPlanner => (
-        event == null && !hasBlocks
-            ? l10n.homeTodayPlanDay
-            : l10n.homeTodayOpenCalendar,
-        Icons.calendar_month_outlined,
-      ),
-    };
-    final button = action == TodayHeroAction.openPlanner
-        ? AppSecondaryButton(
-            label: label,
-            icon: Icon(icon),
-            onPressed: onAction,
-          )
-        : AppPrimaryButton(
-            label: label,
-            icon: icon,
-            loading: starting,
-            onPressed: onAction,
-          );
+    final button = _ActionButton(
+      action: action,
+      hasEvent: event != null,
+      hasBlocks: hasBlocks,
+      starting: starting,
+      onPressed: onAction,
+    );
     if (event == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,8 +250,7 @@ class _NextUp extends StatelessWidget {
             hasBlocks ? l10n.homeTodayAllDone : l10n.homeTodayEmpty,
             style: context.textStyles.titleSmall,
           ),
-          const SizedBox(height: TokensSpacing.s),
-          button,
+          if (showButton) ...[const SizedBox(height: TokensSpacing.s), button],
         ],
       );
     }
@@ -291,8 +295,119 @@ class _NextUp extends StatelessWidget {
           ],
         ),
         if (when != null) Text(when, style: muted),
-        const SizedBox(height: TokensSpacing.s),
-        button,
+        if (showButton) ...[const SizedBox(height: TokensSpacing.s), button],
+      ],
+    );
+  }
+}
+
+/// Botón principal de «Tu día»: concentrarse, entrenar o abrir el calendario.
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.action,
+    required this.hasEvent,
+    required this.hasBlocks,
+    required this.starting,
+    required this.onPressed,
+  });
+
+  final TodayHeroAction action;
+  final bool hasEvent;
+  final bool hasBlocks;
+  final bool starting;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final (label, icon) = switch (action) {
+      TodayHeroAction.focus => (l10n.homeTodayFocus, Icons.timer_outlined),
+      TodayHeroAction.train => (l10n.homeTodayTrain, Icons.play_arrow_rounded),
+      TodayHeroAction.openPlanner => (
+        !hasEvent && !hasBlocks
+            ? l10n.homeTodayPlanDay
+            : l10n.homeTodayOpenCalendar,
+        Icons.calendar_month_outlined,
+      ),
+    };
+    // Sin nada planificado, planificar es lo principal de la pantalla.
+    return action == TodayHeroAction.openPlanner && (hasEvent || hasBlocks)
+        ? AppSecondaryButton(
+            label: label,
+            icon: Icon(icon),
+            onPressed: onPressed,
+          )
+        : AppPrimaryButton(
+            label: label,
+            icon: icon,
+            loading: starting && action != TodayHeroAction.openPlanner,
+            onPressed: onPressed,
+          );
+  }
+}
+
+/// Cifras de hoy en una sola línea (móvil): estudio, entreno y lo que falta
+/// para subir de nivel. Cada cifra se lee como una frase.
+class _StatsLine extends StatelessWidget {
+  const _StatsLine({required this.dashboard, required this.focus});
+
+  final HomeDashboard dashboard;
+  final UsageFocus focus;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final today = dashboard.today;
+    final greeting = dashboard.greeting;
+    final remaining = greeting.levelThreshold - greeting.levelXp;
+    final items = <(IconData, Color, String, String)>[
+      if (focus.includesAcademic)
+        (
+          Icons.menu_book_outlined,
+          context.palette.study,
+          today.studyMinutesPlanned > 0
+              ? l10n.homeTodayStudyOf(
+                  today.studyMinutesCompleted,
+                  today.studyMinutesPlanned,
+                )
+              : l10n.homeTodayMinutes(today.studyMinutesCompleted),
+          l10n.homeTodayStudy,
+        ),
+      if (focus.includesFitness)
+        (
+          Icons.fitness_center_rounded,
+          context.palette.sessions,
+          l10n.homeTodayMinutes(today.trainingMinutes),
+          l10n.homeTodayTraining,
+        ),
+      (
+        Icons.workspace_premium_outlined,
+        context.palette.accent,
+        l10n.homeTodayXp(remaining < 0 ? 0 : remaining, greeting.level + 1),
+        l10n.commonLevel(greeting.level),
+      ),
+    ];
+    final muted = context.textStyles.labelMedium?.copyWith(
+      color: context.colors.onSurfaceVariant,
+    );
+    return Wrap(
+      spacing: TokensSpacing.m,
+      runSpacing: TokensSpacing.xs,
+      children: [
+        for (final (icon, color, value, label) in items)
+          Semantics(
+            label: '$value, $label',
+            excludeSemantics: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: TokensSize.iconXs),
+                const SizedBox(width: TokensSpacing.xxs),
+                // Con el texto grande se parte en vez de desbordar.
+                Flexible(child: Text(value, style: muted)),
+              ],
+            ),
+          ),
       ],
     );
   }

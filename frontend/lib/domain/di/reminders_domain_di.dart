@@ -7,6 +7,7 @@ import '../use_cases/reminders/get_device_reminders_status_use_case.dart';
 import '../use_cases/reminders/mark_reminders_offered_use_case.dart';
 import '../use_cases/reminders/set_device_reminders_enabled_use_case.dart';
 import '../use_cases/reminders/should_offer_reminders_use_case.dart';
+import '../use_cases/reminders/update_ongoing_timer_use_case.dart';
 import '../use_cases/reminders/sync_reminders_use_case.dart';
 import '../use_cases/reminders/watch_device_reminders_enabled_use_case.dart';
 import '../use_cases/reminders/watch_opened_reminders_use_case.dart';
@@ -19,6 +20,9 @@ void registerRemindersDomain(GetIt getIt) {
     )
     ..registerLazySingleton<CancelTimerAlertUseCaseContract>(
       () => CancelTimerAlertUseCase(getIt()),
+    )
+    ..registerLazySingleton<UpdateOngoingTimerUseCaseContract>(
+      () => UpdateOngoingTimerUseCase(getIt()),
     )
     ..registerLazySingleton<SyncRemindersUseCaseContract>(
       () => SyncRemindersUseCase(

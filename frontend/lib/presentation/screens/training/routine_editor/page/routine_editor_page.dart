@@ -232,26 +232,23 @@ class _ParametersStep extends StatelessWidget {
               ),
               const SizedBox(height: TokensSpacing.l),
               AppSectionHeader(title: l10n.trainingGoalOptional),
-              Wrap(
-                spacing: TokensSpacing.s,
-                runSpacing: TokensSpacing.s,
-                children: [
-                  ChoiceChip(
-                    label: Text(l10n.trainingGoalFromProfile),
-                    selected: state.goalParam == null,
-                    onSelected: (_) => bloc.add(
-                      const RoutineEditorEvent.goalParamChanged(null),
-                    ),
-                  ),
-                  for (final goal in TrainingGoal.values)
-                    ChoiceChip(
-                      label: Text(goal.label(l10n)),
-                      selected: state.goalParam == goal,
-                      onSelected: (_) =>
-                          bloc.add(RoutineEditorEvent.goalParamChanged(goal)),
-                    ),
-                ],
+              // Cada objetivo con una línea que lo explica: quien empieza no
+              // sabe qué es «Potencia» o «Fuerza resistencia».
+              _GoalOption(
+                title: l10n.trainingGoalFromProfile,
+                description: l10n.trainingGoalFromProfileHint,
+                selected: state.goalParam == null,
+                onTap: () =>
+                    bloc.add(const RoutineEditorEvent.goalParamChanged(null)),
               ),
+              for (final goal in TrainingGoal.values)
+                _GoalOption(
+                  title: goal.label(l10n),
+                  description: goal.description(l10n),
+                  selected: state.goalParam == goal,
+                  onTap: () =>
+                      bloc.add(RoutineEditorEvent.goalParamChanged(goal)),
+                ),
               const SizedBox(height: TokensSpacing.xl),
               AppPrimaryButton(
                 label: l10n.trainingGenerate,
@@ -263,6 +260,46 @@ class _ParametersStep extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Objetivo elegible para la rutina con IA: nombre y una línea que lo explica.
+/// Se anuncia como opción de un grupo (solo una puede estar elegida).
+class _GoalOption extends StatelessWidget {
+  const _GoalOption({
+    required this.title,
+    required this.description,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String description;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppFocusOutline(
+      child: Semantics(
+        inMutuallyExclusiveGroup: true,
+        checked: selected,
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(
+            selected
+                ? Icons.radio_button_checked_rounded
+                : Icons.radio_button_unchecked_rounded,
+            color: selected
+                ? context.colors.primary
+                : context.colors.onSurfaceVariant,
+          ),
+          title: Text(title),
+          subtitle: Text(description),
+          onTap: onTap,
+        ),
+      ),
     );
   }
 }
@@ -455,7 +492,12 @@ class _EditingStepState extends State<_EditingStep> {
               DropdownButtonFormField<TrainingGoal?>(
                 key: ValueKey(draft.goal),
                 initialValue: draft.goal,
-                decoration: InputDecoration(labelText: l10n.trainingGoal),
+                decoration: InputDecoration(
+                  labelText: l10n.trainingGoal,
+                  // Qué significa el objetivo elegido, sin jerga.
+                  helperText: draft.goal?.description(l10n),
+                  helperMaxLines: 3,
+                ),
                 items: [
                   DropdownMenuItem(child: Text(l10n.trainingGoalNone)),
                   for (final goal in TrainingGoal.values)
@@ -650,13 +692,20 @@ class _WeekEditor extends StatelessWidget {
                     weekTitle(l10n, weekIndex + 1, week.name),
                     style: context.textStyles.titleMedium,
                   ),
-                  if (week.type != null)
+                  if (week.type != null) ...[
                     Text(
                       week.type!.label(l10n),
                       style: context.textStyles.labelMedium?.copyWith(
                         color: context.colors.onSurfaceVariant,
                       ),
                     ),
+                    Text(
+                      week.type!.description(l10n),
+                      style: context.textStyles.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

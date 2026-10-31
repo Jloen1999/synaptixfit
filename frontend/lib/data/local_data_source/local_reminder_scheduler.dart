@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../domain/models/reminders/ongoing_timer.dart';
 import '../../domain/models/reminders/reminder.dart';
 import '../../domain/models/reminders/timer_alert.dart';
 
@@ -26,6 +27,11 @@ abstract interface class LocalReminderScheduler {
 
   Future<void> cancelTimerAlert();
 
+  /// Notificación fija del Pomodoro en marcha (sustituye a la anterior).
+  Future<void> showOngoingTimer(OngoingTimer timer);
+
+  Future<void> cancelOngoingTimer();
+
   /// `payload` de cada aviso tocado, empezando por el que abrió la app.
   Stream<String> watchOpenedPayloads();
 }
@@ -47,6 +53,11 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   /// persona está esperando) y un id fuera del rango de los recordatorios.
   static const _timerChannelId = 'synaptixfit_timer';
   static const _timerId = 2147480000;
+
+  /// Notificación fija del Pomodoro en marcha: canal discreto (sin sonido) y
+  /// otro id fuera del rango de los recordatorios.
+  static const _ongoingChannelId = 'synaptixfit_timer_ongoing';
+  static const _ongoingId = 2147480001;
 
   /// Icono del aviso. Se conserva en el build de release con `res/raw/keep.xml`.
   static const _androidIcon = '@mipmap/launcher_icon';
@@ -184,10 +195,65 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
     await _plugin.cancel(id: _timerId);
   }
 
+  /// Con [OngoingTimer.endsAt], Android muestra la cuenta atrás él solo
+  /// (cronómetro) y la quita al llegar a cero; en pausa, solo el texto.
+  @override
+  Future<void> showOngoingTimer(OngoingTimer timer) async {
+    // Solo Android tiene notificaciones fijas con cuenta atrás; en iOS quedaría
+    // un aviso normal en el centro de notificaciones con cada cambio.
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    await _ensureReady();
+    final end = timer.endsAt;
+    final left = end?.difference(DateTime.now()).inMilliseconds;
+    await _plugin.show(
+      id: _ongoingId,
+      title: timer.title,
+      body: timer.body,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _ongoingChannelId,
+          timer.channelName,
+          importance: Importance.low,
+          priority: Priority.low,
+          ongoing: true,
+          autoCancel: false,
+          onlyAlertOnce: true,
+          silent: true,
+          showWhen: end != null,
+          when: end?.millisecondsSinceEpoch,
+          usesChronometer: end != null,
+          chronometerCountDown: end != null,
+          timeoutAfter: left != null && left > 0 ? left : null,
+          category: AndroidNotificationCategory.stopwatch,
+        ),
+        iOS: const DarwinNotificationDetails(presentSound: false),
+      ),
+    );
+  }
+
+  @override
+  Future<void> cancelOngoingTimer() async {
+    await _ensureReady();
+    await _plugin.cancel(id: _ongoingId);
+  }
+
+  /// Quita los recordatorios (pendientes y mostrados) sin tocar el Pomodoro en
+  /// marcha: su aviso de fin de fase se vuelve a programar y su notificación
+  /// fija se queda. Al cerrar sesión, el propio Pomodoro quita los suyos.
   @override
   Future<void> cancelAll() async {
     await _ensureReady();
-    await _plugin.cancelAll();
+    await _plugin.cancelAllPendingNotifications();
+    for (final shown in await _plugin.getActiveNotifications()) {
+      final id = shown.id;
+      if (id != null && id != _ongoingId && id != _timerId) {
+        await _plugin.cancel(id: id);
+      }
+    }
+    final alert = _timerAlert;
+    if (alert != null && alert.at.isAfter(DateTime.now())) {
+      await _scheduleTimer(alert);
+    }
   }
 
   @override
@@ -229,6 +295,12 @@ class NoopReminderScheduler implements LocalReminderScheduler {
 
   @override
   Future<void> cancelTimerAlert() async {}
+
+  @override
+  Future<void> showOngoingTimer(OngoingTimer timer) async {}
+
+  @override
+  Future<void> cancelOngoingTimer() async {}
 
   @override
   Stream<String> watchOpenedPayloads() => const Stream.empty();

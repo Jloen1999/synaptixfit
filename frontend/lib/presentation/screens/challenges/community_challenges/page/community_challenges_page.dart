@@ -109,6 +109,8 @@ class _CommunityChallengesViewState extends State<CommunityChallengesView>
         final loading =
             state.status == CommunityChallengesStatus.loading ||
             state.listLoading;
+        final filtered =
+            state.type != null || (state.search?.trim().isNotEmpty ?? false);
         return NotificationListener<ScrollNotification>(
           onNotification: (n) {
             if (n.metrics.pixels > n.metrics.maxScrollExtent - 300) {
@@ -134,18 +136,40 @@ class _CommunityChallengesViewState extends State<CommunityChallengesView>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      TextField(
-                        controller: _search,
-                        onChanged: _onSearch,
-                        textInputAction: TextInputAction.search,
-                        decoration: InputDecoration(
-                          labelText: l10n.challengesSearchHint,
-                          prefixIcon: const Icon(Icons.search_rounded),
+                      // Qué es esta pestaña y qué hacer en ella, de un vistazo.
+                      Text(
+                        l10n.challengesCommunityIntro,
+                        style: context.textStyles.bodyMedium?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: TokensSpacing.m),
+                      ValueListenableBuilder(
+                        valueListenable: _search,
+                        builder: (context, value, _) => TextField(
+                          controller: _search,
+                          onChanged: _onSearch,
+                          textInputAction: TextInputAction.search,
+                          decoration: InputDecoration(
+                            labelText: l10n.challengesSearchHint,
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            suffixIcon: value.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: l10n.challengesSearchClear,
+                                    icon: const Icon(Icons.close_rounded),
+                                    onPressed: () {
+                                      _search.clear();
+                                      _filter(type: state.type, search: '');
+                                    },
+                                  ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: TokensSpacing.s),
                       Wrap(
                         spacing: TokensSpacing.s,
+                        runSpacing: TokensSpacing.xs,
                         children: [
                           FilterChip(
                             label: Text(l10n.challengesFilterAll),
@@ -155,7 +179,7 @@ class _CommunityChallengesViewState extends State<CommunityChallengesView>
                           if (context.allowedChallengeTypes.length > 1)
                             for (final t in context.allowedChallengeTypes)
                               FilterChip(
-                                avatar: Icon(t.icon, size: 18),
+                                avatar: Icon(t.icon, size: TokensSize.iconXs),
                                 label: Text(t.label(context)),
                                 selected: state.type == t,
                                 onSelected: (_) => _filter(
@@ -178,6 +202,19 @@ class _CommunityChallengesViewState extends State<CommunityChallengesView>
                                   child: AppSkeleton(height: 132),
                                 ),
                             ],
+                          ),
+                        )
+                      else if (state.challenges.isEmpty && filtered)
+                        AppEmptyState(
+                          icon: Icons.search_off_rounded,
+                          title: l10n.challengesEmptyFilteredTitle,
+                          message: l10n.challengesEmptyFilteredMessage,
+                          action: AppSecondaryButton(
+                            label: l10n.challengesFilterClear,
+                            onPressed: () {
+                              _search.clear();
+                              _filter(search: '');
+                            },
                           ),
                         )
                       else if (state.challenges.isEmpty)

@@ -4,6 +4,10 @@ import '../use_cases/planner/revoke_calendar_feed_use_case.dart';
 import '../use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import 'package:get_it/get_it.dart';
 
+import '../use_cases/planner/clear_active_focus_timer_use_case.dart';
+import '../use_cases/planner/load_active_focus_timer_use_case.dart';
+import '../use_cases/planner/save_active_focus_timer_use_case.dart';
+
 import '../use_cases/planner/get_week_blocks_use_case.dart';
 import '../use_cases/planner/create_block_use_case.dart';
 import '../use_cases/planner/update_block_use_case.dart';
@@ -40,6 +44,15 @@ import '../use_cases/planner/get_focus_stats_use_case.dart';
 /// Casos de uso del módulo planner.
 void registerPlannerDomain(GetIt getIt) {
   getIt
+    ..registerLazySingleton<LoadActiveFocusTimerUseCaseContract>(
+      () => LoadActiveFocusTimerUseCase(getIt()),
+    )
+    ..registerLazySingleton<SaveActiveFocusTimerUseCaseContract>(
+      () => SaveActiveFocusTimerUseCase(getIt()),
+    )
+    ..registerLazySingleton<ClearActiveFocusTimerUseCaseContract>(
+      () => ClearActiveFocusTimerUseCase(getIt()),
+    )
     ..registerLazySingleton<GetWeekBlocksUseCaseContract>(
       () => GetWeekBlocksUseCase(getIt()),
     )

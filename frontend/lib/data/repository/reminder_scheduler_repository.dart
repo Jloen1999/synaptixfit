@@ -1,4 +1,5 @@
 import '../../domain/enums/reminder_kind.dart';
+import '../../domain/models/reminders/ongoing_timer.dart';
 import '../../domain/models/reminders/timer_alert.dart';
 import '../../domain/models/reminders/reminder.dart';
 import '../../domain/models/result/app_result.dart';
@@ -48,6 +49,20 @@ class ReminderSchedulerRepository
   Future<AppResult<Unit>> scheduleTimerAlert(TimerAlert alert) =>
       RepositoryErrorHandler.guard(() async {
         await _local.scheduleTimerAlert(alert);
+        return unit;
+      });
+
+  @override
+  Future<AppResult<Unit>> showOngoingTimer(OngoingTimer timer) =>
+      RepositoryErrorHandler.guard(() async {
+        await _local.showOngoingTimer(timer);
+        return unit;
+      });
+
+  @override
+  Future<AppResult<Unit>> cancelOngoingTimer() =>
+      RepositoryErrorHandler.guard(() async {
+        await _local.cancelOngoingTimer();
         return unit;
       });
 

@@ -231,6 +231,9 @@ class _PlanEditor extends StatelessWidget {
         Text(l10n.trainingIntensity, style: context.textStyles.labelLarge),
         const SizedBox(height: TokensSpacing.xs),
         SegmentedButton<PlanIntensity>(
+          // Sin la marca de seleccionado, «Moderada» cabe sin partirse; el
+          // relleno ya indica cuál está elegida.
+          showSelectedIcon: false,
           segments: [
             for (final i in PlanIntensity.values)
               ButtonSegment(value: i, label: Text(i.label(l10n))),

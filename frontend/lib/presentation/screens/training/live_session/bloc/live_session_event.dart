@@ -7,8 +7,13 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
 
   const factory LiveSessionEvent.started(String sessionId) = LiveSessionStarted;
 
-  /// Un segundo más (lo envía la página con un temporizador).
+  /// Recalcula cronómetro y descanso con el reloj (lo envía la página cada
+  /// segundo con un temporizador).
   const factory LiveSessionEvent.ticked() = LiveSessionTicked;
+
+  /// La app vuelve a primer plano: se recalcula ya con el reloj (el
+  /// temporizador pudo quedar parado) y se reintenta subir lo pendiente.
+  const factory LiveSessionEvent.resumed() = LiveSessionResumed;
 
   /// Ejercicio en el que se está trabajando (cuenta su duración real).
   const factory LiveSessionEvent.exerciseSelected(String? plannedExerciseId) =

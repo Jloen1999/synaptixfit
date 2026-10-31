@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Empareja textos externos (resumen de un evento ICS, asignatura leída por la IA) con las
@@ -12,7 +14,27 @@ import java.util.Optional;
  */
 public final class SubjectMatcher {
 
+    /** Palabras que no cuentan para las siglas («Estructura de Computadores» → «ec»). */
+    private static final Set<String> STOP_WORDS = Set.of("de", "del", "la", "las", "el", "los", "y", "e", "a",
+            "en", "para", "por", "al", "con", "of", "and", "the", "to", "for", "in", "et", "des", "du", "le", "da",
+            "do", "das", "dos", "o", "i", "ii", "iii", "iv");
+
     private SubjectMatcher() {
+    }
+
+    /**
+     * Siglas de la asignatura: iniciales de las palabras significativas («Interacción Persona-Ordenador» →
+     * «ipo»). Los calendarios de los profesores suelen titular así los eventos («EC_GG_Sesiones 1 y 2»).
+     * Vacío si salen menos de 2 letras.
+     */
+    public static String acronym(String subjectName) {
+        StringBuilder out = new StringBuilder();
+        for (String word : normalize(subjectName).split(" ")) {
+            if (!word.isEmpty() && !STOP_WORDS.contains(word) && Character.isLetter(word.charAt(0))) {
+                out.append(word.charAt(0));
+            }
+        }
+        return out.length() >= 2 ? out.toString() : "";
     }
 
     /** Minúsculas, sin tildes y con espacios simples. */
@@ -53,8 +75,9 @@ public final class SubjectMatcher {
     }
 
     /**
-     * ¿El texto menciona la asignatura? Coincide si contiene el nombre o el código, o al menos el 60 %
-     * de las palabras significativas (más de 2 letras) del nombre.
+     * ¿El texto menciona la asignatura? Coincide si contiene el nombre o el código, sus siglas en mayúsculas
+     * como palabra suelta («EC_GG_Tema 5», «2_3_GIIT_EC»), o al menos el 60 % de las palabras significativas (más de 2
+     * letras) del nombre.
      */
     public static boolean mentions(String text, String subjectName, String subjectCode) {
         String t = normalize(text);
@@ -64,6 +87,14 @@ public final class SubjectMatcher {
         }
         String c = normalize(subjectCode);
         if (!c.isEmpty() && t.contains(c)) {
+            return true;
+        }
+        // Siglas solo en MAYÚSCULAS y como palabra suelta en el texto original: «al» o «es» son palabras
+        // corrientes y asignarían entregas a la asignatura equivocada («Entrega al profesor»).
+        String initials = acronym(subjectName).toUpperCase(Locale.ROOT);
+        if (!initials.isEmpty() && text != null
+                && Pattern.compile("(?<![\\p{L}\\p{N}])" + Pattern.quote(initials) + "(?![\\p{L}\\p{N}])")
+                        .matcher(text).find()) {
             return true;
         }
         List<String> words = Arrays.stream(n.split(" ")).filter(w -> w.length() > 2).toList();

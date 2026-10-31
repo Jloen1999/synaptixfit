@@ -14,6 +14,7 @@ import com.synaptixfit.domain.model.planner.IcsCalendar;
 import com.synaptixfit.domain.model.planner.IcsEvent;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.Priority;
+import com.synaptixfit.domain.model.planner.CalendarUrls;
 import com.synaptixfit.domain.model.planner.SubjectMatcher;
 import com.synaptixfit.domain.model.planner.SubjectRef;
 import com.synaptixfit.domain.model.planner.TimeRange;
@@ -26,6 +27,7 @@ import java.net.URISyntaxException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.HashMap;
@@ -78,10 +80,16 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
         if (url == null || url.isBlank()) {
             throw new IcsUrlMissingException();
         }
-        List<IcsEvent> events = download(url);
+        Downloaded calendar = download(url);
+        List<IcsEvent> events = calendar.events();
         List<IcsEvent> matching = events.stream()
                 .filter(e -> SubjectMatcher.mentions(e.summary(), subject.name(), subject.code()))
                 .toList();
+        // Calendario propio de la asignatura (su nombre la menciona, p. ej. «2_3_GIIT_EC») cuyos eventos no
+        // repiten el nombre: todos son de ella.
+        if (matching.isEmpty() && SubjectMatcher.mentions(calendar.name(), subject.name(), subject.code())) {
+            matching = events;
+        }
         Match match = matching.isEmpty() ? Match.NONE : matching.size() == events.size() ? Match.FULL : Match.PARTIAL;
         if (match == Match.NONE && !command.force()) {
             return new Result(match, events.size(), 0, 0, 0, 0, 0, 0, false);
@@ -99,7 +107,7 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
         if (command.url() == null || command.url().isBlank()) {
             throw new IcsUrlMissingException();
         }
-        List<IcsEvent> events = download(command.url());
+        List<IcsEvent> events = download(command.url()).events();
         List<SubjectRef> active = subjects.findActive(command.userId());
         List<IcsEvent> selected = events.stream()
                 .filter(e -> e.category() != IcsEvent.Category.CLASS && !e.isOpeningNotice())
@@ -115,9 +123,19 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
         return save(command.userId(), selected, e -> subjectOf.get(e.uid()), match, events.size(), subjectOf.size());
     }
 
-    private List<IcsEvent> download(String url) {
-        List<IcsEvent> events = IcsCalendar.parse(feed.download(toUri(url)), zone.zone());
-        return events.size() > MAX_EVENTS ? events.subList(0, MAX_EVENTS) : events;
+    private record Downloaded(String name, List<IcsEvent> events) {
+    }
+
+    /** Solo lo que termina en el curso académico actual o después (antes de aplicar el tope de eventos). */
+    private Downloaded download(String url) {
+        String raw = feed.download(toUri(url));
+        Instant from = IcsCalendar.academicYearStart(LocalDate.ofInstant(clock.instant(), zone.zone()))
+                .atStartOfDay(zone.zone()).toInstant();
+        List<IcsEvent> events = IcsCalendar.parse(raw, zone.zone()).stream()
+                .filter(e -> !(e.end() == null ? e.start() : e.end()).isBefore(from))
+                .toList();
+        return new Downloaded(IcsCalendar.calendarName(raw),
+                events.size() > MAX_EVENTS ? events.subList(0, MAX_EVENTS) : events);
     }
 
     /** Guarda (o actualiza por UID) los eventos como bloques y entregas; {@code subjectOf} da la asignatura de cada uno. */
@@ -201,7 +219,8 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
 
     /** Solo http(s) o webcal (que se descarga por https); evita esquemas locales como file: o jar:. */
     static URI toUri(String url) {
-        String value = url.strip();
+        // Enlaces de Google Calendar del Campus Virtual («embed?src=…»): se descarga su ICS público.
+        String value = CalendarUrls.normalize(url);
         if (value.toLowerCase(Locale.ROOT).startsWith("webcal://")) {
             value = "https://" + value.substring("webcal://".length());
         }

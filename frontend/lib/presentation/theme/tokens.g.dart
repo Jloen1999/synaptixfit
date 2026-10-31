@@ -137,10 +137,11 @@ abstract final class TokensSize {
   static const double recordCardHeight = 92;
   static const double focusRing = 2;
   static const double thumbnailS = 48;
+  static const double thumbnailXs = 36;
   static const double stepperValue = 72;
   static const double brandLogo = 128;
   static const double blockStripe = 4;
-  static const double heroRing = 96;
+  static const double heroRing = 64;
   static const double heroStat = 96;
 }
 

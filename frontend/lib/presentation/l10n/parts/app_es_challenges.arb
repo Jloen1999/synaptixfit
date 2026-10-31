@@ -44,8 +44,8 @@
   "challengesEffortLow": "Tranquilo",
   "challengesEffortMedium": "Equilibrado",
   "challengesEffortHigh": "Intenso",
-  "challengesEmptyTitle": "Aún no tienes retos",
-  "challengesEmptyMessage": "Crea tu primer reto y, si quieres, divídelo en tareas.",
+  "challengesEmptyTitle": "Tu primer reto empieza aquí",
+  "challengesEmptyMessage": "Ponte una meta de estudio o de deporte con fecha y gana XP al cumplirla. Pulsa «Nuevo reto» o inspírate en la comunidad.",
   "challengesEmptyFilteredTitle": "Sin resultados",
   "challengesEmptyFilteredMessage": "Ningún reto coincide con los filtros.",
   "challengesCommunityEmptyTitle": "No hay retos de la comunidad",
@@ -126,9 +126,9 @@
       }
     }
   },
-  "challengesClone": "Clonar",
-  "challengesCloneTooltip": "Clonar en mis retos",
-  "challengesCloned": "Reto clonado en tus retos",
+  "challengesClone": "Añadir a mis retos",
+  "challengesCloneTooltip": "Añadir a mis retos",
+  "challengesCloned": "Reto añadido a tus retos",
   "challengesViewCloned": "Ver",
   "challengesXpGain": "+{xp} XP",
   "@challengesXpGain": {
@@ -181,7 +181,7 @@
   "challengesDetailTitle": "Reto",
   "challengesDetailProgress": "Progreso",
   "challengesDetailTasks": "Tareas",
-  "challengesDetailGraph": "Dependencias",
+  "challengesDetailGraph": "Tareas que dependen de otras",
   "challengesDetailGraphSummary": "{count, plural, =1{1 tarea depende de otras} other{{count} tareas dependen de otras}}",
   "@challengesDetailGraphSummary": {
     "placeholders": {
@@ -233,8 +233,7 @@
   "challengesDetailDelete": "Eliminar reto",
   "challengesDetailVisibility": "Visibilidad",
   "challengesDetailMore": "Más opciones",
-  "challengesDetailNoTasks": "Este reto no tiene tareas: regístralo con progreso manual o complétalo directamente.",
-  "challengesDetailReadOnly": "Reto de {name}. Clónalo para hacerlo tuyo.",
+  "challengesDetailReadOnly": "Reto de {name}. Añádelo a tus retos para seguir tu propio progreso.",
   "@challengesDetailReadOnly": {
     "placeholders": {
       "name": {
@@ -265,7 +264,7 @@
   "challengesMilestoneAvailable": "Disponible",
   "challengesMilestoneInProgress": "En curso",
   "challengesMilestoneCompleted": "Completada",
-  "challengesMilestoneWeight": "Peso {weight} %",
+  "challengesMilestoneWeight": "Vale {weight} %",
   "@challengesMilestoneWeight": {
     "placeholders": {
       "weight": {
@@ -460,5 +459,60 @@
   "challengesErrorProgressMilestoneRequired": "Elige la tarea en la que registrar el progreso.",
   "challengesErrorMilestoneAlreadyCompleted": "Esta tarea ya está completada.",
   "challengesErrorAlreadyCompleted": "Este reto ya está completado.",
-  "challengesErrorExpired": "Este reto ya terminó: no se puede seguir avanzando."
+  "challengesErrorExpired": "Este reto ya terminó: no se puede seguir avanzando.",
+  "challengesNextStepTitle": "Siguiente paso",
+  "challengesNextStep": "Siguiente: {title}",
+  "@challengesNextStep": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesSessionsLeft": "{count, plural, =1{Te falta 1 sesión} other{Te faltan {count} sesiones}}",
+  "@challengesSessionsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesNextMarkDone": "Márcalo como hecho cuando lo termines",
+  "challengesNextAddTasks": "Divídelo en tareas para avanzar paso a paso",
+  "challengesCompletedReward": "¡Conseguido! Has ganado {xp} XP",
+  "@challengesCompletedReward": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesCompletedNoXp": "¡Conseguido!",
+  "challengesExpiredHint": "Se acabó el plazo. Amplía la fecha para seguir.",
+  "challengesStreakStart": "Avanza hoy para empezar una racha",
+  "challengesDetailCompleteNext": "Completar siguiente tarea",
+  "challengesDetailGoTraining": "Ir a Rutinas",
+  "challengesDetailExtend": "Ampliar fecha",
+  "challengesDetailNoTasksTitle": "Sin tareas todavía",
+  "challengesDetailNoTasksHint": "Divide el reto en pasos pequeños: verás tu avance tarea a tarea y ganarás XP con cada una.",
+  "challengesDetailNoTasksReadOnly": "Este reto no tiene tareas.",
+  "challengesMilestoneNext": "Siguiente",
+  "challengesPendingShowAll": "Ver todas ({count})",
+  "@challengesPendingShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesPendingShowLess": "Ver menos",
+  "challengesEmptyCommunityAction": "Ver retos de la comunidad",
+  "challengesCommunityIntro": "Inspírate en los retos que comparten otros estudiantes y añádelos a los tuyos.",
+  "challengesQuickSubtitle": "Un objetivo y una fecha bastan. Después puedes dividirlo en tareas.",
+  "challengesFieldTitleHintFitness": "Ej.: Correr 3 veces por semana",
+  "challengesDurationLabel": "Duración",
+  "challengesDurationWeek": "1 semana",
+  "challengesDurationTwoWeeks": "2 semanas",
+  "challengesDurationMonth": "1 mes",
+  "challengesDetailXpEarned": "XP ganada"
 }

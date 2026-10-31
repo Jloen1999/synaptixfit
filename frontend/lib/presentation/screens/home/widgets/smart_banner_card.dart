@@ -195,10 +195,39 @@ class SmartBannerCard extends StatelessWidget {
       SmartBannerTone.neutral => context.colors.primary,
     };
     final path = content.actionPath;
-    // En móvil ocupa la mitad: lo urgente se lee y el próximo entreno sigue a
-    // la vista sin desplazar.
+    // En móvil, una sola fila (icono, título y enlace): lo urgente se ve y la
+    // agenda sigue a la vista. El detalle lo lee el lector de pantalla y se ve
+    // en escritorio, donde sobra espacio.
     final compact =
         MediaQuery.sizeOf(context).width < TokensLayout.twoColumnBreakpoint;
+    final action = path != null && content.actionLabel != null
+        ? TextButton.icon(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.xs),
+              foregroundColor: context.colors.onSurface,
+            ),
+            iconAlignment: IconAlignment.end,
+            icon: const Icon(
+              Icons.arrow_forward_rounded,
+              size: TokensSize.iconXs,
+            ),
+            onPressed: () => onAction(path),
+            label: Text(
+              content.actionLabel!,
+              style: context.textStyles.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          )
+        : null;
+    final icon = Container(
+      padding: const EdgeInsets.all(TokensSpacing.xs),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: AppPill.tintAlpha),
+        borderRadius: BorderRadius.circular(TokensRadius.m),
+      ),
+      child: Icon(content.icon, color: accent),
+    );
     // Sin liveRegion: Inicio se refresca en segundo plano con cada cambio de
     // datos y el aviso se volvería a leer sin que el usuario haya hecho nada.
     return Semantics(
@@ -209,70 +238,72 @@ class SmartBannerCard extends StatelessWidget {
           accent.withValues(alpha: AppPill.tintAlpha),
           context.colors.surface,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.all(
-                compact ? TokensSpacing.xs : TokensSpacing.s,
-              ),
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: AppPill.tintAlpha),
-                borderRadius: BorderRadius.circular(TokensRadius.m),
-              ),
-              child: Icon(content.icon, color: accent),
-            ),
-            const SizedBox(width: TokensSpacing.m),
-            Expanded(
-              child: Column(
+        // En compacto la tarjeta entera lleva a la acción (el título conserva
+        // todo el ancho); sin acción, se ve también el consejo.
+        onTap: compact && path != null && content.actionLabel != null
+            ? () => onAction(path)
+            : null,
+        child: compact
+            ? Row(
+                children: [
+                  icon,
+                  const SizedBox(width: TokensSpacing.sm),
+                  Expanded(
+                    child: Semantics(
+                      label: '${content.title}. ${content.message}',
+                      hint: content.actionLabel,
+                      excludeSemantics: true,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            content.title,
+                            style: context.textStyles.titleSmall,
+                          ),
+                          if (action == null)
+                            Text(
+                              content.message,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.textStyles.bodySmall,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (action != null) const Icon(Icons.chevron_right_rounded),
+                ],
+              )
+            : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    content.title,
-                    style: compact
-                        ? context.textStyles.titleSmall
-                        : context.textStyles.titleMedium,
+                  icon,
+                  const SizedBox(width: TokensSpacing.m),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          content.title,
+                          style: context.textStyles.titleMedium,
+                        ),
+                        const SizedBox(height: TokensSpacing.xxs),
+                        Text(
+                          content.message,
+                          style: context.textStyles.bodyMedium,
+                        ),
+                        if (action != null) ...[
+                          const SizedBox(height: TokensSpacing.xs),
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: action,
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: TokensSpacing.xxs),
-                  Text(content.message, style: context.textStyles.bodyMedium),
-                  if (path != null && content.actionLabel != null) ...[
-                    SizedBox(
-                      height: compact ? TokensSpacing.xxs : TokensSpacing.s,
-                    ),
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: compact
-                          ? TextButton.icon(
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: TokensSpacing.xs,
-                                ),
-                                foregroundColor: context.colors.onSurface,
-                              ),
-                              iconAlignment: IconAlignment.end,
-                              icon: const Icon(
-                                Icons.arrow_forward_rounded,
-                                size: TokensSize.iconXs,
-                              ),
-                              onPressed: () => onAction(path),
-                              label: Text(
-                                content.actionLabel!,
-                                style: context.textStyles.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            )
-                          : FilledButton(
-                              onPressed: () => onAction(path),
-                              child: Text(content.actionLabel!),
-                            ),
-                    ),
-                  ],
                 ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

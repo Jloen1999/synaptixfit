@@ -208,7 +208,7 @@
   "profileNotifModeExamsHint": "Seulement l’essentiel pour te concentrer sur l’étude.",
   "profileNotifModeRest": "Repos",
   "profileNotifModeRestHint": "Un minimum d’interruptions pendant que tu décroches.",
-  "profileNotifCategoryConflict": "Conflits d’agenda",
+  "profileNotifCategoryConflict": "Conflits d’horaire",
   "profileNotifCategoryFatigue": "Alertes de fatigue",
   "profileNotifCategoryMilestone": "Réussites et paliers",
   "profileNotifCategorySocial": "Activité sociale",

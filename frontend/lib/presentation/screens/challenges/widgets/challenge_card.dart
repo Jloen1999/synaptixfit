@@ -6,9 +6,11 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import 'challenge_labels.dart';
+import 'challenge_next_step.dart';
 import 'challenge_progress_bar.dart';
 
-/// Tarjeta de un reto en los listados (propios o de la comunidad).
+/// Tarjeta de un reto en los listados (propios o de la comunidad): título,
+/// plazo, progreso, siguiente paso y datos de motivación (racha, tareas).
 class ChallengeCard extends StatelessWidget {
   const ChallengeCard({
     super.key,
@@ -21,7 +23,7 @@ class ChallengeCard extends StatelessWidget {
   final Challenge challenge;
   final VoidCallback onTap;
 
-  /// Solo en retos ajenos: clona el reto.
+  /// Solo en retos ajenos: lo añade a los retos propios.
   final VoidCallback? onClone;
   final bool cloning;
 
@@ -30,14 +32,7 @@ class ChallengeCard extends StatelessWidget {
     final l10n = context.localizations;
     final accent = challenge.type.color(context);
     final status = challenge.status;
-    final days = ChallengeFormats.daysLeft(challenge.endAt, DateTime.now());
-    final dateText = status == ChallengeStatus.active
-        ? (days <= 7
-              ? l10n.challengesDaysLeft(days < 0 ? 0 : days)
-              : l10n.challengesEndsOn(
-                  ChallengeFormats.shortDate(challenge.endAt),
-                ))
-        : l10n.challengesEndedOn(ChallengeFormats.shortDate(challenge.endAt));
+    final nextStep = challengeNextStepText(context, challenge);
     return AppCard(
       onTap: onTap,
       child: Column(
@@ -46,13 +41,19 @@ class ChallengeCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(TokensSpacing.s),
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(TokensRadius.m),
+              ExcludeSemantics(
+                child: Container(
+                  padding: const EdgeInsets.all(TokensSpacing.s),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: AppPill.tintAlpha),
+                    borderRadius: BorderRadius.circular(TokensRadius.m),
+                  ),
+                  child: Icon(
+                    challenge.type.icon,
+                    color: accent,
+                    size: TokensSize.iconS,
+                  ),
                 ),
-                child: Icon(challenge.type.icon, color: accent, size: 20),
               ),
               const SizedBox(width: TokensSpacing.m),
               Expanded(
@@ -76,27 +77,26 @@ class ChallengeCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                    const SizedBox(height: TokensSpacing.xs),
+                    // El plazo va bajo el título (no a su lado): con el texto
+                    // al 200 % no le quita ancho al nombre del reto.
+                    ChallengeTimePill(challenge: challenge),
                   ],
                 ),
               ),
-              const SizedBox(width: TokensSpacing.s),
-              if (onClone != null)
+              if (onClone != null) ...[
+                const SizedBox(width: TokensSpacing.s),
                 IconButton(
                   tooltip: l10n.challengesCloneTooltip,
                   onPressed: cloning ? null : onClone,
                   icon: cloning
                       ? const SizedBox.square(
-                          dimension: 20,
+                          dimension: TokensSize.iconS,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.copy_all_rounded),
-                )
-              else
-                AppPill(
-                  icon: status.icon,
-                  label: status.label(context),
-                  color: status.color(context),
+                      : const Icon(Icons.library_add_outlined),
                 ),
+              ],
             ],
           ),
           const SizedBox(height: TokensSpacing.m),
@@ -106,12 +106,30 @@ class ChallengeCard extends StatelessWidget {
                 ? context.palette.success
                 : accent,
           ),
+          if (nextStep != null) ...[
+            const SizedBox(height: TokensSpacing.s),
+            _NextStepLine(
+              icon: challengeNextStepIcon(challenge),
+              text: nextStep,
+              color: switch (status) {
+                ChallengeStatus.completed => context.palette.accent,
+                ChallengeStatus.expired => context.palette.warning,
+                ChallengeStatus.active => context.colors.primary,
+              },
+            ),
+          ],
           const SizedBox(height: TokensSpacing.s),
           Wrap(
             spacing: TokensSpacing.m,
             runSpacing: TokensSpacing.xs,
             children: [
-              _Meta(icon: Icons.event_outlined, text: dateText),
+              if (status != ChallengeStatus.active)
+                _Meta(
+                  icon: Icons.event_outlined,
+                  text: l10n.challengesEndedOn(
+                    ChallengeFormats.shortDate(challenge.endAt),
+                  ),
+                ),
               if (challenge.hasMilestones)
                 _Meta(
                   icon: Icons.checklist_rounded,
@@ -146,6 +164,41 @@ class ChallengeCard extends StatelessWidget {
   }
 }
 
+/// Frase de «siguiente paso» con su icono de color (el texto va en el color
+/// normal para mantener el contraste).
+class _NextStepLine extends StatelessWidget {
+  const _NextStepLine({
+    required this.icon,
+    required this.text,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: TokensSize.iconXs, color: color),
+        const SizedBox(width: TokensSpacing.xs),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: context.textStyles.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _Meta extends StatelessWidget {
   const _Meta({required this.icon, required this.text, this.color});
 
@@ -159,12 +212,14 @@ class _Meta extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: c),
+        Icon(icon, size: TokensSize.iconXs, color: c),
         const SizedBox(width: TokensSpacing.xs),
-        Text(
-          text,
-          style: context.textStyles.labelMedium?.copyWith(
-            color: context.colors.onSurfaceVariant,
+        Flexible(
+          child: Text(
+            text,
+            style: context.textStyles.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
           ),
         ),
       ],

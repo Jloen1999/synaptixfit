@@ -33,7 +33,7 @@ class ExerciseMedia extends StatelessWidget {
       alignment: Alignment.center,
       child: Icon(
         Icons.fitness_center_rounded,
-        size: 64,
+        size: TokensSize.iconXl,
         color: context.colors.onSecondaryContainer,
       ),
     );
@@ -47,16 +47,13 @@ class ExerciseMedia extends StatelessWidget {
           child: url == null
               ? fallback
               : _isVideo(url)
-              ? _LoopingVideo(url: url, fallback: fallback)
-              : ColoredBox(
-                  color: context.colors.surfaceContainerLow,
-                  child: CachedNetworkImage(
-                    imageUrl: url,
-                    fit: BoxFit.contain,
-                    placeholder: (_, _) =>
-                        const Center(child: CircularProgressIndicator()),
-                    errorWidget: (_, _, _) => fallback,
-                  ),
+              // Con la clave, si cambia la URL se crea otro reproductor.
+              ? _LoopingVideo(key: ValueKey(url), url: url, fallback: fallback)
+              : _PausableImage(
+                  url: url,
+                  // Solo el GIF se mueve: la vista previa es una imagen fija.
+                  animated: url == gifUrl,
+                  fallback: fallback,
                 ),
         ),
       ),
@@ -64,8 +61,69 @@ class ExerciseMedia extends StatelessWidget {
   }
 }
 
+/// Imagen de la demostración. Si es animada (GIF) arranca parada con «reducir
+/// movimiento» y siempre se puede pausar (WCAG 2.2.2): [TickerMode] congela
+/// el fotograma actual.
+class _PausableImage extends StatefulWidget {
+  const _PausableImage({
+    required this.url,
+    required this.animated,
+    required this.fallback,
+  });
+
+  final String url;
+  final bool animated;
+  final Widget fallback;
+
+  @override
+  State<_PausableImage> createState() => _PausableImageState();
+}
+
+class _PausableImageState extends State<_PausableImage> {
+  bool? _playing;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _playing ??= !context.reduceMotion;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final playing = _playing ?? true;
+    final image = ColoredBox(
+      color: context.colors.surfaceContainerLow,
+      child: CachedNetworkImage(
+        imageUrl: widget.url,
+        fit: BoxFit.contain,
+        placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
+        errorWidget: (_, _, _) => widget.fallback,
+      ),
+    );
+    if (!widget.animated) return image;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        TickerMode(enabled: playing, child: image),
+        PositionedDirectional(
+          end: TokensSpacing.s,
+          bottom: TokensSpacing.s,
+          child: IconButton.filledTonal(
+            tooltip: playing ? l10n.trainingVideoPause : l10n.trainingVideoPlay,
+            onPressed: () => setState(() => _playing = !playing),
+            icon: Icon(
+              playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _LoopingVideo extends StatefulWidget {
-  const _LoopingVideo({required this.url, required this.fallback});
+  const _LoopingVideo({super.key, required this.url, required this.fallback});
 
   final String url;
   final Widget fallback;

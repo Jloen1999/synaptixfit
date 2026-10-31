@@ -69,11 +69,21 @@ abstract class BlockCompletion with _$BlockCompletion {
   }) = _BlockCompletion;
 }
 
-/// Pareja de bloques solapados.
+/// Pareja de bloques que ocupan la misma hora (choque de horario).
 @freezed
 abstract class BlockConflict with _$BlockConflict {
+  const BlockConflict._();
+
   const factory BlockConflict({
     required CalendarBlock first,
     required CalendarBlock second,
   }) = _BlockConflict;
+
+  /// Desde cuándo coinciden: el inicio más tardío de los dos.
+  DateTime get overlapStart =>
+      first.start.isAfter(second.start) ? first.start : second.start;
+
+  /// Hasta cuándo coinciden: el final más temprano de los dos.
+  DateTime get overlapEnd =>
+      first.end.isBefore(second.end) ? first.end : second.end;
 }

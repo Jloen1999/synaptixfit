@@ -22,9 +22,13 @@ class AppContentWidth extends StatelessWidget {
   final Widget child;
   final double maxWidth;
 
+  /// Mide lo que su contenido (heightFactor 1): sin él, en una barra inferior
+  /// (`bottomNavigationBar`) se estiraba a toda la pantalla y tapaba la página.
+  /// Las listas siguen ocupando todo el alto, como antes.
   @override
   Widget build(BuildContext context) => Align(
     alignment: Alignment.topCenter,
+    heightFactor: 1,
     child: ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: child,

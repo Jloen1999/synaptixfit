@@ -104,7 +104,7 @@
   "socialNotificationsEmptyUnread": "You're all caught up",
   "socialNotificationsEmptyMessage": "We'll let you know about likes, comments, requests and alerts from your plan.",
   "socialNotificationUnread": "Unread",
-  "socialNotificationTypeConflict": "Conflict in your plan",
+  "socialNotificationTypeConflict": "Time clash in your plan",
   "socialNotificationTypeFatigue": "Fatigue alert",
   "socialNotificationTypeMilestone": "Achievement",
   "socialNotificationTypeSocial": "Social",

@@ -6,6 +6,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/models/training/session_history.dart';
@@ -16,6 +17,7 @@ import '../../../../../domain/models/training/session_adaptation.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../exercise_detail/page/exercise_how_to_sheet.dart';
 import '../../training_routes.dart';
 import '../../widgets/exercise_thumbnail.dart';
 import '../../widgets/metric_chips.dart';
@@ -50,6 +52,7 @@ class _LiveView extends StatefulWidget {
 
 class _LiveViewState extends State<_LiveView> {
   Timer? _ticker;
+  late final AppLifecycleListener _lifecycle;
 
   LiveSessionBloc get _bloc => context.read<LiveSessionBloc>();
 
@@ -59,17 +62,29 @@ class _LiveViewState extends State<_LiveView> {
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) _bloc.add(const LiveSessionEvent.ticked());
     });
+    // Con la app en segundo plano el temporizador se para: al volver, el
+    // cronómetro y el descanso se ponen en hora al momento.
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        if (mounted) _bloc.add(const LiveSessionEvent.resumed());
+      },
+    );
+    // Pantalla encendida mientras se entrena (en web o escritorio sin soporte,
+    // el fallo se ignora: no impide entrenar).
+    unawaited(WakelockPlus.enable().catchError((Object _) {}));
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    _lifecycle.dispose();
+    unawaited(WakelockPlus.disable().catchError((Object _) {}));
     super.dispose();
   }
 
   Future<void> _finish(LiveSessionState state) async {
     // Con series previstas sin hacer, se pregunta antes de cerrar la sesión.
-    final missing = state.plannedSets - state.completedSets;
+    final missing = state.plannedSets - state.loggedSets;
     if (!state.isFree && missing > 0) {
       final l10n = context.localizations;
       final ok = await showConfirmDialog(
@@ -136,16 +151,15 @@ class _LiveViewState extends State<_LiveView> {
     }
   }
 
-  /// «Hecha»: registra la siguiente serie con los valores propuestos (los de
-  /// la serie anterior, la última vez o lo previsto), sin abrir la hoja.
-  void _quickLog({
-    required String plannedExerciseId,
-    required int setNumber,
-    required ExerciseParameters parameters,
-    SessionSet? previous,
-    PersonalRecord? lastTime,
-  }) {
-    // El botón puede desaparecer (última serie): se anuncia lo hecho (4.1.3).
+  /// «Hecha»: registra la serie [setNumber] de [exercise] con los valores
+  /// propuestos (los de la serie anterior, la última vez o lo previsto), sin
+  /// abrir la hoja.
+  void _quickLog(
+    LiveSessionState state,
+    PlannedExercise exercise,
+    int setNumber,
+  ) {
+    // El botón cambia de serie o desaparece: se anuncia lo hecho (4.1.3).
     unawaited(
       SemanticsService.sendAnnouncement(
         View.of(context),
@@ -153,16 +167,14 @@ class _LiveViewState extends State<_LiveView> {
         Directionality.of(context),
       ),
     );
+    final proposal = _proposal(state, exercise, setNumber);
     _bloc.add(
       LiveSessionEvent.setRecorded(
         SetRecord(
-          plannedExerciseId: plannedExerciseId,
+          plannedExerciseId: exercise.id,
           setNumber: setNumber,
-          repsDone: previous?.repsDone ?? parameters.reps,
-          weightKg:
-              previous?.weightKg ??
-              lastTime?.weightKg ??
-              _plannedWeight(parameters, setNumber),
+          repsDone: proposal.reps,
+          weightKg: proposal.weight,
           completed: true,
           failedReps: 0,
         ),
@@ -170,13 +182,22 @@ class _LiveViewState extends State<_LiveView> {
     );
   }
 
-  double? _plannedWeight(ExerciseParameters? p, int setNumber) {
-    final weights = p?.weightsKg;
-    if (weights != null && weights.length >= setNumber) {
-      return weights[setNumber - 1];
-    }
-    return p?.weightKg;
-  }
+  /// «Editar» de la barra: abre la hoja de la serie que toca.
+  Future<void> _editNext(
+    LiveSessionState state,
+    PlannedExercise exercise,
+    int setNumber,
+  ) => _editSet(
+    title: exercise.exerciseName,
+    plannedExerciseId: exercise.id,
+    setNumber: setNumber,
+    parameters: exercise.parameters,
+    previous: state.session
+        ?.setsFor(exercise.id)
+        .where((s) => s.setNumber == setNumber - 1)
+        .firstOrNull,
+    lastTime: state.lastPerformance[exercise.exerciseId],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -263,56 +284,18 @@ class _LiveViewState extends State<_LiveView> {
                   if (state.saving) const LinearProgressIndicator(),
                   if (state.restRemaining != null) _RestBanner(state: state),
                   Expanded(
-                    child: _ExerciseList(
-                      state: state,
-                      onEdit: _editSet,
-                      onQuickLog: _quickLog,
-                    ),
+                    child: _ExerciseList(state: state, onEdit: _editSet),
                   ),
                 ],
               ),
             },
             bottomNavigationBar:
                 state.status == LiveStatus.ready && !state.completed
-                ? SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(TokensSpacing.m),
-                      child: Row(
-                        children: [
-                          if (!state.isFree)
-                            Expanded(
-                              child: Text(
-                                state.completedSets >= state.plannedSets &&
-                                        state.plannedSets > 0
-                                    ? l10n.trainingAllSetsDone
-                                    : l10n.trainingSetsProgress(
-                                        state.completedSets,
-                                        state.plannedSets,
-                                      ),
-                                style: context.textStyles.labelLarge?.copyWith(
-                                  color:
-                                      state.completedSets >=
-                                              state.plannedSets &&
-                                          state.plannedSets > 0
-                                      ? context.palette.success
-                                      : null,
-                                ),
-                              ),
-                            ),
-                          if (state.isFree) const Spacer(),
-                          AppPrimaryButton(
-                            label: l10n.trainingFinishAction,
-                            icon: Icons.flag_rounded,
-                            loading: state.finishing,
-                            // Con series sin subir no se puede cerrar: se perderían.
-                            onPressed:
-                                state.finishing || state.pendingSets.isNotEmpty
-                                ? null
-                                : () => _finish(state),
-                          ),
-                        ],
-                      ),
-                    ),
+                ? _BottomBar(
+                    state: state,
+                    onFinish: () => _finish(state),
+                    onDone: (e, n) => _quickLog(state, e, n),
+                    onEdit: (e, n) => _editNext(state, e, n),
                   )
                 : null,
           );
@@ -399,6 +382,276 @@ class _RestBanner extends StatelessWidget {
   }
 }
 
+/// Peso previsto para la serie [setNumber] (por serie si la rutina lo detalla).
+double? _plannedWeight(ExerciseParameters? p, int setNumber) {
+  final weights = p?.weightsKg;
+  if (weights != null && weights.length >= setNumber) {
+    return weights[setNumber - 1];
+  }
+  return p?.weightKg;
+}
+
+/// Valores que se proponen para la serie [setNumber] de [exercise]: los de la
+/// serie anterior de hoy, los de la última vez o lo previsto.
+({int reps, double? weight}) _proposal(
+  LiveSessionState state,
+  PlannedExercise exercise,
+  int setNumber,
+) {
+  final previous = state.session
+      ?.setsFor(exercise.id)
+      .where((s) => s.setNumber == setNumber - 1)
+      .firstOrNull;
+  return (
+    reps: previous?.repsDone ?? exercise.parameters.reps,
+    weight:
+        previous?.weightKg ??
+        state.lastPerformance[exercise.exerciseId]?.weightKg ??
+        _plannedWeight(exercise.parameters, setNumber),
+  );
+}
+
+/// Abre «Cómo se hace» del ejercicio sin salir de la sesión.
+void _openHowTo(BuildContext context, PlannedExercise exercise) => unawaited(
+  showExerciseHowToSheet(
+    context,
+    exerciseId: exercise.exerciseId,
+    name: exercise.exerciseName,
+    gifUrl: exercise.gifUrl,
+    previewUrl: exercise.previewUrl,
+  ),
+);
+
+/// Barra fija de la sesión. Mientras quedan series, muestra la que toca
+/// («Press banca · Serie 2 de 4 · 40 kg × 10 reps») con «Hecha» como acción
+/// principal y «Finalizar» como secundaria; sin series pendientes (o en sesión
+/// libre), «Finalizar» pasa a ser la principal.
+class _BottomBar extends StatefulWidget {
+  const _BottomBar({
+    required this.state,
+    required this.onFinish,
+    required this.onDone,
+    required this.onEdit,
+  });
+
+  final LiveSessionState state;
+  final VoidCallback onFinish;
+  final void Function(PlannedExercise exercise, int setNumber) onDone;
+  final void Function(PlannedExercise exercise, int setNumber) onEdit;
+
+  @override
+  State<_BottomBar> createState() => _BottomBarState();
+}
+
+class _BottomBarState extends State<_BottomBar> {
+  final _doneFocus = FocusNode();
+  final _finishFocus = FocusNode();
+
+  LiveSessionState get state => widget.state;
+
+  /// Ejercicio y serie que tocan, o nulo si ya no queda ninguna (o sesión libre).
+  static (PlannedExercise, int)? _target(LiveSessionState s) {
+    final up = s.isFree ? null : s.upNext;
+    final next = up == null ? null : s.nextSetOf(up);
+    return up == null || next == null ? null : (up, next);
+  }
+
+  @override
+  void didUpdateWidget(_BottomBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Tras la última serie «Hecha» desaparece: el foco pasa a «Finalizar» en
+    // vez de perderse (2.4.3).
+    if (_doneFocus.hasFocus &&
+        _target(oldWidget.state) != null &&
+        _target(state) == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _finishFocus.requestFocus();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _doneFocus.dispose();
+    _finishFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final target = _target(state);
+    final allDone =
+        state.plannedSets > 0 && state.loggedSets >= state.plannedSets;
+    // Con series sin subir no se puede cerrar: se perderían.
+    final finish = state.finishing || state.pendingSets.isNotEmpty
+        ? null
+        : widget.onFinish;
+    final progress = state.isFree
+        ? null
+        : Text(
+            allDone
+                ? l10n.trainingAllSetsDone
+                : l10n.trainingSetsProgress(
+                    state.loggedSets,
+                    state.plannedSets,
+                  ),
+            style: context.textStyles.labelLarge?.copyWith(
+              color: allDone ? context.palette.success : null,
+            ),
+          );
+    final Widget content;
+    if (target == null) {
+      content = Row(
+        children: [
+          if (progress != null) Expanded(child: progress) else const Spacer(),
+          const SizedBox(width: TokensSpacing.s),
+          AppPrimaryButton(
+            label: l10n.trainingFinishAction,
+            icon: Icons.flag_rounded,
+            loading: state.finishing,
+            focusNode: _finishFocus,
+            onPressed: finish,
+          ),
+        ],
+      );
+    } else {
+      final (up, next) = target;
+      final proposal = _proposal(state, up, next);
+      final hold = up.parameters.isometricSeconds;
+      final weight = proposal.weight;
+      final (load, loadSpoken) = hold != null
+          ? (l10n.trainingUpNextHold(hold), l10n.trainingUpNextHoldSpoken(hold))
+          : weight != null && weight > 0
+          ? (
+              l10n.trainingUpNextLoad(formatNumber(weight), proposal.reps),
+              l10n.trainingUpNextLoadSpoken(
+                formatNumber(weight),
+                proposal.reps,
+              ),
+            )
+          : (
+              l10n.trainingSetReps(proposal.reps),
+              l10n.trainingUpNextRepsSpoken(proposal.reps),
+            );
+      final setLabel = l10n.trainingUpNextSet(next, up.parameters.sets);
+      // En pantallas bajas (móvil apaisado) o con letra grande se ahorra la
+      // línea «Ahora toca» (el lector la sigue oyendo).
+      final compact =
+          MediaQuery.sizeOf(context).height < TokensLayout.compactHeight ||
+          MediaQuery.textScalerOf(context).scale(1) > 1.3;
+      // Mientras se guarda la serie anterior los botones siguen activos (si se
+      // desactivaran perderían el foco), pero el toque se ignora: la serie que
+      // toca aún no se ha actualizado y se apuntaría dos veces.
+      void ifIdle(void Function() action) {
+        if (!state.saving) action();
+      }
+
+      content = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              if (progress != null) Expanded(child: progress),
+              TextButton.icon(
+                onPressed: finish,
+                icon: const Icon(Icons.flag_outlined),
+                label: Text(l10n.trainingFinishAction),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  container: true,
+                  label: [
+                    l10n.trainingUpNextLabel,
+                    up.exerciseName,
+                    setLabel,
+                    loadSpoken,
+                  ].join(', '),
+                  excludeSemantics: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!compact)
+                        Text(
+                          l10n.trainingUpNextLabel,
+                          style: context.textStyles.labelMedium?.copyWith(
+                            color: context.colors.secondary,
+                          ),
+                        ),
+                      Text(
+                        up.exerciseName,
+                        style: context.textStyles.titleMedium,
+                      ),
+                      Text(
+                        '$setLabel · $load',
+                        style: context.textStyles.bodyMedium?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: l10n.trainingHowToNamed(up.exerciseName),
+                onPressed: () => _openHowTo(context, up),
+                icon: const Icon(Icons.ondemand_video_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.s),
+          Row(
+            children: [
+              Flexible(
+                child: AppSecondaryButton(
+                  label: l10n.commonEdit,
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => ifIdle(() => widget.onEdit(up, next)),
+                ),
+              ),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(
+                flex: 2,
+                child: AppPrimaryButton(
+                  label: l10n.trainingSetDoneAction,
+                  icon: Icons.check_rounded,
+                  focusNode: _doneFocus,
+                  onPressed: () => ifIdle(() => widget.onDone(up, next)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.colors.surfaceContainerLow,
+        border: Border(top: BorderSide(color: context.colors.outlineVariant)),
+      ),
+      child: SafeArea(
+        top: false,
+        // Con letra muy grande en una pantalla baja la barra no puede tapar la
+        // lista: ocupa como mucho la mitad y su contenido se desplaza.
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height / 2,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(TokensSpacing.m),
+            child: TrainingContent(child: content),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 typedef _EditSet =
     Future<void> Function({
       required String title,
@@ -410,25 +663,11 @@ typedef _EditSet =
       PersonalRecord? lastTime,
     });
 
-typedef _QuickLog =
-    void Function({
-      required String plannedExerciseId,
-      required int setNumber,
-      required ExerciseParameters parameters,
-      SessionSet? previous,
-      PersonalRecord? lastTime,
-    });
-
 class _ExerciseList extends StatelessWidget {
-  const _ExerciseList({
-    required this.state,
-    required this.onEdit,
-    required this.onQuickLog,
-  });
+  const _ExerciseList({required this.state, required this.onEdit});
 
   final LiveSessionState state;
   final _EditSet onEdit;
-  final _QuickLog onQuickLog;
 
   @override
   Widget build(BuildContext context) {
@@ -506,9 +745,7 @@ class _ExerciseList extends StatelessWidget {
                     active: state.activeExerciseId == e.id,
                     seconds: state.exerciseSeconds[e.id] ?? 0,
                     readOnly: state.completed,
-                    saving: state.saving,
                     onEdit: onEdit,
-                    onQuickLog: onQuickLog,
                   ),
                 ),
               if (!state.completed &&
@@ -611,9 +848,7 @@ class _ExerciseCard extends StatelessWidget {
     required this.active,
     required this.seconds,
     required this.readOnly,
-    required this.saving,
     required this.onEdit,
-    required this.onQuickLog,
   });
 
   final PlannedExercise exercise;
@@ -624,17 +859,7 @@ class _ExerciseCard extends StatelessWidget {
   final bool active;
   final int seconds;
   final bool readOnly;
-  final bool saving;
   final _EditSet onEdit;
-  final _QuickLog onQuickLog;
-
-  /// Siguiente serie prevista sin registrar, o nula si ya están todas.
-  int? _nextSet(int planned) {
-    for (var n = 1; n <= planned; n++) {
-      if (!sets.any((s) => s.setNumber == n)) return n;
-    }
-    return null;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -643,12 +868,16 @@ class _ExerciseCard extends StatelessWidget {
     final p = exercise.parameters;
     final maxRecorded = sets.fold(0, (m, s) => math.max(m, s.setNumber));
     final rows = math.max(p.sets, maxRecorded);
-    final done = sets.where((s) => s.completed).length;
+    // Apuntadas por número (también con repeticiones de menos), como el bloc
+    // al pasar al siguiente ejercicio.
+    final done = {
+      for (final s in sets)
+        if (s.setNumber <= p.sets) s.setNumber,
+    }.length;
     final finished = done >= p.sets;
     // Un ejercicio terminado y que no se está mirando queda en una línea; se
     // abre tocándolo (por si hay que corregir una serie).
     final compact = finished && !active && !readOnly;
-    final next = _nextSet(p.sets);
     final card = AppCard(
       color: active ? context.colors.surfaceContainerLow : null,
       onTap: readOnly
@@ -753,13 +982,25 @@ class _ExerciseCard extends StatelessWidget {
                   lastTime: lastTime,
                 ),
               ),
-            if (!readOnly)
-              // Con texto grande, la serie que toca baja a otra fila.
-              OverflowBar(
-                alignment: MainAxisAlignment.spaceBetween,
-                overflowAlignment: OverflowBarAlignment.end,
-                overflowSpacing: TokensSpacing.xs,
-                children: [
+            // La serie que toca se apunta desde la barra inferior; aquí, cómo se
+            // hace (con texto, para que se descubra) y las series extra.
+            OverflowBar(
+              alignment: MainAxisAlignment.spaceBetween,
+              overflowAlignment: OverflowBarAlignment.start,
+              overflowSpacing: TokensSpacing.xs,
+              children: [
+                Semantics(
+                  label: l10n.trainingHowToNamed(exercise.exerciseName),
+                  button: true,
+                  excludeSemantics: true,
+                  onTap: () => _openHowTo(context, exercise),
+                  child: TextButton.icon(
+                    onPressed: () => _openHowTo(context, exercise),
+                    icon: const Icon(Icons.ondemand_video_rounded),
+                    label: Text(l10n.trainingHowTo),
+                  ),
+                ),
+                if (!readOnly)
                   TextButton.icon(
                     onPressed: rows >= 50
                         ? null
@@ -775,25 +1016,8 @@ class _ExerciseCard extends StatelessWidget {
                     icon: const Icon(Icons.add_rounded),
                     label: Text(l10n.trainingExtraSet),
                   ),
-                  // La serie que toca, en un toque, con los valores propuestos.
-                  if (next != null && active)
-                    FilledButton.icon(
-                      onPressed: saving
-                          ? null
-                          : () => onQuickLog(
-                              plannedExerciseId: exercise.id,
-                              setNumber: next,
-                              parameters: p,
-                              previous: sets
-                                  .where((s) => s.setNumber == next - 1)
-                                  .firstOrNull,
-                              lastTime: lastTime,
-                            ),
-                      icon: const Icon(Icons.check_rounded),
-                      label: Text(l10n.trainingQuickSetDone(next)),
-                    ),
-                ],
-              ),
+              ],
+            ),
           ],
         ],
       ),
@@ -915,8 +1139,13 @@ class _SetRow extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: TokensSize.iconM),
               const SizedBox(width: TokensSpacing.s),
-              SizedBox(
-                width: 64,
+              // Columna alineada entre filas que crece con el texto (200 %).
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: context.scaled(
+                    TokensLayout.minTouchTarget + TokensSpacing.m,
+                  ),
+                ),
                 child: Text(
                   l10n.trainingSetNumber(setNumber),
                   style: context.textStyles.labelLarge,

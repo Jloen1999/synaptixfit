@@ -34,7 +34,7 @@ class PendingMilestoneTile extends StatelessWidget {
       child: Row(
         children: [
           SizedBox.square(
-            dimension: 48,
+            dimension: TokensLayout.minTouchTarget,
             child: busy
                 ? const Padding(
                     padding: EdgeInsets.all(TokensSpacing.m),
@@ -56,7 +56,7 @@ class PendingMilestoneTile extends StatelessWidget {
               children: [
                 Text(
                   milestone.title,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: context.textStyles.bodyLarge,
                 ),
@@ -78,7 +78,7 @@ class PendingMilestoneTile extends StatelessWidget {
           ),
           Icon(
             milestone.status.icon,
-            size: 18,
+            size: TokensSize.iconXs,
             color: milestone.status.color(context),
             semanticLabel: milestone.status.label(context),
           ),

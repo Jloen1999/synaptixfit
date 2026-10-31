@@ -30,13 +30,15 @@ class SessionCompletedPage extends StatelessWidget {
         ..add(
           SessionCompletedEvent.started(sessionId: sessionId, result: result),
         ),
-      child: const _CompletedView(),
+      child: _CompletedView(sessionId: sessionId),
     );
   }
 }
 
 class _CompletedView extends StatelessWidget {
-  const _CompletedView();
+  const _CompletedView({required this.sessionId});
+
+  final String sessionId;
 
   void _done(BuildContext context) => context.go(TrainingPaths.root);
 
@@ -66,7 +68,11 @@ class _CompletedView extends StatelessWidget {
               count: 3,
               height: 96,
             ),
-            CompletedStatus.failure => AppErrorView(error: state.error!),
+            CompletedStatus.failure => AppErrorView(
+              error: state.error!,
+              onRetry: () =>
+                  bloc.add(SessionCompletedEvent.started(sessionId: sessionId)),
+            ),
             CompletedStatus.ready => ListView(
               padding: const EdgeInsets.all(TokensSpacing.m),
               children: [
@@ -77,11 +83,11 @@ class _CompletedView extends StatelessWidget {
                       const SizedBox(height: TokensSpacing.m),
                       Center(
                         child: CircleAvatar(
-                          radius: 40,
+                          radius: TokensSize.emptyBadge / 2,
                           backgroundColor: context.palette.accentContainer,
                           child: Icon(
                             Icons.emoji_events_rounded,
-                            size: 44,
+                            size: TokensSize.iconXl,
                             color: context.palette.accent,
                           ),
                         ),
@@ -221,7 +227,11 @@ class _ExperienceCard extends StatelessWidget {
       color: context.palette.accentContainer,
       child: Row(
         children: [
-          Icon(Icons.star_rounded, color: context.palette.accent, size: 32),
+          Icon(
+            Icons.star_rounded,
+            color: context.palette.accent,
+            size: TokensSize.iconL,
+          ),
           const SizedBox(width: TokensSpacing.m),
           Expanded(
             child: Column(

@@ -78,6 +78,24 @@ abstract class Challenge with _$Challenge {
   int get totalXpAwarded =>
       xpAwarded + milestones.fold(0, (sum, m) => sum + m.xpAwarded);
 
+  /// Siguiente tarea que se puede hacer ya: la primera, en el orden del reto,
+  /// sin completar ni bloquear. `null` si no hay tareas o están todas hechas.
+  Milestone? get nextMilestone {
+    final open = milestones.where((m) => !m.completed && !m.isLocked).toList()
+      ..sort((a, b) {
+        final byOrder = a.order.compareTo(b.order);
+        return byOrder != 0 ? byOrder : a.id.compareTo(b.id);
+      });
+    return open.isEmpty ? null : open.first;
+  }
+
+  /// Sesiones que faltan para el objetivo (0 si no sigue sesiones o ya llegó).
+  int get sessionsRemaining {
+    if (!tracksTrainingSessions) return 0;
+    final left = (sessionTarget ?? 0) - sessionsCompleted;
+    return left < 0 ? 0 : left;
+  }
+
   Milestone? milestoneById(String id) {
     for (final m in milestones) {
       if (m.id == id) return m;

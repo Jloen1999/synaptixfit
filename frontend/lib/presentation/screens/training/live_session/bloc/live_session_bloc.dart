@@ -48,31 +48,33 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
   }) : _clock = clock ?? DateTime.now,
        super(const LiveSessionState()) {
     on<LiveSessionStarted>(_onStarted);
-    on<LiveSessionTicked>(_onTicked);
+    on<LiveSessionTicked>((_, emit) => _recalculate(emit));
+    on<LiveSessionResumed>((_, emit) => _recalculate(emit, resumed: true));
     on<LiveSessionExerciseSelected>(
       (e, emit) => emit(state.copyWith(activeExerciseId: e.plannedExerciseId)),
     );
     on<LiveSessionSetRecorded>(_onSetRecorded);
     on<LiveSessionSetDeleted>(_onSetDeleted);
     on<LiveSessionRestStarted>(
-      (e, emit) =>
-          emit(state.copyWith(restRemaining: e.seconds, restTotal: e.seconds)),
+      (e, emit) => emit(_withRest(state, e.seconds, from: _clock())),
     );
     on<LiveSessionRestAdjusted>((e, emit) {
-      final remaining = state.restRemaining;
-      if (remaining == null) return;
-      final next = math.max(0, remaining + e.deltaSeconds);
+      final endsAt = state.restEndsAt;
+      if (endsAt == null) return;
+      final next = endsAt.add(Duration(seconds: e.deltaSeconds));
+      final left = _secondsLeft(next, _clock());
       emit(
-        next == 0
-            ? state.copyWith(restRemaining: null)
+        left <= 0
+            ? state.copyWith(restRemaining: null, restEndsAt: null)
             : state.copyWith(
-                restRemaining: next,
-                restTotal: math.max(state.restTotal, next),
+                restRemaining: left,
+                restEndsAt: next,
+                restTotal: math.max(state.restTotal, left),
               ),
       );
     });
     on<LiveSessionRestSkipped>(
-      (_, emit) => emit(state.copyWith(restRemaining: null)),
+      (_, emit) => emit(state.copyWith(restRemaining: null, restEndsAt: null)),
     );
     on<LiveSessionFinishRequested>(_onFinish);
     on<LiveSessionPendingRetried>((_, emit) => _flushPending(emit));
@@ -178,6 +180,8 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         dayNumber: day?.dayNumber,
         dayName: day?.name,
         elapsedSeconds: elapsed,
+        startedAt: session.startedAt,
+        countedUntil: _clock(),
         activeExerciseId: _firstUnfinished(session, exercises),
       ),
     );
@@ -214,8 +218,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     List<PlannedExercise> exercises,
   ) {
     for (final e in exercises) {
-      final done = session.setsFor(e.id).where((s) => s.completed).length;
-      if (done < e.parameters.sets) return e.id;
+      if (_loggedSets(session, e) < e.parameters.sets) return e.id;
     }
     return exercises.isEmpty ? null : exercises.first.id;
   }
@@ -230,38 +233,110 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     required String? fallback,
   }) {
     if (recorded == null) return fallback;
-    final done = session.setsFor(recorded.id).where((s) => s.completed).length;
-    if (done < recorded.parameters.sets) return recorded.id;
+    if (_loggedSets(session, recorded) < recorded.parameters.sets) {
+      return recorded.id;
+    }
     for (final e in state.exercises) {
-      final d = session.setsFor(e.id).where((s) => s.completed).length;
-      if (d < e.parameters.sets) return e.id;
+      if (_loggedSets(session, e) < e.parameters.sets) return e.id;
     }
     return null;
   }
 
-  void _onTicked(LiveSessionTicked event, Emitter<LiveSessionState> emit) {
+  /// Pone el cronómetro, el ejercicio activo y el descanso a la hora del
+  /// reloj. Se calcula con instantes (no restando 1 por tic) porque los tics se
+  /// retrasan o se paran con la pantalla apagada o la app en segundo plano.
+  void _recalculate(Emitter<LiveSessionState> emit, {bool resumed = false}) {
     if (state.status != LiveStatus.ready || state.completed) return;
+    final now = _clock();
+    final from = state.countedUntil;
+    // Sin referencia, o si el reloj del teléfono retrocede, se cuenta desde ya.
+    var delta = 0;
+    var counted = now;
+    if (from != null && !now.isBefore(from)) {
+      delta = now.difference(from).inSeconds;
+      // Se avanza en segundos enteros para no perder las fracciones entre tics.
+      counted = from.add(Duration(seconds: delta));
+    }
+    final startedAt = state.startedAt;
+    final elapsed = startedAt == null
+        ? state.elapsedSeconds + delta
+        : math.max(0, now.difference(startedAt).inSeconds);
     final active = state.activeExerciseId;
-    final seconds = active == null
+    final seconds = active == null || delta == 0
         ? state.exerciseSeconds
         : {
             ...state.exerciseSeconds,
-            active: (state.exerciseSeconds[active] ?? 0) + 1,
+            active: (state.exerciseSeconds[active] ?? 0) + delta,
           };
-    final rest = state.restRemaining;
-    if (state.pendingSets.isNotEmpty &&
-        !state.saving &&
-        state.elapsedSeconds % _retrySeconds == 0) {
+    final endsAt = state.restEndsAt;
+    final left = endsAt == null ? null : _secondsLeft(endsAt, now);
+    final restOver = left != null && left <= 0;
+    final retryDue =
+        resumed ||
+        elapsed ~/ _retrySeconds != state.elapsedSeconds ~/ _retrySeconds;
+    if (state.pendingSets.isNotEmpty && !state.saving && retryDue) {
       add(const LiveSessionEvent.pendingRetried());
     }
     emit(
       state.copyWith(
-        elapsedSeconds: state.elapsedSeconds + 1,
+        elapsedSeconds: elapsed,
+        countedUntil: counted,
         exerciseSeconds: seconds,
-        restRemaining: rest == null || rest <= 1 ? null : rest - 1,
-        restFinishedCount: rest != null && rest <= 1
+        restRemaining: restOver ? null : left,
+        restEndsAt: restOver ? null : endsAt,
+        restFinishedCount: restOver
             ? state.restFinishedCount + 1
             : state.restFinishedCount,
+      ),
+    );
+  }
+
+  /// Segundos que faltan hasta [endsAt], redondeando hacia arriba (con 0,4 s
+  /// aún se ve «0:01», como en cualquier cuenta atrás).
+  static int _secondsLeft(DateTime endsAt, DateTime now) =>
+      (endsAt.difference(now).inMilliseconds / 1000).ceil();
+
+  /// [s] con un descanso de [seconds] que empezó en [from] (sin descanso si
+  /// ya habría terminado o dura 0).
+  LiveSessionState _withRest(
+    LiveSessionState s,
+    int seconds, {
+    required DateTime from,
+  }) {
+    final endsAt = from.add(Duration(seconds: seconds));
+    final left = _secondsLeft(endsAt, _clock());
+    return left <= 0
+        ? s.copyWith(restRemaining: null, restEndsAt: null)
+        : s.copyWith(
+            restRemaining: left,
+            restTotal: seconds,
+            restEndsAt: endsAt,
+          );
+  }
+
+  /// Tras apuntar [record] en el instante [at] (subida o pendiente): arranca el
+  /// descanso previsto desde ese toque (no desde la respuesta del servidor,
+  /// que con mala cobertura tarda) y pasa al ejercicio que toca. Una serie con
+  /// repeticiones de menos también descansa. Con [startRest] falso no toca el
+  /// descanso (ya lo arrancó una serie posterior).
+  LiveSessionState _afterSet(
+    LiveSessionState s,
+    SetRecord record,
+    DateTime at, {
+    bool startRest = true,
+  }) {
+    final planned = s.exercises
+        .where((e) => e.id == record.plannedExerciseId)
+        .firstOrNull;
+    final rest = startRest ? planned?.parameters.restSeconds : null;
+    final next = rest == null ? s : _withRest(s, rest, from: at);
+    final session = next.session;
+    if (session == null) return next;
+    return next.copyWith(
+      activeExerciseId: _activeAfter(
+        session,
+        planned,
+        fallback: record.plannedExerciseId ?? s.activeExerciseId,
       ),
     );
   }
@@ -272,42 +347,35 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
   ) async {
     final id = state.sessionId;
     if (id == null || state.completed) return;
+    final tappedAt = _clock();
     // Mientras se guarda o se sube otra, esta espera en la cola en vez de perderse.
     if (state.saving) {
-      await _queue(emit, id, event.record, keepSaving: true);
+      await _queue(emit, id, event.record, tappedAt, keepSaving: true);
       return;
     }
     emit(state.copyWith(saving: true));
     // Con series pendientes, esta va detrás de ellas para no desordenarlas.
     if (state.pendingSets.isNotEmpty) {
-      await _queue(emit, id, event.record);
+      await _queue(emit, id, event.record, tappedAt);
       return;
     }
     final result = await _recordSet(id, event.record);
     switch (result) {
       // Sin conexión: la serie se guarda en el teléfono y se sube después.
       case Failure(error: NetworkError()):
-        await _queue(emit, id, event.record);
+        await _queue(emit, id, event.record, tappedAt);
         return;
       case Success(value: final session):
-        final planned = state.exercises
-            .where((e) => e.id == event.record.plannedExerciseId)
-            .firstOrNull;
-        final rest = event.record.completed
-            ? planned?.parameters.restSeconds
-            : null;
         emit(
-          state.copyWith(
-            saving: false,
-            session: _withPending(session, state.pendingSets),
-            restRemaining: rest ?? state.restRemaining,
-            restTotal: rest ?? state.restTotal,
-            activeExerciseId: _activeAfter(
-              session,
-              planned,
-              fallback:
-                  event.record.plannedExerciseId ?? state.activeExerciseId,
+          _afterSet(
+            state.copyWith(
+              saving: false,
+              session: _withPending(session, state.pendingSets),
             ),
+            event.record,
+            tappedAt,
+            // Si mientras tanto se apuntó otra, su descanso es el que vale.
+            startRest: state.pendingSets.isEmpty,
           ),
         );
         // Si otra serie esperó en la cola mientras esta se guardaba, se sube ya.
@@ -320,22 +388,28 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     }
   }
 
-  /// Guarda [record] como pendiente (también en el teléfono) y lo muestra. Con
-  /// [keepSaving] no toca `saving`: otra operación en curso lo apagará.
+  /// Guarda [record] como pendiente (también en el teléfono) y lo muestra; el
+  /// descanso arranca igual que si se hubiera subido. Con [keepSaving] no toca
+  /// `saving`: otra operación en curso lo apagará.
   Future<void> _queue(
     Emitter<LiveSessionState> emit,
     String sessionId,
-    SetRecord record, {
+    SetRecord record,
+    DateTime tappedAt, {
     bool keepSaving = false,
   }) async {
     final pending = [...state.pendingSets, record];
     await _savePending(sessionId, pending);
     final session = state.session;
     emit(
-      state.copyWith(
-        saving: keepSaving && state.saving,
-        pendingSets: pending,
-        session: session == null ? null : _withPending(session, [record]),
+      _afterSet(
+        state.copyWith(
+          saving: keepSaving && state.saving,
+          pendingSets: pending,
+          session: session == null ? null : _withPending(session, [record]),
+        ),
+        record,
+        tappedAt,
       ),
     );
   }
@@ -469,7 +543,9 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       _effect(emit, const TrainingEffect.error(AppError.network()));
       return;
     }
-    emit(state.copyWith(finishing: true, restRemaining: null));
+    emit(
+      state.copyWith(finishing: true, restRemaining: null, restEndsAt: null),
+    );
     final realDurations = <String, int>{
       for (final entry in state.exerciseSeconds.entries)
         if (entry.value > 0)

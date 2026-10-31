@@ -33,8 +33,12 @@ sealed class PomodoroEvent with _$PomodoroEvent {
 
   const factory PomodoroEvent.ticked() = PomodoroTicked;
 
-  /// Se sale de la pantalla: registra la fase en curso como sin terminar (sin
-  /// avisos) y completa [done] cuando ha terminado, para cerrar después.
-  const factory PomodoroEvent.leaveRequested(Completer<void> done) =
-      PomodoroLeaveRequested;
+  /// Al entrar en la app: recupera la fase que quedó en marcha (y la registra
+  /// si terminó con la app cerrada). [alertTexts] permite mostrar la
+  /// notificación fija sin abrir la pantalla.
+  const factory PomodoroEvent.restored({PomodoroAlertTexts? alertTexts}) =
+      PomodoroRestored;
+
+  /// Se cerró sesión: se para y se olvida la fase en curso.
+  const factory PomodoroEvent.signedOut() = PomodoroSignedOut;
 }

@@ -54,6 +54,9 @@ dependencies:
   timezone: ^0.11.2
   share_plus: ^13.3.1
 
+  # Pantalla encendida durante la sesión de entrenamiento en vivo
+  wakelock_plus: ^1.8.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

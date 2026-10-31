@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
+import '../../../widgets/widgets.dart';
 
 /// Barra de progreso 0-1 con porcentaje y descripción accesible.
 class ChallengeProgressBar extends StatelessWidget {
@@ -30,7 +31,7 @@ class ChallengeProgressBar extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: value.clamp(0, 1).toDouble(),
                 color: color,
-                backgroundColor: color.withValues(alpha: 0.15),
+                backgroundColor: color.withValues(alpha: AppPill.tintAlpha),
               ),
             ),
           ),

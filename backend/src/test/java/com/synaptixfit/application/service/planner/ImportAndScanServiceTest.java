@@ -141,6 +141,37 @@ class ImportAndScanServiceTest {
     }
 
     @Test
+    void aTeachersGoogleCalendarIsRecognisedByInitialsAndOnlyTheCurrentYearIsImported() {
+        // Como el del Campus Virtual: nombre con siglas, eventos de cursos pasados y de otra asignatura.
+        String teacher = String.join("\r\n",
+                "BEGIN:VCALENDAR",
+                "X-WR-CALNAME:2_3_GIIT_EC",
+                "BEGIN:VEVENT", "UID:old@g", "SUMMARY:EC_GG_Tema 5", "DTSTART:20151020T080000Z",
+                "DTEND:20151020T100000Z", "END:VEVENT",
+                "BEGIN:VEVENT", "UID:now@g", "SUMMARY:EC_GG_Sesiones 1 y 2", "DTSTART:20261020T080000Z",
+                "DTEND:20261020T100000Z", "END:VEVENT",
+                "BEGIN:VEVENT", "UID:ipo@g", "SUMMARY:IPO_Teoría_Tema 6_GIIT (Aula 2)", "DTSTART:20261021T080000Z",
+                "DTEND:20261021T100000Z", "END:VEVENT",
+                "END:VCALENDAR");
+        ics = new IcsService(f.directory, f.blocks, f.deadlines, url -> {
+            downloads.add(url);
+            return teacher;
+        }, new TimelineService(f.blocks, f.deadlines, f.directory), f.weeklyLoadService(), PlannerFakes.ZONE,
+                PlannerFakes.CLOCK);
+        SubjectRef ec = f.directory.addSubject(f.user, "ESTRUCTURA DE COMPUTADORES", null, 2);
+
+        ImportIcsUseCase.Result result = ics.importIcs(new ImportIcsUseCase.Command(f.user, ec.id(),
+                "https://www.google.com/calendar/embed?src=abc%40group.calendar.google.com&ctz=Europe/Madrid", false));
+
+        assertThat(downloads.getLast().toString())
+                .isEqualTo("https://calendar.google.com/calendar/ical/abc%40group.calendar.google.com/public/basic.ics");
+        assertThat(result.totalEvents()).isEqualTo(2);
+        assertThat(result.matchingEvents()).isEqualTo(1);
+        assertThat(result.imported()).isTrue();
+        assertThat(f.blocks.store).hasSize(1);
+    }
+
+    @Test
     void withoutMatchesNothingIsImportedUnlessForced() {
         SubjectRef other = f.directory.addSubject(f.user, "Química Orgánica", "QO", 3);
         ImportIcsUseCase.Result none = ics.importIcs(

@@ -522,7 +522,7 @@ class _TasksSection extends StatelessWidget {
                 children: [
                   Icon(
                     sumOk ? Icons.check_circle_rounded : Icons.error_outline,
-                    size: 18,
+                    size: TokensSize.iconXs,
                     color: sumOk
                         ? context.palette.success
                         : context.colors.error,
@@ -637,7 +637,7 @@ class _MilestoneRow extends StatelessWidget {
                 icon: const Icon(Icons.keyboard_arrow_up_rounded),
               ),
               CircleAvatar(
-                radius: 12,
+                radius: context.scaled(TokensSize.iconM) / 2,
                 backgroundColor: context.colors.primaryContainer,
                 child: Text(
                   '${index + 1}',

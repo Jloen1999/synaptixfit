@@ -8,6 +8,7 @@ import '../../../../app/di/app_di.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../bloc/achievements_bloc.dart';
 import 'achievement_dialog.dart';
+import 'focus_timer_bar.dart';
 import 'reminders_host.dart';
 
 /// Envuelve el armazón de pestañas con [AchievementsBloc]: pasa la cuenta
@@ -30,7 +31,9 @@ class AchievementsHost extends StatelessWidget {
           ),
         ),
       // Los recordatorios locales viven con el armazón, igual que los logros.
-      child: _AchievementsListener(child: RemindersHost(child: child)),
+      child: _AchievementsListener(
+        child: RemindersHost(child: FocusTimerHost(child: child)),
+      ),
     );
   }
 }

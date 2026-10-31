@@ -8,6 +8,7 @@ import '../../../../domain/enums/challenge_type.dart';
 import '../../../../domain/enums/milestone_condition.dart';
 import '../../../../domain/enums/milestone_status.dart';
 import '../../../../domain/enums/visibility.dart';
+import '../../../../domain/models/challenges/challenge.dart';
 import '../../../../domain/models/challenges/challenge_draft_validator.dart';
 import '../../../extensions/context_extensions.dart';
 
@@ -173,6 +174,20 @@ extension ChallengeDraftIssueText on ChallengeDraftIssue {
       ChallengeDraftIssue.sessionTargetInvalid =>
         l10n.challengesIssueSessionTarget,
     };
+  }
+}
+
+extension ChallengeWeightsLabel on Challenge {
+  /// Si cada tarea debe decir cuánto vale: solo con pesos manuales. Se compara
+  /// con el reparto automático (que no siempre es exacto, p. ej. 33,33 / 33,34)
+  /// con la misma tolerancia que el formulario.
+  bool get showsTaskWeights {
+    final auto = ChallengeDraftValidator.autoWeights(milestones.length);
+    final sorted = [...milestones]..sort((a, b) => a.order.compareTo(b.order));
+    for (var i = 0; i < sorted.length; i++) {
+      if ((sorted[i].weight - auto[i]).abs() > 0.01) return true;
+    }
+    return false;
   }
 }
 

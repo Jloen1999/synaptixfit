@@ -35,6 +35,27 @@ public final class IcsCalendar {
 
     // ------------------------------------------------------------------ lectura
 
+    /** Nombre del calendario ({@code X-WR-CALNAME}), o vacío si no lo trae. */
+    public static String calendarName(String raw) {
+        for (String line : unfold(raw)) {
+            if (line.toUpperCase(Locale.ROOT).startsWith("X-WR-CALNAME")) {
+                int colon = line.indexOf(':');
+                return colon < 0 ? "" : line.substring(colon + 1).strip();
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Inicio del curso académico que contiene {@code today}: el 1 de septiembre de ese año o del anterior. Lo
+     * que terminó antes no se importa: los calendarios de los profesores acumulan cursos pasados (uno real
+     * tenía 945 eventos desde 2012).
+     */
+    public static java.time.LocalDate academicYearStart(java.time.LocalDate today) {
+        int year = today.getMonthValue() >= 9 ? today.getYear() : today.getYear() - 1;
+        return java.time.LocalDate.of(year, 9, 1);
+    }
+
     /**
      * Extrae los eventos del texto ICS. Los eventos sin DTSTART válido o cancelados se ignoran.
      *

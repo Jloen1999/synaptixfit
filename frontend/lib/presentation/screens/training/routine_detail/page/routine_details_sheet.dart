@@ -104,7 +104,12 @@ class _DetailsSheetState extends State<_DetailsSheet> {
               ),
               DropdownButtonFormField<TrainingGoal?>(
                 initialValue: _goal,
-                decoration: InputDecoration(labelText: l10n.trainingGoal),
+                decoration: InputDecoration(
+                  labelText: l10n.trainingGoal,
+                  // Qué significa el objetivo elegido, sin jerga.
+                  helperText: _goal?.description(l10n),
+                  helperMaxLines: 3,
+                ),
                 items: [
                   DropdownMenuItem(child: Text(l10n.trainingGoalNone)),
                   for (final goal in TrainingGoal.values)

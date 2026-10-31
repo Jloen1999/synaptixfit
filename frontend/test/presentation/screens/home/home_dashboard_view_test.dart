@@ -92,7 +92,12 @@ void main() {
 
     expect(find.textContaining('Ana'), findsWidgets);
     expect(find.text('Tienes 2 entregas próximas'), findsOneWidget);
-    expect(find.textContaining('Ver entregas'), findsOneWidget);
+    // En el móvil el aviso entero lleva a la acción: se anuncia como pista.
+    expect(
+      find.bySemanticsLabel(RegExp('Tienes 2 entregas próximas')),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.chevron_right_rounded), findsWidgets);
     expect(find.text('Carga cognitiva'), findsOneWidget);
     // En la agenda y en «Tu día» (es el bloque que toca a continuación).
     expect(find.text('Cálculo'), findsNWidgets(2));

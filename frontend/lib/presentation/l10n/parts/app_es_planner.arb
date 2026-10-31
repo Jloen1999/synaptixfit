@@ -59,7 +59,7 @@
       }
     }
   },
-  "plannerOverlapWarning": "{count, plural, =1{Atención: se solapa con otro bloque} other{Atención: se solapa con {count} bloques}}",
+  "plannerOverlapWarning": "{count, plural, =1{Ojo: a esta hora ya tienes otro bloque} other{Ojo: a esta hora ya tienes {count} bloques}}",
   "@plannerOverlapWarning": {
     "placeholders": {
       "count": {
@@ -70,7 +70,7 @@
   "plannerBlockLocked": "Este bloque es fijo y no se puede mover.",
   "plannerCompletedLocked": "Desmarca el bloque como completado antes de moverlo.",
   "plannerInPast": "No puedes colocar bloques en una hora o fecha pasada.",
-  "plannerConflictsBanner": "{count, plural, =1{1 solape esta semana} other{{count} solapes esta semana}}",
+  "plannerConflictsBanner": "{count, plural, =1{1 choque de horario esta semana} other{{count} choques de horario esta semana}}",
   "@plannerConflictsBanner": {
     "placeholders": {
       "count": {
@@ -78,7 +78,7 @@
       }
     }
   },
-  "plannerConflictsTitle": "Bloques solapados",
+  "plannerConflictsTitle": "Choques de horario",
   "plannerConflictPair": "{first} y {second}",
   "@plannerConflictPair": {
     "placeholders": {
@@ -90,7 +90,7 @@
       }
     }
   },
-  "plannerConflictsHint": "Toca un bloque para editarlo o muévelo a otra franja.",
+  "plannerConflictsHint": "Son bloques que ocupan la misma hora, así que no podrás hacer los dos. Toca uno para cambiarlo de hora o borrarlo.",
   "plannerDeadlinesThisWeek": "Entregas de la semana",
   "plannerMenuDeadlines": "Entregas y exámenes",
   "plannerMenuSuggestions": "Sugerencias con IA",
@@ -410,9 +410,9 @@
   "plannerSaveAndScan": "Guardar y escanear",
   "plannerDatesInvalid": "La fecha de fin debe ser posterior a la de inicio.",
   "plannerPickDate": "Elegir fecha",
-  "plannerIcsSection": "Calendario de una asignatura (enlace ICS)",
-  "plannerIcsIntro": "Importa clases, exámenes y entregas desde el enlace ICS del campus virtual.",
-  "plannerIcsUrl": "URL del calendario (opcional)",
+  "plannerIcsSection": "Calendario de una asignatura",
+  "plannerIcsIntro": "Pega el enlace del calendario de la asignatura tal cual aparece en el Campus Virtual: un ICS o un calendario de Google. Se importan las clases, exámenes y entregas del curso actual.",
+  "plannerIcsUrl": "Enlace del calendario (opcional)",
   "plannerIcsUrlHint": "Vacía: se usa la guardada en la asignatura",
   "plannerIcsImport": "Importar",
   "plannerIcsResult": "{created} creados · {updated} actualizados de {total} eventos",
@@ -600,9 +600,6 @@
       }
     }
   },
-  "plannerPomodoroLeaveTitle": "¿Salir del Pomodoro?",
-  "plannerPomodoroLeaveMessage": "El tiempo que llevas se guardará como una fase sin terminar.",
-  "plannerPomodoroLeave": "Salir",
   "plannerSportDoneAction": "Marcar como hecho",
   "plannerMenuCalendarSync": "Sincronizar calendarios",
   "plannerSyncTitle": "Sincronizar calendarios",
@@ -628,7 +625,7 @@
   "plannerSyncCopy": "Copiar enlace",
   "plannerSyncCopied": "Enlace copiado",
   "plannerSyncOpen": "Abrir en el calendario",
-  "plannerSyncGoogleSteps": "En Google Calendar (web): Otros calendarios › + › Desde URL, pega el enlace y pulsa «Añadir calendario».",
+  "plannerSyncGoogleSteps": "La app de Google Calendar del móvil no deja añadir calendarios por enlace. Pulsa «Añadir a Google Calendar» o, desde el ordenador, entra en calendar.google.com › Otros calendarios › + › Desde URL, pega el enlace y pulsa «Añadir calendario». Después aparece también en el móvil.",
   "plannerSyncCampusTitle": "Exámenes y entregas del Campus Virtual",
   "plannerSyncCampusSteps": "1. En el Campus Virtual, abre Calendario › Importar o exportar calendarios › Exportar calendario.\n2. Elige todos los eventos y el periodo «Recientes y próximos 60 días».\n3. Pulsa «Obtener URL del calendario» y copia la dirección.\n4. Pégala aquí. Repítelo de vez en cuando para traer lo nuevo: no se duplica nada.",
   "plannerSyncCampusUrlLabel": "Dirección del calendario",
@@ -651,7 +648,7 @@
   },
   "plannerErrorCalendarFeedNotFound": "Ese enlace ya no existe: puede que lo desactivaras desde otro dispositivo.",
   "plannerSyncRevoked": "Enlace desactivado",
-  "plannerSyncOpenFailed": "No hay ninguna app de calendario que lo abra: copia el enlace y sigue los pasos.",
+  "plannerSyncOpenFailed": "No se ha podido abrir. Copia el enlace y sigue los pasos de abajo.",
   "plannerSyncCampusUrlRequired": "Pega la dirección del calendario.",
   "plannerSyncLinkLabel": "Enlace secreto del calendario",
   "plannerSyncSeeDeadlines": "Ver entregas y exámenes",
@@ -661,5 +658,72 @@
   "plannerPomodoroAlertFocusBody": "Tómate el descanso. Abre SynaptixFit para seguir.",
   "plannerPomodoroAlertBreakTitle": "Descanso terminado",
   "plannerPomodoroAlertBreakBody": "Cuando quieras, empieza el siguiente bloque.",
-  "plannerPomodoroAlertChannel": "Temporizador"
+  "plannerPomodoroAlertChannel": "Temporizador",
+  "plannerConflictWhen": "{day} · coinciden de {start} a {end}",
+  "@plannerConflictWhen": {
+    "description": "Cuándo coinciden dos bloques.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerSyncAddGoogle": "Añadir a Google Calendar",
+  "@plannerSyncAddGoogle": {
+    "description": "Botón: abre la suscripción en Google Calendar (web)."
+  },
+  "plannerPomodoroOngoingFocus": "Concentración en marcha",
+  "plannerPomodoroOngoingBreak": "Descanso en marcha",
+  "plannerPomodoroOngoingPaused": "Pomodoro en pausa",
+  "plannerPomodoroOngoingEndsAt": "Termina a las {time}",
+  "@plannerPomodoroOngoingEndsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerPomodoroOngoingRemaining": "Quedan {time}",
+  "@plannerPomodoroOngoingRemaining": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerPomodoroOngoingChannel": "Pomodoro en marcha",
+  "plannerPomodoroKeepsRunning": "Puedes salir de esta pantalla: el temporizador sigue y lo verás en la barra de abajo.",
+  "plannerPomodoroBarLabel": "{phase}: quedan {time}. Abrir el Pomodoro",
+  "@plannerPomodoroBarLabel": {
+    "description": "Lector de pantalla de la barra del temporizador.",
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerScanTimetableTitle": "Tu horario semanal",
+  "plannerScanOpenCalendar": "Ver en el calendario",
+  "plannerScanPractice": "Prácticas",
+  "plannerPomodoroBarPausedLabel": "{phase} en pausa: quedan {time}. Abrir el Pomodoro",
+  "@plannerPomodoroBarPausedLabel": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerScanNotImported": "no importada (no coincide con tus asignaturas)"
 }

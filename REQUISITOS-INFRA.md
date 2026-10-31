@@ -59,7 +59,10 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 | `R2_ENDPOINT` | `https://<cuenta>.r2.cloudflarestorage.com` | no | |
 | `R2_BUCKET` | `synaptixfit` | no | |
 | `R2_ACCESS_KEY` / `R2_SECRET_KEY` | `***` | **sí** | credenciales S3 de R2 |
-| `R2_PUBLIC_BASE_URL` | `https://media.jloenit.dev` | no | vacío si el bucket es privado |
+| `R2_PUBLIC_BASE_URL` | *(vacío)* | no | vacío: los archivos de los usuarios no se publican (se descargan con URL firmada) |
+| `R2_PROXY_BASE_URL` | `https://synaptixfit.jloenit.dev/storage` | no | subidas y descargas firmadas a través del nginx de la app (ADR 0024); vacío: directas a R2 |
+| `R2_MEDIA_UPSTREAM` | `https://pub-….r2.dev` | no | contenedor `web`: dirección pública del bucket a la que nginx reenvía `/media/ejercicios/` (ADR 0024); por defecto, la del bucket actual |
+| `MEDIA_PUBLIC_BASE_URL` | `https://synaptixfit.jloenit.dev/media` | no | vídeos e imágenes de los ejercicios a través del nginx de la app (ADR 0024); vacío: desde `pub-….r2.dev` |
 | `RESEND_API_KEY` | `***` | **sí** | **obligatoria en producción**: correo transaccional (Resend); sin ella no sale ningún correo aunque la API responda 202 (ADR 0021) |
 | `MAIL_FROM` | `SynaptixFit <no-reply@notifications.jloenit.dev>` | no | remitente; dominio verificado en Resend (`notifications.jloenit.dev`, región eu-west-1) |
 | `WEEKLY_EMAIL_CRON` | `0 0 19-23 * * SUN` | no | opcional: cuándo sale el resumen semanal por correo (zona del planificador). Cada hora de 19 a 23 reintenta solo a quien no lo recibió; `-` lo desactiva |

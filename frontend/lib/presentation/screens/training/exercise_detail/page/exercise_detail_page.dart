@@ -7,6 +7,7 @@ import '../../../../../domain/models/training/exercise.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../widgets/exercise_instructions.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_labels.dart';
@@ -104,32 +105,7 @@ class _Content extends StatelessWidget {
               if (e.instructions.isNotEmpty) ...[
                 const SizedBox(height: TokensSpacing.l),
                 AppSectionHeader(title: l10n.trainingInstructions),
-                for (var i = 0; i < e.instructions.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor: context.colors.secondaryContainer,
-                          child: Text(
-                            '${i + 1}',
-                            style: context.textStyles.labelSmall?.copyWith(
-                              color: context.colors.onSecondaryContainer,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: TokensSpacing.s),
-                        Expanded(
-                          child: Text(
-                            e.instructions[i],
-                            style: context.textStyles.bodyMedium,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                ExerciseInstructions(steps: e.instructions),
               ],
               _ItemSection(
                 title: l10n.trainingTargetMuscles,

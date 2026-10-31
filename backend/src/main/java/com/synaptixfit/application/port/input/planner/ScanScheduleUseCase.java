@@ -1,5 +1,6 @@
 package com.synaptixfit.application.port.input.planner;
 
+import com.synaptixfit.domain.model.planner.ScheduleEntry;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,8 +19,10 @@ public interface ScanScheduleUseCase {
     /**
      * @param classesFound      clases del patrón semanal devueltas por la IA
      * @param unmatchedSubjects asignaturas del documento que no se pudieron vincular
+     * @param classes           el horario semanal detectado, por día y hora, para enseñarlo
      */
-    record Result(int classesFound, int blocksCreated, int blocksUpdated, List<String> unmatchedSubjects) {
+    record Result(int classesFound, int blocksCreated, int blocksUpdated, List<String> unmatchedSubjects,
+                  List<ScheduleEntry> classes) {
     }
 
     Result scan(Command command);

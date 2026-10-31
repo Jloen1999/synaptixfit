@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/challenge_link_type.dart';
 import '../../../../../domain/enums/challenge_status.dart';
+import '../../../../../domain/enums/challenge_type.dart';
 import '../../../../../domain/models/challenges/challenge.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -16,7 +17,9 @@ import '../../challenges_routes.dart';
 import '../../quick_challenge/page/quick_challenge_sheet.dart';
 import '../../widgets/challenge_content_width.dart';
 import '../../widgets/challenge_feedback.dart';
+import '../../widgets/challenge_focus.dart';
 import '../../widgets/challenge_labels.dart';
+import '../../widgets/challenge_next_step.dart';
 import '../../widgets/challenge_progress_bar.dart';
 import '../../widgets/dependency_graph.dart';
 import '../../widgets/milestone_tile.dart';
@@ -40,7 +43,14 @@ class ChallengeDetailPage extends StatelessWidget {
   }
 }
 
-enum _MenuAction { edit, editTasks, reorder, visibility, delete }
+enum _MenuAction {
+  recordProgress,
+  edit,
+  editTasks,
+  reorder,
+  visibility,
+  delete,
+}
 
 class _DetailView extends StatelessWidget with ErrorsMessageMixin {
   const _DetailView({required this.challengeId});
@@ -127,19 +137,12 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
   ) async {
     final bloc = _bloc(context);
     switch (action) {
+      case _MenuAction.recordProgress:
+        await _recordProgress(context);
       case _MenuAction.edit:
-        final result = await showQuickChallengeSheet(
-          context,
-          editing: challenge,
-        );
-        if (result is QuickChallengeSaved) {
-          bloc.add(ChallengeDetailEvent.challengeReplaced(result.challenge));
-        }
+        await _edit(context, challenge);
       case _MenuAction.editTasks:
-        final saved = await context.push<String>(
-          ChallengesPaths.editMilestones(challenge.id),
-        );
-        if (saved != null) bloc.add(const ChallengeDetailEvent.refreshed());
+        await _editTasks(context, challenge);
       case _MenuAction.reorder:
         final ids = await showReorderMilestonesSheet(
           context,
@@ -165,6 +168,23 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
     }
   }
 
+  /// Edita los datos básicos (también la fecha de fin de un reto vencido).
+  Future<void> _edit(BuildContext context, Challenge challenge) async {
+    final bloc = _bloc(context);
+    final result = await showQuickChallengeSheet(context, editing: challenge);
+    if (result is QuickChallengeSaved) {
+      bloc.add(ChallengeDetailEvent.challengeReplaced(result.challenge));
+    }
+  }
+
+  Future<void> _editTasks(BuildContext context, Challenge challenge) async {
+    final bloc = _bloc(context);
+    final saved = await context.push<String>(
+      ChallengesPaths.editMilestones(challenge.id),
+    );
+    if (saved != null) bloc.add(const ChallengeDetailEvent.refreshed());
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -183,6 +203,14 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                   enabled: !state.busy,
                   onSelected: (a) => _onMenu(context, a, challenge),
                   itemBuilder: (context) => [
+                    // También aquí: en retos de sesiones o con tareas la
+                    // barra inferior da prioridad a otra acción.
+                    if (challenge.status == ChallengeStatus.active)
+                      _menuItem(
+                        _MenuAction.recordProgress,
+                        Icons.add_chart_rounded,
+                        l10n.challengesDetailRecordProgress,
+                      ),
                     _menuItem(
                       _MenuAction.edit,
                       Icons.edit_outlined,
@@ -217,7 +245,11 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
           ),
           bottomNavigationBar: challenge == null
               ? null
-              : _BottomActions(challenge: challenge, busy: state.busy),
+              : _BottomActions(
+                  challenge: challenge,
+                  busy: state.busy,
+                  onExtend: () => _edit(context, challenge),
+                ),
           body: switch (state.status) {
             ChallengeDetailStatus.loading => const _DetailSkeleton(),
             ChallengeDetailStatus.failure => AppErrorView(
@@ -230,7 +262,10 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                 _bloc(context).add(const ChallengeDetailEvent.refreshed());
                 await _bloc(context).stream.first;
               },
-              child: _DetailContent(state: state),
+              child: _DetailContent(
+                state: state,
+                onEditTasks: () => _editTasks(context, state.challenge!),
+              ),
             ),
           },
         );
@@ -253,9 +288,10 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
 }
 
 class _DetailContent extends StatelessWidget {
-  const _DetailContent({required this.state});
+  const _DetailContent({required this.state, required this.onEditTasks});
 
   final ChallengeDetailState state;
+  final VoidCallback onEditTasks;
 
   void _openLink(BuildContext context, ChallengeLink link) => context.push(
     link.type == ChallengeLinkType.block
@@ -270,6 +306,8 @@ class _DetailContent extends StatelessWidget {
     final bloc = context.read<ChallengeDetailBloc>();
     final titles = {for (final m in challenge.milestones) m.id: m.title};
     final link = challenge.link;
+    final expired = challenge.status == ChallengeStatus.expired;
+    final nextId = challenge.nextMilestone?.id;
     final dependent = challenge.milestones
         .where((m) => m.dependencies.isNotEmpty)
         .length;
@@ -281,9 +319,9 @@ class _DetailContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _HeaderCard(challenge: challenge, subjectName: state.subjectName),
+              // Arriba, cómo va y qué toca (tras el aviso si el reto es ajeno):
+              // progreso, siguiente paso y motivación. Los datos, después.
               if (!challenge.owned) ...[
-                const SizedBox(height: TokensSpacing.m),
                 AppCard(
                   color: context.colors.primaryContainer,
                   child: Row(
@@ -306,44 +344,35 @@ class _DetailContent extends StatelessWidget {
                     ],
                   ),
                 ),
-              ],
-              const SizedBox(height: TokensSpacing.m),
-              _ProgressCard(challenge: challenge),
-              if (link != null) ...[
                 const SizedBox(height: TokensSpacing.m),
-                AppCard(
-                  onTap: challenge.owned
-                      ? () => _openLink(context, link)
-                      : null,
-                  child: Row(
-                    children: [
-                      Icon(link.type.icon, color: context.colors.tertiary),
-                      const SizedBox(width: TokensSpacing.m),
-                      Expanded(
-                        child: Text(
-                          link.type.linkedLabel(context),
-                          style: context.textStyles.bodyLarge,
-                        ),
-                      ),
-                      if (challenge.owned)
-                        Text(
-                          l10n.challengesLinkOpen,
-                          style: context.textStyles.labelLarge?.copyWith(
-                            color: context.colors.primary,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
               ],
+              _SummaryCard(challenge: challenge),
               const SizedBox(height: TokensSpacing.l),
-              AppSectionHeader(title: l10n.challengesDetailTasks),
+              AppSectionHeader(
+                title: l10n.challengesDetailTasks,
+                // Editar tareas a la vista, no solo en el menú «Más opciones».
+                actionLabel: challenge.owned && challenge.hasMilestones
+                    ? l10n.challengesDetailEditTasks
+                    : null,
+                onAction: onEditTasks,
+              ),
               if (challenge.milestones.isEmpty)
-                Text(
-                  l10n.challengesDetailNoTasks,
-                  style: context.textStyles.bodyMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ),
+                AppCard(
+                  child: challenge.owned
+                      ? AppEmptyState.compact(
+                          icon: Icons.checklist_rounded,
+                          title: l10n.challengesDetailNoTasksTitle,
+                          message: l10n.challengesDetailNoTasksHint,
+                          action: AppSecondaryButton(
+                            label: l10n.challengesDetailAddTasks,
+                            icon: const Icon(Icons.playlist_add_rounded),
+                            onPressed: state.busy ? null : onEditTasks,
+                          ),
+                        )
+                      : AppEmptyState.compact(
+                          icon: Icons.checklist_rounded,
+                          title: l10n.challengesDetailNoTasksReadOnly,
+                        ),
                 )
               else
                 for (final m in challenge.milestones)
@@ -351,11 +380,19 @@ class _DetailContent extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: TokensSpacing.s),
                     child: MilestoneTile(
                       milestone: m,
+                      isNext: challenge.owned && !expired && m.id == nextId,
+                      showWeight: challenge.showsTaskWeights,
+                      expired: expired,
                       dependencyTitles: [
                         for (final d in m.dependencies) ?titles[d],
                       ],
                       busy: state.busyMilestoneId == m.id,
-                      onToggle: challenge.owned && !state.busy
+                      // Vencido, el servidor no deja completar tareas (sí
+                      // desmarcarlas): no se ofrece un toque que fallaría.
+                      onToggle:
+                          challenge.owned &&
+                              !state.busy &&
+                              (!expired || m.completed)
                           ? () => bloc.add(
                               ChallengeDetailEvent.milestoneToggled(m.id),
                             )
@@ -387,6 +424,42 @@ class _DetailContent extends StatelessWidget {
                 const SizedBox(height: TokensSpacing.s),
                 AppCard(
                   child: DependencyGraph(milestones: challenge.milestones),
+                ),
+              ],
+              const SizedBox(height: TokensSpacing.l),
+              AppSectionHeader(title: l10n.challengesFormSectionDetails),
+              _DetailsCard(
+                challenge: challenge,
+                subjectName: state.subjectName,
+              ),
+              if (link != null) ...[
+                const SizedBox(height: TokensSpacing.s),
+                AppCard(
+                  onTap: challenge.owned
+                      ? () => _openLink(context, link)
+                      : null,
+                  child: Row(
+                    children: [
+                      Icon(link.type.icon, color: context.colors.tertiary),
+                      const SizedBox(width: TokensSpacing.m),
+                      Expanded(
+                        child: Text(
+                          link.type.linkedLabel(context),
+                          style: context.textStyles.bodyLarge,
+                        ),
+                      ),
+                      if (challenge.owned)
+                        Flexible(
+                          child: Text(
+                            l10n.challengesLinkOpen,
+                            textAlign: TextAlign.end,
+                            style: context.textStyles.labelLarge?.copyWith(
+                              color: context.colors.primary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ],
               if (challenge.owned) ...[
@@ -439,8 +512,229 @@ class _DetailContent extends StatelessWidget {
   }
 }
 
-class _HeaderCard extends StatelessWidget {
-  const _HeaderCard({required this.challenge, this.subjectName});
+/// Cabecera del detalle: plazo, título, progreso grande, siguiente paso y
+/// cifras de motivación (racha, mejor racha y recompensa).
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.challenge});
+
+  final Challenge challenge;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final status = challenge.status;
+    final accent = challenge.type.color(context);
+    final goal = challenge.goal;
+    final percent = (challenge.progressFraction * 100).round();
+    final nextStep = challengeNextStepText(context, challenge);
+    final counts = challenge.tracksTrainingSessions
+        ? l10n.challengesSessionsProgress(
+            challenge.sessionsCompleted,
+            challenge.sessionTarget ?? 0,
+          )
+        : challenge.hasMilestones
+        ? l10n.challengesMilestonesProgress(
+            challenge.completedMilestoneCount,
+            challenge.milestoneCount,
+          )
+        : null;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: TokensSpacing.s,
+            runSpacing: TokensSpacing.xs,
+            children: [
+              ChallengeTimePill(challenge: challenge),
+              AppPill(
+                icon: challenge.type.icon,
+                label: challenge.type.label(context),
+                color: accent,
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.m),
+          Semantics(
+            header: true,
+            child: Text(
+              challenge.title,
+              style: context.textStyles.headlineSmall,
+            ),
+          ),
+          if (goal != null && goal.isNotEmpty && goal != challenge.title) ...[
+            const SizedBox(height: TokensSpacing.s),
+            Text(goal, style: context.textStyles.bodyMedium),
+          ],
+          const SizedBox(height: TokensSpacing.m),
+          Wrap(
+            spacing: TokensSpacing.s,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              // La cifra grande es visual; la barra ya anuncia el porcentaje.
+              ExcludeSemantics(
+                child: Text(
+                  l10n.challengesProgressPercent(percent),
+                  style: context.textStyles.headlineMedium,
+                ),
+              ),
+              if (counts != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
+                  child: Text(
+                    counts,
+                    style: context.textStyles.labelLarge?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.s),
+          ChallengeProgressBar(
+            value: challenge.progressFraction,
+            showLabel: false,
+            color: status == ChallengeStatus.completed
+                ? context.palette.success
+                : accent,
+          ),
+          if (challenge.tracksTrainingSessions) ...[
+            const SizedBox(height: TokensSpacing.s),
+            Text(
+              l10n.challengesDetailSessionsInfo,
+              style: context.textStyles.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (nextStep != null) ...[
+            const SizedBox(height: TokensSpacing.m),
+            _NextStepBox(challenge: challenge, text: nextStep),
+          ],
+          const SizedBox(height: TokensSpacing.m),
+          // En rejilla: con el texto al 200 % pasa a filas de la mitad en
+          // lugar de cortar «Recompensa». La racha solo cuenta en retos propios.
+          AppTileGrid(
+            children: [
+              if (challenge.owned) ...[
+                _Stat(
+                  icon: Icons.local_fire_department_rounded,
+                  color: context.palette.streak,
+                  label: l10n.challengesDetailStreak,
+                  value: l10n.challengesDetailDaysValue(
+                    challenge.currentStreak,
+                  ),
+                ),
+                _Stat(
+                  icon: Icons.military_tech_outlined,
+                  color: context.palette.streak,
+                  label: l10n.challengesDetailBestStreak,
+                  value: l10n.challengesDetailDaysValue(challenge.bestStreak),
+                ),
+              ],
+              // Con tareas, la XP la reparte el servidor con un tope por
+              // reto: se muestra la ganada, no una suma que no se cumpliría.
+              _Stat(
+                icon: Icons.bolt_rounded,
+                color: context.palette.accent,
+                label: challenge.hasMilestones
+                    ? l10n.challengesDetailXpEarned
+                    : l10n.challengesDetailReward,
+                value: l10n.challengesXpGain(
+                  challenge.hasMilestones
+                      ? challenge.totalXpAwarded
+                      : challenge.xpReward,
+                ),
+              ),
+            ],
+          ),
+          if (challenge.owned &&
+              status == ChallengeStatus.active &&
+              challenge.currentStreak == 0) ...[
+            const SizedBox(height: TokensSpacing.s),
+            Text(
+              l10n.challengesStreakStart,
+              style: context.textStyles.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Caja «Siguiente paso» con el tinte del estado (lima si toca avanzar,
+/// naranja de logro si está conseguido, aviso si venció).
+class _NextStepBox extends StatelessWidget {
+  const _NextStepBox({required this.challenge, required this.text});
+
+  final Challenge challenge;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final color = switch (challenge.status) {
+      ChallengeStatus.completed => context.palette.accent,
+      ChallengeStatus.expired => context.palette.warning,
+      ChallengeStatus.active => context.colors.primary,
+    };
+    final next = challenge.nextMilestone;
+    final active = challenge.status == ChallengeStatus.active;
+    return MergeSemantics(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(TokensSpacing.sm),
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(
+            color.withValues(alpha: AppPill.tintAlpha),
+            context.colors.surface,
+          ),
+          borderRadius: BorderRadius.circular(TokensRadius.m),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              challengeNextStepIcon(challenge),
+              color: color,
+              size: TokensSize.iconS,
+            ),
+            const SizedBox(width: TokensSpacing.s),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (active)
+                    Text(
+                      l10n.challengesNextStepTitle,
+                      style: context.textStyles.labelMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                  Text(
+                    // Con tarea siguiente, su nombre a secas (la etiqueta
+                    // «Siguiente paso» ya va encima).
+                    active && next != null && !challenge.tracksTrainingSessions
+                        ? next.title
+                        : text,
+                    style: context.textStyles.titleSmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Datos del reto (tipo, esfuerzo, visibilidad, fechas, asignatura y autor).
+class _DetailsCard extends StatelessWidget {
+  const _DetailsCard({required this.challenge, this.subjectName});
 
   final Challenge challenge;
   final String? subjectName;
@@ -448,8 +742,6 @@ class _HeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final accent = challenge.type.color(context);
-    final goal = challenge.goal;
     final origin = challenge.originOwnerName;
     return AppCard(
       child: Column(
@@ -460,35 +752,17 @@ class _HeaderCard extends StatelessWidget {
             runSpacing: TokensSpacing.xs,
             children: [
               AppPill(
-                icon: challenge.type.icon,
-                label: challenge.type.label(context),
-                color: accent,
-              ),
-              AppPill(
-                icon: challenge.status.icon,
-                label: challenge.status.label(context),
-                color: challenge.status.color(context),
-              ),
-              AppPill(
                 icon: challenge.difficulty.icon,
                 label: challenge.difficulty.effortLabel(context),
-                color: context.colors.onSurfaceVariant,
               ),
               if (challenge.owned)
                 AppPill(
                   icon: challenge.visibility.challengeIcon,
                   label: challenge.visibility.challengeLabel(context),
-                  color: context.colors.onSurfaceVariant,
                 ),
             ],
           ),
-          const SizedBox(height: TokensSpacing.m),
-          Text(challenge.title, style: context.textStyles.headlineSmall),
-          if (goal != null && goal.isNotEmpty && goal != challenge.title) ...[
-            const SizedBox(height: TokensSpacing.s),
-            Text(goal, style: context.textStyles.bodyMedium),
-          ],
-          const SizedBox(height: TokensSpacing.m),
+          const SizedBox(height: TokensSpacing.s),
           _InfoRow(
             icon: Icons.date_range_outlined,
             text: l10n.challengesDetailDates(
@@ -528,7 +802,11 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.only(top: TokensSpacing.xs),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: context.colors.onSurfaceVariant),
+          Icon(
+            icon,
+            size: TokensSize.iconXs,
+            color: context.colors.onSurfaceVariant,
+          ),
           const SizedBox(width: TokensSpacing.s),
           Expanded(
             child: Text(
@@ -544,112 +822,7 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _ProgressCard extends StatelessWidget {
-  const _ProgressCard({required this.challenge});
-
-  final Challenge challenge;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    final completed = challenge.status == ChallengeStatus.completed;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.challengesDetailProgress,
-                  style: context.textStyles.titleMedium,
-                ),
-              ),
-              if (challenge.hasMilestones)
-                Text(
-                  l10n.challengesMilestonesProgress(
-                    challenge.completedMilestoneCount,
-                    challenge.milestoneCount,
-                  ),
-                  style: context.textStyles.labelLarge,
-                ),
-              if (challenge.tracksTrainingSessions) ...[
-                Icon(
-                  Icons.fitness_center_rounded,
-                  size: 18,
-                  color: challenge.type.color(context),
-                ),
-                const SizedBox(width: TokensSpacing.xs),
-                Text(
-                  l10n.challengesSessionsProgress(
-                    challenge.sessionsCompleted,
-                    challenge.sessionTarget ?? 0,
-                  ),
-                  style: context.textStyles.labelLarge,
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: TokensSpacing.m),
-          ChallengeProgressBar(
-            value: challenge.progressFraction,
-            color: completed
-                ? context.palette.success
-                : challenge.type.color(context),
-          ),
-          if (challenge.tracksTrainingSessions) ...[
-            const SizedBox(height: TokensSpacing.s),
-            Text(
-              l10n.challengesDetailSessionsInfo,
-              style: context.textStyles.bodySmall?.copyWith(
-                color: context.colors.onSurfaceVariant,
-              ),
-            ),
-          ],
-          const SizedBox(height: TokensSpacing.m),
-          Row(
-            children: [
-              Expanded(
-                child: _Stat(
-                  icon: Icons.local_fire_department_rounded,
-                  color: context.palette.streak,
-                  label: l10n.challengesDetailStreak,
-                  value: l10n.challengesDetailDaysValue(
-                    challenge.currentStreak,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: _Stat(
-                  icon: Icons.military_tech_outlined,
-                  color: context.palette.streak,
-                  label: l10n.challengesDetailBestStreak,
-                  value: l10n.challengesDetailDaysValue(challenge.bestStreak),
-                ),
-              ),
-              Expanded(
-                child: _Stat(
-                  icon: Icons.bolt_rounded,
-                  color: context.palette.accent,
-                  label: l10n.challengesDetailReward,
-                  value: l10n.challengesXpGain(
-                    challenge.hasMilestones
-                        ? challenge.milestones.fold(
-                            0,
-                            (sum, m) => sum + m.xpReward,
-                          )
-                        : challenge.xpReward,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+/// Cifra pequeña con icono; se lee como una sola frase («Racha, 3 días»).
 class _Stat extends StatelessWidget {
   const _Stat({
     required this.icon,
@@ -665,41 +838,38 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: TokensSpacing.xs),
-        Text(value, style: context.textStyles.titleSmall),
-        Text(
-          label,
-          style: context.textStyles.labelSmall?.copyWith(
-            color: context.colors.onSurfaceVariant,
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: TokensSize.iconS),
+          const SizedBox(height: TokensSpacing.xs),
+          Text(value, style: context.textStyles.titleSmall),
+          Text(
+            label,
+            style: context.textStyles.labelSmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
+/// Barra inferior con la acción principal según el estado del reto: avanzar
+/// (siguiente tarea, completar o ir a Rutinas), ampliar la fecha si venció o
+/// añadirlo a los propios si es ajeno. Como mucho, una acción secundaria.
 class _BottomActions extends StatelessWidget {
-  const _BottomActions({required this.challenge, required this.busy});
+  const _BottomActions({
+    required this.challenge,
+    required this.busy,
+    required this.onExtend,
+  });
 
   final Challenge challenge;
   final bool busy;
-
-  Future<void> _recordProgress(BuildContext context) async {
-    final bloc = context.read<ChallengeDetailBloc>();
-    final result = await showRecordProgressDialog(context, challenge);
-    if (result != null) {
-      bloc.add(
-        ChallengeDetailEvent.progressRecorded(
-          milestoneId: result.milestoneId,
-          amount: result.amount,
-        ),
-      );
-    }
-  }
+  final VoidCallback onExtend;
 
   Future<void> _toggleCompletion(BuildContext context) async {
     final bloc = context.read<ChallengeDetailBloc>();
@@ -713,58 +883,120 @@ class _BottomActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final children = <Widget>[];
+    final bloc = context.read<ChallengeDetailBloc>();
+    Widget? primary;
+    Widget? secondary;
     if (!challenge.owned) {
-      children.add(
-        Expanded(
-          child: AppPrimaryButton(
-            label: l10n.challengesClone,
-            icon: Icons.copy_all_rounded,
-            loading: busy,
-            onPressed: () => context.read<ChallengeDetailBloc>().add(
-              const ChallengeDetailEvent.cloneRequested(),
-            ),
-          ),
-        ),
+      primary = AppPrimaryButton(
+        label: l10n.challengesClone,
+        icon: Icons.library_add_outlined,
+        loading: busy,
+        onPressed: () => bloc.add(const ChallengeDetailEvent.cloneRequested()),
       );
     } else {
-      if (!challenge.completed) {
-        children.add(
-          Expanded(
-            child: AppSecondaryButton(
+      switch (challenge.status) {
+        case ChallengeStatus.expired:
+          primary = AppPrimaryButton(
+            label: l10n.challengesDetailExtend,
+            icon: Icons.update_rounded,
+            onPressed: busy ? null : onExtend,
+          );
+        case ChallengeStatus.completed:
+          // Deshacer no es la acción que se busca: va como secundaria.
+          if (!challenge.hasMilestones) {
+            secondary = AppSecondaryButton(
+              label: l10n.challengesDetailUncomplete,
+              loading: busy,
+              onPressed: () => _toggleCompletion(context),
+            );
+          }
+        case ChallengeStatus.active:
+          final next = challenge.nextMilestone;
+          // Sin Rutinas en el enfoque de uso, la pestaña no existe.
+          if (challenge.tracksTrainingSessions &&
+              context.allowedChallengeTypes.contains(ChallengeType.fitness)) {
+            primary = AppPrimaryButton(
+              label: l10n.challengesDetailGoTraining,
+              icon: Icons.fitness_center_rounded,
+              onPressed: () => context.go(ChallengesExternalPaths.training),
+            );
+          } else {
+            if (challenge.hasMilestones) {
+              if (next != null) {
+                primary = AppPrimaryButton(
+                  label: l10n.challengesDetailCompleteNext,
+                  icon: Icons.check_rounded,
+                  loading: busy,
+                  onPressed: () =>
+                      bloc.add(ChallengeDetailEvent.milestoneToggled(next.id)),
+                );
+              }
+            } else {
+              primary = AppPrimaryButton(
+                label: l10n.challengesDetailComplete,
+                icon: Icons.check_rounded,
+                loading: busy,
+                onPressed: () => _toggleCompletion(context),
+              );
+            }
+            secondary = AppSecondaryButton(
               label: l10n.challengesDetailRecordProgress,
               icon: const Icon(Icons.add_chart_rounded),
               onPressed: busy ? null : () => _recordProgress(context),
-            ),
-          ),
-        );
-      }
-      if (!challenge.hasMilestones) {
-        if (children.isNotEmpty) {
-          children.add(const SizedBox(width: TokensSpacing.s));
-        }
-        children.add(
-          Expanded(
-            child: AppPrimaryButton(
-              label: challenge.completed
-                  ? l10n.challengesDetailUncomplete
-                  : l10n.challengesDetailComplete,
-              loading: busy,
-              onPressed: () => _toggleCompletion(context),
-            ),
-          ),
-        );
+            );
+          }
       }
     }
-    if (children.isEmpty) return const SizedBox.shrink();
-    return SafeArea(
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          border: Border(top: BorderSide(color: context.colors.outlineVariant)),
+    final buttons = [?secondary, ?primary];
+    if (buttons.isEmpty) return const SizedBox.shrink();
+    // Con el texto grande, uno debajo de otro (la principal arriba) para que
+    // las etiquetas no se corten.
+    final stacked = context.scaled(1) > 1.3;
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        border: Border(top: BorderSide(color: context.colors.outlineVariant)),
+      ),
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.all(TokensSpacing.m),
+        child: ChallengeContentWidth(
+          child: stacked
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final (i, b) in buttons.reversed.indexed) ...[
+                      if (i > 0) const SizedBox(height: TokensSpacing.s),
+                      b,
+                    ],
+                  ],
+                )
+              : Row(
+                  children: [
+                    for (final (i, b) in buttons.indexed) ...[
+                      if (i > 0) const SizedBox(width: TokensSpacing.s),
+                      Expanded(child: b),
+                    ],
+                  ],
+                ),
         ),
-        padding: const EdgeInsets.all(TokensSpacing.m),
-        child: ChallengeContentWidth(child: Row(children: children)),
+      ),
+    );
+  }
+}
+
+/// Abre el diálogo de progreso manual y lo registra en el bloc del detalle.
+Future<void> _recordProgress(BuildContext context) async {
+  final bloc = context.read<ChallengeDetailBloc>();
+  final challenge = bloc.state.challenge;
+  if (challenge == null) return;
+  final result = await showRecordProgressDialog(context, challenge);
+  if (result != null) {
+    bloc.add(
+      ChallengeDetailEvent.progressRecorded(
+        milestoneId: result.milestoneId,
+        amount: result.amount,
       ),
     );
   }
@@ -781,9 +1013,7 @@ class _DetailSkeleton extends StatelessWidget {
         child: ChallengeContentWidth(
           child: Column(
             children: [
-              AppSkeleton(height: 160),
-              SizedBox(height: TokensSpacing.m),
-              AppSkeleton(height: 140),
+              AppSkeleton(height: 260),
               SizedBox(height: TokensSpacing.l),
               AppSkeleton(height: 96),
               SizedBox(height: TokensSpacing.s),

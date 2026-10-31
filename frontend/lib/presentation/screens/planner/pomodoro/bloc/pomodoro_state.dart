@@ -34,11 +34,6 @@ abstract class PomodoroState with _$PomodoroState {
       phase == FocusPhase.focus &&
       remainingSeconds == totalSeconds;
 
-  /// Hay una fase empezada (corriendo o en pausa) con al menos un minuto
-  /// hecho: salir sin más lo perdería (por debajo no se registra nada).
-  bool get hasPhaseInProgress =>
-      status != PomodoroStatus.idle && totalSeconds - remainingSeconds >= 60;
-
   /// Fracción restante (1 = fase entera por delante).
   double get remainingFraction =>
       totalSeconds == 0 ? 0 : remainingSeconds / totalSeconds;

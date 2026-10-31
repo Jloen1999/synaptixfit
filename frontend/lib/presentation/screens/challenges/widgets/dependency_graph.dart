@@ -150,7 +150,7 @@ class _Node extends StatelessWidget {
       child: Material(
         color: status == MilestoneStatus.locked
             ? context.colors.surfaceContainerLow
-            : color.withValues(alpha: 0.1),
+            : color.withValues(alpha: AppPill.tintAlpha),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(TokensRadius.m),
           side: BorderSide(color: color, width: 1.5),
@@ -164,7 +164,7 @@ class _Node extends StatelessWidget {
                 padding: const EdgeInsets.all(TokensSpacing.s),
                 child: Row(
                   children: [
-                    Icon(status.icon, size: 18, color: color),
+                    Icon(status.icon, size: TokensSize.iconXs, color: color),
                     const SizedBox(width: TokensSpacing.xs),
                     Expanded(
                       child: Column(
@@ -217,7 +217,7 @@ class _Legend extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(s.icon, size: 14, color: s.color(context)),
+              Icon(s.icon, size: TokensSize.iconXs, color: s.color(context)),
               const SizedBox(width: TokensSpacing.xs),
               Text(s.label(context), style: context.textStyles.labelSmall),
             ],

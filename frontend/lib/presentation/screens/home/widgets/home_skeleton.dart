@@ -16,8 +16,13 @@ class HomeSkeleton extends StatelessWidget {
         children: [
           AppSkeleton(height: TokensSize.toolbarHeight),
           SizedBox(height: TokensSpacing.l),
-          // «Tu día»: el anillo más el relleno de la tarjeta.
-          AppSkeleton(height: TokensSize.heroRing + 2 * TokensSpacing.l),
+          // «Tu día»: anillo, botón y cifras con el relleno de la tarjeta.
+          AppSkeleton(
+            height:
+                TokensSize.heroRing +
+                TokensSize.controlHeight +
+                5 * TokensSpacing.m,
+          ),
           SizedBox(height: TokensSpacing.l),
           AppSkeleton(height: TokensSize.iconM),
           SizedBox(height: TokensSpacing.s),

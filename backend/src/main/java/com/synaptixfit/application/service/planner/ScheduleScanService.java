@@ -18,6 +18,7 @@ import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -91,6 +92,9 @@ public class ScheduleScanService implements ScanScheduleUseCase {
         }
         List<CalendarBlock> saved = blocks.saveAll(toSave);
         conflicts.refresh(command.userId(), saved, List.of());
-        return new Result(pattern.classes(), created, updated, pattern.unmatchedSubjects());
+        List<ScheduleEntry> timetable = entries.stream()
+                .sorted(Comparator.comparingInt(ScheduleEntry::dayOfWeek).thenComparing(ScheduleEntry::start))
+                .toList();
+        return new Result(pattern.classes(), created, updated, pattern.unmatchedSubjects(), timetable);
     }
 }

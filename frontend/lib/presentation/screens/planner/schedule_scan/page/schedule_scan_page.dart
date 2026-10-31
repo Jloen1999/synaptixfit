@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/planner_enums.dart';
@@ -13,6 +15,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../planner_routes.dart';
 import '../../widgets/semester_dates_sheet.dart';
 import '../bloc/schedule_scan_bloc.dart';
 
@@ -384,7 +387,7 @@ class _ScanResultView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(TokensSpacing.m),
       decoration: BoxDecoration(
-        color: context.palette.success.withValues(alpha: 0.10),
+        color: context.palette.success.withValues(alpha: AppPill.tintAlpha),
         borderRadius: BorderRadius.circular(TokensRadius.m),
       ),
       child: Column(
@@ -423,7 +426,7 @@ class _ScanResultView extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.help_outline_rounded,
-                      size: 16,
+                      size: TokensSize.iconXs,
                       color: context.palette.warning,
                     ),
                     const SizedBox(width: TokensSpacing.xs),
@@ -439,8 +442,129 @@ class _ScanResultView extends StatelessWidget {
               ),
             ),
           ],
+          if (result.classes.isNotEmpty) ...[
+            const SizedBox(height: TokensSpacing.m),
+            Semantics(
+              header: true,
+              child: Text(
+                l10n.plannerScanTimetableTitle,
+                style: context.textStyles.titleSmall,
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            _Timetable(
+              classes: result.classes,
+              unmatched: result.unmatchedSubjects.toSet(),
+            ),
+          ],
+          const SizedBox(height: TokensSpacing.s),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AppSecondaryButton(
+              label: l10n.plannerScanOpenCalendar,
+              icon: const Icon(Icons.calendar_month_outlined),
+              // Se suele llegar desde el calendario: se vuelve a él; si no, se abre.
+              onPressed: () => context.canPop()
+                  ? context.pop()
+                  : unawaited(context.push<void>(PlannerPaths.root)),
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// El horario semanal escaneado, día a día: hora, asignatura, aula y si es
+/// práctica. Así se comprueba de un vistazo que la IA lo leyó bien.
+class _Timetable extends StatelessWidget {
+  const _Timetable({required this.classes, required this.unmatched});
+
+  final List<ScheduleClass> classes;
+
+  /// Asignaturas que no se pudieron vincular: sus clases no se guardaron.
+  final Set<String> unmatched;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final days = <int, List<ScheduleClass>>{};
+    for (final c in classes) {
+      (days[c.dayOfWeek] ??= []).add(c);
+    }
+    final weekdays = DateFormat.EEEE(
+      l10n.localeName,
+    ).dateSymbols.STANDALONEWEEKDAYS;
+    final muted = context.textStyles.bodySmall?.copyWith(
+      color: context.colors.onSurfaceVariant,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final day in days.keys.toList()..sort()) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: TokensSpacing.s),
+            child: Text(
+              toBeginningOfSentenceCase(weekdays[day % 7]),
+              style: context.textStyles.labelLarge,
+            ),
+          ),
+          // La columna de la hora mide lo que su texto: no se parte ni roba
+          // ancho a la asignatura.
+          Table(
+            columnWidths: const {
+              0: IntrinsicColumnWidth(),
+              1: FlexColumnWidth(),
+            },
+            defaultVerticalAlignment: TableCellVerticalAlignment.top,
+            children: [
+              for (final c in days[day]!)
+                TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        top: TokensSpacing.xxs,
+                        end: TokensSpacing.s,
+                      ),
+                      child: Text(
+                        l10n.plannerTimeRange(c.start, c.end),
+                        style: context.textStyles.bodyMedium?.copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: TokensSpacing.xxs),
+                      child: MergeSemantics(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c.subjectName,
+                              style: context.textStyles.bodyMedium,
+                            ),
+                            if (c.practice ||
+                                (c.room ?? '').isNotEmpty ||
+                                unmatched.contains(c.subjectName))
+                              Text(
+                                [
+                                  if (c.practice) l10n.plannerScanPractice,
+                                  if ((c.room ?? '').isNotEmpty) c.room!,
+                                  if (unmatched.contains(c.subjectName))
+                                    l10n.plannerScanNotImported,
+                                ].join(' · '),
+                                style: muted,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }

@@ -50,6 +50,37 @@ class _DetailView extends StatefulWidget {
 class _DetailViewState extends State<_DetailView> {
   int _week = 0;
 
+  /// La semana inicial se elige una vez, al llegar la rutina: la del día que
+  /// toca entrenar. Después manda lo que elija la persona.
+  bool _weekChosen = false;
+
+  /// Tarjeta del día que toca: al abrir se desplaza hasta ella si no se ve.
+  final _nextDayKey = GlobalKey();
+
+  /// Abre la rutina en la semana del siguiente día y lo deja a la vista.
+  void _chooseInitialWeek(Routine routine) {
+    _weekChosen = true;
+    final nextId = _nextDayId(routine);
+    if (nextId == null) return;
+    final index = routine.weeks.indexWhere(
+      (w) => w.days.any((d) => d.id == nextId),
+    );
+    if (index < 0) return;
+    _week = index;
+    final first = routine.weeks.first.days.firstOrNull?.id;
+    // Si es el primer día de la rutina ya se ve bajo la cabecera.
+    if (nextId == first) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _nextDayKey.currentContext;
+      if (!mounted || target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        duration: context.motion(TokensDuration.normal),
+        alignment: 0.05,
+      );
+    });
+  }
+
   RoutineDetailBloc get _bloc => context.read<RoutineDetailBloc>();
 
   Future<void> _onMenu(Routine routine, _MenuAction action) async {
@@ -122,6 +153,7 @@ class _DetailViewState extends State<_DetailView> {
           const TrainingEffectHandler().handle(context, state.effect!),
       builder: (context, state) {
         final routine = state.routine;
+        if (routine != null && !_weekChosen) _chooseInitialWeek(routine);
         if (routine != null && _week >= routine.weeks.length) {
           _week = routine.weeks.isEmpty ? 0 : routine.weeks.length - 1;
         }
@@ -235,6 +267,7 @@ class _DetailViewState extends State<_DetailView> {
                           const SizedBox(height: TokensSpacing.s),
                           _WeekSection(
                             week: routine.weeks[_week],
+                            nextDayKey: _nextDayKey,
                             routine: routine,
                             bodyWeightKg: state.bodyWeightKg,
                             busy: state.busy,
@@ -271,7 +304,7 @@ class _Header extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: TokensSpacing.s),
               child: Row(
                 children: [
-                  AppAvatar(name: r.authorName!, radius: 14),
+                  AppAvatar(name: r.authorName!, radius: TokensSize.iconM / 2),
                   const SizedBox(width: TokensSpacing.s),
                   Text(
                     l10n.trainingByAuthor(r.authorName!),
@@ -354,12 +387,16 @@ class _Header extends StatelessWidget {
 class _WeekSection extends StatelessWidget {
   const _WeekSection({
     required this.week,
+    required this.nextDayKey,
     required this.routine,
     required this.bodyWeightKg,
     required this.busy,
   });
 
   final RoutineWeek week;
+
+  /// Clave para la tarjeta del día que toca (la página se desplaza hasta ella).
+  final GlobalKey nextDayKey;
   final Routine routine;
   final double? bodyWeightKg;
   final bool busy;
@@ -369,6 +406,7 @@ class _WeekSection extends StatelessWidget {
     final l10n = context.localizations;
     final bloc = context.read<RoutineDetailBloc>();
     final owned = routine.owned;
+    final nextId = _nextDayId(routine);
 
     Future<void> renameWeek() async {
       final name = await showTextPromptDialog(
@@ -420,6 +458,13 @@ class _WeekSection extends StatelessWidget {
                       color: context.colors.onSurfaceVariant,
                     ),
                   ),
+                  if (week.type != null)
+                    Text(
+                      week.type!.description(l10n),
+                      style: context.textStyles.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -447,11 +492,12 @@ class _WeekSection extends StatelessWidget {
           ),
         for (final day in week.days)
           Padding(
+            key: day.id == nextId ? nextDayKey : null,
             padding: const EdgeInsets.only(bottom: TokensSpacing.s),
             child: _DayCard(
               key: ValueKey(day.id),
               day: day,
-              isNext: day.id == _nextDayId(routine),
+              isNext: day.id == nextId,
               routine: routine,
               bodyWeightKg: bodyWeightKg,
               busy: busy,

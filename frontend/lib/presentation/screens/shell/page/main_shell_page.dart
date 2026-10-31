@@ -8,6 +8,7 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import '../../auth/session/bloc/session_bloc.dart';
+import '../widgets/focus_timer_bar.dart';
 import '../widgets/achievements_host.dart';
 
 /// Estructura principal con las pestañas de [StatefulNavigationShell]:
@@ -95,28 +96,35 @@ class MainShellPage extends StatelessWidget {
     if (!wide) {
       return Scaffold(
         body: AppFocusGroup(child: shell),
-        bottomNavigationBar: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: context.colors.outlineVariant),
+        // El Pomodoro en marcha, justo encima de la navegación.
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const FocusTimerBar(),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: context.colors.outlineVariant),
+                ),
+              ),
+              child: AppFocusGroup(
+                child: NavigationBar(
+                  selectedIndex: selected < 0 ? 0 : selected,
+                  onDestinationSelected: onSelected,
+                  destinations: [
+                    for (final d in destinations)
+                      NavigationDestination(
+                        icon: AppNavFocusRing(child: Icon(d.icon)),
+                        selectedIcon: AppNavFocusRing(child: Icon(d.selected)),
+                        label: d.label,
+                        // La etiqueta ya está visible: un tooltip la repetiría.
+                        tooltip: '',
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          child: AppFocusGroup(
-            child: NavigationBar(
-              selectedIndex: selected < 0 ? 0 : selected,
-              onDestinationSelected: onSelected,
-              destinations: [
-                for (final d in destinations)
-                  NavigationDestination(
-                    icon: AppNavFocusRing(child: Icon(d.icon)),
-                    selectedIcon: AppNavFocusRing(child: Icon(d.selected)),
-                    label: d.label,
-                    // La etiqueta ya está visible: un tooltip la repetiría.
-                    tooltip: '',
-                  ),
-              ],
-            ),
-          ),
+          ],
         ),
       );
     }
@@ -152,7 +160,15 @@ class MainShellPage extends StatelessWidget {
             ),
           ),
           VerticalDivider(width: 1, color: context.colors.outlineVariant),
-          Expanded(child: AppFocusGroup(child: shell)),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(child: AppFocusGroup(child: shell)),
+                // Abajo, como en el móvil: lejos de la barra de estado.
+                const SafeArea(top: false, left: false, child: FocusTimerBar()),
+              ],
+            ),
+          ),
         ],
       ),
     );

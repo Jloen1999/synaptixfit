@@ -9,14 +9,19 @@ import '../../../widgets/widgets.dart';
 import 'challenge_labels.dart';
 import 'challenge_progress_bar.dart';
 
-/// Tarea de un reto en el detalle: estado, peso, dependencias, adjuntos y
-/// casilla para completarla (si el reto es propio).
+/// Tarea de un reto en el detalle: estado, XP, dependencias, adjuntos y
+/// casilla para completarla (si el reto es propio). Solo muestra lo que
+/// aporta: «Disponible» se da por hecho y el peso, solo si no es el mismo
+/// para todas las tareas.
 class MilestoneTile extends StatelessWidget {
   const MilestoneTile({
     super.key,
     required this.milestone,
     required this.dependencyTitles,
     required this.busy,
+    this.isNext = false,
+    this.showWeight = false,
+    this.expired = false,
     this.onToggle,
     this.onOpenNote,
     this.onOpenFile,
@@ -26,6 +31,15 @@ class MilestoneTile extends StatelessWidget {
   final Milestone milestone;
   final List<String> dependencyTitles;
   final bool busy;
+
+  /// Es la siguiente tarea que toca: se marca con «Siguiente».
+  final bool isNext;
+
+  /// Pesos manuales: cada tarea dice cuánto vale del reto.
+  final bool showWeight;
+
+  /// El reto venció: la tarea pendiente ya no se puede completar.
+  final bool expired;
 
   /// `null` en retos ajenos (solo lectura).
   final VoidCallback? onToggle;
@@ -50,7 +64,7 @@ class MilestoneTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox.square(
-            dimension: 48,
+            dimension: TokensLayout.minTouchTarget,
             child: busy
                 ? const Padding(
                     padding: EdgeInsets.all(TokensSpacing.m),
@@ -59,6 +73,8 @@ class MilestoneTile extends StatelessWidget {
                 : IconButton(
                     tooltip: locked
                         ? l10n.challengesMilestoneLockedHint
+                        : expired && !milestone.completed
+                        ? l10n.challengesExpiredHint
                         : milestone.completed
                         ? l10n.challengesMilestoneUncomplete(milestone.title)
                         : l10n.challengesMilestoneComplete(milestone.title),
@@ -93,23 +109,25 @@ class MilestoneTile extends StatelessWidget {
                   spacing: TokensSpacing.s,
                   runSpacing: TokensSpacing.xs,
                   children: [
-                    AppPill(
-                      icon: status.icon,
-                      label: status.label(context),
-                      color: status.color(context),
-                    ),
-                    AppPill(
-                      icon: Icons.pie_chart_outline_rounded,
-                      label: l10n.challengesMilestoneWeight(
-                        ChallengeFormats.number(milestone.weight),
+                    if (isNext)
+                      AppPill(
+                        icon: Icons.arrow_forward_rounded,
+                        label: l10n.challengesMilestoneNext,
+                        color: context.colors.primary,
+                      )
+                    else if (status != MilestoneStatus.available)
+                      AppPill(
+                        icon: status.icon,
+                        label: status.label(context),
+                        color: status.color(context),
                       ),
-                      color: context.colors.onSurfaceVariant,
-                    ),
-                    AppPill(
-                      icon: milestone.difficulty.icon,
-                      label: milestone.difficulty.effortLabel(context),
-                      color: context.colors.onSurfaceVariant,
-                    ),
+                    if (showWeight)
+                      AppPill(
+                        icon: Icons.pie_chart_outline_rounded,
+                        label: l10n.challengesMilestoneWeight(
+                          ChallengeFormats.number(milestone.weight),
+                        ),
+                      ),
                     AppPill(
                       icon: Icons.bolt_rounded,
                       label: l10n.challengesXpGain(milestone.xpReward),

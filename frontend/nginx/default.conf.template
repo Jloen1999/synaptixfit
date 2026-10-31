@@ -78,6 +78,61 @@ server {
         proxy_set_header X-Forwarded-Proto https;
     }
 
+    # Archivos y medios por el dominio de la app (ADR 0024): en España algunos operadores bloquean las IP de
+    # Cloudflare R2 durante el fútbol y el móvil no podía subir apuntes ni ver vídeos. Las IP de la app no
+    # se ven afectadas y el servidor (en Francia) sí llega a R2. El DNS se resuelve en cada petición
+    # (resolver de Docker): si R2 no está configurado, nginx arranca igual.
+    resolver 127.0.0.11 ipv6=off valid=300s;
+
+    # Subidas y descargas firmadas: misma ruta y mismo Host que firmó el backend, así que la firma vale.
+    # La consulta lleva la firma: sin registro de acceso.
+    location ^~ /storage/ {
+        access_log off;
+        error_log /dev/stderr crit;
+        set $r2 ${R2_UPSTREAM};
+        rewrite ^/storage(/.*)$ $1 break;
+        proxy_pass $r2;
+        proxy_http_version 1.1;
+        proxy_set_header Host $proxy_host;
+        proxy_ssl_server_name on;
+        # Por aquí pasan archivos de los usuarios: se comprueba el certificado de R2.
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_ssl_verify_depth 3;
+        proxy_request_buffering off;
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+        # Archivos privados: ni Cloudflare ni el navegador los guardan (una URL firmada caducada o un
+        # archivo borrado no deben seguir sirviéndose). Se sirven desde el origen de la app, así que van
+        # aislados (sandbox) y sin adivinar el tipo. add_header aquí anula los del server: se repiten.
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "private, no-store" always;
+        add_header Content-Security-Policy "sandbox" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    }
+
+    # Vídeos e imágenes de los ejercicios (solo esa carpeta del bucket): Cloudflare los guarda en caché.
+    location ^~ /media/ejercicios/ {
+        set $media ${MEDIA_UPSTREAM};
+        rewrite ^/media(/.*)$ $1 break;
+        proxy_pass $media;
+        proxy_http_version 1.1;
+        proxy_set_header Host $proxy_host;
+        proxy_ssl_server_name on;
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_ssl_verify_depth 3;
+        proxy_hide_header Set-Cookie;
+        proxy_hide_header Cache-Control;
+        # Sin «always»: un 404 no se guarda una semana en la caché.
+        add_header Cache-Control "public, max-age=604800";
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    }
+
     location = /api/v1/auth/password-reset {
         limit_req zone=password_reset burst=5 nodelay;
         limit_req_status 429;

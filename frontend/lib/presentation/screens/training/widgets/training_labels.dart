@@ -16,6 +16,17 @@ extension TrainingGoalLabel on TrainingGoal {
     TrainingGoal.stability => l10n.trainingGoalStability,
     TrainingGoal.metabolicConditioning => l10n.trainingGoalMetabolic,
   };
+
+  /// Qué significa el objetivo, en una línea y sin jerga.
+  String description(AppLocalizations l10n) => switch (this) {
+    TrainingGoal.hypertrophy => l10n.trainingGoalHypertrophyHint,
+    TrainingGoal.maxStrength => l10n.trainingGoalMaxStrengthHint,
+    TrainingGoal.power => l10n.trainingGoalPowerHint,
+    TrainingGoal.strengthEndurance => l10n.trainingGoalStrengthEnduranceHint,
+    TrainingGoal.mobility => l10n.trainingGoalMobilityHint,
+    TrainingGoal.stability => l10n.trainingGoalStabilityHint,
+    TrainingGoal.metabolicConditioning => l10n.trainingGoalMetabolicHint,
+  };
 }
 
 extension ModalityLabel on Modality {
@@ -96,6 +107,14 @@ extension WeekTypeLabel on WeekType {
     WeekType.load => l10n.trainingWeekTypeLoad,
     WeekType.peak => l10n.trainingWeekTypePeak,
     WeekType.deload => l10n.trainingWeekTypeDeload,
+  };
+
+  /// Para qué sirve ese tipo de semana, en una línea y sin jerga.
+  String description(AppLocalizations l10n) => switch (this) {
+    WeekType.adaptation => l10n.trainingWeekTypeAdaptationHint,
+    WeekType.load => l10n.trainingWeekTypeLoadHint,
+    WeekType.peak => l10n.trainingWeekTypePeakHint,
+    WeekType.deload => l10n.trainingWeekTypeDeloadHint,
   };
 }
 

@@ -104,7 +104,7 @@ void main() {
     ).thenAnswer((_) async => const Success(SessionBookends()));
   });
 
-  LiveSessionBloc build() => LiveSessionBloc(
+  LiveSessionBloc build({DateTime Function()? clock}) => LiveSessionBloc(
     getSession: getSession,
     getRoutine: getRoutine,
     recordSet: recordSet,
@@ -117,7 +117,7 @@ void main() {
     getAdaptation: getAdaptation,
     loadPending: loadPending,
     savePending: savePending,
-    clock: () => now,
+    clock: clock ?? () => now,
   );
 
   LiveSessionState ready({
@@ -133,6 +133,8 @@ void main() {
     routineName: 'Fuerza',
     dayNumber: 1,
     elapsedSeconds: elapsed,
+    startedAt: startedAt,
+    countedUntil: now,
     activeExerciseId: active,
     exerciseSeconds: seconds,
   );
@@ -226,25 +228,206 @@ void main() {
     ],
   );
 
-  blocTest<LiveSessionBloc, LiveSessionState>(
-    'cada segundo suma al total, al ejercicio activo y descuenta el descanso',
-    build: build,
-    seed: () => ready().copyWith(restRemaining: 2, restTotal: 60),
-    act: (bloc) => bloc
-      ..add(const LiveSessionEvent.ticked())
-      ..add(const LiveSessionEvent.ticked()),
-    expect: () => [
-      ready(
-        elapsed: 301,
-        seconds: {'p1': 1},
-      ).copyWith(restRemaining: 1, restTotal: 60),
-      // El descanso llega a cero solo: la pantalla avisa (restFinishedCount sube).
-      ready(
-        elapsed: 302,
-        seconds: {'p1': 2},
-      ).copyWith(restTotal: 60, restFinishedCount: 1),
-    ],
+  SessionSet done(String exercise, int n) => SessionSet(
+    id: '$exercise-$n',
+    plannedExerciseId: exercise,
+    setNumber: n,
+    repsDone: 10,
+    completed: true,
   );
+
+  group('reloj', () {
+    late DateTime current;
+    Duration secs(int n) => Duration(seconds: n);
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'cronómetro, ejercicio activo y descanso salen del reloj, no de sumar tics',
+      setUp: () => current = now,
+      build: () => build(clock: () => current),
+      seed: () => ready().copyWith(
+        restEndsAt: now.add(secs(2)),
+        restRemaining: 2,
+        restTotal: 60,
+      ),
+      act: (bloc) async {
+        current = now.add(secs(1));
+        bloc.add(const LiveSessionEvent.ticked());
+        await Future<void>.delayed(Duration.zero);
+        current = now.add(secs(2));
+        bloc.add(const LiveSessionEvent.ticked());
+      },
+      expect: () => [
+        ready(elapsed: 301, seconds: {'p1': 1}).copyWith(
+          countedUntil: now.add(secs(1)),
+          restEndsAt: now.add(secs(2)),
+          restRemaining: 1,
+          restTotal: 60,
+        ),
+        // El descanso llega a cero solo: la pantalla avisa (restFinishedCount sube).
+        ready(elapsed: 302, seconds: {'p1': 2}).copyWith(
+          countedUntil: now.add(secs(2)),
+          restTotal: 60,
+          restFinishedCount: 1,
+        ),
+      ],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'un tic que llega tarde no pierde tiempo: se cuenta lo que marca el reloj',
+      setUp: () => current = now,
+      build: () => build(clock: () => current),
+      seed: () => ready().copyWith(
+        restEndsAt: now.add(secs(30)),
+        restRemaining: 30,
+        restTotal: 30,
+      ),
+      act: (bloc) {
+        current = now.add(const Duration(milliseconds: 3500));
+        bloc.add(const LiveSessionEvent.ticked());
+      },
+      expect: () => [
+        ready(elapsed: 303, seconds: {'p1': 3}).copyWith(
+          // Los 0,5 s sobrantes se suman en el siguiente tic.
+          countedUntil: now.add(secs(3)),
+          restEndsAt: now.add(secs(30)),
+          restRemaining: 27,
+          restTotal: 30,
+        ),
+      ],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'al volver a primer plano recalcula todo y avisa del descanso acabado',
+      setUp: () => current = now,
+      build: () => build(clock: () => current),
+      seed: () => ready().copyWith(
+        restEndsAt: now.add(secs(60)),
+        restRemaining: 60,
+        restTotal: 60,
+      ),
+      act: (bloc) {
+        // La pantalla estuvo apagada minuto y medio: no llegó ningún tic.
+        current = now.add(secs(90));
+        bloc.add(const LiveSessionEvent.resumed());
+      },
+      expect: () => [
+        ready(elapsed: 390, seconds: {'p1': 90}).copyWith(
+          countedUntil: now.add(secs(90)),
+          restTotal: 60,
+          restFinishedCount: 1,
+        ),
+      ],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'añadir tiempo al descanso mueve su final',
+      setUp: () => current = now,
+      build: () => build(clock: () => current),
+      seed: () => ready().copyWith(
+        restEndsAt: now.add(secs(10)),
+        restRemaining: 10,
+        restTotal: 60,
+      ),
+      act: (bloc) => bloc.add(const LiveSessionEvent.restAdjusted(15)),
+      expect: () => [
+        ready().copyWith(
+          restEndsAt: now.add(secs(25)),
+          restRemaining: 25,
+          restTotal: 60,
+        ),
+      ],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'saltar el descanso lo quita sin avisar',
+      build: build,
+      seed: () => ready().copyWith(
+        restEndsAt: now.add(secs(10)),
+        restRemaining: 10,
+        restTotal: 60,
+      ),
+      act: (bloc) => bloc.add(const LiveSessionEvent.restSkipped()),
+      expect: () => [ready().copyWith(restTotal: 60)],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'quitar más tiempo del que queda termina el descanso sin avisar',
+      build: build,
+      seed: () => ready().copyWith(
+        restEndsAt: now.add(secs(10)),
+        restRemaining: 10,
+        restTotal: 60,
+      ),
+      act: (bloc) => bloc.add(const LiveSessionEvent.restAdjusted(-15)),
+      expect: () => [ready().copyWith(restTotal: 60)],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'el descanso cuenta desde el toque, aunque el servidor tarde en responder',
+      setUp: () {
+        current = now;
+        when(() => recordSet('s1', any())).thenAnswer((_) async {
+          current = now.add(secs(5));
+          return Success(TrainingFixtures.session(startedAt: startedAt));
+        });
+      },
+      build: () => build(clock: () => current),
+      seed: ready,
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.setRecorded(
+          SetRecord(plannedExerciseId: 'p2', setNumber: 1, repsDone: 10),
+        ),
+      ),
+      verify: (bloc) {
+        expect(bloc.state.restEndsAt, now.add(secs(60)));
+        expect(bloc.state.restRemaining, 55);
+        expect(bloc.state.restTotal, 60);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'al volver a primer plano intenta subir enseguida las series pendientes',
+      setUp: () {
+        current = now;
+        when(() => recordSet('s1', any())).thenAnswer(
+          (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+        );
+      },
+      build: () => build(clock: () => current),
+      seed: () => ready().copyWith(
+        pendingSets: const [SetRecord(plannedExerciseId: 'p1', setNumber: 1)],
+      ),
+      act: (bloc) {
+        current = now.add(secs(3));
+        bloc.add(const LiveSessionEvent.resumed());
+      },
+      verify: (bloc) {
+        verify(() => recordSet('s1', any())).called(1);
+        expect(bloc.state.pendingSets, isEmpty);
+      },
+    );
+  });
+
+  test('upNext es el ejercicio activo con series por hacer o el siguiente', () {
+    expect(ready(active: 'p2').upNext?.id, 'p2');
+    final p1Done = TrainingFixtures.session(
+      startedAt: startedAt,
+      sets: [
+        for (var n = 1; n <= 3; n++)
+          SessionSet(
+            id: 'p1-$n',
+            plannedExerciseId: 'p1',
+            setNumber: n,
+            repsDone: 10,
+            completed: true,
+          ),
+      ],
+    );
+    final state = ready(session: p1Done);
+    expect(state.upNext?.id, 'p2');
+    expect(state.nextSetOf(exercises.first), isNull);
+    expect(state.nextSetOf(exercises.last), 1);
+  });
 
   blocTest<LiveSessionBloc, LiveSessionState>(
     'registrar una serie completada actualiza la sesión e inicia el descanso',
@@ -276,17 +459,10 @@ void main() {
       expect(s.saving, isFalse);
       expect(s.session!.sets, hasLength(1));
       expect(s.restRemaining, 60);
+      expect(s.restEndsAt, now.add(const Duration(seconds: 60)));
       expect(s.activeExerciseId, 'p2');
       expect(s.completedSets, 1);
     },
-  );
-
-  SessionSet done(String exercise, int n) => SessionSet(
-    id: '$exercise-$n',
-    plannedExerciseId: exercise,
-    setNumber: n,
-    repsDone: 10,
-    completed: true,
   );
 
   blocTest<LiveSessionBloc, LiveSessionState>(
@@ -469,6 +645,64 @@ void main() {
         expect(bloc.state.pendingSets, isEmpty);
         verify(() => savePending('s1', [record])).called(1);
         verify(() => savePending('s1', const [])).called(1);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'una serie apuntada sin conexión también arranca el descanso',
+      setUp: () => when(
+        () => recordSet('s1', any()),
+      ).thenAnswer((_) async => const Failure(AppError.network())),
+      build: build,
+      seed: ready,
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.setRecorded(
+          SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+        ),
+      ),
+      verify: (bloc) {
+        final s = bloc.state;
+        expect(s.pendingSets, hasLength(1));
+        expect(s.saving, isFalse);
+        expect(s.restRemaining, 90);
+        expect(s.restTotal, 90);
+        expect(s.restEndsAt, now.add(const Duration(seconds: 90)));
+        expect(s.activeExerciseId, 'p1');
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'una serie con repeticiones de menos también descansa y cuenta como hecha',
+      setUp: () => when(
+        () => recordSet('s1', any()),
+      ).thenAnswer((_) async => const Failure(AppError.network())),
+      build: build,
+      seed: () => ready(
+        session: TrainingFixtures.session(
+          startedAt: startedAt,
+          sets: [done('p1', 1), done('p1', 2)],
+        ),
+      ),
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.setRecorded(
+          SetRecord(
+            plannedExerciseId: 'p1',
+            setNumber: 3,
+            repsDone: 6,
+            completed: false,
+            failedReps: 4,
+          ),
+        ),
+      ),
+      verify: (bloc) {
+        final s = bloc.state;
+        expect(s.pendingSets, hasLength(1));
+        expect(s.restRemaining, 90);
+        // Las tres series de p1 están apuntadas: se pasa a p2.
+        expect(s.loggedSetsOf(exercises.first), 3);
+        expect(s.loggedSets, 3);
+        expect(s.activeExerciseId, 'p2');
+        expect(s.upNext?.id, 'p2');
       },
     );
 

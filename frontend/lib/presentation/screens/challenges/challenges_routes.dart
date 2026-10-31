@@ -34,6 +34,9 @@ abstract final class ChallengesExternalPaths {
   static String note(String noteId) => '/academic/notes/$noteId';
   static const deadlines = '/planner/deadlines';
   static const planner = '/planner';
+
+  /// Pestaña Rutinas: se navega con `go` (es una pestaña, no una pantalla).
+  static const training = '/training';
 }
 
 /// Valores iniciales del formulario «Nuevo reto» recibidos por `extra`.

@@ -38,7 +38,24 @@ abstract class ScheduleScanResult with _$ScheduleScanResult {
     required int blocksCreated,
     required int blocksUpdated,
     @Default(<String>[]) List<String> unmatchedSubjects,
+
+    /// El horario semanal detectado, ordenado por día y hora.
+    @Default(<ScheduleClass>[]) List<ScheduleClass> classes,
   }) = _ScheduleScanResult;
+}
+
+/// Una clase del horario escaneado. [dayOfWeek] es ISO (1 = lunes); [start] y
+/// [end] son horas locales «HH:mm».
+@freezed
+abstract class ScheduleClass with _$ScheduleClass {
+  const factory ScheduleClass({
+    required String subjectName,
+    required int dayOfWeek,
+    required String start,
+    required String end,
+    @Default(false) bool practice,
+    String? room,
+  }) = _ScheduleClass;
 }
 
 /// Archivo elegido para escanear.

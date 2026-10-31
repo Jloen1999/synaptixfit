@@ -117,28 +117,6 @@
       }
     }
   },
-  "trainingChipSetsReps": "{sets} × {reps}",
-  "@trainingChipSetsReps": {
-    "placeholders": {
-      "sets": {
-        "type": "int"
-      },
-      "reps": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingChipSetsSeconds": "{sets} × {seconds} s",
-  "@trainingChipSetsSeconds": {
-    "placeholders": {
-      "sets": {
-        "type": "int"
-      },
-      "seconds": {
-        "type": "int"
-      }
-    }
-  },
   "trainingChipRest": "{seconds} s",
   "@trainingChipRest": {
     "placeholders": {
@@ -487,8 +465,6 @@
   },
   "trainingSetNotCompleted": "No completada",
   "trainingRepsDone": "Repeticiones hechas",
-  "trainingFailedReps": "Repeticiones fallidas",
-  "trainingSetCompleted": "Serie completada",
   "trainingDeleteSet": "Borrar serie",
   "trainingSessionAlreadyCompleted": "Esta sesión ya está finalizada.",
   "trainingFinishAction": "Finalizar",
@@ -911,14 +887,6 @@
     }
   },
   "trainingAllSetsDone": "¡Todas las series hechas!",
-  "trainingQuickSetDone": "Serie {n} hecha",
-  "@trainingQuickSetDone": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "trainingSetLogged": "Serie {n} registrada",
   "@trainingSetLogged": {
     "placeholders": {
@@ -1071,5 +1039,148 @@
         "type": "int"
       }
     }
-  }
+  },
+  "trainingSetDoneAction": "Hecha",
+  "trainingUpNextLabel": "Ahora toca",
+  "trainingUpNextSet": "Serie {number} de {total}",
+  "@trainingUpNextSet": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingUpNextLoad": "{weight} kg × {reps} reps",
+  "@trainingUpNextLoad": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingUpNextLoadSpoken": "{weight} kilos, {reps} repeticiones",
+  "@trainingUpNextLoadSpoken": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingUpNextRepsSpoken": "{reps} repeticiones",
+  "@trainingUpNextRepsSpoken": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingUpNextHold": "Aguanta {seconds} s",
+  "@trainingUpNextHold": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingUpNextHoldSpoken": "Aguanta {seconds} segundos",
+  "@trainingUpNextHoldSpoken": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingHowTo": "Cómo se hace",
+  "trainingHowToNamed": "Cómo se hace: {name}",
+  "@trainingHowToNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingHowToEmpty": "Aún no hay instrucciones escritas para este ejercicio: guíate por la demostración.",
+  "trainingMissedReps": "¿Te faltaron repeticiones?",
+  "trainingMissedRepsHint": "Déjalo en 0 si hiciste la serie entera.",
+  "trainingChipSetsRepsLabel": "{sets, plural, =1{1 serie} other{{sets} series}} × {reps} reps",
+  "@trainingChipSetsRepsLabel": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipSetsRepsSpoken": "{sets, plural, =1{1 serie} other{{sets} series}} de {reps} repeticiones",
+  "@trainingChipSetsRepsSpoken": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipSetsHoldLabel": "{sets, plural, =1{1 serie} other{{sets} series}} × {seconds} s",
+  "@trainingChipSetsHoldLabel": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipSetsHoldSpoken": "{sets, plural, =1{1 serie} other{{sets} series}} de {seconds} segundos",
+  "@trainingChipSetsHoldSpoken": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipRestLabel": "Descanso {seconds} s",
+  "@trainingChipRestLabel": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChipRestSpoken": "Descanso de {seconds} segundos entre series",
+  "@trainingChipRestSpoken": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingGoalFromProfileHint": "Usa el objetivo que elegiste en tu perfil.",
+  "trainingGoalHypertrophyHint": "Aumentar el tamaño de los músculos con series de 8 a 12 repeticiones.",
+  "trainingGoalMaxStrengthHint": "Levantar más peso: pocas repeticiones y descansos largos.",
+  "trainingGoalPowerHint": "Moverte rápido y con fuerza: saltos, lanzamientos y gestos explosivos.",
+  "trainingGoalStrengthEnduranceHint": "Aguantar más repeticiones sin cansarte, con pesos moderados.",
+  "trainingGoalMobilityHint": "Ganar amplitud de movimiento y soltar las articulaciones.",
+  "trainingGoalStabilityHint": "Mejorar el equilibrio y el control del cuerpo (abdomen y articulaciones).",
+  "trainingGoalMetabolicHint": "Circuitos intensos para mejorar la forma física y gastar más energía.",
+  "trainingWeekTypeAdaptationHint": "Para aprender los ejercicios con poco peso.",
+  "trainingWeekTypeLoadHint": "Se sube poco a poco el peso o las repeticiones.",
+  "trainingWeekTypePeakHint": "La semana más exigente del bloque.",
+  "trainingWeekTypeDeloadHint": "Menos volumen para recuperarte y asimilar el trabajo."
 }

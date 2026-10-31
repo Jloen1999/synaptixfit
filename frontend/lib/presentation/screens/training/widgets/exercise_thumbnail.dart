@@ -9,7 +9,7 @@ class ExerciseThumbnail extends StatelessWidget {
   const ExerciseThumbnail({
     super.key,
     required this.url,
-    this.size = 56,
+    this.size = TokensSize.listTileMin,
     this.icon = Icons.fitness_center_rounded,
   });
 

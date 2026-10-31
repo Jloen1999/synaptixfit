@@ -31,7 +31,7 @@ class EffortSelector extends StatelessWidget {
           for (final d in ChallengeDifficulty.values)
             ButtonSegment(
               value: d,
-              icon: Icon(d.icon, size: 18),
+              icon: Icon(d.icon, size: TokensSize.iconXs),
               label: Text(d.effortLabel(context)),
             ),
         ],
@@ -66,7 +66,7 @@ class ChallengeTypeSelector extends StatelessWidget {
           for (final t in context.allowedChallengeTypes)
             ButtonSegment(
               value: t,
-              icon: Icon(t.icon, size: 18),
+              icon: Icon(t.icon, size: TokensSize.iconXs),
               label: Text(t.label(context)),
             ),
         ],
@@ -137,7 +137,7 @@ class ChallengeVisibilitySelector extends StatelessWidget {
           for (final v in Visibility.values)
             ButtonSegment(
               value: v,
-              icon: Icon(v.challengeIcon, size: 18),
+              icon: Icon(v.challengeIcon, size: TokensSize.iconXs),
               label: Text(v.challengeLabel(context)),
             ),
         ],

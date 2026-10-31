@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -256,8 +257,26 @@ class _LinkCard extends StatelessWidget {
   final CalendarFeedLink link;
   final FocusNode copyFocus;
 
+  /// En iPhone y Mac, `webcal://` abre Calendario de Apple. En Android nadie
+  /// abre ese esquema y la app de Google Calendar no admite suscripciones por
+  /// enlace: se abre la web de Google Calendar con el enlace ya puesto.
+  static bool get _apple =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS);
+
   Future<void> _open(BuildContext context) async {
-    final opened = await launchUrl(Uri.parse(link.webcalUrl));
+    final uri = _apple
+        ? Uri.parse(link.webcalUrl)
+        : Uri.https('calendar.google.com', '/calendar/render', {
+            'cid': link.webcalUrl,
+          });
+    var opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      opened = false;
+    }
     if (!opened && context.mounted) {
       context.showSnack(context.localizations.plannerSyncOpenFailed);
     }
@@ -317,7 +336,7 @@ class _LinkCard extends StatelessWidget {
               },
             ),
             AppSecondaryButton(
-              label: l10n.plannerSyncOpen,
+              label: _apple ? l10n.plannerSyncOpen : l10n.plannerSyncAddGoogle,
               icon: const Icon(Icons.event_available_rounded),
               onPressed: () => _open(context),
             ),

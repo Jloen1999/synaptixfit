@@ -81,7 +81,9 @@ void registerPlannerPresentation(GetIt getIt) {
         exportIcs: getIt(),
       ),
     )
-    ..registerFactory(
+    // Una sola instancia: el temporizador sigue al salir de la pantalla y lo
+    // muestra el armazón de pestañas.
+    ..registerLazySingleton(
       () => PomodoroBloc(
         recordSession: getIt(),
         getStats: getIt(),
@@ -89,6 +91,10 @@ void registerPlannerPresentation(GetIt getIt) {
         getPlan: getIt(),
         scheduleAlert: getIt(),
         cancelAlert: getIt(),
+        updateOngoing: getIt(),
+        loadTimer: getIt(),
+        saveTimer: getIt(),
+        clearTimer: getIt(),
       ),
     );
 }

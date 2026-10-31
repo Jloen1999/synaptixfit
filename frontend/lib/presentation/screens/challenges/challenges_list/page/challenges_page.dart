@@ -101,8 +101,13 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
   /// Retos a partir de los que se muestra el buscador.
   static const _searchThreshold = 5;
 
+  /// Tareas pendientes a la vista antes de «Ver todas»: con muchas, los retos
+  /// quedarían por debajo del pliegue.
+  static const _pendingPreview = 3;
+
   final _search = TextEditingController();
   Timer? _debounce;
+  bool _showAllPending = false;
 
   @override
   void dispose() {
@@ -172,6 +177,16 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
             onRetry: () => _bloc.add(const ChallengesListEvent.started()),
           );
         }
+        // Sin ningún reto todavía, ni cabecera ni filtros: solo la bienvenida.
+        final firstTime =
+            state.summary.total == 0 &&
+            state.challenges.isEmpty &&
+            !state.query.isFiltered &&
+            !state.listLoading;
+        final pending = _showAllPending
+            ? state.pending
+            : state.pending.take(_pendingPreview).toList();
+        final hiddenPending = state.pending.length > _pendingPreview;
         return NotificationListener<ScrollNotification>(
           onNotification: (n) {
             if (n.metrics.pixels > n.metrics.maxScrollExtent - 300) {
@@ -200,8 +215,21 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                       if (state.pending.isNotEmpty) ...[
                         AppSectionHeader(
                           title: context.localizations.challengesPendingTitle,
+                          actionLabel: !hiddenPending
+                              ? null
+                              : _showAllPending
+                              ? context.localizations.challengesPendingShowLess
+                              : context.localizations.challengesPendingShowAll(
+                                  state.pending.length,
+                                ),
+                          actionExpanded: hiddenPending
+                              ? _showAllPending
+                              : null,
+                          onAction: () => setState(
+                            () => _showAllPending = !_showAllPending,
+                          ),
                         ),
-                        for (final p in state.pending)
+                        for (final p in pending)
                           Padding(
                             padding: const EdgeInsets.only(
                               bottom: TokensSpacing.s,
@@ -219,36 +247,38 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                           ),
                         const SizedBox(height: TokensSpacing.l),
                       ],
-                      AppSectionHeader(
-                        title: context.localizations.challengesListTitle,
-                        actionLabel: state.query.isFiltered
-                            ? context.localizations.challengesFilterClear
-                            : null,
-                        onAction: () {
-                          _search.clear();
-                          _setQuery(const ChallengeQuery());
-                        },
-                      ),
-                      // El buscador solo aparece cuando hay bastantes retos
-                      // (o ya hay una búsqueda escrita): con pocos, estorba.
-                      if (state.summary.total > _searchThreshold ||
-                          _search.text.isNotEmpty) ...[
-                        _SearchField(
-                          controller: _search,
-                          onChanged: _onSearch,
-                          onClear: () {
+                      if (!firstTime) ...[
+                        AppSectionHeader(
+                          title: context.localizations.challengesListTitle,
+                          actionLabel: state.query.isFiltered
+                              ? context.localizations.challengesFilterClear
+                              : null,
+                          onAction: () {
                             _search.clear();
-                            _setQuery(state.query.copyWith(search: null));
+                            _setQuery(const ChallengeQuery());
                           },
                         ),
-                        const SizedBox(height: TokensSpacing.s),
+                        // El buscador solo aparece cuando hay bastantes retos
+                        // (o ya hay una búsqueda escrita): con pocos, estorba.
+                        if (state.summary.total > _searchThreshold ||
+                            _search.text.isNotEmpty) ...[
+                          _SearchField(
+                            controller: _search,
+                            onChanged: _onSearch,
+                            onClear: () {
+                              _search.clear();
+                              _setQuery(state.query.copyWith(search: null));
+                            },
+                          ),
+                          const SizedBox(height: TokensSpacing.s),
+                        ],
+                        _Filters(
+                          query: state.query,
+                          summary: state.summary,
+                          onChanged: _setQuery,
+                        ),
+                        const SizedBox(height: TokensSpacing.m),
                       ],
-                      _Filters(
-                        query: state.query,
-                        summary: state.summary,
-                        onChanged: _setQuery,
-                      ),
-                      const SizedBox(height: TokensSpacing.m),
                       ..._listContent(context, state),
                     ],
                   ),
@@ -297,8 +327,8 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
           message: filtered
               ? l10n.challengesEmptyFilteredMessage
               : l10n.challengesEmptyMessage,
-          // Sin filtros no hay botón propio: «Nuevo reto» ya es el botón
-          // flotante, y dos acciones iguales juntas confunden.
+          // Sin filtros no se repite «Nuevo reto» (ya es el botón flotante):
+          // se ofrece la otra vía para empezar, inspirarse en la comunidad.
           action: filtered
               ? AppSecondaryButton(
                   label: l10n.challengesFilterClear,
@@ -307,7 +337,15 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                     _setQuery(const ChallengeQuery());
                   },
                 )
-              : null,
+              : AppSecondaryButton(
+                  label: l10n.challengesEmptyCommunityAction,
+                  icon: const Icon(Icons.groups_outlined),
+                  onPressed: () =>
+                      DefaultTabController.maybeOf(context)?.animateTo(
+                        1,
+                        duration: context.motion(TokensDuration.normal),
+                      ),
+                ),
         ),
       ];
     }
@@ -364,7 +402,8 @@ class _SearchField extends StatelessWidget {
 
 /// Filtros del listado. Los de estado, con su número, quedan a la vista (así
 /// no hace falta una fila aparte de cifras); tipo y tareas van en la hoja de
-/// «Filtros» para que la fila no se llene de chips.
+/// «Filtros» para que no se llene de chips. Todo cabe a la vista: si no hay
+/// ancho, los chips bajan de línea en lugar de quedar tapados.
 class _Filters extends StatelessWidget {
   const _Filters({
     required this.query,
@@ -393,45 +432,33 @@ class _Filters extends StatelessWidget {
     final allowed = context.allowedChallengeTypes;
     final types = allowed.length > 1 ? allowed : const <ChallengeType>[];
     final extra = _FiltersSheet.activeCount(query, types);
-    Widget chip(String label, bool selected, VoidCallback onTap) => Padding(
-      padding: const EdgeInsets.only(right: TokensSpacing.s),
-      child: FilterChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-      ),
-    );
-    return Row(
+    final statuses = [
+      for (final s in ChallengeStatus.values)
+        // Un estado sin retos no filtra nada útil: se oculta salvo si ya está
+        // elegido (así siempre se puede volver a «Todos»).
+        if (_count(s) > 0 || query.status == s) s,
+    ];
+    // Todo en un Wrap: antes los estados iban en una fila con scroll y
+    // «Filtros», fijo a su derecha, tapaba el último («Comp…»).
+    return Wrap(
+      spacing: TokensSpacing.s,
+      runSpacing: TokensSpacing.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                chip(
-                  l10n.challengesFilterAll,
-                  query.status == null,
-                  () => onChanged(query.copyWith(status: null)),
-                ),
-                for (final s in ChallengeStatus.values)
-                  chip(
-                    l10n.challengesFilterWithCount(
-                      s.pluralLabel(context),
-                      switch (s) {
-                        ChallengeStatus.active => summary.active,
-                        ChallengeStatus.completed => summary.completed,
-                        ChallengeStatus.expired => summary.expired,
-                      },
-                    ),
-                    query.status == s,
-                    () => onChanged(
-                      query.copyWith(status: query.status == s ? null : s),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+        FilterChip(
+          label: Text(l10n.challengesFilterAll),
+          selected: query.status == null,
+          onSelected: (_) => onChanged(query.copyWith(status: null)),
         ),
+        for (final s in statuses)
+          FilterChip(
+            label: Text(
+              l10n.challengesFilterWithCount(s.pluralLabel(context), _count(s)),
+            ),
+            selected: query.status == s,
+            onSelected: (_) =>
+                onChanged(query.copyWith(status: query.status == s ? null : s)),
+          ),
         // El número de filtros activos va en la propia etiqueta («Filtros
         // (2)»): se ve y el lector de pantalla lo lee, sin depender del color.
         ActionChip(
@@ -447,6 +474,12 @@ class _Filters extends StatelessWidget {
       ],
     );
   }
+
+  int _count(ChallengeStatus s) => switch (s) {
+    ChallengeStatus.active => summary.active,
+    ChallengeStatus.completed => summary.completed,
+    ChallengeStatus.expired => summary.expired,
+  };
 }
 
 /// Hoja de filtros secundarios (tipo y tareas). Lee y cambia la consulta del

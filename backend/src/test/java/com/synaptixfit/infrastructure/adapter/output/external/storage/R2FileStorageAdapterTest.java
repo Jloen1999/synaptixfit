@@ -16,7 +16,24 @@ class R2FileStorageAdapterTest {
 
     private static R2FileStorageAdapter adapter(String endpoint, String accessKey, String secretKey) {
         return new R2FileStorageAdapter(new AppProperties(null, null, null, null,
-                new AppProperties.Storage(endpoint, "auto", "bucket-secreto", accessKey, secretKey, null), null));
+                new AppProperties.Storage(endpoint, "auto", "bucket-secreto", accessKey, secretKey, null, null), null));
+    }
+
+    @Test
+    void withAProxyTheSignedUrlGoesThroughTheAppDomainKeepingPathAndSignature() {
+        String endpoint = "https://cuenta.r2.cloudflarestorage.com";
+        R2FileStorageAdapter storage = new R2FileStorageAdapter(new AppProperties(null, null, null, null,
+                new AppProperties.Storage(endpoint, "auto", "synaptixfit", "key", "secret", null,
+                        "https://synaptixfit.jloenit.dev/storage/"), null));
+
+        PresignedUrl direct = adapter(endpoint, "key", "secret")
+                .presignUpload("usuarios/u/a.pdf", "application/pdf", 10, Duration.ofMinutes(5));
+        PresignedUrl proxied = storage.presignUpload("usuarios/u/a.pdf", "application/pdf", 10, Duration.ofMinutes(5));
+
+        assertThat(direct.url()).startsWith(endpoint + "/");
+        assertThat(proxied.url()).startsWith("https://synaptixfit.jloenit.dev/storage/synaptixfit/usuarios/u/a.pdf?");
+        assertThat(proxied.url()).contains("X-Amz-Signature=");
+        assertThat(storage.viaProxy("https://otro.example.com/x")).isEqualTo("https://otro.example.com/x");
     }
 
     @Test

@@ -104,7 +104,7 @@
   "socialNotificationsEmptyUnread": "Tout est à jour",
   "socialNotificationsEmptyMessage": "Nous te préviendrons pour les « j’aime », les commentaires, les demandes et les alertes de ton plan.",
   "socialNotificationUnread": "Non lue",
-  "socialNotificationTypeConflict": "Conflit dans ton plan",
+  "socialNotificationTypeConflict": "Conflit d’horaire dans ton plan",
   "socialNotificationTypeFatigue": "Alerte fatigue",
   "socialNotificationTypeMilestone": "Réussite",
   "socialNotificationTypeSocial": "Social",

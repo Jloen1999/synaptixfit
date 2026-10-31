@@ -19,9 +19,13 @@ RUN dart run build_runner build --delete-conflicting-outputs \
       --dart-define=GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 
 FROM nginx:1.27-alpine
-# La plantilla se resuelve al arrancar con envsubst (BACKEND_UPSTREAM).
+# La plantilla se resuelve al arrancar con envsubst (BACKEND_UPSTREAM, R2_UPSTREAM y MEDIA_UPSTREAM). Sin
+# valor, envsubst dejaría «${R2_UPSTREAM}» literal y nginx no arrancaría: por defecto, un dominio que no
+# resuelve (solo fallan /storage/ y /media/).
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/build/web /usr/share/nginx/html
-ENV BACKEND_UPSTREAM=http://backend:8080
+ENV BACKEND_UPSTREAM=http://backend:8080 \
+    R2_UPSTREAM=https://r2-no-configurado.invalid \
+    MEDIA_UPSTREAM=https://r2-no-configurado.invalid
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://127.0.0.1/healthz || exit 1

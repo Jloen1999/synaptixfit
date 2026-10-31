@@ -31,9 +31,11 @@ public class ExerciseSqlReader {
             + "COALESCE(e.activo, true) AS activo, e.valor_met, e.creado_en, e.actualizado_en, e.categoria";
 
     private final JdbcClient jdbc;
+    private final ExerciseMediaUrls media;
 
-    public ExerciseSqlReader(JdbcClient jdbc) {
+    public ExerciseSqlReader(JdbcClient jdbc, ExerciseMediaUrls media) {
         this.jdbc = jdbc;
+        this.media = media;
     }
 
     /** Ejercicios completos por id, en el orden de {@code ids}. */
@@ -70,7 +72,7 @@ public class ExerciseSqlReader {
                         + "e.es_circuito, e.valor_met, COALESCE(e.activo, true) AS activo FROM ejercicios e WHERE e.id IN (:ids)")
                 .param("ids", ids)
                 .query((rs, n) -> new ExerciseRef(rs.getObject("id", UUID.class), rs.getString("nombre"),
-                        rs.getString("url_gif"), rs.getString("url_preview"),
+                        media.resolve(rs.getString("url_gif")), media.resolve(rs.getString("url_preview")),
                         TrainingDbValues.modality(rs.getString("modalidad_entrenamiento")),
                         TrainingDbValues.measurementTypes(strings(rs.getArray("tipo_medicion"))),
                         rs.getBoolean("es_circuito"), rs.getDouble("valor_met"), rs.getBoolean("activo")))
@@ -81,7 +83,8 @@ public class ExerciseSqlReader {
     public List<CatalogItem> catalog(String table, boolean withImage) {
         String image = withImage ? "url_imagen" : "NULL AS url_imagen";
         return jdbc.sql("SELECT id, nombre, " + image + " FROM " + table + " ORDER BY nombre")
-                .query((rs, n) -> new CatalogItem(rs.getInt("id"), rs.getString("nombre"), rs.getString("url_imagen")))
+                .query((rs, n) -> new CatalogItem(rs.getInt("id"), rs.getString("nombre"),
+                        media.resolve(rs.getString("url_imagen"))))
                 .list();
     }
 
@@ -93,9 +96,9 @@ public class ExerciseSqlReader {
                        Timestamp updatedAt, String category) {
     }
 
-    private static Row row(ResultSet rs) throws SQLException {
-        return new Row(rs.getObject("id", UUID.class), rs.getString("nombre"), rs.getString("url_gif"),
-                rs.getString("url_preview"), strings(rs.getArray("instrucciones")), rs.getString("dificultad"),
+    private Row row(ResultSet rs) throws SQLException {
+        return new Row(rs.getObject("id", UUID.class), rs.getString("nombre"), media.resolve(rs.getString("url_gif")),
+                media.resolve(rs.getString("url_preview")), strings(rs.getArray("instrucciones")), rs.getString("dificultad"),
                 rs.getString("descripcion"), strings(rs.getArray("finalidad")),
                 rs.getString("modalidad_entrenamiento"), strings(rs.getArray("tipo_medicion")),
                 rs.getBoolean("es_circuito"), rs.getBoolean("activo"), rs.getDouble("valor_met"),

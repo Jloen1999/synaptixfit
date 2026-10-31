@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/models/training/recommendation.dart';
 import '../../../../../domain/models/training/routine.dart';
 import '../../../../../domain/models/training/wellbeing.dart';
@@ -241,6 +242,9 @@ class _PendingDayCard extends StatelessWidget {
   final VoidCallback onFreeSession;
   final ValueChanged<String> onOpenRoutine;
 
+  /// Ejercicios del día que se nombran en la tarjeta (el resto, «y N más»).
+  static const _previewCount = 3;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -313,28 +317,47 @@ class _PendingDayCard extends StatelessWidget {
               color: colors.onSecondaryContainer,
               label: l10n.trainingExercisesCount(day.exercises.length),
             ),
+            // Los nombres de los primeros ejercicios dicen qué toca hoy mejor
+            // que solo las miniaturas.
             if (day.exercises.isNotEmpty) ...[
               const SizedBox(height: TokensSpacing.s),
-              SizedBox(
-                height: TokensSize.thumbnailS,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: day.exercises.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(width: TokensSpacing.xs),
-                  itemBuilder: (_, i) => Tooltip(
-                    message: day.exercises[i].exerciseName,
-                    child: ExerciseThumbnail(
-                      url: day.exercises[i].thumbnailUrl,
-                      size: TokensSize.thumbnailS,
-                    ),
+              for (final e in day.exercises.take(_previewCount))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
+                  child: Row(
+                    children: [
+                      ExerciseThumbnail(
+                        url: e.thumbnailUrl,
+                        size: TokensSize.thumbnailXs,
+                      ),
+                      const SizedBox(width: TokensSpacing.s),
+                      Expanded(
+                        child: Text(
+                          e.exerciseName,
+                          style: context.textStyles.bodyMedium?.copyWith(
+                            color: colors.onSecondaryContainer,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+              if (day.exercises.length > _previewCount)
+                Text(
+                  l10n.trainingRecommendationMoreExercises(
+                    day.exercises.length - _previewCount,
+                  ),
+                  style: context.textStyles.labelMedium?.copyWith(
+                    color: colors.onSecondaryContainer,
+                  ),
+                ),
             ],
             const SizedBox(height: TokensSpacing.m),
             AppPrimaryButton(
-              label: l10n.trainingStart,
+              // Un día empezado y sin terminar se retoma, no se empieza.
+              label: day.dayStatus == ProgressStatus.inProgress
+                  ? l10n.trainingContinueDay
+                  : l10n.trainingStart,
               icon: Icons.play_arrow_rounded,
               loading: starting,
               onPressed: () => onStart(day),
@@ -522,7 +545,7 @@ class _QuickAccess extends StatelessWidget {
     ];
     return AppTileGrid(
       // Icono y texto en fila: cada acceso necesita más ancho que en Inicio.
-      minTileWidth: 144,
+      minTileWidth: TokensLayout.minTouchTarget * 3,
       children: [
         for (final (icon, label, path) in items)
           AppCard(

@@ -57,7 +57,6 @@ class _SetSheet extends StatefulWidget {
 class _SetSheetState extends State<_SetSheet> {
   late int _reps = widget.initial.repsDone ?? 10;
   late int _failed = widget.initial.failedReps;
-  late bool _completed = widget.initial.completed;
   late final _weight = TextEditingController(
     text: widget.initial.weightKg == null
         ? ''
@@ -79,7 +78,8 @@ class _SetSheetState extends State<_SetSheet> {
         widget.initial.copyWith(
           repsDone: _reps,
           weightKg: weight,
-          completed: _completed,
+          // Una sola pregunta: si no faltó ninguna repetición, está completada.
+          completed: _failed == 0,
           failedReps: _failed,
         ),
       ),
@@ -117,11 +117,17 @@ class _SetSheetState extends State<_SetSheet> {
                 onChanged: (v) => setState(() => _reps = v),
               ),
               AppStepperField(
-                label: l10n.trainingFailedReps,
+                label: l10n.trainingMissedReps,
                 value: _failed,
                 min: 0,
                 max: 1000,
                 onChanged: (v) => setState(() => _failed = v),
+              ),
+              Text(
+                l10n.trainingMissedRepsHint,
+                style: context.textStyles.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: TokensSpacing.s),
               TextFormField(
@@ -144,14 +150,6 @@ class _SetSheetState extends State<_SetSheet> {
                       ? l10n.trainingParamOutOfRange('0', '500')
                       : null;
                 },
-              ),
-              AppFocusOutline(
-                child: SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.trainingSetCompleted),
-                  value: _completed,
-                  onChanged: (v) => setState(() => _completed = v),
-                ),
               ),
               const SizedBox(height: TokensSpacing.m),
               AppPrimaryButton(label: l10n.commonSave, onPressed: _save),

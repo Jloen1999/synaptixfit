@@ -6,7 +6,7 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import 'training_labels.dart';
 
-/// Chips semánticos de los parámetros de un ejercicio: series × repeticiones,
+/// Chips semánticos de los parámetros de un ejercicio: series y repeticiones,
 /// descanso, peso, duración, distancia y calorías estimadas (MET).
 class ExerciseParameterChips extends StatelessWidget {
   const ExerciseParameterChips({
@@ -38,16 +38,22 @@ class ExerciseParameterChips extends StatelessWidget {
       spacing: TokensSpacing.xs,
       runSpacing: TokensSpacing.xs,
       children: [
+        // Textos completos («3 series × 12 reps») para quien no conoce la
+        // jerga; el lector recibe otra versión para no decir «multiplicado por».
         AppPill(
           icon: Icons.repeat_rounded,
           color: context.colors.secondary,
           label: p.isometricSeconds != null
-              ? l10n.trainingChipSetsSeconds(p.sets, p.isometricSeconds!)
-              : l10n.trainingChipSetsReps(p.sets, p.reps),
+              ? l10n.trainingChipSetsHoldLabel(p.sets, p.isometricSeconds!)
+              : l10n.trainingChipSetsRepsLabel(p.sets, p.reps),
+          semanticLabel: p.isometricSeconds != null
+              ? l10n.trainingChipSetsHoldSpoken(p.sets, p.isometricSeconds!)
+              : l10n.trainingChipSetsRepsSpoken(p.sets, p.reps),
         ),
         AppPill(
           icon: Icons.hourglass_bottom_rounded,
-          label: l10n.trainingChipRest(p.restSeconds),
+          label: l10n.trainingChipRestLabel(p.restSeconds),
+          semanticLabel: l10n.trainingChipRestSpoken(p.restSeconds),
         ),
         if (weightLabel != null)
           AppPill(

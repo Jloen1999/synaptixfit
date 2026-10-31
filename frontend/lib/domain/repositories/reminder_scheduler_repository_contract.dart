@@ -1,4 +1,5 @@
 import '../enums/reminder_kind.dart';
+import '../models/reminders/ongoing_timer.dart';
 import '../models/reminders/reminder.dart';
 import '../models/reminders/timer_alert.dart';
 import '../models/result/app_result.dart';
@@ -31,6 +32,11 @@ abstract interface class ReminderSchedulerRepositoryContract {
   Future<AppResult<Unit>> scheduleTimerAlert(TimerAlert alert);
 
   Future<AppResult<Unit>> cancelTimerAlert();
+
+  /// Notificación fija del Pomodoro en marcha (cuenta atrás en la barra).
+  Future<AppResult<Unit>> showOngoingTimer(OngoingTimer timer);
+
+  Future<AppResult<Unit>> cancelOngoingTimer();
 
   /// Avisos que el usuario toca (también el que abrió la app en frío).
   Stream<ReminderKind> watchOpened();

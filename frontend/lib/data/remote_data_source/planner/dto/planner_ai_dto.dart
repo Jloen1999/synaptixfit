@@ -66,6 +66,7 @@ abstract class ScheduleScanDto with _$ScheduleScanDto {
     @Default(0) int blocksCreated,
     @Default(0) int blocksUpdated,
     @Default(<String>[]) List<String> unmatchedSubjects,
+    @Default(<ScheduleClassDto>[]) List<ScheduleClassDto> classes,
   }) = _ScheduleScanDto;
 
   const ScheduleScanDto._();
@@ -78,7 +79,38 @@ abstract class ScheduleScanDto with _$ScheduleScanDto {
     blocksCreated: blocksCreated,
     blocksUpdated: blocksUpdated,
     unmatchedSubjects: unmatchedSubjects,
+    classes: classes.map((c) => c.toDomain()).toList(),
   );
+}
+
+@freezed
+abstract class ScheduleClassDto with _$ScheduleClassDto {
+  const factory ScheduleClassDto({
+    @Default('') String subjectName,
+    String? classKind,
+    @Default(1) int dayOfWeek,
+    @Default('') String start,
+    @Default('') String end,
+    String? room,
+  }) = _ScheduleClassDto;
+
+  const ScheduleClassDto._();
+
+  factory ScheduleClassDto.fromJson(Map<String, dynamic> json) =>
+      _$ScheduleClassDtoFromJson(json);
+
+  /// La API manda las horas como «HH:mm:ss»: se muestran como «HH:mm».
+  ScheduleClass toDomain() => ScheduleClass(
+    subjectName: subjectName,
+    dayOfWeek: dayOfWeek,
+    start: _hm(start),
+    end: _hm(end),
+    practice: classKind == 'PRACTICE',
+    room: room,
+  );
+
+  static String _hm(String time) =>
+      time.length >= 5 ? time.substring(0, 5) : time;
 }
 
 @freezed
