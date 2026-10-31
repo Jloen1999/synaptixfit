@@ -54,6 +54,10 @@ sealed class BlockEditorOutcome with _$BlockEditorOutcome {
   const factory BlockEditorOutcome.focusRequested(CalendarBlock block) =
       BlockEditorFocusRequested;
 
+  /// El usuario quiere llevar el bloque no hecho al primer hueco libre.
+  const factory BlockEditorOutcome.rescheduleRequested(String blockId) =
+      BlockEditorRescheduleRequested;
+
   /// El usuario pide marcar/desmarcar el bloque (lo resuelve el calendario).
   const factory BlockEditorOutcome.completionRequested(String blockId) =
       BlockEditorCompletionRequested;

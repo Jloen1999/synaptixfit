@@ -1,3 +1,4 @@
+import '../../enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../enums/planner_enums.dart';
@@ -30,6 +31,13 @@ abstract class CalendarBlock with _$CalendarBlock {
     String? challengeId,
     String? milestoneId,
     String? deadlineId,
+
+    /// Pendiente, en curso, hecho o no hecho (lo decide el servidor).
+    @Default(ItemTimeStatus.upcoming) ItemTimeStatus timeStatus,
+
+    /// Deporte que no es una sesión de rutina: al marcarlo hecho se pide el
+    /// esfuerzo para su carga física (lo decide el servidor).
+    @Default(false) bool tracksPhysicalLoad,
   }) = _CalendarBlock;
 
   const CalendarBlock._();

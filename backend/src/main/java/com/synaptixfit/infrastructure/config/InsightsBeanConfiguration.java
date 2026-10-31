@@ -7,6 +7,7 @@ import com.synaptixfit.application.port.input.insights.GetStudyActivityUseCase;
 import com.synaptixfit.application.port.input.insights.GetStudyCaloriesTodayUseCase;
 import com.synaptixfit.application.port.input.insights.GetWellbeingUseCase;
 import com.synaptixfit.application.port.input.insights.InitializeCognitiveStateUseCase;
+import com.synaptixfit.application.port.input.insights.SyncSportBlockLoadUseCase;
 import com.synaptixfit.application.port.input.insights.RecordTrainingLoadUseCase;
 import com.synaptixfit.application.port.input.insights.RefreshCognitiveStateUseCase;
 import com.synaptixfit.application.service.insights.CognitiveStateService;
@@ -67,6 +68,11 @@ public class InsightsBeanConfiguration {
     @Bean
     RecordTrainingLoadUseCase recordTrainingLoadUseCase() {
         return tx.wrap(RecordTrainingLoadUseCase.class, trainingLoadService());
+    }
+
+    @Bean
+    SyncSportBlockLoadUseCase syncSportBlockLoadUseCase() {
+        return tx.wrap(SyncSportBlockLoadUseCase.class, trainingLoadService());
     }
 
     @Bean

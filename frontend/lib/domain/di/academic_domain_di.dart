@@ -7,10 +7,10 @@ import '../use_cases/academic/assign_subject_semester_use_case.dart';
 import '../use_cases/academic/clear_subject_semester_use_case.dart';
 import '../use_cases/academic/complete_practice_use_case.dart';
 import '../use_cases/academic/complete_test_session_use_case.dart';
-import '../use_cases/academic/create_note_from_scan_use_case.dart';
 import '../use_cases/academic/create_note_use_case.dart';
 import '../use_cases/academic/create_subject_use_case.dart';
 import '../use_cases/academic/delete_note_use_case.dart';
+import '../use_cases/academic/abandon_study_material_use_case.dart';
 import '../use_cases/academic/delete_study_material_use_case.dart';
 import '../use_cases/academic/delete_subject_file_use_case.dart';
 import '../use_cases/academic/delete_subject_use_case.dart';
@@ -20,6 +20,7 @@ import '../use_cases/academic/generate_study_document_use_case.dart';
 import '../use_cases/academic/apply_teaching_guide_import_use_case.dart';
 import '../use_cases/academic/await_teaching_guide_import_use_case.dart';
 import '../use_cases/academic/discard_teaching_guide_import_use_case.dart';
+import '../use_cases/academic/export_flashcards_to_anki_use_case.dart';
 import '../use_cases/academic/retry_teaching_guide_import_use_case.dart';
 import '../use_cases/academic/set_teaching_guide_mode_use_case.dart';
 import '../use_cases/academic/start_teaching_guide_import_use_case.dart';
@@ -82,9 +83,6 @@ void registerAcademicDomain(GetIt getIt) {
     ..registerLazySingleton<CompleteTestSessionUseCaseContract>(
       () => CompleteTestSessionUseCase(getIt()),
     )
-    ..registerLazySingleton<CreateNoteFromScanUseCaseContract>(
-      () => CreateNoteFromScanUseCase(getIt()),
-    )
     ..registerLazySingleton<CreateNoteUseCaseContract>(
       () => CreateNoteUseCase(getIt()),
     )
@@ -93,6 +91,9 @@ void registerAcademicDomain(GetIt getIt) {
     )
     ..registerLazySingleton<DeleteNoteUseCaseContract>(
       () => DeleteNoteUseCase(getIt()),
+    )
+    ..registerLazySingleton<AbandonStudyMaterialUseCaseContract>(
+      () => AbandonStudyMaterialUseCase(getIt()),
     )
     ..registerLazySingleton<DeleteStudyMaterialUseCaseContract>(
       () => DeleteStudyMaterialUseCase(getIt()),
@@ -198,6 +199,9 @@ void registerAcademicDomain(GetIt getIt) {
     )
     ..registerLazySingleton<RegisterStudyMaterialUseCaseContract>(
       () => RegisterStudyMaterialUseCase(getIt()),
+    )
+    ..registerLazySingleton<ExportFlashcardsToAnkiUseCaseContract>(
+      () => ExportFlashcardsToAnkiUseCase(getIt()),
     )
     ..registerLazySingleton<ReviewFlashcardsUseCaseContract>(
       () => ReviewFlashcardsUseCase(getIt()),

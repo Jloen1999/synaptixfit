@@ -1,6 +1,8 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 
+import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
+import com.synaptixfit.domain.model.training.SessionAdaptation;
 import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.SessionType;
 import com.synaptixfit.domain.model.training.TrainingSession;
@@ -59,6 +61,15 @@ public final class SessionDtos {
         static SessionSetResponse from(SessionSet s) {
             return new SessionSetResponse(s.id(), s.plannedExerciseId(), s.setNumber(), s.repsDone(), s.weightKg(),
                     s.completed(), s.failedReps());
+        }
+    }
+
+    /** Adaptación de hoy: factor de volumen, motivos y series por ejercicio planificado. */
+    public record SessionAdaptationResponse(double volumeFactor, List<SessionAdaptation.Reason> reasons,
+                                            Map<UUID, Integer> sets) {
+
+        public static SessionAdaptationResponse from(GetSessionAdaptationUseCase.Result r) {
+            return new SessionAdaptationResponse(r.adaptation().volumeFactor(), r.adaptation().reasons(), r.sets());
         }
     }
 

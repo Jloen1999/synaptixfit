@@ -7,6 +7,9 @@ import 'package:synaptixfit/domain/enums/planner_enums.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/planner/focus.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/models/reminders/timer_alert.dart';
+import 'package:synaptixfit/domain/use_cases/reminders/cancel_timer_alert_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/reminders/schedule_timer_alert_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_focus_plan_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_focus_stats_use_case.dart';
@@ -22,6 +25,10 @@ class _Stats extends Mock implements GetFocusStatsUseCaseContract {}
 class _Account extends Mock implements GetAccountUseCaseContract {}
 
 class _Plan extends Mock implements GetFocusPlanUseCaseContract {}
+
+class _Schedule extends Mock implements ScheduleTimerAlertUseCaseContract {}
+
+class _Cancel extends Mock implements CancelTimerAlertUseCaseContract {}
 
 void main() {
   setUpAll(registerPlannerFallbacks);
@@ -386,4 +393,94 @@ void main() {
       ),
     ).called(1),
   );
+
+  blocTest<PomodoroBloc, PomodoroState>(
+    '«Descanso guiado» empieza directamente en la pausa corta',
+    build: build,
+    act: (bloc) => bloc.add(const PomodoroEvent.started(startWithBreak: true)),
+    verify: (bloc) {
+      expect(bloc.state.phase, FocusPhase.shortBreak);
+      expect(bloc.state.totalSeconds, 60);
+      expect(bloc.state.status, PomodoroStatus.idle);
+    },
+  );
+
+  blocTest<PomodoroBloc, PomodoroState>(
+    'salir con la fase en marcha la guarda sin terminar y sin felicitar',
+    build: build,
+    act: (bloc) async {
+      bloc.add(const PomodoroEvent.startPressed());
+      await Future<void>.delayed(Duration.zero);
+      await tickAfter(bloc, const Duration(seconds: 90));
+      final done = Completer<void>();
+      bloc.add(PomodoroEvent.leaveRequested(done));
+      await done.future;
+    },
+    verify: (bloc) {
+      expect(bloc.state.notice, isNull);
+      verify(
+        () => record(
+          any(
+            that: isA<FocusSessionRecord>()
+                .having((r) => r.completed, 'completed', isFalse)
+                .having((r) => r.durationMinutes, 'durationMinutes', 2),
+          ),
+        ),
+      ).called(1);
+    },
+  );
+
+  group('aviso del sistema al terminar la fase', () {
+    late _Schedule schedule;
+    late _Cancel cancel;
+    const texts = PomodoroAlertTexts(
+      focusEndTitle: 'Bloque terminado',
+      focusEndBody: 'Descansa',
+      breakEndTitle: 'Descanso terminado',
+      breakEndBody: 'Sigue',
+      channelName: 'Temporizador',
+    );
+
+    setUpAll(
+      () => registerFallbackValue(
+        TimerAlert(at: testNow, title: '', body: '', channelName: ''),
+      ),
+    );
+
+    setUp(() {
+      schedule = _Schedule();
+      cancel = _Cancel();
+      when(() => schedule(any())).thenAnswer((_) async => const Success(unit));
+      when(() => cancel()).thenAnswer((_) async => const Success(unit));
+    });
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      'se programa al empezar para cuando acaba la fase y se quita al pausar',
+      build: () => PomodoroBloc(
+        recordSession: record,
+        getStats: getStats,
+        getAccount: getAccount,
+        getPlan: getPlan,
+        scheduleAlert: schedule,
+        cancelAlert: cancel,
+        config: config,
+        now: () => clock,
+        ticker: () => ticks.stream,
+      ),
+      act: (bloc) async {
+        bloc
+          ..add(const PomodoroEvent.started(alertTexts: texts))
+          ..add(const PomodoroEvent.startPressed());
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const PomodoroEvent.pausePressed());
+      },
+      verify: (_) {
+        final alert =
+            verify(() => schedule(captureAny())).captured.single as TimerAlert;
+        expect(alert.at, testNow.add(const Duration(minutes: 2)));
+        expect(alert.title, 'Bloque terminado');
+        verify(() => cancel()).called(1);
+      },
+    );
+  });
 }

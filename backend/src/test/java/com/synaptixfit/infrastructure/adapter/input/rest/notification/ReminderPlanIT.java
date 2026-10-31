@@ -1,5 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.notification;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -64,6 +66,9 @@ class ReminderPlanIT {
                 .andExpect(status().isCreated());
     }
 
+    /** Avisos de bloques (sin «Tu semana», que depende del día de la semana). */
+    private static final String BLOCKS = "$.reminders[?(@.kind != 'WEEKLY_SUMMARY')]";
+
     @Test
     void plansBlocksAndAppliesModeAndWindow() throws Exception {
         createBlock("SPORT", tomorrow, "Pierna");
@@ -73,13 +78,11 @@ class ReminderPlanIT {
         // Preferencias por defecto (sin silencio, 10 al día) y enfoque «ambos»; sin repasos vencidos.
         mvc.perform(auth(get("/api/v1/notifications/reminder-plan")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.reminders.length()").value(2))
-                .andExpect(jsonPath("$.reminders[0].kind").value("TRAINING"))
-                .andExpect(jsonPath("$.reminders[0].title").value("Pierna"))
-                .andExpect(jsonPath("$.reminders[0].startsAt").value(tomorrow.toString()))
-                .andExpect(jsonPath("$.reminders[0].at").value(tomorrow.minus(Duration.ofMinutes(15)).toString()))
-                .andExpect(jsonPath("$.reminders[1].kind").value("STUDY"))
-                .andExpect(jsonPath("$.reminders[1].title").value("Matrices"));
+                // «Tu semana» (domingo) entra o no según el día en que se ejecute: se miran los bloques.
+                .andExpect(jsonPath(BLOCKS + ".kind", contains("TRAINING", "STUDY")))
+                .andExpect(jsonPath(BLOCKS + ".title", contains("Pierna", "Matrices")))
+                .andExpect(jsonPath(BLOCKS + ".startsAt", hasItem(tomorrow.toString())))
+                .andExpect(jsonPath(BLOCKS + ".at", hasItem(tomorrow.minus(Duration.ofMinutes(15)).toString())));
 
         // Modo exámenes: solo lo académico.
         mvc.perform(auth(put("/api/v1/notifications/preferences")).content("""
@@ -88,8 +91,7 @@ class ReminderPlanIT {
                 .andExpect(status().isOk());
         mvc.perform(auth(get("/api/v1/notifications/reminder-plan").param("days", "2")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.reminders.length()").value(1))
-                .andExpect(jsonPath("$.reminders[0].kind").value("STUDY"));
+                .andExpect(jsonPath(BLOCKS + ".kind", contains("STUDY")));
 
         // Límite diario 0: solo pasarían las críticas, y un recordatorio no lo es.
         mvc.perform(auth(put("/api/v1/notifications/preferences")).content("""

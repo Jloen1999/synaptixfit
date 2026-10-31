@@ -97,6 +97,11 @@ class _TrainingHomeView extends StatelessWidget {
             title: Text(l10n.tabTraining),
             actions: [
               IconButton(
+                tooltip: l10n.trainingPastActivityTitle,
+                onPressed: () => open(context, TrainingPaths.pastActivity),
+                icon: const Icon(Icons.add_task_rounded),
+              ),
+              IconButton(
                 tooltip: l10n.trainingHistoryTitle,
                 onPressed: () => open(context, TrainingPaths.history),
                 icon: const Icon(Icons.history_rounded),

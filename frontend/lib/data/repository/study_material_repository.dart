@@ -49,6 +49,13 @@ class StudyMaterialRepository implements StudyMaterialRepositoryContract {
       });
 
   @override
+  Future<AppResult<Unit>> abandonMaterial(String materialId) =>
+      RepositoryErrorHandler.guard(() async {
+        await _remote.abandonMaterial(materialId);
+        return unit;
+      });
+
+  @override
   Future<AppResult<ReviewPreview>> getReviewPreview(String materialId) =>
       RepositoryErrorHandler.guard(
         () async => (await _remote.getPreview(materialId)).toDomain(),

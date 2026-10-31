@@ -32,7 +32,16 @@ class GetProgressOverviewUseCase implements GetProgressOverviewUseCaseContract {
 
   @override
   Future<AppResult<ProgressOverview>> call() async {
-    final (account, streak, earned, weekly, load, posts, study) = await (
+    final (
+      account,
+      streak,
+      earned,
+      weekly,
+      load,
+      posts,
+      study,
+      subjects,
+    ) = await (
       _account.getAccount(),
       _badges.getStreak(),
       _badges.getMine(includeHidden: true),
@@ -40,6 +49,7 @@ class GetProgressOverviewUseCase implements GetProgressOverviewUseCaseContract {
       _progress.getPhysicalLoad(),
       _progress.getCommunityPreview(),
       _analytics.getStudyWeek(),
+      _analytics.getStudyBySubject(),
     ).wait;
 
     return switch ((account, streak, earned)) {
@@ -58,6 +68,7 @@ class GetProgressOverviewUseCase implements GetProgressOverviewUseCaseContract {
             physicalLoad: load.valueOrNull,
             communityPosts: posts.valueOrNull,
             studyWeek: study.valueOrNull,
+            studyBySubject: subjects.valueOrNull,
           ),
         ),
       (Failure(:final error), _, _) ||

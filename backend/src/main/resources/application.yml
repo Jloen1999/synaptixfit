@@ -24,8 +24,15 @@ spring:
   flyway:
     # Migraciones por motor: el SQL de esquema (tipos, índices, uuid, arrays) es propio de cada uno.
     locations: classpath:db/migration/${DB_VENDOR:postgresql}
+  web:
+    # Idioma de la petición (Accept-Language, lo envía la app): solo decide en qué idioma escribe la IA
+    # (AiLanguage). Sin cabecera, español.
+    locale: es
+    locale-resolver: accept-header
   servlet:
     multipart:
+      # Hasta 6 MB el archivo se queda en memoria (sin temporal en disco): la matrícula no toca el disco.
+      file-size-threshold: 6MB
       max-file-size: 25MB
       max-request-size: 25MB
   threads:
@@ -62,6 +69,13 @@ synaptixfit:
     access-key: ${R2_ACCESS_KEY:}
     secret-key: ${R2_SECRET_KEY:}
     public-base-url: ${R2_PUBLIC_BASE_URL:}
+  mail:
+    resend-api-key: ${RESEND_API_KEY:}
+    from: ${MAIL_FROM:SynaptixFit <no-reply@notifications.jloenit.dev>}
+    app-url: ${APP_PUBLIC_URL:http://localhost:5173}
+    # Resumen semanal por correo: domingo de 19 a 23 h (zona del planificador); cada pasada solo manda a
+    # quien aún no lo recibió esa semana. «-» lo desactiva.
+    weekly-cron: ${WEEKLY_EMAIL_CRON:0 0 19-23 * * SUN}
 
 management:
   endpoints:

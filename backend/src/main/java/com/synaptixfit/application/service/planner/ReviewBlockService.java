@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.planner;
 
+import com.synaptixfit.application.port.input.planner.CancelReviewBlocksUseCase;
 import com.synaptixfit.application.port.input.planner.ScheduleReviewBlockUseCase;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
@@ -26,7 +27,7 @@ import java.util.stream.Stream;
  * pasado y no antes de las 08:00); si choca, primer hueco libre de 30 minutos de ese mismo día; si el
  * día está lleno, se crea igualmente a la hora prevista marcado con conflicto.
  */
-public class ReviewBlockService implements ScheduleReviewBlockUseCase {
+public class ReviewBlockService implements ScheduleReviewBlockUseCase, CancelReviewBlocksUseCase {
 
     static final int REVIEW_MINUTES = 30;
     static final LocalTime EARLIEST = LocalTime.of(8, 0);
@@ -88,6 +89,16 @@ public class ReviewBlockService implements ScheduleReviewBlockUseCase {
         CalendarBlock saved = blocks.save(block);
         conflicts.refresh(command.userId(), List.of(saved), conflicts.neighboursOf(saved));
         return Optional.of(saved);
+    }
+
+    /** Los pendientes no tienen XP que restar: basta con borrarlos y recalcular los conflictos de alrededor. */
+    @Override
+    public void cancelReviewBlocks(UUID userId, UUID studyMaterialId) {
+        for (CalendarBlock block : blocks.findPendingReviews(userId, studyMaterialId)) {
+            List<CalendarBlock> neighbours = conflicts.neighboursOf(block);
+            blocks.delete(block.id());
+            conflicts.refresh(userId, List.of(), neighbours);
+        }
     }
 
     /**

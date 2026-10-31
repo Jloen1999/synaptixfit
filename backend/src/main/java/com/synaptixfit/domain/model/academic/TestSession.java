@@ -79,9 +79,17 @@ public final class TestSession {
         return !questionIds.isEmpty() && questionIds.stream().allMatch(results::containsKey);
     }
 
-    /** Concede la XP una sola vez y solo si se completó respondiendo todas las preguntas. */
+    /** ¿Puede dar XP? Una sola vez y solo si se completó respondiendo todas las preguntas. */
+    public boolean canClaimXp() {
+        return !xpAwarded && status == TestSessionStatus.COMPLETED && allAnswered();
+    }
+
+    /**
+     * Concede la XP (si {@link #canClaimXp()}). Solo se marca cuando de verdad dio XP: así el tope de tests
+     * con XP de {@code PracticeRewards} no cuenta los que no puntuaron.
+     */
     public boolean claimXp() {
-        if (xpAwarded || status != TestSessionStatus.COMPLETED || !allAnswered()) {
+        if (!canClaimXp()) {
             return false;
         }
         xpAwarded = true;

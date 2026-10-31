@@ -1,6 +1,8 @@
 package com.synaptixfit.application.service.social;
 
 import com.synaptixfit.application.port.input.notification.CreateNotificationUseCase;
+import com.synaptixfit.domain.model.notification.NotificationMessage.Code;
+import com.synaptixfit.domain.model.notification.NotificationMessage;
 import com.synaptixfit.domain.model.notification.NotificationPriority;
 import com.synaptixfit.domain.model.notification.NotificationType;
 import com.synaptixfit.domain.model.user.User;
@@ -27,26 +29,26 @@ public final class SocialNotifier {
 
     public void postLiked(UUID postAuthorId, UUID postId, UUID actorId) {
         send(postAuthorId, actorId, "Nuevo me gusta", "%s ha dado me gusta a tu publicación",
-                "/social/posts/" + postId, "Ver publicación");
+                "/social/posts/" + postId, "Ver publicación", Code.POST_LIKED);
     }
 
     public void postCommented(UUID postAuthorId, UUID postId, UUID actorId) {
         send(postAuthorId, actorId, "Nuevo comentario", "%s ha comentado tu publicación",
-                "/social/posts/" + postId, "Ver comentario");
+                "/social/posts/" + postId, "Ver comentario", Code.POST_COMMENTED);
     }
 
     public void friendRequestReceived(UUID addresseeId, UUID requesterId) {
         send(addresseeId, requesterId, "Nueva solicitud de amistad", "%s quiere añadirte como amigo",
-                "/social/friends/requests", "Ver solicitud");
+                "/social/friends/requests", "Ver solicitud", Code.FRIEND_REQUEST_RECEIVED);
     }
 
     public void friendRequestAccepted(UUID requesterId, UUID accepterId) {
         send(requesterId, accepterId, "Solicitud aceptada", "%s ha aceptado tu solicitud de amistad",
-                "/social/users/" + accepterId, "Ver perfil");
+                "/social/users/" + accepterId, "Ver perfil", Code.FRIEND_REQUEST_ACCEPTED);
     }
 
     private void send(UUID recipientId, UUID actorId, String title, String descriptionPattern, String actionUrl,
-                      String actionLabel) {
+                      String actionLabel, Code code) {
         if (recipientId.equals(actorId)) {
             return;
         }
@@ -56,6 +58,7 @@ public final class SocialNotifier {
         }
         notifications.create(new CreateNotificationUseCase.Command(recipientId, title,
                 String.format(descriptionPattern, actor.fullName()), NotificationPriority.INFORMATIVE,
-                NotificationType.SOCIAL, actionUrl, actionLabel));
+                NotificationType.SOCIAL, actionUrl, actionLabel, null,
+                NotificationMessage.of(code, "name", actor.fullName())));
     }
 }

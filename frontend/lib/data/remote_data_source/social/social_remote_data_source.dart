@@ -50,10 +50,16 @@ class SocialRemoteDataSource {
     required String type,
     required String description,
     String? imageUrl,
+    Map<String, Object?>? metadata,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '$_base/posts',
-      data: {'type': type, 'description': description, 'imageUrl': ?imageUrl},
+      data: {
+        'type': type,
+        'description': description,
+        'imageUrl': ?imageUrl,
+        'metadata': ?metadata,
+      },
     );
     return PostDto.fromJson(response.data!);
   }

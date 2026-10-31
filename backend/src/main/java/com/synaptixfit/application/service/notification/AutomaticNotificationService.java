@@ -3,6 +3,8 @@ package com.synaptixfit.application.service.notification;
 import com.synaptixfit.application.port.input.notification.CreateNotificationUseCase;
 import com.synaptixfit.application.port.input.notification.NotifyAchievementUseCase;
 import com.synaptixfit.application.port.input.notification.NotifyFatigueAlertUseCase;
+import com.synaptixfit.domain.model.notification.NotificationMessage.Code;
+import com.synaptixfit.domain.model.notification.NotificationMessage;
 import com.synaptixfit.domain.model.notification.NotificationPriority;
 import com.synaptixfit.domain.model.notification.NotificationType;
 import com.synaptixfit.domain.port.output.notification.NotificationRepositoryPort;
@@ -41,13 +43,15 @@ public class AutomaticNotificationService implements NotifyAchievementUseCase, N
         switch (c.kind()) {
             case CHALLENGE_COMPLETED -> send(c.userId(), "challenge:" + c.referenceId(), NotificationType.MILESTONE,
                     NotificationPriority.INFORMATIVE, "¡Reto completado!", "Has completado el reto «" + c.name() + "»",
-                    "/challenges/" + c.referenceId(), "Ver reto");
+                    "/challenges/" + c.referenceId(), "Ver reto",
+                    NotificationMessage.of(Code.CHALLENGE_COMPLETED, "name", c.name()));
             case BADGE_EARNED -> send(c.userId(), "badge:" + c.referenceId(), NotificationType.MILESTONE,
                     NotificationPriority.INFORMATIVE, "¡Nueva insignia!",
-                    "Has desbloqueado la insignia «" + c.name() + "»", "/profile", "Ver insignias");
+                    "Has desbloqueado la insignia «" + c.name() + "»", "/progress/badges", "Ver insignias",
+                    NotificationMessage.of(Code.BADGE_EARNED, "name", c.name()));
             case LEVEL_UP -> send(c.userId(), "level:" + c.name(), NotificationType.MILESTONE,
                     NotificationPriority.INFORMATIVE, "¡Has subido de nivel!", "Ya eres nivel " + c.name(), "/profile",
-                    "Ver perfil");
+                    "Ver perfil", NotificationMessage.of(Code.LEVEL_UP, "level", c.name()));
         }
     }
 
@@ -59,13 +63,15 @@ public class AutomaticNotificationService implements NotifyAchievementUseCase, N
         switch (c.reason()) {
             case CHECK_IN_ADAPTATION -> send(c.userId(), key, NotificationType.FATIGUE_ALERT,
                     NotificationPriority.RECOMMENDED, "Hoy conviene adaptar el entrenamiento",
-                    "Tu check-in indica mucha fatiga: baja la intensidad o tómate el día de descanso.",
-                    "/training", "Ver entrenamiento");
-            case OVERTRAINING -> send(c.userId(), key, NotificationType.FATIGUE_ALERT,
-                    NotificationPriority.RECOMMENDED, "Riesgo de sobreentrenamiento",
-                    String.format(Locale.ROOT, "Tu carga de esta semana es %.2f veces tu media del mes: prioriza "
-                            + "el descanso y acorta los bloques de estudio.", c.acwr() == null ? 0 : c.acwr()),
-                    "/progress", "Ver indicadores");
+                    "Nos has contado que estás muy cansado: baja la intensidad o tómate el día de descanso.",
+                    "/training", "Ver entrenamiento", NotificationMessage.of(Code.FATIGUE_CHECK_IN));
+            case OVERTRAINING -> {
+                String ratio = String.format(Locale.ROOT, "%.2f", c.acwr() == null ? 0 : c.acwr());
+                send(c.userId(), key, NotificationType.FATIGUE_ALERT, NotificationPriority.RECOMMENDED,
+                        "Riesgo de sobreentrenamiento", "Tu carga de esta semana es " + ratio
+                                + " veces tu media del mes: prioriza el descanso y acorta los bloques de estudio.",
+                        "/progress", "Ver indicadores", NotificationMessage.of(Code.OVERTRAINING, "ratio", ratio));
+            }
         }
     }
 
@@ -74,11 +80,12 @@ public class AutomaticNotificationService implements NotifyAchievementUseCase, N
      * del reto o la insignia (no su título: dos retos pueden llamarse igual) o el número de nivel.
      */
     private void send(UUID userId, String referenceKey, NotificationType type, NotificationPriority priority,
-                      String title, String description, String actionUrl, String actionLabel) {
+                      String title, String description, String actionUrl, String actionLabel,
+                      NotificationMessage message) {
         if (repository.existsByReferenceKey(userId, referenceKey)) {
             return;
         }
         notifications.create(new CreateNotificationUseCase.Command(userId, title, description, priority, type,
-                actionUrl, actionLabel, referenceKey));
+                actionUrl, actionLabel, referenceKey, message));
     }
 }

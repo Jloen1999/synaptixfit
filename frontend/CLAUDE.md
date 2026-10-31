@@ -29,7 +29,7 @@ Para que cada módulo crezca sin tocar ficheros compartidos, cada uno tiene su p
 | Registro de casos de uso | `lib/domain/di/<modulo>_domain_di.dart` |
 | Registro de blocs | `lib/presentation/di/<modulo>_presentation_di.dart` |
 | Rutas | `lib/presentation/screens/<modulo>/<modulo>_routes.dart` |
-| Textos | `lib/presentation/l10n/parts/app_es_<modulo>.arb` |
+| Textos | `lib/presentation/l10n/parts/app_es_<modulo>.arb` (plantilla) y su traducción en `app_en_`, `app_fr_` y `app_pt_<modulo>.arb` (ADR 0017) |
 | Texto de los `code` de error de negocio | `lib/presentation/l10n/error_messages/<modulo>_error_messages.dart` |
 
 Módulos: `home`, `academic`, `training`, `challenges`, `progress` (pestañas) y `profile`, `planner`, `social`, `admin`, `reminders` (avisos locales, sin rutas).
@@ -44,7 +44,7 @@ Módulos: `home`, `academic`, `training`, `challenges`, `progress` (pestañas) y
 6. `presentation/screens/<zona>/<pantalla>/bloc/` → eventos, estado y bloc (`@freezed`).
 7. `presentation/screens/<zona>/<pantalla>/page/` → la pantalla.
 8. `<modulo>_routes.dart` → navegación.
-9. `parts/app_es_<modulo>.arb` → textos, y `<modulo>_error_messages.dart` para los `code` de error nuevos.
+9. `parts/app_es_<modulo>.arb` → textos (y los mismos en `app_en_`, `app_fr_` y `app_pt_<modulo>.arb`; `translations_test.dart` lo comprueba), y `<modulo>_error_messages.dart` para los `code` de error nuevos. Fechas y números con `DateFormat`/`NumberFormat` sin idioma fijo: siguen el de la app.
 10. Regenerar código y traducciones.
 
 ## Comandos
@@ -60,6 +60,6 @@ Módulos: `home`, `academic`, `training`, `challenges`, `progress` (pestañas) y
 
 ## No hacer
 
-- No editar `*.g.dart`, `*.freezed.dart`, `l10n/gen_l10n/`, `l10n/app_es.arb` ni `theme/tokens.g.dart`.
+- No editar `*.g.dart`, `*.freezed.dart`, `l10n/gen_l10n/`, `l10n/app_<idioma>.arb` ni `theme/tokens.g.dart`.
 - No llamar a servicios externos (DeepSeek, R2, Supabase) desde el cliente: todo pasa por el backend.
 - No crear carpetas fuera de la estructura del perfil sin preguntar.

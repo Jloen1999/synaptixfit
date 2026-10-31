@@ -17,6 +17,11 @@ public interface PhysicalLoadRepositoryPort {
     /** Borra el registro de la sesión. Devuelve si existía. */
     boolean deleteBySession(UUID userId, UUID sessionId);
 
+    Optional<PhysicalLoadRecord> findByBlock(UUID userId, UUID blockId);
+
+    /** Borra el registro del bloque de deporte. Devuelve si existía. */
+    boolean deleteByBlock(UUID userId, UUID blockId);
+
     /**
      * Filas de carga entre dos fechas, ambas incluidas. Las sumas y agregados los calcula
      * {@link PhysicalLoadHistory} en el caso de uso.

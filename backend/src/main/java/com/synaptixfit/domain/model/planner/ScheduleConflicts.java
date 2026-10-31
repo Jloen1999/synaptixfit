@@ -2,6 +2,8 @@ package com.synaptixfit.domain.model.planner;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -83,6 +85,30 @@ public final class ScheduleConflicts {
                 return Optional.of(slot);
             }
             candidate = candidate.plus(STEP);
+        }
+        return Optional.empty();
+    }
+
+    /** Horas del día en las que se busca hueco para reprogramar (ni de madrugada ni de noche). */
+    public static final LocalTime RESCHEDULE_DAY_START = LocalTime.of(8, 0);
+    public static final LocalTime RESCHEDULE_DAY_END = LocalTime.of(22, 0);
+    public static final int RESCHEDULE_DAYS_AHEAD = 7;
+
+    /**
+     * Primer hueco libre de {@code minutes} desde {@code now}, día a día entre las 8:00 y las 22:00
+     * de la zona del planificador, en los próximos {@link #RESCHEDULE_DAYS_AHEAD} días.
+     */
+    public static Optional<TimeRange> nextFreeSlot(long minutes, Instant now, PlannerZone zone,
+                                                   Collection<CalendarBlock> busy) {
+        LocalDate today = zone.today(now);
+        for (int d = 0; d < RESCHEDULE_DAYS_AHEAD; d++) {
+            LocalDate day = today.plusDays(d);
+            Instant dayStart = zone.at(day, RESCHEDULE_DAY_START);
+            Instant from = dayStart.isBefore(now) ? now : dayStart;
+            Optional<TimeRange> slot = firstFreeSlot(minutes, from, zone.at(day, RESCHEDULE_DAY_END), busy);
+            if (slot.isPresent()) {
+                return slot;
+            }
         }
         return Optional.empty();
     }

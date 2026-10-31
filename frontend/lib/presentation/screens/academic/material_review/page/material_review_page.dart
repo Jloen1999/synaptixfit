@@ -16,21 +16,38 @@ import '../bloc/material_review_bloc.dart';
 
 /// Repaso espaciado de un material con autoevaluación de 6 niveles.
 class MaterialReviewPage extends StatelessWidget {
-  const MaterialReviewPage({super.key, required this.materialId});
+  const MaterialReviewPage({
+    super.key,
+    required this.materialId,
+    this.queue = const [],
+  });
 
   final String materialId;
+
+  /// Materiales que se repasan después, seguidos («Repasar todos» de Inicio).
+  final List<String> queue;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) =>
         getIt<MaterialReviewBloc>()
           ..add(MaterialReviewEvent.started(materialId)),
-    child: const _MaterialReviewView(),
+    child: _MaterialReviewView(queue: queue),
   );
 }
 
+/// Abre el siguiente repaso de la cola en lugar del actual (Atrás vuelve a
+/// donde empezó la tanda, no a cada repaso hecho).
+void _openNext(BuildContext context, List<String> queue) =>
+    context.pushReplacement(
+      '/academic/materials/${queue.first}/review'
+      '${queue.length > 1 ? '?queue=${queue.skip(1).join(',')}' : ''}',
+    );
+
 class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
-  const _MaterialReviewView();
+  const _MaterialReviewView({required this.queue});
+
+  final List<String> queue;
 
   /// Confirmación breve antes de guardar: el servidor no permite deshacer un
   /// repaso, así que un toque accidental no debe registrarlo. La fila ya dice
@@ -60,14 +77,36 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
     }
   }
 
+  Future<void> _confirmDelete(BuildContext context) async {
+    final l10n = context.localizations;
+    final bloc = context.read<MaterialReviewBloc>();
+    final ok = await confirmDestructive(
+      context,
+      title: l10n.academicMaterialRemoveTitle,
+      message: l10n.academicMaterialRemoveMessage,
+      confirmLabel: l10n.academicMaterialRemove,
+    );
+    if (ok) bloc.add(const MaterialReviewEvent.removeRequested());
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return BlocConsumer<MaterialReviewBloc, MaterialReviewState>(
       listenWhen: (a, b) =>
           a.actionError != b.actionError ||
-          a.updatedAccount != b.updatedAccount,
+          a.updatedAccount != b.updatedAccount ||
+          a.removed != b.removed,
       listener: (context, state) {
+        if (state.removed) {
+          context.showSnack(l10n.academicMaterialRemoved);
+          if (queue.isNotEmpty) {
+            _openNext(context, queue);
+          } else {
+            context.pop(true);
+          }
+          return;
+        }
         if (state.updatedAccount != null) {
           syncSessionAccount(context, state.updatedAccount!);
         }
@@ -78,7 +117,25 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
       builder: (context, state) {
         final material = state.material;
         return Scaffold(
-          appBar: AppPageBar(title: Text(l10n.academicReviewTitle)),
+          appBar: AppPageBar(
+            title: Text(l10n.academicReviewTitle),
+            actions: [
+              if (material != null)
+                IconButton(
+                  tooltip: l10n.academicMaterialRemove,
+                  icon: const Icon(Icons.bookmark_remove_outlined),
+                  onPressed: state.removing
+                      ? null
+                      : () => _confirmDelete(context),
+                ),
+            ],
+            bottom: state.removing
+                ? const PreferredSize(
+                    preferredSize: Size.fromHeight(TokensSize.progressBar),
+                    child: LinearProgressIndicator(),
+                  )
+                : null,
+          ),
           body: switch (state) {
             MaterialReviewState(loading: true) => const AppSkeletonList(
               count: 5,
@@ -100,6 +157,7 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
                     _OutcomeCard(
                       material: state.outcome!.material,
                       xpAwarded: state.outcome!.xpAwarded,
+                      queue: queue,
                     )
                   else ...[
                     Text(
@@ -319,47 +377,75 @@ class _QualityOption extends StatelessWidget {
 }
 
 class _OutcomeCard extends StatelessWidget {
-  const _OutcomeCard({required this.material, required this.xpAwarded});
+  const _OutcomeCard({
+    required this.material,
+    required this.xpAwarded,
+    required this.queue,
+  });
 
   final StudyMaterial material;
   final int xpAwarded;
 
+  /// Repasos que quedan en la tanda: si hay, el botón principal es «Siguiente».
+  final List<String> queue;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return AppCard(
-      color: context.palette.success.withValues(alpha: AppPill.tintAlpha),
-      padding: const EdgeInsets.all(TokensSpacing.l),
-      child: Column(
-        children: [
-          Icon(
-            Icons.check_circle_rounded,
-            color: context.palette.success,
-            size: TokensSize.iconL,
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          Text(l10n.academicReviewDone, style: context.textStyles.titleMedium),
-          const SizedBox(height: TokensSpacing.xs),
-          Text(
-            material.nextReviewAt == null
-                ? l10n.academicReviewInterval(material.intervalDays)
-                : l10n.academicNextReview(longDate(material.nextReviewAt!)),
-            textAlign: TextAlign.center,
-          ),
-          if (xpAwarded > 0) ...[
-            const SizedBox(height: TokensSpacing.m),
-            AppPill(
-              label: l10n.academicXpEarned(xpAwarded),
-              color: context.palette.accent,
-              icon: Icons.bolt_rounded,
+    // Región viva: al guardar, el lector anuncia «Repaso guardado» y cuándo toca
+    // el siguiente (las opciones desaparecen y el foco no se mueve solo).
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: AppCard(
+        color: context.palette.success.withValues(alpha: AppPill.tintAlpha),
+        padding: const EdgeInsets.all(TokensSpacing.l),
+        child: Column(
+          children: [
+            Icon(
+              Icons.check_circle_rounded,
+              color: context.palette.success,
+              size: TokensSize.iconL,
             ),
+            const SizedBox(height: TokensSpacing.s),
+            Text(
+              l10n.academicReviewDone,
+              style: context.textStyles.titleMedium,
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              material.nextReviewAt == null
+                  ? l10n.academicReviewInterval(material.intervalDays)
+                  : l10n.academicNextReview(longDate(material.nextReviewAt!)),
+              textAlign: TextAlign.center,
+            ),
+            if (xpAwarded > 0) ...[
+              const SizedBox(height: TokensSpacing.m),
+              AppPill(
+                label: l10n.academicXpEarned(xpAwarded),
+                color: context.palette.accent,
+                icon: Icons.bolt_rounded,
+              ),
+            ],
+            const SizedBox(height: TokensSpacing.m),
+            if (queue.isNotEmpty) ...[
+              AppPrimaryButton(
+                label: l10n.academicReviewNext(queue.length),
+                icon: Icons.skip_next_rounded,
+                onPressed: () => _openNext(context, queue),
+              ),
+              const SizedBox(height: TokensSpacing.s),
+              TextButton(
+                onPressed: () => context.pop(true),
+                child: Text(l10n.academicReviewStopQueue),
+              ),
+            ] else
+              AppSecondaryButton(
+                label: l10n.commonBack,
+                onPressed: () => context.pop(true),
+              ),
           ],
-          const SizedBox(height: TokensSpacing.m),
-          AppSecondaryButton(
-            label: l10n.commonBack,
-            onPressed: () => context.pop(true),
-          ),
-        ],
+        ),
       ),
     );
   }

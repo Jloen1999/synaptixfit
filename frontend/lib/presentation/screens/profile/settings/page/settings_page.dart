@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../domain/enums/app_language.dart';
+import '../../language/bloc/language_bloc.dart';
+import '../../../../../domain/enums/appearance_mode.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -11,6 +15,7 @@ import '../../../auth/session/bloc/session_bloc.dart';
 import '../../profile_routes.dart';
 import '../../widgets/delete_account_dialog.dart';
 import '../../widgets/profile_layout.dart';
+import '../../appearance/bloc/appearance_bloc.dart';
 import '../bloc/settings_bloc.dart';
 
 /// Versión mostrada en Ajustes (coincide con `version` de pubspec.yaml).
@@ -129,6 +134,8 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                   ),
                 ],
               ),
+              const _AppearanceGroup(),
+              const _LanguageGroup(),
               _Group(
                 title: l10n.profileSettingsNotificationsGroup,
                 children: [
@@ -242,6 +249,144 @@ class _Group extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Idioma: los textos cambian al momento y se guarda en este dispositivo. Los
+/// nombres de idioma van en su propio idioma, para encontrar el tuyo aunque la
+/// app esté en otro.
+class _LanguageGroup extends StatelessWidget {
+  const _LanguageGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final language = context.select((LanguageBloc b) => b.state.language);
+    final options = [
+      (AppLanguage.system, l10n.profileLanguageSystem),
+      (AppLanguage.es, l10n.languageNameEs),
+      (AppLanguage.en, l10n.languageNameEn),
+      (AppLanguage.fr, l10n.languageNameFr),
+      (AppLanguage.pt, l10n.languageNamePt),
+    ];
+    return _Group(
+      title: l10n.profileSettingsLanguageGroup,
+      children: [
+        RadioGroup<AppLanguage>(
+          groupValue: language,
+          onChanged: (value) {
+            if (value != null) {
+              context.read<LanguageBloc>().add(LanguageEvent.changed(value));
+            }
+          },
+          child: Semantics(
+            container: true,
+            explicitChildNodes: true,
+            label: l10n.profileSettingsLanguageGroup,
+            child: Column(
+              children: [
+                for (final (value, label) in options)
+                  AppFocusOutline(
+                    child: RadioListTile<AppLanguage>(
+                      value: value,
+                      controlAffinity: ListTileControlAffinity.trailing,
+                      secondary: value == AppLanguage.system
+                          ? const Icon(Icons.phone_iphone_rounded)
+                          : null,
+                      title: value.languageCode == null
+                          ? Text(label)
+                          : Semantics(
+                              attributedLabel: AttributedString(
+                                label,
+                                attributes: [
+                                  LocaleStringAttribute(
+                                    range: TextRange(
+                                      start: 0,
+                                      end: label.length,
+                                    ),
+                                    locale: Locale(value.languageCode!),
+                                  ),
+                                ],
+                              ),
+                              child: ExcludeSemantics(child: Text(label)),
+                            ),
+                      subtitle: value == AppLanguage.system
+                          ? Text(l10n.profileLanguageSystemHint)
+                          : null,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Apariencia: se aplica al momento y se guarda en este dispositivo.
+class _AppearanceGroup extends StatelessWidget {
+  const _AppearanceGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final mode = context.select((AppearanceBloc b) => b.state.mode);
+    final options = [
+      (
+        AppearanceMode.dark,
+        Icons.dark_mode_outlined,
+        l10n.profileAppearanceDark,
+      ),
+      (
+        AppearanceMode.light,
+        Icons.light_mode_outlined,
+        l10n.profileAppearanceLight,
+      ),
+      (
+        AppearanceMode.system,
+        Icons.brightness_auto_outlined,
+        l10n.profileAppearanceSystem,
+      ),
+    ];
+    return _Group(
+      title: l10n.profileSettingsAppearanceGroup,
+      children: [
+        RadioGroup<AppearanceMode>(
+          groupValue: mode,
+          onChanged: (value) {
+            if (value != null) {
+              context.read<AppearanceBloc>().add(
+                AppearanceEvent.changed(value),
+              );
+            }
+          },
+          // El lector anuncia el grupo («Apariencia») antes de cada opción.
+          child: Semantics(
+            container: true,
+            explicitChildNodes: true,
+            label: l10n.profileSettingsAppearanceGroup,
+            child: Column(
+              children: [
+                for (final (value, icon, label) in options)
+                  AppFocusOutline(
+                    child: RadioListTile<AppearanceMode>(
+                      value: value,
+                      // Icono delante y radio al final, como el resto de ajustes.
+                      controlAffinity: ListTileControlAffinity.trailing,
+                      secondary: Icon(icon),
+                      title: Text(label),
+                      subtitle: value == AppearanceMode.system
+                          ? Text(l10n.profileAppearanceSystemHint)
+                          : null,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

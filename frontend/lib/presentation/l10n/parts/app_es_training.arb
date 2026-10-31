@@ -15,7 +15,7 @@
   "trainingStart": "Empezar",
   "trainingTrain": "Entrenar",
   "trainingCheckInCtaTitle": "¿Cómo te encuentras hoy?",
-  "trainingCheckInToday": "Check-in de hoy",
+  "trainingCheckInToday": "Cómo estás hoy",
   "trainingFatigueScore": "Fatiga {score}/100",
   "@trainingFatigueScore": {
     "placeholders": {
@@ -53,7 +53,7 @@
   "trainingWeeklyPlanTitle": "Plan semanal",
   "trainingHistoryTitle": "Historial de sesiones",
   "trainingMoreActions": "Más acciones",
-  "trainingGoalHypertrophy": "Hipertrofia",
+  "trainingGoalHypertrophy": "Ganar músculo",
   "trainingGoalMaxStrength": "Fuerza máxima",
   "trainingGoalPower": "Potencia",
   "trainingGoalStrengthEndurance": "Fuerza resistencia",
@@ -74,13 +74,13 @@
   "trainingWeekTypeAdaptation": "Adaptación",
   "trainingWeekTypeLoad": "Carga",
   "trainingWeekTypePeak": "Pico",
-  "trainingWeekTypeDeload": "Descarga",
+  "trainingWeekTypeDeload": "Semana suave",
   "trainingProgressPending": "Pendiente",
   "trainingProgressInProgress": "En curso",
   "trainingProgressCompleted": "Completado",
   "trainingRecommendationProgression": "Progresión",
   "trainingRecommendationDegradation": "Ajuste a la baja",
-  "trainingRecommendationDeload": "Descarga",
+  "trainingRecommendationDeload": "Semana suave",
   "trainingRecommendationVariant": "Variante",
   "trainingRecommendationAcademic": "Carga académica",
   "trainingRecommendationApplied": "Aplicada",
@@ -492,20 +492,6 @@
   "trainingDeleteSet": "Borrar serie",
   "trainingSessionAlreadyCompleted": "Esta sesión ya está finalizada.",
   "trainingFinishAction": "Finalizar",
-  "trainingRpeTitle": "¿Cuánto te ha costado?",
-  "trainingRpeMessage": "Valora el esfuerzo percibido de 1 (muy fácil) a 10 (máximo).",
-  "trainingRpeEasy": "Fácil",
-  "trainingRpeModerate": "Moderado",
-  "trainingRpeHard": "Duro",
-  "trainingRpeMax": "Máximo",
-  "trainingRpeSemantics": "Esfuerzo {value} de 10",
-  "@trainingRpeSemantics": {
-    "placeholders": {
-      "value": {
-        "type": "int"
-      }
-    }
-  },
   "trainingRpeLabel": "Esfuerzo percibido (1-10)",
   "trainingRpeValue": "Esfuerzo {value}/10",
   "@trainingRpeValue": {
@@ -585,10 +571,10 @@
       }
     }
   },
-  "trainingCheckInTitle": "Check-in diario",
-  "trainingCheckInIntro": "Así adaptamos tu entrenamiento.",
-  "trainingCheckInUpdate": "Ya hiciste el check-in hoy. Puedes actualizarlo.",
-  "trainingCheckInXp": "¡Primer check-in del día! +{xp} XP",
+  "trainingCheckInTitle": "¿Cómo estás hoy?",
+  "trainingCheckInIntro": "Cuatro preguntas rápidas (sueño, estrés, energía y agujetas) para adaptar tu entrenamiento a cómo te encuentras.",
+  "trainingCheckInUpdate": "Ya nos has contado cómo estás hoy. Puedes cambiarlo.",
+  "trainingCheckInXp": "¡Gracias por contarnos cómo estás! +{xp} XP",
   "@trainingCheckInXp": {
     "placeholders": {
       "xp": {
@@ -638,9 +624,9 @@
   "trainingPainLegs": "Piernas",
   "trainingReadyToTrain": "Me siento listo para entrenar",
   "trainingNotes": "Notas (opcional)",
-  "trainingCheckInSave": "Guardar check-in",
-  "trainingCheckInUpdateAction": "Actualizar check-in",
-  "trainingCheckInHistory": "Últimos check-ins",
+  "trainingCheckInSave": "Guardar",
+  "trainingCheckInUpdateAction": "Guardar cambios",
+  "trainingCheckInHistory": "Días anteriores",
   "trainingCheckInHistoryLine": "Sueño {sleep} · Estrés {stress} · Energía {energy} · Agujetas {soreness}",
   "@trainingCheckInHistoryLine": {
     "placeholders": {
@@ -719,7 +705,7 @@
   "trainingMsgRoutineDeleted": "Rutina eliminada",
   "trainingMsgRoutineDuplicated": "Rutina duplicada",
   "trainingMsgRoutineCloned": "Rutina clonada en tus rutinas",
-  "trainingMsgCheckInSaved": "Check-in guardado",
+  "trainingMsgCheckInSaved": "Guardado: adaptamos tu día a cómo estás",
   "trainingMsgPlanSaved": "Plan semanal guardado",
   "trainingMsgPlanDeleted": "Plan semanal eliminado",
   "trainingMsgSessionUnmarked": "Sesión desmarcada",
@@ -909,5 +895,181 @@
       }
     }
   },
-  "trainingExerciseSourceOpenGym": "Datos del ejercicio: openGym (Duarte Santos), licencia AGPL-3.0."
+  "trainingExerciseSourceOpenGym": "Datos del ejercicio: openGym (Duarte Santos), licencia AGPL-3.0.",
+  "trainingRepeatDay": "Repetir",
+  "trainingRepeatDayTitle": "¿Repetir este día?",
+  "trainingRepeatDayMessage": "Ya lo terminaste. Si lo repites, cuenta como una sesión nueva.",
+  "trainingContinueDay": "Continuar",
+  "trainingNextDay": "Siguiente",
+  "trainingFinishEarlyTitle": "¿Terminar ya la sesión?",
+  "trainingFinishEarlyMessage": "{count, plural, =1{Te falta 1 serie.} other{Te faltan {count} series.}} Se guardará lo que has hecho.",
+  "@trainingFinishEarlyMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingAllSetsDone": "¡Todas las series hechas!",
+  "trainingQuickSetDone": "Serie {n} hecha",
+  "@trainingQuickSetDone": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetLogged": "Serie {n} registrada",
+  "@trainingSetLogged": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRestOver": "Descanso terminado: a por la siguiente serie",
+  "trainingAdaptedTitle": "Sesión adaptada hoy",
+  "trainingAdaptedExam": "Tienes un examen cerca.",
+  "trainingAdaptedOvertraining": "Tu carga de entrenamiento está muy alta.",
+  "trainingAdaptedFatigue": "Hoy te encuentras con mucho cansancio.",
+  "trainingAdaptedSets": "Por eso hoy, series al {percent} % de lo planificado.",
+  "@trainingAdaptedSets": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingVolumeMoved": "{kg} kg movidos",
+  "@trainingVolumeMoved": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingVolumeMore": "{kg} kg más que la última vez",
+  "@trainingVolumeMore": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingVolumeLess": "{kg} kg menos que la última vez",
+  "@trainingVolumeLess": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingNewRecords": "{count, plural, =1{¡Nuevo récord!} other{¡{count} récords nuevos!}}",
+  "@trainingNewRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingShareWall": "Compartir en el muro",
+  "trainingShared": "Compartido",
+  "trainingShareText": "Sesión de {minutes} min: {kg} kg movidos.",
+  "@trainingShareText": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingShareRecord": "Nuevo récord en {exercise}: {value}",
+  "@trainingShareRecord": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingMsgSessionShared": "Publicado en el muro",
+  "trainingMsgPendingSetDiscarded": "Una serie guardada sin conexión no se pudo subir y se ha descartado. Revísala y apúntala de nuevo.",
+  "@trainingMsgPendingSetDiscarded": {
+    "description": "Aviso: una serie de la cola sin conexión fue rechazada por el servidor."
+  },
+  "trainingShareTextNoVolume": "Sesión de {minutes} min completada.",
+  "@trainingShareTextNoVolume": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingShareRecordUnnamed": "Nuevo récord: {value}",
+  "@trainingShareRecordUnnamed": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingShareConfirmTitle": "¿Publicar en el muro?",
+  "trainingSharePublish": "Publicar",
+  "trainingRecordWeightSpoken": "{kg} kilos, {reps} repeticiones",
+  "@trainingRecordWeightSpoken": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPastActivityTitle": "Apuntar actividad",
+  "trainingPastActivityIntro": "¿Hiciste deporte sin la app? Apúntalo y contará en tu carga física y en tu semana. Puedes apuntar lo de los últimos 7 días.",
+  "trainingPastActivityWhat": "¿Qué hiciste?",
+  "trainingPastActivityName": "Actividad",
+  "trainingPastActivityFootball": "Fútbol",
+  "trainingPastActivityRunning": "Correr",
+  "trainingPastActivityGym": "Gimnasio",
+  "trainingPastActivityCycling": "Bici",
+  "trainingPastActivitySwimming": "Natación",
+  "trainingPastActivityPadel": "Pádel",
+  "trainingPastActivityWhen": "¿Cuándo?",
+  "trainingPastActivityToday": "Hoy",
+  "trainingPastActivityYesterday": "Ayer",
+  "trainingPastActivityStart": "Empezaste a las",
+  "trainingPastActivityDuration": "Duración",
+  "trainingPastActivityMinutes": "{minutes} min",
+  "trainingPastActivitySave": "Guardar actividad",
+  "trainingPastActivitySaved": "Actividad apuntada",
+  "trainingPastActivitySavedXp": "Actividad apuntada · +{xp} XP",
+  "trainingPastActivityNotFinished": "Esa actividad aún no ha terminado: elige una hora anterior o una duración menor.",
+  "@trainingPastActivityMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@trainingPastActivitySavedXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingOfflinePending": "{count, plural, =1{Sin conexión: 1 serie se guardará en cuanto vuelva la cobertura.} other{Sin conexión: {count} series se guardarán en cuanto vuelva la cobertura.}} Para terminar el entreno hace falta conexión.",
+  "@trainingOfflinePending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

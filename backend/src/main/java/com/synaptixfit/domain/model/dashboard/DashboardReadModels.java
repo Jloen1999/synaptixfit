@@ -3,6 +3,7 @@ package com.synaptixfit.domain.model.dashboard;
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeType;
 import com.synaptixfit.domain.model.challenge.Difficulty;
+import com.synaptixfit.domain.model.training.TrainingSession;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -30,8 +31,32 @@ public final class DashboardReadModels {
     }
 
     /** Primer día no completado de la rutina activa más reciente. */
+    /**
+     * @param openSessionStartedAt inicio de la sesión sin terminar más reciente de ese día (null si no hay)
+     */
     public record NextTrainingDay(UUID routineId, String routineName, UUID weekId, int weekNumber, UUID dayId,
-                                  int dayNumber, String dayName, String dayStatus) {
+                                  int dayNumber, String dayName, String dayStatus, Instant openSessionStartedAt) {
+
+        public NextTrainingDay(UUID routineId, String routineName, UUID weekId, int weekNumber, UUID dayId,
+                               int dayNumber, String dayName, String dayStatus) {
+            this(routineId, routineName, weekId, weekNumber, dayId, dayNumber, dayName, dayStatus, null);
+        }
+
+        /**
+         * El día solo sigue «en curso» si su sesión abierta no está abandonada
+         * ({@link TrainingSession#STALE_AFTER}); si no, vuelve a estar pendiente.
+         */
+        public NextTrainingDay effective(Instant now) {
+            boolean inProgress = IN_PROGRESS.equals(dayStatus);
+            boolean stale = openSessionStartedAt == null || TrainingSession.isStaleStart(openSessionStartedAt, now);
+            return inProgress && stale
+                    ? new NextTrainingDay(routineId, routineName, weekId, weekNumber, dayId, dayNumber, dayName,
+                            PENDING, openSessionStartedAt)
+                    : this;
+        }
+
+        static final String IN_PROGRESS = "en_progreso";
+        static final String PENDING = "pendiente";
     }
 
     /**

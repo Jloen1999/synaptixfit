@@ -48,12 +48,15 @@ public class WellbeingService implements GetWellbeingUseCase {
     private AcademicAdherence adherence(UUID userId, WeeklyAcademicLoad weekly, LocalDate weekStart, ZoneId zone) {
         Instant from = TimeZones.startOfDay(weekStart, zone);
         Instant to = TimeZones.startOfDay(weekStart.plusDays(7), zone);
-        InsightsSourcePort.DeadlineCounts counts = sources.deadlineCounts(userId, from, to);
+        Instant now = clock.instant();
+        // Solo cuentan las entregas que ya vencían y los días ya transcurridos (ver AcademicAdherence).
+        InsightsSourcePort.DeadlineCounts counts = sources.deadlineCounts(userId, from, now.isBefore(to) ? now : to);
+        int elapsedDays = (int) java.time.temporal.ChronoUnit.DAYS.between(weekStart, LocalDate.ofInstant(now, zone)) + 1;
         int studyDays = (int) sources.completedStudyBlocks(userId, from, to).stream()
                 .filter(b -> ActivityType.countsAsStudyCode(b.activityType()))
                 .map(b -> LocalDate.ofInstant(b.start(), zone))
                 .distinct()
                 .count();
-        return AcademicAdherence.compute(weekly, counts.total(), counts.completed(), studyDays);
+        return AcademicAdherence.compute(weekly, counts.total(), counts.completed(), studyDays, elapsedDays);
     }
 }

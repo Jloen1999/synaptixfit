@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../domain/enums/weekly_email_status.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/profile/notification_category.dart';
 import '../../../../../domain/enums/profile/notification_mode.dart';
@@ -12,6 +13,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/profile_labels.dart';
 import '../../widgets/profile_layout.dart';
+import '../bloc/weekly_email_bloc.dart';
 import '../bloc/device_reminders_bloc.dart';
 import '../bloc/notification_settings_bloc.dart';
 
@@ -32,6 +34,10 @@ class NotificationSettingsPage extends StatelessWidget {
           create: (_) =>
               getIt<DeviceRemindersBloc>()
                 ..add(const DeviceRemindersEvent.started()),
+        ),
+        BlocProvider(
+          create: (_) =>
+              getIt<WeeklyEmailBloc>()..add(const WeeklyEmailEvent.started()),
         ),
       ],
       child: const _NotificationSettingsView(),
@@ -267,6 +273,7 @@ class _Content extends StatelessWidget {
               // Va al final y aparte: se guarda al momento en el teléfono,
               // sin el botón «Guardar» de las preferencias de la cuenta.
               const _DeviceRemindersSection(),
+              const _WeeklyEmailSection(),
             ],
           ),
         ),
@@ -370,6 +377,89 @@ class _DeviceRemindersSectionState extends State<_DeviceRemindersSection>
                   ),
                 ],
               ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Resumen semanal por correo: se aplica al momento, como los avisos del
+/// móvil. Explica en cada estado qué va a pasar (confirmar desde el correo,
+/// llega el domingo).
+class _WeeklyEmailSection extends StatelessWidget with ErrorsMessageMixin {
+  const _WeeklyEmailSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return BlocConsumer<WeeklyEmailBloc, WeeklyEmailState>(
+      listenWhen: (a, b) => b.error != null && a.error != b.error,
+      listener: (context, state) =>
+          context.showSnack(errorMessage(context, state.error!)),
+      builder: (context, state) {
+        final status = state.status;
+        if (status == null) {
+          final loadError = state.loadError;
+          return ProfileFormSection(
+            title: l10n.profileWeeklyEmailSectionTitle,
+            // Mientras carga, un hueco del alto de la fila (la página no salta);
+            // si falla, el error y cómo reintentarlo, solo en esta sección.
+            child: loadError == null
+                ? const AppSkeleton(height: TokensSize.heroStat)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppInlineMessage(
+                        message: errorMessage(context, loadError),
+                      ),
+                      const SizedBox(height: TokensSpacing.s),
+                      AppSecondaryButton(
+                        label: l10n.commonRetry,
+                        icon: const Icon(Icons.refresh_rounded),
+                        onPressed: () => context.read<WeeklyEmailBloc>().add(
+                          const WeeklyEmailEvent.started(),
+                        ),
+                      ),
+                    ],
+                  ),
+          );
+        }
+        final hint = switch (status) {
+          WeeklyEmailStatus.off => l10n.profileWeeklyEmailHintOff,
+          WeeklyEmailStatus.pending => l10n.profileWeeklyEmailHintPending,
+          WeeklyEmailStatus.active => l10n.profileWeeklyEmailHintActive,
+        };
+        return ProfileFormSection(
+          title: l10n.profileWeeklyEmailSectionTitle,
+          // Pendiente, «se aplica al momento» confundiría: aún falta confirmar.
+          trailing: status == WeeklyEmailStatus.pending
+              ? AppPill(
+                  label: l10n.profileWeeklyEmailPendingPill,
+                  icon: Icons.mark_email_unread_outlined,
+                  color: context.palette.warning,
+                )
+              : AppPill(
+                  label: l10n.remindersAppliesNow,
+                  icon: Icons.bolt_rounded,
+                ),
+          child: AppCard(
+            padding: EdgeInsets.zero,
+            child: AppFocusOutline(
+              child: SwitchListTile(
+                secondary: const Icon(Icons.mark_email_unread_outlined),
+                title: Text(l10n.profileWeeklyEmailToggle),
+                // Región viva: el texto cambia al activarlo (p. ej. «revisa tu
+                // correo para confirmarlo») y se anuncia.
+                subtitle: Semantics(liveRegion: true, child: Text(hint)),
+                value: status != WeeklyEmailStatus.off,
+                onChanged: state.busy
+                    ? null
+                    : (on) => context.read<WeeklyEmailBloc>().add(
+                        WeeklyEmailEvent.toggled(on),
+                      ),
+              ),
             ),
           ),
         );

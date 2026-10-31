@@ -9,7 +9,6 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/training_content.dart';
-import '../../widgets/training_dialogs.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
 import '../bloc/weekly_plan_bloc.dart';
@@ -103,7 +102,7 @@ class _WeekNavigator extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final end = weekStart.add(const Duration(days: 6));
-    final format = DateFormat.MMMd('es');
+    final format = DateFormat.MMMd();
     return Row(
       children: [
         IconButton(
@@ -311,7 +310,7 @@ class _PlanTile extends StatelessWidget {
         ),
       ),
       title: Text(
-        l10n.trainingWeekOf(DateFormat.yMMMd('es').format(plan.weekStart)),
+        l10n.trainingWeekOf(DateFormat.yMMMd().format(plan.weekStart)),
       ),
       subtitle: Text(
         '${l10n.trainingSessionsDone(plan.completedSessions, plan.plannedSessions)}'

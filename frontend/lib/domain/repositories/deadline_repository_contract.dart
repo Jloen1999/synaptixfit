@@ -4,9 +4,11 @@ import '../models/result/result.dart';
 
 /// Entregas y exámenes.
 abstract interface class DeadlineRepositoryContract {
-  /// [upcoming] = solo pendientes desde hoy.
+  /// [upcoming] = solo pendientes desde hoy; con [includeOverdue], también las
+  /// vencidas sin completar de los últimos 30 días (primero).
   Future<AppResult<DeadlinePage>> getDeadlines({
     bool upcoming = false,
+    bool includeOverdue = false,
     String? subjectId,
     int page = 0,
     int size = 20,

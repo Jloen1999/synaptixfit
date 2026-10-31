@@ -12,6 +12,7 @@ import com.synaptixfit.application.port.input.academic.CreateSubjectUseCase;
 import com.synaptixfit.application.port.input.academic.CreateSubjectsFromCatalogUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteNoteUseCase;
 import com.synaptixfit.application.port.input.academic.PrivatizeUserNotesUseCase;
+import com.synaptixfit.application.port.input.academic.AbandonStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteSubjectFileUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteSubjectUseCase;
@@ -371,6 +372,11 @@ public class AcademicBeanConfiguration {
     @Bean
     GetStudyMaterialUseCase getStudyMaterialUseCase() {
         return tx.wrap(GetStudyMaterialUseCase.class, studyMaterialService());
+    }
+
+    @Bean
+    AbandonStudyMaterialUseCase abandonStudyMaterialUseCase() {
+        return tx.wrap(AbandonStudyMaterialUseCase.class, studyMaterialService());
     }
 
     @Bean

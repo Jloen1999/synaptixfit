@@ -68,6 +68,19 @@ class ChallengeTrainingSessionsTest {
     }
 
     @Test
+    void aManualCompletionBelowTheTargetGivesXpOnlyWhenTheSessionsReachIt() {
+        Challenge c = fitness(3);
+        c.applyTrainingSessions(1, TODAY);
+
+        // Antes un toque daba la XP del reto sin haber entrenado.
+        assertThat(c.complete(TODAY).xpDelta()).isZero();
+        assertThat(c.completed()).isTrue();
+
+        assertThat(c.applyTrainingSessions(3, TODAY).xpDelta()).isEqualTo(Difficulty.MEDIUM.xp());
+        assertThat(c.applyTrainingSessions(3, TODAY).xpDelta()).isZero();
+    }
+
+    @Test
     void onlyFitnessChallengesWithoutTasksTrackSessions() {
         assertThat(fitness(null).tracksTrainingSessions()).isFalse();
         assertThat(fitness(null).applyTrainingSessions(10, TODAY).xpDelta()).isZero();

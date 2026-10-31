@@ -139,6 +139,10 @@ class TrainingFlowIT {
 
         body(post("/api/v1/training/sessions/" + sessionId + "/sets").content(
                 "{\"plannedExerciseId\":\"" + plannedDay1.get(0) + "\",\"setNumber\":1,\"repsDone\":8,\"weightKg\":42.5}"), token, 200);
+        // La duración guardada no pasa del tiempo real: la sesión empezó hace una hora.
+        jdbc.sql("UPDATE sesiones_registradas SET creado_en = :t WHERE id = :id")
+                .param("t", java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(3600)))
+                .param("id", java.util.UUID.fromString(sessionId)).update();
         String finish = body(post("/api/v1/training/sessions/" + sessionId + "/finish").content(
                 "{\"durationSeconds\":2700,\"rpe\":6,\"realDurations\":{\"" + plannedDay1.get(0) + "\":600},"
                         + "\"sets\":[{\"plannedExerciseId\":\"" + plannedDay1.get(0) + "\",\"setNumber\":2,\"repsDone\":8,\"weightKg\":42.5}]}"),

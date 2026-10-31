@@ -12,10 +12,12 @@ import com.synaptixfit.application.port.input.challenge.SyncMilestoneStudyBlocks
 import com.synaptixfit.application.port.input.challenge.SyncTrainingSessionChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.UncompleteChallengeUseCase;
 import com.synaptixfit.application.port.input.challenge.UncompleteMilestoneUseCase;
+import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.exception.challenge.ChallengeNotFoundException;
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeChanges;
 import com.synaptixfit.domain.model.challenge.ChallengeLink;
+import com.synaptixfit.domain.model.challenge.ChallengeStatus;
 import com.synaptixfit.domain.model.challenge.Milestone;
 import com.synaptixfit.domain.model.challenge.ProgressEntry;
 import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
@@ -66,12 +68,15 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     @Override
     public ChallengeOutcome completeChallenge(UUID userId, UUID challengeId) {
         Challenge challenge = owned(userId, challengeId);
+        challenge.requireOpen(clock.instant());
         return persist(challenge, challenge.complete(today()), null);
     }
 
     @Override
     public ChallengeOutcome uncompleteChallenge(UUID userId, UUID challengeId) {
         Challenge challenge = owned(userId, challengeId);
+        // Desmarcar uno vencido lo dejaría sin poder recompletarse (y sin su XP por un toque).
+        challenge.requireOpen(clock.instant());
         return persist(challenge, challenge.uncomplete(), null);
     }
 
@@ -93,6 +98,7 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     @Override
     public ChallengeOutcome completeMilestone(UUID userId, UUID challengeId, UUID milestoneId) {
         Challenge challenge = owned(userId, challengeId);
+        challenge.requireOpen(clock.instant());
         return persist(challenge, challenge.completeMilestone(milestoneId, today(), false), null);
     }
 
@@ -106,7 +112,12 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     public ChallengeOutcome recordProgress(RecordChallengeProgressUseCase.Command command) {
         Challenge challenge = owned(command.userId(), command.challengeId());
         Instant now = clock.instant();
+        challenge.requireOpen(now);
         Instant recordedAt = command.recordedAt() == null ? now : command.recordedAt();
+        if (!challenge.acceptsProgressAt(recordedAt, now)) {
+            throw new FieldValidationException("recordedAt", "OUT_OF_RANGE",
+                    "recordedAt must be between the challenge start and now");
+        }
         ChallengeChanges changes = challenge.addProgress(command.milestoneId(), command.amount(),
                 LocalDate.ofInstant(recordedAt, zone));
         ChallengeOutcome outcome = persist(challenge, changes, null);
@@ -120,7 +131,12 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     @Override
     public void syncDeadline(UUID userId, UUID deadlineId, boolean completed) {
         LocalDate today = today();
+        Instant now = clock.instant();
         for (Challenge challenge : challenges.findByLinkedEntity(userId, deadlineId)) {
+            // Un reto vencido queda como estaba: lo que se complete después no lo avanza.
+            if (challenge.status(now) == ChallengeStatus.EXPIRED) {
+                continue;
+            }
             ChallengeChanges changes = new ChallengeChanges();
             if (isDeadlineLink(challenge.link(), deadlineId)) {
                 changes.merge(completed ? challenge.complete(today) : challenge.uncomplete());
@@ -142,6 +158,7 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
         }
         challenges.findByMilestoneId(milestoneId)
                 .filter(c -> c.isOwnedBy(userId))
+                .filter(c -> c.status(clock.instant()) != ChallengeStatus.EXPIRED)
                 .ifPresent(challenge -> {
                     StudyBlockProgress blocks = referencePort.studyBlockProgress(userId, milestoneId);
                     OptionalDouble percent = blocks.percent();
@@ -157,7 +174,11 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     @Override
     public void syncTrainingSessions(UUID userId) {
         LocalDate today = today();
+        Instant now = clock.instant();
         for (Challenge challenge : challenges.findTrainingTrackedByOwner(userId)) {
+            if (challenge.status(now) == ChallengeStatus.EXPIRED) {
+                continue;
+            }
             int before = challenge.sessionsCompleted();
             ChallengeChanges changes = trainingSessions.apply(challenge, today);
             if (before != challenge.sessionsCompleted() || changes.xpDelta() != 0 || changes.challengeCompleted()

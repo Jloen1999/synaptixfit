@@ -1,15 +1,16 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.dashboard.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import static com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.round;
 
 import com.synaptixfit.domain.model.dashboard.Dashboard;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChallenge;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.NextTrainingDay;
 import com.synaptixfit.domain.model.dashboard.SmartBanner;
+import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.CognitiveStateResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.CrossRegulationResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.WellbeingResponse;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -75,7 +76,7 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
         }
     }
 
-    public record PlanDayResponse(LocalDate date, int planned, int completed) {
+    public record PlanDayResponse(LocalDate date, int planned, int completed, int missed) {
     }
 
     /**
@@ -83,10 +84,11 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
      * o EXAM, DELIVERY, PRESENTATION, OTHER (entregas). {@code end} es null en las entregas.
      */
     public record TodayEventResponse(Dashboard.TodayEvent.Kind kind, UUID id, String title, String type, Instant start,
-                                     Instant end, boolean completed, String subjectName) {
+                                     Instant end, boolean completed, String subjectName, ItemTimeStatus status) {
     }
 
-    public record BannerResponse(SmartBanner.Type type, Map<String, Number> params) {
+    /** {@code labels}: textos del usuario que el aviso cita (p. ej. el bloque sin hacer). */
+    public record BannerResponse(SmartBanner.Type type, Map<String, Number> params, Map<String, String> labels) {
     }
 
     public static DashboardResponse from(Dashboard d) {
@@ -105,9 +107,10 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                 WellbeingResponse.from(d.wellbeing()),
                 NextTrainingDayResponse.from(d.nextTrainingDay()),
                 d.activeChallenges().stream().map(ChallengeResponse::from).toList(),
-                d.planWeek().stream().map(p -> new PlanDayResponse(p.date(), p.planned(), p.completed())).toList(),
+                d.planWeek().stream()
+                        .map(p -> new PlanDayResponse(p.date(), p.planned(), p.completed(), p.missed())).toList(),
                 d.todayEvents().stream().map(e -> new TodayEventResponse(e.kind(), e.id(), e.title(), code(e.type()),
-                        e.start(), e.end(), e.completed(), e.subjectName())).toList(),
-                new BannerResponse(d.banner().type(), d.banner().params()));
+                        e.start(), e.end(), e.completed(), e.subjectName(), e.status())).toList(),
+                new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()));
     }
 }

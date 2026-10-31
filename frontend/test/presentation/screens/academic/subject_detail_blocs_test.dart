@@ -3,6 +3,9 @@ import 'dart:typed_data';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:synaptixfit/domain/enums/visibility.dart';
+import 'package:synaptixfit/domain/models/academic/note.dart';
+import 'package:synaptixfit/domain/enums/data_topic.dart';
 import 'package:synaptixfit/domain/enums/evaluation_mode.dart';
 import 'package:synaptixfit/domain/enums/study_source_type.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
@@ -26,7 +29,17 @@ import 'package:synaptixfit/domain/use_cases/academic/upload_subject_file_use_ca
 import 'package:synaptixfit/presentation/screens/academic/subject_detail/bloc/subject_progress_bloc.dart';
 import 'package:synaptixfit/presentation/screens/academic/subject_detail/bloc/subject_syllabus_bloc.dart';
 
+import '../data_changes_fake.dart';
 import 'academic_fixtures.dart';
+
+const note2 = Note(
+  id: 'n2',
+  subjectId: 's1',
+  title: 'Derivadas',
+  content: '# Derivadas',
+  visibility: Visibility.private,
+  quickNote: false,
+);
 
 class _GetGuide extends Mock implements GetTeachingGuideUseCaseContract {}
 
@@ -224,6 +237,7 @@ void main() {
     late _DeleteFile deleteFile;
     late _DeleteNote deleteNote;
     late _Register register;
+    late FakeDataChanges changes;
     const available = DocumentAvailability(
       summary: true,
       mindMap: false,
@@ -238,6 +252,7 @@ void main() {
       deleteFile = _DeleteFile();
       deleteNote = _DeleteNote();
       register = _Register();
+      changes = FakeDataChanges();
       when(
         () => getNotes(subjectId: 's1'),
       ).thenAnswer((_) async => const Success([note]));
@@ -251,6 +266,7 @@ void main() {
     });
 
     SubjectSyllabusBloc build() => SubjectSyllabusBloc(
+      watchChanges: changes.useCase,
       getNotes: getNotes,
       getFiles: getFiles,
       getAvailability: getAvailability,
@@ -280,6 +296,26 @@ void main() {
           availability: {'n1': available},
         ),
       ],
+    );
+
+    blocTest<SubjectSyllabusBloc, SubjectSyllabusState>(
+      'un apunte creado en otra pantalla aparece sin recargar',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const SubjectSyllabusEvent.started('s1'));
+        await pump();
+        await pump();
+        when(
+          () => getNotes(subjectId: 's1'),
+        ).thenAnswer((_) async => const Success([note, note2]));
+        when(
+          () => getAvailability(StudySourceType.note, 'n2'),
+        ).thenAnswer((_) async => const Success(DocumentAvailability.none));
+        changes.emit({DataTopic.academic});
+        await pump();
+        await pump();
+      },
+      verify: (bloc) => expect(bloc.state.notes, [note, note2]),
     );
 
     blocTest<SubjectSyllabusBloc, SubjectSyllabusState>(

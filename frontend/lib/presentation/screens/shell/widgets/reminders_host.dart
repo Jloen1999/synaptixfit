@@ -9,9 +9,11 @@ import '../../../../domain/enums/reminder_kind.dart';
 import '../../../../domain/enums/usage_focus.dart';
 import '../../../../domain/models/account/account.dart';
 import '../../../extensions/context_extensions.dart';
+import '../../../widgets/widgets.dart';
 import '../../academic/academic_routes.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../../planner/planner_routes.dart';
+import '../../progress/progress_routes.dart';
 import '../../training/training_routes.dart';
 import '../bloc/reminders_bloc.dart';
 import 'l10n_reminder_texts.dart';
@@ -60,6 +62,10 @@ class _RemindersListener extends StatelessWidget {
         context.go(TrainingPaths.root);
       case ReminderKind.studyBlock:
         unawaited(context.push<void>(PlannerPaths.root));
+      case ReminderKind.exam || ReminderKind.deadline:
+        unawaited(context.push<void>(PlannerPaths.deadlines));
+      case ReminderKind.weeklySummary:
+        context.go(ProgressPaths.root);
     }
   }
 
@@ -67,6 +73,40 @@ class _RemindersListener extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocListener(
       listeners: [
+        // Ofrecer los avisos una vez, justo después de planificar o estudiar.
+        BlocListener<RemindersBloc, RemindersState>(
+          listenWhen: (previous, current) =>
+              !previous.offerReminders && current.offerReminders,
+          listener: (context, _) async {
+            final bloc = context.read<RemindersBloc>();
+            // No encima de otro diálogo (p. ej. la celebración de una
+            // insignia): se espera a que el armazón vuelva a estar delante.
+            for (var i = 0; i < 60; i++) {
+              if (!context.mounted) return;
+              if (ModalRoute.of(context)?.isCurrent ?? true) break;
+              await Future<void>.delayed(const Duration(seconds: 1));
+            }
+            if (!context.mounted) return;
+            final l10n = context.localizations;
+            final accepted = await showConfirmDialog(
+              context,
+              title: l10n.remindersOfferTitle,
+              message: l10n.remindersOfferMessage,
+              confirmLabel: l10n.remindersOfferAccept,
+              cancelLabel: l10n.remindersOfferDecline,
+              destructive: false,
+              barrierDismissible: false,
+            );
+            bloc.add(RemindersEvent.offerAnswered(accepted: accepted));
+          },
+        ),
+        BlocListener<RemindersBloc, RemindersState>(
+          listenWhen: (previous, current) =>
+              current.permissionDeniedCount > previous.permissionDeniedCount,
+          listener: (context, _) => context.showSnack(
+            context.localizations.remindersPermissionDeniedBody,
+          ),
+        ),
         BlocListener<SessionBloc, SessionState>(
           listenWhen: (previous, current) =>
               previous is SessionAuthenticatedState &&

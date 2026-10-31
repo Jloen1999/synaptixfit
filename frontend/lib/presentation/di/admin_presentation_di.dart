@@ -55,6 +55,8 @@ void registerAdminPresentation(GetIt getIt) {
       () => AdminExerciseFormBloc(
         getOptions: getIt(),
         getExercise: getIt(),
+        getNames: getIt(),
+        suggestNames: getIt(),
         create: getIt(),
         update: getIt(),
       ),

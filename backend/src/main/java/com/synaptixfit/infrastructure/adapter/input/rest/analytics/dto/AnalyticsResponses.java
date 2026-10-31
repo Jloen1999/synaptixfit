@@ -102,12 +102,13 @@ public final class AnalyticsResponses {
     /** «Tu estudio» de la semana; {@code planAdherence} y {@code averageTestScore} en %, nulos sin datos. */
     public record StudyWeekResponse(LocalDate weekStart, int focusMinutes, int focusSessions, int studyBlocksPlanned,
                                     int studyBlocksCompleted, Integer planAdherence, int reviewsCompleted,
-                                    int testsCompleted, Integer averageTestScore, int reviewsDue, boolean empty) {
+                                    int testsCompleted, Integer averageTestScore, int reviewsDue, int studyHours,
+                                    int weeklyGoalHours, boolean empty) {
 
         public static StudyWeekResponse from(StudyWeekSummary s) {
             return new StudyWeekResponse(s.weekStart(), s.focusMinutes(), s.focusSessions(), s.studyBlocksPlanned(),
                     s.studyBlocksCompleted(), s.planAdherence(), s.reviewsCompleted(), s.testsCompleted(),
-                    s.averageTestScore(), s.reviewsDue(), s.isEmpty());
+                    s.averageTestScore(), s.reviewsDue(), s.studyHours(), s.weeklyGoalHours(), s.isEmpty());
         }
     }
 }

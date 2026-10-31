@@ -19,6 +19,12 @@ public interface PhysicalLoadJpaRepository extends JpaRepository<PhysicalLoadEnt
     @Query("delete from PhysicalLoadEntity r where r.usuarioId = :userId and r.sesionId = :sessionId")
     int deleteBySession(@Param("userId") UUID userId, @Param("sessionId") UUID sessionId);
 
+    Optional<PhysicalLoadEntity> findByUsuarioIdAndBloqueId(UUID usuarioId, UUID bloqueId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("delete from PhysicalLoadEntity r where r.usuarioId = :userId and r.bloqueId = :blockId")
+    int deleteByBlock(@Param("userId") UUID userId, @Param("blockId") UUID blockId);
+
     List<PhysicalLoadEntity> findByUsuarioIdAndFechaRegistroBetween(UUID usuarioId, LocalDate from, LocalDate to);
 
     List<PhysicalLoadEntity> findByUsuarioId(UUID usuarioId);

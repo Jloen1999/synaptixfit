@@ -25,6 +25,13 @@ abstract class LiveSessionState with _$LiveSessionState {
 
     /// Descanso en curso (segundos restantes) y su duración inicial.
     int? restRemaining,
+
+    /// Adaptación de hoy (examen, carga alta o fatiga); sin motivos si no hay.
+    @Default(SessionAdaptation()) SessionAdaptation adaptation,
+
+    /// Sube cada vez que un descanso llega a cero solo (no al saltarlo): la
+    /// pantalla avisa.
+    @Default(0) int restFinishedCount,
     @Default(0) int restTotal,
     @Default(false) bool saving,
     @Default(false) bool finishing,
@@ -36,6 +43,10 @@ abstract class LiveSessionState with _$LiveSessionState {
 
     /// Calentamiento y vuelta a la calma sugeridos para los ejercicios del día.
     SessionBookends? bookends,
+
+    /// Series apuntadas sin conexión que aún no ha recibido el servidor (en
+    /// orden). Se ven en la lista y se suben solas al volver la cobertura.
+    @Default(<SetRecord>[]) List<SetRecord> pendingSets,
   }) = _LiveSessionState;
 
   const LiveSessionState._();

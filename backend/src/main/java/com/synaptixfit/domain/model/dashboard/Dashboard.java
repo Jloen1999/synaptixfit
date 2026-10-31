@@ -5,6 +5,7 @@ import com.synaptixfit.domain.model.dashboard.DashboardReadModels.NextTrainingDa
 import com.synaptixfit.domain.model.insights.CognitiveState;
 import com.synaptixfit.domain.model.insights.CrossRegulationView;
 import com.synaptixfit.domain.model.insights.WellbeingSnapshot;
+import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -45,7 +46,12 @@ public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, Cogni
     }
 
     /** Bloques planificados y completados de un día de la semana (sin descanso, comida ni sueño). */
-    public record PlanDay(LocalDate date, int planned, int completed) {
+    /** {@code missed}: bloques del día que ya pasaron sin hacerse. */
+    public record PlanDay(LocalDate date, int planned, int completed, int missed) {
+
+        public PlanDay(LocalDate date, int planned, int completed) {
+            this(date, planned, completed, 0);
+        }
     }
 
     /**
@@ -54,9 +60,16 @@ public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, Cogni
      * @param type tipo de actividad del bloque o tipo de la entrega, tal cual en la BD
      * @param end  fin del bloque (null en entregas)
      */
+    /** {@code status}: pendiente, en curso, hecho o no hecho/vencido ({@link ItemTimeStatus}). */
     public record TodayEvent(Kind kind, UUID id, String title, String type, Instant start, Instant end,
-                             boolean completed, String subjectName) {
+                             boolean completed, String subjectName, ItemTimeStatus status) {
 
         public enum Kind { BLOCK, DEADLINE }
+
+        public TodayEvent(Kind kind, UUID id, String title, String type, Instant start, Instant end,
+                          boolean completed, String subjectName) {
+            this(kind, id, title, type, start, end, completed, subjectName,
+                    completed ? ItemTimeStatus.DONE : ItemTimeStatus.UPCOMING);
+        }
     }
 }

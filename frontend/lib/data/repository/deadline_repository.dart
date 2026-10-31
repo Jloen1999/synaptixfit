@@ -22,12 +22,14 @@ class DeadlineRepository implements DeadlineRepositoryContract {
   @override
   Future<AppResult<DeadlinePage>> getDeadlines({
     bool upcoming = false,
+    bool includeOverdue = false,
     String? subjectId,
     int page = 0,
     int size = 20,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.getDeadlines(
       upcoming: upcoming,
+      includeOverdue: includeOverdue,
       subjectId: subjectId,
       page: page,
       size: size,

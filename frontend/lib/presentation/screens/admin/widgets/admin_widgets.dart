@@ -129,17 +129,16 @@ class _AdminKeepAliveState extends State<AdminKeepAlive>
 /// Formatos de fecha del panel (locale `es`).
 abstract final class AdminFormat {
   static String dateTime(DateTime? value) =>
-      value == null ? '—' : DateFormat('d MMM y, HH:mm', 'es').format(value);
+      value == null ? '—' : DateFormat('d MMM y, HH:mm').format(value);
 
   static String date(DateTime? value) =>
-      value == null ? '—' : DateFormat('d MMM y', 'es').format(value);
+      value == null ? '—' : DateFormat('d MMM y').format(value);
 
-  static String shortDate(DateTime value) =>
-      DateFormat('d MMM', 'es').format(value);
+  static String shortDate(DateTime value) => DateFormat('d MMM').format(value);
 
   static String number(num value) =>
-      NumberFormat.decimalPattern('es').format(value);
+      NumberFormat.decimalPattern().format(value);
 
   static String decimal(double? value) =>
-      value == null ? '—' : NumberFormat('0.#', 'es').format(value);
+      value == null ? '—' : NumberFormat('0.#').format(value);
 }

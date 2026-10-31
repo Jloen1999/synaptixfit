@@ -87,15 +87,18 @@ public final class Milestone {
         this.order = newOrder;
     }
 
-    /** Marca la tarea como completada y devuelve el XP otorgado (0 si ya lo tenía). */
-    int markCompleted() {
+    /**
+     * Marca la tarea como completada y devuelve el XP otorgado (0 si ya lo tenía): el de su dificultad,
+     * sin pasar de {@code maxXp} (lo que le queda al reto de su tope).
+     */
+    int markCompleted(int maxXp) {
         completed = true;
         progress = 100.0;
         status = MilestoneStatus.COMPLETED;
         if (xpAwarded > 0) {
             return 0;
         }
-        xpAwarded = difficulty.xp();
+        xpAwarded = Math.max(0, Math.min(difficulty.xp(), maxXp));
         return xpAwarded;
     }
 

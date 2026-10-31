@@ -2,6 +2,7 @@ package com.synaptixfit.domain.model.challenge;
 
 import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.exception.challenge.ChallengeAlreadyCompletedException;
+import com.synaptixfit.domain.exception.challenge.ChallengeExpiredException;
 import com.synaptixfit.domain.exception.challenge.InvalidChallengeDatesException;
 import com.synaptixfit.domain.exception.challenge.InvalidMilestoneDependencyException;
 import com.synaptixfit.domain.exception.challenge.InvalidMilestoneOrderException;
@@ -32,7 +33,9 @@ import java.util.UUID;
  *   <li>Sin tareas, completar el reto otorga el XP de su dificultad. Con tareas, el XP lo da
  *       cada tarea y el reto se completa solo cuando todas lo están (progreso ponderado 100 %).</li>
  *   <li>Anti-farmeo: {@code xpAwarded} guarda el XP exacto del estado completado actual y se
- *       resta tal cual al descompletar o borrar.</li>
+ *       resta tal cual al descompletar o borrar. Un reto da como mucho {@value #MAX_XP} XP entre todas
+ *       sus tareas (antes, 12 tareas difíciles marcadas a mano daban 840), y un reto de sesiones
+ *       marcado a mano antes de llegar al objetivo no da XP hasta que las sesiones lo alcanzan.</li>
  *   <li>Como máximo {@value #MAX_MILESTONES} tareas cuyos pesos suman 100.</li>
  *   <li>Las dependencias (AND / OR / X_OF_Y) desbloquean tareas automáticamente; una tarea
  *       bloqueada no se puede completar a mano.</li>
@@ -47,6 +50,8 @@ public final class Challenge {
     public static final int GOAL_MAX = 500;
     public static final int MAX_MILESTONES = 12;
     public static final int SESSION_TARGET_MAX = 365;
+    /** Tope de XP de un reto: el doble de uno difícil sin tareas. */
+    public static final int MAX_XP = 2 * Difficulty.HIGH.xp();
     /** Margen admitido en la suma de pesos (p. ej. 3 × 33,33 = 99,99). */
     static final double WEIGHT_TOLERANCE = 0.1;
 
@@ -254,7 +259,7 @@ public final class Challenge {
         }
         if (milestones.isEmpty()) {
             completed = true;
-            if (xpAwarded == 0) {
+            if (xpAwarded == 0 && !belowSessionTarget()) {
                 xpAwarded = difficulty.xp();
                 changes.addXp(xpAwarded);
             }
@@ -263,7 +268,7 @@ public final class Challenge {
         } else {
             for (Milestone m : milestones) {
                 if (!m.completed()) {
-                    changes.addXp(m.markCompleted());
+                    changes.addXp(m.markCompleted(remainingXp()));
                     changes.linkChanged(m.link(), true);
                 }
             }
@@ -314,7 +319,7 @@ public final class Challenge {
         if (m.isLocked() && !force) {
             throw new MilestoneLockedException(milestoneId);
         }
-        changes.addXp(m.markCompleted());
+        changes.addXp(m.markCompleted(remainingXp()));
         changes.linkChanged(m.link(), true);
         refreshStates(changes);
         syncCompletionWithMilestones(changes);
@@ -416,10 +421,24 @@ public final class Challenge {
         boolean reached = sessionsCompleted >= sessionTarget;
         if (reached && !completed) {
             changes.merge(complete(today));
+        } else if (reached && xpAwarded == 0) {
+            // Se marcó a mano antes de tiempo (sin XP): las sesiones ya lo justifican.
+            xpAwarded = difficulty.xp();
+            changes.addXp(xpAwarded);
         } else if (!reached && completed && previous >= sessionTarget) {
             changes.merge(uncomplete());
         }
         return changes;
+    }
+
+    /** Reto de sesiones que aún no las tiene: completarlo a mano no da XP. */
+    private boolean belowSessionTarget() {
+        return tracksTrainingSessions() && sessionsCompleted < sessionTarget;
+    }
+
+    /** XP que aún puede dar el reto antes de llegar a {@link #MAX_XP}. */
+    private int remainingXp() {
+        return Math.max(0, MAX_XP - totalXpAwarded());
     }
 
     /** ¿Avanza con los entrenamientos? Reto de fitness sin tareas y con objetivo de sesiones. */
@@ -470,6 +489,18 @@ public final class Challenge {
         }
         double sum = milestones.stream().mapToDouble(Milestone::weightedProgress).sum();
         return Math.min(100.0, Math.round(sum * 100.0) / 100.0);
+    }
+
+    /** Solo se avanza un reto dentro de plazo: vencido, ni se completa ni suma progreso. */
+    public void requireOpen(Instant now) {
+        if (status(now) == ChallengeStatus.EXPIRED) {
+            throw new ChallengeExpiredException(id);
+        }
+    }
+
+    /** Un progreso registrado debe caer entre el inicio del reto y ahora (ni antes ni en el futuro). */
+    public boolean acceptsProgressAt(Instant recordedAt, Instant now) {
+        return !recordedAt.isAfter(now) && (startAt == null || !recordedAt.isBefore(startAt));
     }
 
     public ChallengeStatus status(Instant now) {

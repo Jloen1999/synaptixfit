@@ -44,6 +44,16 @@ public class PhysicalLoadPersistenceAdapter implements PhysicalLoadRepositoryPor
     }
 
     @Override
+    public Optional<PhysicalLoadRecord> findByBlock(UUID userId, UUID blockId) {
+        return repository.findByUsuarioIdAndBloqueId(userId, blockId).map(InsightsPersistenceMapper::toDomain);
+    }
+
+    @Override
+    public boolean deleteByBlock(UUID userId, UUID blockId) {
+        return repository.deleteByBlock(userId, blockId) > 0;
+    }
+
+    @Override
     public List<PhysicalLoadHistory.Entry> entriesBetween(UUID userId, LocalDate from, LocalDate to) {
         return repository.findByUsuarioIdAndFechaRegistroBetween(userId, from, to).stream()
                 .map(InsightsPersistenceMapper::toEntry).toList();

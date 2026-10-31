@@ -23,6 +23,18 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 | Salud | web `GET /healthz`; backend `GET /actuator/health` (healthchecks del compose) |
 | Dominio | `https://synaptixfit.jloenit.dev` (web y API en el mismo origen), Cloudflare proxied + certificado de origen `*.jloenit.dev` en Traefik |
 
+### Rutas con credenciales y salida a Internet
+
+* **Calendario suscrito** (`/api/v1/planner/calendar-feed/<token>.ics`, ADR 0020): el token de la ruta es una
+  credencial. El nginx del cliente no lo registra y limita a 30 peticiones por minuto e IP. Pendiente del operador:
+  - que **Traefik** no guarde registros de acceso con la ruta (desactivados o con la ruta enmascarada);
+  - en **Cloudflare**, que *Bot Fight Mode* o los desafíos no bloqueen esa ruta, porque los lectores de Google,
+    Apple y Outlook no resuelven desafíos. Basta con una regla que la excluya.
+* **Descarga de calendarios ICS** (importación por URL): el backend descarga direcciones que da el usuario. La app
+  rechaza IP privadas y puertos que no sean 80/443 en cada redirección. Queda un riesgo residual, porque el nombre
+  se vuelve a resolver al conectar (DNS rebinding). Recomendado: filtrar la salida del contenedor `backend` a
+  rangos privados, salvo la BD.
+
 ### Variables de entorno
 
 | Variable | Ejemplo | Secreta | Descripción |
@@ -43,6 +55,10 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 | `R2_BUCKET` | `synaptixfit` | no | |
 | `R2_ACCESS_KEY` / `R2_SECRET_KEY` | `***` | **sí** | credenciales S3 de R2 |
 | `R2_PUBLIC_BASE_URL` | `https://media.jloenit.dev` | no | vacío si el bucket es privado |
+| `RESEND_API_KEY` | `***` | **sí** | **obligatoria en producción**: correo transaccional (Resend); sin ella no sale ningún correo aunque la API responda 202 (ADR 0021) |
+| `MAIL_FROM` | `SynaptixFit <no-reply@notifications.jloenit.dev>` | no | remitente; dominio verificado en Resend (`notifications.jloenit.dev`, región eu-west-1) |
+| `WEEKLY_EMAIL_CRON` | `0 0 19-23 * * SUN` | no | opcional: cuándo sale el resumen semanal por correo (zona del planificador). Cada hora de 19 a 23 reintenta solo a quien no lo recibió; `-` lo desactiva |
+| `APP_PUBLIC_URL` | `https://synaptixfit.jloenit.dev` | no | **obligatoria en producción**: base de los enlaces de los correos; sin ella apuntan a `http://localhost:5173` |
 
 Plantilla completa: [`backend/.env.example`](backend/.env.example).
 

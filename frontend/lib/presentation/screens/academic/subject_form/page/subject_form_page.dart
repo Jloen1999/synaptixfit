@@ -115,7 +115,6 @@ class _SubjectFormViewState extends State<_SubjectFormView>
       initialDate: _nextAssessment ?? now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 3),
-      locale: const Locale('es'),
     );
     if (picked != null) setState(() => _nextAssessment = picked);
   }

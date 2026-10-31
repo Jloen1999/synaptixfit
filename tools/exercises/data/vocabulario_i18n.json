@@ -1,0 +1,942 @@
+{
+ "Abductores": {
+  "en": "Abductors",
+  "fr": "Abducteurs",
+  "pt": "Abdutores"
+ },
+ "Aductores": {
+  "en": "Adductors",
+  "fr": "Adducteurs",
+  "pt": "Adutores"
+ },
+ "Aductores del muslo": {
+  "en": "Thigh adductors",
+  "fr": "Adducteurs de la cuisse",
+  "pt": "Adutores da coxa"
+ },
+ "Agarre de cuerda": {
+  "en": "Rope grip",
+  "fr": "Prise de corde",
+  "pt": "Pega de corda"
+ },
+ "Agarre de mano simple": {
+  "en": "Single-hand grip",
+  "fr": "Prise à une main",
+  "pt": "Pega de uma mão"
+ },
+ "Agarre estrecho neutro": {
+  "en": "Close neutral grip",
+  "fr": "Prise serrée neutre",
+  "pt": "Pega fechada neutra"
+ },
+ "Almohadilla protectora": {
+  "en": "Protective pad",
+  "fr": "Coussin de protection",
+  "pt": "Almofada protetora"
+ },
+ "Anillas": {
+  "en": "Rings",
+  "fr": "Anneaux",
+  "pt": "Argolas"
+ },
+ "Antebrazos": {
+  "en": "Forearms",
+  "fr": "Avant-bras",
+  "pt": "Antebraços"
+ },
+ "Asistencia": {
+  "en": "Assistance",
+  "fr": "Assistance",
+  "pt": "Assistência"
+ },
+ "Balón medicinal": {
+  "en": "Medicine ball",
+  "fr": "Ballon médicinal",
+  "pt": "Bola medicinal"
+ },
+ "Banco": {
+  "en": "Bench",
+  "fr": "Banc",
+  "pt": "Banco"
+ },
+ "Banco (opcional para soporte)": {
+  "en": "Bench (optional for support)",
+  "fr": "Banc (optionnel pour le support)",
+  "pt": "Banco (opcional para apoio)"
+ },
+ "Banco declinado": {
+  "en": "Decline bench",
+  "fr": "Banc décliné",
+  "pt": "Banco declinado"
+ },
+ "Banco inclinado": {
+  "en": "Incline bench",
+  "fr": "Banc incliné",
+  "pt": "Banco inclinado"
+ },
+ "Banco o silla": {
+  "en": "Bench or chair",
+  "fr": "Banc ou chaise",
+  "pt": "Banco ou cadeira"
+ },
+ "Banco plano": {
+  "en": "Flat bench",
+  "fr": "Banc plat",
+  "pt": "Banco plano"
+ },
+ "Banco predicador": {
+  "en": "Preacher bench",
+  "fr": "Banc à prédicateur",
+  "pt": "Banco Scott"
+ },
+ "Banco regulable": {
+  "en": "Adjustable bench",
+  "fr": "Banc réglable",
+  "pt": "Banco ajustável"
+ },
+ "Banda de resistencia": {
+  "en": "Resistance band",
+  "fr": "Bande de résistance",
+  "pt": "Banda de resistência"
+ },
+ "Banda de resistencia tubular": {
+  "en": "Tube resistance band",
+  "fr": "Bande de résistance tubulaire",
+  "pt": "Banda de resistência tubular"
+ },
+ "Banda elástica": {
+  "en": "Elastic band",
+  "fr": "Bande élastique",
+  "pt": "Banda elástica"
+ },
+ "Barra": {
+  "en": "Barbell",
+  "fr": "Barre",
+  "pt": "Barra"
+ },
+ "Barra de dominadas": {
+  "en": "Pull-up bar",
+  "fr": "Barre de traction",
+  "pt": "Barra de dominadas"
+ },
+ "Barra ez": {
+  "en": "EZ bar",
+  "fr": "Barre EZ",
+  "pt": "Barra EZ"
+ },
+ "Barra fija": {
+  "en": "Pull-up bar",
+  "fr": "Barre fixe",
+  "pt": "Barra fixa"
+ },
+ "Barra hexagonal": {
+  "en": "Hex bar",
+  "fr": "Barre hexagonale",
+  "pt": "Barra hexagonal"
+ },
+ "Barra larga": {
+  "en": "Long bar",
+  "fr": "Barre longue",
+  "pt": "Barra longa"
+ },
+ "Barra recta": {
+  "en": "Straight bar",
+  "fr": "Barre droite",
+  "pt": "Barra reta"
+ },
+ "Barra recta de polea": {
+  "en": "Straight cable bar",
+  "fr": "Barre droite de poulie",
+  "pt": "Barra reta de polia"
+ },
+ "Barra vertical": {
+  "en": "Vertical bar",
+  "fr": "Barre verticale",
+  "pt": "Barra vertical"
+ },
+ "Barras paralelas": {
+  "en": "Parallel bars",
+  "fr": "Barres parallèles",
+  "pt": "Barras paralelas"
+ },
+ "Barras paralelas bajas": {
+  "en": "Low parallel bars",
+  "fr": "Barres parallèles basses",
+  "pt": "Barras paralelas baixas"
+ },
+ "Battle ropes": {
+  "en": "Battle ropes",
+  "fr": "Battle ropes",
+  "pt": "Battle ropes"
+ },
+ "Bicicleta estática": {
+  "en": "Stationary bike",
+  "fr": "Vélo d'appartement",
+  "pt": "Bicicleta estática"
+ },
+ "Bosu": {
+  "en": "Bosu",
+  "fr": "Bosu",
+  "pt": "Bosu"
+ },
+ "Braquial": {
+  "en": "Brachialis",
+  "fr": "Brachial",
+  "pt": "Braquial"
+ },
+ "Braquial anterior": {
+  "en": "Brachialis anterior",
+  "fr": "Brachial antérieur",
+  "pt": "Braquial anterior"
+ },
+ "Braquiorradial": {
+  "en": "Brachioradialis",
+  "fr": "Brachioradial",
+  "pt": "Braquiorradial"
+ },
+ "Brazos": {
+  "en": "Arms",
+  "fr": "Bras",
+  "pt": "Braços"
+ },
+ "Bíceps": {
+  "en": "Biceps",
+  "fr": "Biceps",
+  "pt": "Bíceps"
+ },
+ "Bíceps braquial": {
+  "en": "Biceps brachii",
+  "fr": "Biceps brachial",
+  "pt": "Bíceps braquial"
+ },
+ "Cadera": {
+  "en": "Hip",
+  "fr": "Hanche",
+  "pt": "Anca"
+ },
+ "Caderas": {
+  "en": "Hips",
+  "fr": "Hanches",
+  "pt": "Ancas"
+ },
+ "Cajón": {
+  "en": "Box",
+  "fr": "Caisse",
+  "pt": "Caixa"
+ },
+ "Cajón pliométrico": {
+  "en": "Plyo box",
+  "fr": "Caisse pliométrique",
+  "pt": "Caixa pliométrica"
+ },
+ "Cinta rodante": {
+  "en": "Treadmill",
+  "fr": "Tapis de course",
+  "pt": "Passadeira"
+ },
+ "Cinturón de lastre": {
+  "en": "Weight belt",
+  "fr": "Ceinture de lest",
+  "pt": "Cinto de lastro"
+ },
+ "Colchoneta": {
+  "en": "Exercise mat",
+  "fr": "Tapis de sol",
+  "pt": "Colchonete"
+ },
+ "Comba": {
+  "en": "Jump rope",
+  "fr": "Corde à sauter",
+  "pt": "Corda de saltar"
+ },
+ "Glúteos": {
+  "en": "Glutes",
+  "fr": "Fessiers",
+  "pt": "Glúteos"
+ },
+ "Grupo muscular objetivo del estiramiento": {
+  "en": "Stretch target muscle group",
+  "fr": "Groupe musculaire ciblé par l'étirement",
+  "pt": "Grupo muscular alvo do alongamento"
+ },
+ "Grupo muscular principal": {
+  "en": "Primary muscle group",
+  "fr": "Groupe musculaire principal",
+  "pt": "Grupo muscular principal"
+ },
+ "Hombros": {
+  "en": "Shoulders",
+  "fr": "Épaules",
+  "pt": "Ombros"
+ },
+ "Iliopsoas": {
+  "en": "Iliopsoas",
+  "fr": "Psoas-iliaque",
+  "pt": "Iliopsoas"
+ },
+ "Isquiosurales": {
+  "en": "Hamstrings",
+  "fr": "Ischio-jambiers",
+  "pt": "Isquiotibiais"
+ },
+ "Isquiotibiales": {
+  "en": "Hamstrings",
+  "fr": "Ischio-jambiers",
+  "pt": "Isquiotibiais"
+ },
+ "Kettlebell": {
+  "en": "Kettlebell",
+  "fr": "Kettlebell",
+  "pt": "Kettlebell"
+ },
+ "Landmine": {
+  "en": "Landmine",
+  "fr": "Landmine",
+  "pt": "Landmine"
+ },
+ "Lastre": {
+  "en": "Weight plate",
+  "fr": "Disque de poids",
+  "pt": "Disco de peso"
+ },
+ "Mancuerna": {
+  "en": "Dumbbell",
+  "fr": "Haltère",
+  "pt": "Haltere"
+ },
+ "Mancuernas": {
+  "en": "Dumbbells",
+  "fr": "Haltères",
+  "pt": "Halteres"
+ },
+ "Maneral de agarre estrecho (triángulo o v-bar)": {
+  "en": "Close-grip handle (triangle or v-bar)",
+  "fr": "Poignée de prise serrée (triangle ou v-bar)",
+  "pt": "Pega de agarre estreito (triângulo ou v-bar)"
+ },
+ "Manguito rotador": {
+  "en": "Rotator cuff",
+  "fr": "Coiffe des rotateurs",
+  "pt": "Manguito rotador"
+ },
+ "Manos": {
+  "en": "Hands",
+  "fr": "Mains",
+  "pt": "Mãos"
+ },
+ "Maza": {
+  "en": "Mace",
+  "fr": "Masse",
+  "pt": "Maça"
+ },
+ "Mazo": {
+  "en": "Mace",
+  "fr": "Masse",
+  "pt": "Maça"
+ },
+ "Movilidad": {
+  "en": "Mobility",
+  "fr": "Mobilité",
+  "pt": "Mobilidade"
+ },
+ "Movilidad articular": {
+  "en": "Joint mobility",
+  "fr": "Mobilité articulaire",
+  "pt": "Mobilidade articular"
+ },
+ "Multífidos": {
+  "en": "Multifidus",
+  "fr": "Multifides",
+  "pt": "Multífidos"
+ },
+ "Máquina de palanca": {
+  "en": "Lever machine",
+  "fr": "Machine à levier",
+  "pt": "Máquina de alavanca"
+ },
+ "Máquina de poleas": {
+  "en": "Cable machine",
+  "fr": "Machine à poulies",
+  "pt": "Máquina de polias"
+ },
+ "Máquina de prensa de piernas": {
+  "en": "Leg press machine",
+  "fr": "Presse à cuisses",
+  "pt": "Máquina de leg press"
+ },
+ "Máquina de prensa de piernas a 45°": {
+  "en": "45-degree leg press machine",
+  "fr": "Presse à cuisses à 45°",
+  "pt": "Máquina de leg press a 45°"
+ },
+ "Máquina elíptica": {
+  "en": "Elliptical machine",
+  "fr": "Vélo elliptique",
+  "pt": "Máquina elíptica"
+ },
+ "Máquina escaladora": {
+  "en": "Stair climber",
+  "fr": "Machine à escalier",
+  "pt": "Máquina de escadas"
+ },
+ "Máquina smith": {
+  "en": "Smith machine",
+  "fr": "Machine Smith",
+  "pt": "Máquina Smith"
+ },
+ "Músculos intrínsecos de la mano": {
+  "en": "Intrinsic muscles of the hand",
+  "fr": "Muscles intrinsèques de la main",
+  "pt": "Músculos intrínsecos da mão"
+ },
+ "Músculos intrínsecos del pie": {
+  "en": "Intrinsic muscles of the foot",
+  "fr": "Muscles intrinsèques du pied",
+  "pt": "Músculos intrínsecos do pé"
+ },
+ "Músculos paravertebrales": {
+  "en": "Paraspinal muscles",
+  "fr": "Muscles paravertébraux",
+  "pt": "Músculos paravertebrais"
+ },
+ "Neumático": {
+  "en": "Tire",
+  "fr": "Pneu",
+  "pt": "Pneu"
+ },
+ "Oblicuo externo": {
+  "en": "External oblique",
+  "fr": "Oblique externe",
+  "pt": "Oblíquo externo"
+ },
+ "Oblicuo interno": {
+  "en": "Internal oblique",
+  "fr": "Oblique interne",
+  "pt": "Oblíquo interno"
+ },
+ "Oblicuos": {
+  "en": "Obliques",
+  "fr": "Obliques",
+  "pt": "Oblíquos"
+ },
+ "Pantorrillas": {
+  "en": "Calves",
+  "fr": "Mollets",
+  "pt": "Gémeos"
+ },
+ "Pared": {
+  "en": "Wall",
+  "fr": "Mur",
+  "pt": "Parede"
+ },
+ "Pecho": {
+  "en": "Chest",
+  "fr": "Poitrine",
+  "pt": "Peito"
+ },
+ "Pectoral": {
+  "en": "Pectoral",
+  "fr": "Pectoral",
+  "pt": "Peitoral"
+ },
+ "Pectoral mayor": {
+  "en": "Pectoralis major",
+  "fr": "Grand pectoral",
+  "pt": "Peitoral maior"
+ },
+ "Pectoral mayor (clavicular)": {
+  "en": "Pectoralis major (clavicular)",
+  "fr": "Grand pectoral (claviculaire)",
+  "pt": "Peitoral maior (clavicular)"
+ },
+ "Pectoral mayor (porción clavicular)": {
+  "en": "Pectoralis major (clavicular portion)",
+  "fr": "Grand pectoral (portion claviculaire)",
+  "pt": "Peitoral maior (porção clavicular)"
+ },
+ "Pectoral mayor (porción inferior)": {
+  "en": "Pectoralis major (lower portion)",
+  "fr": "Grand pectoral (portion inférieure)",
+  "pt": "Peitoral maior (porção inferior)"
+ },
+ "Pectoral menor": {
+  "en": "Pectoralis minor",
+  "fr": "Petit pectoral",
+  "pt": "Peitoral menor"
+ },
+ "Peso corporal": {
+  "en": "Bodyweight",
+  "fr": "Poids du corps",
+  "pt": "Peso corporal"
+ },
+ "Piernas": {
+  "en": "Legs",
+  "fr": "Jambes",
+  "pt": "Pernas"
+ },
+ "Pies": {
+  "en": "Feet",
+  "fr": "Pieds",
+  "pt": "Pés"
+ },
+ "Polea": {
+  "en": "Pulley",
+  "fr": "Poulie",
+  "pt": "Polia"
+ },
+ "Psoas ilíaco": {
+  "en": "Iliopsoas",
+  "fr": "Psoas iliaque",
+  "pt": "Psoas ilíaco"
+ },
+ "Rack de sentadillas": {
+  "en": "Squat rack",
+  "fr": "Rack à squats",
+  "pt": "Rack de agachamentos"
+ },
+ "Recto abdominal": {
+  "en": "Rectus abdominis",
+  "fr": "Grand droit de l'abdomen",
+  "pt": "Reto abdominal"
+ },
+ "Recto abdominal inferior": {
+  "en": "Lower rectus abdominis",
+  "fr": "Grand droit inférieur",
+  "pt": "Reto abdominal inferior"
+ },
+ "Recto abdominal superior": {
+  "en": "Upper rectus abdominis",
+  "fr": "Grand droit supérieur",
+  "pt": "Reto abdominal superior"
+ },
+ "Recto femoral": {
+  "en": "Rectus femoris",
+  "fr": "Droit fémoral",
+  "pt": "Reto femoral"
+ },
+ "Redondo mayor": {
+  "en": "Teres major",
+  "fr": "Grand rond",
+  "pt": "Redondo maior"
+ },
+ "Rodillo de espuma": {
+  "en": "Foam roller",
+  "fr": "Rouleau de mousse",
+  "pt": "Rolo de espuma"
+ },
+ "Rodillo de muñeca": {
+  "en": "Wrist roller",
+  "fr": "Rouleau de poignet",
+  "pt": "Rolo de pulso"
+ },
+ "Romboides": {
+  "en": "Rhomboids",
+  "fr": "Rhomboïdes",
+  "pt": "Romboides"
+ },
+ "Romboides mayor": {
+  "en": "Rhomboid major",
+  "fr": "Grand rhomboïde",
+  "pt": "Romboide maior"
+ },
+ "Romboides menor": {
+  "en": "Rhomboid minor",
+  "fr": "Petit rhomboïde",
+  "pt": "Romboide menor"
+ },
+ "Rueda abdominal": {
+  "en": "Ab wheel",
+  "fr": "Roue abdominale",
+  "pt": "Roda abdominal"
+ },
+ "Saco de arena": {
+  "en": "Sandbag",
+  "fr": "Sac de sable",
+  "pt": "Saco de areia"
+ },
+ "Sartorio": {
+  "en": "Sartorius",
+  "fr": "Sartorius",
+  "pt": "Sartório"
+ },
+ "Serrato anterior": {
+  "en": "Serratus anterior",
+  "fr": "Dentelé antérieur",
+  "pt": "Serrátil anterior"
+ },
+ "Silla": {
+  "en": "Chair",
+  "fr": "Chaise",
+  "pt": "Cadeira"
+ },
+ "Sillas": {
+  "en": "Chairs",
+  "fr": "Chaises",
+  "pt": "Cadeiras"
+ },
+ "Sin equipamiento": {
+  "en": "No equipment",
+  "fr": "Sans équipement",
+  "pt": "Sem equipamento"
+ },
+ "SkiErg": {
+  "en": "SkiErg",
+  "fr": "SkiErg",
+  "pt": "SkiErg"
+ },
+ "Soporte": {
+  "en": "Rack",
+  "fr": "Support",
+  "pt": "Suporte"
+ },
+ "Soporte de banca": {
+  "en": "Bench rack",
+  "fr": "Support de banc",
+  "pt": "Suporte de banco"
+ },
+ "Suelo": {
+  "en": "Floor",
+  "fr": "Sol",
+  "pt": "Chão"
+ },
+ "Suelo pélvico": {
+  "en": "Pelvic floor",
+  "fr": "Plancher pelvien",
+  "pt": "Assoalho pélvico"
+ },
+ "Superficie elevada": {
+  "en": "Elevated surface",
+  "fr": "Surface surélevée",
+  "pt": "Superfície elevada"
+ },
+ "Supraespinoso": {
+  "en": "Supraspinatus",
+  "fr": "Supra-épineux",
+  "pt": "Supraespinhal"
+ },
+ "Suspensión": {
+  "en": "Suspension",
+  "fr": "Suspension",
+  "pt": "Suspensão"
+ },
+ "Sóleo": {
+  "en": "Soleus",
+  "fr": "Soléaire",
+  "pt": "Sóleo"
+ },
+ "Coracobraquial": {
+  "en": "Coracobrachialis",
+  "fr": "Coracobrachial",
+  "pt": "Coracobraquial"
+ },
+ "Core": {
+  "en": "Core",
+  "fr": "Gainage",
+  "pt": "Core"
+ },
+ "Core (como estabilizador)": {
+  "en": "Core (as stabilizer)",
+  "fr": "Gainage (comme stabilisateur)",
+  "pt": "Core (como estabilizador)"
+ },
+ "Cuadrado lumbar": {
+  "en": "Quadratus lumborum",
+  "fr": "Carré des lombes",
+  "pt": "Quadrado lombar"
+ },
+ "Cuello": {
+  "en": "Neck",
+  "fr": "Cou",
+  "pt": "Pescoço"
+ },
+ "Cuerda": {
+  "en": "Rope",
+  "fr": "Corde",
+  "pt": "Corda"
+ },
+ "Cuerda de tríceps": {
+  "en": "Triceps rope",
+  "fr": "Corde de triceps",
+  "pt": "Corda de tríceps"
+ },
+ "Cuerpo completo": {
+  "en": "Full body",
+  "fr": "Corps entier",
+  "pt": "Corpo inteiro"
+ },
+ "Cuádriceps": {
+  "en": "Quadriceps",
+  "fr": "Quadriceps",
+  "pt": "Quadríceps"
+ },
+ "Deltoides": {
+  "en": "Deltoids",
+  "fr": "Deltoïdes",
+  "pt": "Deltoides"
+ },
+ "Deltoides anterior": {
+  "en": "Anterior deltoid",
+  "fr": "Deltoïde antérieur",
+  "pt": "Deltoide anterior"
+ },
+ "Deltoides medio": {
+  "en": "Lateral deltoid",
+  "fr": "Deltoïde moyen",
+  "pt": "Deltoide médio"
+ },
+ "Deltoides posterior": {
+  "en": "Posterior deltoid",
+  "fr": "Deltoïde postérieur",
+  "pt": "Deltoide posterior"
+ },
+ "Disco": {
+  "en": "Plate",
+  "fr": "Disque",
+  "pt": "Disco"
+ },
+ "Discos de pesas": {
+  "en": "Weight plates",
+  "fr": "Disques de poids",
+  "pt": "Discos de pesos"
+ },
+ "Dorsal ancho": {
+  "en": "Latissimus dorsi",
+  "fr": "Grand dorsal",
+  "pt": "Grande dorsal"
+ },
+ "Déficit o escalón": {
+  "en": "Deficit or step",
+  "fr": "Déficit ou marche",
+  "pt": "Défice ou degrau"
+ },
+ "Elevador de la escápula": {
+  "en": "Levator scapulae",
+  "fr": "Élévateur de la scapula",
+  "pt": "Elevador da escápula"
+ },
+ "Erectores espinales": {
+  "en": "Spinal erectors",
+  "fr": "Érecteurs du rachis",
+  "pt": "Eretores da coluna"
+ },
+ "Erectores espinales torácicos": {
+  "en": "Thoracic spinal erectors",
+  "fr": "Érecteurs du rachis thoracique",
+  "pt": "Eretores da coluna torácicos"
+ },
+ "Ergómetro de brazos": {
+  "en": "Arm ergometer",
+  "fr": "Ergomètre à bras",
+  "pt": "Ergómetro de braços"
+ },
+ "Ergómetro de remo": {
+  "en": "Rowing ergometer",
+  "fr": "Ergomètre d'aviron",
+  "pt": "Ergómetro de remo"
+ },
+ "Escalenos": {
+  "en": "Scalenes",
+  "fr": "Scalènes",
+  "pt": "Escalenos"
+ },
+ "Escalera": {
+  "en": "Ladder",
+  "fr": "Échelle",
+  "pt": "Escada"
+ },
+ "Escalera de agilidad": {
+  "en": "Agility ladder",
+  "fr": "Échelle d'agilité",
+  "pt": "Escada de agilidade"
+ },
+ "Escalón": {
+  "en": "Step",
+  "fr": "Marche",
+  "pt": "Degrau"
+ },
+ "Espalda": {
+  "en": "Back",
+  "fr": "Dos",
+  "pt": "Costas"
+ },
+ "Espalda alta": {
+  "en": "Upper back",
+  "fr": "Haut du dos",
+  "pt": "Costas superiores"
+ },
+ "Estabilizadores de la escápula": {
+  "en": "Scapular stabilizers",
+  "fr": "Stabilisateurs de l'omoplate",
+  "pt": "Estabilizadores da omoplata"
+ },
+ "Estabilizadores globales": {
+  "en": "Global stabilizers",
+  "fr": "Stabilisateurs globaux",
+  "pt": "Estabilizadores globais"
+ },
+ "Esternocleidomastoideo": {
+  "en": "Sternocleidomastoid",
+  "fr": "Sternocléidomastoïdien",
+  "pt": "Esternocleidomastoideo"
+ },
+ "Extensor radial corto del carpo": {
+  "en": "Extensor carpi radialis brevis",
+  "fr": "Court extenseur radial du carpe",
+  "pt": "Extensor radial curto do carpo"
+ },
+ "Extensor radial largo del carpo": {
+  "en": "Extensor carpi radialis longus",
+  "fr": "Long extenseur radial du carpe",
+  "pt": "Extensor radial longo do carpo"
+ },
+ "Extensores de la muñeca": {
+  "en": "Wrist extensors",
+  "fr": "Extenseurs du poignet",
+  "pt": "Extensores do punho"
+ },
+ "Extensores de los dedos": {
+  "en": "Finger extensors",
+  "fr": "Extenseurs des doigts",
+  "pt": "Extensores dos dedos"
+ },
+ "Extensores de muñeca": {
+  "en": "Wrist extensors",
+  "fr": "Extenseurs du poignet",
+  "pt": "Extensores do punho"
+ },
+ "Extensores del antebrazo": {
+  "en": "Forearm extensors",
+  "fr": "Extenseurs de l'avant-bras",
+  "pt": "Extensores do antebraço"
+ },
+ "Fitball": {
+  "en": "Stability ball",
+  "fr": "Swiss ball",
+  "pt": "Bola suíça"
+ },
+ "Flexibilidad": {
+  "en": "Flexibility",
+  "fr": "Souplesse",
+  "pt": "Flexibilidade"
+ },
+ "Flexores de antebrazo": {
+  "en": "Forearm flexors",
+  "fr": "Fléchisseurs de l'avant-bras",
+  "pt": "Flexores do antebraço"
+ },
+ "Flexores de cadera": {
+  "en": "Hip flexors",
+  "fr": "Fléchisseurs de la hanche",
+  "pt": "Flexores da anca"
+ },
+ "Flexores de la muñeca": {
+  "en": "Wrist flexors",
+  "fr": "Fléchisseurs du poignet",
+  "pt": "Flexores do punho"
+ },
+ "Flexores de los dedos": {
+  "en": "Finger flexors",
+  "fr": "Fléchisseurs des doigts",
+  "pt": "Flexores dos dedos"
+ },
+ "Flexores de muñeca": {
+  "en": "Wrist flexors",
+  "fr": "Fléchisseurs du poignet",
+  "pt": "Flexores do punho"
+ },
+ "Flexores del antebrazo": {
+  "en": "Forearm flexors",
+  "fr": "Fléchisseurs de l'avant-bras",
+  "pt": "Flexores do antebraço"
+ },
+ "Foam roller": {
+  "en": "Foam roller",
+  "fr": "Rouleau de massage",
+  "pt": "Rolo de massagem"
+ },
+ "Gastrocnemio": {
+  "en": "Gastrocnemius",
+  "fr": "Gastrocnémien",
+  "pt": "Gastrocnémio"
+ },
+ "Gemelos": {
+  "en": "Calves",
+  "fr": "Mollets",
+  "pt": "Gémeos"
+ },
+ "Glúteo mayor": {
+  "en": "Gluteus maximus",
+  "fr": "Grand fessier",
+  "pt": "Grande glúteo"
+ },
+ "Glúteo medio": {
+  "en": "Gluteus medius",
+  "fr": "Moyen fessier",
+  "pt": "Médio glúteo"
+ },
+ "Tejido conectivo": {
+  "en": "Connective tissue",
+  "fr": "Tissu conjonctif",
+  "pt": "Tecido conjuntivo"
+ },
+ "Tensor de la fascia lata": {
+  "en": "Tensor fasciae latae",
+  "fr": "Tenseur du fascia lata",
+  "pt": "Tensor da fáscia lata"
+ },
+ "Toalla": {
+  "en": "Towel",
+  "fr": "Serviette",
+  "pt": "Toalha"
+ },
+ "Transverso abdominal": {
+  "en": "Transverse abdominis",
+  "fr": "Transverse de l'abdomen",
+  "pt": "Transverso do abdómen"
+ },
+ "Trapecio": {
+  "en": "Trapezius",
+  "fr": "Trapèze",
+  "pt": "Trapézio"
+ },
+ "Trapecio inferior": {
+  "en": "Lower trapezius",
+  "fr": "Trapèze inférieur",
+  "pt": "Trapézio inferior"
+ },
+ "Trapecio medio": {
+  "en": "Middle trapezius",
+  "fr": "Trapèze moyen",
+  "pt": "Trapézio médio"
+ },
+ "Trapecio superior": {
+  "en": "Upper trapezius",
+  "fr": "Trapèze supérieur",
+  "pt": "Trapézio superior"
+ },
+ "Tren inferior": {
+  "en": "Lower body",
+  "fr": "Bas du corps",
+  "pt": "Membros inferiores"
+ },
+ "Tríceps braquial": {
+  "en": "Triceps brachii",
+  "fr": "Triceps brachial",
+  "pt": "Tríceps braquial"
+ },
+ "Tríceps braquial (cabeza larga)": {
+  "en": "Triceps brachii (long head)",
+  "fr": "Triceps brachial (chef long)",
+  "pt": "Tríceps braquial (cabeça longa)"
+ },
+ "Tríceps braquial (énfasis en la cabeza larga)": {
+  "en": "Triceps brachii (long head emphasis)",
+  "fr": "Triceps brachial (accent sur le chef long)",
+  "pt": "Tríceps braquial (ênfase na cabeça longa)"
+ },
+ "Zona media": {
+  "en": "Core",
+  "fr": "Sangle abdominale",
+  "pt": "Zona média"
+ }
+}

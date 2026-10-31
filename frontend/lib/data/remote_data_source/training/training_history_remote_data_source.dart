@@ -35,6 +35,13 @@ class TrainingHistoryRemoteDataSource {
         .toList();
   }
 
+  Future<SessionHighlightsDto> highlights(String sessionId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/sessions/$sessionId/highlights',
+    );
+    return SessionHighlightsDto.fromJson(response.data!);
+  }
+
   Future<List<PersonalRecordDto>> records() async {
     final response = await _dio.get<List<dynamic>>('$_base/records');
     return [

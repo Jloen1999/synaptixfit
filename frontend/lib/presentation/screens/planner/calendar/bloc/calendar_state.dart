@@ -71,6 +71,10 @@ sealed class CalendarNotice with _$CalendarNotice {
 
   const factory CalendarNotice.failure(AppError error) = CalendarNoticeFailure;
 
+  /// Bloque reprogramado al primer hueco libre (empieza en [start]).
+  const factory CalendarNotice.rescheduled(DateTime start) =
+      CalendarNoticeRescheduled;
+
   /// Bloque quitado: el aviso ofrece «Deshacer» durante la ventana de borrado.
   const factory CalendarNotice.blockDeleted(String blockId) =
       CalendarNoticeBlockDeleted;

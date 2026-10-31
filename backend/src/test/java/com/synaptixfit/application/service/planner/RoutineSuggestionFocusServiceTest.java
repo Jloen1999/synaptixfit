@@ -137,7 +137,8 @@ class RoutineSuggestionFocusServiceTest {
     }
 
     private FocusService focusService() {
-        return new FocusService(f.focus, f.blocks, f.directory, f.xp, f.publisher, PlannerFakes.ZONE,
+        return new FocusService(f.focus, f.blocks, f.directory, f.xp, f.publisher, f.weeklyLoadService(),
+                PlannerFakes.ZONE,
                 PlannerFakes.CLOCK);
     }
 }

@@ -1,3 +1,4 @@
+import '../../../../domain/enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/home_acwr_zone.dart';
@@ -263,6 +264,7 @@ abstract class HomePlanDayDto with _$HomePlanDayDto {
     required DateTime date,
     @Default(0) int planned,
     @Default(0) int completed,
+    @Default(0) int missed,
   }) = _HomePlanDayDto;
 
   const HomePlanDayDto._();
@@ -270,8 +272,12 @@ abstract class HomePlanDayDto with _$HomePlanDayDto {
   factory HomePlanDayDto.fromJson(Map<String, dynamic> json) =>
       _$HomePlanDayDtoFromJson(json);
 
-  HomePlanDay toDomain() =>
-      HomePlanDay(date: date, planned: planned, completed: completed);
+  HomePlanDay toDomain() => HomePlanDay(
+    date: date,
+    planned: planned,
+    completed: completed,
+    missed: missed,
+  );
 }
 
 @freezed
@@ -285,6 +291,7 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     DateTime? end,
     @Default(false) bool completed,
     String? subjectName,
+    String? status,
   }) = _HomeTodayEventDto;
 
   const HomeTodayEventDto._();
@@ -301,6 +308,7 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     end: end?.toLocal(),
     completed: completed,
     subjectName: subjectName,
+    status: ItemTimeStatus.fromApi(status),
   );
 }
 
@@ -309,6 +317,7 @@ abstract class HomeBannerDto with _$HomeBannerDto {
   const factory HomeBannerDto({
     String? type,
     @Default(<String, num>{}) Map<String, num> params,
+    @Default(<String, String>{}) Map<String, String> labels,
   }) = _HomeBannerDto;
 
   const HomeBannerDto._();
@@ -316,6 +325,9 @@ abstract class HomeBannerDto with _$HomeBannerDto {
   factory HomeBannerDto.fromJson(Map<String, dynamic> json) =>
       _$HomeBannerDtoFromJson(json);
 
-  HomeSmartBanner toDomain() =>
-      HomeSmartBanner(type: HomeBannerType.fromApi(type), params: params);
+  HomeSmartBanner toDomain() => HomeSmartBanner(
+    type: HomeBannerType.fromApi(type),
+    params: params,
+    labels: labels,
+  );
 }

@@ -10,7 +10,9 @@ import java.util.UUID;
  */
 public interface ImportIcsUseCase {
 
-    /** @param force importar todos los eventos aunque no mencionen la asignatura */
+    /**
+     * @param force importar todos los eventos aunque no mencionen la asignatura
+     */
     record Command(UUID userId, UUID subjectId, String url, boolean force) {
     }
 

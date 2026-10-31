@@ -48,6 +48,27 @@ class InsightsDomainTest {
     }
 
     @Test
+    void aSingleOldSessionIsNotABaseline() {
+        LocalDate today = LocalDate.of(2026, 10, 18);
+        // Una sesión hace 9 días y tres esta semana: antes daba ACWR ~3 y avisaba de sobreentrenamiento.
+        List<PhysicalLoadHistory.Entry> sparse = List.of(
+                new PhysicalLoadHistory.Entry(today.minusDays(9), 7, 60),
+                new PhysicalLoadHistory.Entry(today.minusDays(4), 8, 60),
+                new PhysicalLoadHistory.Entry(today.minusDays(2), 8, 60),
+                new PhysicalLoadHistory.Entry(today, 8, 60));
+        CrossRegulationState state = CrossRegulationState.compute(USER, sparse, today, null, NOW);
+        assertThat(state.acwr()).isNull();
+        assertThat(state.zone()).isEqualTo(AcwrZone.NO_DATA);
+
+        // Con carga en dos de las tres semanas anteriores ya hay línea base y el pico sí cuenta.
+        List<PhysicalLoadHistory.Entry> withBaseline = new java.util.ArrayList<>(sparse);
+        withBaseline.add(new PhysicalLoadHistory.Entry(today.minusDays(16), 7, 60));
+        CrossRegulationState spike = CrossRegulationState.compute(USER, withBaseline, today, null, NOW);
+        assertThat(spike.acwr()).isNotNull();
+        assertThat(spike.zone()).isEqualTo(AcwrZone.OVERTRAINING);
+    }
+
+    @Test
     void acwrIsNullWithoutChronicLoad() {
         CrossRegulationState empty = CrossRegulationState.compute(USER, 0, 0, null, NOW);
         assertThat(empty.acwr()).isNull();

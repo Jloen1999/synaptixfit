@@ -14,5 +14,13 @@ public interface SetBlockCompletionUseCase {
     record Result(CalendarBlock block, int xpDelta) {
     }
 
-    Result setCompletion(UUID userId, UUID blockId, boolean completed);
+    /**
+     * @param effort esfuerzo percibido (1-10) de un bloque de deporte sin rutina, para su carga física;
+     *               null en los demás o si no se indica
+     */
+    Result setCompletion(UUID userId, UUID blockId, boolean completed, Integer effort);
+
+    default Result setCompletion(UUID userId, UUID blockId, boolean completed) {
+        return setCompletion(userId, blockId, completed, null);
+    }
 }

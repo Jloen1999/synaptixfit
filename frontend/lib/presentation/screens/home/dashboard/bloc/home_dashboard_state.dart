@@ -19,6 +19,9 @@ abstract class HomeDashboardState with _$HomeDashboardState {
     @Default(<HomeTodayEvent>[]) List<HomeTodayEvent> upcoming,
     @Default(0) int unreadNotifications,
 
+    /// Configuración pendiente (aviso discreto); nulo si no se pudo leer.
+    HomeSetup? setup,
+
     /// La página debe abrir `/onboarding` (efecto de un solo uso).
     @Default(false) bool onboardingRequired,
 

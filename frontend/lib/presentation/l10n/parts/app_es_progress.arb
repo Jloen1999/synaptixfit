@@ -233,7 +233,7 @@
       }
     }
   },
-  "progressBadgeCriterionConsecutiveCheckIns": "Completa {n, plural, =1{1 check-in diario} other{{n} check-ins diarios consecutivos}}",
+  "progressBadgeCriterionConsecutiveCheckIns": "Cuenta cómo estás {n, plural, =1{1 día} other{{n} días seguidos}}",
   "@progressBadgeCriterionConsecutiveCheckIns": {
     "placeholders": {
       "n": {
@@ -512,7 +512,7 @@
       }
     }
   },
-  "progressInsightConsistencyElite": "{weeks} semanas seguidas sin fallar. Tu adherencia es de nivel élite.",
+  "progressInsightConsistencyElite": "{weeks} semanas seguidas sin fallar. Tu constancia es de nivel élite.",
   "@progressInsightConsistencyElite": {
     "placeholders": {
       "weeks": {
@@ -628,6 +628,108 @@
   "@progressStudyReviewNow": {
     "placeholders": {
       "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressStudyGoal": "{hours} de {goal} h de estudio esta semana",
+  "@progressStudyGoal": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "progressStudyGoalSemantics": "{hours, plural, =1{1 hora} other{{hours} horas}} de {goal} de estudio esta semana",
+  "@progressStudyGoalSemantics": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "progressStudyGoalReached": "Objetivo cumplido",
+  "progressBadgeShareImage": "Compartir como imagen",
+  "achievementSharePreview": "Así se verá",
+  "achievementShareAction": "Compartir imagen",
+  "achievementShareBadgeText": "He conseguido la insignia «{name}» en SynaptixFit.",
+  "@achievementShareBadgeText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "progressStreakFreezes": "{count, plural, =0{Sin comodines: ganas uno cada 7 días seguidos.} =1{1 comodín: salva un día sin actividad.} other{{count} comodines: cada uno salva un día sin actividad.}}",
+  "progressStreakFrozen": "El {date} un comodín salvó tu racha.",
+  "@progressStreakFreezes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@progressStreakFrozen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "progressBySubjectTitle": "Por asignatura (últimas {weeks} semanas)",
+  "progressBySubjectEmpty": "Cuando completes bloques de estudio o repasos, aquí verás cuánto dedicas a cada asignatura.",
+  "progressBySubjectMinutes": "{minutes} min",
+  "progressBySubjectHours": "{hours} h {minutes} min",
+  "progressBySubjectHoursOnly": "{hours} h",
+  "@progressBySubjectHoursOnly": {
+    "description": "Horas exactas, sin minutos.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "progressBySubjectNoSubject": "Sin asignatura",
+  "progressBySubjectArchived": "Asignatura archivada",
+  "progressBySubjectNoReviews": "Sin repasos todavía",
+  "progressBySubjectRecall": "{reviews, plural, =1{1 repaso} other{{reviews} repasos}} · recuerdas el {percent} %",
+  "progressBySubjectWeak": "repásala más a menudo",
+  "@progressBySubjectTitle": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "@progressBySubjectMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@progressBySubjectHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@progressBySubjectRecall": {
+    "placeholders": {
+      "reviews": {
+        "type": "int"
+      },
+      "percent": {
         "type": "int"
       }
     }

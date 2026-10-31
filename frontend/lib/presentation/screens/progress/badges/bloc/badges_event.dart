@@ -18,4 +18,11 @@ sealed class BadgesEvent with _$BadgesEvent {
     required Badge badge,
     String? message,
   }) = BadgesShareRequested;
+
+  /// Comparte fuera de la app la imagen de la insignia ya dibujada.
+  const factory BadgesEvent.imageShareRequested({
+    required Uint8List png,
+    required String fileName,
+    required String text,
+  }) = BadgesImageShareRequested;
 }

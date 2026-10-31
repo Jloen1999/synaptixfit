@@ -16,6 +16,21 @@ class NotificationPreferencesRemoteDataSource {
     return NotificationPreferencesDto.fromJson(response.data!);
   }
 
+  static const _weeklyEmail = '/api/v1/notifications/weekly-email';
+
+  /// Estado del resumen semanal por correo: `OFF`, `PENDING` o `ACTIVE`.
+  Future<String?> weeklyEmail() async {
+    final response = await _dio.get<Map<String, dynamic>>(_weeklyEmail);
+    return response.data?['status'] as String?;
+  }
+
+  Future<String?> enableWeeklyEmail() async {
+    final response = await _dio.put<Map<String, dynamic>>(_weeklyEmail);
+    return response.data?['status'] as String?;
+  }
+
+  Future<void> disableWeeklyEmail() => _dio.delete<void>(_weeklyEmail);
+
   Future<NotificationPreferencesDto> update(Map<String, dynamic> body) async {
     final response = await _dio.put<Map<String, dynamic>>(_path, data: body);
     return NotificationPreferencesDto.fromJson(response.data!);

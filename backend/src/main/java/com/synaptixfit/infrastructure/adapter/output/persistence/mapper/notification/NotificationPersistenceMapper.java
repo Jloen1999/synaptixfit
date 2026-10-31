@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.mapper.notification;
 
 import com.synaptixfit.domain.model.notification.Notification;
+import com.synaptixfit.domain.model.notification.NotificationMessage;
 import com.synaptixfit.domain.model.notification.NotificationMode;
 import com.synaptixfit.domain.model.notification.NotificationPreferences;
 import com.synaptixfit.domain.model.notification.NotificationPriority;
@@ -9,6 +10,7 @@ import com.synaptixfit.infrastructure.adapter.output.persistence.entity.notifica
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.notification.NotificationPreferencesEntity;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 /** Notificaciones y preferencias de dominio ↔ entidades. Enums en minúsculas en la base de datos. */
@@ -48,7 +50,20 @@ public final class NotificationPersistenceMapper {
     public static Notification toDomain(NotificationEntity e) {
         return new Notification(e.getId(), e.getUsuarioId(), e.getTitulo(), e.getDescripcion(),
                 priorityFromDb(e.getPrioridad()), typeFromDb(e.getTipo()), e.getUrlAccion(), e.getEtiquetaAccion(),
-                e.getClaveReferencia(), e.isEstaLeida(), e.getCreadoEn(), e.getLeidaEn());
+                e.getClaveReferencia(), messageFromDb(e.getCodigoMensaje(), e.getParametrosMensaje()), e.isEstaLeida(),
+                e.getCreadoEn(), e.getLeidaEn());
+    }
+
+    /** Un código que ya no existe se ignora: queda el texto guardado. */
+    static NotificationMessage messageFromDb(String code, Map<String, String> params) {
+        if (code == null) {
+            return null;
+        }
+        try {
+            return new NotificationMessage(NotificationMessage.Code.valueOf(code), params);
+        } catch (IllegalArgumentException unknown) {
+            return null;
+        }
     }
 
     public static void copyToEntity(Notification n, NotificationEntity e) {
@@ -61,6 +76,8 @@ public final class NotificationPersistenceMapper {
         e.setUrlAccion(n.actionUrl());
         e.setEtiquetaAccion(n.actionLabel());
         e.setClaveReferencia(n.referenceKey());
+        e.setCodigoMensaje(n.message() == null ? null : n.message().code().name());
+        e.setParametrosMensaje(n.message() == null ? null : n.message().params());
         e.setEstaLeida(n.read());
         e.setCreadoEn(n.createdAt());
         e.setLeidaEn(n.readAt());

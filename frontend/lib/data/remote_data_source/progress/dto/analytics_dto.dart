@@ -243,6 +243,8 @@ abstract class StudyWeekDto with _$StudyWeekDto {
     @Default(0) int testsCompleted,
     int? averageTestScore,
     @Default(0) int reviewsDue,
+    @Default(0) int studyHours,
+    @Default(0) int weeklyGoalHours,
     @Default(true) bool empty,
   }) = _StudyWeekDto;
 
@@ -262,6 +264,8 @@ abstract class StudyWeekDto with _$StudyWeekDto {
     testsCompleted: testsCompleted,
     averageTestScore: averageTestScore,
     reviewsDue: reviewsDue,
+    studyHours: studyHours,
+    weeklyGoalHours: weeklyGoalHours,
     empty: empty,
   );
 }

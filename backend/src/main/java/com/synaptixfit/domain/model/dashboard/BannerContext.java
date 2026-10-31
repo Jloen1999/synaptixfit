@@ -17,7 +17,19 @@ public record BannerContext(AcwrZone zone, Double acwr, int maxStudyMinutes, int
                             Integer daysUntilNextDeadline, Integer recentFatigueScore, Double adherence,
                             Double energy, boolean checkInDone, Integer weeklyStress, double attentionCapacity,
                             double cognitiveLoad, int trainingStreak, int studyStreakDays,
-                            Integer daysSinceLastSession, UsageFocus focus) {
+                            Integer daysSinceLastSession, UsageFocus focus, int overdueDeadlines,
+                            int missedBlocks) {
+
+    /** Sin entregas vencidas ni bloques sin hacer. */
+    public BannerContext(AcwrZone zone, Double acwr, int maxStudyMinutes, int upcomingDeadlines,
+                         Integer daysUntilNextDeadline, Integer recentFatigueScore, Double adherence,
+                         Double energy, boolean checkInDone, Integer weeklyStress, double attentionCapacity,
+                         double cognitiveLoad, int trainingStreak, int studyStreakDays,
+                         Integer daysSinceLastSession, UsageFocus focus) {
+        this(zone, acwr, maxStudyMinutes, upcomingDeadlines, daysUntilNextDeadline, recentFatigueScore, adherence,
+                energy, checkInDone, weeklyStress, attentionCapacity, cognitiveLoad, trainingStreak, studyStreakDays,
+                daysSinceLastSession, focus, 0, 0);
+    }
 
     /** Contexto de alguien que usa la app completa (estudios y deporte). */
     public BannerContext(AcwrZone zone, Double acwr, int maxStudyMinutes, int upcomingDeadlines,

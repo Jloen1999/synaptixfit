@@ -1,13 +1,9 @@
 package com.synaptixfit.infrastructure.adapter.output.external.deepseek;
 
 import com.synaptixfit.domain.exception.AiAttachmentNotSupportedException;
-import com.synaptixfit.domain.exception.AiUnavailableException;
 import com.synaptixfit.domain.port.output.ai.AiAttachment;
-import java.io.IOException;
+import com.synaptixfit.infrastructure.adapter.output.external.document.PdfTextExtractor;
 import java.nio.charset.StandardCharsets;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,10 +37,8 @@ public class AttachmentTextExtractor {
     }
 
     private static String pdfText(byte[] data) {
-        try (PDDocument document = Loader.loadPDF(data)) {
-            return new PDFTextStripper().getText(document).strip();
-        } catch (IOException e) {
-            throw new AiUnavailableException("Could not read PDF attachment: " + e.getMessage());
-        }
+        // Un PDF dañado es un problema del archivo, no del servicio: reintentar no lo arregla.
+        return PdfTextExtractor.text(data)
+                .orElseThrow(() -> new AiAttachmentNotSupportedException("application/pdf (dañado)"));
     }
 }

@@ -1,3 +1,4 @@
+import '../../domain/models/home/home_setup.dart';
 import '../../domain/models/home/home_dashboard.dart';
 import '../../domain/models/home/home_due_review.dart';
 import '../../domain/models/home/home_onboarding_status.dart';
@@ -27,6 +28,10 @@ class HomeRepository implements HomeRepositoryContract {
   @override
   Future<AppResult<int>> getUnreadNotificationsCount() =>
       RepositoryErrorHandler.guard(_remote.unreadCount);
+
+  @override
+  Future<AppResult<HomeSetup>> getSetup() =>
+      RepositoryErrorHandler.guard(_remote.setup);
 
   @override
   Future<AppResult<HomeOnboardingStatus>> getOnboardingStatus() =>

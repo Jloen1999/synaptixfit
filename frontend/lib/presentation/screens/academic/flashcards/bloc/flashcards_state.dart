@@ -17,6 +17,13 @@ abstract class FlashcardsState with _$FlashcardsState {
     AppError? actionError,
     FlashcardReviewResult? result,
     Account? updatedAccount,
+
+    /// Título del material: nombre del mazo de Anki.
+    String? deckName,
+    @Default(false) bool exportingAnki,
+
+    /// Sube con cada mazo guardado (el aviso se muestra al cambiar).
+    @Default(0) int ankiExports,
   }) = _FlashcardsState;
 
   const FlashcardsState._();

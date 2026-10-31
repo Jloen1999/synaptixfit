@@ -13,7 +13,7 @@ String socialTimeAgo(AppLocalizations l10n, DateTime date, {DateTime? now}) {
   if (diff.inHours < 1) return l10n.socialTimeMinutes(diff.inMinutes);
   if (diff.inDays < 1) return l10n.socialTimeHours(diff.inHours);
   if (diff.inDays < 7) return l10n.socialTimeDays(diff.inDays);
-  return DateFormat('d MMM yyyy', 'es').format(date);
+  return DateFormat('d MMM yyyy').format(date);
 }
 
 /// Etiqueta, icono y color de cada tipo de publicación.

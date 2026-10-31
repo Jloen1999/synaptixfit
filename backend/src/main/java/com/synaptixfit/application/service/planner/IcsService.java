@@ -1,6 +1,7 @@
 package com.synaptixfit.application.service.planner;
 
 import com.synaptixfit.application.port.input.planner.ExportIcsUseCase;
+import com.synaptixfit.application.port.input.planner.ImportGeneralCalendarUseCase;
 import com.synaptixfit.application.port.input.planner.ImportIcsUseCase;
 import com.synaptixfit.domain.exception.planner.IcsUrlMissingException;
 import com.synaptixfit.domain.exception.planner.InvalidIcsUrlException;
@@ -27,10 +28,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Importación y exportación iCalendar.
@@ -38,7 +41,7 @@ import java.util.UUID;
  * <p>Importar es idempotente: cada evento se identifica por su UID (restricción única
  * {@code (usuario_id, ics_uid)} en bloques y en entregas) y volver a importar actualiza.
  */
-public class IcsService implements ImportIcsUseCase, ExportIcsUseCase {
+public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCase, ExportIcsUseCase {
 
     /** Tope de eventos por importación (protege de calendarios desmesurados). */
     static final int MAX_EVENTS = 3000;
@@ -68,17 +71,14 @@ public class IcsService implements ImportIcsUseCase, ExportIcsUseCase {
     }
 
     @Override
-    public Result importIcs(Command command) {
+    public Result importIcs(ImportIcsUseCase.Command command) {
         SubjectRef subject = subjects.findOwned(command.userId(), command.subjectId())
                 .orElseThrow(() -> new PlannerSubjectNotFoundException(command.subjectId()));
         String url = command.url() != null && !command.url().isBlank() ? command.url() : subject.icsUrl();
         if (url == null || url.isBlank()) {
             throw new IcsUrlMissingException();
         }
-        List<IcsEvent> events = IcsCalendar.parse(feed.download(toUri(url)), zone.zone());
-        if (events.size() > MAX_EVENTS) {
-            events = events.subList(0, MAX_EVENTS);
-        }
+        List<IcsEvent> events = download(url);
         List<IcsEvent> matching = events.stream()
                 .filter(e -> SubjectMatcher.mentions(e.summary(), subject.name(), subject.code()))
                 .toList();
@@ -87,13 +87,49 @@ public class IcsService implements ImportIcsUseCase, ExportIcsUseCase {
             return new Result(match, events.size(), 0, 0, 0, 0, 0, 0, false);
         }
         List<IcsEvent> selected = command.force() ? events : matching;
+        return save(command.userId(), selected, e -> subject.id(), match, events.size(), matching.size());
+    }
+
+    /**
+     * Calendario general (Moodle): solo exámenes y entregas, sin avisos de apertura, cada uno en la asignatura
+     * que mencione su título, categoría o descripción. Las clases vienen del horario de cada asignatura.
+     */
+    @Override
+    public Result importGeneral(ImportGeneralCalendarUseCase.Command command) {
+        if (command.url() == null || command.url().isBlank()) {
+            throw new IcsUrlMissingException();
+        }
+        List<IcsEvent> events = download(command.url());
+        List<SubjectRef> active = subjects.findActive(command.userId());
+        List<IcsEvent> selected = events.stream()
+                .filter(e -> e.category() != IcsEvent.Category.CLASS && !e.isOpeningNotice())
+                .toList();
+        Map<String, UUID> subjectOf = new HashMap<>();
+        for (IcsEvent e : selected) {
+            e.subjectHints().stream()
+                    .flatMap(hint -> active.stream().filter(s -> SubjectMatcher.mentions(hint, s.name(), s.code())))
+                    .findFirst()
+                    .ifPresent(s -> subjectOf.put(e.uid(), s.id()));
+        }
+        Match match = selected.isEmpty() ? Match.NONE : Match.FULL;
+        return save(command.userId(), selected, e -> subjectOf.get(e.uid()), match, events.size(), subjectOf.size());
+    }
+
+    private List<IcsEvent> download(String url) {
+        List<IcsEvent> events = IcsCalendar.parse(feed.download(toUri(url)), zone.zone());
+        return events.size() > MAX_EVENTS ? events.subList(0, MAX_EVENTS) : events;
+    }
+
+    /** Guarda (o actualiza por UID) los eventos como bloques y entregas; {@code subjectOf} da la asignatura de cada uno. */
+    private Result save(UUID userId, List<IcsEvent> selected, Function<IcsEvent, UUID> subjectOf, Match match,
+                        int totalEvents, int matchingEvents) {
         // Un UID repetido dentro del mismo calendario se importa una vez (gana el primero).
         Map<String, IcsEvent> byUid = new LinkedHashMap<>();
         selected.forEach(e -> byUid.putIfAbsent(e.uid(), e));
 
         Instant now = clock.instant();
-        Map<String, CalendarBlock> existingBlocks = blocks.findByIcsUids(command.userId(), byUid.keySet());
-        Map<String, Deadline> existingDeadlines = deadlines.findByIcsUids(command.userId(), byUid.keySet());
+        Map<String, CalendarBlock> existingBlocks = blocks.findByIcsUids(userId, byUid.keySet());
+        Map<String, Deadline> existingDeadlines = deadlines.findByIcsUids(userId, byUid.keySet());
         int classes = 0;
         int exams = 0;
         int deliveries = 0;
@@ -101,6 +137,7 @@ public class IcsService implements ImportIcsUseCase, ExportIcsUseCase {
         int updated = 0;
         List<CalendarBlock> toSave = new ArrayList<>();
         for (IcsEvent event : byUid.values()) {
+            UUID subjectId = subjectOf.apply(event);
             IcsEvent.Category category = event.category();
             UUID deadlineId = null;
             ActivityType type = ActivityType.CLASS;
@@ -111,15 +148,15 @@ public class IcsService implements ImportIcsUseCase, ExportIcsUseCase {
                 String title = truncate(event.summary(), Deadline.TITLE_MAX);
                 String description = truncate(event.description(), Deadline.DESCRIPTION_MAX);
                 if (deadline == null) {
-                    deadline = Deadline.builder().id(UUID.randomUUID()).userId(command.userId())
-                            .subjectId(subject.id()).title(title)
+                    deadline = Deadline.builder().id(UUID.randomUUID()).userId(userId)
+                            .subjectId(subjectId).title(title)
                             .type(exam ? DeadlineType.EXAM : DeadlineType.ASSIGNMENT).dueAt(event.start())
                             .difficulty(Priority.MEDIUM).description(description).icsUid(event.uid())
                             .createdAt(now).updatedAt(now).build();
                     created++;
                 } else {
                     deadline.update(title, exam ? DeadlineType.EXAM : DeadlineType.ASSIGNMENT, event.start(), null,
-                            description, subject.id(), false, now);
+                            description, subjectId, false, now);
                     updated++;
                 }
                 deadlineId = deadlines.save(deadline).id();
@@ -134,12 +171,12 @@ public class IcsService implements ImportIcsUseCase, ExportIcsUseCase {
             Instant end = event.end().isBefore(event.start().plus(Duration.ofMinutes(TimeRange.MIN_MINUTES)))
                     ? event.start().plus(Duration.ofMinutes(TimeRange.MIN_MINUTES)) : event.end();
             TimeRange range = new TimeRange(event.start(), end);
-            CalendarBlock.Details details = new CalendarBlock.Details(subject.id(),
+            CalendarBlock.Details details = new CalendarBlock.Details(subjectId,
                     truncate(event.summary(), CalendarBlock.TOPICS_MAX), truncate(event.location(), CalendarBlock.LOCATION_MAX),
                     Priority.MEDIUM, false, null, null, null, null, null, null, deadlineId);
             CalendarBlock block = existingBlocks.get(event.uid());
             if (block == null) {
-                block = CalendarBlock.builder().id(UUID.randomUUID()).userId(command.userId()).range(range)
+                block = CalendarBlock.builder().id(UUID.randomUUID()).userId(userId).range(range)
                         .dayOfWeek(zone.dayOfWeek(range.start())).type(type).details(details)
                         .fixed(false).immovable(true).icsUid(event.uid()).createdAt(now).build();
                 created++;
@@ -150,10 +187,10 @@ public class IcsService implements ImportIcsUseCase, ExportIcsUseCase {
             toSave.add(block);
         }
         List<CalendarBlock> saved = blocks.saveAll(toSave);
-        conflicts.refresh(command.userId(), saved, List.of());
+        conflicts.refresh(userId, saved, List.of());
         saved.stream().map(b -> PlannerZone.mondayOf(zone.localDate(b.start()))).distinct()
-                .forEach(monday -> weeklyLoads.refresh(command.userId(), monday));
-        return new Result(match, events.size(), matching.size(), classes, exams, deliveries, created, updated, true);
+                .forEach(monday -> weeklyLoads.refresh(userId, monday));
+        return new Result(match, totalEvents, matchingEvents, classes, exams, deliveries, created, updated, true);
     }
 
     @Override

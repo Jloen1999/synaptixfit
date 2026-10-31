@@ -6,7 +6,7 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
-/// Cabecera del inicio: saludo, avatar, fecha con el nivel, racha, campana y
+/// Cabecera del inicio: saludo, avatar, fecha, racha, campana y
 /// admin. La racha lleva a la pestaña Progreso, donde está la barra de XP.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
@@ -48,7 +48,7 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final current = now ?? DateTime.now();
-    final date = DateFormat.MMMMEEEEd('es').format(current);
+    final date = DateFormat.MMMMEEEEd().format(current);
     return Row(
       children: [
         Tooltip(
@@ -84,10 +84,12 @@ class HomeHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // El nivel va como texto: la barra de XP vive en Progreso.
+              // El nivel y su XP están en «Tu día»: aquí solo la fecha, en una
+              // línea.
               Text(
-                '${toBeginningOfSentenceCase(date)} · '
-                '${l10n.commonLevel(greeting.level)}',
+                toBeginningOfSentenceCase(date),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: context.textStyles.bodyMedium?.copyWith(
                   color: context.colors.onSurfaceVariant,
                 ),

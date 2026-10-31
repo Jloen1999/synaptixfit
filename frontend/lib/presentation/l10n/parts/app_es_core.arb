@@ -128,5 +128,53 @@
         "type": "String"
       }
     }
+  },
+  "commonEffortTitle": "¿Cuánto te ha costado?",
+  "commonEffortMessage": "Valora el esfuerzo percibido de 1 (muy fácil) a 10 (máximo).",
+  "commonEffortEasy": "Fácil",
+  "commonEffortModerate": "Moderado",
+  "commonEffortHard": "Duro",
+  "commonEffortMax": "Máximo",
+  "commonEffortSemantics": "Esfuerzo {value} de 10, {level}",
+  "@commonEffortSemantics": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      },
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "loginForgotPassword": "¿Has olvidado tu contraseña?",
+  "authForgotTitle": "Recupera tu cuenta",
+  "authForgotSubtitle": "Escribe tu correo y te enviaremos un enlace para elegir una contraseña nueva.",
+  "authForgotSend": "Enviar enlace",
+  "authForgotSent": "Si hay una cuenta con {email}, te hemos enviado un enlace. Caduca en 30 minutos. Si no lo ves, mira en el correo no deseado.",
+  "authForgotResend": "Enviarlo otra vez",
+  "authBackToLogin": "Volver a iniciar sesión",
+  "authResetTitle": "Elige una contraseña nueva",
+  "authResetSubtitle": "Al guardarla se cerrará la sesión en todos tus dispositivos.",
+  "authResetSave": "Guardar contraseña",
+  "authResetDone": "Ya puedes iniciar sesión con tu contraseña nueva.",
+  "authResetRequestAnother": "Pedir otro enlace",
+  "errorAuthResetTokenInvalid": "Este enlace ya no sirve: caduca a los 30 minutos y solo se puede usar una vez. Pide otro.",
+  "@authForgotSent": {
+    "description": "Los 30 minutos son PasswordResetToken.TTL del backend: si cambia, cambia también este texto.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authForgotSentTitle": "Revisa tu correo",
+  "authForgotSentSubtitle": "Abre el enlace del correo para elegir una contraseña nueva.",
+  "authForgotResent": "Te lo hemos vuelto a enviar. Usa el enlace del último correo: los anteriores ya no sirven.",
+  "authResetDoneTitle": "Contraseña cambiada",
+  "authResetDoneSubtitle": "Hemos cerrado la sesión en todos tus dispositivos.",
+  "authResetExpiredTitle": "Enlace caducado",
+  "authResetExpiredSubtitle": "Pide otro y usa el del último correo.",
+  "@errorAuthResetTokenInvalid": {
+    "description": "Los 30 minutos son PasswordResetToken.TTL del backend: si cambia, cambia también este texto."
   }
 }

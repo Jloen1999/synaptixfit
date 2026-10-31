@@ -8,5 +8,11 @@ abstract class RemindersState with _$RemindersState {
 
     /// Avisos programados en la última sincronización correcta.
     int? scheduled,
+
+    /// Hay que preguntar si se activan los recordatorios (una sola vez).
+    @Default(false) bool offerReminders,
+
+    /// Se aceptó pero el sistema negó el permiso: hay que decir cómo activarlo.
+    @Default(0) int permissionDeniedCount,
   }) = _RemindersState;
 }

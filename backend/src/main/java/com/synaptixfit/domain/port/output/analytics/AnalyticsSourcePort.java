@@ -22,7 +22,8 @@ public interface AnalyticsSourcePort {
 
     /**
      * Recuentos de estudio entre {@code from} (incluido) y {@code to} (excluido): fases de
-     * concentración completadas, bloques de los tipos {@code studyBlockCodes}, repasos, simulacros
+     * concentración completadas, bloques de los tipos {@code studyBlockCodes} que ya debían estar
+     * hechos en {@code now} (o ya completados), repasos, simulacros
      * terminados y materiales con el repaso pendiente en {@code now}. Los días del Pomodoro
      * ({@code fecha}) van de {@code fromDay} a {@code toDay} (excluido).
      */

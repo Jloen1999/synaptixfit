@@ -39,6 +39,16 @@ class SmartBannerRulesTest {
     }
 
     @Test
+    void overdueBeforeUpcomingAndFatigueBeforeMissedBlocks() {
+        assertThat(SmartBannerRules.choose(base().overdue(1).deadlines(2, 3).build()).type())
+                .isEqualTo(SmartBanner.Type.OVERDUE_DEADLINES);
+        assertThat(SmartBannerRules.choose(base().missed(2).fatigue(70).build()).type())
+                .isEqualTo(SmartBanner.Type.HIGH_FATIGUE);
+        assertThat(SmartBannerRules.choose(base().missed(2).adherence(10.0).build()).type())
+                .isEqualTo(SmartBanner.Type.MISSED_BLOCKS);
+    }
+
+    @Test
     void lowEnergyIsIgnoredWithoutCheckIn() {
         SmartBanner b = SmartBannerRules.choose(base().energy(10).noCheckIn().build());
         assertThat(b.type()).isEqualTo(SmartBanner.Type.CHECK_IN_PENDING);
@@ -101,6 +111,8 @@ class SmartBannerRulesTest {
         private int studyStreak;
         private Integer inactive = 1;
         private UsageFocus focus = UsageFocus.BOTH;
+        private int overdue;
+        private int missed;
 
         Builder zone(AcwrZone z, double a) { zone = z; acwr = a; return this; }
         Builder deadlines(int count, int days) { deadlines = count; daysUntil = days; return this; }
@@ -114,10 +126,13 @@ class SmartBannerRulesTest {
         Builder studyStreak(int d) { studyStreak = d; return this; }
         Builder inactive(int d) { inactive = d; return this; }
         Builder focus(UsageFocus f) { focus = f; return this; }
+        Builder overdue(int n) { overdue = n; return this; }
+        Builder missed(int n) { missed = n; return this; }
 
         BannerContext build() {
             return new BannerContext(zone, acwr, zone.isRisky() ? 45 : 90, deadlines, daysUntil, fatigue, adherence,
-                    energy, checkIn, stress, attention, 0.5, trainingStreak, studyStreak, inactive, focus);
+                    energy, checkIn, stress, attention, 0.5, trainingStreak, studyStreak, inactive, focus,
+                    overdue, missed);
         }
     }
 }

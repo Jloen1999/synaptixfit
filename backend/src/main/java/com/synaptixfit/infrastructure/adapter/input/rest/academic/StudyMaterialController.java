@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.academic;
 
+import com.synaptixfit.application.port.input.academic.AbandonStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.academic.GetRetentionMetricsUseCase;
 import com.synaptixfit.application.port.input.academic.GetStudyMaterialUseCase;
@@ -47,6 +48,7 @@ public class StudyMaterialController {
     private final ListDueStudyMaterialsUseCase listDue;
     private final GetStudyMaterialUseCase get;
     private final DeleteStudyMaterialUseCase delete;
+    private final AbandonStudyMaterialUseCase abandon;
     private final GetRetentionMetricsUseCase retention;
     private final PreviewReviewIntervalsUseCase preview;
     private final ReviewStudyMaterialUseCase review;
@@ -55,7 +57,8 @@ public class StudyMaterialController {
 
     public StudyMaterialController(RegisterStudyMaterialUseCase register, ListStudyMaterialsUseCase list,
                                    ListDueStudyMaterialsUseCase listDue, GetStudyMaterialUseCase get,
-                                   DeleteStudyMaterialUseCase delete, GetRetentionMetricsUseCase retention,
+                                   DeleteStudyMaterialUseCase delete, AbandonStudyMaterialUseCase abandon,
+                                   GetRetentionMetricsUseCase retention,
                                    PreviewReviewIntervalsUseCase preview, ReviewStudyMaterialUseCase review,
                                    ListReviewHistoryUseCase history, ReviewFlashcardsUseCase flashcards) {
         this.register = register;
@@ -63,6 +66,7 @@ public class StudyMaterialController {
         this.listDue = listDue;
         this.get = get;
         this.delete = delete;
+        this.abandon = abandon;
         this.retention = retention;
         this.preview = preview;
         this.review = review;
@@ -101,6 +105,12 @@ public class StudyMaterialController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@CurrentUserId UUID userId, @PathVariable UUID materialId) {
         delete.deleteMaterial(userId, materialId);
+    }
+
+    /** Quita el material del repaso conservando su historial (estado «abandonado»). */
+    @PostMapping("/study-materials/{materialId}/abandon")
+    public StudyMaterialResponse abandon(@CurrentUserId UUID userId, @PathVariable UUID materialId) {
+        return StudyMaterialResponse.from(abandon.abandonMaterial(userId, materialId));
     }
 
     @GetMapping("/subjects/{subjectId}/retention")

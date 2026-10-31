@@ -14,31 +14,27 @@ import '../../../l10n/gen_l10n/app_localizations.dart';
 /// Formatos numéricos y de fecha del módulo (locale `es`).
 abstract final class ProgressFormat {
   static String integer(num value) =>
-      NumberFormat.decimalPattern('es').format(value.round());
+      NumberFormat.decimalPattern().format(value.round());
 
   /// Un decimal como máximo (`3,5`).
-  static String oneDecimal(num value) =>
-      NumberFormat('#,##0.#', 'es').format(value);
+  static String oneDecimal(num value) => NumberFormat('#,##0.#').format(value);
 
   /// Dos decimales con signo para coeficientes y pendientes (`-0,42`).
   static String signed(num value, {int decimals = 2}) {
-    final formatted = NumberFormat(
-      '0.${'0' * decimals}',
-      'es',
-    ).format(value.abs());
+    final formatted = NumberFormat('0.${'0' * decimals}').format(value.abs());
     return value < 0 ? '-$formatted' : formatted;
   }
 
-  static String date(DateTime value) => DateFormat.yMMMd('es').format(value);
+  static String date(DateTime value) => DateFormat.yMMMd().format(value);
 
   /// Etiqueta corta de semana para los ejes (`12 oct`).
-  static String week(DateTime value) => DateFormat('d MMM', 'es').format(value);
+  static String week(DateTime value) => DateFormat('d MMM').format(value);
 
   static String relative(DateTime value, DateTime now) {
     final diff = now.difference(value);
-    if (diff.inDays >= 7) return DateFormat.MMMd('es').format(value);
-    if (diff.inDays >= 1) return DateFormat.E('es').format(value);
-    return DateFormat.Hm('es').format(value);
+    if (diff.inDays >= 7) return DateFormat.MMMd().format(value);
+    if (diff.inDays >= 1) return DateFormat.E().format(value);
+    return DateFormat.Hm().format(value);
   }
 }
 

@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.social;
 
+import com.synaptixfit.domain.exception.social.PostAlreadySharedException;
 import com.synaptixfit.application.port.input.social.PublishAchievementPostUseCase;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,6 +44,19 @@ class PostServiceTest {
         assertThat(view.author().id()).isEqualTo(author.id());
         assertThat(view.type()).isEqualTo(PostType.ROUTINE);
         assertThat(fakes.posts).hasSize(1);
+    }
+
+    @Test
+    void aSessionIsSharedOnlyOnceButOtherPostsCanRepeat() {
+        String session = "{\"sessionId\":\"s1\"}";
+        service.createPost(new CreatePostUseCase.Command(author.id(), PostType.SESSION_COMPLETED, "Entreno", null,
+                session));
+        assertThatThrownBy(() -> service.createPost(new CreatePostUseCase.Command(author.id(),
+                PostType.SESSION_COMPLETED, "Otra vez", null, session)))
+                .isInstanceOf(PostAlreadySharedException.class);
+        service.createPost(new CreatePostUseCase.Command(author.id(), PostType.ROUTINE, "Rutina", null, "{}"));
+        service.createPost(new CreatePostUseCase.Command(author.id(), PostType.ROUTINE, "Rutina", null, "{}"));
+        assertThat(fakes.posts).hasSize(3);
     }
 
     @Test

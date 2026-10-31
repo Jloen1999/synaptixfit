@@ -17,5 +17,9 @@ abstract class MaterialReviewState with _$MaterialReviewState {
 
     /// Cuenta refrescada tras el repaso (se propaga a la sesión).
     Account? updatedAccount,
+
+    /// Quitando el material del repaso / ya quitado (la pantalla se cierra).
+    @Default(false) bool removing,
+    @Default(false) bool removed,
   }) = _MaterialReviewState;
 }

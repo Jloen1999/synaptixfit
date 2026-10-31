@@ -3,6 +3,7 @@ package com.synaptixfit.domain.model.planner;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.synaptixfit.domain.exception.FieldValidationException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -29,6 +30,21 @@ class PlannerDomainTest {
         assertThat(CalendarBlock.experienceFor(31)).isEqualTo(20);
         assertThat(CalendarBlock.experienceFor(90)).isEqualTo(30);
         assertThat(CalendarBlock.experienceFor(240)).isEqualTo(80);
+        // Contra el farmeo: un bloque puntúa como mucho 4 h (uno de 24 h daba 480 XP) y hay tope diario.
+        assertThat(CalendarBlock.experienceFor(24 * 60)).isEqualTo(80);
+        assertThat(CalendarBlock.fitsDailyXp(120, 80)).isTrue();
+        assertThat(CalendarBlock.fitsDailyXp(130, 80)).isFalse();
+    }
+
+    @Test
+    void focusCanOnlyBeRecordedForTodayOrYesterday() {
+        LocalDate today = LocalDate.of(2026, 10, 18);
+        assertThat(FocusSession.recordedDay(null, today)).isEqualTo(today);
+        assertThat(FocusSession.recordedDay(today.plusDays(3), today)).isEqualTo(today);
+        assertThat(FocusSession.recordedDay(today.minusDays(1), today)).isEqualTo(today.minusDays(1));
+        // Antes se aceptaba cualquier fecha pasada y se podía inventar una racha de un año.
+        assertThatThrownBy(() -> FocusSession.recordedDay(today.minusDays(2), today))
+                .isInstanceOf(FieldValidationException.class);
     }
 
     @Test
@@ -50,6 +66,17 @@ class PlannerDomainTest {
         CalendarBlock done = block(start, start.plusSeconds(3600), false, false);
         done.complete(NOW, null, null, null);
         assertThatThrownBy(() -> done.moveTo(later, 1, NOW)).extracting("code").isEqualTo("BLOCK_COMPLETED_LOCKED");
+
+        // Un bloque de deporte hecho no puede pasar a reflejar una rutina (ni dejar de hacerlo): con vincular,
+        // desmarcar (restaba 0), desvincular y volver a completar se ganaba XP sin límite.
+        CalendarBlock sport = CalendarBlock.builder().id(UUID.randomUUID()).userId(UUID.randomUUID())
+                .range(new TimeRange(start, start.plusSeconds(3600))).type(ActivityType.SPORT).build();
+        sport.complete(NOW, null, null, null);
+        CalendarBlock.Details linked = new CalendarBlock.Details(null, "Pierna", null, null, false, null,
+                UUID.randomUUID(), null, UUID.randomUUID(), null, null, null);
+        assertThatThrownBy(() -> sport.revise(ActivityType.SPORT, linked))
+                .extracting("code").isEqualTo("BLOCK_COMPLETED_LOCKED");
+        sport.revise(ActivityType.SPORT, CalendarBlock.Details.empty()); // otros cambios sí se permiten
         // Un bloque inamovible sí se actualiza desde su origen (ICS/escaneo).
         CalendarBlock imported = block(start, start.plusSeconds(3600), false, true);
         imported.syncFromSource(later, 1, ActivityType.CLASS, CalendarBlock.Details.empty());

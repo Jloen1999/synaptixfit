@@ -1,11 +1,13 @@
 package com.synaptixfit.infrastructure.adapter.input.event.insights;
 
 import com.synaptixfit.application.port.input.insights.InitializeCognitiveStateUseCase;
+import com.synaptixfit.application.port.input.insights.SyncSportBlockLoadUseCase;
 import com.synaptixfit.application.port.input.insights.RecordTrainingLoadUseCase;
 import com.synaptixfit.application.port.input.insights.RefreshCognitiveStateUseCase;
 import com.synaptixfit.domain.event.academic.ReviewCompleted;
 import com.synaptixfit.domain.event.academic.TestSessionCompleted;
 import com.synaptixfit.domain.event.planner.FocusSessionCompleted;
+import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
 import com.synaptixfit.domain.event.training.TrainingSessionCompletionChanged;
 import com.synaptixfit.domain.event.user.UserRegistered;
@@ -23,13 +25,16 @@ public class InsightsEventListener {
 
     private final InitializeCognitiveStateUseCase initializeCognitiveState;
     private final RecordTrainingLoadUseCase recordTrainingLoad;
+    private final SyncSportBlockLoadUseCase syncSportBlockLoad;
     private final RefreshCognitiveStateUseCase refreshCognitiveState;
 
     public InsightsEventListener(InitializeCognitiveStateUseCase initializeCognitiveState,
                                  RecordTrainingLoadUseCase recordTrainingLoad,
+                                 SyncSportBlockLoadUseCase syncSportBlockLoad,
                                  RefreshCognitiveStateUseCase refreshCognitiveState) {
         this.initializeCognitiveState = initializeCognitiveState;
         this.recordTrainingLoad = recordTrainingLoad;
+        this.syncSportBlockLoad = syncSportBlockLoad;
         this.refreshCognitiveState = refreshCognitiveState;
     }
 
@@ -42,6 +47,12 @@ public class InsightsEventListener {
     public void on(TrainingSessionCompletionChanged event) {
         recordTrainingLoad.recordTrainingLoad(new RecordTrainingLoadUseCase.Command(event.userId(), event.sessionId(),
                 event.date(), event.rpe(), event.durationMinutes(), event.completed()));
+    }
+
+    @EventListener
+    public void on(SportBlockCompletionChanged event) {
+        syncSportBlockLoad.syncSportBlockLoad(new SyncSportBlockLoadUseCase.Command(event.userId(),
+                event.blockId(), event.date(), event.effort(), event.durationMinutes(), event.completed()));
     }
 
     @EventListener

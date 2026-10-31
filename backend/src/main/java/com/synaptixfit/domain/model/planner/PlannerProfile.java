@@ -22,6 +22,9 @@ public final class PlannerProfile {
      */
     public record Academic(int weeklyStudyGoalHours, LocalDate semesterStart, LocalDate semesterEnd) {
 
+        /** Objetivo semanal de estudio si el usuario no tiene perfil académico (el de la columna por defecto). */
+        public static final int DEFAULT_WEEKLY_GOAL_HOURS = 14;
+
         public boolean hasSemesterDates() {
             return semesterStart != null && semesterEnd != null && !semesterEnd.isBefore(semesterStart);
         }

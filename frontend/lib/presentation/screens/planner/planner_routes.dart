@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import 'calendar/page/calendar_page.dart';
+import 'calendar_sync/page/calendar_sync_page.dart';
 import 'deadlines/page/deadlines_page.dart';
 import 'pomodoro/page/pomodoro_page.dart';
 import 'schedule_scan/page/schedule_scan_page.dart';
@@ -12,6 +13,9 @@ abstract final class PlannerPaths {
   static const root = '/planner';
   static const deadlines = '/planner/deadlines';
   static const pomodoro = '/planner/pomodoro';
+
+  /// Pomodoro que empieza por una pausa corta («Descanso guiado»).
+  static const pomodoroBreak = '$pomodoro?phase=break';
 
   /// Pomodoro vinculado a una asignatura o a un bloque del calendario.
   static String pomodoroFor({
@@ -27,6 +31,9 @@ abstract final class PlannerPaths {
     },
   ).toString();
   static const suggestions = '/planner/suggestions';
+
+  /// Ver el planificador en otro calendario e importar el del Campus Virtual.
+  static const calendarSync = '/planner/calendar-sync';
   static const scheduleScan = '/planner/schedule-scan';
 
   /// Calendario abierto en la semana de [day].
@@ -57,11 +64,16 @@ List<RouteBase> plannerRoutes() => [
           subjectId: state.uri.queryParameters['subjectId'],
           blockId: state.uri.queryParameters['blockId'],
           title: state.uri.queryParameters['title'],
+          startWithBreak: state.uri.queryParameters['phase'] == 'break',
         ),
       ),
       GoRoute(
         path: 'suggestions',
         builder: (context, state) => const SuggestionsPage(),
+      ),
+      GoRoute(
+        path: 'calendar-sync',
+        builder: (context, state) => const CalendarSyncPage(),
       ),
       GoRoute(
         path: 'schedule-scan',

@@ -4,8 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:synaptixfit/domain/enums/home_event_kind.dart';
+import 'package:synaptixfit/domain/enums/home_event_type.dart';
+import 'package:synaptixfit/domain/enums/item_time_status.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
+import 'package:synaptixfit/domain/models/home/home_dashboard.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/auth/session/bloc/session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/home/dashboard/bloc/home_dashboard_bloc.dart';
@@ -37,14 +42,16 @@ void main() {
     WidgetTester tester, {
     ThemeData? theme,
     double textScale = 1,
+    double width = 390,
+    String language = 'es',
   }) async {
-    tester.view.physicalSize = Size(390, 2400 * textScale);
+    tester.view.physicalSize = Size(width, 2400 * textScale);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         theme: theme ?? AppTheme.light,
-        locale: const Locale('es'),
+        locale: Locale(language),
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: const [
           AppLocalizations.delegate,
@@ -85,14 +92,17 @@ void main() {
 
     expect(find.textContaining('Ana'), findsWidgets);
     expect(find.text('Tienes 2 entregas próximas'), findsOneWidget);
-    expect(find.text('Ver entregas'), findsOneWidget);
+    expect(find.textContaining('Ver entregas'), findsOneWidget);
     expect(find.text('Carga cognitiva'), findsOneWidget);
-    expect(find.text('Cálculo'), findsOneWidget);
+    // En la agenda y en «Tu día» (es el bloque que toca a continuación).
+    expect(find.text('Cálculo'), findsNWidgets(2));
+    expect(find.text('Tu día'), findsOneWidget);
     expect(find.text('Tema 3: Límites'), findsOneWidget);
     expect(find.text('Fuerza base'), findsOneWidget);
-    expect(find.text('Hacer check-in'), findsOneWidget);
+    expect(find.text('Contar cómo estoy'), findsOneWidget);
     expect(find.text('Estudiar 10 horas'), findsOneWidget);
     // La recomendación termina en una acción: empezar a estudiar.
+    // Solo en «Tu día»: «Tu equilibrio» ya no lo repite.
     expect(find.text('Concentrarme'), findsOneWidget);
     // La regulación cruzada termina en una recomendación de una línea.
     expect(find.textContaining('bloques de 52 min'), findsOneWidget);
@@ -149,6 +159,57 @@ void main() {
       await expectLater(tester, meetsGuideline(textContrastGuideline));
       semantics.dispose();
     });
+
+    testWidgets(
+      'un bloque sin hacer a 360 dp y texto al 200 % lleva el aviso bajo el subtítulo',
+      (tester) async {
+        when(() => home.state).thenReturn(
+          HomeDashboardState(
+            status: HomeDashboardStatus.loaded,
+            dashboard: homeDashboardFixture.copyWith(
+              todayEvents: [
+                HomeTodayEvent(
+                  id: 'e3',
+                  kind: HomeEventKind.block,
+                  type: HomeEventType.study,
+                  title: 'Repaso de integrales por partes y sustitución',
+                  start: DateTime(2026, 10, 18, 8),
+                  end: DateTime(2026, 10, 18, 9),
+                  completed: false,
+                  status: ItemTimeStatus.missed,
+                ),
+              ],
+            ),
+          ),
+        );
+
+        await pump(tester, textScale: 2, width: 360);
+
+        final pill = find.text('Sin hacer');
+        expect(pill, findsOneWidget);
+        // Debajo del título, no a su derecha.
+        expect(
+          tester.getTopLeft(pill).dy,
+          greaterThan(
+            tester
+                .getBottomLeft(find.textContaining('Repaso de integrales'))
+                .dy,
+          ),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    for (final language in ['en', 'fr', 'pt']) {
+      testWidgets('en $language con texto al 200 % no se rompe', (
+        tester,
+      ) async {
+        Intl.defaultLocale = language;
+        addTearDown(() => Intl.defaultLocale = 'es');
+        await pump(tester, textScale: 2, width: 360, language: language);
+        expect(tester.takeException(), isNull);
+      });
+    }
 
     testWidgets('con el texto al 200 % no se corta ni se solapa', (
       tester,

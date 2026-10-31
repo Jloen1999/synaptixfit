@@ -31,5 +31,8 @@ public interface TrainingSessionRepositoryPort {
 
     int countCompletedBetween(UUID userId, Instant fromInclusive, Instant toExclusive);
 
+    /** Sesiones completadas en el intervalo que dieron experiencia (para el tope diario). */
+    int countRewardedBetween(UUID userId, Instant fromInclusive, Instant toExclusive);
+
     void delete(UUID sessionId);
 }

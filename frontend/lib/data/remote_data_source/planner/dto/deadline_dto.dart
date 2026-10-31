@@ -1,3 +1,4 @@
+import '../../../../domain/enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/planner_enums.dart';
@@ -19,6 +20,7 @@ abstract class DeadlineDto with _$DeadlineDto {
     String? subjectId,
     @Default(false) bool completed,
     @Default(false) bool imported,
+    String? timeStatus,
   }) = _DeadlineDto;
 
   const DeadlineDto._();
@@ -37,6 +39,7 @@ abstract class DeadlineDto with _$DeadlineDto {
     subjectId: subjectId,
     completed: completed,
     imported: imported,
+    timeStatus: ItemTimeStatus.fromApi(timeStatus),
   );
 }
 

@@ -1,12 +1,16 @@
 package com.synaptixfit.application.service.training;
 
+import com.synaptixfit.application.port.input.training.GetSessionHighlightsUseCase;
 import com.synaptixfit.application.port.input.training.ListLastPerformanceUseCase;
 import com.synaptixfit.application.port.input.training.ListPersonalRecordsUseCase;
 import com.synaptixfit.application.port.input.training.ListSessionHistoryUseCase;
+import com.synaptixfit.domain.exception.training.SessionNotCompletedException;
+import com.synaptixfit.domain.exception.training.SessionNotFoundException;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.training.PersonalRecord;
 import com.synaptixfit.domain.model.training.PersonalRecords;
+import com.synaptixfit.domain.model.training.SessionHighlights;
 import com.synaptixfit.domain.model.training.SessionHistoryEntry;
 import com.synaptixfit.domain.model.training.SessionLabel;
 import com.synaptixfit.domain.model.training.TrainingSession;
@@ -22,7 +26,7 @@ import java.util.UUID;
  * sus nombres con {@link SessionLabelQueryPort} y calcula los récords con {@link PersonalRecords}.
  */
 public class SessionHistoryService implements ListSessionHistoryUseCase, ListPersonalRecordsUseCase,
-        ListLastPerformanceUseCase {
+        ListLastPerformanceUseCase, GetSessionHighlightsUseCase {
 
     /** Sesiones que se recorren para los récords: de sobra para años de entrenamiento habitual. */
     static final int RECORDS_WINDOW = 1000;
@@ -56,6 +60,17 @@ public class SessionHistoryService implements ListSessionHistoryUseCase, ListPer
     @Override
     public List<PersonalRecord> lastPerformance(UUID userId) {
         return List.copyOf(PersonalRecords.lastBest(completed(userId)).values());
+    }
+
+    @Override
+    public SessionHighlights highlights(UUID userId, UUID sessionId) {
+        TrainingSession session = sessions.findById(sessionId).filter(s -> s.isOwnedBy(userId))
+                .orElseThrow(() -> new SessionNotFoundException(sessionId));
+        if (!session.isCompleted()) {
+            throw new SessionNotCompletedException();
+        }
+        return SessionHighlights.of(sessionId, completed(userId))
+                .orElseThrow(() -> new SessionNotFoundException(sessionId));
     }
 
     private List<CompletedSessionSummary> completed(UUID userId) {

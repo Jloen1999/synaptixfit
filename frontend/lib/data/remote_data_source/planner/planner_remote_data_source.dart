@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
+import 'dto/calendar_feed_dto.dart';
 import 'dto/calendar_block_dto.dart';
 import 'dto/deadline_dto.dart';
 import 'dto/focus_dto.dart';
@@ -52,6 +53,13 @@ class PlannerRemoteDataSource {
     return CalendarBlockDto.fromJson(response.data!);
   }
 
+  Future<BlockChangeDto> rescheduleToNextFreeSlot(String id) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/blocks/$id/reschedule-next',
+    );
+    return BlockChangeDto.fromJson(response.data!);
+  }
+
   Future<BlockChangeDto> rescheduleBlock(
     String id,
     String start,
@@ -69,10 +77,19 @@ class PlannerRemoteDataSource {
   Future<BlockCompletionDto> setBlockCompletion(
     String id, {
     required bool completed,
+    int? effort,
   }) async {
     final response = await _dio.put<Map<String, dynamic>>(
       '$_base/blocks/$id/completion',
-      data: {'completed': completed},
+      data: {'completed': completed, 'effort': ?effort},
+    );
+    return BlockCompletionDto.fromJson(response.data!);
+  }
+
+  Future<BlockCompletionDto> logPastActivity(Map<String, dynamic> body) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/past-activities',
+      data: body,
     );
     return BlockCompletionDto.fromJson(response.data!);
   }
@@ -150,6 +167,7 @@ class PlannerRemoteDataSource {
 
   Future<DeadlinePageDto> getDeadlines({
     required bool upcoming,
+    bool includeOverdue = false,
     String? subjectId,
     required int page,
     required int size,
@@ -158,6 +176,7 @@ class PlannerRemoteDataSource {
       '$_base/deadlines',
       queryParameters: {
         'upcoming': upcoming,
+        if (includeOverdue) 'includeOverdue': true,
         'subjectId': ?subjectId,
         'page': page,
         'size': size,
@@ -244,6 +263,30 @@ class PlannerRemoteDataSource {
       data: body,
     );
     return IcsImportDto.fromJson(response.data!);
+  }
+
+  Future<CalendarFeedStatusDto> calendarFeed() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/calendar-feed',
+    );
+    return CalendarFeedStatusDto.fromJson(response.data!);
+  }
+
+  Future<CalendarFeedCreatedDto> createCalendarFeed() async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/calendar-feed',
+    );
+    return CalendarFeedCreatedDto.fromJson(response.data!);
+  }
+
+  Future<void> revokeCalendarFeed() =>
+      _dio.delete<void>('$_base/calendar-feed');
+
+  /// Dirección pública del calendario suscrito (la que se pega en Google,
+  /// Apple u Outlook): la de la API más el token.
+  String calendarFeedUrl(String token) {
+    final base = _dio.options.baseUrl.replaceFirst(RegExp(r'/+$'), '');
+    return '$base$_base/calendar-feed/$token.ics';
   }
 
   Future<String> exportIcs() async {

@@ -35,6 +35,13 @@ class TrainingRemoteDataSource {
   Future<SessionDto> getSession(String sessionId) =>
       _session(_dio.get<Map<String, dynamic>>('$_base/sessions/$sessionId'));
 
+  Future<SessionAdaptationDto> getSessionAdaptation(String sessionId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/sessions/$sessionId/adaptation',
+    );
+    return SessionAdaptationDto.fromJson(response.data!);
+  }
+
   Future<TrainingPage<SessionDto>> listSessions({
     bool? completed,
     required int page,

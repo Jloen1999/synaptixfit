@@ -114,6 +114,19 @@ class TrainingDomainTest {
     }
 
     @Test
+    void aSessionLeftOpenIsStaleAndItsDurationIsBounded() {
+        TrainingSession s = TrainingSession.start(UUID.randomUUID(), null, null, NOW);
+        assertThat(s.isStale(NOW.plusSeconds(5 * 3600))).isFalse();
+        assertThat(s.isStale(NOW.plusSeconds(7 * 3600))).isTrue();
+        // El cliente manda 24 h porque la pantalla se quedó abierta: se guardan 4 h como mucho.
+        assertThat(s.boundedDurationSeconds(86_400, NOW.plusSeconds(3 * 86_400)))
+                .isEqualTo(TrainingSession.MAX_DURATION.toSeconds());
+        // Y nunca más que el tiempo real transcurrido.
+        assertThat(s.boundedDurationSeconds(3_600, NOW.plusSeconds(1_800))).isEqualTo(1_800);
+        assertThat(s.boundedDurationSeconds(1_200, NOW.plusSeconds(3_600))).isEqualTo(1_200);
+    }
+
+    @Test
     void sessionCompletionAndUnmarkKeepTheAwardedXp() {
         TrainingSession s = TrainingSession.start(UUID.randomUUID(), null, null, NOW);
         s.recordSet(null, 1, 10, 20.0, true, 0);
@@ -131,9 +144,12 @@ class TrainingDomainTest {
 
     @Test
     void sessionXpFormula() {
-        assertThat(TrainingRewards.sessionXp(45, 7)).isEqualTo(50 + 45 + 35);
-        assertThat(TrainingRewards.sessionXp(200, 10)).isEqualTo(50 + 90 + 50);
-        assertThat(TrainingRewards.sessionXp(1, 1)).isEqualTo(56);
+        assertThat(TrainingRewards.sessionXp(45, 7, 0)).isEqualTo(50 + 45 + 35);
+        assertThat(TrainingRewards.sessionXp(200, 10, 1)).isEqualTo(50 + 90 + 50);
+        assertThat(TrainingRewards.sessionXp(10, 1, 0)).isEqualTo(65);
+        // Contra el farmeo: menos de 10 min o más de dos sesiones con XP en el día no puntúan.
+        assertThat(TrainingRewards.sessionXp(9, 10, 0)).isZero();
+        assertThat(TrainingRewards.sessionXp(45, 7, 2)).isZero();
     }
 
     @Test

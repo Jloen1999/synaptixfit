@@ -43,6 +43,9 @@ class StudyMaterialsRemoteDataSource {
 
   Future<void> deleteMaterial(String id) => _dio.delete<void>('$_base/$id');
 
+  Future<void> abandonMaterial(String id) =>
+      _dio.post<void>('$_base/$id/abandon');
+
   Future<ReviewPreviewDto> getPreview(String id) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '$_base/$id/review-preview',

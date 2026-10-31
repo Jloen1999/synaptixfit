@@ -48,6 +48,23 @@ class TrainingSessionServiceTest {
     private static final UUID OTHER = UUID.randomUUID();
     private static final Instant NOW = Instant.parse("2026-10-05T18:00:00Z");
 
+    /** Reloj que se puede adelantar (para terminar una sesión un rato después de empezarla). */
+    private static final class MutableClock extends Clock {
+        private Instant now;
+
+        MutableClock(Instant now) { this.now = now; }
+
+        void advance(java.time.Duration d) { now = now.plus(d); }
+
+        @Override public java.time.ZoneId getZone() { return ZoneOffset.UTC; }
+
+        @Override public Clock withZone(java.time.ZoneId zone) { return this; }
+
+        @Override public Instant instant() { return now; }
+    }
+
+    private final MutableClock clock = new MutableClock(NOW);
+
     private final TrainingFakes.Sessions sessions = new TrainingFakes.Sessions();
     private final TrainingFakes.Routines routines = new TrainingFakes.Routines();
     private final TrainingFakes.Recommendations recommendations = new TrainingFakes.Recommendations();
@@ -78,7 +95,7 @@ class TrainingSessionServiceTest {
                     revoked.add(amount);
                     return new ExperienceChange(1, 0, 0, -amount);
                 },
-                events::add, Clock.fixed(NOW, ZoneOffset.UTC), ZoneOffset.UTC);
+                events::add, clock, ZoneOffset.UTC);
 
         var bench = TrainingFakes.strength("Press de banca", "Pectoral mayor").toRef();
         day1 = RoutineDay.create(1, "Torso");
@@ -129,6 +146,7 @@ class TrainingSessionServiceTest {
     void finishCompletesDayAwardsXpComputesCaloriesAndPublishesEvent() {
         TrainingSession s = service.start(USER, routine.id(), day1.id());
         UUID plannedId = planned(day1).id();
+        clock.advance(java.time.Duration.ofMinutes(50));
         FinishTrainingSessionUseCase.Result result = service.finish(new FinishTrainingSessionUseCase.Command(USER,
                 s.id(), 2700, 7, Map.of(plannedId, 600),
                 List.of(new RecordSessionSetUseCase.Command(USER, s.id(), plannedId, 1, 10, 50.0, true, 0))));
@@ -168,6 +186,7 @@ class TrainingSessionServiceTest {
     @Test
     void unmarkRevokesExactlyTheAwardedXpAndPublishesInverseEvent() {
         TrainingSession s = service.start(USER, routine.id(), day1.id());
+        clock.advance(java.time.Duration.ofHours(2));
         service.finish(new FinishTrainingSessionUseCase.Command(USER, s.id(), 7200, 10, null, null));
         int granted = awarded.getFirst();
         assertThat(granted).isEqualTo(50 + 90 + 50);
@@ -232,8 +251,22 @@ class TrainingSessionServiceTest {
     void freeSessionUsesDefaultMetAndDefaultWeight() {
         weight = null;
         TrainingSession s = service.start(USER, null, null);
+        clock.advance(java.time.Duration.ofHours(1));
         var result = service.finish(new FinishTrainingSessionUseCase.Command(USER, s.id(), 3600, 5, null, null));
         assertThat(result.session().calories()).isEqualTo(6.0 * 70);
         assertThat(result.recommendations()).isEmpty();
+    }
+
+    @Test
+    void anAbandonedSessionIsNotResumedAndALeftOpenOneIsBounded() {
+        TrainingSession old = service.start(USER, routine.id(), day1.id());
+        clock.advance(java.time.Duration.ofHours(7));
+
+        TrainingSession fresh = service.start(USER, routine.id(), day1.id());
+
+        assertThat(fresh.id()).isNotEqualTo(old.id());
+        clock.advance(java.time.Duration.ofDays(2));
+        var result = service.finish(new FinishTrainingSessionUseCase.Command(USER, fresh.id(), 86_400, 6, null, null));
+        assertThat(result.session().durationMinutes()).isEqualTo(240);
     }
 }

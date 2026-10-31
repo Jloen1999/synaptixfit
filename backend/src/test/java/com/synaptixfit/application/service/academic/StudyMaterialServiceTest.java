@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 
 import com.synaptixfit.application.port.input.academic.ReviewFlashcardsUseCase;
+import com.synaptixfit.domain.event.academic.ReviewAbandoned;
 import com.synaptixfit.domain.event.academic.ReviewCompleted;
 import com.synaptixfit.domain.model.academic.PracticeRewards;
 import com.synaptixfit.domain.event.academic.ReviewScheduled;
@@ -91,7 +92,7 @@ class StudyMaterialServiceTest {
         f.loadHistory.add(new PhysicalLoadHistory.Entry(today, 5, 20));
         f.loadHistory.add(new PhysicalLoadHistory.Entry(today.minusDays(3), 10, 60));
 
-        // Q_real 2 → Q_adj 2.25: sigue siendo fallo (round = 2) pero el EF usa 2.25.
+        // Q_real 2 → Q_adj 2.25: es fallo (decide la calidad real) pero el EF usa 2.25.
         ReviewOutcome outcome = service.review(user, m.id(), 2);
 
         assertThat(outcome.record().adjustedQuality()).isEqualTo(2.25);
@@ -115,12 +116,30 @@ class StudyMaterialServiceTest {
         assertThat(preview.maxDailyLoad()).isEqualTo(400);
         assertThat(preview.fatigueCoefficient()).isEqualTo(0.5);
         assertThat(preview.options()).hasSize(6);
-        // Con fatiga máxima, un 2 declarado (2.5) ya cuenta como acierto.
+        // Con fatiga máxima un 2 declarado sube a 2,5, pero sigue siendo un fallo (solo suaviza el EF).
         assertThat(preview.options().get(2).adjustedQuality()).isEqualTo(2.5);
         assertThat(preview.options().get(2).intervalDays()).isEqualTo(1);
         assertThat(preview.options().get(0).resultingState()).isEqualTo(MasteryState.NEEDS_REVIEW);
         assertThat(f.reviewStore).isEmpty();
         assertThat(f.events).isEmpty();
+    }
+
+    @Test
+    void abandoningKeepsTheHistoryAndAsksThePlannerToDropPendingReviews() {
+        Subject s = f.subject(user, "Física");
+        StudyMaterial m = f.material(user, s.id(), UUID.randomUUID());
+        service.review(user, m.id(), 4);
+        f.events.clear();
+
+        StudyMaterial abandoned = service.abandonMaterial(user, m.id());
+
+        assertThat(abandoned.masteryState()).isEqualTo(MasteryState.ABANDONED);
+        assertThat(abandoned.nextReviewAt()).isNull();
+        assertThat(f.reviewStore).hasSize(1); // el historial se conserva
+        assertThat(f.events).singleElement().isInstanceOfSatisfying(ReviewAbandoned.class,
+                e -> assertThat(e.studyMaterialId()).isEqualTo(m.id()));
+        assertThatThrownBy(() -> service.abandonMaterial(stranger, m.id()))
+                .isInstanceOf(StudyMaterialNotFoundException.class);
     }
 
     @Test

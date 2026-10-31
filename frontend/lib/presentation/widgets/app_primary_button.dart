@@ -11,12 +11,16 @@ class AppPrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.loading = false,
+    this.focusNode,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool loading;
+
+  /// Para devolverle el foco cuando desaparece el botón que lo tenía.
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +42,11 @@ class AppPrimaryButton extends StatelessWidget {
     if (icon != null && !loading) {
       return FilledButton.icon(
         onPressed: onTap,
+        focusNode: focusNode,
         icon: Icon(icon),
         label: child,
       );
     }
-    return FilledButton(onPressed: onTap, child: child);
+    return FilledButton(onPressed: onTap, focusNode: focusNode, child: child);
   }
 }

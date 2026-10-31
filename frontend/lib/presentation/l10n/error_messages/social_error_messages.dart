@@ -8,6 +8,7 @@ String? socialErrorMessage(
 ) => switch (code) {
   'POST_NOT_FOUND' => l10n.socialErrorPostNotFound,
   'POST_FORBIDDEN' => l10n.socialErrorPostForbidden,
+  'POST_ALREADY_SHARED' => l10n.socialErrorPostAlreadyShared,
   'COMMENT_NOT_FOUND' => l10n.socialErrorCommentNotFound,
   'COMMENT_FORBIDDEN' => l10n.socialErrorCommentForbidden,
   'FRIENDSHIP_NOT_FOUND' => l10n.socialErrorFriendshipNotFound,

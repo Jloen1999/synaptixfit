@@ -138,6 +138,14 @@ abstract final class TokensSize {
   static const double focusRing = 2;
   static const double thumbnailS = 48;
   static const double stepperValue = 72;
+  static const double brandLogo = 128;
+  static const double blockStripe = 4;
+  static const double heroRing = 96;
+  static const double heroStat = 96;
+}
+
+abstract final class TokensOpacity {
+  static const double glow = 0.55;
 }
 
 abstract final class TokensFont {
@@ -152,4 +160,5 @@ abstract final class TokensDuration {
   static const Duration emphasized = Duration(milliseconds: 900);
   static const Duration tooltipWait = Duration(milliseconds: 600);
   static const Duration undoWindow = Duration(milliseconds: 10000);
+  static const Duration pulse = Duration(milliseconds: 1200);
 }

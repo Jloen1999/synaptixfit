@@ -70,7 +70,7 @@ class _WellnessProfileFormState extends State<WellnessProfileForm> {
   void initState() {
     super.initState();
     final p = widget.initial;
-    final decimal = NumberFormat.decimalPattern('es');
+    final decimal = NumberFormat.decimalPattern();
     _age = TextEditingController(text: p?.age?.toString() ?? '');
     _weight = TextEditingController(
       text: p?.weightKg == null ? '' : decimal.format(p!.weightKg),
@@ -524,7 +524,7 @@ class _BmiPreview extends StatelessWidget {
                   bmi == null
                       ? l10n.profileBmiPreviewEmpty
                       : l10n.profileBmiPreview(
-                          NumberFormat('0.0', 'es').format(bmi),
+                          NumberFormat('0.0').format(bmi),
                           category!,
                         ),
                   style: context.textStyles.titleSmall,

@@ -10,6 +10,7 @@ import 'package:synaptixfit/domain/repositories/reminder_scheduler_repository_co
 import 'package:synaptixfit/domain/repositories/reminder_settings_repository_contract.dart';
 import 'package:synaptixfit/domain/use_cases/reminders/get_device_reminders_status_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/reminders/set_device_reminders_enabled_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/reminders/should_offer_reminders_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/reminders/sync_reminders_use_case.dart';
 
 import 'reminder_test_texts.dart';
@@ -239,5 +240,39 @@ void main() {
         const DeviceRemindersStatus(supported: true, enabled: true),
       );
     });
+  });
+
+  group('ShouldOfferRemindersUseCase', () {
+    ShouldOfferRemindersUseCase offer() =>
+        ShouldOfferRemindersUseCase(scheduler: scheduler, settings: settings);
+
+    test(
+      'se ofrece una sola vez y solo si se admiten y no están activados',
+      () async {
+        when(
+          () => settings.isEnabled(),
+        ).thenAnswer((_) async => const Success(false));
+        when(
+          () => settings.wasOffered(),
+        ).thenAnswer((_) async => const Success(false));
+        expect((await offer()()).valueOrNull, isTrue);
+
+        when(
+          () => settings.wasOffered(),
+        ).thenAnswer((_) async => const Success(true));
+        expect((await offer()()).valueOrNull, isFalse);
+
+        when(
+          () => settings.isEnabled(),
+        ).thenAnswer((_) async => const Success(true));
+        when(
+          () => settings.wasOffered(),
+        ).thenAnswer((_) async => const Success(false));
+        expect((await offer()()).valueOrNull, isFalse);
+
+        when(() => scheduler.isSupported).thenReturn(false);
+        expect((await offer()()).valueOrNull, isFalse);
+      },
+    );
   });
 }

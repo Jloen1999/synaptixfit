@@ -318,7 +318,7 @@ class _Header extends StatelessWidget {
                 AppPill(
                   icon: Icons.event_rounded,
                   label: l10n.trainingStartsOn(
-                    DateFormat.yMMMd('es').format(r.startDate!),
+                    DateFormat.yMMMd().format(r.startDate!),
                   ),
                 ),
             ],
@@ -449,7 +449,9 @@ class _WeekSection extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: TokensSpacing.s),
             child: _DayCard(
+              key: ValueKey(day.id),
               day: day,
+              isNext: day.id == _nextDayId(routine),
               routine: routine,
               bodyWeightKg: bodyWeightKg,
               busy: busy,
@@ -466,18 +468,96 @@ class _WeekSection extends StatelessWidget {
   }
 }
 
-class _DayCard extends StatelessWidget {
+/// Primer día sin terminar de la rutina, en orden: el que toca entrenar.
+String? _nextDayId(Routine routine) {
+  for (final week in routine.weeks) {
+    for (final day in week.days) {
+      if (day.status != ProgressStatus.completed && day.exercises.isNotEmpty) {
+        return day.id;
+      }
+    }
+  }
+  return null;
+}
+
+/// Día de la rutina. Los ya hechos aparecen plegados (cabecera y resumen)
+/// para que se vea a la primera lo que queda; se despliegan con un toque.
+class _DayCard extends StatefulWidget {
   const _DayCard({
+    super.key,
     required this.day,
+    required this.isNext,
     required this.routine,
     required this.bodyWeightKg,
     required this.busy,
   });
 
   final RoutineDay day;
+
+  /// Es el siguiente día que toca entrenar.
+  final bool isNext;
   final Routine routine;
   final double? bodyWeightKg;
   final bool busy;
+
+  @override
+  State<_DayCard> createState() => _DayCardState();
+}
+
+class _DayCardState extends State<_DayCard> {
+  late bool _expanded = widget.day.status != ProgressStatus.completed;
+
+  @override
+  void didUpdateWidget(_DayCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Al terminarse el día se pliega solo; si se reabre, se despliega.
+    if (oldWidget.day.status != widget.day.status) {
+      _expanded = widget.day.status != ProgressStatus.completed;
+    }
+  }
+
+  RoutineDay get day => widget.day;
+  Routine get routine => widget.routine;
+  double? get bodyWeightKg => widget.bodyWeightKg;
+  bool get busy => widget.busy;
+
+  /// Repetir un día hecho cuenta como una sesión nueva: se confirma antes.
+  Future<void> _train(BuildContext context) async {
+    final bloc = context.read<RoutineDetailBloc>();
+    if (day.status == ProgressStatus.completed) {
+      final l10n = context.localizations;
+      final ok = await showConfirmDialog(
+        context,
+        title: l10n.trainingRepeatDayTitle,
+        message: l10n.trainingRepeatDayMessage,
+        confirmLabel: l10n.trainingRepeatDay,
+      );
+      if (!ok) return;
+    }
+    bloc.add(RoutineDetailEvent.sessionStarted(day.id));
+  }
+
+  Widget _trainButton(BuildContext context) {
+    final l10n = context.localizations;
+    final onPressed = busy ? null : () => _train(context);
+    return switch (day.status) {
+      ProgressStatus.completed => OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.replay_rounded),
+        label: Text(l10n.trainingRepeatDay),
+      ),
+      ProgressStatus.inProgress => FilledButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.play_arrow_rounded),
+        label: Text(l10n.trainingContinueDay),
+      ),
+      ProgressStatus.pending => FilledButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.play_arrow_rounded),
+        label: Text(l10n.trainingTrain),
+      ),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -544,140 +624,190 @@ class _DayCard extends StatelessWidget {
       if (ok) bloc.add(RoutineDetailEvent.exerciseRemoved(e.id));
     }
 
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                day.status.icon,
-                size: 20,
-                color: day.status == ProgressStatus.completed
-                    ? context.palette.success
-                    : context.colors.onSurfaceVariant,
-                semanticLabel: day.status.label(l10n),
-              ),
-              const SizedBox(width: TokensSpacing.s),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dayTitle(l10n, day.dayNumber, day.name),
-                      style: context.textStyles.titleSmall,
-                    ),
-                    Text(
-                      weekdayName(l10n, day.dayNumber),
-                      style: context.textStyles.labelSmall?.copyWith(
-                        color: context.colors.onSurfaceVariant,
+    // Solo la zona del título pliega/despliega; renombrar y borrar van al
+    // lado, fuera de ella (sin controles anidados).
+    final toggle = AppFocusOutline(
+      child: Semantics(
+        button: true,
+        expanded: _expanded,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(TokensRadius.m),
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: TokensLayout.minTouchTarget,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  day.status.icon,
+                  size: TokensSize.iconS,
+                  color: day.status == ProgressStatus.completed
+                      ? context.palette.success
+                      : context.colors.onSurfaceVariant,
+                  semanticLabel: day.status.label(l10n),
+                ),
+                const SizedBox(width: TokensSpacing.s),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        dayTitle(l10n, day.dayNumber, day.name),
+                        style: context.textStyles.titleSmall,
                       ),
+                      Text(
+                        [
+                          weekdayName(l10n, day.dayNumber),
+                          if (day.status != ProgressStatus.pending)
+                            day.status.label(l10n),
+                        ].join(' · '),
+                        style: context.textStyles.labelSmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                      // Debajo del título: con texto grande no le quita sitio.
+                      if (widget.isNext)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: TokensSpacing.xxs,
+                          ),
+                          child: AppPill(
+                            icon: Icons.flag_rounded,
+                            label: l10n.trainingNextDay,
+                            color: context.colors.primary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                ExcludeSemantics(
+                  child: AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: context.motion(TokensDuration.normal),
+                    child: Icon(
+                      Icons.expand_more_rounded,
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final header = Row(
+      children: [
+        Expanded(child: toggle),
+        if (owned && _expanded) ...[
+          IconButton(
+            tooltip: l10n.trainingRenameDay,
+            onPressed: busy ? null : rename,
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            tooltip: l10n.trainingDeleteDay,
+            onPressed: busy ? null : delete,
+            icon: const Icon(Icons.delete_outline_rounded),
+          ),
+        ],
+      ],
+    );
+    return AppCard(
+      child: AnimatedSize(
+        duration: context.motion(TokensDuration.normal),
+        alignment: Alignment.topCenter,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            header,
+            if (day.exercises.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: TokensSpacing.xs),
+                child: Wrap(
+                  spacing: TokensSpacing.xs,
+                  children: [
+                    AppPill(
+                      icon: Icons.fitness_center_rounded,
+                      label: l10n.trainingExercisesCount(day.exercises.length),
+                    ),
+                    AppPill(
+                      icon: Icons.local_fire_department_rounded,
+                      color: context.palette.calories,
+                      label: l10n.trainingChipKcal(kcal.round()),
                     ),
                   ],
                 ),
               ),
-              if (owned) ...[
-                IconButton(
-                  tooltip: l10n.trainingRenameDay,
-                  onPressed: busy ? null : rename,
-                  icon: const Icon(Icons.edit_outlined),
+            if (_expanded && day.exercises.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: TokensSpacing.s),
+                child: Text(
+                  l10n.trainingDayNoExercises,
+                  style: context.textStyles.bodySmall?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
                 ),
-                IconButton(
-                  tooltip: l10n.trainingDeleteDay,
-                  onPressed: busy ? null : delete,
-                  icon: const Icon(Icons.delete_outline_rounded),
+              ),
+            if (_expanded)
+              for (var i = 0; i < day.exercises.length; i++)
+                ExerciseRow(
+                  key: ValueKey(day.exercises[i].id),
+                  position: i + 1,
+                  count: day.exercises.length,
+                  name: day.exercises[i].exerciseName,
+                  thumbnailUrl: day.exercises[i].thumbnailUrl,
+                  parameters: day.exercises[i].parameters,
+                  met: day.exercises[i].met,
+                  bodyWeightKg: bodyWeightKg,
+                  realDurationSeconds: day.exercises[i].realDurationSeconds,
+                  inactive: !day.exercises[i].exerciseActive,
+                  onTap: () => context.push(
+                    TrainingPaths.exercise(day.exercises[i].exerciseId),
+                  ),
+                  onMoveUp: !owned || busy || i == 0
+                      ? null
+                      : () => bloc.add(
+                          RoutineDetailEvent.exerciseMoved(
+                            day.id,
+                            day.exercises[i].id,
+                            up: true,
+                          ),
+                        ),
+                  onMoveDown: !owned || busy || i == day.exercises.length - 1
+                      ? null
+                      : () => bloc.add(
+                          RoutineDetailEvent.exerciseMoved(
+                            day.id,
+                            day.exercises[i].id,
+                            up: false,
+                          ),
+                        ),
+                  onEdit: !owned || busy ? null : () => edit(day.exercises[i]),
+                  onRemove: !owned || busy
+                      ? null
+                      : () => remove(day.exercises[i]),
                 ),
-              ],
-            ],
-          ),
-          if (day.exercises.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: TokensSpacing.xs),
-              child: Wrap(
-                spacing: TokensSpacing.xs,
+            if (owned && _expanded) ...[
+              const SizedBox(height: TokensSpacing.xs),
+              // Con texto grande, la acción principal baja a otra fila.
+              OverflowBar(
+                alignment: MainAxisAlignment.spaceBetween,
+                overflowAlignment: OverflowBarAlignment.end,
+                overflowSpacing: TokensSpacing.xs,
                 children: [
-                  AppPill(
-                    icon: Icons.fitness_center_rounded,
-                    label: l10n.trainingExercisesCount(day.exercises.length),
+                  TextButton.icon(
+                    onPressed: busy ? null : addExercise,
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(l10n.trainingAddExercise),
                   ),
-                  AppPill(
-                    icon: Icons.local_fire_department_rounded,
-                    color: context.palette.calories,
-                    label: l10n.trainingChipKcal(kcal.round()),
-                  ),
+                  if (day.exercises.isNotEmpty) _trainButton(context),
                 ],
               ),
-            ),
-          if (day.exercises.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: TokensSpacing.s),
-              child: Text(
-                l10n.trainingDayNoExercises,
-                style: context.textStyles.bodySmall?.copyWith(
-                  color: context.colors.onSurfaceVariant,
-                ),
-              ),
-            ),
-          for (var i = 0; i < day.exercises.length; i++)
-            ExerciseRow(
-              key: ValueKey(day.exercises[i].id),
-              position: i + 1,
-              count: day.exercises.length,
-              name: day.exercises[i].exerciseName,
-              thumbnailUrl: day.exercises[i].thumbnailUrl,
-              parameters: day.exercises[i].parameters,
-              met: day.exercises[i].met,
-              bodyWeightKg: bodyWeightKg,
-              realDurationSeconds: day.exercises[i].realDurationSeconds,
-              inactive: !day.exercises[i].exerciseActive,
-              onTap: () => context.push(
-                TrainingPaths.exercise(day.exercises[i].exerciseId),
-              ),
-              onMoveUp: !owned || busy || i == 0
-                  ? null
-                  : () => bloc.add(
-                      RoutineDetailEvent.exerciseMoved(
-                        day.id,
-                        day.exercises[i].id,
-                        up: true,
-                      ),
-                    ),
-              onMoveDown: !owned || busy || i == day.exercises.length - 1
-                  ? null
-                  : () => bloc.add(
-                      RoutineDetailEvent.exerciseMoved(
-                        day.id,
-                        day.exercises[i].id,
-                        up: false,
-                      ),
-                    ),
-              onEdit: !owned || busy ? null : () => edit(day.exercises[i]),
-              onRemove: !owned || busy ? null : () => remove(day.exercises[i]),
-            ),
-          if (owned) ...[
-            const SizedBox(height: TokensSpacing.xs),
-            Row(
-              children: [
-                TextButton.icon(
-                  onPressed: busy ? null : addExercise,
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(l10n.trainingAddExercise),
-                ),
-                const Spacer(),
-                if (day.exercises.isNotEmpty)
-                  FilledButton.icon(
-                    onPressed: busy
-                        ? null
-                        : () => bloc.add(
-                            RoutineDetailEvent.sessionStarted(day.id),
-                          ),
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: Text(l10n.trainingTrain),
-                  ),
-              ],
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

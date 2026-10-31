@@ -8,6 +8,7 @@ String? coreErrorMessage(AppLocalizations l10n, String code) => switch (code) {
   'AUTH_ACCOUNT_DISABLED' => l10n.errorAuthAccountDisabled,
   'AUTH_EMAIL_ALREADY_REGISTERED' => l10n.errorAuthEmailAlreadyRegistered,
   'AUTH_WEAK_PASSWORD' => l10n.errorAuthWeakPassword,
+  'AUTH_RESET_TOKEN_INVALID' => l10n.errorAuthResetTokenInvalid,
   'GOOGLE_SIGN_IN_CANCELLED' => l10n.errorAuthGoogleCancelled,
   'GOOGLE_SIGN_IN_FAILED' => l10n.errorAuthGoogleFailed,
   'USER_NOT_FOUND' => l10n.errorNotFound,

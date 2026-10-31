@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/home_banner_type.dart';
 import '../../../../../domain/enums/usage_focus.dart';
 import '../../../../../domain/models/home/home_dashboard.dart';
 import '../../../../extensions/context_extensions.dart';
@@ -19,12 +20,21 @@ import '../../widgets/home_header.dart';
 import '../../widgets/home_skeleton.dart';
 import '../../widgets/next_training_card.dart';
 import '../../widgets/plan_week_bar.dart';
+import '../../widgets/setup_checklist_card.dart';
 import '../../widgets/smart_banner_card.dart';
 import '../../widgets/state_section.dart';
+import '../../widgets/today_hero_card.dart';
 import '../bloc/home_dashboard_bloc.dart';
 
 /// Pestaña Inicio: lo importante ahora (aviso), cómo estás (equilibrio), qué
 /// toca hoy y, al lado, tus retos y tu semana. El resto vive en su pestaña.
+/// Avisos que van arriba del todo, antes de «Tu día».
+const _urgentBanners = {
+  HomeBannerType.overdueDeadlines,
+  HomeBannerType.physicalOverload,
+  HomeBannerType.highFatigue,
+};
+
 class HomeDashboardPage extends StatelessWidget {
   const HomeDashboardPage({super.key});
 
@@ -175,11 +185,10 @@ class _HomeContent extends StatelessWidget {
       onAdmin: () => onNavigate(HomeExternalPaths.admin),
       onProgress: () => onNavigate(HomeExternalPaths.progress),
     );
-    // Un aviso urgente va arriba del todo; uno informativo (racha, equilibrio)
-    // no debe empujar la agenda y va debajo de ella.
-    final urgent =
-        SmartBannerContent.of(context, dashboard.banner).tone ==
-        SmartBannerTone.warning;
+    // Solo lo que no puede esperar (entregas vencidas, sobrecarga, mucha
+    // fatiga) va arriba del todo; el resto de avisos, aunque sean de aviso
+    // (entregas próximas, poca energía…), no empuja «Tu día» y va debajo.
+    final urgent = _urgentBanners.contains(dashboard.banner.type);
     final banner = SmartBannerCard(
       banner: dashboard.banner,
       onAction: onNavigate,
@@ -187,6 +196,26 @@ class _HomeContent extends StatelessWidget {
     // Columna principal: primero lo que hay que hacer (agenda de hoy y los
     // próximos días y el próximo entreno), que es lo que el estudiante busca al
     // abrir la app; después, en una tarjeta compacta, cómo está para hacerlo.
+    void startTraining() => next == null
+        ? onNavigate(HomeExternalPaths.newRoutine)
+        : context.read<HomeDashboardBloc>().add(
+            HomeDashboardEvent.trainingStarted(
+              routineId: next.routineId,
+              dayId: next.dayId,
+            ),
+          );
+    // «Tu día»: lo primero que se ve, con lo que toca ahora y su botón.
+    final hero = TodayHeroCard(
+      dashboard: dashboard,
+      focus: focus,
+      starting: state.startingTraining,
+      onAction: (action) => switch (action) {
+        TodayHeroAction.focus => onNavigate(HomeExternalPaths.pomodoro),
+        TodayHeroAction.train => startTraining(),
+        TodayHeroAction.openPlanner => onNavigate(HomeExternalPaths.planner),
+      },
+    );
+    final setup = state.setup;
     final main = <Widget>[
       AgendaSection(
         events: dashboard.todayEvents,
@@ -196,34 +225,42 @@ class _HomeContent extends StatelessWidget {
         onOpenPlanner: () => onNavigate(HomeExternalPaths.planner),
         onOpenReview: (review) =>
             onNavigate(HomeExternalPaths.materialReview(review.id)),
+        onReviewAll: () => onNavigate(
+          HomeExternalPaths.materialReview(
+            state.dueReviews.first.id,
+            queue: [for (final r in state.dueReviews.skip(1)) r.id],
+          ),
+        ),
       ),
-      if (!urgent) banner,
       if (focus.includesFitness)
         NextTrainingCard(
           day: next,
           checkInDone: dashboard.wellbeing.checkInDone,
           starting: state.startingTraining,
           // Igual que en Rutinas: empieza (o reanuda) la sesión directamente.
-          onStart: () => next == null
-              ? onNavigate(HomeExternalPaths.newRoutine)
-              : context.read<HomeDashboardBloc>().add(
-                  HomeDashboardEvent.trainingStarted(
-                    routineId: next.routineId,
-                    dayId: next.dayId,
-                  ),
-                ),
+          onStart: startTraining,
           onOpenRoutine: next == null
               ? null
               : () => onNavigate(HomeExternalPaths.routine(next.routineId)),
           onCheckIn: () => onNavigate(HomeExternalPaths.checkIn),
         ),
+      if (setup != null && setup.visibleAt(DateTime.now()))
+        SetupChecklistCard(
+          setup: setup,
+          onOpen: (task) => onNavigate(HomeExternalPaths.setupTask(task)),
+          onLater: () => context.read<HomeDashboardBloc>().add(
+            const HomeDashboardEvent.setupSnoozed(),
+          ),
+        ),
+      // Un aviso informativo va después del próximo entreno: no lo tapa.
+      if (!urgent) banner,
+      // Sin «Concentrarme»: ya está en «Tu día» (una parada por destino).
       StateSection(
         cognitive: dashboard.cognitive,
         crossRegulation: dashboard.crossRegulation,
         wellbeing: dashboard.wellbeing,
         focus: focus,
         onOpenAnalytics: () => onNavigate(HomeExternalPaths.analytics),
-        onStudyNow: () => onNavigate(HomeExternalPaths.pomodoro),
       ),
     ];
     // Columna secundaria: metas y semana. Las cifras detalladas están en la
@@ -258,6 +295,8 @@ class _HomeContent extends StatelessWidget {
             header,
             const SizedBox(height: TokensSpacing.m),
             if (urgent) ...[banner, _gap],
+            hero,
+            _gap,
             // Un grupo de foco por columna: el Tabulador recorre la izquierda
             // entera y luego la derecha, en vez de saltar de una a otra según
             // la altura de cada tarjeta.

@@ -8,6 +8,9 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/account/account.dart';
 import '../../../../../domain/models/planner/focus.dart';
 import '../../../../../domain/models/result/result.dart';
+import '../../../../../domain/models/reminders/timer_alert.dart';
+import '../../../../../domain/use_cases/reminders/cancel_timer_alert_use_case.dart';
+import '../../../../../domain/use_cases/reminders/schedule_timer_alert_use_case.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_focus_plan_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_focus_stats_use_case.dart';
@@ -64,12 +67,31 @@ class PomodoroConfig {
 /// Temporizador Pomodoro en el cliente. El tiempo restante se calcula con el
 /// reloj ([now]) para no desviarse si la app se queda en segundo plano; el
 /// [ticker] solo provoca el recálculo. Cada fase terminada se registra en la API.
+/// Textos (ya traducidos por la pantalla) del aviso de fin de fase.
+class PomodoroAlertTexts {
+  const PomodoroAlertTexts({
+    required this.focusEndTitle,
+    required this.focusEndBody,
+    required this.breakEndTitle,
+    required this.breakEndBody,
+    required this.channelName,
+  });
+
+  final String focusEndTitle;
+  final String focusEndBody;
+  final String breakEndTitle;
+  final String breakEndBody;
+  final String channelName;
+}
+
 class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
   PomodoroBloc({
     required this._recordSession,
     required this._getStats,
     required this._getAccount,
     required this._getPlan,
+    this._scheduleAlert,
+    this._cancelAlert,
     PomodoroConfig config = const PomodoroConfig(),
     DateTime Function()? now,
     Stream<void> Function()? ticker,
@@ -91,6 +113,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     on<PomodoroResetPressed>(_onReset);
     on<PomodoroSkipPressed>(_onSkip);
     on<PomodoroTicked>(_onTick);
+    on<PomodoroLeaveRequested>(_onLeave);
   }
 
   /// Duraciones en uso: las iniciales, luego la recomendación del servidor y
@@ -101,6 +124,11 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
   final RecordFocusSessionUseCaseContract _recordSession;
   final GetFocusStatsUseCaseContract _getStats;
   final GetAccountUseCaseContract _getAccount;
+  final ScheduleTimerAlertUseCaseContract? _scheduleAlert;
+  final CancelTimerAlertUseCaseContract? _cancelAlert;
+
+  /// Textos del aviso de fin de fase; null = no se programa.
+  PomodoroAlertTexts? _alertTexts;
 
   final DateTime Function() _now;
   final Stream<void> Function() _ticker;
@@ -114,8 +142,21 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     PomodoroStarted event,
     Emitter<PomodoroState> emit,
   ) async {
+    _alertTexts = event.alertTexts;
     if (event.subjectId != null || event.blockId != null) {
       emit(state.copyWith(subjectId: event.subjectId, blockId: event.blockId));
+    }
+    // La pausa se muestra desde el principio (sin pasar por «Concentración»);
+    // al llegar el plan se ajusta su duración a la recomendada de hoy.
+    if (event.startWithBreak) {
+      final total = config.minutesOf(FocusPhase.shortBreak) * 60;
+      emit(
+        state.copyWith(
+          phase: FocusPhase.shortBreak,
+          totalSeconds: total,
+          remainingSeconds: total,
+        ),
+      );
     }
     await Future.wait([_loadPlan(emit), _loadStats(emit)]);
   }
@@ -126,8 +167,12 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     final plan = (await _getPlan()).valueOrNull;
     if (plan == null) return;
     _config = PomodoroConfig.fromPlan(plan);
-    if (state.canAdjust) {
-      final total = _config.focusMinutes * 60;
+    final untouched =
+        state.status == PomodoroStatus.idle &&
+        state.remainingSeconds == state.totalSeconds &&
+        state.completedFocusCycles == 0;
+    if (untouched) {
+      final total = _config.minutesOf(state.phase) * 60;
       emit(
         state.copyWith(
           plan: plan,
@@ -174,16 +219,43 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     _tick = null;
   }
 
+  /// Aviso del sistema al terminar la fase en curso: llega aunque la app esté
+  /// cerrada o en segundo plano.
+  void _scheduleEndAlert() {
+    final texts = _alertTexts;
+    final endsAt = _endsAt;
+    final schedule = _scheduleAlert;
+    if (texts == null || endsAt == null || schedule == null) return;
+    final focus = state.phase == FocusPhase.focus;
+    unawaited(
+      schedule(
+        TimerAlert(
+          at: endsAt,
+          title: focus ? texts.focusEndTitle : texts.breakEndTitle,
+          body: focus ? texts.focusEndBody : texts.breakEndBody,
+          channelName: texts.channelName,
+        ),
+      ),
+    );
+  }
+
+  void _cancelEndAlert() {
+    final cancel = _cancelAlert;
+    if (cancel != null) unawaited(cancel());
+  }
+
   void _onStart(PomodoroStartPressed event, Emitter<PomodoroState> emit) {
     if (state.status != PomodoroStatus.idle) return;
     _endsAt = _now().add(Duration(seconds: state.remainingSeconds));
     emit(state.copyWith(status: PomodoroStatus.running));
     _startTicker();
+    _scheduleEndAlert();
   }
 
   void _onPause(PomodoroPausePressed event, Emitter<PomodoroState> emit) {
     if (state.status != PomodoroStatus.running) return;
     _stopTicker();
+    _cancelEndAlert();
     final remaining = _remaining();
     _endsAt = null;
     emit(
@@ -199,10 +271,12 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     _endsAt = _now().add(Duration(seconds: state.remainingSeconds));
     emit(state.copyWith(status: PomodoroStatus.running));
     _startTicker();
+    _scheduleEndAlert();
   }
 
   void _onReset(PomodoroResetPressed event, Emitter<PomodoroState> emit) {
     _stopTicker();
+    _cancelEndAlert();
     _endsAt = null;
     final total = config.focusMinutes * 60;
     emit(
@@ -243,12 +317,26 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     Emitter<PomodoroState> emit,
   ) => _finishPhase(emit, completed: false);
 
+  Future<void> _onLeave(
+    PomodoroLeaveRequested event,
+    Emitter<PomodoroState> emit,
+  ) async {
+    if (state.status != PomodoroStatus.idle) {
+      await _finishPhase(emit, completed: false, notify: false);
+    }
+    event.done.complete();
+  }
+
   /// Cierra la fase actual, la registra (si procede) y prepara la siguiente.
   Future<void> _finishPhase(
     Emitter<PomodoroState> emit, {
     required bool completed,
+    bool notify = true,
   }) async {
     _stopTicker();
+    // Con la app abierta ya se avisa en pantalla; al saltar o salir, no debe
+    // llegar el aviso de una fase que ya no corre.
+    _cancelEndAlert();
     final remaining = completed ? 0 : _remaining();
     _endsAt = null;
     final finished = state.phase;
@@ -273,8 +361,14 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
         totalSeconds: total,
         remainingSeconds: total,
         completedFocusCycles: cycles,
-        notice: PomodoroNotice.phaseFinished(finished: finished, next: next),
-        noticeId: state.noticeId + 1,
+        notice: notify
+            ? PomodoroNotice.phaseFinished(
+                finished: finished,
+                next: next,
+                completed: completed,
+              )
+            : state.notice,
+        noticeId: notify ? state.noticeId + 1 : state.noticeId,
       ),
     );
 
@@ -290,6 +384,8 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
         blockId: state.blockId,
       ),
     );
+    // Al salir de la pantalla solo importa guardar: no hay nadie a quien avisar.
+    if (!notify) return;
     switch (result) {
       case Failure(:final error):
         emit(
@@ -338,6 +434,9 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
   @override
   Future<void> close() {
     _stopTicker();
+    // Al salir de la pantalla el temporizador deja de existir: su aviso también.
+    // Si el sistema mata la app, close() no llega y el aviso sí suena.
+    if (state.status == PomodoroStatus.running) _cancelEndAlert();
     return super.close();
   }
 }

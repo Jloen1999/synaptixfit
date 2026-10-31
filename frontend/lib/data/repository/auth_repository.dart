@@ -59,6 +59,22 @@ class AuthRepository implements AuthRepositoryContract {
   });
 
   @override
+  Future<AppResult<Unit>> requestPasswordReset({required String email}) =>
+      RepositoryErrorHandler.guard(() async {
+        await _remote.requestPasswordReset(email);
+        return unit;
+      });
+
+  @override
+  Future<AppResult<Unit>> resetPassword({
+    required String token,
+    required String newPassword,
+  }) => RepositoryErrorHandler.guard(() async {
+    await _remote.resetPassword(token, newPassword);
+    return unit;
+  });
+
+  @override
   Future<AppResult<Account?>> restoreSession() =>
       RepositoryErrorHandler.guard(() async {
         final tokens = await _tokens.read();

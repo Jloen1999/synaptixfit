@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * variables de entorno). Ningún secreto tiene valor por defecto en producción.
  */
 @ConfigurationProperties(prefix = "synaptixfit")
-public record AppProperties(Jwt jwt, Cors cors, Google google, Ai ai, Storage storage) {
+public record AppProperties(Jwt jwt, Cors cors, Google google, Ai ai, Storage storage, Mail mail) {
 
     /** Firma de tokens de acceso (HS256) y caducidades. */
     public record Jwt(String secret, String issuer, Duration accessTokenTtl, Duration refreshTokenTtl) {
@@ -34,5 +34,18 @@ public record AppProperties(Jwt jwt, Cors cors, Google google, Ai ai, Storage st
     /** Almacenamiento S3 compatible (Cloudflare R2). */
     public record Storage(String endpoint, String region, String bucket, String accessKey,
                           String secretKey, String publicBaseUrl) {
+    }
+
+    /**
+     * Correo transaccional con Resend. Sin clave no se envía nada (se registra un aviso).
+     *
+     * @param from   remitente de un dominio verificado en Resend
+     * @param appUrl dirección pública de la app web, base de los enlaces de los correos
+     */
+    public record Mail(String resendApiKey, String from, String appUrl) {
+        @Override
+        public String toString() {
+            return "Mail[from=" + from + ", appUrl=" + appUrl + ", resendApiKey=***]";
+        }
     }
 }

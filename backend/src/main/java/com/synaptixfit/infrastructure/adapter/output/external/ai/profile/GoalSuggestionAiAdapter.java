@@ -6,6 +6,7 @@ import com.synaptixfit.domain.model.profile.GoalSuggestionContext;
 import com.synaptixfit.domain.model.profile.TrainingGoal;
 import com.synaptixfit.domain.port.output.ai.GenerativeAiPort;
 import com.synaptixfit.domain.port.output.profile.GoalSuggestionPort;
+import com.synaptixfit.infrastructure.adapter.output.external.ai.AiLanguage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -60,12 +61,12 @@ public class GoalSuggestionAiAdapter implements GoalSuggestionPort {
                 - Ciudad: %s
 
                 Responde únicamente con JSON con esta forma exacta:
-                {"suggestions":[{"goal":"CODIGO","reason":"motivo breve en español (máximo 25 palabras)"}]}
+                {"suggestions":[{"goal":"CODIGO","reason":"motivo breve en %s (máximo 25 palabras)"}]}
                 """.formatted(goals,
                 c.age() == null ? "No especificada" : c.age(),
                 c.sex() == null ? "No especificado" : c.sex().name(),
                 c.activityLevel() == null ? "No especificado" : c.activityLevel().name(),
-                c.city() == null ? "No especificada" : c.city());
+                c.city() == null ? "No especificada" : c.city(), AiLanguage.current());
     }
 
     List<GoalSuggestion> parse(String response) {

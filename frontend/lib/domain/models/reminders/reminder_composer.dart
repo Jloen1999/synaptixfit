@@ -37,11 +37,32 @@ class ReminderComposer {
             ),
             at: planned.at,
           ),
+          ReminderKind.weeklySummary => Reminder(
+            id: _weeklyId,
+            kind: planned.kind,
+            title: texts.weeklySummaryTitle,
+            body: texts.weeklySummaryBody,
+            at: planned.at,
+          ),
+          ReminderKind.exam || ReminderKind.deadline => Reminder(
+            id: _blockId(planned.refId),
+            kind: planned.kind,
+            title: texts.deadlineTitle(planned.kind, planned.count ?? 1),
+            body: texts.deadlineBody(
+              planned.kind,
+              planned.title,
+              (planned.startsAt ?? planned.at).toLocal(),
+            ),
+            at: planned.at,
+          ),
         },
     ];
   }
 
   static const _reviewIdBase = 100;
+
+  /// Uno solo a la vez (el próximo domingo), lejos de repasos y bloques.
+  static const _weeklyId = 90;
 
   /// Hash propio porque `String.hashCode` no es estable entre ejecuciones y
   /// el id debe serlo. Se queda por debajo de 2^31 (Android usa int32), lejos

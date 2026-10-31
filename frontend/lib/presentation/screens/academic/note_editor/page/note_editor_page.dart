@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Visibility;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../widgets/markdown_toolbar.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/visibility.dart';
 import '../../../../extensions/context_extensions.dart';
@@ -59,6 +60,14 @@ class _NoteEditorViewState extends State<_NoteEditorView>
   bool _filled = false;
   bool _preview = false;
 
+  /// Lo que había al abrir: si cambia, salir pregunta antes de descartar.
+  (String, String, Visibility, bool, String?)? _initial;
+
+  (String, String, Visibility, bool, String?) get _current =>
+      (_title.text, _content.text, _visibility, _quick, _subjectId);
+
+  bool get _dirty => _initial != null && _current != _initial;
+
   @override
   void dispose() {
     _title.dispose();
@@ -76,15 +85,32 @@ class _NoteEditorViewState extends State<_NoteEditorView>
       _visibility = note?.visibility ?? Visibility.private;
       _quick = state.initialQuickNote;
       _subjectId = state.initialSubjectId;
+      _initial = _current;
     });
   }
 
-  void _save() {
-    final title = _title.text.trim();
-    if (title.isEmpty) {
-      context.showSnack(context.localizations.academicNoteTitleRequired);
-      return;
+  /// Volver con cambios sin guardar pregunta antes (antes se perdía todo).
+  Future<void> _leave() async {
+    final l10n = context.localizations;
+    final ok = await confirmDestructive(
+      context,
+      title: l10n.academicNoteDiscardTitle,
+      message: l10n.academicNoteDiscardMessage,
+      confirmLabel: l10n.academicNoteDiscard,
+    );
+    if (ok && mounted) {
+      _initial = _current;
+      context.pop();
     }
+  }
+
+  void _save() {
+    // Sin título se pone uno con la fecha: una nota rápida no debe exigirlo.
+    final title = _title.text.trim().isEmpty
+        ? context.localizations.academicNoteDefaultTitle(
+            shortDate(DateTime.now()),
+          )
+        : _title.text.trim();
     context.read<NoteEditorBloc>().add(
       NoteEditorEvent.submitted(
         title: title,
@@ -114,85 +140,105 @@ class _NoteEditorViewState extends State<_NoteEditorView>
         }
       },
       builder: (context, state) {
-        return Scaffold(
-          appBar: AppPageBar(
-            title: Text(
-              widget.isNew ? l10n.academicNoteNew : l10n.academicNoteEdit,
-            ),
-            actions: [
-              IconButton(
-                tooltip: _preview
-                    ? l10n.academicNoteEditMode
-                    : l10n.academicNotePreview,
-                icon: Icon(
-                  _preview ? Icons.edit_outlined : Icons.visibility_outlined,
-                ),
-                onPressed: () => setState(() => _preview = !_preview),
+        return PopScope(
+          // Los campos no reconstruyen la página al escribir: se decide al salir.
+          canPop: state.savedNoteId != null,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            _dirty ? _leave() : context.pop();
+          },
+          child: Scaffold(
+            appBar: AppPageBar(
+              title: Text(
+                widget.isNew ? l10n.academicNoteNew : l10n.academicNoteEdit,
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: TokensSpacing.s),
-                child: FilledButton(
-                  onPressed: state.saving || state.loading ? null : _save,
-                  child: state.saving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.commonSave),
+              actions: [
+                IconButton(
+                  tooltip: _preview
+                      ? l10n.academicNoteEditMode
+                      : l10n.academicNotePreview,
+                  icon: Icon(
+                    _preview ? Icons.edit_outlined : Icons.visibility_outlined,
+                  ),
+                  onPressed: () => setState(() => _preview = !_preview),
                 ),
-              ),
-            ],
-          ),
-          body: switch (state) {
-            NoteEditorState(loading: true) => const AppLoadingView(),
-            NoteEditorState(:final loadError?) => AppErrorView(
-              error: loadError,
-              onRetry: () => context.pop(),
+                Padding(
+                  padding: const EdgeInsets.only(right: TokensSpacing.s),
+                  // Mientras guarda anuncia «Guardar, Cargando».
+                  child: AppPrimaryButton(
+                    label: l10n.commonSave,
+                    loading: state.saving,
+                    onPressed: state.loading ? null : _save,
+                  ),
+                ),
+              ],
             ),
-            _ => AcademicBody(
-              child: ListView(
-                padding: const EdgeInsets.all(TokensSpacing.m),
-                children: [
-                  TextField(
-                    controller: _title,
-                    style: context.textStyles.titleLarge,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: l10n.academicNoteTitleLabel,
-                    ),
-                  ),
-                  const SizedBox(height: TokensSpacing.m),
-                  _MetaRow(
-                    subjects: [for (final s in state.subjects) (s.id, s.name)],
-                    subjectId: _subjectId,
-                    visibility: _visibility,
-                    quick: _quick,
-                    onSubject: (v) => setState(() => _subjectId = v),
-                    onVisibility: (v) => setState(() => _visibility = v),
-                    onQuick: (v) => setState(() => _quick = v),
-                  ),
-                  const SizedBox(height: TokensSpacing.m),
-                  if (_preview)
-                    AppCard(
-                      child: _content.text.trim().isEmpty
-                          ? Text(l10n.academicNoteEmptyContent)
-                          : AcademicMarkdown(data: _content.text),
-                    )
-                  else
+            body: switch (state) {
+              NoteEditorState(loading: true) => const AppLoadingView(),
+              NoteEditorState(:final loadError?) => AppErrorView(
+                error: loadError,
+                onRetry: () => context.pop(),
+              ),
+              _ => AcademicBody(
+                child: ListView(
+                  padding: const EdgeInsets.all(TokensSpacing.m),
+                  children: [
                     TextField(
-                      controller: _content,
-                      minLines: 14,
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
+                      controller: _title,
+                      style: context.textStyles.titleLarge,
+                      textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
-                        labelText: l10n.academicNoteContentHint,
-                        alignLabelWithHint: true,
+                        labelText: l10n.academicNoteTitleLabel,
+                        helperText: l10n.academicNoteTitleHelper(
+                          l10n.academicNoteDefaultTitle(
+                            shortDate(DateTime.now()),
+                          ),
+                        ),
                       ),
                     ),
-                ],
+                    const SizedBox(height: TokensSpacing.m),
+                    _MetaRow(
+                      subjects: [
+                        for (final s in state.subjects) (s.id, s.name),
+                      ],
+                      subjectId: _subjectId,
+                      visibility: _visibility,
+                      quick: _quick,
+                      onSubject: (v) => setState(() => _subjectId = v),
+                      onVisibility: (v) => setState(() => _visibility = v),
+                      onQuick: (v) => setState(() => _quick = v),
+                    ),
+                    const SizedBox(height: TokensSpacing.m),
+                    if (_preview)
+                      AppCard(
+                        child: _content.text.trim().isEmpty
+                            ? Text(l10n.academicNoteEmptyContent)
+                            : AcademicMarkdown(data: _content.text),
+                      )
+                    else ...[
+                      // Formato sin saber Markdown: la barra lo escribe por ti.
+                      MarkdownToolbar(controller: _content),
+                      const SizedBox(height: TokensSpacing.s),
+                      MarkdownShortcuts(
+                        controller: _content,
+                        child: TextField(
+                          controller: _content,
+                          minLines: 14,
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          decoration: InputDecoration(
+                            labelText: l10n.academicNoteContentHint,
+                            hintText: l10n.academicNoteContentPlaceholder,
+                            alignLabelWithHint: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          },
+            },
+          ),
         );
       },
     );
@@ -262,7 +308,10 @@ class _MetaRow extends StatelessWidget {
               onSelectionChanged: (s) => onVisibility(s.first),
             ),
             FilterChip(
-              avatar: const Icon(Icons.sticky_note_2_outlined, size: 18),
+              avatar: const Icon(
+                Icons.sticky_note_2_outlined,
+                size: TokensSize.iconXs,
+              ),
               label: Text(l10n.academicQuickNote),
               selected: quick,
               onSelected: onQuick,

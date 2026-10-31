@@ -82,9 +82,19 @@ class CrossModuleFlowIT {
         return jdbc.sql(sql).param("u", user).query(Long.class).single();
     }
 
+    /**
+     * Adelanta 40 min el inicio de la sesión: la duración que se guarda nunca supera el tiempo real desde que
+     * empezó, y las de menos de 10 min no cuentan para retos ni insignias (TrainingRewards).
+     */
+    private void backdateStart(String sessionId) {
+        jdbc.sql("update sesiones_registradas set creado_en = creado_en - interval '40 minutes' where id = :id")
+                .param("id", UUID.fromString(sessionId)).update();
+    }
+
     private String finishFreeSession(String token) throws Exception {
         String session = body(post("/api/v1/training/sessions"), token, 201);
         String sessionId = JsonPath.read(session, "$.id");
+        backdateStart(sessionId);
         body(post("/api/v1/training/sessions/" + sessionId + "/finish").content("{\"durationSeconds\":1800,\"rpe\":5}"),
                 token, 200);
         return sessionId;
@@ -235,6 +245,12 @@ class CrossModuleFlowIT {
                 {"start":"%s","end":"%s","type":"STUDY","subjectId":"%s"}"""
                 .formatted(start, start.plus(Duration.ofMinutes(60)), subjectId)), token, 201);
         String blockId = JsonPath.read(block, "$.block.id");
+        // Solo se marca como hecho un bloque que ya ha empezado: se lleva a hace una hora.
+        Instant past = Instant.now().minus(Duration.ofHours(1)).truncatedTo(ChronoUnit.MINUTES);
+        jdbc.sql("UPDATE horarios_academicos SET hora_inicio = :s, hora_fin = :e WHERE id = :id")
+                .param("s", java.sql.Timestamp.from(past))
+                .param("e", java.sql.Timestamp.from(past.plus(Duration.ofMinutes(60))))
+                .param("id", UUID.fromString(blockId)).update();
         body(put("/api/v1/planner/blocks/" + blockId + "/completion").content("{\"completed\":true}"), token, 200);
         assertThat(totalXp(token)).isEqualTo(20);
 
@@ -314,6 +330,7 @@ class CrossModuleFlowIT {
         String session = body(post("/api/v1/training/sessions")
                 .content("{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + dayId + "\"}"), token, 201);
         String sessionId = JsonPath.read(session, "$.id");
+        backdateStart(sessionId);
         String finish = body(post("/api/v1/training/sessions/" + sessionId + "/finish")
                 .content("{\"durationSeconds\":1800,\"rpe\":5}"), token, 200);
         int sessionXp = JsonPath.read(finish, "$.session.xpAwarded");

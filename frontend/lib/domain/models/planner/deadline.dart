@@ -1,3 +1,4 @@
+import '../../enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../enums/planner_enums.dart';
@@ -17,6 +18,9 @@ abstract class Deadline with _$Deadline {
     String? subjectId,
     @Default(false) bool completed,
     @Default(false) bool imported,
+
+    /// Pendiente, hecha o vencida (lo decide el servidor).
+    @Default(ItemTimeStatus.upcoming) ItemTimeStatus timeStatus,
   }) = _Deadline;
 }
 

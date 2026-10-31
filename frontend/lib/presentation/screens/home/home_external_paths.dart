@@ -1,3 +1,5 @@
+import '../../../domain/models/home/home_setup.dart';
+
 /// Rutas de otros módulos a las que navega el inicio (mapa de rutas compartido).
 ///
 /// Se escriben como texto para no depender de los ficheros de otros módulos.
@@ -12,6 +14,9 @@ abstract final class HomeExternalPaths {
   static const planner = '/planner';
   static const deadlines = '/planner/deadlines';
   static const pomodoro = '/planner/pomodoro';
+
+  /// Pomodoro que empieza por una pausa («Descanso guiado»).
+  static const pomodoroBreak = '/planner/pomodoro?phase=break';
   static const scheduleScan = '/planner/schedule-scan';
 
   static const training = '/training';
@@ -30,8 +35,26 @@ abstract final class HomeExternalPaths {
   static const analytics = '/progress/analytics';
   static const badges = '/progress/badges';
 
-  static String materialReview(String materialId) =>
-      '/academic/materials/$materialId/review';
+  /// Repaso de un material; [queue], los que vienen después («Repasar todos»).
+  static String materialReview(
+    String materialId, {
+    List<String> queue = const [],
+  }) =>
+      '/academic/materials/$materialId/review'
+      '${queue.isEmpty ? '' : '?queue=${queue.join(',')}'}';
+
+  static const subjects = '/profile/subjects';
+  static const wellnessProfile = '/profile/wellness';
+  static const academicProfile = '/profile/academic';
+
+  /// Dónde se resuelve cada tarea de configuración pendiente.
+  static String setupTask(HomeSetupTask task) => switch (task) {
+    HomeSetupTask.subjects => subjects,
+    HomeSetupTask.wellnessProfile => wellnessProfile,
+    HomeSetupTask.routine => newRoutine,
+    HomeSetupTask.weekPlan => planner,
+    HomeSetupTask.academicProfile => academicProfile,
+  };
 
   /// Rutas que pertenecen a otra pestaña de la barra inferior.
   static bool isTabRoute(String path) =>

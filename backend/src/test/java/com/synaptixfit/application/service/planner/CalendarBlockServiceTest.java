@@ -38,7 +38,7 @@ class CalendarBlockServiceTest {
         service = new CalendarBlockService(f.blocks, f.deadlines, f.directory, f.directory, f.directory, f.xp,
                 f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK);
         completion = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp, f.publisher, loads,
-                PlannerFakes.ZONE, PlannerFakes.CLOCK);
+                PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK);
     }
 
     private static BlockDetailsInput details(ActivityType type) {
@@ -243,5 +243,18 @@ class CalendarBlockServiceTest {
                 false, details(ActivityType.EXAM), 4)).weeklyCopies()).isZero();
         assertThat(service.createBlock(new CreateCalendarBlockUseCase.Command(f.user, at(3, 9, 0), at(3, 10, 0),
                 false, details(ActivityType.STUDY), 99)).weeklyCopies()).isEqualTo(CalendarBlock.MAX_WEEKLY_REPEATS);
+    }
+
+    @Test
+    void reschedulingToTheNextFreeSlotSkipsBusyTimeAndNight() {
+        // Lunes: estudio 10:00-12:00 y deporte 12:00-13:00; el bloque de 60 min va a las 13:00.
+        create(at(0, 10, 0), at(0, 12, 0), ActivityType.STUDY);
+        create(at(0, 12, 0), at(0, 13, 0), ActivityType.SPORT);
+        CalendarBlock toMove = create(at(2, 18, 0), at(2, 19, 0), ActivityType.STUDY).block();
+
+        BlockChange moved = service.rescheduleToNextFreeSlot(f.user, toMove.id());
+
+        assertThat(moved.block().start()).isEqualTo(at(0, 13, 0));
+        assertThat(moved.block().end()).isEqualTo(at(0, 14, 0));
     }
 }

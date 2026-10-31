@@ -5,6 +5,7 @@ import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCa
 import com.synaptixfit.application.port.input.planner.CompleteReviewBlockUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.application.port.input.planner.SyncSportBlockWithSessionUseCase;
+import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
 import com.synaptixfit.domain.exception.planner.CalendarBlockNotFoundException;
 import com.synaptixfit.domain.model.neuro.CognitiveLoad;
@@ -64,11 +65,14 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
     }
 
     @Override
-    public Result setCompletion(UUID userId, UUID blockId, boolean completed) {
+    public Result setCompletion(UUID userId, UUID blockId, boolean completed, Integer effort) {
         CalendarBlock block = blocks.findById(blockId)
                 .filter(b -> b.userId().equals(userId))
                 .orElseThrow(() -> new CalendarBlockNotFoundException(blockId));
-        return apply(block, completed);
+        if (completed) {
+            block.requireStarted(clock.instant());
+        }
+        return apply(block, completed, effort);
     }
 
     @Override
@@ -79,7 +83,7 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
         blocks.findOverlapping(userId, zone.startOfDay(date), zone.startOfDay(date.plusDays(1)), null).stream()
                 .filter(b -> b.type() == ActivityType.SPORT && routineDayId.equals(b.details().routineDayId()))
                 .filter(b -> zone.localDate(b.start()).equals(date))
-                .forEach(b -> apply(b, completed));
+                .forEach(b -> apply(b, completed, null));
     }
 
     @Override
@@ -88,14 +92,14 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
         blocks.findPendingReviews(userId, studyMaterialId).stream()
                 .filter(b -> b.start().isBefore(endOfToday))
                 .reduce((first, second) -> second)
-                .ifPresent(b -> apply(b, true));
+                .ifPresent(b -> apply(b, true, null));
     }
 
     /**
      * Cambia el estado (idempotente) con su XP, guarda, recalcula la semana y publica el evento. La
      * semana se recalcula antes de publicar para que los oyentes (insignias) lean la carga ya al día.
      */
-    private Result apply(CalendarBlock block, boolean completed) {
+    private Result apply(CalendarBlock block, boolean completed, Integer effort) {
         UUID userId = block.userId();
         Instant now = clock.instant();
         int xpDelta = 0;
@@ -105,7 +109,7 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
                 return new Result(block, 0);
             }
             int reward = block.experienceReward();
-            if (!block.xpAwarded() && reward > 0) {
+            if (!block.xpAwarded() && reward > 0 && CalendarBlock.fitsDailyXp(blockXpOfDay(block), reward)) {
                 award.award(userId, reward);
                 block.markExperienceAwarded(true);
                 xpDelta = reward;
@@ -125,7 +129,22 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
         weeklyLoads.refresh(userId, zone.localDate(saved.start()));
         events.publish(new StudyBlockCompletionChanged(userId, saved.id(), saved.type().code(), saved.subjectId(),
                 saved.details().milestoneId(), saved.start(), saved.end(), saved.completed(), now));
+        if (saved.countsAsPhysicalActivity()) {
+            events.publish(new SportBlockCompletionChanged(userId, saved.id(), zone.localDate(saved.start()), effort,
+                    (int) saved.range().minutes(), saved.completed(), now));
+        }
         return new Result(saved, xpDelta);
+    }
+
+    /** XP que ya dieron los otros bloques completados del mismo día que {@code block}. */
+    private int blockXpOfDay(CalendarBlock block) {
+        LocalDate day = zone.localDate(block.start());
+        return blocks.findOverlapping(block.userId(), zone.startOfDay(day), zone.startOfDay(day.plusDays(1)), null)
+                .stream()
+                .filter(b -> !b.id().equals(block.id()) && b.completed() && b.xpAwarded()
+                        && zone.localDate(b.start()).equals(day))
+                .mapToInt(CalendarBlock::experienceReward)
+                .sum();
     }
 
     private Energy energyOf(CalendarBlock block) {

@@ -206,13 +206,14 @@ class AcademicFlowIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.score").value(2))
-                .andExpect(jsonPath("$.xpGranted").value(30));
+                // Un test de menos de 5 preguntas ya no da XP (PracticeRewards, contra el farmeo).
+                .andExpect(jsonPath("$.xpGranted").value(0));
         perform(post("/api/v1/test-sessions/" + sessionId + "/complete"), token, null)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("QUIZ_SESSION_NOT_IN_PROGRESS"));
-        // 30 del test + 5 del primer repaso SM-2 (tocaba: material sin repasar).
+        // Solo los 5 del primer repaso SM-2 (tocaba: material sin repasar); el test de 2 preguntas no puntúa.
         perform(get("/api/v1/me"), token, null)
-                .andExpect(jsonPath("$.levelXp").value(35));
+                .andExpect(jsonPath("$.levelXp").value(5));
         perform(get("/api/v1/test-sessions/" + sessionId), other, null)
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("QUIZ_SESSION_NOT_FOUND"));

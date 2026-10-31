@@ -10,6 +10,7 @@ import 'package:synaptixfit/domain/use_cases/academic/answer_in_test_session_use
 import 'package:synaptixfit/domain/use_cases/academic/answer_question_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/complete_practice_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/complete_test_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/export_flashcards_to_anki_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/generate_question_bank_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_active_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_question_bank_use_case.dart';
@@ -54,6 +55,9 @@ class _Complete extends Mock implements CompleteTestSessionUseCaseContract {}
 class _Abandon extends Mock implements AbandonTestSessionUseCaseContract {}
 
 class _GetAccount extends Mock implements GetAccountUseCaseContract {}
+
+class _ExportAnki extends Mock
+    implements ExportFlashcardsToAnkiUseCaseContract {}
 
 void main() {
   late _GetAccount getAccount;
@@ -218,13 +222,28 @@ void main() {
 
   group('FlashcardsBloc', () {
     late _GetBank getBank;
+    late _GetMaterial getMaterial;
     late _ReviewFlashcards reviewFlashcards;
+    late _ExportAnki exportAnki;
 
     setUp(() {
       getBank = _GetBank();
+      getMaterial = _GetMaterial();
       reviewFlashcards = _ReviewFlashcards();
+      exportAnki = _ExportAnki();
       when(() => getBank('m1')).thenAnswer((_) async => const Success(bank));
+      when(
+        () => getMaterial('m1'),
+      ).thenAnswer((_) async => const Success(material));
     });
+
+    FlashcardsBloc build() => FlashcardsBloc(
+      getBank: getBank,
+      getMaterial: getMaterial,
+      reviewFlashcards: reviewFlashcards,
+      exportAnki: exportAnki,
+      getAccount: getAccount,
+    );
 
     blocTest<FlashcardsBloc, FlashcardsState>(
       'clasifica todas las tarjetas y registra la ronda',
@@ -235,11 +254,7 @@ void main() {
             (_) async =>
                 const Success(FlashcardReviewResult(quality: 3, xpAwarded: 5)),
           ),
-      build: () => FlashcardsBloc(
-        getBank: getBank,
-        reviewFlashcards: reviewFlashcards,
-        getAccount: getAccount,
-      ),
+      build: build,
       act: (bloc) async {
         bloc.add(const FlashcardsEvent.started('m1'));
         await Future<void>.delayed(Duration.zero);
@@ -252,6 +267,35 @@ void main() {
         expect(bloc.state.finished, isTrue);
         expect(bloc.state.result?.xpAwarded, 5);
         expect(bloc.state.updatedAccount, account);
+      },
+    );
+
+    blocTest<FlashcardsBloc, FlashcardsState>(
+      'exporta a Anki con el título del material y avisa del fallo',
+      setUp: () {
+        when(
+          () => exportAnki(deck: material.title, cards: bank.questions),
+        ).thenAnswer((_) async => const Success(true));
+      },
+      build: build,
+      act: (bloc) async {
+        bloc.add(const FlashcardsEvent.started('m1'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const FlashcardsEvent.ankiExportRequested('Genérico'));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.ankiExports, 1);
+        when(
+          () => exportAnki(
+            deck: any(named: 'deck'),
+            cards: any(named: 'cards'),
+          ),
+        ).thenAnswer((_) async => const Failure(AppError.unknown()));
+        bloc.add(const FlashcardsEvent.ankiExportRequested('Genérico'));
+      },
+      verify: (bloc) {
+        expect(bloc.state.ankiExports, 1);
+        expect(bloc.state.exportingAnki, isFalse);
+        expect(bloc.state.actionError, const AppError.unknown());
       },
     );
   });

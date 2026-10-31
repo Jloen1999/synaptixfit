@@ -27,7 +27,8 @@ sealed class CalendarEvent with _$CalendarEvent {
   const factory CalendarEvent.lockedBlockTouched(String blockId) =
       CalendarLockedBlockTouched;
 
-  const factory CalendarEvent.completionToggled(String blockId) =
+  /// [effort] (1-10): esfuerzo al marcar hecho un bloque de deporte sin rutina.
+  const factory CalendarEvent.completionToggled(String blockId, {int? effort}) =
       CalendarCompletionToggled;
 
   const factory CalendarEvent.planSaveRequested() = CalendarPlanSaveRequested;
@@ -36,6 +37,10 @@ sealed class CalendarEvent with _$CalendarEvent {
   /// sin deshacer (o al salir de la pantalla).
   const factory CalendarEvent.blockDeleteRequested(CalendarBlock block) =
       CalendarBlockDeleteRequested;
+
+  /// Lleva un bloque que se quedó sin hacer al primer hueco libre.
+  const factory CalendarEvent.rescheduleNextRequested(String blockId) =
+      CalendarRescheduleNextRequested;
 
   /// «Deshacer» del aviso: el bloque vuelve y no se borra.
   const factory CalendarEvent.blockDeleteUndone(String blockId) =

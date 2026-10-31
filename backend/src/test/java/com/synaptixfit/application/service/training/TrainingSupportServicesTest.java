@@ -21,6 +21,7 @@ import com.synaptixfit.domain.model.training.Exercise;
 import com.synaptixfit.domain.model.training.ExerciseAdjustment;
 import com.synaptixfit.domain.model.training.ExerciseCategory;
 import com.synaptixfit.domain.model.training.ExerciseDraft;
+import com.synaptixfit.domain.model.training.ExerciseNameTranslations;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.ExerciseSearchCriteria;
 import com.synaptixfit.domain.model.training.MeasurementType;
@@ -36,11 +37,13 @@ import com.synaptixfit.domain.model.training.TrainingSession;
 import com.synaptixfit.domain.model.training.WeekType;
 import com.synaptixfit.domain.model.training.WeeklyTrainingPlan;
 import com.synaptixfit.domain.model.user.ExperienceChange;
+import com.synaptixfit.domain.port.output.training.ExerciseNameTranslationsRepositoryPort;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -126,12 +129,41 @@ class TrainingSupportServicesTest {
     @Nested
     class Catalog {
         private final TrainingFakes.Exercises exercises = new TrainingFakes.Exercises();
-        private final ExerciseCatalogService service = new ExerciseCatalogService(exercises, CLOCK);
+        private final Map<UUID, ExerciseNameTranslations> names = new HashMap<>();
+        private final ExerciseNameTranslationsRepositoryPort namesRepository = new ExerciseNameTranslationsRepositoryPort() {
+            @Override
+            public ExerciseNameTranslations findByExercise(UUID exerciseId) {
+                return names.getOrDefault(exerciseId, ExerciseNameTranslations.EMPTY);
+            }
+
+            @Override
+            public void replace(UUID exerciseId, ExerciseNameTranslations translations) {
+                names.put(exerciseId, translations);
+            }
+        };
+        private final ExerciseCatalogService service = new ExerciseCatalogService(exercises, namesRepository, CLOCK);
 
         private ExerciseDraft draft() {
+            return draft(null);
+        }
+
+        private ExerciseDraft draft(ExerciseNameTranslations translations) {
             return new ExerciseDraft("Plancha frontal", null, List.of("Aguanta"), Difficulty.BEGINNER,
                     List.of(TrainingGoal.STABILITY), Modality.STRENGTH, null, false, 3.0, null, null,
-                    List.of(1), List.of(2), List.of(), List.of());
+                    List.of(1), List.of(2), List.of(), List.of(), translations);
+        }
+
+        @Test
+        void namesInOtherLanguagesAreSavedWithTheExerciseAndKeptWhenOmitted() {
+            ExerciseNameTranslations plank = new ExerciseNameTranslations("Front plank", "Gainage", "Prancha");
+            Exercise e = service.create(draft(plank));
+            assertThat(names).containsEntry(e.id(), plank);
+
+            service.update(e.id(), draft(null));
+            assertThat(names).containsEntry(e.id(), plank);
+
+            service.update(e.id(), draft(ExerciseNameTranslations.EMPTY));
+            assertThat(names.get(e.id()).isEmpty()).isTrue();
         }
 
         @Test

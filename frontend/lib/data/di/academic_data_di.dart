@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 
+import '../../domain/repositories/file_export_repository_contract.dart';
 import '../../domain/repositories/note_repository_contract.dart';
 import '../../domain/repositories/quiz_repository_contract.dart';
 import '../../domain/repositories/study_assistant_repository_contract.dart';
@@ -14,6 +15,7 @@ import '../remote_data_source/academic/study_materials_remote_data_source.dart';
 import '../remote_data_source/academic/study_remote_data_source.dart';
 import '../remote_data_source/academic/subjects_remote_data_source.dart';
 import '../remote_data_source/academic/teaching_guide_imports_remote_data_source.dart';
+import '../repository/file_export_repository.dart';
 import '../repository/note_repository.dart';
 import '../repository/quiz_repository.dart';
 import '../repository/study_assistant_repository.dart';
@@ -46,6 +48,9 @@ void registerAcademicData(GetIt getIt) {
     )
     ..registerLazySingleton<StudyMaterialRepositoryContract>(
       () => StudyMaterialRepository(getIt()),
+    )
+    ..registerLazySingleton<FileExportRepositoryContract>(
+      () => FileExportRepository(getIt()),
     )
     ..registerLazySingleton<QuizRepositoryContract>(
       () => QuizRepository(getIt()),

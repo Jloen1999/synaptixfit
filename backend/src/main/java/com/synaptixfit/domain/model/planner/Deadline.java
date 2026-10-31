@@ -10,11 +10,13 @@ import java.util.UUID;
  * Entrega, examen, presentación u otra evaluación con fecha límite.
  *
  * <p>Completarla da {@link #EXPERIENCE} puntos una sola vez mientras siga completada
- * ({@code xp_entrega_otorgado}); al desmarcarla se restan.
+ * ({@code xp_entrega_otorgado}); al desmarcarla se restan. Como mucho {@value #MAX_REWARDED_PER_DAY}
+ * entregas dan XP cada 24 h: crear y completar entregas en serie daba XP sin límite.
  */
 public final class Deadline {
 
     public static final int EXPERIENCE = 30;
+    public static final int MAX_REWARDED_PER_DAY = 5;
     public static final int TITLE_MAX = 200;
     public static final int DESCRIPTION_MAX = 2000;
 
@@ -90,6 +92,15 @@ public final class Deadline {
         return true;
     }
 
+    /**
+     * ¿Puede dar XP si ya dieron {@code rewardedLastDay} entregas en las últimas 24 h? Se cuentan por su última
+     * modificación (no hay fecha de compleción): editar una entrega antigua solo puede restar margen, nunca
+     * dar XP de más.
+     */
+    public static boolean fitsDailyCap(long rewardedLastDay) {
+        return rewardedLastDay < MAX_REWARDED_PER_DAY;
+    }
+
     public void markExperienceAwarded(boolean awarded) {
         this.xpAwarded = awarded;
     }
@@ -120,6 +131,11 @@ public final class Deadline {
     public String title() { return title; }
     public DeadlineType type() { return type; }
     public Instant dueAt() { return dueAt; }
+
+    /** Pendiente, hecha o vencida (sin completar y con la fecha pasada) respecto a {@code now}. */
+    public ItemTimeStatus timeStatus(Instant now) {
+        return ItemTimeStatus.ofDeadline(dueAt, completed, now);
+    }
     public Priority difficulty() { return difficulty; }
     public String description() { return description; }
     public boolean completed() { return completed; }

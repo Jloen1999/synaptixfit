@@ -64,7 +64,7 @@ class _AcademicProfileFormState extends State<AcademicProfileForm> {
     _gpa = TextEditingController(
       text: p?.targetGpa == null
           ? ''
-          : NumberFormat.decimalPattern('es').format(p!.targetGpa),
+          : NumberFormat.decimalPattern().format(p!.targetGpa),
     );
     _semester = p?.semester;
     _modality = p?.modality;
@@ -94,7 +94,6 @@ class _AcademicProfileFormState extends State<AcademicProfileForm> {
       initialDate: initial,
       firstDate: DateTime(now.year - 2),
       lastDate: DateTime(now.year + 3),
-      locale: const Locale('es'),
     );
     if (picked == null) return;
     setState(() => start ? _start = picked : _end = picked);
@@ -124,7 +123,7 @@ class _AcademicProfileFormState extends State<AcademicProfileForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final dateFormat = DateFormat.yMMMd('es');
+    final dateFormat = DateFormat.yMMMd();
     return Form(
       key: _formKey,
       child: Column(

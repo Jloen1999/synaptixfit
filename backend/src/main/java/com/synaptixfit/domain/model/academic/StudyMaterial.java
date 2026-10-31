@@ -61,14 +61,29 @@ public final class StudyMaterial {
         return t.length() > 255 ? t.substring(0, 255) : t;
     }
 
-    /** Calcula (sin aplicar) el resultado SM-2 de un repaso con la calidad ya ajustada. */
-    public SpacedRepetition.Result simulate(double adjustedQuality) {
-        return SpacedRepetition.next(adjustedQuality, intervalDays, easeFactor, completedReviews);
+    /**
+     * Calcula (sin aplicar) el resultado SM-2 de un repaso. Un acierto antes de tiempo no adelanta el
+     * calendario: repasar tres veces seguidas no deja el material «dominado» (estado, intervalo y fecha
+     * siguen como estaban). Un fallo cuenta siempre: indica que hay que volver a empezar.
+     */
+    public SpacedRepetition.Result simulate(int realQuality, double adjustedQuality, Instant now) {
+        SpacedRepetition.Result r = SpacedRepetition.next(realQuality, adjustedQuality, intervalDays, easeFactor,
+                completedReviews);
+        if (!r.failed() && !isReviewOwed(now)) {
+            return new SpacedRepetition.Result(intervalDays, easeFactor, completedReviews, masteryState, false);
+        }
+        return r;
+    }
+
+    /** Fecha del siguiente repaso si se aplica {@code r} en {@code now} (un acierto adelantado la conserva). */
+    public Instant nextReviewAfter(SpacedRepetition.Result r, Instant now) {
+        return r.failed() || isReviewOwed(now) ? now.plus(Duration.ofDays(r.intervalDays())) : nextReviewAt;
     }
 
     /** Aplica un repaso: actualiza dominio, intervalo, facilidad, contadores y la siguiente fecha. */
-    public SpacedRepetition.Result review(double adjustedQuality, Instant now) {
-        SpacedRepetition.Result r = simulate(adjustedQuality);
+    public SpacedRepetition.Result review(int realQuality, double adjustedQuality, Instant now) {
+        SpacedRepetition.Result r = simulate(realQuality, adjustedQuality, now);
+        Instant next = nextReviewAfter(r, now);
         this.masteryState = r.masteryState();
         this.intervalDays = r.intervalDays();
         this.easeFactor = r.easeFactor();
@@ -77,7 +92,7 @@ public final class StudyMaterial {
             this.failedReviews++;
         }
         this.lastReviewedAt = now;
-        this.nextReviewAt = now.plus(Duration.ofDays(r.intervalDays()));
+        this.nextReviewAt = next;
         return r;
     }
 
@@ -92,6 +107,15 @@ public final class StudyMaterial {
      */
     public boolean isReviewOwed(Instant now) {
         return nextReviewAt == null || !nextReviewAt.isAfter(now);
+    }
+
+    /**
+     * Lo quita del repaso: «abandonado» y sin fecha (la cola de repasos y los avisos lo ignoran). El historial
+     * se conserva; un repaso posterior lo reactiva con el estado que resulte.
+     */
+    public void abandon() {
+        this.masteryState = MasteryState.ABANDONED;
+        this.nextReviewAt = null;
     }
 
     /** Registra que el material ya ha dado XP de práctica alguna vez (dato informativo). */

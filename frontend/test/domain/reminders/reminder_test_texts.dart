@@ -24,4 +24,18 @@ class TestReminderTexts implements ReminderTexts {
         '${start.minute.toString().padLeft(2, '0')}';
     return '${kind.name}:${name ?? '-'}@$time';
   }
+
+  @override
+  String get weeklySummaryTitle => 'weekly';
+
+  @override
+  String get weeklySummaryBody => 'weekly-body';
+
+  @override
+  String deadlineTitle(ReminderKind kind, int daysBefore) =>
+      '${kind.name}:$daysBefore';
+
+  @override
+  String deadlineBody(ReminderKind kind, String? name, DateTime due) =>
+      '${kind.name}:${name ?? '-'}';
 }

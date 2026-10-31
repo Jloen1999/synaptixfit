@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.insights;
 import com.synaptixfit.application.port.input.insights.GetCognitiveStateUseCase;
 import com.synaptixfit.application.port.input.insights.GetCrossRegulationUseCase;
 import com.synaptixfit.application.port.input.insights.GetPhysicalLoadUseCase;
+import com.synaptixfit.application.port.input.insights.SyncSportBlockLoadUseCase;
 import com.synaptixfit.application.port.input.insights.RecordTrainingLoadUseCase;
 import com.synaptixfit.domain.event.insights.OvertrainingDetected;
 import com.synaptixfit.domain.model.insights.AcwrZone;
@@ -36,8 +37,8 @@ import java.util.UUID;
  * y a la función {@code recalcular_regulacion_cruzada}. Publica {@link OvertrainingDetected} cuando el
  * ACWR entra en zona de sobreentrenamiento.
  */
-public class TrainingLoadService implements RecordTrainingLoadUseCase, GetCrossRegulationUseCase,
-        GetPhysicalLoadUseCase {
+public class TrainingLoadService implements RecordTrainingLoadUseCase, SyncSportBlockLoadUseCase,
+        GetCrossRegulationUseCase, GetPhysicalLoadUseCase {
 
     private static final int SERIES_DAYS = 28;
 
@@ -62,7 +63,7 @@ public class TrainingLoadService implements RecordTrainingLoadUseCase, GetCrossR
     }
 
     @Override
-    public void recordTrainingLoad(Command command) {
+    public void recordTrainingLoad(RecordTrainingLoadUseCase.Command command) {
         Guard.notNull(command.userId(), "userId");
         Guard.notNull(command.sessionId(), "sessionId");
         if (command.completed()) {
@@ -79,6 +80,28 @@ public class TrainingLoadService implements RecordTrainingLoadUseCase, GetCrossR
             }
         } else {
             loads.deleteBySession(command.userId(), command.sessionId());
+        }
+        recalculate(command.userId(), defaultZone);
+    }
+
+    @Override
+    public void syncSportBlockLoad(SyncSportBlockLoadUseCase.Command command) {
+        Guard.notNull(command.userId(), "userId");
+        Guard.notNull(command.blockId(), "blockId");
+        int effort = command.effort() == null ? PhysicalLoadRecord.DEFAULT_RPE : command.effort();
+        if (command.completed()) {
+            LocalDate date = command.date() != null ? command.date() : today(defaultZone);
+            Optional<PhysicalLoadRecord> existing = loads.findByBlock(command.userId(), command.blockId());
+            if (existing.isPresent()) {
+                if (existing.get().update(date, effort, command.durationMinutes())) {
+                    loads.save(existing.get());
+                }
+            } else {
+                loads.save(PhysicalLoadRecord.forBlock(command.userId(), command.blockId(), date, effort,
+                        command.durationMinutes(), clock.instant()));
+            }
+        } else {
+            loads.deleteByBlock(command.userId(), command.blockId());
         }
         recalculate(command.userId(), defaultZone);
     }
@@ -116,8 +139,6 @@ public class TrainingLoadService implements RecordTrainingLoadUseCase, GetCrossR
         LocalDate today = today(zone);
         List<PhysicalLoadHistory.Entry> window = loads.entriesBetween(userId,
                 today.minusDays(CrossRegulationState.CHRONIC_DAYS - 1L), today);
-        double acute = PhysicalLoadHistory.total(window, today.minusDays(CrossRegulationState.ACUTE_DAYS - 1L), today);
-        double chronic = PhysicalLoadHistory.total(window);
         Instant now = clock.instant();
         Integer daysUntilExam = sources.nextPendingExam(userId, now)
                 .map(deadline -> (int) ChronoUnit.DAYS.between(today, LocalDate.ofInstant(deadline, zone)))
@@ -125,7 +146,7 @@ public class TrainingLoadService implements RecordTrainingLoadUseCase, GetCrossR
         boolean wasOvertraining = regulation.findByUser(userId)
                 .map(previous -> previous.zone() == AcwrZone.OVERTRAINING).orElse(false);
         CrossRegulationState saved =
-                regulation.save(CrossRegulationState.compute(userId, acute, chronic, daysUntilExam, now));
+                regulation.save(CrossRegulationState.compute(userId, window, today, daysUntilExam, now));
         // Solo la entrada en la zona se anuncia: recalcular cada lectura no debe repetir el aviso.
         if (saved.zone() == AcwrZone.OVERTRAINING && !wasOvertraining) {
             events.publish(new OvertrainingDetected(userId, saved.acwr(), now));

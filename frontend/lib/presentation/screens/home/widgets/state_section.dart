@@ -20,7 +20,7 @@ class StateSection extends StatelessWidget {
     required this.wellbeing,
     this.focus = UsageFocus.both,
     required this.onOpenAnalytics,
-    required this.onStudyNow,
+    this.onStudyNow,
   });
 
   final HomeCognitiveState cognitive;
@@ -30,7 +30,9 @@ class StateSection extends StatelessWidget {
   final VoidCallback onOpenAnalytics;
 
   /// Abre el Pomodoro: la recomendación termina en algo que hacer.
-  final VoidCallback onStudyNow;
+  /// Botón «Concentrarme» de la franja; sin él (Inicio ya lo tiene en «Tu
+  /// día») solo se muestra la pauta.
+  final VoidCallback? onStudyNow;
 
   @override
   Widget build(BuildContext context) {
@@ -267,7 +269,7 @@ class _Link extends StatelessWidget {
 
   final int focusMinutes;
   final int breakMinutes;
-  final VoidCallback onStudyNow;
+  final VoidCallback? onStudyNow;
 
   @override
   Widget build(BuildContext context) {
@@ -305,11 +307,12 @@ class _Link extends StatelessWidget {
               ),
             ],
           ),
-          TextButton.icon(
-            onPressed: onStudyNow,
-            icon: const Icon(Icons.timer_outlined),
-            label: Text(l10n.homeBalanceStudyNow),
-          ),
+          if (onStudyNow case final onPressed?)
+            TextButton.icon(
+              onPressed: onPressed,
+              icon: const Icon(Icons.timer_outlined),
+              label: Text(l10n.homeBalanceStudyNow),
+            ),
         ],
       ),
     );

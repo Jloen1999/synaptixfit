@@ -41,3 +41,26 @@ abstract class SessionHistoryEntry with _$SessionHistoryEntry {
     @Default(<PersonalRecord>[]) List<PersonalRecord> records,
   }) = _SessionHistoryEntry;
 }
+
+/// Lo destacable de una sesión terminada: volumen movido, récords batidos y
+/// la sesión anterior comparable (nulos si no la hay).
+@freezed
+abstract class SessionHighlights with _$SessionHighlights {
+  const factory SessionHighlights({
+    @Default(0) double volumeKg,
+    @Default(0) int totalReps,
+    @Default(0) int completedSets,
+    @Default(<PersonalRecord>[]) List<PersonalRecord> records,
+    double? previousVolumeKg,
+    int? previousDurationMinutes,
+  }) = _SessionHighlights;
+
+  const SessionHighlights._();
+
+  /// Diferencia de volumen con la sesión anterior comparable (sin sentido si
+  /// aquella no movió peso, p. ej. solo peso corporal).
+  double? get volumeDeltaKg =>
+      previousVolumeKg == null || previousVolumeKg! <= 0
+      ? null
+      : volumeKg - previousVolumeKg!;
+}

@@ -112,12 +112,6 @@ class _AcademicHomeView extends StatelessWidget {
                   AcademicPaths.newNote(quick: true),
                 ),
                 option(
-                  Icons.document_scanner_outlined,
-                  l10n.academicScanTitle,
-                  l10n.academicScanHint,
-                  AcademicPaths.scanNote(),
-                ),
-                option(
                   Icons.auto_awesome_rounded,
                   l10n.academicGenerateTitle,
                   l10n.academicGenerateHint,

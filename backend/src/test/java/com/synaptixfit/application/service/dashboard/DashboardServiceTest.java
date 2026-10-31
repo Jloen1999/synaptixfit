@@ -75,7 +75,7 @@ class DashboardServiceTest {
                 .level(3).levelXp(120).streak(2).privacy(Visibility.PRIVATE).role(Role.USER).passwordHash("x")
                 .createdAt(NOW).build()));
         when(reads.trainingTotals(eq(USER), any(), any())).thenReturn(new TrainingTotals(1, 45, 350.0));
-        when(reads.plannedWeeklySessions(USER)).thenReturn(Optional.of(4));
+        when(reads.plannedWeeklySessions(eq(USER), any())).thenReturn(Optional.of(4));
         when(reads.nextTrainingDay(USER)).thenReturn(Optional.empty());
         when(reads.lastTrainingSession(USER)).thenReturn(Optional.of(NOW));
         when(sources.checkIns(eq(USER), any(), any())).thenReturn(List.of());
@@ -127,7 +127,8 @@ class DashboardServiceTest {
         assertThat(d.week().studyMinutesCompleted()).isEqualTo(85);
         assertThat(d.planWeek()).hasSize(7);
         assertThat(d.planWeek().get(0)).isEqualTo(new Dashboard.PlanDay(MONDAY, 1, 1)); // la comida no cuenta
-        assertThat(d.planWeek().get(2)).isEqualTo(new Dashboard.PlanDay(TODAY, 2, 0));
+        // Uno de los dos de hoy ya terminó sin hacerse: «no hecho».
+        assertThat(d.planWeek().get(2)).isEqualTo(new Dashboard.PlanDay(TODAY, 2, 0, 1));
         // El bloque de examen no se duplica: aparece la entrega/examen.
         assertThat(d.todayEvents()).extracting(Dashboard.TodayEvent::kind)
                 .containsExactly(Dashboard.TodayEvent.Kind.BLOCK, Dashboard.TodayEvent.Kind.DEADLINE);

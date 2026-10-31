@@ -9,7 +9,16 @@ enum ReminderKind {
   sportBlock('TRAINING'),
 
   /// Bloque de estudio o repaso del planificador a punto de empezar.
-  studyBlock('STUDY');
+  studyBlock('STUDY'),
+
+  /// Examen pendiente en pocos días.
+  exam('EXAM'),
+
+  /// Entrega pendiente en pocos días.
+  deadline('DEADLINE'),
+
+  /// «Tu semana»: el domingo por la tarde.
+  weeklySummary('WEEKLY_SUMMARY');
 
   const ReminderKind(this.apiValue);
 

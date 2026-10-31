@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.academic;
 
+import com.synaptixfit.application.port.input.academic.AbandonStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.academic.GetRetentionMetricsUseCase;
 import com.synaptixfit.application.port.input.academic.GetStudyMaterialUseCase;
@@ -11,6 +12,7 @@ import com.synaptixfit.application.port.input.academic.RegisterStudyMaterialUseC
 import com.synaptixfit.application.port.input.academic.ReviewFlashcardsUseCase;
 import com.synaptixfit.application.port.input.academic.ReviewStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
+import com.synaptixfit.domain.event.academic.ReviewAbandoned;
 import com.synaptixfit.domain.event.academic.ReviewCompleted;
 import com.synaptixfit.domain.event.academic.ReviewScheduled;
 import com.synaptixfit.domain.exception.FieldValidationException;
@@ -53,7 +55,8 @@ import java.util.UUID;
  * el planificador complete el bloque de repaso pendiente y prepare el de la siguiente fecha.
  */
 public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListStudyMaterialsUseCase,
-        ListDueStudyMaterialsUseCase, GetStudyMaterialUseCase, DeleteStudyMaterialUseCase, GetRetentionMetricsUseCase,
+        ListDueStudyMaterialsUseCase, GetStudyMaterialUseCase, DeleteStudyMaterialUseCase, AbandonStudyMaterialUseCase,
+        GetRetentionMetricsUseCase,
         PreviewReviewIntervalsUseCase, ReviewStudyMaterialUseCase, ListReviewHistoryUseCase, ReviewFlashcardsUseCase {
 
     static final int MAX_DUE = 100;
@@ -127,6 +130,15 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
     }
 
     @Override
+    public StudyMaterial abandonMaterial(UUID userId, UUID materialId) {
+        StudyMaterial m = lookups.material(userId, materialId);
+        m.abandon();
+        StudyMaterial saved = materials.save(m);
+        events.publish(new ReviewAbandoned(userId, saved.id(), clock.instant()));
+        return saved;
+    }
+
+    @Override
     public RetentionMetrics retention(UUID userId, UUID subjectId) {
         Subject s = lookups.subject(userId, subjectId);
         return RetentionMetrics.of(materials.findByUser(userId, s.id()));
@@ -140,9 +152,9 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
         List<ReviewPreview.Option> options = new ArrayList<>();
         for (int q = 0; q <= 5; q++) {
             double adjusted = FatigueAdjustedRecall.adjustedQuality(q, f.today(), f.max());
-            SpacedRepetition.Result r = m.simulate(adjusted);
+            SpacedRepetition.Result r = m.simulate(q, adjusted, now);
             options.add(new ReviewPreview.Option(q, round(adjusted, 2), r.intervalDays(),
-                    now.plus(Duration.ofDays(r.intervalDays())), r.masteryState()));
+                    m.nextReviewAfter(r, now), r.masteryState()));
         }
         return new ReviewPreview(f.today(), f.max(), round(f.coefficient(), 3), options);
     }
@@ -185,7 +197,7 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
         Instant now = clock.instant();
         Fatigue f = fatigue(userId, now);
         double adjusted = FatigueAdjustedRecall.adjustedQuality(quality, f.today(), f.max());
-        m.review(adjusted, now);
+        m.review(quality, adjusted, now);
         if (xp > 0) {
             m.markPracticeXpAwarded();
         }

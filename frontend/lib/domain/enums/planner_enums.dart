@@ -41,7 +41,75 @@ enum BlockType {
 
   /// Estudio o repaso: se puede abrir el Pomodoro desde el bloque.
   bool get isStudy => this == BlockType.study || this == BlockType.review;
+
+  /// Cómo se pide la hora en el editor: una entrega es un momento (la hora
+  /// límite); examen, comida y descanso tienen duraciones típicas; el resto,
+  /// inicio y fin.
+  BlockTimeInput get timeInput => switch (this) {
+    delivery => BlockTimeInput.moment,
+    exam || meal || rest => BlockTimeInput.duration,
+    _ => BlockTimeInput.range,
+  };
+
+  /// Duraciones que se ofrecen (minutos) con [BlockTimeInput.duration]; la
+  /// propuesta es [defaultDuration]. Nunca menos de 30 min, el
+  /// mínimo de un bloque.
+  List<int> get durationOptions => switch (this) {
+    exam => const [60, 90, 120, 180],
+    meal => const [30, 45, 60, 90],
+    rest => const [30, 45, 60],
+    _ => const [],
+  };
+
+  int get defaultDuration => switch (this) {
+    exam => 120,
+    meal => 45,
+    rest => 30,
+    delivery => momentDurationMinutes,
+    _ => 60,
+  };
+
+  /// Hueco que ocupa en el calendario una entrega (termina a su hora límite).
+  static const momentDurationMinutes = 30;
+
+  /// Minuto de inicio real: una entrega ocupa la media hora anterior a su
+  /// hora límite ([endMin]); el resto empieza donde se eligió.
+  int startMinuteFor(int startMin, int endMin) =>
+      timeInput == BlockTimeInput.moment
+      ? (endMin - momentDurationMinutes).clamp(0, endMin)
+      : startMin;
+
+  /// Temas o notas: lo que se va a estudiar, repasar o entra en el examen.
+  bool get usesTopics =>
+      this == study || this == review || this == exam || this == classSession;
+
+  /// Lugar: donde hay que ir (aula, biblioteca, gimnasio).
+  bool get usesLocation =>
+      this == study || this == classSession || this == exam || this == sport;
+
+  /// Prioridad: lo que compite por el tiempo (no clases, comidas ni sueño).
+  bool get usesPriority =>
+      this == study ||
+      this == review ||
+      this == exam ||
+      this == delivery ||
+      this == sport;
+
+  /// Se puede vincular a un reto.
+  bool get usesChallenge =>
+      this == study ||
+      this == review ||
+      this == sport ||
+      this == exam ||
+      this == delivery;
+
+  /// Se puede vincular a una entrega o examen.
+  bool get usesDeadlineLink =>
+      this == study || this == review || this == exam || this == delivery;
 }
+
+/// Forma de pedir la hora de un bloque en el editor (ver [BlockType.timeInput]).
+enum BlockTimeInput { range, duration, moment }
 
 /// Prioridad de un bloque o dificultad de una entrega.
 enum PlannerPriority {

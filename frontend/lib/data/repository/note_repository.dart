@@ -90,17 +90,4 @@ class NoteRepository implements NoteRepositoryContract {
         () async =>
             (await _remote.getSharedNotes(page, _sharedPageSize)).toDomain(),
       );
-
-  @override
-  Future<AppResult<Note>> createNoteFromScan({
-    required String title,
-    required String text,
-    String? subjectId,
-  }) => RepositoryErrorHandler.guard(
-    () async => (await _remote.createFromScan({
-      'title': title,
-      'text': text,
-      'subjectId': ?subjectId,
-    })).toDomain(),
-  );
 }

@@ -4,15 +4,13 @@ import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCas
 import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
 import com.synaptixfit.application.port.input.insights.GetCrossRegulationUseCase;
 import com.synaptixfit.application.port.input.planner.CompleteReviewBlockUseCase;
-import com.synaptixfit.application.port.input.planner.DeleteSubjectBlocksUseCase;
-import com.synaptixfit.application.port.input.planner.PrivatizeUserStudyPlansUseCase;
-import com.synaptixfit.application.port.input.planner.SyncSportBlockWithSessionUseCase;
 import com.synaptixfit.application.port.input.planner.CreateCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.CreateDeadlineUseCase;
 import com.synaptixfit.application.port.input.planner.CreateDeadlinesFromGuideUseCase;
 import com.synaptixfit.application.port.input.planner.DeleteCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.DeleteDeadlineUseCase;
 import com.synaptixfit.application.port.input.planner.DeleteStudyPlanUseCase;
+import com.synaptixfit.application.port.input.planner.DeleteSubjectBlocksUseCase;
 import com.synaptixfit.application.port.input.planner.DistributeRoutineUseCase;
 import com.synaptixfit.application.port.input.planner.ExportIcsUseCase;
 import com.synaptixfit.application.port.input.planner.GetCalendarBlockUseCase;
@@ -26,16 +24,21 @@ import com.synaptixfit.application.port.input.planner.GetStudyPlansUseCase;
 import com.synaptixfit.application.port.input.planner.GetTimelineUseCase;
 import com.synaptixfit.application.port.input.planner.GetWeekBalanceUseCase;
 import com.synaptixfit.application.port.input.planner.GetWeeklyLoadsUseCase;
+import com.synaptixfit.application.port.input.planner.ImportGeneralCalendarUseCase;
 import com.synaptixfit.application.port.input.planner.ImportIcsUseCase;
+import com.synaptixfit.application.port.input.planner.PrivatizeUserStudyPlansUseCase;
 import com.synaptixfit.application.port.input.planner.RecordFocusSessionUseCase;
+import com.synaptixfit.application.port.input.planner.RescheduleBlockToNextFreeSlotUseCase;
 import com.synaptixfit.application.port.input.planner.RescheduleCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.SaveWeeklyPlanUseCase;
 import com.synaptixfit.application.port.input.planner.ScanScheduleUseCase;
+import com.synaptixfit.application.port.input.planner.CancelReviewBlocksUseCase;
 import com.synaptixfit.application.port.input.planner.ScheduleReviewBlockUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.application.port.input.planner.SetDeadlineCompletionUseCase;
 import com.synaptixfit.application.port.input.planner.SuggestWeekPlanUseCase;
 import com.synaptixfit.application.port.input.planner.SyncDeadlineFromChallengeUseCase;
+import com.synaptixfit.application.port.input.planner.SyncSportBlockWithSessionUseCase;
 import com.synaptixfit.application.port.input.planner.SyncWeeklyLoadUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateDeadlineUseCase;
@@ -54,7 +57,6 @@ import com.synaptixfit.application.service.planner.StudyPlanService;
 import com.synaptixfit.application.service.planner.TimelineService;
 import com.synaptixfit.application.service.planner.WeeklyLoadService;
 import com.synaptixfit.domain.model.planner.PlannerZone;
-import com.synaptixfit.domain.port.output.user.UsageFocusPort;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.ChallengeDirectoryPort;
@@ -68,6 +70,7 @@ import com.synaptixfit.domain.port.output.planner.ScheduleScannerPort;
 import com.synaptixfit.domain.port.output.planner.StudyPlanRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import com.synaptixfit.domain.port.output.planner.WeeklyLoadRepositoryPort;
+import com.synaptixfit.domain.port.output.user.UsageFocusPort;
 import java.time.Clock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -141,7 +144,7 @@ public class PlannerBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     WeeklyLoadService weeklyLoadService() {
-        return new WeeklyLoadService(loads, blocks, deadlines, profiles, award, revoke, zone);
+        return new WeeklyLoadService(loads, blocks, focusSessions, deadlines, profiles, award, revoke, zone);
     }
 
     @Bean
@@ -190,6 +193,11 @@ public class PlannerBeanConfiguration {
     @Bean
     UpdateCalendarBlockUseCase updateCalendarBlockUseCase() {
         return tx.wrap(UpdateCalendarBlockUseCase.class, calendarBlockService());
+    }
+
+    @Bean
+    RescheduleBlockToNextFreeSlotUseCase rescheduleBlockToNextFreeSlotUseCase() {
+        return tx.wrap(RescheduleBlockToNextFreeSlotUseCase.class, calendarBlockService());
     }
 
     @Bean
@@ -251,6 +259,11 @@ public class PlannerBeanConfiguration {
     @Bean
     ScheduleReviewBlockUseCase scheduleReviewBlockUseCase() {
         return tx.wrap(ScheduleReviewBlockUseCase.class, reviewBlockService());
+    }
+
+    @Bean
+    CancelReviewBlocksUseCase cancelReviewBlocksUseCase() {
+        return tx.wrap(CancelReviewBlocksUseCase.class, reviewBlockService());
     }
 
     // ---------------------------------------------------------------- entregas
@@ -350,6 +363,11 @@ public class PlannerBeanConfiguration {
     }
 
     @Bean
+    ImportGeneralCalendarUseCase importGeneralCalendarUseCase() {
+        return tx.wrap(ImportGeneralCalendarUseCase.class, icsService());
+    }
+
+    @Bean
     ExportIcsUseCase exportIcsUseCase() {
         return tx.wrap(ExportIcsUseCase.class, icsService());
     }
@@ -381,7 +399,7 @@ public class PlannerBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     FocusService focusService() {
-        return new FocusService(focusSessions, blocks, subjects, award, events, zone, clock);
+        return new FocusService(focusSessions, blocks, subjects, award, events, weeklyLoadService(), zone, clock);
     }
 
     @Bean

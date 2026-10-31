@@ -13,11 +13,15 @@ class PickerField extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.onTap,
+    this.helper,
   });
 
   final String label;
   final String value;
   final IconData icon;
+
+  /// Ayuda bajo el campo (p. ej. cuánto ocupa una entrega en el calendario).
+  final String? helper;
 
   /// `null` deshabilita el campo.
   final VoidCallback? onTap;
@@ -33,49 +37,13 @@ class PickerField extends StatelessWidget {
           isEmpty: false,
           decoration: InputDecoration(
             labelText: label,
+            helperText: helper,
+            // Sin recortar con texto grande (al 200 % ocupa varias líneas).
+            helperMaxLines: 6,
             prefixIcon: Icon(icon),
             enabled: onTap != null,
           ),
           child: Text(value, style: context.textStyles.bodyLarge),
-        ),
-      ),
-    );
-  }
-}
-
-/// Mensaje en línea (error o aviso) dentro de una hoja inferior, donde un
-/// SnackBar quedaría oculto.
-class InlineMessage extends StatelessWidget {
-  const InlineMessage({super.key, required this.message, this.isError = true});
-
-  final String message;
-  final bool isError;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isError ? context.colors.error : context.palette.warning;
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.all(TokensSpacing.s),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(TokensRadius.m),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              isError
-                  ? Icons.error_outline_rounded
-                  : Icons.info_outline_rounded,
-              color: color,
-              size: 20,
-            ),
-            const SizedBox(width: TokensSpacing.s),
-            Expanded(
-              child: Text(message, style: context.textStyles.bodyMedium),
-            ),
-          ],
         ),
       ),
     );
@@ -137,7 +105,6 @@ Future<DateTime?> pickPlannerDate(
     initialDate: initialDate,
     firstDate: firstDate,
     lastDate: lastDate,
-    locale: const Locale('es'),
   );
 }
 

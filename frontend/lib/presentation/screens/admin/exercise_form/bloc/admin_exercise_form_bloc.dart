@@ -5,7 +5,9 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/admin/admin_exercise.dart';
 import '../../../../../domain/use_cases/admin/create_admin_exercise_use_case.dart';
 import '../../../../../domain/use_cases/admin/get_admin_exercise_options_use_case.dart';
+import '../../../../../domain/use_cases/admin/get_admin_exercise_names_use_case.dart';
 import '../../../../../domain/use_cases/admin/get_admin_exercise_use_case.dart';
+import '../../../../../domain/use_cases/admin/suggest_admin_exercise_names_use_case.dart';
 import '../../../../../domain/use_cases/admin/update_admin_exercise_use_case.dart';
 import '../../widgets/admin_status.dart';
 
@@ -19,6 +21,8 @@ class AdminExerciseFormBloc
   AdminExerciseFormBloc({
     required this._getOptions,
     required this._getExercise,
+    required this._getNames,
+    required this._suggestNames,
     required this._create,
     required this._update,
   }) : super(const AdminExerciseFormState()) {
@@ -26,11 +30,14 @@ class AdminExerciseFormBloc
     on<AdminExerciseFormDraftChanged>(
       (e, emit) => emit(state.copyWith(draft: e.draft)),
     );
+    on<AdminExerciseFormNamesSuggested>(_onNamesSuggested);
     on<AdminExerciseFormSubmitted>(_onSubmitted);
   }
 
   final GetAdminExerciseOptionsUseCaseContract _getOptions;
   final GetAdminExerciseUseCaseContract _getExercise;
+  final GetAdminExerciseNamesUseCaseContract _getNames;
+  final SuggestAdminExerciseNamesUseCaseContract _suggestNames;
   final CreateAdminExerciseUseCaseContract _create;
   final UpdateAdminExerciseUseCaseContract _update;
 
@@ -62,7 +69,12 @@ class AdminExerciseFormBloc
         );
         return;
       }
-      draft = AdminExerciseDraft.fromExercise(value);
+      // Si no se pueden leer sus nombres en otros idiomas, se guardan sin
+      // tocarlos (translations nulo) en vez de borrarlos.
+      final names = (await _getNames(id)).valueOrNull;
+      draft = AdminExerciseDraft.fromExercise(
+        value,
+      ).copyWith(translations: names);
       active = value.active;
     }
     emit(
@@ -71,6 +83,28 @@ class AdminExerciseFormBloc
         options: options.valueOrNull!,
         draft: draft,
         active: active,
+      ),
+    );
+  }
+
+  Future<void> _onNamesSuggested(
+    AdminExerciseFormNamesSuggested event,
+    Emitter<AdminExerciseFormState> emit,
+  ) async {
+    final draft = state.draft;
+    final current = draft.translations;
+    if (state.suggestingNames || current == null || !draft.isNameValid) return;
+    if (event.onlyIfEmpty && !current.isEmpty) return;
+    emit(state.copyWith(suggestingNames: true, namesError: null));
+    final result = await _suggestNames(draft.name);
+    emit(
+      result.fold(
+        (names) => state.copyWith(
+          suggestingNames: false,
+          draft: state.draft.copyWith(translations: names),
+          namesRevision: state.namesRevision + 1,
+        ),
+        (error) => state.copyWith(suggestingNames: false, namesError: error),
       ),
     );
   }

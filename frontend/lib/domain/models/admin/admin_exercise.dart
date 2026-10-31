@@ -54,6 +54,27 @@ abstract class AdminExercise with _$AdminExercise {
   }) = _AdminExercise;
 }
 
+/// Nombre de un ejercicio en los demás idiomas de la app. El español es el
+/// canónico (lo usan las reglas de rutinas); un idioma vacío se ve en español.
+@freezed
+abstract class AdminExerciseNames with _$AdminExerciseNames {
+  const factory AdminExerciseNames({
+    @Default('') String en,
+    @Default('') String fr,
+    @Default('') String pt,
+  }) = _AdminExerciseNames;
+
+  const AdminExerciseNames._();
+
+  bool get isEmpty =>
+      en.trim().isEmpty && fr.trim().isEmpty && pt.trim().isEmpty;
+
+  bool get isValid =>
+      en.length <= AdminExerciseDraft.nameMax &&
+      fr.length <= AdminExerciseDraft.nameMax &&
+      pt.length <= AdminExerciseDraft.nameMax;
+}
+
 /// Datos editables de un ejercicio (alta y edición).
 @freezed
 abstract class AdminExerciseDraft with _$AdminExerciseDraft {
@@ -75,6 +96,9 @@ abstract class AdminExerciseDraft with _$AdminExerciseDraft {
     @Default(<int>{}) Set<int> targetMuscleIds,
     @Default(<int>{}) Set<int> secondaryMuscleIds,
     @Default(<int>{}) Set<int> equipmentIds,
+
+    /// Nulo si no se pudieron cargar: al guardar no se tocan.
+    @Default(AdminExerciseNames()) AdminExerciseNames? translations,
   }) = _AdminExerciseDraft;
 
   const AdminExerciseDraft._();
@@ -126,7 +150,8 @@ abstract class AdminExerciseDraft with _$AdminExerciseDraft {
       areInstructionsValid &&
       description.length <= descriptionMax &&
       gifUrl.length <= urlMax &&
-      previewUrl.length <= urlMax;
+      previewUrl.length <= urlMax &&
+      (translations?.isValid ?? true);
 }
 
 /// Resultado de borrar un ejercicio: si está en uso se desactiva en su lugar.

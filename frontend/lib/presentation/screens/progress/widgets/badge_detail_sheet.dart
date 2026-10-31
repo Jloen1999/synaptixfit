@@ -6,6 +6,7 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import '../badges/bloc/badges_bloc.dart';
+import 'achievement_share.dart';
 import 'badge_tile.dart';
 import 'progress_labels.dart';
 
@@ -146,11 +147,44 @@ class _BadgeDetailSheet extends StatelessWidget {
                   icon: const Icon(Icons.share_rounded),
                   onPressed: busy ? null : () => _share(context, badge),
                 ),
+                const SizedBox(height: TokensSpacing.s),
+                // Fuera de la app (WhatsApp, Instagram…), como imagen.
+                AppSecondaryButton(
+                  label: l10n.progressBadgeShareImage,
+                  icon: const Icon(Icons.ios_share_rounded),
+                  onPressed: () => _shareImage(context, badge),
+                ),
               ],
             ],
           ),
         );
       },
+    );
+  }
+
+  Future<void> _shareImage(BuildContext context, Badge badge) {
+    final l10n = context.localizations;
+    final bloc = context.read<BadgesBloc>();
+    final earnedAt = badge.earnedAt;
+    return showAchievementShareDialog(
+      context,
+      card: AchievementShareCard(
+        emblem: BadgeEmblem(badge: badge, size: TokensSize.medallion),
+        title: badge.name,
+        detail: [
+          l10n.badgeRarity(badge.rarity),
+          if (earnedAt != null)
+            l10n.progressBadgeEarnedOn(ProgressFormat.date(earnedAt)),
+        ].join(' · '),
+        accent: context.rarityColor(badge.rarity),
+      ),
+      onShare: (png) => bloc.add(
+        BadgesEvent.imageShareRequested(
+          png: png,
+          fileName: 'synaptixfit-insignia.png',
+          text: l10n.achievementShareBadgeText(badge.name),
+        ),
+      ),
     );
   }
 

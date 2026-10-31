@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.planner;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.port.input.planner.GetFocusStatsUseCase;
 import com.synaptixfit.application.port.input.planner.RecordFocusSessionUseCase;
+import com.synaptixfit.application.port.input.planner.SyncWeeklyLoadUseCase;
 import com.synaptixfit.domain.event.planner.FocusSessionCompleted;
 import com.synaptixfit.domain.exception.planner.CalendarBlockNotFoundException;
 import com.synaptixfit.domain.exception.planner.PlannerSubjectNotFoundException;
@@ -32,17 +33,19 @@ public class FocusService implements RecordFocusSessionUseCase, GetFocusStatsUse
     private final SubjectDirectoryPort subjects;
     private final AwardExperienceUseCase award;
     private final DomainEventPublisherPort events;
+    private final SyncWeeklyLoadUseCase weeklyLoads;
     private final PlannerZone zone;
     private final Clock clock;
 
     public FocusService(FocusSessionRepositoryPort sessions, CalendarBlockRepositoryPort blocks,
                         SubjectDirectoryPort subjects, AwardExperienceUseCase award, DomainEventPublisherPort events,
-                        PlannerZone zone, Clock clock) {
+                        SyncWeeklyLoadUseCase weeklyLoads, PlannerZone zone, Clock clock) {
         this.sessions = sessions;
         this.blocks = blocks;
         this.subjects = subjects;
         this.award = award;
         this.events = events;
+        this.weeklyLoads = weeklyLoads;
         this.zone = zone;
         this.clock = clock;
     }
@@ -51,10 +54,7 @@ public class FocusService implements RecordFocusSessionUseCase, GetFocusStatsUse
     public Result record(Command command) {
         Instant now = clock.instant();
         LocalDate today = zone.today(now);
-        LocalDate date = command.date() == null ? today : command.date();
-        if (date.isAfter(today)) {
-            date = today;
-        }
+        LocalDate date = FocusSession.recordedDay(command.date(), today);
         UUID subjectId = command.subjectId();
         if (command.blockId() != null) {
             CalendarBlock block = blocks.findById(command.blockId())
@@ -77,6 +77,8 @@ public class FocusService implements RecordFocusSessionUseCase, GetFocusStatsUse
             award.award(command.userId(), xp);
         }
         if (saved.isCompletedFocus()) {
+            // La concentración suma horas reales de la semana (objetivo semanal y su bonus).
+            weeklyLoads.syncWeek(saved.userId(), saved.date());
             events.publish(new FocusSessionCompleted(saved.userId(), saved.id(), saved.date(), saved.durationMinutes(),
                     saved.blockId(), saved.subjectId(), xp, now));
         }

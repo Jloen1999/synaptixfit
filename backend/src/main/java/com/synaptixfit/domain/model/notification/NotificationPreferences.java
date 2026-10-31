@@ -22,6 +22,12 @@ public final class NotificationPreferences {
 
     public static final int DEFAULT_DAILY_LIMIT = 10;
     public static final int MAX_DAILY_LIMIT = 50;
+    /**
+     * Modo exámenes automático: con un examen en los próximos días, el modo {@code NORMAL} se comporta como
+     * {@code EXAMS} (solo lo académico, conflictos y fatiga). Una semana basta para preparar un examen sin que
+     * los avisos de otras cosas distraigan; pasado el examen vuelve solo.
+     */
+    public static final int EXAM_SEASON_DAYS = 7;
 
     private final UUID id;
     private final UUID userId;
@@ -41,6 +47,18 @@ public final class NotificationPreferences {
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
         apply(activeCategories, quietHoursStart, quietHoursEnd, dailyLimit, mode);
         this.updatedAt = updatedAt == null ? createdAt : updatedAt;
+    }
+
+    /**
+     * Las mismas preferencias con el modo efectivo durante la época de exámenes: {@code NORMAL} pasa a
+     * {@code EXAMS}; el modo descanso (y uno ya en exámenes) se respeta. No se guarda: se decide en cada envío.
+     */
+    public NotificationPreferences duringExamSeason() {
+        if (mode != NotificationMode.NORMAL) {
+            return this;
+        }
+        return new NotificationPreferences(id, userId, activeCategories, quietHoursStart, quietHoursEnd, dailyLimit,
+                NotificationMode.EXAMS, createdAt, updatedAt);
     }
 
     /** Preferencias por defecto: todas las categorías, sin horas de silencio, 10 al día, modo normal. */

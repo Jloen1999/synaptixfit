@@ -1,5 +1,6 @@
 import '../enums/analytics_enums.dart';
 import '../enums/analytics_period.dart';
+import '../models/progress/study_by_subject.dart';
 import '../models/progress/analytics_insight.dart';
 import '../models/progress/load_correlation.dart';
 import '../models/progress/rpe_trend.dart';
@@ -22,4 +23,7 @@ abstract interface class AnalyticsRepositoryContract {
 
   /// «Tu estudio» de la semana en curso.
   Future<AppResult<StudyWeek>> getStudyWeek();
+
+  /// Estudio por asignatura de las últimas [weeks] semanas.
+  Future<AppResult<StudyBySubject>> getStudyBySubject({int weeks = 4});
 }

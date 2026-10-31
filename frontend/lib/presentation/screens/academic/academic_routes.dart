@@ -13,7 +13,6 @@ import 'mock_exam/page/mock_exam_page.dart';
 import 'note_editor/page/note_editor_page.dart';
 import 'note_viewer/page/note_viewer_page.dart';
 import 'practice_hub/page/practice_hub_page.dart';
-import 'scan_note/page/scan_note_page.dart';
 import 'shared_notes/page/shared_notes_page.dart';
 import 'subject_detail/page/subject_detail_page.dart';
 import 'subject_form/page/subject_form_page.dart';
@@ -55,10 +54,6 @@ abstract final class AcademicPaths {
   static String note(String noteId) => '/academic/notes/$noteId';
 
   static String editNote(String noteId) => '/academic/notes/$noteId/edit';
-
-  /// Guardar texto escaneado o pegado como apunte.
-  static String scanNote({String? subjectId}) =>
-      _withQuery('/academic/notes/scan', {'subjectId': subjectId});
 
   static String file(String fileId) => '/academic/files/$fileId';
 
@@ -109,6 +104,10 @@ abstract final class AcademicPaths {
 }
 
 /// Rutas dentro de la pestaña (conservan la barra inferior).
+final _uuid = RegExp(
+  r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+);
+
 List<RouteBase> academicBranchRoutes() => [
   GoRoute(
     path: AcademicPaths.root,
@@ -145,11 +144,6 @@ List<RouteBase> academicRoutes() => [
       subjectId: state.uri.queryParameters['subjectId'],
       quickNote: state.uri.queryParameters['quick'] == '1',
     ),
-  ),
-  GoRoute(
-    path: '/academic/notes/scan',
-    builder: (context, state) =>
-        ScanNotePage(subjectId: state.uri.queryParameters['subjectId']),
   ),
   GoRoute(
     path: AcademicPaths.sharedNotes,
@@ -194,8 +188,14 @@ List<RouteBase> academicRoutes() => [
   ),
   GoRoute(
     path: '/academic/materials/:materialId/review',
-    builder: (context, state) =>
-        MaterialReviewPage(materialId: state.pathParameters['materialId']!),
+    builder: (context, state) => MaterialReviewPage(
+      materialId: state.pathParameters['materialId']!,
+      // La cola llega en la URL: solo se aceptan ids con forma de UUID.
+      queue: [
+        for (final id in (state.uri.queryParameters['queue'] ?? '').split(','))
+          if (_uuid.hasMatch(id)) id,
+      ],
+    ),
   ),
   GoRoute(
     path: '/academic/practice/:materialId/free',

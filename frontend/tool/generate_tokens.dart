@@ -35,6 +35,8 @@ void main() {
   void dimensions(String group, String className) {
     out.writeln('abstract final class $className {');
     (json[group] as Map<String, dynamic>).forEach((name, token) {
+      // Las claves con $ (descripción del grupo) no son tokens.
+      if (name.startsWith(r'$')) return;
       final value = ((token as Map<String, dynamic>)[r'$value'] as String)
           .replaceAll('px', '');
       out.writeln('  static const double $name = $value;');
@@ -48,6 +50,7 @@ void main() {
   dimensions('radius', 'TokensRadius');
   dimensions('layout', 'TokensLayout');
   dimensions('size', 'TokensSize');
+  dimensions('opacity', 'TokensOpacity');
 
   out.writeln('abstract final class TokensFont {');
   (json['font'] as Map<String, dynamic>).forEach((name, token) {

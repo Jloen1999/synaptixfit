@@ -197,6 +197,31 @@ void main() {
     expect(body['met'], 3.5);
     expect(body['gifUrl'], isNull);
     expect(body['bodyPartIds'], [4]);
+    // Nombres en otros idiomas: vacíos como nulos (se muestran en español).
+    expect(body['translations'], {'en': null, 'fr': null, 'pt': null});
+  });
+
+  test('AdminExerciseRequest envía los nombres revisados y omite los no '
+      'cargados', () {
+    final body = AdminExerciseRequest.fromDraft(
+      const AdminExerciseDraft(
+        name: 'Plancha',
+        translations: AdminExerciseNames(en: ' Front plank ', pt: 'Prancha'),
+      ),
+    );
+    expect(body['translations'], {
+      'en': 'Front plank',
+      'fr': null,
+      'pt': 'Prancha',
+    });
+    final untouched = AdminExerciseRequest.fromDraft(
+      const AdminExerciseDraft(name: 'Plancha', translations: null),
+    );
+    expect(untouched.containsKey('translations'), isFalse);
+    expect(
+      AdminExerciseNamesDto.fromJson(const {'en': 'Front plank'}).toDomain(),
+      const AdminExerciseNames(en: 'Front plank'),
+    );
   });
 
   test('AdminExerciseDraft valida los límites de la API', () {

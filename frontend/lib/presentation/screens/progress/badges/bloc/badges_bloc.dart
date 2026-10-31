@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -6,6 +8,7 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/progress/badge.dart';
 import '../../../../../domain/use_cases/progress/change_badge_visibility_use_case.dart';
 import '../../../../../domain/use_cases/progress/get_badge_catalog_use_case.dart';
+import '../../../../../domain/use_cases/progress/share_achievement_image_use_case.dart';
 import '../../../../../domain/use_cases/progress/share_badge_use_case.dart';
 
 part 'badges_bloc.freezed.dart';
@@ -18,16 +21,35 @@ class BadgesBloc extends Bloc<BadgesEvent, BadgesState> {
     required this._getCatalog,
     required this._changeVisibility,
     required this._shareBadge,
+    required this._shareImage,
   }) : super(const BadgesState()) {
     on<BadgesStarted>(_onStarted);
     on<BadgesCategorySelected>(_onCategorySelected);
     on<BadgesVisibilityToggled>(_onVisibilityToggled);
     on<BadgesShareRequested>(_onShareRequested);
+    on<BadgesImageShareRequested>(_onImageShareRequested);
   }
 
   final GetBadgeCatalogUseCaseContract _getCatalog;
   final ChangeBadgeVisibilityUseCaseContract _changeVisibility;
   final ShareBadgeUseCaseContract _shareBadge;
+  final ShareAchievementImageUseCaseContract _shareImage;
+
+  /// El menú del sistema ya es la respuesta: solo se avisa si falla.
+  Future<void> _onImageShareRequested(
+    BadgesImageShareRequested event,
+    Emitter<BadgesState> emit,
+  ) async {
+    final result = await _shareImage(
+      png: event.png,
+      fileName: event.fileName,
+      text: event.text,
+    );
+    if (result.errorOrNull case final AppError error) {
+      emit(state.copyWith(feedback: BadgesFeedback.failed(error)));
+      emit(state.copyWith(feedback: null));
+    }
+  }
 
   Future<void> _onStarted(
     BadgesStarted event,

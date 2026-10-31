@@ -12,6 +12,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../../progress_routes.dart';
+import '../../widgets/study_by_subject_card.dart';
 import '../../widgets/study_week_card.dart';
 import '../../widgets/analytics_summary.dart';
 import '../../widgets/community_preview_card.dart';
@@ -115,6 +116,8 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
                           const ProgressOverviewEvent.refreshed(),
                         ),
                       ),
+                    if (focus.includesAcademic)
+                      StudyBySubjectCard(report: overview.studyBySubject),
                     // Cifras de entrenamiento: solo si la persona hace deporte.
                     if (focus.includesFitness) ...[
                       WeeklySummaryCard(

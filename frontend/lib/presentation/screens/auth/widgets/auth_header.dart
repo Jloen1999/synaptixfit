@@ -19,7 +19,7 @@ class AuthHeader extends StatelessWidget {
     return Column(
       children: [
         if (showMark) ...[
-          const AppBrandMark(size: 64),
+          const AppBrandMark(size: TokensSize.brandLogo),
           const SizedBox(height: TokensSpacing.l),
         ],
         // Título de la página: encabezado para saltar con el lector.

@@ -46,7 +46,7 @@ class PlannerCrossModuleSyncTest {
         f = new PlannerFakes();
         loads = f.weeklyLoadService();
         completion = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp, f.publisher, loads,
-                PlannerFakes.ZONE, PlannerFakes.CLOCK);
+                PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK);
         calendar = new CalendarBlockService(f.blocks, f.deadlines, f.directory, f.directory, f.directory, f.xp,
                 f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK);
     }
@@ -96,6 +96,9 @@ class PlannerCrossModuleSyncTest {
         UUID material = UUID.randomUUID();
         CalendarBlock today = block(ActivityType.REVIEW, at(0, 17, 0), 30, null, null, material);
         CalendarBlock future = block(ActivityType.REVIEW, at(3, 17, 0), 30, null, null, material);
+        // «Hoy» es el lunes de PlannerFakes.NOW (el repaso se hace hoy).
+        BlockCompletionService completion = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp,
+                f.xp, f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK);
 
         completion.completeReviewBlock(f.user, material);
 
@@ -168,7 +171,8 @@ class PlannerCrossModuleSyncTest {
 
     @Test
     void focusXpHasADailyCapAndOnlyCompletedFocusPhasesPublish() {
-        FocusService focus = new FocusService(f.focus, f.blocks, f.directory, f.xp, f.publisher, PlannerFakes.ZONE,
+        FocusService focus = new FocusService(f.focus, f.blocks, f.directory, f.xp, f.publisher, f.weeklyLoadService(),
+                PlannerFakes.ZONE,
                 PlannerFakes.CLOCK);
         List<Integer> xps = new ArrayList<>();
         List<FocusXpStatus> statuses = new ArrayList<>();
@@ -192,7 +196,8 @@ class PlannerCrossModuleSyncTest {
 
     @Test
     void focusInAnOwnBlockTakesItsSubjectAndDoesNotCompleteIt() {
-        FocusService focus = new FocusService(f.focus, f.blocks, f.directory, f.xp, f.publisher, PlannerFakes.ZONE,
+        FocusService focus = new FocusService(f.focus, f.blocks, f.directory, f.xp, f.publisher, f.weeklyLoadService(),
+                PlannerFakes.ZONE,
                 PlannerFakes.CLOCK);
         SubjectRef subject = f.directory.addSubject(f.user, "Física", "FIS", 3);
         CalendarBlock study = block(ActivityType.STUDY, at(0, 9, 0), 60, subject.id(), null, null);

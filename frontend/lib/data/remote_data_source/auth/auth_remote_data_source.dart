@@ -56,6 +56,15 @@ class AuthRemoteDataSource {
     return AccountDto.fromJson(response.data!);
   }
 
+  Future<void> requestPasswordReset(String email) =>
+      _dio.post<void>('/api/v1/auth/password-reset', data: {'email': email});
+
+  Future<void> resetPassword(String token, String newPassword) =>
+      _dio.post<void>(
+        '/api/v1/auth/password-reset/confirm',
+        data: {'token': token, 'newPassword': newPassword},
+      );
+
   Future<void> changePassword(String? currentPassword, String newPassword) =>
       _dio.put<void>(
         '/api/v1/me/password',

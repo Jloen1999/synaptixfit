@@ -20,6 +20,23 @@ void main() {
       );
     });
 
+    test('aplicar la matrícula refresca estudios; leerla no cambia nada', () {
+      expect(
+        DataChangeInterceptor.topicsFor(
+          'POST',
+          '/api/v1/profile/enrollment/apply',
+        ),
+        containsAll([DataTopic.academic, DataTopic.planner]),
+      );
+      expect(
+        DataChangeInterceptor.topicsFor(
+          'POST',
+          '/api/v1/profile/enrollment/read',
+        ),
+        isEmpty,
+      );
+    });
+
     test('cambiar la privacidad en /me avisa a lo que se privatiza', () {
       expect(DataChangeInterceptor.topicsFor('PATCH', '/api/v1/me'), {
         DataTopic.profile,

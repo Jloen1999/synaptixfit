@@ -11,6 +11,7 @@ import '../../../../extensions/validation_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../forgot_password/page/forgot_password_page.dart';
 import '../../session/bloc/session_bloc.dart';
 import '../../widgets/auth_header.dart';
 import '../../widgets/auth_layout.dart';
@@ -107,7 +108,16 @@ class _LoginViewState extends State<_LoginView> with ErrorsMessageMixin {
                     validator: (v) => Validators.requiredText(v)?.text(context),
                     onSubmitted: (_) => _submit(),
                   ),
-                  const SizedBox(height: TokensSpacing.l),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: TextButton(
+                      onPressed: busy
+                          ? null
+                          : () => context.push(ForgotPasswordPage.path),
+                      child: Text(l10n.loginForgotPassword),
+                    ),
+                  ),
+                  const SizedBox(height: TokensSpacing.s),
                   AppPrimaryButton(
                     label: l10n.loginAction,
                     loading: busy,

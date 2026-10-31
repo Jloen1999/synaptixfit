@@ -68,13 +68,15 @@ class InsightsFlowIT {
                 .andExpect(jsonPath("$.cognitiveLoad").value(0.0))
                 .andExpect(jsonPath("$.attentionCapacity").value(1.0));
 
-        // Historial: una carga de hace 20 días (420 AU) da línea base al ACWR; sin ella, la primera
-        // semana no tiene ACWR (zona NO_DATA) para no alarmar a un usuario nuevo.
-        jdbc.sql("""
-                        INSERT INTO registros_carga_fisica (usuario_id, fecha_registro, rpe_sesion, duracion_minutos)
-                        VALUES (:u, :d, 7, 60)
-                        """)
-                .param("u", userId).param("d", LocalDate.now(MADRID).minusDays(20)).update();
+        // Historial: cargas hace 20 y 10 días (210 AU cada una, en dos semanas distintas) dan línea base
+        // al ACWR; sin ella, la primera semana no tiene ACWR (zona NO_DATA) para no alarmar a un usuario nuevo.
+        for (int daysAgo : new int[]{20, 10}) {
+            jdbc.sql("""
+                            INSERT INTO registros_carga_fisica (usuario_id, fecha_registro, rpe_sesion, duracion_minutos)
+                            VALUES (:u, :d, 7, 30)
+                            """)
+                    .param("u", userId).param("d", LocalDate.now(MADRID).minusDays(daysAgo)).update();
+        }
 
         // Sesión de entrenamiento completada hoy: RPE 7 x 60 min = 420 AU.
         UUID sessionId = UUID.randomUUID();
@@ -91,7 +93,7 @@ class InsightsFlowIT {
         events.publishEvent(completed); // idempotente
 
         assertThat(jdbc.sql("SELECT count(*) FROM registros_carga_fisica WHERE usuario_id = :u")
-                .param("u", userId).query(Long.class).single()).isEqualTo(2L);
+                .param("u", userId).query(Long.class).single()).isEqualTo(3L);
         // Columna generada con el criterio corregido: (420/7) / (840/28) = 60 / 30 = 2.
         assertThat(jdbc.sql("SELECT acwr_actual FROM estado_regulacion_cruzada WHERE usuario_id = :u")
                 .param("u", userId).query(BigDecimal.class).single()).isEqualByComparingTo("2.00");

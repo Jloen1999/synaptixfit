@@ -36,14 +36,15 @@ class PlanWeekBar extends StatelessWidget {
     final l10n = context.localizations;
     final planned = days.fold<int>(0, (sum, d) => sum + d.planned);
     final completed = days.fold<int>(0, (sum, d) => sum + d.completed);
+    final missed = days.fold<int>(0, (sum, d) => sum + d.missed);
     final maxValue = days.fold<int>(
       1,
       (m, d) => math.max(m, math.max(d.planned, d.completed)),
     );
     final current = now ?? DateTime.now();
     const weekdays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-    final longDay = DateFormat.EEEE('es');
-    final number = NumberFormat.decimalPattern('es');
+    final longDay = DateFormat.EEEE();
+    final number = NumberFormat.decimalPattern();
     final weekParts = [
       if (focus.includesFitness)
         week.plannedSessions != null && week.plannedSessions! > 0
@@ -70,7 +71,10 @@ class PlanWeekBar extends StatelessWidget {
               Text(
                 planned == 0
                     ? l10n.homePlanWeekEmpty
-                    : l10n.homePlanWeekSummary(completed, planned),
+                    : [
+                        l10n.homePlanWeekSummary(completed, planned),
+                        if (missed > 0) l10n.homePlanWeekMissed(missed),
+                      ].join(' · '),
                 style: context.textStyles.labelLarge,
               ),
               Text(
@@ -90,6 +94,7 @@ class PlanWeekBar extends StatelessWidget {
                           longDay.format(day.date),
                           day.completed,
                           day.planned,
+                          day.missed,
                         ),
                         excludeSemantics: true,
                         child: _DayColumn(
@@ -108,12 +113,74 @@ class PlanWeekBar extends StatelessWidget {
                     ),
                 ],
               ),
+              const SizedBox(height: TokensSpacing.s),
+              // Leyenda: sin ella, las barras grises de una semana sin empezar
+              // no se entienden.
+              ExcludeSemantics(
+                child: Wrap(
+                  spacing: TokensSpacing.m,
+                  children: [
+                    _LegendDot(
+                      color: context.colors.outline,
+                      label: l10n.homePlanWeekLegendPlanned,
+                      outlined: true,
+                    ),
+                    _LegendDot(
+                      color: focus == UsageFocus.fitness
+                          ? context.palette.sessions
+                          : context.palette.study,
+                      label: l10n.homePlanWeekLegendDone,
+                    ),
+                    _LegendDot(
+                      color: context.palette.success,
+                      label: l10n.homePlanWeekLegendComplete,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ],
     );
   }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({
+    required this.color,
+    required this.label,
+    this.outlined = false,
+  });
+
+  final Color color;
+  final String label;
+
+  /// Hueco con borde, como la barra de lo planificado.
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: TokensSize.dot * 2,
+        height: TokensSize.dot * 2,
+        decoration: BoxDecoration(
+          color: outlined ? null : color,
+          border: outlined ? Border.all(color: color) : null,
+          borderRadius: BorderRadius.circular(TokensRadius.pill),
+        ),
+      ),
+      const SizedBox(width: TokensSpacing.xs),
+      Text(
+        label,
+        style: context.textStyles.labelSmall?.copyWith(
+          color: context.colors.onSurfaceVariant,
+        ),
+      ),
+    ],
+  );
 }
 
 class _DayColumn extends StatelessWidget {
@@ -150,11 +217,12 @@ class _DayColumn extends StatelessWidget {
           child: Stack(
             alignment: Alignment.bottomCenter,
             children: [
+              // Lo planificado, hueco con borde; lo hecho, relleno encima. Así se
+              // distinguen por la forma y no solo por el color (WCAG 1.4.11).
               Container(
                 height: math.max(plannedHeight, TokensSpacing.xs),
                 decoration: BoxDecoration(
-                  // outline: la barra de lo planificado llega a 3:1 con la tarjeta.
-                  color: context.colors.outline,
+                  border: Border.all(color: context.colors.outline),
                   borderRadius: BorderRadius.circular(TokensRadius.s),
                 ),
               ),

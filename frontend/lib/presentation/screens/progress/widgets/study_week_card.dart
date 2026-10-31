@@ -85,46 +85,117 @@ class StudyWeekCard extends StatelessWidget {
               ),
             )
           : null,
-      child: AppTileGrid(
-        minTileWidth: TokensLayout.minTouchTarget * 3,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppMetricTile(
-            bare: true,
-            icon: Icons.timer_outlined,
-            color: study,
-            value: l10n.progressStudyMinutes(data.focusMinutes),
-            label: l10n.progressStudyFocusLabel,
-          ),
-          AppMetricTile(
-            bare: true,
-            icon: Icons.event_available_rounded,
-            color: study,
-            value: data.studyBlocksPlanned == 0
-                ? l10n.progressStudyNoPlan
-                : l10n.progressStudyBlocksDone(
-                    data.studyBlocksCompleted,
-                    data.studyBlocksPlanned,
-                  ),
-            label: l10n.progressStudyBlocksLabel,
-            detail: data.planAdherence == null
-                ? null
-                : l10n.progressStudyAdherence(data.planAdherence!),
-          ),
-          AppMetricTile(
-            bare: true,
-            icon: Icons.replay_rounded,
-            color: study,
-            value: '${data.reviewsCompleted}',
-            label: l10n.progressStudyReviewsLabel,
-          ),
-          if (data.testsCompleted > 0)
-            AppMetricTile(
-              bare: true,
-              icon: Icons.quiz_outlined,
+          if (data.weeklyGoalHours > 0) ...[
+            _GoalProgress(
+              hours: data.studyHours,
+              goal: data.weeklyGoalHours,
               color: study,
-              value: l10n.progressStudyScore(data.averageTestScore ?? 0),
-              label: l10n.progressStudyTestsLabel(data.testsCompleted),
             ),
+            const SizedBox(height: TokensSpacing.m),
+          ],
+          AppTileGrid(
+            minTileWidth: TokensLayout.minTouchTarget * 3,
+            children: [
+              AppMetricTile(
+                bare: true,
+                icon: Icons.timer_outlined,
+                color: study,
+                value: l10n.progressStudyMinutes(data.focusMinutes),
+                label: l10n.progressStudyFocusLabel,
+              ),
+              AppMetricTile(
+                bare: true,
+                icon: Icons.event_available_rounded,
+                color: study,
+                value: data.studyBlocksPlanned == 0
+                    ? l10n.progressStudyNoPlan
+                    : l10n.progressStudyBlocksDone(
+                        data.studyBlocksCompleted,
+                        data.studyBlocksPlanned,
+                      ),
+                label: l10n.progressStudyBlocksLabel,
+                detail: data.planAdherence == null
+                    ? null
+                    : l10n.progressStudyAdherence(data.planAdherence!),
+              ),
+              AppMetricTile(
+                bare: true,
+                icon: Icons.replay_rounded,
+                color: study,
+                value: '${data.reviewsCompleted}',
+                label: l10n.progressStudyReviewsLabel,
+              ),
+              if (data.testsCompleted > 0)
+                AppMetricTile(
+                  bare: true,
+                  icon: Icons.quiz_outlined,
+                  color: study,
+                  value: l10n.progressStudyScore(data.averageTestScore ?? 0),
+                  label: l10n.progressStudyTestsLabel(data.testsCompleted),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Horas de estudio de la semana frente al objetivo del perfil académico.
+class _GoalProgress extends StatelessWidget {
+  const _GoalProgress({
+    required this.hours,
+    required this.goal,
+    required this.color,
+  });
+
+  final int hours;
+  final int goal;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final reached = hours >= goal;
+    final semantics = l10n.progressStudyGoalSemantics(hours, goal);
+    return Semantics(
+      label: reached
+          ? '$semantics. ${l10n.progressStudyGoalReached}'
+          : semantics,
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.progressStudyGoal(hours, goal),
+                  style: context.textStyles.titleSmall,
+                ),
+              ),
+              if (reached) ...[
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: color,
+                  size: TokensSize.iconS,
+                ),
+                const SizedBox(width: TokensSpacing.xs),
+                Text(
+                  l10n.progressStudyGoalReached,
+                  style: context.textStyles.labelLarge,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          LinearProgressIndicator(
+            value: (hours / goal).clamp(0.0, 1.0),
+            color: color,
+          ),
         ],
       ),
     );

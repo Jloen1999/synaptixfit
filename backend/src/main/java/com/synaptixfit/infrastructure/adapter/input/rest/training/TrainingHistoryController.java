@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training;
 
+import com.synaptixfit.application.port.input.training.GetSessionHighlightsUseCase;
 import com.synaptixfit.application.port.input.training.ListLastPerformanceUseCase;
 import com.synaptixfit.application.port.input.training.ListPersonalRecordsUseCase;
 import com.synaptixfit.application.port.input.training.ListSessionHistoryUseCase;
@@ -7,16 +8,21 @@ import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.HistoryDtos.PersonalRecordResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.HistoryDtos.SessionHighlightsResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.HistoryDtos.SessionHistoryResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Historial de entrenamiento con nombres y récords ({@link ListSessionHistoryUseCase}, {@link ListPersonalRecordsUseCase}). */
+/**
+ * Historial de entrenamiento con nombres y récords ({@link ListSessionHistoryUseCase}, {@link ListPersonalRecordsUseCase})
+ * y lo destacado de una sesión terminada ({@link GetSessionHighlightsUseCase}).
+ */
 @Tag(name = "Training history")
 @RestController
 @RequestMapping("/api/v1/training")
@@ -25,12 +31,20 @@ public class TrainingHistoryController {
     private final ListSessionHistoryUseCase history;
     private final ListPersonalRecordsUseCase records;
     private final ListLastPerformanceUseCase last;
+    private final GetSessionHighlightsUseCase highlights;
 
     public TrainingHistoryController(ListSessionHistoryUseCase history, ListPersonalRecordsUseCase records,
-                                     ListLastPerformanceUseCase last) {
+                                     ListLastPerformanceUseCase last, GetSessionHighlightsUseCase highlights) {
         this.history = history;
         this.records = records;
         this.last = last;
+        this.highlights = highlights;
+    }
+
+    /** Resumen de una sesión terminada: volumen, récords batidos y comparación con la anterior comparable. */
+    @GetMapping("/sessions/{sessionId}/highlights")
+    public SessionHighlightsResponse highlights(@CurrentUserId UUID userId, @PathVariable UUID sessionId) {
+        return SessionHighlightsResponse.from(highlights.highlights(userId, sessionId));
     }
 
     @GetMapping("/history")

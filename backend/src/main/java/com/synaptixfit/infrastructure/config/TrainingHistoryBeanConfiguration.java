@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.application.port.input.training.GetSessionHighlightsUseCase;
 import com.synaptixfit.application.port.input.training.ListLastPerformanceUseCase;
 import com.synaptixfit.application.port.input.training.ListPersonalRecordsUseCase;
 import com.synaptixfit.application.port.input.training.ListSessionHistoryUseCase;
@@ -32,6 +33,11 @@ public class TrainingHistoryBeanConfiguration {
     @Bean
     ListSessionHistoryUseCase listSessionHistoryUseCase() {
         return tx.wrap(ListSessionHistoryUseCase.class, sessionHistoryService());
+    }
+
+    @Bean
+    GetSessionHighlightsUseCase getSessionHighlightsUseCase() {
+        return tx.wrap(GetSessionHighlightsUseCase.class, sessionHistoryService());
     }
 
     @Bean

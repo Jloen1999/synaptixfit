@@ -14,4 +14,8 @@ sealed class SessionCompletedEvent with _$SessionCompletedEvent {
   const factory SessionCompletedEvent.recommendationDiscarded(
     String recommendationId,
   ) = SessionCompletedRecommendationDiscarded;
+
+  /// Publica el resumen en el muro con el texto ya redactado por la página.
+  const factory SessionCompletedEvent.shareRequested(String description) =
+      SessionCompletedShareRequested;
 }

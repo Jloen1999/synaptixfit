@@ -54,4 +54,6 @@ enum TrainingMessage {
   sessionUnmarked,
   sessionAbandoned,
   setSaved,
+  sessionShared,
+  pendingSetDiscarded,
 }

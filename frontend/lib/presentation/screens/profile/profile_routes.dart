@@ -1,3 +1,4 @@
+import 'enrollment_import/page/enrollment_import_page.dart';
 import 'package:go_router/go_router.dart';
 
 import 'change_password/page/change_password_page.dart';
@@ -21,6 +22,7 @@ abstract final class ProfilePaths {
   static const editAcademic = '/profile/academic';
   static const degrees = '/profile/degrees';
   static const subjects = '/profile/subjects';
+  static const enrollmentImport = '/profile/enrollment';
   static const settings = '/profile/settings';
   static const changePassword = '/profile/settings/password';
   static const notifications = '/profile/settings/notifications';
@@ -45,6 +47,10 @@ List<RouteBase> profileRoutes() => [
       ),
       GoRoute(path: 'academic', builder: (_, _) => const EditAcademicPage()),
       GoRoute(path: 'degrees', builder: (_, _) => const DegreesPage()),
+      GoRoute(
+        path: 'enrollment',
+        builder: (_, _) => const EnrollmentImportPage(),
+      ),
       GoRoute(
         path: 'subjects',
         builder: (_, _) =>

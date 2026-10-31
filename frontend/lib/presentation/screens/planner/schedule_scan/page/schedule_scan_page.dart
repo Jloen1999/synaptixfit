@@ -13,7 +13,6 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
-import '../../widgets/planner_form_fields.dart';
 import '../../widgets/semester_dates_sheet.dart';
 import '../bloc/schedule_scan_bloc.dart';
 
@@ -225,7 +224,7 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
           const SizedBox(height: TokensSpacing.m),
         ],
         if (state.scanError != null) ...[
-          InlineMessage(message: errorMessage(context, state.scanError!)),
+          AppInlineMessage(message: errorMessage(context, state.scanError!)),
           const SizedBox(height: TokensSpacing.m),
         ],
         if (result != null) ...[
@@ -256,7 +255,10 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
         if (!state.subjectsLoaded)
           const AppSkeletonGroup(child: AppSkeleton(height: 56))
         else if (state.subjects.isEmpty)
-          InlineMessage(message: l10n.plannerIcsNoSubjects, isError: false)
+          AppInlineMessage(
+            message: l10n.plannerIcsNoSubjects,
+            tone: AppMessageTone.warning,
+          )
         else ...[
           DropdownButtonFormField<String>(
             initialValue: subjectId,
@@ -288,8 +290,8 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
           if (result != null) ...[
             const SizedBox(height: TokensSpacing.s),
             if (result.imported)
-              InlineMessage(
-                isError: false,
+              AppInlineMessage(
+                tone: AppMessageTone.warning,
                 message: l10n.plannerIcsResult(
                   result.created,
                   result.updated,
@@ -297,8 +299,8 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
                 ),
               )
             else ...[
-              InlineMessage(
-                isError: false,
+              AppInlineMessage(
+                tone: AppMessageTone.warning,
                 message: l10n.plannerIcsNotImported(
                   result.matchingEvents,
                   result.totalEvents,

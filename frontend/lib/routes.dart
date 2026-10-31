@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import 'domain/enums/usage_focus.dart';
 
+import 'presentation/screens/auth/forgot_password/page/forgot_password_page.dart';
 import 'presentation/screens/auth/login/page/login_page.dart';
 import 'presentation/screens/auth/register/page/register_page.dart';
+import 'presentation/screens/auth/reset_password/page/reset_password_page.dart';
 import 'presentation/screens/auth/session/bloc/session_bloc.dart';
 import 'presentation/screens/shell/page/main_shell_page.dart';
 import 'presentation/screens/splash/page/splash_page.dart';
@@ -22,12 +24,19 @@ import 'presentation/screens/admin/admin_routes.dart';
 
 /// Navegación de la app. Cada módulo declara sus rutas en `<modulo>_routes.dart`.
 GoRouter buildRouter(SessionBloc session) {
-  const publicPaths = {LoginPage.path, RegisterPage.path};
+  const publicPaths = {
+    LoginPage.path,
+    RegisterPage.path,
+    ForgotPasswordPage.path,
+  };
   return GoRouter(
     initialLocation: SplashPage.path,
     refreshListenable: _StreamListenable(session.stream),
     redirect: (context, state) {
       final location = state.matchedLocation;
+      // El enlace del correo funciona con o sin sesión y no puede pasar por la
+      // pantalla de carga: se perdería el token de la dirección.
+      if (location == ResetPasswordPage.path) return null;
       return switch (session.state) {
         SessionUnknown() =>
           location == SplashPage.path ? null : SplashPage.path,
@@ -45,6 +54,15 @@ GoRouter buildRouter(SessionBloc session) {
       GoRoute(path: SplashPage.path, builder: (_, _) => const SplashPage()),
       GoRoute(path: LoginPage.path, builder: (_, _) => const LoginPage()),
       GoRoute(path: RegisterPage.path, builder: (_, _) => const RegisterPage()),
+      GoRoute(
+        path: ForgotPasswordPage.path,
+        builder: (_, _) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: ResetPasswordPage.path,
+        builder: (_, state) =>
+            ResetPasswordPage(token: state.uri.queryParameters['token'] ?? ''),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => MainShellPage(shell: shell),
         branches: [

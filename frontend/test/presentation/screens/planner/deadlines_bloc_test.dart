@@ -74,6 +74,7 @@ void main() {
     when(
       () => getDeadlines(
         upcoming: any(named: 'upcoming'),
+        includeOverdue: any(named: 'includeOverdue'),
         subjectId: any(named: 'subjectId'),
         page: any(named: 'page'),
       ),
@@ -100,8 +101,9 @@ void main() {
           .having((s) => s.items, 'items', [d1, d2])
           .having((s) => s.hasMore, 'hasMore', isTrue),
     ],
-    verify: (_) =>
-        verify(() => getDeadlines(upcoming: true, subjectId: null)).called(1),
+    verify: (_) => verify(
+      () => getDeadlines(upcoming: true, includeOverdue: true, subjectId: null),
+    ).called(1),
   );
 
   blocTest<DeadlinesBloc, DeadlinesState>(
@@ -109,6 +111,7 @@ void main() {
     setUp: () => when(
       () => getDeadlines(
         upcoming: any(named: 'upcoming'),
+        includeOverdue: any(named: 'includeOverdue'),
         subjectId: any(named: 'subjectId'),
         page: any(named: 'page'),
       ),
@@ -131,7 +134,13 @@ void main() {
     verify: (bloc) {
       expect(bloc.state.pendingOnly, isFalse);
       expect(bloc.state.subjectId, 's1');
-      verify(() => getDeadlines(upcoming: false, subjectId: 's1')).called(1);
+      verify(
+        () => getDeadlines(
+          upcoming: false,
+          includeOverdue: false,
+          subjectId: 's1',
+        ),
+      ).called(1);
     },
   );
 

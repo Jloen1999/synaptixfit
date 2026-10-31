@@ -14,6 +14,7 @@ import com.synaptixfit.domain.model.training.RoutineStatus;
 import com.synaptixfit.domain.model.training.RoutineWeek;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.domain.model.training.WeekType;
+import com.synaptixfit.infrastructure.adapter.input.rest.support.LocalizedNames;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -134,7 +135,8 @@ public final class RoutineDtos {
                                           Integer isometricSeconds, Integer realDurationSeconds) {
         public static PlannedExerciseResponse from(PlannedExercise p) {
             ExerciseParameters x = p.parameters();
-            return new PlannedExerciseResponse(p.id(), p.exerciseId(), p.exercise().name(), p.exercise().gifUrl(),
+            return new PlannedExerciseResponse(p.id(), p.exerciseId(),
+                    LocalizedNames.exercise(p.exerciseId(), p.exercise().name()), p.exercise().gifUrl(),
                     p.exercise().previewUrl(), p.exercise().modality(), p.exercise().measurementTypes(),
                     p.exercise().effectiveMet(), p.exercise().active(), p.order(), x.sets(), x.reps(), x.restSeconds(),
                     x.weightKg(), x.weightsKg(), x.targetDurationSeconds(), x.distanceMeters(), x.isometricSeconds(),

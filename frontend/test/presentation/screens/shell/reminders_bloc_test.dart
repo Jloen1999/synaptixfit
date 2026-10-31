@@ -8,6 +8,8 @@ import 'package:synaptixfit/domain/enums/reminder_kind.dart';
 import 'package:synaptixfit/domain/enums/usage_focus.dart';
 import 'package:synaptixfit/domain/models/reminders/reminder.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/use_cases/reminders/mark_reminders_offered_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/reminders/should_offer_reminders_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/reminders/clear_reminders_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/reminders/get_device_reminders_status_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/reminders/set_device_reminders_enabled_use_case.dart';
@@ -31,6 +33,12 @@ class _Enabled extends Mock
 
 class _Opened extends Mock implements WatchOpenedRemindersUseCaseContract {}
 
+class _ShouldOffer extends Mock
+    implements ShouldOfferRemindersUseCaseContract {}
+
+class _MarkOffered extends Mock
+    implements MarkRemindersOfferedUseCaseContract {}
+
 class _Status extends Mock implements GetDeviceRemindersStatusUseCaseContract {}
 
 class _SetEnabled extends Mock
@@ -45,6 +53,9 @@ void main() {
     late _Changes changes;
     late _Enabled enabled;
     late _Opened opened;
+    late _ShouldOffer shouldOffer;
+    late _MarkOffered markOffered;
+    late _SetEnabled setEnabled;
     late StreamController<Set<DataTopic>> changesController;
     late StreamController<ReminderKind> openedController;
 
@@ -58,6 +69,15 @@ void main() {
       changes = _Changes();
       enabled = _Enabled();
       opened = _Opened();
+      shouldOffer = _ShouldOffer();
+      markOffered = _MarkOffered();
+      setEnabled = _SetEnabled();
+      // Por defecto no toca ofrecer (ya se ofreció o no se admite).
+      when(() => shouldOffer()).thenAnswer((_) async => const Success(false));
+      when(() => markOffered()).thenAnswer((_) async => const Success(unit));
+      when(
+        () => setEnabled(any()),
+      ).thenAnswer((_) async => const Success(true));
       changesController = StreamController.broadcast();
       openedController = StreamController.broadcast();
       when(
@@ -77,7 +97,37 @@ void main() {
       watchChanges: changes,
       watchEnabled: enabled,
       watchOpened: opened,
+      shouldOffer: shouldOffer,
+      markOffered: markOffered,
+      setEnabled: setEnabled,
       debounce: Duration.zero,
+    );
+
+    blocTest<RemindersBloc, RemindersState>(
+      'al guardar algo del planificador ofrece los avisos una vez y, si se aceptan, los activa',
+      setUp: () => when(
+        () => shouldOffer(),
+      ).thenAnswer((_) async => const Success(true)),
+      build: build,
+      act: (bloc) async {
+        bloc.add(
+          const RemindersEvent.started(focus: UsageFocus.both, texts: texts),
+        );
+        await Future<void>.delayed(Duration.zero);
+        changesController
+          ..add({DataTopic.planner})
+          ..add({DataTopic.academic});
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        expect(bloc.state.offerReminders, isTrue);
+        bloc.add(const RemindersEvent.offerAnswered(accepted: true));
+        await Future<void>.delayed(Duration.zero);
+      },
+      verify: (bloc) {
+        expect(bloc.state.offerReminders, isFalse);
+        verify(() => shouldOffer()).called(1);
+        verify(() => markOffered()).called(1);
+        verify(() => setEnabled(true)).called(1);
+      },
     );
 
     blocTest<RemindersBloc, RemindersState>(

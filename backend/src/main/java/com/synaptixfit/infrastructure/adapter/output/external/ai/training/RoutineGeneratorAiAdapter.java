@@ -9,13 +9,14 @@ import com.synaptixfit.domain.model.training.generation.AcademicContext;
 import com.synaptixfit.domain.model.training.generation.GoalParameters;
 import com.synaptixfit.domain.model.training.generation.RoutineProposal.ProposedDay;
 import com.synaptixfit.domain.model.training.generation.RoutineProposal.ProposedExercise;
-import com.synaptixfit.domain.model.training.generation.RoutineRefinement;
 import com.synaptixfit.domain.model.training.generation.RoutineRefinement.RefinedExercise;
+import com.synaptixfit.domain.model.training.generation.RoutineRefinement;
 import com.synaptixfit.domain.model.training.generation.RoutineRefinementRequest;
 import com.synaptixfit.domain.model.training.generation.TrainingHistory;
 import com.synaptixfit.domain.model.training.generation.TrainingProfile;
 import com.synaptixfit.domain.port.output.ai.GenerativeAiPort;
 import com.synaptixfit.domain.port.output.training.RoutineGeneratorPort;
+import com.synaptixfit.infrastructure.adapter.output.external.ai.AiLanguage;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -100,7 +101,8 @@ public class RoutineGeneratorAiAdapter implements RoutineGeneratorPort {
                 """.formatted(context(r), r.durationWeeks(), base, candidates(r.candidates()),
                 r.adjustmentReasons().isEmpty() ? "" : " Menciona sutilmente que se adaptó la intensidad al contexto actual del usuario.",
                 equipment, goal.label(), params.setsMin(), params.setsMax(), params.repsMin(), params.repsMax(),
-                params.restMin(), params.restMax(), firstDay(r), firstDay(r), r.durationWeeks());
+                params.restMin(), params.restMax(), firstDay(r), firstDay(r), r.durationWeeks())
+                + "Escribe \"nombre\", \"descripcion\", \"nombresSemanas\" y \"nombresDias\" en " + AiLanguage.current() + ".\n";
     }
 
     private static String firstDay(RoutineRefinementRequest r) {

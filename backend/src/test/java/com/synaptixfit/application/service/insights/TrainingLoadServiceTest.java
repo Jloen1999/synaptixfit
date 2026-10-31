@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 
+import com.synaptixfit.application.port.input.insights.SyncSportBlockLoadUseCase;
 import com.synaptixfit.application.port.input.insights.RecordTrainingLoadUseCase.Command;
 import com.synaptixfit.domain.exception.insights.InvalidTimeZoneException;
 import com.synaptixfit.domain.event.insights.OvertrainingDetected;
@@ -63,6 +64,23 @@ class TrainingLoadServiceTest {
         service.recordTrainingLoad(new Command(USER, session, TODAY, 6, 40, true));
         service.recordTrainingLoad(new Command(USER, session, TODAY, 8, 60, true));
         assertThat(ports.loads).singleElement().satisfies(r -> assertThat(r.load()).isEqualTo(480));
+    }
+
+    @Test
+    void aSportBlockAddsLoadWithModerateEffortByDefaultAndUnmarkingRemovesIt() {
+        UUID block = UUID.randomUUID();
+        service.syncSportBlockLoad(new SyncSportBlockLoadUseCase.Command(USER, block, TODAY, null, 90, true));
+        assertThat(ports.loads).singleElement().satisfies(r -> {
+            assertThat(r.blockId()).isEqualTo(block);
+            assertThat(r.sessionId()).isNull();
+            assertThat(r.load()).isEqualTo(PhysicalLoadRecord.DEFAULT_RPE * 90);
+        });
+
+        service.syncSportBlockLoad(new SyncSportBlockLoadUseCase.Command(USER, block, TODAY, 8, 90, true));
+        assertThat(ports.loads).singleElement().satisfies(r -> assertThat(r.load()).isEqualTo(720));
+
+        service.syncSportBlockLoad(new SyncSportBlockLoadUseCase.Command(USER, block, TODAY, null, 90, false));
+        assertThat(ports.loads).isEmpty();
     }
 
     @Test
@@ -135,8 +153,9 @@ class TrainingLoadServiceTest {
 
     @Test
     void enteringOvertrainingIsAnnouncedOnce() {
-        // Línea base baja (días 8-28) y una semana muy cargada: ACWR > 1.5.
+        // Línea base baja (carga en dos de las tres semanas anteriores) y una semana muy cargada: ACWR > 1.5.
         ports.loads.add(PhysicalLoadRecord.forSession(USER, UUID.randomUUID(), TODAY.minusDays(20), 5, 30, NOW));
+        ports.loads.add(PhysicalLoadRecord.forSession(USER, UUID.randomUUID(), TODAY.minusDays(10), 5, 30, NOW));
         UUID heavy = UUID.randomUUID();
         service.recordTrainingLoad(new Command(USER, heavy, TODAY, 9, 120, true));
         service.recordTrainingLoad(new Command(USER, heavy, TODAY, 9, 120, true));

@@ -23,6 +23,7 @@ import com.synaptixfit.domain.model.training.ExerciseDraft;
 import com.synaptixfit.domain.model.training.ExerciseFilterOptions;
 import com.synaptixfit.domain.model.training.ExerciseSearchCriteria;
 import com.synaptixfit.domain.model.training.SessionBookends;
+import com.synaptixfit.domain.port.output.training.ExerciseNameTranslationsRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseRepositoryPort;
 import java.time.Clock;
 import java.util.Arrays;
@@ -36,6 +37,7 @@ import java.util.UUID;
 /**
  * Catálogo de ejercicios: consulta para usuarios (solo activos) y gestión de administración. Un
  * ejercicio usado en alguna rutina no se borra (la FK lo impide y romperíamos rutinas): se desactiva.
+ * Al crear o editar se guardan también sus nombres en otros idiomas, en la misma transacción.
  */
 public class ExerciseCatalogService implements SearchExercisesUseCase, GetExerciseUseCase, ListExerciseAlternativesUseCase,
         SuggestSessionBookendsUseCase,
@@ -43,10 +45,13 @@ public class ExerciseCatalogService implements SearchExercisesUseCase, GetExerci
         UpdateExerciseUseCase, SetExerciseActiveUseCase, DeleteExerciseUseCase {
 
     private final ExerciseRepositoryPort exercises;
+    private final ExerciseNameTranslationsRepositoryPort names;
     private final Clock clock;
 
-    public ExerciseCatalogService(ExerciseRepositoryPort exercises, Clock clock) {
+    public ExerciseCatalogService(ExerciseRepositoryPort exercises, ExerciseNameTranslationsRepositoryPort names,
+                                  Clock clock) {
         this.exercises = exercises;
+        this.names = names;
         this.clock = clock;
     }
 
@@ -123,7 +128,9 @@ public class ExerciseCatalogService implements SearchExercisesUseCase, GetExerci
         if (!exercises.catalogReferencesExist(draft)) {
             throw new CatalogReferenceInvalidException();
         }
-        return exercises.create(UUID.randomUUID(), draft, clock.instant());
+        Exercise created = exercises.create(UUID.randomUUID(), draft, clock.instant());
+        saveNames(created.id(), draft);
+        return created;
     }
 
     @Override
@@ -132,7 +139,15 @@ public class ExerciseCatalogService implements SearchExercisesUseCase, GetExerci
         if (!exercises.catalogReferencesExist(draft)) {
             throw new CatalogReferenceInvalidException();
         }
-        return exercises.update(exerciseId, draft, clock.instant());
+        Exercise updated = exercises.update(exerciseId, draft, clock.instant());
+        saveNames(exerciseId, draft);
+        return updated;
+    }
+
+    private void saveNames(UUID exerciseId, ExerciseDraft draft) {
+        if (draft.translations() != null) {
+            names.replace(exerciseId, draft.translations());
+        }
     }
 
     @Override

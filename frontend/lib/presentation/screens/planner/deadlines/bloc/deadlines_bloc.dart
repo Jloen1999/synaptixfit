@@ -73,8 +73,10 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
     }
     final pendingOnly = state.pendingOnly;
     final subjectId = state.subjectId;
+    // «Pendientes» también enseña lo vencido sin entregar (primero).
     final result = await _getDeadlines(
       upcoming: pendingOnly,
+      includeOverdue: pendingOnly,
       subjectId: subjectId,
     );
     // Filtros cambiados mientras se cargaba: manda la última petición.
@@ -127,6 +129,7 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
     emit(state.copyWith(loadingMore: true));
     final result = await _getDeadlines(
       upcoming: state.pendingOnly,
+      includeOverdue: state.pendingOnly,
       subjectId: state.subjectId,
       page: state.page + 1,
     );

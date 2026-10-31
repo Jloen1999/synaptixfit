@@ -160,7 +160,7 @@
   "homeBannerActionPlan": "Planificar",
   "homeBannerActionPomodoro": "Descanso guiado",
   "homeBannerActionTrain": "Entrenar",
-  "homeBannerActionCheckIn": "Hacer check-in",
+  "homeBannerActionCheckIn": "Contar cómo estoy",
   "homeWeekTitle": "Esta semana",
   "homeWeekSessions": "{count, plural, =1{1 sesión} other{{count} sesiones}}",
   "@homeWeekSessions": {
@@ -201,7 +201,7 @@
   "homeGaugeCognitiveLoadHint": "Sube con lo que estudias hoy. Unas 4 h exigentes llevan a la zona crítica.",
   "homeGaugeAttentionHint": "Baja a la mitad tras 52 min seguidos. Un descanso de 17 min la recupera.",
   "homeGaugeEnergyHint": "Según tu sueño, recuperación y estrés de hoy.",
-  "homeGaugeEnergyNoCheckIn": "Haz el check-in para calcularla.",
+  "homeGaugeEnergyNoCheckIn": "Cuéntanos cómo estás hoy para calcularla.",
   "homeGaugeAcwr": "Carga física",
   "homeGaugeAcwrHint": "Compara lo que has entrenado esta semana con tu media del último mes. Lo ideal es la zona óptima.",
   "homeGaugePercent": "{value} %",
@@ -250,7 +250,14 @@
       }
     }
   },
-  "homeAgendaPlanAction": "Planificar",
+  "homeAgendaDayPending": "{count, plural, =1{1 pendiente} other{{count} pendientes}}",
+  "@homeAgendaDayPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "homeAgendaTimeRange": "{start} – {end}",
   "@homeAgendaTimeRange": {
     "placeholders": {
@@ -290,8 +297,8 @@
   "homeTrainingInProgress": "En curso",
   "homeTrainingStart": "Empezar",
   "homeTrainingContinue": "Continuar",
-  "homeTrainingCheckIn": "Hacer check-in",
-  "homeTrainingCheckInDone": "Check-in de hoy hecho",
+  "homeTrainingCheckIn": "Contar cómo estoy",
+  "homeTrainingCheckInDone": "Ya nos has contado cómo estás",
   "homeTrainingEmptyTitle": "Sin rutina activa",
   "homeTrainingEmptyMessage": "Crea una rutina adaptada a tu carga académica.",
   "homeTrainingCreate": "Crear rutina",
@@ -330,7 +337,7 @@
     }
   },
   "homePlanWeekEmpty": "Aún no has planificado esta semana.",
-  "homePlanDaySemantics": "{day}: {completed} de {planned} bloques",
+  "homePlanDaySemantics": "{day}: {completed} de {planned} bloques{missed, plural, =0{} =1{, 1 sin hacer} other{, {missed} sin hacer}}",
   "@homePlanDaySemantics": {
     "placeholders": {
       "day": {
@@ -340,6 +347,9 @@
         "type": "int"
       },
       "planned": {
+        "type": "int"
+      },
+      "missed": {
         "type": "int"
       }
     }
@@ -364,7 +374,7 @@
       }
     }
   },
-  "homeBalanceEnergyMissing": "Energía: sin check-in",
+  "homeBalanceEnergyMissing": "Energía: cuéntanos cómo estás",
   "homeBalanceStudyNow": "Concentrarme",
   "homeStateTitle": "Tu estado",
   "homeTrainingSeeRoutine": "Ver rutina",
@@ -378,5 +388,188 @@
         "type": "int"
       }
     }
-  }
+  },
+  "homeAgendaMissed": "Sin hacer",
+  "homeAgendaOverdue": "Vencida",
+  "homeAgendaNow": "Ahora",
+  "homePlanWeekMissed": "{count, plural, =1{1 sin hacer} other{{count} sin hacer}}",
+  "@homePlanWeekMissed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerOverdueDeadlinesTitle": "{count, plural, =1{Tienes 1 entrega vencida} other{Tienes {count} entregas vencidas}}",
+  "@homeBannerOverdueDeadlinesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerOverdueDeadlinesMessage": "{count, plural, =1{Si aún puedes, entrégala hoy; si no, márcala o habla con tu profesor.} other{Si aún puedes, entrégalas hoy; si no, márcalas o habla con tu profesor.}}",
+  "homeBannerMissedBlocksTitle": "{count, plural, =1{1 bloque se quedó sin hacer} other{{count} bloques se quedaron sin hacer}}",
+  "@homeBannerMissedBlocksTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerMissedBlocksMessage": "{count, plural, =1{Márcalo si lo hiciste o llévalo al próximo hueco libre.} other{Márcalos si los hiciste o llévalos al próximo hueco libre.}}",
+  "@homeBannerMissedBlocksMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerActionReschedule": "Revisar en el calendario",
+  "@homeBannerOverdueDeadlinesMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeSetupTitle": "Termina de preparar tu app",
+  "homeSetupProgress": "{done} de {total} listo",
+  "@homeSetupProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "homeSetupLater": "Ahora no",
+  "homeSetupSubjects": "Añade tus asignaturas",
+  "homeSetupSubjectsHint": "Para planificar tu estudio y tus repasos.",
+  "homeSetupWellness": "Completa tu perfil físico",
+  "homeSetupWellnessHint": "Peso, altura y actividad para calcular tus calorías y tu carga.",
+  "homeSetupRoutine": "Elige o crea una rutina",
+  "homeSetupRoutineHint": "Así sabrás qué toca entrenar cada día.",
+  "homeSetupWeekPlan": "Planifica tus próximos días",
+  "homeSetupWeekPlanHint": "Añade clases, estudio o entrenos al calendario.",
+  "homeSetupAcademic": "Indica tu universidad y tu grado",
+  "homeSetupAcademicHint": "Te proponemos las asignaturas de tu carrera.",
+  "homeBannerWhenToday": "hoy a las {time}",
+  "@homeBannerWhenToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeBannerWhenYesterday": "ayer a las {time}",
+  "@homeBannerWhenYesterday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeBannerMissedBlockOne": "{name} ({when}) se quedó sin hacer",
+  "@homeBannerMissedBlockOne": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "homeBannerMissedBlockMany": "{name} ({when}) y {others, plural, =1{1 bloque más} other{{others} bloques más}} se quedaron sin hacer",
+  "@homeBannerMissedBlockMany": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "homeAgendaShowMore": "Ver {count} más",
+  "@homeAgendaShowMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeAgendaShowLess": "Ver menos",
+  "homeSetupShowAll": "Ver las {count}",
+  "@homeSetupShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTodayTitle": "Tu día",
+  "homeTodayProgressSemantics": "{total, plural, =0{No tienes bloques planificados hoy} =1{Has hecho {done} de 1 bloque de hoy} other{Has hecho {done} de {total} bloques de hoy}}",
+  "homeTodayNow": "Ahora",
+  "homeTodayNext": "A continuación",
+  "homeTodayFocus": "Concentrarme",
+  "homeTodayTrain": "Empezar entreno",
+  "homeTodayPlanDay": "Planificar el día",
+  "homeTodayOpenCalendar": "Ver calendario",
+  "homeTodayAllDone": "Has terminado lo de hoy. ¡Buen trabajo!",
+  "homeTodayEmpty": "Aún no tienes nada planificado para hoy.",
+  "homeTodayStudy": "estudio hoy",
+  "homeTodayTraining": "entreno hoy",
+  "homeTodayStudyOf": "{done} de {planned} min",
+  "homeTodayMinutes": "{minutes} min",
+  "homeTodayXp": "{remaining} XP para el nivel {next}",
+  "homePlanWeekLegendPlanned": "Planificado",
+  "homePlanWeekLegendDone": "Hecho",
+  "homePlanWeekLegendComplete": "Día completo",
+  "@homeTodayProgressSemantics": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@homeTodayStudyOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "planned": {
+        "type": "int"
+      }
+    }
+  },
+  "@homeTodayMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@homeTodayXp": {
+    "description": "Lo que falta para subir de nivel.",
+    "placeholders": {
+      "remaining": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "homeReviewAll": "Repasar todos"
 }

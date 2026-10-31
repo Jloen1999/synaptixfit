@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.dashboard;
 
+import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
 import com.synaptixfit.application.port.input.challenge.ListMyChallengesUseCase;
 import com.synaptixfit.application.port.input.dashboard.GetDashboardUseCase;
 import com.synaptixfit.application.port.input.insights.GetCognitiveStateUseCase;
@@ -22,14 +23,16 @@ import com.synaptixfit.domain.model.dashboard.SmartBanner;
 import com.synaptixfit.domain.model.dashboard.SmartBannerRules;
 import com.synaptixfit.domain.model.insights.CognitiveState;
 import com.synaptixfit.domain.model.insights.CompletedStudyBlock;
-import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.insights.CrossRegulationView;
 import com.synaptixfit.domain.model.insights.DailyCheckIn;
 import com.synaptixfit.domain.model.insights.StudyActivity;
 import com.synaptixfit.domain.model.insights.StudyCaloriesSummary;
 import com.synaptixfit.domain.model.insights.TimeZones;
 import com.synaptixfit.domain.model.insights.WellbeingSnapshot;
+import com.synaptixfit.domain.model.planner.ActivityType;
+import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.shared.PageRequest;
+import com.synaptixfit.domain.model.training.TrainingSession;
 import com.synaptixfit.domain.model.user.UsageFocus;
 import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.dashboard.DashboardReadPort;
@@ -44,6 +47,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -81,6 +86,8 @@ public class DashboardService implements GetDashboardUseCase {
     private final GetPhysicalLoadUseCase physicalLoad;
     private final GetWellbeingUseCase wellbeing;
     private final ListMyChallengesUseCase challenges;
+    /** Racha efectiva al leer (null: se usa la guardada en el usuario). */
+    private final GetStreakUseCase streaks;
     private final Clock clock;
     private final ZoneId defaultZone;
 
@@ -90,6 +97,17 @@ public class DashboardService implements GetDashboardUseCase {
                             GetPhysicalLoadUseCase physicalLoad,
                             GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges, Clock clock,
                             ZoneId defaultZone) {
+        this(users, reads, insightSources, cognitiveStates, crossRegulation, studyCalories, studyActivity, physicalLoad,
+                wellbeing, challenges, null, clock, defaultZone);
+    }
+
+    public DashboardService(UserRepositoryPort users, DashboardReadPort reads, InsightsSourcePort insightSources,
+                            GetCognitiveStateUseCase cognitiveStates, GetCrossRegulationUseCase crossRegulation,
+                            GetStudyCaloriesTodayUseCase studyCalories, GetStudyActivityUseCase studyActivity,
+                            GetPhysicalLoadUseCase physicalLoad,
+                            GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges,
+                            GetStreakUseCase streaks, Clock clock, ZoneId defaultZone) {
+        this.streaks = streaks;
         this.users = users;
         this.reads = reads;
         this.insightSources = insightSources;
@@ -103,6 +121,9 @@ public class DashboardService implements GetDashboardUseCase {
         this.clock = clock;
         this.defaultZone = defaultZone;
     }
+
+    /** Ventana de entregas vencidas que se avisan en Inicio. */
+    static final int OVERDUE_DAYS = 14;
 
     @Override
     public Dashboard getDashboard(UUID userId, String timeZone) {
@@ -131,6 +152,20 @@ public class DashboardService implements GetDashboardUseCase {
                 ? reads.deadlines(userId, todayStart, now.plus(Duration.ofDays(UPCOMING_DAYS)))
                 : List.of();
 
+        // Bloques que se quedaron sin hacer ayer u hoy (de lo que la persona usa). Las clases no
+        // cuentan para el aviso: casi siempre vienen del horario importado y pocos las marcan.
+        Instant yesterdayStart = TimeZones.startOfDay(today.minusDays(1), zone);
+        List<CalendarBlock> missed = reads.calendarBlocks(userId, yesterdayStart, tomorrowStart).stream()
+                .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus))
+                .filter(b -> ActivityType.fromCode(b.activityType()) != ActivityType.CLASS)
+                .filter(b -> status(b, now) == ItemTimeStatus.MISSED)
+                .toList();
+        int missedBlocks = missed.size();
+        int overdueDeadlines = focus.includesAcademic()
+                ? (int) reads.deadlines(userId, now.minus(Duration.ofDays(OVERDUE_DAYS)), now).stream()
+                        .filter(d -> ItemTimeStatus.ofDeadline(d.dueAt(), d.completed(), now) == ItemTimeStatus.MISSED)
+                        .count()
+                : 0;
         List<CalendarBlock> todayBlocks = weekBlocks.stream()
                 .filter(b -> !b.start().isBefore(todayStart) && b.start().isBefore(tomorrowStart))
                 .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus))
@@ -141,9 +176,12 @@ public class DashboardService implements GetDashboardUseCase {
         int studyWeekCompleted = StudyActivity.minutes(
                 studyActivity.getStudyActivity(userId, weekStartInstant, weekEndInstant));
 
-        Integer planned = reads.plannedWeeklySessions(userId).orElse(null);
+        Integer planned = reads.plannedWeeklySessions(userId, weekStart).orElse(null);
+        // La racha guardada solo se recalcula al evaluar insignias: se lee la de hoy para no mostrar
+        // una racha que ya se rompió.
+        int streak = streaks == null ? user.streak() : streaks.getStreak(userId, tz).currentDays();
         Dashboard.Greeting greeting = new Dashboard.Greeting(user.fullName(), user.avatarUrl(), user.level(),
-                user.levelXp(), user.levelThreshold(), user.streak());
+                user.levelXp(), user.levelThreshold(), streak);
         Dashboard.TodayKpis todayKpis = new Dashboard.TodayKpis(today, trainingToday.calories(),
                 studyToday.totalCalories(), trainingToday.sessions(), trainingToday.minutes(),
                 studyToday.studyMinutes(), studyPlanned, loadToday);
@@ -162,19 +200,24 @@ public class DashboardService implements GetDashboardUseCase {
                 wellbeingNow.energy() == null ? null : wellbeingNow.energy().score(),
                 wellbeingNow.checkInDone(),
                 wellbeingNow.weeklyLoad() == null ? null : wellbeingNow.weeklyLoad().stressLevel(),
-                cognitive.attentionCapacity(), cognitive.cognitiveLoad(), user.streak(),
+                cognitive.attentionCapacity(), cognitive.cognitiveLoad(), streak,
                 studyStreak(userId, today, zone),
                 reads.lastTrainingSession(userId)
                         .map(last -> (int) ChronoUnit.DAYS.between(LocalDate.ofInstant(last, zone), today))
                         .orElse(null),
-                focus));
+                focus, overdueDeadlines, missedBlocks));
+        if (banner.type() == SmartBanner.Type.MISSED_BLOCKS) {
+            banner = SmartBannerRules.describeLatestMissed(banner, missed, today, zone);
+        }
 
         return new Dashboard(greeting, todayKpis, weekKpis, cognitive, regulation, wellbeingNow,
-                focus.includesFitness() ? reads.nextTrainingDay(userId).orElse(null) : null,
+                focus.includesFitness()
+                        ? reads.nextTrainingDay(userId).map(d -> d.effective(now)).orElse(null)
+                        : null,
                 activeChallenges(userId, focus),
                 planWeek(weekStart, weekBlocks.stream()
-                        .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus)).toList(), zone),
-                todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart),
+                        .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus)).toList(), zone, now),
+                todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart, now),
                 banner);
     }
 
@@ -194,6 +237,11 @@ public class DashboardService implements GetDashboardUseCase {
     }
 
     static List<Dashboard.PlanDay> planWeek(LocalDate weekStart, List<CalendarBlock> blocks, ZoneId zone) {
+        return planWeek(weekStart, blocks, zone, Instant.MIN);
+    }
+
+    static List<Dashboard.PlanDay> planWeek(LocalDate weekStart, List<CalendarBlock> blocks, ZoneId zone,
+                                            Instant now) {
         List<Dashboard.PlanDay> days = new ArrayList<>(7);
         for (int i = 0; i < 7; i++) {
             LocalDate day = weekStart.plusDays(i);
@@ -201,13 +249,24 @@ public class DashboardService implements GetDashboardUseCase {
                     .filter(b -> !NON_PLAN_TYPES.contains(b.activityType()))
                     .filter(b -> LocalDate.ofInstant(b.start(), zone).equals(day))
                     .toList();
-            days.add(new Dashboard.PlanDay(day, ofDay.size(), (int) ofDay.stream().filter(CalendarBlock::completed).count()));
+            int missed = (int) ofDay.stream().filter(b -> status(b, now) == ItemTimeStatus.MISSED).count();
+            days.add(new Dashboard.PlanDay(day, ofDay.size(),
+                    (int) ofDay.stream().filter(CalendarBlock::completed).count(), missed));
         }
         return days;
     }
 
+    static ItemTimeStatus status(CalendarBlock b, Instant now) {
+        return ItemTimeStatus.ofBlock(ActivityType.fromCode(b.activityType()), b.start(), b.end(), b.completed(), now);
+    }
+
     static List<Dashboard.TodayEvent> todayEvents(List<CalendarBlock> todayBlocks, List<Deadline> deadlines,
                                                   Instant todayStart, Instant tomorrowStart) {
+        return todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart, todayStart);
+    }
+
+    static List<Dashboard.TodayEvent> todayEvents(List<CalendarBlock> todayBlocks, List<Deadline> deadlines,
+                                                  Instant todayStart, Instant tomorrowStart, Instant now) {
         List<Dashboard.TodayEvent> events = new ArrayList<>();
         for (CalendarBlock b : todayBlocks) {
             if (DEADLINE_BLOCK_TYPES.contains(b.activityType())) {
@@ -215,12 +274,13 @@ public class DashboardService implements GetDashboardUseCase {
             }
             String title = b.subjectName() != null ? b.subjectName() : b.topics();
             events.add(new Dashboard.TodayEvent(Dashboard.TodayEvent.Kind.BLOCK, b.id(), title, b.activityType(),
-                    b.start(), b.end(), b.completed(), b.subjectName()));
+                    b.start(), b.end(), b.completed(), b.subjectName(), status(b, now)));
         }
         for (Deadline d : deadlines) {
             if (!d.dueAt().isBefore(todayStart) && d.dueAt().isBefore(tomorrowStart)) {
                 events.add(new Dashboard.TodayEvent(Dashboard.TodayEvent.Kind.DEADLINE, d.id(), d.title(), d.type(),
-                        d.dueAt(), null, d.completed(), d.subjectName()));
+                        d.dueAt(), null, d.completed(), d.subjectName(),
+                        ItemTimeStatus.ofDeadline(d.dueAt(), d.completed(), now)));
             }
         }
         events.sort(Comparator.comparing(Dashboard.TodayEvent::start));

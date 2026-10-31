@@ -35,8 +35,12 @@ class _FlashcardsView extends StatelessWidget with ErrorsMessageMixin {
     return BlocConsumer<FlashcardsBloc, FlashcardsState>(
       listenWhen: (a, b) =>
           a.actionError != b.actionError ||
-          a.updatedAccount != b.updatedAccount,
+          a.updatedAccount != b.updatedAccount ||
+          a.ankiExports != b.ankiExports,
       listener: (context, state) {
+        if (state.ankiExports > 0) {
+          context.showSnack(l10n.academicFlashcardsAnkiExported);
+        }
         if (state.updatedAccount != null) {
           syncSessionAccount(context, state.updatedAccount!);
         }
@@ -49,6 +53,20 @@ class _FlashcardsView extends StatelessWidget with ErrorsMessageMixin {
         return Scaffold(
           appBar: AppPageBar.reading(
             title: Text(l10n.academicFlashcardsTitle),
+            actions: [
+              if (state.cards.isNotEmpty)
+                IconButton(
+                  tooltip: l10n.academicFlashcardsExportAnki,
+                  icon: const Icon(Icons.file_download_outlined),
+                  onPressed: state.exportingAnki
+                      ? null
+                      : () => bloc.add(
+                          FlashcardsEvent.ankiExportRequested(
+                            l10n.academicFlashcardsAnkiDeck,
+                          ),
+                        ),
+                ),
+            ],
             bottom: state.cards.isEmpty || state.finished
                 ? null
                 : PreferredSize(

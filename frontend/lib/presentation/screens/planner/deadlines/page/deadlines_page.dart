@@ -1,3 +1,4 @@
+import '../../../../../domain/enums/item_time_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -299,7 +300,7 @@ class _DeadlineTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final d = deadline;
-    final overdue = !d.completed && d.dueAt.isBefore(DateTime.now());
+    final overdue = d.timeStatus == ItemTimeStatus.missed;
     final accent = d.type == DeadlineType.exam
         ? context.colors.error
         : context.colors.tertiary;

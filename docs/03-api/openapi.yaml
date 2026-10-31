@@ -555,7 +555,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CompletionRequest"
+              $ref: "#/components/schemas/BlockCompletionRequest"
         required: true
       responses:
         "200":
@@ -564,6 +564,36 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/BlockCompletionResponse"
+  /api/v1/notifications/weekly-email:
+    get:
+      tags:
+      - Notifications
+      operationId: status
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WeeklyEmailResponse"
+    put:
+      tags:
+      - Notifications
+      operationId: enable
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WeeklyEmailResponse"
+    delete:
+      tags:
+      - Notifications
+      operationId: disable
+      responses:
+        "204":
+          description: No Content
   /api/v1/notifications/preferences:
     get:
       tags:
@@ -1605,6 +1635,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/FlashcardReviewResponse"
+  /api/v1/study-materials/{materialId}/abandon:
+    post:
+      tags:
+      - Academic - Study materials
+      operationId: abandon_1
+      parameters:
+      - name: materialId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyMaterialResponse"
   /api/v1/social/posts:
     get:
       tags:
@@ -2131,6 +2180,54 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/OnboardingStatusResponse"
+  /api/v1/profile/enrollment/read:
+    post:
+      tags:
+      - Profile
+      operationId: read
+      parameters:
+      - name: consent
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EnrollmentProposalResponse"
+  /api/v1/profile/enrollment/apply:
+    post:
+      tags:
+      - Profile
+      operationId: apply_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyEnrollmentRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApplyEnrollmentResponse"
   /api/v1/planner/weekly-loads/{weekStart}/sync:
     post:
       tags:
@@ -2191,6 +2288,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ScheduleScanResponse"
+  /api/v1/planner/past-activities:
+    post:
+      tags:
+      - Planner - Blocks
+      operationId: log
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PastActivityRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BlockCompletionResponse"
   /api/v1/planner/ics/import:
     post:
       tags:
@@ -2257,6 +2372,12 @@ paths:
         schema:
           type: boolean
           default: false
+      - name: includeOverdue
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
       - name: page
         in: query
         required: false
@@ -2295,6 +2416,36 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/DeadlineResponse"
+  /api/v1/planner/calendar-feed:
+    get:
+      tags:
+      - Planner - calendar feed
+      operationId: status_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CalendarFeedStatusResponse"
+    post:
+      tags:
+      - Planner - calendar feed
+      operationId: create_4
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CalendarFeedCreatedResponse"
+    delete:
+      tags:
+      - Planner - calendar feed
+      operationId: revoke
+      responses:
+        "204":
+          description: No Content
   /api/v1/planner/blocks:
     get:
       tags:
@@ -2331,7 +2482,7 @@ paths:
     post:
       tags:
       - Planner - Blocks
-      operationId: create_4
+      operationId: create_5
       requestBody:
         content:
           application/json:
@@ -2341,6 +2492,25 @@ paths:
       responses:
         "201":
           description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BlockChangeResponse"
+  /api/v1/planner/blocks/{blockId}/reschedule-next:
+    post:
+      tags:
+      - Planner - Blocks
+      operationId: rescheduleNext
+      parameters:
+      - name: blockId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
           content:
             '*/*':
               schema:
@@ -2384,6 +2554,76 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/NotificationResponse"
+  /api/v1/notifications/weekly-email/unsubscribe:
+    get:
+      tags:
+      - Notifications
+      operationId: unsubscribePage
+      parameters:
+      - name: token
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+    post:
+      tags:
+      - Notifications
+      operationId: unsubscribe
+      parameters:
+      - name: token
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+  /api/v1/notifications/weekly-email/confirm:
+    get:
+      tags:
+      - Notifications
+      operationId: confirmPage
+      parameters:
+      - name: token
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+    post:
+      tags:
+      - Notifications
+      operationId: confirm_1
+      parameters:
+      - name: token
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
   /api/v1/notifications/read-all:
     post:
       tags:
@@ -2444,7 +2684,7 @@ paths:
     post:
       tags:
       - Academic - Notes
-      operationId: create_5
+      operationId: create_6
       requestBody:
         content:
           application/json:
@@ -2536,7 +2776,7 @@ paths:
     post:
       tags:
       - Challenges
-      operationId: create_6
+      operationId: create_7
       requestBody:
         content:
           application/json:
@@ -2770,6 +3010,34 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/AuthResponse"
+  /api/v1/auth/password-reset:
+    post:
+      tags:
+      - Auth
+      operationId: requestPasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+        required: true
+      responses:
+        "202":
+          description: Accepted
+  /api/v1/auth/password-reset/confirm:
+    post:
+      tags:
+      - Auth
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetConfirmRequest"
+        required: true
+      responses:
+        "204":
+          description: No Content
   /api/v1/auth/logout:
     post:
       tags:
@@ -2979,7 +3247,7 @@ paths:
     post:
       tags:
       - Admin - Exercises
-      operationId: create_7
+      operationId: create_8
       requestBody:
         content:
           application/json:
@@ -2993,6 +3261,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ExerciseResponse"
+  /api/v1/admin/exercises/name-suggestions:
+    post:
+      tags:
+      - Admin - Exercises
+      operationId: suggestNames
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExerciseNameSuggestionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ExerciseNamesDto"
   /api/v1/subjects/{subjectId}:
     get:
       tags:
@@ -3808,6 +4094,49 @@ paths:
       responses:
         "204":
           description: No Content
+  /api/v1/training/sessions/{sessionId}/highlights:
+    get:
+      tags:
+      - Training history
+      operationId: highlights
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SessionHighlightsResponse"
+  /api/v1/training/sessions/{sessionId}/adaptation:
+    get:
+      tags:
+      - Training sessions
+      operationId: adaptation
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: tz
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SessionAdaptationResponse"
   /api/v1/training/records:
     get:
       tags:
@@ -4358,6 +4687,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/GoalHistoryResponse"
+  /api/v1/profile/setup:
+    get:
+      tags:
+      - Profile
+      operationId: setup
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SetupChecklistResponse"
   /api/v1/profile/onboarding:
     get:
       tags:
@@ -4582,6 +4923,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/FocusPlanResponse"
+  /api/v1/planner/calendar-feed/{token}.ics:
+    get:
+      tags:
+      - Planner - calendar feed
+      operationId: feed_1
+      parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
   /api/v1/planner/blocks/conflicts:
     get:
       tags:
@@ -5456,6 +5815,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/StudyWeekResponse"
+  /api/v1/analytics/study-subjects:
+    get:
+      tags:
+      - Analytics
+      operationId: studySubjects
+      parameters:
+      - name: weeks
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 4
+      - name: zone
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StudyBySubjectResponse"
   /api/v1/analytics/rpe-trend:
     get:
       tags:
@@ -5771,6 +6155,25 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/DailyActivityResponse"
+  /api/v1/admin/exercises/{exerciseId}/names:
+    get:
+      tags:
+      - Admin - Exercises
+      operationId: names
+      parameters:
+      - name: exerciseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ExerciseNamesDto"
   /api/v1/admin/audit:
     get:
       tags:
@@ -7027,6 +7430,14 @@ components:
         updatedAt:
           type: string
           format: date-time
+        timeStatus:
+          type: string
+          enum:
+          - UPCOMING
+          - IN_PROGRESS
+          - DONE
+          - MISSED
+          - PAST
     BlockDetailsRequest:
       type: object
       properties:
@@ -7185,6 +7596,28 @@ components:
         createdAt:
           type: string
           format: date-time
+        timeStatus:
+          type: string
+          enum:
+          - UPCOMING
+          - IN_PROGRESS
+          - DONE
+          - MISSED
+          - PAST
+        tracksPhysicalLoad:
+          type: boolean
+    BlockCompletionRequest:
+      type: object
+      properties:
+        completed:
+          type: boolean
+        effort:
+          type: integer
+          format: int32
+          maximum: 10
+          minimum: 1
+      required:
+      - completed
     BlockCompletionResponse:
       type: object
       properties:
@@ -7193,6 +7626,15 @@ components:
         xpDelta:
           type: integer
           format: int32
+    WeeklyEmailResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - "OFF"
+          - PENDING
+          - ACTIVE
     UpdateNotificationPreferencesRequest:
       type: object
       properties:
@@ -7652,6 +8094,21 @@ components:
         updatedAt:
           type: string
           format: date-time
+    ExerciseNamesDto:
+      type: object
+      properties:
+        en:
+          type: string
+          maxLength: 200
+          minLength: 0
+        fr:
+          type: string
+          maxLength: 200
+          minLength: 0
+        pt:
+          type: string
+          maxLength: 200
+          minLength: 0
     ExerciseRequest:
       type: object
       properties:
@@ -7741,6 +8198,8 @@ components:
           items:
             type: integer
             format: int32
+        translations:
+          $ref: "#/components/schemas/ExerciseNamesDto"
       required:
       - difficulty
       - met
@@ -9667,6 +10126,93 @@ components:
           type: boolean
         subjectsCompleted:
           type: boolean
+    EnrollmentProposalResponse:
+      type: object
+      properties:
+        universityName:
+          type: string
+        universityId:
+          type: string
+          format: uuid
+        centerName:
+          type: string
+        degreeName:
+          type: string
+        degreeId:
+          type: string
+          format: uuid
+        academicYear:
+          type: string
+        subjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subject"
+    Subject:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        course:
+          type: integer
+          format: int32
+        credits:
+          type: number
+          format: double
+        period:
+          type: string
+        timesEnrolled:
+          type: integer
+          format: int32
+        catalogSubjectId:
+          type: string
+          format: uuid
+        alreadyAdded:
+          type: boolean
+    ApplyEnrollmentRequest:
+      type: object
+      properties:
+        degreeId:
+          type: string
+          format: uuid
+        catalogSubjectIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          maxItems: 40
+          minItems: 0
+        customSubjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomSubject"
+          maxItems: 40
+          minItems: 0
+    CustomSubject:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          minLength: 0
+        code:
+          type: string
+          maxLength: 40
+          minLength: 0
+        credits:
+          type: integer
+          format: int32
+      required:
+      - name
+    ApplyEnrollmentResponse:
+      type: object
+      properties:
+        subjectsAdded:
+          type: integer
+          format: int32
+        degreeLinked:
+          type: boolean
     WeeklyLoadResponse:
       type: object
       properties:
@@ -9802,6 +10348,28 @@ components:
           type: array
           items:
             type: string
+    PastActivityRequest:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        minutes:
+          type: integer
+          format: int32
+          maximum: 300
+          minimum: 30
+        title:
+          type: string
+          maxLength: 200
+          minLength: 0
+        effort:
+          type: integer
+          format: int32
+          maximum: 10
+          minimum: 1
+      required:
+      - start
     IcsImportRequest:
       type: object
       properties:
@@ -9814,8 +10382,6 @@ components:
           minLength: 0
         force:
           type: boolean
-      required:
-      - subjectId
     IcsImportResponse:
       type: object
       properties:
@@ -9956,6 +10522,14 @@ components:
       - dueAt
       - title
       - type
+    CalendarFeedCreatedResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
     CalendarBlockRequest:
       type: object
       properties:
@@ -10117,6 +10691,22 @@ components:
         readAt:
           type: string
           format: date-time
+        messageCode:
+          type: string
+          enum:
+          - CHALLENGE_COMPLETED
+          - BADGE_EARNED
+          - LEVEL_UP
+          - FATIGUE_CHECK_IN
+          - OVERTRAINING
+          - POST_LIKED
+          - POST_COMMENTED
+          - FRIEND_REQUEST_RECEIVED
+          - FRIEND_REQUEST_ACCEPTED
+        messageParams:
+          type: object
+          additionalProperties:
+            type: string
     MarkAllReadResponse:
       type: object
       properties:
@@ -10351,6 +10941,14 @@ components:
           items:
             type: integer
             format: int32
+        freezesAvailable:
+          type: integer
+          format: int32
+        frozenDays:
+          type: array
+          items:
+            type: string
+            format: date
     RegisterRequest:
       type: object
       properties:
@@ -10439,6 +11037,30 @@ components:
           minLength: 1
       required:
       - refreshToken
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          minLength: 0
+      required:
+      - email
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          maxLength: 128
+          minLength: 0
+        newPassword:
+          type: string
+          maxLength: 128
+          minLength: 8
+      required:
+      - newPassword
+      - token
     LoginRequest:
       type: object
       properties:
@@ -10480,6 +11102,15 @@ components:
         failedFileDeletions:
           type: integer
           format: int32
+    ExerciseNameSuggestionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          minLength: 2
+      required:
+      - name
     UpdateSubjectRequest:
       type: object
       properties:
@@ -10920,6 +11551,50 @@ components:
         achievedAt:
           type: string
           format: date-time
+    SessionHighlightsResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        volumeKg:
+          type: number
+          format: double
+        totalReps:
+          type: integer
+          format: int32
+        completedSets:
+          type: integer
+          format: int32
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonalRecordResponse"
+        previousVolumeKg:
+          type: number
+          format: double
+        previousDurationMinutes:
+          type: integer
+          format: int32
+    SessionAdaptationResponse:
+      type: object
+      properties:
+        volumeFactor:
+          type: number
+          format: double
+        reasons:
+          type: array
+          items:
+            type: string
+            enum:
+            - EXAM_SOON
+            - OVERTRAINING
+            - HIGH_FATIGUE
+        sets:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
     PageResponseRecommendationResponse:
       type: object
       properties:
@@ -11465,6 +12140,22 @@ components:
           items:
             type: string
             format: uuid
+    SetupChecklistResponse:
+      type: object
+      properties:
+        pending:
+          type: array
+          items:
+            type: string
+            enum:
+            - SUBJECTS
+            - WELLNESS_PROFILE
+            - ROUTINE
+            - WEEK_PLAN
+            - ACADEMIC_PROFILE
+        total:
+          type: integer
+          format: int32
     CatalogSubjectResponse:
       type: object
       properties:
@@ -11686,6 +12377,14 @@ components:
         totalPages:
           type: integer
           format: int32
+    CalendarFeedStatusResponse:
+      type: object
+      properties:
+        active:
+          type: boolean
+        activeSince:
+          type: string
+          format: date-time
     ConflictResponse:
       type: object
       properties:
@@ -11761,6 +12460,9 @@ components:
           - REVIEWS
           - TRAINING
           - STUDY
+          - EXAM
+          - DEADLINE
+          - WEEKLY_SUMMARY
         at:
           type: string
           format: date-time
@@ -12132,7 +12834,9 @@ components:
           type: string
           enum:
           - PHYSICAL_OVERLOAD
+          - OVERDUE_DEADLINES
           - UPCOMING_DEADLINES
+          - MISSED_BLOCKS
           - HIGH_FATIGUE
           - LOW_ADHERENCE
           - LOW_ENERGY
@@ -12147,6 +12851,10 @@ components:
           type: object
           additionalProperties:
             type: number
+        labels:
+          type: object
+          additionalProperties:
+            type: string
     DashboardChallengeResponse:
       type: object
       properties:
@@ -12278,6 +12986,9 @@ components:
         completed:
           type: integer
           format: int32
+        missed:
+          type: integer
+          format: int32
     TodayEventResponse:
       type: object
       properties:
@@ -12303,6 +13014,14 @@ components:
           type: boolean
         subjectName:
           type: string
+        status:
+          type: string
+          enum:
+          - UPCOMING
+          - IN_PROGRESS
+          - DONE
+          - MISSED
+          - PAST
     TodayResponse:
       type: object
       properties:
@@ -12592,8 +13311,27 @@ components:
         reviewsDue:
           type: integer
           format: int32
+        studyHours:
+          type: integer
+          format: int32
+        weeklyGoalHours:
+          type: integer
+          format: int32
         empty:
           type: boolean
+    StudyBySubjectResponse:
+      type: object
+      properties:
+        firstWeek:
+          type: string
+          format: date
+        weeks:
+          type: integer
+          format: int32
+        subjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubjectResponse"
     RpePointResponse:
       type: object
       properties:

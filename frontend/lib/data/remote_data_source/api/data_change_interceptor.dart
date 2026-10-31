@@ -82,6 +82,14 @@ class DataChangeInterceptor extends Interceptor {
       DataTopic.social,
     },
     '/api/v1/badges': {DataTopic.gamification, DataTopic.social},
+    // Antes que /profile: aplicar la matrícula crea asignaturas (leerla no
+    // cambia nada).
+    '/api/v1/profile/enrollment/read': {},
+    '/api/v1/profile/enrollment/apply': {
+      DataTopic.profile,
+      DataTopic.academic,
+      DataTopic.planner,
+    },
     '/api/v1/profile': {DataTopic.profile, DataTopic.training},
     '/api/v1/me': {
       DataTopic.profile,

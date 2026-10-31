@@ -17,9 +17,12 @@ import java.util.Set;
  * @param daysToNextMilestone días que faltan para el próximo hito
  * @param milestoneProgress   progreso (0-1) desde el hito anterior hasta el próximo
  * @param reachedMilestones   hitos alcanzados por la racha actual
+ * @param freezesAvailable    comodines guardados ({@link StreakFreezes})
+ * @param frozenDays          días de la racha actual salvados con un comodín
  */
 public record StreakStatus(int currentDays, int bestDays, boolean activeToday, boolean atRisk, Integer nextMilestone,
-                           int daysToNextMilestone, double milestoneProgress, List<Integer> reachedMilestones) {
+                           int daysToNextMilestone, double milestoneProgress, List<Integer> reachedMilestones,
+                           int freezesAvailable, List<LocalDate> frozenDays) {
 
     public static final List<Integer> MILESTONES = List.of(7, 30, 100, 365);
     public static final int RISK_HOURS = 4;
@@ -27,11 +30,13 @@ public record StreakStatus(int currentDays, int bestDays, boolean activeToday, b
     /** Calcula la racha a partir de los días con actividad y la hora local del usuario. */
     public static StreakStatus compute(Set<LocalDate> activeDays, LocalDateTime now) {
         LocalDate today = now.toLocalDate();
-        int current = ActivityDays.currentRun(activeDays, today);
+        StreakFreezes.Run run = StreakFreezes.run(activeDays, today);
+        int current = run.currentDays();
         int best = Math.max(current, ActivityDays.longestRun(activeDays));
         boolean activeToday = activeDays.contains(today);
         boolean lateInDay = !now.toLocalTime().isBefore(LocalTime.MIDNIGHT.minusHours(RISK_HOURS));
-        boolean atRisk = !activeToday && current > 0 && lateInDay;
+        // Con un comodín guardado, un día sin actividad no rompe la racha: no está en riesgo.
+        boolean atRisk = !activeToday && current > 0 && lateInDay && run.available() == 0;
 
         Integer next = null;
         int previous = 0;
@@ -46,6 +51,7 @@ public record StreakStatus(int currentDays, int bestDays, boolean activeToday, b
         double progress = next == null ? 1.0 : Math.min(1.0, Math.max(0.0,
                 (double) (current - previous) / (next - previous)));
         List<Integer> reached = MILESTONES.stream().filter(m -> current >= m).toList();
-        return new StreakStatus(current, best, activeToday, atRisk, next, daysToNext, progress, reached);
+        return new StreakStatus(current, best, activeToday, atRisk, next, daysToNext, progress, reached,
+                run.available(), run.frozenDays());
     }
 }

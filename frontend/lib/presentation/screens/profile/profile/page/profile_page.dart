@@ -313,7 +313,7 @@ class _WellnessSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final p = profile;
-    final number = NumberFormat('0.#', 'es');
+    final number = NumberFormat('0.#');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -506,6 +506,22 @@ class _AcademicSummary extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: AppFocusOutline(
+            child: ListTile(
+              leading: Icon(
+                Icons.upload_file_rounded,
+                color: context.palette.study,
+              ),
+              title: Text(l10n.profileEnrollmentEntry),
+              subtitle: Text(l10n.profileEnrollmentEntryHint),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _open(context, ProfilePaths.enrollmentImport),
+            ),
           ),
         ),
       ],

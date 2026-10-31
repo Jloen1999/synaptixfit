@@ -20,6 +20,13 @@ abstract class Streak with _$Streak {
     /// Progreso hacia el siguiente hito entre 0 y 1.
     required double milestoneProgress,
     @Default(<int>[]) List<int> reachedMilestones,
+
+    /// Comodines guardados: cada uno salva un día sin actividad (se gana uno
+    /// por cada 7 días seguidos, máximo 2). Lo decide el servidor.
+    @Default(0) int freezesAvailable,
+
+    /// Días de la racha actual salvados con un comodín.
+    @Default(<DateTime>[]) List<DateTime> frozenDays,
   }) = _Streak;
 
   /// Hitos de racha que la app celebra.

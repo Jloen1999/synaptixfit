@@ -14,6 +14,7 @@ import com.synaptixfit.application.port.input.notification.UpdateNotificationPre
 import com.synaptixfit.application.service.notification.AutomaticNotificationService;
 import com.synaptixfit.application.service.notification.NotificationPreferencesService;
 import com.synaptixfit.application.service.notification.NotificationService;
+import com.synaptixfit.domain.port.output.notification.ExamCalendarPort;
 import com.synaptixfit.domain.port.output.notification.NotificationPreferencesRepositoryPort;
 import com.synaptixfit.domain.port.output.notification.NotificationRepositoryPort;
 import java.time.Clock;
@@ -29,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class NotificationBeanConfiguration {
 
+    private final ExamCalendarPort exams;
     private final TransactionalUseCaseFactory tx;
     private final NotificationRepositoryPort notifications;
     private final NotificationPreferencesRepositoryPort preferences;
@@ -36,9 +38,11 @@ public class NotificationBeanConfiguration {
     private final ZoneId zone;
 
     public NotificationBeanConfiguration(TransactionalUseCaseFactory tx, NotificationRepositoryPort notifications,
-                                         NotificationPreferencesRepositoryPort preferences, Clock clock,
+                                         NotificationPreferencesRepositoryPort preferences, ExamCalendarPort exams,
+                                         Clock clock,
                                          @Value("${synaptixfit.notifications.zone:Europe/Madrid}") String zone) {
         this.tx = tx;
+        this.exams = exams;
         this.notifications = notifications;
         this.preferences = preferences;
         this.clock = clock;
@@ -49,7 +53,7 @@ public class NotificationBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     NotificationService notificationService() {
-        return new NotificationService(notifications, preferences, clock, zone);
+        return new NotificationService(notifications, preferences, exams, clock, zone);
     }
 
     @Bean

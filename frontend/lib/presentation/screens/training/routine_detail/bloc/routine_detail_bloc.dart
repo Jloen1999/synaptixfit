@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -186,6 +188,7 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
   ) async {
     final id = state.routineId;
     if (id == null) return;
+    await _reorderQueue;
     final result = await _uc.getRoutine(id);
     switch (result) {
       case Success(value: final routine):
@@ -211,15 +214,43 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
     RoutineDetailExerciseMoved event,
     Emitter<RoutineDetailState> emit,
   ) async {
-    final day = state.routine?.dayById(event.dayId);
-    if (day == null) return;
+    final routine = state.routine;
+    final routineId = state.routineId;
+    final day = routine?.dayById(event.dayId);
+    if (routine == null || routineId == null || day == null) return;
     final ids = day.exercises.map((e) => e.id).toList();
     final from = ids.indexOf(event.plannedExerciseId);
     final to = event.up ? from - 1 : from + 1;
     if (from < 0 || to < 0 || to >= ids.length) return;
     ids.insert(to, ids.removeAt(from));
-    await _mutate(emit, (id) => _uc.reorderExercises(id, event.dayId, ids));
+    // Optimista: el orden cambia ya, sin estado de carga. El guardado va
+    // detrás y en orden (cada envío espera al anterior).
+    final version = ++_reorderVersion;
+    emit(state.copyWith(routine: routine.withExerciseOrder(event.dayId, ids)));
+    final previous = _reorderQueue;
+    final done = Completer<void>();
+    _reorderQueue = done.future;
+    await previous;
+    final result = await _uc.reorderExercises(routineId, event.dayId, ids);
+    done.complete();
+    // Solo cuenta la respuesta del último movimiento: cada envío lleva el
+    // orden completo del día, así que el último manda sobre los anteriores.
+    if (version != _reorderVersion) return;
+    switch (result) {
+      case Success(value: final saved):
+        emit(state.copyWith(routine: saved));
+      case Failure(:final error):
+        _effect(emit, TrainingEffect.error(error));
+        // No se sabe qué envíos llegaron: se pide la rutina al servidor.
+        add(const RoutineDetailEvent.refreshed());
+    }
   }
+
+  int _reorderVersion = 0;
+
+  /// Termina cuando se ha enviado el último reordenado pendiente; las demás
+  /// ediciones y la recarga esperan a que acabe para no pisarse.
+  Future<void> _reorderQueue = Future.value();
 
   Future<void> _onDuplicated(
     RoutineDetailDuplicated event,
@@ -311,6 +342,7 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
     final id = state.routineId;
     if (id == null || state.busy) return;
     emit(state.copyWith(busy: true));
+    await _reorderQueue;
     final result = await call(id);
     switch (result) {
       case Success(value: final routine):

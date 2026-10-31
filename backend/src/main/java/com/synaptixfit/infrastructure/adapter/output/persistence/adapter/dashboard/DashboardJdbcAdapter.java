@@ -10,6 +10,7 @@ import com.synaptixfit.domain.model.dashboard.DashboardReadModels.NextTrainingDa
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.TrainingTotals;
 import com.synaptixfit.domain.port.output.dashboard.DashboardReadPort;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,13 +46,13 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
     }
 
     @Override
-    public Optional<Integer> plannedWeeklySessions(UUID userId) {
+    public Optional<Integer> plannedWeeklySessions(UUID userId, LocalDate weekStart) {
         return jdbc.sql("""
                         SELECT sesiones_planificadas FROM plan_entrenamiento_semanal
-                        WHERE usuario_id = :u AND estado = 'activo'
-                        ORDER BY semana_inicio DESC LIMIT 1
+                        WHERE usuario_id = :u AND estado = 'activo' AND semana_inicio = :week
+                        LIMIT 1
                         """)
-                .param("u", userId).query(Integer.class).optional();
+                .param("u", userId).param("week", weekStart).query(Integer.class).optional();
     }
 
     @Override
@@ -90,7 +91,9 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
     public Optional<NextTrainingDay> nextTrainingDay(UUID userId) {
         return jdbc.sql("""
                         SELECT r.id AS rutina_id, r.nombre AS rutina, s.id AS semana_id, s.numero_semana,
-                               d.id AS dia_id, d.numero_dia, d.nombre AS dia, d.estado
+                               d.id AS dia_id, d.numero_dia, d.nombre AS dia, d.estado,
+                               (SELECT MAX(t.creado_en) FROM sesiones_registradas t
+                                 WHERE t.dia_id = d.id AND t.completada_en IS NULL) AS sesion_abierta
                         FROM rutinas r
                         JOIN semanas_rutina s ON s.rutina_id = r.id
                         JOIN dias_rutina d ON d.semana_id = s.id
@@ -102,7 +105,7 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
                 .param("u", userId)
                 .query((rs, n) -> new NextTrainingDay(uuid(rs, "rutina_id"), rs.getString("rutina"),
                         uuid(rs, "semana_id"), rs.getInt("numero_semana"), uuid(rs, "dia_id"), rs.getInt("numero_dia"),
-                        rs.getString("dia"), rs.getString("estado")))
+                        rs.getString("dia"), rs.getString("estado"), instant(rs, "sesion_abierta")))
                 .optional();
     }
 

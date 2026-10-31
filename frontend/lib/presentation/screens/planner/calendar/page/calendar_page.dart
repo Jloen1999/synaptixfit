@@ -48,6 +48,19 @@ class _CalendarView extends StatefulWidget {
 
 class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   DateTime _now = DateTime.now();
+
+  /// Sube con cada «Hoy» para recrear el lienzo y centrarlo de nuevo en hoy.
+  int _todayTick = 0;
+
+  /// Vuelve a colocar la vista en hoy aunque ya sea esta semana.
+  void _goToday() {
+    setState(() => _todayTick++);
+    _bloc.add(const CalendarEvent.todayRequested());
+  }
+
+  static bool _compactBar(BuildContext context) =>
+      MediaQuery.sizeOf(context).width < TokensLayout.twoColumnBreakpoint / 2 ||
+      context.scaled(1) > 1.3;
   Timer? _clock;
 
   /// El consejo de arrastrar se da una vez, al cerrar un bloque sin cambios,
@@ -106,8 +119,11 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
           ),
         );
         return;
+      case BlockEditorRescheduleRequested(:final blockId):
+        _bloc.add(CalendarEvent.rescheduleNextRequested(blockId));
+        return;
       case BlockEditorCompletionRequested(:final blockId):
-        _bloc.add(CalendarEvent.completionToggled(blockId));
+        await _toggleCompletion(blockId);
         return;
       case BlockEditorCreated(:final overlaps, :final weeklyCopies):
         // Con copias se dice cuántas; los solapes ya los avisa la franja de
@@ -128,6 +144,22 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         context.showSnack(l10n.plannerRoutineDistributed(count));
     }
     _bloc.add(const CalendarEvent.refreshed());
+  }
+
+  /// Al marcar hecho un bloque que registra carga física (lo dice el
+  /// servidor) se pregunta el esfuerzo: con él se calcula su carga.
+  Future<void> _toggleCompletion(String blockId) async {
+    final block = _bloc.state.blocks.where((b) => b.id == blockId).firstOrNull;
+    int? effort;
+    if (block != null && !block.completed && block.tracksPhysicalLoad) {
+      effort = await showEffortDialog(
+        context,
+        confirmLabel: context.localizations.plannerSportDoneAction,
+        subtitle: _bloc.state.blockTitles[block.id] ?? block.topics,
+      );
+      if (effort == null || !mounted) return;
+    }
+    _bloc.add(CalendarEvent.completionToggled(blockId, effort: effort));
   }
 
   Future<void> _openWeeklyLoad(DateTime weekStart) async {
@@ -186,6 +218,12 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         unawaited(_openEditor(start: start));
       case CalendarNoticeFailure(:final error):
         context.showSnack(errorMessage(context, error));
+      case CalendarNoticeRescheduled(:final start):
+        context.showSnack(
+          context.localizations.plannerRescheduledTo(
+            PlannerFormats.dateTime(start),
+          ),
+        );
       case CalendarNoticeBlockDeleted(:final blockId):
         final bloc = _bloc;
         context.showUndoSnack(
@@ -213,6 +251,8 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
   }
 
+  void _savePlan() => _bloc.add(const CalendarEvent.planSaveRequested());
+
   @override
   Widget build(BuildContext context) =>
       AppUndoShortcut(onUndo: _undoLastDelete, child: _content(context));
@@ -227,16 +267,21 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
           appBar: AppPageBar(
             title: Text(l10n.plannerTitle),
             actions: [
-              TextButton(
-                onPressed: () =>
-                    _bloc.add(const CalendarEvent.todayRequested()),
-                child: Text(l10n.plannerToday),
-              ),
+              // Con poco ancho o texto grande, «Hoy» es un icono (con nombre)
+              // para que el título y el resto de acciones quepan.
+              if (_compactBar(context))
+                IconButton(
+                  tooltip: l10n.plannerToday,
+                  icon: const Icon(Icons.today_rounded),
+                  onPressed: _goToday,
+                )
+              else
+                TextButton(onPressed: _goToday, child: Text(l10n.plannerToday)),
               _SavePlanButton(
                 saving: state.savingPlan,
                 enabled: state.status == CalendarStatus.ready,
-                onSave: () =>
-                    _bloc.add(const CalendarEvent.planSaveRequested()),
+                compact: _compactBar(context),
+                onSave: _savePlan,
               ),
               _PlannerMenu(
                 onReturn: () => _bloc.add(const CalendarEvent.refreshed()),
@@ -331,7 +376,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
                   );
                 },
                 child: WeekCanvas(
-                  key: ValueKey(state.weekStart),
+                  key: ValueKey((state.weekStart, _todayTick)),
                   weekStart: state.weekStart,
                   blocks: state.visibleBlocks,
                   titles: state.blockTitles,
@@ -404,11 +449,15 @@ class _SavePlanButton extends StatelessWidget {
   const _SavePlanButton({
     required this.saving,
     required this.enabled,
+    required this.compact,
     required this.onSave,
   });
 
   final bool saving;
   final bool enabled;
+
+  /// Con poco ancho, solo el icono (con su nombre como tooltip), como «Hoy».
+  final bool compact;
   final VoidCallback onSave;
 
   @override
@@ -417,13 +466,25 @@ class _SavePlanButton extends StatelessWidget {
     if (saving) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.m),
+        // Lo provoca la persona (a veces desde el menú): se anuncia aunque el
+        // foco esté en otro sitio.
         child: Semantics(
-          label: label,
-          child: const SizedBox.square(
-            dimension: TokensSize.iconS,
-            child: CircularProgressIndicator(strokeWidth: 2),
+          liveRegion: true,
+          label: '$label, ${context.localizations.commonLoading}',
+          child: const ExcludeSemantics(
+            child: SizedBox.square(
+              dimension: TokensSize.iconS,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
           ),
         ),
+      );
+    }
+    if (compact) {
+      return IconButton(
+        tooltip: label,
+        icon: const Icon(Icons.task_alt_rounded),
+        onPressed: enabled ? onSave : null,
       );
     }
     return TextButton.icon(
@@ -460,6 +521,11 @@ class _PlannerMenu extends StatelessWidget {
         PlannerPaths.scheduleScan,
         Icons.document_scanner_rounded,
         l10n.plannerMenuScheduleImport,
+      ),
+      (
+        PlannerPaths.calendarSync,
+        Icons.cloud_sync_rounded,
+        l10n.plannerMenuCalendarSync,
       ),
     ];
     return PopupMenuButton<String>(

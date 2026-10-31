@@ -24,6 +24,16 @@ abstract class AdminExerciseFormState with _$AdminExerciseFormState {
     @Default(true) bool active,
     @Default(false) bool submitting,
 
+    /// La IA está proponiendo los nombres en otros idiomas.
+    @Default(false) bool suggestingNames,
+
+    /// Fallo de la última propuesta (se muestra junto a los campos).
+    AppError? namesError,
+
+    /// Sube cada vez que llegan nombres propuestos: la página rellena sus
+    /// campos de texto.
+    @Default(0) int namesRevision,
+
     /// Se activa al intentar guardar para mostrar los errores de validación.
     @Default(false) bool showErrors,
     AdminExerciseFormEffect? effect,

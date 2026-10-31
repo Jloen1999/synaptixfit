@@ -6,9 +6,11 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Carga interna de una sesión de entrenamiento (session-RPE de Foster): {@code RPE x minutos}.
+ * Carga interna de una sesión de entrenamiento o de un bloque de deporte del calendario sin rutina
+ * (session-RPE de Foster): {@code RPE x minutos}.
  *
- * <p>Una sesión genera como máximo un registro ({@code sessionId} es la clave de idempotencia).
+ * <p>Una sesión o un bloque generan como máximo un registro ({@code sessionId} o {@code blockId} es la
+ * clave de idempotencia).
  * Sin RPE válido se usa 5 (esfuerzo moderado) y la duración mínima es 1 minuto, como en el
  * trigger heredado {@code trg_insertar_carga_fisica}.
  */
@@ -20,16 +22,18 @@ public final class PhysicalLoadRecord {
     private final UUID id;
     private final UUID userId;
     private final UUID sessionId;
+    private final UUID blockId;
     private final Instant createdAt;
     private LocalDate date;
     private int rpe;
     private int durationMinutes;
 
-    public PhysicalLoadRecord(UUID id, UUID userId, UUID sessionId, LocalDate date, int rpe, int durationMinutes,
-                              Instant createdAt) {
+    public PhysicalLoadRecord(UUID id, UUID userId, UUID sessionId, UUID blockId, LocalDate date, int rpe,
+                              int durationMinutes, Instant createdAt) {
         this.id = Guard.notNull(id, "id");
         this.userId = Guard.notNull(userId, "userId");
         this.sessionId = sessionId;
+        this.blockId = blockId;
         this.date = Guard.notNull(date, "date");
         this.rpe = Guard.range(rpe, "rpe", 1, 10);
         this.durationMinutes = Guard.range(durationMinutes, "durationMinutes", 1, MAX_MINUTES);
@@ -39,7 +43,15 @@ public final class PhysicalLoadRecord {
     public static PhysicalLoadRecord forSession(UUID userId, UUID sessionId, LocalDate date, int rpe,
                                                 int durationMinutes, Instant now) {
         Guard.notNull(sessionId, "sessionId");
-        return new PhysicalLoadRecord(UUID.randomUUID(), userId, sessionId, date, normalizeRpe(rpe),
+        return new PhysicalLoadRecord(UUID.randomUUID(), userId, sessionId, null, date, normalizeRpe(rpe),
+                normalizeDuration(durationMinutes), now);
+    }
+
+    /** Registro de un bloque de deporte completado; sin esfuerzo indicado se toma {@link #DEFAULT_RPE}. */
+    public static PhysicalLoadRecord forBlock(UUID userId, UUID blockId, LocalDate date, int rpe,
+                                              int durationMinutes, Instant now) {
+        Guard.notNull(blockId, "blockId");
+        return new PhysicalLoadRecord(UUID.randomUUID(), userId, null, blockId, date, normalizeRpe(rpe),
                 normalizeDuration(durationMinutes), now);
     }
 
@@ -79,6 +91,7 @@ public final class PhysicalLoadRecord {
     public UUID id() { return id; }
     public UUID userId() { return userId; }
     public UUID sessionId() { return sessionId; }
+    public UUID blockId() { return blockId; }
     public LocalDate date() { return date; }
     public int rpe() { return rpe; }
     public int durationMinutes() { return durationMinutes; }

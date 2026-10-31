@@ -13,6 +13,8 @@ void registerHomePresentation(GetIt getIt) {
         getDueReviews: getIt(),
         getUnreadCount: getIt(),
         getOnboardingStatus: getIt(),
+        getSetup: getIt(),
+        snoozeSetup: getIt(),
         getTimeline: getIt(),
         onboardingGate: getIt(),
         watchChanges: getIt(),

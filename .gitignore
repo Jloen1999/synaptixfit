@@ -48,3 +48,6 @@ _archivo/
 
 # Instaladores compilados (APK, app de escritorio): se guardan en local, no en git
 dist/
+
+# Documentos personales de ejemplo (datos reales): nunca al repositorio
+docs/CARTA DE PAGO.pdf

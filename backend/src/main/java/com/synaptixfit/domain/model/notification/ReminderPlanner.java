@@ -28,6 +28,11 @@ import java.util.UUID;
  *       vencidos. Más de un día para que siga avisando aunque no se abra la app.</li>
  *   <li>Bloques de deporte, estudio y repaso: 15 minutos antes de empezar. Se descartan los
  *       completados, los ya empezados y el resto de tipos (clases, exámenes, entregas…).</li>
+ *   <li>«Tu semana»: el domingo a las {@link #WEEKLY_TIME}, para mirar cómo ha ido y planificar la siguiente
+ *       (categoría académica o de hitos, la que esté activa).</li>
+ *   <li>Entregas y exámenes pendientes: a las 18:00 de tres días antes y del día antes
+ *       ({@link #DEADLINE_DAYS_BEFORE}). Antes la app no avisaba de ninguno: con tres días aún hay margen
+ *       para organizarse y el día antes sirve de último aviso. Categoría académica.</li>
  *   <li>Categorías: repasos y estudio usan {@link NotificationType#ACADEMIC}; «hora de entrenar»,
  *       {@link #TRAINING_CATEGORY} ({@code MILESTONE}), porque no hay categoría de deporte y cumplir la
  *       sesión planificada es un hito del plan. Así el modo exámenes la silencia y deja el estudio.</li>
@@ -51,6 +56,9 @@ public final class ReminderPlanner {
     public static final int REVIEW_DAYS = 3;
     public static final int MAX_DAYS = 7;
     public static final int DEFAULT_MAX_REMINDERS = 60;
+    public static final LocalTime DEADLINE_TIME = LocalTime.of(18, 0);
+    public static final LocalTime WEEKLY_TIME = LocalTime.of(20, 0);
+    public static final List<Integer> DEADLINE_DAYS_BEFORE = List.of(3, 1);
 
     private final int maxReminders;
 
@@ -70,15 +78,32 @@ public final class ReminderPlanner {
     public record Block(UUID id, ActivityType type, Instant start, String title, boolean completed) {
     }
 
+    /** Entrega o examen pendiente, candidato a aviso. */
+    public record Deadline(UUID id, boolean exam, String title, Instant dueAt) {
+    }
+
     /**
      * Datos del plan.
      *
      * @param dueReviews repasos vencidos ahora
      * @param blocks     bloques que se solapan con la ventana [now, now + days)
      * @param days       ventana en días (1..{@link #MAX_DAYS})
+     * @param deadlines  entregas y exámenes pendientes que vencen antes de {@link #deadlineHorizon}
+     * @param weeklySummary incluir el aviso «Tu semana» del domingo
      */
     public record Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
-                        Instant now, ZoneId zone, int days) {
+                        Instant now, ZoneId zone, int days, List<Deadline> deadlines, boolean weeklySummary) {
+
+        public Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
+                     Instant now, ZoneId zone, int days) {
+            this(dueReviews, blocks, preferences, focus, now, zone, days, List.of(), false);
+        }
+    }
+
+    /** Hasta dónde hace falta leer entregas: la que vence justo después de la ventana aún se avisa antes. */
+    public static Instant deadlineHorizon(Instant now, int days) {
+        int maxBefore = DEADLINE_DAYS_BEFORE.stream().mapToInt(Integer::intValue).max().orElse(0);
+        return horizonEnd(now, days).plus(Duration.ofDays(maxBefore + 1L));
     }
 
     /** Fin de la ventana del plan; valida {@code days} (1..{@link #MAX_DAYS}). */
@@ -89,6 +114,12 @@ public final class ReminderPlanner {
     /** ¿Hace falta contar los repasos vencidos? Evita leer datos que no se van a avisar. */
     public static boolean wantsReviews(NotificationPreferences preferences, UsageFocus focus) {
         return preferences.dailyLimit() > 0 && allows(ActivityType.REVIEW, preferences, focus);
+    }
+
+    /** ¿Hace falta leer entregas y exámenes? */
+    public static boolean wantsDeadlines(NotificationPreferences preferences, UsageFocus focus) {
+        return preferences.dailyLimit() > 0 && (allows(ActivityType.EXAM, preferences, focus)
+                || allows(ActivityType.DELIVERY, preferences, focus));
     }
 
     /** ¿Hace falta leer los bloques del planificador? */
@@ -107,6 +138,10 @@ public final class ReminderPlanner {
             addReviews(candidates, input, end);
         }
         addBlocks(candidates, input, end);
+        addDeadlines(candidates, input, end);
+        if (input.weeklySummary()) {
+            addWeeklySummary(candidates, input, end);
+        }
         candidates.sort(Comparator.comparing(ReminderPlan.Item::at));
         return new ReminderPlan(applyDailyLimit(candidates, input.preferences().dailyLimit(), input.zone())
                 .stream().limit(maxReminders).toList());
@@ -147,6 +182,46 @@ public final class ReminderPlanner {
                 continue;
             }
             out.add(new ReminderPlan.Item(kind, at, block.id().toString(), null, block.title(), block.start()));
+        }
+    }
+
+    private static void addDeadlines(List<ReminderPlan.Item> out, Input input, Instant end) {
+        for (Deadline deadline : input.deadlines()) {
+            ActivityType type = deadline.exam() ? ActivityType.EXAM : ActivityType.DELIVERY;
+            if (!allows(type, input.preferences(), input.focus())) {
+                continue;
+            }
+            LocalDate dueDay = deadline.dueAt().atZone(input.zone()).toLocalDate();
+            for (int daysBefore : DEADLINE_DAYS_BEFORE) {
+                ZonedDateTime planned = ZonedDateTime.of(dueDay.minusDays(daysBefore), DEADLINE_TIME, input.zone());
+                Instant at = deferQuietHours(planned, input);
+                if (!at.isAfter(input.now()) || at.isAfter(end) || !at.isBefore(deadline.dueAt())) {
+                    continue;
+                }
+                // Días que faltan desde el aviso real (el silencio puede haberlo movido al día siguiente).
+                int daysLeft = (int) java.time.temporal.ChronoUnit.DAYS.between(
+                        at.atZone(input.zone()).toLocalDate(), dueDay);
+                out.add(new ReminderPlan.Item(deadline.exam() ? ReminderKind.EXAM : ReminderKind.DEADLINE, at,
+                        deadline.id() + ":" + daysBefore, daysLeft, deadline.title(), deadline.dueAt()));
+            }
+        }
+    }
+
+    private static void addWeeklySummary(List<ReminderPlan.Item> out, Input input, Instant end) {
+        NotificationPreferences prefs = input.preferences();
+        if (!prefs.admits(STUDY_CATEGORY) && !prefs.admits(TRAINING_CATEGORY)) {
+            return;
+        }
+        LocalDate day = input.now().atZone(input.zone()).toLocalDate()
+                .with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
+        ZonedDateTime planned = ZonedDateTime.of(day, WEEKLY_TIME, input.zone());
+        if (!planned.toInstant().isAfter(input.now())) {
+            planned = planned.plusWeeks(1);
+        }
+        Instant at = deferQuietHours(planned, input);
+        if (at.isAfter(input.now()) && !at.isAfter(end)) {
+            out.add(new ReminderPlan.Item(ReminderKind.WEEKLY_SUMMARY, at, planned.toLocalDate().toString(), null,
+                    null, null));
         }
     }
 

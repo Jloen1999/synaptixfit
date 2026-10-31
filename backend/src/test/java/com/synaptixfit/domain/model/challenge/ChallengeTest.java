@@ -178,6 +178,19 @@ class ChallengeTest {
     }
 
     @Test
+    void aChallengeNeverGivesMoreThanItsXpCap() {
+        List<MilestoneDraft> drafts = new ArrayList<>();
+        IntStream.range(0, 12).forEach(i -> drafts.add(new MilestoneDraft(null, "Tarea " + i, null, Difficulty.HIGH,
+                null, null, null, null, List.of(), null, null)));
+        Challenge c = withTasks(drafts.toArray(MilestoneDraft[]::new));
+
+        // 12 tareas difíciles daban 12 × 70 = 840 XP; ahora el reto entero da como mucho MAX_XP.
+        assertThat(c.complete(TODAY).xpDelta()).isEqualTo(Challenge.MAX_XP);
+        assertThat(c.totalXpAwarded()).isEqualTo(Challenge.MAX_XP);
+        assertThat(c.uncomplete().xpDelta()).isEqualTo(-Challenge.MAX_XP);
+    }
+
+    @Test
     void atMostTwelveTasks() {
         List<MilestoneDraft> drafts = new ArrayList<>();
         IntStream.range(0, 13).forEach(i -> drafts.add(task("Tarea " + i)));

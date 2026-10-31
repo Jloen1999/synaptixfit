@@ -132,7 +132,7 @@ class MainShellPage extends StatelessWidget {
                 groupAlignment: -0.9,
                 leading: const Padding(
                   padding: EdgeInsets.symmetric(vertical: TokensSpacing.m),
-                  child: AppBrandMark(size: 40),
+                  child: AppBrandMark(size: TokensSize.iconXl),
                 ),
                 destinations: [
                   for (final d in destinations)

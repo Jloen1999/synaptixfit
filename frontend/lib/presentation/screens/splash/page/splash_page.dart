@@ -18,7 +18,8 @@ class SplashPage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AppBrandMark(size: 80),
+            // El nombre va justo debajo: el logo es decorativo.
+            const AppBrandMark(size: TokensSize.brandLogo, decorative: true),
             const SizedBox(height: TokensSpacing.l),
             Text(l10n.appName, style: context.textStyles.headlineSmall),
             const SizedBox(height: TokensSpacing.xl),

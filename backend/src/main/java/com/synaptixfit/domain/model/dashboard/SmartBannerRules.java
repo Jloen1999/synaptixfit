@@ -1,6 +1,12 @@
 package com.synaptixfit.domain.model.dashboard;
 
+import com.synaptixfit.domain.model.dashboard.DashboardReadModels.CalendarBlock;
+import com.synaptixfit.domain.model.planner.ActivityType;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,12 +44,20 @@ public final class SmartBannerRules {
         if (fitness && c.zone().isRisky()) {
             return banner(SmartBanner.Type.PHYSICAL_OVERLOAD, "acwr", round2(c.acwr()), "maxStudyMinutes", c.maxStudyMinutes());
         }
+        // Lo vencido va antes que lo que viene: aún se puede entregar o hablar con el profesor.
+        if (academic && c.overdueDeadlines() > 0) {
+            return banner(SmartBanner.Type.OVERDUE_DEADLINES, "count", c.overdueDeadlines());
+        }
         if (academic && c.upcomingDeadlines() > 0) {
             return banner(SmartBanner.Type.UPCOMING_DEADLINES, "count", c.upcomingDeadlines(),
                     "daysUntilNext", c.daysUntilNextDeadline() == null ? 0 : c.daysUntilNextDeadline());
         }
+        // La fatiga alta va antes que lo no hecho: con el cuerpo al límite no toca recuperar bloques.
         if (fitness && c.recentFatigueScore() != null && c.recentFatigueScore() > HIGH_FATIGUE) {
             return banner(SmartBanner.Type.HIGH_FATIGUE, "fatigueScore", c.recentFatigueScore());
+        }
+        if (c.missedBlocks() > 0) {
+            return banner(SmartBanner.Type.MISSED_BLOCKS, "count", c.missedBlocks());
         }
         if (academic && c.adherence() != null && c.adherence() < LOW_ADHERENCE) {
             return banner(SmartBanner.Type.LOW_ADHERENCE, "adherence", Math.round(c.adherence()));
@@ -73,6 +87,27 @@ public final class SmartBannerRules {
             return banner(SmartBanner.Type.CHECK_IN_PENDING);
         }
         return banner(SmartBanner.Type.BALANCE);
+    }
+
+    /**
+     * Concreta el aviso de bloques sin hacer con el más reciente: así se sabe de un vistazo cuál es
+     * («Álgebra, hoy a las 16:00») sin abrir el calendario.
+     */
+    public static SmartBanner describeLatestMissed(SmartBanner banner, List<CalendarBlock> missed, LocalDate today,
+                                                   ZoneId zone) {
+        return missed.stream().max(Comparator.comparing(CalendarBlock::start)).map(latest -> {
+            var local = latest.start().atZone(zone);
+            String title = latest.subjectName() != null && !latest.subjectName().isBlank()
+                    ? latest.subjectName()
+                    : latest.topics();
+            Map<String, String> labels = new LinkedHashMap<>();
+            if (title != null && !title.isBlank()) {
+                labels.put("title", title.strip());
+            }
+            labels.put("activity", ActivityType.fromCode(latest.activityType()).name());
+            return banner.with(Map.of("startMinutes", local.getHour() * 60 + local.getMinute(),
+                    "yesterday", local.toLocalDate().isBefore(today) ? 1 : 0), labels);
+        }).orElse(banner);
     }
 
     private static SmartBanner banner(SmartBanner.Type type, Object... kv) {

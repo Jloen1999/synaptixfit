@@ -9,11 +9,13 @@ import com.synaptixfit.application.port.input.planner.DeleteSubjectBlocksUseCase
 import com.synaptixfit.application.port.input.planner.GetCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.GetCalendarBlocksUseCase;
 import com.synaptixfit.application.port.input.planner.GetScheduleConflictsUseCase;
+import com.synaptixfit.application.port.input.planner.RescheduleBlockToNextFreeSlotUseCase;
 import com.synaptixfit.application.port.input.planner.RescheduleCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateCalendarBlockUseCase;
+import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
 import com.synaptixfit.domain.exception.FieldValidationException;
-import com.synaptixfit.domain.exception.planner.BlockAlreadyCompletedException;
+import com.synaptixfit.domain.exception.planner.BlockNoFreeSlotException;
 import com.synaptixfit.domain.exception.planner.CalendarBlockNotFoundException;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
@@ -37,6 +39,7 @@ import java.util.UUID;
 
 /** Bloques del calendario: consulta, alta, edición, cambio de horario, borrado y conflictos. */
 public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalendarBlockUseCase,
+        RescheduleBlockToNextFreeSlotUseCase,
         CreateCalendarBlockUseCase, UpdateCalendarBlockUseCase, RescheduleCalendarBlockUseCase,
         DeleteCalendarBlockUseCase, GetScheduleConflictsUseCase, DeleteSubjectBlocksUseCase {
 
@@ -119,6 +122,20 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         return original.weeklyCopy(UUID.randomUUID(), range, zone.dayOfWeek(range.start()), now);
     }
 
+    @Override
+    public BlockChange rescheduleToNextFreeSlot(UUID userId, UUID blockId) {
+        CalendarBlock block = owned(userId, blockId);
+        Instant now = clock.instant();
+        long minutes = block.range().minutes();
+        Instant horizon = zone.startOfDay(zone.today(now).plusDays(ScheduleConflicts.RESCHEDULE_DAYS_AHEAD + 1L));
+        List<CalendarBlock> busy = blocks.findOverlapping(userId, now, horizon, null).stream()
+                .filter(b -> !b.id().equals(blockId))
+                .toList();
+        TimeRange slot = ScheduleConflicts.nextFreeSlot(minutes, now, zone, busy)
+                .orElseThrow(BlockNoFreeSlotException::new);
+        return reschedule(new RescheduleCalendarBlockUseCase.Command(userId, blockId, slot.start(), slot.end()));
+    }
+
     /** Entrega/examen que acompaña a un bloque EXAM o DELIVERY: la hora indicada de un examen es su inicio. */
     private static Deadline linkedDeadline(UUID userId, ActivityType type, TimeRange range, BlockDetailsInput in,
                                            Instant now) {
@@ -140,10 +157,6 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
     public CalendarBlock updateBlock(UpdateCalendarBlockUseCase.Command command) {
         CalendarBlock block = owned(command.userId(), command.blockId());
         ActivityType type = command.details().type() == null ? block.type() : command.details().type();
-        if (block.completed() && type != block.type()) {
-            // La experiencia ya concedida depende del tipo: cambiarlo descuadraría la resta al desmarcar.
-            throw new BlockAlreadyCompletedException();
-        }
         block.revise(type, resolver.resolve(command.userId(), command.details()));
         return blocks.save(block);
     }
@@ -199,6 +212,11 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         if (block.completed()) {
             events.publish(new StudyBlockCompletionChanged(userId, block.id(), block.type().code(), block.subjectId(),
                     block.details().milestoneId(), block.start(), block.end(), false, clock.instant()));
+            if (block.countsAsPhysicalActivity()) {
+                // Indicadores retira su carga y recalcula el ACWR (no depende de la cascada de la BD).
+                events.publish(new SportBlockCompletionChanged(userId, block.id(), zone.localDate(block.start()), null,
+                        (int) block.range().minutes(), false, clock.instant()));
+            }
         }
     }
 

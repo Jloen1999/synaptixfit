@@ -1,8 +1,10 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 
 import com.synaptixfit.domain.model.training.PersonalRecord;
+import com.synaptixfit.domain.model.training.SessionHighlights;
 import com.synaptixfit.domain.model.training.SessionHistoryEntry;
 import com.synaptixfit.domain.model.training.SessionLabel;
+import com.synaptixfit.infrastructure.adapter.input.rest.support.LocalizedNames;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.SessionResponse;
 import java.time.Instant;
 import java.util.List;
@@ -14,11 +16,22 @@ public final class HistoryDtos {
     private HistoryDtos() {
     }
 
+    /** Resumen destacado de una sesión terminada. */
+    public record SessionHighlightsResponse(UUID sessionId, double volumeKg, int totalReps, int completedSets,
+                                            List<PersonalRecordResponse> records, Double previousVolumeKg,
+                                            Integer previousDurationMinutes) {
+        public static SessionHighlightsResponse from(SessionHighlights h) {
+            return new SessionHighlightsResponse(h.sessionId(), h.volumeKg(), h.totalReps(), h.completedSets(),
+                    h.records().stream().map(PersonalRecordResponse::from).toList(), h.previousVolumeKg(),
+                    h.previousDurationMinutes());
+        }
+    }
+
     /** Récord: con {@code kind = WEIGHT} manda {@code weightKg}; con {@code REPS}, las repeticiones. */
     public record PersonalRecordResponse(UUID exerciseId, String exerciseName, PersonalRecord.Kind kind,
                                          Double weightKg, int reps, UUID sessionId, Instant achievedAt) {
         public static PersonalRecordResponse from(PersonalRecord r) {
-            return new PersonalRecordResponse(r.exerciseId(), r.exerciseName(), r.kind(), r.weightKg(), r.reps(),
+            return new PersonalRecordResponse(r.exerciseId(), LocalizedNames.exercise(r.exerciseId(), r.exerciseName()), r.kind(), r.weightKg(), r.reps(),
                     r.sessionId(), r.achievedAt());
         }
     }

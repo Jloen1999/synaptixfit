@@ -266,7 +266,7 @@ class _AccountStepState extends State<_AccountStep> {
                 const SizedBox(height: TokensSpacing.m),
                 AppTextField(
                   label: l10n.profilePasswordNew,
-                  hint: l10n.fieldPasswordHint,
+                  helper: l10n.fieldPasswordHint,
                   controller: _password,
                   icon: Icons.lock_outline_rounded,
                   obscure: true,

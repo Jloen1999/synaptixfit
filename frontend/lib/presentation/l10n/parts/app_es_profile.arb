@@ -382,7 +382,7 @@
   "profileNotificationsModeTitle": "Modo",
   "profileNotificationsCategoriesTitle": "Qué quieres recibir",
   "profileNotifModeNormal": "Normal",
-  "profileNotifModeNormalHint": "Recibes todas las categorías activas.",
+  "profileNotifModeNormalHint": "Recibes todas las categorías activas. La semana antes de un examen pasa sola a «Exámenes» y vuelve al terminar.",
   "profileNotifModeExams": "Exámenes",
   "profileNotifModeExamsHint": "Solo lo importante para que te concentres en estudiar.",
   "profileNotifModeRest": "Descanso",
@@ -475,5 +475,99 @@
   "profileFocusEditHint": "Muestra solo lo que usas.",
   "profileWellnessMoreOptions": "Más opciones: actividad, días y material",
   "profileWellnessMoreOptionsHint": "Opcional. Si no lo indicas, empezamos con un plan prudente que cambias cuando quieras en tu perfil físico.",
-  "profileWellnessLessOptions": "Menos opciones"
+  "profileWellnessLessOptions": "Menos opciones",
+  "profileSettingsAppearanceGroup": "Apariencia",
+  "profileAppearanceDark": "Oscuro",
+  "profileAppearanceLight": "Claro",
+  "profileAppearanceSystem": "Como el sistema",
+  "profileAppearanceSystemHint": "Cambia con el modo claro u oscuro de tu dispositivo",
+  "profileSettingsLanguageGroup": "Idioma",
+  "profileLanguageSystem": "Como el dispositivo",
+  "profileLanguageSystemHint": "Usa el idioma de tu móvil u ordenador si está disponible; si no, español.",
+  "languageNameEs": "Español",
+  "languageNameEn": "English",
+  "languageNameFr": "Français",
+  "languageNamePt": "Português",
+  "profileEnrollmentTitle": "Importar tu matrícula",
+  "profileEnrollmentEntry": "Importar desde tu matrícula",
+  "profileEnrollmentEntryHint": "Sube la carta de pago o el resguardo (PDF) y añadimos tus asignaturas.",
+  "profileEnrollmentIntro": "Sube la carta de pago o el resguardo de matrícula en PDF. Reconocemos tu carrera y tus asignaturas y tú eliges cuáles añadir.",
+  "profileEnrollmentPrivacyTitle": "Tus datos, protegidos",
+  "profileEnrollmentPrivacyRead": "Solo leemos la universidad, la carrera, el curso y las asignaturas.",
+  "profileEnrollmentPrivacyHidden": "Antes de analizarlo quitamos tu DNI o NIE, tu nombre, tu dirección, tus datos de contacto y la cuenta bancaria.",
+  "profileEnrollmentPrivacyAi": "El texto que queda lo lee nuestro proveedor de inteligencia artificial para reconocer las asignaturas.",
+  "profileEnrollmentPrivacyNotStored": "No guardamos el documento: se lee y se descarta.",
+  "profileEnrollmentConsent": "Doy permiso para leer este documento como se explica arriba.",
+  "profileEnrollmentConsentNeeded": "Marca el permiso para poder elegir el PDF.",
+  "profileEnrollmentChoose": "Elegir PDF",
+  "profileEnrollmentTooLarge": "El PDF ocupa demasiado (máximo 5 MB).",
+  "profileEnrollmentReading": "Leyendo tu matrícula…",
+  "profileEnrollmentDegreeUnknown": "Carrera no indicada",
+  "profileEnrollmentDegreeFound": "Carrera en el catálogo",
+  "profileEnrollmentDegreeNotFound": "Carrera no encontrada",
+  "profileEnrollmentSubjects": "{count, plural, =1{1 asignatura} other{{count} asignaturas}}",
+  "@profileEnrollmentSubjects": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileEnrollmentCourse": "{course}.º curso",
+  "@profileEnrollmentCourse": {
+    "placeholders": {
+      "course": {
+        "type": "int"
+      }
+    }
+  },
+  "profileEnrollmentCredits": "{credits} créditos",
+  "@profileEnrollmentCredits": {
+    "placeholders": {
+      "credits": {
+        "type": "num",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "profileEnrollmentTimes": "{times}.ª matrícula",
+  "@profileEnrollmentTimes": {
+    "placeholders": {
+      "times": {
+        "type": "int"
+      }
+    }
+  },
+  "profileEnrollmentAlready": "Ya la tienes",
+  "profileEnrollmentSelectAll": "Elegir todas",
+  "profileEnrollmentSelectNone": "Quitar todas",
+  "profileEnrollmentOwnSubject": "Se añadirá como asignatura propia",
+  "profileEnrollmentAdd": "{count, plural, =0{Elige alguna asignatura} =1{Añadir 1 asignatura} other{Añadir {count} asignaturas}}",
+  "@profileEnrollmentAdd": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileEnrollmentOther": "Usar otro documento",
+  "profileEnrollmentDone": "{count, plural, =0{No se ha añadido ninguna asignatura} =1{1 asignatura añadida} other{{count} asignaturas añadidas}}",
+  "@profileEnrollmentDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileEnrollmentDegreeLinked": "También hemos vinculado tu carrera.",
+  "profileEnrollmentSeeSubjects": "Ver mis asignaturas",
+  "profileErrorEnrollmentConsent": "Necesitamos tu permiso para leer el documento.",
+  "profileErrorEnrollmentFile": "Sube un PDF de 5 MB como máximo.",
+  "profileErrorEnrollmentNothing": "No hemos encontrado asignaturas en el documento. Comprueba que es la carta de pago o el resguardo de matrícula.",
+  "profileWeeklyEmailSectionTitle": "Por correo",
+  "profileWeeklyEmailToggle": "Resumen semanal",
+  "profileWeeklyEmailHintOff": "Cada domingo, lo que has hecho en la semana y lo que viene. Te pediremos confirmarlo por correo.",
+  "profileWeeklyEmailHintPending": "Te hemos enviado un correo: ábrelo y pulsa «Confirmar» para empezar a recibirlo.",
+  "profileWeeklyEmailHintActive": "Activo: te llegará cada domingo a partir de las 19:00. Puedes darte de baja desde cualquier correo.",
+  "profileWeeklyEmailPendingPill": "Pendiente de confirmar"
 }

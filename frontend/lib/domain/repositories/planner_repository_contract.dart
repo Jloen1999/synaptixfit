@@ -1,5 +1,6 @@
 import '../models/planner/block_draft.dart';
 import '../models/planner/calendar_block.dart';
+import '../models/planner/calendar_feed.dart';
 import '../models/planner/planner_ai.dart';
 import '../models/planner/planner_options.dart';
 import '../models/planner/weekly_planning.dart';
@@ -31,9 +32,21 @@ abstract interface class PlannerRepositoryContract {
 
   Future<AppResult<Unit>> deleteBlock(String blockId);
 
+  /// Lleva el bloque al primer hueco libre de su duración (lo busca el servidor).
+  Future<AppResult<BlockChange>> rescheduleToNextFreeSlot(String blockId);
+
   Future<AppResult<BlockCompletion>> setBlockCompletion(
     String blockId, {
     required bool completed,
+    int? effort,
+  });
+
+  /// Actividad física ya pasada: bloque de deporte completado con su esfuerzo.
+  Future<AppResult<BlockCompletion>> logPastActivity({
+    required DateTime start,
+    required int minutes,
+    required int effort,
+    String? title,
   });
 
   Future<AppResult<List<CalendarBlock>>> distributeRoutine(
@@ -82,10 +95,22 @@ abstract interface class PlannerRepositoryContract {
     required DateTime end,
   });
 
+  /// Suscripción al calendario (enlace privado .ics).
+  Future<AppResult<CalendarFeedStatus>> getCalendarFeed();
+
+  Future<AppResult<CalendarFeedLink>> createCalendarFeed();
+
+  Future<AppResult<Unit>> revokeCalendarFeed();
+
   Future<AppResult<IcsImportResult>> importIcs({
     required String subjectId,
     String? url,
     bool force = false,
+  });
+
+  /// Calendario general (Campus Virtual): solo exámenes y entregas.
+  Future<AppResult<IcsImportResult>> importGeneralCalendar({
+    required String url,
   });
 
   /// Contenido `.ics` del calendario del usuario.

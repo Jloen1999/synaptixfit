@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../local_data_source/token_storage.dart';
 import 'auth_interceptor.dart';
 import 'data_change_interceptor.dart';
+import 'language_interceptor.dart';
 import 'session_expiry_notifier.dart';
 
 /// Cliente HTTP de la API de SynaptixFit. Todas las fuentes de datos remotas lo usan.
@@ -30,7 +31,9 @@ class ApiClient {
         expiry: expiry,
       ),
     );
-    dio.interceptors.add(changes);
+    dio.interceptors
+      ..add(changes)
+      ..add(LanguageInterceptor());
   }
 
   late final Dio dio;

@@ -1,24 +1,40 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.application.port.input.academic.CreateSubjectUseCase;
+import com.synaptixfit.application.port.input.academic.CreateSubjectsFromCatalogUseCase;
+import com.synaptixfit.application.port.input.academic.ListSubjectsUseCase;
+import com.synaptixfit.application.port.input.catalog.LinkDegreeUseCase;
+import com.synaptixfit.application.port.input.catalog.ListDegreesUseCase;
 import com.synaptixfit.application.port.input.catalog.ListMyDegreesUseCase;
+import com.synaptixfit.application.port.input.catalog.ListUniversitiesUseCase;
+import com.synaptixfit.application.port.input.catalog.SearchCatalogSubjectsUseCase;
+import com.synaptixfit.application.port.input.planner.GetCalendarBlocksUseCase;
+import com.synaptixfit.application.port.input.profile.ApplyEnrollmentUseCase;
 import com.synaptixfit.application.port.input.profile.CompleteOnboardingUseCase;
 import com.synaptixfit.application.port.input.profile.GetAcademicProfileUseCase;
 import com.synaptixfit.application.port.input.profile.GetGoalHistoryUseCase;
 import com.synaptixfit.application.port.input.profile.GetOnboardingStatusUseCase;
 import com.synaptixfit.application.port.input.profile.GetProfileSummaryUseCase;
+import com.synaptixfit.application.port.input.profile.GetSetupChecklistUseCase;
 import com.synaptixfit.application.port.input.profile.GetWeightHistoryUseCase;
 import com.synaptixfit.application.port.input.profile.GetWellnessProfileUseCase;
+import com.synaptixfit.application.port.input.profile.ReadEnrollmentUseCase;
 import com.synaptixfit.application.port.input.profile.SaveAcademicProfileUseCase;
 import com.synaptixfit.application.port.input.profile.SaveWellnessProfileUseCase;
 import com.synaptixfit.application.port.input.profile.SuggestGoalsUseCase;
 import com.synaptixfit.application.port.input.profile.UpdateAcademicProfileUseCase;
 import com.synaptixfit.application.port.input.profile.UpdateWellnessProfileUseCase;
+import com.synaptixfit.application.port.input.training.ListMyRoutinesUseCase;
 import com.synaptixfit.application.service.profile.AcademicProfileService;
+import com.synaptixfit.application.service.profile.EnrollmentImportService;
 import com.synaptixfit.application.service.profile.OnboardingService;
+import com.synaptixfit.application.service.profile.SetupChecklistService;
 import com.synaptixfit.application.service.profile.WellnessProfileService;
 import com.synaptixfit.domain.port.output.catalog.AcademicCatalogPort;
 import com.synaptixfit.domain.port.output.catalog.UserDegreeRepositoryPort;
 import com.synaptixfit.domain.port.output.profile.AcademicProfileRepositoryPort;
+import com.synaptixfit.domain.port.output.profile.DocumentTextPort;
+import com.synaptixfit.domain.port.output.profile.EnrollmentReaderPort;
 import com.synaptixfit.domain.port.output.profile.GoalHistoryRepositoryPort;
 import com.synaptixfit.domain.port.output.profile.GoalSuggestionPort;
 import com.synaptixfit.domain.port.output.profile.UserSubjectsQueryPort;
@@ -146,5 +162,47 @@ public class ProfileBeanConfiguration {
     @Bean
     GetProfileSummaryUseCase getProfileSummaryUseCase() {
         return tx.wrap(GetProfileSummaryUseCase.class, onboardingService());
+    }
+
+    /** Importar la matrícula: los casos de uso de catálogo y académicos llegan por parámetro (sin ciclos). */
+    @Bean(autowireCandidate = false)
+    EnrollmentImportService enrollmentImportService(DocumentTextPort documents, EnrollmentReaderPort reader,
+                                                    ListUniversitiesUseCase universities, ListDegreesUseCase degrees,
+                                                    SearchCatalogSubjectsUseCase catalogSubjects,
+                                                    ListSubjectsUseCase mySubjects, LinkDegreeUseCase linkDegree,
+                                                    CreateSubjectsFromCatalogUseCase fromCatalog,
+                                                    CreateSubjectUseCase createSubject) {
+        return new EnrollmentImportService(documents, reader, users, universities, degrees, catalogSubjects,
+                mySubjects, linkDegree, fromCatalog, createSubject);
+    }
+
+    /** Sin transacción: leer el PDF y la IA tardan; sus lecturas del catálogo llevan la suya propia. */
+    @Bean
+    ReadEnrollmentUseCase readEnrollmentUseCase(DocumentTextPort documents, EnrollmentReaderPort reader,
+                                                ListUniversitiesUseCase universities, ListDegreesUseCase degrees,
+                                                SearchCatalogSubjectsUseCase catalogSubjects,
+                                                ListSubjectsUseCase mySubjects, LinkDegreeUseCase linkDegree,
+                                                CreateSubjectsFromCatalogUseCase fromCatalog,
+                                                CreateSubjectUseCase createSubject) {
+        return enrollmentImportService(documents, reader, universities, degrees, catalogSubjects, mySubjects,
+                linkDegree, fromCatalog, createSubject)::readEnrollment;
+    }
+
+    @Bean
+    ApplyEnrollmentUseCase applyEnrollmentUseCase(DocumentTextPort documents, EnrollmentReaderPort reader,
+                                                  ListUniversitiesUseCase universities, ListDegreesUseCase degrees,
+                                                  SearchCatalogSubjectsUseCase catalogSubjects,
+                                                  ListSubjectsUseCase mySubjects, LinkDegreeUseCase linkDegree,
+                                                  CreateSubjectsFromCatalogUseCase fromCatalog,
+                                                  CreateSubjectUseCase createSubject) {
+        return tx.wrap(ApplyEnrollmentUseCase.class, enrollmentImportService(documents, reader, universities, degrees,
+                catalogSubjects, mySubjects, linkDegree, fromCatalog, createSubject));
+    }
+
+    /** Rutinas y calendario llegan por parámetro (no por constructor) para no crear ciclos entre configuraciones. */
+    @Bean
+    GetSetupChecklistUseCase getSetupChecklistUseCase(ListMyRoutinesUseCase routines, GetCalendarBlocksUseCase blocks) {
+        return tx.wrap(GetSetupChecklistUseCase.class,
+                new SetupChecklistService(getOnboardingStatusUseCase(), routines, blocks, clock));
     }
 }

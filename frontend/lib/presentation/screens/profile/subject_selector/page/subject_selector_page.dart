@@ -11,6 +11,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../profile_routes.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/subject_selector_bloc.dart';
 
@@ -31,6 +32,21 @@ class SubjectSelectorPage extends StatelessWidget {
         builder: (context) => Scaffold(
           appBar: AppPageBar.reading(
             title: Text(context.localizations.profileSubjectsTitle),
+            actions: [
+              // Atajo opcional: añadir las asignaturas desde la matrícula.
+              IconButton(
+                tooltip: context.localizations.profileEnrollmentEntry,
+                icon: const Icon(Icons.upload_file_rounded),
+                onPressed: () async {
+                  await context.push<void>(ProfilePaths.enrollmentImport);
+                  if (context.mounted) {
+                    context.read<SubjectSelectorBloc>().add(
+                      const SubjectSelectorEvent.started(),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
           body: SubjectSelectorView(
             onAdded: (count) => context.showSnack(
@@ -323,7 +339,7 @@ class _SubjectTile extends StatelessWidget {
         l10n.profileSubjectsSemester(subject.semester!),
       if (credits != null)
         l10n.profileSubjectsCredits(
-          NumberFormat.decimalPattern('es').format(credits),
+          NumberFormat.decimalPattern().format(credits),
         ),
       ?subject.character,
     ].join(' · ');

@@ -12,6 +12,7 @@ import com.synaptixfit.domain.model.analytics.WeeklyAnalytics;
 import com.synaptixfit.domain.model.analytics.WeeklyStudyLoad;
 import com.synaptixfit.domain.model.analytics.WeeklyTrainingMetric;
 import com.synaptixfit.domain.model.analytics.WeeklyTrainingMetric.CompletedSession;
+import com.synaptixfit.domain.model.planner.PlannerProfile;
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.user.Role;
 import com.synaptixfit.domain.model.user.User;
@@ -66,7 +67,7 @@ class AnalyticsServiceTest {
                                                        LocalDate toDay, List<String> codes, Instant now) {
                 studyRequest.addAll(List.of(from, to));
                 studyCodes.addAll(codes);
-                return new StudyWeekSummary.Counts(150, 3, 8, 6, 12, 2, 15, 20, 4);
+                return new StudyWeekSummary.Counts(150, 3, 8, 6, 12, 2, 15, 20, 4, 9, 12);
             }
         };
     }
@@ -157,14 +158,19 @@ class AnalyticsServiceTest {
         assertThat(summary.planAdherence()).isEqualTo(75);
         assertThat(summary.averageTestScore()).isEqualTo(75);
         assertThat(summary.reviewsDue()).isEqualTo(4);
+        assertThat(summary.studyHours()).isEqualTo(9);
+        assertThat(summary.weeklyGoalHours()).isEqualTo(12);
         assertThat(summary.isEmpty()).isFalse();
     }
 
     @Test
     void withoutPlannedBlocksOrTestsThereIsNoPercentage() {
-        StudyWeekSummary empty = StudyWeekSummary.of(CURRENT_WEEK, new StudyWeekSummary.Counts(0, 0, 0, 0, 0, 0, 0, 0, 0));
+        StudyWeekSummary empty = StudyWeekSummary.of(CURRENT_WEEK,
+                new StudyWeekSummary.Counts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null));
 
         assertThat(empty.planAdherence()).isNull();
+        // Sin perfil académico el objetivo es el de por defecto (el mismo que el del bonus semanal).
+        assertThat(empty.weeklyGoalHours()).isEqualTo(PlannerProfile.Academic.DEFAULT_WEEKLY_GOAL_HOURS);
         assertThat(empty.averageTestScore()).isNull();
         assertThat(empty.isEmpty()).isTrue();
     }

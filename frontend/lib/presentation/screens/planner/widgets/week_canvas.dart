@@ -83,17 +83,26 @@ class _WeekCanvasState extends State<WeekCanvas> {
     super.dispose();
   }
 
-  void _scrollToMorning(WeekGridGeometry g) {
+  /// Al abrir la semana: una hora antes de ahora (como pronto, las 7:00) y,
+  /// si hoy cae en ella, con hoy como primera columna visible: los días ya
+  /// pasados quedan a la izquierda, a un desplazamiento.
+  void _scrollToNow(WeekGridGeometry g) {
     if (_initialScrollDone) return;
     _initialScrollDone = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_vertical.hasClients) return;
-      final nowMin = WeekGridGeometry.minutesOfDay(widget.now);
-      final target = math.max(7 * 60, nowMin - 60);
-      final y = g
-          .minutesToY(target)
-          .clamp(0.0, _vertical.position.maxScrollExtent);
-      _vertical.jumpTo(y);
+      if (_vertical.hasClients) {
+        final nowMin = WeekGridGeometry.minutesOfDay(widget.now);
+        final target = math.max(7 * 60, nowMin - 60);
+        _vertical.jumpTo(
+          g.minutesToY(target).clamp(0.0, _vertical.position.maxScrollExtent),
+        );
+      }
+      final today = g.dayIndexOf(widget.now, widget.weekStart);
+      if (today != null && _horizontal.hasClients) {
+        _horizontal.jumpTo(
+          g.dayLeft(today).clamp(0.0, _horizontal.position.maxScrollExtent),
+        );
+      }
     });
   }
 
@@ -124,7 +133,7 @@ class _WeekCanvasState extends State<WeekCanvas> {
           dayWidth: math.max(available / 7, WeekCanvas.minDayWidth),
           hourHeight: WeekCanvas.hourHeight,
         );
-        _scrollToMorning(geometry);
+        _scrollToNow(geometry);
         return Column(
           children: [
             SizedBox(
@@ -370,8 +379,12 @@ class _DayHeader extends StatelessWidget {
 
   Widget _dayLabel(BuildContext context, DateTime day) {
     final isToday = PlannerWeek.isSameDay(day, now);
+    // «Hoy, viernes 24 de octubre»: el resalte de color también se dice. Cada
+    // día es un encabezado para saltar de columna en columna.
+    final date = PlannerFormats.longDate(day);
     return Semantics(
-      label: PlannerFormats.longDate(day),
+      header: true,
+      label: isToday ? context.localizations.plannerTodayDate(date) : date,
       excludeSemantics: true,
       child: Center(
         child: Container(

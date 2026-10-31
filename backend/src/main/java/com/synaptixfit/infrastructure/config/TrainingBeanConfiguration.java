@@ -25,9 +25,12 @@ import com.synaptixfit.application.port.input.training.DiscardRecommendationUseC
 import com.synaptixfit.application.port.input.training.DuplicateRoutineUseCase;
 import com.synaptixfit.application.port.input.training.FinishTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.GenerateRoutineProposalUseCase;
+import com.synaptixfit.application.port.input.training.GetCatalogTranslationsUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseFilterOptionsUseCase;
+import com.synaptixfit.application.port.input.training.GetExerciseNamesUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.GetRoutineUseCase;
 import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
 import com.synaptixfit.application.port.input.training.GetTrainingSessionUseCase;
@@ -50,21 +53,28 @@ import com.synaptixfit.application.port.input.training.SearchExercisesUseCase;
 import com.synaptixfit.application.port.input.training.SetExerciseActiveUseCase;
 import com.synaptixfit.application.port.input.training.StartTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.SubmitDailyCheckInUseCase;
+import com.synaptixfit.application.port.input.training.SuggestExerciseNamesUseCase;
 import com.synaptixfit.application.port.input.training.SuggestSessionBookendsUseCase;
 import com.synaptixfit.application.port.input.training.UnmarkTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.UpdateExerciseUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineExerciseUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineWeekUseCase;
+import com.synaptixfit.application.service.training.CatalogTranslationService;
 import com.synaptixfit.application.service.training.DailyCheckInService;
 import com.synaptixfit.application.service.training.ExerciseCatalogService;
+import com.synaptixfit.application.service.training.ExerciseNameTranslationService;
 import com.synaptixfit.application.service.training.RecommendationService;
 import com.synaptixfit.application.service.training.RoutineGenerationService;
 import com.synaptixfit.application.service.training.RoutineService;
+import com.synaptixfit.application.service.training.SessionAdaptationService;
 import com.synaptixfit.application.service.training.TrainingSessionService;
 import com.synaptixfit.application.service.training.WeeklyPlanService;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
+import com.synaptixfit.domain.port.output.training.CatalogTranslationsPort;
 import com.synaptixfit.domain.port.output.training.DailyCheckInRepositoryPort;
+import com.synaptixfit.domain.port.output.training.ExerciseNameTranslationsRepositoryPort;
+import com.synaptixfit.domain.port.output.training.ExerciseNameTranslatorPort;
 import com.synaptixfit.domain.port.output.training.ExerciseRepositoryPort;
 import com.synaptixfit.domain.port.output.training.RecommendationRepositoryPort;
 import com.synaptixfit.domain.port.output.training.RoutineGeneratorPort;
@@ -88,6 +98,7 @@ public class TrainingBeanConfiguration {
 
     private final TransactionalUseCaseFactory tx;
     private final ExerciseRepositoryPort exercises;
+    private final ExerciseNameTranslationsRepositoryPort exerciseNames;
     private final RoutineRepositoryPort routines;
     private final TrainingSessionRepositoryPort sessions;
     private final DailyCheckInRepositoryPort checkIns;
@@ -110,6 +121,7 @@ public class TrainingBeanConfiguration {
      */
     public TrainingBeanConfiguration(TransactionalUseCaseFactory tx,
                                      ExerciseRepositoryPort exercises,
+                                     ExerciseNameTranslationsRepositoryPort exerciseNames,
                                      RoutineRepositoryPort routines,
                                      TrainingSessionRepositoryPort sessions,
                                      DailyCheckInRepositoryPort checkIns,
@@ -127,6 +139,7 @@ public class TrainingBeanConfiguration {
                                      @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
         this.tx = tx;
         this.exercises = exercises;
+        this.exerciseNames = exerciseNames;
         this.routines = routines;
         this.sessions = sessions;
         this.checkIns = checkIns;
@@ -144,11 +157,37 @@ public class TrainingBeanConfiguration {
         this.zone = ZoneId.of(zone);
     }
 
+    // ---------------------------------------------------------------- traducciones del catálogo
+
+    /** Sin transacción: el adaptador las tiene en memoria por idioma. */
+    @Bean
+    GetCatalogTranslationsUseCase getCatalogTranslationsUseCase(CatalogTranslationsPort translations) {
+        return new CatalogTranslationService(translations);
+    }
+
+    // ---------------------------------------------------------------- ExerciseNameTranslationService
+
+    @Bean(autowireCandidate = false)
+    ExerciseNameTranslationService exerciseNameTranslationService(ExerciseNameTranslatorPort translator) {
+        return new ExerciseNameTranslationService(exercises, exerciseNames, translator);
+    }
+
+    /** Sin transacción: la llamada a la IA no debe tener una conexión de BD abierta mientras espera. */
+    @Bean
+    SuggestExerciseNamesUseCase suggestExerciseNamesUseCase(ExerciseNameTranslatorPort translator) {
+        return exerciseNameTranslationService(translator);
+    }
+
+    @Bean
+    GetExerciseNamesUseCase getExerciseNamesUseCase(ExerciseNameTranslatorPort translator) {
+        return tx.wrap(GetExerciseNamesUseCase.class, exerciseNameTranslationService(translator));
+    }
+
     // ---------------------------------------------------------------- ExerciseCatalogService
 
     @Bean(autowireCandidate = false)
     ExerciseCatalogService exerciseCatalogService() {
-        return new ExerciseCatalogService(exercises, clock);
+        return new ExerciseCatalogService(exercises, exerciseNames, clock);
     }
 
     @Bean
@@ -337,6 +376,16 @@ public class TrainingBeanConfiguration {
     }
 
     // ---------------------------------------------------------------- TrainingSessionService
+
+    @Bean(autowireCandidate = false)
+    SessionAdaptationService sessionAdaptationService() {
+        return new SessionAdaptationService(sessions, routines, checkIns, crossRegulation, clock, zone);
+    }
+
+    @Bean
+    GetSessionAdaptationUseCase getSessionAdaptationUseCase() {
+        return tx.wrap(GetSessionAdaptationUseCase.class, sessionAdaptationService());
+    }
 
     @Bean(autowireCandidate = false)
     TrainingSessionService trainingSessionService() {

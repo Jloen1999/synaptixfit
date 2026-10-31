@@ -1,0 +1,9 @@
+part of 'reset_password_bloc.dart';
+
+@freezed
+sealed class ResetPasswordEvent with _$ResetPasswordEvent {
+  const factory ResetPasswordEvent.submitted({
+    required String token,
+    required String newPassword,
+  }) = ResetPasswordSubmitted;
+}

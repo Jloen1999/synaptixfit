@@ -8,6 +8,7 @@ import '../use_cases/admin/delete_admin_user_use_case.dart';
 import '../use_cases/admin/dismiss_report_use_case.dart';
 import '../use_cases/admin/export_admin_user_data_use_case.dart';
 import '../use_cases/admin/get_activity_trend_use_case.dart';
+import '../use_cases/admin/get_admin_exercise_names_use_case.dart';
 import '../use_cases/admin/get_admin_exercise_options_use_case.dart';
 import '../use_cases/admin/get_admin_exercise_use_case.dart';
 import '../use_cases/admin/get_admin_user_activity_use_case.dart';
@@ -25,6 +26,7 @@ import '../use_cases/admin/set_admin_exercise_active_use_case.dart';
 import '../use_cases/admin/set_admin_user_progress_use_case.dart';
 import '../use_cases/admin/set_admin_user_shadowban_use_case.dart';
 import '../use_cases/admin/set_lockdown_use_case.dart';
+import '../use_cases/admin/suggest_admin_exercise_names_use_case.dart';
 import '../use_cases/admin/update_admin_exercise_use_case.dart';
 import '../use_cases/admin/update_admin_user_identity_use_case.dart';
 import '../use_cases/admin/wipe_admin_user_use_case.dart';
@@ -100,6 +102,12 @@ void registerAdminDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetAdminExerciseUseCaseContract>(
       () => GetAdminExerciseUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetAdminExerciseNamesUseCaseContract>(
+      () => GetAdminExerciseNamesUseCase(getIt()),
+    )
+    ..registerLazySingleton<SuggestAdminExerciseNamesUseCaseContract>(
+      () => SuggestAdminExerciseNamesUseCase(getIt()),
     )
     ..registerLazySingleton<CreateAdminExerciseUseCaseContract>(
       () => CreateAdminExerciseUseCase(getIt()),

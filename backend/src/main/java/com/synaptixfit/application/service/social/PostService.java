@@ -2,14 +2,15 @@ package com.synaptixfit.application.service.social;
 
 import com.synaptixfit.application.port.input.notification.CreateNotificationUseCase;
 import com.synaptixfit.application.port.input.social.CreatePostUseCase;
-import com.synaptixfit.application.port.input.social.PublishAchievementPostUseCase;
 import com.synaptixfit.application.port.input.social.DeletePostUseCase;
 import com.synaptixfit.application.port.input.social.EditPostUseCase;
 import com.synaptixfit.application.port.input.social.GetFeedUseCase;
 import com.synaptixfit.application.port.input.social.GetPostUseCase;
 import com.synaptixfit.application.port.input.social.LikePostUseCase;
+import com.synaptixfit.application.port.input.social.PublishAchievementPostUseCase;
 import com.synaptixfit.application.port.input.social.ReportPostUseCase;
 import com.synaptixfit.application.port.input.social.UnlikePostUseCase;
+import com.synaptixfit.domain.exception.social.PostAlreadySharedException;
 import com.synaptixfit.domain.exception.social.PostNotFoundException;
 import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.shared.PageResult;
@@ -68,6 +69,10 @@ public class PostService implements GetFeedUseCase, GetPostUseCase, CreatePostUs
 
     @Override
     public PostView createPost(CreatePostUseCase.Command command) {
+        if (Post.uniquePerMetadata(command.type(), command.metadata())
+                && posts.existsByAuthorTypeAndMetadata(command.userId(), command.type(), command.metadata())) {
+            throw new PostAlreadySharedException();
+        }
         Post post = Post.publish(command.userId(), command.type(), command.description(), command.imageUrl(),
                 command.metadata(), clock.instant());
         posts.save(post);

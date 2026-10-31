@@ -106,9 +106,12 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         }
         RoutineDay day = routine.findDay(dayId).orElseThrow(SessionDayMismatchException::new);
         Optional<TrainingSession> existing = sessions.findInProgressForDay(userId, dayId);
-        if (existing.isPresent()) {
+        if (existing.isPresent() && !existing.get().isStale(now)) {
             return existing.get();
         }
+        // Una sesión de ese día abandonada (hace más de 6 h) no se reanuda: se descarta y se empieza
+        // de cero, para no registrar días de duración ni series de otra jornada.
+        existing.ifPresent(stale -> cancel(userId, stale.id()));
         sessions.lastCompletedAt(userId).ifPresent(last -> {
             int days = (int) ChronoUnit.DAYS.between(LocalDate.ofInstant(last, zone), today());
             SessionFeedback.afterInactivity(userId, routineId, days, day.exercises(), GoalParameters.of(routine.goal()), now)
@@ -155,10 +158,13 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
             });
         }
         Double weight = context.bodyWeightKg(c.userId()).orElse(null);
-        double calories = SessionCalories.estimate(planned, realDurations, weight, c.durationSeconds());
-        int xp = TrainingRewards.sessionXp(TrainingSession.minutesOf(Math.max(1, c.durationSeconds())), c.rpe());
         Instant now = clock.instant();
-        session.complete(c.durationSeconds(), c.rpe(), calories, xp, now);
+        long duration = session.boundedDurationSeconds(c.durationSeconds(), now);
+        double calories = SessionCalories.estimate(planned, realDurations, weight, duration);
+        Instant dayStart = today().atStartOfDay(zone).toInstant();
+        int rewardedToday = sessions.countRewardedBetween(c.userId(), dayStart, now);
+        int xp = TrainingRewards.sessionXp(TrainingSession.minutesOf(duration), c.rpe(), rewardedToday);
+        session.complete(duration, c.rpe(), calories, xp, now);
         TrainingSession saved = sessions.save(session);
 
         routine.ifPresent(r -> {

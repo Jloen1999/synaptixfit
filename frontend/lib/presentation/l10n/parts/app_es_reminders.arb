@@ -27,9 +27,47 @@
   "remindersStudyFallbackName": "Tu bloque de estudio",
   "remindersDeviceSectionTitle": "Recordatorios",
   "remindersDeviceToggle": "En este móvil",
-  "remindersDeviceHint": "Repasos pendientes y 15 min antes de cada bloque",
+  "remindersDeviceHint": "Repasos, bloques, entregas y exámenes, y el resumen del domingo",
   "remindersAppliesNow": "Se aplica al momento",
   "remindersPermissionDeniedTitle": "Permiso desactivado en el sistema",
   "remindersPermissionDeniedBody": "Actívalo en los ajustes del teléfono, en Notificaciones de SynaptixFit.",
-  "remindersPermissionRetry": "Volver a pedir"
+  "remindersPermissionRetry": "Volver a pedir",
+  "remindersExamTitle": "{days, plural, =0{Examen hoy} =1{Examen mañana} other{Examen en {days} días}}",
+  "@remindersExamTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersDeadlineTitle": "{days, plural, =0{Entrega hoy} =1{Entrega mañana} other{Entrega en {days} días}}",
+  "@remindersDeadlineTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersDeadlineBody": "{name}: {day} a las {time}",
+  "@remindersDeadlineBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersExamFallbackName": "Tu examen",
+  "remindersDeadlineFallbackName": "Tu entrega",
+  "remindersOfferTitle": "¿Te avisamos?",
+  "remindersOfferMessage": "Podemos recordarte en este móvil los repasos, los bloques que empiezan y las entregas y exámenes que se acercan. Puedes cambiarlo cuando quieras en Ajustes, en Recordatorios.",
+  "remindersOfferAccept": "Activar recordatorios",
+  "remindersWeeklyTitle": "Tu semana",
+  "remindersWeeklyBody": "Mira cómo te ha ido y planifica la próxima.",
+  "remindersOfferDecline": "No, gracias"
 }

@@ -21,6 +21,9 @@ sealed class HomeDashboardEvent with _$HomeDashboardEvent {
   const factory HomeDashboardEvent.trainingHandled() =
       HomeDashboardTrainingHandled;
 
+  /// «Ahora no» en el aviso de configuración pendiente.
+  const factory HomeDashboardEvent.setupSnoozed() = HomeDashboardSetupSnoozed;
+
   /// La página ya ha navegado al onboarding.
   const factory HomeDashboardEvent.onboardingHandled() =
       HomeDashboardOnboardingHandled;

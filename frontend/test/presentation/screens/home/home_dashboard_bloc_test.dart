@@ -8,11 +8,14 @@ import 'package:synaptixfit/domain/enums/planner_enums.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/home/home_dashboard.dart';
 import 'package:synaptixfit/domain/models/home/home_onboarding_status.dart';
+import 'package:synaptixfit/domain/models/home/home_setup.dart';
 import 'package:synaptixfit/domain/models/planner/weekly_planning.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/home/get_home_dashboard_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/get_home_due_reviews_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/get_home_onboarding_status_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/home/get_home_setup_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/home/snooze_home_setup_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/get_home_unread_count_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_timeline_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/start_session_use_case.dart';
@@ -36,6 +39,10 @@ class _MockTimeline extends Mock implements GetTimelineUseCaseContract {}
 
 class _MockStart extends Mock implements StartSessionUseCaseContract {}
 
+class _MockSetup extends Mock implements GetHomeSetupUseCaseContract {}
+
+class _MockSnooze extends Mock implements SnoozeHomeSetupUseCaseContract {}
+
 void main() {
   late _MockDashboard getDashboard;
   late _MockReviews getReviews;
@@ -45,12 +52,16 @@ void main() {
   late HomeOnboardingGate gate;
   late FakeDataChanges changes;
   late _MockStart start;
+  late _MockSetup getSetup;
+  late _MockSnooze snooze;
 
   HomeDashboardBloc build() => HomeDashboardBloc(
     getDashboard: getDashboard,
     getDueReviews: getReviews,
     getUnreadCount: getUnread,
     getOnboardingStatus: getOnboarding,
+    getSetup: getSetup,
+    snoozeSetup: snooze,
     getTimeline: getTimeline,
     onboardingGate: gate,
     watchChanges: changes.useCase,
@@ -63,10 +74,16 @@ void main() {
     dashboard: homeDashboardFixture,
     dueReviews: homeReviewsFixture,
     unreadNotifications: 3,
+    setup: const HomeSetup(),
   );
 
   setUp(() {
     start = _MockStart();
+    getSetup = _MockSetup();
+    snooze = _MockSnooze();
+    when(
+      () => getSetup(userId: any(named: 'userId')),
+    ).thenAnswer((_) async => const Success(HomeSetup()));
     getDashboard = _MockDashboard();
     getReviews = _MockReviews();
     getUnread = _MockUnread();
@@ -92,6 +109,33 @@ void main() {
       (_) async => const Success(HomeOnboardingStatus(completed: true)),
     );
   });
+
+  blocTest<HomeDashboardBloc, HomeDashboardState>(
+    '«Ahora no» oculta el aviso de configuración una semana',
+    setUp: () {
+      registerFallbackValue(DateTime(2026));
+      when(
+        () => snooze(any(), userId: any(named: 'userId')),
+      ).thenAnswer((_) async => Success(DateTime(2026, 10, 27, 9)));
+    },
+    build: build,
+    seed: () => loaded.copyWith(
+      setup: const HomeSetup(pending: [HomeSetupTask.subjects], total: 3),
+    ),
+    act: (bloc) => bloc.add(const HomeDashboardEvent.setupSnoozed()),
+    expect: () => [
+      loaded.copyWith(
+        setup: HomeSetup(
+          pending: const [HomeSetupTask.subjects],
+          total: 3,
+          snoozedUntil: DateTime(2026, 10, 27, 9),
+        ),
+      ),
+    ],
+    verify: (_) => verify(
+      () => snooze(DateTime(2026, 10, 20, 9), userId: any(named: 'userId')),
+    ).called(1),
+  );
 
   blocTest<HomeDashboardBloc, HomeDashboardState>(
     'carga el resumen, los repasos y el contador',
@@ -178,13 +222,16 @@ void main() {
   );
 
   blocTest<HomeDashboardBloc, HomeDashboardState>(
-    'los repasos y el contador son opcionales',
+    'los repasos, el contador y el aviso de configuración son opcionales',
     setUp: () {
       when(
         () => getReviews(limit: any(named: 'limit')),
       ).thenAnswer((_) async => const Failure(AppError.server()));
       when(
         () => getUnread(),
+      ).thenAnswer((_) async => const Failure(AppError.server()));
+      when(
+        () => getSetup(userId: 'u1'),
       ).thenAnswer((_) async => const Failure(AppError.server()));
     },
     build: build,

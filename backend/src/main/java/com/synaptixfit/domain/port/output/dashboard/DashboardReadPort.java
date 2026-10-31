@@ -5,6 +5,7 @@ import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.NextTrainingDay;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.TrainingTotals;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +21,8 @@ public interface DashboardReadPort {
     TrainingTotals trainingTotals(UUID userId, Instant from, Instant to);
 
     /** Sesiones planificadas del plan de entrenamiento semanal activo. */
-    Optional<Integer> plannedWeeklySessions(UUID userId);
+    /** Sesiones planificadas en el plan semanal activo de la semana que empieza en {@code weekStart}. */
+    Optional<Integer> plannedWeeklySessions(UUID userId, LocalDate weekStart);
 
     /** Bloques del calendario que empiezan en [from, to), ordenados por inicio. */
     List<CalendarBlock> calendarBlocks(UUID userId, Instant from, Instant to);
@@ -28,6 +30,10 @@ public interface DashboardReadPort {
     /** Entregas y exámenes con fecha límite en [from, to), ordenados por fecha. */
     List<Deadline> deadlines(UUID userId, Instant from, Instant to);
 
+    /**
+     * Próximo día pendiente de la rutina activa, con el inicio de su sesión abierta más reciente
+     * (el estado efectivo lo decide {@code NextTrainingDay.effective}).
+     */
     Optional<NextTrainingDay> nextTrainingDay(UUID userId);
 
     Optional<Instant> lastTrainingSession(UUID userId);

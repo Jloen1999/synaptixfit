@@ -185,7 +185,9 @@ class ReminderPlannerTest {
 
     @Test
     void bothGivesReviewsStudyAndTraining() {
-        assertThat(kinds(UsageFocus.BOTH, allOn())).containsExactlyInAnyOrder(ReminderKind.values());
+        // Sin entregas en el plan: los tres tipos de bloques y repasos.
+        assertThat(kinds(UsageFocus.BOTH, allOn())).containsExactlyInAnyOrder(ReminderKind.REVIEWS,
+                ReminderKind.STUDY, ReminderKind.TRAINING);
     }
 
     @Test

@@ -1,3 +1,4 @@
+import '../../../../domain/enums/item_time_status.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../domain/models/planner/calendar_block.dart';
@@ -48,6 +49,7 @@ class TimeBlockTile extends StatelessWidget {
   final VoidCallback onLockedTouched;
 
   bool get _movable => !block.isLocked && !block.completed;
+  bool get _missed => block.timeStatus == ItemTimeStatus.missed;
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +70,7 @@ class TimeBlockTile extends StatelessWidget {
         ),
         title,
         if (block.completed) l10n.plannerCompletedLabel,
+        if (_missed) l10n.plannerMissedLabel,
         if (block.isLocked) l10n.plannerFixedLabel,
       ].join(', '),
       // El toque va en el InkWell (enfocable, con resaltado de foco); aquí solo
@@ -84,15 +87,25 @@ class TimeBlockTile extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxHeight < 44;
+              final radius = BorderRadius.circular(TokensRadius.s);
               return AppFocusOutline(
-                borderRadius: BorderRadius.circular(TokensRadius.s),
+                borderRadius: radius,
                 child: Material(
                   color: Color.alphaBlend(
                     color.withValues(alpha: block.completed ? 0.10 : 0.20),
                     context.colors.surface,
                   ),
                   elevation: dragging ? 6 : 0,
-                  borderRadius: BorderRadius.circular(TokensRadius.s),
+                  // Sin hacer: contorno de aviso además de la franja de su tipo.
+                  shape: RoundedRectangleBorder(
+                    borderRadius: radius,
+                    side: _missed
+                        ? BorderSide(
+                            color: context.palette.warning,
+                            width: TokensSize.focusRing,
+                          )
+                        : BorderSide.none,
+                  ),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
                     onTap: onTap,
@@ -100,14 +113,12 @@ class TimeBlockTile extends StatelessWidget {
                     child: ExcludeSemantics(
                       child: Stack(
                         children: [
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  left: BorderSide(color: color, width: 4),
-                                ),
-                              ),
-                            ),
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: TokensSize.blockStripe,
+                            child: ColoredBox(color: color),
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(
@@ -157,6 +168,15 @@ class TimeBlockTile extends StatelessWidget {
     final statusIcons = [
       if (block.completed)
         Icon(Icons.check_circle_rounded, size: 14, color: color),
+      if (_missed)
+        Tooltip(
+          message: context.localizations.plannerMissedLabel,
+          child: Icon(
+            Icons.history_rounded,
+            size: TokensSize.iconXs,
+            color: context.palette.warning,
+          ),
+        ),
       if (block.isLocked)
         Icon(
           Icons.lock_rounded,
@@ -185,7 +205,9 @@ class TimeBlockTile extends StatelessWidget {
       children: [
         header,
         Text(
-          timeText,
+          _missed
+              ? '$timeText · ${context.localizations.plannerMissedLabel}'
+              : timeText,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: context.textStyles.labelSmall?.copyWith(

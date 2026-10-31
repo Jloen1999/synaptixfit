@@ -29,5 +29,8 @@ public final class EmbeddedPostgresSupport {
         registry.add("spring.datasource.password", () -> "postgres");
         // Los tests nunca llaman a la IA real aunque exista backend/.env con una clave.
         registry.add("synaptixfit.ai.api-key", () -> "");
+        // Ni envían correos reales.
+        registry.add("synaptixfit.mail.resend-api-key", () -> "");
+        registry.add("synaptixfit.mail.weekly-cron", () -> "-");
     }
 }

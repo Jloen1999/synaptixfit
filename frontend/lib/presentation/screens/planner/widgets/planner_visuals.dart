@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../domain/enums/planner_enums.dart';
 import '../../../extensions/context_extensions.dart';
+import '../../../l10n/gen_l10n/app_localizations.dart';
 
 /// Color, icono y texto de cada tipo de bloque (nunca solo color: siempre icono).
 extension BlockTypeVisuals on BlockType {
@@ -109,38 +110,47 @@ extension BalanceStateVisuals on BalanceState {
   };
 }
 
-/// Formatos de fecha y hora en español del planificador.
+/// Formatos de fecha y hora del planificador, en el idioma de la app. Las
+/// horas van en 24 h en todos los idiomas: caben en los bloques del lienzo.
 abstract final class PlannerFormats {
-  static String time(DateTime t) => DateFormat.Hm('es').format(t);
+  static String time(DateTime t) => DateFormat.Hm().format(t);
 
+  /// Minutos desde medianoche como hora («09:30»), con el mismo formato que
+  /// [time].
   static String minutes(int minutesOfDay) =>
-      '${(minutesOfDay ~/ 60).toString().padLeft(2, '0')}:'
-      '${(minutesOfDay % 60).toString().padLeft(2, '0')}';
+      time(DateTime(2024, 1, 1, minutesOfDay ~/ 60, minutesOfDay % 60));
 
   /// «lun 14».
-  static String dayShort(DateTime d) => DateFormat('EEE d', 'es').format(d);
+  static String dayShort(DateTime d) => DateFormat('EEE d').format(d);
 
   /// «lu», «ma»… para los selectores de días.
   static String weekdayInitials(int weekday) {
     // 2024-01-01 fue lunes.
     final d = DateTime(2024, 1, weekday);
-    return DateFormat('EEEEE', 'es').format(d).toUpperCase();
+    return DateFormat('EEEEE').format(d).toUpperCase();
   }
 
   static String weekdayName(int weekday) =>
-      DateFormat('EEEE', 'es').format(DateTime(2024, 1, weekday));
+      DateFormat('EEEE').format(DateTime(2024, 1, weekday));
 
   /// «14 oct».
-  static String dayMonth(DateTime d) => DateFormat('d MMM', 'es').format(d);
+  static String dayMonth(DateTime d) => DateFormat.MMMd().format(d);
 
   /// «lunes, 14 de octubre».
-  static String longDate(DateTime d) =>
-      DateFormat("EEEE, d 'de' MMMM", 'es').format(d);
+  static String longDate(DateTime d) => DateFormat.MMMMEEEEd().format(d);
 
   /// «14 oct 2026, 10:00».
-  static String dateTime(DateTime d) =>
-      DateFormat('d MMM y, HH:mm', 'es').format(d);
+  static String dateTime(DateTime d) => DateFormat.yMMMd().add_Hm().format(d);
+
+  /// Duración legible: «45 min», «2 h», «1 h 30 min».
+  static String duration(AppLocalizations l10n, int minutes) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (h == 0) return l10n.plannerDurationMinutes(m);
+    if (m == 0) return l10n.plannerDurationHours(h);
+    return l10n.plannerDurationHoursMinutes(h, m);
+  }
 
   /// Horas con un decimal como máximo («2,5»).
-  static String hours(double h) => NumberFormat('#0.#', 'es').format(h);
+  static String hours(double h) => NumberFormat('#0.#').format(h);
 }

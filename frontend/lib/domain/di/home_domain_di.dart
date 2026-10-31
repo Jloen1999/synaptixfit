@@ -1,3 +1,5 @@
+import '../use_cases/home/snooze_home_setup_use_case.dart';
+import '../use_cases/home/get_home_setup_use_case.dart';
 import 'package:get_it/get_it.dart';
 
 import '../use_cases/home/get_home_dashboard_use_case.dart';
@@ -19,5 +21,11 @@ void registerHomeDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetHomeOnboardingStatusUseCaseContract>(
       () => GetHomeOnboardingStatusUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetHomeSetupUseCaseContract>(
+      () => GetHomeSetupUseCase(getIt(), getIt()),
+    )
+    ..registerLazySingleton<SnoozeHomeSetupUseCaseContract>(
+      () => SnoozeHomeSetupUseCase(getIt()),
     );
 }

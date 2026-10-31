@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../domain/models/reminders/reminder.dart';
+import '../../domain/models/reminders/timer_alert.dart';
 
 /// Acceso técnico a las notificaciones locales del sistema. Lo usa
 /// `ReminderSchedulerRepository`; puede lanzar excepciones del plugin.
@@ -18,6 +19,12 @@ abstract interface class LocalReminderScheduler {
   Future<void> replaceAll(List<Reminder> reminders, String channelName);
 
   Future<void> cancelAll();
+
+  /// Aviso de fin de fase del Pomodoro (id propio: sustituir los
+  /// recordatorios no lo quita).
+  Future<void> scheduleTimerAlert(TimerAlert alert);
+
+  Future<void> cancelTimerAlert();
 
   /// `payload` de cada aviso tocado, empezando por el que abrió la app.
   Stream<String> watchOpenedPayloads();
@@ -36,11 +43,20 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
 
   static const _channelId = 'synaptixfit_reminders';
 
+  /// Canal y id del aviso del temporizador: prioridad alta (es lo que la
+  /// persona está esperando) y un id fuera del rango de los recordatorios.
+  static const _timerChannelId = 'synaptixfit_timer';
+  static const _timerId = 2147480000;
+
   /// Icono del aviso. Se conserva en el build de release con `res/raw/keep.xml`.
   static const _androidIcon = '@mipmap/launcher_icon';
 
   final FlutterLocalNotificationsPlugin _plugin;
   final _opened = StreamController<String>.broadcast();
+
+  /// Aviso del temporizador pendiente: se vuelve a programar si se sustituyen
+  /// los recordatorios (eso cancela todo lo pendiente).
+  TimerAlert? _timerAlert;
   Future<void>? _ready;
   bool _launchChecked = false;
 
@@ -119,6 +135,53 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
         payload: reminder.kind.payload,
       );
     }
+    final alert = _timerAlert;
+    if (alert != null && alert.at.isAfter(DateTime.now())) {
+      await _scheduleTimer(alert);
+    }
+  }
+
+  @override
+  Future<void> scheduleTimerAlert(TimerAlert alert) async {
+    await _ensureReady();
+    _timerAlert = alert;
+    await _plugin.cancel(id: _timerId);
+    await _scheduleTimer(alert);
+  }
+
+  /// Exacto si Android lo permite (en Android 14 hay que concederlo en
+  /// ajustes); si no, inexacto: puede llegar con algo de retraso, pero llega.
+  Future<void> _scheduleTimer(TimerAlert alert) async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    final exact = await android?.canScheduleExactNotifications() ?? true;
+    await _plugin.zonedSchedule(
+      id: _timerId,
+      title: alert.title,
+      body: alert.body,
+      scheduledDate: tz.TZDateTime.from(alert.at.toUtc(), tz.UTC),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _timerChannelId,
+          alert.channelName,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: exact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
+  @override
+  Future<void> cancelTimerAlert() async {
+    await _ensureReady();
+    _timerAlert = null;
+    await _plugin.cancel(id: _timerId);
   }
 
   @override
@@ -160,6 +223,12 @@ class NoopReminderScheduler implements LocalReminderScheduler {
 
   @override
   Future<void> cancelAll() async {}
+
+  @override
+  Future<void> scheduleTimerAlert(TimerAlert alert) async {}
+
+  @override
+  Future<void> cancelTimerAlert() async {}
 
   @override
   Stream<String> watchOpenedPayloads() => const Stream.empty();

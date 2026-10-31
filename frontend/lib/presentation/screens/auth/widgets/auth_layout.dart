@@ -81,7 +81,7 @@ class _BrandPanel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const AppBrandMark(size: 64),
+                const AppBrandMark(size: TokensSize.brandLogo),
                 const SizedBox(height: TokensSpacing.xl),
                 Text(
                   l10n.authBrandTitle,

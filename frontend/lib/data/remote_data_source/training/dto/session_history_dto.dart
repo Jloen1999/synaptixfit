@@ -59,3 +59,29 @@ abstract class SessionHistoryDto with _$SessionHistoryDto {
     records: [for (final r in records) r.toDomain()],
   );
 }
+
+@freezed
+abstract class SessionHighlightsDto with _$SessionHighlightsDto {
+  const factory SessionHighlightsDto({
+    @Default(0) double volumeKg,
+    @Default(0) int totalReps,
+    @Default(0) int completedSets,
+    @Default(<PersonalRecordDto>[]) List<PersonalRecordDto> records,
+    double? previousVolumeKg,
+    int? previousDurationMinutes,
+  }) = _SessionHighlightsDto;
+
+  const SessionHighlightsDto._();
+
+  factory SessionHighlightsDto.fromJson(Map<String, dynamic> json) =>
+      _$SessionHighlightsDtoFromJson(json);
+
+  SessionHighlights toDomain() => SessionHighlights(
+    volumeKg: volumeKg,
+    totalReps: totalReps,
+    completedSets: completedSets,
+    records: [for (final r in records) r.toDomain()],
+    previousVolumeKg: previousVolumeKg,
+    previousDurationMinutes: previousDurationMinutes,
+  );
+}

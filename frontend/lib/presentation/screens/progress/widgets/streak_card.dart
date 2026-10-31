@@ -4,6 +4,7 @@ import '../../../../domain/models/progress/streak.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
+import 'progress_labels.dart';
 
 /// Racha diaria: días actuales, récord, hitos y aviso de riesgo.
 class StreakCard extends StatelessWidget {
@@ -76,6 +77,36 @@ class StreakCard extends StatelessWidget {
             const SizedBox(height: TokensSpacing.m),
             _RiskBanner(message: l10n.progressStreakAtRisk),
           ],
+          // Comodines: cuántos quedan y, si alguno salvó la racha, cuándo.
+          const SizedBox(height: TokensSpacing.m),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(
+                child: Icon(
+                  Icons.ac_unit_rounded,
+                  color: streak.freezesAvailable > 0
+                      ? context.colors.tertiary
+                      : context.colors.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(
+                child: Text(
+                  [
+                    l10n.progressStreakFreezes(streak.freezesAvailable),
+                    if (streak.frozenDays.isNotEmpty)
+                      l10n.progressStreakFrozen(
+                        ProgressFormat.date(streak.frozenDays.last),
+                      ),
+                  ].join(' '),
+                  style: context.textStyles.bodySmall?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: TokensSpacing.m),
           if (next != null) ...[
             ClipRRect(

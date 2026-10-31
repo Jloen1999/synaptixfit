@@ -17,6 +17,8 @@ abstract class StreakDto with _$StreakDto {
     @Default(0) int daysToNextMilestone,
     @Default(0) double milestoneProgress,
     @Default(<int>[]) List<int> reachedMilestones,
+    @Default(0) int freezesAvailable,
+    @Default(<String>[]) List<String> frozenDays,
   }) = _StreakDto;
 
   const StreakDto._();
@@ -36,5 +38,7 @@ abstract class StreakDto with _$StreakDto {
     daysToNextMilestone: daysToNextMilestone < 0 ? 0 : daysToNextMilestone,
     milestoneProgress: milestoneProgress.clamp(0, 1).toDouble(),
     reachedMilestones: [...reachedMilestones]..sort(),
+    freezesAvailable: freezesAvailable,
+    frozenDays: [for (final d in frozenDays) DateTime.parse(d)],
   );
 }

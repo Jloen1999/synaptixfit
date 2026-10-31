@@ -63,11 +63,13 @@ class AcademicDomainTest {
             assertThat(SpacedRepetition.next(0, 1, 1.4, 0).easeFactor()).isEqualTo(1.3);
             assertThat(SpacedRepetition.next(5, 1, 3.0, 0).easeFactor()).isEqualTo(3.0);
 
-            SpacedRepetition.Result r = SpacedRepetition.next(2.5, 0, 2.5, 0);
-            assertThat(r.failed()).isFalse(); // round(2.5) = 3
+            SpacedRepetition.Result r = SpacedRepetition.next(3, 2.5, 0, 2.5, 0);
+            assertThat(r.failed()).isFalse();
             assertThat(r.easeFactor()).isCloseTo(2.275, within(1e-9)); // 2.5 + 0.1 - 2.5 * 0.13
 
-            assertThatThrownBy(() -> SpacedRepetition.next(5.1, 0, 2.5, 0))
+            assertThatThrownBy(() -> SpacedRepetition.next(5, 5.1, 0, 2.5, 0))
+                    .isInstanceOf(FieldValidationException.class);
+            assertThatThrownBy(() -> SpacedRepetition.next(6, 0, 2.5, 0))
                     .isInstanceOf(FieldValidationException.class);
         }
 
@@ -75,8 +77,8 @@ class AcademicDomainTest {
         void fatigueAdjustmentFeedsSm2WithTheExactFraction() {
             double adjusted = FatigueAdjustedRecall.adjustedQuality(2, 450, 600);
             assertThat(adjusted).isCloseTo(2.375, within(1e-9));
-            SpacedRepetition.Result r = SpacedRepetition.next(adjusted, 0, 2.5, 0);
-            assertThat(r.failed()).isTrue(); // round(2.375) = 2
+            SpacedRepetition.Result r = SpacedRepetition.next(2, adjusted, 0, 2.5, 0);
+            assertThat(r.failed()).isTrue();
             double d = 5 - 2.375;
             assertThat(r.easeFactor()).isCloseTo(2.5 + 0.1 - d * (0.08 + d * 0.02), within(1e-9));
         }
@@ -86,7 +88,7 @@ class AcademicDomainTest {
             Instant now = Instant.parse("2026-10-18T10:00:00Z");
             StudyMaterial m = StudyMaterial.create(UUID.randomUUID(), UUID.randomUUID(), StudySourceType.NOTE,
                     UUID.randomUUID(), "Tema", now);
-            m.review(1, now);
+            m.review(1, 1, now);
             assertThat(m.failedReviews()).isEqualTo(1);
             assertThat(m.masteryState()).isEqualTo(MasteryState.NEEDS_REVIEW);
             assertThat(m.nextReviewAt()).isEqualTo(Instant.parse("2026-10-19T10:00:00Z"));
@@ -94,6 +96,37 @@ class AcademicDomainTest {
             // Tras repasar, el siguiente repaso queda a un día: repetirlo hoy no toca (no da XP).
             assertThat(m.isReviewOwed(now)).isFalse();
             assertThat(m.isReviewOwed(Instant.parse("2026-10-19T10:00:00Z"))).isTrue();
+        }
+
+        @Test
+        void fatigueNeverTurnsAFailureIntoASuccess() {
+            // Con fatiga máxima un 2 sube a 2,5: antes se redondeaba a 3 y contaba como acierto.
+            SpacedRepetition.Result r = SpacedRepetition.next(2, 2.5, 16, 2.5, 3);
+            assertThat(r.failed()).isTrue();
+            assertThat(r.repetitions()).isZero();
+            assertThat(r.intervalDays()).isEqualTo(1);
+            assertThat(r.easeFactor()).isCloseTo(2.275, within(1e-9)); // la fatiga suaviza solo el EF
+        }
+
+        @Test
+        void earlySuccessDoesNotAdvanceTheScheduleButEarlyFailureResets() {
+            Instant now = Instant.parse("2026-10-18T10:00:00Z");
+            StudyMaterial m = StudyMaterial.create(UUID.randomUUID(), UUID.randomUUID(), StudySourceType.NOTE,
+                    UUID.randomUUID(), "Tema", now);
+            m.review(5, 5, now);
+            Instant due = m.nextReviewAt();
+            for (int i = 1; i <= 3; i++) {
+                m.review(5, 5, now.plusSeconds(60L * i));
+            }
+            assertThat(m.completedReviews()).isEqualTo(1);
+            assertThat(m.masteryState()).isEqualTo(MasteryState.IN_PROGRESS);
+            assertThat(m.nextReviewAt()).isEqualTo(due);
+            assertThat(m.lastReviewedAt()).isEqualTo(now.plusSeconds(180));
+
+            m.review(1, 1, now.plusSeconds(600));
+            assertThat(m.completedReviews()).isZero();
+            assertThat(m.failedReviews()).isEqualTo(1);
+            assertThat(m.nextReviewAt()).isEqualTo(now.plusSeconds(600).plus(java.time.Duration.ofDays(1)));
         }
     }
 
@@ -201,9 +234,12 @@ class AcademicDomainTest {
 
         @Test
         void practiceRewards() {
-            assertThat(PracticeRewards.practiceXp(8, 10)).isEqualTo(30);
-            assertThat(PracticeRewards.practiceXp(7, 10)).isEqualTo(20);
-            assertThat(PracticeRewards.practiceXp(0, 0)).isZero();
+            assertThat(PracticeRewards.practiceXp(8, 10, 0)).isEqualTo(30);
+            assertThat(PracticeRewards.practiceXp(7, 10, 4)).isEqualTo(20);
+            assertThat(PracticeRewards.practiceXp(0, 0, 0)).isZero();
+            // Contra el farmeo: menos de 5 preguntas o 5 tests con XP en 24 h ya no puntúan.
+            assertThat(PracticeRewards.practiceXp(4, 4, 0)).isZero();
+            assertThat(PracticeRewards.practiceXp(10, 10, 5)).isZero();
             assertThat(PracticeRewards.flashcardsXp(4, 3)).isEqualTo(15);
             assertThat(PracticeRewards.flashcardsQuality(5, 0, 5)).isEqualTo(4);
             assertThat(PracticeRewards.flashcardsQuality(2, 3, 5)).isEqualTo(3);

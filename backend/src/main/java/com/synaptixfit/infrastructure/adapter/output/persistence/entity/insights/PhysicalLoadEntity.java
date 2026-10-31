@@ -28,6 +28,8 @@ public class PhysicalLoadEntity {
     private BigDecimal cargaDiaria;
     @Column(name = "sesion_id")
     private UUID sesionId;
+    @Column(name = "bloque_id")
+    private UUID bloqueId;
     @Column(name = "creado_en", nullable = false)
     private Instant creadoEn;
 
@@ -44,6 +46,8 @@ public class PhysicalLoadEntity {
     public BigDecimal getCargaDiaria() { return cargaDiaria; }
     public UUID getSesionId() { return sesionId; }
     public void setSesionId(UUID sesionId) { this.sesionId = sesionId; }
+    public UUID getBloqueId() { return bloqueId; }
+    public void setBloqueId(UUID bloqueId) { this.bloqueId = bloqueId; }
     public Instant getCreadoEn() { return creadoEn; }
     public void setCreadoEn(Instant creadoEn) { this.creadoEn = creadoEn; }
 }

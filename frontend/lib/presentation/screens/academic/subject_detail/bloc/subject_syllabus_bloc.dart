@@ -1,6 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../../domain/enums/data_topic.dart';
+import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
+import '../../../../mixins/data_change_refresh_mixin.dart';
 import '../../../../../domain/enums/study_source_type.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/academic/note.dart';
@@ -19,10 +22,13 @@ part 'subject_syllabus_event.dart';
 part 'subject_syllabus_state.dart';
 
 /// Pestaña Temario: apuntes y archivos de la asignatura con sus documentos de
-/// IA guardados, subida de archivos y acceso al repaso o la práctica.
+/// IA guardados, subida de archivos y acceso al repaso o la práctica. Se
+/// refresca sola cuando otra pantalla crea o cambia un apunte (ADR 0010).
 class SubjectSyllabusBloc
-    extends Bloc<SubjectSyllabusEvent, SubjectSyllabusState> {
+    extends Bloc<SubjectSyllabusEvent, SubjectSyllabusState>
+    with DataChangeRefreshMixin<SubjectSyllabusEvent, SubjectSyllabusState> {
   SubjectSyllabusBloc({
+    required this._watchChanges,
     required this._getNotes,
     required this._getFiles,
     required this._getAvailability,
@@ -32,6 +38,11 @@ class SubjectSyllabusBloc
     required this._registerMaterial,
   }) : super(const SubjectSyllabusState()) {
     on<SubjectSyllabusStarted>((event, emit) async {
+      watchDataChanges(
+        _watchChanges,
+        topics: const {DataTopic.academic},
+        onChanged: const SubjectSyllabusEvent.refreshed(),
+      );
       emit(state.copyWith(subjectId: event.subjectId));
       await _load(emit, silent: false);
     });
@@ -42,6 +53,7 @@ class SubjectSyllabusBloc
     on<SubjectSyllabusMaterialRequested>(_onMaterialRequested);
   }
 
+  final WatchDataChangesUseCaseContract _watchChanges;
   final GetNotesUseCaseContract _getNotes;
   final GetSubjectFilesUseCaseContract _getFiles;
   final GetDocumentAvailabilityUseCaseContract _getAvailability;

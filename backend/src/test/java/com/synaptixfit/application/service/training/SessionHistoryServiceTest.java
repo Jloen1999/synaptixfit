@@ -1,7 +1,10 @@
 package com.synaptixfit.application.service.training;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.synaptixfit.domain.exception.training.SessionNotFoundException;
+import com.synaptixfit.domain.exception.training.SessionNotCompletedException;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.training.PersonalRecord;
 import com.synaptixfit.domain.model.training.SessionHistoryEntry;
@@ -66,5 +69,21 @@ class SessionHistoryServiceTest {
 
         assertThat(service.listPersonalRecords(userId)).singleElement()
                 .extracting(PersonalRecord::weightKg).isEqualTo(60.0);
+    }
+
+    @Test
+    void highlightsNeedAFinishedOwnSession() {
+        UUID done = UUID.randomUUID();
+        sessions.save(completed(done, "2026-10-13T18:00:00Z"));
+        sessions.recent = List.of(summary(done, "2026-10-13T18:00:00Z", 60));
+        TrainingSession running = sessions.save(TrainingSession.start(userId, null, null,
+                Instant.parse("2026-10-14T18:00:00Z")));
+        SessionHistoryService service = new SessionHistoryService(sessions, ids -> Map.of());
+
+        assertThat(service.highlights(userId, done).volumeKg()).isEqualTo(300.0);
+        assertThatThrownBy(() -> service.highlights(userId, running.id()))
+                .isInstanceOf(SessionNotCompletedException.class);
+        assertThatThrownBy(() -> service.highlights(UUID.randomUUID(), done))
+                .isInstanceOf(SessionNotFoundException.class);
     }
 }

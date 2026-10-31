@@ -20,12 +20,15 @@ import com.synaptixfit.domain.model.notification.ReminderPlan;
 import com.synaptixfit.domain.model.notification.ReminderPlanner;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
+import com.synaptixfit.domain.model.planner.Deadline;
+import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.planner.Priority;
 import com.synaptixfit.domain.model.planner.TimeRange;
 import com.synaptixfit.domain.model.user.UsageFocus;
 import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
 import com.synaptixfit.domain.port.output.notification.NotificationPreferencesRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import com.synaptixfit.domain.port.output.user.UsageFocusPort;
 import java.time.Clock;
@@ -54,12 +57,14 @@ class ReminderPlanServiceTest {
     private final UsageFocusPort focus = mock(UsageFocusPort.class);
     private final StudyMaterialRepositoryPort materials = mock(StudyMaterialRepositoryPort.class);
     private final CalendarBlockRepositoryPort blocks = mock(CalendarBlockRepositoryPort.class);
+    private final DeadlineRepositoryPort deadlines = mock(DeadlineRepositoryPort.class);
     private final SubjectDirectoryPort subjects = mock(SubjectDirectoryPort.class);
     private ReminderPlanService service;
 
     @BeforeEach
     void setUp() {
-        service = new ReminderPlanService(preferences, focus, materials, blocks, subjects, new ReminderPlanner(),
+        service = new ReminderPlanService(preferences, focus, materials, blocks, deadlines, subjects,
+                new ReminderPlanner(), (userId, from, to) -> false,
                 Clock.fixed(NOW, ZoneOffset.UTC), ZONE);
         when(preferences.findByUserId(USER)).thenReturn(Optional.empty());
         when(focus.focusOf(USER)).thenReturn(UsageFocus.BOTH);
@@ -87,10 +92,33 @@ class ReminderPlanServiceTest {
 
         assertThat(plan.reminders()).filteredOn(r -> r.kind() == ReminderKind.REVIEWS).hasSize(3)
                 .allSatisfy(r -> assertThat(r.count()).isEqualTo(2));
-        assertThat(plan.reminders()).filteredOn(r -> r.kind() != ReminderKind.REVIEWS)
+        assertThat(plan.reminders()).filteredOn(r -> r.kind() == ReminderKind.STUDY
+                        || r.kind() == ReminderKind.TRAINING)
                 .extracting(ReminderPlan.Item::title).containsExactly("Álgebra", "Pierna");
+        // «Tu semana» el domingo 25 a las 20:00 (Madrid).
+        assertThat(plan.reminders()).filteredOn(r -> r.kind() == ReminderKind.WEEKLY_SUMMARY)
+                .singleElement().satisfies(r -> assertThat(r.at()).isEqualTo(Instant.parse("2026-10-25T19:00:00Z")));
         // Por defecto el límite diario es 10: no recorta nada.
-        assertThat(plan.reminders()).hasSize(5);
+        assertThat(plan.reminders()).hasSize(6);
+    }
+
+    @Test
+    void examsAndDeliveriesAreRemindedThreeDaysAndOneDayBefore() {
+        when(blocks.findOverlapping(any(), any(), any(), any())).thenReturn(List.of());
+        // Examen el sábado 24 a las 9:00 (Madrid): avisos el miércoles 21 y el viernes 23 a las 18:00.
+        Instant exam = Instant.parse("2026-10-24T07:00:00Z");
+        when(deadlines.findAll(eq(USER), any())).thenReturn(List.of(Deadline.builder().id(UUID.randomUUID())
+                .userId(USER).title("Parcial de Física").type(DeadlineType.EXAM).dueAt(exam).createdAt(NOW).build()));
+
+        ReminderPlan plan = service.getReminderPlan(USER, 7);
+
+        assertThat(plan.reminders()).filteredOn(i -> i.kind() == ReminderKind.EXAM)
+                .extracting(ReminderPlan.Item::at, ReminderPlan.Item::count)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(Instant.parse("2026-10-21T16:00:00Z"), 3),
+                        org.assertj.core.groups.Tuple.tuple(Instant.parse("2026-10-23T16:00:00Z"), 1));
+        assertThat(plan.reminders()).filteredOn(i -> i.kind() == ReminderKind.EXAM)
+                .allSatisfy(i -> assertThat(i.title()).isEqualTo("Parcial de Física"));
     }
 
     @Test
@@ -129,8 +157,9 @@ class ReminderPlanServiceTest {
         when(blocks.findOverlapping(any(), any(), any(), any())).thenReturn(List.of(
                 block(ActivityType.SPORT, NOW.plus(Duration.ofDays(1)), "Pierna", SUBJECT)));
 
-        assertThat(service.getReminderPlan(USER, 7).reminders()).singleElement()
-                .satisfies(r -> assertThat(r.kind()).isEqualTo(ReminderKind.TRAINING));
+        // Solo hitos activos: el bloque de deporte y «Tu semana» (que también usa esa categoría).
+        assertThat(service.getReminderPlan(USER, 7).reminders()).extracting(ReminderPlan.Item::kind)
+                .containsExactly(ReminderKind.TRAINING, ReminderKind.WEEKLY_SUMMARY);
         verify(subjects, never()).namesOf(any(), any());
     }
 }

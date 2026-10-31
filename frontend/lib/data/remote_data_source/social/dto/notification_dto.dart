@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../domain/enums/notification_message_code.dart';
 import '../../../../domain/enums/notification_priority.dart';
 import '../../../../domain/enums/notification_type.dart';
 import '../../../../domain/models/social/app_notification.dart';
@@ -20,6 +21,8 @@ abstract class NotificationDto with _$NotificationDto {
     String? actionLabel,
     @Default(false) bool read,
     required DateTime createdAt,
+    String? messageCode,
+    Map<String, dynamic>? messageParams,
   }) = _NotificationDto;
 
   const NotificationDto._();
@@ -39,5 +42,10 @@ abstract class NotificationDto with _$NotificationDto {
     actionLabel: actionLabel,
     read: read,
     createdAt: createdAt.toLocal(),
+    messageCode: NotificationMessageCode.fromApi(messageCode),
+    messageParams: {
+      for (final e in (messageParams ?? const <String, dynamic>{}).entries)
+        if (e.value != null) e.key: '${e.value}',
+    },
   );
 }

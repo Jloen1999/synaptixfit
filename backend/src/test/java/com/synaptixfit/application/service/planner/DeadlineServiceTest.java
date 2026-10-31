@@ -10,6 +10,7 @@ import com.synaptixfit.application.port.input.planner.GetDeadlinesUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateDeadlineUseCase;
 import com.synaptixfit.domain.event.planner.DeadlineCompletionChanged;
 import com.synaptixfit.domain.model.planner.Deadline;
+import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.planner.Priority;
 import com.synaptixfit.domain.model.planner.SubjectRef;
@@ -92,17 +93,23 @@ class DeadlineServiceTest {
     }
 
     @Test
-    void upcomingOnlyReturnsPendingFromToday() {
+    void pendingIncludesRecentOverdueFirstAndHidesCompleted() {
         Deadline past = create("Pasada", DeadlineType.ASSIGNMENT, at(-2, 12, 0), null);
         Deadline done = create("Hecha", DeadlineType.ASSIGNMENT, at(2, 12, 0), null);
         Deadline pending = create("Pendiente", DeadlineType.EXAM, at(3, 12, 0), null);
         Deadline earlyToday = create("Hoy temprano", DeadlineType.EXAM, at(0, 1, 0), null);
         service.setCompletion(f.user, done.id(), true);
 
-        var page = service.getDeadlines(new GetDeadlinesUseCase.Query(f.user, null, null, null, true,
+        var page = service.getDeadlines(new GetDeadlinesUseCase.Query(f.user, null, null, null, true, true,
                 new PageRequest(0, 20)));
-        assertThat(page.items()).extracting(Deadline::id).containsExactly(earlyToday.id(), pending.id());
-        assertThat(past.id()).isNotNull();
+        // La vencida sin entregar no desaparece de «Pendientes»: sale la primera.
+        assertThat(page.items()).extracting(Deadline::id).containsExactly(past.id(), earlyToday.id(), pending.id());
+        // Sin includeOverdue, «upcoming» sigue empezando hoy.
+        var upcoming = service.getDeadlines(new GetDeadlinesUseCase.Query(f.user, null, null, null, true,
+                new PageRequest(0, 20)));
+        assertThat(upcoming.items()).extracting(Deadline::id).containsExactly(earlyToday.id(), pending.id());
+        assertThat(past.timeStatus(PlannerFakes.NOW)).isEqualTo(ItemTimeStatus.MISSED);
+        assertThat(pending.timeStatus(PlannerFakes.NOW)).isEqualTo(ItemTimeStatus.UPCOMING);
     }
 
     @Test

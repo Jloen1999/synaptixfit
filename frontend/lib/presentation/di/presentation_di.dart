@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 import '../screens/auth/login/bloc/login_bloc.dart';
 import '../screens/auth/register/bloc/register_bloc.dart';
 import '../screens/auth/session/bloc/session_bloc.dart';
+import '../screens/auth/forgot_password/bloc/forgot_password_bloc.dart';
+import '../screens/auth/reset_password/bloc/reset_password_bloc.dart';
 import '../screens/shell/bloc/achievements_bloc.dart';
 import 'home_presentation_di.dart';
 import 'academic_presentation_di.dart';
@@ -26,6 +28,8 @@ void registerPresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(() => LoginBloc(login: getIt(), loginWithGoogle: getIt()))
+    ..registerFactory(() => ForgotPasswordBloc(requestReset: getIt()))
+    ..registerFactory(() => ResetPasswordBloc(resetPassword: getIt()))
     ..registerFactory(() => RegisterBloc(register: getIt()))
     ..registerFactory(
       () => AchievementsBloc(

@@ -5,7 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /** Tabla {@code notificaciones}. */
 @Entity
@@ -29,6 +32,11 @@ public class NotificationEntity {
     private String etiquetaAccion;
     @Column(name = "clave_referencia")
     private String claveReferencia;
+    @Column(name = "codigo_mensaje")
+    private String codigoMensaje;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "parametros_mensaje")
+    private Map<String, String> parametrosMensaje;
     @Column(name = "esta_leida", nullable = false)
     private boolean estaLeida;
     @Column(name = "creado_en", nullable = false, updatable = false)
@@ -53,6 +61,10 @@ public class NotificationEntity {
     public String getEtiquetaAccion() { return etiquetaAccion; }
     public void setEtiquetaAccion(String etiquetaAccion) { this.etiquetaAccion = etiquetaAccion; }
     public String getClaveReferencia() { return claveReferencia; }
+    public String getCodigoMensaje() { return codigoMensaje; }
+    public void setCodigoMensaje(String codigoMensaje) { this.codigoMensaje = codigoMensaje; }
+    public Map<String, String> getParametrosMensaje() { return parametrosMensaje; }
+    public void setParametrosMensaje(Map<String, String> parametrosMensaje) { this.parametrosMensaje = parametrosMensaje; }
     public void setClaveReferencia(String claveReferencia) { this.claveReferencia = claveReferencia; }
     public boolean isEstaLeida() { return estaLeida; }
     public void setEstaLeida(boolean estaLeida) { this.estaLeida = estaLeida; }

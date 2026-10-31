@@ -34,6 +34,11 @@ abstract class PomodoroState with _$PomodoroState {
       phase == FocusPhase.focus &&
       remainingSeconds == totalSeconds;
 
+  /// Hay una fase empezada (corriendo o en pausa) con al menos un minuto
+  /// hecho: salir sin más lo perdería (por debajo no se registra nada).
+  bool get hasPhaseInProgress =>
+      status != PomodoroStatus.idle && totalSeconds - remainingSeconds >= 60;
+
   /// Fracción restante (1 = fase entera por delante).
   double get remainingFraction =>
       totalSeconds == 0 ? 0 : remainingSeconds / totalSeconds;
@@ -41,10 +46,12 @@ abstract class PomodoroState with _$PomodoroState {
 
 @freezed
 sealed class PomodoroNotice with _$PomodoroNotice {
-  /// Ha terminado [finished]; la siguiente fase es [next].
+  /// Ha terminado [finished]; la siguiente fase es [next]. [completed] es
+  /// falso si se saltó: entonces no se felicita ni se avisa.
   const factory PomodoroNotice.phaseFinished({
     required FocusPhase finished,
     required FocusPhase next,
+    @Default(true) bool completed,
   }) = PomodoroNoticePhaseFinished;
 
   /// La fase registrada dio [xp]; [account] trae el nivel actualizado.

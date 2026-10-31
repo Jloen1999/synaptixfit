@@ -60,5 +60,8 @@ class TrainingEffectHandler with ErrorsMessageMixin {
         TrainingMessage.sessionUnmarked => l10n.trainingMsgSessionUnmarked,
         TrainingMessage.sessionAbandoned => l10n.trainingMsgSessionAbandoned,
         TrainingMessage.setSaved => l10n.trainingMsgSetSaved,
+        TrainingMessage.sessionShared => l10n.trainingMsgSessionShared,
+        TrainingMessage.pendingSetDiscarded =>
+          l10n.trainingMsgPendingSetDiscarded,
       };
 }

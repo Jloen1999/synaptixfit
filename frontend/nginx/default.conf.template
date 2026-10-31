@@ -7,6 +7,16 @@ map $http_cf_connecting_ip $client_ip {
     default $http_cf_connecting_ip;
 }
 
+# Calendario suscrito (ADR 0020): límite por IP para que nadie pruebe tokens a ritmo de máquina.
+limit_req_zone $client_ip zone=calendar_feed:1m rate=30r/m;
+# Recuperar la contraseña (ADR 0021): cada petición puede mandar un correo y el plan de Resend tiene un tope
+# diario; el backend además limita a 3 por cuenta y hora.
+limit_req_zone $client_ip zone=password_reset:1m rate=5r/m;
+# Resumen semanal (ADR 0022): activarlo puede mandar un correo de confirmación; el backend además espera 10 min
+# entre reenvíos. Los enlaces del correo llevan un token: límite contra quien pruebe tokens.
+limit_req_zone $client_ip zone=weekly_email:1m rate=5r/m;
+limit_req_zone $client_ip zone=weekly_email_links:1m rate=30r/m;
+
 server {
     listen 80;
     server_name _;
@@ -28,6 +38,54 @@ server {
     location = /healthz {
         access_log off;
         return 200 "ok\n";
+    }
+
+    # El token de la ruta es una credencial: esta ruta no deja rastro en los registros (el de errores
+    # también copia la petición), y Google o Apple la piden sin sesión.
+    location ~ ^/api/v1/planner/calendar-feed/[^/]+\.ics$ {
+        access_log off;
+        error_log /dev/stderr crit;
+        limit_req zone=calendar_feed burst=10 nodelay;
+        limit_req_status 429;
+        limit_req_log_level warn;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Enlaces de los correos del resumen semanal (ADR 0022): el token va en la query; sin registro de acceso.
+    location ~ ^/api/v1/notifications/weekly-email/(confirm|unsubscribe)$ {
+        access_log off;
+        error_log /dev/stderr crit;
+        limit_req zone=weekly_email_links burst=10 nodelay;
+        limit_req_status 429;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /api/v1/notifications/weekly-email {
+        limit_req zone=weekly_email burst=5 nodelay;
+        limit_req_status 429;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /api/v1/auth/password-reset {
+        limit_req zone=password_reset burst=5 nodelay;
+        limit_req_status 429;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
     }
 
     location /api/ {

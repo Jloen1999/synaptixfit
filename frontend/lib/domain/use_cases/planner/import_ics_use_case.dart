@@ -2,7 +2,8 @@ import '../../models/planner/planner_ai.dart';
 import '../../models/result/app_result.dart';
 import '../../repositories/planner_repository_contract.dart';
 
-/// Importa el calendario ICS de una asignatura.
+/// Importa el calendario ICS de una asignatura (la URL indicada o la que tiene
+/// guardada); con [force], aunque los eventos no la mencionen.
 abstract interface class ImportIcsUseCaseContract {
   Future<AppResult<IcsImportResult>> call({
     required String subjectId,

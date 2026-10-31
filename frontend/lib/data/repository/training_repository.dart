@@ -4,6 +4,7 @@ import '../../domain/models/result/result.dart';
 import '../../domain/models/training/recommendation.dart';
 import '../../domain/models/training/routine.dart';
 import '../../domain/models/training/session.dart';
+import '../../domain/models/training/session_adaptation.dart';
 import '../../domain/models/training/training_page.dart';
 import '../../domain/models/training/wellbeing.dart';
 import '../../domain/repositories/training_repository_contract.dart';
@@ -44,6 +45,12 @@ class TrainingRepository implements TrainingRepositoryContract {
   Future<AppResult<TrainingSession>> getSession(String sessionId) =>
       RepositoryErrorHandler.guard(
         () async => (await _remote.getSession(sessionId)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<SessionAdaptation>> getSessionAdaptation(String sessionId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.getSessionAdaptation(sessionId)).toDomain(),
       );
 
   @override

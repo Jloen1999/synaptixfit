@@ -56,6 +56,12 @@ final class PlannerFakes {
 
     static final Instant NOW = Instant.parse("2026-10-19T08:00:00Z");
     static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
+    /**
+     * Domingo por la noche de la semana de {@link #NOW}: todos sus bloques ya han empezado, así que
+     * se pueden marcar como hechos (no se completa un bloque antes de empezar).
+     */
+    static final Clock END_OF_WEEK = Clock.fixed(NOW.plus(java.time.Duration.ofDays(6)).plus(
+            java.time.Duration.ofHours(14)), ZoneOffset.UTC);
     static final PlannerZone ZONE = PlannerZone.of("Europe/Madrid");
     static final LocalDate MONDAY = LocalDate.of(2026, 10, 19);
 
@@ -72,7 +78,7 @@ final class PlannerFakes {
     final DomainEventPublisherPort publisher = events::add;
 
     WeeklyLoadService weeklyLoadService() {
-        return new WeeklyLoadService(loads, blocks, deadlines, directory, xp, xp, ZONE);
+        return new WeeklyLoadService(loads, blocks, focus, deadlines, directory, xp, xp, ZONE);
     }
 
     /** Minutos máximos de estudio por bloque que devuelve la regulación cruzada simulada. */

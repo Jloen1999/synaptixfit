@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 
+import '../screens/training/past_activity/bloc/past_activity_bloc.dart';
 import '../screens/training/exercise_alternatives/bloc/exercise_alternatives_bloc.dart';
 import '../screens/training/check_in/bloc/check_in_bloc.dart';
 import '../screens/training/community/bloc/community_bloc.dart';
@@ -16,6 +17,9 @@ import '../screens/training/weekly_plan/bloc/weekly_plan_bloc.dart';
 /// Blocs del módulo training.
 void registerTrainingPresentation(GetIt getIt) {
   getIt
+    ..registerFactory(
+      () => PastActivityBloc(logPastActivity: getIt(), getAccount: getIt()),
+    )
     ..registerFactory(() => ExerciseAlternativesBloc(getAlternatives: getIt()))
     ..registerFactory(
       () => TrainingHomeBloc(
@@ -75,6 +79,9 @@ void registerTrainingPresentation(GetIt getIt) {
         getAccount: getIt(),
         getLastPerformance: getIt(),
         getBookends: getIt(),
+        getAdaptation: getIt(),
+        loadPending: getIt(),
+        savePending: getIt(),
       ),
     )
     ..registerFactory(
@@ -82,6 +89,8 @@ void registerTrainingPresentation(GetIt getIt) {
         getSession: getIt(),
         apply: getIt(),
         discard: getIt(),
+        getHighlights: getIt(),
+        createPost: getIt(),
       ),
     )
     ..registerFactory(

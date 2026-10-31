@@ -3,12 +3,15 @@ import 'package:get_it/get_it.dart';
 import '../../domain/repositories/analytics_repository_contract.dart';
 import '../../domain/repositories/badge_repository_contract.dart';
 import '../../domain/repositories/progress_repository_contract.dart';
+import '../../domain/repositories/share_repository_contract.dart';
+import '../local_data_source/image_share_data_source.dart';
 import '../remote_data_source/progress/analytics_remote_data_source.dart';
 import '../remote_data_source/progress/badge_remote_data_source.dart';
 import '../remote_data_source/progress/progress_remote_data_source.dart';
 import '../repository/analytics_repository.dart';
 import '../repository/badge_repository.dart';
 import '../repository/progress_repository.dart';
+import '../repository/share_repository.dart';
 
 /// Data sources y repositorios del módulo progress.
 void registerProgressData(GetIt getIt) {
@@ -24,5 +27,9 @@ void registerProgressData(GetIt getIt) {
     )
     ..registerLazySingleton<ProgressRepositoryContract>(
       () => ProgressRepository(getIt()),
+    )
+    ..registerLazySingleton(() => const ImageShareDataSource())
+    ..registerLazySingleton<ShareRepositoryContract>(
+      () => ShareRepository(getIt()),
     );
 }

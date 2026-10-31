@@ -178,18 +178,15 @@ extension ChallengeDraftIssueText on ChallengeDraftIssue {
 
 /// Formatos de fecha y número del módulo (locale `es`).
 abstract final class ChallengeFormats {
-  static String shortDate(DateTime date) =>
-      DateFormat('d MMM', 'es').format(date);
+  static String shortDate(DateTime date) => DateFormat('d MMM').format(date);
 
-  static String longDate(DateTime date) =>
-      DateFormat('d MMM y', 'es').format(date);
+  static String longDate(DateTime date) => DateFormat('d MMM y').format(date);
 
   static String dateTime(DateTime date) =>
-      DateFormat('EEE d MMM, HH:mm', 'es').format(date);
+      DateFormat('EEE d MMM, HH:mm').format(date);
 
   /// Número con hasta dos decimales y coma decimal.
-  static String number(double value) =>
-      NumberFormat('#,##0.##', 'es').format(value);
+  static String number(double value) => NumberFormat('#,##0.##').format(value);
 
   /// Días naturales que faltan hasta [end] (0 = hoy, negativo = vencido).
   static int daysLeft(DateTime end, DateTime now) {

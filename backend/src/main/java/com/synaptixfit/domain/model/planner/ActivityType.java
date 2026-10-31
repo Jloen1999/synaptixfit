@@ -88,6 +88,14 @@ public enum ActivityType {
     }
 
     /**
+     * Tiene seguimiento: si pasa sin completarse queda «no hecho» ({@link ItemTimeStatus#MISSED}).
+     * Exámenes y entregas se siguen por su entrega; descanso, comida y sueño no se marcan.
+     */
+    public boolean isTrackable() {
+        return this == STUDY || this == REVIEW || this == SPORT || this == CLASS;
+    }
+
+    /**
      * Se puede repetir cada semana al crearlo. Exámenes y entregas no: cada uno crea su propia
      * entrega con fecha y no se repiten.
      */

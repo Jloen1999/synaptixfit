@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -6,6 +8,7 @@ import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/progress/change_badge_visibility_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/progress/get_badge_catalog_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/progress/share_achievement_image_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/progress/share_badge_use_case.dart';
 import 'package:synaptixfit/presentation/screens/progress/badges/bloc/badges_bloc.dart';
 
@@ -18,10 +21,16 @@ class _MockVisibility extends Mock
 
 class _MockShare extends Mock implements ShareBadgeUseCaseContract {}
 
+class _MockShareImage extends Mock
+    implements ShareAchievementImageUseCaseContract {}
+
 void main() {
+  setUpAll(() => registerFallbackValue(Uint8List(0)));
+
   late _MockCatalog catalog;
   late _MockVisibility visibility;
   late _MockShare share;
+  late _MockShareImage shareImage;
 
   final earned = testBadge();
   final locked = testBadge(
@@ -37,12 +46,14 @@ void main() {
     catalog = _MockCatalog();
     visibility = _MockVisibility();
     share = _MockShare();
+    shareImage = _MockShareImage();
   });
 
   BadgesBloc build() => BadgesBloc(
     getCatalog: catalog,
     changeVisibility: visibility,
     shareBadge: share,
+    shareImage: shareImage,
   );
 
   final loaded = BadgesState(
@@ -147,6 +158,32 @@ void main() {
     expect: () => [
       loaded.copyWith(busyIds: {'b1'}),
       loaded.copyWith(feedback: const BadgesFeedback.shared()),
+      loaded,
+    ],
+  );
+
+  blocTest<BadgesBloc, BadgesState>(
+    'compartir la imagen solo avisa si falla',
+    setUp: () => when(
+      () => shareImage(
+        png: any(named: 'png'),
+        fileName: any(named: 'fileName'),
+        text: any(named: 'text'),
+      ),
+    ).thenAnswer((_) async => const Failure(AppError.unknown())),
+    build: build,
+    seed: () => loaded,
+    act: (bloc) => bloc.add(
+      BadgesEvent.imageShareRequested(
+        png: Uint8List(4),
+        fileName: 'synaptixfit-insignia.png',
+        text: 'Insignia',
+      ),
+    ),
+    expect: () => [
+      loaded.copyWith(
+        feedback: const BadgesFeedback.failed(AppError.unknown()),
+      ),
       loaded,
     ],
   );

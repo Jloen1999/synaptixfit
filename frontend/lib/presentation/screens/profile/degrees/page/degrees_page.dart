@@ -186,7 +186,7 @@ class _DegreeCard extends StatelessWidget {
                 if (item.linkedAt != null)
                   Text(
                     l10n.profileDegreeLinkedAt(
-                      DateFormat.yMMMd('es').format(item.linkedAt!),
+                      DateFormat.yMMMd().format(item.linkedAt!),
                     ),
                     style: context.textStyles.labelSmall?.copyWith(
                       color: context.colors.onSurfaceVariant,

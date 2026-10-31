@@ -1,3 +1,4 @@
+import '../../enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../enums/home_acwr_zone.dart';
@@ -133,6 +134,9 @@ abstract class HomePlanDay with _$HomePlanDay {
     required DateTime date,
     required int planned,
     required int completed,
+
+    /// Bloques del día que pasaron sin hacerse.
+    @Default(0) int missed,
   }) = _HomePlanDay;
 }
 
@@ -148,6 +152,9 @@ abstract class HomeTodayEvent with _$HomeTodayEvent {
     DateTime? end,
     required bool completed,
     String? subjectName,
+
+    /// Pendiente, en curso, hecho o no hecho/vencido.
+    @Default(ItemTimeStatus.upcoming) ItemTimeStatus status,
   }) = _HomeTodayEvent;
 }
 
@@ -157,6 +164,9 @@ abstract class HomeSmartBanner with _$HomeSmartBanner {
   const factory HomeSmartBanner({
     required HomeBannerType type,
     @Default(<String, num>{}) Map<String, num> params,
+
+    /// Textos del usuario que el aviso cita (p. ej. el bloque sin hacer).
+    @Default(<String, String>{}) Map<String, String> labels,
   }) = _HomeSmartBanner;
 
   const HomeSmartBanner._();

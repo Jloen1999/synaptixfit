@@ -4,6 +4,7 @@ import com.synaptixfit.domain.model.training.ExerciseAdjustment;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.Recommendation;
 import com.synaptixfit.domain.model.training.RecommendationType;
+import com.synaptixfit.infrastructure.adapter.input.rest.support.LocalizedNames;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,8 @@ public final class RecommendationDtos {
                                      Integer targetDurationSeconds, Integer distanceMeters, Integer isometricSeconds) {
         static AdjustmentResponse from(ExerciseAdjustment a) {
             ExerciseParameters p = a.parameters();
-            return new AdjustmentResponse(a.plannedExerciseId(), a.exerciseId(), a.exerciseName(), a.reason(), p.sets(),
+            return new AdjustmentResponse(a.plannedExerciseId(), a.exerciseId(),
+                    LocalizedNames.exercise(a.exerciseId(), a.exerciseName()), a.reason(), p.sets(),
                     p.reps(), p.restSeconds(), p.weightKg(), p.weightsKg(), p.targetDurationSeconds(),
                     p.distanceMeters(), p.isometricSeconds());
         }

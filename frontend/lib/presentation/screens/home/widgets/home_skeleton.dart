@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
-/// Esqueleto de carga con la forma del inicio: saludo, agenda (cabecera, tira
-/// de días y dos eventos) y la tarjeta compacta de estado.
+/// Esqueleto de carga con la forma del inicio: saludo, «Tu día», agenda
+/// (cabecera, tira de días y dos eventos) y la tarjeta compacta de estado.
 class HomeSkeleton extends StatelessWidget {
   const HomeSkeleton({super.key});
 
@@ -15,6 +15,9 @@ class HomeSkeleton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppSkeleton(height: TokensSize.toolbarHeight),
+          SizedBox(height: TokensSpacing.l),
+          // «Tu día»: el anillo más el relleno de la tarjeta.
+          AppSkeleton(height: TokensSize.heroRing + 2 * TokensSpacing.l),
           SizedBox(height: TokensSpacing.l),
           AppSkeleton(height: TokensSize.iconM),
           SizedBox(height: TokensSpacing.s),

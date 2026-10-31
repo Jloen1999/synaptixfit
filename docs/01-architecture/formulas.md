@@ -61,20 +61,77 @@ Todas están en `CognitiveLoad` como constantes con nombre. Los tests de `NeuroF
 
 ## Fórmula 3: regulación cruzada
 
-- **ACWR** = media diaria de carga de 7 días / media diaria de 28 días; carga de sesión = RPE × minutos. Sin carga anterior a los últimos 7 días no hay línea base y el ACWR queda vacío.
+- **ACWR** = media diaria de carga de 7 días / media diaria de 28 días; carga de sesión = RPE × minutos. Sin carga en al menos 2 de las 3 semanas anteriores a la aguda no hay línea base y el ACWR queda vacío (una sola sesión suelta hace 9 días ya no basta). Un bloque de deporte del calendario sin rutina («Fútbol 90 min») también suma carga: esfuerzo × minutos del bloque, con esfuerzo 5 si no se indica (ADR 0019).
 - **Minutos máximos de estudio:** 90 min con ACWR ≤ 1,3; entre 1,3 y 2,0 bajan de forma logarítmica (`90·(1 − 0,5·ln(ACWR/1,3))`); por encima de 2,0, tope del 50 %. El planificador nunca sugiere bloques más largos (mínimo 30 min).
 - **Volumen de entrenamiento con examen cerca:** `V = V_base·(1 − 0,40·min(1, C/C_max·e^(−0,15·días)))`.
+- **Sesión adaptada (`SessionAdaptation`):** al abrir una sesión de rutina en curso se aplica el factor más restrictivo de: examen cerca (el de arriba), sobreentrenamiento (ACWR > 1,5 → 0,7) y registro de hoy con fatiga alta (> 50 → 0,8); solo si recorta al menos un 5 %. Series de cada ejercicio = `max(1, round(series · factor))`, nunca por debajo de las ya completadas; una sesión terminada o abandonada no se adapta. La app muestra «Sesión adaptada hoy» con el motivo (`GET /training/sessions/{id}/adaptation`).
 - **Pomodoro recomendado (`FocusPlan`):** bloque = `min(52, minutos máximos de estudio)` (nunca menos de 25) y pausa = `round(bloque·17/52)` (mínimo 5); pausa larga de 30 min cada 3 bloques. Sin datos de carga física, 52/17. Inicio («Hoy, bloques de X min con pausas de Y») y el Pomodoro muestran lo mismo; el usuario puede ajustar el bloque entre 15 y 90 min antes de empezar.
+
+## Fórmula 4: repaso SM-2 con fatiga
+
+- El ajuste por fatiga sube la calidad hasta +0,5 (`FatigueAdjustedRecall`), pero **solo cambia el factor de facilidad**: si el repaso falla (calidad real < 3) sigue siendo un fallo. Antes un 2 con la máxima fatiga daba 2,5, se redondeaba a 3 y contaba como acierto.
+- **Repaso adelantado:** un acierto antes de la fecha prevista se registra pero no cambia estado, intervalo ni fecha; un fallo sí reinicia (`StudyMaterial.simulate`). La vista previa muestra lo mismo.
+
+## Progreso justo (ADR 0019)
+
+| Qué | Regla |
+|---|---|
+| Sesión de entrenamiento | Menos de 10 min: sin XP y no cuenta para retos, insignias ni racha; solo las 2 primeras del día dan XP |
+| Test o práctica | XP solo con ≥ 5 preguntas; como mucho 5 tests con XP cada 24 h (la práctica de un banco da XP una sola vez por banco y no entra en ese tope) |
+| Reto | Como mucho 140 XP entre todas sus tareas; uno de sesiones marcado a mano antes del objetivo no da XP hasta alcanzarlo |
+| Bloque del calendario | 10 XP por media hora hasta 4 h; como mucho 200 XP al día en bloques |
+| Entrega | Como mucho 5 con XP cada 24 h |
+| Pomodoro | Fecha de hoy o de ayer; para la racha, fase de foco de al menos 10 min |
+| Racha | Un día cuenta si hay entrenamiento (sesión o bloque de deporte), registro diario, Pomodoro o estudio (bloque de estudio o repaso, repaso SM-2 o test) |
 
 ## «Tu estudio» (Progreso) y valores por defecto
 
 - **Semana:** de lunes a domingo en la zona de la app (`StudyWeekSummary`).
   - Minutos de concentración: solo las fases de foco completadas del Pomodoro, por su día registrado. No es la actividad de estudio completa de `StudyActivity`.
-  - Bloques hechos: bloques de estudio y repaso completados de los planificados esa semana; `planAdherence = round(100·hechos/planificados)` (vacío si no hay ninguno planificado).
+  - Bloques hechos: bloques de estudio y repaso completados frente a los que ya debían estar hechos (terminados antes de ahora, o ya completados); `planAdherence = round(100·hechos/debidos)` (vacío si aún no tocaba ninguno). Así el lunes por la mañana no sale «0 %».
   - Aciertos en simulacros: `round(100·Σaciertos/Σpreguntas)` de los simulacros terminados (media ponderada por preguntas, no media de las notas).
   - Repasos pendientes: materiales con `siguiente_repaso_en ≤ ahora` que no están abandonados (igual que la cola de repasos).
+  - Horas de la semana frente al objetivo: `horas_estudio_reales` de `carga_academica_semanal` (bloques de estudio y repaso hechos **más** la concentración del Pomodoro que no está dentro de un bloque completado) frente a `horas_objetivo_estudio_semana` del perfil académico (14 h sin perfil). Son las mismas horas que dan el bonus semanal de 150 XP.
 - **Perfil físico corto (onboarding):** sin actividad, días ni minutos, el servidor usa actividad ligera y 3 días de 50 min (los 150 min semanales de actividad moderada que recomienda la OMS). Al reemplazar el perfil sin esos datos se conservan los que había.
 - **Repetir cada semana:** hasta 15 copias más (un cuatrimestre), a la misma hora local; exámenes y entregas no se repiten y las copias no heredan vínculos (rutina, reto, tarea ni entrega).
+
+## Lo que ya pasó
+
+- **Estado de bloques y entregas (`ItemTimeStatus`):** hecho, pendiente, en curso o **sin hacer** (bloque de estudio, repaso, deporte o clase que terminó sin completarse) / **vencida** (entrega sin completar con la fecha pasada). Descanso, comida, sueño y los bloques de examen o entrega quedan como «pasado» sin seguimiento. El servidor lo calcula al responder (`timeStatus`); el cliente solo lo pinta.
+- Un bloque **no se marca como hecho antes de empezar** (`BLOCK_IN_FUTURE`): evita sumar XP y horas por adelantado. Los bloques espejo de una sesión de deporte o de un repaso se completan solos desde su origen y no pasan por esta comprobación.
+- **Reprogramar** lleva el bloque al primer hueco libre de su duración entre las 8:00 y las 22:00 de los próximos 7 días (`BLOCK_NO_FREE_SLOT` si no hay).
+- **Adherencia académica:** las horas planificadas se prorratean por los días transcurridos de la semana (`planificadas·días/7`), los días con estudio se comparan con esos días y las entregas son las que ya vencían.
+- **Avisos de Inicio:** entregas vencidas de los últimos 14 días (antes que las próximas) y bloques de ayer u hoy sin hacer (sin contar clases, que casi siempre vienen del horario importado). La fatiga alta va antes que los bloques sin hacer.
+- **Lista «Pendientes» de entregas:** `upcoming=true&includeOverdue=true` añade las vencidas sin completar de los últimos 30 días (primero). Con solo `upcoming=true` la lista empieza hoy, como antes.
+- **Racha:** la de Inicio es la efectiva (`GetStreakUseCase`): si ayer no hubo actividad, ya está rota aunque la guardada diga otra cosa.
+- **Sesiones de entreno abandonadas:** una sesión abierta más de 6 h se da por abandonada; al empezar otra se cancela (con sus series) y su día de rutina vuelve a pendiente en Inicio. Al terminar, la duración se acota a 4 h para que olvidar la sesión abierta no infle minutos ni kcal.
+- **Retos vencidos:** pasada su fecha de fin ya no se completan, desmarcan ni avanzan (`CHALLENGE_EXPIRED` si se intenta a mano; la sincronización con entregas, bloques y sesiones los salta sin error). Un progreso no puede registrarse con fecha fuera del periodo del reto.
+
+## Configuración pendiente (aviso de Inicio)
+
+`SetupChecklist` decide qué falta según el enfoque de uso, en orden de importancia: asignaturas
+(estudios), perfil físico y rutina activa (deporte), algo en el calendario de los próximos 7 días
+(siempre) y universidad y grado (estudios). `total` son las tareas que aplican al enfoque. El cliente
+lo muestra como una tarjeta en Inicio con enlaces a cada sitio; «Ahora no» la oculta 7 días en ese
+dispositivo. No bloquea nada: el onboarding corto deja saltar pasos y aquí se recuerdan.
+
+## Comodines de racha (ADR 0023)
+- Se gana **1 comodín por cada 7 días seguidos** con actividad; se guardan **como mucho 2**.
+- Un día sin actividad dentro de la racha gasta uno: **no suma** pero **no la corta**. Sin comodín, la racha
+  vuelve a 0. Hoy, aún sin actividad, ni corta ni gasta.
+- Se recalcula entero desde el historial de días activos (`StreakFreezes.run`); no se guarda.
+
+## Modo exámenes automático (ADR 0023)
+- Con el modo **Normal** y un **examen pendiente en los próximos 7 días**
+  (`NotificationPreferences.EXAM_SEASON_DAYS`), las notificaciones y los avisos del móvil se filtran como en el
+  modo **Exámenes**. Descanso y Exámenes elegidos a mano se respetan.
+
+## Analítica por asignatura
+- Minutos: bloques de **estudio y repaso completados** en las últimas N semanas (4 por defecto), por semana ISO
+  en la zona del usuario.
+- **Recuerdas** = repasos con calidad real (SM-2, 0-5) **≥ 3** / repasos de la asignatura (umbral de superado de
+  SM-2). Con **3 o más repasos** y **menos del 60 %** se marca «repásala más a menudo»; con menos repasos no se
+  juzga (`StudyBySubject`).
 
 ## Referencias
 

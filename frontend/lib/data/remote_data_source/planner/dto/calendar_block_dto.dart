@@ -1,3 +1,4 @@
+import '../../../../domain/enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/planner_enums.dart';
@@ -32,6 +33,8 @@ abstract class CalendarBlockDto with _$CalendarBlockDto {
     String? challengeId,
     String? milestoneId,
     String? deadlineId,
+    String? timeStatus,
+    @Default(false) bool tracksPhysicalLoad,
   }) = _CalendarBlockDto;
 
   const CalendarBlockDto._();
@@ -62,6 +65,8 @@ abstract class CalendarBlockDto with _$CalendarBlockDto {
     challengeId: challengeId,
     milestoneId: milestoneId,
     deadlineId: deadlineId,
+    timeStatus: ItemTimeStatus.fromApi(timeStatus),
+    tracksPhysicalLoad: tracksPhysicalLoad,
   );
 }
 

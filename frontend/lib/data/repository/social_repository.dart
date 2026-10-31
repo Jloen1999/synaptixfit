@@ -45,11 +45,13 @@ class SocialRepository implements SocialRepositoryContract {
     required PostType type,
     required String description,
     String? imageUrl,
+    Map<String, Object?>? metadata,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.createPost(
       type: type.apiValue,
       description: description,
       imageUrl: imageUrl == null || imageUrl.isEmpty ? null : imageUrl,
+      metadata: metadata,
     )).toDomain(),
   );
 

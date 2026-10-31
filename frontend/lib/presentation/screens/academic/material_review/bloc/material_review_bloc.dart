@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/academic/study_material.dart';
 import '../../../../../domain/models/account/account.dart';
+import '../../../../../domain/use_cases/academic/abandon_study_material_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_review_history_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_review_preview_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_study_material_use_case.dart';
@@ -15,7 +16,7 @@ part 'material_review_event.dart';
 part 'material_review_state.dart';
 
 /// Repaso espaciado de un material: autoevaluación 0-5 con el intervalo que
-/// resulta de cada nivel e historial de repasos.
+/// resulta de cada nivel, historial de repasos y quitarlo del repaso.
 class MaterialReviewBloc
     extends Bloc<MaterialReviewEvent, MaterialReviewState> {
   MaterialReviewBloc({
@@ -24,9 +25,11 @@ class MaterialReviewBloc
     required this._getHistory,
     required this._review,
     required this._getAccount,
+    required this._abandon,
   }) : super(const MaterialReviewState()) {
     on<MaterialReviewStarted>(_onStarted);
     on<MaterialReviewQualitySubmitted>(_onSubmitted);
+    on<MaterialReviewRemoveRequested>(_onRemoveRequested);
   }
 
   final GetStudyMaterialUseCaseContract _getMaterial;
@@ -34,6 +37,23 @@ class MaterialReviewBloc
   final GetReviewHistoryUseCaseContract _getHistory;
   final ReviewStudyMaterialUseCaseContract _review;
   final GetAccountUseCaseContract _getAccount;
+  final AbandonStudyMaterialUseCaseContract _abandon;
+
+  Future<void> _onRemoveRequested(
+    MaterialReviewRemoveRequested event,
+    Emitter<MaterialReviewState> emit,
+  ) async {
+    if (state.removing || state.removed) return;
+    emit(state.copyWith(removing: true, actionError: null));
+    final result = await _abandon(state.materialId);
+    emit(
+      state.copyWith(
+        removing: false,
+        removed: result.errorOrNull == null,
+        actionError: result.errorOrNull,
+      ),
+    );
+  }
 
   Future<void> _onStarted(
     MaterialReviewStarted event,

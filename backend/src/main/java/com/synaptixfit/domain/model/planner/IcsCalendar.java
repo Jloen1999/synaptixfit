@@ -18,7 +18,7 @@ import java.util.Map;
 
 /**
  * Lectura y escritura del formato iCalendar (RFC 5545), limitado a lo que necesita el planificador:
- * VEVENT con UID, SUMMARY, DESCRIPTION, LOCATION, DTSTART, DTEND/DURATION y STATUS.
+ * VEVENT con UID, SUMMARY, DESCRIPTION, LOCATION, CATEGORIES, DTSTART, DTEND/DURATION y STATUS.
  *
  * <p>No expande reglas de recurrencia (RRULE): se importa solo la primera ocurrencia. Los calendarios
  * universitarios habituales publican cada sesión como un evento propio.
@@ -93,7 +93,7 @@ public final class IcsCalendar {
                 uid = fallbackUid(summary, dtStart.value());
             }
             return java.util.Optional.of(new IcsEvent(uid, summary, text(props.get("DESCRIPTION")),
-                    text(props.get("LOCATION")), start, end, allDay));
+                    text(props.get("LOCATION")), start, end, allDay, text(props.get("CATEGORIES"))));
         } catch (RuntimeException e) {
             // Fecha mal formada: el evento se ignora sin abortar la importación.
             return java.util.Optional.empty();

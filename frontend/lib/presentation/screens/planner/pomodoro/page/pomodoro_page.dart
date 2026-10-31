@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/planner_enums.dart';
@@ -14,18 +18,40 @@ import '../bloc/pomodoro_bloc.dart';
 
 /// Temporizador Pomodoro (`/planner/pomodoro`). Con [subjectId]/[blockId] las
 /// fases cuentan para esa asignatura o bloque; [title] dice qué se estudia.
+/// Con [startWithBreak] empieza por una pausa («Descanso guiado»).
 class PomodoroPage extends StatelessWidget {
-  const PomodoroPage({super.key, this.subjectId, this.blockId, this.title});
+  const PomodoroPage({
+    super.key,
+    this.subjectId,
+    this.blockId,
+    this.title,
+    this.startWithBreak = false,
+  });
 
   final String? subjectId;
   final String? blockId;
   final String? title;
+  final bool startWithBreak;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.localizations;
     return BlocProvider(
       create: (_) => getIt<PomodoroBloc>()
-        ..add(PomodoroEvent.started(subjectId: subjectId, blockId: blockId)),
+        ..add(
+          PomodoroEvent.started(
+            subjectId: subjectId,
+            blockId: blockId,
+            startWithBreak: startWithBreak,
+            alertTexts: PomodoroAlertTexts(
+              focusEndTitle: l10n.plannerPomodoroAlertFocusTitle,
+              focusEndBody: l10n.plannerPomodoroAlertFocusBody,
+              breakEndTitle: l10n.plannerPomodoroAlertBreakTitle,
+              breakEndBody: l10n.plannerPomodoroAlertBreakBody,
+              channelName: l10n.plannerPomodoroAlertChannel,
+            ),
+          ),
+        ),
       child: _PomodoroView(title: title),
     );
   }
@@ -56,10 +82,41 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
       '${(seconds ~/ 60).toString().padLeft(2, '0')}:'
       '${(seconds % 60).toString().padLeft(2, '0')}';
 
+  /// Salir con una fase empezada pregunta antes: si se sale, lo hecho se
+  /// guarda como fase sin terminar (antes se perdía sin avisar). Es neutra
+  /// (no se pierde nada), así que el foco va en «Salir».
+  Future<void> _leave(BuildContext context) async {
+    final bloc = context.read<PomodoroBloc>();
+    if (bloc.state.hasPhaseInProgress) {
+      final l10n = context.localizations;
+      final ok = await showConfirmDialog(
+        context,
+        title: l10n.plannerPomodoroLeaveTitle,
+        message: l10n.plannerPomodoroLeaveMessage,
+        confirmLabel: l10n.plannerPomodoroLeave,
+        destructive: false,
+      );
+      if (!ok || !context.mounted) return;
+    }
+    // Se cierra cuando la fase ya está guardada (la página no puede quedar a medias).
+    final done = Completer<void>();
+    bloc.add(PomodoroEvent.leaveRequested(done));
+    await done.future;
+    if (context.mounted) context.pop();
+  }
+
   void _onNotice(BuildContext context, PomodoroNotice notice) {
     final l10n = context.localizations;
     switch (notice) {
+      // Saltar una fase no se celebra: la pantalla ya muestra la siguiente.
+      case PomodoroNoticePhaseFinished(completed: false):
+        return;
       case PomodoroNoticePhaseFinished(:final finished):
+        // Refuerzo en primer plano (en el móvil vibra si el sistema lo
+        // permite; el sonido solo existe en escritorio). El aviso con la app
+        // en segundo plano es una notificación local pendiente.
+        HapticFeedback.heavyImpact();
+        SystemSound.play(SystemSoundType.alert);
         context.showSnack(
           finished == FocusPhase.focus
               ? l10n.plannerPomodoroFocusDone
@@ -92,113 +149,120 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
         final cycle =
             state.completedFocusCycles % config.cyclesBeforeLongBreak +
             (state.phase == FocusPhase.focus ? 1 : 0);
-        return Scaffold(
-          appBar: AppPageBar.reading(title: Text(l10n.plannerPomodoroTitle)),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: TokensLayout.readingMaxWidth,
-              ),
-              child: ListView(
-                padding: const EdgeInsets.all(TokensSpacing.m),
-                children: [
-                  if (title != null && title!.isNotEmpty) ...[
-                    Text(
-                      l10n.plannerPomodoroStudying(title!),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.textStyles.titleMedium,
-                    ),
-                    const SizedBox(height: TokensSpacing.s),
-                  ],
-                  Center(
-                    child: Chip(
-                      avatar: Icon(
-                        state.phase == FocusPhase.focus
-                            ? Icons.psychology_rounded
-                            : Icons.free_breakfast_rounded,
-                        color: color,
-                        size: 18,
+        return PopScope(
+          canPop: state.status == PomodoroStatus.idle,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _leave(context);
+          },
+          child: Scaffold(
+            appBar: AppPageBar.reading(title: Text(l10n.plannerPomodoroTitle)),
+            body: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: TokensLayout.readingMaxWidth,
+                ),
+                child: ListView(
+                  padding: const EdgeInsets.all(TokensSpacing.m),
+                  children: [
+                    if (title != null && title!.isNotEmpty) ...[
+                      Text(
+                        l10n.plannerPomodoroStudying(title!),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.textStyles.titleMedium,
                       ),
-                      label: Text(phaseLabel),
-                    ),
-                  ),
-                  const SizedBox(height: TokensSpacing.m),
-                  Center(
-                    child: Semantics(
-                      liveRegion: false,
-                      label: l10n.plannerTimeRemaining(
-                        phaseLabel,
-                        _clock(state.remainingSeconds),
+                      const SizedBox(height: TokensSpacing.s),
+                    ],
+                    Center(
+                      child: Chip(
+                        avatar: Icon(
+                          state.phase == FocusPhase.focus
+                              ? Icons.psychology_rounded
+                              : Icons.free_breakfast_rounded,
+                          color: color,
+                          size: 18,
+                        ),
+                        label: Text(phaseLabel),
                       ),
-                      excludeSemantics: true,
-                      child: SizedBox.square(
-                        dimension: 260,
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(end: state.remainingFraction),
-                          duration: MediaQuery.disableAnimationsOf(context)
-                              ? Duration.zero
-                              : TokensDuration.slow,
-                          builder: (context, value, child) => CustomPaint(
-                            painter: PomodoroRingPainter(
-                              fraction: value,
-                              color: color,
-                              trackColor: color.withValues(alpha: 0.15),
+                    ),
+                    const SizedBox(height: TokensSpacing.m),
+                    Center(
+                      child: Semantics(
+                        liveRegion: false,
+                        label: l10n.plannerTimeRemaining(
+                          phaseLabel,
+                          _clock(state.remainingSeconds),
+                        ),
+                        excludeSemantics: true,
+                        child: SizedBox.square(
+                          dimension: 260,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(end: state.remainingFraction),
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : TokensDuration.slow,
+                            builder: (context, value, child) => CustomPaint(
+                              painter: PomodoroRingPainter(
+                                fraction: value,
+                                color: color,
+                                trackColor: color.withValues(alpha: 0.15),
+                              ),
+                              child: child,
                             ),
-                            child: child,
-                          ),
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    _clock(state.remainingSeconds),
-                                    style: context.textStyles.displayMedium
-                                        ?.copyWith(
-                                          fontFeatures: const [
-                                            FontFeature.tabularFigures(),
-                                          ],
-                                        ),
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      _clock(state.remainingSeconds),
+                                      style: context.textStyles.displayMedium
+                                          ?.copyWith(
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  l10n.plannerPomodoroCycle(
-                                    cycle.clamp(
-                                      1,
+                                  Text(
+                                    l10n.plannerPomodoroCycle(
+                                      cycle.clamp(
+                                        1,
+                                        config.cyclesBeforeLongBreak,
+                                      ),
                                       config.cyclesBeforeLongBreak,
                                     ),
-                                    config.cyclesBeforeLongBreak,
+                                    style: context.textStyles.labelLarge
+                                        ?.copyWith(
+                                          color:
+                                              context.colors.onSurfaceVariant,
+                                        ),
                                   ),
-                                  style: context.textStyles.labelLarge
-                                      ?.copyWith(
-                                        color: context.colors.onSurfaceVariant,
-                                      ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  if (state.canAdjust) ...[
-                    const SizedBox(height: TokensSpacing.m),
-                    _DurationAdjuster(
-                      minutes: config.focusMinutes,
-                      min: config.minFocusMinutes,
-                      max: config.maxFocusMinutes,
-                      breakMinutes: config.shortBreakMinutes,
-                      limitedByFatigue: state.plan?.limitedByFatigue ?? false,
-                    ),
+                    if (state.canAdjust) ...[
+                      const SizedBox(height: TokensSpacing.m),
+                      _DurationAdjuster(
+                        minutes: config.focusMinutes,
+                        min: config.minFocusMinutes,
+                        max: config.maxFocusMinutes,
+                        breakMinutes: config.shortBreakMinutes,
+                        limitedByFatigue: state.plan?.limitedByFatigue ?? false,
+                      ),
+                    ],
+                    const SizedBox(height: TokensSpacing.l),
+                    _Controls(state: state),
+                    const SizedBox(height: TokensSpacing.xl),
+                    _StatsSection(state: state),
                   ],
-                  const SizedBox(height: TokensSpacing.l),
-                  _Controls(state: state),
-                  const SizedBox(height: TokensSpacing.xl),
-                  _StatsSection(state: state),
-                ],
+                ),
               ),
             ),
           ),

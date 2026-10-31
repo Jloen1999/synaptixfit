@@ -150,6 +150,12 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
     }
 
     @Override
+    public int countRewardedBetween(UUID userId, Instant fromInclusive, Instant toExclusive) {
+        return (int) sessions.countByUsuarioIdAndCompletadaEnGreaterThanEqualAndCompletadaEnLessThanAndXpOtorgadoGreaterThan(
+                userId, fromInclusive, toExclusive, 0);
+    }
+
+    @Override
     public void delete(UUID sessionId) {
         sessions.deleteById(sessionId);
         sessions.flush();

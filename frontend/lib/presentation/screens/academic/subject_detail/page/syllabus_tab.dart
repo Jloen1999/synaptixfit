@@ -117,14 +117,6 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                         style: context.textStyles.titleMedium,
                       ),
                     ),
-                    IconButton(
-                      tooltip: l10n.academicScanTitle,
-                      icon: const Icon(Icons.document_scanner_outlined),
-                      onPressed: () => _openAndRefresh(
-                        context,
-                        AcademicPaths.scanNote(subjectId: state.subjectId),
-                      ),
-                    ),
                     TextButton.icon(
                       onPressed: () => _openAndRefresh(
                         context,

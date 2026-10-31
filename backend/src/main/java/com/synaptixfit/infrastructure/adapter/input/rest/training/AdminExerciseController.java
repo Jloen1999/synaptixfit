@@ -4,7 +4,9 @@ import com.synaptixfit.application.port.input.training.AdminGetExerciseUseCase;
 import com.synaptixfit.application.port.input.training.AdminSearchExercisesUseCase;
 import com.synaptixfit.application.port.input.training.CreateExerciseUseCase;
 import com.synaptixfit.application.port.input.training.DeleteExerciseUseCase;
+import com.synaptixfit.application.port.input.training.GetExerciseNamesUseCase;
 import com.synaptixfit.application.port.input.training.SetExerciseActiveUseCase;
+import com.synaptixfit.application.port.input.training.SuggestExerciseNamesUseCase;
 import com.synaptixfit.application.port.input.training.UpdateExerciseUseCase;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.training.Difficulty;
@@ -13,6 +15,8 @@ import com.synaptixfit.domain.model.training.Modality;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.DeleteExerciseResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseNameSuggestionRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseNamesDto;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.SetActiveRequest;
@@ -44,16 +48,21 @@ public class AdminExerciseController {
     private final UpdateExerciseUseCase update;
     private final SetExerciseActiveUseCase setActive;
     private final DeleteExerciseUseCase delete;
+    private final GetExerciseNamesUseCase names;
+    private final SuggestExerciseNamesUseCase suggestNames;
 
     public AdminExerciseController(AdminSearchExercisesUseCase search, AdminGetExerciseUseCase get,
                                    CreateExerciseUseCase create, UpdateExerciseUseCase update,
-                                   SetExerciseActiveUseCase setActive, DeleteExerciseUseCase delete) {
+                                   SetExerciseActiveUseCase setActive, DeleteExerciseUseCase delete,
+                                   GetExerciseNamesUseCase names, SuggestExerciseNamesUseCase suggestNames) {
         this.search = search;
         this.get = get;
         this.create = create;
         this.update = update;
         this.setActive = setActive;
         this.delete = delete;
+        this.names = names;
+        this.suggestNames = suggestNames;
     }
 
     @GetMapping
@@ -68,28 +77,40 @@ public class AdminExerciseController {
                                                  @RequestParam(defaultValue = "0") int page,
                                                  @RequestParam(defaultValue = "20") int size) {
         return PageResponse.from(search.adminSearch(new ExerciseSearchCriteria(q, bodyPartId, muscleId, equipmentId,
-                difficulty, modality, purpose, includeInactive), new PageRequest(page, size)), ExerciseResponse::from);
+                difficulty, modality, purpose, includeInactive), new PageRequest(page, size)), ExerciseResponse::canonical);
     }
 
     @GetMapping("/{exerciseId}")
     public ExerciseResponse get(@PathVariable UUID exerciseId) {
-        return ExerciseResponse.from(get.adminGet(exerciseId));
+        return ExerciseResponse.canonical(get.adminGet(exerciseId));
+    }
+
+    /** Nombre del ejercicio en los demás idiomas, para editarlo. */
+    @GetMapping("/{exerciseId}/names")
+    public ExerciseNamesDto names(@PathVariable UUID exerciseId) {
+        return ExerciseNamesDto.from(names.names(exerciseId));
+    }
+
+    /** Propuesta de la IA (no guarda nada): se revisa y se envía con el alta o la edición. */
+    @PostMapping("/name-suggestions")
+    public ExerciseNamesDto suggestNames(@Valid @RequestBody ExerciseNameSuggestionRequest request) {
+        return ExerciseNamesDto.from(suggestNames.suggest(request.name()));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ExerciseResponse create(@Valid @RequestBody ExerciseRequest request) {
-        return ExerciseResponse.from(create.create(request.toDraft()));
+        return ExerciseResponse.canonical(create.create(request.toDraft()));
     }
 
     @PutMapping("/{exerciseId}")
     public ExerciseResponse update(@PathVariable UUID exerciseId, @Valid @RequestBody ExerciseRequest request) {
-        return ExerciseResponse.from(update.update(exerciseId, request.toDraft()));
+        return ExerciseResponse.canonical(update.update(exerciseId, request.toDraft()));
     }
 
     @PatchMapping("/{exerciseId}/active")
     public ExerciseResponse setActive(@PathVariable UUID exerciseId, @Valid @RequestBody SetActiveRequest request) {
-        return ExerciseResponse.from(setActive.setActive(exerciseId, request.active()));
+        return ExerciseResponse.canonical(setActive.setActive(exerciseId, request.active()));
     }
 
     /** Borra el ejercicio; si alguna rutina lo usa, lo desactiva en su lugar. */

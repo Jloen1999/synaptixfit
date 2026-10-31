@@ -61,6 +61,14 @@ final class InMemoryInsightsPorts {
             return loads.removeIf(r -> r.userId().equals(userId) && sessionId.equals(r.sessionId()));
         }
 
+        public Optional<PhysicalLoadRecord> findByBlock(UUID userId, UUID blockId) {
+            return loads.stream().filter(r -> r.userId().equals(userId) && blockId.equals(r.blockId())).findFirst();
+        }
+
+        public boolean deleteByBlock(UUID userId, UUID blockId) {
+            return loads.removeIf(r -> r.userId().equals(userId) && blockId.equals(r.blockId()));
+        }
+
         public List<PhysicalLoadHistory.Entry> entriesBetween(UUID userId, LocalDate from, LocalDate to) {
             return loads.stream().filter(r -> r.userId().equals(userId) && !r.date().isBefore(from) && !r.date().isAfter(to))
                     .map(r -> new PhysicalLoadHistory.Entry(r.date(), r.rpe(), r.durationMinutes())).toList();

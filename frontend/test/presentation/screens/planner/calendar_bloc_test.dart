@@ -8,6 +8,7 @@ import 'package:synaptixfit/domain/models/planner/weekly_planning.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/delete_block_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_timeline_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_week_balance_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_week_blocks_use_case.dart';
@@ -37,6 +38,9 @@ class _Account extends Mock implements GetAccountUseCaseContract {}
 
 class _DeleteBlock extends Mock implements DeleteBlockUseCaseContract {}
 
+class _RescheduleNext extends Mock
+    implements RescheduleBlockToNextFreeSlotUseCaseContract {}
+
 void main() {
   setUpAll(registerPlannerFallbacks);
 
@@ -49,6 +53,7 @@ void main() {
   late _SavePlan savePlan;
   late _Account getAccount;
   late _DeleteBlock deleteBlock;
+  late _RescheduleNext rescheduleNext;
 
   final b1 = block();
   final deadlineEntry = TimelineEntry(
@@ -74,6 +79,7 @@ void main() {
     savePlan: savePlan,
     getAccount: getAccount,
     deleteBlock: deleteBlock,
+    rescheduleNext: rescheduleNext,
     now: () => testNow,
   );
 
@@ -94,6 +100,7 @@ void main() {
     savePlan = _SavePlan();
     getAccount = _Account();
     deleteBlock = _DeleteBlock();
+    rescheduleNext = _RescheduleNext();
     when(() => deleteBlock(any())).thenAnswer((_) async => const Success(unit));
     when(() => getBlocks(any())).thenAnswer((_) async => Success([b1]));
     when(() => getConflicts(any())).thenAnswer((_) async => const Success([]));
@@ -436,4 +443,33 @@ void main() {
       verify(() => deleteBlock(b1.id)).called(1);
     });
   });
+
+  blocTest<CalendarBloc, CalendarState>(
+    'reprogramar un bloque no hecho avisa de su nuevo horario y recarga',
+    setUp: () => when(() => rescheduleNext(b1.id)).thenAnswer(
+      (_) async => Success(BlockChange(block: b1.copyWith(start: testNow))),
+    ),
+    build: build,
+    seed: ready,
+    act: (bloc) => bloc.add(CalendarEvent.rescheduleNextRequested(b1.id)),
+    verify: (bloc) {
+      verify(() => rescheduleNext(b1.id)).called(1);
+      verify(() => getBlocks(any())).called(1);
+      expect(bloc.state.busyBlockIds, isEmpty);
+    },
+  );
+
+  blocTest<CalendarBloc, CalendarState>(
+    'sin hueco libre se avisa del error',
+    setUp: () => when(() => rescheduleNext(b1.id)).thenAnswer(
+      (_) async => const Failure(AppError.business('BLOCK_NO_FREE_SLOT')),
+    ),
+    build: build,
+    seed: ready,
+    act: (bloc) => bloc.add(CalendarEvent.rescheduleNextRequested(b1.id)),
+    verify: (bloc) => expect(
+      bloc.state.notice,
+      const CalendarNotice.failure(AppError.business('BLOCK_NO_FREE_SLOT')),
+    ),
+  );
 }

@@ -4,7 +4,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/academic/quiz.dart';
 import '../../../../../domain/models/account/account.dart';
+import '../../../../../domain/use_cases/academic/export_flashcards_to_anki_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_question_bank_use_case.dart';
+import '../../../../../domain/use_cases/academic/get_study_material_use_case.dart';
 import '../../../../../domain/use_cases/academic/review_flashcards_use_case.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 
@@ -17,7 +19,9 @@ part 'flashcards_state.dart';
 class FlashcardsBloc extends Bloc<FlashcardsEvent, FlashcardsState> {
   FlashcardsBloc({
     required this._getBank,
+    required this._getMaterial,
     required this._reviewFlashcards,
+    required this._exportAnki,
     required this._getAccount,
   }) : super(const FlashcardsState()) {
     on<FlashcardsStarted>(_onStarted);
@@ -37,10 +41,13 @@ class FlashcardsBloc extends Bloc<FlashcardsEvent, FlashcardsState> {
       ),
     );
     on<FlashcardsSubmitRetried>((_, emit) => _submit(emit));
+    on<FlashcardsAnkiExportRequested>(_onAnkiExport);
   }
 
   final GetQuestionBankUseCaseContract _getBank;
+  final GetStudyMaterialUseCaseContract _getMaterial;
   final ReviewFlashcardsUseCaseContract _reviewFlashcards;
+  final ExportFlashcardsToAnkiUseCaseContract _exportAnki;
   final GetAccountUseCaseContract _getAccount;
 
   Future<void> _onStarted(
@@ -50,16 +57,21 @@ class FlashcardsBloc extends Bloc<FlashcardsEvent, FlashcardsState> {
     emit(
       state.copyWith(materialId: event.materialId, loading: true, error: null),
     );
-    final result = await _getBank(event.materialId);
+    final (result, material) = await (
+      _getBank(event.materialId),
+      _getMaterial(event.materialId),
+    ).wait;
+    // El título solo da nombre al mazo de Anki: si falla, se usa uno genérico.
+    final base = state.copyWith(deckName: material.valueOrNull?.title);
     emit(
       result.fold(
         (bank) => bank == null || bank.questions.isEmpty
-            ? state.copyWith(
+            ? base.copyWith(
                 loading: false,
                 error: const AppError.business('QUIZ_BANK_EMPTY'),
               )
-            : state.copyWith(loading: false, cards: bank.questions),
-        (error) => state.copyWith(loading: false, error: error),
+            : base.copyWith(loading: false, cards: bank.questions),
+        (error) => base.copyWith(loading: false, error: error),
       ),
     );
   }
@@ -74,6 +86,27 @@ class FlashcardsBloc extends Bloc<FlashcardsEvent, FlashcardsState> {
       state.copyWith(ratings: ratings, index: state.index + 1, flipped: false),
     );
     if (state.finished) await _submit(emit);
+  }
+
+  Future<void> _onAnkiExport(
+    FlashcardsAnkiExportRequested event,
+    Emitter<FlashcardsState> emit,
+  ) async {
+    if (state.exportingAnki || state.cards.isEmpty) return;
+    emit(state.copyWith(exportingAnki: true, actionError: null));
+    final result = await _exportAnki(
+      deck: state.deckName ?? event.fallbackDeck,
+      cards: state.cards,
+    );
+    emit(
+      result.fold(
+        (saved) => state.copyWith(
+          exportingAnki: false,
+          ankiExports: saved ? state.ankiExports + 1 : state.ankiExports,
+        ),
+        (error) => state.copyWith(exportingAnki: false, actionError: error),
+      ),
+    );
   }
 
   Future<void> _submit(Emitter<FlashcardsState> emit) async {

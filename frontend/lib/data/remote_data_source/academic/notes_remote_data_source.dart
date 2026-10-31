@@ -53,12 +53,4 @@ class NotesRemoteDataSource {
     );
     return SharedNotePageDto.fromJson(response.data!);
   }
-
-  Future<NoteDto> createFromScan(Map<String, dynamic> body) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '$_base/from-scan',
-      data: body,
-    );
-    return NoteDto.fromJson(response.data!);
-  }
 }

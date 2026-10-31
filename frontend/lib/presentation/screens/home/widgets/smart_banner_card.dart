@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../domain/enums/home_banner_type.dart';
+import '../../../../domain/enums/home_event_type.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import '../home_external_paths.dart';
+import 'agenda_section.dart';
 
 /// Texto, icono, tono y acción del banner inteligente según su tipo.
 class SmartBannerContent {
@@ -43,6 +46,22 @@ class SmartBannerContent {
         actionLabel: l10n.homeBannerActionAnalytics,
         actionPath: HomeExternalPaths.analytics,
       ),
+      HomeBannerType.overdueDeadlines => SmartBannerContent(
+        icon: Icons.assignment_late_outlined,
+        title: l10n.homeBannerOverdueDeadlinesTitle(asInt('count')),
+        message: l10n.homeBannerOverdueDeadlinesMessage(asInt('count')),
+        tone: SmartBannerTone.warning,
+        actionLabel: l10n.homeBannerActionDeadlines,
+        actionPath: HomeExternalPaths.deadlines,
+      ),
+      HomeBannerType.missedBlocks => SmartBannerContent(
+        icon: Icons.history_rounded,
+        title: _missedTitle(context, banner),
+        message: l10n.homeBannerMissedBlocksMessage(asInt('count')),
+        tone: SmartBannerTone.warning,
+        actionLabel: l10n.homeBannerActionReschedule,
+        actionPath: HomeExternalPaths.planner,
+      ),
       HomeBannerType.upcomingDeadlines => SmartBannerContent(
         icon: Icons.event_note_outlined,
         title: l10n.homeBannerUpcomingDeadlinesTitle(asInt('count')),
@@ -60,7 +79,7 @@ class SmartBannerContent {
         tone: SmartBannerTone.warning,
       ),
       HomeBannerType.lowAdherence => SmartBannerContent(
-        icon: Icons.event_busy_outlined,
+        icon: Icons.trending_down_rounded,
         title: l10n.homeBannerLowAdherenceTitle,
         message: l10n.homeBannerLowAdherenceMessage(asInt('adherence')),
         tone: SmartBannerTone.warning,
@@ -81,7 +100,7 @@ class SmartBannerContent {
         ),
         tone: SmartBannerTone.warning,
         actionLabel: l10n.homeBannerActionPomodoro,
-        actionPath: HomeExternalPaths.pomodoro,
+        actionPath: HomeExternalPaths.pomodoroBreak,
       ),
       HomeBannerType.peakDay => SmartBannerContent(
         icon: Icons.bolt_rounded,
@@ -132,6 +151,28 @@ class SmartBannerContent {
   }
 }
 
+/// «Álgebra (hoy a las 16:00) se quedó sin hacer»: el bloque más reciente
+/// por su nombre (o su tipo) y su hora, para saber cuál es sin abrir nada.
+String _missedTitle(BuildContext context, HomeSmartBanner banner) {
+  final l10n = context.localizations;
+  final count = banner.param('count').round();
+  final activity = banner.labels['activity'];
+  if (activity == null) return l10n.homeBannerMissedBlocksTitle(count);
+  final name =
+      banner.labels['title'] ??
+      eventTypeLabel(context, HomeEventType.fromApi(activity));
+  final minutes = banner.param('startMinutes').round();
+  final time = DateFormat.Hm().format(
+    DateTime(2000, 1, 1, minutes ~/ 60, minutes % 60),
+  );
+  final when = banner.param('yesterday') == 1
+      ? l10n.homeBannerWhenYesterday(time)
+      : l10n.homeBannerWhenToday(time);
+  return count <= 1
+      ? l10n.homeBannerMissedBlockOne(name, when)
+      : l10n.homeBannerMissedBlockMany(name, when, count - 1);
+}
+
 enum SmartBannerTone { warning, positive, neutral }
 
 /// Banner inteligente del día con acción contextual opcional.
@@ -154,11 +195,16 @@ class SmartBannerCard extends StatelessWidget {
       SmartBannerTone.neutral => context.colors.primary,
     };
     final path = content.actionPath;
+    // En móvil ocupa la mitad: lo urgente se lee y el próximo entreno sigue a
+    // la vista sin desplazar.
+    final compact =
+        MediaQuery.sizeOf(context).width < TokensLayout.twoColumnBreakpoint;
     // Sin liveRegion: Inicio se refresca en segundo plano con cada cambio de
     // datos y el aviso se volvería a leer sin que el usuario haya hecho nada.
     return Semantics(
       container: true,
       child: AppCard(
+        padding: EdgeInsets.all(compact ? TokensSpacing.sm : TokensSpacing.m),
         color: Color.alphaBlend(
           accent.withValues(alpha: AppPill.tintAlpha),
           context.colors.surface,
@@ -167,7 +213,9 @@ class SmartBannerCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(TokensSpacing.s),
+              padding: EdgeInsets.all(
+                compact ? TokensSpacing.xs : TokensSpacing.s,
+              ),
               decoration: BoxDecoration(
                 color: accent.withValues(alpha: AppPill.tintAlpha),
                 borderRadius: BorderRadius.circular(TokensRadius.m),
@@ -179,17 +227,45 @@ class SmartBannerCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(content.title, style: context.textStyles.titleMedium),
-                  const SizedBox(height: TokensSpacing.xs),
+                  Text(
+                    content.title,
+                    style: compact
+                        ? context.textStyles.titleSmall
+                        : context.textStyles.titleMedium,
+                  ),
+                  const SizedBox(height: TokensSpacing.xxs),
                   Text(content.message, style: context.textStyles.bodyMedium),
                   if (path != null && content.actionLabel != null) ...[
-                    const SizedBox(height: TokensSpacing.s),
+                    SizedBox(
+                      height: compact ? TokensSpacing.xxs : TokensSpacing.s,
+                    ),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: FilledButton(
-                        onPressed: () => onAction(path),
-                        child: Text(content.actionLabel!),
-                      ),
+                      child: compact
+                          ? TextButton.icon(
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: TokensSpacing.xs,
+                                ),
+                                foregroundColor: context.colors.onSurface,
+                              ),
+                              iconAlignment: IconAlignment.end,
+                              icon: const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: TokensSize.iconXs,
+                              ),
+                              onPressed: () => onAction(path),
+                              label: Text(
+                                content.actionLabel!,
+                                style: context.textStyles.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            )
+                          : FilledButton(
+                              onPressed: () => onAction(path),
+                              child: Text(content.actionLabel!),
+                            ),
                     ),
                   ],
                 ],

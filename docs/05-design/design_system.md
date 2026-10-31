@@ -6,7 +6,7 @@ Comprobación automática: `test/presentation/theme/contrast_test.dart` verifica
 
 ## Dirección visual: «B · Deportivo oscuro»
 
-La app **arranca en oscuro** (`themeMode: ThemeMode.dark` en `SynaptixFitApp`); el tema claro mantiene la misma identidad y queda listo para un futuro selector. Lienzo casi negro, tarjetas planas con borde fino, un verde lima enérgico para la acción y un color por dominio: **mente en violeta, cuerpo en lima, logro en naranja**. Todo sale de los tokens y del tema: las pantallas no cambian.
+La app **arranca en oscuro** por defecto; en Ajustes → Apariencia se elige Oscuro, Claro o «Como el sistema» (`AppearanceBloc` en la raíz, guardado en el dispositivo y leído antes de `runApp` para que no haya destello). El cambio de tema se anima `TokensDuration.normal`, o al instante si se pide reducir el movimiento. El tema claro mantiene la misma identidad. Lienzo casi negro, tarjetas planas con borde fino, un verde lima enérgico para la acción y un color por dominio: **mente en violeta, cuerpo en lima, logro en naranja**. Todo sale de los tokens y del tema: las pantallas no cambian.
 
 | Pieza | Oscuro (por defecto) | Claro |
 |---|---|---|
@@ -59,13 +59,15 @@ Manrope para títulos y cifras (pesos 700–800; `display*`, `headline*` en 800,
 | `AppPill` | **Única** pastilla de estado o dato: texto (e icono opcional) de un color sobre ese color al 12 % fundido con `surface`, en `labelMedium`. Los módulos solo eligen etiqueta, icono y color (o envuelven un enum, como `BalanceStateChip`). Los colores admitidos como texto son los de la lista «pastillas tintadas» del test de contraste |
 | `AppTileGrid` | Accesos rápidos en una fila, o en filas de la mitad si no caben (texto al 200 %) |
 | `AppCard` | Tarjeta plana con borde suave y toque opcional |
+| `AppInlineMessage` | Aviso junto a lo que lo provoca (un campo, una hoja, un formulario de acceso), en tono error, aviso o éxito, con el color al 12 %. No se cierra solo como un SnackBar; su texto es región viva |
 | `AppMetricTile` | Cifra con icono, etiqueta y desglose; se anuncia como una sola frase. `bare: true` dentro de otra tarjeta (nada de tarjeta dentro de tarjeta) |
 | `AppSectionHeader` | Título de sección (encabezado accesible) con acción; `actionExpanded` si la acción despliega o pliega («Ver todas» / «Ver menos») |
 | `AppPrimaryButton` · `AppSecondaryButton` | Botones con estado de carga anunciado |
 | `AppTextField` | Campo con etiqueta visible, ayuda y contraseña con botón etiquetado |
 | `AppEmptyState` (`.compact` dentro de tarjetas) · `AppErrorView` (reintento como botón secundario) · `AppLoadingView` | Estados vacío, error y carga |
 | `AppSkeleton` · `AppSkeletonGroup` · `AppSkeletonList` | Carga con la forma del contenido. Cada bloque es mudo; el grupo (o la lista) se anuncia una vez como «Cargando» (región viva). Todo estado de carga con esqueletos va en un `AppSkeletonGroup` o es un `AppSkeletonList`. Sin brillo si se reduce el movimiento |
-| `XpProgressBar` · `AppAvatar` · `AppBrandMark` | Nivel, avatar y marca (monograma plano en `primary` con una chispa naranja; sin degradados) |
+| `XpProgressBar` · `AppAvatar` · `AppBrandMark` | Nivel, avatar y marca: el logo de `assets/images/logo.png` recortado en círculo (`TokensSize.brandLogo` en acceso y carga; `decorative: true` cuando el nombre ya va al lado). Los iconos de la app salen del mismo archivo con `tools/brand/generate_icons.py` |
+| `SetupChecklistCard` (Inicio) | Configuración pendiente: título, «N de M listo», barra de progreso y una fila por tarea con su enlace; «Ahora no» la oculta 7 días. Va tras el próximo entreno (no tapa lo de hoy) y desaparece al completarlo todo |
 | `AppChartSummary` | Resumen textual de una gráfica para lectores de pantalla (excluye los trazos) |
 | `AppFocusGroup` · `AppScrollBehavior` · `AppFocusOutline` · `AppNavFocusRing` | Orden y visibilidad del foco con teclado (ver `accessibility.md`, «Teclado y foco»). Todo `InkWell` propio y todo `ListTile` pulsable de `screens/` va dentro de un `AppFocusOutline`; los iconos de la barra inferior y del riel, dentro de un `AppNavFocusRing` |
 
@@ -74,7 +76,7 @@ Antes de crear un widget nuevo, busca en el barrel `widgets.dart`. Los envoltori
 ## Estructura de la app
 
 - **Navegación:** hasta 5 pestañas (Inicio, Académico, Rutinas, Retos, Progreso); con un solo enfoque de uso se oculta Académico o Rutinas (ADR 0014). Barra inferior en móvil, riel lateral con la marca en pantallas anchas (`MainShellPage`).
-- **Inicio pone primero lo que hay que hacer:** saludo → aviso solo si es urgente → agenda → (aviso informativo) → próximo entreno → «Tu equilibrio» compacto (una fila con barra para la mente y otra para el cuerpo, nivel en palabras, sin cifras técnicas como el ACWR) → retos y semana. En pantallas anchas se reparte en dos columnas: lo de hoy y el estado a la izquierda; retos y semana a la derecha. Todas las tarjetas llevan a su pantalla.
+- **Inicio pone primero lo que hay que hacer:** saludo → aviso solo si es urgente (entregas vencidas, sobrecarga física o mucha fatiga) → «Tu día» (anillo de bloques hechos, lo que toca ahora con su botón y tres cifras; la única acción principal visible al abrir) → agenda → próximo entreno → configuración pendiente → (resto de avisos) → «Tu equilibrio» compacto (una fila con barra para la mente y otra para el cuerpo, nivel en palabras, sin cifras técnicas como el ACWR; sin botón propio para no repetir el de «Tu día») → retos y semana. «Tu día» es plana con el tinte de marca al 12 %, sin degradado. En «Tu semana» lo planificado es una barra hueca con borde y lo hecho, una barra rellena encima (verde si el día está completo), con su leyenda. En pantallas anchas se reparte en dos columnas: lo de hoy y el estado a la izquierda; retos y semana a la derecha. Todas las tarjetas llevan a su pantalla.
 - **Logros globales:** la subida de nivel y las insignias nuevas se celebran una sola vez en un diálogo común (`AchievementsHost`), estés en la pestaña que estés.
 - **Datos siempre al día:** cualquier escritura en la API avisa por `DataChangeInterceptor` → `WatchDataChangesUseCase`, y el bloc de cada pestaña que muestra esos datos (con `DataChangeRefreshMixin`) se refresca en segundo plano. Una acción nueva no tiene que avisar a mano: basta con que su ruta esté en el mapa de `DataChangeInterceptor`.
 

@@ -58,6 +58,21 @@ class AdminExerciseRemoteDataSource {
     return AdminExerciseDeletionDto.fromJson(response.data!);
   }
 
+  Future<AdminExerciseNamesDto> names(String exerciseId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/$exerciseId/names',
+    );
+    return AdminExerciseNamesDto.fromJson(response.data!);
+  }
+
+  Future<AdminExerciseNamesDto> suggestNames(String spanishName) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/name-suggestions',
+      data: {'name': spanishName},
+    );
+    return AdminExerciseNamesDto.fromJson(response.data!);
+  }
+
   Future<AdminExerciseOptionsDto> options() async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/api/v1/exercises/filters',

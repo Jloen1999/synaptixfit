@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/models/training/session.dart';
+import '../../../../domain/models/training/session_adaptation.dart';
 import 'recommendation_dto.dart';
 
 part 'session_dto.freezed.dart';
@@ -158,5 +159,25 @@ abstract class UnmarkSessionResponseDto with _$UnmarkSessionResponseDto {
   UnmarkSessionResult toDomain() => UnmarkSessionResult(
     session: session.toDomain(),
     experience: experience.toDomain(),
+  );
+}
+
+@freezed
+abstract class SessionAdaptationDto with _$SessionAdaptationDto {
+  const factory SessionAdaptationDto({
+    @Default(1.0) double volumeFactor,
+    @Default(<String>[]) List<String> reasons,
+    @Default(<String, int>{}) Map<String, int> sets,
+  }) = _SessionAdaptationDto;
+
+  const SessionAdaptationDto._();
+
+  factory SessionAdaptationDto.fromJson(Map<String, dynamic> json) =>
+      _$SessionAdaptationDtoFromJson(json);
+
+  SessionAdaptation toDomain() => SessionAdaptation(
+    volumeFactor: volumeFactor,
+    reasons: [for (final r in reasons) ?SessionAdaptationReason.fromApi(r)],
+    sets: sets,
   );
 }

@@ -27,6 +27,7 @@ public final class Notification {
     private final String actionUrl;
     private final String actionLabel;
     private final String referenceKey;
+    private final NotificationMessage message;
     private boolean read;
     private final Instant createdAt;
     private Instant readAt;
@@ -34,6 +35,15 @@ public final class Notification {
     public Notification(UUID id, UUID userId, String title, String description, NotificationPriority priority,
                         NotificationType type, String actionUrl, String actionLabel, String referenceKey,
                         boolean read, Instant createdAt, Instant readAt) {
+        this(id, userId, title, description, priority, type, actionUrl, actionLabel, referenceKey, null, read,
+                createdAt, readAt);
+    }
+
+    /** @param message código y datos para que el cliente lo muestre en su idioma (opcional) */
+    public Notification(UUID id, UUID userId, String title, String description, NotificationPriority priority,
+                        NotificationType type, String actionUrl, String actionLabel, String referenceKey,
+                        NotificationMessage message, boolean read, Instant createdAt, Instant readAt) {
+        this.message = message;
         this.id = Objects.requireNonNull(id, "id");
         this.userId = Objects.requireNonNull(userId, "userId");
         this.title = Guard.length(title, "title", 1, MAX_TITLE);
@@ -58,6 +68,12 @@ public final class Notification {
                                       String referenceKey, Instant now) {
         return new Notification(UUID.randomUUID(), userId, title, description, priority, type, actionUrl,
                 actionLabel, referenceKey, false, now, null);
+    }
+
+    /** La misma notificación con su mensaje traducible. */
+    public Notification withMessage(NotificationMessage newMessage) {
+        return new Notification(id, userId, title, description, priority, type, actionUrl, actionLabel, referenceKey,
+                newMessage, read, createdAt, readAt);
     }
 
     public boolean belongsTo(UUID otherUserId) {
@@ -88,6 +104,7 @@ public final class Notification {
     public String actionUrl() { return actionUrl; }
     public String actionLabel() { return actionLabel; }
     public String referenceKey() { return referenceKey; }
+    public NotificationMessage message() { return message; }
     public boolean read() { return read; }
     public Instant createdAt() { return createdAt; }
     public Instant readAt() { return readAt; }

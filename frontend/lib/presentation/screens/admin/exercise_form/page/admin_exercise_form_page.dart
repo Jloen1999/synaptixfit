@@ -58,6 +58,9 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
   final _met = TextEditingController();
   final _gifUrl = TextEditingController();
   final _previewUrl = TextEditingController();
+  final _nameEn = TextEditingController();
+  final _nameFr = TextEditingController();
+  final _namePt = TextEditingController();
   final _steps = <_Step>[];
   var _nextStepId = 0;
 
@@ -65,7 +68,16 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
 
   @override
   void dispose() {
-    for (final c in [_name, _description, _met, _gifUrl, _previewUrl]) {
+    for (final c in [
+      _name,
+      _description,
+      _met,
+      _gifUrl,
+      _previewUrl,
+      _nameEn,
+      _nameFr,
+      _namePt,
+    ]) {
       c.dispose();
     }
     for (final step in _steps) {
@@ -81,6 +93,7 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
     _met.text = AdminFormat.decimal(draft.met).replaceAll(',', '.');
     _gifUrl.text = draft.gifUrl;
     _previewUrl.text = draft.previewUrl;
+    _fillNames(draft.translations);
     for (final step in _steps) {
       step.controller.dispose();
     }
@@ -91,6 +104,20 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
       ]);
     setState(() {});
   }
+
+  void _fillNames(AdminExerciseNames? names) {
+    _nameEn.text = names?.en ?? '';
+    _nameFr.text = names?.fr ?? '';
+    _namePt.text = names?.pt ?? '';
+  }
+
+  /// Cambia un idioma sin tocar los demás (solo si los nombres se cargaron).
+  void _updateNames(AdminExerciseNames Function(AdminExerciseNames n) change) =>
+      _update(
+        (d) => d.translations == null
+            ? d
+            : d.copyWith(translations: change(d.translations!)),
+      );
 
   void _update(AdminExerciseDraft Function(AdminExerciseDraft d) change) =>
       _bloc.add(AdminExerciseFormEvent.draftChanged(change(_bloc.state.draft)));
@@ -128,8 +155,14 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
     return BlocConsumer<AdminExerciseFormBloc, AdminExerciseFormState>(
       listenWhen: (a, b) =>
           (a.status != AdminStatus.ready && b.status == AdminStatus.ready) ||
-          (a.effect != b.effect && b.effect != null),
+          (a.effect != b.effect && b.effect != null) ||
+          a.namesRevision != b.namesRevision,
       listener: (context, state) {
+        // Nombres propuestos por la IA: a sus campos, sin tocar el resto.
+        if (state.namesRevision > 0 && state.effect == null) {
+          _fillNames(state.draft.translations);
+          if (state.status == AdminStatus.ready) return;
+        }
         final effect = state.effect;
         if (effect == null) {
           _fill(state.draft);
@@ -222,15 +255,28 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
                 _Section(
                   title: l10n.adminExerciseSectionBasics,
                   children: [
-                    TextField(
-                      controller: _name,
-                      maxLength: AdminExerciseDraft.nameMax,
-                      onChanged: (v) => _update((d) => d.copyWith(name: v)),
-                      decoration: InputDecoration(
-                        labelText: l10n.adminFieldExerciseName,
-                        errorText: show && !draft.isNameValid
-                            ? l10n.adminValidationExerciseName
-                            : null,
+                    // Al salir del nombre, si aún no hay nombres en otros
+                    // idiomas, la IA los propone para revisarlos.
+                    Focus(
+                      onFocusChange: (focused) {
+                        if (!focused) {
+                          _bloc.add(
+                            const AdminExerciseFormEvent.namesSuggested(
+                              onlyIfEmpty: true,
+                            ),
+                          );
+                        }
+                      },
+                      child: TextField(
+                        controller: _name,
+                        maxLength: AdminExerciseDraft.nameMax,
+                        onChanged: (v) => _update((d) => d.copyWith(name: v)),
+                        decoration: InputDecoration(
+                          labelText: l10n.adminFieldExerciseName,
+                          errorText: show && !draft.isNameValid
+                              ? l10n.adminValidationExerciseName
+                              : null,
+                        ),
                       ),
                     ),
                     gap,
@@ -247,6 +293,15 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
                       ),
                     ),
                   ],
+                ),
+                _NamesSection(
+                  state: state,
+                  english: _nameEn,
+                  french: _nameFr,
+                  portuguese: _namePt,
+                  onSuggest: () =>
+                      _bloc.add(const AdminExerciseFormEvent.namesSuggested()),
+                  onChanged: _updateNames,
                 ),
                 _Section(
                   title: l10n.adminFieldInstructions,
@@ -489,6 +544,110 @@ class _Section extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Nombre del ejercicio en inglés, francés y portugués: la IA lo propone y la
+/// administración lo revisa antes de guardar.
+class _NamesSection extends StatelessWidget with ErrorsMessageMixin {
+  const _NamesSection({
+    required this.state,
+    required this.english,
+    required this.french,
+    required this.portuguese,
+    required this.onSuggest,
+    required this.onChanged,
+  });
+
+  final AdminExerciseFormState state;
+  final TextEditingController english;
+  final TextEditingController french;
+  final TextEditingController portuguese;
+  final VoidCallback onSuggest;
+  final void Function(AdminExerciseNames Function(AdminExerciseNames n))
+  onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final names = state.draft.translations;
+    final suggesting = state.suggestingNames;
+    final canSuggest = names != null && !suggesting && state.draft.isNameValid;
+    final muted = context.textStyles.bodySmall?.copyWith(
+      color: context.colors.onSurfaceVariant,
+    );
+    final fields = [
+      (
+        english,
+        l10n.adminFieldNameEnglish,
+        (AdminExerciseNames n, String v) => n.copyWith(en: v),
+      ),
+      (
+        french,
+        l10n.adminFieldNameFrench,
+        (AdminExerciseNames n, String v) => n.copyWith(fr: v),
+      ),
+      (
+        portuguese,
+        l10n.adminFieldNamePortuguese,
+        (AdminExerciseNames n, String v) => n.copyWith(pt: v),
+      ),
+    ];
+    return _Section(
+      title: l10n.adminExerciseSectionNames,
+      trailing: TextButton.icon(
+        onPressed: canSuggest ? onSuggest : null,
+        icon: suggesting
+            ? const SizedBox.square(
+                dimension: TokensSize.iconS,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.auto_awesome_rounded),
+        label: Text(l10n.adminExerciseNamesSuggest),
+      ),
+      children: [
+        if (names == null)
+          Text(l10n.adminExerciseNamesUnavailable, style: muted)
+        else ...[
+          Text(
+            state.draft.isNameValid
+                ? l10n.adminExerciseNamesHint
+                : l10n.adminExerciseNamesNeedName,
+            style: muted,
+          ),
+          // Se anuncia al empezar y al fallar: lo provoca quien edita.
+          Semantics(
+            liveRegion: true,
+            child: switch ((suggesting, state.namesError)) {
+              (true, _) => Padding(
+                padding: const EdgeInsets.only(top: TokensSpacing.xs),
+                child: Text(l10n.adminExerciseNamesSuggesting, style: muted),
+              ),
+              (false, final error?) => Padding(
+                padding: const EdgeInsets.only(top: TokensSpacing.xs),
+                child: Text(
+                  errorMessage(context, error),
+                  style: context.textStyles.bodySmall?.copyWith(
+                    color: context.colors.error,
+                  ),
+                ),
+              ),
+              _ => const SizedBox.shrink(),
+            },
+          ),
+          for (final (controller, label, apply) in fields) ...[
+            const SizedBox(height: TokensSpacing.m),
+            TextField(
+              controller: controller,
+              enabled: !suggesting,
+              maxLength: AdminExerciseDraft.nameMax,
+              onChanged: (v) => onChanged((n) => apply(n, v)),
+              decoration: InputDecoration(labelText: label),
+            ),
+          ],
+        ],
+      ],
     );
   }
 }

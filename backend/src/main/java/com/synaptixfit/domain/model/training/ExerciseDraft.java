@@ -4,12 +4,16 @@ import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.model.shared.Guard;
 import java.util.List;
 
-/** Datos de alta o edición de un ejercicio del catálogo (administración). */
+/**
+ * Datos de alta o edición de un ejercicio del catálogo (administración). {@code translations} es el
+ * nombre en los demás idiomas; nulo deja los que tenga (clientes que no lo envían).
+ */
 public record ExerciseDraft(String name, String description, List<String> instructions, Difficulty difficulty,
                             List<TrainingGoal> purposes, Modality modality, List<MeasurementType> measurementTypes,
                             boolean circuit, double met, String gifUrl, String previewUrl,
                             List<Integer> bodyPartIds, List<Integer> targetMuscleIds,
-                            List<Integer> secondaryMuscleIds, List<Integer> equipmentIds) {
+                            List<Integer> secondaryMuscleIds, List<Integer> equipmentIds,
+                            ExerciseNameTranslations translations) {
 
     public ExerciseDraft {
         name = Guard.length(name, "name", 2, 200);

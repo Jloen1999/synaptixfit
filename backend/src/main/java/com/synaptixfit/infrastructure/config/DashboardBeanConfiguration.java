@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
 import com.synaptixfit.application.port.input.challenge.ListMyChallengesUseCase;
 import com.synaptixfit.application.port.input.dashboard.GetDashboardUseCase;
 import com.synaptixfit.application.port.input.insights.GetCognitiveStateUseCase;
@@ -46,9 +47,10 @@ public class DashboardBeanConfiguration {
                                             GetStudyCaloriesTodayUseCase studyCalories,
                                             GetStudyActivityUseCase studyActivity,
                                             GetPhysicalLoadUseCase physicalLoad, GetWellbeingUseCase wellbeing,
-                                            ListMyChallengesUseCase challenges) {
+                                            ListMyChallengesUseCase challenges, GetStreakUseCase streaks) {
         DashboardService service = new DashboardService(users, reads, insightSources, cognitiveStates,
-                crossRegulation, studyCalories, studyActivity, physicalLoad, wellbeing, challenges, clock, zone);
+                crossRegulation, studyCalories, studyActivity, physicalLoad, wellbeing, challenges, streaks, clock,
+                zone);
         return tx.wrap(GetDashboardUseCase.class, service);
     }
 }

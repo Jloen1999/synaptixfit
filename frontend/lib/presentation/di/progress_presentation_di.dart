@@ -15,6 +15,7 @@ void registerProgressPresentation(GetIt getIt) {
         getCatalog: getIt(),
         changeVisibility: getIt(),
         shareBadge: getIt(),
+        shareImage: getIt(),
       ),
     )
     ..registerFactory(

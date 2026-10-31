@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.challenge;
 
 import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
+import com.synaptixfit.domain.model.training.TrainingRewards;
 import com.synaptixfit.domain.port.output.challenge.ChallengeReferencePort;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -66,8 +67,10 @@ public class ChallengeReferencePersistenceAdapter implements ChallengeReferenceP
                         select count(*) from sesiones_registradas
                         where usuario_id = :user and completada_en is not null
                           and completada_en >= :from and completada_en <= :to
+                          and duracion_minutos >= :minMinutes
                         """)
                 .param("user", userId)
+                .param("minMinutes", TrainingRewards.MIN_COUNTED_MINUTES)
                 .param("from", OffsetDateTime.ofInstant(from, ZoneOffset.UTC))
                 .param("to", OffsetDateTime.ofInstant(to, ZoneOffset.UTC))
                 .query(Long.class).single().intValue();

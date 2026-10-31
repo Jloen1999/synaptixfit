@@ -239,5 +239,88 @@
   "socialErrorSocialCannotReportOwn": "No puedes reportar tu propio contenido.",
   "socialErrorNotificationNotFound": "Esta notificación ya no existe.",
   "socialErrorNotificationQuietHours": "Indica la hora de inicio y de fin del silencio (distintas).",
-  "socialAttachedImage": "Imagen adjunta"
+  "socialAttachedImage": "Imagen adjunta",
+  "socialNotifChallengeCompletedTitle": "¡Reto completado!",
+  "socialNotifChallengeCompletedBody": "Has completado el reto «{name}»",
+  "@socialNotifChallengeCompletedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifBadgeEarnedTitle": "¡Nueva insignia!",
+  "socialNotifBadgeEarnedBody": "Has desbloqueado la insignia «{name}»",
+  "@socialNotifBadgeEarnedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifLevelUpTitle": "¡Has subido de nivel!",
+  "socialNotifLevelUpBody": "Ya eres nivel {level}",
+  "@socialNotifLevelUpBody": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifFatigueTitle": "Hoy conviene adaptar el entrenamiento",
+  "socialNotifFatigueBody": "Nos has contado que estás muy cansado: baja la intensidad o tómate el día de descanso.",
+  "socialNotifOvertrainingTitle": "Riesgo de sobreentrenamiento",
+  "socialNotifOvertrainingBody": "Tu carga de esta semana es {ratio} veces tu media del mes: prioriza el descanso y acorta los bloques de estudio.",
+  "@socialNotifOvertrainingBody": {
+    "placeholders": {
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifPostLikedTitle": "Nuevo me gusta",
+  "socialNotifPostLikedBody": "{name} ha dado me gusta a tu publicación",
+  "@socialNotifPostLikedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifPostCommentedTitle": "Nuevo comentario",
+  "socialNotifPostCommentedBody": "{name} ha comentado tu publicación",
+  "@socialNotifPostCommentedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifFriendRequestTitle": "Nueva solicitud de amistad",
+  "socialNotifFriendRequestBody": "{name} quiere añadirte como amigo",
+  "@socialNotifFriendRequestBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifFriendAcceptedTitle": "Solicitud aceptada",
+  "socialNotifFriendAcceptedBody": "{name} ha aceptado tu solicitud de amistad",
+  "@socialNotifFriendAcceptedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifActionChallenge": "Ver reto",
+  "socialNotifActionBadges": "Ver insignias",
+  "socialNotifActionProfile": "Ver perfil",
+  "socialNotifActionTraining": "Ver entrenamiento",
+  "socialNotifActionIndicators": "Ver indicadores",
+  "socialNotifActionPost": "Ver publicación",
+  "socialNotifActionComment": "Ver comentario",
+  "socialNotifActionRequest": "Ver solicitud",
+  "socialErrorPostAlreadyShared": "Ya lo habías compartido en el muro."
 }

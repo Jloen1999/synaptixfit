@@ -26,4 +26,13 @@ sealed class RemindersEvent with _$RemindersEvent {
 
   /// La página ya ha navegado al destino del aviso.
   const factory RemindersEvent.openHandled() = RemindersOpenHandled;
+
+  /// Se ha guardado algo de estudio o del planificador: ¿toca ofrecer los
+  /// recordatorios?
+  const factory RemindersEvent.offerCheckRequested() =
+      RemindersOfferCheckRequested;
+
+  /// Respuesta al ofrecimiento ([accepted]: activar y pedir permiso).
+  const factory RemindersEvent.offerAnswered({required bool accepted}) =
+      RemindersOfferAnswered;
 }

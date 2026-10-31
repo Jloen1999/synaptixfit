@@ -12,5 +12,12 @@ abstract class SessionCompletedState with _$SessionCompletedState {
     @Default(<String>{}) Set<String> busyIds,
     AppError? error,
     TrainingEffect? effect,
+
+    /// Volumen, récords y comparación (llega después; null si falla).
+    SessionHighlights? highlights,
+
+    /// Ya se compartió en el muro / se está compartiendo.
+    @Default(false) bool shared,
+    @Default(false) bool sharing,
   }) = _SessionCompletedState;
 }

@@ -27,6 +27,11 @@ public record ReminderPlan(List<Item> reminders) {
      * @param title    título del bloque o su asignatura; nulo si no tiene (solo bloques)
      * @param startsAt inicio del bloque (solo bloques)
      */
+    /**
+     * Aviso del plan. Según {@code kind}: {@code count} son los repasos vencidos ({@code REVIEWS}) o los días que
+     * faltan ({@code EXAM}, {@code DEADLINE}); {@code startsAt} es el inicio del bloque o la fecha de la entrega;
+     * {@code title}, el del bloque o la entrega.
+     */
     public record Item(ReminderKind kind, Instant at, String refId, Integer count, String title,
                        Instant startsAt) {
 

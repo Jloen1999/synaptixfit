@@ -7,6 +7,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'app/config/app_config.dart';
 import 'app/di/app_di.dart';
 import 'app/synaptixfit_app.dart';
+import 'domain/use_cases/profile/get_appearance_use_case.dart';
+import 'domain/use_cases/profile/get_language_use_case.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +24,14 @@ Future<void> main() async {
       yield LicenseEntryWithLineBreaks([family], license);
     }
   });
-  await initializeDateFormatting('es');
+  // Fechas en los cuatro idiomas de la app (se elige en Ajustes).
+  await initializeDateFormatting();
   await appInitDi(AppConfig.fromEnvironment());
-  runApp(const SynaptixFitApp());
+  // La apariencia se lee antes de pintar para no arrancar en oscuro y cambiar.
+  final appearance =
+      (await getIt<GetAppearanceUseCaseContract>()()).valueOrNull;
+  final language = (await getIt<GetLanguageUseCaseContract>()()).valueOrNull;
+  runApp(
+    SynaptixFitApp(initialAppearance: appearance, initialLanguage: language),
+  );
 }

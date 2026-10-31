@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.badge.dto;
 
 import com.synaptixfit.domain.model.badge.StreakStatus;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -9,10 +10,11 @@ import java.util.List;
  */
 public record StreakResponse(int currentDays, int bestDays, boolean activeToday, boolean atRisk,
                              Integer nextMilestone, int daysToNextMilestone, double milestoneProgress,
-                             List<Integer> reachedMilestones) {
+                             List<Integer> reachedMilestones, int freezesAvailable, List<LocalDate> frozenDays) {
 
     public static StreakResponse from(StreakStatus s) {
         return new StreakResponse(s.currentDays(), s.bestDays(), s.activeToday(), s.atRisk(), s.nextMilestone(),
-                s.daysToNextMilestone(), s.milestoneProgress(), s.reachedMilestones());
+                s.daysToNextMilestone(), s.milestoneProgress(), s.reachedMilestones(), s.freezesAvailable(),
+                s.frozenDays());
     }
 }

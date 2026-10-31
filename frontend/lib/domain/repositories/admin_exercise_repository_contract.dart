@@ -27,6 +27,12 @@ abstract interface class AdminExerciseRepositoryContract {
 
   Future<AppResult<AdminExerciseDeletion>> delete(String exerciseId);
 
+  /// Nombre del ejercicio en los demás idiomas.
+  Future<AppResult<AdminExerciseNames>> getNames(String exerciseId);
+
+  /// Propuesta de la IA a partir del nombre en español (no guarda nada).
+  Future<AppResult<AdminExerciseNames>> suggestNames(String spanishName);
+
   /// Músculos, partes del cuerpo y equipamiento (`/api/v1/exercises/filters`).
   Future<AppResult<AdminExerciseOptions>> getOptions();
 }

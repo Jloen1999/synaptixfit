@@ -7,6 +7,8 @@ import 'package:synaptixfit/domain/enums/training_enums.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/session.dart';
+import 'package:synaptixfit/domain/use_cases/training/load_pending_sets_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/save_pending_sets_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_last_performance_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_bookends_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
@@ -18,10 +20,16 @@ import 'package:synaptixfit/domain/use_cases/training/get_session_use_case.dart'
 import 'package:synaptixfit/domain/use_cases/training/record_set_use_case.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/bloc/live_session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_effect.dart';
+import 'package:synaptixfit/domain/models/training/session_adaptation.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_session_adaptation_use_case.dart';
 
 import 'training_fixtures.dart';
 
 class _MockGetSession extends Mock implements GetSessionUseCaseContract {}
+
+class _MockLoadPending extends Mock implements LoadPendingSetsUseCaseContract {}
+
+class _MockSavePending extends Mock implements SavePendingSetsUseCaseContract {}
 
 class _MockGetRoutine extends Mock implements GetRoutineUseCaseContract {}
 
@@ -40,6 +48,9 @@ class _MockGetLast extends Mock implements GetLastPerformanceUseCaseContract {}
 class _MockGetBookends extends Mock
     implements GetSessionBookendsUseCaseContract {}
 
+class _MockGetAdaptation extends Mock
+    implements GetSessionAdaptationUseCaseContract {}
+
 void main() {
   late _MockGetSession getSession;
   late _MockGetRoutine getRoutine;
@@ -50,13 +61,19 @@ void main() {
   late _MockGetAccount getAccount;
   late _MockGetLast getLast;
   late _MockGetBookends getBookends;
+  late _MockGetAdaptation getAdaptation;
+  late _MockLoadPending loadPending;
+  late _MockSavePending savePending;
 
   final startedAt = DateTime(2026, 10, 18, 10);
   final now = startedAt.add(const Duration(minutes: 5));
   final routine = TrainingFixtures.routine();
   final exercises = routine.weeks.first.days.first.exercises;
 
-  setUpAll(() => registerFallbackValue(const SetRecord(setNumber: 1)));
+  setUpAll(() {
+    registerFallbackValue(const SetRecord(setNumber: 1));
+    registerFallbackValue(const <SetRecord>[]);
+  });
 
   setUp(() {
     getSession = _MockGetSession();
@@ -68,6 +85,18 @@ void main() {
     getAccount = _MockGetAccount();
     getLast = _MockGetLast();
     getBookends = _MockGetBookends();
+    getAdaptation = _MockGetAdaptation();
+    loadPending = _MockLoadPending();
+    savePending = _MockSavePending();
+    // Sin series pendientes guardadas en el teléfono salvo en su test.
+    when(() => loadPending(any())).thenAnswer((_) async => const Success([]));
+    when(
+      () => savePending(any(), any()),
+    ).thenAnswer((_) async => const Success(unit));
+    // Sin motivos: la sesión sale como está planificada salvo en su test.
+    when(
+      () => getAdaptation(any()),
+    ).thenAnswer((_) async => const Success(SessionAdaptation()));
     // Las ayudas (la última vez, calentamiento) llegan vacías salvo en su test.
     when(() => getLast()).thenAnswer((_) async => const Success([]));
     when(
@@ -85,6 +114,9 @@ void main() {
     getAccount: getAccount,
     getLastPerformance: getLast,
     getBookends: getBookends,
+    getAdaptation: getAdaptation,
+    loadPending: loadPending,
+    savePending: savePending,
     clock: () => now,
   );
 
@@ -153,6 +185,31 @@ void main() {
   );
 
   blocTest<LiveSessionBloc, LiveSessionState>(
+    'con examen cerca aplica las series adaptadas por el servidor',
+    setUp: () {
+      when(() => getSession('s1')).thenAnswer(
+        (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+      );
+      when(() => getRoutine('r1')).thenAnswer((_) async => Success(routine));
+      when(() => getAdaptation('s1')).thenAnswer(
+        (_) async => Success(
+          SessionAdaptation(
+            volumeFactor: 0.7,
+            reasons: const [SessionAdaptationReason.examSoon],
+            sets: {for (final e in exercises) e.id: 1},
+          ),
+        ),
+      );
+    },
+    build: build,
+    act: (bloc) => bloc.add(const LiveSessionEvent.started('s1')),
+    verify: (bloc) {
+      expect(bloc.state.adaptation.adapted, isTrue);
+      expect(bloc.state.exercises.every((e) => e.parameters.sets == 1), isTrue);
+    },
+  );
+
+  blocTest<LiveSessionBloc, LiveSessionState>(
     'si la sesión no existe muestra el error',
     setUp: () => when(() => getSession('s1')).thenAnswer(
       (_) async => const Failure(AppError.business('SESSION_NOT_FOUND')),
@@ -181,7 +238,11 @@ void main() {
         elapsed: 301,
         seconds: {'p1': 1},
       ).copyWith(restRemaining: 1, restTotal: 60),
-      ready(elapsed: 302, seconds: {'p1': 2}).copyWith(restTotal: 60),
+      // El descanso llega a cero solo: la pantalla avisa (restFinishedCount sube).
+      ready(
+        elapsed: 302,
+        seconds: {'p1': 2},
+      ).copyWith(restTotal: 60, restFinishedCount: 1),
     ],
   );
 
@@ -218,6 +279,57 @@ void main() {
       expect(s.activeExerciseId, 'p2');
       expect(s.completedSets, 1);
     },
+  );
+
+  SessionSet done(String exercise, int n) => SessionSet(
+    id: '$exercise-$n',
+    plannedExerciseId: exercise,
+    setNumber: n,
+    repsDone: 10,
+    completed: true,
+  );
+
+  blocTest<LiveSessionBloc, LiveSessionState>(
+    'al completar las series de un ejercicio se pasa solo al siguiente',
+    setUp: () => when(() => recordSet('s1', any())).thenAnswer(
+      (_) async => Success(
+        TrainingFixtures.session(
+          startedAt: startedAt,
+          sets: [done('p1', 1), done('p1', 2), done('p1', 3)],
+        ),
+      ),
+    ),
+    build: build,
+    seed: ready,
+    act: (bloc) => bloc.add(
+      const LiveSessionEvent.setRecorded(
+        SetRecord(plannedExerciseId: 'p1', setNumber: 3, repsDone: 10),
+      ),
+    ),
+    verify: (bloc) => expect(bloc.state.activeExerciseId, 'p2'),
+  );
+
+  blocTest<LiveSessionBloc, LiveSessionState>(
+    'con todo hecho ya no cuenta ningún ejercicio',
+    setUp: () => when(() => recordSet('s1', any())).thenAnswer(
+      (_) async => Success(
+        TrainingFixtures.session(
+          startedAt: startedAt,
+          sets: [
+            for (final e in ['p1', 'p2'])
+              for (var n = 1; n <= 3; n++) done(e, n),
+          ],
+        ),
+      ),
+    ),
+    build: build,
+    seed: () => ready(active: 'p2'),
+    act: (bloc) => bloc.add(
+      const LiveSessionEvent.setRecorded(
+        SetRecord(plannedExerciseId: 'p2', setNumber: 3, repsDone: 10),
+      ),
+    ),
+    verify: (bloc) => expect(bloc.state.activeExerciseId, isNull),
   );
 
   blocTest<LiveSessionBloc, LiveSessionState>(
@@ -323,4 +435,108 @@ void main() {
       ready(),
     ],
   );
+
+  group('sin conexión', () {
+    const record = SetRecord(
+      plannedExerciseId: 'p1',
+      setNumber: 3,
+      repsDone: 10,
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'la serie se guarda en el teléfono, se ve y se sube al volver la red',
+      setUp: () {
+        when(
+          () => recordSet('s1', any()),
+        ).thenAnswer((_) async => const Failure(AppError.network()));
+      },
+      build: build,
+      seed: () => ready(),
+      act: (bloc) async {
+        bloc.add(const LiveSessionEvent.setRecorded(record));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.pendingSets, [record]);
+        expect(
+          bloc.state.session!.sets.last.id,
+          startsWith(LiveSessionBloc.pendingPrefix),
+        );
+        when(() => recordSet('s1', any())).thenAnswer(
+          (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+        );
+        bloc.add(const LiveSessionEvent.pendingRetried());
+      },
+      verify: (bloc) {
+        expect(bloc.state.pendingSets, isEmpty);
+        verify(() => savePending('s1', [record])).called(1);
+        verify(() => savePending('s1', const [])).called(1);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'si el servidor está caído la serie sigue en la cola',
+      setUp: () => when(
+        () => recordSet('s1', any()),
+      ).thenAnswer((_) async => const Failure(AppError.server())),
+      build: build,
+      seed: () => ready().copyWith(pendingSets: const [record]),
+      act: (bloc) => bloc.add(const LiveSessionEvent.pendingRetried()),
+      verify: (bloc) => expect(bloc.state.pendingSets, [record]),
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'una serie que el servidor rechaza se descarta y se avisa',
+      setUp: () => when(
+        () => recordSet('s1', any()),
+      ).thenAnswer((_) async => const Failure(AppError.validation())),
+      build: build,
+      seed: () => ready().copyWith(pendingSets: const [record]),
+      act: (bloc) => bloc.add(const LiveSessionEvent.pendingRetried()),
+      expect: () => [
+        isA<LiveSessionState>().having((s) => s.saving, 'saving', isTrue),
+        isA<LiveSessionState>().having(
+          (s) => s.effect,
+          'effect',
+          const TrainingEffect.message(TrainingMessage.pendingSetDiscarded),
+        ),
+        isA<LiveSessionState>().having((s) => s.effect, 'effect', isNull),
+        isA<LiveSessionState>()
+            .having((s) => s.pendingSets, 'pendingSets', isEmpty)
+            .having((s) => s.saving, 'saving', isFalse),
+      ],
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'una serie apuntada mientras se guarda otra espera en la cola',
+      build: build,
+      seed: () => ready().copyWith(saving: true),
+      act: (bloc) => bloc.add(const LiveSessionEvent.setRecorded(record)),
+      verify: (bloc) {
+        expect(bloc.state.pendingSets, [record]);
+        // La otra operación sigue en curso: no se apaga su indicador.
+        expect(bloc.state.saving, isTrue);
+        verifyNever(() => recordSet(any(), any()));
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'sin subir las pendientes no se puede terminar',
+      setUp: () => when(
+        () => recordSet('s1', any()),
+      ).thenAnswer((_) async => const Failure(AppError.network())),
+      build: build,
+      seed: () => ready().copyWith(pendingSets: const [record]),
+      act: (bloc) => bloc.add(const LiveSessionEvent.finishRequested(6)),
+      verify: (bloc) {
+        expect(bloc.state.pendingSets, [record]);
+        verifyNever(
+          () => finish(
+            any(),
+            durationSeconds: any(named: 'durationSeconds'),
+            rpe: any(named: 'rpe'),
+            realDurations: any(named: 'realDurations'),
+          ),
+        );
+      },
+    );
+  });
 }

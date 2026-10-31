@@ -3,6 +3,7 @@ import '../models/result/result.dart';
 import '../models/training/recommendation.dart';
 import '../models/training/routine.dart';
 import '../models/training/session.dart';
+import '../models/training/session_adaptation.dart';
 import '../models/training/training_page.dart';
 import '../models/training/wellbeing.dart';
 
@@ -18,6 +19,9 @@ abstract interface class TrainingRepositoryContract {
   });
 
   Future<AppResult<TrainingSession>> getSession(String sessionId);
+
+  /// Adaptación de hoy de la sesión (regulación cruzada).
+  Future<AppResult<SessionAdaptation>> getSessionAdaptation(String sessionId);
 
   Future<AppResult<TrainingPage<TrainingSession>>> getSessions({
     bool? completed,

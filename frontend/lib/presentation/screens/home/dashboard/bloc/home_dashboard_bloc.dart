@@ -1,3 +1,6 @@
+import '../../../../../domain/models/home/home_setup.dart';
+import '../../../../../domain/use_cases/home/get_home_setup_use_case.dart';
+import '../../../../../domain/use_cases/home/snooze_home_setup_use_case.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -33,6 +36,8 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     required this._getDueReviews,
     required this._getUnreadCount,
     required this._getOnboardingStatus,
+    required this._getSetup,
+    required this._snoozeSetup,
     required this._getTimeline,
     required this._onboardingGate,
     required this._watchChanges,
@@ -45,6 +50,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
       (_, emit) => emit(state.copyWith(onboardingRequired: false)),
     );
     on<HomeDashboardTrainingStarted>(_onTrainingStarted);
+    on<HomeDashboardSetupSnoozed>(_onSetupSnoozed);
     on<HomeDashboardTrainingHandled>(
       (_, emit) =>
           emit(state.copyWith(openSessionId: null, trainingError: null)),
@@ -61,11 +67,30 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
   final GetHomeDueReviewsUseCaseContract _getDueReviews;
   final GetHomeUnreadCountUseCaseContract _getUnreadCount;
   final GetHomeOnboardingStatusUseCaseContract _getOnboardingStatus;
+  final GetHomeSetupUseCaseContract _getSetup;
+  final SnoozeHomeSetupUseCaseContract _snoozeSetup;
   final GetTimelineUseCaseContract _getTimeline;
   final DateTime Function() _clock;
   final HomeOnboardingGate _onboardingGate;
   final WatchDataChangesUseCaseContract _watchChanges;
   final StartSessionUseCaseContract _startSession;
+
+  /// Usuario de la sesión (llega en `started`): el «Ahora no» es suyo.
+  String _userId = '';
+
+  /// «Ahora no»: se oculta hasta la fecha que devuelve el caso de uso (si no
+  /// se pudo guardar, sigue a la vista).
+  Future<void> _onSetupSnoozed(
+    HomeDashboardSetupSnoozed event,
+    Emitter<HomeDashboardState> emit,
+  ) async {
+    final setup = state.setup;
+    if (setup == null) return;
+    final now = _clock();
+    final until = (await _snoozeSetup(now, userId: _userId)).valueOrNull;
+    if (until == null) return;
+    emit(state.copyWith(setup: setup.copyWith(snoozedUntil: until)));
+  }
 
   Future<void> _onTrainingStarted(
     HomeDashboardTrainingStarted event,
@@ -91,6 +116,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     HomeDashboardStarted event,
     Emitter<HomeDashboardState> emit,
   ) async {
+    _userId = event.userId;
     // Inicio resume todos los módulos: cualquier cambio le afecta.
     watchDataChanges(
       _watchChanges,
@@ -131,6 +157,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     final dashboardFuture = _getDashboard();
     final reviewsFuture = _getDueReviews(limit: dueReviewsLimit);
     final unreadFuture = _getUnreadCount();
+    final setupFuture = _getSetup(userId: _userId);
     final upcomingFuture = _getTimeline(
       from: tomorrow,
       to: DateTime(now.year, now.month, now.day + agendaDays),
@@ -139,6 +166,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     final reviews = await reviewsFuture;
     final unread = await unreadFuture;
     final upcoming = await upcomingFuture;
+    final setup = await setupFuture;
 
     return dashboard.fold(
       (value) {
@@ -153,6 +181,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
                 unread.valueOrNull ?? state.unreadNotifications,
             upcoming:
                 upcoming.valueOrNull?.map(_toEvent).toList() ?? state.upcoming,
+            setup: setup.valueOrNull ?? state.setup,
           ),
         );
         return true;

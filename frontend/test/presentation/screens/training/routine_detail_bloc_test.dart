@@ -72,6 +72,7 @@ void main() {
   late _Clone clone;
   late _Reorder reorder;
   late _RenameDay renameDay;
+  late _RemoveExercise removeExercise;
   late RoutineDetailUseCases useCases;
   final routine = TrainingFixtures.routine();
 
@@ -82,6 +83,7 @@ void main() {
     clone = _Clone();
     reorder = _Reorder();
     renameDay = _RenameDay();
+    removeExercise = _RemoveExercise();
     useCases = RoutineDetailUseCases(
       getRoutine: getRoutine,
       getBodyWeight: getWeight,
@@ -99,7 +101,7 @@ void main() {
       addExercise: _AddExercise(),
       reorderExercises: reorder,
       updateExercise: _UpdateExercise(),
-      removeExercise: _RemoveExercise(),
+      removeExercise: removeExercise,
       startSession: _Start(),
     );
   });
@@ -153,10 +155,99 @@ void main() {
     seed: ready,
     act: (bloc) =>
         bloc.add(const RoutineDetailEvent.exerciseMoved('d1', 'p1', up: false)),
+    // Sin estado de carga: primero el orden nuevo en pantalla, luego lo que
+    // confirma el servidor.
     expect: () => [
-      ready().copyWith(busy: true),
+      ready(routine.withExerciseOrder('d1', ['p2', 'p1'])),
       ready(routine.copyWith(name: 'Reordenada')),
     ],
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'si el servidor no guarda el orden, se avisa y vuelve lo guardado',
+    setUp: () {
+      when(
+        () => reorder('r1', 'd1', ['p2', 'p1']),
+      ).thenAnswer((_) async => const Failure(AppError.network()));
+      when(() => getRoutine('r1')).thenAnswer((_) async => Success(routine));
+    },
+    build: () => RoutineDetailBloc(useCases),
+    seed: ready,
+    act: (bloc) =>
+        bloc.add(const RoutineDetailEvent.exerciseMoved('d1', 'p1', up: false)),
+    expect: () {
+      final moved = ready(routine.withExerciseOrder('d1', ['p2', 'p1']));
+      return [
+        moved,
+        moved.copyWith(effect: const TrainingEffect.error(AppError.network())),
+        moved,
+        ready(),
+      ];
+    },
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'dos movimientos seguidos se envían en orden y manda el último',
+    setUp: () {
+      when(() => reorder('r1', 'd1', ['p2', 'p1'])).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        return Success(routine.copyWith(name: 'Primera'));
+      });
+      when(
+        () => reorder('r1', 'd1', ['p1', 'p2']),
+      ).thenAnswer((_) async => Success(routine.copyWith(name: 'Segunda')));
+    },
+    build: () => RoutineDetailBloc(useCases),
+    seed: ready,
+    act: (bloc) async {
+      bloc.add(const RoutineDetailEvent.exerciseMoved('d1', 'p1', up: false));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const RoutineDetailEvent.exerciseMoved('d1', 'p1', up: true));
+    },
+    wait: const Duration(milliseconds: 60),
+    expect: () => [
+      ready(routine.withExerciseOrder('d1', ['p2', 'p1'])),
+      ready(routine.withExerciseOrder('d1', ['p1', 'p2'])),
+      ready(routine.copyWith(name: 'Segunda')),
+    ],
+    verify: (_) => verifyInOrder([
+      () => reorder('r1', 'd1', ['p2', 'p1']),
+      () => reorder('r1', 'd1', ['p1', 'p2']),
+    ]),
+  );
+
+  blocTest<RoutineDetailBloc, RoutineDetailState>(
+    'quitar un ejercicio mientras se guarda el orden espera a ese guardado',
+    setUp: () {
+      when(() => reorder('r1', 'd1', ['p2', 'p1'])).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        return Success(routine.copyWith(name: 'Reordenada'));
+      });
+      when(
+        () => removeExercise('r1', 'p1'),
+      ).thenAnswer((_) async => Success(routine.copyWith(name: 'Sin p1')));
+    },
+    build: () => RoutineDetailBloc(useCases),
+    seed: ready,
+    act: (bloc) async {
+      bloc.add(const RoutineDetailEvent.exerciseMoved('d1', 'p1', up: false));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const RoutineDetailEvent.exerciseRemoved('p1'));
+    },
+    wait: const Duration(milliseconds: 60),
+    expect: () {
+      final moved = ready(routine.withExerciseOrder('d1', ['p2', 'p1']));
+      return [
+        moved,
+        moved.copyWith(busy: true),
+        ready(routine.copyWith(name: 'Reordenada')).copyWith(busy: true),
+        ready(routine.copyWith(name: 'Sin p1')),
+      ];
+    },
+    verify: (_) => verifyInOrder([
+      () => reorder('r1', 'd1', ['p2', 'p1']),
+      () => removeExercise('r1', 'p1'),
+    ]),
   );
 
   blocTest<RoutineDetailBloc, RoutineDetailState>(

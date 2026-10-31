@@ -1,3 +1,4 @@
+import '../../../../../domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -37,6 +38,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     required this._savePlan,
     required this._getAccount,
     required this._deleteBlock,
+    required this._rescheduleNext,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        super(
@@ -54,6 +56,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     on<CalendarCompletionToggled>(_onCompletionToggled);
     on<CalendarPlanSaveRequested>(_onSavePlan);
     on<CalendarBlockDeleteRequested>(_onDeleteRequested);
+    on<CalendarRescheduleNextRequested>(_onRescheduleNext);
     on<CalendarBlockDeleteUndone>(_onDeleteUndone);
     on<CalendarBlockDeleteCommitted>(_onDeleteCommitted);
   }
@@ -136,6 +139,33 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   final SaveWeekPlanUseCaseContract _savePlan;
   final GetAccountUseCaseContract _getAccount;
   final DeleteBlockUseCaseContract _deleteBlock;
+  final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleNext;
+
+  Future<void> _onRescheduleNext(
+    CalendarRescheduleNextRequested event,
+    Emitter<CalendarState> emit,
+  ) async {
+    if (state.busyBlockIds.contains(event.blockId)) return;
+    emit(state.copyWith(busyBlockIds: {...state.busyBlockIds, event.blockId}));
+    final result = await _rescheduleNext(event.blockId);
+    final busy = {...state.busyBlockIds}..remove(event.blockId);
+    switch (result) {
+      case Success(:final value):
+        emit(
+          _withNotice(
+            CalendarNotice.rescheduled(value.block.start),
+          ).copyWith(busyBlockIds: busy),
+        );
+        add(const CalendarEvent.refreshed());
+      case Failure(:final error):
+        emit(
+          _withNotice(
+            CalendarNotice.failure(error),
+          ).copyWith(busyBlockIds: busy),
+        );
+    }
+  }
+
   final DateTime Function() _now;
 
   CalendarState _withNotice(CalendarNotice notice) =>
@@ -345,7 +375,11 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     final block = _find(event.blockId);
     if (block == null || state.busyBlockIds.contains(block.id)) return;
     emit(state.copyWith(busyBlockIds: {...state.busyBlockIds, block.id}));
-    final result = await _setCompletion(block.id, completed: !block.completed);
+    final result = await _setCompletion(
+      block.id,
+      completed: !block.completed,
+      effort: block.completed ? null : event.effort,
+    );
     final busy = {...state.busyBlockIds}..remove(block.id);
     switch (result) {
       case Failure(:final error):

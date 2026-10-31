@@ -24,4 +24,7 @@ public interface TrainingSessionJpaRepository extends JpaRepository<TrainingSess
     Optional<TrainingSessionEntity> findFirstByUsuarioIdAndCompletadaEnIsNotNullOrderByCompletadaEnDesc(UUID usuarioId);
 
     long countByUsuarioIdAndCompletadaEnGreaterThanEqualAndCompletadaEnLessThan(UUID usuarioId, Instant from, Instant to);
+
+    long countByUsuarioIdAndCompletadaEnGreaterThanEqualAndCompletadaEnLessThanAndXpOtorgadoGreaterThan(
+            UUID usuarioId, Instant from, Instant to, int xp);
 }

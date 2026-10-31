@@ -27,6 +27,7 @@ abstract interface class SocialRepositoryContract {
     required PostType type,
     required String description,
     String? imageUrl,
+    Map<String, Object?>? metadata,
   });
 
   Future<AppResult<Post>> editPost({

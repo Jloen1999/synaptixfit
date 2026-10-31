@@ -11,6 +11,9 @@ void registerRemindersPresentation(GetIt getIt) {
       watchChanges: getIt(),
       watchEnabled: getIt(),
       watchOpened: getIt(),
+      shouldOffer: getIt(),
+      markOffered: getIt(),
+      setEnabled: getIt(),
     ),
   );
 }

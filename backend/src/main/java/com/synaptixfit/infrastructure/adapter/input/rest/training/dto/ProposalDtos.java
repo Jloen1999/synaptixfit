@@ -4,6 +4,7 @@ import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.domain.model.training.WeekType;
 import com.synaptixfit.domain.model.training.generation.RoutineProposal;
+import com.synaptixfit.infrastructure.adapter.input.rest.support.LocalizedNames;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -40,7 +41,7 @@ public final class ProposalDtos {
                                       @Min(1) @Max(600) Integer isometricSeconds) {
         static ProposedExerciseDto from(RoutineProposal.ProposedExercise e) {
             ExerciseParameters p = e.parameters();
-            return new ProposedExerciseDto(e.exerciseId(), e.exerciseName(), p.sets(), p.reps(), p.restSeconds(),
+            return new ProposedExerciseDto(e.exerciseId(), LocalizedNames.exercise(e.exerciseId(), e.exerciseName()), p.sets(), p.reps(), p.restSeconds(),
                     p.weightKg(), p.weightsKg(), p.targetDurationSeconds(), p.distanceMeters(), p.isometricSeconds());
         }
 

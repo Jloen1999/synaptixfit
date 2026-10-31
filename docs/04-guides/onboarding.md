@@ -36,6 +36,8 @@ cp config/dev.example.json config/dev.json   # la primera vez; rellena GOOGLE_CL
 flutter run -d chrome --web-port 5173 --dart-define-from-file=config/dev.json
 ```
 
+Si cambia el logo (`frontend/assets/images/logo.png`), regenera los iconos de Android, web y Windows con `py tools/brand/generate_icons.py` desde la raíz (necesita Pillow: `py -m pip install pillow`).
+
 `config/dev.json` no se sube al repositorio. Valores que admite (también como `--dart-define` sueltos):
 
 | Clave | Para qué |

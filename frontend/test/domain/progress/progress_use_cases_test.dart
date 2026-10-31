@@ -65,6 +65,9 @@ void main() {
     when(
       () => analytics.getStudyWeek(),
     ).thenAnswer((_) async => const Failure(AppError.network()));
+    when(
+      () => analytics.getStudyBySubject(),
+    ).thenAnswer((_) async => const Failure(AppError.network()));
   });
 
   GetProgressOverviewUseCase overview() => GetProgressOverviewUseCase(

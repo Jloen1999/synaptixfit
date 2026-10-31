@@ -66,6 +66,32 @@ void main() {
       expect(review.map((r) => r.id), [100, 101]);
     });
 
+    test('examen y entrega dicen cuántos días faltan y su título', () {
+      final due = DateTime.utc(2026, 10, 24, 7);
+      final reminders = composer.compose([
+        PlannedReminder(
+          kind: ReminderKind.exam,
+          at: due.subtract(const Duration(days: 3)),
+          refId: 'e1:3',
+          count: 3,
+          title: 'Parcial',
+          startsAt: due,
+        ),
+        PlannedReminder(
+          kind: ReminderKind.deadline,
+          at: due.subtract(const Duration(days: 1)),
+          refId: 'd1:1',
+          count: 1,
+          startsAt: due,
+        ),
+      ], texts);
+
+      expect(reminders.map((r) => r.title), ['exam:3', 'deadline:1']);
+      expect(reminders.map((r) => r.body), ['exam:Parcial', 'deadline:-']);
+      // Cada aviso (3 días / 1 día) tiene su propio id estable.
+      expect(reminders.first.id, isNot(reminders.last.id));
+    });
+
     test('no pasa del tope del dispositivo', () {
       const small = ReminderComposer(maxReminders: 1);
 

@@ -1,4 +1,5 @@
 import '../../domain/enums/reminder_kind.dart';
+import '../../domain/models/reminders/timer_alert.dart';
 import '../../domain/models/reminders/reminder.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/models/result/result.dart';
@@ -42,6 +43,20 @@ class ReminderSchedulerRepository
 
   /// Los fallos del plugin y los `payload` desconocidos se descartan: tocar un
   /// aviso nunca debe romper la app, como mucho no navega.
+
+  @override
+  Future<AppResult<Unit>> scheduleTimerAlert(TimerAlert alert) =>
+      RepositoryErrorHandler.guard(() async {
+        await _local.scheduleTimerAlert(alert);
+        return unit;
+      });
+
+  @override
+  Future<AppResult<Unit>> cancelTimerAlert() =>
+      RepositoryErrorHandler.guard(() async {
+        await _local.cancelTimerAlert();
+        return unit;
+      });
   @override
   Stream<ReminderKind> watchOpened() =>
       RepositoryErrorHandler.guardStream(_local.watchOpenedPayloads)

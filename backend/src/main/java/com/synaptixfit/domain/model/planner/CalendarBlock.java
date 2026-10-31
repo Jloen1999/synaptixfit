@@ -2,6 +2,7 @@ package com.synaptixfit.domain.model.planner;
 
 import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.exception.planner.BlockAlreadyCompletedException;
+import com.synaptixfit.domain.exception.planner.BlockInFutureException;
 import com.synaptixfit.domain.exception.planner.BlockInPastException;
 import com.synaptixfit.domain.exception.planner.BlockLockedException;
 import com.synaptixfit.domain.model.shared.Guard;
@@ -126,9 +127,34 @@ public final class CalendarBlock {
         return new Builder();
     }
 
-    /** Experiencia de completar un bloque de {@code minutes} minutos. */
+    /** Minutos que puntúan como mucho en un bloque (antes un bloque de 24 h daba 480 XP). */
+    public static final int MAX_REWARDED_MINUTES = 240;
+    /** XP máxima al día por bloques completados (unas 10 h de estudio). */
+    public static final int DAILY_XP_CAP = 200;
+
+    /** Experiencia de completar un bloque de {@code minutes} minutos (10 por cada media hora, hasta 4 h). */
     public static int experienceFor(long minutes) {
-        return (int) Math.ceil(minutes / 30.0) * 10;
+        return (int) Math.ceil(Math.min(minutes, MAX_REWARDED_MINUTES) / 30.0) * 10;
+    }
+
+    /**
+     * ¿Puede dar su XP un bloque con {@code reward} si ese día los bloques ya dieron {@code awardedToday}?
+     * Es todo o nada (no se reparte una parte) para que al desmarcarlo se reste exactamente lo que dio.
+     */
+    public static boolean fitsDailyXp(int awardedToday, int reward) {
+        return awardedToday + reward <= DAILY_XP_CAP;
+    }
+
+    /** Pendiente, en curso, hecho o no hecho respecto a {@code now} ({@link ItemTimeStatus}). */
+    public ItemTimeStatus timeStatus(Instant now) {
+        return ItemTimeStatus.ofBlock(type, range.start(), range.end(), completed, now);
+    }
+
+    /** Solo se marca como hecho un bloque que ya ha empezado. */
+    public void requireStarted(Instant now) {
+        if (now.isBefore(range.start())) {
+            throw new BlockInFutureException();
+        }
     }
 
     /** Comprueba que el bloque empieza en el futuro (creación por el usuario). */
@@ -180,9 +206,19 @@ public final class CalendarBlock {
         revise(sourceType, sourceDetails);
     }
 
+    /**
+     * Cambia tipo y detalles. Un bloque completado no puede cambiar de tipo ni dejar de reflejar (o empezar
+     * a reflejar) una sesión de rutina o un repaso: su XP depende de ello y desmarcarlo después restaría otra
+     * cantidad (con vincular, desmarcar, desvincular y volver a completar se ganaba XP sin límite).
+     */
     public void revise(ActivityType newType, Details newDetails) {
-        this.type = Guard.notNull(newType, "type");
-        this.details = Guard.notNull(newDetails, "details");
+        Guard.notNull(newType, "type");
+        Guard.notNull(newDetails, "details");
+        if (completed && (newType != type || mirrors(newType, newDetails) != mirrorsTrackedActivity())) {
+            throw new BlockAlreadyCompletedException();
+        }
+        this.type = newType;
+        this.details = newDetails;
     }
 
     /**
@@ -228,10 +264,22 @@ public final class CalendarBlock {
         return experienceFor(range.minutes());
     }
 
+    /**
+     * Bloque de deporte que no es una sesión de rutina (p. ej. «Fútbol 90 min»): al completarlo su carga
+     * física cuenta en el ACWR y la fatiga (las sesiones de rutina ya la registran por su cuenta).
+     */
+    public boolean countsAsPhysicalActivity() {
+        return type == ActivityType.SPORT && !mirrorsTrackedActivity();
+    }
+
     /** ¿Es el reflejo en el calendario de una sesión de rutina o de un repaso SM-2? */
     public boolean mirrorsTrackedActivity() {
-        return (type == ActivityType.SPORT && details.routineDayId() != null)
-                || (type == ActivityType.REVIEW && studyMaterialId != null);
+        return mirrors(type, details);
+    }
+
+    private boolean mirrors(ActivityType t, Details d) {
+        return (t == ActivityType.SPORT && d.routineDayId() != null)
+                || (t == ActivityType.REVIEW && studyMaterialId != null);
     }
 
     public void markExperienceAwarded(boolean awarded) {

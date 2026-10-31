@@ -65,7 +65,9 @@ public class ExercisePersistenceAdapter implements ExerciseRepositoryPort {
             // sustituye por MATCH ... AGAINST sobre un índice FULLTEXT (docs/06-ops/database_portability.md).
             where.append(" AND (to_tsvector('spanish'::regconfig, COALESCE(e.nombre, '') || ' ' || COALESCE(e.descripcion, ''))"
                     + " @@ to_tsquery('spanish'::regconfig, :ts) OR ").append(SqlLike.containsIgnoreCase("e.nombre", "like"))
-                    .append(")");
+                    // Quien usa la app en otro idioma busca por el nombre que ve.
+                    .append(" OR EXISTS (SELECT 1 FROM ejercicio_nombres n WHERE n.ejercicio_id = e.id AND ")
+                    .append(SqlLike.containsIgnoreCase("n.nombre", "like")).append("))");
             params.put("ts", tsQuery);
             params.put("like", SqlLike.contains(c.text().strip()));
         }

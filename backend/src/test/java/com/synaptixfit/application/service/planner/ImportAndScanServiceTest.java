@@ -3,6 +3,8 @@ package com.synaptixfit.application.service.planner;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.synaptixfit.domain.exception.planner.IcsUrlMissingException;
+import com.synaptixfit.application.port.input.planner.ImportGeneralCalendarUseCase;
 import com.synaptixfit.application.port.input.planner.ImportIcsUseCase;
 import com.synaptixfit.application.port.input.planner.ScanScheduleUseCase;
 import com.synaptixfit.domain.model.planner.ActivityType;
@@ -61,6 +63,52 @@ class ImportAndScanServiceTest {
             downloads.add(url);
             return ICS;
         }, timeline, f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.CLOCK);
+    }
+
+    /** Calendario del Campus Virtual: entregas y cuestionarios de varios cursos, con el curso en CATEGORIES. */
+    private static final String MOODLE = String.join("\r\n",
+            "BEGIN:VCALENDAR",
+            "BEGIN:VEVENT",
+            "UID:m-1@moodle",
+            "SUMMARY:Práctica 2 está en fecha de entrega",
+            "CATEGORIES:ÁLGEBRA LINEAL (2026-27)",
+            "DTSTART:20261110T225900Z",
+            "END:VEVENT",
+            "BEGIN:VEVENT",
+            "UID:m-2@moodle",
+            "SUMMARY:Cuestionario tema 3 se abre",
+            "CATEGORIES:ÁLGEBRA LINEAL (2026-27)",
+            "DTSTART:20261108T080000Z",
+            "END:VEVENT",
+            "BEGIN:VEVENT",
+            "UID:m-3@moodle",
+            "SUMMARY:Entrega del informe",
+            "CATEGORIES:FÍSICA I",
+            "DTSTART:20261112T225900Z",
+            "END:VEVENT",
+            "BEGIN:VEVENT",
+            "UID:m-4@moodle",
+            "SUMMARY:Tutoría colectiva",
+            "DTSTART:20261109T080000Z",
+            "END:VEVENT",
+            "END:VCALENDAR");
+
+    @Test
+    void aGeneralCalendarBringsOnlyDeadlinesEachInTheSubjectItMentions() {
+        IcsService moodle = new IcsService(f.directory, f.blocks, f.deadlines, url -> MOODLE,
+                new TimelineService(f.blocks, f.deadlines, f.directory), f.weeklyLoadService(), PlannerFakes.ZONE,
+                PlannerFakes.CLOCK);
+
+        ImportIcsUseCase.Result result = moodle.importGeneral(
+                new ImportGeneralCalendarUseCase.Command(f.user, "https://campusvirtual.example/calendar.ics"));
+
+        // Sin la tutoría (sería una clase) ni el aviso de apertura del cuestionario.
+        assertThat(result.deliveries()).isEqualTo(2);
+        assertThat(result.classes()).isZero();
+        assertThat(f.deadlines.store.values()).extracting(d -> d.subjectId())
+                .containsExactlyInAnyOrder(algebra.id(), null);
+        assertThatThrownBy(() -> moodle.importGeneral(new ImportGeneralCalendarUseCase.Command(f.user, null)))
+                .isInstanceOf(IcsUrlMissingException.class);
     }
 
     @Test

@@ -7,6 +7,7 @@ import '../use_cases/progress/get_load_correlation_use_case.dart';
 import '../use_cases/progress/get_progress_overview_use_case.dart';
 import '../use_cases/progress/get_unnotified_badges_use_case.dart';
 import '../use_cases/progress/mark_badges_notified_use_case.dart';
+import '../use_cases/progress/share_achievement_image_use_case.dart';
 import '../use_cases/progress/share_badge_use_case.dart';
 
 /// Casos de uso del módulo progress.
@@ -34,6 +35,9 @@ void registerProgressDomain(GetIt getIt) {
     )
     ..registerLazySingleton<ShareBadgeUseCaseContract>(
       () => ShareBadgeUseCase(getIt()),
+    )
+    ..registerLazySingleton<ShareAchievementImageUseCaseContract>(
+      () => ShareAchievementImageUseCase(getIt()),
     )
     ..registerLazySingleton<GetAnalyticsReportUseCaseContract>(
       () => GetAnalyticsReportUseCase(getIt()),

@@ -107,7 +107,7 @@ class _SemesterDatesSheetState extends State<SemesterDatesSheet> {
         ),
         if (_invalid) ...[
           const SizedBox(height: TokensSpacing.s),
-          InlineMessage(message: l10n.plannerDatesInvalid),
+          AppInlineMessage(message: l10n.plannerDatesInvalid),
         ],
         const SizedBox(height: TokensSpacing.l),
         AppPrimaryButton(

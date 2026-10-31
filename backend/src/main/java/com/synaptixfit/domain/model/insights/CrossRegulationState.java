@@ -3,6 +3,9 @@ package com.synaptixfit.domain.model.insights;
 import com.synaptixfit.domain.model.neuro.CrossRegulation;
 import com.synaptixfit.domain.model.shared.Guard;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.UUID;
 
 /**
@@ -18,6 +21,8 @@ public record CrossRegulationState(UUID userId, double acuteDailyLoad, double ch
 
     public static final int ACUTE_DAYS = 7;
     public static final int CHRONIC_DAYS = 28;
+    /** Semanas con carga, de las tres anteriores a la aguda, que hacen falta para tener línea base. */
+    public static final int MIN_BASELINE_WEEKS = 2;
 
     public CrossRegulationState {
         Guard.notNull(userId, "userId");
@@ -44,6 +49,27 @@ public record CrossRegulationState(UUID userId, double acuteDailyLoad, double ch
                 : CrossRegulation.maxStudyMinutes(CrossRegulation.DEFAULT_STUDY_MINUTES, acwr);
         return new CrossRegulationState(userId, acuteSum7d / ACUTE_DAYS, chronicSum28d / CHRONIC_DAYS,
                 maxStudy, daysUntilExam, now);
+    }
+
+    /**
+     * Recalcula el estado con las filas de carga de los últimos 28 días (hoy incluido).
+     *
+     * <p>Exige carga en al menos {@value #MIN_BASELINE_WEEKS} de las tres semanas anteriores a la aguda:
+     * con una sola sesión suelta hace 9 días y tres esta semana el ACWR salía ~3 y avisaba de
+     * sobreentrenamiento (y recortaba el estudio) a alguien que acaba de empezar.
+     */
+    public static CrossRegulationState compute(UUID userId, Collection<PhysicalLoadHistory.Entry> window,
+                                               LocalDate today, Integer daysUntilExam, Instant now) {
+        double acute = PhysicalLoadHistory.total(window, today.minusDays(ACUTE_DAYS - 1L), today);
+        double chronic = PhysicalLoadHistory.total(window, today.minusDays(CHRONIC_DAYS - 1L), today);
+        long baselineWeeks = window.stream()
+                .filter(e -> e.load() > 0)
+                .mapToLong(e -> ChronoUnit.DAYS.between(e.date(), today) / ACUTE_DAYS)
+                .filter(week -> week >= 1 && week < CHRONIC_DAYS / ACUTE_DAYS)
+                .distinct()
+                .count();
+        // Sin línea base suficiente la crónica se iguala a la aguda: compute(...) la trata como «sin historial».
+        return compute(userId, acute, baselineWeeks >= MIN_BASELINE_WEEKS ? chronic : acute, daysUntilExam, now);
     }
 
     /** Media diaria 7d / media diaria 28d; null sin historial. */

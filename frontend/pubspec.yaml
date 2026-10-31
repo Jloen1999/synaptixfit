@@ -52,6 +52,7 @@ dependencies:
   # Recordatorios locales en el móvil (repasos y bloques del planificador)
   flutter_local_notifications: ^22.3.2
   timezone: ^0.11.2
+  share_plus: ^13.3.1
 
 dev_dependencies:
   flutter_test:

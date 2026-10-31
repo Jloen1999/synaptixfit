@@ -106,8 +106,8 @@ class _WeightChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final number = NumberFormat('0.#', 'es');
-    final dayFormat = DateFormat.MMMd('es');
+    final number = NumberFormat('0.#');
+    final dayFormat = DateFormat.MMMd();
     final color = context.colors.secondary;
     final weights = records.map((r) => r.weightKg).toList();
     final minY = (weights.reduce((a, b) => a < b ? a : b) - 2).floorToDouble();
@@ -268,7 +268,7 @@ class _GoalEntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final format = DateFormat.yMMMd('es');
+    final format = DateFormat.yMMMd();
     final title = entry.goal?.label(l10n) ?? entry.goalLabel ?? '—';
     final start = entry.startDate == null
         ? '—'

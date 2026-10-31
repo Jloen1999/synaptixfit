@@ -10,18 +10,41 @@ import java.util.Locale;
  * @param allDay evento de día completo ({@code VALUE=DATE}); su inicio se fija a las 09:00 locales
  */
 public record IcsEvent(String uid, String summary, String description, String location, Instant start,
-                       Instant end, boolean allDay) {
+                       Instant end, boolean allDay, String categories) {
 
     private static final List<String> EXAM_KEYWORDS =
-            List.of("examen", "parcial", "quiz", "evaluacion", "test", "final", "midterm", "exam");
+            List.of("examen", "parcial", "quiz", "cuestionario", "evaluacion", "test", "final", "midterm", "exam");
+    /** Avisos de apertura de Moodle («El cuestionario X se abre»): no son una fecha que cumplir. */
+    private static final List<String> OPENING_KEYWORDS = List.of(" se abre", " abre", " opens", " is open");
     private static final List<String> DELIVERY_KEYWORDS =
             List.of("entrega", "tarea", "proyecto", "deadline", "trabajo", "assignment", "submission");
+
+    /** Sin categorías (calendarios que no las traen). */
+    public IcsEvent(String uid, String summary, String description, String location, Instant start, Instant end,
+                    boolean allDay) {
+        this(uid, summary, description, location, start, end, allDay, null);
+    }
 
     /** Clasificación heredada por palabras clave del título. */
     public enum Category {
         EXAM,
         DELIVERY,
         CLASS
+    }
+
+    /** ¿Es solo el aviso de que algo se abre (no una fecha límite)? */
+    public boolean isOpeningNotice() {
+        String text = " " + SubjectMatcher.normalize(summary);
+        return OPENING_KEYWORDS.stream().anyMatch(text::endsWith) || text.contains(" se abre ");
+    }
+
+    /**
+     * Textos donde buscar la asignatura, por orden de fiabilidad: título y categorías (Moodle pone el curso) y,
+     * como último recurso, la descripción, que puede mencionar otras asignaturas.
+     */
+    public List<String> subjectHints() {
+        String main = String.join(" ", summary == null ? "" : summary, categories == null ? "" : categories);
+        return List.of(main, description == null ? "" : description);
     }
 
     public Category category() {

@@ -20,6 +20,16 @@ abstract interface class AuthRepositoryContract {
 
   Future<AppResult<Unit>> logout();
 
+  /// Envía el correo para restablecer la contraseña (siempre éxito si el
+  /// servidor responde: no revela si la cuenta existe).
+  Future<AppResult<Unit>> requestPasswordReset({required String email});
+
+  /// Contraseña nueva con el token del enlace del correo.
+  Future<AppResult<Unit>> resetPassword({
+    required String token,
+    required String newPassword,
+  });
+
   /// Recupera la sesión guardada. Devuelve `null` si no hay sesión.
   Future<AppResult<Account?>> restoreSession();
 

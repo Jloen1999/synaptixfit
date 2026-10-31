@@ -210,4 +210,37 @@ class ChallengeProgressServiceTest {
         assertThat(f.store.get(c.id()).completed()).isFalse();
         assertThat(f.netXp()).isZero();
     }
+
+    @Test
+    void anExpiredChallengeNoLongerAdvances() {
+        Challenge expired = f.repository.save(Challenge.create(UUID.randomUUID(), userId,
+                new ChallengeDetails("Reto vencido", null, null, Visibility.PUBLIC, Difficulty.MEDIUM,
+                        NOW.minusSeconds(3 * 86_400), NOW.minusSeconds(3_600), null, null), List.of(), NOW));
+
+        assertThatThrownBy(() -> service.completeChallenge(userId, expired.id()))
+                .extracting("code").isEqualTo("CHALLENGE_EXPIRED");
+        assertThatThrownBy(() -> service.uncompleteChallenge(userId, expired.id()))
+                .extracting("code").isEqualTo("CHALLENGE_EXPIRED");
+    }
+
+    @Test
+    void synchronisationLeavesExpiredChallengesAsTheyWere() {
+        UUID deadline = UUID.randomUUID();
+        Challenge expired = f.repository.save(Challenge.create(UUID.randomUUID(), userId,
+                new ChallengeDetails("Entrega vencida", null, null, Visibility.PUBLIC, Difficulty.MEDIUM,
+                        NOW.minusSeconds(3 * 86_400), NOW.minusSeconds(3_600), null,
+                        new ChallengeLink(LinkType.DELIVERY, deadline)), List.of(), NOW));
+        Challenge fitness = f.repository.save(Challenge.create(UUID.randomUUID(), userId,
+                new ChallengeDetails("Entrenar vencido", ChallengeType.FITNESS, null, Visibility.PRIVATE,
+                        Difficulty.LOW, NOW.minusSeconds(3 * 86_400), NOW.minusSeconds(3_600), null, null, 1),
+                List.of(), NOW));
+        f.trainingSessions.add(NOW.minusSeconds(2 * 86_400));
+
+        service.syncDeadline(userId, deadline, true);
+        service.syncTrainingSessions(userId);
+
+        assertThat(f.store.get(expired.id()).completed()).isFalse();
+        assertThat(f.store.get(fitness.id()).completed()).isFalse();
+        assertThat(f.awarded).isEmpty();
+    }
 }

@@ -72,7 +72,8 @@ public class AnalyticsJdbcAdapter implements AnalyticsSourcePort {
                               AND fecha >= :fromDay AND fecha < :toDay) AS focus_sessions,
                           (SELECT COUNT(*) FROM horarios_academicos
                             WHERE usuario_id = :u AND tipo_actividad IN (:codes)
-                              AND hora_inicio >= :from AND hora_inicio < :to) AS blocks_planned,
+                              AND hora_inicio >= :from AND hora_inicio < :to
+                              AND (hora_fin <= :now OR completado)) AS blocks_planned,
                           (SELECT COALESCE(SUM(CASE WHEN completado THEN 1 ELSE 0 END), 0) FROM horarios_academicos
                             WHERE usuario_id = :u AND tipo_actividad IN (:codes)
                               AND hora_inicio >= :from AND hora_inicio < :to) AS blocks_completed,
@@ -90,7 +91,11 @@ public class AnalyticsJdbcAdapter implements AnalyticsSourcePort {
                               AND completado_en >= :from AND completado_en < :to) AS test_questions,
                           (SELECT COUNT(*) FROM materiales_estudio
                             WHERE usuario_id = :u AND siguiente_repaso_en IS NOT NULL
-                              AND siguiente_repaso_en <= :now AND estado_dominio <> :abandoned) AS reviews_due
+                              AND siguiente_repaso_en <= :now AND estado_dominio <> :abandoned) AS reviews_due,
+                          (SELECT COALESCE(MAX(horas_estudio_reales), 0) FROM carga_academica_semanal
+                            WHERE usuario_id = :u AND semana_inicio = :fromDay) AS study_hours,
+                          (SELECT MAX(horas_objetivo_estudio_semana) FROM perfil_academico_usuario
+                            WHERE usuario_id = :u) AS goal_hours
                         """)
                 .param("u", userId)
                 .param("from", JdbcRows.param(from))
@@ -104,7 +109,8 @@ public class AnalyticsJdbcAdapter implements AnalyticsSourcePort {
                 .query((rs, n) -> new StudyWeekSummary.Counts(rs.getInt("focus_minutes"), rs.getInt("focus_sessions"),
                         rs.getInt("blocks_planned"), rs.getInt("blocks_completed"), rs.getInt("reviews"),
                         rs.getInt("tests"), rs.getInt("test_correct"), rs.getInt("test_questions"),
-                        rs.getInt("reviews_due")))
+                        rs.getInt("reviews_due"), rs.getInt("study_hours"),
+                        rs.getObject("goal_hours") == null ? null : rs.getInt("goal_hours")))
                 .single();
     }
 }

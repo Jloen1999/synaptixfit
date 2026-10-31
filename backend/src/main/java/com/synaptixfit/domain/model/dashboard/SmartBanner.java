@@ -8,19 +8,43 @@ import java.util.Map;
  * Mensaje prioritario del día para el inicio. El cliente lo redacta con sus traducciones a partir
  * de {@code type} y los parámetros numéricos (sustituye a los textos fijos y a la llamada a la IA
  * de {@code smart_banner_provider.dart}).
+ *
+ * @param labels datos de texto del usuario que el cliente cita tal cual (p. ej. el nombre del bloque)
  */
-public record SmartBanner(Type type, Map<String, Number> params) {
+public record SmartBanner(Type type, Map<String, Number> params, Map<String, String> labels) {
 
     public SmartBanner {
         params = Collections.unmodifiableMap(new LinkedHashMap<>(params));
+        labels = labels == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(labels));
+    }
+
+    public SmartBanner(Type type, Map<String, Number> params) {
+        this(type, params, Map.of());
+    }
+
+    /** El mismo aviso con más datos (números y textos) para que el cliente lo concrete. */
+    public SmartBanner with(Map<String, Number> moreParams, Map<String, String> moreLabels) {
+        Map<String, Number> p = new LinkedHashMap<>(params);
+        p.putAll(moreParams);
+        Map<String, String> l = new LinkedHashMap<>(labels);
+        l.putAll(moreLabels);
+        return new SmartBanner(type, p, l);
     }
 
     /** Tipos en orden de prioridad (el primero que aplica gana). */
     public enum Type {
         /** ACWR en zona de peligro o sobreentrenamiento: params acwr, maxStudyMinutes. */
         PHYSICAL_OVERLOAD,
+        /** Entregas o exámenes vencidos sin completar (últimos 14 días): params count. */
+        OVERDUE_DEADLINES,
         /** Entregas o exámenes pendientes en los próximos 7 días: params count, daysUntilNext. */
         UPCOMING_DEADLINES,
+        /**
+         * Bloques de ayer u hoy que pasaron sin hacerse: params count y, del más reciente, startMinutes
+         * (minuto del día) y yesterday (1 si fue ayer); labels title (asignatura o temas, puede faltar) y
+         * activity (tipo, p. ej. STUDY).
+         */
+        MISSED_BLOCKS,
         /** Fatiga media de los check-ins de los últimos 3 días &gt; 50: params fatigueScore. */
         HIGH_FATIGUE,
         /** Adherencia académica &lt; 40: params adherence. */

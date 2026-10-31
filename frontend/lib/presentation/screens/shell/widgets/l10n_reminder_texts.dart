@@ -8,10 +8,13 @@ import '../../../l10n/gen_l10n/app_localizations.dart';
 /// (los compone `ReminderComposer`). La crea [RemindersHost] con el idioma de
 /// la app.
 class L10nReminderTexts implements ReminderTexts {
-  L10nReminderTexts(this._l10n) : _time = DateFormat.Hm(_l10n.localeName);
+  L10nReminderTexts(this._l10n)
+    : _time = DateFormat.Hm(_l10n.localeName),
+      _day = DateFormat.MMMEd(_l10n.localeName);
 
   final AppLocalizations _l10n;
   final DateFormat _time;
+  final DateFormat _day;
 
   @override
   String get channelName => _l10n.remindersChannelName;
@@ -25,9 +28,34 @@ class L10nReminderTexts implements ReminderTexts {
   @override
   String blockTitle(ReminderKind kind) => switch (kind) {
     ReminderKind.sportBlock => _l10n.remindersSportTitle,
-    ReminderKind.studyBlock ||
-    ReminderKind.dueReviews => _l10n.remindersStudyTitle,
+    _ => _l10n.remindersStudyTitle,
   };
+
+  @override
+  String get weeklySummaryTitle => _l10n.remindersWeeklyTitle;
+
+  @override
+  String get weeklySummaryBody => _l10n.remindersWeeklyBody;
+
+  @override
+  String deadlineTitle(ReminderKind kind, int daysBefore) =>
+      kind == ReminderKind.exam
+      ? _l10n.remindersExamTitle(daysBefore)
+      : _l10n.remindersDeadlineTitle(daysBefore);
+
+  @override
+  String deadlineBody(ReminderKind kind, String? name, DateTime due) {
+    final label = (name == null || name.trim().isEmpty)
+        ? (kind == ReminderKind.exam
+              ? _l10n.remindersExamFallbackName
+              : _l10n.remindersDeadlineFallbackName)
+        : name.trim();
+    return _l10n.remindersDeadlineBody(
+      label,
+      _day.format(due),
+      _time.format(due),
+    );
+  }
 
   @override
   String blockBody(ReminderKind kind, String? name, DateTime start) {

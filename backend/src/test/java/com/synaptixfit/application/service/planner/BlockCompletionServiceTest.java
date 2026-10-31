@@ -6,11 +6,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
+import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
 import com.synaptixfit.domain.model.neuro.BiologicalSex;
 import com.synaptixfit.domain.model.neuro.StudyEnergy;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
+import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.planner.PlannerProfile;
 import com.synaptixfit.domain.model.planner.Priority;
 import com.synaptixfit.domain.model.planner.SubjectRef;
@@ -29,7 +31,7 @@ class BlockCompletionServiceTest {
     void setUp() {
         f = new PlannerFakes();
         service = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp, f.publisher,
-                f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.CLOCK);
+                f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK);
     }
 
     private CalendarBlock block(ActivityType type, Instant start, int minutes, UUID subjectId) {
@@ -53,6 +55,31 @@ class BlockCompletionServiceTest {
         assertThat(f.xp.of(f.user)).isEqualTo(30);
         assertThat(f.events).hasSize(1);
         assertThat(first.block().xpAwarded()).isTrue();
+    }
+
+    @Test
+    void aSportBlockWithoutRoutineReportsItsPhysicalLoad() {
+        CalendarBlock football = block(ActivityType.SPORT, at(0, 16, 0), 90, null);
+
+        service.setCompletion(f.user, football.id(), true, 7);
+        service.setCompletion(f.user, football.id(), false, null);
+
+        assertThat(f.events).filteredOn(SportBlockCompletionChanged.class::isInstance)
+                .map(SportBlockCompletionChanged.class::cast)
+                .satisfiesExactly(
+                        done -> {
+                            assertThat(done.completed()).isTrue();
+                            assertThat(done.effort()).isEqualTo(7);
+                            assertThat(done.durationMinutes()).isEqualTo(90);
+                        },
+                        undone -> assertThat(undone.completed()).isFalse());
+    }
+
+    @Test
+    void studyBlocksDoNotReportPhysicalLoad() {
+        CalendarBlock study = block(ActivityType.STUDY, at(0, 16, 0), 60, null);
+        service.setCompletion(f.user, study.id(), true, 7);
+        assertThat(f.events).noneMatch(SportBlockCompletionChanged.class::isInstance);
     }
 
     @Test
@@ -86,7 +113,7 @@ class BlockCompletionServiceTest {
         assertThat(done.caloriesBurned()).isCloseTo(StudyEnergy.blockCalories(rmr, 3600, 1.8), within(1e-9));
         // 60 min × 1,8 (asignatura difícil) = 108 min equivalentes: C = 1 - e^(-108/τ), τ = 240/ln 5.
         assertThat(done.cognitiveLoad()).isCloseTo(1 - Math.exp(-108 / (240 / Math.log(5))), within(1e-9));
-        assertThat(done.attendanceRegisteredAt()).isEqualTo(PlannerFakes.NOW);
+        assertThat(done.attendanceRegisteredAt()).isEqualTo(PlannerFakes.END_OF_WEEK.instant());
 
         StudyBlockCompletionChanged event = (StudyBlockCompletionChanged) f.events.get(0);
         assertThat(event.activityType()).isEqualTo("clase");
@@ -122,5 +149,19 @@ class BlockCompletionServiceTest {
         CalendarBlock b = block(ActivityType.STUDY, at(0, 16, 0), 60, null);
         assertThatThrownBy(() -> service.setCompletion(f.otherUser, b.id(), true))
                 .extracting("code").isEqualTo("BLOCK_NOT_FOUND");
+    }
+
+    @Test
+    void aBlockCannotBeCompletedBeforeItStartsButAMissedOneCan() {
+        BlockCompletionService early = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp,
+                f.publisher, f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.CLOCK);
+        CalendarBlock future = block(ActivityType.STUDY, at(0, 16, 0), 60, null);
+        assertThatThrownBy(() -> early.setCompletion(f.user, future.id(), true))
+                .extracting("code").isEqualTo("BLOCK_IN_FUTURE");
+
+        CalendarBlock missed = block(ActivityType.STUDY, at(0, 5, 0), 60, null);
+        assertThat(missed.timeStatus(PlannerFakes.NOW)).isEqualTo(ItemTimeStatus.MISSED);
+        assertThat(early.setCompletion(f.user, missed.id(), true).block().timeStatus(PlannerFakes.NOW))
+                .isEqualTo(ItemTimeStatus.DONE);
     }
 }

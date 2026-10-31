@@ -13,4 +13,7 @@ abstract interface class TrainingHistoryRepositoryContract {
 
   /// Mejor serie de la última sesión de cada ejercicio (referencia al registrar).
   Future<AppResult<List<PersonalRecord>>> getLastPerformance();
+
+  /// Resumen destacado de una sesión terminada.
+  Future<AppResult<SessionHighlights>> getSessionHighlights(String sessionId);
 }

@@ -31,6 +31,8 @@ class AppTextField extends StatefulWidget {
     this.focusNode,
     this.inputFormatters,
     this.textCapitalization = TextCapitalization.none,
+    this.errorText,
+    this.autocorrect = true,
   });
 
   final String label;
@@ -58,6 +60,13 @@ class AppTextField extends StatefulWidget {
   final FocusNode? focusNode;
   final List<TextInputFormatter>? inputFormatters;
   final TextCapitalization textCapitalization;
+
+  /// Error mostrado junto al campo sin pasar por un `Form` (p. ej. el que
+  /// llega del bloc).
+  final String? errorText;
+
+  /// `false` en direcciones y códigos: sin autocorrector ni sugerencias.
+  final bool autocorrect;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -88,7 +97,10 @@ class _AppTextFieldState extends State<AppTextField> {
       focusNode: widget.focusNode,
       inputFormatters: widget.inputFormatters,
       textCapitalization: widget.textCapitalization,
+      autocorrect: widget.autocorrect,
+      enableSuggestions: widget.autocorrect,
       decoration: InputDecoration(
+        errorText: widget.errorText,
         labelText: widget.label,
         hintText: widget.hint,
         helperText: widget.helper,

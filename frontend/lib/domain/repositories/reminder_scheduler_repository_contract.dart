@@ -1,5 +1,6 @@
 import '../enums/reminder_kind.dart';
 import '../models/reminders/reminder.dart';
+import '../models/reminders/timer_alert.dart';
 import '../models/result/app_result.dart';
 import '../models/result/result.dart';
 
@@ -24,6 +25,12 @@ abstract interface class ReminderSchedulerRepositoryContract {
 
   /// Quita los avisos pendientes y los ya mostrados.
   Future<AppResult<Unit>> cancelAll();
+
+  /// Aviso de fin de fase del Pomodoro: uno solo, aparte de los recordatorios
+  /// (sustituirlos no lo quita).
+  Future<AppResult<Unit>> scheduleTimerAlert(TimerAlert alert);
+
+  Future<AppResult<Unit>> cancelTimerAlert();
 
   /// Avisos que el usuario toca (también el que abrió la app en frío).
   Stream<ReminderKind> watchOpened();

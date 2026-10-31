@@ -75,14 +75,13 @@ String subjectAcronym(Subject subject) {
 }
 
 /// Fecha corta en español («12 oct»).
-String shortDate(DateTime date) => DateFormat('d MMM', 'es').format(date);
+String shortDate(DateTime date) => DateFormat('d MMM').format(date);
 
 /// Fecha con hora en español («12 oct, 18:30»).
-String dateTime(DateTime date) => DateFormat('d MMM, HH:mm', 'es').format(date);
+String dateTime(DateTime date) => DateFormat('d MMM, HH:mm').format(date);
 
 /// Fecha larga en español («lunes, 12 de octubre»).
-String longDate(DateTime date) =>
-    DateFormat("EEEE, d 'de' MMMM", 'es').format(date);
+String longDate(DateTime date) => DateFormat.MMMMEEEEd().format(date);
 
 /// Tamaño legible de un archivo.
 String fileSize(int bytes) {
@@ -92,7 +91,7 @@ String fileSize(int bytes) {
 }
 
 /// Nota con un decimal en formato español.
-String grade(double value) => NumberFormat('0.0', 'es').format(value);
+String grade(double value) => NumberFormat('0.0').format(value);
 
 IconData fileIcon(SubjectFile file) {
   if (file.isPdf) return Icons.picture_as_pdf_rounded;

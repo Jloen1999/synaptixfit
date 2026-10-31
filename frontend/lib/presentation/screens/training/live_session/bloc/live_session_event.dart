@@ -2,6 +2,9 @@ part of 'live_session_bloc.dart';
 
 @freezed
 sealed class LiveSessionEvent with _$LiveSessionEvent {
+  /// Reintenta subir las series apuntadas sin conexión.
+  const factory LiveSessionEvent.pendingRetried() = LiveSessionPendingRetried;
+
   const factory LiveSessionEvent.started(String sessionId) = LiveSessionStarted;
 
   /// Un segundo más (lo envía la página con un temporizador).

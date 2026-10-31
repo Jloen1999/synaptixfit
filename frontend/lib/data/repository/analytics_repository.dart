@@ -1,5 +1,6 @@
 import '../../domain/enums/analytics_enums.dart';
 import '../../domain/enums/analytics_period.dart';
+import '../../domain/models/progress/study_by_subject.dart';
 import '../../domain/models/progress/analytics_insight.dart';
 import '../../domain/models/progress/load_correlation.dart';
 import '../../domain/models/progress/rpe_trend.dart';
@@ -20,6 +21,12 @@ class AnalyticsRepository implements AnalyticsRepositoryContract {
   Future<AppResult<StudyWeek>> getStudyWeek() => RepositoryErrorHandler.guard(
     () async => (await _remote.studyWeek()).toDomain(),
   );
+
+  @override
+  Future<AppResult<StudyBySubject>> getStudyBySubject({int weeks = 4}) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.studyBySubject(weeks)).toDomain(),
+      );
 
   @override
   Future<AppResult<WeeklyAnalytics>> getWeekly(AnalyticsPeriod period) =>

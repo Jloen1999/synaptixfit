@@ -5,6 +5,14 @@
   "plannerPrevWeek": "Semana anterior",
   "plannerNextWeek": "Semana siguiente",
   "plannerToday": "Hoy",
+  "plannerTodayDate": "Hoy, {date}",
+  "@plannerTodayDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "plannerWeekRange": "{start} – {end}",
   "@plannerWeekRange": {
     "placeholders": {
@@ -270,7 +278,15 @@
   "plannerDeadlinesEmptyMessage": "Añade tus entregas y exámenes para planificar el estudio con tiempo.",
   "plannerFieldTitle": "Título",
   "plannerFieldDueDate": "Fecha límite",
-  "plannerFieldDueTime": "Hora",
+  "plannerFieldDueTime": "Hora de entrega",
+  "plannerDueTimeHint": "En el calendario ocupa los {minutes} minutos anteriores.",
+  "@plannerDueTimeHint": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "plannerFieldDescription": "Descripción",
   "plannerDeadlineCreated": "Entrega creada",
   "plannerDeadlineUpdated": "Entrega actualizada",
@@ -394,7 +410,7 @@
   "plannerSaveAndScan": "Guardar y escanear",
   "plannerDatesInvalid": "La fecha de fin debe ser posterior a la de inicio.",
   "plannerPickDate": "Elegir fecha",
-  "plannerIcsSection": "Calendario ICS de una asignatura",
+  "plannerIcsSection": "Calendario de una asignatura (enlace ICS)",
   "plannerIcsIntro": "Importa clases, exámenes y entregas desde el enlace ICS del campus virtual.",
   "plannerIcsUrl": "URL del calendario (opcional)",
   "plannerIcsUrlHint": "Vacía: se usa la guardada en la asignatura",
@@ -550,5 +566,100 @@
     }
   },
   "plannerPomodoroBlockLabel": "Duración del bloque",
-  "plannerRepeatWeeksLabel": "Semanas en total"
+  "plannerRepeatWeeksLabel": "Semanas en total",
+  "plannerRescheduleNext": "Reprogramar al próximo hueco",
+  "plannerRescheduledTo": "Reprogramado para el {when}",
+  "@plannerRescheduledTo": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerMissedLabel": "Sin hacer",
+  "plannerCompleteWhenStarted": "Podrás marcarlo como hecho cuando empiece.",
+  "plannerErrorBlockInFuture": "Este bloque aún no ha empezado: márcalo cuando lo hagas.",
+  "plannerErrorBlockNoFreeSlot": "No hay un hueco libre en los próximos días. Muévelo a mano.",
+  "plannerFieldBlockDuration": "Duración",
+  "plannerDurationHours": "{hours} h",
+  "@plannerDurationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerDurationHoursMinutes": "{hours} h {minutes} min",
+  "@plannerDurationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroLeaveTitle": "¿Salir del Pomodoro?",
+  "plannerPomodoroLeaveMessage": "El tiempo que llevas se guardará como una fase sin terminar.",
+  "plannerPomodoroLeave": "Salir",
+  "plannerSportDoneAction": "Marcar como hecho",
+  "plannerMenuCalendarSync": "Sincronizar calendarios",
+  "plannerSyncTitle": "Sincronizar calendarios",
+  "plannerSyncFeedTitle": "Tu plan en otro calendario",
+  "plannerSyncFeedIntro": "Añade tu planificador a Google Calendar, Apple Calendar u Outlook con un enlace secreto, sin contraseña. Se actualiza solo (Google puede tardar hasta un día en traer los cambios).",
+  "plannerSyncActiveSince": "Enlace activo desde el {date}",
+  "@plannerSyncActiveSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerSyncHiddenLink": "Por seguridad, el enlace solo se muestra al crearlo. Si lo has perdido, crea uno nuevo.",
+  "plannerSyncCreateLink": "Crear enlace",
+  "plannerSyncNewLink": "Crear un enlace nuevo",
+  "plannerSyncNewLinkTitle": "¿Crear un enlace nuevo?",
+  "plannerSyncNewLinkMessage": "El enlace anterior dejará de funcionar: añade el nuevo en tu calendario y quita el antiguo.",
+  "plannerSyncRevoke": "Desactivar enlace",
+  "plannerSyncRevokeTitle": "¿Desactivar el enlace?",
+  "plannerSyncRevokeMessage": "Tu calendario externo dejará de recibir el planificador. Quítalo también de Google Calendar para que desaparezca lo que ya se ve.",
+  "plannerSyncSaveLinkWarning": "Guárdalo ahora: no podrás volver a verlo. Funciona como una contraseña: quien tenga el enlace puede ver tus bloques, exámenes y entregas (no cambiarlos). No lo compartas; si crees que alguien lo tiene, crea uno nuevo.",
+  "plannerSyncCopy": "Copiar enlace",
+  "plannerSyncCopied": "Enlace copiado",
+  "plannerSyncOpen": "Abrir en el calendario",
+  "plannerSyncGoogleSteps": "En Google Calendar (web): Otros calendarios › + › Desde URL, pega el enlace y pulsa «Añadir calendario».",
+  "plannerSyncCampusTitle": "Exámenes y entregas del Campus Virtual",
+  "plannerSyncCampusSteps": "1. En el Campus Virtual, abre Calendario › Importar o exportar calendarios › Exportar calendario.\n2. Elige todos los eventos y el periodo «Recientes y próximos 60 días».\n3. Pulsa «Obtener URL del calendario» y copia la dirección.\n4. Pégala aquí. Repítelo de vez en cuando para traer lo nuevo: no se duplica nada.",
+  "plannerSyncCampusUrlLabel": "Dirección del calendario",
+  "plannerSyncCampusUrlHelper": "Empieza por https:// o webcal://",
+  "plannerSyncCampusImport": "Importar exámenes y entregas",
+  "plannerSyncCampusNothing": "No había exámenes ni entregas en ese calendario.",
+  "plannerSyncCampusResult": "Importados: {exams, plural, =1{1 examen} other{{exams} exámenes}} y {deliveries, plural, =1{1 entrega} other{{deliveries} entregas}}. {matched, plural, =0{Ninguno menciona una de tus asignaturas, así que quedan sin asignatura.} =1{1 se ha asignado a su asignatura.} other{{matched} se han asignado a su asignatura.}}",
+  "@plannerSyncCampusResult": {
+    "placeholders": {
+      "exams": {
+        "type": "int"
+      },
+      "deliveries": {
+        "type": "int"
+      },
+      "matched": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerErrorCalendarFeedNotFound": "Ese enlace ya no existe: puede que lo desactivaras desde otro dispositivo.",
+  "plannerSyncRevoked": "Enlace desactivado",
+  "plannerSyncOpenFailed": "No hay ninguna app de calendario que lo abra: copia el enlace y sigue los pasos.",
+  "plannerSyncCampusUrlRequired": "Pega la dirección del calendario.",
+  "plannerSyncLinkLabel": "Enlace secreto del calendario",
+  "plannerSyncSeeDeadlines": "Ver entregas y exámenes",
+  "plannerSyncLinkReady": "Enlace creado. Guárdalo ahora: no podrás volver a verlo.",
+  "plannerErrorPastActivityOutOfRange": "Solo puedes apuntar actividades ya terminadas de los últimos 7 días.",
+  "plannerPomodoroAlertFocusTitle": "Bloque de concentración terminado",
+  "plannerPomodoroAlertFocusBody": "Tómate el descanso. Abre SynaptixFit para seguir.",
+  "plannerPomodoroAlertBreakTitle": "Descanso terminado",
+  "plannerPomodoroAlertBreakBody": "Cuando quieras, empieza el siguiente bloque.",
+  "plannerPomodoroAlertChannel": "Temporizador"
 }

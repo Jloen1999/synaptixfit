@@ -9,6 +9,7 @@ import com.synaptixfit.application.port.input.notification.CreateNotificationUse
 import com.synaptixfit.application.port.input.notification.UpdateNotificationPreferencesUseCase;
 import com.synaptixfit.domain.exception.notification.NotificationNotFoundException;
 import com.synaptixfit.domain.model.notification.Notification;
+import com.synaptixfit.domain.model.notification.NotificationMessage;
 import com.synaptixfit.domain.model.notification.NotificationMode;
 import com.synaptixfit.domain.model.notification.NotificationPreferences;
 import com.synaptixfit.domain.model.notification.NotificationPriority;
@@ -43,6 +44,8 @@ class NotificationServicesTest {
     private NotificationService notifications;
     private NotificationPreferencesService preferences;
     private final UUID user = UUID.randomUUID();
+    /** Hay un examen en los próximos días (modo exámenes automático). */
+    private boolean examSoon;
 
     @BeforeEach
     void setUp() {
@@ -84,13 +87,26 @@ class NotificationServicesTest {
             }
             public NotificationPreferences save(NotificationPreferences p) { prefsStore.put(p.userId(), p); return p; }
         };
-        notifications = new NotificationService(repo, prefsRepo, CLOCK, ZoneId.of("Europe/Madrid"));
+        notifications = new NotificationService(repo, prefsRepo, (userId, from, to) -> examSoon, CLOCK,
+                ZoneId.of("Europe/Madrid"));
         preferences = new NotificationPreferencesService(prefsRepo, CLOCK);
     }
 
     private CreateNotificationUseCase.Command social() {
         return new CreateNotificationUseCase.Command(user, "Nuevo me gusta", "Ana ha dado me gusta",
                 NotificationPriority.INFORMATIVE, NotificationType.SOCIAL, "/social/posts/1", "Ver");
+    }
+
+    @Test
+    void theWeekBeforeAnExamNormalModeActsAsExamMode() {
+        examSoon = true;
+        assertThat(notifications.create(social())).isEmpty();
+        var academic = new CreateNotificationUseCase.Command(user, "Repaso", null, NotificationPriority.RECOMMENDED,
+                NotificationType.ACADEMIC, null, null);
+        assertThat(notifications.create(academic)).isPresent();
+
+        examSoon = false;
+        assertThat(notifications.create(social())).isPresent();
     }
 
     @Test
@@ -173,6 +189,22 @@ class NotificationServicesTest {
                 NotificationType.MILESTONE, NotificationType.MILESTONE, NotificationType.FATIGUE_ALERT);
         assertThat(store.values()).filteredOn(n -> n.type() == NotificationType.MILESTONE)
                 .extracting(Notification::actionUrl).contains("/challenges/" + challenge);
+    }
+
+    @Test
+    void automaticNotificationsCarryTheirMessageCodeForTheClientLanguage() {
+        AutomaticNotificationService automatic = new AutomaticNotificationService(notifications, repo, CLOCK,
+                ZoneId.of("Europe/Madrid"));
+        automatic.notifyAchievement(new NotifyAchievementUseCase.Command(user, NotifyAchievementUseCase.Kind.LEVEL_UP,
+                "5", null));
+        automatic.notifyFatigue(new NotifyFatigueAlertUseCase.Command(user,
+                NotifyFatigueAlertUseCase.Reason.OVERTRAINING, 1.734));
+
+        assertThat(store.values()).extracting(Notification::message).containsExactlyInAnyOrder(
+                NotificationMessage.of(NotificationMessage.Code.LEVEL_UP, "level", "5"),
+                NotificationMessage.of(NotificationMessage.Code.OVERTRAINING, "ratio", "1.73"));
+        // El texto guardado sigue en español como respaldo.
+        assertThat(store.values()).extracting(Notification::title).contains("¡Has subido de nivel!");
     }
 
     @Test

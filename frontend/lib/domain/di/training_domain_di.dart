@@ -1,5 +1,7 @@
 import 'package:get_it/get_it.dart';
 
+import '../use_cases/training/load_pending_sets_use_case.dart';
+import '../use_cases/training/save_pending_sets_use_case.dart';
 import '../use_cases/training/search_exercises_use_case.dart';
 import '../use_cases/training/get_exercise_use_case.dart';
 import '../use_cases/training/get_exercise_filters_use_case.dart';
@@ -26,6 +28,8 @@ import '../use_cases/training/generate_routine_use_case.dart';
 import '../use_cases/training/refine_routine_use_case.dart';
 import '../use_cases/training/get_pending_day_use_case.dart';
 import '../use_cases/training/start_session_use_case.dart';
+import '../use_cases/training/get_session_adaptation_use_case.dart';
+import '../use_cases/training/get_session_highlights_use_case.dart';
 import '../use_cases/training/get_session_use_case.dart';
 import '../use_cases/training/get_sessions_use_case.dart';
 import '../use_cases/training/get_session_history_use_case.dart';
@@ -134,6 +138,9 @@ void registerTrainingDomain(GetIt getIt) {
     ..registerLazySingleton<GetSessionUseCaseContract>(
       () => GetSessionUseCase(getIt()),
     )
+    ..registerLazySingleton<GetSessionAdaptationUseCaseContract>(
+      () => GetSessionAdaptationUseCase(getIt()),
+    )
     ..registerLazySingleton<GetSessionsUseCaseContract>(
       () => GetSessionsUseCase(getIt()),
     )
@@ -143,6 +150,9 @@ void registerTrainingDomain(GetIt getIt) {
     ..registerLazySingleton<GetLastPerformanceUseCaseContract>(
       () => GetLastPerformanceUseCase(getIt()),
     )
+    ..registerLazySingleton<GetSessionHighlightsUseCaseContract>(
+      () => GetSessionHighlightsUseCase(getIt()),
+    )
     ..registerLazySingleton<GetExerciseAlternativesUseCaseContract>(
       () => GetExerciseAlternativesUseCase(getIt()),
     )
@@ -151,6 +161,12 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetPersonalRecordsUseCaseContract>(
       () => GetPersonalRecordsUseCase(getIt()),
+    )
+    ..registerLazySingleton<LoadPendingSetsUseCaseContract>(
+      () => LoadPendingSetsUseCase(getIt()),
+    )
+    ..registerLazySingleton<SavePendingSetsUseCaseContract>(
+      () => SavePendingSetsUseCase(getIt()),
     )
     ..registerLazySingleton<RecordSetUseCaseContract>(
       () => RecordSetUseCase(getIt()),

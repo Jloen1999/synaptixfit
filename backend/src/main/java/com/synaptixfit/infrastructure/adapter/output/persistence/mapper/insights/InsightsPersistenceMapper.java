@@ -17,7 +17,7 @@ public final class InsightsPersistenceMapper {
     }
 
     public static PhysicalLoadRecord toDomain(PhysicalLoadEntity e) {
-        return new PhysicalLoadRecord(e.getId(), e.getUsuarioId(), e.getSesionId(), e.getFechaRegistro(),
+        return new PhysicalLoadRecord(e.getId(), e.getUsuarioId(), e.getSesionId(), e.getBloqueId(), e.getFechaRegistro(),
                 e.getRpeSesion(), e.getDuracionMinutos(), e.getCreadoEn());
     }
 
@@ -29,6 +29,7 @@ public final class InsightsPersistenceMapper {
         e.setId(r.id());
         e.setUsuarioId(r.userId());
         e.setSesionId(r.sessionId());
+        e.setBloqueId(r.blockId());
         e.setFechaRegistro(r.date());
         e.setRpeSesion((short) r.rpe());
         e.setDuracionMinutos(r.durationMinutes());

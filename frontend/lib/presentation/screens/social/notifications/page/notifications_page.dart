@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../widgets/notification_texts.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/notification_priority.dart';
 import '../../../../../domain/enums/notification_type.dart';
@@ -257,6 +258,7 @@ class _NotificationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    final texts = notificationTexts(l10n, notification);
     final color = _color(context);
     final unread = !notification.read;
     final priority = notification.priority;
@@ -290,7 +292,7 @@ class _NotificationTile extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          notification.title,
+                          texts.title,
                           style: context.textStyles.titleSmall?.copyWith(
                             fontWeight: unread
                                 ? FontWeight.w700
@@ -309,10 +311,10 @@ class _NotificationTile extends StatelessWidget {
                         ),
                     ],
                   ),
-                  if (notification.description != null) ...[
+                  if (texts.description != null) ...[
                     const SizedBox(height: TokensSpacing.xxs),
                     Text(
-                      notification.description!,
+                      texts.description!,
                       style: context.textStyles.bodyMedium?.copyWith(
                         color: context.colors.onSurfaceVariant,
                       ),
@@ -331,10 +333,10 @@ class _NotificationTile extends StatelessWidget {
                       ),
                       if (priority != NotificationPriority.informative)
                         _PriorityLabel(priority: priority),
-                      if (notification.actionLabel != null &&
+                      if (texts.action != null &&
                           notification.actionUrl != null)
                         Text(
-                          notification.actionLabel!,
+                          texts.action!,
                           style: context.textStyles.labelMedium?.copyWith(
                             color: context.colors.primary,
                           ),

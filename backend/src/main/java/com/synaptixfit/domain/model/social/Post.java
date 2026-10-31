@@ -47,6 +47,14 @@ public final class Post {
     }
 
     /** Crea una publicación nueva del autor. */
+    /**
+     * ¿Solo puede haber una publicación de este tipo por entidad vinculada ({@code metadata})? Compartir una
+     * sesión desde su resumen dos veces (o al reabrirlo) no debe duplicarla en el muro.
+     */
+    public static boolean uniquePerMetadata(PostType type, String metadata) {
+        return type == PostType.SESSION_COMPLETED && metadata != null;
+    }
+
     public static Post publish(UUID authorId, PostType type, String description, String imageUrl, String metadata,
                                Instant now) {
         return new Post(UUID.randomUUID(), authorId, type, description, imageUrl, metadata, now, null, false, null);

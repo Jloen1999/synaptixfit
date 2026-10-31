@@ -3,9 +3,11 @@ package com.synaptixfit.infrastructure.config;
 import com.synaptixfit.application.port.input.notification.GetReminderPlanUseCase;
 import com.synaptixfit.application.service.notification.ReminderPlanService;
 import com.synaptixfit.domain.model.notification.ReminderPlanner;
+import com.synaptixfit.domain.port.output.notification.ExamCalendarPort;
 import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
 import com.synaptixfit.domain.port.output.notification.NotificationPreferencesRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import com.synaptixfit.domain.port.output.user.UsageFocusPort;
 import java.time.Clock;
@@ -21,11 +23,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ReminderPlanBeanConfiguration {
 
+    private final ExamCalendarPort exams;
     private final TransactionalUseCaseFactory tx;
     private final NotificationPreferencesRepositoryPort preferences;
     private final UsageFocusPort focus;
     private final StudyMaterialRepositoryPort materials;
     private final CalendarBlockRepositoryPort blocks;
+    private final DeadlineRepositoryPort deadlines;
     private final SubjectDirectoryPort subjects;
     private final Clock clock;
     private final ZoneId zone;
@@ -33,22 +37,25 @@ public class ReminderPlanBeanConfiguration {
     public ReminderPlanBeanConfiguration(TransactionalUseCaseFactory tx,
                                          NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
                                          StudyMaterialRepositoryPort materials, CalendarBlockRepositoryPort blocks,
-                                         SubjectDirectoryPort subjects, Clock clock,
+                                         DeadlineRepositoryPort deadlines, SubjectDirectoryPort subjects,
+                                         ExamCalendarPort exams, Clock clock,
                                          @Value("${synaptixfit.notifications.zone:Europe/Madrid}") String zone) {
         this.tx = tx;
         this.preferences = preferences;
         this.focus = focus;
         this.materials = materials;
         this.blocks = blocks;
+        this.deadlines = deadlines;
         this.subjects = subjects;
+        this.exams = exams;
         this.clock = clock;
         this.zone = ZoneId.of(zone);
     }
 
     @Bean(autowireCandidate = false)
     ReminderPlanService reminderPlanService() {
-        return new ReminderPlanService(preferences, focus, materials, blocks, subjects, new ReminderPlanner(), clock,
-                zone);
+        return new ReminderPlanService(preferences, focus, materials, blocks, deadlines, subjects,
+                new ReminderPlanner(), exams, clock, zone);
     }
 
     @Bean

@@ -1,3 +1,7 @@
+import '../use_cases/planner/create_calendar_feed_use_case.dart';
+import '../use_cases/planner/get_calendar_feed_use_case.dart';
+import '../use_cases/planner/revoke_calendar_feed_use_case.dart';
+import '../use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import 'package:get_it/get_it.dart';
 
 import '../use_cases/planner/get_week_blocks_use_case.dart';
@@ -17,6 +21,8 @@ import '../use_cases/planner/get_timeline_use_case.dart';
 import '../use_cases/planner/suggest_week_plan_use_case.dart';
 import '../use_cases/planner/scan_schedule_use_case.dart';
 import '../use_cases/planner/save_semester_dates_use_case.dart';
+import '../use_cases/planner/import_general_calendar_use_case.dart';
+import '../use_cases/planner/log_past_activity_use_case.dart';
 import '../use_cases/planner/import_ics_use_case.dart';
 import '../use_cases/planner/export_ics_use_case.dart';
 import '../use_cases/planner/get_planner_subjects_use_case.dart';
@@ -45,6 +51,9 @@ void registerPlannerDomain(GetIt getIt) {
     )
     ..registerLazySingleton<RescheduleBlockUseCaseContract>(
       () => RescheduleBlockUseCase(getIt()),
+    )
+    ..registerLazySingleton<RescheduleBlockToNextFreeSlotUseCaseContract>(
+      () => RescheduleBlockToNextFreeSlotUseCase(getIt()),
     )
     ..registerLazySingleton<DeleteBlockUseCaseContract>(
       () => DeleteBlockUseCase(getIt()),
@@ -84,6 +93,21 @@ void registerPlannerDomain(GetIt getIt) {
     )
     ..registerLazySingleton<SaveSemesterDatesUseCaseContract>(
       () => SaveSemesterDatesUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetCalendarFeedUseCaseContract>(
+      () => GetCalendarFeedUseCase(getIt()),
+    )
+    ..registerLazySingleton<CreateCalendarFeedUseCaseContract>(
+      () => CreateCalendarFeedUseCase(getIt()),
+    )
+    ..registerLazySingleton<RevokeCalendarFeedUseCaseContract>(
+      () => RevokeCalendarFeedUseCase(getIt()),
+    )
+    ..registerLazySingleton<LogPastActivityUseCaseContract>(
+      () => LogPastActivityUseCase(getIt()),
+    )
+    ..registerLazySingleton<ImportGeneralCalendarUseCaseContract>(
+      () => ImportGeneralCalendarUseCase(getIt()),
     )
     ..registerLazySingleton<ImportIcsUseCaseContract>(
       () => ImportIcsUseCase(getIt()),

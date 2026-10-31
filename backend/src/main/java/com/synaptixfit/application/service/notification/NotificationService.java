@@ -13,9 +13,11 @@ import com.synaptixfit.domain.model.notification.NotificationPreferences;
 import com.synaptixfit.domain.model.notification.UnreadCounts;
 import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.shared.PageResult;
+import com.synaptixfit.domain.port.output.notification.ExamCalendarPort;
 import com.synaptixfit.domain.port.output.notification.NotificationPreferencesRepositoryPort;
 import com.synaptixfit.domain.port.output.notification.NotificationRepositoryPort;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -32,13 +34,16 @@ public class NotificationService implements CreateNotificationUseCase, ListNotif
 
     private final NotificationRepositoryPort notifications;
     private final NotificationPreferencesRepositoryPort preferences;
+    private final ExamCalendarPort exams;
     private final Clock clock;
     private final ZoneId zone;
 
     public NotificationService(NotificationRepositoryPort notifications,
-                               NotificationPreferencesRepositoryPort preferences, Clock clock, ZoneId zone) {
+                               NotificationPreferencesRepositoryPort preferences, ExamCalendarPort exams,
+                               Clock clock, ZoneId zone) {
         this.notifications = notifications;
         this.preferences = preferences;
+        this.exams = exams;
         this.clock = clock;
         this.zone = zone;
     }
@@ -50,9 +55,13 @@ public class NotificationService implements CreateNotificationUseCase, ListNotif
         // Se construye primero para validar la entrada aunque luego se descarte.
         Notification notification = Notification.create(userId, command.title(), command.description(),
                 command.priority(), command.type(), command.actionUrl(), command.actionLabel(), command.referenceKey(),
-                now);
-        NotificationPreferences prefs = preferences.findByUserId(userId)
+                now).withMessage(command.message());
+        NotificationPreferences stored = preferences.findByUserId(userId)
                 .orElseGet(() -> NotificationPreferences.defaults(userId, now));
+        // Modo exámenes automático: con un examen en los próximos días, Normal se comporta como Exámenes.
+        NotificationPreferences prefs = exams.hasExamBetween(userId, now,
+                now.plus(Duration.ofDays(NotificationPreferences.EXAM_SEASON_DAYS)))
+                ? stored.duringExamSeason() : stored;
         ZonedDateTime local = now.atZone(zone);
         long sentToday = notifications.countCreatedSince(userId, local.toLocalDate().atStartOfDay(zone).toInstant());
         DeliveryDecision decision = prefs.evaluate(notification.type(), notification.priority(),

@@ -56,7 +56,8 @@ public class DeadlineController {
     }
 
     /**
-     * Entregas por fecha límite ascendente. {@code upcoming=true}: solo pendientes desde hoy.
+     * Entregas por fecha límite ascendente. {@code upcoming=true}: solo pendientes desde hoy;
+     * con {@code includeOverdue=true}, también las vencidas sin completar de los últimos 30 días.
      * {@code from}/{@code to} filtran la fecha límite [from, to).
      */
     @GetMapping
@@ -65,10 +66,11 @@ public class DeadlineController {
                                                @RequestParam(required = false) Instant to,
                                                @RequestParam(required = false) UUID subjectId,
                                                @RequestParam(defaultValue = "false") boolean upcoming,
+                                               @RequestParam(defaultValue = "false") boolean includeOverdue,
                                                @RequestParam(defaultValue = "0") int page,
                                                @RequestParam(defaultValue = "20") int size) {
         return PageResponse.from(getMany.getDeadlines(new GetDeadlinesUseCase.Query(userId, from, to, subjectId,
-                upcoming, new PageRequest(page, size))), DeadlineResponse::from);
+                upcoming, includeOverdue, new PageRequest(page, size))), DeadlineResponse::from);
     }
 
     @GetMapping("/{deadlineId}")

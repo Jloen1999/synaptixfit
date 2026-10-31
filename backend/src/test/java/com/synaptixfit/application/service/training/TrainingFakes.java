@@ -184,6 +184,10 @@ final class TrainingFakes {
             return (int) store.values().stream().filter(s -> s.userId().equals(userId) && s.isCompleted()
                     && !s.completedAt().isBefore(from) && s.completedAt().isBefore(to)).count();
         }
+        public int countRewardedBetween(UUID userId, Instant from, Instant to) {
+            return (int) store.values().stream().filter(s -> s.userId().equals(userId) && s.isCompleted()
+                    && s.xpAwarded() > 0 && !s.completedAt().isBefore(from) && s.completedAt().isBefore(to)).count();
+        }
         public void delete(UUID sessionId) { store.remove(sessionId); }
     }
 

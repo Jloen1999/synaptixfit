@@ -28,4 +28,15 @@ class ReminderSettingsRepository implements ReminderSettingsRepositoryContract {
 
   @override
   Stream<bool> watchEnabled() => _changes.stream;
+
+  @override
+  Future<AppResult<bool>> wasOffered() =>
+      RepositoryErrorHandler.guard(_storage.readOffered);
+
+  @override
+  Future<AppResult<Unit>> markOffered() =>
+      RepositoryErrorHandler.guard(() async {
+        await _storage.writeOffered();
+        return unit;
+      });
 }

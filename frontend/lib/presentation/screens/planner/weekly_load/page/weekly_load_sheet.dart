@@ -9,7 +9,6 @@ import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
-import '../../widgets/planner_form_fields.dart';
 import '../../widgets/planner_visuals.dart';
 import '../../widgets/week_overview.dart';
 import '../bloc/weekly_load_bloc.dart';
@@ -286,7 +285,12 @@ class _WeeklyLoadViewState extends State<_WeeklyLoadView>
             ),
             const SizedBox(height: TokensSpacing.m),
             if (_message != null) ...[
-              InlineMessage(message: _message!, isError: _messageIsError),
+              AppInlineMessage(
+                message: _message!,
+                tone: _messageIsError
+                    ? AppMessageTone.error
+                    : AppMessageTone.warning,
+              ),
               const SizedBox(height: TokensSpacing.s),
             ],
             AppPrimaryButton(

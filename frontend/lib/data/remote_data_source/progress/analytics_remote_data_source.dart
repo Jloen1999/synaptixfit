@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
+import 'dto/study_by_subject_dto.dart';
 import 'dto/analytics_dto.dart';
 
 /// Endpoints de analítica (`/api/v1/analytics`).
@@ -23,6 +24,11 @@ class AnalyticsRemoteDataSource {
 
   Future<StudyWeekDto> studyWeek() async =>
       StudyWeekDto.fromJson(await _get('study-week', const {}));
+
+  Future<StudyBySubjectDto> studyBySubject(int weeks) async =>
+      StudyBySubjectDto.fromJson(
+        await _get('study-subjects', {'weeks': weeks}),
+      );
 
   Future<List<InsightDto>> insights(String period) async {
     final response = await _dio.get<List<dynamic>>(

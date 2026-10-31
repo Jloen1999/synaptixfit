@@ -19,6 +19,9 @@ abstract interface class StudyMaterialRepositoryContract {
 
   Future<AppResult<Unit>> deleteMaterial(String materialId);
 
+  /// Lo quita del repaso conservando su historial.
+  Future<AppResult<Unit>> abandonMaterial(String materialId);
+
   Future<AppResult<ReviewPreview>> getReviewPreview(String materialId);
 
   Future<AppResult<ReviewOutcome>> review(String materialId, int quality);

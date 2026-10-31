@@ -1,3 +1,4 @@
+import '../../../domain/models/home/home_setup.dart';
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
@@ -36,6 +37,21 @@ class HomeRemoteDataSource {
       '/api/v1/profile/onboarding',
     );
     return response.data?['completed'] as bool? ?? true;
+  }
+
+  /// Configuración pendiente; las tareas desconocidas se ignoran.
+  Future<HomeSetup> setup() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/profile/setup',
+    );
+    final data = response.data ?? const <String, dynamic>{};
+    return HomeSetup(
+      pending: [
+        for (final code in data['pending'] as List<dynamic>? ?? const [])
+          ?HomeSetupTask.fromApi(code as String?),
+      ],
+      total: (data['total'] as num?)?.toInt() ?? 0,
+    );
   }
 
   static List<T> _list<T>(

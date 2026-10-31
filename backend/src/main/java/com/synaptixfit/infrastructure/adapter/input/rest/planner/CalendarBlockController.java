@@ -7,6 +7,7 @@ import com.synaptixfit.application.port.input.planner.DistributeRoutineUseCase;
 import com.synaptixfit.application.port.input.planner.GetCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.GetCalendarBlocksUseCase;
 import com.synaptixfit.application.port.input.planner.GetScheduleConflictsUseCase;
+import com.synaptixfit.application.port.input.planner.RescheduleBlockToNextFreeSlotUseCase;
 import com.synaptixfit.application.port.input.planner.RescheduleCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateCalendarBlockUseCase;
@@ -15,7 +16,7 @@ import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.BlockComple
 import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.BlockDetailsRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.CalendarBlockRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.CalendarBlockResponse;
-import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.CompletionRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.BlockCompletionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.ConflictResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.RescheduleRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.RoutineDistributionRequest;
@@ -51,6 +52,7 @@ public class CalendarBlockController {
     private final CreateCalendarBlockUseCase createBlock;
     private final UpdateCalendarBlockUseCase updateBlock;
     private final RescheduleCalendarBlockUseCase reschedule;
+    private final RescheduleBlockToNextFreeSlotUseCase rescheduleNext;
     private final DeleteCalendarBlockUseCase deleteBlock;
     private final SetBlockCompletionUseCase setCompletion;
     private final DistributeRoutineUseCase distributeRoutine;
@@ -58,7 +60,8 @@ public class CalendarBlockController {
 
     public CalendarBlockController(GetCalendarBlocksUseCase getBlocks, GetCalendarBlockUseCase getBlock,
                                    CreateCalendarBlockUseCase createBlock, UpdateCalendarBlockUseCase updateBlock,
-                                   RescheduleCalendarBlockUseCase reschedule, DeleteCalendarBlockUseCase deleteBlock,
+                                   RescheduleCalendarBlockUseCase reschedule,
+                                   RescheduleBlockToNextFreeSlotUseCase rescheduleNext, DeleteCalendarBlockUseCase deleteBlock,
                                    SetBlockCompletionUseCase setCompletion, DistributeRoutineUseCase distributeRoutine,
                                    GetScheduleConflictsUseCase getConflicts) {
         this.getBlocks = getBlocks;
@@ -66,6 +69,7 @@ public class CalendarBlockController {
         this.createBlock = createBlock;
         this.updateBlock = updateBlock;
         this.reschedule = reschedule;
+        this.rescheduleNext = rescheduleNext;
         this.deleteBlock = deleteBlock;
         this.setCompletion = setCompletion;
         this.distributeRoutine = distributeRoutine;
@@ -113,6 +117,12 @@ public class CalendarBlockController {
                 new RescheduleCalendarBlockUseCase.Command(userId, blockId, r.start(), r.end())));
     }
 
+    /** Lleva el bloque al primer hueco libre de su duración (p. ej. uno que se quedó sin hacer). */
+    @PostMapping("/{blockId}/reschedule-next")
+    public BlockChangeResponse rescheduleNext(@CurrentUserId UUID userId, @PathVariable UUID blockId) {
+        return BlockChangeResponse.from(rescheduleNext.rescheduleToNextFreeSlot(userId, blockId));
+    }
+
     @DeleteMapping("/{blockId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@CurrentUserId UUID userId, @PathVariable UUID blockId) {
@@ -121,8 +131,9 @@ public class CalendarBlockController {
 
     @PutMapping("/{blockId}/completion")
     public BlockCompletionResponse completion(@CurrentUserId UUID userId, @PathVariable UUID blockId,
-                                              @Valid @RequestBody CompletionRequest r) {
-        SetBlockCompletionUseCase.Result result = setCompletion.setCompletion(userId, blockId, r.completed());
+                                              @Valid @RequestBody BlockCompletionRequest r) {
+        SetBlockCompletionUseCase.Result result = setCompletion.setCompletion(userId, blockId, r.completed(),
+                r.effort());
         return new BlockCompletionResponse(CalendarBlockResponse.from(result.block()), result.xpDelta());
     }
 

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../widgets/personal_record_row.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/models/training/session_history.dart';
@@ -11,7 +12,6 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../training_routes.dart';
 import '../../widgets/training_content.dart';
-import '../../widgets/training_dialogs.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../bloc/session_history_bloc.dart';
 
@@ -108,17 +108,6 @@ class _HistoryView extends StatelessWidget {
   }
 }
 
-/// Texto de una marca: «62,5 kg × 5» o «8 reps».
-String _recordValue(BuildContext context, PersonalRecord r) {
-  final l10n = context.localizations;
-  return r.kind == PersonalRecordKind.weight && r.weightKg != null
-      ? l10n.trainingRecordWeight(
-          NumberFormat('0.#', 'es').format(r.weightKg),
-          r.reps,
-        )
-      : l10n.trainingRecordReps(r.reps);
-}
-
 /// Tus mejores marcas, en una tira horizontal (las más recientes primero).
 class _RecordsStrip extends StatelessWidget {
   const _RecordsStrip({required this.records});
@@ -148,7 +137,7 @@ class _RecordsStrip extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _recordValue(context, r),
+                        recordValueLabel(context, r),
                         style: context.textStyles.titleMedium?.copyWith(
                           color: context.palette.accent,
                         ),
@@ -183,7 +172,7 @@ class _SessionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final s = entry.session;
-    final date = DateFormat.MMMEd('es').add_Hm().format(s.startedAt);
+    final date = DateFormat.MMMEd().add_Hm().format(s.startedAt);
     // Nombre del día entrenado; si no tiene, «Día N»; si es libre, el tipo.
     final title =
         entry.dayName ??
@@ -280,30 +269,11 @@ class _SessionCard extends StatelessWidget {
           ),
           for (final r in entry.records) ...[
             const SizedBox(height: TokensSpacing.xs),
-            Row(
-              children: [
-                Icon(
-                  Icons.emoji_events_rounded,
-                  size: TokensSize.iconS,
-                  color: context.palette.accent,
-                ),
-                const SizedBox(width: TokensSpacing.xs),
-                Expanded(
-                  child: Text(
-                    r.exerciseName == null
-                        ? l10n.trainingRecordBrokenUnnamed(
-                            _recordValue(context, r),
-                          )
-                        : l10n.trainingRecordBroken(
-                            r.exerciseName!,
-                            _recordValue(context, r),
-                          ),
-                    style: context.textStyles.labelMedium?.copyWith(
-                      color: context.palette.accent,
-                    ),
-                  ),
-                ),
-              ],
+            PersonalRecordRow(
+              record: r,
+              style: context.textStyles.labelMedium?.copyWith(
+                color: context.palette.accent,
+              ),
             ),
           ],
         ],

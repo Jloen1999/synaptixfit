@@ -10,4 +10,9 @@ abstract interface class ReminderSettingsRepositoryContract {
 
   /// Emite el nuevo valor cada vez que cambia.
   Stream<bool> watchEnabled();
+
+  /// Si ya se ofrecieron los recordatorios en este dispositivo.
+  Future<AppResult<bool>> wasOffered();
+
+  Future<AppResult<Unit>> markOffered();
 }

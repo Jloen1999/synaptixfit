@@ -7,5 +7,11 @@ public enum ReminderKind {
     /** Bloque de deporte del planificador a punto de empezar. */
     TRAINING,
     /** Bloque de estudio o repaso del planificador a punto de empezar. */
-    STUDY
+    STUDY,
+    /** Examen pendiente en pocos días. */
+    EXAM,
+    /** Entrega (trabajo, práctica, presentación…) pendiente en pocos días. */
+    DEADLINE,
+    /** «Tu semana»: el domingo por la tarde, repasar cómo ha ido y planificar la siguiente. */
+    WEEKLY_SUMMARY
 }

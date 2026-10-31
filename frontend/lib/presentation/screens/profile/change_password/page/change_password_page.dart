@@ -121,7 +121,7 @@ class _ChangePasswordViewState extends State<_ChangePasswordView>
                       ],
                       AppTextField(
                         label: l10n.profilePasswordNew,
-                        hint: l10n.fieldPasswordHint,
+                        helper: l10n.fieldPasswordHint,
                         controller: _new,
                         icon: Icons.lock_reset_rounded,
                         obscure: true,

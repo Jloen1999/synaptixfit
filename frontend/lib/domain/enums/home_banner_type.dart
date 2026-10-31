@@ -1,7 +1,9 @@
 /// Tipo del banner inteligente del inicio (en orden de prioridad del backend).
 enum HomeBannerType {
   physicalOverload,
+  overdueDeadlines,
   upcomingDeadlines,
+  missedBlocks,
   highFatigue,
   lowAdherence,
   lowEnergy,
@@ -16,7 +18,9 @@ enum HomeBannerType {
   /// Valor desconocido o ausente: mensaje genérico de equilibrio.
   static HomeBannerType fromApi(String? value) => switch (value) {
     'PHYSICAL_OVERLOAD' => physicalOverload,
+    'OVERDUE_DEADLINES' => overdueDeadlines,
     'UPCOMING_DEADLINES' => upcomingDeadlines,
+    'MISSED_BLOCKS' => missedBlocks,
     'HIGH_FATIGUE' => highFatigue,
     'LOW_ADHERENCE' => lowAdherence,
     'LOW_ENERGY' => lowEnergy,

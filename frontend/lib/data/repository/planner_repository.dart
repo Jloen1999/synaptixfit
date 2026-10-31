@@ -1,5 +1,6 @@
 import '../../domain/models/planner/block_draft.dart';
 import '../../domain/models/planner/calendar_block.dart';
+import '../../domain/models/planner/calendar_feed.dart';
 import '../../domain/models/planner/planner_ai.dart';
 import '../../domain/models/planner/planner_options.dart';
 import '../../domain/models/planner/planner_week.dart';
@@ -69,6 +70,13 @@ class PlannerRepository implements PlannerRepositoryContract {
   );
 
   @override
+  Future<AppResult<BlockChange>> rescheduleToNextFreeSlot(String blockId) =>
+      RepositoryErrorHandler.guard(
+        () async =>
+            (await _remote.rescheduleToNextFreeSlot(blockId)).toDomain(),
+      );
+
+  @override
   Future<AppResult<BlockChange>> rescheduleBlock(
     String blockId, {
     required DateTime start,
@@ -92,11 +100,28 @@ class PlannerRepository implements PlannerRepositoryContract {
   Future<AppResult<BlockCompletion>> setBlockCompletion(
     String blockId, {
     required bool completed,
+    int? effort,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.setBlockCompletion(
       blockId,
       completed: completed,
+      effort: effort,
     )).toDomain(),
+  );
+
+  @override
+  Future<AppResult<BlockCompletion>> logPastActivity({
+    required DateTime start,
+    required int minutes,
+    required int effort,
+    String? title,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.logPastActivity({
+      'start': PlannerJson.toInstant(start),
+      'minutes': minutes,
+      'effort': effort,
+      if (title != null && title.isNotEmpty) 'title': title,
+    })).toDomain(),
   );
 
   @override
@@ -226,6 +251,33 @@ class PlannerRepository implements PlannerRepositoryContract {
       'force': force,
     })).toDomain(),
   );
+
+  @override
+  Future<AppResult<IcsImportResult>> importGeneralCalendar({
+    required String url,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.importIcs({'url': url})).toDomain(),
+  );
+
+  @override
+  Future<AppResult<CalendarFeedStatus>> getCalendarFeed() =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.calendarFeed()).toDomain(),
+      );
+
+  @override
+  Future<AppResult<CalendarFeedLink>> createCalendarFeed() =>
+      RepositoryErrorHandler.guard(() async {
+        final dto = await _remote.createCalendarFeed();
+        return dto.toDomain(_remote.calendarFeedUrl(dto.token));
+      });
+
+  @override
+  Future<AppResult<Unit>> revokeCalendarFeed() =>
+      RepositoryErrorHandler.guard(() async {
+        await _remote.revokeCalendarFeed();
+        return unit;
+      });
 
   @override
   Future<AppResult<String>> exportIcs() =>

@@ -31,7 +31,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 /**
  * Seguridad: API sin estado protegida con JWT propios (HS256).
  *
- * <p>Públicos: autenticación, documentación OpenAPI y salud. Administración: rol ADMIN. El resto
+ * <p>Públicos: autenticación, documentación OpenAPI, salud y el calendario suscrito (lo protege el token de su
+ * ruta, ADR 0020). Administración: rol ADMIN. El resto
  * exige un token válido. Los errores 401/403 salen en formato RFC 9457 con {@code code}.
  */
 @Configuration
@@ -52,6 +53,13 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml",
                                 "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health/**").permitAll()
+                        // Calendario suscrito: lo piden Google, Apple u Outlook sin sesión; el token de la ruta lo protege.
+                        // HEAD también: algunos clientes de calendario lo piden antes del GET.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/planner/calendar-feed/*.ics").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/v1/planner/calendar-feed/*.ics").permitAll()
+                        // Enlaces de los correos del resumen semanal: su token los protege (ADR 0022).
+                        .requestMatchers("/api/v1/notifications/weekly-email/confirm",
+                                "/api/v1/notifications/weekly-email/unsubscribe").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth

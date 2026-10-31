@@ -62,6 +62,18 @@ class AdminExerciseRepository implements AdminExerciseRepositoryContract {
   );
 
   @override
+  Future<AppResult<AdminExerciseNames>> getNames(String exerciseId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.names(exerciseId)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<AdminExerciseNames>> suggestNames(String spanishName) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.suggestNames(spanishName.trim())).toDomain(),
+      );
+
+  @override
   Future<AppResult<AdminExercise>> setActive(
     String exerciseId, {
     required bool active,

@@ -15,4 +15,14 @@ abstract interface class ReminderTexts {
   /// [name] es el título del bloque o su asignatura (puede faltar);
   /// [start] llega en hora local.
   String blockBody(ReminderKind kind, String? name, DateTime start);
+
+  String get weeklySummaryTitle;
+
+  String get weeklySummaryBody;
+
+  /// Examen o entrega que vence en [daysBefore] días.
+  String deadlineTitle(ReminderKind kind, int daysBefore);
+
+  /// [name] es el título de la entrega (puede faltar); [due] en hora local.
+  String deadlineBody(ReminderKind kind, String? name, DateTime due);
 }

@@ -459,5 +459,6 @@
   "challengesErrorOrderInvalid": "El nuevo orden no es válido.",
   "challengesErrorProgressMilestoneRequired": "Elige la tarea en la que registrar el progreso.",
   "challengesErrorMilestoneAlreadyCompleted": "Esta tarea ya está completada.",
-  "challengesErrorAlreadyCompleted": "Este reto ya está completado."
+  "challengesErrorAlreadyCompleted": "Este reto ya está completado.",
+  "challengesErrorExpired": "Este reto ya terminó: no se puede seguir avanzando."
 }

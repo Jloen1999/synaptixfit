@@ -394,7 +394,7 @@ class _HistoryTile extends StatelessWidget {
             : Icons.check_circle_outline_rounded,
         color: color,
       ),
-      title: Text(DateFormat.yMMMEd('es').format(checkIn.date)),
+      title: Text(DateFormat.yMMMEd().format(checkIn.date)),
       subtitle: Text(
         l10n.trainingCheckInHistoryLine(
           checkIn.sleepQuality,

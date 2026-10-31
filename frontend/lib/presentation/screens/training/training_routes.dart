@@ -5,6 +5,7 @@ import 'check_in/page/check_in_page.dart';
 import 'community/page/community_page.dart';
 import 'exercise_detail/page/exercise_detail_page.dart';
 import 'exercise_explorer/page/exercise_explorer_page.dart';
+import 'past_activity/page/past_activity_page.dart';
 import 'live_session/page/live_session_page.dart';
 import 'routine_detail/page/routine_detail_page.dart';
 import 'routine_editor/page/routine_editor_page.dart';
@@ -44,6 +45,7 @@ abstract final class TrainingPaths {
   static const checkIn = '$root/check-in';
   static const weeklyPlan = '$root/weekly-plan';
   static const community = '$root/community';
+  static const pastActivity = '$root/past-activity';
 }
 
 /// Rutas dentro de la pestaña (conservan la barra inferior).
@@ -86,6 +88,10 @@ List<RouteBase> trainingRoutes() => [
   // El check-in se abre desde Inicio y desde Entreno: a pantalla completa
   // vuelve siempre a quien lo abrió.
   GoRoute(path: TrainingPaths.checkIn, builder: (_, _) => const CheckInPage()),
+  GoRoute(
+    path: TrainingPaths.pastActivity,
+    builder: (_, _) => const PastActivityPage(),
+  ),
   // El resumen va como ruta hermana (no hija) para no reconstruir la sesión debajo.
   GoRoute(
     path: '${TrainingPaths.root}/sessions/:sessionId/completed',

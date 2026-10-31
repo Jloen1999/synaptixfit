@@ -100,6 +100,19 @@ class PlannerFlowIT {
         assertThat((List<?>) JsonPath.read(overlapping, "$.conflicts")).hasSize(1);
         assertThat((Boolean) JsonPath.read(overlapping, "$.block.hasConflict")).isTrue();
 
+        // Aún no ha empezado: no se puede marcar como hecho.
+        mvc.perform(auth(put("/api/v1/planner/blocks/" + blockId + "/completion"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"completed\":true}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("BLOCK_IN_FUTURE"));
+        // Se lleva a hace dos horas (ya pasó sin hacerse) y entonces sí.
+        Instant past = Instant.now().minus(Duration.ofHours(2)).truncatedTo(ChronoUnit.MINUTES);
+        jdbc.sql("UPDATE horarios_academicos SET hora_inicio = :s, hora_fin = :e WHERE id = :id")
+                .param("s", java.sql.Timestamp.from(past))
+                .param("e", java.sql.Timestamp.from(past.plus(Duration.ofMinutes(90))))
+                .param("id", java.util.UUID.fromString(blockId)).update();
+        mvc.perform(auth(get("/api/v1/planner/blocks/" + blockId)))
+                .andExpect(jsonPath("$.timeStatus").value("MISSED"));
         String done = json(put("/api/v1/planner/blocks/" + blockId + "/completion"), "{\"completed\":true}", 200);
         assertThat((Integer) JsonPath.read(done, "$.xpDelta")).isEqualTo(30);
         assertThat((Double) JsonPath.read(done, "$.block.metValue")).isEqualTo(1.3);
@@ -107,7 +120,7 @@ class PlannerFlowIT {
         mvc.perform(auth(get("/api/v1/me"))).andExpect(jsonPath("$.levelXp").value(30));
 
         mvc.perform(auth(get("/api/v1/planner/timeline")
-                        .param("from", start.minus(Duration.ofHours(1)).toString())
+                        .param("from", past.minus(Duration.ofHours(1)).toString())
                         .param("to", start.plus(Duration.ofDays(1)).toString())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))

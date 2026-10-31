@@ -22,6 +22,10 @@ abstract class StudyWeek with _$StudyWeek {
     int? averageTestScore,
     @Default(0) int reviewsDue,
 
+    /// Horas reales de estudio de la semana y objetivo del perfil académico.
+    @Default(0) int studyHours,
+    @Default(0) int weeklyGoalHours,
+
     /// Aún no hay nada que contar esta semana.
     @Default(true) bool empty,
   }) = _StudyWeek;

@@ -156,7 +156,6 @@
       }
     }
   },
-  "academicGradeTapHint": "Toca un criterio para poner o quitar tu nota.",
   "academicGradeLabel": "Nota (0-10)",
   "academicGradeHint": "Por ejemplo, 7,5",
   "academicGradeClear": "Quitar nota",
@@ -212,7 +211,7 @@
       }
     }
   },
-  "academicNotesEmpty": "Todavía no hay apuntes. Crea uno o pega texto escaneado.",
+  "academicNotesEmpty": "Todavía no hay apuntes. Crea uno: puedes escribir o pegar texto y darle formato.",
   "academicFilesEmpty": "Sube PDF, imágenes o documentos de la asignatura (máx. 25 MB).",
   "academicFileUpload": "Subir archivo",
   "academicFileUploading": "Subiendo… {percent} %",
@@ -242,7 +241,6 @@
   "academicNotePreview": "Vista previa",
   "academicNoteEditMode": "Editar",
   "academicNoteTitleLabel": "Título",
-  "academicNoteTitleRequired": "Ponle un título al apunte",
   "academicNoteContentHint": "Escribe en Markdown: # títulos, **negrita**, - listas…",
   "academicNoteEmptyContent": "Este apunte está vacío.",
   "academicNoteSubject": "Asignatura",
@@ -264,12 +262,6 @@
   "academicSharedNotesTitle": "Apuntes de amigos",
   "academicSharedEmptyTitle": "Nadie ha compartido apuntes todavía",
   "academicSharedEmptyMessage": "Aquí verás los apuntes que tus amigos compartan contigo.",
-  "academicScanTitle": "Texto escaneado",
-  "academicScanHint": "Pega texto de un documento y guárdalo como apunte",
-  "academicScanExplain": "Pega o escribe el texto reconocido de tus apuntes en papel, una foto o un PDF. Lo guardaremos como apunte en Markdown.",
-  "academicScanPaste": "Pegar del portapapeles",
-  "academicScanTextHint": "Texto del documento",
-  "academicScanSave": "Guardar como apunte",
   "academicFileOpenExternal": "Abrir fuera de la app",
   "academicFileOpenFailed": "No se ha podido abrir el archivo.",
   "academicFileNoPreview": "Este tipo de archivo no tiene vista previa.",
@@ -773,6 +765,79 @@
     "placeholders": {
       "name": {
         "type": "String"
+      }
+    }
+  },
+  "academicFormatHeading": "Título",
+  "academicFormatBold": "Negrita",
+  "academicFormatItalic": "Cursiva",
+  "academicFormatStrike": "Tachado",
+  "academicFormatBullets": "Lista",
+  "academicFormatNumbers": "Lista numerada",
+  "academicFormatChecklist": "Lista de tareas",
+  "academicFormatQuote": "Cita",
+  "academicFormatCode": "Código",
+  "academicFormatDivider": "Separador",
+  "academicNoteContentPlaceholder": "Escribe o pega aquí tus apuntes; usa la barra para dar formato.",
+  "academicGradeAdd": "Poner nota",
+  "academicGradeEditSemantics": "Nota {grade}, {result}. Cambiar",
+  "@academicGradeEditSemantics": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "result": {
+        "type": "String"
+      }
+    }
+  },
+  "academicGradePassed": "Aprobado",
+  "academicGradeFailed": "Suspenso",
+  "academicGradeOutOfRange": "Escribe una nota de 0 a 10.",
+  "academicFormatToolbar": "Formato del texto",
+  "academicFormatShortcut": "{action} (Ctrl+{key})",
+  "@academicFormatShortcut": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "academicNoteDiscardTitle": "¿Descartar los cambios?",
+  "academicNoteDiscardMessage": "Perderás lo que has escrito y no has guardado.",
+  "academicNoteDiscard": "Descartar",
+  "academicNoteDefaultTitle": "Apunte del {date}",
+  "@academicNoteDefaultTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "academicMaterialRemove": "Quitar del repaso",
+  "academicMaterialRemoveTitle": "¿Quitar del repaso?",
+  "academicMaterialRemoveMessage": "Dejará de aparecer en tus repasos. El apunte o el archivo original se conserva.",
+  "academicMaterialRemoved": "Quitado del repaso",
+  "academicNoteTitleHelper": "Si lo dejas vacío: «{title}»",
+  "@academicNoteTitleHelper": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicFlashcardsExportAnki": "Exportar a Anki",
+  "academicFlashcardsAnkiDeck": "SynaptixFit",
+  "academicFlashcardsAnkiExported": "Archivo guardado. En Anki (ordenador): Archivo › Importar y elige el archivo; en AnkiDroid: menú ⋮ › Importar.",
+  "academicReviewNext": "{count, plural, =1{Siguiente repaso (queda 1)} other{Siguiente repaso (quedan {count})}}",
+  "academicReviewStopQueue": "Dejarlo por hoy",
+  "@academicReviewNext": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   }

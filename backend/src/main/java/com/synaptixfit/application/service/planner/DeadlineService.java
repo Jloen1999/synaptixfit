@@ -22,6 +22,7 @@ import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -134,13 +135,19 @@ public class DeadlineService implements CreateDeadlineUseCase, CreateDeadlinesFr
         return owned(userId, deadlineId);
     }
 
+    /** Hasta cuántos días atrás se muestran las entregas vencidas sin completar en «Pendientes». */
+    static final int OVERDUE_LOOKBACK_DAYS = 30;
+
     @Override
     public PageResult<Deadline> getDeadlines(Query query) {
         Instant from = query.from();
         boolean pendingOnly = false;
         if (query.upcomingOnly()) {
-            Instant today = zone.startOfDay(zone.today(clock.instant()));
-            from = from == null || from.isBefore(today) ? today : from;
+            // Con includeOverdue, «Pendientes» incluye las vencidas sin completar de las últimas
+            // semanas (primero, por fecha): una entrega de ayer sin entregar no debe desaparecer.
+            LocalDate today = zone.today(clock.instant());
+            Instant oldest = zone.startOfDay(query.includeOverdue() ? today.minusDays(OVERDUE_LOOKBACK_DAYS) : today);
+            from = from == null || from.isBefore(oldest) ? oldest : from;
             pendingOnly = true;
         }
         return deadlines.find(query.userId(),
@@ -166,7 +173,7 @@ public class DeadlineService implements CreateDeadlineUseCase, CreateDeadlinesFr
             return new Result(deadline, 0);
         }
         int xpDelta = 0;
-        if (completed && !deadline.xpAwarded()) {
+        if (completed && !deadline.xpAwarded() && Deadline.fitsDailyCap(rewardedLastDay(deadline, now))) {
             award.award(deadline.userId(), Deadline.EXPERIENCE);
             deadline.markExperienceAwarded(true);
             xpDelta = Deadline.EXPERIENCE;
@@ -179,6 +186,15 @@ public class DeadlineService implements CreateDeadlineUseCase, CreateDeadlinesFr
         weeklyLoads.refresh(saved.userId(), zone.localDate(saved.dueAt()));
         events.publish(new DeadlineCompletionChanged(saved.userId(), saved.id(), saved.completed(), now));
         return new Result(saved, xpDelta);
+    }
+
+    /** Otras entregas completadas con XP en las últimas 24 h (por su última modificación). */
+    private long rewardedLastDay(Deadline deadline, Instant now) {
+        Instant since = now.minus(Duration.ofDays(1));
+        return deadlines.findAll(deadline.userId(), new DeadlineRepositoryPort.Query(null, null, null, false)).stream()
+                .filter(d -> !d.id().equals(deadline.id()) && d.completed() && d.xpAwarded()
+                        && d.updatedAt() != null && d.updatedAt().isAfter(since))
+                .count();
     }
 
     private void requireSubject(UUID userId, UUID subjectId) {

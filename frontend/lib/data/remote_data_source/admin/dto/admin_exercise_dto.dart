@@ -116,6 +116,21 @@ abstract class AdminExerciseDeletionDto with _$AdminExerciseDeletionDto {
       AdminExerciseDeletion(deleted: deleted, deactivated: deactivated);
 }
 
+/// Nombre en otros idiomas (`ExerciseNamesDto`); los vacíos llegan nulos.
+@freezed
+abstract class AdminExerciseNamesDto with _$AdminExerciseNamesDto {
+  const factory AdminExerciseNamesDto({String? en, String? fr, String? pt}) =
+      _AdminExerciseNamesDto;
+
+  const AdminExerciseNamesDto._();
+
+  factory AdminExerciseNamesDto.fromJson(Map<String, dynamic> json) =>
+      _$AdminExerciseNamesDtoFromJson(json);
+
+  AdminExerciseNames toDomain() =>
+      AdminExerciseNames(en: en ?? '', fr: fr ?? '', pt: pt ?? '');
+}
+
 /// Cuerpo de `POST/PUT /api/v1/admin/exercises` (`ExerciseRequest`).
 abstract final class AdminExerciseRequest {
   static Map<String, dynamic> fromDraft(AdminExerciseDraft draft) {
@@ -140,6 +155,13 @@ abstract final class AdminExerciseRequest {
       'targetMuscleIds': draft.targetMuscleIds.toList(),
       'secondaryMuscleIds': draft.secondaryMuscleIds.toList(),
       'equipmentIds': draft.equipmentIds.toList(),
+      // Sin nombres cargados no se envían: el servidor deja los que tenga.
+      if (draft.translations case final names?)
+        'translations': {
+          'en': optional(names.en),
+          'fr': optional(names.fr),
+          'pt': optional(names.pt),
+        },
     };
   }
 }

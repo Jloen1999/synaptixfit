@@ -45,6 +45,8 @@ import com.synaptixfit.domain.port.output.academic.TestSessionRepositoryPort;
 import com.synaptixfit.domain.port.output.storage.FileStoragePort;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -140,8 +142,11 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
         int xp = 0;
         if (allAnswered && !bank.xpAwarded()) {
             banks.save(bank.withXpAwarded());
-            xp = PracticeRewards.practiceXp(correct, questions.size());
-            awardExperience.award(userId, xp);
+            // Un banco solo da XP una vez (bank.xpAwarded): no entra en el tope diario de tests.
+            xp = PracticeRewards.practiceXp(correct, questions.size(), 0);
+            if (xp > 0) {
+                awardExperience.award(userId, xp);
+            }
         }
         return new PracticeResult(correct, questions.size(), xp);
     }
@@ -227,8 +232,11 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
         TestSession session = session(userId, sessionId);
         session.complete(clock.instant());
         int xp = 0;
-        if (session.claimXp()) {
-            xp = PracticeRewards.practiceXp(session.score(), session.totalQuestions());
+        if (session.canClaimXp()) {
+            xp = PracticeRewards.practiceXp(session.score(), session.totalQuestions(), rewardedLastDay(userId));
+            if (xp > 0) {
+                session.claimXp();
+            }
         }
         TestSession saved = sessions.save(session);
         if (xp > 0) {
@@ -237,6 +245,14 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
         events.publish(new TestSessionCompleted(userId, saved.id(), saved.materialId(), saved.score(),
                 saved.totalQuestions(), clock.instant()));
         return view(saved, xp);
+    }
+
+    /** Tests que dieron XP en las últimas 24 h (para el tope de {@link PracticeRewards}). */
+    private int rewardedLastDay(UUID userId) {
+        Instant since = clock.instant().minus(Duration.ofDays(1));
+        return (int) sessions.findByUser(userId, null, TestSessionStatus.COMPLETED).stream()
+                .filter(s -> s.xpAwarded() && s.completedAt() != null && s.completedAt().isAfter(since))
+                .count();
     }
 
     @Override

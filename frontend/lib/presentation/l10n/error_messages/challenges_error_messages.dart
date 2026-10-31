@@ -4,6 +4,7 @@ import '../gen_l10n/app_localizations.dart';
 String? challengesErrorMessage(AppLocalizations l10n, String code) =>
     switch (code) {
       'CHALLENGE_NOT_FOUND' => l10n.challengesErrorNotFound,
+      'CHALLENGE_EXPIRED' => l10n.challengesErrorExpired,
       'MILESTONE_NOT_FOUND' => l10n.challengesErrorMilestoneNotFound,
       'CHALLENGE_SUBJECT_NOT_FOUND' => l10n.challengesErrorSubjectNotFound,
       'CHALLENGE_LINK_NOT_FOUND' => l10n.challengesErrorLinkNotFound,

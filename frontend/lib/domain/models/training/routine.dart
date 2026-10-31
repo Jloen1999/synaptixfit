@@ -178,6 +178,29 @@ abstract class Routine with _$Routine {
     }
     return null;
   }
+
+  /// La misma rutina con los ejercicios de [dayId] en el orden de
+  /// [plannedExerciseIds] (para mostrar un cambio de orden al instante).
+  Routine withExerciseOrder(String dayId, List<String> plannedExerciseIds) =>
+      copyWith(
+        weeks: [
+          for (final week in weeks)
+            week.copyWith(
+              days: [
+                for (final day in week.days)
+                  if (day.id != dayId)
+                    day
+                  else
+                    day.copyWith(
+                      exercises: [
+                        for (final id in plannedExerciseIds)
+                          ?day.exercises.where((e) => e.id == id).firstOrNull,
+                      ],
+                    ),
+              ],
+            ),
+        ],
+      );
 }
 
 /// Próximo día de entrenamiento pendiente de la rutina activa.

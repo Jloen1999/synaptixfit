@@ -1,15 +1,19 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 
-import com.synaptixfit.domain.model.training.SessionBookends;
-import com.synaptixfit.domain.model.training.ExerciseCategory;
 import com.synaptixfit.domain.model.training.CatalogItem;
+import com.synaptixfit.domain.model.training.CatalogTranslations;
 import com.synaptixfit.domain.model.training.Difficulty;
 import com.synaptixfit.domain.model.training.Exercise;
+import com.synaptixfit.domain.model.training.ExerciseCategory;
 import com.synaptixfit.domain.model.training.ExerciseDraft;
 import com.synaptixfit.domain.model.training.ExerciseFilterOptions;
+import com.synaptixfit.domain.model.training.ExerciseNameTranslations;
 import com.synaptixfit.domain.model.training.MeasurementType;
 import com.synaptixfit.domain.model.training.Modality;
+import com.synaptixfit.domain.model.training.SessionBookends;
 import com.synaptixfit.domain.model.training.TrainingGoal;
+import com.synaptixfit.infrastructure.adapter.input.rest.support.LocalizedNames;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -28,11 +32,19 @@ public final class ExerciseDtos {
     /** Músculo, parte del cuerpo o equipamiento. */
     public record CatalogItemResponse(int id, String name, String imageUrl) {
         public static CatalogItemResponse from(CatalogItem c) {
-            return new CatalogItemResponse(c.id(), c.name(), c.imageUrl());
+            return from(c, LocalizedNames.current());
+        }
+
+        static CatalogItemResponse from(CatalogItem c, CatalogTranslations names) {
+            return new CatalogItemResponse(c.id(), names.term(c.name()), c.imageUrl());
+        }
+
+        static List<CatalogItemResponse> list(List<CatalogItem> items, CatalogTranslations names) {
+            return items.stream().map(c -> from(c, names)).toList();
         }
 
         static List<CatalogItemResponse> list(List<CatalogItem> items) {
-            return items.stream().map(CatalogItemResponse::from).toList();
+            return list(items, LocalizedNames.current());
         }
     }
 
@@ -44,12 +56,26 @@ public final class ExerciseDtos {
                                    List<CatalogItemResponse> targetMuscles, List<CatalogItemResponse> secondaryMuscles,
                                    List<CatalogItemResponse> equipment, Instant createdAt, Instant updatedAt,
                                    ExerciseCategory category) {
+        /** En el idioma de la petición. */
         public static ExerciseResponse from(Exercise e) {
-            return new ExerciseResponse(e.id(), e.name(), e.description(), e.instructions(), e.difficulty(),
+            return from(e, LocalizedNames.current());
+        }
+
+        /**
+         * Con los nombres canónicos en español, sea cual sea el idioma: la administración edita el
+         * catálogo y, si recibiera la traducción, al guardar la escribiría sobre el español que usan las
+         * reglas de rutinas.
+         */
+        public static ExerciseResponse canonical(Exercise e) {
+            return from(e, CatalogTranslations.NONE);
+        }
+
+        private static ExerciseResponse from(Exercise e, CatalogTranslations names) {
+            return new ExerciseResponse(e.id(), names.exercise(e.id(), e.name()), e.description(), e.instructions(), e.difficulty(),
                     e.purposes(), e.modality(), e.measurementTypes(), e.circuit(), e.active(), e.met(), e.gifUrl(),
-                    e.previewUrl(), CatalogItemResponse.list(e.bodyParts()), CatalogItemResponse.list(e.targetMuscles()),
-                    CatalogItemResponse.list(e.secondaryMuscles()), CatalogItemResponse.list(e.equipment()),
-                    e.createdAt(), e.updatedAt(), e.category());
+                    e.previewUrl(), CatalogItemResponse.list(e.bodyParts(), names),
+                    CatalogItemResponse.list(e.targetMuscles(), names), CatalogItemResponse.list(e.secondaryMuscles(), names),
+                    CatalogItemResponse.list(e.equipment(), names), e.createdAt(), e.updatedAt(), e.category());
         }
     }
 
@@ -77,11 +103,33 @@ public final class ExerciseDtos {
                                   List<@NotNull Integer> bodyPartIds,
                                   List<@NotNull Integer> targetMuscleIds,
                                   List<@NotNull Integer> secondaryMuscleIds,
-                                  List<@NotNull Integer> equipmentIds) {
+                                  List<@NotNull Integer> equipmentIds,
+                                  @Valid ExerciseNamesDto translations) {
         public ExerciseDraft toDraft() {
             return new ExerciseDraft(name, description, instructions, difficulty, purposes, modality, measurementTypes,
-                    circuit, met, gifUrl, previewUrl, bodyPartIds, targetMuscleIds, secondaryMuscleIds, equipmentIds);
+                    circuit, met, gifUrl, previewUrl, bodyPartIds, targetMuscleIds, secondaryMuscleIds, equipmentIds,
+                    translations == null ? null : translations.toDomain());
         }
+    }
+
+    /**
+     * Nombre del ejercicio en los demás idiomas de la app (vacío o nulo: se muestra en español). En el
+     * alta o edición, omitirlo deja los que tenga.
+     */
+    public record ExerciseNamesDto(@Size(max = 200) String en, @Size(max = 200) String fr,
+                                   @Size(max = 200) String pt) {
+
+        public static ExerciseNamesDto from(ExerciseNameTranslations n) {
+            return new ExerciseNamesDto(n.en(), n.fr(), n.pt());
+        }
+
+        ExerciseNameTranslations toDomain() {
+            return new ExerciseNameTranslations(en, fr, pt);
+        }
+    }
+
+    /** Nombre en español para el que se piden propuestas de traducción. */
+    public record ExerciseNameSuggestionRequest(@NotBlank @Size(min = 2, max = 200) String name) {
     }
 
     /** Activar o desactivar un ejercicio. */

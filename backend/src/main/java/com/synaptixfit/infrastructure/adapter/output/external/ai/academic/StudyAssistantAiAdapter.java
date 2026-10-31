@@ -10,6 +10,7 @@ import com.synaptixfit.domain.port.output.academic.StudyAssistantPort;
 import com.synaptixfit.domain.port.output.academic.StudyDocumentCodecPort;
 import com.synaptixfit.domain.port.output.ai.AiAttachment;
 import com.synaptixfit.domain.port.output.ai.GenerativeAiPort;
+import com.synaptixfit.infrastructure.adapter.output.external.ai.AiLanguage;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -18,7 +19,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Asistente de estudio sobre {@link GenerativeAiPort} (DeepSeek). Prompts en español heredados de
+ * Asistente de estudio sobre {@link GenerativeAiPort} (DeepSeek). Prompts en español (el contenido sale en el
+ * idioma de la app, {@link AiLanguage}) heredados de
  * {@code estudio_ia_service.dart} y {@code guia_docente_ia_service.dart}; las fuentes de texto
  * van en el prompt y los PDF o imágenes como adjuntos multimodales.
  */
@@ -108,8 +110,8 @@ public class StudyAssistantAiAdapter implements StudyAssistantPort {
                 - Usa **negrita** en conceptos importantes.
                 - Termina con la sección "## Puntos clave" (3-5 viñetas).
                 - No inventes información que no esté en las fuentes.
-                - Escribe en español.
-                """.formatted(TITLE_RULE);
+                - %s
+                """.formatted(TITLE_RULE, AiLanguage.rule());
         JsonNode json = call(prompt, sources);
         String markdown = json.path("contenido_markdown").asString("");
         if (markdown.isBlank()) {
@@ -137,8 +139,8 @@ public class StudyAssistantAiAdapter implements StudyAssistantPort {
                 - Etiquetas MUY concisas (máximo 6 palabras por nodo).
                 - Cada línea del markdown es un nodo indentado con dos espacios por nivel y "- ".
                 - Conecta conceptos de diferentes fuentes cuando sea relevante.
-                - Solo conceptos de las fuentes. En español.
-                """.formatted(TITLE_RULE);
+                - Solo conceptos de las fuentes. %s
+                """.formatted(TITLE_RULE, AiLanguage.rule());
         JsonNode json = call(prompt, sources);
         String title = json.path("titulo_personalizado").asString("");
         MindMap map = MindMap.fromIndentedMarkdown(title, json.path("contenido_markdown").asString(""));
@@ -167,9 +169,9 @@ public class StudyAssistantAiAdapter implements StudyAssistantPort {
                 - Las preguntas deben cubrir TODAS las fuentes combinadas, no solo una.
                 - Preguntas variadas: definiciones, relaciones, causas, consecuencias, comparaciones.
                 - Respuestas claras y concisas (1-3 frases).
-                - En español. Solo conceptos de las fuentes.
+                - %s Solo conceptos de las fuentes.
                 - Ordena de más sencillo a más difícil.
-                """.formatted(TITLE_RULE);
+                """.formatted(TITLE_RULE, AiLanguage.rule());
         JsonNode json = call(prompt, sources);
         List<Flashcard> cards = new ArrayList<>();
         for (JsonNode card : json.path("tarjetas")) {
@@ -217,9 +219,9 @@ public class StudyAssistantAiAdapter implements StudyAssistantPort {
                 - Cubre TODAS las fuentes combinadas proporcionalmente.
                 - Opciones verosímiles. Respuestas de hueco: máximo 3 palabras.
                 - Enunciados claros. Explicaciones de 1-2 frases.
-                - En español. Solo conceptos de las fuentes.
+                - %s Solo conceptos de las fuentes.
                 - Ordena de más sencilla a más difícil.
-                """.formatted(TITLE_RULE);
+                """.formatted(TITLE_RULE, AiLanguage.rule());
         JsonNode json = call(prompt, sources);
         List<QuestionDraft> questions = new ArrayList<>();
         for (JsonNode q : json.path("preguntas")) {

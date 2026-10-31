@@ -31,10 +31,4 @@ abstract interface class NoteRepositoryContract {
   Future<AppResult<Unit>> deleteNote(String noteId);
 
   Future<AppResult<SharedNotesPage>> getSharedNotes({required int page});
-
-  Future<AppResult<Note>> createNoteFromScan({
-    required String title,
-    required String text,
-    String? subjectId,
-  });
 }

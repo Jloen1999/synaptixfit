@@ -2,10 +2,13 @@
     <!-- La app habla con la API: en las compilaciones de versión el permiso debe declararse. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Recordatorios locales (flutter_local_notifications): mostrar avisos
-         (Android 13+) y reprogramarlos tras reiniciar el teléfono. Se usan
-         alarmas inexactas, así que no hace falta SCHEDULE_EXACT_ALARM. -->
+         (Android 13+) y reprogramarlos tras reiniciar el teléfono. Los recordatorios
+         usan alarmas inexactas. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Aviso de fin de fase del Pomodoro a la hora exacta. Android 12-13 lo concede;
+         en Android 14 hay que activarlo en ajustes y, si no, el aviso es inexacto. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <application
         android:label="SynaptixFit"
         android:name="${applicationName}"

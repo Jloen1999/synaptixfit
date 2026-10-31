@@ -1,3 +1,4 @@
+import 'study_by_subject.dart';
 import 'study_week.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -26,5 +27,8 @@ abstract class ProgressOverview with _$ProgressOverview {
 
     /// «Tu estudio» de la semana (nulo si no se pudo cargar).
     StudyWeek? studyWeek,
+
+    /// Estudio por asignatura (últimas 4 semanas); opcional.
+    StudyBySubject? studyBySubject,
   }) = _ProgressOverview;
 }

@@ -13,4 +13,9 @@ sealed class FlashcardsEvent with _$FlashcardsEvent {
 
   /// Reintenta registrar la ronda si falló el envío.
   const factory FlashcardsEvent.submitRetried() = FlashcardsSubmitRetried;
+
+  /// Guarda las tarjetas como mazo de Anki; [fallbackDeck] da nombre al mazo
+  /// si no se pudo leer el título del material.
+  const factory FlashcardsEvent.ankiExportRequested(String fallbackDeck) =
+      FlashcardsAnkiExportRequested;
 }

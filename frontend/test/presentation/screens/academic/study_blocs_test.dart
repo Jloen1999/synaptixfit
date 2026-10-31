@@ -14,6 +14,7 @@ import 'package:synaptixfit/domain/use_cases/academic/generate_study_artifact_us
 import 'package:synaptixfit/domain/use_cases/academic/generate_study_document_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_note_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_notes_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/abandon_study_material_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_review_history_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_review_preview_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_study_material_use_case.dart';
@@ -66,6 +67,9 @@ class _GetHistory extends Mock implements GetReviewHistoryUseCaseContract {}
 class _Review extends Mock implements ReviewStudyMaterialUseCaseContract {}
 
 class _GetAccount extends Mock implements GetAccountUseCaseContract {}
+
+class _AbandonMaterial extends Mock
+    implements AbandonStudyMaterialUseCaseContract {}
 
 void main() {
   setUpAll(() {
@@ -357,6 +361,7 @@ void main() {
     late _GetHistory getHistory;
     late _Review review;
     late _GetAccount getAccount;
+    late _AbandonMaterial abandonMaterial;
     final reviewed = material.copyWith(intervalDays: 6);
 
     setUp(() {
@@ -365,6 +370,7 @@ void main() {
       getHistory = _GetHistory();
       review = _Review();
       getAccount = _GetAccount();
+      abandonMaterial = _AbandonMaterial();
       when(
         () => getMaterial('m1'),
       ).thenAnswer((_) async => const Success(material));
@@ -381,6 +387,7 @@ void main() {
       getHistory: getHistory,
       review: review,
       getAccount: getAccount,
+      abandon: abandonMaterial,
     );
 
     blocTest<MaterialReviewBloc, MaterialReviewState>(
@@ -459,6 +466,34 @@ void main() {
           preview: preview,
           outcome: ReviewOutcome(material: reviewed, xpAwarded: 5),
           updatedAccount: account,
+        ),
+      ],
+    );
+
+    blocTest<MaterialReviewBloc, MaterialReviewState>(
+      'quitar del repaso archiva el material y marca la pantalla para cerrarse',
+      setUp: () => when(
+        () => abandonMaterial('m1'),
+      ).thenAnswer((_) async => const Success(unit)),
+      build: build,
+      seed: () => const MaterialReviewState(
+        materialId: 'm1',
+        loading: false,
+        material: material,
+      ),
+      act: (bloc) => bloc.add(const MaterialReviewEvent.removeRequested()),
+      expect: () => const [
+        MaterialReviewState(
+          materialId: 'm1',
+          loading: false,
+          material: material,
+          removing: true,
+        ),
+        MaterialReviewState(
+          materialId: 'm1',
+          loading: false,
+          material: material,
+          removed: true,
         ),
       ],
     );

@@ -68,6 +68,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `AUTH_INVALID_GOOGLE_TOKEN` | 401 | ID token de Google no verificable | `errorAuthGoogleFailed` | No se ha podido iniciar sesión con Google. | Activo |
 | `AUTH_ACCOUNT_DISABLED` | 403 | Cuenta eliminada o desactivada | `errorAuthAccountDisabled` | Esta cuenta está desactivada. | Activo |
 | `AUTH_EMAIL_ALREADY_REGISTERED` | 409 | Ya existe una cuenta con ese email | `errorAuthEmailAlreadyRegistered` | Ya existe una cuenta con ese email. | Activo |
+| `AUTH_RESET_TOKEN_INVALID` | 400 | El enlace para restablecer la contraseña no existe, ya se usó o caducó | `errorAuthResetTokenInvalid` | Este enlace ya no sirve: caduca a los 30 minutos y solo se puede usar una vez. Pide otro. | Activo |
 | `AUTH_WEAK_PASSWORD` | 400 | Contraseña fuera de la política (≥ 8, letras y números) | `errorAuthWeakPassword` | La contraseña debe tener al menos 8 caracteres, con letras y números. | Activo |
 | `USER_NOT_FOUND` | 404 | El usuario no existe | `errorNotFound` | No hemos encontrado lo que buscas. | Activo |
 | `GOOGLE_SIGN_IN_CANCELLED` | — (cliente) | El usuario cerró el diálogo de Google | `errorAuthGoogleCancelled` | Has cancelado el inicio de sesión con Google. | Activo |
@@ -102,6 +103,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 |---|---|---|---|---|
 | `POST_NOT_FOUND` | 404 | La publicación no existe o no es visible | Esta publicación ya no está disponible. | Activo |
 | `POST_FORBIDDEN` | 403 | Editar o borrar una publicación ajena | Solo el autor puede modificar esta publicación. | Activo |
+| `POST_ALREADY_SHARED` | 409 | Compartir otra vez la misma sesión en el muro | Ya lo habías compartido en el muro. | Activo |
 | `COMMENT_NOT_FOUND` | 404 | El comentario no existe, está borrado o no es visible | Este comentario ya no está disponible. | Activo |
 | `COMMENT_FORBIDDEN` | 403 | Editar o borrar un comentario ajeno | Solo el autor puede modificar este comentario. | Activo |
 | `FRIENDSHIP_NOT_FOUND` | 404 | La relación no existe o no es tuya | No se encontró la solicitud o amistad. | Activo |
@@ -112,6 +114,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `SOCIAL_USER_NOT_FOUND` | 404 | Usuario inexistente, eliminado, con shadowban o que te ha bloqueado | Usuario no encontrado. | Activo |
 | `SOCIAL_CANNOT_REPORT_OWN_CONTENT` | 422 | Reportar contenido propio | No puedes reportar tu propio contenido. | Activo |
 | `NOTIFICATION_NOT_FOUND` | 404 | La notificación no existe o es ajena | Esta notificación ya no existe. | Activo |
+| `NOTIFICATION_WEEKLY_EMAIL_LINK_INVALID` | 404 | El enlace de confirmación o de baja del resumen semanal no existe o ya se usó | — (página web del backend) | Enlace no válido: gestiona el resumen en Ajustes › Notificaciones. | Activo |
 | `NOTIFICATION_INVALID_QUIET_HOURS` | 400 | Solo una de las horas de silencio, o inicio igual a fin | Indica la hora de inicio y de fin del silencio (distintas). | Activo |
 
 ## Perfil y catálogo académico
@@ -121,6 +124,10 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `PROFILE_WELLNESS_NOT_FOUND` | 404 | El usuario aún no tiene perfil de bienestar | Todavía no has completado tu perfil físico. | Activo |
 | `PROFILE_ACADEMIC_NOT_FOUND` | 404 | El usuario aún no tiene perfil académico | Todavía no has configurado tu perfil académico. | Activo |
 | `PROFILE_INVALID_CLASS_DATES` | 400 | Fin de clases anterior al inicio | La fecha de fin de clases no puede ser anterior a la de inicio. | Activo |
+| `ENROLLMENT_CONSENT_REQUIRED` | 422 | Se intenta leer un documento de matrícula sin el permiso expreso del usuario | Necesitamos tu permiso para leer el documento. | Activo |
+| `ENROLLMENT_FILE_INVALID` | 400 | El documento de matrícula está vacío, dañado, no es un PDF o pasa de 5 MB | Sube un PDF de 5 MB como máximo. | Activo |
+| `ENROLLMENT_TOO_MANY_SUBJECTS` | 400 | Se piden más de 40 asignaturas al aplicar la matrícula | Has elegido demasiadas asignaturas de una vez. | Activo |
+| `ENROLLMENT_NOTHING_FOUND` | 422 | No se ha encontrado ninguna asignatura matriculada en el documento | No hemos encontrado asignaturas en el documento. Comprueba que es la carta de pago o el resguardo de matrícula. | Activo |
 | `PROFILE_ONBOARDING_WELLNESS_REQUIRED` | 422 | Cerrar el onboarding sin perfil de bienestar | Completa tu perfil físico antes de terminar. | Activo |
 | `CATALOG_UNIVERSITY_NOT_FOUND` | 404 | La universidad no existe | No encontramos esa universidad. | Activo |
 | `CATALOG_CENTER_NOT_FOUND` | 404 | El centro no existe | No encontramos ese centro. | Activo |
@@ -138,6 +145,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `MILESTONE_ATTACHMENT_NOT_FOUND` | 404 | Apunte o archivo adjunto inexistente o ajeno | El apunte o archivo adjunto no existe. | Activo |
 | `CHALLENGE_TYPE_OUTSIDE_FOCUS` | 422 | El ámbito del reto (académico o físico) no está en el enfoque de uso de la persona | Ese tipo de reto no está activo en tu cuenta. Cámbialo en tu perfil si quieres usarlo. | Activo |
 | `CHALLENGE_INVALID_DATES` | 400 | `endAt` no es posterior a `startAt` | La fecha de fin debe ser posterior a la de inicio. | Activo |
+| `CHALLENGE_EXPIRED` | 422 | Completar o sumar progreso a un reto cuya fecha de fin ya pasó | Este reto ya terminó: no se puede seguir avanzando. | Activo |
 | `MILESTONE_ATTACHMENT_CONFLICT` | 400 | Apunte y archivo a la vez | Una tarea solo puede tener un apunte o un archivo. | Activo |
 | `CHALLENGE_TOO_MANY_MILESTONES` | 422 | Más de 12 tareas | Un reto puede tener como máximo 12 tareas. | Activo |
 | `MILESTONE_WEIGHTS_INVALID` | 422 | Pesos que no suman 100 o incompletos | Los pesos de las tareas deben sumar 100 %. | Activo |
@@ -157,6 +165,8 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `BLOCK_NOT_FOUND` | 404 | El bloque no existe o es de otro usuario | No encontramos ese bloque. | Activo |
 | `BLOCK_IN_PAST` | 422 | Crear, mover o redimensionar hacia el pasado | No puedes colocar bloques en una hora o fecha pasada. | Activo |
 | `BLOCK_LOCKED` | 422 | Bloque fijo o inamovible | Este bloque es fijo y no se puede mover. | Activo |
+| `BLOCK_IN_FUTURE` | 422 | Marcar como hecho un bloque que aún no ha empezado | Este bloque aún no ha empezado: márcalo cuando lo hagas. | Activo |
+| `BLOCK_NO_FREE_SLOT` | 409 | Reprogramar sin hueco libre de su duración (8:00-22:00, próximos 7 días) | No hay un hueco libre en los próximos días. Muévelo a mano. | Activo |
 | `BLOCK_COMPLETED_LOCKED` | 422 | Cambiar horario o tipo de un bloque completado | Desmarca el bloque como completado antes de cambiarlo. | Activo |
 | `BLOCK_INVALID_TIME_RANGE` | 400 | Fin ≤ inicio o menos de 30 minutos | El bloque debe durar al menos 30 minutos. | Activo |
 | `DEADLINE_NOT_FOUND` | 404 | La entrega no existe o es de otro usuario | No encontramos esa entrega o examen. | Activo |
@@ -166,7 +176,9 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `PLANNER_CHALLENGE_NOT_FOUND` | 404 | Reto o tarea vinculados inexistentes o ajenos | No encontramos ese reto. | Activo |
 | `PLANNER_ROUTINE_EMPTY` | 422 | La rutina no tiene días | La rutina no tiene días que añadir al calendario. | Activo |
 | `PLANNER_RANGE_TOO_LARGE` | 400 | Rango de fechas inválido o demasiado grande | El rango de fechas no es válido. | Activo |
-| `PLANNER_ICS_URL_MISSING` | 422 | Sin URL ICS en la petición ni en la asignatura | Añade la URL del calendario de la asignatura. | Activo |
+| `PLANNER_ICS_URL_MISSING` | 422 | Sin URL ICS en la petición ni en la asignatura (o calendario general sin URL) | Añade la URL del calendario de la asignatura. | Activo |
+| `PLANNER_PAST_ACTIVITY_OUT_OF_RANGE` | 422 | La actividad pasada aún no ha terminado o es de hace más de 7 días | `plannerErrorPastActivityOutOfRange` | Solo puedes apuntar actividades ya terminadas de los últimos 7 días. | Activo |
+| `PLANNER_CALENDAR_FEED_NOT_FOUND` | 404 | El enlace de suscripción al calendario no existe o se revocó | Ese enlace ya no existe: puede que lo desactivaras desde otro dispositivo. | Activo |
 | `PLANNER_ICS_URL_INVALID` | 400 | URL no http(s)/webcal o dirección local | La URL del calendario no es válida. | Activo |
 | `PLANNER_ICS_UNAVAILABLE` | 503 | No se pudo descargar o supera 5 MB | No hemos podido descargar el calendario. Inténtalo más tarde. | Activo |
 | `SCHEDULE_SEMESTER_DATES_MISSING` | 422 | El perfil académico no tiene fechas de semestre | Indica primero las fechas de inicio y fin de clases. | Activo |

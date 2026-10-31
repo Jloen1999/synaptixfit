@@ -4,6 +4,7 @@ import com.synaptixfit.domain.exception.training.SessionAlreadyCompletedExceptio
 import com.synaptixfit.domain.exception.training.SessionNotCompletedException;
 import com.synaptixfit.domain.exception.training.SessionSetNotFoundException;
 import com.synaptixfit.domain.model.shared.Guard;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -46,6 +47,35 @@ public final class TrainingSession {
         this.calories = calories;
         this.xpAwarded = Math.max(0, xpAwarded);
         this.sets = new ArrayList<>(sets == null ? List.of() : sets);
+    }
+
+    /**
+     * Una sesión empezada hace más de esto y sin terminar se da por abandonada: no se reanuda ni
+     * cuenta como «en curso» (nadie entrena 6 horas seguidas).
+     */
+    public static final Duration STALE_AFTER = Duration.ofHours(6);
+
+    /** Duración máxima que se registra: lo que pase de aquí es una sesión que se dejó abierta. */
+    public static final Duration MAX_DURATION = Duration.ofHours(4);
+
+    /** En curso pero empezada hace más de {@link #STALE_AFTER}. */
+    public boolean isStale(Instant now) {
+        return completedAt == null && isStaleStart(startedAt, now);
+    }
+
+    /** Una sesión abierta que empezó en {@code startedAt} ya se da por abandonada en {@code now}. */
+    public static boolean isStaleStart(Instant startedAt, Instant now) {
+        return startedAt.plus(STALE_AFTER).isBefore(now);
+    }
+
+    /**
+     * Duración que se guarda al terminar: la que manda el cliente, pero nunca más que el tiempo real
+     * desde que empezó ni que {@link #MAX_DURATION} (una sesión olvidada abierta no suma 24 h de
+     * carga ni de calorías).
+     */
+    public long boundedDurationSeconds(long requestedSeconds, Instant now) {
+        long elapsed = Math.max(1, Duration.between(startedAt, now).toSeconds());
+        return Math.max(1, Math.min(requestedSeconds, Math.min(elapsed, MAX_DURATION.toSeconds())));
     }
 
     public static TrainingSession start(UUID userId, UUID routineId, UUID dayId, Instant now) {

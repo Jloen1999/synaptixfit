@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/models/training/session_history.dart';
 import '../../../../../domain/models/training/session.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../training_routes.dart';
+import '../../widgets/personal_record_row.dart';
 import '../../widgets/recommendation_card.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
@@ -91,6 +94,20 @@ class _CompletedView extends StatelessWidget {
                       ),
                       const SizedBox(height: TokensSpacing.l),
                       _Metrics(state: state),
+                      if (state.highlights != null) ...[
+                        const SizedBox(height: TokensSpacing.m),
+                        _HighlightsCard(
+                          highlights: state.highlights!,
+                          shared: state.shared,
+                          sharing: state.sharing,
+                          preview: _shareText(context, state),
+                          onShare: () => bloc.add(
+                            SessionCompletedEvent.shareRequested(
+                              _shareText(context, state),
+                            ),
+                          ),
+                        ),
+                      ],
                       if (state.experience != null) ...[
                         const SizedBox(height: TokensSpacing.m),
                         _ExperienceCard(experience: state.experience!),
@@ -232,6 +249,120 @@ class _ExperienceCard extends StatelessWidget {
             style: context.textStyles.labelLarge?.copyWith(
               color: context.palette.onAccentContainer,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Texto que se publica en el muro: duración, volumen (si lo hay) y récords.
+String _shareText(BuildContext context, SessionCompletedState state) {
+  final l10n = context.localizations;
+  final h = state.highlights!;
+  final minutes = state.session!.durationMinutes;
+  final number = NumberFormat.decimalPattern(l10n.localeName);
+  final lines = [
+    h.volumeKg > 0
+        ? l10n.trainingShareText(minutes, number.format(h.volumeKg.round()))
+        : l10n.trainingShareTextNoVolume(minutes),
+    for (final r in h.records)
+      (r.exerciseName == null || r.exerciseName!.trim().isEmpty)
+          ? l10n.trainingShareRecordUnnamed(recordValueLabel(context, r))
+          : l10n.trainingShareRecord(
+              r.exerciseName!,
+              recordValueLabel(context, r),
+            ),
+  ];
+  return lines.join('\n');
+}
+
+/// Lo destacado de la sesión: volumen (y su diferencia con la anterior
+/// comparable), récords batidos y compartir en el muro (con vista previa).
+class _HighlightsCard extends StatelessWidget {
+  const _HighlightsCard({
+    required this.highlights,
+    required this.shared,
+    required this.sharing,
+    required this.preview,
+    required this.onShare,
+  });
+
+  final SessionHighlights highlights;
+  final bool shared;
+  final bool sharing;
+
+  /// Texto que se publicará (se enseña antes de confirmar).
+  final String preview;
+  final VoidCallback onShare;
+
+  Future<void> _confirm(BuildContext context) async {
+    final l10n = context.localizations;
+    final ok = await showConfirmDialog(
+      context,
+      title: l10n.trainingShareConfirmTitle,
+      message: preview,
+      confirmLabel: l10n.trainingSharePublish,
+      destructive: false,
+    );
+    if (ok) onShare();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final number = NumberFormat.decimalPattern(l10n.localeName);
+    final delta = highlights.volumeDeltaKg?.round();
+    final muted = context.textStyles.bodyMedium?.copyWith(
+      color: context.colors.onSurfaceVariant,
+    );
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (highlights.volumeKg > 0) ...[
+            Text(
+              l10n.trainingVolumeMoved(
+                number.format(highlights.volumeKg.round()),
+              ),
+              style: context.textStyles.titleMedium,
+            ),
+            if (delta != null && delta != 0)
+              Text(
+                delta > 0
+                    ? l10n.trainingVolumeMore(number.format(delta))
+                    : l10n.trainingVolumeLess(number.format(-delta)),
+                style: muted,
+              ),
+            const SizedBox(height: TokensSpacing.s),
+          ],
+          if (highlights.records.isNotEmpty) ...[
+            Text(
+              l10n.trainingNewRecords(highlights.records.length),
+              style: context.textStyles.titleSmall,
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            for (final r in highlights.records)
+              Padding(
+                padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
+                child: PersonalRecordRow(record: r),
+              ),
+            const SizedBox(height: TokensSpacing.s),
+          ],
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: shared
+                ? AppPill(
+                    icon: Icons.check_rounded,
+                    color: context.palette.success,
+                    label: l10n.trainingShared,
+                  )
+                : AppSecondaryButton(
+                    label: l10n.trainingShareWall,
+                    icon: const Icon(Icons.dynamic_feed_rounded),
+                    loading: sharing,
+                    onPressed: () => _confirm(context),
+                  ),
           ),
         ],
       ),

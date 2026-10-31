@@ -4,7 +4,9 @@ package com.synaptixfit.domain.model.academic;
  * Experiencia de la práctica académica (cantidades del sistema antiguo).
  *
  * <ul>
- *   <li>Test o práctica completa: 20 XP, +10 si se acierta al menos el 80 %.</li>
+ *   <li>Test o práctica completa: 20 XP, +10 si se acierta al menos el 80 %. Solo con al menos
+ *       {@value #MIN_REWARDED_QUESTIONS} preguntas y como mucho {@value #MAX_REWARDED_TESTS_PER_DAY} tests con XP
+ *       cada 24 h: antes un test de una pregunta daba 30 XP y se podía repetir sin fin.</li>
  *   <li>Repaso SM-2 que tocaba (ver {@code StudyMaterial.isReviewOwed}): {@value #DUE_REVIEW_XP} XP.
  *       Antes era una sola vez por material; ahora premia el hábito de repasar cuando toca, una vez
  *       al día como mucho por material porque el siguiente repaso queda al menos a un día.</li>
@@ -20,12 +22,15 @@ public final class PracticeRewards {
     public static final double BONUS_THRESHOLD = 0.8;
     public static final int DUE_REVIEW_XP = 5;
     public static final int FLASHCARDS_MAX_XP = 30;
+    public static final int MIN_REWARDED_QUESTIONS = 5;
+    public static final int MAX_REWARDED_TESTS_PER_DAY = 5;
 
     private PracticeRewards() {
     }
 
-    public static int practiceXp(int correct, int total) {
-        if (total <= 0) {
+    /** XP de un test terminado; {@code rewardedLastDay} son los tests que dieron XP en las últimas 24 h. */
+    public static int practiceXp(int correct, int total, int rewardedLastDay) {
+        if (total < MIN_REWARDED_QUESTIONS || rewardedLastDay >= MAX_REWARDED_TESTS_PER_DAY) {
             return 0;
         }
         return PRACTICE_BASE_XP + ((double) correct / total >= BONUS_THRESHOLD ? PRACTICE_BONUS_XP : 0);

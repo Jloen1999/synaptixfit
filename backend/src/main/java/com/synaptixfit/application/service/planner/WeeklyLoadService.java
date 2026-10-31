@@ -10,18 +10,22 @@ import com.synaptixfit.domain.exception.planner.PlannerRangeTooLargeException;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.Deadline;
 import com.synaptixfit.domain.model.planner.DeadlineType;
+import com.synaptixfit.domain.model.planner.FocusSession;
 import com.synaptixfit.domain.model.planner.PlannerProfile;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.WeekBalance;
 import com.synaptixfit.domain.model.planner.WeeklyAcademicLoad;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.FocusSessionRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.PlannerProfilePort;
 import com.synaptixfit.domain.port.output.planner.WeeklyLoadRepositoryPort;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -35,11 +39,9 @@ import java.util.UUID;
 public class WeeklyLoadService implements SyncWeeklyLoadUseCase, UpdateWeeklyWellbeingUseCase, GetWeeklyLoadsUseCase,
         GetWeekBalanceUseCase {
 
-    /** Objetivo semanal por defecto si el usuario no tiene perfil académico. */
-    static final int DEFAULT_WEEKLY_GOAL_HOURS = 14;
-
     private final WeeklyLoadRepositoryPort loads;
     private final CalendarBlockRepositoryPort blocks;
+    private final FocusSessionRepositoryPort focusSessions;
     private final DeadlineRepositoryPort deadlines;
     private final PlannerProfilePort profiles;
     private final AwardExperienceUseCase award;
@@ -47,10 +49,12 @@ public class WeeklyLoadService implements SyncWeeklyLoadUseCase, UpdateWeeklyWel
     private final PlannerZone zone;
 
     public WeeklyLoadService(WeeklyLoadRepositoryPort loads, CalendarBlockRepositoryPort blocks,
-                             DeadlineRepositoryPort deadlines, PlannerProfilePort profiles,
-                             AwardExperienceUseCase award, RevokeExperienceUseCase revoke, PlannerZone zone) {
+                             FocusSessionRepositoryPort focusSessions, DeadlineRepositoryPort deadlines,
+                             PlannerProfilePort profiles, AwardExperienceUseCase award, RevokeExperienceUseCase revoke,
+                             PlannerZone zone) {
         this.loads = loads;
         this.blocks = blocks;
+        this.focusSessions = focusSessions;
         this.deadlines = deadlines;
         this.profiles = profiles;
         this.award = award;
@@ -72,17 +76,23 @@ public class WeeklyLoadService implements SyncWeeklyLoadUseCase, UpdateWeeklyWel
         Instant to = zone.weekEnd(monday);
         long planned = 0;
         long actual = 0;
+        Set<UUID> completedBlocks = new HashSet<>();
         for (CalendarBlock b : weekBlocks(userId, monday)) {
             if (b.type().countsAsStudy()) {
                 planned += b.range().minutes();
-                actual += b.completed() ? b.range().minutes() : 0;
+                if (b.completed()) {
+                    actual += b.range().minutes();
+                    completedBlocks.add(b.id());
+                }
             }
         }
+        actual += FocusSession.focusMinutesOutside(
+                focusSessions.findByUserBetween(userId, monday, monday.plusDays(6)), completedBlocks);
         List<Deadline> week = deadlines.findAll(userId, new DeadlineRepositoryPort.Query(from, to, null, false));
         int exams = (int) week.stream().filter(d -> d.type() == DeadlineType.EXAM).count();
         load.refresh(planned, actual, exams, week.size() - exams);
         int goal = profiles.findAcademic(userId).map(PlannerProfile.Academic::weeklyStudyGoalHours)
-                .orElse(DEFAULT_WEEKLY_GOAL_HOURS);
+                .orElse(PlannerProfile.Academic.DEFAULT_WEEKLY_GOAL_HOURS);
         int xp = 0;
         if (load.qualifiesForStudyExperience(goal)) {
             award.award(userId, WeeklyAcademicLoad.STUDY_EXPERIENCE);

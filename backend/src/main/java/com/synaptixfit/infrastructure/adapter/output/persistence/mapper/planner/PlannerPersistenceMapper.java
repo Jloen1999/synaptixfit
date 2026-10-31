@@ -183,7 +183,7 @@ public final class PlannerPersistenceMapper {
         e.setUsuarioId(s.userId());
         e.setDuracionMinutos(s.durationMinutes());
         e.setCiclosCompletados(s.cycles());
-        e.setTipoFase(s.phase().name().toLowerCase(Locale.ROOT));
+        e.setTipoFase(phaseToDb(s.phase()));
         e.setCompletada(s.completed());
         e.setFecha(s.date());
         e.setBloqueId(s.blockId());
@@ -244,6 +244,11 @@ public final class PlannerPersistenceMapper {
             case "practica", "practice" -> ClassKind.PRACTICE;
             default -> null;
         };
+    }
+
+    /** Código de la fase en {@code sesiones_focus.tipo_fase}. */
+    public static String phaseToDb(FocusSession.FocusPhase phase) {
+        return phase.name().toLowerCase(Locale.ROOT);
     }
 
     static FocusSession.FocusPhase phaseToDomain(String v) {

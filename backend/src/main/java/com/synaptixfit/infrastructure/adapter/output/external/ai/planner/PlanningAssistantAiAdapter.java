@@ -11,6 +11,7 @@ import com.synaptixfit.domain.model.planner.SubjectRef;
 import com.synaptixfit.domain.model.planner.SuggestedBlock;
 import com.synaptixfit.domain.port.output.ai.GenerativeAiPort;
 import com.synaptixfit.domain.port.output.planner.PlanningAssistantPort;
+import com.synaptixfit.infrastructure.adapter.output.external.ai.AiLanguage;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -129,7 +130,8 @@ public class PlanningAssistantAiAdapter implements PlanningAssistantPort {
                 - Responde ÚNICAMENTE con el JSON. Sin Markdown, sin explicaciones.
                 """.formatted(inbox.weekStart(), inbox.studyHoursTarget(), inbox.sportSessionsTarget(), sportMinutes,
                 inbox.sportSessionsTarget() * sportMinutes / 60.0, deadlines, subjects, routines, fixed, sportMinutes,
-                tMax, Math.round(tMax * 0.6));
+                tMax, Math.round(tMax * 0.6))
+                + "- Escribe el campo \"tema\" en " + AiLanguage.current() + ".\n";
     }
 
     /** Convierte la respuesta en propuestas; los nombres de asignatura y rutina se resuelven a sus ids. */

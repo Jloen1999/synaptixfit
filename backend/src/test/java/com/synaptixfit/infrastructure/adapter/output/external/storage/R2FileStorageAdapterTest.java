@@ -16,7 +16,7 @@ class R2FileStorageAdapterTest {
 
     private static R2FileStorageAdapter adapter(String endpoint, String accessKey, String secretKey) {
         return new R2FileStorageAdapter(new AppProperties(null, null, null, null,
-                new AppProperties.Storage(endpoint, "auto", "bucket-secreto", accessKey, secretKey, null)));
+                new AppProperties.Storage(endpoint, "auto", "bucket-secreto", accessKey, secretKey, null), null));
     }
 
     @Test
