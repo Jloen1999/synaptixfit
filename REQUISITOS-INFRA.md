@@ -26,14 +26,19 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 ### Rutas con credenciales y salida a Internet
 
 * **Calendario suscrito** (`/api/v1/planner/calendar-feed/<token>.ics`, ADR 0020): el token de la ruta es una
-  credencial. El nginx del cliente no lo registra y limita a 30 peticiones por minuto e IP. Pendiente del operador:
-  - que **Traefik** no guarde registros de acceso con la ruta (desactivados o con la ruta enmascarada);
-  - en **Cloudflare**, que *Bot Fight Mode* o los desafíos no bloqueen esa ruta, porque los lectores de Google,
-    Apple y Outlook no resuelven desafíos. Basta con una regla que la excluya.
+  credencial. El nginx del cliente no lo registra y limita a 30 peticiones por minuto e IP. Además:
+  - **Traefik** no debe guardar registros de acceso con la ruta (desactivados o con la ruta quitada).
+    `infra/scripts/10-revisar-registros-traefik.sh` lo comprueba sin imprimir ninguna línea de registro.
+  - En **Cloudflare**, *Bot Fight Mode* o los desafíos no deben bloquear esa ruta, porque los lectores de Google,
+    Apple y Outlook no resuelven desafíos. Regla personalizada de WAF «Skip» con la expresión
+    `starts_with(http.request.uri.path, "/api/v1/planner/calendar-feed/")` (2026-10-31: sin bloqueo; probado
+    con los agentes de Google Calendar, Apple y Outlook).
 * **Descarga de calendarios ICS** (importación por URL): el backend descarga direcciones que da el usuario. La app
   rechaza IP privadas y puertos que no sean 80/443 en cada redirección. Queda un riesgo residual, porque el nombre
-  se vuelve a resolver al conectar (DNS rebinding). Recomendado: filtrar la salida del contenedor `backend` a
-  rangos privados, salvo la BD.
+  se vuelve a resolver al conectar (DNS rebinding). Lo cierra `infra/scripts/11-filtrar-salida-backend.sh
+  --aplicar`: reglas dentro del espacio de red del contenedor `backend` (no en el cortafuegos del servidor) que
+  solo dejan salir a Internet y a PostgreSQL de `infra-app-db`. Se pierden al recrear el contenedor:
+  `infra/desplegar.ps1` las vuelve a aplicar en cada despliegue.
 
 ### Variables de entorno
 

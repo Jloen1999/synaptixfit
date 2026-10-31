@@ -29,7 +29,8 @@ Navegador ──HTTPS──▶ Cloudflare (proxy, Full strict) ──▶ VPS :44
 
 1. Push a `master`. CI pasa los tests y, si están en verde, el job `images` publica las dos imágenes con la etiqueta del commit (`git rev-parse HEAD`).
 2. La primera vez: en GitHub → *Packages* → cada imagen → *Package settings* → **Change visibility → Public** (el repositorio es público; así el VPS descarga sin credenciales).
-3. Desplegar esa etiqueta (desde Windows):
+3. Desplegar esa etiqueta (desde Windows). Lo más cómodo es `infra\desplegar.ps1 -Tag <commit>`, que además hace
+   una copia de la BD antes, vuelve a aplicar el filtro de salida del backend y verifica. A mano:
    ```powershell
    scp docker-compose.prod.yml infra\scripts\07-desplegar-synaptixfit.sh infra\scripts\08-verificar-synaptixfit.sh infra-ovh:/tmp/
    ssh infra-ovh 'sed -i "s/\r$//" /tmp/0*.sh && sudo bash /tmp/07-desplegar-synaptixfit.sh <commit> <GOOGLE_CLIENT_IDS> /tmp/docker-compose.prod.yml'
