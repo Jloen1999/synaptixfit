@@ -215,7 +215,10 @@ class AdminFlowIT {
         mvc.perform(as(adminToken, get("/api/v1/admin/audit").param("action", "SELF_DELETE_ACCOUNT")))
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.items[0].adminId").isEmpty());
-        // El último administrador no puede darse de baja.
+        // El último administrador no puede darse de baja. La BD embebida se comparte entre tests y el orden
+        // cambia de una máquina a otra: se deja a este como único administrador para no depender de él.
+        jdbc.sql("UPDATE usuarios SET rol = 'usuario' WHERE rol = 'admin' AND email <> 'admin-it@example.com'")
+                .update();
         mvc.perform(as(adminToken, delete("/api/v1/me"))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"password\":\"secret123\"}"))
                 .andExpect(status().isUnprocessableEntity())
