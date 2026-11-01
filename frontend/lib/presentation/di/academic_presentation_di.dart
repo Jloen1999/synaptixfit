@@ -27,6 +27,8 @@ void registerAcademicPresentation(GetIt getIt) {
       () => AcademicHomeBloc(
         getSubjects: getIt(),
         getDue: getIt(),
+        getInbox: getIt(),
+        moveNote: getIt(),
         watchChanges: getIt(),
       ),
     )
@@ -86,6 +88,9 @@ void registerAcademicPresentation(GetIt getIt) {
         getSubjects: getIt(),
         createNote: getIt(),
         updateNote: getIt(),
+        loadDraft: getIt(),
+        saveDraft: getIt(),
+        discardDraft: getIt(),
       ),
     )
     ..registerFactory(
@@ -119,6 +124,7 @@ void registerAcademicPresentation(GetIt getIt) {
         generate: getIt(),
         saveAsNote: getIt(),
         saveAsQuiz: getIt(),
+        uploadFile: getIt(),
       ),
     )
     ..registerFactory(

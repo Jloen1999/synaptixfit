@@ -35,7 +35,12 @@ class _FocusTimerHostState extends State<FocusTimerHost> {
     super.didChangeDependencies();
     if (_restored) return;
     _restored = true;
-    _bloc.add(PomodoroEvent.restored(alertTexts: pomodoroAlertTexts(context)));
+    _bloc.add(
+      PomodoroEvent.restored(
+        alertTexts: pomodoroAlertTexts(context),
+        accountId: context.read<SessionBloc>().account?.id,
+      ),
+    );
   }
 
   @override

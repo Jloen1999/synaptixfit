@@ -192,5 +192,8 @@
   "progressBySubjectArchived": "Archived subject",
   "progressBySubjectNoReviews": "No reviews yet",
   "progressBySubjectRecall": "{reviews, plural, =1{1 review} other{{reviews} reviews}} · you remember {percent}%",
-  "progressBySubjectWeak": "review it more often"
+  "progressBySubjectWeak": "review it more often",
+  "progressNextBadgeTitle": "Next badge",
+  "progressNextBadgeAmount": "{current} of {target} · {remaining} to go",
+  "progressNextBadgeHint": "Opens your badges"
 }

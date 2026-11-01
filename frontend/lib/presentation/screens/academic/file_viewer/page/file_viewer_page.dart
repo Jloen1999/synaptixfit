@@ -128,40 +128,8 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
               ),
               PopupMenuButton<String>(
                 tooltip: l10n.academicMoreActions,
-                onSelected: (value) {
-                  final bloc = context.read<FileViewerBloc>();
-                  switch (value) {
-                    case 'review':
-                      bloc.add(
-                        const FileViewerEvent.materialRequested(
-                          practice: false,
-                        ),
-                      );
-                    case 'practice':
-                      bloc.add(
-                        const FileViewerEvent.materialRequested(practice: true),
-                      );
-                    default:
-                      _delete(context, file);
-                  }
-                },
+                onSelected: (_) => _delete(context, file),
                 itemBuilder: (_) => [
-                  if (file.aiReadable) ...[
-                    PopupMenuItem(
-                      value: 'review',
-                      child: ListTile(
-                        leading: const Icon(Icons.replay_rounded),
-                        title: Text(l10n.academicActionReview),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'practice',
-                      child: ListTile(
-                        leading: const Icon(Icons.quiz_outlined),
-                        title: Text(l10n.academicActionPractice),
-                      ),
-                    ),
-                  ],
                   PopupMenuItem(
                     value: 'delete',
                     child: ListTile(
@@ -176,6 +144,48 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
               ),
             ],
           ),
+          // Como en el visor de apuntes: repasar y practicar a la vista (antes
+          // estaban escondidos en el menú). Solo si la IA puede leerlo.
+          bottomNavigationBar: file.aiReadable
+              ? SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(TokensSpacing.m),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppSecondaryButton(
+                            label: l10n.academicActionReview,
+                            icon: const Icon(Icons.replay_rounded),
+                            loading: state.requestedPractice == false,
+                            onPressed: state.busy
+                                ? null
+                                : () => context.read<FileViewerBloc>().add(
+                                    const FileViewerEvent.materialRequested(
+                                      practice: false,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: TokensSpacing.s),
+                        Expanded(
+                          child: AppPrimaryButton(
+                            label: l10n.academicActionPractice,
+                            icon: Icons.quiz_outlined,
+                            loading: state.requestedPractice == true,
+                            onPressed: state.busy
+                                ? null
+                                : () => context.read<FileViewerBloc>().add(
+                                    const FileViewerEvent.materialRequested(
+                                      practice: true,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : null,
           body: Column(
             children: [
               if (state.busy) const LinearProgressIndicator(),

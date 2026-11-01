@@ -78,8 +78,10 @@ abstract final class AcademicPaths {
   static String generate({String? subjectId}) =>
       _withQuery('/academic/generate', {'subjectId': subjectId});
 
-  static String review(String materialId) =>
-      '/academic/materials/$materialId/review';
+  /// Repaso de un material; [queue], los que vienen después («Repasar todos»).
+  static String review(String materialId, {List<String> queue = const []}) =>
+      '/academic/materials/$materialId/review'
+      '${queue.isEmpty ? '' : '?queue=${queue.join(',')}'}';
 
   static String practice(String materialId) => '/academic/practice/$materialId';
 

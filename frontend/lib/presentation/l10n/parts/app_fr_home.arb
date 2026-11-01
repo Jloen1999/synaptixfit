@@ -162,5 +162,10 @@
   "homePlanWeekLegendDone": "Fait",
   "homePlanWeekLegendComplete": "Journée faite",
   "homeReviewAll": "Tout réviser",
-  "homeCommunity": "Mur de la communauté"
+  "homeCommunity": "Mur de la communauté",
+  "homeTodayClassesNote": "{count, plural, =1{Plus 1 cours (non compté comme bloc)} other{Plus {count} cours (non comptés comme blocs)}}",
+  "homeBannerActionTrainingToday": "Voir l'entraînement du jour",
+  "homeBannerActionNextSlot": "Au prochain créneau",
+  "homeBannerActionDone": "Fait",
+  "homeBannerActionMarkInCalendar": "Marquer dans le calendrier"
 }

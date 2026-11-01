@@ -30,6 +30,11 @@ import '../use_cases/academic/get_due_study_materials_use_case.dart';
 import '../use_cases/academic/get_file_content_use_case.dart';
 import '../use_cases/academic/get_note_use_case.dart';
 import '../use_cases/academic/get_notes_use_case.dart';
+import '../use_cases/academic/get_unassigned_notes_use_case.dart';
+import '../use_cases/academic/load_note_draft_use_case.dart';
+import '../use_cases/academic/save_note_draft_use_case.dart';
+import '../use_cases/academic/discard_note_draft_use_case.dart';
+import '../use_cases/academic/move_note_to_subject_use_case.dart';
 import '../use_cases/academic/get_question_bank_use_case.dart';
 import '../use_cases/academic/get_review_history_use_case.dart';
 import '../use_cases/academic/get_review_preview_use_case.dart';
@@ -150,6 +155,21 @@ void registerAcademicDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetNotesUseCaseContract>(
       () => GetNotesUseCase(getIt()),
+    )
+    ..registerLazySingleton<LoadNoteDraftUseCaseContract>(
+      () => LoadNoteDraftUseCase(getIt()),
+    )
+    ..registerLazySingleton<SaveNoteDraftUseCaseContract>(
+      () => SaveNoteDraftUseCase(getIt()),
+    )
+    ..registerLazySingleton<DiscardNoteDraftUseCaseContract>(
+      () => DiscardNoteDraftUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetUnassignedNotesUseCaseContract>(
+      () => GetUnassignedNotesUseCase(getIt()),
+    )
+    ..registerLazySingleton<MoveNoteToSubjectUseCaseContract>(
+      () => MoveNoteToSubjectUseCase(getIt()),
     )
     ..registerLazySingleton<GetQuestionBankUseCaseContract>(
       () => GetQuestionBankUseCase(getIt()),

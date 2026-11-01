@@ -1,5 +1,7 @@
 package com.synaptixfit.domain.model.training;
 
+import java.util.Optional;
+
 /**
  * Experiencia que otorga el módulo de entrenamiento (valores heredados de la app anterior).
  *
@@ -22,6 +24,20 @@ public final class TrainingRewards {
     private TrainingRewards() {
     }
 
+    /**
+     * Motivo por el que una sesión no da XP (vacío si la da). La duración manda sobre el tope: una
+     * sesión corta no cuenta aunque el día ya estuviera lleno.
+     */
+    public static Optional<SessionXpWithheld> withheldReason(int durationMinutes, int rewardedToday) {
+        if (!countsAsWorkout(durationMinutes)) {
+            return Optional.of(SessionXpWithheld.SHORT_SESSION);
+        }
+        if (rewardedToday >= MAX_REWARDED_SESSIONS_PER_DAY) {
+            return Optional.of(SessionXpWithheld.DAILY_LIMIT);
+        }
+        return Optional.empty();
+    }
+
     /** ¿La sesión cuenta como entrenamiento (XP, retos, insignias y racha)? */
     public static boolean countsAsWorkout(int durationMinutes) {
         return durationMinutes >= MIN_COUNTED_MINUTES;
@@ -32,7 +48,7 @@ public final class TrainingRewards {
      * contaron antes que esta.
      */
     public static int sessionXp(int durationMinutes, int rpe, int rewardedToday) {
-        if (!countsAsWorkout(durationMinutes) || rewardedToday >= MAX_REWARDED_SESSIONS_PER_DAY) {
+        if (withheldReason(durationMinutes, rewardedToday).isPresent()) {
             return 0;
         }
         int minutes = Math.max(0, Math.min(durationMinutes, SESSION_MAX_MINUTES_XP));

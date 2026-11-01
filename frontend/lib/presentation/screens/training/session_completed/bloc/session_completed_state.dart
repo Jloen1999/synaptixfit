@@ -8,6 +8,9 @@ abstract class SessionCompletedState with _$SessionCompletedState {
     @Default(CompletedStatus.loading) CompletedStatus status,
     TrainingSession? session,
     ExperienceChange? experience,
+
+    /// Por qué la sesión no dio XP (lo dice el servidor; nulo si la dio).
+    SessionXpWithheld? xpWithheld,
     @Default(<Recommendation>[]) List<Recommendation> recommendations,
     @Default(<String>{}) Set<String> busyIds,
     AppError? error,

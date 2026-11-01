@@ -32,6 +32,7 @@ abstract class PlannedExerciseDto with _$PlannedExerciseDto {
     List<int>? isometricSecondsPerSet,
     int? realDurationSeconds,
     String? trackingKind,
+    int? estimatedSeconds,
   }) = _PlannedExerciseDto;
 
   const PlannedExerciseDto._();
@@ -66,6 +67,7 @@ abstract class PlannedExerciseDto with _$PlannedExerciseDto {
     ),
     realDurationSeconds: realDurationSeconds,
     trackingKind: TrackingKind.tryFromApi(trackingKind),
+    estimatedSeconds: estimatedSeconds,
   );
 }
 
@@ -78,6 +80,7 @@ abstract class DayDto with _$DayDto {
     String? status,
     String? closedOn,
     List<PlannedExerciseDto>? exercises,
+    @Default(0) int estimatedMinutes,
   }) = _DayDto;
 
   const DayDto._();
@@ -91,6 +94,7 @@ abstract class DayDto with _$DayDto {
     status: ProgressStatus.fromApi(status),
     closedOn: parseLocalDate(closedOn),
     exercises: _exercises(exercises),
+    estimatedMinutes: estimatedMinutes,
   );
 }
 
@@ -238,7 +242,9 @@ abstract class RoutineSummaryDto with _$RoutineSummaryDto {
     createdAt: createdAt?.toLocal(),
     skippedDays: skippedDays,
     coverImageUrl: blankToNull(coverImageUrl),
-    coverModality: coverModality == null ? null : Modality.fromApi(coverModality),
+    coverModality: coverModality == null
+        ? null
+        : Modality.fromApi(coverModality),
   );
 }
 
@@ -266,6 +272,7 @@ abstract class PendingDayDto with _$PendingDayDto {
     @Default(0) int skippedDays,
     String? coverImageUrl,
     String? coverModality,
+    @Default(0) int estimatedMinutes,
   }) = _PendingDayDto;
 
   const PendingDayDto._();
@@ -294,7 +301,10 @@ abstract class PendingDayDto with _$PendingDayDto {
     completedDays: completedDays,
     skippedDays: skippedDays,
     coverImageUrl: blankToNull(coverImageUrl),
-    coverModality: coverModality == null ? null : Modality.fromApi(coverModality),
+    coverModality: coverModality == null
+        ? null
+        : Modality.fromApi(coverModality),
+    estimatedMinutes: estimatedMinutes,
   );
 }
 

@@ -17,12 +17,16 @@ import 'package:synaptixfit/domain/use_cases/home/get_home_onboarding_status_use
 import 'package:synaptixfit/domain/use_cases/home/get_home_setup_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/snooze_home_setup_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/get_home_unread_count_use_case.dart';
+import 'package:synaptixfit/domain/models/planner/calendar_block.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_timeline_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/set_block_completion_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/start_session_use_case.dart';
 import 'package:synaptixfit/presentation/screens/home/dashboard/bloc/home_dashboard_bloc.dart';
 import 'package:synaptixfit/presentation/screens/home/home_onboarding_gate.dart';
 
 import '../data_changes_fake.dart';
+import '../planner/planner_fixtures.dart';
 import '../training/training_fixtures.dart';
 import 'home_fixtures.dart';
 
@@ -43,6 +47,11 @@ class _MockSetup extends Mock implements GetHomeSetupUseCaseContract {}
 
 class _MockSnooze extends Mock implements SnoozeHomeSetupUseCaseContract {}
 
+class _MockComplete extends Mock implements SetBlockCompletionUseCaseContract {}
+
+class _MockReschedule extends Mock
+    implements RescheduleBlockToNextFreeSlotUseCaseContract {}
+
 void main() {
   late _MockDashboard getDashboard;
   late _MockReviews getReviews;
@@ -54,6 +63,8 @@ void main() {
   late _MockStart start;
   late _MockSetup getSetup;
   late _MockSnooze snooze;
+  late _MockComplete complete;
+  late _MockReschedule reschedule;
 
   HomeDashboardBloc build() => HomeDashboardBloc(
     getDashboard: getDashboard,
@@ -66,6 +77,8 @@ void main() {
     onboardingGate: gate,
     watchChanges: changes.useCase,
     startSession: start,
+    setBlockCompletion: complete,
+    rescheduleToNextSlot: reschedule,
     clock: () => DateTime(2026, 10, 20, 9),
   );
 
@@ -81,6 +94,8 @@ void main() {
     start = _MockStart();
     getSetup = _MockSetup();
     snooze = _MockSnooze();
+    complete = _MockComplete();
+    reschedule = _MockReschedule();
     when(
       () => getSetup(userId: any(named: 'userId')),
     ).thenAnswer((_) async => const Success(HomeSetup()));
@@ -353,4 +368,56 @@ void main() {
       HomeDashboardState(trainingError: AppError.network()),
     ],
   );
+
+  group('acciones del aviso de bloques sin hacer', () {
+    final missed = block(id: 'b9', start: DateTime(2026, 10, 20, 8));
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      '«Hecho» marca el bloque y avisa de la XP que dio el servidor',
+      setUp: () => when(() => complete('b9', completed: true)).thenAnswer(
+        (_) async => Success(BlockCompletion(block: missed, xpDelta: 20)),
+      ),
+      build: build,
+      act: (bloc) => bloc
+        ..add(const HomeDashboardEvent.bannerBlockCompleted('b9'))
+        ..add(const HomeDashboardEvent.bannerNoticeHandled()),
+      expect: () => const [
+        HomeDashboardState(bannerBusy: HomeBannerAction.complete),
+        HomeDashboardState(bannerNotice: HomeBannerNotice.completed(20)),
+        HomeDashboardState(),
+      ],
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      '«Al próximo hueco» lo mueve y dice a dónde',
+      setUp: () => when(
+        () => reschedule('b9'),
+      ).thenAnswer((_) async => Success(BlockChange(block: missed))),
+      build: build,
+      act: (bloc) =>
+          bloc.add(const HomeDashboardEvent.bannerBlockRescheduled('b9')),
+      expect: () => [
+        const HomeDashboardState(bannerBusy: HomeBannerAction.reschedule),
+        HomeDashboardState(
+          bannerNotice: HomeBannerNotice.rescheduled(DateTime(2026, 10, 20, 8)),
+        ),
+      ],
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      'si falla, avisa con el error',
+      setUp: () => when(
+        () => reschedule('b9'),
+      ).thenAnswer((_) async => const Failure(AppError.network())),
+      build: build,
+      act: (bloc) =>
+          bloc.add(const HomeDashboardEvent.bannerBlockRescheduled('b9')),
+      expect: () => const [
+        HomeDashboardState(bannerBusy: HomeBannerAction.reschedule),
+        HomeDashboardState(
+          bannerNotice: HomeBannerNotice.failed(AppError.network()),
+        ),
+      ],
+    );
+  });
 }

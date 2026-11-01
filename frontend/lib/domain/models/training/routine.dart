@@ -196,6 +196,10 @@ abstract class PlannedExercise with _$PlannedExercise {
 
     /// Cómo se apunta cada serie (del servidor; nulo con versiones antiguas).
     TrackingKind? trackingKind,
+
+    /// Duración prevista del ejercicio (la calcula el servidor; nula con
+    /// versiones antiguas): para «quedan ≈ 12 min» en la sesión.
+    int? estimatedSeconds,
   }) = _PlannedExercise;
 
   const PlannedExercise._();
@@ -216,6 +220,9 @@ abstract class RoutineDay with _$RoutineDay {
     /// Día en que se completó o se saltó.
     DateTime? closedOn,
     @Default(<PlannedExercise>[]) List<PlannedExercise> exercises,
+
+    /// Duración prevista del día («≈ 45 min»; 0 si el servidor no la manda).
+    @Default(0) int estimatedMinutes,
   }) = _RoutineDay;
 }
 
@@ -405,6 +412,9 @@ abstract class PendingDay with _$PendingDay {
     /// Foto y modalidad del ejercicio que representa la rutina.
     String? coverImageUrl,
     Modality? coverModality,
+
+    /// Duración prevista del día («≈ 45 min»; 0 si el servidor no la manda).
+    @Default(0) int estimatedMinutes,
   }) = _PendingDay;
 
   const PendingDay._();

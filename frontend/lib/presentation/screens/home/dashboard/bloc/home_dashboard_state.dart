@@ -33,5 +33,30 @@ abstract class HomeDashboardState with _$HomeDashboardState {
 
     /// No se pudo empezar el entreno (efecto de un solo uso).
     AppError? trainingError,
+
+    /// Acción del aviso en curso («Hecho» o «Al próximo hueco»); nula si
+    /// no hay ninguna.
+    HomeBannerAction? bannerBusy,
+
+    /// Resultado de la acción del aviso (efecto de un solo uso).
+    HomeBannerNotice? bannerNotice,
   }) = _HomeDashboardState;
+}
+
+/// Acciones del aviso de bloques sin hacer.
+enum HomeBannerAction { complete, reschedule }
+
+/// Qué pasó al actuar desde el aviso; la página lo dice con un SnackBar.
+@freezed
+sealed class HomeBannerNotice with _$HomeBannerNotice {
+  /// Bloque marcado como hecho; [xpDelta] es la XP que dio (puede ser 0).
+  const factory HomeBannerNotice.completed(int xpDelta) =
+      HomeBannerNoticeCompleted;
+
+  /// Bloque llevado al hueco que empieza en [start].
+  const factory HomeBannerNotice.rescheduled(DateTime start) =
+      HomeBannerNoticeRescheduled;
+
+  const factory HomeBannerNotice.failed(AppError error) =
+      HomeBannerNoticeFailed;
 }

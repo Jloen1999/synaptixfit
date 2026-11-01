@@ -11,6 +11,11 @@ sealed class GenerationCenterEvent with _$GenerationCenterEvent {
   const factory GenerationCenterEvent.sourceToggled(StudySourceRef source) =
       GenerationCenterSourceToggled;
 
+  /// Sube un archivo a la asignatura elegida para usarlo como fuente.
+  const factory GenerationCenterEvent.fileUploadRequested(
+    FileUploadPayload payload,
+  ) = GenerationCenterFileUploadRequested;
+
   const factory GenerationCenterEvent.kindSelected(ArtifactKind kind) =
       GenerationCenterKindSelected;
 

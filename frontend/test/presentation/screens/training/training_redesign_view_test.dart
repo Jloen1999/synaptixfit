@@ -7,9 +7,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/app/di/app_di.dart';
 import 'package:synaptixfit/domain/enums/training_enums.dart';
 import 'package:synaptixfit/domain/enums/visibility.dart' as vis;
+import 'package:synaptixfit/domain/models/training/exercise.dart';
 import 'package:synaptixfit/domain/models/training/routine.dart';
 import 'package:synaptixfit/domain/models/training/session.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
+import 'package:synaptixfit/presentation/screens/training/exercise_detail/bloc/exercise_detail_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/bloc/live_session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/page/live_session_page.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/planned_exercise_card.dart';
@@ -20,6 +22,9 @@ import 'training_fixtures.dart';
 
 class _MockLiveBloc extends MockBloc<LiveSessionEvent, LiveSessionState>
     implements LiveSessionBloc {}
+
+class _MockDetailBloc extends MockBloc<ExerciseDetailEvent, ExerciseDetailState>
+    implements ExerciseDetailBloc {}
 
 /// Press banca en pirámide (reps + kg), plancha (segundos) y carrera (min +
 /// metros): las tres formas de medir que cambian la tabla de series.
@@ -273,6 +278,48 @@ void main() {
         },
       );
     }
+
+    // Antes se apilaba la ruta del ejercicio (de la pestaña Entreno) sobre la
+    // sesión, que es pantalla completa: go_router duplicaba el armazón y se
+    // veía una pantalla oscura. Ahora se abre «Cómo se hace» en una hoja.
+    testWidgets('tocar un ejercicio de calentamiento abre su hoja', (
+      tester,
+    ) async {
+      final detail = _MockDetailBloc();
+      when(() => detail.state).thenReturn(const ExerciseDetailState.loading());
+      getIt.registerFactory<ExerciseDetailBloc>(() => detail);
+      addTearDown(() => getIt.unregister<ExerciseDetailBloc>());
+      final warmUp = TrainingFixtures.squat.copyWith(previewUrl: null);
+      when(() => bloc.state).thenReturn(
+        ready().copyWith(
+          session: TrainingFixtures.session(),
+          bookends: SessionBookends(warmUp: [warmUp]),
+        ),
+      );
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      final header = find.text('Calentamiento').first;
+      await tester.ensureVisible(header);
+      await tester.tap(header);
+      await tester.pump(const Duration(milliseconds: 500));
+      // La barra fija de abajo puede taparla en 360 dp: se pulsa su acción.
+      final tile = find.ancestor(
+        of: find.text('Sentadilla').first,
+        matching: find.byType(ListTile),
+      );
+      tester.widget<ListTile>(tile).onTap!();
+      // La hoja tiene una animación de carga: no se espera a que pare.
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('Sentadilla'),
+        ),
+        findsWidgets,
+      );
+      await tester.pumpWidget(const SizedBox());
+    });
 
     testWidgets('marcar la serie que toca envía lo previsto de esa serie', (
       tester,

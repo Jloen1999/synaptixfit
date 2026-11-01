@@ -7,9 +7,9 @@
   "plannerToday": "Today",
   "plannerTodayDate": "Today, {date}",
   "plannerWeekRange": "{start} – {end}",
-  "plannerSavePlan": "Save plan",
-  "plannerPlanSaved": "{count, plural, =0{Plan saved} =1{Plan saved with 1 block} other{Plan saved with {count} blocks}}",
-  "plannerPlanSavedXp": "Plan saved · +{xp} XP",
+  "plannerSavePlan": "Close week",
+  "plannerPlanSaved": "{count, plural, =0{Week closed} =1{Week closed with 1 block} other{Week closed with {count} blocks}}",
+  "plannerPlanSavedXp": "Week closed · +{xp} XP",
   "plannerBlockCompleted": "Block completed",
   "plannerBlockCompletedXp": "Block completed · +{xp} XP",
   "plannerBlockUncompleted": "Block unmarked",
@@ -337,5 +337,9 @@
   "plannerFieldChallengeTaskHint": "Each completed block moves that task forward. The block must fall within the challenge dates.",
   "plannerNoChallengeTask": "No specific task",
   "plannerErrorBlockOutsideChallenge": "The block falls outside its challenge's dates. Move it or extend the challenge.",
-  "plannerDeadlineDoneCaption": "Done"
+  "plannerDeadlineDoneCaption": "Done",
+  "plannerPomodoroSubjectLabel": "What are you studying?",
+  "plannerPomodoroNoSubject": "No subject",
+  "plannerClosePlanTitle": "Close the week?",
+  "plannerClosePlanMessage": "You mark this week as planned and, the first time, earn XP for every block you planned. It isn't needed to save: blocks save themselves and you can keep changing them."
 }

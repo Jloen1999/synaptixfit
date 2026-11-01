@@ -116,9 +116,7 @@ void main() {
         status: any(named: 'status'),
         size: any(named: 'size'),
       ),
-    ).thenAnswer(
-      (_) async => const Failure(AppError.network()),
-    );
+    ).thenAnswer((_) async => const Failure(AppError.network()));
     useCases = RoutineDetailUseCases(
       getRoutine: getRoutine,
       getBodyWeight: getWeight,
@@ -305,9 +303,12 @@ void main() {
       ),
       build: () => RoutineDetailBloc(useCases),
       seed: ready,
-      act: (bloc) => bloc.add(const RoutineDetailEvent.exerciseUpdated('p1', four)),
+      act: (bloc) =>
+          bloc.add(const RoutineDetailEvent.exerciseUpdated('p1', four)),
       expect: () => [
-        ready(routine.withExerciseParameters('p1', four)).copyWith(saving: true),
+        ready(
+          routine.withExerciseParameters('p1', four),
+        ).copyWith(saving: true),
         ready(routine.withExerciseParameters('p1', four)),
       ],
     );
@@ -333,8 +334,12 @@ void main() {
       wait: const Duration(milliseconds: 60),
       // La respuesta del primero no pisa el segundo, que sigue a la vista.
       expect: () => [
-        ready(routine.withExerciseParameters('p1', four)).copyWith(saving: true),
-        ready(routine.withExerciseParameters('p1', five)).copyWith(saving: true),
+        ready(
+          routine.withExerciseParameters('p1', four),
+        ).copyWith(saving: true),
+        ready(
+          routine.withExerciseParameters('p1', five),
+        ).copyWith(saving: true),
         ready(routine.withExerciseParameters('p1', five)),
       ],
       verify: (_) => verifyInOrder([
@@ -345,9 +350,9 @@ void main() {
 
     blocTest<RoutineDetailBloc, RoutineDetailState>(
       'sustituir un ejercicio guarda y avisa',
-      setUp: () => when(() => replace('r1', 'p1', 'e9')).thenAnswer(
-        (_) async => Success(routine.copyWith(name: 'Con e9')),
-      ),
+      setUp: () => when(
+        () => replace('r1', 'p1', 'e9'),
+      ).thenAnswer((_) async => Success(routine.copyWith(name: 'Con e9'))),
       build: () => RoutineDetailBloc(useCases),
       seed: ready,
       act: (bloc) =>

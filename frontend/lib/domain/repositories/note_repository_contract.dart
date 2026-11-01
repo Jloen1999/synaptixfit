@@ -8,6 +8,15 @@ import '../models/result/result.dart';
 abstract interface class NoteRepositoryContract {
   Future<AppResult<List<Note>>> getNotes({String? subjectId});
 
+  /// Apuntes sin asignatura, los más recientes primero.
+  Future<AppResult<List<Note>>> getUnassignedNotes();
+
+  /// Cambia solo la asignatura del apunte.
+  Future<AppResult<Note>> moveNoteToSubject(
+    String noteId, {
+    required String subjectId,
+  });
+
   Future<AppResult<Note>> getNote(String noteId);
 
   Future<AppResult<Note>> createNote({

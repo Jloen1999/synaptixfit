@@ -84,6 +84,21 @@ Todas están en `CognitiveLoad` como constantes con nombre. Los tests de `NeuroF
 | Pomodoro | Fecha de hoy o de ayer; para la racha, fase de foco de al menos 10 min |
 | Racha | Un día cuenta si hay entrenamiento (sesión o bloque de deporte), registro diario, Pomodoro o estudio (bloque de estudio o repaso, repaso SM-2 o test) |
 
+- **Por qué «+0 XP» (`SessionXpWithheld`):** al terminar una sesión sin XP, `POST /training/sessions/{id}/finish` devuelve `xpWithheld` = `SHORT_SESSION` (menos de 10 min; manda sobre el tope) o `DAILY_LIMIT` (ya dieron XP 2 sesiones ese día). Lo decide `TrainingRewards.withheldReason`; la app solo lo explica.
+- **Hoja «Cómo se gana XP» (cliente, `xp_guide_sheet.dart`):** es texto explicativo con las cifras de esta tabla, del bloque de calendario, del Pomodoro (`FocusRewards`: 5 XP por concentración de ≥ 10 min, tope 20 al día), del registro diario (20) y del bonus semanal de estudio (150). **Si cambia una regla de esta sección, actualiza también esos textos** (`xpGuide*` en `app_*_core.arb`).
+
+## Duración prevista de una sesión (`SessionDurationEstimate`)
+
+Solo orienta («≈ 45 min» en el próximo día y el detalle del día; «quedan ≈ 12 min» en la sesión). La duración que cuenta para la carga (esfuerzo × minutos), las kcal y la XP es siempre la **real** (de empezar a terminar).
+
+- Por ejercicio: si ya se hizo, su duración real de la última vez (`realDurationSeconds`, que guarda la sesión en vivo). Si no: `series × (trabajo + descanso)`, con trabajo por serie = duración objetivo (cardio), o segundos de aguante (isométrico), o `3 s × repeticiones` (tempo medio de una repetición controlada). El descanso tras la última serie cubre el cambio al siguiente ejercicio.
+- Por día: suma de sus ejercicios, en minutos redondeados hacia arriba. Va en `estimatedMinutes` del día de rutina, del próximo día (`/training/...pending`) y del próximo entreno de Inicio; cada ejercicio planificado lleva `estimatedSeconds`.
+- «Quedan»: la app suma `estimatedSeconds × series sin apuntar / series` de cada ejercicio (proporción de lo que manda el servidor; no hay regla en el cliente).
+
+## Sugerencias tras la sesión: qué cambia y por qué
+
+Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevos, los que tenía (`before`) y el motivo (`reasonCode`: `FAILED_REPS`, `VERY_HIGH_RPE`, `VERY_LOW_RPE`, `LOW_RPE_MORE_REPS`, `LOW_RPE_MORE_WEIGHT`, `LOW_RPE_MORE_TIME`, `LOW_RPE_MORE_DISTANCE`, `INACTIVITY`), que decide `ProgressionCalculator`. El motivo de **toda** la sugerencia va en `details.reasonCode` (lo elige `SessionFeedback`: fallos o RPE máximo en una degradación, RPE bajo o muy bajo en una progresión, `INACTIVITY` en una descarga), porque cada ejercicio puede tener uno distinto. La app enseña «Peso: 40 → 42,5 kg», el porqué con el RPE, las repeticiones fallidas o los días sin entrenar de `details`, y que al aplicarla se guarda en la rutina (se nota la próxima vez que se haga ese día); «Ahora no» la quita y la rutina sigue igual. Las sugerencias antiguas (sin `before`) se ven como antes. La adaptación de la sesión de hoy (`SessionAdaptation`) dice qué ejercicios pierden series («4 → 3 series») y que es solo hoy; «Hacerla completa» (con confirmación) vuelve a las series planificadas en la app (el servidor no lo impide). «Quedan ≈ min» reparte la estimación entre las series planificadas, no las adaptadas.
+
 ## «Tu estudio» (Progreso) y valores por defecto
 
 - **Semana:** de lunes a domingo en la zona de la app (`StudyWeekSummary`).

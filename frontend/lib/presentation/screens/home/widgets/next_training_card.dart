@@ -99,16 +99,32 @@ class NextTrainingCard extends StatelessWidget {
                   ),
                   style: context.textStyles.bodyLarge,
                 ),
-                if (next.overdue && next.scheduledDate != null)
+                if ((next.overdue && next.scheduledDate != null) ||
+                    next.estimatedMinutes > 0)
                   Padding(
                     padding: const EdgeInsets.only(top: TokensSpacing.xs),
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: AppCoverPill(
-                        icon: Icons.schedule_rounded,
-                        color: context.palette.warning,
-                        label: overdueSinceLabel(l10n, next.scheduledDate!),
-                      ),
+                    child: Wrap(
+                      spacing: TokensSpacing.xs,
+                      runSpacing: TokensSpacing.xs,
+                      children: [
+                        if (next.overdue && next.scheduledDate != null)
+                          AppCoverPill(
+                            icon: Icons.schedule_rounded,
+                            color: context.palette.warning,
+                            label: overdueSinceLabel(l10n, next.scheduledDate!),
+                          ),
+                        // Duración prevista (la calcula el servidor).
+                        if (next.estimatedMinutes > 0)
+                          AppCoverPill(
+                            icon: Icons.timer_outlined,
+                            label: l10n.trainingEstimatedMinutes(
+                              next.estimatedMinutes,
+                            ),
+                            semanticLabel: l10n.trainingEstimatedMinutesSpoken(
+                              next.estimatedMinutes,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 if (next.totalDays > 0) ...[

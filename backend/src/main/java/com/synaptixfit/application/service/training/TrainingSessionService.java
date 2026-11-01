@@ -187,8 +187,9 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         // Una sesión abandonada cuenta en el día en que se hizo, no en el de hoy.
         Instant completedAt = session.completionInstant(duration, now);
         LocalDate day = LocalDate.ofInstant(completedAt, zone);
-        int xp = TrainingRewards.sessionXp(TrainingSession.minutesOf(duration), c.rpe(),
-                rewardedOn(c.userId(), day, completedAt));
+        int minutes = TrainingSession.minutesOf(duration);
+        int rewardedToday = rewardedOn(c.userId(), day, completedAt);
+        int xp = TrainingRewards.sessionXp(minutes, c.rpe(), rewardedToday);
         session.complete(duration, c.rpe(), calories, xp, completedAt);
         TrainingSession saved = sessions.save(session);
 
@@ -206,7 +207,8 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         events.publish(new TrainingSessionCompletionChanged(c.userId(), saved.id(), day, c.rpe(),
                 saved.durationMinutes(), saved.dayId(), true, now));
         trained.ifPresent(r -> closeDay(r, session.dayId(), day));
-        return new FinishTrainingSessionUseCase.Result(saved, experience, suggestions);
+        return new FinishTrainingSessionUseCase.Result(saved, experience, suggestions,
+                TrainingRewards.withheldReason(minutes, rewardedToday).orElse(null));
     }
 
     @Override

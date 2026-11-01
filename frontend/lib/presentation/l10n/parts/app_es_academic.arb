@@ -90,7 +90,7 @@
   "academicPriorityMedium": "Media",
   "academicPriorityHigh": "Alta",
   "academicTabProgress": "Progreso",
-  "academicTabSyllabus": "Temario",
+  "academicTabSyllabus": "Apuntes y archivos",
   "academicSubjectArchive": "Archivar",
   "academicSubjectUnarchive": "Restaurar",
   "academicSubjectDeleteTitle": "¿Eliminar la asignatura?",
@@ -894,5 +894,58 @@
         "type": "String"
       }
     }
-  }
+  },
+  "academicInboxTitle": "{count, plural, =1{1 apunte rápido sin asignatura} other{{count} apuntes rápidos sin asignatura}}",
+  "@academicInboxTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicInboxHint": "Llévalos a su asignatura para repasarlos y usarlos con la IA.",
+  "academicInboxMove": "Mover a asignatura",
+  "academicInboxMoveTitle": "Mover «{title}» a…",
+  "@academicInboxMoveTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicInboxMoved": "Apunte movido a {subject}",
+  "@academicInboxMoved": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "academicInboxOpenHint": "Abrir el apunte",
+  "academicPracticeRegenerateTitle": "¿Generar preguntas nuevas?",
+  "academicPracticeRegenerateMessage": "Se borran las preguntas de ahora y tus aciertos y fallos en cada una (las cifras de intentadas y acertadas vuelven a cero). Tus simulacros conservan su nota, pero ya no verás sus preguntas (tampoco las de uno a medias).",
+  "academicPracticeRegenerateConfirm": "Generar nuevas",
+  "academicGenerateCreateNote": "Crear apunte",
+  "academicGenerateUploadFile": "Subir archivo",
+  "academicGenerateFileUnreadable": "Archivo subido, pero la IA no puede leer ese tipo: prueba con un PDF, una imagen o un texto.",
+  "academicNoteDraftFound": "Tienes un borrador sin guardar ({when}). ¿Lo recuperas?",
+  "@academicNoteDraftFound": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "academicNoteDraftRestore": "Recuperar",
+  "academicNoteDraftDiscard": "Descartar",
+  "academicReviewAll": "Repasar todos",
+  "academicInboxMoveSpoken": "Mover «{title}» a una asignatura",
+  "@academicInboxMoveSpoken": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "academicInboxMoving": "Moviendo…"
 }

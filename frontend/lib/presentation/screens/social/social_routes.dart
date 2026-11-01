@@ -47,6 +47,15 @@ abstract final class SocialExternalPaths {
 
   /// `true` si [url] es la raíz de una pestaña (sin contar la query).
   static bool isTabRoot(String url) => tabRoots.contains(Uri.parse(url).path);
+
+  /// `true` si [url] vive dentro de una pestaña (una rutina, un ejercicio):
+  /// desde el muro, que es pantalla completa, se abre cambiando de pestaña;
+  /// apilarla duplicaría el armazón y la pantalla quedaría en negro.
+  static bool opensInTab(String url) {
+    final path = Uri.parse(url).path;
+    return path.startsWith('/training/routines/') ||
+        path.startsWith('/training/exercises/');
+  }
 }
 
 /// Rutas a pantalla completa (sin barra inferior). El módulo no tiene pestaña.

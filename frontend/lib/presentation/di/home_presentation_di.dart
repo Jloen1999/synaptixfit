@@ -19,6 +19,8 @@ void registerHomePresentation(GetIt getIt) {
         onboardingGate: getIt(),
         watchChanges: getIt(),
         startSession: getIt(),
+        setBlockCompletion: getIt(),
+        rescheduleToNextSlot: getIt(),
       ),
     );
 }

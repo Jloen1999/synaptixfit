@@ -24,6 +24,7 @@ class WeekCanvas extends StatefulWidget {
     required this.titles,
     required this.busyIds,
     required this.now,
+    this.focusAt,
     required this.onSlotTap,
     required this.onBlockTap,
     required this.onReschedule,
@@ -35,6 +36,10 @@ class WeekCanvas extends StatefulWidget {
   final Map<String, String> titles;
   final Set<String> busyIds;
   final DateTime now;
+
+  /// Momento en el que se coloca la vista al abrir (un bloque pedido); sin él,
+  /// en «ahora».
+  final DateTime? focusAt;
   final ValueChanged<DateTime> onSlotTap;
   final ValueChanged<CalendarBlock> onBlockTap;
   final void Function(CalendarBlock block, DateTime start, DateTime end)
@@ -90,14 +95,15 @@ class _WeekCanvasState extends State<WeekCanvas> {
     if (_initialScrollDone) return;
     _initialScrollDone = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final anchor = widget.focusAt ?? widget.now;
       if (_vertical.hasClients) {
-        final nowMin = WeekGridGeometry.minutesOfDay(widget.now);
+        final nowMin = WeekGridGeometry.minutesOfDay(anchor);
         final target = math.max(7 * 60, nowMin - 60);
         _vertical.jumpTo(
           g.minutesToY(target).clamp(0.0, _vertical.position.maxScrollExtent),
         );
       }
-      final today = g.dayIndexOf(widget.now, widget.weekStart);
+      final today = g.dayIndexOf(anchor, widget.weekStart);
       if (today != null && _horizontal.hasClients) {
         _horizontal.jumpTo(
           g.dayLeft(today).clamp(0.0, _horizontal.position.maxScrollExtent),

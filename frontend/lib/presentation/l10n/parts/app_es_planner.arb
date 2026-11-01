@@ -24,8 +24,8 @@
       }
     }
   },
-  "plannerSavePlan": "Guardar plan",
-  "plannerPlanSaved": "{count, plural, =0{Plan guardado} =1{Plan guardado con 1 bloque} other{Plan guardado con {count} bloques}}",
+  "plannerSavePlan": "Cerrar semana",
+  "plannerPlanSaved": "{count, plural, =0{Semana cerrada} =1{Semana cerrada con 1 bloque} other{Semana cerrada con {count} bloques}}",
   "@plannerPlanSaved": {
     "placeholders": {
       "count": {
@@ -33,7 +33,7 @@
       }
     }
   },
-  "plannerPlanSavedXp": "Plan guardado · +{xp} XP",
+  "plannerPlanSavedXp": "Semana cerrada · +{xp} XP",
   "@plannerPlanSavedXp": {
     "placeholders": {
       "xp": {
@@ -765,5 +765,9 @@
   "plannerFieldChallengeTaskHint": "Cada bloque completado hace avanzar esa tarea. El bloque debe caer dentro de las fechas del reto.",
   "plannerNoChallengeTask": "Ninguna en concreto",
   "plannerErrorBlockOutsideChallenge": "El bloque queda fuera de las fechas de su reto. Muévelo o amplía el reto.",
-  "plannerDeadlineDoneCaption": "Hecha"
+  "plannerDeadlineDoneCaption": "Hecha",
+  "plannerPomodoroSubjectLabel": "¿Qué estudias?",
+  "plannerPomodoroNoSubject": "Sin asignatura",
+  "plannerClosePlanTitle": "¿Cerrar la semana?",
+  "plannerClosePlanMessage": "Das por planificada esta semana y, la primera vez, sumas XP por cada bloque que has planificado. No hace falta para guardar: los bloques se guardan solos y puedes seguir cambiándolos."
 }

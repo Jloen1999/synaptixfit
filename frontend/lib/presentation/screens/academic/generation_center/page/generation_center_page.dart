@@ -14,6 +14,7 @@ import '../../../../widgets/widgets.dart';
 import '../../academic_routes.dart';
 import '../../widgets/academic_visuals.dart';
 import '../../widgets/academic_widgets.dart';
+import '../../widgets/file_pick.dart';
 import '../../widgets/mind_map_view.dart';
 import '../bloc/generation_center_bloc.dart';
 
@@ -37,6 +38,24 @@ class _GenerationCenterView extends StatelessWidget with ErrorsMessageMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    // La subida avisa por su cuenta: un aviso de guardado no la repite.
+    return BlocListener<GenerationCenterBloc, GenerationCenterState>(
+      listenWhen: (a, b) =>
+          (b.uploadError != null && a.uploadError != b.uploadError) ||
+          (b.uploadOutcome != null && a.uploadOutcome != b.uploadOutcome),
+      listener: (context, state) => context.showSnack(
+        state.uploadError != null
+            ? errorMessage(context, state.uploadError!)
+            : state.uploadOutcome == FileUploadOutcome.readable
+            ? l10n.academicFileUploaded
+            : l10n.academicGenerateFileUnreadable,
+      ),
+      child: _content(context),
+    );
+  }
+
+  Widget _content(BuildContext context) {
     final l10n = context.localizations;
     return BlocConsumer<GenerationCenterBloc, GenerationCenterState>(
       listenWhen: (a, b) =>
@@ -93,6 +112,29 @@ class _SetupView extends StatelessWidget {
 
   final GenerationCenterState state;
 
+  /// Crea un apunte en la asignatura y, al volver, recarga las fuentes.
+  Future<void> _createNote(BuildContext context, String subjectId) async {
+    final bloc = context.read<GenerationCenterBloc>();
+    await context.push<Object?>(AcademicPaths.newNote(subjectId: subjectId));
+    bloc.add(GenerationCenterEvent.subjectSelected(subjectId));
+  }
+
+  /// Sube un archivo a la asignatura elegida (lo hace el bloc).
+  Future<void> _uploadFile(BuildContext context) async {
+    final bloc = context.read<GenerationCenterBloc>();
+    final l10n = context.localizations;
+    final picked = await pickUploadFile();
+    if (!context.mounted) return;
+    switch (picked) {
+      case PickedPayload(:final payload):
+        bloc.add(GenerationCenterEvent.fileUploadRequested(payload));
+      case PickedTooLarge():
+        context.showSnack(l10n.academicErrorFileTooLarge);
+      case null:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -143,7 +185,7 @@ class _SetupView extends StatelessWidget {
             children: [
               for (final kind in ArtifactKind.values)
                 ChoiceChip(
-                  avatar: Icon(artifactIcon(kind), size: 18),
+                  avatar: Icon(artifactIcon(kind), size: TokensSize.iconXs),
                   label: Text(context.artifactLabel(kind)),
                   selected: state.kind == kind,
                   onSelected: (_) =>
@@ -182,7 +224,31 @@ class _SetupView extends StatelessWidget {
               ),
             )
           else if (state.notes.isEmpty && state.files.isEmpty)
-            AppCard(child: Text(l10n.academicGenerateNoSources))
+            AppCard(
+              child: AppEmptyState.compact(
+                icon: Icons.note_add_outlined,
+                title: l10n.academicGenerateNoSources,
+                // Crear la fuente aquí mismo: antes había que salir a buscarla.
+                action: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: TokensSpacing.s,
+                  runSpacing: TokensSpacing.s,
+                  children: [
+                    AppSecondaryButton(
+                      label: l10n.academicGenerateCreateNote,
+                      icon: const Icon(Icons.edit_note_rounded),
+                      onPressed: () => _createNote(context, state.subjectId!),
+                    ),
+                    AppSecondaryButton(
+                      label: l10n.academicGenerateUploadFile,
+                      icon: const Icon(Icons.upload_file_rounded),
+                      loading: state.uploading,
+                      onPressed: () => _uploadFile(context),
+                    ),
+                  ],
+                ),
+              ),
+            )
           else
             AppCard(
               padding: EdgeInsets.zero,
@@ -429,7 +495,7 @@ class _ArtifactView extends StatelessWidget {
                                 o == q.correctAnswer
                                     ? Icons.check_circle_rounded
                                     : Icons.radio_button_unchecked_rounded,
-                                size: 18,
+                                size: TokensSize.iconXs,
                                 color: o == q.correctAnswer
                                     ? context.palette.success
                                     : context.colors.onSurfaceVariant,

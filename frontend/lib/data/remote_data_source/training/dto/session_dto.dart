@@ -138,6 +138,7 @@ abstract class FinishSessionResponseDto with _$FinishSessionResponseDto {
     required SessionDto session,
     required ExperienceDto experience,
     List<RecommendationDto>? recommendations,
+    String? xpWithheld,
   }) = _FinishSessionResponseDto;
 
   const FinishSessionResponseDto._();
@@ -151,6 +152,7 @@ abstract class FinishSessionResponseDto with _$FinishSessionResponseDto {
     recommendations: (recommendations ?? const [])
         .map((r) => r.toDomain())
         .toList(),
+    xpWithheld: SessionXpWithheld.fromApi(xpWithheld),
   );
 }
 

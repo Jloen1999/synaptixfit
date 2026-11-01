@@ -24,6 +24,19 @@ sealed class HomeDashboardEvent with _$HomeDashboardEvent {
   /// «Ahora no» en el aviso de configuración pendiente.
   const factory HomeDashboardEvent.setupSnoozed() = HomeDashboardSetupSnoozed;
 
+  /// «Hecho» en el aviso de bloques sin hacer: marca ese bloque.
+  const factory HomeDashboardEvent.bannerBlockCompleted(String blockId) =
+      HomeDashboardBannerBlockCompleted;
+
+  /// «Al próximo hueco» en el aviso de bloques sin hacer: lo lleva al primer
+  /// hueco libre (lo elige el servidor).
+  const factory HomeDashboardEvent.bannerBlockRescheduled(String blockId) =
+      HomeDashboardBannerBlockRescheduled;
+
+  /// La página ya ha avisado del resultado de la acción del aviso.
+  const factory HomeDashboardEvent.bannerNoticeHandled() =
+      HomeDashboardBannerNoticeHandled;
+
   /// La página ya ha navegado al onboarding.
   const factory HomeDashboardEvent.onboardingHandled() =
       HomeDashboardOnboardingHandled;

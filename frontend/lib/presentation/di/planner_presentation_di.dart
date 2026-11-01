@@ -95,6 +95,7 @@ void registerPlannerPresentation(GetIt getIt) {
         loadTimer: getIt(),
         saveTimer: getIt(),
         clearTimer: getIt(),
+        getSubjects: getIt(),
       ),
     );
 }

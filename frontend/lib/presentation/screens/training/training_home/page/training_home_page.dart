@@ -99,11 +99,6 @@ class _TrainingHomeView extends StatelessWidget {
             title: Text(l10n.tabTraining),
             actions: [
               IconButton(
-                tooltip: l10n.trainingPastActivityTitle,
-                onPressed: () => open(context, TrainingPaths.pastActivity),
-                icon: const Icon(Icons.add_task_rounded),
-              ),
-              IconButton(
                 tooltip: l10n.trainingHistoryTitle,
                 onPressed: () => open(context, TrainingPaths.history),
                 icon: const Icon(Icons.history_rounded),
@@ -150,7 +145,8 @@ class _HomeContent extends StatelessWidget {
     final l10n = context.localizations;
     final bloc = context.read<TrainingHomeBloc>();
     // Ciclo terminado: no queda día que hacer y no hay otra rutina en curso.
-    final finished = state.pendingDay == null &&
+    final finished =
+        state.pendingDay == null &&
             !state.routines.any((r) => r.status == RoutineStatus.active)
         ? state.routines
               .where((r) => r.status == RoutineStatus.completed)
@@ -226,6 +222,15 @@ class _HomeContent extends StatelessWidget {
                 onOpen: () =>
                     _TrainingHomeView.open(context, TrainingPaths.checkIn),
               ),
+              const SizedBox(height: TokensSpacing.s),
+              // Un partido o una carrera fuera de la app también cuenta: antes
+              // solo se llegaba desde un icono de la barra superior.
+              AppSecondaryButton(
+                label: l10n.trainingLogActivityButton,
+                icon: const Icon(Icons.sports_soccer_rounded),
+                onPressed: () =>
+                    _TrainingHomeView.open(context, TrainingPaths.pastActivity),
+              ),
               const SizedBox(height: TokensSpacing.l),
               AppSectionHeader(title: l10n.trainingMyRoutines),
               if (state.routines.isEmpty)
@@ -234,6 +239,32 @@ class _HomeContent extends StatelessWidget {
                     icon: Icons.fitness_center_rounded,
                     title: l10n.trainingNoRoutinesTitle,
                     message: l10n.trainingNoRoutinesMessage,
+                    // Las dos formas de empezar, sin pasar por el botón flotante.
+                    action: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: TokensSpacing.s,
+                      runSpacing: TokensSpacing.s,
+                      children: [
+                        AppPrimaryButton(
+                          label: l10n.trainingNewRoutineAi,
+                          icon: Icons.auto_awesome_rounded,
+                          onPressed: () => _TrainingHomeView.open(
+                            context,
+                            TrainingPaths.newRoutine(),
+                          ),
+                        ),
+                        AppSecondaryButton(
+                          label: l10n.trainingNewRoutineManual,
+                          icon: const Icon(Icons.edit_note_rounded),
+                          onPressed: () => _TrainingHomeView.open(
+                            context,
+                            TrainingPaths.newRoutine(
+                              mode: TrainingPaths.modeManual,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               else
@@ -398,6 +429,15 @@ class _PendingDayCard extends StatelessWidget {
                 icon: Icons.fitness_center_rounded,
                 label: l10n.trainingExercisesCount(day.exercises.length),
               ),
+              // Duración prevista (la calcula el servidor).
+              if (day.estimatedMinutes > 0)
+                AppCoverPill(
+                  icon: Icons.timer_outlined,
+                  label: l10n.trainingEstimatedMinutes(day.estimatedMinutes),
+                  semanticLabel: l10n.trainingEstimatedMinutesSpoken(
+                    day.estimatedMinutes,
+                  ),
+                ),
             ],
           ),
           if (day.totalDays > 0) ...[
@@ -466,22 +506,22 @@ class _PendingDayCard extends StatelessWidget {
                 onPressed: () => onOpenRoutine(day.routineId),
               ),
               if (day.dayStatus != ProgressStatus.inProgress)
-              TextButton.icon(
-                icon: const Icon(Icons.redo_rounded),
-                label: Text(l10n.trainingSkipDay),
-                onPressed: busy || starting
-                    ? null
-                    : () async {
-                        final ok = await showConfirmDialog(
-                          context,
-                          title: l10n.trainingSkipDayTitle,
-                          message: l10n.trainingSkipDayMessage,
-                          confirmLabel: l10n.trainingSkipDay,
-                          destructive: false,
-                        );
-                        if (ok) onSkip(day);
-                      },
-              ),
+                TextButton.icon(
+                  icon: const Icon(Icons.redo_rounded),
+                  label: Text(l10n.trainingSkipDay),
+                  onPressed: busy || starting
+                      ? null
+                      : () async {
+                          final ok = await showConfirmDialog(
+                            context,
+                            title: l10n.trainingSkipDayTitle,
+                            message: l10n.trainingSkipDayMessage,
+                            confirmLabel: l10n.trainingSkipDay,
+                            destructive: false,
+                          );
+                          if (ok) onSkip(day);
+                        },
+                ),
             ],
           ),
         ],

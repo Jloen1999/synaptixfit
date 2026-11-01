@@ -24,6 +24,7 @@ class AgendaSection extends StatefulWidget {
     this.focus = UsageFocus.both,
     required this.reviews,
     required this.onOpenPlanner,
+    required this.onOpenEvent,
     required this.onOpenReview,
     this.onReviewAll,
     this.now,
@@ -40,6 +41,9 @@ class AgendaSection extends StatefulWidget {
   final UsageFocus focus;
   final List<HomeDueReview> reviews;
   final VoidCallback onOpenPlanner;
+
+  /// Toque en un evento: abre ese día y ese bloque (o las entregas).
+  final ValueChanged<HomeTodayEvent> onOpenEvent;
   final ValueChanged<HomeDueReview> onOpenReview;
 
   /// Repasa todos los pendientes seguidos (se muestra con dos o más).
@@ -158,7 +162,10 @@ class _AgendaSectionState extends State<AgendaSection> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   for (final event in _visibleEvents(context, events))
-                    _EventTile(event: event, onTap: widget.onOpenPlanner),
+                    _EventTile(
+                      event: event,
+                      onTap: () => widget.onOpenEvent(event),
+                    ),
                   if (_hidden(context, events) > 0 || _expanded)
                     Align(
                       alignment: AlignmentDirectional.centerEnd,

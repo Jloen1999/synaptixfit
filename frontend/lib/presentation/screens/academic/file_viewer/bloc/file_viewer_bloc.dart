@@ -81,15 +81,27 @@ class FileViewerBloc extends Bloc<FileViewerEvent, FileViewerState> {
     FileViewerMaterialRequested event,
     Emitter<FileViewerState> emit,
   ) async {
-    emit(state.copyWith(busy: true, actionError: null, navigation: null));
+    emit(
+      state.copyWith(
+        busy: true,
+        actionError: null,
+        navigation: null,
+        requestedPractice: event.practice,
+      ),
+    );
     final result = await _registerMaterial(StudySourceType.file, state.fileId);
     emit(
       result.fold(
         (m) => state.copyWith(
           busy: false,
+          requestedPractice: null,
           navigation: (materialId: m.id, practice: event.practice),
         ),
-        (error) => state.copyWith(busy: false, actionError: error),
+        (error) => state.copyWith(
+          busy: false,
+          requestedPractice: null,
+          actionError: error,
+        ),
       ),
     );
   }

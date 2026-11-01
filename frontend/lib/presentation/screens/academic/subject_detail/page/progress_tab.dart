@@ -51,6 +51,15 @@ class ProgressTab extends StatelessWidget with ErrorsMessageMixin {
             child: ListView(
               padding: const EdgeInsets.all(TokensSpacing.m),
               children: [
+                // Lo que toca y cómo va la memoria, primero: es lo que se
+                // consulta a diario; el plan docente, debajo.
+                _TimelineSection(items: state.timeline),
+                const SizedBox(height: TokensSpacing.l),
+                _RetentionSection(
+                  retention: state.retention,
+                  materials: state.materials,
+                ),
+                const SizedBox(height: TokensSpacing.l),
                 if (guide == null)
                   _GuideEmpty(subjectId: state.subjectId)
                 else ...[
@@ -67,7 +76,7 @@ class ProgressTab extends StatelessWidget with ErrorsMessageMixin {
                   ],
                   const SizedBox(height: TokensSpacing.s),
                   Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: AlignmentDirectional.centerStart,
                     child: TextButton.icon(
                       onPressed: () =>
                           _reimport(context, state.subjectId, guide),
@@ -78,13 +87,6 @@ class ProgressTab extends StatelessWidget with ErrorsMessageMixin {
                     ),
                   ),
                 ],
-                const SizedBox(height: TokensSpacing.l),
-                _RetentionSection(
-                  retention: state.retention,
-                  materials: state.materials,
-                ),
-                const SizedBox(height: TokensSpacing.l),
-                _TimelineSection(items: state.timeline),
                 const SizedBox(height: TokensSpacing.xxl),
               ],
             ),

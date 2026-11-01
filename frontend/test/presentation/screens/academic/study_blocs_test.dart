@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -8,8 +10,14 @@ import 'package:synaptixfit/domain/enums/study_source_type.dart';
 import 'package:synaptixfit/domain/enums/visibility.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/academic/study_artifact.dart';
+import 'package:synaptixfit/domain/models/academic/subject_file.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/models/academic/note_draft.dart';
 import 'package:synaptixfit/domain/use_cases/academic/create_note_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/discard_note_draft_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/load_note_draft_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/save_note_draft_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/academic/upload_subject_file_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/generate_study_artifact_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/generate_study_document_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/get_note_use_case.dart';
@@ -41,6 +49,14 @@ class _GetSubjects extends Mock implements GetSubjectsUseCaseContract {}
 class _CreateNote extends Mock implements CreateNoteUseCaseContract {}
 
 class _UpdateNote extends Mock implements UpdateNoteUseCaseContract {}
+
+class _LoadDraft extends Mock implements LoadNoteDraftUseCaseContract {}
+
+class _SaveDraft extends Mock implements SaveNoteDraftUseCaseContract {}
+
+class _DiscardDraft extends Mock implements DiscardNoteDraftUseCaseContract {}
+
+class _Upload extends Mock implements UploadSubjectFileUseCaseContract {}
 
 class _LoadOrGenerate extends Mock
     implements LoadOrGenerateStudyDocumentUseCaseContract {}
@@ -84,8 +100,31 @@ void main() {
     late _GetSubjects getSubjects;
     late _CreateNote createNote;
     late _UpdateNote updateNote;
+    late _LoadDraft loadDraft;
+    late _SaveDraft saveDraft;
+    late _DiscardDraft discardDraft;
+
+    final draft = NoteDraft(
+      accountId: 'u1',
+      title: 'Límites',
+      content: 'Lo que llevaba escrito',
+      visibility: Visibility.private,
+      quickNote: true,
+      savedAt: DateTime(2026, 11, 1, 10),
+    );
 
     setUp(() {
+      registerFallbackValue(draft);
+      loadDraft = _LoadDraft();
+      saveDraft = _SaveDraft();
+      discardDraft = _DiscardDraft();
+      when(
+        () => discardDraft(
+          accountId: any(named: 'accountId'),
+          noteId: any(named: 'noteId'),
+        ),
+      ).thenAnswer((_) async => const Success(unit));
+      when(() => saveDraft(any())).thenAnswer((_) async => const Success(unit));
       getNote = _GetNote();
       getSubjects = _GetSubjects();
       createNote = _CreateNote();
@@ -100,6 +139,56 @@ void main() {
       getSubjects: getSubjects,
       createNote: createNote,
       updateNote: updateNote,
+      loadDraft: loadDraft,
+      saveDraft: saveDraft,
+      discardDraft: discardDraft,
+      now: () => DateTime(2026, 11, 1, 10),
+    );
+
+    blocTest<NoteEditorBloc, NoteEditorState>(
+      'ofrece recuperar el borrador que quedó sin guardar',
+      setUp: () => when(
+        () => loadDraft(accountId: 'u1'),
+      ).thenAnswer((_) async => Success(draft)),
+      build: build,
+      act: (bloc) => bloc.add(const NoteEditorEvent.started(accountId: 'u1')),
+      skip: 1,
+      expect: () => [
+        NoteEditorState(
+          loading: false,
+          subjects: const [subject],
+          recoverableDraft: draft,
+        ),
+      ],
+    );
+
+    blocTest<NoteEditorBloc, NoteEditorState>(
+      'guarda el borrador mientras se escribe y lo borra al descartarlo',
+      setUp: () => when(
+        () => loadDraft(accountId: 'u1'),
+      ).thenAnswer((_) async => const Success(null)),
+      build: build,
+      act: (bloc) async {
+        bloc.add(const NoteEditorEvent.started(accountId: 'u1'));
+        await Future<void>.delayed(Duration.zero);
+        bloc
+          ..add(
+            const NoteEditorEvent.draftChanged(
+              title: 'Límites',
+              content: 'Lo que llevaba escrito',
+              visibility: Visibility.private,
+              quickNote: true,
+            ),
+          )
+          ..add(const NoteEditorEvent.draftDiscarded());
+      },
+      verify: (_) {
+        final saved =
+            verify(() => saveDraft(captureAny())).captured.single as NoteDraft;
+        expect(saved.accountId, 'u1');
+        expect(saved.content, 'Lo que llevaba escrito');
+        verify(() => discardDraft(accountId: 'u1')).called(1);
+      },
     );
 
     blocTest<NoteEditorBloc, NoteEditorState>(
@@ -297,8 +386,10 @@ void main() {
     late _SaveNote saveNote;
     late _SaveQuiz saveQuiz;
     const source = StudySourceRef(type: StudySourceType.note, id: 'n1');
+    late _Upload upload;
 
     setUp(() {
+      upload = _Upload();
       getSubjects = _GetSubjects();
       getNotes = _GetNotes();
       getFiles = _GetFiles();
@@ -321,6 +412,48 @@ void main() {
       generate: generateArtifact,
       saveAsNote: saveNote,
       saveAsQuiz: saveQuiz,
+      uploadFile: upload,
+    );
+
+    final payload = FileUploadPayload(
+      fileName: 'tema1.pdf',
+      mimeType: 'application/pdf',
+      bytes: Uint8List(1),
+    );
+
+    blocTest<GenerationCenterBloc, GenerationCenterState>(
+      '«Subir archivo» lo sube a la asignatura elegida y recarga las fuentes',
+      setUp: () {
+        registerFallbackValue(payload);
+        when(
+          () => upload('s1', any()),
+        ).thenAnswer((_) async => const Success(file));
+      },
+      build: build,
+      seed: () => const GenerationCenterState(loading: false, subjectId: 's1'),
+      act: (bloc) =>
+          bloc.add(GenerationCenterEvent.fileUploadRequested(payload)),
+      verify: (bloc) {
+        expect(bloc.state.uploadOutcome, FileUploadOutcome.readable);
+        expect(bloc.state.files, [file]);
+        verify(() => getFiles('s1')).called(1);
+      },
+    );
+
+    blocTest<GenerationCenterBloc, GenerationCenterState>(
+      'si la IA no puede leer el archivo, lo avisa (no sale entre las fuentes)',
+      setUp: () {
+        registerFallbackValue(payload);
+        when(
+          () => upload('s1', any()),
+        ).thenAnswer((_) async => Success(file.copyWith(aiReadable: false)));
+      },
+      build: build,
+      seed: () => const GenerationCenterState(loading: false, subjectId: 's1'),
+      act: (bloc) =>
+          bloc.add(GenerationCenterEvent.fileUploadRequested(payload)),
+      verify: (bloc) =>
+          expect(bloc.state.uploadOutcome, FileUploadOutcome.unreadable),
     );
 
     blocTest<GenerationCenterBloc, GenerationCenterState>(

@@ -2,7 +2,7 @@
   "@@locale": "en",
   "socialFeedTitle": "Community",
   "socialFeedEmptyTitle": "No posts yet",
-  "socialFeedEmptyMessage": "Share an achievement or a workout to cheer on your classmates.",
+  "socialFeedEmptyMessage": "Share an achievement or a workout, or find your friends to see what they post.",
   "socialPublish": "Post",
   "socialPeriodAll": "All",
   "socialPeriodToday": "Today",
@@ -180,5 +180,6 @@
   "socialRequestReceivedHint": "Wants to be your friend",
   "socialRequestSentHint": "Waiting for a reply",
   "socialOpenPostHint": "Open the post",
-  "socialLinkBadge": "Badge"
+  "socialLinkBadge": "Badge",
+  "socialFindFriends": "Find friends"
 }

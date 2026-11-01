@@ -1,5 +1,6 @@
 package com.synaptixfit.domain.model.training.generation;
 
+import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.ExerciseAdjustment;
 import com.synaptixfit.domain.model.training.PlannedExercise;
 import com.synaptixfit.domain.model.training.Recommendation;
@@ -54,7 +55,7 @@ public final class SessionFeedback {
                     p.exercise().measurementTypes(), rpe, sets, goal);
             if (r.changed(p.parameters())) {
                 adjustments.add(new ExerciseAdjustment(plannedId, p.exerciseId(), p.exercise().name(),
-                        r.parameters(), r.log()));
+                        r.parameters(), r.log(), p.parameters(), r.reason()));
             }
         });
         if (adjustments.isEmpty()) {
@@ -68,6 +69,9 @@ public final class SessionFeedback {
         details.put("totalFailedReps", totalFailed);
 
         if (totalFailed > 0 || rpe >= 9.5) {
+            // Motivo de toda la sugerencia: cada ejercicio trae el suyo, pero la app explica este.
+            details.put("reasonCode", (totalFailed > 0 ? AdjustmentReason.FAILED_REPS
+                    : AdjustmentReason.VERY_HIGH_RPE).name());
             int reduction = totalFailed > 0 ? 100 - Math.max(70, Math.min(95, 100 - totalFailed * 5)) : 15;
             String title = totalFailed > 0
                     ? "Reducir carga: " + totalFailed + " repeticiones fallidas"
@@ -80,6 +84,8 @@ public final class SessionFeedback {
                     description, session.routineId(), adjustments, details, now));
         }
         if (rpe <= 7 && completedSets == totalSets) {
+            details.put("reasonCode", (rpe <= 5 ? AdjustmentReason.VERY_LOW_RPE
+                    : AdjustmentReason.LOW_RPE_MORE_REPS).name());
             return List.of(Recommendation.create(session.userId(), RecommendationType.PROGRESSION,
                     "Considera aumentar la carga",
                     "Completaste todas las series sin fallos con RPE " + rpe
@@ -101,13 +107,14 @@ public final class SessionFeedback {
                     p.exercise().measurementTypes(), daysInactive, goal);
             if (r.changed(p.parameters())) {
                 adjustments.add(new ExerciseAdjustment(p.id(), p.exerciseId(), p.exercise().name(), r.parameters(),
-                        r.log()));
+                        r.log(), p.parameters(), r.reason()));
             }
         }
         double factor = daysInactive > 21 ? 0.70 : 0.80;
         return Optional.of(Recommendation.create(userId, RecommendationType.DELOAD,
                 "Volviste después de " + daysInactive + " días",
                 "Retoma con el " + Math.round(factor * 100) + " % de tu carga habitual para evitar agujetas severas.",
-                routineId, adjustments, Map.of("daysInactive", daysInactive, "loadFactor", factor), now));
+                routineId, adjustments, Map.of("daysInactive", daysInactive, "loadFactor", factor,
+                        "reasonCode", AdjustmentReason.INACTIVITY.name()), now));
     }
 }

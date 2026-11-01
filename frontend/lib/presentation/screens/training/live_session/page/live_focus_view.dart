@@ -104,6 +104,17 @@ class LiveSessionHeader extends StatelessWidget {
                 ),
                 style: context.textStyles.labelLarge,
               ),
+              // Lo que queda, con la duración prevista del servidor.
+              // Con el texto grande se omite: la cabecera fija ya ocupa mucho.
+              if (s.remainingEstimatedMinutes case final left?
+                  when left > 0 && !context.largeText)
+                Text(
+                  l10n.trainingRemainingMinutes(left),
+                  semanticsLabel: l10n.trainingRemainingMinutesSpoken(left),
+                  style: context.textStyles.labelMedium?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                ),
               const SizedBox(height: TokensSpacing.xs),
               ClipRRect(
                 borderRadius: BorderRadius.circular(TokensRadius.pill),

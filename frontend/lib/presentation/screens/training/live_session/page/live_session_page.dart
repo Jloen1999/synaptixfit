@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../exercise_detail/page/exercise_how_to_sheet.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/models/training/session_history.dart';
 import '../../../../../domain/models/training/exercise.dart';
@@ -17,7 +17,6 @@ import '../../../../../domain/models/training/session_adaptation.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
-import '../../training_routes.dart';
 import '../../widgets/exercise_thumbnail.dart';
 import '../../widgets/metric_chips.dart';
 import '../../widgets/training_content.dart';
@@ -397,7 +396,11 @@ class _LiveViewState extends State<_LiveView> {
                           const SizedBox(height: TokensSpacing.m),
                         ],
                         if (state.adaptation.adapted)
-                          _AdaptationCard(adaptation: state.adaptation),
+                          _AdaptationCard(
+                            adaptation: state.adaptation,
+                            exercises: state.exercises,
+                            plannedSets: state.plannedSetsById,
+                          ),
                         // Calentamiento al empezar; vuelta a la calma al acabar.
                         if (state.loggedSets == 0 &&
                             (state.bookends?.warmUp.isNotEmpty ?? false))
@@ -566,7 +569,6 @@ double? _plannedWeight(ExerciseParameters? p, int setNumber) {
         _plannedWeight(exercise.parameters, setNumber),
   );
 }
-
 
 /// Barra fija de la sesión. Mientras quedan series, muestra la que toca
 /// («Press banca · Serie 2 de 4 · 40 kg × 10 reps») con «Hecha» como acción
@@ -861,7 +863,11 @@ class _ExerciseList extends StatelessWidget {
                 const SizedBox(height: TokensSpacing.m),
               ],
               if (!state.completed && state.adaptation.adapted)
-                _AdaptationCard(adaptation: state.adaptation),
+                _AdaptationCard(
+                  adaptation: state.adaptation,
+                  exercises: state.exercises,
+                  plannedSets: state.plannedSetsById,
+                ),
               if (state.isFree)
                 _FreeSetsCard(
                   sets: session.setsFor(null),
@@ -976,7 +982,18 @@ class _BookendsCardState extends State<_BookendsCard> {
                     ),
                     title: Text(e.name),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push(TrainingPaths.exercise(e.id)),
+                    // En una hoja, como «Cómo se hace» de la sesión: apilar
+                    // la ruta del ejercicio (vive dentro de la pestaña) desde
+                    // esta pantalla completa dejaba una pantalla oscura.
+                    onTap: () => unawaited(
+                      showExerciseHowToSheet(
+                        context,
+                        exerciseId: e.id,
+                        name: e.name,
+                        gifUrl: e.gifUrl,
+                        previewUrl: e.previewUrl,
+                      ),
+                    ),
                   ),
                 ),
           ],
@@ -1318,10 +1335,33 @@ class _SetRow extends StatelessWidget {
 }
 
 /// Aviso de sesión adaptada (regulación cruzada): por qué hay menos series hoy.
+/// «Sesión adaptada hoy»: por qué (examen, carga o fatiga, lo decide el
+/// servidor), qué cambia en cada ejercicio («Press banca: 4 → 3 series»), que
+/// solo es hoy (la rutina no cambia) y la opción de hacerla completa.
 class _AdaptationCard extends StatelessWidget {
-  const _AdaptationCard({required this.adaptation});
+  const _AdaptationCard({
+    required this.adaptation,
+    required this.exercises,
+    required this.plannedSets,
+  });
 
   final SessionAdaptation adaptation;
+  final List<PlannedExercise> exercises;
+  final Map<String, int> plannedSets;
+
+  /// La adaptación cuida de la fatiga o la carga: deshacerla se confirma.
+  Future<void> _decline(BuildContext context) async {
+    final l10n = context.localizations;
+    final bloc = context.read<LiveSessionBloc>();
+    final ok = await showConfirmDialog(
+      context,
+      title: l10n.trainingAdaptedDeclineTitle,
+      message: l10n.trainingAdaptedDeclineMessage,
+      confirmLabel: l10n.trainingAdaptedDecline,
+      destructive: false,
+    );
+    if (ok) bloc.add(const LiveSessionEvent.adaptationDeclined());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1330,7 +1370,8 @@ class _AdaptationCard extends StatelessWidget {
     final style = context.textStyles.bodyMedium?.copyWith(color: onColor);
     return Padding(
       padding: const EdgeInsets.only(bottom: TokensSpacing.m),
-      child: MergeSemantics(
+      child: Semantics(
+        container: true,
         child: AppCard(
           color: context.colors.tertiaryContainer,
           child: Row(
@@ -1363,6 +1404,28 @@ class _AdaptationCard extends StatelessWidget {
                         (adaptation.volumeFactor * 100).round(),
                       ),
                       style: style,
+                    ),
+                    const SizedBox(height: TokensSpacing.xs),
+                    for (final e in exercises)
+                      if ((plannedSets[e.id] ?? e.parameters.sets) !=
+                          e.parameters.sets)
+                        Text(
+                          l10n.trainingAdaptedExercise(
+                            e.exerciseName,
+                            plannedSets[e.id]!,
+                            e.parameters.sets,
+                          ),
+                          style: style,
+                        ),
+                    const SizedBox(height: TokensSpacing.xs),
+                    Text(l10n.trainingAdaptedScope, style: style),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: TextButton(
+                        style: TextButton.styleFrom(foregroundColor: onColor),
+                        onPressed: () => _decline(context),
+                        child: Text(l10n.trainingAdaptedDecline),
+                      ),
                     ),
                   ],
                 ),

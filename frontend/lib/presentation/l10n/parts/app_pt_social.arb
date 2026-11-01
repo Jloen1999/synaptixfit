@@ -2,7 +2,7 @@
   "@@locale": "pt",
   "socialFeedTitle": "Comunidade",
   "socialFeedEmptyTitle": "Ainda não há publicações",
-  "socialFeedEmptyMessage": "Partilha uma conquista ou um treino para motivar os teus colegas.",
+  "socialFeedEmptyMessage": "Partilha uma conquista ou um treino, ou procura os teus amigos para veres o que publicam.",
   "socialPublish": "Publicar",
   "socialPeriodAll": "Tudo",
   "socialPeriodToday": "Hoje",
@@ -180,5 +180,6 @@
   "socialRequestReceivedHint": "Quer ser teu amigo",
   "socialRequestSentHint": "À espera de resposta",
   "socialOpenPostHint": "Abrir a publicação",
-  "socialLinkBadge": "Insígnia"
+  "socialLinkBadge": "Insígnia",
+  "socialFindFriends": "Procurar amigos"
 }

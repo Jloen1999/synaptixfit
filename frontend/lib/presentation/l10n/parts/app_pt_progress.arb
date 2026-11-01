@@ -192,5 +192,8 @@
   "progressBySubjectArchived": "Disciplina arquivada",
   "progressBySubjectNoReviews": "Ainda sem revisões",
   "progressBySubjectRecall": "{reviews, plural, =1{1 revisão} other{{reviews} revisões}} · recordas {percent} %",
-  "progressBySubjectWeak": "revê-a mais vezes"
+  "progressBySubjectWeak": "revê-a mais vezes",
+  "progressNextBadgeTitle": "Próxima insígnia",
+  "progressNextBadgeAmount": "{current} de {target} · faltam {remaining}",
+  "progressNextBadgeHint": "Abre as tuas insígnias"
 }

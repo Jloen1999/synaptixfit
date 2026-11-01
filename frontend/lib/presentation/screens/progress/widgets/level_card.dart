@@ -5,7 +5,7 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
-/// Nivel del usuario con su barra de XP.
+/// Nivel del usuario con su barra de XP y el acceso a «Cómo se gana XP».
 class LevelCard extends StatelessWidget {
   const LevelCard({super.key, required this.account});
 
@@ -25,18 +25,22 @@ class LevelCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 56,
-                height: 56,
+                width: context.scaled(TokensSize.listTileMin),
+                height: context.scaled(TokensSize.listTileMin),
                 alignment: Alignment.center,
+                padding: const EdgeInsets.all(TokensSpacing.xs),
                 decoration: BoxDecoration(
                   color: context.palette.accentContainer,
                   shape: BoxShape.circle,
                 ),
-                child: Text(
-                  '${account.level}',
-                  style: context.textStyles.headlineSmall?.copyWith(
-                    color: context.palette.accent,
-                    fontWeight: FontWeight.w800,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${account.level}',
+                    style: context.textStyles.headlineSmall?.copyWith(
+                      color: context.palette.onAccentContainer,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
@@ -73,6 +77,14 @@ class LevelCard extends StatelessWidget {
             l10n.progressLevelXpToNext(remaining, account.level + 1),
             style: context.textStyles.bodySmall?.copyWith(
               color: context.colors.onSurfaceVariant,
+            ),
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: () => showXpGuideSheet(context),
+              icon: const Icon(Icons.help_outline_rounded),
+              label: Text(l10n.xpGuideOpen),
             ),
           ),
         ],

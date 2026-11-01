@@ -1,6 +1,7 @@
 package com.synaptixfit.application.port.input.training;
 
 import com.synaptixfit.domain.model.training.Recommendation;
+import com.synaptixfit.domain.model.training.SessionXpWithheld;
 import com.synaptixfit.domain.model.training.TrainingSession;
 import com.synaptixfit.domain.model.user.ExperienceChange;
 import java.util.List;
@@ -17,6 +18,8 @@ public interface FinishTrainingSessionUseCase {
                    List<RecordSessionSetUseCase.Command> sets) {
     }
 
-    record Result(TrainingSession session, ExperienceChange experience, List<Recommendation> recommendations) {
+    /** {@code xpWithheld}: por qué la sesión no dio XP (nulo si la dio), para que el cliente lo explique. */
+    record Result(TrainingSession session, ExperienceChange experience, List<Recommendation> recommendations,
+                  SessionXpWithheld xpWithheld) {
     }
 }

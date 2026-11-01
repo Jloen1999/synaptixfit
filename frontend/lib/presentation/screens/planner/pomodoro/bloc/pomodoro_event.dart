@@ -8,12 +8,20 @@ sealed class PomodoroEvent with _$PomodoroEvent {
   ///
   /// [alertTexts]: textos del aviso del sistema al terminar cada fase (para
   /// que llegue con la app cerrada); sin ellos no se programa.
+  ///
+  /// [accountId]: cuenta de la sesión (sin red); ver [PomodoroEvent.restored].
   const factory PomodoroEvent.started({
     String? subjectId,
     String? blockId,
     @Default(false) bool startWithBreak,
     PomodoroAlertTexts? alertTexts,
+    String? accountId,
   }) = PomodoroStarted;
+
+  /// Asignatura elegida en la pantalla cuando no se abrió desde un bloque
+  /// (nula = sin asignatura). Solo antes de empezar.
+  const factory PomodoroEvent.subjectSelected(String? subjectId) =
+      PomodoroSubjectSelected;
 
   /// Ajusta a mano la duración del bloque de concentración (antes de empezar).
   const factory PomodoroEvent.focusMinutesChanged(int minutes) =
@@ -36,8 +44,14 @@ sealed class PomodoroEvent with _$PomodoroEvent {
   /// Al entrar en la app: recupera la fase que quedó en marcha (y la registra
   /// si terminó con la app cerrada). [alertTexts] permite mostrar la
   /// notificación fija sin abrir la pantalla.
-  const factory PomodoroEvent.restored({PomodoroAlertTexts? alertTexts}) =
-      PomodoroRestored;
+  ///
+  /// [accountId] es la cuenta de la sesión: decide de quién es la fase sin
+  /// llamar a la red (antes, si `GET /me` fallaba al abrir la app, la fase se
+  /// tomaba por ajena y se borraba).
+  const factory PomodoroEvent.restored({
+    PomodoroAlertTexts? alertTexts,
+    String? accountId,
+  }) = PomodoroRestored;
 
   /// Se cerró sesión: se para y se olvida la fase en curso.
   const factory PomodoroEvent.signedOut() = PomodoroSignedOut;

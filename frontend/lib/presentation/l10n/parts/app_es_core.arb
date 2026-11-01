@@ -207,5 +207,26 @@
         "type": "String"
       }
     }
-  }
+  },
+  "xpGuideOpen": "Cómo se gana XP",
+  "xpGuideTitle": "Cómo se gana XP",
+  "xpGuideIntro": "La XP premia la constancia: sumas al hacer lo que planificas. Los topes evitan que se pueda inflar.",
+  "xpGuideTraining": "Entrenar",
+  "xpGuideTrainingDetail": "Cada sesión terminada da 50 XP, más 1 por minuto (hasta 90) y 5 por punto de esfuerzo. Las de menos de 10 minutos no cuentan y solo las 2 primeras del día dan XP.",
+  "xpGuideCheckIn": "Registro diario",
+  "xpGuideCheckInDetail": "20 XP por el primer registro de cada día.",
+  "xpGuideBlocks": "Bloques del calendario",
+  "xpGuideBlocksDetail": "10 XP por cada media hora de bloque hecho (hasta 4 horas por bloque); como mucho 200 XP al día en bloques. Un bloque no se marca hecho antes de empezar.",
+  "xpGuidePomodoro": "Pomodoro",
+  "xpGuidePomodoroDetail": "5 XP por cada concentración de al menos 10 minutos, hasta 20 XP al día.",
+  "xpGuideStudyWeek": "Semana de estudio",
+  "xpGuideStudyWeekDetail": "150 XP extra al llegar a tus horas de estudio de la semana.",
+  "xpGuideTests": "Tests y práctica",
+  "xpGuideTestsDetail": "Con al menos 5 preguntas; como mucho 5 tests con XP cada 24 horas. Practicar un banco de preguntas da XP una sola vez.",
+  "xpGuideDeadlines": "Entregas",
+  "xpGuideDeadlinesDetail": "Marcar una entrega como hecha da XP; como mucho 5 cada 24 horas.",
+  "xpGuideChallenges": "Retos",
+  "xpGuideChallengesDetail": "Cada tarea da XP según su dificultad; como mucho 140 XP por reto.",
+  "xpGuideFooter": "Si algo no suma, la app te dice por qué.",
+  "commonArrowSpoken": " a "
 }

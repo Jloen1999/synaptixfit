@@ -858,11 +858,22 @@ class _DayCardState extends State<_DayCard> {
                 padding: const EdgeInsets.only(top: TokensSpacing.xs),
                 child: Wrap(
                   spacing: TokensSpacing.xs,
+                  runSpacing: TokensSpacing.xs,
                   children: [
                     AppPill(
                       icon: Icons.fitness_center_rounded,
                       label: l10n.trainingExercisesCount(day.exercises.length),
                     ),
+                    if (day.estimatedMinutes > 0)
+                      AppPill(
+                        icon: Icons.timer_outlined,
+                        label: l10n.trainingEstimatedMinutes(
+                          day.estimatedMinutes,
+                        ),
+                        semanticLabel: l10n.trainingEstimatedMinutesSpoken(
+                          day.estimatedMinutes,
+                        ),
+                      ),
                     AppPill(
                       icon: Icons.local_fire_department_rounded,
                       color: context.palette.calories,

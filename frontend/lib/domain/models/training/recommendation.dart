@@ -5,7 +5,9 @@ import 'routine.dart';
 
 part 'recommendation.freezed.dart';
 
-/// Parámetros propuestos para un ejercicio planificado.
+/// Parámetros propuestos para un ejercicio planificado; [before], los que
+/// tenía (para enseñar «40 → 42,5 kg») y [reasonCode], por qué cambia. Ambos
+/// faltan en sugerencias antiguas.
 @freezed
 abstract class ExerciseAdjustment with _$ExerciseAdjustment {
   const factory ExerciseAdjustment({
@@ -14,6 +16,8 @@ abstract class ExerciseAdjustment with _$ExerciseAdjustment {
     String? exerciseName,
     String? reason,
     required ExerciseParameters parameters,
+    ExerciseParameters? before,
+    AdjustmentReason? reasonCode,
   }) = _ExerciseAdjustment;
 }
 
@@ -30,5 +34,14 @@ abstract class Recommendation with _$Recommendation {
     required bool applied,
     DateTime? createdAt,
     @Default(<ExerciseAdjustment>[]) List<ExerciseAdjustment> adjustments,
+
+    /// Datos del porqué que manda el servidor: esfuerzo de la sesión,
+    /// repeticiones fallidas y días sin entrenar (si aplican).
+    int? rpe,
+    int? failedReps,
+    int? daysInactive,
+
+    /// Motivo de toda la sugerencia (lo elige el servidor; nulo en antiguas).
+    AdjustmentReason? reasonCode,
   }) = _Recommendation;
 }

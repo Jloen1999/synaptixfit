@@ -52,6 +52,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
         blockId: widget.blockId,
         startWithBreak: widget.startWithBreak,
         alertTexts: pomodoroAlertTexts(context),
+        accountId: context.read<SessionBloc>().account?.id,
       ),
     );
   }
@@ -171,6 +172,11 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                     ),
                     const SizedBox(height: TokensSpacing.s),
                   ],
+                  // Sin bloque, se elige a qué asignatura cuentan las fases.
+                  if (state.blockId == null && state.subjects.isNotEmpty) ...[
+                    _SubjectPicker(state: state),
+                    const SizedBox(height: TokensSpacing.m),
+                  ],
                   Center(
                     child: Chip(
                       avatar: Icon(
@@ -178,7 +184,7 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                             ? Icons.psychology_rounded
                             : Icons.free_breakfast_rounded,
                         color: color,
-                        size: 18,
+                        size: TokensSize.iconXs,
                       ),
                       label: Text(phaseLabel),
                     ),
@@ -203,7 +209,9 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                             painter: PomodoroRingPainter(
                               fraction: value,
                               color: color,
-                              trackColor: color.withValues(alpha: 0.15),
+                              trackColor: color.withValues(
+                                alpha: AppPill.tintAlpha,
+                              ),
                             ),
                             child: child,
                           ),
@@ -275,6 +283,54 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
           ),
         );
       },
+    );
+  }
+}
+
+/// «¿Qué estudias?»: asignatura a la que se vinculan las fases. Se fija al
+/// empezar; mientras corre se ve pero no se cambia.
+class _SubjectPicker extends StatelessWidget {
+  const _SubjectPicker({required this.state});
+
+  final PomodoroState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final known = state.subjects.any((s) => s.id == state.subjectId);
+    if (!state.canPickSubject) {
+      final name = state.subjects
+          .where((s) => s.id == state.subjectId)
+          .firstOrNull
+          ?.name;
+      return Text(
+        l10n.plannerPomodoroStudying(name ?? l10n.plannerPomodoroNoSubject),
+        textAlign: TextAlign.center,
+        style: context.textStyles.titleSmall?.copyWith(
+          color: context.colors.onSurfaceVariant,
+        ),
+      );
+    }
+    return DropdownButtonFormField<String?>(
+      // La clave cambia con la asignatura: el campo se rehace si llega otra
+      // (p. ej. al recuperar una fase guardada).
+      key: ValueKey(state.subjectId),
+      initialValue: known ? state.subjectId : null,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: l10n.plannerPomodoroSubjectLabel,
+        prefixIcon: const Icon(Icons.school_outlined),
+      ),
+      items: [
+        DropdownMenuItem(child: Text(l10n.plannerPomodoroNoSubject)),
+        for (final subject in state.subjects)
+          DropdownMenuItem(
+            value: subject.id,
+            child: Text(subject.name, overflow: TextOverflow.ellipsis),
+          ),
+      ],
+      onChanged: (id) =>
+          context.read<PomodoroBloc>().add(PomodoroEvent.subjectSelected(id)),
     );
   }
 }

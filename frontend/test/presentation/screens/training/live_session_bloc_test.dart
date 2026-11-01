@@ -183,7 +183,44 @@ void main() {
     },
     build: build,
     act: (bloc) => bloc.add(const LiveSessionEvent.started('s1')),
-    expect: () => [const LiveSessionState(sessionId: 's1'), ready()],
+    expect: () => [
+      const LiveSessionState(sessionId: 's1'),
+      ready().copyWith(
+        plannedSetsById: {for (final e in exercises) e.id: e.parameters.sets},
+      ),
+    ],
+  );
+
+  blocTest<LiveSessionBloc, LiveSessionState>(
+    '«Hacerla completa» vuelve a las series planificadas',
+    setUp: () {
+      when(() => getSession('s1')).thenAnswer(
+        (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+      );
+      when(() => getRoutine('r1')).thenAnswer((_) async => Success(routine));
+      when(() => getAdaptation('s1')).thenAnswer(
+        (_) async => Success(
+          SessionAdaptation(
+            volumeFactor: 0.7,
+            reasons: const [SessionAdaptationReason.examSoon],
+            sets: {for (final e in exercises) e.id: 1},
+          ),
+        ),
+      );
+    },
+    build: build,
+    act: (bloc) async {
+      bloc.add(const LiveSessionEvent.started('s1'));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const LiveSessionEvent.adaptationDeclined());
+    },
+    verify: (bloc) {
+      expect(bloc.state.adaptation.adapted, isFalse);
+      expect(
+        bloc.state.exercises.map((e) => e.parameters.sets),
+        exercises.map((e) => e.parameters.sets),
+      );
+    },
   );
 
   blocTest<LiveSessionBloc, LiveSessionState>(

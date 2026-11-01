@@ -26,5 +26,16 @@ abstract class GenerationCenterState with _$GenerationCenterState {
 
     /// Material creado al guardar preguntas.
     String? savedMaterialId,
+
+    /// Subiendo un archivo desde «Subir archivo».
+    @Default(false) bool uploading,
+    AppError? uploadError,
+
+    /// Resultado de la última subida (cambia en cada una): la página avisa si
+    /// la IA no puede leer el archivo y por eso no sale entre las fuentes.
+    FileUploadOutcome? uploadOutcome,
   }) = _GenerationCenterState;
 }
+
+/// Qué pasó con el archivo subido desde el centro de generación.
+enum FileUploadOutcome { readable, unreadable }

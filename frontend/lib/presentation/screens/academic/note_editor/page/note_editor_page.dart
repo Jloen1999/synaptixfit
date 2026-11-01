@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Visibility;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/markdown_toolbar.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/visibility.dart';
+import '../../../../../domain/models/academic/note_draft.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -35,6 +38,7 @@ class NoteEditorPage extends StatelessWidget {
       ..add(
         NoteEditorEvent.started(
           noteId: noteId,
+          accountId: context.read<SessionBloc>().account?.id ?? '',
           subjectId: subjectId,
           quickNote: quickNote,
           profilePrivacy:
@@ -73,11 +77,58 @@ class _NoteEditorViewState extends State<_NoteEditorView>
 
   bool get _dirty => _initial != null && _current != _initial;
 
+  /// Cada cuánto se guarda el borrador en el teléfono si hay cambios.
+  static const _draftInterval = Duration(seconds: 5);
+  Timer? _draftTimer;
+
+  /// Lo último que se guardó como borrador (para no repetirlo).
+  (String, String, Visibility, bool, String?)? _lastDraft;
+
+  /// Al pasar la app a segundo plano también se guarda: el sistema puede
+  /// cerrarla antes del siguiente guardado periódico.
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftTimer = Timer.periodic(_draftInterval, (_) => _saveDraft());
+    _lifecycle = AppLifecycleListener(onHide: _saveDraft, onPause: _saveDraft);
+  }
+
   @override
   void dispose() {
+    _lifecycle.dispose();
+    _draftTimer?.cancel();
     _title.dispose();
     _content.dispose();
     super.dispose();
+  }
+
+  void _saveDraft() {
+    if (!mounted || !_dirty || _current == _lastDraft) return;
+    _lastDraft = _current;
+    context.read<NoteEditorBloc>().add(
+      NoteEditorEvent.draftChanged(
+        title: _title.text,
+        content: _content.text,
+        visibility: _visibility,
+        quickNote: _quick,
+        subjectId: _subjectId,
+      ),
+    );
+  }
+
+  /// «Recuperar»: el editor pasa a tener lo del borrador (sin guardar aún).
+  void _restore(NoteDraft draft, NoteEditorState state) {
+    setState(() {
+      _title.text = draft.title;
+      _content.text = draft.content;
+      _visibility = state.allowed(draft.visibility);
+      _quick = draft.quickNote;
+      _subjectId = draft.subjectId;
+      _lastDraft = _current;
+    });
+    context.read<NoteEditorBloc>().add(const NoteEditorEvent.draftRestored());
   }
 
   void _fill(NoteEditorState state) {
@@ -105,6 +156,9 @@ class _NoteEditorViewState extends State<_NoteEditorView>
     );
     if (ok && mounted) {
       _initial = _current;
+      context.read<NoteEditorBloc>().add(
+        const NoteEditorEvent.draftDiscarded(),
+      );
       context.pop();
     }
   }
@@ -212,6 +266,16 @@ class _NoteEditorViewState extends State<_NoteEditorView>
                 child: ListView(
                   padding: const EdgeInsets.all(TokensSpacing.m),
                   children: [
+                    if (state.recoverableDraft case final draft?) ...[
+                      _DraftBanner(
+                        draft: draft,
+                        onRestore: () => _restore(draft, state),
+                        onDiscard: () => context.read<NoteEditorBloc>().add(
+                          const NoteEditorEvent.draftDiscarded(),
+                        ),
+                      ),
+                      const SizedBox(height: TokensSpacing.m),
+                    ],
                     TextField(
                       controller: _title,
                       style: context.textStyles.titleLarge,
@@ -394,6 +458,77 @@ class _MetaRow extends StatelessWidget {
             ],
           ),
       ],
+    );
+  }
+}
+
+/// Aviso de borrador sin guardar (la app se cerró mientras se escribía), con
+/// «Recuperar» y «Descartar» como botones hermanos.
+class _DraftBanner extends StatelessWidget {
+  const _DraftBanner({
+    required this.draft,
+    required this.onRestore,
+    required this.onDiscard,
+  });
+
+  final NoteDraft draft;
+  final VoidCallback onRestore;
+  final VoidCallback onDiscard;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Semantics(
+      container: true,
+      child: AppCard(
+        color: context.colors.tertiaryContainer,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.restore_page_outlined,
+                  color: context.colors.onTertiaryContainer,
+                ),
+                const SizedBox(width: TokensSpacing.s),
+                Expanded(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      l10n.academicNoteDraftFound(dateTime(draft.savedAt)),
+                      style: context.textStyles.bodyMedium?.copyWith(
+                        color: context.colors.onTertiaryContainer,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: TokensSpacing.s),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: TokensSpacing.s,
+              runSpacing: TokensSpacing.s,
+              children: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: context.colors.onTertiaryContainer,
+                  ),
+                  onPressed: onDiscard,
+                  child: Text(l10n.academicNoteDraftDiscard),
+                ),
+                AppSecondaryButton(
+                  label: l10n.academicNoteDraftRestore,
+                  icon: const Icon(Icons.restore_rounded),
+                  onPressed: onRestore,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

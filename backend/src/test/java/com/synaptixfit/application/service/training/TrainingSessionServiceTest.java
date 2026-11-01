@@ -11,6 +11,7 @@ import com.synaptixfit.domain.event.training.RoutineDeactivated;
 import com.synaptixfit.domain.exception.training.SessionPastDateInvalidException;
 import com.synaptixfit.domain.exception.training.SessionStaleOpenException;
 import com.synaptixfit.domain.exception.training.SessionUnmarkExpiredException;
+import com.synaptixfit.domain.model.training.SessionXpWithheld;
 import com.synaptixfit.domain.model.training.RoutineStatus;
 import com.synaptixfit.application.port.input.training.FinishTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
@@ -152,6 +153,17 @@ class TrainingSessionServiceTest {
     }
 
     @Test
+    void aShortSessionGivesNoXpAndSaysWhy() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        clock.advance(java.time.Duration.ofMinutes(5));
+        FinishTrainingSessionUseCase.Result result = service.finish(new FinishTrainingSessionUseCase.Command(USER,
+                s.id(), 300, 6, null, null));
+
+        assertThat(result.session().xpAwarded()).isZero();
+        assertThat(result.xpWithheld()).isEqualTo(SessionXpWithheld.SHORT_SESSION);
+    }
+
+    @Test
     void finishCompletesDayAwardsXpComputesCaloriesAndPublishesEvent() {
         TrainingSession s = service.start(USER, routine.id(), day1.id());
         UUID plannedId = planned(day1).id();
@@ -165,6 +177,7 @@ class TrainingSessionServiceTest {
         assertThat(result.session().durationMinutes()).isEqualTo(45);
         assertThat(result.session().xpAwarded()).isEqualTo(expectedXp);
         assertThat(awarded).containsExactly(expectedXp);
+        assertThat(result.xpWithheld()).isNull();
         // 600 s a MET 6 + 2 descansos de 90 s a MET 1,5, con 80 kg.
         double expectedKcal = 6.0 * 80 * 600 / 3600 + 1.5 * 80 * 180 / 3600;
         assertThat(result.session().calories()).isCloseTo(expectedKcal, org.assertj.core.data.Offset.offset(0.1));
@@ -178,7 +191,13 @@ class TrainingSessionServiceTest {
             assertThat(e.date()).isEqualTo(LocalDate.of(2026, 10, 5));
         });
         assertThat(result.recommendations()).singleElement()
-                .satisfies(r -> assertThat(r.type()).isEqualTo(RecommendationType.PROGRESSION));
+                .satisfies(r -> assertThat(r.type()).isEqualTo(RecommendationType.PROGRESSION))
+                // Cada ajuste dice lo que había y por qué cambia (la app enseña «antes → después»).
+                .satisfies(r -> assertThat(r.details()).containsEntry("reasonCode", "LOW_RPE_MORE_REPS"))
+                .satisfies(r -> assertThat(r.adjustments()).allSatisfy(a -> {
+                    assertThat(a.before()).isNotNull();
+                    assertThat(a.reasonCode()).isNotNull();
+                }));
         assertThatThrownBy(() -> service.finish(new FinishTrainingSessionUseCase.Command(USER, s.id(), 60, 5, null, null)))
                 .isInstanceOf(SessionAlreadyCompletedException.class);
     }

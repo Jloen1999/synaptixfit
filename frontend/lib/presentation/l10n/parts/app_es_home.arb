@@ -561,5 +561,17 @@
     }
   },
   "homeReviewAll": "Repasar todos",
-  "homeCommunity": "Muro de la comunidad"
+  "homeCommunity": "Muro de la comunidad",
+  "homeTodayClassesNote": "{count, plural, =1{Además, 1 clase (no cuenta como bloque)} other{Además, {count} clases (no cuentan como bloques)}}",
+  "@homeTodayClassesNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBannerActionTrainingToday": "Ver entreno de hoy",
+  "homeBannerActionNextSlot": "Al próximo hueco",
+  "homeBannerActionDone": "Hecho",
+  "homeBannerActionMarkInCalendar": "Marcar en el calendario"
 }

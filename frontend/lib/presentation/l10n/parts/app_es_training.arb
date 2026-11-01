@@ -7,7 +7,7 @@
   "trainingNewRoutineManualHint": "Diseña tú las semanas, días y ejercicios",
   "trainingMyRoutines": "Mis rutinas",
   "trainingNoRoutinesTitle": "Aún no tienes rutinas",
-  "trainingNoRoutinesMessage": "Crea tu primera rutina con IA o desde cero con el botón «Nueva rutina».",
+  "trainingNoRoutinesMessage": "Crea tu primera rutina: la IA la prepara con tus objetivos o la montas tú desde cero.",
   "trainingNextWorkout": "Próximo entrenamiento",
   "trainingNoPendingDay": "No tienes días pendientes",
   "trainingNoPendingDayHint": "Activa una rutina o haz una sesión libre.",
@@ -25,7 +25,7 @@
     }
   },
   "trainingFatigueTitle": "Puntuación de fatiga",
-  "trainingFatigueAdapt": "Conviene adaptar o aligerar el entrenamiento de hoy.",
+  "trainingFatigueAdapt": "Con este cansancio, tu sesión de hoy se adapta sola: menos series en cada ejercicio (lo verás al empezarla). Tu rutina no cambia.",
   "trainingFatigueOk": "Estás en buena forma para entrenar.",
   "trainingRecommendationsTitle": "Sugerencias",
   "trainingRecommendationsCount": "{count, plural, =1{1 sugerencia} other{{count} sugerencias}}",
@@ -1628,5 +1628,180 @@
       }
     }
   },
-  "trainingExerciseNoLongerInRoutine": "Ejercicio que ya no está en la rutina"
+  "trainingExerciseNoLongerInRoutine": "Ejercicio que ya no está en la rutina",
+  "trainingXpWithheldShort": "Sin XP: la sesión fue demasiado corta para contar como entreno.",
+  "trainingXpWithheldDaily": "Sin XP: hoy ya sumaste la XP de entreno que se puede ganar en un día.",
+  "trainingLogActivityButton": "Apuntar un partido u otra actividad",
+  "trainingNotNow": "Ahora no",
+  "trainingRecommendationScope": "Cuándo: se guarda en tu rutina y lo verás desde la próxima vez que hagas este día.",
+  "trainingRecommendationScopeApplied": "Ya está en tu rutina: lo verás la próxima vez que hagas este día.",
+  "trainingRecommendationIfNot": "«Ahora no» la quita y tu rutina sigue igual.",
+  "trainingWhyFailedReps": "{count, plural, =1{Por qué: fallaste 1 repetición en la última sesión.} other{Por qué: fallaste {count} repeticiones en la última sesión.}}",
+  "@trainingWhyFailedReps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWhyVeryHighRpe": "Por qué: marcaste un esfuerzo máximo (RPE {rpe} de 10).",
+  "@trainingWhyVeryHighRpe": {
+    "placeholders": {
+      "rpe": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWhyVeryLowRpe": "Por qué: la sesión te resultó muy fácil (RPE {rpe} de 10).",
+  "@trainingWhyVeryLowRpe": {
+    "placeholders": {
+      "rpe": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWhyLowRpe": "Por qué: completaste todas las series sin fallos con un esfuerzo moderado (RPE {rpe} de 10).",
+  "@trainingWhyLowRpe": {
+    "placeholders": {
+      "rpe": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWhyInactivity": "Por qué: llevabas {days} días sin entrenar; volver con menos carga evita agujetas fuertes.",
+  "@trainingWhyInactivity": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChangeWeight": "Peso: {from} → {to} kg",
+  "@trainingChangeWeight": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingChangeSets": "Series: {from} → {to}",
+  "@trainingChangeSets": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChangeReps": "Repeticiones: {from} → {to}",
+  "@trainingChangeReps": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChangeTime": "Tiempo: {from} → {to} min",
+  "@trainingChangeTime": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingChangeDistance": "Distancia: {from} → {to} m",
+  "@trainingChangeDistance": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChangeHold": "Aguante: {from} → {to} s",
+  "@trainingChangeHold": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingChangeRest": "Descanso: {from} → {to} s",
+  "@trainingChangeRest": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingAdaptedExercise": "{name}: {from} → {to} series",
+  "@trainingAdaptedExercise": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingAdaptedScope": "Solo en esta sesión: tu rutina no cambia.",
+  "trainingAdaptedDecline": "Hacerla completa",
+  "trainingEstimatedMinutes": "≈ {minutes} min",
+  "@trainingEstimatedMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRemainingMinutes": "Quedan ≈ {minutes} min",
+  "@trainingRemainingMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingDurationIsReal": "La duración es el tiempo real de la sesión (desde que empiezas hasta que terminas) y es la que cuenta para tu carga de entrenamiento.",
+  "trainingEstimatedMinutesSpoken": "Unos {minutes} minutos",
+  "@trainingEstimatedMinutesSpoken": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRemainingMinutesSpoken": "Quedan unos {minutes} minutos",
+  "@trainingRemainingMinutesSpoken": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingAdaptedDeclineTitle": "¿Hacer la sesión completa?",
+  "trainingAdaptedDeclineMessage": "Hoy se recortaron series para cuidarte. Si la haces completa, entrenarás con todas las series planificadas."
 }

@@ -213,7 +213,10 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
     final routineFuture = _uc.getRoutine(event.routineId);
     final weightFuture = _uc.getBodyWeight();
     // Para avisar de qué rutina se pausará al empezar esta (es un extra).
-    final activeFuture = _uc.getMyRoutines(status: RoutineStatus.active, size: 5);
+    final activeFuture = _uc.getMyRoutines(
+      status: RoutineStatus.active,
+      size: 5,
+    );
     final result = await routineFuture;
     final weight = (await weightFuture).valueOrNull;
     final otherActive = (await activeFuture).valueOrNull?.items

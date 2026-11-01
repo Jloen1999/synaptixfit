@@ -37,6 +37,20 @@ class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
     bloc.add(const PracticeHubEvent.refreshed());
   }
 
+  /// Generar preguntas nuevas sustituye las de ahora y, con ellas, las
+  /// estadísticas por pregunta: se avisa antes de hacerlo.
+  Future<void> _regenerate(BuildContext context) async {
+    final l10n = context.localizations;
+    final bloc = context.read<PracticeHubBloc>();
+    final ok = await confirmDestructive(
+      context,
+      title: l10n.academicPracticeRegenerateTitle,
+      message: l10n.academicPracticeRegenerateMessage,
+      confirmLabel: l10n.academicPracticeRegenerateConfirm,
+    );
+    if (ok) bloc.add(const PracticeHubEvent.bankRequested());
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -117,16 +131,14 @@ class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
                     ),
                     const SizedBox(height: TokensSpacing.s),
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: TextButton.icon(
                         onPressed: state.generating
                             ? null
-                            : () => context.read<PracticeHubBloc>().add(
-                                const PracticeHubEvent.bankRequested(),
-                              ),
+                            : () => _regenerate(context),
                         icon: state.generating
                             ? const SizedBox.square(
-                                dimension: 16,
+                                dimension: TokensSize.iconXs,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                 ),

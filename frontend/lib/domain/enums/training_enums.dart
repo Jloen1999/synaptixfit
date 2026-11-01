@@ -231,3 +231,38 @@ enum PlanStatus {
   static PlanStatus fromApi(String? value) =>
       _fromApi(values, (v) => v.apiValue, value, active);
 }
+
+/// Por qué una sesión terminada no dio XP (lo decide el servidor; la app solo
+/// lo explica).
+enum SessionXpWithheld {
+  shortSession('SHORT_SESSION'),
+  dailyLimit('DAILY_LIMIT');
+
+  const SessionXpWithheld(this.apiValue);
+
+  final String apiValue;
+
+  /// Nulo si la sesión dio XP o el valor es desconocido.
+  static SessionXpWithheld? fromApi(String? value) =>
+      values.where((v) => v.apiValue == value).firstOrNull;
+}
+
+/// Por qué cambia un ejercicio en una sugerencia (lo decide el servidor).
+enum AdjustmentReason {
+  failedReps('FAILED_REPS'),
+  veryHighRpe('VERY_HIGH_RPE'),
+  veryLowRpe('VERY_LOW_RPE'),
+  lowRpeMoreReps('LOW_RPE_MORE_REPS'),
+  lowRpeMoreWeight('LOW_RPE_MORE_WEIGHT'),
+  lowRpeMoreTime('LOW_RPE_MORE_TIME'),
+  lowRpeMoreDistance('LOW_RPE_MORE_DISTANCE'),
+  inactivity('INACTIVITY');
+
+  const AdjustmentReason(this.apiValue);
+
+  final String apiValue;
+
+  /// Nulo en sugerencias antiguas o con un valor desconocido.
+  static AdjustmentReason? fromApi(String? value) =>
+      values.where((v) => v.apiValue == value).firstOrNull;
+}

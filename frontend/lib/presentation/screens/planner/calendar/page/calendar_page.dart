@@ -24,23 +24,28 @@ import '../bloc/calendar_bloc.dart';
 
 /// Calendario semanal (`/planner`).
 class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key, this.initialWeek});
+  const CalendarPage({super.key, this.initialWeek, this.initialBlockId});
 
   /// Cualquier día de la semana que se abre (la actual si es nulo).
   final DateTime? initialWeek;
+
+  /// Bloque que se enseña al abrir (se centra en él y se abre su ficha).
+  final String? initialBlockId;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
           getIt<CalendarBloc>()..add(CalendarEvent.started(week: initialWeek)),
-      child: const _CalendarView(),
+      child: _CalendarView(initialBlockId: initialBlockId),
     );
   }
 }
 
 class _CalendarView extends StatefulWidget {
-  const _CalendarView();
+  const _CalendarView({this.initialBlockId});
+
+  final String? initialBlockId;
 
   @override
   State<_CalendarView> createState() => _CalendarViewState();
@@ -54,7 +59,11 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
 
   /// Vuelve a colocar la vista en hoy aunque ya sea esta semana.
   void _goToday() {
-    setState(() => _todayTick++);
+    setState(() {
+      _todayTick++;
+      // Tras «Hoy» el lienzo se centra en ahora, no en el bloque pedido.
+      _focusDone = true;
+    });
     _bloc.add(const CalendarEvent.todayRequested());
   }
 
@@ -66,6 +75,28 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   /// El consejo de arrastrar se da una vez, al cerrar un bloque sin cambios,
   /// en lugar de ocupar una línea fija encima del calendario.
   bool _dragHintShown = false;
+
+  /// El bloque pedido ya se ha enseñado: el lienzo vuelve a centrarse en ahora.
+  bool _focusDone = false;
+
+  /// Último aviso mostrado: el oyente también salta al cargar la semana.
+  int _lastNoticeId = 0;
+
+  /// Bloque pedido al abrir que aún no se ha enseñado (una sola vez).
+  late String? _pendingBlockId = widget.initialBlockId;
+
+  /// Al cargar la semana por primera vez, abre la ficha del bloque pedido (si
+  /// sigue existiendo); el lienzo ya se ha centrado en su hora.
+  void _showPendingBlock(CalendarState state) {
+    final id = _pendingBlockId;
+    if (id == null || state.status != CalendarStatus.ready) return;
+    _pendingBlockId = null;
+    final block = state.blocks.where((b) => b.id == id).firstOrNull;
+    if (block == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_openEditor(block: block));
+    });
+  }
 
   @override
   void initState() {
@@ -126,7 +157,9 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         await _toggleCompletion(blockId);
         return;
       case BlockEditorTrainingRequested(:final routineId):
-        unawaited(context.push<void>(PlannerExternalPaths.routine(routineId)));
+        // La rutina vive en la pestaña Entreno: se cambia de pestaña (apilarla
+        // sobre esta pantalla completa duplica el armazón y queda en negro).
+        context.go(PlannerExternalPaths.routine(routineId));
         return;
       case BlockEditorCreated(:final overlaps, :final weeklyCopies):
         // Con copias se dice cuántas; los solapes ya los avisa la franja de
@@ -254,7 +287,27 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
   }
 
-  void _savePlan() => _bloc.add(const CalendarEvent.planSaveRequested());
+  /// Inicio del bloque pedido al abrir: el lienzo se coloca en su hora y su día
+  /// en lugar de en «ahora».
+  DateTime? _focusOf(CalendarState state) {
+    final id = widget.initialBlockId;
+    if (id == null || _focusDone) return null;
+    return state.blocks.where((b) => b.id == id).firstOrNull?.start;
+  }
+
+  /// «Cerrar semana» no guarda cambios (los bloques se guardan solos): da por
+  /// planificada la semana y, la primera vez, suma XP. Se explica antes.
+  Future<void> _savePlan() async {
+    final l10n = context.localizations;
+    final ok = await showConfirmDialog(
+      context,
+      title: l10n.plannerClosePlanTitle,
+      message: l10n.plannerClosePlanMessage,
+      confirmLabel: l10n.plannerSavePlan,
+      destructive: false,
+    );
+    if (ok && mounted) _bloc.add(const CalendarEvent.planSaveRequested());
+  }
 
   @override
   Widget build(BuildContext context) =>
@@ -263,8 +316,17 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   Widget _content(BuildContext context) {
     final l10n = context.localizations;
     return BlocConsumer<CalendarBloc, CalendarState>(
-      listenWhen: (a, b) => a.noticeId != b.noticeId && b.notice != null,
-      listener: (context, state) => _onNotice(context, state.notice!),
+      listenWhen: (a, b) =>
+          (a.noticeId != b.noticeId && b.notice != null) ||
+          (_pendingBlockId != null && a.status != b.status),
+      listener: (context, state) {
+        _showPendingBlock(state);
+        final notice = state.notice;
+        if (notice != null && state.noticeId != _lastNoticeId) {
+          _lastNoticeId = state.noticeId;
+          _onNotice(context, notice);
+        }
+      },
       builder: (context, state) {
         return Scaffold(
           appBar: AppPageBar(
@@ -385,6 +447,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
                   titles: state.blockTitles,
                   busyIds: state.busyBlockIds,
                   now: _now,
+                  focusAt: _focusOf(state),
                   onSlotTap: (start) =>
                       _bloc.add(CalendarEvent.slotTapped(start)),
                   onBlockTap: (b) => _openEditor(block: b),
@@ -446,8 +509,8 @@ class _WeekNavigator extends StatelessWidget {
   }
 }
 
-/// «Guardar plan» en la barra superior: confirma la semana (y da XP) sin
-/// competir con «Nuevo bloque», que es la acción principal de abajo.
+/// «Cerrar semana» en la barra superior: da por planificada la semana (y da
+/// XP) sin competir con «Nuevo bloque», que es la acción principal de abajo.
 class _SavePlanButton extends StatelessWidget {
   const _SavePlanButton({
     required this.saving,

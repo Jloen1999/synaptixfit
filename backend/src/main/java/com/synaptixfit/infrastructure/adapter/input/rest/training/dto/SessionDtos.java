@@ -7,6 +7,7 @@ import com.synaptixfit.domain.model.training.SessionAdaptation;
 import com.synaptixfit.domain.model.training.SessionLabel;
 import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.SessionType;
+import com.synaptixfit.domain.model.training.SessionXpWithheld;
 import com.synaptixfit.domain.model.training.TrainingSession;
 import com.synaptixfit.domain.model.user.ExperienceChange;
 import jakarta.validation.Valid;
@@ -130,8 +131,10 @@ public final class SessionDtos {
         }
     }
 
+    /** {@code xpWithheld}: SHORT_SESSION o DAILY_LIMIT si la sesión no dio XP; nulo si la dio. */
     public record FinishSessionResponse(SessionResponse session, ExperienceResponse experience,
-                                        List<RecommendationDtos.RecommendationResponse> recommendations) {
+                                        List<RecommendationDtos.RecommendationResponse> recommendations,
+                                        SessionXpWithheld xpWithheld) {
     }
 
     public record UnmarkSessionResponse(SessionResponse session, ExperienceResponse experience) {

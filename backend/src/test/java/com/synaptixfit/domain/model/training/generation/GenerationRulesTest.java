@@ -7,6 +7,7 @@ import com.synaptixfit.domain.model.training.CatalogItem;
 import com.synaptixfit.domain.model.training.DailyCheckIn;
 import com.synaptixfit.domain.model.training.Difficulty;
 import com.synaptixfit.domain.model.training.Exercise;
+import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.MeasurementType;
 import com.synaptixfit.domain.model.training.Modality;
@@ -64,6 +65,14 @@ class GenerationRulesTest {
         assertThat(failed.parameters().weightKg()).isEqualTo(42.5);
         assertThat(failed.parameters().sets()).isEqualTo(3);
         assertThat(failed.log()).contains("3 fallos");
+        // El motivo viaja como código para que la app lo explique en su idioma.
+        assertThat(failed.reason()).isEqualTo(AdjustmentReason.FAILED_REPS);
+        assertThat(ProgressionCalculator.progress(p, REPS_WEIGHT, 6, List.of(set(0)), HYP).reason())
+                .isEqualTo(AdjustmentReason.LOW_RPE_MORE_REPS);
+        assertThat(ProgressionCalculator.progress(top, REPS_WEIGHT, 6, List.of(set(0)), HYP).reason())
+                .isEqualTo(AdjustmentReason.LOW_RPE_MORE_WEIGHT);
+        assertThat(ProgressionCalculator.degradeForInactivity(p, REPS_WEIGHT, 20, HYP).reason())
+                .isEqualTo(AdjustmentReason.INACTIVITY);
         assertThat(ProgressionCalculator.progress(p, REPS_WEIGHT, 8, List.of(), HYP).changed(p)).isFalse();
     }
 

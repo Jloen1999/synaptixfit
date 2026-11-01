@@ -18,6 +18,7 @@ import '../../widgets/analytics_summary.dart';
 import '../../widgets/community_preview_card.dart';
 import '../../widgets/earned_badges_preview.dart';
 import '../../widgets/level_card.dart';
+import '../../widgets/next_badge_card.dart';
 import '../../widgets/physical_load_card.dart';
 import '../../widgets/streak_card.dart';
 import '../bloc/progress_overview_bloc.dart';
@@ -99,6 +100,11 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
                   children: [
                     LevelCard(account: overview.account),
                     StreakCard(streak: overview.streak),
+                    if (overview.nextBadge case final next?)
+                      NextBadgeCard(
+                        badge: next,
+                        onOpen: () => _open(ProgressPaths.badges),
+                      ),
                     EarnedBadgesPreview(
                       badges: overview.earnedBadges,
                       onOpen: () => _open(ProgressPaths.badges),

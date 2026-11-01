@@ -7,6 +7,7 @@ import 'package:synaptixfit/domain/enums/planner_enums.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/planner/active_focus_timer.dart';
 import 'package:synaptixfit/domain/models/planner/focus.dart';
+import 'package:synaptixfit/domain/models/planner/planner_options.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/reminders/timer_alert.dart';
 import 'package:synaptixfit/domain/use_cases/reminders/cancel_timer_alert_use_case.dart';
@@ -16,6 +17,7 @@ import 'package:synaptixfit/domain/use_cases/planner/clear_active_focus_timer_us
 import 'package:synaptixfit/domain/use_cases/planner/get_focus_plan_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/load_active_focus_timer_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_focus_stats_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/get_planner_subjects_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/record_focus_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/save_active_focus_timer_use_case.dart';
 import 'package:synaptixfit/presentation/screens/planner/pomodoro/bloc/pomodoro_bloc.dart';
@@ -40,6 +42,8 @@ class _SaveTimer extends Mock implements SaveActiveFocusTimerUseCaseContract {}
 
 class _ClearTimer extends Mock
     implements ClearActiveFocusTimerUseCaseContract {}
+
+class _Subjects extends Mock implements GetPlannerSubjectsUseCaseContract {}
 
 void main() {
   setUpAll(registerPlannerFallbacks);
@@ -333,6 +337,66 @@ void main() {
       const PomodoroState(totalSeconds: 120, remainingSeconds: 120),
     ],
   );
+
+  group('asignatura sin bloque', () {
+    late _Subjects getSubjects;
+    const algebra = SubjectOption(id: 'sub-1', name: 'Álgebra');
+
+    setUp(() {
+      getSubjects = _Subjects();
+      when(
+        () => getSubjects(),
+      ).thenAnswer((_) async => const Success([algebra]));
+    });
+
+    PomodoroBloc withSubjects() => PomodoroBloc(
+      recordSession: record,
+      getStats: getStats,
+      getAccount: getAccount,
+      getPlan: getPlan,
+      getSubjects: getSubjects,
+      config: config,
+      now: () => clock,
+      ticker: () => ticks.stream,
+    );
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      'sin bloque ofrece las asignaturas y se elige antes de empezar',
+      build: withSubjects,
+      act: (bloc) async {
+        bloc.add(const PomodoroEvent.started());
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const PomodoroEvent.subjectSelected('sub-1'));
+      },
+      verify: (bloc) {
+        expect(bloc.state.subjects, [algebra]);
+        expect(bloc.state.subjectId, 'sub-1');
+      },
+    );
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      'con un bloque no ofrece asignaturas (cuenta la del bloque)',
+      build: withSubjects,
+      act: (bloc) => bloc.add(const PomodoroEvent.started(blockId: 'b1')),
+      verify: (bloc) {
+        expect(bloc.state.subjects, isEmpty);
+        verifyNever(() => getSubjects());
+      },
+    );
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      'en marcha no se cambia de asignatura',
+      build: withSubjects,
+      act: (bloc) async {
+        bloc.add(const PomodoroEvent.started());
+        await Future<void>.delayed(Duration.zero);
+        bloc
+          ..add(const PomodoroEvent.startPressed())
+          ..add(const PomodoroEvent.subjectSelected('sub-1'));
+      },
+      verify: (bloc) => expect(bloc.state.subjectId, isNull),
+    );
+  });
 
   group('recomendación del servidor', () {
     const plan = FocusPlan(

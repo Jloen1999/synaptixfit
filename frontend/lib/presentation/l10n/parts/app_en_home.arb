@@ -162,5 +162,10 @@
   "homePlanWeekLegendDone": "Done",
   "homePlanWeekLegendComplete": "Day done",
   "homeReviewAll": "Review all",
-  "homeCommunity": "Community wall"
+  "homeCommunity": "Community wall",
+  "homeTodayClassesNote": "{count, plural, =1{Plus 1 class (not counted as a block)} other{Plus {count} classes (not counted as blocks)}}",
+  "homeBannerActionTrainingToday": "See today's workout",
+  "homeBannerActionNextSlot": "To next free slot",
+  "homeBannerActionDone": "Done",
+  "homeBannerActionMarkInCalendar": "Mark in the calendar"
 }

@@ -18,4 +18,14 @@ void main() {
       expect(SocialExternalPaths.isTabRoot('/social/posts/p1'), isFalse);
     },
   );
+
+  test(
+    'las rutinas enlazadas viven en la pestaña Entreno: se abren con go',
+    () {
+      expect(SocialExternalPaths.opensInTab('/training/routines/r1'), isTrue);
+      expect(SocialExternalPaths.opensInTab('/training/exercises/e1'), isTrue);
+      expect(SocialExternalPaths.opensInTab('/challenges/c1'), isFalse);
+      expect(SocialExternalPaths.opensInTab('/progress/badges'), isFalse);
+    },
+  );
 }

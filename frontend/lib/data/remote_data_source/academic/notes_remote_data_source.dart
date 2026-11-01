@@ -14,11 +14,17 @@ class NotesRemoteDataSource {
   /// Tamaño de página al listar todos los apuntes de una asignatura.
   static const _pageSize = 100;
 
-  Future<NotePageDto> getNotes({String? subjectId, int page = 0}) async {
+  /// [unassignedOnly]: solo los que no tienen asignatura (bandeja de notas).
+  Future<NotePageDto> getNotes({
+    String? subjectId,
+    int page = 0,
+    bool unassignedOnly = false,
+  }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       _base,
       queryParameters: {
         'subjectId': ?subjectId,
+        if (unassignedOnly) 'unassignedOnly': true,
         'page': page,
         'size': _pageSize,
       },

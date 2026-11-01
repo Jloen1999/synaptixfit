@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/home_banner_type.dart';
+import '../../../../../domain/enums/home_event_kind.dart';
 import '../../../../../domain/enums/usage_focus.dart';
 import '../../../../../domain/models/home/home_dashboard.dart';
 import '../../../../extensions/context_extensions.dart';
@@ -65,6 +67,21 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
     }
   }
 
+  /// Resultado de «Hecho» o «Al próximo hueco» del aviso.
+  void _showBannerNotice(BuildContext context, HomeBannerNotice notice) {
+    final l10n = context.localizations;
+    context.showSnack(switch (notice) {
+      HomeBannerNoticeCompleted(:final xpDelta) =>
+        xpDelta > 0
+            ? l10n.plannerBlockCompletedXp(xpDelta)
+            : l10n.plannerBlockCompleted,
+      HomeBannerNoticeRescheduled(:final start) => l10n.plannerRescheduledTo(
+        DateFormat.MMMEd().add_Hm().format(start),
+      ),
+      HomeBannerNoticeFailed(:final error) => errorMessage(context, error),
+    });
+  }
+
   Future<void> _refresh(BuildContext context) async {
     final bloc = context.read<HomeDashboardBloc>()
       ..add(const HomeDashboardEvent.refreshed());
@@ -84,10 +101,20 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
                   current.openSessionId != previous.openSessionId) ||
               (current.trainingError != null &&
                   current.trainingError != previous.trainingError) ||
+              (current.bannerNotice != null &&
+                  current.bannerNotice != previous.bannerNotice) ||
               (current.error != null &&
                   current.error != previous.error &&
                   current.dashboard != null),
           listener: (context, state) {
+            final bannerNotice = state.bannerNotice;
+            if (bannerNotice != null) {
+              context.read<HomeDashboardBloc>().add(
+                const HomeDashboardEvent.bannerNoticeHandled(),
+              );
+              _showBannerNotice(context, bannerNotice);
+              return;
+            }
             final sessionId = state.openSessionId;
             final trainingError = state.trainingError;
             if (sessionId != null || trainingError != null) {
@@ -190,9 +217,15 @@ class _HomeContent extends StatelessWidget {
     // fatiga) va arriba del todo; el resto de avisos, aunque sean de aviso
     // (entregas próximas, poca energía…), no empuja «Tu día» y va debajo.
     final urgent = _urgentBanners.contains(dashboard.banner.type);
+    final bloc = context.read<HomeDashboardBloc>();
     final banner = SmartBannerCard(
       banner: dashboard.banner,
       onAction: onNavigate,
+      busy: state.bannerBusy,
+      onRescheduleBlock: (id) =>
+          bloc.add(HomeDashboardEvent.bannerBlockRescheduled(id)),
+      onCompleteBlock: (id) =>
+          bloc.add(HomeDashboardEvent.bannerBlockCompleted(id)),
     );
     // Columna principal: primero lo que hay que hacer (agenda de hoy y los
     // próximos días y el próximo entreno), que es lo que el estudiante busca al
@@ -213,19 +246,37 @@ class _HomeContent extends StatelessWidget {
       final dayId = event?.routineDayId;
       if (routineId != null && dayId != null) {
         context.read<HomeDashboardBloc>().add(
-          HomeDashboardEvent.trainingStarted(routineId: routineId, dayId: dayId),
+          HomeDashboardEvent.trainingStarted(
+            routineId: routineId,
+            dayId: dayId,
+          ),
         );
       } else {
         startTraining();
       }
     }
+
+    // «Concentrarme» se liga al bloque que toca: sus fases cuentan para él y
+    // para su asignatura.
+    void focusOnNext() {
+      final event = TodayHeroCard.nextEvent(dashboard.todayEvents);
+      onNavigate(
+        event == null
+            ? HomeExternalPaths.pomodoro
+            : HomeExternalPaths.pomodoroFor(
+                blockId: event.id,
+                title: event.title.isEmpty ? null : event.title,
+              ),
+      );
+    }
+
     // «Tu día»: lo primero que se ve, con lo que toca ahora y su botón.
     final hero = TodayHeroCard(
       dashboard: dashboard,
       focus: focus,
       starting: state.startingTraining,
       onAction: (action) => switch (action) {
-        TodayHeroAction.focus => onNavigate(HomeExternalPaths.pomodoro),
+        TodayHeroAction.focus => focusOnNext(),
         TodayHeroAction.train => trainTodayBlock(),
         TodayHeroAction.openPlanner => onNavigate(HomeExternalPaths.planner),
       },
@@ -238,6 +289,14 @@ class _HomeContent extends StatelessWidget {
         focus: focus,
         reviews: state.dueReviews,
         onOpenPlanner: () => onNavigate(HomeExternalPaths.planner),
+        onOpenEvent: (event) => onNavigate(
+          event.kind == HomeEventKind.deadline
+              ? HomeExternalPaths.deadlines
+              : HomeExternalPaths.plannerAt(
+                  event.start ?? DateTime.now(),
+                  blockId: event.id,
+                ),
+        ),
         onOpenReview: (review) =>
             onNavigate(HomeExternalPaths.materialReview(review.id)),
         onReviewAll: () => onNavigate(

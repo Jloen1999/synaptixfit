@@ -239,6 +239,15 @@ class TrainingDomainTest {
     }
 
     @Test
+    void withheldReasonExplainsAZeroXpSession() {
+        assertThat(TrainingRewards.withheldReason(45, 0)).isEmpty();
+        assertThat(TrainingRewards.withheldReason(9, 0)).contains(SessionXpWithheld.SHORT_SESSION);
+        assertThat(TrainingRewards.withheldReason(45, 2)).contains(SessionXpWithheld.DAILY_LIMIT);
+        // La duración manda: corta y con el día lleno se explica como corta.
+        assertThat(TrainingRewards.withheldReason(5, 2)).contains(SessionXpWithheld.SHORT_SESSION);
+    }
+
+    @Test
     void caloriesUseMetPerExerciseRestAndScaleToTheSession() {
         PlannedExercise reps = new PlannedExercise(UUID.randomUUID(), REF, P, 1, null);
         ExerciseRef cardio = new ExerciseRef(UUID.randomUUID(), "Remo", null, null, Modality.AEROBIC,

@@ -88,6 +88,9 @@ abstract class FinishSessionResult with _$FinishSessionResult {
     required TrainingSession session,
     required ExperienceChange experience,
     @Default(<Recommendation>[]) List<Recommendation> recommendations,
+
+    /// Por qué no dio XP (nulo si la dio): sesión corta o tope del día.
+    SessionXpWithheld? xpWithheld,
   }) = _FinishSessionResult;
 }
 

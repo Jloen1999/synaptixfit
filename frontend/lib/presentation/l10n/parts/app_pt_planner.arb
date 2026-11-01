@@ -7,9 +7,9 @@
   "plannerToday": "Hoje",
   "plannerTodayDate": "Hoje, {date}",
   "plannerWeekRange": "{start} – {end}",
-  "plannerSavePlan": "Guardar plano",
-  "plannerPlanSaved": "{count, plural, =0{Plano guardado} =1{Plano guardado com 1 bloco} other{Plano guardado com {count} blocos}}",
-  "plannerPlanSavedXp": "Plano guardado · +{xp} XP",
+  "plannerSavePlan": "Fechar semana",
+  "plannerPlanSaved": "{count, plural, =0{Semana fechada} =1{Semana fechada com 1 bloco} other{Semana fechada com {count} blocos}}",
+  "plannerPlanSavedXp": "Semana fechada · +{xp} XP",
   "plannerBlockCompleted": "Bloco concluído",
   "plannerBlockCompletedXp": "Bloco concluído · +{xp} XP",
   "plannerBlockUncompleted": "Bloco desmarcado",
@@ -337,5 +337,9 @@
   "plannerFieldChallengeTaskHint": "Cada bloco concluído faz avançar essa tarefa. O bloco tem de ficar dentro das datas do desafio.",
   "plannerNoChallengeTask": "Nenhuma em concreto",
   "plannerErrorBlockOutsideChallenge": "O bloco fica fora das datas do seu desafio. Mova-o ou prolongue o desafio.",
-  "plannerDeadlineDoneCaption": "Feita"
+  "plannerDeadlineDoneCaption": "Feita",
+  "plannerPomodoroSubjectLabel": "O que estás a estudar?",
+  "plannerPomodoroNoSubject": "Sem disciplina",
+  "plannerClosePlanTitle": "Fechar a semana?",
+  "plannerClosePlanMessage": "Dás esta semana como planeada e, na primeira vez, ganhas XP por cada bloco que planeaste. Não é preciso para guardar: os blocos guardam-se sozinhos e podes continuar a alterá-los."
 }

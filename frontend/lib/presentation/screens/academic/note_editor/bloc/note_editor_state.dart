@@ -17,6 +17,9 @@ abstract class NoteEditorState with _$NoteEditorState {
     @Default(false) bool saving,
     AppError? saveError,
     String? savedNoteId,
+
+    /// Borrador que quedó sin guardar (la app se cerró): se ofrece recuperarlo.
+    NoteDraft? recoverableDraft,
   }) = _NoteEditorState;
 
   const NoteEditorState._();

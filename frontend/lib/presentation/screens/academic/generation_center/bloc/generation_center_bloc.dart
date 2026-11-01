@@ -8,12 +8,14 @@ import '../../../../../domain/models/academic/note.dart';
 import '../../../../../domain/models/academic/study_artifact.dart';
 import '../../../../../domain/models/academic/subject.dart';
 import '../../../../../domain/models/academic/subject_file.dart';
+import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/use_cases/academic/generate_study_artifact_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_notes_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_subject_files_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_subjects_use_case.dart';
 import '../../../../../domain/use_cases/academic/save_artifact_as_note_use_case.dart';
 import '../../../../../domain/use_cases/academic/save_artifact_as_quiz_use_case.dart';
+import '../../../../../domain/use_cases/academic/upload_subject_file_use_case.dart';
 
 part 'generation_center_bloc.freezed.dart';
 part 'generation_center_event.dart';
@@ -30,12 +32,14 @@ class GenerationCenterBloc
     required this._generate,
     required this._saveAsNote,
     required this._saveAsQuiz,
+    required this._uploadFile,
   }) : super(const GenerationCenterState()) {
     on<GenerationCenterStarted>(_onStarted);
     on<GenerationCenterSubjectSelected>(
       (event, emit) => _loadSources(emit, event.subjectId),
     );
     on<GenerationCenterSourceToggled>(_onSourceToggled);
+    on<GenerationCenterFileUploadRequested>(_onUpload);
     on<GenerationCenterKindSelected>(
       (event, emit) => emit(state.copyWith(kind: event.kind)),
     );
@@ -52,6 +56,35 @@ class GenerationCenterBloc
   final GenerateStudyArtifactUseCaseContract _generate;
   final SaveArtifactAsNoteUseCaseContract _saveAsNote;
   final SaveArtifactAsQuizUseCaseContract _saveAsQuiz;
+  final UploadSubjectFileUseCaseContract _uploadFile;
+
+  /// Sube el archivo a la asignatura elegida y recarga las fuentes. Solo los
+  /// que la IA puede leer (lo dice el servidor) aparecen como fuente.
+  Future<void> _onUpload(
+    GenerationCenterFileUploadRequested event,
+    Emitter<GenerationCenterState> emit,
+  ) async {
+    final subjectId = state.subjectId;
+    if (subjectId == null || state.uploading) return;
+    emit(
+      state.copyWith(uploading: true, uploadError: null, uploadOutcome: null),
+    );
+    final result = await _uploadFile(subjectId, event.payload);
+    switch (result) {
+      case Failure(:final error):
+        emit(state.copyWith(uploading: false, uploadError: error));
+      case Success(:final value):
+        emit(
+          state.copyWith(
+            uploading: false,
+            uploadOutcome: value.aiReadable
+                ? FileUploadOutcome.readable
+                : FileUploadOutcome.unreadable,
+          ),
+        );
+        await _loadSources(emit, subjectId);
+    }
+  }
 
   /// Máximo de fuentes que admite la API.
   static const maxSources = 10;

@@ -58,14 +58,15 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
     /**
      * Próximo entrenamiento (regla única {@code RoutineSchedule}). {@code status}: PENDING o IN_PROGRESS;
      * {@code dayName} nulo si el día no tiene nombre propio (el cliente muestra el día de la semana de
-     * {@code dayNumber}); {@code staleSessionId}: sesión abandonada de ese día que hay que cerrar antes.
+     * {@code dayNumber}); {@code staleSessionId}: sesión abandonada de ese día que hay que cerrar antes;
+     * {@code estimatedMinutes}: duración prevista del día («≈ 45 min»).
      */
     public record NextTrainingDayResponse(UUID routineId, String routineName, UUID weekId, int weekNumber,
                                           int totalWeeks, UUID dayId, int dayNumber, String dayName, String status,
                                           LocalDate scheduledDate, boolean overdue, int sessionOfWeek,
                                           int sessionsInWeek, UUID staleSessionId, int exerciseCount,
                                           int totalDays, int completedDays, int skippedDays, String coverImageUrl,
-                                          Modality coverModality) {
+                                          Modality coverModality, int estimatedMinutes) {
 
         static NextTrainingDayResponse from(PendingDay p) {
             if (p == null) {
@@ -78,7 +79,8 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                     p.staleSessionId(), p.day().exercises().size(), p.routine().totalDays(),
                     p.routine().completedDays(), p.routine().skippedDays(),
                     cover.map(ExerciseRef::stillImageUrl).orElse(null),
-                    cover.map(ExerciseRef::modality).orElse(null));
+                    cover.map(ExerciseRef::modality).orElse(null),
+                    p.day().estimatedMinutes());
         }
     }
 

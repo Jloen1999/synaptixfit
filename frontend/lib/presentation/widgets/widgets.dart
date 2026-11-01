@@ -32,3 +32,4 @@ export 'app_text_field.dart';
 export 'app_tile_grid.dart';
 export 'app_undo_shortcut.dart';
 export 'xp_progress_bar.dart';
+export 'xp_guide_sheet.dart';

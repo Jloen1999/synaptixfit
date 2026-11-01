@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 
+import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/models/training/recommendation.dart';
+import '../../../../domain/models/training/routine.dart';
 import '../../../extensions/context_extensions.dart';
+import '../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import 'metric_chips.dart';
 import 'training_labels.dart';
 
-/// Sugerencia de entrenamiento con acciones aplicar / descartar. Plegada
-/// enseña los primeros ajustes; desplegada («Ver detalle» o un toque en la
-/// tarjeta), el porqué y todos los ajustes, para revisarlos antes de aplicar.
+/// Sugerencia de entrenamiento con «Aplicar» / «Ahora no». Dice qué cambia en
+/// cada ejercicio con sus cifras («Peso: 40 → 42,5 kg»), por qué (el esfuerzo
+/// o los días sin entrenar que manda el servidor), cuándo se nota (desde la
+/// próxima vez que se haga ese día de la rutina) y qué pasa si no se aplica.
+/// Plegada enseña los primeros ajustes; desplegada, todos.
 class RecommendationCard extends StatefulWidget {
   const RecommendationCard({
     super.key,
@@ -44,7 +49,10 @@ class _RecommendationCardState extends State<RecommendationCard> {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final r = widget.recommendation;
-    final reason = r.description?.trim() ?? '';
+    // El porqué en el idioma de la app si el servidor manda su código; si no
+    // (sugerencias antiguas), su descripción.
+    final reason = recommendationWhy(l10n, r) ?? r.description?.trim() ?? '';
+    final changesRoutine = r.adjustments.isNotEmpty;
     // Solo se puede desplegar si hay algo más que ver.
     final expandable =
         reason.isNotEmpty ||
@@ -104,11 +112,15 @@ class _RecommendationCardState extends State<RecommendationCard> {
             if (a.exerciseName != null)
               Text(a.exerciseName!, style: context.textStyles.labelLarge),
             const SizedBox(height: TokensSpacing.xxs),
-            ExerciseParameterChips(parameters: a.parameters),
-            if (expanded && (a.reason?.trim().isNotEmpty ?? false)) ...[
-              const SizedBox(height: TokensSpacing.xxs),
-              Text(a.reason!.trim(), style: muted),
-            ],
+            if (a.before case final before?)
+              for (final line in adjustmentChanges(l10n, before, a.parameters))
+                Text(
+                  line,
+                  semanticsLabel: spokenArrow(l10n, line),
+                  style: context.textStyles.bodyMedium,
+                )
+            else
+              ExerciseParameterChips(parameters: a.parameters),
           ],
           if (hidden > 0) ...[
             const SizedBox(height: TokensSpacing.xs),
@@ -116,6 +128,17 @@ class _RecommendationCardState extends State<RecommendationCard> {
               l10n.trainingRecommendationMoreExercises(hidden),
               style: muted,
             ),
+          ],
+          if (changesRoutine && expanded) ...[
+            const SizedBox(height: TokensSpacing.s),
+            Text(
+              r.applied
+                  ? l10n.trainingRecommendationScopeApplied
+                  : l10n.trainingRecommendationScope,
+              style: muted,
+            ),
+            if (!r.applied)
+              Text(l10n.trainingRecommendationIfNot, style: muted),
           ],
         ],
       ),
@@ -131,7 +154,7 @@ class _RecommendationCardState extends State<RecommendationCard> {
             children: [
               TextButton(
                 onPressed: widget.busy ? null : widget.onDiscard,
-                child: Text(l10n.trainingDiscard),
+                child: Text(l10n.trainingNotNow),
               ),
               AppPrimaryButton(
                 label: l10n.trainingApply,
@@ -204,3 +227,63 @@ class _RecommendationCardState extends State<RecommendationCard> {
     );
   }
 }
+
+/// Por qué propone el cambio: el motivo de toda la sugerencia lo elige el
+/// servidor (cada ejercicio puede tener el suyo); null en las antiguas.
+String? recommendationWhy(AppLocalizations l10n, Recommendation r) {
+  final rpe = r.rpe;
+  return switch (r.reasonCode) {
+    AdjustmentReason.failedReps when r.failedReps != null =>
+      l10n.trainingWhyFailedReps(r.failedReps!),
+    AdjustmentReason.veryHighRpe when rpe != null =>
+      l10n.trainingWhyVeryHighRpe(rpe),
+    AdjustmentReason.veryLowRpe when rpe != null => l10n.trainingWhyVeryLowRpe(
+      rpe,
+    ),
+    AdjustmentReason.lowRpeMoreReps ||
+    AdjustmentReason.lowRpeMoreWeight ||
+    AdjustmentReason.lowRpeMoreTime ||
+    AdjustmentReason.lowRpeMoreDistance when rpe != null =>
+      l10n.trainingWhyLowRpe(rpe),
+    AdjustmentReason.inactivity when r.daysInactive != null =>
+      l10n.trainingWhyInactivity(r.daysInactive!),
+    _ => null,
+  };
+}
+
+/// Lo que cambia de un ejercicio, una línea por cifra: «Peso: 40 → 42,5 kg».
+/// Solo compara lo que manda el servidor (antes y después): no calcula nada.
+List<String> adjustmentChanges(
+  AppLocalizations l10n,
+  ExerciseParameters before,
+  ExerciseParameters after,
+) {
+  String minutes(int seconds) => formatNumber(seconds / 60);
+  final bw = before.weightKg;
+  final aw = after.weightKg;
+  final bt = before.targetDurationSeconds;
+  final at = after.targetDurationSeconds;
+  final bd = before.distanceMeters;
+  final ad = after.distanceMeters;
+  final bi = before.isometricSeconds;
+  final ai = after.isometricSeconds;
+  return [
+    if (bw != null && aw != null && (bw - aw).abs() >= 0.05)
+      l10n.trainingChangeWeight(formatNumber(bw), formatNumber(aw)),
+    if (before.sets != after.sets)
+      l10n.trainingChangeSets(before.sets, after.sets),
+    if (before.reps != after.reps && bi == null && bt == null)
+      l10n.trainingChangeReps(before.reps, after.reps),
+    if (bt != null && at != null && bt != at)
+      l10n.trainingChangeTime(minutes(bt), minutes(at)),
+    if (bd != null && ad != null && bd != ad)
+      l10n.trainingChangeDistance(bd, ad),
+    if (bi != null && ai != null && bi != ai) l10n.trainingChangeHold(bi, ai),
+    if (before.restSeconds != after.restSeconds)
+      l10n.trainingChangeRest(before.restSeconds, after.restSeconds),
+  ];
+}
+
+/// La flecha «→» se lee mal en voz («flecha derecha»): se dice «a».
+String spokenArrow(AppLocalizations l10n, String text) =>
+    text.replaceAll(' → ', l10n.commonArrowSpoken);

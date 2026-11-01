@@ -133,6 +133,9 @@ abstract class HomeNextTrainingDay with _$HomeNextTrainingDay {
     /// Foto y modalidad del ejercicio que representa la rutina.
     String? coverImageUrl,
     Modality? coverModality,
+
+    /// Duración prevista del día («≈ 45 min»; 0 si el servidor no la manda).
+    @Default(0) int estimatedMinutes,
   }) = _HomeNextTrainingDay;
 
   const HomeNextTrainingDay._();

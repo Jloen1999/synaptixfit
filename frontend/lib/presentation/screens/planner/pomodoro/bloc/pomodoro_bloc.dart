@@ -8,6 +8,7 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/account/account.dart';
 import '../../../../../domain/models/planner/active_focus_timer.dart';
 import '../../../../../domain/models/planner/focus.dart';
+import '../../../../../domain/models/planner/planner_options.dart';
 import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/models/reminders/ongoing_timer.dart';
 import '../../../../../domain/models/reminders/timer_alert.dart';
@@ -18,6 +19,7 @@ import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 import '../../../../../domain/use_cases/planner/clear_active_focus_timer_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_focus_plan_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_focus_stats_use_case.dart';
+import '../../../../../domain/use_cases/planner/get_planner_subjects_use_case.dart';
 import '../../../../../domain/use_cases/planner/load_active_focus_timer_use_case.dart';
 import '../../../../../domain/use_cases/planner/record_focus_session_use_case.dart';
 import '../../../../../domain/use_cases/planner/save_active_focus_timer_use_case.dart';
@@ -124,6 +126,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     this._loadTimer,
     this._saveTimer,
     this._clearTimer,
+    this._getSubjects,
     PomodoroConfig config = const PomodoroConfig(),
     DateTime Function()? now,
     Stream<void> Function()? ticker,
@@ -139,6 +142,10 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
        ) {
     on<PomodoroStarted>(_onStarted);
     on<PomodoroFocusMinutesChanged>(_onFocusMinutesChanged);
+    on<PomodoroSubjectSelected>((event, emit) {
+      if (!state.canPickSubject) return;
+      emit(state.copyWith(subjectId: event.subjectId));
+    });
     on<PomodoroStartPressed>(_onStart);
     on<PomodoroPausePressed>(_onPause);
     on<PomodoroResumePressed>(_onResume);
@@ -163,6 +170,16 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
   final LoadActiveFocusTimerUseCaseContract? _loadTimer;
   final SaveActiveFocusTimerUseCaseContract? _saveTimer;
   final ClearActiveFocusTimerUseCaseContract? _clearTimer;
+  final GetPlannerSubjectsUseCaseContract? _getSubjects;
+
+  /// Sin bloque, la pantalla ofrece elegir asignatura. Si falla, no se avisa:
+  /// concentrarse sin asignatura sigue valiendo.
+  Future<void> _loadSubjects(Emitter<PomodoroState> emit) async {
+    final getSubjects = _getSubjects;
+    if (getSubjects == null || state.blockId != null) return;
+    final subjects = (await getSubjects()).valueOrNull;
+    if (subjects != null) emit(state.copyWith(subjects: subjects));
+  }
 
   /// La fase guardada en el teléfono ya se ha recuperado (una vez por sesión).
   bool _restored = false;
@@ -186,7 +203,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     Emitter<PomodoroState> emit,
   ) async {
     _alertTexts = event.alertTexts ?? _alertTexts;
-    await _restore(emit);
+    await _restore(emit, accountId: event.accountId);
     // Con una fase en marcha (se abrió de nuevo la pantalla) no se cambia nada.
     if (state.status != PomodoroStatus.idle) {
       _syncOngoing();
@@ -210,7 +227,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
         ),
       );
     }
-    await Future.wait([_loadPlan(emit), _loadStats(emit)]);
+    await Future.wait([_loadPlan(emit), _loadStats(emit), _loadSubjects(emit)]);
   }
 
   /// Si falla, se queda con las duraciones por defecto (sin aviso: no impide
@@ -362,12 +379,20 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
 
   /// Recupera la fase guardada en el teléfono. Si terminó con la app cerrada,
   /// se registra ya como completada (antes se perdía).
-  Future<void> _restore(Emitter<PomodoroState> emit) async {
+  ///
+  /// La cuenta sale de la sesión ([accountId]); sin ella se pregunta al
+  /// servidor. Solo se descarta la fase si se sabe que es de otra cuenta: si
+  /// no se puede saber (sin red, renovando la sesión), se conserva.
+  Future<void> _restore(
+    Emitter<PomodoroState> emit, {
+    String? accountId,
+  }) async {
     if (_restored) return;
     _restored = true;
+    _accountId =
+        accountId ?? _accountId ?? (await _getAccount()).valueOrNull?.id;
     final load = _loadTimer;
     if (load == null || state.status != PomodoroStatus.idle) return;
-    _accountId = (await _getAccount()).valueOrNull?.id;
     final saved = (await load()).valueOrNull;
     // Sin fase guardada no debe quedar una notificación fija de otra vez.
     if (saved == null) {
@@ -376,13 +401,16 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
       return;
     }
     // Fase de otra cuenta en este teléfono: se descarta sin registrarla.
-    if (saved.accountId != null && saved.accountId != _accountId) {
+    final owner = saved.accountId;
+    if (owner != null && _accountId != null && owner != _accountId) {
       final clear = _clearTimer;
       if (clear != null) unawaited(clear());
       final update = _updateOngoing;
       if (update != null) unawaited(update(null));
       return;
     }
+    // Sin cuenta conocida, la fase sigue siendo de quien la empezó.
+    _accountId ??= owner;
     final remaining = saved.remainingAt(_now());
     emit(
       state.copyWith(
@@ -413,7 +441,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     Emitter<PomodoroState> emit,
   ) async {
     _alertTexts = event.alertTexts ?? _alertTexts;
-    await _restore(emit);
+    await _restore(emit, accountId: event.accountId);
   }
 
   /// Al cerrar sesión no debe quedar nada de la cuenta anterior.

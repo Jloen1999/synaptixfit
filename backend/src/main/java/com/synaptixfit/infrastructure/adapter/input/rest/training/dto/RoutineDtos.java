@@ -141,7 +141,10 @@ public final class RoutineDtos {
     public record OriginResponse(UUID routineId, UUID ownerId, String ownerName) {
     }
 
-    /** Ejercicio planificado con los datos del ejercicio. */
+    /**
+     * Ejercicio planificado con los datos del ejercicio. {@code estimatedSeconds}: duración prevista
+     * (ver {@code SessionDurationEstimate}), para «quedan ≈ 12 min» en la sesión.
+     */
     public record PlannedExerciseResponse(UUID id, UUID exerciseId, String exerciseName, String gifUrl,
                                           String previewUrl, Modality modality, List<MeasurementType> measurementTypes,
                                           double met, boolean exerciseActive, int order, int sets, int reps,
@@ -149,7 +152,7 @@ public final class RoutineDtos {
                                           Integer targetDurationSeconds, Integer distanceMeters,
                                           Integer isometricSeconds, Integer realDurationSeconds,
                                           List<Integer> repsPerSet, List<Integer> isometricSecondsPerSet,
-                                          TrackingKind trackingKind) {
+                                          TrackingKind trackingKind, int estimatedSeconds) {
         public static PlannedExerciseResponse from(PlannedExercise p) {
             ExerciseParameters x = p.parameters();
             return new PlannedExerciseResponse(p.id(), p.exerciseId(),
@@ -157,19 +160,22 @@ public final class RoutineDtos {
                     p.exercise().previewUrl(), p.exercise().modality(), p.exercise().measurementTypes(),
                     p.exercise().effectiveMet(), p.exercise().active(), p.order(), x.sets(), x.reps(), x.restSeconds(),
                     x.weightKg(), x.weightsKg(), x.targetDurationSeconds(), x.distanceMeters(), x.isometricSeconds(),
-                    p.realDurationSeconds(), x.repsPerSet(), x.isometricSecondsPerSet(), p.trackingKind());
+                    p.realDurationSeconds(), x.repsPerSet(), x.isometricSecondsPerSet(), p.trackingKind(),
+                    p.estimatedSeconds());
         }
     }
 
     /**
      * Día de la rutina. {@code dayNumber} es el día de la semana preferido (1 = lunes); {@code name} es
-     * nulo si no tiene nombre propio; {@code closedOn}, el día en que se completó o se saltó.
+     * nulo si no tiene nombre propio; {@code closedOn}, el día en que se completó o se saltó;
+     * {@code estimatedMinutes}, duración prevista («≈ 45 min»).
      */
     public record DayResponse(UUID id, int dayNumber, String name, ProgressStatus status, LocalDate closedOn,
-                              List<PlannedExerciseResponse> exercises) {
+                              List<PlannedExerciseResponse> exercises, int estimatedMinutes) {
         public static DayResponse from(RoutineDay d) {
             return new DayResponse(d.id(), d.number(), d.name(), d.status(), d.closedOn(),
-                    d.exercises().stream().map(PlannedExerciseResponse::from).toList());
+                    d.exercises().stream().map(PlannedExerciseResponse::from).toList(),
+                    d.estimatedMinutes());
         }
     }
 
@@ -227,7 +233,8 @@ public final class RoutineDtos {
                                      ProgressStatus dayStatus, LocalDate scheduledDate, boolean overdue,
                                      int sessionOfWeek, int sessionsInWeek, UUID staleSessionId,
                                      List<PlannedExerciseResponse> exercises, int totalDays, int completedDays,
-                                     int skippedDays, String coverImageUrl, Modality coverModality) {
+                                     int skippedDays, String coverImageUrl, Modality coverModality,
+                                     int estimatedMinutes) {
         public static PendingDayResponse from(PendingDay p) {
             Routine r = p.routine();
             // La foto es la del día que se propone (puede no ser el primero pendiente si hay uno en curso).
@@ -238,7 +245,8 @@ public final class RoutineDtos {
                     p.staleSessionId(), p.day().exercises().stream().map(PlannedExerciseResponse::from).toList(),
                     r.totalDays(), r.completedDays(), r.skippedDays(),
                     cover.map(ExerciseRef::stillImageUrl).orElse(null),
-                    cover.map(ExerciseRef::modality).orElse(null));
+                    cover.map(ExerciseRef::modality).orElse(null),
+                    p.day().estimatedMinutes());
         }
     }
 

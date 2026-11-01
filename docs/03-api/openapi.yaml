@@ -7031,6 +7031,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PlannedExerciseResponse"
+        estimatedMinutes:
+          type: integer
+          format: int32
     OriginResponse:
       type: object
       properties:
@@ -7127,6 +7130,9 @@ components:
           - REPETITIONS
           - HOLD
           - CARDIO
+        estimatedSeconds:
+          type: integer
+          format: int32
     RoutineResponse:
       type: object
       properties:
@@ -8818,6 +8824,19 @@ components:
           items:
             type: integer
             format: int32
+        reasonCode:
+          type: string
+          enum:
+          - FAILED_REPS
+          - VERY_HIGH_RPE
+          - VERY_LOW_RPE
+          - LOW_RPE_MORE_REPS
+          - LOW_RPE_MORE_WEIGHT
+          - LOW_RPE_MORE_TIME
+          - LOW_RPE_MORE_DISTANCE
+          - INACTIVITY
+        before:
+          $ref: "#/components/schemas/ParametersResponse"
     FinishSessionResponse:
       type: object
       properties:
@@ -8829,6 +8848,35 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RecommendationResponse"
+        xpWithheld:
+          type: string
+          enum:
+          - SHORT_SESSION
+          - DAILY_LIMIT
+    ParametersResponse:
+      type: object
+      properties:
+        sets:
+          type: integer
+          format: int32
+        reps:
+          type: integer
+          format: int32
+        restSeconds:
+          type: integer
+          format: int32
+        weightKg:
+          type: number
+          format: double
+        targetDurationSeconds:
+          type: integer
+          format: int32
+        distanceMeters:
+          type: integer
+          format: int32
+        isometricSeconds:
+          type: integer
+          format: int32
     RecommendationResponse:
       type: object
       properties:
@@ -12155,6 +12203,9 @@ components:
           - MOBILITY
           - METABOLIC
           - AEROBIC
+        estimatedMinutes:
+          type: integer
+          format: int32
     PageResponseSessionHistoryResponse:
       type: object
       properties:
@@ -13570,6 +13621,9 @@ components:
           - MOBILITY
           - METABOLIC
           - AEROBIC
+        estimatedMinutes:
+          type: integer
+          format: int32
     PlanDayResponse:
       type: object
       properties:

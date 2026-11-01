@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training;
 
 import com.synaptixfit.domain.model.training.DailyCheckIn;
+import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.ExerciseAdjustment;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
 import com.synaptixfit.domain.model.training.Recommendation;
@@ -167,12 +168,23 @@ public final class TrainingPersistenceMapper {
     }
 
     private static Map<String, Object> toMap(ExerciseAdjustment a) {
-        ExerciseParameters p = a.parameters();
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("plannedExerciseId", a.plannedExerciseId().toString());
         m.put("exerciseId", a.exerciseId() == null ? null : a.exerciseId().toString());
         m.put("exerciseName", a.exerciseName());
         m.put("reason", a.reason());
+        m.put("reasonCode", a.reasonCode() == null ? null : a.reasonCode().name());
+        putParameters(m, a.parameters());
+        // Lo que había antes, para enseñar «40 → 42,5 kg» (jsonb: sin migración).
+        if (a.before() != null) {
+            Map<String, Object> before = new LinkedHashMap<>();
+            putParameters(before, a.before());
+            m.put("before", before);
+        }
+        return m;
+    }
+
+    private static void putParameters(Map<String, Object> m, ExerciseParameters p) {
         m.put("sets", p.sets());
         m.put("reps", p.reps());
         m.put("restSeconds", p.restSeconds());
@@ -183,25 +195,32 @@ public final class TrainingPersistenceMapper {
         m.put("isometricSeconds", p.isometricSeconds());
         m.put("repsPerSet", p.repsPerSet());
         m.put("isometricSecondsPerSet", p.isometricSecondsPerSet());
-        return m;
     }
 
     private static ExerciseAdjustment adjustment(Map<?, ?> m) {
         try {
             UUID planned = UUID.fromString(String.valueOf(m.get("plannedExerciseId")));
             Object exerciseId = m.get("exerciseId");
-            List<Double> weights = m.get("weightsKg") instanceof List<?> l
-                    ? l.stream().filter(Number.class::isInstance).map(n -> ((Number) n).doubleValue()).toList() : null;
-            ExerciseParameters params = ExerciseParameters.clamped(intOf(m.get("sets"), 3), intOf(m.get("reps"), 10),
-                    intOf(m.get("restSeconds"), 90), doubleOf(m.get("weightKg")), weights,
-                    integerOf(m.get("targetDurationSeconds")), integerOf(m.get("distanceMeters")),
-                    integerOf(m.get("isometricSeconds")), integersOf(m.get("repsPerSet")),
-                    integersOf(m.get("isometricSecondsPerSet")));
+            ExerciseParameters before = m.get("before") instanceof Map<?, ?> b ? parameters(b) : null;
+            AdjustmentReason reasonCode = m.get("reasonCode") instanceof String code
+                    ? Arrays.stream(AdjustmentReason.values()).filter(r -> r.name().equals(code))
+                    .findFirst().orElse(null)
+                    : null;
             return new ExerciseAdjustment(planned, exerciseId == null ? null : UUID.fromString(exerciseId.toString()),
-                    (String) m.get("exerciseName"), params, (String) m.get("reason"));
+                    (String) m.get("exerciseName"), parameters(m), (String) m.get("reason"), before, reasonCode);
         } catch (RuntimeException ex) {
             return null;
         }
+    }
+
+    private static ExerciseParameters parameters(Map<?, ?> m) {
+        List<Double> weights = m.get("weightsKg") instanceof List<?> l
+                ? l.stream().filter(Number.class::isInstance).map(n -> ((Number) n).doubleValue()).toList() : null;
+        return ExerciseParameters.clamped(intOf(m.get("sets"), 3), intOf(m.get("reps"), 10),
+                intOf(m.get("restSeconds"), 90), doubleOf(m.get("weightKg")), weights,
+                integerOf(m.get("targetDurationSeconds")), integerOf(m.get("distanceMeters")),
+                integerOf(m.get("isometricSeconds")), integersOf(m.get("repsPerSet")),
+                integersOf(m.get("isometricSecondsPerSet")));
     }
 
     private static int intOf(Object v, int fallback) {

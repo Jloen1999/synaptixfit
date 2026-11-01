@@ -132,7 +132,10 @@ class _UserProfileView extends StatelessWidget {
                           await context.push<void>(SocialPaths.post(post.id));
                           bloc.add(const UserProfileEvent.refreshed());
                         },
-                        onLinkTap: (route) => context.push<void>(route),
+                        onLinkTap: (route) =>
+                            SocialExternalPaths.opensInTab(route)
+                            ? context.go(route)
+                            : context.push<void>(route),
                       ),
                     ),
                     const SizedBox(height: TokensSpacing.m),

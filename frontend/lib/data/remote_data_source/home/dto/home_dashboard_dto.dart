@@ -227,6 +227,7 @@ abstract class HomeNextTrainingDayDto with _$HomeNextTrainingDayDto {
     @Default(0) int skippedDays,
     String? coverImageUrl,
     String? coverModality,
+    @Default(0) int estimatedMinutes,
   }) = _HomeNextTrainingDayDto;
 
   const HomeNextTrainingDayDto._();
@@ -252,17 +253,22 @@ abstract class HomeNextTrainingDayDto with _$HomeNextTrainingDayDto {
     totalDays: totalDays,
     completedDays: completedDays,
     skippedDays: skippedDays,
-    coverImageUrl: (coverImageUrl?.trim().isEmpty ?? true) ? null : coverImageUrl,
+    coverImageUrl: (coverImageUrl?.trim().isEmpty ?? true)
+        ? null
+        : coverImageUrl,
     coverModality: coverModality == null
         ? null
         : Modality.fromApi(coverModality),
+    estimatedMinutes: estimatedMinutes,
   );
 }
 
 /// Fecha sin hora de la API (`yyyy-MM-dd`) como medianoche local.
 DateTime? _localDate(String? value) {
   final parsed = value == null ? null : DateTime.tryParse(value);
-  return parsed == null ? null : DateTime(parsed.year, parsed.month, parsed.day);
+  return parsed == null
+      ? null
+      : DateTime(parsed.year, parsed.month, parsed.day);
 }
 
 @freezed

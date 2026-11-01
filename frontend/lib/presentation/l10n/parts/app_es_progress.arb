@@ -733,5 +733,21 @@
         "type": "int"
       }
     }
-  }
+  },
+  "progressNextBadgeTitle": "Próxima insignia",
+  "progressNextBadgeAmount": "{current} de {target} · te faltan {remaining}",
+  "@progressNextBadgeAmount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      },
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "progressNextBadgeHint": "Abre tus insignias"
 }

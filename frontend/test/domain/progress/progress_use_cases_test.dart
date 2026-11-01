@@ -68,6 +68,13 @@ void main() {
     when(
       () => analytics.getStudyBySubject(),
     ).thenAnswer((_) async => const Failure(AppError.network()));
+    when(() => badges.getCatalog(category: any(named: 'category'))).thenAnswer(
+      (_) async => Success([
+        testBadge(id: 'done'),
+        testBadge(id: 'far', earned: false, order: 1).copyWith(progress: 0.2),
+        testBadge(id: 'near', earned: false, order: 5).copyWith(progress: 0.8),
+      ]),
+    );
   });
 
   GetProgressOverviewUseCase overview() => GetProgressOverviewUseCase(
@@ -88,6 +95,8 @@ void main() {
     // Las insignias se ordenan de la más reciente a la más antigua.
     expect(value.earnedBadges.map((b) => b.id), ['new', 'old']);
     verify(() => badges.getMine(includeHidden: true)).called(1);
+    // La próxima insignia es la bloqueada con más progreso del servidor.
+    expect(value.nextBadge?.id, 'near');
     // Un caso de uso «Get» no escribe: las insignias las otorga el servidor.
     verifyNever(() => badges.markNotified(any()));
   });

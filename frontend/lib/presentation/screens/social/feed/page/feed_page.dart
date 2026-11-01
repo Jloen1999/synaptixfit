@@ -80,6 +80,10 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
 
   /// Navega pausando el sondeo hasta volver.
   Future<void> _push(String location) async {
+    if (SocialExternalPaths.opensInTab(location)) {
+      context.go(location);
+      return;
+    }
     _covered++;
     _bloc.add(const FeedEvent.pollingStopped());
     await context.push<void>(location);
@@ -238,7 +242,10 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
                       RefreshIndicator(
                         onRefresh: _refresh,
                         child: state.posts.isEmpty
-                            ? _EmptyFeed(onCreate: _create)
+                            ? _EmptyFeed(
+                                onCreate: _create,
+                                onFindFriends: () => _push(SocialPaths.friends),
+                              )
                             : _postList(state),
                       ),
                       if (state.newPosts.isNotEmpty)
@@ -473,9 +480,12 @@ class _ComposerShortcut extends StatelessWidget {
 }
 
 class _EmptyFeed extends StatelessWidget {
-  const _EmptyFeed({required this.onCreate});
+  const _EmptyFeed({required this.onCreate, required this.onFindFriends});
 
   final VoidCallback onCreate;
+
+  /// Sin amigos el muro se queda vacío: buscarlos es la otra salida.
+  final VoidCallback onFindFriends;
 
   @override
   Widget build(BuildContext context) {
@@ -489,10 +499,22 @@ class _EmptyFeed extends StatelessWidget {
             icon: Icons.forum_outlined,
             title: l10n.socialFeedEmptyTitle,
             message: l10n.socialFeedEmptyMessage,
-            action: AppPrimaryButton(
-              label: l10n.socialPublish,
-              icon: Icons.edit_rounded,
-              onPressed: onCreate,
+            action: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: TokensSpacing.s,
+              runSpacing: TokensSpacing.s,
+              children: [
+                AppPrimaryButton(
+                  label: l10n.socialPublish,
+                  icon: Icons.edit_rounded,
+                  onPressed: onCreate,
+                ),
+                AppSecondaryButton(
+                  label: l10n.socialFindFriends,
+                  icon: const Icon(Icons.person_search_rounded),
+                  onPressed: onFindFriends,
+                ),
+              ],
             ),
           ),
         ),

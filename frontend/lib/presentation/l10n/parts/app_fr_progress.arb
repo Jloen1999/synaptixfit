@@ -192,5 +192,8 @@
   "progressBySubjectArchived": "Matière archivée",
   "progressBySubjectNoReviews": "Pas encore de révisions",
   "progressBySubjectRecall": "{reviews, plural, =1{1 révision} other{{reviews} révisions}} · tu retiens {percent} %",
-  "progressBySubjectWeak": "révise-la plus souvent"
+  "progressBySubjectWeak": "révise-la plus souvent",
+  "progressNextBadgeTitle": "Prochain badge",
+  "progressNextBadgeAmount": "{current} sur {target} · encore {remaining}",
+  "progressNextBadgeHint": "Ouvre tes badges"
 }

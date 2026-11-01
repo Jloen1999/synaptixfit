@@ -171,7 +171,10 @@ class _PostDetailView extends StatelessWidget {
                       ),
                       onDelete: () => _delete(context),
                       onReport: () => _report(context),
-                      onLinkTap: (route) => context.push<void>(route),
+                      onLinkTap: (route) =>
+                          SocialExternalPaths.opensInTab(route)
+                          ? context.go(route)
+                          : context.push<void>(route),
                     ),
                   ),
                   const SizedBox(height: TokensSpacing.l),

@@ -153,7 +153,7 @@ public class TrainingSessionController {
                 request.sets() == null ? List.of() : request.sets().stream().map(s -> s.toCommand(userId, sessionId)).toList()));
         return new FinishSessionResponse(SessionResponse.from(result.session()),
                 ExperienceResponse.from(result.experience()),
-                result.recommendations().stream().map(RecommendationResponse::from).toList());
+                result.recommendations().stream().map(RecommendationResponse::from).toList(), result.xpWithheld());
     }
 
     /**

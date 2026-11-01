@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/models/training/session_history.dart';
+import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/models/training/session.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
@@ -100,6 +101,15 @@ class _CompletedView extends StatelessWidget {
                       ),
                       const SizedBox(height: TokensSpacing.l),
                       _Metrics(state: state),
+                      const SizedBox(height: TokensSpacing.xs),
+                      // La duración no es la prevista: es la real, y con ella
+                      // se calcula la carga (lo explica para que no extrañe).
+                      Text(
+                        l10n.trainingDurationIsReal,
+                        style: context.textStyles.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
                       if (state.highlights != null) ...[
                         const SizedBox(height: TokensSpacing.m),
                         _HighlightsCard(
@@ -116,7 +126,10 @@ class _CompletedView extends StatelessWidget {
                       ],
                       if (state.experience != null) ...[
                         const SizedBox(height: TokensSpacing.m),
-                        _ExperienceCard(experience: state.experience!),
+                        _ExperienceCard(
+                          experience: state.experience!,
+                          withheld: state.xpWithheld,
+                        ),
                       ],
                       if (state.recommendations.isNotEmpty) ...[
                         const SizedBox(height: TokensSpacing.l),
@@ -214,54 +227,91 @@ class _Metrics extends StatelessWidget {
   }
 }
 
+/// XP de la sesión, el nivel y, si no sumó, el motivo que da el servidor; con
+/// el acceso a «Cómo se gana XP».
 class _ExperienceCard extends StatelessWidget {
-  const _ExperienceCard({required this.experience});
+  const _ExperienceCard({required this.experience, this.withheld});
 
   final ExperienceChange experience;
+  final SessionXpWithheld? withheld;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final e = experience;
+    final onCard = context.palette.onAccentContainer;
+    final reason = e.xpDelta > 0
+        ? null
+        : switch (withheld) {
+            SessionXpWithheld.shortSession => l10n.trainingXpWithheldShort,
+            SessionXpWithheld.dailyLimit => l10n.trainingXpWithheldDaily,
+            null => null,
+          };
     return AppCard(
       color: context.palette.accentContainer,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.star_rounded,
-            color: context.palette.accent,
-            size: TokensSize.iconL,
-          ),
-          const SizedBox(width: TokensSpacing.m),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.trainingXpGained(e.xpDelta),
-                  style: context.textStyles.titleMedium?.copyWith(
-                    color: context.palette.onAccentContainer,
-                  ),
-                ),
-                Text(
-                  e.levelUps > 0
-                      ? l10n.trainingLevelUp(e.level)
-                      : l10n.commonLevel(e.level),
-                  style: context.textStyles.bodyMedium?.copyWith(
-                    color: context.palette.onAccentContainer,
-                  ),
-                ),
-              ],
+          _experienceRow(context, e),
+          if (reason != null) ...[
+            const SizedBox(height: TokensSpacing.s),
+            Text(
+              reason,
+              style: context.textStyles.bodyMedium?.copyWith(color: onCard),
             ),
-          ),
-          Text(
-            l10n.trainingLevelXp(e.levelXp),
-            style: context.textStyles.labelLarge?.copyWith(
-              color: context.palette.onAccentContainer,
+          ],
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: onCard),
+              onPressed: () => showXpGuideSheet(context),
+              icon: const Icon(Icons.help_outline_rounded),
+              label: Text(l10n.xpGuideOpen),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _experienceRow(BuildContext context, ExperienceChange e) {
+    final l10n = context.localizations;
+    return Row(
+      children: [
+        Icon(
+          Icons.star_rounded,
+          color: context.palette.accent,
+          size: TokensSize.iconL,
+        ),
+        const SizedBox(width: TokensSpacing.m),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.trainingXpGained(e.xpDelta),
+                style: context.textStyles.titleMedium?.copyWith(
+                  color: context.palette.onAccentContainer,
+                ),
+              ),
+              Text(
+                e.levelUps > 0
+                    ? l10n.trainingLevelUp(e.level)
+                    : l10n.commonLevel(e.level),
+                style: context.textStyles.bodyMedium?.copyWith(
+                  color: context.palette.onAccentContainer,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          l10n.trainingLevelXp(e.levelXp),
+          style: context.textStyles.labelLarge?.copyWith(
+            color: context.palette.onAccentContainer,
+          ),
+        ),
+      ],
     );
   }
 }

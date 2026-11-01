@@ -24,6 +24,8 @@ abstract class AdjustmentDto with _$AdjustmentDto {
     int? isometricSeconds,
     List<int>? repsPerSet,
     List<int>? isometricSecondsPerSet,
+    String? reasonCode,
+    ParametersDto? before,
   }) = _AdjustmentDto;
 
   const AdjustmentDto._();
@@ -48,6 +50,37 @@ abstract class AdjustmentDto with _$AdjustmentDto {
       repsPerSet: repsPerSet,
       isometricSecondsPerSet: isometricSecondsPerSet,
     ),
+    before: before?.toDomain(),
+    reasonCode: AdjustmentReason.fromApi(reasonCode),
+  );
+}
+
+/// Parámetros que tenía el ejercicio antes de la sugerencia.
+@freezed
+abstract class ParametersDto with _$ParametersDto {
+  const factory ParametersDto({
+    required int sets,
+    required int reps,
+    required int restSeconds,
+    double? weightKg,
+    int? targetDurationSeconds,
+    int? distanceMeters,
+    int? isometricSeconds,
+  }) = _ParametersDto;
+
+  const ParametersDto._();
+
+  factory ParametersDto.fromJson(Map<String, dynamic> json) =>
+      _$ParametersDtoFromJson(json);
+
+  ExerciseParameters toDomain() => ExerciseParameters(
+    sets: sets,
+    reps: reps,
+    restSeconds: restSeconds,
+    weightKg: weightKg,
+    targetDurationSeconds: targetDurationSeconds,
+    distanceMeters: distanceMeters,
+    isometricSeconds: isometricSeconds,
   );
 }
 
@@ -63,6 +96,7 @@ abstract class RecommendationDto with _$RecommendationDto {
     @Default(false) bool applied,
     DateTime? createdAt,
     List<AdjustmentDto>? adjustments,
+    Map<String, dynamic>? details,
   }) = _RecommendationDto;
 
   const RecommendationDto._();
@@ -80,5 +114,11 @@ abstract class RecommendationDto with _$RecommendationDto {
     applied: applied,
     createdAt: createdAt?.toLocal(),
     adjustments: (adjustments ?? const []).map((a) => a.toDomain()).toList(),
+    rpe: _int(details?['rpe']),
+    failedReps: _int(details?['totalFailedReps']),
+    daysInactive: _int(details?['daysInactive']),
+    reasonCode: AdjustmentReason.fromApi(details?['reasonCode'] as String?),
   );
 }
+
+int? _int(Object? value) => value is num ? value.round() : null;

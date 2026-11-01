@@ -24,9 +24,16 @@ abstract class PomodoroState with _$PomodoroState {
     /// Asignatura y bloque a los que se vinculan las fases registradas.
     String? subjectId,
     String? blockId,
+
+    /// Asignaturas para elegir cuando no hay bloque (vacía si no se pudieron
+    /// leer: se concentra igual, sin asignatura).
+    @Default(<SubjectOption>[]) List<SubjectOption> subjects,
   }) = _PomodoroState;
 
   const PomodoroState._();
+
+  /// Se puede elegir asignatura: sin bloque y sin nada en marcha.
+  bool get canPickSubject => blockId == null && status == PomodoroStatus.idle;
 
   /// Se puede cambiar la duración: concentración sin empezar.
   bool get canAdjust =>

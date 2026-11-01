@@ -30,5 +30,9 @@ abstract class ProgressOverview with _$ProgressOverview {
 
     /// Estudio por asignatura (últimas 4 semanas); opcional.
     StudyBySubject? studyBySubject,
+
+    /// Insignia bloqueada más cerca de conseguirse (progreso del servidor);
+    /// nula si no se pudo leer el catálogo o ya están todas.
+    Badge? nextBadge,
   }) = _ProgressOverview;
 }

@@ -17,6 +17,8 @@ import '../../../../../domain/use_cases/home/get_home_due_reviews_use_case.dart'
 import '../../../../../domain/use_cases/home/get_home_onboarding_status_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_unread_count_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_timeline_use_case.dart';
+import '../../../../../domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
+import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
 import '../../../../../domain/use_cases/training/start_session_use_case.dart';
 import '../../home_onboarding_gate.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
@@ -42,6 +44,8 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     required this._onboardingGate,
     required this._watchChanges,
     required this._startSession,
+    required this._setBlockCompletion,
+    required this._rescheduleToNextSlot,
     this._clock = DateTime.now,
   }) : super(const HomeDashboardState()) {
     on<HomeDashboardStarted>(_onStarted);
@@ -51,6 +55,11 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     );
     on<HomeDashboardTrainingStarted>(_onTrainingStarted);
     on<HomeDashboardSetupSnoozed>(_onSetupSnoozed);
+    on<HomeDashboardBannerBlockCompleted>(_onBannerBlockCompleted);
+    on<HomeDashboardBannerBlockRescheduled>(_onBannerBlockRescheduled);
+    on<HomeDashboardBannerNoticeHandled>(
+      (_, emit) => emit(state.copyWith(bannerNotice: null)),
+    );
     on<HomeDashboardTrainingHandled>(
       (_, emit) =>
           emit(state.copyWith(openSessionId: null, trainingError: null)),
@@ -74,6 +83,46 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
   final HomeOnboardingGate _onboardingGate;
   final WatchDataChangesUseCaseContract _watchChanges;
   final StartSessionUseCaseContract _startSession;
+  final SetBlockCompletionUseCaseContract _setBlockCompletion;
+  final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleToNextSlot;
+
+  /// La XP y el hueco los decide el servidor; Inicio se refresca solo con el
+  /// cambio de datos del planificador.
+  Future<void> _onBannerBlockCompleted(
+    HomeDashboardBannerBlockCompleted event,
+    Emitter<HomeDashboardState> emit,
+  ) async {
+    if (state.bannerBusy != null) return;
+    emit(state.copyWith(bannerBusy: HomeBannerAction.complete));
+    final result = await _setBlockCompletion(event.blockId, completed: true);
+    emit(
+      state.copyWith(
+        bannerBusy: null,
+        bannerNotice: result.fold(
+          (value) => HomeBannerNotice.completed(value.xpDelta),
+          HomeBannerNotice.failed,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onBannerBlockRescheduled(
+    HomeDashboardBannerBlockRescheduled event,
+    Emitter<HomeDashboardState> emit,
+  ) async {
+    if (state.bannerBusy != null) return;
+    emit(state.copyWith(bannerBusy: HomeBannerAction.reschedule));
+    final result = await _rescheduleToNextSlot(event.blockId);
+    emit(
+      state.copyWith(
+        bannerBusy: null,
+        bannerNotice: result.fold(
+          (value) => HomeBannerNotice.rescheduled(value.block.start),
+          HomeBannerNotice.failed,
+        ),
+      ),
+    );
+  }
 
   /// Usuario de la sesión (llega en `started`): el «Ahora no» es suyo.
   String _userId = '';

@@ -105,6 +105,8 @@ public final class SmartBannerRules {
                 labels.put("title", title.strip());
             }
             labels.put("activity", ActivityType.fromCode(latest.activityType()).name());
+            // Para que el aviso actúe sobre ese bloque («Hecho», «Al próximo hueco») sin abrir el calendario.
+            labels.put("blockId", latest.id().toString());
             return banner.with(Map.of("startMinutes", local.getHour() * 60 + local.getMinute(),
                     "yesterday", local.toLocalDate().isBefore(today) ? 1 : 0), labels);
         }).orElse(banner);

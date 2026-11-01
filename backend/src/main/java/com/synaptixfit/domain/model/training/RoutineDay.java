@@ -162,4 +162,7 @@ public final class RoutineDay {
     public ProgressStatus status() { return status; }
     public LocalDate closedOn() { return closedOn; }
     public List<PlannedExercise> exercises() { return List.copyOf(exercises); }
+
+    /** Duración prevista del día en minutos ({@link SessionDurationEstimate}). */
+    public int estimatedMinutes() { return SessionDurationEstimate.dayMinutes(exercises); }
 }

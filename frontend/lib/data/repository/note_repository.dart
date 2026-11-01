@@ -33,6 +33,24 @@ class NoteRepository implements NoteRepositoryContract {
         return notes;
       });
 
+  /// La bandeja muestra la primera página (las más recientes): es una lista
+  /// para vaciar, no un archivo.
+  @override
+  Future<AppResult<List<Note>>> getUnassignedNotes() =>
+      RepositoryErrorHandler.guard(() async {
+        final result = await _remote.getNotes(unassignedOnly: true);
+        return result.items.map((n) => n.toDomain()).toList();
+      });
+
+  @override
+  Future<AppResult<Note>> moveNoteToSubject(
+    String noteId, {
+    required String subjectId,
+  }) => RepositoryErrorHandler.guard(
+    () async =>
+        (await _remote.updateNote(noteId, {'subjectId': subjectId})).toDomain(),
+  );
+
   @override
   Future<AppResult<Note>> getNote(String noteId) =>
       RepositoryErrorHandler.guard(

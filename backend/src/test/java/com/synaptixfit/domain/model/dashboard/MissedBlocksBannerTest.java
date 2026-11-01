@@ -25,14 +25,15 @@ class MissedBlocksBannerTest {
     @Test
     void namesTheLatestMissedBlockWithItsTime() {
         SmartBanner banner = new SmartBanner(SmartBanner.Type.MISSED_BLOCKS, Map.of("count", 2));
+        CalendarBlock latest = block("deporte", "2026-10-21T14:00:00Z", null, null);
         SmartBanner described = SmartBannerRules.describeLatestMissed(banner, List.of(
-                block("estudio", "2026-10-20T08:00:00Z", "Álgebra", null),
-                block("deporte", "2026-10-21T14:00:00Z", null, null)), TODAY, MADRID);
+                block("estudio", "2026-10-20T08:00:00Z", "Álgebra", null), latest), TODAY, MADRID);
 
         assertThat(described.params()).containsEntry("count", 2).containsEntry("startMinutes", 16 * 60)
                 .containsEntry("yesterday", 0);
         // Sin asignatura ni temas, el cliente usa el tipo.
-        assertThat(described.labels()).containsEntry("activity", "SPORT").doesNotContainKey("title");
+        assertThat(described.labels()).containsEntry("activity", "SPORT").doesNotContainKey("title")
+                .containsEntry("blockId", latest.id().toString());
     }
 
     @Test

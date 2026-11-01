@@ -11,6 +11,11 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import 'agenda_section.dart';
 
+/// Las clases del horario: se ven en la agenda pero no cuentan como bloques
+/// hechos (todavía no se dan por asistidas solas).
+bool isClassEvent(HomeTodayEvent e) =>
+    e.kind == HomeEventKind.block && e.type == HomeEventType.classSession;
+
 /// Qué hace la persona al pulsar el botón principal de «Tu día».
 enum TodayHeroAction { focus, train, openPlanner }
 
@@ -58,7 +63,11 @@ class TodayHeroCard extends StatelessWidget {
     final blocks = dashboard.todayEvents
         .where((e) => e.kind == HomeEventKind.block)
         .toList();
-    final done = blocks.where((e) => e.completed).length;
+    // Las clases no cuentan en el anillo: nadie las marca como hechas y el día
+    // se quedaba en «1/5» aunque hubieras ido a todas. Se nombran aparte.
+    final counted = blocks.where((e) => !isClassEvent(e)).toList();
+    final classes = blocks.length - counted.length;
+    final done = counted.where((e) => e.completed).length;
     final next = nextEvent(dashboard.todayEvents);
     final action = _actionFor(next);
     final colors = context.colors;
@@ -99,7 +108,7 @@ class TodayHeroCard extends StatelessWidget {
               final summary = Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _ProgressRing(done: done, total: blocks.length),
+                  _ProgressRing(done: done, total: counted.length),
                   const SizedBox(width: TokensSpacing.m),
                   Expanded(
                     child: _NextUp(
@@ -109,6 +118,7 @@ class TodayHeroCard extends StatelessWidget {
                       starting: starting,
                       onAction: () => onAction(action),
                       showButton: wide,
+                      classes: classes,
                     ),
                   ),
                 ],
@@ -218,9 +228,13 @@ class _NextUp extends StatelessWidget {
     required this.starting,
     required this.onAction,
     this.showButton = true,
+    this.classes = 0,
   });
 
   final HomeTodayEvent? next;
+
+  /// Clases de hoy, que van fuera del anillo: se dicen en una línea aparte.
+  final int classes;
   final bool hasBlocks;
   final TodayHeroAction action;
   final bool starting;
@@ -243,6 +257,14 @@ class _NextUp extends StatelessWidget {
       starting: starting,
       onPressed: onAction,
     );
+    final classesNote = classes == 0
+        ? null
+        : Text(
+            l10n.homeTodayClassesNote(classes),
+            style: context.textStyles.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          );
     if (event == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,6 +273,7 @@ class _NextUp extends StatelessWidget {
             hasBlocks ? l10n.homeTodayAllDone : l10n.homeTodayEmpty,
             style: context.textStyles.titleSmall,
           ),
+          ?classesNote,
           if (showButton) ...[const SizedBox(height: TokensSpacing.s), button],
         ],
       );
@@ -296,6 +319,7 @@ class _NextUp extends StatelessWidget {
           ],
         ),
         if (when != null) Text(when, style: muted),
+        ?classesNote,
         if (showButton) ...[const SizedBox(height: TokensSpacing.s), button],
       ],
     );

@@ -39,6 +39,10 @@ abstract class LiveSessionState with _$LiveSessionState {
     /// Adaptación de hoy (examen, carga alta o fatiga); sin motivos si no hay.
     @Default(SessionAdaptation()) SessionAdaptation adaptation,
 
+    /// Series planificadas de cada ejercicio antes de adaptar la sesión: para
+    /// enseñar «4 → 3 series» y para «Hacerla completa».
+    @Default(<String, int>{}) Map<String, int> plannedSetsById,
+
     /// Sube cada vez que un descanso llega a cero solo (no al saltarlo): la
     /// pantalla avisa.
     @Default(0) int restFinishedCount,
@@ -71,6 +75,23 @@ abstract class LiveSessionState with _$LiveSessionState {
   int get completedSets => session?.sets.where((s) => s.completed).length ?? 0;
 
   int get plannedSets => exercises.fold(0, (sum, e) => sum + e.parameters.sets);
+
+  /// Minutos que quedan según la duración prevista de cada ejercicio (del
+  /// servidor), en proporción a sus series sin apuntar. Nulo si el servidor
+  /// no la manda; solo orienta: la duración que cuenta es la real.
+  int? get remainingEstimatedMinutes {
+    if (!exercises.any((e) => e.estimatedSeconds != null)) return null;
+    var seconds = 0.0;
+    for (final e in exercises) {
+      final estimate = e.estimatedSeconds;
+      // El servidor la calculó con las series planificadas (no las adaptadas).
+      final sets = plannedSetsById[e.id] ?? e.parameters.sets;
+      if (estimate == null || sets <= 0) continue;
+      final left = (e.parameters.sets - loggedSetsOf(e)).clamp(0, sets);
+      seconds += estimate * left / sets;
+    }
+    return (seconds / 60).ceil();
+  }
 
   /// Series previstas ya apuntadas, enteras o con repeticiones de menos: son
   /// las que cuentan para avanzar y para saber cuántas faltan.

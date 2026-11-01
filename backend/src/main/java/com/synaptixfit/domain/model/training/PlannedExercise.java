@@ -62,4 +62,7 @@ public final class PlannedExercise {
     public ExerciseParameters parameters() { return parameters; }
     public int order() { return order; }
     public Integer realDurationSeconds() { return realDurationSeconds; }
+
+    /** Duración prevista ({@link SessionDurationEstimate}). */
+    public int estimatedSeconds() { return SessionDurationEstimate.exerciseSeconds(this); }
 }

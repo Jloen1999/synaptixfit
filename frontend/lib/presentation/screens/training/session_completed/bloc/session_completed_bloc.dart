@@ -5,6 +5,7 @@ import '../../../../../domain/enums/post_type.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/models/training/recommendation.dart';
+import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/models/training/session.dart';
 import '../../../../../domain/models/training/session_history.dart';
 import '../../../../../domain/use_cases/social/create_post_use_case.dart';
@@ -57,6 +58,7 @@ class SessionCompletedBloc
           status: CompletedStatus.ready,
           session: result.session,
           experience: result.experience,
+          xpWithheld: result.xpWithheld,
           recommendations: result.recommendations,
         ),
       );

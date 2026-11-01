@@ -49,6 +49,22 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
   }) : _clock = clock ?? DateTime.now,
        super(const LiveSessionState()) {
     on<LiveSessionStarted>(_onStarted);
+    on<LiveSessionAdaptationDeclined>((_, emit) {
+      if (!state.adaptation.adapted) return;
+      emit(
+        state.copyWith(
+          exercises: [
+            for (final e in state.exercises)
+              e.copyWith(
+                parameters: e.parameters.copyWith(
+                  sets: state.plannedSetsById[e.id] ?? e.parameters.sets,
+                ),
+              ),
+          ],
+          adaptation: const SessionAdaptation(),
+        ),
+      );
+    });
     on<LiveSessionTicked>((_, emit) => _recalculate(emit));
     on<LiveSessionResumed>((_, emit) => _recalculate(emit, resumed: true));
     on<LiveSessionExerciseSelected>(
@@ -140,6 +156,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     // Regulación cruzada: series de hoy según examen, carga y fatiga (si
     // falla, la sesión sigue tal cual).
     var adaptation = const SessionAdaptation();
+    final plannedSets = {for (final e in exercises) e.id: e.parameters.sets};
     if (!session.isCompleted && exercises.isNotEmpty) {
       adaptation =
           (await _getAdaptation(session.id)).valueOrNull ??
@@ -177,6 +194,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         pendingSets: pending,
         exercises: exercises,
         adaptation: adaptation,
+        plannedSetsById: plannedSets,
         routineName: routineName,
         dayNumber: day?.dayNumber,
         dayName: day?.name,

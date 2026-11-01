@@ -33,6 +33,11 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
 
   const factory LiveSessionEvent.restSkipped() = LiveSessionRestSkipped;
 
+  /// «Hacerla completa»: hoy se entrena con las series planificadas en vez de
+  /// las adaptadas (la decisión es de la persona; el servidor no la impide).
+  const factory LiveSessionEvent.adaptationDeclined() =
+      LiveSessionAdaptationDeclined;
+
   /// Finaliza con el esfuerzo percibido (RPE 1-10).
   const factory LiveSessionEvent.finishRequested(int rpe) =
       LiveSessionFinishRequested;
