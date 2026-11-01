@@ -235,6 +235,19 @@ class _LiveViewState extends State<_LiveView> {
     );
   }
 
+  /// Usa (o deshace) la propuesta de carga de [e]: lo escrito a mano en sus
+  /// series pendientes para esa cifra deja de mandar.
+  void _onLoadToggled(PlannedExercise e, bool accepted) {
+    final field = _bloc.state.loadSuggestions[e.id]?.metric.field;
+    if (field == null) return;
+    setState(
+      () => _drafts.removeWhere(
+        (k, _) => k.startsWith('${e.id}/') && k.endsWith('/${field.name}'),
+      ),
+    );
+    _bloc.add(LiveSessionEvent.loadSuggestionToggled(e.id, accepted: accepted));
+  }
+
   /// Serie fuera del plan: en ejercicios de repeticiones se abre la hoja para
   /// apuntarla; en los demás se marca con lo propuesto (y se corrige en la fila).
   void _onExtraSet(LiveSessionState state, PlannedExercise e, int set) {
@@ -384,6 +397,7 @@ class _LiveViewState extends State<_LiveView> {
                       onLoggedTap: (e, set) =>
                           unawaited(onLoggedSetTap(context, e, set)),
                       onExtraSet: (e, set) => _onExtraSet(state, e, set),
+                      onLoadToggled: _onLoadToggled,
                       header: [
                         // Sin conexión: las series se guardan en el teléfono.
                         if (state.pendingSets.isNotEmpty) ...[

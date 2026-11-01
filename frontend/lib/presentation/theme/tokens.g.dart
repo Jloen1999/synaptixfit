@@ -115,6 +115,7 @@ abstract final class TokensLayout {
   static const double minTouchTarget = 48;
   static const double cardSideBySideMin = 280;
   static const double cardActionsInlineMin = 336;
+  static const double statsFourColumns = 560;
 }
 
 abstract final class TokensSize {
@@ -151,6 +152,7 @@ abstract final class TokensSize {
   static const double subjectCardMaxWidth = 260;
   static const double reviewCardWidth = 220;
   static const double reviewCardHeight = 104;
+  static const double pomodoroRing = 260;
 }
 
 abstract final class TokensOpacity {

@@ -156,7 +156,10 @@ class RoutineSummaryCard extends StatelessWidget {
                 label: l10n.trainingExercisesCount(r.exerciseCount),
               ),
               if (r.goal != null)
-                AppCoverPill(icon: Icons.flag_outlined, label: r.goal!.label(l10n)),
+                AppCoverPill(
+                  icon: Icons.flag_outlined,
+                  label: r.goal!.label(l10n),
+                ),
             ],
           ),
         ],

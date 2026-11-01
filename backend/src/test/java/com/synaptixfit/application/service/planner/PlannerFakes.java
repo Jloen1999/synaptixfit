@@ -7,6 +7,7 @@ import com.synaptixfit.domain.event.DomainEvent;
 import com.synaptixfit.domain.model.insights.AcwrZone;
 import com.synaptixfit.domain.model.insights.CrossRegulationState;
 import com.synaptixfit.domain.model.insights.CrossRegulationView;
+import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.Deadline;
 import com.synaptixfit.domain.model.planner.FocusSession;
@@ -114,6 +115,10 @@ final class PlannerFakes {
             return Optional.ofNullable(store.get(id));
         }
 
+        public Optional<CalendarBlock> findByIdForUpdate(UUID id) {
+            return findById(id);
+        }
+
         public void delete(UUID id) {
             store.remove(id);
         }
@@ -131,6 +136,12 @@ final class PlannerFakes {
             return store.values().stream()
                     .filter(b -> b.userId().equals(userId) && b.icsUid() != null && wanted.contains(b.icsUid()))
                     .collect(Collectors.toMap(CalendarBlock::icsUid, b -> b, (a, b) -> a));
+        }
+
+        public List<CalendarBlock> findClassesToAttend(Instant from, Instant to) {
+            return store.values().stream().filter(b -> b.type() == ActivityType.CLASS && !b.completed()
+                            && !b.absent() && !b.end().isBefore(from) && b.end().isBefore(to))
+                    .sorted(Comparator.comparing(CalendarBlock::end)).toList();
         }
 
         public List<CalendarBlock> findPendingReviews(UUID userId, UUID materialId) {

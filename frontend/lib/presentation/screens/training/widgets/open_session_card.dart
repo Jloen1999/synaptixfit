@@ -38,7 +38,9 @@ class OpenSessionCard extends StatelessWidget {
     final title = open.dayNumber != null
         ? dayTitle(l10n, open.dayNumber!, open.dayName)
         : l10n.trainingSessionFree;
-    final started = DateFormat.MMMEd(l10n.localeName).add_Hm().format(session.startedAt);
+    final started = DateFormat.MMMEd(
+      l10n.localeName,
+    ).add_Hm().format(session.startedAt);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -47,8 +49,12 @@ class OpenSessionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                open.stale ? Icons.pending_actions_rounded : Icons.timelapse_rounded,
-                color: open.stale ? context.palette.warning : context.colors.primary,
+                open.stale
+                    ? Icons.pending_actions_rounded
+                    : Icons.timelapse_rounded,
+                color: open.stale
+                    ? context.palette.warning
+                    : context.colors.primary,
                 size: TokensSize.iconS,
               ),
               const SizedBox(width: TokensSpacing.s),

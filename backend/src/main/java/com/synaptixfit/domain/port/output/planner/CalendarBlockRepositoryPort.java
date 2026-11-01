@@ -17,6 +17,12 @@ public interface CalendarBlockRepositoryPort {
 
     Optional<CalendarBlock> findById(UUID id);
 
+    /**
+     * Como {@link #findById}, bloqueando la fila hasta el fin de la transacción: marcar a mano y la tarea que da
+     * las clases por asistidas no se pisan (ADR 0029).
+     */
+    Optional<CalendarBlock> findByIdForUpdate(UUID id);
+
     void delete(UUID id);
 
     /** Bloques del usuario que se solapan con [from, to), ordenados por inicio. Filtro opcional por asignatura. */
@@ -36,4 +42,10 @@ public interface CalendarBlockRepositoryPort {
 
     /** Todos los bloques del usuario enlazados a esos días de rutina, por inicio ascendente. */
     List<CalendarBlock> findByRoutineDays(UUID userId, Collection<UUID> routineDayIds);
+
+    /**
+     * Clases de cualquier usuario sin completar ni marcar «No fui» que terminaron en [from, to), por fin
+     * ascendente: las que se dan por asistidas solas (ADR 0029).
+     */
+    List<CalendarBlock> findClassesToAttend(Instant from, Instant to);
 }

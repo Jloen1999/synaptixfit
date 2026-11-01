@@ -18,7 +18,16 @@ enum ReminderKind {
   deadline('DEADLINE'),
 
   /// «Tu semana»: el domingo por la tarde.
-  weeklySummary('WEEKLY_SUMMARY');
+  weeklySummary('WEEKLY_SUMMARY'),
+
+  /// «Tocaba ayer»: el día de rutina previsto pasó sin entrenar.
+  routineDayMissed('ROUTINE_DAY_MISSED'),
+
+  /// «¿Terminaste la sesión?»: sesión abierta horas después de empezar.
+  openSession('OPEN_SESSION'),
+
+  /// «Tu reto vence mañana».
+  challengeDue('CHALLENGE_DUE');
 
   const ReminderKind(this.apiValue);
 

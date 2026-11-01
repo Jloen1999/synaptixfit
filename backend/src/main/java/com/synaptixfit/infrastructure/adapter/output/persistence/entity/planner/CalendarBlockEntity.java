@@ -41,6 +41,8 @@ public class CalendarBlockEntity {
     private boolean completado;
     @Column(name = "asistencia_registrada_en")
     private Instant asistenciaRegistradaEn;
+    @Column(nullable = false)
+    private boolean ausente;
     @Column(name = "es_fijo", nullable = false)
     private boolean esFijo;
     @Column(name = "dia_semana")
@@ -104,6 +106,8 @@ public class CalendarBlockEntity {
     public void setCompletado(boolean completado) { this.completado = completado; }
     public Instant getAsistenciaRegistradaEn() { return asistenciaRegistradaEn; }
     public void setAsistenciaRegistradaEn(Instant v) { this.asistenciaRegistradaEn = v; }
+    public boolean isAusente() { return ausente; }
+    public void setAusente(boolean v) { this.ausente = v; }
     public boolean isEsFijo() { return esFijo; }
     public void setEsFijo(boolean esFijo) { this.esFijo = esFijo; }
     public Integer getDiaSemana() { return diaSemana; }

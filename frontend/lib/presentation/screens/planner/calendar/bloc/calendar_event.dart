@@ -28,8 +28,13 @@ sealed class CalendarEvent with _$CalendarEvent {
       CalendarLockedBlockTouched;
 
   /// [effort] (1-10): esfuerzo al marcar hecho un bloque de deporte sin rutina.
-  const factory CalendarEvent.completionToggled(String blockId, {int? effort}) =
-      CalendarCompletionToggled;
+  /// [completed] fija el estado en vez de alternarlo («No fui» en una clase
+  /// que aún no se ha dado por asistida).
+  const factory CalendarEvent.completionToggled(
+    String blockId, {
+    int? effort,
+    bool? completed,
+  }) = CalendarCompletionToggled;
 
   const factory CalendarEvent.planSaveRequested() = CalendarPlanSaveRequested;
 

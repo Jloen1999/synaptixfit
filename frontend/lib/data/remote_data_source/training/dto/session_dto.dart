@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/training_enums.dart';
+import '../../../../domain/models/training/load_suggestion.dart';
 import '../../../../domain/models/training/session.dart';
 import '../../../../domain/models/training/session_adaptation.dart';
 import 'recommendation_dto.dart';
@@ -216,6 +217,44 @@ abstract class PastSessionResponseDto with _$PastSessionResponseDto {
     session: session.toDomain(),
     experience: experience.toDomain(),
   );
+}
+
+/// Propuesta de carga de hoy (`GET /sessions/{id}/load-suggestions`).
+@freezed
+abstract class LoadSuggestionDto with _$LoadSuggestionDto {
+  const factory LoadSuggestionDto({
+    required String plannedExerciseId,
+    required String metric,
+    required double previous,
+    required double suggested,
+    int? changePercent,
+    String? reasonCode,
+    @Default(0) int lastRpe,
+    DateTime? lastSessionAt,
+    @Default(<double>[]) List<double> perSet,
+  }) = _LoadSuggestionDto;
+
+  const LoadSuggestionDto._();
+
+  factory LoadSuggestionDto.fromJson(Map<String, dynamic> json) =>
+      _$LoadSuggestionDtoFromJson(json);
+
+  /// Nula si la cifra es de un tipo que esta versión no conoce.
+  LoadSuggestion? toDomain() {
+    final m = LoadMetric.fromApi(metric);
+    if (m == null) return null;
+    return LoadSuggestion(
+      plannedExerciseId: plannedExerciseId,
+      metric: m,
+      previous: previous,
+      suggested: suggested,
+      changePercent: changePercent,
+      reason: AdjustmentReason.fromApi(reasonCode),
+      lastRpe: lastRpe,
+      lastSessionAt: lastSessionAt?.toLocal(),
+      perSet: perSet,
+    );
+  }
 }
 
 @freezed

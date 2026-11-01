@@ -161,9 +161,9 @@ void main() {
     'eliminar una sesión de otro día la quita y recarga la cuenta',
     setUp: () {
       when(() => delete('s1')).thenAnswer((_) async => const Success(unit));
-      when(() => getAccount()).thenAnswer(
-        (_) async => const Failure(AppError.network()),
-      );
+      when(
+        () => getAccount(),
+      ).thenAnswer((_) async => const Failure(AppError.network()));
     },
     build: build,
     seed: () => SessionHistoryState(

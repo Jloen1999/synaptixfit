@@ -45,6 +45,11 @@ import java.util.UUID;
  *   <li>Límite diario: como mucho {@code dailyLimit} avisos por día local, por orden de hora; 0 deja
  *       pasar solo las críticas, y un recordatorio nunca lo es, así que no hay avisos.</li>
  *   <li>Tope total de {@link #DEFAULT_MAX_REMINDERS}: iOS solo guarda 64 avisos pendientes por app.</li>
+ *   <li>Seguimiento (ver {@link FollowUps}): «tocaba ayer» a las {@link #FOLLOW_UP_TIME} del día siguiente al
+ *       previsto para el próximo día de rutina; «¿terminaste la sesión?» {@link #OPEN_SESSION_AFTER} después de
+ *       empezar una sesión que sigue abierta (más allá ya cuenta como abandonada y la app lo pregunta al
+ *       entrar); «tu reto vence mañana» a las {@link #DEADLINE_TIME} del día antes de su fin. Los dos primeros
+ *       son de entrenamiento ({@link #TRAINING_CATEGORY}, enfoque con deporte); el del reto, de hitos.</li>
  * </ul>
  */
 public final class ReminderPlanner {
@@ -59,6 +64,8 @@ public final class ReminderPlanner {
     public static final LocalTime DEADLINE_TIME = LocalTime.of(18, 0);
     public static final LocalTime WEEKLY_TIME = LocalTime.of(20, 0);
     public static final List<Integer> DEADLINE_DAYS_BEFORE = List.of(3, 1);
+    public static final LocalTime FOLLOW_UP_TIME = LocalTime.of(10, 0);
+    public static final Duration OPEN_SESSION_AFTER = Duration.ofHours(2);
 
     private final int maxReminders;
 
@@ -82,6 +89,29 @@ public final class ReminderPlanner {
     public record Deadline(UUID id, boolean exam, String title, Instant dueAt) {
     }
 
+    /** Próximo día de rutina pendiente y la fecha en que tocaba. */
+    public record RoutineDay(UUID dayId, String title, LocalDate scheduledDate) {
+    }
+
+    /** Sesión de entrenamiento abierta. */
+    public record OpenSession(UUID sessionId, String title, Instant startedAt) {
+    }
+
+    /** Reto sin completar y su fin. */
+    public record ChallengeDue(UUID challengeId, String title, Instant endAt) {
+    }
+
+    /** Lo que se sigue después de planificar: día de rutina, sesiones abiertas y retos (vacío si no aplica). */
+    public record FollowUps(RoutineDay routineDay, List<OpenSession> openSessions, List<ChallengeDue> challenges) {
+
+        public static final FollowUps NONE = new FollowUps(null, List.of(), List.of());
+
+        public FollowUps {
+            openSessions = List.copyOf(openSessions);
+            challenges = List.copyOf(challenges);
+        }
+    }
+
     /**
      * Datos del plan.
      *
@@ -92,7 +122,17 @@ public final class ReminderPlanner {
      * @param weeklySummary incluir el aviso «Tu semana» del domingo
      */
     public record Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
-                        Instant now, ZoneId zone, int days, List<Deadline> deadlines, boolean weeklySummary) {
+                        Instant now, ZoneId zone, int days, List<Deadline> deadlines, boolean weeklySummary,
+                        FollowUps followUps) {
+
+        public Input {
+            followUps = followUps == null ? FollowUps.NONE : followUps;
+        }
+
+        public Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
+                     Instant now, ZoneId zone, int days, List<Deadline> deadlines, boolean weeklySummary) {
+            this(dueReviews, blocks, preferences, focus, now, zone, days, deadlines, weeklySummary, FollowUps.NONE);
+        }
 
         public Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
                      Instant now, ZoneId zone, int days) {
@@ -142,6 +182,7 @@ public final class ReminderPlanner {
         if (input.weeklySummary()) {
             addWeeklySummary(candidates, input, end);
         }
+        addFollowUps(candidates, input, end);
         candidates.sort(Comparator.comparing(ReminderPlan.Item::at));
         return new ReminderPlan(applyDailyLimit(candidates, input.preferences().dailyLimit(), input.zone())
                 .stream().limit(maxReminders).toList());
@@ -222,6 +263,43 @@ public final class ReminderPlanner {
         if (at.isAfter(input.now()) && !at.isAfter(end)) {
             out.add(new ReminderPlan.Item(ReminderKind.WEEKLY_SUMMARY, at, planned.toLocalDate().toString(), null,
                     null, null));
+        }
+    }
+
+    private static void addFollowUps(List<ReminderPlan.Item> out, Input input, Instant end) {
+        FollowUps f = input.followUps();
+        boolean training = allows(ActivityType.SPORT, input.preferences(), input.focus());
+        if (training && f.routineDay() != null) {
+            ZonedDateTime planned = ZonedDateTime.of(f.routineDay().scheduledDate().plusDays(1), FOLLOW_UP_TIME,
+                    input.zone());
+            addIfInWindow(out, input, end, ReminderKind.ROUTINE_DAY_MISSED, deferQuietHours(planned, input),
+                    f.routineDay().dayId().toString(), f.routineDay().title(),
+                    f.routineDay().scheduledDate().atStartOfDay(input.zone()).toInstant());
+        }
+        if (training) {
+            for (OpenSession s : f.openSessions()) {
+                Instant at = deferQuietHours(s.startedAt().plus(OPEN_SESSION_AFTER).atZone(input.zone()), input);
+                addIfInWindow(out, input, end, ReminderKind.OPEN_SESSION, at, s.sessionId().toString(), s.title(),
+                        s.startedAt());
+            }
+        }
+        if (input.preferences().admits(NotificationType.MILESTONE)) {
+            for (ChallengeDue c : f.challenges()) {
+                LocalDate endDay = c.endAt().atZone(input.zone()).toLocalDate();
+                Instant at = deferQuietHours(ZonedDateTime.of(endDay.minusDays(1), DEADLINE_TIME, input.zone()),
+                        input);
+                if (at.isBefore(c.endAt())) {
+                    addIfInWindow(out, input, end, ReminderKind.CHALLENGE_DUE, at, c.challengeId().toString(),
+                            c.title(), c.endAt());
+                }
+            }
+        }
+    }
+
+    private static void addIfInWindow(List<ReminderPlan.Item> out, Input input, Instant end, ReminderKind kind,
+                                      Instant at, String refId, String title, Instant startsAt) {
+        if (at.isAfter(input.now()) && !at.isAfter(end)) {
+            out.add(new ReminderPlan.Item(kind, at, refId, null, title, startsAt));
         }
     }
 

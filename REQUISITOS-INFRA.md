@@ -66,6 +66,7 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 | `RESEND_API_KEY` | `***` | **sí** | **obligatoria en producción**: correo transaccional (Resend); sin ella no sale ningún correo aunque la API responda 202 (ADR 0021) |
 | `MAIL_FROM` | `SynaptixFit <no-reply@notifications.jloenit.dev>` | no | remitente; dominio verificado en Resend (`notifications.jloenit.dev`, región eu-west-1) |
 | `WEEKLY_EMAIL_CRON` | `0 0 19-23 * * SUN` | no | opcional: cuándo sale el resumen semanal por correo (zona del planificador). Cada hora de 19 a 23 reintenta solo a quien no lo recibió; `-` lo desactiva |
+| `CLASS_AUTO_ATTEND_CRON` | `0 */10 * * * *` | no | opcional: cada cuánto se dan por asistidas las clases que acaban de terminar (ADR 0029); `-` lo desactiva |
 | `APP_PUBLIC_URL` | `https://synaptixfit.jloenit.dev` | no | **obligatoria en producción**: base de los enlaces de los correos; sin ella apuntan a `http://localhost:5173` |
 
 Plantilla completa: [`backend/.env.example`](backend/.env.example).

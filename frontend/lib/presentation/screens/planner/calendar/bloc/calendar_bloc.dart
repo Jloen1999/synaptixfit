@@ -375,10 +375,11 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     final block = _find(event.blockId);
     if (block == null || state.busyBlockIds.contains(block.id)) return;
     emit(state.copyWith(busyBlockIds: {...state.busyBlockIds, block.id}));
+    final target = event.completed ?? !block.completed;
     final result = await _setCompletion(
       block.id,
-      completed: !block.completed,
-      effort: block.completed ? null : event.effort,
+      completed: target,
+      effort: target ? event.effort : null,
     );
     final busy = {...state.busyBlockIds}..remove(block.id);
     switch (result) {
@@ -401,6 +402,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
                   completed: value.block.completed,
                   xpDelta: value.xpDelta,
                   account: account,
+                  absent: value.block.absent,
                 ),
                 noticeId: state.noticeId + 1,
               ),

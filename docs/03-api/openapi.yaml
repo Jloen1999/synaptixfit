@@ -4256,6 +4256,27 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/PageResponseWeeklyPlanResponse"
+  /api/v1/training/sessions/{sessionId}/load-suggestions:
+    get:
+      tags:
+      - Training sessions
+      operationId: loadSuggestions
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LoadSuggestionResponse"
   /api/v1/training/sessions/{sessionId}/highlights:
     get:
       tags:
@@ -7879,6 +7900,8 @@ components:
           - PAST
         tracksPhysicalLoad:
           type: boolean
+        absent:
+          type: boolean
     BlockCompletionRequest:
       type: object
       properties:
@@ -10850,6 +10873,21 @@ components:
           format: int32
           maximum: 10
           minimum: 1
+        type:
+          type: string
+          enum:
+          - STUDY
+          - SPORT
+          - CLASS
+          - REST
+          - MEAL
+          - SLEEP
+          - EXAM
+          - DELIVERY
+          - REVIEW
+        subjectId:
+          type: string
+          format: uuid
       required:
       - start
     IcsImportRequest:
@@ -12028,6 +12066,54 @@ components:
         totalPages:
           type: integer
           format: int32
+    LoadSuggestionResponse:
+      type: object
+      properties:
+        plannedExerciseId:
+          type: string
+          format: uuid
+        exerciseId:
+          type: string
+          format: uuid
+        metric:
+          type: string
+          enum:
+          - WEIGHT
+          - REPS
+          - HOLD_SECONDS
+          - DURATION_SECONDS
+          - DISTANCE_METERS
+        previous:
+          type: number
+          format: double
+        suggested:
+          type: number
+          format: double
+        changePercent:
+          type: integer
+          format: int32
+        reasonCode:
+          type: string
+          enum:
+          - FAILED_REPS
+          - VERY_HIGH_RPE
+          - VERY_LOW_RPE
+          - LOW_RPE_MORE_REPS
+          - LOW_RPE_MORE_WEIGHT
+          - LOW_RPE_MORE_TIME
+          - LOW_RPE_MORE_DISTANCE
+          - INACTIVITY
+        lastRpe:
+          type: integer
+          format: int32
+        lastSessionAt:
+          type: string
+          format: date-time
+        perSet:
+          type: array
+          items:
+            type: number
+            format: double
     PersonalRecordResponse:
       type: object
       properties:
@@ -13035,6 +13121,9 @@ components:
           - EXAM
           - DEADLINE
           - WEEKLY_SUMMARY
+          - ROUTINE_DAY_MISSED
+          - OPEN_SESSION
+          - CHALLENGE_DUE
         at:
           type: string
           format: date-time

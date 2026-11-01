@@ -25,5 +25,13 @@
   "remindersOfferAccept": "Ativar lembretes",
   "remindersWeeklyTitle": "A tua semana",
   "remindersWeeklyBody": "Vê como correu e planeia a próxima.",
-  "remindersOfferDecline": "Não, obrigado"
+  "remindersOfferDecline": "Não, obrigado",
+  "remindersRoutineMissedTitle": "Ontem era dia de treino",
+  "remindersRoutineMissedBody": "Ontem era dia de treinar com «{routine}». Fá-lo hoje ou salta-o para manter a rotina em dia.",
+  "remindersOpenSessionTitle": "Terminaste a sessão?",
+  "remindersOpenSessionBody": "O teu treino continua aberto. Termina-o com o que registaste ou descarta-o.",
+  "remindersChallengeDueTitle": "O teu desafio termina amanhã",
+  "remindersChallengeDueBody": "«{challenge}» termina amanhã: ainda vais a tempo.",
+  "remindersYourRoutine": "a tua rotina",
+  "remindersYourChallenge": "O teu desafio"
 }

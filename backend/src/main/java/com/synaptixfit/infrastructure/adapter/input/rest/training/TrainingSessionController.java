@@ -5,6 +5,7 @@ import com.synaptixfit.application.port.input.training.DeleteSessionSetUseCase;
 import com.synaptixfit.application.port.input.training.DeleteTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.FinishTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.GetLoadSuggestionsUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.GetTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
@@ -22,6 +23,7 @@ import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDto
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.ExperienceResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.FinishSessionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.FinishSessionResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.LoadSuggestionResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.OpenSessionResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.PastSessionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.PastSessionResponse;
@@ -66,6 +68,7 @@ public class TrainingSessionController {
     private final GetTrainingSessionUseCase get;
     private final GetPendingTrainingDayUseCase pendingDay;
     private final GetSessionAdaptationUseCase adaptation;
+    private final GetLoadSuggestionsUseCase loadSuggestions;
 
     public TrainingSessionController(StartTrainingSessionUseCase start, RecordSessionSetUseCase recordSet,
                                      DeleteSessionSetUseCase deleteSet, FinishTrainingSessionUseCase finish,
@@ -74,7 +77,8 @@ public class TrainingSessionController {
                                      ListOpenSessionsUseCase listOpen,
                                      ListTrainingSessionsUseCase list, GetTrainingSessionUseCase get,
                                      GetPendingTrainingDayUseCase pendingDay,
-                                     GetSessionAdaptationUseCase adaptation) {
+                                     GetSessionAdaptationUseCase adaptation,
+                                     GetLoadSuggestionsUseCase loadSuggestions) {
         this.start = start;
         this.recordSet = recordSet;
         this.deleteSet = deleteSet;
@@ -88,6 +92,7 @@ public class TrainingSessionController {
         this.get = get;
         this.pendingDay = pendingDay;
         this.adaptation = adaptation;
+        this.loadSuggestions = loadSuggestions;
     }
 
     /** Próximo día de la rutina en curso, con fecha prevista y retraso; 204 si no hay. */
@@ -171,6 +176,12 @@ public class TrainingSessionController {
     public SessionAdaptationResponse adaptation(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
                                                 @RequestParam(required = false) String tz) {
         return SessionAdaptationResponse.from(adaptation.adaptation(userId, sessionId, tz));
+    }
+
+    /** Propuesta de carga de hoy por ejercicio, desde la última vez que se hizo (vacía si no hay). */
+    @GetMapping("/sessions/{sessionId}/load-suggestions")
+    public List<LoadSuggestionResponse> loadSuggestions(@CurrentUserId UUID userId, @PathVariable UUID sessionId) {
+        return loadSuggestions.loadSuggestions(userId, sessionId).stream().map(LoadSuggestionResponse::from).toList();
     }
 
     /** Corrige el RPE y la duración de una sesión terminada (recalcula calorías y carga). */

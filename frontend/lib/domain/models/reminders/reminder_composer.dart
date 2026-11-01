@@ -19,6 +19,16 @@ class ReminderComposer {
     return [
       for (final planned in plan.take(maxReminders))
         switch (planned.kind) {
+          ReminderKind.routineDayMissed ||
+          ReminderKind.openSession ||
+          ReminderKind.challengeDue => Reminder(
+            id: _blockId('${planned.kind.name}:${planned.refId}'),
+            kind: planned.kind,
+            title: texts.followUpTitle(planned.kind),
+            body: texts.followUpBody(planned.kind, planned.title),
+            at: planned.at,
+            refId: planned.refId,
+          ),
           ReminderKind.dueReviews => Reminder(
             id: _reviewIdBase + review++,
             kind: planned.kind,
@@ -36,6 +46,7 @@ class ReminderComposer {
               (planned.startsAt ?? planned.at).toLocal(),
             ),
             at: planned.at,
+            refId: planned.refId,
           ),
           ReminderKind.weeklySummary => Reminder(
             id: _weeklyId,

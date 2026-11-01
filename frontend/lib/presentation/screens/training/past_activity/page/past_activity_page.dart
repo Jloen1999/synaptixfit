@@ -258,28 +258,28 @@ class _PastActivityViewState extends State<_PastActivityView>
               if (_routineMode)
                 ..._routineSection(context, state)
               else ...[
-              AppSectionHeader(title: l10n.trainingPastActivityWhat),
-              Wrap(
-                spacing: TokensSpacing.s,
-                runSpacing: TokensSpacing.s,
-                children: [
-                  for (final name in suggestions)
-                    ChoiceChip(
-                      label: Text(name),
-                      selected: _title.text == name,
-                      onSelected: (_) => setState(() => _title.text = name),
-                    ),
-                ],
-              ),
-              const SizedBox(height: TokensSpacing.m),
-              AppTextField(
-                controller: _title,
-                label: l10n.trainingPastActivityName,
-                icon: Icons.sports_soccer_outlined,
-                textInputAction: TextInputAction.done,
-                maxLength: 200,
-                onChanged: (_) => setState(() {}),
-              ),
+                AppSectionHeader(title: l10n.trainingPastActivityWhat),
+                Wrap(
+                  spacing: TokensSpacing.s,
+                  runSpacing: TokensSpacing.s,
+                  children: [
+                    for (final name in suggestions)
+                      ChoiceChip(
+                        label: Text(name),
+                        selected: _title.text == name,
+                        onSelected: (_) => setState(() => _title.text = name),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: TokensSpacing.m),
+                AppTextField(
+                  controller: _title,
+                  label: l10n.trainingPastActivityName,
+                  icon: Icons.sports_soccer_outlined,
+                  textInputAction: TextInputAction.done,
+                  maxLength: 200,
+                  onChanged: (_) => setState(() {}),
+                ),
               ],
               const SizedBox(height: TokensSpacing.m),
               AppSectionHeader(title: l10n.trainingPastActivityWhen),
@@ -313,20 +313,20 @@ class _PastActivityViewState extends State<_PastActivityView>
               const SizedBox(height: TokensSpacing.m),
               // Para un día de la rutina basta con el día: no hay hora de inicio.
               if (!_routineMode)
-              AppCard(
-                padding: EdgeInsets.zero,
-                child: AppFocusOutline(
-                  child: ListTile(
-                    leading: const Icon(Icons.schedule_rounded),
-                    title: Text(l10n.trainingPastActivityStart),
-                    trailing: Text(
-                      _time.format(context),
-                      style: context.textStyles.titleMedium,
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: AppFocusOutline(
+                    child: ListTile(
+                      leading: const Icon(Icons.schedule_rounded),
+                      title: Text(l10n.trainingPastActivityStart),
+                      trailing: Text(
+                        _time.format(context),
+                        style: context.textStyles.titleMedium,
+                      ),
+                      onTap: _pickTime,
                     ),
-                    onTap: _pickTime,
                   ),
                 ),
-              ),
               const SizedBox(height: TokensSpacing.m),
               AppStepperField(
                 label: l10n.trainingPastActivityDuration,

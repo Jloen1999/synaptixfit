@@ -1,4 +1,3 @@
-import '../enums/reminder_kind.dart';
 import '../models/reminders/ongoing_timer.dart';
 import '../models/reminders/reminder.dart';
 import '../models/reminders/timer_alert.dart';
@@ -39,5 +38,5 @@ abstract interface class ReminderSchedulerRepositoryContract {
   Future<AppResult<Unit>> cancelOngoingTimer();
 
   /// Avisos que el usuario toca (también el que abrió la app en frío).
-  Stream<ReminderKind> watchOpened();
+  Stream<OpenedReminder> watchOpened();
 }

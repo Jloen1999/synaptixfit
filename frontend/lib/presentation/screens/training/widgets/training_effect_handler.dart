@@ -43,35 +43,36 @@ class TrainingEffectHandler with ErrorsMessageMixin {
     }
   }
 
-  static String messageText(AppLocalizations l10n, TrainingMessage m) =>
-      switch (m) {
-        TrainingMessage.recommendationApplied =>
-          l10n.trainingMsgRecommendationApplied,
-        TrainingMessage.recommendationDiscarded =>
-          l10n.trainingMsgRecommendationDiscarded,
-        TrainingMessage.routineSaved => l10n.trainingMsgRoutineSaved,
-        TrainingMessage.routineDeleted => l10n.trainingMsgRoutineDeleted,
-        TrainingMessage.routineUpdated => l10n.commonSaved,
-        TrainingMessage.routineDuplicated => l10n.trainingMsgRoutineDuplicated,
-        TrainingMessage.routineCloned => l10n.trainingMsgRoutineCloned,
-        TrainingMessage.checkInSaved => l10n.trainingMsgCheckInSaved,
-        TrainingMessage.planSaved => l10n.trainingMsgPlanSaved,
-        TrainingMessage.planDeleted => l10n.trainingMsgPlanDeleted,
-        TrainingMessage.sessionUnmarked => l10n.trainingMsgSessionUnmarked,
-        TrainingMessage.sessionAbandoned => l10n.trainingMsgSessionAbandoned,
-        TrainingMessage.setSaved => l10n.trainingMsgSetSaved,
-        TrainingMessage.sessionShared => l10n.trainingMsgSessionShared,
-        TrainingMessage.daySkipped => l10n.trainingDaySkipped,
-        TrainingMessage.dayUnskipped => l10n.trainingDayUnskipped,
-        TrainingMessage.sessionSavedOnItsDay => l10n.trainingSessionSavedOnItsDay,
-        TrainingMessage.sessionDiscarded => l10n.trainingSessionDiscarded,
-        TrainingMessage.sessionCorrected => l10n.trainingSessionCorrected,
-        TrainingMessage.sessionDeleted => l10n.trainingSessionDeleted,
-        TrainingMessage.routineStarted => l10n.trainingRoutineStarted,
-        TrainingMessage.routineRestarted => l10n.trainingRoutineRestarted,
-        TrainingMessage.exerciseReplaced => l10n.trainingMsgExerciseReplaced,
-        TrainingMessage.exerciseRemoved => l10n.trainingMsgExerciseRemoved,
-        TrainingMessage.pendingSetDiscarded =>
-          l10n.trainingMsgPendingSetDiscarded,
-      };
+  static String messageText(
+    AppLocalizations l10n,
+    TrainingMessage m,
+  ) => switch (m) {
+    TrainingMessage.recommendationApplied =>
+      l10n.trainingMsgRecommendationApplied,
+    TrainingMessage.recommendationDiscarded =>
+      l10n.trainingMsgRecommendationDiscarded,
+    TrainingMessage.routineSaved => l10n.trainingMsgRoutineSaved,
+    TrainingMessage.routineDeleted => l10n.trainingMsgRoutineDeleted,
+    TrainingMessage.routineUpdated => l10n.commonSaved,
+    TrainingMessage.routineDuplicated => l10n.trainingMsgRoutineDuplicated,
+    TrainingMessage.routineCloned => l10n.trainingMsgRoutineCloned,
+    TrainingMessage.checkInSaved => l10n.trainingMsgCheckInSaved,
+    TrainingMessage.planSaved => l10n.trainingMsgPlanSaved,
+    TrainingMessage.planDeleted => l10n.trainingMsgPlanDeleted,
+    TrainingMessage.sessionUnmarked => l10n.trainingMsgSessionUnmarked,
+    TrainingMessage.sessionAbandoned => l10n.trainingMsgSessionAbandoned,
+    TrainingMessage.setSaved => l10n.trainingMsgSetSaved,
+    TrainingMessage.sessionShared => l10n.trainingMsgSessionShared,
+    TrainingMessage.daySkipped => l10n.trainingDaySkipped,
+    TrainingMessage.dayUnskipped => l10n.trainingDayUnskipped,
+    TrainingMessage.sessionSavedOnItsDay => l10n.trainingSessionSavedOnItsDay,
+    TrainingMessage.sessionDiscarded => l10n.trainingSessionDiscarded,
+    TrainingMessage.sessionCorrected => l10n.trainingSessionCorrected,
+    TrainingMessage.sessionDeleted => l10n.trainingSessionDeleted,
+    TrainingMessage.routineStarted => l10n.trainingRoutineStarted,
+    TrainingMessage.routineRestarted => l10n.trainingRoutineRestarted,
+    TrainingMessage.exerciseReplaced => l10n.trainingMsgExerciseReplaced,
+    TrainingMessage.exerciseRemoved => l10n.trainingMsgExerciseRemoved,
+    TrainingMessage.pendingSetDiscarded => l10n.trainingMsgPendingSetDiscarded,
+  };
 }

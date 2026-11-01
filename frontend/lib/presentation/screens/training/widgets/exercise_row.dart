@@ -225,7 +225,9 @@ class _ExerciseRowState extends State<ExerciseRow> {
     excludeSemantics: true,
     onTap: onPressed,
     child: TextButton.icon(
-      style: color == null ? null : TextButton.styleFrom(foregroundColor: color),
+      style: color == null
+          ? null
+          : TextButton.styleFrom(foregroundColor: color),
       onPressed: onPressed,
       icon: Icon(icon),
       label: Text(label),

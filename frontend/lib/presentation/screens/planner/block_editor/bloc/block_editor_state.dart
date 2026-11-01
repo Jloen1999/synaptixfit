@@ -62,6 +62,10 @@ sealed class BlockEditorOutcome with _$BlockEditorOutcome {
   const factory BlockEditorOutcome.completionRequested(String blockId) =
       BlockEditorCompletionRequested;
 
+  /// «No fui» a una clase: se desmarca y no se da por asistida sola.
+  const factory BlockEditorOutcome.absenceRequested(String blockId) =
+      BlockEditorAbsenceRequested;
+
   /// Bloque de un día de rutina: se abre la rutina para entrenarlo (su estado
   /// lo marca la sesión, no la persona).
   const factory BlockEditorOutcome.trainingRequested(String routineId) =

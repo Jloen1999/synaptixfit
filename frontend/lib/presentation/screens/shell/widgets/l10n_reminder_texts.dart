@@ -32,6 +32,22 @@ class L10nReminderTexts implements ReminderTexts {
   };
 
   @override
+  String followUpTitle(ReminderKind kind) => switch (kind) {
+    ReminderKind.routineDayMissed => _l10n.remindersRoutineMissedTitle,
+    ReminderKind.openSession => _l10n.remindersOpenSessionTitle,
+    _ => _l10n.remindersChallengeDueTitle,
+  };
+
+  @override
+  String followUpBody(ReminderKind kind, String? name) => switch (kind) {
+    ReminderKind.routineDayMissed => _l10n.remindersRoutineMissedBody(
+      name ?? _l10n.remindersYourRoutine,
+    ),
+    ReminderKind.openSession => _l10n.remindersOpenSessionBody,
+    _ => _l10n.remindersChallengeDueBody(name ?? _l10n.remindersYourChallenge),
+  };
+
+  @override
   String get weeklySummaryTitle => _l10n.remindersWeeklyTitle;
 
   @override

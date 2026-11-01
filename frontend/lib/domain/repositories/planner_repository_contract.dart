@@ -49,6 +49,14 @@ abstract interface class PlannerRepositoryContract {
     String? title,
   });
 
+  /// Estudio ya hecho (últimos 7 días): bloque de estudio completado.
+  Future<AppResult<BlockCompletion>> logPastStudy({
+    required DateTime start,
+    required int minutes,
+    String? subjectId,
+    String? title,
+  });
+
   Future<AppResult<List<CalendarBlock>>> distributeRoutine(
     RoutineDistribution request,
   );

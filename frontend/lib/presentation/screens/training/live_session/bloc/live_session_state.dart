@@ -57,6 +57,14 @@ abstract class LiveSessionState with _$LiveSessionState {
     @Default(<String, PersonalRecord>{})
     Map<String, PersonalRecord> lastPerformance,
 
+    /// Propuesta de carga de hoy por id de ejercicio planificado (servidor).
+    @Default(<String, LoadSuggestion>{})
+    Map<String, LoadSuggestion> loadSuggestions,
+
+    /// Ejercicios cuya propuesta de carga se ha aceptado: sus series sin
+    /// apuntar toman la cifra propuesta.
+    @Default(<String>{}) Set<String> acceptedLoad,
+
     /// Calentamiento y vuelta a la calma sugeridos para los ejercicios del día.
     SessionBookends? bookends,
 
@@ -121,6 +129,16 @@ abstract class LiveSessionState with _$LiveSessionState {
   /// manda el plan; si no, lo que se hizo en la serie anterior de hoy (lo
   /// real), la última vez (solo el peso) y, por último, lo previsto.
   num? proposedValue(PlannedExercise e, int set, SetField f) {
+    final load = acceptedLoad.contains(e.id) ? loadSuggestions[e.id] : null;
+    if (load != null && load.metric.field == f) {
+      final value = load.forSet(set);
+      // El campo de duración va en minutos; los demás, tal cual.
+      return switch (load.metric) {
+        LoadMetric.weight => value,
+        LoadMetric.durationSeconds => (value / 60).round(),
+        _ => value.round(),
+      };
+    }
     final p = e.parameters;
     final previous = session
         ?.setsFor(e.id)
@@ -182,6 +200,17 @@ abstract class LiveSessionState with _$LiveSessionState {
     if (active != null && nextSetOf(active) != null) return active;
     return exercises.where((e) => nextSetOf(e) != null).firstOrNull;
   }
+}
+
+/// Campo de la serie que mueve cada cifra de una propuesta de carga.
+extension LoadMetricField on LoadMetric {
+  SetField get field => switch (this) {
+    LoadMetric.weight => SetField.weight,
+    LoadMetric.reps => SetField.reps,
+    LoadMetric.holdSeconds => SetField.hold,
+    LoadMetric.durationSeconds => SetField.duration,
+    LoadMetric.distanceMeters => SetField.distance,
+  };
 }
 
 /// Números de serie previstos de [exercise] que ya tienen registro en

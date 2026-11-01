@@ -46,6 +46,7 @@ public final class PlannerPersistenceMapper {
                 .studyPlanId(e.getPlanEstudioId())
                 .completed(e.isCompletado())
                 .attendanceRegisteredAt(e.getAsistenciaRegistradaEn())
+                .absent(e.isAusente())
                 .fixed(e.isEsFijo())
                 .immovable(e.isEsHitoInamovible())
                 .xpAwarded(e.isXpBloqueOtorgado())
@@ -74,6 +75,7 @@ public final class PlannerPersistenceMapper {
         e.setTemas(d.topics());
         e.setCompletado(b.completed());
         e.setAsistenciaRegistradaEn(b.attendanceRegisteredAt());
+        e.setAusente(b.absent());
         e.setEsFijo(b.fixed());
         e.setDiaSemana(b.dayOfWeek());
         e.setXpBloqueOtorgado(b.xpAwarded());

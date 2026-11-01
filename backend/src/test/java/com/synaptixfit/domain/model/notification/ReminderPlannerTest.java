@@ -283,4 +283,51 @@ class ReminderPlannerTest {
     private LocalDate day(ReminderPlan.Item item) {
         return item.at().atZone(ZONE).toLocalDate();
     }
+
+    // ------------------------------------------------------------ avisos de seguimiento
+
+    private List<ReminderPlan.Item> followUps(ReminderPlanner.FollowUps f, NotificationPreferences prefs,
+                                              UsageFocus focus) {
+        return planner.plan(new ReminderPlanner.Input(0, List.of(), prefs, focus, NOW, ZONE, 7, List.of(), false, f))
+                .reminders();
+    }
+
+    @Test
+    void followUpsRemindAMissedRoutineDayAnOpenSessionAndAChallengeEndingTomorrow() {
+        UUID day = UUID.randomUUID();
+        UUID session = UUID.randomUUID();
+        UUID challenge = UUID.randomUUID();
+        ReminderPlanner.FollowUps f = new ReminderPlanner.FollowUps(
+                new ReminderPlanner.RoutineDay(day, "Fuerza", LocalDate.of(2026, 10, 22)),
+                List.of(new ReminderPlanner.OpenSession(session, "Fuerza", NOW.minusSeconds(1800))),
+                List.of(new ReminderPlanner.ChallengeDue(challenge, "10 km", at(2026, 10, 25, 23, 59))));
+
+        List<ReminderPlan.Item> items = followUps(f, allOn(), UsageFocus.BOTH);
+
+        assertThat(items).extracting(ReminderPlan.Item::kind, ReminderPlan.Item::at, ReminderPlan.Item::refId)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(ReminderKind.OPEN_SESSION, NOW.plusSeconds(5400),
+                                session.toString()),
+                        org.assertj.core.groups.Tuple.tuple(ReminderKind.ROUTINE_DAY_MISSED,
+                                at(2026, 10, 23, 10, 0), day.toString()),
+                        org.assertj.core.groups.Tuple.tuple(ReminderKind.CHALLENGE_DUE, at(2026, 10, 24, 18, 0),
+                                challenge.toString()));
+    }
+
+    @Test
+    void followUpsRespectFocusAndSkipWhatAlreadyPassed() {
+        ReminderPlanner.FollowUps f = new ReminderPlanner.FollowUps(
+                new ReminderPlanner.RoutineDay(UUID.randomUUID(), "Fuerza", LocalDate.of(2026, 10, 19)),
+                List.of(new ReminderPlanner.OpenSession(UUID.randomUUID(), null, NOW.minusSeconds(3 * 3600))),
+                List.of(new ReminderPlanner.ChallengeDue(UUID.randomUUID(), "Leer", at(2026, 10, 21, 23, 0))));
+
+        // Día que tocaba hace días, sesión de hace 3 h y reto que vence hoy: sus avisos ya pasaron.
+        assertThat(followUps(f, allOn(), UsageFocus.BOTH)).isEmpty();
+
+        ReminderPlanner.FollowUps training = new ReminderPlanner.FollowUps(
+                new ReminderPlanner.RoutineDay(UUID.randomUUID(), "Fuerza", LocalDate.of(2026, 10, 22)), List.of(),
+                List.of());
+        // Solo estudios: no se recuerdan entrenamientos.
+        assertThat(followUps(training, allOn(), UsageFocus.ACADEMIC)).isEmpty();
+    }
 }

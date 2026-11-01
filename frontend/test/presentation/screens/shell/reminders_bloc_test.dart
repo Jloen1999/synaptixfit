@@ -57,7 +57,7 @@ void main() {
     late _MarkOffered markOffered;
     late _SetEnabled setEnabled;
     late StreamController<Set<DataTopic>> changesController;
-    late StreamController<ReminderKind> openedController;
+    late StreamController<OpenedReminder> openedController;
 
     setUpAll(() {
       registerFallbackValue(const TestReminderTexts());
@@ -180,13 +180,18 @@ void main() {
           const RemindersEvent.started(focus: UsageFocus.both, texts: texts),
         );
         await Future<void>.delayed(Duration.zero);
-        openedController.add(ReminderKind.dueReviews);
+        openedController.add(
+          const OpenedReminder(kind: ReminderKind.dueReviews),
+        );
         await Future<void>.delayed(Duration.zero);
         bloc.add(const RemindersEvent.openHandled());
       },
       expect: () => const [
         RemindersState(scheduled: 2),
-        RemindersState(scheduled: 2, openRequest: ReminderKind.dueReviews),
+        RemindersState(
+          scheduled: 2,
+          openRequest: OpenedReminder(kind: ReminderKind.dueReviews),
+        ),
         RemindersState(scheduled: 2),
       ],
     );

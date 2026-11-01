@@ -185,6 +185,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `PLANNER_RANGE_TOO_LARGE` | 400 | Rango de fechas inválido o demasiado grande | El rango de fechas no es válido. | Activo |
 | `PLANNER_ICS_URL_MISSING` | 422 | Sin URL ICS en la petición ni en la asignatura (o calendario general sin URL) | Añade la URL del calendario de la asignatura. | Activo |
 | `PLANNER_PAST_ACTIVITY_OUT_OF_RANGE` | 422 | La actividad pasada aún no ha terminado o es de hace más de 7 días | `plannerErrorPastActivityOutOfRange` | Solo puedes apuntar actividades ya terminadas de los últimos 7 días. | Activo |
+| `PLANNER_PAST_ACTIVITY_TYPE_NOT_ALLOWED` | 422 | Se intenta apuntar a posteriori algo que no es deporte ni estudio | `plannerErrorPastActivityType` | Solo puedes apuntar después deporte o estudio. | Activo |
 | `PLANNER_CALENDAR_FEED_NOT_FOUND` | 404 | El enlace de suscripción al calendario no existe o se revocó | Ese enlace ya no existe: puede que lo desactivaras desde otro dispositivo. | Activo |
 | `PLANNER_ICS_URL_INVALID` | 400 | URL no http(s)/webcal o dirección local | La URL del calendario no es válida. | Activo |
 | `PLANNER_ICS_UNAVAILABLE` | 503 | No se pudo descargar o supera 5 MB | No hemos podido descargar el calendario. Inténtalo más tarde. | Activo |

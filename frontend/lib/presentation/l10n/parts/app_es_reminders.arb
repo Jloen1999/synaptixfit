@@ -69,5 +69,27 @@
   "remindersOfferAccept": "Activar recordatorios",
   "remindersWeeklyTitle": "Tu semana",
   "remindersWeeklyBody": "Mira cómo te ha ido y planifica la próxima.",
-  "remindersOfferDecline": "No, gracias"
+  "remindersOfferDecline": "No, gracias",
+  "remindersRoutineMissedTitle": "Ayer tocaba entrenar",
+  "remindersRoutineMissedBody": "Ayer tocaba entrenar con «{routine}». Hazlo hoy o sáltalo para que tu rutina siga al día.",
+  "@remindersRoutineMissedBody": {
+    "placeholders": {
+      "routine": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersOpenSessionTitle": "¿Terminaste la sesión?",
+  "remindersOpenSessionBody": "Tu entreno sigue abierto. Termínalo con lo que apuntaste o descártalo.",
+  "remindersChallengeDueTitle": "Tu reto vence mañana",
+  "remindersChallengeDueBody": "«{challenge}» termina mañana: aún estás a tiempo.",
+  "@remindersChallengeDueBody": {
+    "placeholders": {
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersYourRoutine": "tu rutina",
+  "remindersYourChallenge": "Tu reto"
 }

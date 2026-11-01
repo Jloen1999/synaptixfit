@@ -43,10 +43,12 @@ abstract class CalendarState with _$CalendarState {
 @freezed
 sealed class CalendarNotice with _$CalendarNotice {
   /// Bloque marcado/desmarcado: XP sumada o restada y cuenta actualizada.
+  /// [absent]: era una clase y quedó marcada «No fui».
   const factory CalendarNotice.blockXp({
     required bool completed,
     required int xpDelta,
     Account? account,
+    @Default(false) bool absent,
   }) = CalendarNoticeBlockXp;
 
   const factory CalendarNotice.planSaved({

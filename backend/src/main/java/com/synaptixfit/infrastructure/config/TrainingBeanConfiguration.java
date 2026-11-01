@@ -35,6 +35,7 @@ import com.synaptixfit.application.port.input.training.GetExerciseFilterOptionsU
 import com.synaptixfit.application.port.input.training.GetExerciseNamesUseCase;
 import com.synaptixfit.application.port.input.training.GetExerciseUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.GetLoadSuggestionsUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.GetRoutineUseCase;
 import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
@@ -74,6 +75,7 @@ import com.synaptixfit.application.service.training.RecommendationService;
 import com.synaptixfit.application.service.training.RoutineGenerationService;
 import com.synaptixfit.application.service.training.RoutineProgressService;
 import com.synaptixfit.application.service.training.RoutineService;
+import com.synaptixfit.application.service.training.LoadSuggestionService;
 import com.synaptixfit.application.service.training.SessionAdaptationService;
 import com.synaptixfit.application.service.training.TrainingSessionService;
 import com.synaptixfit.application.service.training.WeeklyPlanService;
@@ -423,6 +425,16 @@ public class TrainingBeanConfiguration {
     @Bean
     GetSessionAdaptationUseCase getSessionAdaptationUseCase() {
         return tx.wrap(GetSessionAdaptationUseCase.class, sessionAdaptationService());
+    }
+
+    @Bean(autowireCandidate = false)
+    LoadSuggestionService loadSuggestionService() {
+        return new LoadSuggestionService(sessions, routines, clock);
+    }
+
+    @Bean
+    GetLoadSuggestionsUseCase getLoadSuggestionsUseCase() {
+        return tx.wrap(GetLoadSuggestionsUseCase.class, loadSuggestionService());
     }
 
     @Bean(autowireCandidate = false)

@@ -32,5 +32,6 @@ public final class EmbeddedPostgresSupport {
         // Ni envían correos reales.
         registry.add("synaptixfit.mail.resend-api-key", () -> "");
         registry.add("synaptixfit.mail.weekly-cron", () -> "-");
+        registry.add("synaptixfit.planner.auto-attend-cron", () -> "-");
     }
 }

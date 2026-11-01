@@ -20,7 +20,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-/** Apuntar una actividad pasada: bloque de deporte completado con su esfuerzo, solo de los últimos 7 días. */
+/** Apuntar una actividad pasada (deporte con su esfuerzo o estudio), como bloque hecho, solo de los últimos 7 días. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class PastActivityIT {
@@ -74,5 +74,34 @@ class PastActivityIT {
         mvc.perform(post("/api/v1/planner/past-activities").header("Authorization", auth)
                         .contentType(MediaType.APPLICATION_JSON).content(body(now.minus(Duration.ofDays(1)), 10)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void studyAlreadyDoneIsSavedAsACompletedStudyBlockWithoutEffort() throws Exception {
+        Instant yesterday = Instant.now().truncatedTo(ChronoUnit.HOURS).minus(Duration.ofDays(1));
+
+        mvc.perform(post("/api/v1/planner/past-activities").header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"start\":\"%s\",\"minutes\":90,\"title\":\"Temas 3 y 4\",\"type\":\"STUDY\"}"
+                                .formatted(yesterday)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.block.type").value("STUDY"))
+                .andExpect(jsonPath("$.block.completed").value(true))
+                .andExpect(jsonPath("$.xpDelta").isNumber());
+    }
+
+    @Test
+    void onlySportAndStudyAndAKnownSubject() throws Exception {
+        Instant yesterday = Instant.now().truncatedTo(ChronoUnit.HOURS).minus(Duration.ofDays(1));
+        mvc.perform(post("/api/v1/planner/past-activities").header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"start\":\"%s\",\"minutes\":60,\"type\":\"CLASS\"}".formatted(yesterday)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("PLANNER_PAST_ACTIVITY_TYPE_NOT_ALLOWED"));
+        mvc.perform(post("/api/v1/planner/past-activities").header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"start\":\"%s\",\"minutes\":60,\"type\":\"STUDY\",\"subjectId\":\"%s\"}"
+                                .formatted(yesterday, UUID.randomUUID())))
+                .andExpect(status().isNotFound());
     }
 }

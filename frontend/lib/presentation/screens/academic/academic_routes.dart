@@ -43,6 +43,19 @@ abstract final class AcademicPaths {
   /// Calendario semanal (módulo planner).
   static const planner = '/planner';
 
+  /// Calendario abierto en el día de [start] con el bloque [blockId] abierto.
+  static String plannerBlock(String blockId, DateTime start) =>
+      _withQuery(planner, {
+        'week':
+            '${start.year.toString().padLeft(4, '0')}-'
+            '${start.month.toString().padLeft(2, '0')}-'
+            '${start.day.toString().padLeft(2, '0')}',
+        'block': blockId,
+      });
+
+  /// Entregas y exámenes (módulo planner).
+  static const deadlines = '/planner/deadlines';
+
   /// Pomodoro (módulo planner) vinculado a una asignatura.
   static String pomodoro({required String subjectId, required String title}) =>
       _withQuery('/planner/pomodoro', {'subjectId': subjectId, 'title': title});

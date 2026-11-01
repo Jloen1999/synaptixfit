@@ -81,6 +81,9 @@ synaptixfit:
     # Resumen semanal por correo: domingo de 19 a 23 h (zona del planificador); cada pasada solo manda a
     # quien aún no lo recibió esa semana. «-» lo desactiva.
     weekly-cron: ${WEEKLY_EMAIL_CRON:0 0 19-23 * * SUN}
+  planner:
+    # Clases dadas por asistidas solas al terminar (ADR 0029): cada 10 minutos. «-» lo desactiva.
+    auto-attend-cron: ${CLASS_AUTO_ATTEND_CRON:0 */10 * * * *}
 
 management:
   endpoints:

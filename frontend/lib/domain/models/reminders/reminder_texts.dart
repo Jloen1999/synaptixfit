@@ -25,4 +25,10 @@ abstract interface class ReminderTexts {
 
   /// [name] es el título de la entrega (puede faltar); [due] en hora local.
   String deadlineBody(ReminderKind kind, String? name, DateTime due);
+
+  /// Avisos de seguimiento (día de rutina atrasado, sesión abierta, reto que
+  /// vence): título y cuerpo con el nombre (rutina o reto) si lo hay.
+  String followUpTitle(ReminderKind kind);
+
+  String followUpBody(ReminderKind kind, String? name);
 }

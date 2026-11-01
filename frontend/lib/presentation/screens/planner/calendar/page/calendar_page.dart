@@ -155,6 +155,8 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         return;
       case BlockEditorCompletionRequested(:final blockId):
         await _toggleCompletion(blockId);
+      case BlockEditorAbsenceRequested(:final blockId):
+        _bloc.add(CalendarEvent.completionToggled(blockId, completed: false));
         return;
       case BlockEditorTrainingRequested(:final routineId):
         // La rutina vive en la pestaña Entreno: se cambia de pestaña (apilarla
@@ -220,10 +222,15 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         :final completed,
         :final xpDelta,
         :final account,
+        :final absent,
       ):
         _updateAccount(account);
         context.showSnack(
-          completed
+          absent
+              ? (xpDelta < 0
+                    ? l10n.plannerClassAbsentXp(-xpDelta)
+                    : l10n.plannerClassAbsent)
+              : completed
               ? (xpDelta > 0
                     ? l10n.plannerBlockCompletedXp(xpDelta)
                     : l10n.plannerBlockCompleted)
@@ -583,6 +590,11 @@ class _PlannerMenu extends StatelessWidget {
         l10n.plannerMenuSuggestions,
       ),
       (PlannerPaths.pomodoro, Icons.timer_rounded, l10n.plannerMenuPomodoro),
+      (
+        PlannerPaths.pastStudy,
+        Icons.history_edu_rounded,
+        l10n.plannerMenuPastStudy,
+      ),
       (
         PlannerPaths.scheduleScan,
         Icons.document_scanner_rounded,

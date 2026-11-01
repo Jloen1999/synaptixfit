@@ -5,6 +5,7 @@ import '../screens/planner/block_editor/bloc/block_editor_bloc.dart';
 import '../screens/planner/calendar/bloc/calendar_bloc.dart';
 import '../screens/planner/calendar_sync/bloc/calendar_sync_bloc.dart';
 import '../screens/planner/deadlines/bloc/deadlines_bloc.dart';
+import '../screens/planner/past_study/bloc/past_study_bloc.dart';
 import '../screens/planner/pomodoro/bloc/pomodoro_bloc.dart';
 import '../screens/planner/schedule_scan/bloc/schedule_scan_bloc.dart';
 import '../screens/planner/suggestions/bloc/suggestions_bloc.dart';
@@ -13,6 +14,13 @@ import '../screens/planner/weekly_load/bloc/weekly_load_bloc.dart';
 /// Blocs del módulo planner.
 void registerPlannerPresentation(GetIt getIt) {
   getIt
+    ..registerFactory(
+      () => PastStudyBloc(
+        logPastStudy: getIt(),
+        getSubjects: getIt(),
+        getAccount: getIt(),
+      ),
+    )
     ..registerFactory(
       () => CalendarBloc(
         getBlocks: getIt(),
@@ -96,6 +104,7 @@ void registerPlannerPresentation(GetIt getIt) {
         saveTimer: getIt(),
         clearTimer: getIt(),
         getSubjects: getIt(),
+        setBlockCompletion: getIt(),
       ),
     );
 }

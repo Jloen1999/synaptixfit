@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.planner;
 
+import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.planner.CalendarBlockEntity;
@@ -68,6 +69,11 @@ public class CalendarBlockPersistenceAdapter implements CalendarBlockRepositoryP
     }
 
     @Override
+    public Optional<CalendarBlock> findByIdForUpdate(UUID id) {
+        return repository.findLockedById(id).map(PlannerPersistenceMapper::toDomain);
+    }
+
+    @Override
     public void delete(UUID id) {
         repository.deleteById(id);
         repository.flush();
@@ -108,6 +114,12 @@ public class CalendarBlockPersistenceAdapter implements CalendarBlockRepositoryP
     public List<CalendarBlock> findByRoutine(UUID userId, UUID routineId) {
         return repository.findByUsuarioIdAndRutinaIdOrderByHoraInicioAsc(userId, routineId).stream()
                 .map(PlannerPersistenceMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<CalendarBlock> findClassesToAttend(Instant from, Instant to) {
+        return repository.findByTipoActividadAndCompletadoFalseAndAusenteFalseAndHoraFinGreaterThanEqualAndHoraFinLessThanOrderByHoraFinAsc(
+                ActivityType.CLASS.code(), from, to).stream().map(PlannerPersistenceMapper::toDomain).toList();
     }
 
     @Override

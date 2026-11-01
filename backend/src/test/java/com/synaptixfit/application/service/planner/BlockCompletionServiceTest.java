@@ -191,4 +191,70 @@ class BlockCompletionServiceTest {
         assertThat(early.setCompletion(f.user, missed.id(), true).block().timeStatus(PlannerFakes.NOW))
                 .isEqualTo(ItemTimeStatus.DONE);
     }
+
+    // ------------------------------------------------------------ clases dadas por asistidas (ADR 0029)
+
+    /** Lo que hace la tarea programada: buscar y completar una a una. */
+    private int attendAll() {
+        int attended = 0;
+        for (UUID id : service.endedClassesToAttend()) {
+            if (service.attendClass(id)) {
+                attended++;
+            }
+        }
+        return attended;
+    }
+
+    @Test
+    void anEndedClassIsAttendedOnItsOwnWithItsXpButNotAnOldOneOrAFutureOne() {
+        CalendarBlock sunday = block(ActivityType.CLASS, at(6, 10, 0), 60, null);
+        CalendarBlock monday = block(ActivityType.CLASS, at(0, 9, 0), 60, null);
+        CalendarBlock tonight = block(ActivityType.CLASS, at(6, 23, 30), 60, null);
+        CalendarBlock study = block(ActivityType.STUDY, at(6, 12, 0), 60, null);
+
+        assertThat(attendAll()).isEqualTo(1);
+
+        CalendarBlock attended = f.blocks.store.get(sunday.id());
+        assertThat(attended.completed()).isTrue();
+        assertThat(attended.attendanceRegisteredAt()).isNotNull();
+        assertThat(f.xp.of(f.user)).isEqualTo(20);
+        assertThat(f.events).filteredOn(StudyBlockCompletionChanged.class::isInstance).hasSize(1);
+        // Más de 24 h atrás, aún sin terminar o que no es una clase: no se tocan.
+        assertThat(f.blocks.store.get(monday.id()).completed()).isFalse();
+        assertThat(f.blocks.store.get(tonight.id()).completed()).isFalse();
+        assertThat(f.blocks.store.get(study.id()).completed()).isFalse();
+        // Repetirlo no cambia nada.
+        assertThat(attendAll()).isZero();
+        assertThat(f.xp.of(f.user)).isEqualTo(20);
+    }
+
+    @Test
+    void notAttendingUnmarksTheClassRemovesItsXpAndItIsNotAttendedAgain() {
+        CalendarBlock sunday = block(ActivityType.CLASS, at(6, 10, 0), 60, null);
+        attendAll();
+
+        SetBlockCompletionUseCase.Result result = service.setCompletion(f.user, sunday.id(), false);
+
+        assertThat(result.xpDelta()).isEqualTo(-20);
+        assertThat(result.block().completed()).isFalse();
+        assertThat(result.block().absent()).isTrue();
+        assertThat(attendAll()).isZero();
+        assertThat(f.blocks.store.get(sunday.id()).completed()).isFalse();
+
+        // Volver a marcarla a mano borra la ausencia.
+        service.setCompletion(f.user, sunday.id(), true);
+        assertThat(f.blocks.store.get(sunday.id()).absent()).isFalse();
+    }
+
+    @Test
+    void notAttendingBeforeItIsAttendedOnlyLeavesTheAbsence() {
+        CalendarBlock sunday = block(ActivityType.CLASS, at(6, 10, 0), 60, null);
+
+        SetBlockCompletionUseCase.Result result = service.setCompletion(f.user, sunday.id(), false);
+
+        assertThat(result.xpDelta()).isZero();
+        assertThat(f.blocks.store.get(sunday.id()).absent()).isTrue();
+        assertThat(attendAll()).isZero();
+        assertThat(f.events).noneMatch(StudyBlockCompletionChanged.class::isInstance);
+    }
 }

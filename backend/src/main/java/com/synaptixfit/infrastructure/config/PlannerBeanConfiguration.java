@@ -3,6 +3,8 @@ package com.synaptixfit.infrastructure.config;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
 import com.synaptixfit.application.port.input.insights.GetCrossRegulationUseCase;
+import com.synaptixfit.application.port.input.planner.AttendClassUseCase;
+import com.synaptixfit.application.port.input.planner.AttendEndedClassesUseCase;
 import com.synaptixfit.application.port.input.planner.CompleteReviewBlockUseCase;
 import com.synaptixfit.application.port.input.planner.CreateCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.CreateDeadlineUseCase;
@@ -229,6 +231,16 @@ public class PlannerBeanConfiguration {
     BlockCompletionService blockCompletionService() {
         return new BlockCompletionService(blocks, subjects, profiles, award, revoke, events, weeklyLoadService(),
                 zone, clock);
+    }
+
+    @Bean
+    AttendEndedClassesUseCase attendEndedClassesUseCase() {
+        return tx.wrap(AttendEndedClassesUseCase.class, blockCompletionService());
+    }
+
+    @Bean
+    AttendClassUseCase attendClassUseCase() {
+        return tx.wrap(AttendClassUseCase.class, blockCompletionService());
     }
 
     @Bean

@@ -1,9 +1,9 @@
-import '../../enums/reminder_kind.dart';
+import '../../models/reminders/reminder.dart';
 import '../../repositories/reminder_scheduler_repository_contract.dart';
 
 /// Avisos locales que el usuario ha tocado, para llevarle a su pantalla.
 abstract interface class WatchOpenedRemindersUseCaseContract {
-  Stream<ReminderKind> call();
+  Stream<OpenedReminder> call();
 }
 
 class WatchOpenedRemindersUseCase
@@ -13,6 +13,6 @@ class WatchOpenedRemindersUseCase
   final ReminderSchedulerRepositoryContract _scheduler;
 
   @override
-  Stream<ReminderKind> call() =>
+  Stream<OpenedReminder> call() =>
       _scheduler.isSupported ? _scheduler.watchOpened() : const Stream.empty();
 }

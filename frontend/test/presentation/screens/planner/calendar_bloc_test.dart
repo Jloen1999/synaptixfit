@@ -338,6 +338,39 @@ void main() {
   );
 
   blocTest<CalendarBloc, CalendarState>(
+    '«No fui» en una clase aún sin dar por asistida la desmarca y avisa',
+    setUp: () => when(() => setCompletion('b1', completed: false)).thenAnswer(
+      (_) async => Success(
+        BlockCompletion(
+          block: b1.copyWith(type: BlockType.classSession, absent: true),
+          xpDelta: 0,
+        ),
+      ),
+    ),
+    build: build,
+    seed: ready,
+    act: (bloc) =>
+        bloc.add(const CalendarEvent.completionToggled('b1', completed: false)),
+    skip: 1,
+    expect: () => [
+      isA<CalendarState>()
+          .having((s) => s.blocks.single.absent, 'ausente', isTrue)
+          .having(
+            (s) => s.notice,
+            'notice',
+            const CalendarNotice.blockXp(
+              completed: false,
+              xpDelta: 0,
+              absent: true,
+            ),
+          ),
+    ],
+    verify: (_) => verifyNever(
+      () => setCompletion('b1', completed: true, effort: any(named: 'effort')),
+    ),
+  );
+
+  blocTest<CalendarBloc, CalendarState>(
     'guardar el plan informa de la XP y no pide la cuenta si es 0',
     setUp: () => when(() => savePlan(testMonday)).thenAnswer(
       (_) async => const Success(

@@ -22,7 +22,8 @@ sealed class RemindersEvent with _$RemindersEvent {
   const factory RemindersEvent.signedOut() = RemindersSignedOut;
 
   /// El usuario ha tocado un aviso.
-  const factory RemindersEvent.opened(ReminderKind kind) = RemindersOpened;
+  const factory RemindersEvent.opened(OpenedReminder reminder) =
+      RemindersOpened;
 
   /// La página ya ha navegado al destino del aviso.
   const factory RemindersEvent.openHandled() = RemindersOpenHandled;

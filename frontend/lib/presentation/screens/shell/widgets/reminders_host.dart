@@ -10,7 +10,9 @@ import '../../../../domain/enums/usage_focus.dart';
 import '../../../../domain/models/account/account.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../widgets/widgets.dart';
+import '../../../../domain/models/reminders/reminder.dart';
 import '../../academic/academic_routes.dart';
+import '../../challenges/challenges_routes.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../../planner/planner_routes.dart';
 import '../../progress/progress_routes.dart';
@@ -52,16 +54,38 @@ class _RemindersListener extends StatelessWidget {
 
   final Widget child;
 
-  /// Repasos y entrenar son pestañas (`go`); el planificador es una pantalla
-  /// completa (`push`, para no destruir las pestañas).
-  void _open(BuildContext context, ReminderKind kind) {
-    switch (kind) {
+  /// Abre lo que anuncia el aviso. Repasos, entrenar y retos son pestañas
+  /// (`go`); el planificador y la sesión en vivo, pantallas completas (`push`,
+  /// para no destruir las pestañas). Con referencia se abre ese bloque, sesión
+  /// o reto; sin ella (avisos de una versión anterior), su pantalla.
+  void _open(BuildContext context, OpenedReminder opened) {
+    final ref = opened.refId;
+    switch (opened.kind) {
       case ReminderKind.dueReviews:
         context.go(AcademicPaths.root);
-      case ReminderKind.sportBlock:
+      case ReminderKind.sportBlock || ReminderKind.routineDayMissed:
         context.go(TrainingPaths.root);
       case ReminderKind.studyBlock:
-        unawaited(context.push<void>(PlannerPaths.root));
+        unawaited(
+          context.push<void>(
+            ref == null
+                ? PlannerPaths.root
+                : Uri(
+                    path: PlannerPaths.root,
+                    queryParameters: {'block': ref},
+                  ).toString(),
+          ),
+        );
+      case ReminderKind.openSession:
+        if (ref == null) {
+          context.go(TrainingPaths.root);
+        } else {
+          unawaited(context.push<void>(TrainingPaths.session(ref)));
+        }
+      case ReminderKind.challengeDue:
+        context.go(
+          ref == null ? ChallengesPaths.root : ChallengesPaths.detail(ref),
+        );
       case ReminderKind.exam || ReminderKind.deadline:
         unawaited(context.push<void>(PlannerPaths.deadlines));
       case ReminderKind.weeklySummary:

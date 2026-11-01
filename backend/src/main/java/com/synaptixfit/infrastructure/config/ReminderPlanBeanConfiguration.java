@@ -1,6 +1,9 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.application.port.input.challenge.ListMyChallengesUseCase;
 import com.synaptixfit.application.port.input.notification.GetReminderPlanUseCase;
+import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
 import com.synaptixfit.application.service.notification.ReminderPlanService;
 import com.synaptixfit.domain.model.notification.ReminderPlanner;
 import com.synaptixfit.domain.port.output.notification.ExamCalendarPort;
@@ -52,14 +55,13 @@ public class ReminderPlanBeanConfiguration {
         this.zone = ZoneId.of(zone);
     }
 
-    @Bean(autowireCandidate = false)
-    ReminderPlanService reminderPlanService() {
-        return new ReminderPlanService(preferences, focus, materials, blocks, deadlines, subjects,
-                new ReminderPlanner(), exams, clock, zone);
-    }
-
+    /** Los avisos de seguimiento leen entrenamiento y retos con sus casos de uso. */
     @Bean
-    GetReminderPlanUseCase getReminderPlanUseCase() {
-        return tx.wrap(GetReminderPlanUseCase.class, reminderPlanService());
+    GetReminderPlanUseCase getReminderPlanUseCase(GetPendingTrainingDayUseCase pendingDay,
+                                                  ListOpenSessionsUseCase openSessions,
+                                                  ListMyChallengesUseCase challenges) {
+        return tx.wrap(GetReminderPlanUseCase.class, new ReminderPlanService(preferences, focus, materials, blocks,
+                deadlines, subjects, new ReminderPlanner(), exams, clock, zone, pendingDay, openSessions,
+                challenges));
     }
 }

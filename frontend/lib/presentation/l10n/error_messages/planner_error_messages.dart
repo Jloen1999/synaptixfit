@@ -24,6 +24,7 @@ String? plannerErrorMessage(
   'PLANNER_ICS_URL_MISSING' => l10n.plannerErrorIcsUrlMissing,
   'PLANNER_PAST_ACTIVITY_OUT_OF_RANGE' =>
     l10n.plannerErrorPastActivityOutOfRange,
+  'PLANNER_PAST_ACTIVITY_TYPE_NOT_ALLOWED' => l10n.plannerErrorPastActivityType,
   'PLANNER_CALENDAR_FEED_NOT_FOUND' => l10n.plannerErrorCalendarFeedNotFound,
   'PLANNER_ICS_URL_INVALID' => l10n.plannerErrorIcsUrlInvalid,
   'PLANNER_ICS_UNAVAILABLE' => l10n.plannerErrorIcsUnavailable,

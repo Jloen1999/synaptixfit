@@ -27,6 +27,7 @@ import '../use_cases/planner/scan_schedule_use_case.dart';
 import '../use_cases/planner/save_semester_dates_use_case.dart';
 import '../use_cases/planner/import_general_calendar_use_case.dart';
 import '../use_cases/planner/log_past_activity_use_case.dart';
+import '../use_cases/planner/log_past_study_use_case.dart';
 import '../use_cases/planner/import_ics_use_case.dart';
 import '../use_cases/planner/export_ics_use_case.dart';
 import '../use_cases/planner/get_planner_subjects_use_case.dart';
@@ -115,6 +116,9 @@ void registerPlannerDomain(GetIt getIt) {
     )
     ..registerLazySingleton<RevokeCalendarFeedUseCaseContract>(
       () => RevokeCalendarFeedUseCase(getIt()),
+    )
+    ..registerLazySingleton<LogPastStudyUseCaseContract>(
+      () => LogPastStudyUseCase(getIt()),
     )
     ..registerLazySingleton<LogPastActivityUseCaseContract>(
       () => LogPastActivityUseCase(getIt()),

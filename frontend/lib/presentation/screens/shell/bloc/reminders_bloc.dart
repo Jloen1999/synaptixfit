@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/data_topic.dart';
-import '../../../../domain/enums/reminder_kind.dart';
 import '../../../../domain/enums/usage_focus.dart';
+import '../../../../domain/models/reminders/reminder.dart';
 import '../../../../domain/models/reminders/reminder_texts.dart';
 import '../../../../domain/use_cases/reminders/mark_reminders_offered_use_case.dart';
 import '../../../../domain/use_cases/reminders/set_device_reminders_enabled_use_case.dart';
@@ -40,7 +40,9 @@ class RemindersBloc extends Bloc<RemindersEvent, RemindersState> {
     on<RemindersFocusChanged>(_onFocusChanged);
     on<RemindersSyncRequested>((_, emit) => _enqueueSync(emit));
     on<RemindersSignedOut>(_onSignedOut);
-    on<RemindersOpened>((e, emit) => emit(state.copyWith(openRequest: e.kind)));
+    on<RemindersOpened>(
+      (e, emit) => emit(state.copyWith(openRequest: e.reminder)),
+    );
     on<RemindersOpenHandled>(
       (_, emit) => emit(state.copyWith(openRequest: null)),
     );
@@ -104,8 +106,8 @@ class RemindersBloc extends Bloc<RemindersEvent, RemindersState> {
           }
         }),
         _watchEnabled().listen((_) => _requestSync()),
-        _watchOpened().listen((kind) {
-          if (!isClosed) add(RemindersEvent.opened(kind));
+        _watchOpened().listen((opened) {
+          if (!isClosed) add(RemindersEvent.opened(opened));
         }),
       ]);
     }

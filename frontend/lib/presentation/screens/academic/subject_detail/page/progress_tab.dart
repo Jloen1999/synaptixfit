@@ -818,40 +818,57 @@ class _TimelineSection extends StatelessWidget {
               : Column(
                   children: [
                     for (final item in items)
-                      ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor:
-                              (item.isDeadline
-                                      ? context.palette.warning
-                                      : context.colors.tertiary)
-                                  .withValues(alpha: AppPill.tintAlpha),
-                          child: Icon(
-                            timelineIcon(item.type),
-                            color: item.isDeadline
-                                ? context.palette.warning
-                                : context.colors.tertiary,
+                      AppFocusOutline(
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                (item.isDeadline
+                                        ? context.palette.warning
+                                        : context.colors.tertiary)
+                                    .withValues(alpha: AppPill.tintAlpha),
+                            child: Icon(
+                              timelineIcon(item.type),
+                              color: item.isDeadline
+                                  ? context.palette.warning
+                                  : context.colors.tertiary,
+                            ),
+                          ),
+                          title: Text(
+                            item.title.isEmpty
+                                ? context.timelineLabel(item.type)
+                                : item.title,
+                            style: item.completed
+                                ? context.textStyles.bodyLarge?.copyWith(
+                                    decoration: TextDecoration.lineThrough,
+                                  )
+                                : null,
+                          ),
+                          subtitle: Text(
+                            '${context.timelineLabel(item.type)} · ${dateTime(item.start)}',
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (item.completed)
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: context.palette.success,
+                                  semanticLabel: l10n.academicCompleted,
+                                ),
+                              const Icon(Icons.chevron_right_rounded),
+                            ],
+                          ),
+                          // Abre lo mismo que la agenda de Inicio: el bloque en
+                          // su día del calendario o la lista de entregas.
+                          onTap: () => context.push(
+                            item.isDeadline
+                                ? AcademicPaths.deadlines
+                                : AcademicPaths.plannerBlock(
+                                    item.id,
+                                    item.start,
+                                  ),
                           ),
                         ),
-                        title: Text(
-                          item.title.isEmpty
-                              ? context.timelineLabel(item.type)
-                              : item.title,
-                          style: item.completed
-                              ? context.textStyles.bodyLarge?.copyWith(
-                                  decoration: TextDecoration.lineThrough,
-                                )
-                              : null,
-                        ),
-                        subtitle: Text(
-                          '${context.timelineLabel(item.type)} · ${dateTime(item.start)}',
-                        ),
-                        trailing: item.completed
-                            ? Icon(
-                                Icons.check_circle_rounded,
-                                color: context.palette.success,
-                                semanticLabel: l10n.academicCompleted,
-                              )
-                            : null,
                       ),
                   ],
                 ),

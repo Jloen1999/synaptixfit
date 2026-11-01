@@ -2,6 +2,11 @@ part of 'pomodoro_bloc.dart';
 
 enum PomodoroStatus { idle, running, paused }
 
+/// Pregunta «¿Terminaste este bloque?» tras una concentración ligada a un
+/// bloque: [asking] se ve en la pantalla, [saving] mientras se marca y
+/// [done] cuando ya está hecho (no se vuelve a preguntar).
+enum BlockCheck { none, asking, saving, done }
+
 @freezed
 abstract class PomodoroState with _$PomodoroState {
   const factory PomodoroState({
@@ -24,6 +29,9 @@ abstract class PomodoroState with _$PomodoroState {
     /// Asignatura y bloque a los que se vinculan las fases registradas.
     String? subjectId,
     String? blockId,
+
+    /// Si se pregunta (o ya se respondió) si el bloque está terminado.
+    @Default(BlockCheck.none) BlockCheck blockCheck,
 
     /// Asignaturas para elegir cuando no hay bloque (vacía si no se pudieron
     /// leer: se concentra igual, sin asignatura).
@@ -63,6 +71,14 @@ sealed class PomodoroNotice with _$PomodoroNotice {
   /// Concentración válida sin XP: ya se alcanzó el tope diario del Pomodoro.
   const factory PomodoroNotice.dailyXpLimitReached() =
       PomodoroNoticeDailyXpLimitReached;
+
+  /// El bloque quedó marcado como hecho; [xp] es la experiencia que dio.
+  const factory PomodoroNotice.blockMarked({required int xp}) =
+      PomodoroNoticeBlockMarked;
+
+  /// No se pudo marcar el bloque como hecho.
+  const factory PomodoroNotice.blockMarkFailed(AppError error) =
+      PomodoroNoticeBlockMarkFailed;
 
   /// No se pudo registrar la fase en el servidor.
   const factory PomodoroNotice.recordFailed(AppError error) =

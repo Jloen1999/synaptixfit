@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'calendar/page/calendar_page.dart';
 import 'calendar_sync/page/calendar_sync_page.dart';
 import 'deadlines/page/deadlines_page.dart';
+import 'past_study/page/past_study_page.dart';
 import 'pomodoro/page/pomodoro_page.dart';
 import 'schedule_scan/page/schedule_scan_page.dart';
 import 'suggestions/page/suggestions_page.dart';
@@ -32,6 +33,9 @@ abstract final class PlannerPaths {
     },
   ).toString();
   static const suggestions = '/planner/suggestions';
+
+  /// Apuntar estudio ya hecho sin la app (últimos 7 días).
+  static const pastStudy = '/planner/past-study';
 
   /// Ver el planificador en otro calendario e importar el del Campus Virtual.
   static const calendarSync = '/planner/calendar-sync';
@@ -74,6 +78,10 @@ List<RouteBase> plannerRoutes() => [
           title: state.uri.queryParameters['title'],
           startWithBreak: state.uri.queryParameters['phase'] == 'break',
         ),
+      ),
+      GoRoute(
+        path: 'past-study',
+        builder: (context, state) => const PastStudyPage(),
       ),
       GoRoute(
         path: 'suggestions',

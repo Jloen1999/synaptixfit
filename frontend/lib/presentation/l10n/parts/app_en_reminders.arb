@@ -25,5 +25,13 @@
   "remindersOfferAccept": "Turn on reminders",
   "remindersWeeklyTitle": "Your week",
   "remindersWeeklyBody": "See how it went and plan the next one.",
-  "remindersOfferDecline": "No thanks"
+  "remindersOfferDecline": "No thanks",
+  "remindersRoutineMissedTitle": "Yesterday was a training day",
+  "remindersRoutineMissedBody": "Yesterday was a \"{routine}\" day. Do it today or skip it to keep your routine on track.",
+  "remindersOpenSessionTitle": "Did you finish your session?",
+  "remindersOpenSessionBody": "Your workout is still open. Finish it with what you logged or discard it.",
+  "remindersChallengeDueTitle": "Your challenge ends tomorrow",
+  "remindersChallengeDueBody": "\"{challenge}\" ends tomorrow: there's still time.",
+  "remindersYourRoutine": "your routine",
+  "remindersYourChallenge": "Your challenge"
 }

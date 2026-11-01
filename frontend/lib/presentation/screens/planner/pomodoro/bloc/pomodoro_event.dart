@@ -53,6 +53,11 @@ sealed class PomodoroEvent with _$PomodoroEvent {
     String? accountId,
   }) = PomodoroRestored;
 
+  /// Respuesta a «¿Terminaste este bloque?»: [done] lo marca como hecho con
+  /// el caso de uso del planificador; «Aún no» solo cierra la pregunta.
+  const factory PomodoroEvent.blockDoneAnswered({required bool done}) =
+      PomodoroBlockDoneAnswered;
+
   /// Se cerró sesión: se para y se olvida la fase en curso.
   const factory PomodoroEvent.signedOut() = PomodoroSignedOut;
 }

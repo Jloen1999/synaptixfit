@@ -4,7 +4,7 @@ part of 'reminders_bloc.dart';
 abstract class RemindersState with _$RemindersState {
   const factory RemindersState({
     /// Aviso tocado pendiente de navegar a su pantalla.
-    ReminderKind? openRequest,
+    OpenedReminder? openRequest,
 
     /// Avisos programados en la última sincronización correcta.
     int? scheduled,

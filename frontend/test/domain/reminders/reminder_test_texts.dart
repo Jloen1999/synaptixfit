@@ -38,4 +38,11 @@ class TestReminderTexts implements ReminderTexts {
   @override
   String deadlineBody(ReminderKind kind, String? name, DateTime due) =>
       '${kind.name}:${name ?? '-'}';
+
+  @override
+  String followUpTitle(ReminderKind kind) => kind.name;
+
+  @override
+  String followUpBody(ReminderKind kind, String? name) =>
+      '${kind.name}:${name ?? '-'}';
 }

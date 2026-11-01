@@ -1803,5 +1803,170 @@
     }
   },
   "trainingAdaptedDeclineTitle": "¿Hacer la sesión completa?",
-  "trainingAdaptedDeclineMessage": "Hoy se recortaron series para cuidarte. Si la haces completa, entrenarás con todas las series planificadas."
+  "trainingAdaptedDeclineMessage": "Hoy se recortaron series para cuidarte. Si la haces completa, entrenarás con todas las series planificadas.",
+  "trainingLoadUp": "Hoy prueba {value}",
+  "@trainingLoadUp": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLoadDown": "Hoy baja a {value}",
+  "@trainingLoadDown": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLoadUpPercent": "Hoy prueba {value} (+{percent} %)",
+  "@trainingLoadUpPercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadDownPercent": "Hoy baja a {value} (−{percent} %)",
+  "@trainingLoadDownPercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadUpSpoken": "Propuesta para hoy: {value}, un {percent} por ciento más.",
+  "@trainingLoadUpSpoken": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadDownSpoken": "Propuesta para hoy: {value}, un {percent} por ciento menos.",
+  "@trainingLoadDownSpoken": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadKg": "{value} kg",
+  "@trainingLoadKg": {
+    "placeholders": {
+      "value": {
+        "type": "double",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "trainingLoadReps": "{count, plural, =1{1 repetición} other{{count} repeticiones}}",
+  "@trainingLoadReps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadHold": "{seconds} s de aguante",
+  "@trainingLoadHold": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadMinutes": "{minutes} min",
+  "@trainingLoadMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadMeters": "{meters} m",
+  "@trainingLoadMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadWhyLowRpe": "La última vez hiciste {previous} con un esfuerzo moderado (RPE {rpe} de 10) y sin fallos.",
+  "@trainingLoadWhyLowRpe": {
+    "placeholders": {
+      "previous": {
+        "type": "String"
+      },
+      "rpe": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadWhyVeryLowRpe": "La última vez hiciste {previous} y te resultó muy fácil (RPE {rpe} de 10).",
+  "@trainingLoadWhyVeryLowRpe": {
+    "placeholders": {
+      "previous": {
+        "type": "String"
+      },
+      "rpe": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadWhyVeryHighRpe": "La última vez hiciste {previous} con un esfuerzo máximo (RPE {rpe} de 10).",
+  "@trainingLoadWhyVeryHighRpe": {
+    "placeholders": {
+      "previous": {
+        "type": "String"
+      },
+      "rpe": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadWhyFailed": "La última vez fallaste repeticiones con {previous}.",
+  "@trainingLoadWhyFailed": {
+    "placeholders": {
+      "previous": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLoadWhyOther": "La última vez hiciste {previous} (RPE {rpe} de 10).",
+  "@trainingLoadWhyOther": {
+    "placeholders": {
+      "previous": {
+        "type": "String"
+      },
+      "rpe": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLoadScope": "Solo cambia las series que te faltan hoy; tu rutina sigue igual.",
+  "trainingLoadAccept": "Usar en las series que faltan",
+  "trainingLoadAccepted": "Listo: lo usarás en las series que te faltan.",
+  "trainingLoadUndo": "Deshacer",
+  "trainingLoadSeconds": "{seconds} s",
+  "@@trainingLoadSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../../domain/models/training/exercise.dart';
+import '../../../../../domain/models/training/load_suggestion.dart';
 import '../../../../../domain/models/training/session_history.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/result/result.dart';
@@ -14,6 +15,7 @@ import '../../../../../domain/models/training/set_fields.dart';
 import '../../../../../domain/use_cases/training/load_pending_sets_use_case.dart';
 import '../../../../../domain/use_cases/training/save_pending_sets_use_case.dart';
 import '../../../../../domain/use_cases/training/get_last_performance_use_case.dart';
+import '../../../../../domain/use_cases/training/get_load_suggestions_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_bookends_use_case.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 import '../../../../../domain/use_cases/training/cancel_session_use_case.dart';
@@ -43,6 +45,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     required this._getLastPerformance,
     required this._getBookends,
     required this._getAdaptation,
+    required this._getLoadSuggestions,
     required this._loadPending,
     required this._savePending,
     DateTime Function()? clock,
@@ -62,6 +65,16 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
               ),
           ],
           adaptation: const SessionAdaptation(),
+        ),
+      );
+    });
+    on<LiveSessionLoadSuggestionToggled>((e, emit) {
+      if (!state.loadSuggestions.containsKey(e.plannedExerciseId)) return;
+      emit(
+        state.copyWith(
+          acceptedLoad: e.accepted
+              ? {...state.acceptedLoad, e.plannedExerciseId}
+              : ({...state.acceptedLoad}..remove(e.plannedExerciseId)),
         ),
       );
     });
@@ -100,6 +113,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
 
   final GetSessionUseCaseContract _getSession;
   final GetSessionAdaptationUseCaseContract _getAdaptation;
+  final GetLoadSuggestionsUseCaseContract _getLoadSuggestions;
   final GetRoutineUseCaseContract _getRoutine;
   final RecordSetUseCaseContract _recordSet;
   final DeleteSetUseCaseContract _deleteSet;
@@ -206,14 +220,25 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     );
     if (session.isCompleted) return;
     // Ayudas que no bloquean la sesión: si fallan, simplemente no se muestran.
-    final (last, bookends) = await (
+    final (last, bookends, loads) = await (
       _getLastPerformance(),
       exercises.isEmpty
           ? Future.value(
               const Success<SessionBookends, AppError>(SessionBookends()),
             )
           : _getBookends([for (final e in exercises) e.exerciseId]),
+      exercises.isEmpty
+          ? Future.value(
+              const Success<List<LoadSuggestion>, AppError>(<LoadSuggestion>[]),
+            )
+          : _getLoadSuggestions(session.id),
     ).wait;
+    // Solo las de ejercicios de este día que aún tienen series por hacer.
+    final ids = {for (final e in exercises) e.id};
+    final loadById = {
+      for (final l in loads.valueOrNull ?? const <LoadSuggestion>[])
+        if (ids.contains(l.plannedExerciseId)) l.plannedExerciseId: l,
+    };
     final lastByExercise = {
       for (final r in last.valueOrNull ?? const <PersonalRecord>[])
         r.exerciseId: r,
@@ -222,11 +247,12 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     final hasBookends =
         suggested != null &&
         (suggested.warmUp.isNotEmpty || suggested.coolDown.isNotEmpty);
-    if (lastByExercise.isEmpty && !hasBookends) return;
+    if (lastByExercise.isEmpty && !hasBookends && loadById.isEmpty) return;
     emit(
       state.copyWith(
         lastPerformance: lastByExercise,
         bookends: hasBookends ? suggested : null,
+        loadSuggestions: loadById,
       ),
     );
   }

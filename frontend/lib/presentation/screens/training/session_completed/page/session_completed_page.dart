@@ -215,7 +215,7 @@ class _Metrics extends StatelessWidget {
     ];
     return LayoutBuilder(
       builder: (context, c) {
-        final columns = c.maxWidth > 560 ? 4 : 2;
+        final columns = c.maxWidth > TokensLayout.statsFourColumns ? 4 : 2;
         final width = (c.maxWidth - TokensSpacing.s * (columns - 1)) / columns;
         return Wrap(
           spacing: TokensSpacing.s,

@@ -35,6 +35,7 @@ abstract class CalendarBlockDto with _$CalendarBlockDto {
     String? deadlineId,
     String? timeStatus,
     @Default(false) bool tracksPhysicalLoad,
+    @Default(false) bool absent,
   }) = _CalendarBlockDto;
 
   const CalendarBlockDto._();
@@ -67,6 +68,7 @@ abstract class CalendarBlockDto with _$CalendarBlockDto {
     deadlineId: deadlineId,
     timeStatus: ItemTimeStatus.fromApi(timeStatus),
     tracksPhysicalLoad: tracksPhysicalLoad,
+    absent: absent,
   );
 }
 

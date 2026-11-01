@@ -11,6 +11,7 @@ import java.util.UUID;
 /**
  * Bloque del calendario. {@code imported}: viene de un ICS o de un escaneo de horario.
  * {@code timeStatus}: pendiente, en curso, hecho o no hecho respecto al momento de la respuesta.
+ * {@code absent}: clase marcada «No fui» (no se da por asistida sola al terminar, ADR 0029).
  */
 public record CalendarBlockResponse(UUID id, ActivityType type, Instant start, Instant end, int dayOfWeek,
                                     UUID subjectId, String topics, String location, Priority priority,
@@ -20,7 +21,7 @@ public record CalendarBlockResponse(UUID id, ActivityType type, Instant start, I
                                     Double caloriesBurned, Double cognitiveLoad, UUID studyPlanId, UUID routineId,
                                     UUID routineWeekId, UUID routineDayId, UUID challengeId, UUID milestoneId,
                                     UUID deadlineId, UUID studyMaterialId, Instant createdAt,
-                                    ItemTimeStatus timeStatus, boolean tracksPhysicalLoad) {
+                                    ItemTimeStatus timeStatus, boolean tracksPhysicalLoad, boolean absent) {
 
     public static CalendarBlockResponse from(CalendarBlock b) {
         return from(b, Instant.now());
@@ -33,6 +34,6 @@ public record CalendarBlockResponse(UUID id, ActivityType type, Instant start, I
                 b.icsUid() != null, b.hasConflict(), b.completed(), b.attendanceRegisteredAt(), b.xpAwarded(),
                 b.experienceReward(), b.metValue(), b.caloriesBurned(), b.cognitiveLoad(), b.studyPlanId(),
                 d.routineId(), d.routineWeekId(), d.routineDayId(), d.challengeId(), d.milestoneId(), d.deadlineId(),
-                b.studyMaterialId(), b.createdAt(), b.timeStatus(now), b.countsAsPhysicalActivity());
+                b.studyMaterialId(), b.createdAt(), b.timeStatus(now), b.countsAsPhysicalActivity(), b.absent());
     }
 }

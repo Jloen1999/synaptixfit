@@ -1,4 +1,3 @@
-import '../../domain/enums/reminder_kind.dart';
 import '../../domain/models/reminders/ongoing_timer.dart';
 import '../../domain/models/reminders/timer_alert.dart';
 import '../../domain/models/reminders/reminder.dart';
@@ -73,9 +72,9 @@ class ReminderSchedulerRepository
         return unit;
       });
   @override
-  Stream<ReminderKind> watchOpened() =>
+  Stream<OpenedReminder> watchOpened() =>
       RepositoryErrorHandler.guardStream(_local.watchOpenedPayloads)
-          .map((result) => ReminderKind.fromPayload(result.valueOrNull))
-          .where((kind) => kind != null)
-          .cast<ReminderKind>();
+          .map((result) => OpenedReminder.fromPayload(result.valueOrNull))
+          .where((opened) => opened != null)
+          .cast<OpenedReminder>();
 }

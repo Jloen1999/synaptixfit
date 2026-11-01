@@ -97,6 +97,7 @@ void registerTrainingPresentation(GetIt getIt) {
         getLastPerformance: getIt(),
         getBookends: getIt(),
         getAdaptation: getIt(),
+        getLoadSuggestions: getIt(),
         loadPending: getIt(),
         savePending: getIt(),
       ),

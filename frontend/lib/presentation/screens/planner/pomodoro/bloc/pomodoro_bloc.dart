@@ -23,6 +23,7 @@ import '../../../../../domain/use_cases/planner/get_planner_subjects_use_case.da
 import '../../../../../domain/use_cases/planner/load_active_focus_timer_use_case.dart';
 import '../../../../../domain/use_cases/planner/record_focus_session_use_case.dart';
 import '../../../../../domain/use_cases/planner/save_active_focus_timer_use_case.dart';
+import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
 
 part 'pomodoro_bloc.freezed.dart';
 part 'pomodoro_event.dart';
@@ -127,6 +128,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     this._saveTimer,
     this._clearTimer,
     this._getSubjects,
+    this._setBlockCompletion,
     PomodoroConfig config = const PomodoroConfig(),
     DateTime Function()? now,
     Stream<void> Function()? ticker,
@@ -154,6 +156,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     on<PomodoroTicked>(_onTick);
     on<PomodoroRestored>(_onRestored);
     on<PomodoroSignedOut>(_onSignedOut);
+    on<PomodoroBlockDoneAnswered>(_onBlockDoneAnswered);
   }
 
   /// Duraciones en uso: las iniciales, luego la recomendación del servidor y
@@ -171,6 +174,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
   final SaveActiveFocusTimerUseCaseContract? _saveTimer;
   final ClearActiveFocusTimerUseCaseContract? _clearTimer;
   final GetPlannerSubjectsUseCaseContract? _getSubjects;
+  final SetBlockCompletionUseCaseContract? _setBlockCompletion;
 
   /// Sin bloque, la pantalla ofrece elegir asignatura. Si falla, no se avisa:
   /// concentrarse sin asignatura sigue valiendo.
@@ -213,7 +217,13 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
     // Sin fase en marcha, cada apertura decide a qué se vincula (también a
     // nada): la instancia es única y no debe arrastrar la de antes.
     if (state.subjectId != event.subjectId || state.blockId != event.blockId) {
-      emit(state.copyWith(subjectId: event.subjectId, blockId: event.blockId));
+      emit(
+        state.copyWith(
+          subjectId: event.subjectId,
+          blockId: event.blockId,
+          blockCheck: BlockCheck.none,
+        ),
+      );
     }
     // La pausa se muestra desde el principio (sin pasar por «Concentración»);
     // al llegar el plan se ajusta su duración a la recomendada de hoy.
@@ -562,6 +572,14 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
       _ => FocusPhase.focus,
     };
     final total = config.minutesOf(next) * 60;
+    // Una concentración completa de un bloque abre la pregunta de si se
+    // terminó (salvo que ya se marcara o no haya cómo marcarlo).
+    final ask =
+        finished == FocusPhase.focus &&
+        completed &&
+        state.blockId != null &&
+        _setBlockCompletion != null &&
+        state.blockCheck == BlockCheck.none;
     emit(
       state.copyWith(
         phase: next,
@@ -569,6 +587,7 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
         totalSeconds: total,
         remainingSeconds: total,
         completedFocusCycles: cycles,
+        blockCheck: ask ? BlockCheck.asking : state.blockCheck,
         notice: notify
             ? PomodoroNotice.phaseFinished(
                 finished: finished,
@@ -608,6 +627,46 @@ class PomodoroBloc extends Bloc<PomodoroEvent, PomodoroState> {
       case Success(:final value):
         await _loadStats(emit);
         await _notifyXp(emit, value);
+    }
+  }
+
+  /// «Aún no» cierra la pregunta (vuelve a salir tras la próxima
+  /// concentración); «Sí» marca el bloque como hecho con el caso de uso del
+  /// planificador, que decide la XP.
+  Future<void> _onBlockDoneAnswered(
+    PomodoroBlockDoneAnswered event,
+    Emitter<PomodoroState> emit,
+  ) async {
+    final blockId = state.blockId;
+    final setCompletion = _setBlockCompletion;
+    if (state.blockCheck != BlockCheck.asking ||
+        blockId == null ||
+        setCompletion == null) {
+      return;
+    }
+    if (!event.done) {
+      emit(state.copyWith(blockCheck: BlockCheck.none));
+      return;
+    }
+    emit(state.copyWith(blockCheck: BlockCheck.saving));
+    final result = await setCompletion(blockId, completed: true);
+    switch (result) {
+      case Success(:final value):
+        emit(
+          state.copyWith(
+            blockCheck: BlockCheck.done,
+            notice: PomodoroNotice.blockMarked(xp: value.xpDelta),
+            noticeId: state.noticeId + 1,
+          ),
+        );
+      case Failure(:final error):
+        emit(
+          state.copyWith(
+            blockCheck: BlockCheck.asking,
+            notice: PomodoroNotice.blockMarkFailed(error),
+            noticeId: state.noticeId + 1,
+          ),
+        );
     }
   }
 

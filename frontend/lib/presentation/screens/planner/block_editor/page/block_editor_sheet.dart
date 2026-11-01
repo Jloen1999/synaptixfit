@@ -410,11 +410,40 @@ class _EditorViewState extends State<_EditorView>
         )
       else if (block.timeStatus == ItemTimeStatus.upcoming && !block.completed)
         // Un bloque que aún no ha empezado no se marca como hecho.
-        AppInlineMessage(
-          message: l10n.plannerCompleteWhenStarted,
-          tone: AppMessageTone.warning,
-        )
-      else
+        block.type == BlockType.classSession
+            ? _note(context, l10n.plannerClassAttendsLater)
+            : AppInlineMessage(
+                message: l10n.plannerCompleteWhenStarted,
+                tone: AppMessageTone.warning,
+              )
+      else if (block.type == BlockType.classSession) ...[
+        // Las clases se dan por asistidas solas al terminar (ADR 0029): lo
+        // que se apunta es «No fui» (o corregirlo con «Sí fui»).
+        _note(
+          context,
+          block.absent
+              ? l10n.plannerClassMarkedAbsent
+              : block.completed
+              ? l10n.plannerClassAttended
+              : l10n.plannerClassAttendsByItself,
+        ),
+        if (!block.completed)
+          AppSecondaryButton(
+            label: l10n.plannerClassWent,
+            icon: const Icon(Icons.check_circle_outline_rounded),
+            onPressed: state.submitting
+                ? null
+                : () => close(BlockEditorOutcome.completionRequested(block.id)),
+          ),
+        if (!block.absent)
+          AppSecondaryButton(
+            label: l10n.plannerClassDidNotGo,
+            icon: const Icon(Icons.event_busy_rounded),
+            onPressed: state.submitting
+                ? null
+                : () => close(BlockEditorOutcome.absenceRequested(block.id)),
+          ),
+      ] else
         AppSecondaryButton(
           label: block.completed
               ? l10n.plannerMarkPending
@@ -428,7 +457,7 @@ class _EditorViewState extends State<_EditorView>
               ? null
               : () => close(BlockEditorOutcome.completionRequested(block.id)),
         ),
-      if (missed && !block.isLocked)
+      if (missed && !block.isLocked && block.type != BlockType.classSession)
         AppSecondaryButton(
           label: l10n.plannerRescheduleNext,
           icon: const Icon(Icons.update_rounded),
@@ -453,6 +482,14 @@ class _EditorViewState extends State<_EditorView>
       ],
     ];
   }
+
+  /// Nota de cómo cuenta una clase (no es un aviso: no hay nada mal).
+  Widget _note(BuildContext context, String text) => Text(
+    text,
+    style: context.textStyles.bodyMedium?.copyWith(
+      color: context.colors.onSurfaceVariant,
+    ),
+  );
 
   Widget _blockForm(BuildContext context, BlockEditorState state) {
     final l10n = context.localizations;

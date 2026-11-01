@@ -143,7 +143,7 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
         scheduledDate: tz.TZDateTime.from(reminder.at.toUtc(), tz.UTC),
         notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: reminder.kind.payload,
+        payload: reminder.payload,
       );
     }
     final alert = _timerAlert;

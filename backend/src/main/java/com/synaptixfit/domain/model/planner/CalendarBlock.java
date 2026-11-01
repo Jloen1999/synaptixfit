@@ -6,6 +6,7 @@ import com.synaptixfit.domain.exception.planner.BlockInFutureException;
 import com.synaptixfit.domain.exception.planner.BlockInPastException;
 import com.synaptixfit.domain.exception.planner.BlockLockedException;
 import com.synaptixfit.domain.model.shared.Guard;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -29,6 +30,13 @@ public final class CalendarBlock {
     public static final int TOPICS_MAX = 1000;
     public static final int LOCATION_MAX = 200;
 
+    /**
+     * Hasta cuánto después de terminar una clase se da por asistida sola (ADR 0029). Con la tarea cada pocos
+     * minutos basta con margen; más atrás no se toca para no dar XP de golpe por clases antiguas (al
+     * desplegar o tras una parada larga), que se siguen marcando a mano.
+     */
+    public static final Duration AUTO_ATTEND_WINDOW = Duration.ofHours(24);
+
     /** Semanas extra al «Repetir cada semana»: 15 más la primera cubren un cuatrimestre. */
     public static final int MAX_WEEKLY_REPEATS = 15;
 
@@ -42,6 +50,8 @@ public final class CalendarBlock {
     private UUID studyPlanId;
     private boolean completed;
     private Instant attendanceRegisteredAt;
+    /** Clase marcada con «No fui»: no se da por asistida al terminar (ADR 0029). */
+    private boolean absent;
     private final boolean fixed;
     private final boolean immovable;
     private boolean xpAwarded;
@@ -112,6 +122,7 @@ public final class CalendarBlock {
         this.studyPlanId = b.studyPlanId;
         this.completed = b.completed;
         this.attendanceRegisteredAt = b.attendanceRegisteredAt;
+        this.absent = b.absent;
         this.fixed = b.fixed;
         this.immovable = b.immovable;
         this.xpAwarded = b.xpAwarded;
@@ -231,11 +242,32 @@ public final class CalendarBlock {
             return false;
         }
         this.completed = true;
+        this.absent = false;
         this.attendanceRegisteredAt = type == ActivityType.CLASS ? now : null;
         this.metValue = met;
         this.caloriesBurned = calories;
         this.cognitiveLoad = load;
         return true;
+    }
+
+    /**
+     * «No fui» a una clase: deja constancia para que no se dé por asistida sola al terminar.
+     *
+     * @return false si no es una clase o ya estaba marcada (idempotente)
+     */
+    public boolean markAbsent() {
+        if (type != ActivityType.CLASS || absent) {
+            return false;
+        }
+        this.absent = true;
+        return true;
+    }
+
+    /**
+     * Clase que se da por asistida sola: ya terminó, no está completada y no se marcó «No fui».
+     */
+    public boolean attendsAutomatically(Instant now) {
+        return type == ActivityType.CLASS && !completed && !absent && !now.isBefore(range.end());
     }
 
     /** @return false si no estaba completado (idempotente) */
@@ -322,6 +354,7 @@ public final class CalendarBlock {
     public UUID studyPlanId() { return studyPlanId; }
     public boolean completed() { return completed; }
     public Instant attendanceRegisteredAt() { return attendanceRegisteredAt; }
+    public boolean absent() { return absent; }
     public boolean fixed() { return fixed; }
     public boolean immovable() { return immovable; }
     public boolean xpAwarded() { return xpAwarded; }
@@ -344,6 +377,7 @@ public final class CalendarBlock {
         private UUID studyPlanId;
         private boolean completed;
         private Instant attendanceRegisteredAt;
+        private boolean absent;
         private boolean fixed;
         private boolean immovable;
         private boolean xpAwarded;
@@ -364,6 +398,7 @@ public final class CalendarBlock {
         public Builder studyPlanId(UUID v) { this.studyPlanId = v; return this; }
         public Builder completed(boolean v) { this.completed = v; return this; }
         public Builder attendanceRegisteredAt(Instant v) { this.attendanceRegisteredAt = v; return this; }
+        public Builder absent(boolean v) { this.absent = v; return this; }
         public Builder fixed(boolean v) { this.fixed = v; return this; }
         public Builder immovable(boolean v) { this.immovable = v; return this; }
         public Builder xpAwarded(boolean v) { this.xpAwarded = v; return this; }

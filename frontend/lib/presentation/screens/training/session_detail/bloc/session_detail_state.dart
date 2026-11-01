@@ -9,7 +9,8 @@ abstract class SessionDetailState with _$SessionDetailState {
     SessionHistoryEntry? entry,
 
     /// Ejercicios de la rutina por id de ejercicio planificado.
-    @Default(<String, PlannedExercise>{}) Map<String, PlannedExercise> exercises,
+    @Default(<String, PlannedExercise>{})
+    Map<String, PlannedExercise> exercises,
     SessionHighlights? highlights,
     AppError? error,
   }) = _SessionDetailState;

@@ -1,3 +1,4 @@
+import '../../domain/enums/planner_enums.dart';
 import '../../domain/models/planner/block_draft.dart';
 import '../../domain/models/planner/calendar_block.dart';
 import '../../domain/models/planner/calendar_feed.dart';
@@ -123,6 +124,22 @@ class PlannerRepository implements PlannerRepositoryContract {
       'start': PlannerJson.toInstant(start),
       'minutes': minutes,
       'effort': effort,
+      if (title != null && title.isNotEmpty) 'title': title,
+    })).toDomain(),
+  );
+
+  @override
+  Future<AppResult<BlockCompletion>> logPastStudy({
+    required DateTime start,
+    required int minutes,
+    String? subjectId,
+    String? title,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.logPastActivity({
+      'start': PlannerJson.toInstant(start),
+      'minutes': minutes,
+      'type': BlockType.study.apiValue,
+      'subjectId': ?subjectId,
       if (title != null && title.isNotEmpty) 'title': title,
     })).toDomain(),
   );

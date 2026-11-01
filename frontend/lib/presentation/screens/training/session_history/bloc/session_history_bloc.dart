@@ -63,11 +63,7 @@ class SessionHistoryBloc
       (e, emit) => _act(
         emit,
         e.sessionId,
-        () => _finish(
-          e.sessionId,
-          durationSeconds: e.minutes * 60,
-          rpe: e.rpe,
-        ),
+        () => _finish(e.sessionId, durationSeconds: e.minutes * 60, rpe: e.rpe),
         TrainingMessage.sessionSavedOnItsDay,
         xpChanged: true,
       ),

@@ -135,6 +135,14 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
         context.showSnack(l10n.plannerPomodoroXpLimitReached);
       case PomodoroNoticeRecordFailed():
         context.showSnack(l10n.plannerPomodoroRecordFailed);
+      case PomodoroNoticeBlockMarked(:final xp):
+        context.showSnack(
+          xp > 0
+              ? l10n.plannerPomodoroBlockMarkedXp(xp)
+              : l10n.plannerPomodoroBlockMarked,
+        );
+      case PomodoroNoticeBlockMarkFailed(:final error):
+        context.showSnack(errorMessage(context, error));
     }
   }
 
@@ -172,6 +180,14 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                     ),
                     const SizedBox(height: TokensSpacing.s),
                   ],
+                  if (state.blockCheck == BlockCheck.asking ||
+                      state.blockCheck == BlockCheck.saving) ...[
+                    _BlockDoneCard(
+                      title: title,
+                      saving: state.blockCheck == BlockCheck.saving,
+                    ),
+                    const SizedBox(height: TokensSpacing.m),
+                  ],
                   // Sin bloque, se elige a qué asignatura cuentan las fases.
                   if (state.blockId == null && state.subjects.isNotEmpty) ...[
                     _SubjectPicker(state: state),
@@ -199,7 +215,7 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                       ),
                       excludeSemantics: true,
                       child: SizedBox.square(
-                        dimension: 260,
+                        dimension: TokensSize.pomodoroRing,
                         child: TweenAnimationBuilder<double>(
                           tween: Tween(end: state.remainingFraction),
                           duration: MediaQuery.disableAnimationsOf(context)
@@ -283,6 +299,73 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
           ),
         );
       },
+    );
+  }
+}
+
+/// «¿Terminaste este bloque?» tras una concentración ligada a un bloque:
+/// «Sí, está hecho» lo marca en el calendario (da su XP); «Aún no» la cierra
+/// y se sigue con el Pomodoro.
+class _BlockDoneCard extends StatelessWidget {
+  const _BlockDoneCard({required this.title, required this.saving});
+
+  final String? title;
+  final bool saving;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final bloc = context.read<PomodoroBloc>();
+    final onColor = context.colors.onPrimaryContainer;
+    final name = title;
+    // La tarjeta desaparece al responder: el foco pasa al siguiente control
+    // (el selector o «Empezar») en lugar de perderse.
+    void answer(bool done) {
+      FocusScope.of(context).nextFocus();
+      bloc.add(PomodoroEvent.blockDoneAnswered(done: done));
+    }
+
+    return Semantics(
+      container: true,
+      child: AppCard(
+        color: context.colors.primaryContainer,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                name == null || name.isEmpty
+                    ? l10n.plannerPomodoroBlockQuestion
+                    : l10n.plannerPomodoroBlockQuestionNamed(name),
+                style: context.textStyles.titleMedium?.copyWith(color: onColor),
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.xxs),
+            Text(
+              l10n.plannerPomodoroBlockHint,
+              style: context.textStyles.bodyMedium?.copyWith(color: onColor),
+            ),
+            const SizedBox(height: TokensSpacing.s),
+            Wrap(
+              spacing: TokensSpacing.s,
+              runSpacing: TokensSpacing.xs,
+              children: [
+                AppPrimaryButton(
+                  loading: saving,
+                  icon: Icons.check_rounded,
+                  onPressed: () => answer(true),
+                  label: l10n.plannerPomodoroBlockYes,
+                ),
+                TextButton(
+                  onPressed: saving ? null : () => answer(false),
+                  child: Text(l10n.plannerPomodoroBlockNotYet),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

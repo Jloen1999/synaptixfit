@@ -20,6 +20,8 @@ import 'package:synaptixfit/domain/use_cases/planner/get_focus_stats_use_case.da
 import 'package:synaptixfit/domain/use_cases/planner/get_planner_subjects_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/record_focus_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/save_active_focus_timer_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/set_block_completion_use_case.dart';
+import 'package:synaptixfit/domain/models/planner/calendar_block.dart';
 import 'package:synaptixfit/presentation/screens/planner/pomodoro/bloc/pomodoro_bloc.dart';
 
 import 'planner_fixtures.dart';
@@ -44,6 +46,9 @@ class _ClearTimer extends Mock
     implements ClearActiveFocusTimerUseCaseContract {}
 
 class _Subjects extends Mock implements GetPlannerSubjectsUseCaseContract {}
+
+class _SetCompletion extends Mock
+    implements SetBlockCompletionUseCaseContract {}
 
 void main() {
   setUpAll(registerPlannerFallbacks);
@@ -662,6 +667,121 @@ void main() {
         expect(alert.title, 'Bloque terminado');
         verify(() => cancel()).called(1);
       },
+    );
+  });
+
+  group('¿Terminaste este bloque?', () {
+    late _SetCompletion setCompletion;
+
+    setUp(() => setCompletion = _SetCompletion());
+
+    PomodoroBloc withBlock() => PomodoroBloc(
+      recordSession: record,
+      getStats: getStats,
+      getAccount: getAccount,
+      getPlan: getPlan,
+      setBlockCompletion: setCompletion,
+      config: config,
+      now: () => clock,
+      ticker: () => ticks.stream,
+    );
+
+    PomodoroState asking() => const PomodoroState(
+      totalSeconds: 60,
+      remainingSeconds: 60,
+      phase: FocusPhase.shortBreak,
+      blockId: 'b1',
+      blockCheck: BlockCheck.asking,
+    );
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      'al completar una concentración de un bloque, pregunta',
+      build: withBlock,
+      act: (bloc) async {
+        bloc.add(const PomodoroEvent.started(blockId: 'b1'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const PomodoroEvent.startPressed());
+        await Future<void>.delayed(Duration.zero);
+        await tickAfter(bloc, const Duration(minutes: 2));
+      },
+      verify: (bloc) => expect(bloc.state.blockCheck, BlockCheck.asking),
+    );
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      'sin bloque o al saltar la fase no pregunta',
+      build: withBlock,
+      act: (bloc) async {
+        bloc.add(const PomodoroEvent.started(blockId: 'b1'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const PomodoroEvent.startPressed());
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const PomodoroEvent.skipPressed());
+      },
+      verify: (bloc) => expect(bloc.state.blockCheck, BlockCheck.none),
+    );
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      '«Sí, está hecho» marca el bloque con su XP y no vuelve a preguntar',
+      setUp: () => when(() => setCompletion('b1', completed: true)).thenAnswer(
+        (_) async => Success(BlockCompletion(block: block(), xpDelta: 25)),
+      ),
+      build: withBlock,
+      seed: asking,
+      act: (bloc) =>
+          bloc.add(const PomodoroEvent.blockDoneAnswered(done: true)),
+      expect: () => [
+        isA<PomodoroState>().having(
+          (s) => s.blockCheck,
+          'check',
+          BlockCheck.saving,
+        ),
+        isA<PomodoroState>()
+            .having((s) => s.blockCheck, 'check', BlockCheck.done)
+            .having(
+              (s) => s.notice,
+              'aviso',
+              const PomodoroNotice.blockMarked(xp: 25),
+            ),
+      ],
+    );
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      'si falla, avisa y deja la pregunta abierta',
+      setUp: () => when(
+        () => setCompletion('b1', completed: true),
+      ).thenAnswer((_) async => const Failure(AppError.network())),
+      build: withBlock,
+      seed: asking,
+      act: (bloc) =>
+          bloc.add(const PomodoroEvent.blockDoneAnswered(done: true)),
+      skip: 1,
+      expect: () => [
+        isA<PomodoroState>()
+            .having((s) => s.blockCheck, 'check', BlockCheck.asking)
+            .having(
+              (s) => s.notice,
+              'aviso',
+              const PomodoroNotice.blockMarkFailed(AppError.network()),
+            ),
+      ],
+    );
+
+    blocTest<PomodoroBloc, PomodoroState>(
+      '«Aún no» cierra la pregunta sin marcar nada',
+      build: withBlock,
+      seed: asking,
+      act: (bloc) =>
+          bloc.add(const PomodoroEvent.blockDoneAnswered(done: false)),
+      expect: () => [
+        isA<PomodoroState>().having(
+          (s) => s.blockCheck,
+          'check',
+          BlockCheck.none,
+        ),
+      ],
+      verify: (_) => verifyNever(
+        () => setCompletion(any(), completed: any(named: 'completed')),
+      ),
     );
   });
 }

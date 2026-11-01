@@ -25,5 +25,13 @@
   "remindersOfferAccept": "Activer les rappels",
   "remindersWeeklyTitle": "Ta semaine",
   "remindersWeeklyBody": "Regarde comment ça s’est passé et planifie la suivante.",
-  "remindersOfferDecline": "Non merci"
+  "remindersOfferDecline": "Non merci",
+  "remindersRoutineMissedTitle": "Hier, c'était jour d'entraînement",
+  "remindersRoutineMissedBody": "Hier, c'était une séance de « {routine} ». Fais-la aujourd'hui ou passe-la pour garder ta routine à jour.",
+  "remindersOpenSessionTitle": "As-tu terminé ta séance ?",
+  "remindersOpenSessionBody": "Ton entraînement est encore ouvert. Termine-le avec ce que tu as noté ou supprime-le.",
+  "remindersChallengeDueTitle": "Ton défi se termine demain",
+  "remindersChallengeDueBody": "« {challenge} » se termine demain : il est encore temps.",
+  "remindersYourRoutine": "ta routine",
+  "remindersYourChallenge": "Ton défi"
 }

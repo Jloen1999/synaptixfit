@@ -6,9 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../../domain/enums/training_enums.dart';
+import '../../../../../domain/models/training/load_suggestion.dart';
 import '../../../../../domain/models/training/routine.dart';
 import '../../../../../domain/models/training/session.dart';
 import '../../../../extensions/context_extensions.dart';
+import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../exercise_detail/page/exercise_how_to_sheet.dart';
@@ -275,6 +278,7 @@ class LiveExerciseView extends StatelessWidget {
     required this.onLog,
     required this.onLoggedTap,
     required this.onExtraSet,
+    this.onLoadToggled,
     this.header = const [],
   });
 
@@ -297,6 +301,9 @@ class LiveExerciseView extends StatelessWidget {
   final void Function(PlannedExercise e, SessionSet set) onLoggedTap;
   final void Function(PlannedExercise e, int set) onExtraSet;
 
+  /// Acepta o deshace la propuesta de carga de hoy de un ejercicio.
+  final void Function(PlannedExercise e, bool accepted)? onLoadToggled;
+
   /// Avisos que van encima (sin conexión, sesión adaptada…).
   final List<Widget> header;
 
@@ -312,6 +319,7 @@ class LiveExerciseView extends StatelessWidget {
     final rows = math.max(e.parameters.sets, maxRecorded);
     final current = s.nextSetOf(e);
     final last = s.lastPerformance[e.exerciseId];
+    final load = current == null ? null : s.loadSuggestions[e.id];
     return ListView(
       padding: const EdgeInsets.all(TokensSpacing.m),
       children: [
@@ -377,6 +385,14 @@ class LiveExerciseView extends StatelessWidget {
                     ),
                   ),
                 ),
+              if (load != null && onLoadToggled != null) ...[
+                const SizedBox(height: TokensSpacing.s),
+                LoadSuggestionCard(
+                  suggestion: load,
+                  accepted: s.acceptedLoad.contains(e.id),
+                  onToggled: (accepted) => onLoadToggled!(e, accepted),
+                ),
+              ],
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: TextButton.icon(
@@ -448,6 +464,139 @@ class LiveExerciseView extends StatelessWidget {
     );
   }
 }
+
+/// «Hoy prueba 42 kg (+5 %)»: propuesta de carga del servidor para el
+/// ejercicio que se mira, con el porqué y un toque para usarla en las series
+/// que faltan (se puede deshacer). No toca la rutina.
+class LoadSuggestionCard extends StatelessWidget {
+  const LoadSuggestionCard({
+    super.key,
+    required this.suggestion,
+    required this.accepted,
+    required this.onToggled,
+  });
+
+  final LoadSuggestion suggestion;
+  final bool accepted;
+  final ValueChanged<bool> onToggled;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final l = suggestion;
+    final value = loadValueLabel(l10n, l.metric, l.suggested);
+    final previous = loadValueLabel(l10n, l.metric, l.previous);
+    // El porcentaje aclara en cargas; en repeticiones basta la cifra.
+    final percent = l.metric == LoadMetric.reps ? null : l.changePercent?.abs();
+    final title = switch ((l.increases, percent)) {
+      (true, null) => l10n.trainingLoadUp(value),
+      (false, null) => l10n.trainingLoadDown(value),
+      (true, final int p) => l10n.trainingLoadUpPercent(value, p),
+      (false, final int p) => l10n.trainingLoadDownPercent(value, p),
+    };
+    final spoken = percent == null
+        ? title
+        : l.increases
+        ? l10n.trainingLoadUpSpoken(value, percent)
+        : l10n.trainingLoadDownSpoken(value, percent);
+    final why = switch (l.reason) {
+      AdjustmentReason.failedReps => l10n.trainingLoadWhyFailed(previous),
+      AdjustmentReason.veryHighRpe => l10n.trainingLoadWhyVeryHighRpe(
+        previous,
+        l.lastRpe,
+      ),
+      AdjustmentReason.veryLowRpe => l10n.trainingLoadWhyVeryLowRpe(
+        previous,
+        l.lastRpe,
+      ),
+      AdjustmentReason.lowRpeMoreReps ||
+      AdjustmentReason.lowRpeMoreWeight ||
+      AdjustmentReason.lowRpeMoreTime ||
+      AdjustmentReason.lowRpeMoreDistance => l10n.trainingLoadWhyLowRpe(
+        previous,
+        l.lastRpe,
+      ),
+      _ => l10n.trainingLoadWhyOther(previous, l.lastRpe),
+    };
+    final onColor = context.colors.onSecondaryContainer;
+    final body = context.textStyles.bodyMedium?.copyWith(color: onColor);
+    return Semantics(
+      container: true,
+      child: AppCard(
+        color: context.colors.secondaryContainer,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  l.increases
+                      ? Icons.trending_up_rounded
+                      : Icons.trending_down_rounded,
+                  color: onColor,
+                ),
+                const SizedBox(width: TokensSpacing.s),
+                Expanded(
+                  child: Semantics(
+                    label: spoken,
+                    excludeSemantics: true,
+                    child: Text(
+                      title,
+                      style: context.textStyles.titleMedium?.copyWith(
+                        color: onColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(why, style: body),
+            Text(
+              l10n.trainingLoadScope,
+              style: context.textStyles.bodySmall?.copyWith(color: onColor),
+            ),
+            if (accepted) ...[
+              const SizedBox(height: TokensSpacing.xs),
+              Semantics(
+                liveRegion: true,
+                child: Text(l10n.trainingLoadAccepted, style: body),
+              ),
+            ],
+            const SizedBox(height: TokensSpacing.s),
+            // Un solo botón que cambia de texto: al usar o deshacer, el foco
+            // sigue en él (dos botones distintos lo perderían).
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: FilledButton(
+                key: const ValueKey('load-suggestion-toggle'),
+                onPressed: () => onToggled(!accepted),
+                child: Text(
+                  accepted ? l10n.trainingLoadUndo : l10n.trainingLoadAccept,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Cifra de una propuesta de carga con su unidad («42,5 kg», «11 repeticiones»).
+String loadValueLabel(AppLocalizations l10n, LoadMetric metric, double v) =>
+    switch (metric) {
+      LoadMetric.weight => l10n.trainingLoadKg(v),
+      LoadMetric.reps => l10n.trainingLoadReps(v.round()),
+      LoadMetric.holdSeconds => l10n.trainingLoadHold(v.round()),
+      // Por debajo de 2 min, en segundos: «1 min» para 80 s engañaría.
+      LoadMetric.durationSeconds =>
+        v < 120
+            ? l10n.trainingLoadSeconds(v.round())
+            : l10n.trainingLoadMinutes((v / 60).round()),
+      LoadMetric.distanceMeters => l10n.trainingLoadMeters(v.round()),
+    };
 
 class _TableHeader extends StatelessWidget {
   const _TableHeader({required this.fields, required this.number});

@@ -2,6 +2,8 @@ package com.synaptixfit.application.service.planner;
 
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
+import com.synaptixfit.application.port.input.planner.AttendClassUseCase;
+import com.synaptixfit.application.port.input.planner.AttendEndedClassesUseCase;
 import com.synaptixfit.application.port.input.planner.CompleteReviewBlockUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.application.port.input.planner.SyncSportBlockWithSessionUseCase;
@@ -40,9 +42,14 @@ import java.util.UUID;
  * se completa al hacer el repaso SM-2. Esos bloques no dan XP propia ({@link CalendarBlock#experienceReward()}).
  * El de un día de rutina tampoco se marca a mano ({@code BLOCK_ROUTINE_LINKED}): marcarlo no avanzaría
  * la rutina ni sumaría carga; se empieza la sesión o se registra como sesión pasada.
+ *
+ * <p>Las clases se dan por asistidas solas al terminar ({@link AttendEndedClassesUseCase} y
+ * {@link AttendClassUseCase}, ADR 0029); desmarcar una clase es «No fui»: queda la ausencia y ya no se completa
+ * sola. Marcar a mano y darla por asistida leen el bloque bloqueándolo ({@code findByIdForUpdate}) para que
+ * un «No fui» a la vez que la tarea no se pise.
  */
 public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSportBlockWithSessionUseCase,
-        CompleteReviewBlockUseCase {
+        CompleteReviewBlockUseCase, AttendEndedClassesUseCase, AttendClassUseCase {
 
     private final CalendarBlockRepositoryPort blocks;
     private final SubjectDirectoryPort subjects;
@@ -71,7 +78,7 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
 
     @Override
     public Result setCompletion(UUID userId, UUID blockId, boolean completed, Integer effort) {
-        CalendarBlock block = blocks.findById(blockId)
+        CalendarBlock block = blocks.findByIdForUpdate(blockId)
                 .filter(b -> b.userId().equals(userId))
                 .orElseThrow(() -> new CalendarBlockNotFoundException(blockId));
         if (block.type() == ActivityType.SPORT && block.details().routineDayId() != null) {
@@ -79,8 +86,33 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
         }
         if (completed) {
             block.requireStarted(clock.instant());
+        } else if (block.type() == ActivityType.CLASS) {
+            // «No fui»: además de desmarcarla, que no se dé por asistida sola al terminar.
+            boolean marked = block.markAbsent();
+            if (!block.completed()) {
+                return new Result(marked ? blocks.save(block) : block, 0);
+            }
         }
         return apply(block, completed, effort);
+    }
+
+    @Override
+    public List<UUID> endedClassesToAttend() {
+        Instant now = clock.instant();
+        return blocks.findClassesToAttend(now.minus(CalendarBlock.AUTO_ATTEND_WINDOW), now).stream()
+                .map(CalendarBlock::id).toList();
+    }
+
+    @Override
+    public boolean attendClass(UUID blockId) {
+        Instant now = clock.instant();
+        return blocks.findByIdForUpdate(blockId)
+                .filter(b -> b.attendsAutomatically(now))
+                .map(b -> {
+                    apply(b, true, null);
+                    return true;
+                })
+                .orElse(false);
     }
 
     /**

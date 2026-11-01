@@ -42,6 +42,16 @@ class TrainingRemoteDataSource {
     return SessionAdaptationDto.fromJson(response.data!);
   }
 
+  Future<List<LoadSuggestionDto>> getLoadSuggestions(String sessionId) async {
+    final response = await _dio.get<List<dynamic>>(
+      '$_base/sessions/$sessionId/load-suggestions',
+    );
+    return [
+      for (final item in response.data ?? const <dynamic>[])
+        LoadSuggestionDto.fromJson(item as Map<String, dynamic>),
+    ];
+  }
+
   Future<TrainingPage<SessionDto>> listSessions({
     bool? completed,
     required int page,

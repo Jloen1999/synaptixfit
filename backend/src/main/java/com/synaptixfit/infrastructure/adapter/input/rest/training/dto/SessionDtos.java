@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 
 import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
+import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.OpenTrainingSession;
 import com.synaptixfit.domain.model.training.SessionAdaptation;
 import com.synaptixfit.domain.model.training.SessionLabel;
@@ -9,6 +10,7 @@ import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.SessionType;
 import com.synaptixfit.domain.model.training.SessionXpWithheld;
 import com.synaptixfit.domain.model.training.TrainingSession;
+import com.synaptixfit.domain.model.training.generation.LoadSuggestion;
 import com.synaptixfit.domain.model.user.ExperienceChange;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -110,6 +112,21 @@ public final class SessionDtos {
 
         public static SessionAdaptationResponse from(GetSessionAdaptationUseCase.Result r) {
             return new SessionAdaptationResponse(r.adaptation().volumeFactor(), r.adaptation().reasons(), r.sets());
+        }
+    }
+
+    /**
+     * Propuesta de carga de hoy en un ejercicio («Hoy prueba 42,5 kg (+5 %)»). {@code metric} dice qué cifra
+     * cambia: kg, repeticiones, segundos de aguante, segundos de trabajo o metros.
+     */
+    public record LoadSuggestionResponse(UUID plannedExerciseId, UUID exerciseId, LoadSuggestion.Metric metric,
+                                         double previous, double suggested, Integer changePercent,
+                                         AdjustmentReason reasonCode, int lastRpe, Instant lastSessionAt,
+                                         List<Double> perSet) {
+
+        public static LoadSuggestionResponse from(LoadSuggestion s) {
+            return new LoadSuggestionResponse(s.plannedExerciseId(), s.exerciseId(), s.metric(), s.previous(),
+                    s.suggested(), s.changePercent(), s.reason(), s.lastRpe(), s.lastSessionAt(), s.perSet());
         }
     }
 

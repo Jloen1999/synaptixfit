@@ -22,10 +22,15 @@ import 'package:synaptixfit/presentation/screens/training/live_session/bloc/live
 import 'package:synaptixfit/presentation/screens/training/training_effect.dart';
 import 'package:synaptixfit/domain/models/training/session_adaptation.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_adaptation_use_case.dart';
+import 'package:synaptixfit/domain/models/training/load_suggestion.dart';
+import 'package:synaptixfit/domain/models/training/set_fields.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_load_suggestions_use_case.dart';
 
 import 'training_fixtures.dart';
 
 class _MockGetSession extends Mock implements GetSessionUseCaseContract {}
+
+class _MockGetLoads extends Mock implements GetLoadSuggestionsUseCaseContract {}
 
 class _MockLoadPending extends Mock implements LoadPendingSetsUseCaseContract {}
 
@@ -62,6 +67,7 @@ void main() {
   late _MockGetLast getLast;
   late _MockGetBookends getBookends;
   late _MockGetAdaptation getAdaptation;
+  late _MockGetLoads getLoads;
   late _MockLoadPending loadPending;
   late _MockSavePending savePending;
 
@@ -86,6 +92,8 @@ void main() {
     getLast = _MockGetLast();
     getBookends = _MockGetBookends();
     getAdaptation = _MockGetAdaptation();
+    getLoads = _MockGetLoads();
+    when(() => getLoads(any())).thenAnswer((_) async => const Success([]));
     loadPending = _MockLoadPending();
     savePending = _MockSavePending();
     // Sin series pendientes guardadas en el teléfono salvo en su test.
@@ -115,6 +123,7 @@ void main() {
     getLastPerformance: getLast,
     getBookends: getBookends,
     getAdaptation: getAdaptation,
+    getLoadSuggestions: getLoads,
     loadPending: loadPending,
     savePending: savePending,
     clock: clock ?? () => now,
@@ -172,6 +181,98 @@ void main() {
       ),
     ],
   );
+
+  group('propuesta de carga', () {
+    const load = LoadSuggestion(
+      plannedExerciseId: 'p1',
+      metric: LoadMetric.weight,
+      previous: 40,
+      suggested: 42,
+      changePercent: 5,
+      lastRpe: 6,
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'tras cargar, guarda la propuesta de cada ejercicio del día',
+      setUp: () {
+        when(() => getSession('s1')).thenAnswer(
+          (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+        );
+        when(() => getRoutine(any())).thenAnswer((_) async => Success(routine));
+        when(() => getLoads('s1')).thenAnswer(
+          (_) async => const Success([
+            load,
+            // De un ejercicio que ya no está en el día: se ignora.
+            LoadSuggestion(
+              plannedExerciseId: 'otro',
+              metric: LoadMetric.reps,
+              previous: 10,
+              suggested: 11,
+              lastRpe: 6,
+            ),
+          ]),
+        );
+      },
+      build: build,
+      act: (bloc) => bloc.add(const LiveSessionEvent.started('s1')),
+      skip: 2,
+      expect: () => [
+        isA<LiveSessionState>().having((s) => s.loadSuggestions, 'propuestas', {
+          'p1': load,
+        }),
+      ],
+    );
+
+    test(
+      'aceptarla rellena las series que faltan; deshacerla vuelve a lo de antes',
+      () {
+        final base = ready().copyWith(loadSuggestions: {'p1': load});
+        final e = exercises.first;
+        expect(base.proposedValue(e, 2, SetField.weight), isNot(42));
+        final accepted = base.copyWith(acceptedLoad: {'p1'});
+        expect(accepted.proposedValue(e, 2, SetField.weight), 42);
+        // Solo cambia la cifra propuesta (el peso); las repeticiones siguen.
+        expect(accepted.proposedValue(e, 2, SetField.reps), 10);
+      },
+    );
+
+    test('cada serie toma la cifra que reparte el servidor', () {
+      final e = exercises.first;
+      final s = ready().copyWith(
+        loadSuggestions: {
+          'p1': load.copyWith(perSet: const [21, 31.5, 42]),
+        },
+        acceptedLoad: {'p1'},
+      );
+      expect(s.proposedValue(e, 1, SetField.weight), 21);
+      expect(s.proposedValue(e, 2, SetField.weight), 31.5);
+      expect(s.proposedValue(e, 3, SetField.weight), 42);
+    });
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'aceptar y deshacer solo cambia qué ejercicios la usan',
+      build: build,
+      seed: () => ready().copyWith(loadSuggestions: {'p1': load}),
+      act: (bloc) => bloc
+        ..add(
+          const LiveSessionEvent.loadSuggestionToggled('p1', accepted: true),
+        )
+        ..add(
+          const LiveSessionEvent.loadSuggestionToggled('p2', accepted: true),
+        )
+        ..add(
+          const LiveSessionEvent.loadSuggestionToggled('p1', accepted: false),
+        ),
+      expect: () => [
+        isA<LiveSessionState>().having((s) => s.acceptedLoad, 'usa', {'p1'}),
+        isA<LiveSessionState>().having(
+          (s) => s.acceptedLoad,
+          'usa',
+          <String>{},
+        ),
+      ],
+    );
+  });
 
   blocTest<LiveSessionBloc, LiveSessionState>(
     'al empezar carga la sesión, los ejercicios del día y el cronómetro',

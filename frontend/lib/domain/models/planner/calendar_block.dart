@@ -38,6 +38,10 @@ abstract class CalendarBlock with _$CalendarBlock {
     /// Deporte que no es una sesión de rutina: al marcarlo hecho se pide el
     /// esfuerzo para su carga física (lo decide el servidor).
     @Default(false) bool tracksPhysicalLoad,
+
+    /// Clase marcada «No fui»: no se da por asistida sola al terminar
+    /// (ADR 0029; lo decide el servidor).
+    @Default(false) bool absent,
   }) = _CalendarBlock;
 
   const CalendarBlock._();

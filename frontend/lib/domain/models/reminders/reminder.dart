@@ -18,7 +18,37 @@ abstract class Reminder with _$Reminder {
 
     /// Instante en que debe sonar.
     required DateTime at,
+
+    /// Qué abre al tocarlo: id del bloque, sesión, día de rutina o reto.
+    String? refId,
   }) = _Reminder;
+
+  const Reminder._();
+
+  /// `payload` de la notificación: «tipo|referencia» (solo el tipo si no hay).
+  String get payload => refId == null ? kind.payload : '${kind.payload}|$refId';
+}
+
+/// Aviso tocado: a qué pantalla ir ([kind]) y qué abrir en ella ([refId]).
+@freezed
+abstract class OpenedReminder with _$OpenedReminder {
+  const factory OpenedReminder({required ReminderKind kind, String? refId}) =
+      _OpenedReminder;
+
+  /// Nulo si el `payload` no es de un aviso conocido (p. ej. de otra versión).
+  static OpenedReminder? fromPayload(String? payload) {
+    if (payload == null) return null;
+    final cut = payload.indexOf('|');
+    final kind = ReminderKind.fromPayload(
+      cut < 0 ? payload : payload.substring(0, cut),
+    );
+    if (kind == null) return null;
+    final ref = cut < 0 ? null : payload.substring(cut + 1);
+    return OpenedReminder(
+      kind: kind,
+      refId: ref == null || ref.isEmpty ? null : ref,
+    );
+  }
 }
 
 /// Estado de los recordatorios en este dispositivo: si la plataforma los

@@ -99,6 +99,17 @@ Solo orienta («≈ 45 min» en el próximo día y el detalle del día; «quedan
 
 Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevos, los que tenía (`before`) y el motivo (`reasonCode`: `FAILED_REPS`, `VERY_HIGH_RPE`, `VERY_LOW_RPE`, `LOW_RPE_MORE_REPS`, `LOW_RPE_MORE_WEIGHT`, `LOW_RPE_MORE_TIME`, `LOW_RPE_MORE_DISTANCE`, `INACTIVITY`), que decide `ProgressionCalculator`. El motivo de **toda** la sugerencia va en `details.reasonCode` (lo elige `SessionFeedback`: fallos o RPE máximo en una degradación, RPE bajo o muy bajo en una progresión, `INACTIVITY` en una descarga), porque cada ejercicio puede tener uno distinto. La app enseña «Peso: 40 → 42,5 kg», el porqué con el RPE, las repeticiones fallidas o los días sin entrenar de `details`, y que al aplicarla se guarda en la rutina (se nota la próxima vez que se haga ese día); «Ahora no» la quita y la rutina sigue igual. Las sugerencias antiguas (sin `before`) se ven como antes. La adaptación de la sesión de hoy (`SessionAdaptation`) dice qué ejercicios pierden series («4 → 3 series») y que es solo hoy; «Hacerla completa» (con confirmación) vuelve a las series planificadas en la app (el servidor no lo impide). «Quedan ≈ min» reparte la estimación entre las series planificadas, no las adaptadas.
 
+## Progresión de cargas dentro de la sesión (`LoadSuggestions`)
+
+`GET /training/sessions/{id}/load-suggestions` propone la cifra de hoy de cada ejercicio («Hoy prueba 42 kg (+5 %)») con **las mismas reglas** que la sugerencia de después de la sesión (`ProgressionCalculator`), para que las dos digan lo mismo:
+
+- **Base:** lo que se hizo de verdad la última vez que se entrenó ese ejercicio (la serie de más peso con sus repeticiones; el aguante, el tiempo o la distancia más largos), no lo planificado. Si alguien subió por su cuenta, se progresa desde ahí.
+- **Regla:** el RPE de aquella sesión y sus repeticiones fallidas: fallos → carga −5 % por fallo (entre −5 % y −30 %); RPE ≥ 9,5 → −15 %; RPE ≤ 5 → +10 % (isométrico +10 s); RPE ≤ 7 → +1 repetición o, en el tope del rango del objetivo, +5 % de peso (tiempo o distancia +10 %). El peso se redondea a 0,5 kg.
+- **Cifra que se propone (`metric`):** la que mueve el motivo: `WEIGHT`, `REPS`, `HOLD_SECONDS`, `DURATION_SECONDS` o `DISTANCE_METERS`. Los recortes al rango del objetivo no se proponen. Solo cambia la carga de hoy; las series no.
+- **Sin propuesta** si no hubo RPE, si la última vez fue hace más de 14 días (manda la descarga por inactividad), o si la rutina ya pide esa cifra (la sugerencia de después de la sesión ya se aplicó).
+- **Por serie (`perSet`):** el servidor da la cifra de cada serie planificada: en una pirámide, el peso y el aguante se mueven en la misma proporción (peso a 0,5 kg) y las repeticiones en la misma diferencia; si no, la cifra propuesta.
+- **En la app:** aceptarla («Usar en las series que faltan») rellena con `perSet` las series que faltan de ese ejercicio. No toca la rutina ni las series ya apuntadas.
+
 ## «Tu estudio» (Progreso) y valores por defecto
 
 - **Semana:** de lunes a domingo en la zona de la app (`StudyWeekSummary`).

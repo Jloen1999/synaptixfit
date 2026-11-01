@@ -1,5 +1,6 @@
 import '../models/result/app_result.dart';
 import '../models/result/result.dart';
+import '../models/training/load_suggestion.dart';
 import '../models/training/recommendation.dart';
 import '../models/training/routine.dart';
 import '../models/training/session.dart';
@@ -22,6 +23,9 @@ abstract interface class TrainingRepositoryContract {
 
   /// Adaptación de hoy de la sesión (regulación cruzada).
   Future<AppResult<SessionAdaptation>> getSessionAdaptation(String sessionId);
+
+  /// Propuestas de carga de hoy por ejercicio (vacía si no hay).
+  Future<AppResult<List<LoadSuggestion>>> getLoadSuggestions(String sessionId);
 
   Future<AppResult<TrainingPage<TrainingSession>>> getSessions({
     bool? completed,

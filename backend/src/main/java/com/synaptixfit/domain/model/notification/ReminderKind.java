@@ -13,5 +13,11 @@ public enum ReminderKind {
     /** Entrega (trabajo, práctica, presentación…) pendiente en pocos días. */
     DEADLINE,
     /** «Tu semana»: el domingo por la tarde, repasar cómo ha ido y planificar la siguiente. */
-    WEEKLY_SUMMARY
+    WEEKLY_SUMMARY,
+    /** «Tocaba ayer»: el día de rutina previsto pasó sin entrenar. */
+    ROUTINE_DAY_MISSED,
+    /** «¿Terminaste la sesión?»: una sesión de entrenamiento sigue abierta horas después de empezar. */
+    OPEN_SESSION,
+    /** «Tu reto vence mañana». */
+    CHALLENGE_DUE
 }
