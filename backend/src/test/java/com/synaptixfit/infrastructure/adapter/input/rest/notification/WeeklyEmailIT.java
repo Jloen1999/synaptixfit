@@ -20,10 +20,15 @@ import com.synaptixfit.application.port.input.notification.SendWeeklySummariesUs
 import com.synaptixfit.domain.model.notification.WeeklySummary;
 import com.synaptixfit.domain.port.output.notification.WeeklyEmailMailerPort;
 import com.synaptixfit.support.EmbeddedPostgresSupport;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.UUID;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,11 +69,19 @@ class WeeklyEmailIT {
                         .content("{\"email\":\"" + email + "\",\"password\":\"secret123\",\"fullName\":\"Ana\"}"))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         String auth = "Bearer " + JsonPath.read(body, "$.accessToken");
-        Instant later = Instant.now().truncatedTo(ChronoUnit.HOURS).plus(Duration.ofHours(2));
+        // El resumen cuenta la semana en curso (lunes a domingo, Europe/Madrid), así que el bloque
+        // debe caer dentro. «Dentro de 2 h» se salía de la semana el domingo por la noche.
+        Instant later = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(Duration.ofMinutes(2));
+        Instant laterEnd = later.plus(Duration.ofMinutes(30));
+        ZoneId zone = ZoneId.of("Europe/Madrid");
+        Instant weekEnd = LocalDate.now(zone).with(TemporalAdjusters.next(DayOfWeek.MONDAY))
+                .atStartOfDay(zone).toInstant();
+        Assumptions.assumeTrue(laterEnd.isBefore(weekEnd),
+                "En los últimos minutos de la semana no cabe un bloque futuro dentro de ella");
         mvc.perform(post("/api/v1/planner/blocks").header("Authorization", auth)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"start\":\"%s\",\"end\":\"%s\",\"type\":\"STUDY\",\"topics\":\"Repaso\"}"
-                                .formatted(later, later.plus(Duration.ofHours(1)))))
+                                .formatted(later, laterEnd)))
                 .andExpect(status().isCreated());
 
         mvc.perform(put("/api/v1/notifications/weekly-email").header("Authorization", auth)
