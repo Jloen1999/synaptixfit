@@ -137,12 +137,12 @@ class ChallengesRepository implements ChallengesRepositoryContract {
   Future<AppResult<ChallengeOutcome>> recordProgress(
     String challengeId, {
     String? milestoneId,
-    required double amount,
+    required double value,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.recordProgress(
       challengeId,
       milestoneId: milestoneId,
-      amount: amount,
+      value: value,
     )).toDomain(),
   );
 

@@ -68,6 +68,10 @@ class ActiveChallengesSection extends StatelessWidget {
   }
 }
 
+/// Fila de un reto activo, como la tarjeta de Retos en pequeño: cuándo
+/// (bloque de fecha y «Termina mañana», en aviso si es hoy o mañana), qué
+/// (título) y cuánto (barra en el acento del tipo con el %). Sin fecha de fin,
+/// el bloque muestra el icono del tipo.
 class _ChallengeTile extends StatelessWidget {
   const _ChallengeTile({
     required this.challenge,
@@ -82,91 +86,106 @@ class _ChallengeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final color = challenge.academic
+    final typeColor = challenge.academic
         ? context.palette.study
         : context.colors.secondary;
     final endsAt = challenge.endsAt;
-    final today = DateTime(now.year, now.month, now.day);
-    final daysLeft = endsAt == null
-        ? null
-        : DateTime(
-            endsAt.year,
-            endsAt.month,
-            endsAt.day,
-          ).difference(today).inDays.clamp(0, 9999);
+    final daysLeft = endsAt == null ? null : AppDueDates.daysUntil(endsAt, now);
+    final soon = endsAt != null && AppDueDates.isSoon(endsAt, now);
+    final blockColor = soon ? context.palette.warning : typeColor;
     final progress = challenge.progress.round();
+    final typeLabel = challenge.academic
+        ? l10n.homeChallengeAcademic
+        : l10n.homeChallengeFitness;
 
-    return AppFocusOutline(
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: TokensSpacing.m,
-            vertical: TokensSpacing.s,
-          ),
-          child: Row(
-            children: [
-              Tooltip(
-                message: challenge.academic
-                    ? l10n.homeChallengeAcademic
-                    : l10n.homeChallengeFitness,
-                child: Icon(
-                  challenge.academic
+    return AppCardTapArea(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: TokensSpacing.m,
+        vertical: TokensSpacing.s,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final side = AppDateBlock.sideBySide(context, constraints.maxWidth);
+          final block = endsAt == null
+              ? AppDateBlock(
+                  caption: typeLabel,
+                  icon: challenge.academic
                       ? Icons.school_outlined
                       : Icons.fitness_center_rounded,
-                  color: color,
+                  color: typeColor,
+                  compact: !side,
+                )
+              : AppDateBlock.due(
+                  context,
+                  due: endsAt,
+                  now: now,
+                  color: blockColor,
+                  compact: !side,
+                );
+          final content = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Sin fecha de fin, el tipo ya lo dice el bloque: no se repite.
+              if (daysLeft != null) ...[
+                Text(
+                  // Si ya pasó (p. ej. por la zona horaria), lo mismo que
+                  // dice el bloque de al lado: «Venció el 2 nov».
+                  daysLeft < 0
+                      ? AppDueDates.text(context, endsAt!, now)
+                      : l10n.homeChallengeEndsIn(daysLeft),
+                  style: context.textStyles.labelLarge?.copyWith(
+                    color: soon
+                        ? context.palette.warning
+                        : context.colors.onSurfaceVariant,
+                  ),
                 ),
+                const SizedBox(height: TokensSpacing.xxs),
+              ],
+              Text(
+                challenge.title,
+                style: context.textStyles.titleSmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(width: TokensSpacing.m),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            challenge.title,
-                            style: context.textStyles.bodyLarge,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          l10n.homeChallengeProgress(progress),
-                          style: context.textStyles.labelLarge,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: TokensSpacing.xs),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(TokensRadius.pill),
-                      child: LinearProgressIndicator(
-                        value: challenge.progress / 100,
-                        color: color,
-                        backgroundColor: color.withValues(alpha: 0.16),
-                      ),
-                    ),
-                    if (daysLeft != null) ...[
-                      const SizedBox(height: TokensSpacing.xs),
-                      Text(
-                        l10n.homeChallengeEndsIn(daysLeft),
-                        style: context.textStyles.bodySmall?.copyWith(
-                          color: context.colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: TokensSpacing.s),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: context.colors.onSurfaceVariant,
+              const SizedBox(height: TokensSpacing.s),
+              AppCycleProgress(
+                progress: challenge.progress / 100,
+                label: l10n.homeChallengeProgress(progress),
+                color: typeColor,
               ),
             ],
-          ),
-        ),
+          );
+          final chevron = Icon(
+            Icons.chevron_right_rounded,
+            color: context.colors.onSurfaceVariant,
+          );
+          if (!side) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(child: block),
+                    const Spacer(),
+                    chevron,
+                  ],
+                ),
+                const SizedBox(height: TokensSpacing.s),
+                content,
+              ],
+            );
+          }
+          return Row(
+            children: [
+              block,
+              const SizedBox(width: TokensSpacing.m),
+              Expanded(child: content),
+              const SizedBox(width: TokensSpacing.s),
+              chevron,
+            ],
+          );
+        },
       ),
     );
   }

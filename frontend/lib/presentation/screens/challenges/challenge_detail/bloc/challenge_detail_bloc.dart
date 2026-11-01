@@ -186,7 +186,7 @@ class ChallengeDetailBloc
       _recordProgress(
         challenge.id,
         milestoneId: event.milestoneId,
-        amount: event.amount,
+        value: event.value,
       ),
       progress: true,
     );

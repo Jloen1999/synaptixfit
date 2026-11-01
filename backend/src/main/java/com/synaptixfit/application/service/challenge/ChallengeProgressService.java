@@ -18,17 +18,19 @@ import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeChanges;
 import com.synaptixfit.domain.model.challenge.ChallengeLink;
 import com.synaptixfit.domain.model.challenge.ChallengeStatus;
-import com.synaptixfit.domain.model.challenge.Milestone;
+import com.synaptixfit.domain.model.challenge.MilestoneDraft;
 import com.synaptixfit.domain.model.challenge.ProgressEntry;
-import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
 import com.synaptixfit.domain.port.output.challenge.ChallengeReferencePort;
 import com.synaptixfit.domain.port.output.challenge.ChallengeRepositoryPort;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.OptionalDouble;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -47,6 +49,7 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     private final Clock clock;
     private final ZoneId zone;
     private final TrainingSessionTracker trainingSessions;
+    private final LinkedSourcesSync linkedSources;
 
     /**
      * @param zone zona horaria con la que se decide el «día» de la racha de cada reto
@@ -61,6 +64,7 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
         this.clock = clock;
         this.zone = zone;
         this.trainingSessions = new TrainingSessionTracker(referencePort);
+        this.linkedSources = new LinkedSourcesSync(challenges, zone);
     }
 
     // ------------------------------------------------------------ acciones del usuario
@@ -69,7 +73,7 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     public ChallengeOutcome completeChallenge(UUID userId, UUID challengeId) {
         Challenge challenge = owned(userId, challengeId);
         challenge.requireOpen(clock.instant());
-        return persist(challenge, challenge.complete(today()), null);
+        return persist(challenge, challenge.complete(today()));
     }
 
     @Override
@@ -77,14 +81,26 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
         Challenge challenge = owned(userId, challengeId);
         // Desmarcar uno vencido lo dejaría sin poder recompletarse (y sin su XP por un toque).
         challenge.requireOpen(clock.instant());
-        return persist(challenge, challenge.uncomplete(), null);
+        return persist(challenge, challenge.uncomplete());
     }
 
     @Override
     public ChallengeOutcome replaceMilestones(ReplaceMilestonesUseCase.Command command) {
         Challenge challenge = owned(command.userId(), command.challengeId());
-        references.checkDrafts(command.userId(), command.milestones());
-        return persist(challenge, challenge.replaceMilestones(command.milestones()), null);
+        Instant now = clock.instant();
+        // Antes de empezar se pueden preparar las tareas; después del fin, no (borrar las pendientes de un
+        // reto vencido lo daría por completado).
+        challenge.requireNotEnded(now);
+        Set<UUID> previousLinks = new HashSet<>();
+        challenge.allLinks().forEach(l -> previousLinks.add(l.entityId()));
+        references.checkDrafts(command.userId(), command.milestones(), previousLinks);
+        List<UUID> newLinks = command.milestones().stream().map(MilestoneDraft::link).filter(Objects::nonNull)
+                .map(ChallengeLink::entityId).filter(id -> !previousLinks.contains(id)).toList();
+        ChallengeChanges changes = challenge.replaceMilestones(command.milestones());
+        challenge.touch(now);
+        Challenge saved = linkedSources.apply(challenges.save(challenge), newLinks, changes, now);
+        effects.apply(saved, changes);
+        return outcome(saved, changes);
     }
 
     @Override
@@ -99,13 +115,15 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     public ChallengeOutcome completeMilestone(UUID userId, UUID challengeId, UUID milestoneId) {
         Challenge challenge = owned(userId, challengeId);
         challenge.requireOpen(clock.instant());
-        return persist(challenge, challenge.completeMilestone(milestoneId, today(), false), null);
+        return persist(challenge, challenge.completeMilestone(milestoneId, today()));
     }
 
     @Override
     public ChallengeOutcome uncompleteMilestone(UUID userId, UUID challengeId, UUID milestoneId) {
         Challenge challenge = owned(userId, challengeId);
-        return persist(challenge, challenge.uncompleteMilestone(milestoneId), null);
+        // Misma regla que el reto: una tarea de un reto vencido ya no se desmarca (perdería su XP).
+        challenge.requireOpen(clock.instant());
+        return persist(challenge, challenge.uncompleteMilestone(milestoneId));
     }
 
     @Override
@@ -118,11 +136,21 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
             throw new FieldValidationException("recordedAt", "OUT_OF_RANGE",
                     "recordedAt must be between the challenge start and now");
         }
-        ChallengeChanges changes = challenge.addProgress(command.milestoneId(), command.amount(),
-                LocalDate.ofInstant(recordedAt, zone));
-        ChallengeOutcome outcome = persist(challenge, changes, null);
-        challenges.saveProgress(new ProgressEntry(UUID.randomUUID(), challenge.id(), command.milestoneId(),
-                command.userId(), command.amount(), recordedAt, now));
+        if (command.value() == null && command.amount() == null) {
+            throw new FieldValidationException("value", "REQUIRED", "value (or the former amount) is required");
+        }
+        LocalDate day = LocalDate.ofInstant(recordedAt, zone);
+        double before = currentProgress(challenge, command.milestoneId());
+        ChallengeChanges changes = command.value() != null
+                ? challenge.setProgress(command.milestoneId(), command.value(), day)
+                : challenge.addProgress(command.milestoneId(), command.amount(), day);
+        double gained = currentProgress(challenge, command.milestoneId()) - before;
+        ChallengeOutcome outcome = persist(challenge, changes);
+        // El historial guarda lo que se avanzó; bajar el valor es una corrección y no se anota.
+        if (gained > 0) {
+            challenges.saveProgress(new ProgressEntry(UUID.randomUUID(), challenge.id(), command.milestoneId(),
+                    command.userId(), Math.round(gained * 100.0) / 100.0, recordedAt, now));
+        }
         return outcome;
     }
 
@@ -133,21 +161,11 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
         LocalDate today = today();
         Instant now = clock.instant();
         for (Challenge challenge : challenges.findByLinkedEntity(userId, deadlineId)) {
-            // Un reto vencido queda como estaba: lo que se complete después no lo avanza.
+            // Un reto vencido queda como estaba; si se amplía, la edición recupera el estado de la entrega.
             if (challenge.status(now) == ChallengeStatus.EXPIRED) {
                 continue;
             }
-            ChallengeChanges changes = new ChallengeChanges();
-            if (isDeadlineLink(challenge.link(), deadlineId)) {
-                changes.merge(completed ? challenge.complete(today) : challenge.uncomplete());
-            }
-            for (Milestone m : challenge.milestones()) {
-                if (isDeadlineLink(m.link(), deadlineId)) {
-                    changes.merge(completed ? challenge.completeMilestone(m.id(), today, true)
-                            : challenge.uncompleteMilestone(m.id()));
-                }
-            }
-            persist(challenge, changes, deadlineId);
+            persist(challenge, challenge.applyDeadline(deadlineId, completed, today));
         }
     }
 
@@ -160,14 +178,11 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
                 .filter(c -> c.isOwnedBy(userId))
                 .filter(c -> c.status(clock.instant()) != ChallengeStatus.EXPIRED)
                 .ifPresent(challenge -> {
-                    StudyBlockProgress blocks = referencePort.studyBlockProgress(userId, milestoneId);
-                    OptionalDouble percent = blocks.percent();
+                    OptionalDouble percent = referencePort.studyBlockProgress(userId, milestoneId).percent();
                     if (percent.isEmpty()) {
                         return;
                     }
-                    ChallengeChanges changes =
-                            challenge.applyStudyBlockProgress(milestoneId, percent.getAsDouble(), today());
-                    persist(challenge, changes, null);
+                    persist(challenge, challenge.applyStudyBlockProgress(milestoneId, percent.getAsDouble(), today()));
                 });
     }
 
@@ -181,9 +196,8 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
             }
             int before = challenge.sessionsCompleted();
             ChallengeChanges changes = trainingSessions.apply(challenge, today);
-            if (before != challenge.sessionsCompleted() || changes.xpDelta() != 0 || changes.challengeCompleted()
-                    || changes.challengeUncompleted()) {
-                persist(challenge, changes, null);
+            if (before != challenge.sessionsCompleted() || !changes.isEmpty()) {
+                persist(challenge, changes);
             }
         }
     }
@@ -203,16 +217,23 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
 
     // ------------------------------------------------------------ apoyo
 
-    private ChallengeOutcome persist(Challenge challenge, ChallengeChanges changes, UUID sourceEntityId) {
+    private ChallengeOutcome persist(Challenge challenge, ChallengeChanges changes) {
         challenge.touch(clock.instant());
         Challenge saved = challenges.save(challenge);
-        effects.apply(saved, changes, sourceEntityId);
+        effects.apply(saved, changes);
+        return outcome(saved, changes);
+    }
+
+    private static ChallengeOutcome outcome(Challenge saved, ChallengeChanges changes) {
         return new ChallengeOutcome(saved, changes.xpDelta(), changes.unlockedMilestoneIds(),
                 changes.challengeCompleted());
     }
 
-    private static boolean isDeadlineLink(ChallengeLink link, UUID entityId) {
-        return link != null && link.type().isDeadline() && link.entityId().equals(entityId);
+    private static double currentProgress(Challenge challenge, UUID milestoneId) {
+        if (milestoneId == null) {
+            return challenge.completed() ? 100 : challenge.manualProgress();
+        }
+        return challenge.hasMilestone(milestoneId) ? challenge.milestone(milestoneId).progress() : 0;
     }
 
     private Challenge owned(UUID userId, UUID challengeId) {

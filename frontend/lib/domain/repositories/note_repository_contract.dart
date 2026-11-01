@@ -1,3 +1,4 @@
+import '../enums/shared_notes_scope.dart';
 import '../enums/visibility.dart';
 import '../models/academic/note.dart';
 import '../models/result/app_result.dart';
@@ -30,5 +31,14 @@ abstract interface class NoteRepositoryContract {
 
   Future<AppResult<Unit>> deleteNote(String noteId);
 
-  Future<AppResult<SharedNotesPage>> getSharedNotes({required int page});
+  Future<AppResult<SharedNoteSummaryPage>> getSharedNotes({
+    required int page,
+    SharedNotesScope scope = SharedNotesScope.all,
+    String? authorId,
+    int size = 20,
+  });
+
+  Future<AppResult<SharedNote>> getSharedNote(String noteId);
+
+  Future<AppResult<Note>> copySharedNote(String noteId);
 }

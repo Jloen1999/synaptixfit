@@ -102,5 +102,15 @@
   "authResetDoneTitle": "Palavra-passe alterada",
   "authResetDoneSubtitle": "Terminámos a sessão em todos os teus dispositivos.",
   "authResetExpiredTitle": "Ligação expirada",
-  "authResetExpiredSubtitle": "Pede outra e usa a do último email."
+  "authResetExpiredSubtitle": "Pede outra e usa a do último email.",
+  "commonLoadingMore": "A carregar mais",
+  "commonDateDue": "Prazo",
+  "commonDateOverdue": "Venceu",
+  "commonDateToday": "Hoje",
+  "commonDateTomorrow": "Amanhã",
+  "commonDueToday": "Vence hoje",
+  "commonDueTomorrow": "Vence amanhã",
+  "commonDueIn": "{count, plural, =1{Vence dentro de 1 dia} other{Vence dentro de {count} dias}}",
+  "commonDueOn": "Vence a {date}",
+  "commonOverdueOn": "Venceu a {date}"
 }

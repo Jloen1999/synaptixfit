@@ -48,6 +48,44 @@ abstract class NotePageDto with _$NotePageDto {
       _$NotePageDtoFromJson(json);
 }
 
+/// Resumen de `GET /api/v1/notes/shared` (sin el contenido).
+@freezed
+abstract class SharedNoteSummaryDto with _$SharedNoteSummaryDto {
+  const factory SharedNoteSummaryDto({
+    required String id,
+    required String authorId,
+    @Default('') String authorName,
+    String? authorAvatarUrl,
+    String? catalogSubjectId,
+    String? catalogSubjectName,
+    @Default('') String title,
+    @Default('') String excerpt,
+    String? visibility,
+    DateTime? updatedAt,
+    @Default(false) bool mine,
+  }) = _SharedNoteSummaryDto;
+
+  const SharedNoteSummaryDto._();
+
+  factory SharedNoteSummaryDto.fromJson(Map<String, dynamic> json) =>
+      _$SharedNoteSummaryDtoFromJson(json);
+
+  SharedNoteSummary toDomain() => SharedNoteSummary(
+    id: id,
+    authorId: authorId,
+    authorName: authorName,
+    authorAvatarUrl: authorAvatarUrl,
+    catalogSubjectId: catalogSubjectId,
+    catalogSubjectName: catalogSubjectName,
+    title: title,
+    excerpt: excerpt,
+    visibility: Visibility.fromApi(visibility),
+    updatedAt: updatedAt?.toLocal(),
+    mine: mine,
+  );
+}
+
+/// Apunte compartido completo (`GET /api/v1/notes/shared/{id}`).
 @freezed
 abstract class SharedNoteDto with _$SharedNoteDto {
   const factory SharedNoteDto({
@@ -55,11 +93,13 @@ abstract class SharedNoteDto with _$SharedNoteDto {
     required String authorId,
     @Default('') String authorName,
     String? authorAvatarUrl,
-    String? subjectId,
+    String? catalogSubjectId,
+    String? catalogSubjectName,
     @Default('') String title,
     String? content,
     String? visibility,
     DateTime? updatedAt,
+    @Default(false) bool mine,
   }) = _SharedNoteDto;
 
   const SharedNoteDto._();
@@ -72,18 +112,20 @@ abstract class SharedNoteDto with _$SharedNoteDto {
     authorId: authorId,
     authorName: authorName,
     authorAvatarUrl: authorAvatarUrl,
-    subjectId: subjectId,
+    catalogSubjectId: catalogSubjectId,
+    catalogSubjectName: catalogSubjectName,
     title: title,
     content: content ?? '',
     visibility: Visibility.fromApi(visibility),
     updatedAt: updatedAt?.toLocal(),
+    mine: mine,
   );
 }
 
 @freezed
 abstract class SharedNotePageDto with _$SharedNotePageDto {
   const factory SharedNotePageDto({
-    @Default(<SharedNoteDto>[]) List<SharedNoteDto> items,
+    @Default(<SharedNoteSummaryDto>[]) List<SharedNoteSummaryDto> items,
     @Default(0) int page,
     @Default(0) int totalPages,
   }) = _SharedNotePageDto;
@@ -93,7 +135,7 @@ abstract class SharedNotePageDto with _$SharedNotePageDto {
   factory SharedNotePageDto.fromJson(Map<String, dynamic> json) =>
       _$SharedNotePageDtoFromJson(json);
 
-  SharedNotesPage toDomain() => SharedNotesPage(
+  SharedNoteSummaryPage toDomain() => SharedNoteSummaryPage(
     items: items.map((n) => n.toDomain()).toList(),
     page: page,
     totalPages: totalPages,

@@ -11,8 +11,6 @@ public interface ChallengeReferencePort {
 
     boolean deadlineBelongsTo(UUID userId, UUID deadlineId);
 
-    boolean studyBlockBelongsTo(UUID userId, UUID blockId);
-
     boolean noteBelongsTo(UUID userId, UUID noteId);
 
     boolean fileBelongsTo(UUID userId, UUID fileId);

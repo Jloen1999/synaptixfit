@@ -742,14 +742,6 @@
       }
     }
   },
-  "trainingDayNumber": "Día {number}",
-  "@trainingDayNumber": {
-    "placeholders": {
-      "number": {
-        "type": "int"
-      }
-    }
-  },
   "trainingMoreOptions": "Más opciones",
   "trainingRecordUnnamed": "Ejercicio",
   "trainingRecordBrokenUnnamed": "Récord: {value}",
@@ -1182,5 +1174,459 @@
   "trainingWeekTypeAdaptationHint": "Para aprender los ejercicios con poco peso.",
   "trainingWeekTypeLoadHint": "Se sube poco a poco el peso o las repeticiones.",
   "trainingWeekTypePeakHint": "La semana más exigente del bloque.",
-  "trainingWeekTypeDeloadHint": "Menos volumen para recuperarte y asimilar el trabajo."
+  "trainingWeekTypeDeloadHint": "Menos volumen para recuperarte y asimilar el trabajo.",
+  "trainingProgressSkipped": "Saltado",
+  "trainingWeekOfTotal": "Semana {week} de {total}",
+  "@trainingWeekOfTotal": {
+    "placeholders": {
+      "week": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSessionOfWeek": "Sesión {position} de {count}",
+  "@trainingSessionOfWeek": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingOverdueSince": "Atrasado: tocaba el {date}",
+  "@trainingOverdueSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSkipDay": "Saltar",
+  "trainingSkipDayTitle": "¿Saltar este día?",
+  "trainingSkipDayMessage": "La rutina pasará al siguiente día y el calendario quitará este entrenamiento. Puedes recuperarlo cuando quieras.",
+  "trainingUnskipDay": "Recuperar",
+  "trainingDaySkipped": "Día saltado",
+  "trainingDayUnskipped": "Día recuperado",
+  "trainingSkipEarlierTitle": "¿Entrenar este día?",
+  "trainingSkipEarlierMessage": "Aún quedan días anteriores por hacer. Al terminar este, se darán por saltados (podrás recuperarlos).",
+  "trainingFinishWithLogged": "Terminar con lo registrado",
+  "trainingDiscardSession": "Descartar",
+  "trainingDiscardSessionTitle": "¿Descartar la sesión?",
+  "trainingDiscardSessionMessage": "Se borrarán las series que registraste en esa sesión.",
+  "trainingSessionSavedOnItsDay": "Sesión guardada en su día",
+  "trainingSessionDiscarded": "Sesión descartada",
+  "trainingSessionFiguresTitle": "¿Cómo fue la sesión?",
+  "trainingSessionDurationLabel": "Duración",
+  "trainingCorrectSession": "Corregir",
+  "trainingSessionCorrected": "Sesión corregida",
+  "trainingDeleteSession": "Eliminar",
+  "trainingDeleteSessionTitle": "¿Eliminar la sesión?",
+  "trainingDeleteSessionMessage": "Se restarán {xp} XP y dejará de contar para tu carga, tus retos y el calendario. El día de la rutina volverá a estar pendiente.",
+  "@trainingDeleteSessionMessage": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSessionDeleted": "Sesión eliminada",
+  "trainingUnfinishedTitle": "Sin terminar",
+  "trainingHistoryWeekOf": "Semana del {date}",
+  "@trainingHistoryWeekOf": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingStartThisRoutine": "Empezar esta rutina",
+  "trainingStartThisRoutineTitle": "¿Empezar esta rutina?",
+  "trainingStartThisRoutineMessage": "«{name}» se pausará: solo puedes seguir una rutina a la vez. No pierdes su avance.",
+  "@trainingStartThisRoutineMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingStartThisRoutineMessageNone": "Pasará a ser tu rutina en curso.",
+  "trainingRoutineStarted": "Rutina en curso",
+  "trainingCycleDoneTitle": "¡Rutina terminada!",
+  "trainingCycleDoneMessage": "Has completado «{name}». Repite el ciclo o prepara la siguiente.",
+  "@trainingCycleDoneMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingRepeatCycle": "Repetir ciclo",
+  "trainingNextWithAi": "Generar la siguiente con IA",
+  "trainingRoutineRestarted": "Nuevo ciclo empezado",
+  "trainingPastActivityModeOther": "Otro deporte",
+  "trainingPastActivityModeRoutine": "Día de mi rutina",
+  "trainingPastActivityRoutineIntro": "Apunta un día de tu rutina que entrenaste sin la app: avanza la rutina y cuenta en su fecha.",
+  "trainingPastActivityRoutineDay": "Qué día de la rutina",
+  "trainingPastActivityNoRoutine": "No tienes una rutina en curso. Empieza una para apuntar sus días.",
+  "trainingErrorRoutineDayNotSkippable": "Ese día ya está hecho: no se puede saltar.",
+  "trainingErrorSessionStaleOpen": "Tienes una sesión de ese día sin terminar. Termínala con lo registrado o descártala antes.",
+  "trainingErrorSessionUnmarkExpired": "Solo se desmarca el mismo día. Puedes corregirla o eliminarla.",
+  "trainingErrorSessionPastDateInvalid": "Elige hoy o uno de los 7 días anteriores.",
+  "trainingStaleSessionHint": "Lleva más de 6 h abierta: termínala con lo registrado o descártala.",
+  "trainingSetColSet": "Serie",
+  "trainingSetColTarget": "Objetivo",
+  "trainingSetColReps": "Reps",
+  "trainingSetColKg": "Kg",
+  "trainingSetColSeconds": "Seg",
+  "trainingSetColMinutes": "Min",
+  "trainingSetColMeters": "Metros",
+  "trainingSetFieldReps": "repeticiones",
+  "trainingSetFieldKg": "kilos",
+  "trainingSetFieldSeconds": "segundos",
+  "trainingSetFieldMinutes": "minutos",
+  "trainingSetFieldMeters": "metros",
+  "trainingSetCellSemantics": "Serie {set}, {field}",
+  "@trainingSetCellSemantics": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      },
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSetFieldInvalid": "{field}: entre {min} y {max}",
+  "@trainingSetFieldInvalid": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingRemoveSetNamed": "Quitar la serie {set} de {name}",
+  "@trainingRemoveSetNamed": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingAddSetNamed": "Añadir una serie a {name}",
+  "@trainingAddSetNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingReplaceShort": "Cambiar",
+  "trainingRemoveShort": "Quitar",
+  "trainingEditSetsShort": "Series",
+  "trainingReplaceExerciseNamed": "Cambiar {name} por otro ejercicio",
+  "@trainingReplaceExerciseNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingRemoveExerciseNamed": "Quitar {name} del día",
+  "@trainingRemoveExerciseNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingEditSetsNamed": "Editar series, repeticiones y peso de {name}",
+  "@trainingEditSetsNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSummarySets": "{sets, plural, =1{1 serie} other{{sets} series}}",
+  "@trainingSummarySets": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingRepsUnit": "{value} reps",
+  "@trainingRepsUnit": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingKgUnit": "{value} kg",
+  "@trainingKgUnit": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSecondsUnit": "{value} s",
+  "@trainingSecondsUnit": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingChipSetsRepsVaried": "{sets, plural, =1{1 serie} other{{sets} series}} × {reps} reps",
+  "@trainingChipSetsRepsVaried": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingChipSetsRepsVariedSpoken": "{sets, plural, =1{1 serie} other{{sets} series}} de {reps} repeticiones",
+  "@trainingChipSetsRepsVariedSpoken": {
+    "placeholders": {
+      "sets": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingMsgExerciseReplaced": "Ejercicio cambiado",
+  "trainingMsgExerciseRemoved": "Ejercicio quitado",
+  "trainingLiveProgress": "{done} de {total} ejercicios · {minutes} min",
+  "@trainingLiveProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLiveStripItem": "Ejercicio {index} de {total}: {name}, {done} de {sets} series",
+  "@trainingLiveStripItem": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      },
+      "done": {
+        "type": "int"
+      },
+      "sets": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLiveExerciseOf": "Ejercicio {index} de {total}",
+  "@trainingLiveExerciseOf": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingMarkSetDone": "Marcar la serie {set} como hecha",
+  "@trainingMarkSetDone": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetDoneEdit": "Serie {set} hecha. Corregir o desmarcar",
+  "@trainingSetDoneEdit": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLiveSetDone": "Marcar serie {set}",
+  "@trainingLiveSetDone": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLiveGoTo": "Siguiente: {name}",
+  "@trainingLiveGoTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLiveNextExercise": "Después: {name}",
+  "@trainingLiveNextExercise": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLiveAfterRest": "Ahora: {name} · serie {set} · {target}",
+  "@trainingLiveAfterRest": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "set": {
+        "type": "int"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingRestMinus15": "−15 s",
+  "trainingRestPlus15": "+15 s",
+  "trainingUnmarkSetTitle": "¿Desmarcar la serie {set}?",
+  "@trainingUnmarkSetTitle": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingUnmarkSetMessage": "Se borra lo apuntado en esta serie.",
+  "trainingSessionDetailTitle": "Sesión",
+  "trainingSessionDetailDuration": "Duración",
+  "trainingSessionDetailEffort": "Esfuerzo",
+  "trainingSessionDetailSets": "Series hechas",
+  "trainingSessionDetailVolume": "Volumen",
+  "trainingSessionDetailCalories": "Calorías",
+  "trainingSessionDetailXp": "Experiencia",
+  "trainingSessionDetailExercises": "Ejercicios",
+  "trainingSessionDetailNoSets": "Sin series apuntadas",
+  "trainingLivePrevious": "Ejercicio anterior",
+  "trainingLiveNext": "Ejercicio siguiente",
+  "trainingTargetWithWeight": "{main} · {weight} kg",
+  "@trainingTargetWithWeight": {
+    "placeholders": {
+      "main": {
+        "type": "String"
+      },
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSetWithTarget": "Serie {set} · objetivo {target}",
+  "@trainingSetWithTarget": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCurrentSet": "Serie actual",
+  "trainingSetFieldInvalidInSet": "Serie {set}: {field} entre {min} y {max}",
+  "@trainingSetFieldInvalidInSet": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      },
+      "field": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLiveNow": "Ahora: {set} · {target}",
+  "@trainingLiveNow": {
+    "placeholders": {
+      "set": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingValueRange": "{from}–{to}",
+  "@trainingValueRange": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingFieldValueSpoken": "{field}: {value}",
+  "@trainingFieldValueSpoken": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingRestValue": "Descanso: {value}",
+  "@trainingRestValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSeeRoutine": "Ver rutina",
+  "trainingRpeShort": "{value} de 10",
+  "@trainingRpeShort": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingExerciseNoLongerInRoutine": "Ejercicio que ya no está en la rutina"
 }

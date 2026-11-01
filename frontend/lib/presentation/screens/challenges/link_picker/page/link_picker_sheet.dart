@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../app/di/app_di.dart';
-import '../../../../../domain/enums/challenge_link_type.dart';
 import '../../../../../domain/models/challenges/challenge_references.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
@@ -10,10 +9,13 @@ import '../../../../widgets/widgets.dart';
 import '../../widgets/challenge_labels.dart';
 import '../bloc/link_picker_bloc.dart';
 
-/// Hoja para vincular un reto o tarea a una entrega, examen o bloque futuro.
+/// Hoja para vincular un reto o tarea a una entrega o examen que venza dentro
+/// del periodo del reto ([from]-[to]).
 Future<ChallengeLinkOption?> showLinkPickerSheet(
   BuildContext context, {
   String? subjectId,
+  DateTime? from,
+  DateTime? to,
 }) {
   return showModalBottomSheet<ChallengeLinkOption>(
     context: context,
@@ -21,10 +23,11 @@ Future<ChallengeLinkOption?> showLinkPickerSheet(
     useSafeArea: true,
     showDragHandle: true,
     builder: (_) => BlocProvider(
-      create: (_) =>
-          getIt<LinkPickerBloc>()
-            ..add(LinkPickerEvent.started(subjectId: subjectId)),
-      child: _LinkPickerView(subjectId: subjectId),
+      create: (_) => getIt<LinkPickerBloc>()
+        ..add(
+          LinkPickerEvent.started(subjectId: subjectId, from: from, to: to),
+        ),
+      child: _LinkPickerView(subjectId: subjectId, from: from, to: to),
     ),
   );
 }
@@ -39,21 +42,17 @@ String challengeLinkOptionLabel(BuildContext context, ChallengeLinkOption o) {
 }
 
 class _LinkPickerView extends StatelessWidget {
-  const _LinkPickerView({this.subjectId});
+  const _LinkPickerView({this.subjectId, this.from, this.to});
 
   final String? subjectId;
+  final DateTime? from;
+  final DateTime? to;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return BlocBuilder<LinkPickerBloc, LinkPickerState>(
       builder: (context, state) {
-        final deadlines = state.options
-            .where((o) => o.type != ChallengeLinkType.block)
-            .toList();
-        final blocks = state.options
-            .where((o) => o.type == ChallengeLinkType.block)
-            .toList();
         Widget tile(ChallengeLinkOption o) => AppFocusOutline(
           child: ListTile(
             leading: Icon(o.type.icon, color: context.colors.tertiary),
@@ -105,7 +104,11 @@ class _LinkPickerView extends StatelessWidget {
                   AppErrorView(
                     error: state.error!,
                     onRetry: () => context.read<LinkPickerBloc>().add(
-                      LinkPickerEvent.started(subjectId: subjectId),
+                      LinkPickerEvent.started(
+                        subjectId: subjectId,
+                        from: from,
+                        to: to,
+                      ),
                     ),
                   ),
                 ],
@@ -113,18 +116,12 @@ class _LinkPickerView extends StatelessWidget {
                   AppEmptyState(
                     icon: Icons.event_busy_outlined,
                     title: l10n.challengesLinkEmpty,
+                    message: l10n.challengesLinkEmptyPeriod,
                   ),
                 ],
                 LinkPickerStatus.ready => [
-                  if (deadlines.isNotEmpty) ...[
-                    AppSectionHeader(title: l10n.challengesLinkDeadlines),
-                    ...deadlines.map(tile),
-                  ],
-                  if (blocks.isNotEmpty) ...[
-                    const SizedBox(height: TokensSpacing.s),
-                    AppSectionHeader(title: l10n.challengesLinkBlocks),
-                    ...blocks.map(tile),
-                  ],
+                  AppSectionHeader(title: l10n.challengesLinkDeadlines),
+                  ...state.options.map(tile),
                 ],
               },
             ],

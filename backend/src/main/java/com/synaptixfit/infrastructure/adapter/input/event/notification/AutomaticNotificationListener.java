@@ -7,6 +7,7 @@ import com.synaptixfit.domain.event.challenge.ChallengeCompleted;
 import com.synaptixfit.domain.event.gamification.LevelUp;
 import com.synaptixfit.domain.event.insights.OvertrainingDetected;
 import com.synaptixfit.domain.event.training.CheckInSubmitted;
+import com.synaptixfit.domain.event.training.RoutineCompleted;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +30,12 @@ public class AutomaticNotificationListener {
     public void on(ChallengeCompleted event) {
         achievements.notifyAchievement(new NotifyAchievementUseCase.Command(event.userId(),
                 NotifyAchievementUseCase.Kind.CHALLENGE_COMPLETED, event.title(), event.challengeId()));
+    }
+
+    @EventListener
+    public void on(RoutineCompleted event) {
+        achievements.notifyAchievement(new NotifyAchievementUseCase.Command(event.userId(),
+                NotifyAchievementUseCase.Kind.ROUTINE_COMPLETED, event.routineName(), event.routineId()));
     }
 
     @EventListener

@@ -221,24 +221,18 @@ void main() {
 
   blocTest<ChallengeDetailBloc, ChallengeDetailState>(
     'registrar progreso recarga el historial',
-    setUp: () =>
-        when(() => record('c1', milestoneId: 'm1', amount: 25)).thenAnswer(
-          (_) async => Success(
-            ChallengeOutcome(
-              challenge: challenge,
-              xpDelta: 0,
-              challengeCompleted: false,
-            ),
-          ),
+    setUp: () => when(() => record('c1', value: 25)).thenAnswer(
+      (_) async => Success(
+        ChallengeOutcome(
+          challenge: challenge,
+          xpDelta: 0,
+          challengeCompleted: false,
         ),
-    build: build,
-    seed: () => ready,
-    act: (b) => b.add(
-      const ChallengeDetailEvent.progressRecorded(
-        milestoneId: 'm1',
-        amount: 25,
       ),
     ),
+    build: build,
+    seed: () => ready,
+    act: (b) => b.add(const ChallengeDetailEvent.progressRecorded(value: 25)),
     expect: () => [
       ready.copyWith(busy: true),
       ready,

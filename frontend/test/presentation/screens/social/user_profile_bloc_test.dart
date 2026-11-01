@@ -3,10 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/enums/feed_period.dart';
 import 'package:synaptixfit/domain/enums/friendship_relation.dart';
+import 'package:synaptixfit/domain/enums/shared_notes_scope.dart';
 import 'package:synaptixfit/domain/enums/visibility.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
+import 'package:synaptixfit/domain/models/academic/note.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/social/public_profile.dart';
+import 'package:synaptixfit/domain/use_cases/academic/get_shared_notes_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/accept_friend_request_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/block_user_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/social/get_feed_use_case.dart';
@@ -36,15 +39,19 @@ class _Remove extends Mock implements RemoveFriendshipUseCaseContract {}
 
 class _Block extends Mock implements BlockUserUseCaseContract {}
 
+class _Notes extends Mock implements GetSharedNotesUseCaseContract {}
+
 void main() {
   late _Profile profile;
   late _Feed feed;
   late _Send send;
   late _Block block;
+  late _Notes notes;
 
   setUpAll(() {
     registerFallbackValue(FeedPeriod.all);
     registerFallbackValue(DateTime(2000));
+    registerFallbackValue(SharedNotesScope.all);
   });
 
   setUp(() {
@@ -52,6 +59,19 @@ void main() {
     feed = _Feed();
     send = _Send();
     block = _Block();
+    notes = _Notes();
+    when(
+      () => notes(
+        page: any(named: 'page'),
+        scope: any(named: 'scope'),
+        authorId: any(named: 'authorId'),
+        size: any(named: 'size'),
+      ),
+    ).thenAnswer(
+      (_) async => const Success(
+        SharedNoteSummaryPage(items: [], page: 0, totalPages: 0),
+      ),
+    );
   });
 
   UserProfileBloc build() => UserProfileBloc(
@@ -63,6 +83,7 @@ void main() {
     rejectRequest: _Reject(),
     removeFriendship: _Remove(),
     blockUser: block,
+    getSharedNotes: notes,
   );
 
   PublicProfile profileWith(FriendshipRelation relation, {String? fid}) =>

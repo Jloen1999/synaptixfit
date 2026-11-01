@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../app/di/app_di.dart';
-import '../../../../../domain/enums/challenge_link_type.dart';
 import '../../../../../domain/enums/challenge_status.dart';
 import '../../../../../domain/enums/challenge_type.dart';
 import '../../../../../domain/models/challenges/challenge.dart';
@@ -203,9 +202,11 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                   enabled: !state.busy,
                   onSelected: (a) => _onMenu(context, a, challenge),
                   itemBuilder: (context) => [
-                    // También aquí: en retos de sesiones o con tareas la
-                    // barra inferior da prioridad a otra acción.
-                    if (challenge.status == ChallengeStatus.active)
+                    // «¿Cuánto llevas?» solo en retos sin tareas (las tareas son
+                    // de sí o no) que no complete su entrega.
+                    if (challenge.status == ChallengeStatus.active &&
+                        !challenge.hasMilestones &&
+                        !challenge.completedByLink)
                       _menuItem(
                         _MenuAction.recordProgress,
                         Icons.add_chart_rounded,
@@ -293,11 +294,8 @@ class _DetailContent extends StatelessWidget {
   final ChallengeDetailState state;
   final VoidCallback onEditTasks;
 
-  void _openLink(BuildContext context, ChallengeLink link) => context.push(
-    link.type == ChallengeLinkType.block
-        ? ChallengesExternalPaths.planner
-        : ChallengesExternalPaths.deadlines,
-  );
+  void _openLink(BuildContext context) =>
+      context.push(ChallengesExternalPaths.deadlines);
 
   @override
   Widget build(BuildContext context) {
@@ -307,6 +305,9 @@ class _DetailContent extends StatelessWidget {
     final titles = {for (final m in challenge.milestones) m.id: m.title};
     final link = challenge.link;
     final expired = challenge.status == ChallengeStatus.expired;
+    // Solo en plazo se marca o desmarca a mano (lo dice el servidor): ni antes
+    // de empezar ni vencido, donde desmarcar haría perder XP para siempre.
+    final open = challenge.open;
     final nextId = challenge.nextMilestone?.id;
     final dependent = challenge.milestones
         .where((m) => m.dependencies.isNotEmpty)
@@ -381,18 +382,18 @@ class _DetailContent extends StatelessWidget {
                     child: MilestoneTile(
                       milestone: m,
                       isNext: challenge.owned && !expired && m.id == nextId,
-                      showWeight: challenge.showsTaskWeights,
                       expired: expired,
                       dependencyTitles: [
                         for (final d in m.dependencies) ?titles[d],
                       ],
                       busy: state.busyMilestoneId == m.id,
-                      // Vencido, el servidor no deja completar tareas (sí
-                      // desmarcarlas): no se ofrece un toque que fallaría.
+                      // Fuera de plazo, o si la completa su entrega o sus
+                      // bloques, no se ofrece un toque que el servidor rechaza.
                       onToggle:
                           challenge.owned &&
                               !state.busy &&
-                              (!expired || m.completed)
+                              open &&
+                              !m.completedByLink
                           ? () => bloc.add(
                               ChallengeDetailEvent.milestoneToggled(m.id),
                             )
@@ -407,9 +408,9 @@ class _DetailContent extends StatelessWidget {
                           : () => bloc.add(
                               ChallengeDetailEvent.fileRequested(m.fileId!),
                             ),
-                      onOpenLink: m.link == null
+                      onOpenLink: m.link == null || !challenge.owned
                           ? null
-                          : () => _openLink(context, m.link!),
+                          : () => _openLink(context),
                     ),
                   ),
               if (challenge.hasDependencies) ...[
@@ -435,28 +436,48 @@ class _DetailContent extends StatelessWidget {
               if (link != null) ...[
                 const SizedBox(height: TokensSpacing.s),
                 AppCard(
-                  onTap: challenge.owned
-                      ? () => _openLink(context, link)
-                      : null,
+                  onTap: challenge.owned ? () => _openLink(context) : null,
                   child: Row(
                     children: [
                       Icon(link.type.icon, color: context.colors.tertiary),
                       const SizedBox(width: TokensSpacing.m),
                       Expanded(
-                        child: Text(
-                          link.type.linkedLabel(context),
-                          style: context.textStyles.bodyLarge,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              challenge.linkTitle ??
+                                  link.type.linkedLabel(context),
+                              style: context.textStyles.bodyLarge,
+                            ),
+                            if (challenge.linkDueAt case final due?)
+                              Text(
+                                l10n.challengesFeedbackJoin(
+                                  link.type.label(context),
+                                  ChallengeFormats.dateTime(due),
+                                ),
+                                style: context.textStyles.labelMedium?.copyWith(
+                                  color: context.colors.onSurfaceVariant,
+                                ),
+                              ),
+                            // Con tareas, el vínculo del reto es una referencia:
+                            // lo completan sus tareas.
+                            if (challenge.completedByLink)
+                              Text(
+                                l10n.challengesLinkDrivesChallenge,
+                                style: context.textStyles.labelMedium?.copyWith(
+                                  color: context.colors.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
+                      // Toda la tarjeta abre el planificador: basta la flecha,
+                      // que no le quita ancho al título con el texto grande.
                       if (challenge.owned)
-                        Flexible(
-                          child: Text(
-                            l10n.challengesLinkOpen,
-                            textAlign: TextAlign.end,
-                            style: context.textStyles.labelLarge?.copyWith(
-                              color: context.colors.primary,
-                            ),
-                          ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: context.colors.onSurfaceVariant,
                         ),
                     ],
                   ),
@@ -632,19 +653,20 @@ class _SummaryCard extends StatelessWidget {
                   value: l10n.challengesDetailDaysValue(challenge.bestStreak),
                 ),
               ],
-              // Con tareas, la XP la reparte el servidor con un tope por
-              // reto: se muestra la ganada, no una suma que no se cumpliría.
+              // Con tareas, la XP la reparte el servidor con un tope por reto:
+              // la ganada y la que puede dar en total (ya con el tope).
               _Stat(
                 icon: Icons.bolt_rounded,
                 color: context.palette.accent,
                 label: challenge.hasMilestones
                     ? l10n.challengesDetailXpEarned
                     : l10n.challengesDetailReward,
-                value: l10n.challengesXpGain(
-                  challenge.hasMilestones
-                      ? challenge.totalXpAwarded
-                      : challenge.xpReward,
-                ),
+                value: challenge.hasMilestones
+                    ? l10n.challengesXpOfTotal(
+                        challenge.totalXpAwarded,
+                        challenge.xpReward,
+                      )
+                    : l10n.challengesXpGain(challenge.xpReward),
               ),
             ],
           ),
@@ -679,6 +701,7 @@ class _NextStepBox extends StatelessWidget {
     final color = switch (challenge.status) {
       ChallengeStatus.completed => context.palette.accent,
       ChallengeStatus.expired => context.palette.warning,
+      ChallengeStatus.upcoming => context.colors.onSurfaceVariant,
       ChallengeStatus.active => context.colors.primary,
     };
     final next = challenge.nextMilestone;
@@ -902,14 +925,25 @@ class _BottomActions extends StatelessWidget {
             onPressed: busy ? null : onExtend,
           );
         case ChallengeStatus.completed:
-          // Deshacer no es la acción que se busca: va como secundaria.
-          if (!challenge.hasMilestones) {
+          // Deshacer no es la acción que se busca: va como secundaria. No se
+          // ofrece si lo completó su entrega ni con el plazo ya cerrado.
+          if (!challenge.hasMilestones &&
+              !challenge.completedByLink &&
+              challenge.open) {
             secondary = AppSecondaryButton(
               label: l10n.challengesDetailUncomplete,
               loading: busy,
               onPressed: () => _toggleCompletion(context),
             );
           }
+        case ChallengeStatus.upcoming:
+          // Aún no empieza (la pastilla del resumen dice cuándo): lo que se
+          // puede hacer es ajustar las fechas.
+          primary = AppPrimaryButton(
+            label: l10n.challengesDetailEdit,
+            icon: Icons.edit_calendar_outlined,
+            onPressed: busy ? null : onExtend,
+          );
         case ChallengeStatus.active:
           final next = challenge.nextMilestone;
           // Sin Rutinas en el enfoque de uso, la pestaña no existe.
@@ -920,25 +954,31 @@ class _BottomActions extends StatelessWidget {
               icon: Icons.fitness_center_rounded,
               onPressed: () => context.go(ChallengesExternalPaths.training),
             );
-          } else {
-            if (challenge.hasMilestones) {
-              if (next != null) {
-                primary = AppPrimaryButton(
-                  label: l10n.challengesDetailCompleteNext,
-                  icon: Icons.check_rounded,
-                  loading: busy,
-                  onPressed: () =>
-                      bloc.add(ChallengeDetailEvent.milestoneToggled(next.id)),
-                );
-              }
-            } else {
+          } else if (challenge.completedByLink) {
+            // Lo completa su entrega o examen: se va a marcarlo allí.
+            primary = AppPrimaryButton(
+              label: l10n.challengesLinkOpen,
+              icon: Icons.event_available_outlined,
+              onPressed: () => context.push(ChallengesExternalPaths.deadlines),
+            );
+          } else if (challenge.hasMilestones) {
+            // «Completar siguiente tarea» salta las que avanzan solas.
+            if (next != null) {
               primary = AppPrimaryButton(
-                label: l10n.challengesDetailComplete,
+                label: l10n.challengesDetailCompleteNext,
                 icon: Icons.check_rounded,
                 loading: busy,
-                onPressed: () => _toggleCompletion(context),
+                onPressed: () =>
+                    bloc.add(ChallengeDetailEvent.milestoneToggled(next.id)),
               );
             }
+          } else {
+            primary = AppPrimaryButton(
+              label: l10n.challengesDetailComplete,
+              icon: Icons.check_rounded,
+              loading: busy,
+              onPressed: () => _toggleCompletion(context),
+            );
             secondary = AppSecondaryButton(
               label: l10n.challengesDetailRecordProgress,
               icon: const Icon(Icons.add_chart_rounded),
@@ -993,12 +1033,7 @@ Future<void> _recordProgress(BuildContext context) async {
   if (challenge == null) return;
   final result = await showRecordProgressDialog(context, challenge);
   if (result != null) {
-    bloc.add(
-      ChallengeDetailEvent.progressRecorded(
-        milestoneId: result.milestoneId,
-        amount: result.amount,
-      ),
-    );
+    bloc.add(ChallengeDetailEvent.progressRecorded(value: result.value));
   }
 }
 

@@ -1,5 +1,6 @@
 package com.synaptixfit.domain.port.output.training;
 
+import com.synaptixfit.domain.model.shared.AuthorAudience;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.training.VisibleRoutine;
@@ -26,12 +27,22 @@ public interface RoutineRepositoryPort {
     /** La rutina activa más reciente del usuario. */
     Optional<Routine> findLatestActive(UUID ownerId);
 
+    /** Todas las rutinas activas (no borradas) del usuario; normalmente una (o ninguna). */
+    List<Routine> findActiveByOwner(UUID ownerId);
+
     /**
-     * Rutinas de otros usuarios visibles para {@code viewerId}: públicas, o de amigos si hay amistad
-     * aceptada; nunca de autores con shadowban.
+     * Rutinas de otros usuarios visibles para {@code viewerId} según {@code EffectiveVisibility}
+     * (visibilidad de la rutina y del perfil, bloqueos, autores eliminados o con shadowban).
      */
     PageResult<VisibleRoutine> findCommunity(UUID viewerId, String text, TrainingGoal goal, PageRequest page);
 
-    /** La rutina si el usuario es su dueño o puede verla según las reglas de la comunidad. */
-    Optional<VisibleRoutine> findVisible(UUID routineId, UUID viewerId);
+    /** Rutina no borrada con su autor y los datos de este vistos por {@code viewerId}, sin decidir nada. */
+    record AuthoredRoutine(Routine routine, String authorName, AuthorAudience audience) {
+    }
+
+    /**
+     * Cualquier rutina no borrada con los datos de su autor vistos por {@code viewerId}; quién puede
+     * verla lo decide el caso de uso con {@code EffectiveVisibility}.
+     */
+    Optional<AuthoredRoutine> findWithAuthor(UUID routineId, UUID viewerId);
 }

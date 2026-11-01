@@ -1,9 +1,9 @@
 import '../../../../../domain/enums/item_time_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
-import '../../../../../domain/enums/planner_enums.dart';
 import '../../../../../domain/models/planner/deadline.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -279,6 +279,13 @@ class _Filters extends StatelessWidget {
   }
 }
 
+/// Tarjeta de una entrega o examen, leída en el orden en que se actúa:
+/// cuándo (bloque de fecha a la izquierda y «Vence mañana · 23:59», en aviso si
+/// es hoy o mañana y en error si venció sin hacerse), qué (título) y de qué
+/// (tipo, asignatura, dificultad, en pastillas). La zona de texto abre la
+/// edición; marcar como hecha y borrar son botones aparte (sin toques
+/// anidados). Con el texto grande o poco ancho, la fecha va encima y los
+/// botones debajo.
 class _DeadlineTile extends StatelessWidget {
   const _DeadlineTile({
     required this.deadline,
@@ -300,137 +307,151 @@ class _DeadlineTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final d = deadline;
-    final overdue = d.timeStatus == ItemTimeStatus.missed;
-    final accent = d.type == DeadlineType.exam
+    final now = DateTime.now();
+    final missed = !d.completed && d.timeStatus == ItemTimeStatus.missed;
+    final soon = !d.completed && AppDueDates.isSoon(d.dueAt, now);
+    final color = d.completed
+        ? context.palette.success
+        : missed
         ? context.colors.error
+        : soon
+        ? context.palette.warning
         : context.colors.tertiary;
+    final when = d.completed
+        ? l10n.plannerDeadlineDoneCaption
+        : '${AppDueDates.text(context, d.dueAt, now, overdue: missed)} · '
+              '${DateFormat.Hm().format(d.dueAt)}';
+    final subject = subjectName;
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          when,
+          style: context.textStyles.labelLarge?.copyWith(
+            color: missed || soon ? color : context.colors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: TokensSpacing.xxs),
+        Text(
+          d.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: context.textStyles.titleMedium?.copyWith(
+            decoration: d.completed ? TextDecoration.lineThrough : null,
+            color: d.completed ? context.colors.onSurfaceVariant : null,
+          ),
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        Wrap(
+          spacing: TokensSpacing.s,
+          runSpacing: TokensSpacing.xs,
+          children: [
+            AppPill(
+              icon: d.type.icon,
+              label: d.type.label(context),
+              color: context.colors.tertiary,
+            ),
+            if (subject != null)
+              AppPill(icon: Icons.school_outlined, label: subject),
+            AppPill(
+              icon: Icons.signal_cellular_alt_rounded,
+              label: d.difficulty.label(context),
+            ),
+            if (d.imported)
+              AppPill(
+                icon: Icons.cloud_download_outlined,
+                label: l10n.plannerImported,
+              ),
+          ],
+        ),
+      ],
+    );
+    final toggle = busy
+        ? const SizedBox.square(
+            dimension: TokensLayout.minTouchTarget,
+            child: Padding(
+              padding: EdgeInsets.all(TokensSpacing.m),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        : IconButton(
+            tooltip: d.completed
+                ? l10n.plannerMarkUndone
+                : l10n.plannerMarkDone,
+            onPressed: onToggle,
+            icon: Icon(
+              d.completed
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              color: d.completed
+                  ? context.palette.success
+                  : context.colors.onSurfaceVariant,
+            ),
+          );
+    final delete = IconButton(
+      tooltip: l10n.commonDelete,
+      onPressed: busy ? null : onDelete,
+      icon: const Icon(Icons.delete_outline_rounded),
+    );
     return AppCard(
-      onTap: onEdit,
-      padding: const EdgeInsets.symmetric(
-        horizontal: TokensSpacing.s,
-        vertical: TokensSpacing.s,
-      ),
-      child: Row(
-        children: [
-          busy
-              ? const SizedBox.square(
-                  dimension: 48,
-                  child: Padding(
-                    padding: EdgeInsets.all(TokensSpacing.m - 2),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              : IconButton(
-                  tooltip: d.completed
-                      ? l10n.plannerMarkUndone
-                      : l10n.plannerMarkDone,
-                  onPressed: onToggle,
-                  icon: Icon(
-                    d.completed
-                        ? Icons.check_circle_rounded
-                        : Icons.radio_button_unchecked_rounded,
-                    color: d.completed
-                        ? context.palette.success
-                        : context.colors.onSurfaceVariant,
-                  ),
-                ),
-          const SizedBox(width: TokensSpacing.xs),
-          Expanded(
-            child: Column(
+      padding: const EdgeInsets.all(TokensSpacing.xs),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final side = AppDateBlock.sideBySide(context, constraints.maxWidth);
+          final block = AppDateBlock.due(
+            context,
+            due: d.dueAt,
+            now: now,
+            color: color,
+            overdue: missed,
+            compact: !side,
+          );
+          if (side) {
+            return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Icon(d.type.icon, size: 16, color: accent),
-                    const SizedBox(width: TokensSpacing.xs),
-                    Expanded(
-                      child: Text(
-                        d.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.textStyles.titleSmall?.copyWith(
-                          decoration: d.completed
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                      ),
+                Expanded(
+                  child: AppCardTapArea(
+                    onTap: onEdit,
+                    semanticHint: l10n.plannerEditDeadline,
+                    padding: const EdgeInsets.all(TokensSpacing.s),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        block,
+                        const SizedBox(width: TokensSpacing.m),
+                        Expanded(child: content),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: TokensSpacing.xxs),
-                Text(
-                  [
-                    d.type.label(context),
-                    ?subjectName,
-                    l10n.plannerDueOn(PlannerFormats.dateTime(d.dueAt)),
-                  ].join(' · '),
-                  style: context.textStyles.bodySmall?.copyWith(
-                    color: context.colors.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: TokensSpacing.xs),
-                Wrap(
-                  spacing: TokensSpacing.xs,
-                  runSpacing: TokensSpacing.xs,
+                Column(children: [toggle, delete]),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppCardTapArea(
+                onTap: onEdit,
+                semanticHint: l10n.plannerEditDeadline,
+                padding: const EdgeInsets.all(TokensSpacing.s),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _Tag(
-                      icon: Icons.signal_cellular_alt_rounded,
-                      label: d.difficulty.label(context),
-                      color: context.colors.onSurfaceVariant,
-                    ),
-                    if (overdue)
-                      _Tag(
-                        icon: Icons.error_outline_rounded,
-                        label: l10n.plannerOverdue,
-                        color: context.colors.error,
-                      ),
-                    if (d.imported)
-                      _Tag(
-                        icon: Icons.cloud_download_outlined,
-                        label: l10n.plannerImported,
-                        color: context.colors.primary,
-                      ),
+                    block,
+                    const SizedBox(height: TokensSpacing.s),
+                    content,
                   ],
                 ),
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: l10n.commonDelete,
-            onPressed: busy ? null : onDelete,
-            icon: const Icon(Icons.delete_outline_rounded),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Tag extends StatelessWidget {
-  const _Tag({required this.icon, required this.label, required this.color});
-
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: TokensSpacing.s,
-        vertical: TokensSpacing.xxs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(TokensRadius.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: TokensSpacing.xxs),
-          Text(label, style: context.textStyles.labelSmall),
-        ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [toggle, delete],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

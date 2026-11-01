@@ -1,10 +1,12 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.challenge;
 
 import com.synaptixfit.domain.model.challenge.ChallengeType;
-import com.synaptixfit.domain.model.challenge.OwnerAudience;
+import com.synaptixfit.domain.model.shared.AudienceScope;
+import com.synaptixfit.domain.model.shared.AuthorAudience;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.port.output.challenge.ChallengeAudiencePort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SharedContentSql;
 import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SqlLike;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -19,21 +21,11 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Visibilidad de retos ajenos: lee {@code usuarios} (Núcleo) y {@code amistades} (Social). Para un reto
- * concreto solo trae los datos ({@link OwnerAudience}) y decide {@code Challenge.isVisibleTo}; el
- * listado paginado replica esa regla en SQL estándar porque hay que filtrar antes de paginar.
+ * concreto solo trae los datos ({@link AuthorAudience}) y decide {@code Challenge.isVisibleTo}; el
+ * listado paginado filtra con {@link SharedContentSql}, que recibe los niveles de la misma regla.
  */
 @Repository
 public class ChallengeAudiencePersistenceAdapter implements ChallengeAudiencePort {
-
-    /** Autor visible (no silenciado ni eliminado) y reto público o de un amigo con amistad aceptada. */
-    private static final String VISIBLE = """
-             u.is_shadowbanned = false and u.eliminado_en is null
-             and (r.visibilidad = 'public'
-                  or (r.visibilidad = 'friends' and exists (
-                        select 1 from amistades a where a.estado = 'aceptada'
-                          and ((a.solicitante_id = :viewer and a.receptor_id = r.usuario_id)
-                               or (a.receptor_id = :viewer and a.solicitante_id = r.usuario_id)))))
-            """;
 
     private final JdbcClient jdbc;
 
@@ -47,8 +39,8 @@ public class ChallengeAudiencePersistenceAdapter implements ChallengeAudiencePor
         StringBuilder where = new StringBuilder("""
                  from retos r join usuarios u on u.id = r.usuario_id
                  where r.usuario_id <> :viewer and r.esta_completado = false and r.fecha_fin >= :now and
-                """).append(VISIBLE);
-        Map<String, Object> params = new HashMap<>();
+                """).append(SharedContentSql.visible(AudienceScope.ALL, "r.visibilidad", "r.usuario_id", "u"));
+        Map<String, Object> params = new HashMap<>(SharedContentSql.params(AudienceScope.ALL));
         params.put("viewer", viewerId);
         params.put("now", OffsetDateTime.ofInstant(now, ZoneOffset.UTC));
         if (type != null) {
@@ -71,20 +63,12 @@ public class ChallengeAudiencePersistenceAdapter implements ChallengeAudiencePor
     }
 
     @Override
-    public OwnerAudience audienceOf(UUID viewerId, UUID ownerId) {
-        boolean friends = jdbc.sql("""
-                        select count(*) from amistades a where a.estado = 'aceptada'
-                          and ((a.solicitante_id = :viewer and a.receptor_id = :owner)
-                               or (a.receptor_id = :viewer and a.solicitante_id = :owner))
-                        """)
+    public AuthorAudience audienceOf(UUID viewerId, UUID ownerId) {
+        return jdbc.sql("select " + SharedContentSql.audienceColumns(":owner", "u") + " from usuarios u where u.id = :owner")
                 .param("viewer", viewerId)
                 .param("owner", ownerId)
-                .query(Long.class).single() > 0;
-        return jdbc.sql("select eliminado_en, is_shadowbanned from usuarios where id = :owner")
-                .param("owner", ownerId)
-                .query((rs, n) -> new OwnerAudience(rs.getObject("eliminado_en") == null,
-                        rs.getBoolean("is_shadowbanned"), friends))
+                .query((rs, n) -> SharedContentSql.audience(rs))
                 .optional()
-                .orElse(new OwnerAudience(false, false, friends));
+                .orElseGet(AuthorAudience::missing);
     }
 }

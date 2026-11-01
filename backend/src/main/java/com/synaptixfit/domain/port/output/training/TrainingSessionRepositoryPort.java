@@ -18,6 +18,9 @@ public interface TrainingSessionRepositoryPort {
 
     Optional<TrainingSession> findInProgressForDay(UUID userId, UUID dayId);
 
+    /** Sesiones sin terminar del usuario (en curso o abandonadas), más recientes primero. */
+    List<TrainingSession> findOpen(UUID userId);
+
     /** Si hay otra sesión completada del día (distinta de {@code excludingSessionId}). */
     boolean existsCompletedForDay(UUID dayId, UUID excludingSessionId);
 

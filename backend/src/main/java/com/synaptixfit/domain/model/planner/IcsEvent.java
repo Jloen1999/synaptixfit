@@ -32,6 +32,16 @@ public record IcsEvent(String uid, String summary, String description, String lo
         CLASS
     }
 
+    /** Festivos y avisos de que no hay clase: no son algo que hacer ni una clase. */
+    private static final List<String> NON_TEACHING_KEYWORDS =
+            List.of("festivo", "fiesta", "no hay clase", "no lectivo", "vacaciones", "puente");
+
+    /** ¿Es un festivo o un aviso de que no hay clase? */
+    public boolean isNonTeaching() {
+        String text = " " + SubjectMatcher.normalize(summary) + " ";
+        return NON_TEACHING_KEYWORDS.stream().anyMatch(k -> text.contains(" " + k + " ") || text.contains(" " + k));
+    }
+
     /** ¿Es solo el aviso de que algo se abre (no una fecha límite)? */
     public boolean isOpeningNotice() {
         String text = " " + SubjectMatcher.normalize(summary);

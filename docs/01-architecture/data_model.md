@@ -53,6 +53,14 @@ Las 62 migraciones de Supabase se consolidaron en `V1__baseline_schema.sql`. `V2
 | `V500`: `sesiones_focus.bloque_id`, `sesiones_focus.asignatura_id` (opcionales, `ON DELETE SET NULL`) y `sesiones_focus.xp_otorgado`; `retos.sesiones_objetivo` (1-365, opcional) y `retos.sesiones_completadas` | Pomodoro vinculado a un bloque y una asignatura, con XP de tope diario calculado sumando lo ya concedido; retos de fitness que avanzan con las sesiones de entrenamiento recontadas desde cero (ADR 0009) |
 | `V450`: `ck_usuarios_credencial` admite cuentas anonimizadas (`eliminado_en IS NOT NULL`); `v_admin_metricas` con «hoy» en UTC y sin contar cuentas eliminadas | La anonimización RGPD dejaba la fila sin credenciales |
 | `V960`: `suscripciones_calendario` (una por usuario, solo la huella SHA-256 del token; ADR 0020) | Ver el planificador en Google, Apple u Outlook con un enlace privado que se actualiza solo |
+| `V1000`: `dias_rutina.estado` admite `'saltado'` y añade `cerrado_en` (día en que se completó o se saltó; los completados se rellenan con su última sesión en Europe/Madrid) | Saltar días sin bloquear la rutina; proponer el próximo día al ritmo real de entrenamiento (`RoutineSchedule`) |
+| `V1001`: deja en curso (`'activo'`) solo la rutina activa más reciente de cada usuario; el resto pasa a `'pausado'` sin perder avance | Una sola rutina en curso: antes, duplicar o clonar cambiaba el «próximo entrenamiento» sin avisar |
+| `V1002`: vacía los nombres de día por defecto (`'Día 1'`…`'Día 7'`) | El número del día es el día de la semana preferido; sin nombre propio, el cliente muestra el día de la semana |
+| `V1010`: `hitos_de_reto.porcentaje_peso` recalculado desde la dificultad de cada tarea (XP / suma del reto × 100) | Una sola medida de importancia (ADR 0028); el dominio lo recalcula igualmente al cargar |
+| `V1011`: `retos.progreso_manual` (0-100, por defecto 0), rellenado con la suma del historial con tope 100 (0 si el reto no está completado y la suma llega a 100) | El progreso manual de un reto sin tareas es un valor absoluto que el reto guarda; antes se sumaba el historial y desmarcar seguía mostrando 100 % |
+| `V1012`: los vínculos `'bloque'` de retos y tareas pasan a `horarios_academicos.hito_id`/`reto_id` (mismo usuario, sin pisar) y se borran del reto | El vínculo de bloque no hacía nada; ahora los bloques se asignan a una tarea desde el editor de bloques (ADR 0028) |
+| `V1020`: `seleccion_de_ejercicios.repeticiones_por_serie` y `segundos_isometricos_por_serie` (`jsonb`, como `pesos_kg`; nulo = todas las series usan el valor común) y `series_sesion.duracion_segundos` / `distancia_metros` (con CHECK de rango) | Objetivos distintos en cada serie (pirámides) y series de tiempo o distancia (plancha, correr) en la sesión en vivo (ADR 0027) |
+| `V1021`: `series_sesion.ejercicio_id` (FK a `ejercicios`, `ON DELETE SET NULL`, índice), rellenada desde `seleccion_de_ejercicios` | Quitar o sustituir un ejercicio de la rutina ya no deja sus series sin ejercicio en el historial y los récords (ADR 0027) |
 | `V980`: `suscripciones_resumen_semanal` (una por usuario; doble confirmación, solo la huella del token de confirmación; ADR 0022) | Resumen semanal por correo |
 | `V970`: `restablecimientos_contrasena` (solo la huella SHA-256, caduca a los 30 min, un uso; ADR 0021) | Recuperar la contraseña por correo |
 | `V950`: `registros_carga_fisica.bloque_id` (FK a `horarios_academicos`, `ON DELETE CASCADE`). Cada registro viene de una sesión (`sesion_id`) o de un bloque de deporte sin rutina (`bloque_id`) | Los bloques de deporte daban XP pero no contaban para el ACWR ni la fatiga |
@@ -72,8 +80,8 @@ Las 62 migraciones de Supabase se consolidaron en `V1__baseline_schema.sql`. `V2
 | `handle_new_auth_user`, `trg_inicializar_estado_cognitivo` | Registro en `AuthService` + evento `UserRegistered` |
 | `shadowban_nuevo_si_lockdown` | `AuthService` consulta `PlatformSettingsPort` al registrar |
 | `invalidar_contenido_al_privatizar` | Evento `UserPrivacyChanged` |
-| `sync_entrega_a_reto`, `sync_reto_a_entrega`, `sync_hito_a_entrega` | Eventos `DeadlineCompletionChanged` y `ChallengeLinkCompletionChanged` |
-| `fn_actualizar_progreso_hito` | Evento `StudyBlockCompletionChanged` |
+| `sync_entrega_a_reto`, `sync_reto_a_entrega`, `sync_hito_a_entrega` | Evento `DeadlineCompletionChanged`, en un solo sentido (entrega → reto; ADR 0028) |
+| `fn_actualizar_progreso_hito` | Eventos `StudyBlockCompletionChanged` y `StudyBlockAssignmentChanged` |
 | `trg_insertar_carga_fisica`, `recalcular_regulacion_cruzada` | Evento `TrainingSessionCompletionChanged` |
 | `marcar_semana_completada`, `actualizar_estado_semana` (contradictorios entre sí) | Regla única en el dominio de entrenamiento |
 | `es_admin`, políticas RLS | Rol en el JWT + comprobación de propiedad en los casos de uso |
@@ -81,3 +89,7 @@ Las 62 migraciones de Supabase se consolidaron en `V1__baseline_schema.sql`. `V2
 | Vistas `v_admin_metricas`, `v_analitica_semanal` | `AdminActivityAggregation`, `WeeklyTrainingMetric.byWeek` (aplicadas en los casos de uso; los puertos solo devuelven filas) |
 | Columnas generadas `carga_diaria` y `acwr_actual` (se conservan como copia, la app no las lee) | `PhysicalLoadRecord.load` + `PhysicalLoadHistory`; `CrossRegulationState` |
 | Progreso de retos con `CASE` en el SQL del inicio | `Challenge.progress()` vía `ListMyChallengesUseCase` |
+
+## Visibilidad del contenido compartido
+
+`apuntes.visibilidad`, `rutinas.visibilidad` y `retos.visibilidad` guardan lo que eligió su autor, pero lo que ven los demás es la **visibilidad efectiva**: la más restrictiva entre esa columna y `usuarios.nivel_privacidad` del autor, sin bloqueos (`amistades.estado = 'bloqueada'`, en cualquier sentido) y sin autores eliminados o con shadowban. La regla vive en `EffectiveVisibility` (dominio); las consultas paginadas reciben sus niveles como parámetros (`SharedContentSql`). Al crear o editar un apunte o una rutina, el backend rebaja la visibilidad pedida a la del perfil. Los apuntes compartidos exponen la asignatura del catálogo (`asignaturas.catalogo_asignatura_id` → `asignaturas_catalogo`), nunca la asignatura privada del autor. Sin cambios de esquema.

@@ -2,7 +2,9 @@ package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 
 import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
+import com.synaptixfit.domain.model.training.OpenTrainingSession;
 import com.synaptixfit.domain.model.training.SessionAdaptation;
+import com.synaptixfit.domain.model.training.SessionLabel;
 import com.synaptixfit.domain.model.training.SessionSet;
 import com.synaptixfit.domain.model.training.SessionType;
 import com.synaptixfit.domain.model.training.TrainingSession;
@@ -15,6 +17,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,14 +38,20 @@ public final class SessionDtos {
     public record StartSessionRequest(UUID routineId, UUID dayId) {
     }
 
-    /** Serie realizada; {@code completed} por defecto true. Repetir {@code plannedExerciseId}+{@code setNumber} la sustituye. */
+    /**
+     * Serie realizada; {@code completed} por defecto true. Repetir {@code plannedExerciseId}+{@code setNumber}
+     * la sustituye. {@code durationSeconds}/{@code distanceMeters}: en ejercicios de tiempo o distancia.
+     */
     public record RecordSetRequest(UUID plannedExerciseId, @NotNull @Min(1) @Max(50) Integer setNumber,
                                    @Min(0) @Max(1000) Integer repsDone,
                                    @DecimalMin("0") @DecimalMax("500") Double weightKg,
-                                   Boolean completed, @Min(0) @Max(1000) Integer failedReps) {
+                                   Boolean completed, @Min(0) @Max(1000) Integer failedReps,
+                                   @Min(0) @Max(14400) Integer durationSeconds,
+                                   @Min(0) @Max(100000) Integer distanceMeters) {
         public RecordSessionSetUseCase.Command toCommand(UUID userId, UUID sessionId) {
             return new RecordSessionSetUseCase.Command(userId, sessionId, plannedExerciseId, setNumber, repsDone,
-                    weightKg, completed == null || completed, failedReps == null ? 0 : failedReps);
+                    weightKg, completed == null || completed, failedReps == null ? 0 : failedReps, durationSeconds,
+                    distanceMeters);
         }
     }
 
@@ -56,11 +65,41 @@ public final class SessionDtos {
                                        @Size(max = 300) List<@Valid @NotNull RecordSetRequest> sets) {
     }
 
+    /** Corregir una sesión terminada: RPE 1-10 y duración en minutos (1-240). */
+    public record CorrectSessionRequest(@NotNull @Min(1) @Max(10) Integer rpe,
+                                        @NotNull @Min(1) @Max(240) Integer durationMinutes) {
+    }
+
+    /** Registrar un día de rutina hecho sin la app: fecha de hoy o de los 7 días anteriores. */
+    public record PastSessionRequest(@NotNull UUID routineId, @NotNull UUID dayId, @NotNull LocalDate date,
+                                     @NotNull @Min(1) @Max(240) Integer durationMinutes,
+                                     @NotNull @Min(1) @Max(10) Integer rpe) {
+    }
+
+    /**
+     * Sesión sin terminar con su nombre. {@code stale}: abandonada (más de 6 h abierta): se termina con
+     * lo registrado o se descarta. Rutina y día nulos en sesiones libres; {@code dayName} nulo si el día
+     * no tiene nombre propio.
+     */
+    public record OpenSessionResponse(SessionResponse session, boolean stale, String routineName, String dayName,
+                                      Integer dayNumber, Integer weekNumber) {
+        public static OpenSessionResponse from(OpenTrainingSession o) {
+            SessionLabel l = o.label();
+            return new OpenSessionResponse(SessionResponse.from(o.session()), o.stale(),
+                    l == null ? null : l.routineName(), l == null ? null : l.dayName(),
+                    l == null ? null : l.dayNumber(), l == null ? null : l.weekNumber());
+        }
+    }
+
+    public record PastSessionResponse(SessionResponse session, ExperienceResponse experience) {
+    }
+
     public record SessionSetResponse(UUID id, UUID plannedExerciseId, int setNumber, Integer repsDone, Double weightKg,
-                                     boolean completed, int failedReps) {
+                                     boolean completed, int failedReps, Integer durationSeconds,
+                                     Integer distanceMeters, UUID exerciseId) {
         static SessionSetResponse from(SessionSet s) {
             return new SessionSetResponse(s.id(), s.plannedExerciseId(), s.setNumber(), s.repsDone(), s.weightKg(),
-                    s.completed(), s.failedReps());
+                    s.completed(), s.failedReps(), s.durationSeconds(), s.distanceMeters(), s.exerciseId());
         }
     }
 

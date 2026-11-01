@@ -10,7 +10,7 @@ import '../../enums/visibility.dart';
 
 part 'challenge.freezed.dart';
 
-/// Vínculo de un reto o tarea con una entrega, examen o bloque del planificador.
+/// Vínculo de un reto o tarea con una entrega o examen del planificador.
 @freezed
 abstract class ChallengeLink with _$ChallengeLink {
   const factory ChallengeLink({
@@ -39,10 +39,26 @@ abstract class Challenge with _$Challenge {
 
     /// Progreso ponderado 0-100.
     required double progress,
+
+    /// Si ahora se puede actuar a mano (entre inicio y fin). Lo decide el
+    /// servidor (ADR 0028); el cliente no repite la regla.
+    @Default(true) bool open,
     required DateTime startAt,
     required DateTime endAt,
     String? subjectId,
     ChallengeLink? link,
+
+    /// Entrega o examen vinculado (solo en retos propios): título, fecha y si
+    /// ya está hecho. Lo manda el servidor para no tener que pedirlo aparte.
+    String? linkTitle,
+    DateTime? linkDueAt,
+    bool? linkCompleted,
+
+    /// Sin tareas y vinculado: lo completa su entrega, no un toque (lo decide
+    /// el servidor; ADR 0028).
+    @Default(false) bool completedByLink,
+
+    /// Racha vigente hoy (0 si se rompió), calculada por el servidor.
     required int currentStreak,
     required int bestStreak,
     DateTime? lastActiveDay,
@@ -78,14 +94,18 @@ abstract class Challenge with _$Challenge {
   int get totalXpAwarded =>
       xpAwarded + milestones.fold(0, (sum, m) => sum + m.xpAwarded);
 
-  /// Siguiente tarea que se puede hacer ya: la primera, en el orden del reto,
-  /// sin completar ni bloquear. `null` si no hay tareas o están todas hechas.
+  /// Siguiente tarea que se puede marcar ya: la primera, en el orden del reto,
+  /// sin completar, sin bloquear y que no complete su vínculo (esas avanzan
+  /// solas). `null` si no hay ninguna.
   Milestone? get nextMilestone {
-    final open = milestones.where((m) => !m.completed && !m.isLocked).toList()
-      ..sort((a, b) {
-        final byOrder = a.order.compareTo(b.order);
-        return byOrder != 0 ? byOrder : a.id.compareTo(b.id);
-      });
+    final open =
+        milestones
+            .where((m) => !m.completed && !m.isLocked && !m.completedByLink)
+            .toList()
+          ..sort((a, b) {
+            final byOrder = a.order.compareTo(b.order);
+            return byOrder != 0 ? byOrder : a.id.compareTo(b.id);
+          });
     return open.isEmpty ? null : open.first;
   }
 
@@ -121,10 +141,20 @@ abstract class Milestone with _$Milestone {
     required MilestoneCondition condition,
     required int conditionN,
     required ChallengeDifficulty difficulty,
+
+    /// XP real con el tope del reto (la que dio si está completada).
     required int xpReward,
     required int xpAwarded,
     String? subjectId,
     ChallengeLink? link,
+    String? linkTitle,
+    DateTime? linkDueAt,
+    bool? linkCompleted,
+
+    /// La completa su entrega/examen o sus bloques del calendario, no un toque.
+    @Default(false) bool completedByLink,
+    @Default(0) int studyBlocksTotal,
+    @Default(0) int studyBlocksCompleted,
     String? noteId,
     String? fileId,
   }) = _Milestone;
@@ -134,4 +164,7 @@ abstract class Milestone with _$Milestone {
   bool get isLocked => status == MilestoneStatus.locked;
 
   bool get hasAttachment => noteId != null || fileId != null;
+
+  /// Avanza con bloques del calendario asignados a la tarea.
+  bool get hasStudyBlocks => studyBlocksTotal > 0;
 }

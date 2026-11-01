@@ -1,11 +1,11 @@
 package com.synaptixfit.domain.model.dashboard;
 
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChallenge;
-import com.synaptixfit.domain.model.dashboard.DashboardReadModels.NextTrainingDay;
 import com.synaptixfit.domain.model.insights.CognitiveState;
 import com.synaptixfit.domain.model.insights.CrossRegulationView;
 import com.synaptixfit.domain.model.insights.WellbeingSnapshot;
 import com.synaptixfit.domain.model.planner.ItemTimeStatus;
+import com.synaptixfit.domain.model.training.PendingDay;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.UUID;
 /** Resumen del inicio en una sola lectura. */
 public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, CognitiveState cognitive,
                         CrossRegulationView crossRegulation, WellbeingSnapshot wellbeing,
-                        NextTrainingDay nextTrainingDay, List<ActiveChallenge> activeChallenges,
+                        PendingDay nextTrainingDay, List<ActiveChallenge> activeChallenges,
                         List<PlanDay> planWeek, List<TodayEvent> todayEvents, SmartBanner banner) {
 
     public Dashboard {
@@ -60,11 +60,20 @@ public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, Cogni
      * @param type tipo de actividad del bloque o tipo de la entrega, tal cual en la BD
      * @param end  fin del bloque (null en entregas)
      */
-    /** {@code status}: pendiente, en curso, hecho o no hecho/vencido ({@link ItemTimeStatus}). */
+    /**
+     * {@code status}: pendiente, en curso, hecho o no hecho/vencido ({@link ItemTimeStatus});
+     * {@code routineId}/{@code routineDayId}: día de rutina que refleja un bloque de deporte.
+     */
     public record TodayEvent(Kind kind, UUID id, String title, String type, Instant start, Instant end,
-                             boolean completed, String subjectName, ItemTimeStatus status) {
+                             boolean completed, String subjectName, ItemTimeStatus status, UUID routineId,
+                             UUID routineDayId) {
 
         public enum Kind { BLOCK, DEADLINE }
+
+        public TodayEvent(Kind kind, UUID id, String title, String type, Instant start, Instant end,
+                          boolean completed, String subjectName, ItemTimeStatus status) {
+            this(kind, id, title, type, start, end, completed, subjectName, status, null, null);
+        }
 
         public TodayEvent(Kind kind, UUID id, String title, String type, Instant start, Instant end,
                           boolean completed, String subjectName) {

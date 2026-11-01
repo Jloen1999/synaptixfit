@@ -11,6 +11,7 @@ import com.synaptixfit.domain.event.planner.DeadlineCompletionChanged;
 import com.synaptixfit.domain.event.planner.FocusSessionCompleted;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
 import com.synaptixfit.domain.exception.planner.CalendarBlockNotFoundException;
+import com.synaptixfit.domain.exception.planner.BlockRoutineLinkedException;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.Deadline;
@@ -81,11 +82,14 @@ class PlannerCrossModuleSyncTest {
     }
 
     @Test
-    void completingASportBlockLinkedToARoutineDayByHandGivesNoXp() {
+    void aSportBlockLinkedToARoutineDayCannotBeCompletedByHand() {
         CalendarBlock sport = block(ActivityType.SPORT, at(0, 18, 0), 60, null, UUID.randomUUID(), null);
         CalendarBlock free = block(ActivityType.SPORT, at(0, 20, 0), 60, null, null, null);
 
-        assertThat(completion.setCompletion(f.user, sport.id(), true).xpDelta()).isZero();
+        // Lo marca la sesión de entrenamiento (ADR 0026), nunca la mano: así no hay XP ni carga duplicadas.
+        assertThatThrownBy(() -> completion.setCompletion(f.user, sport.id(), true))
+                .isInstanceOf(BlockRoutineLinkedException.class);
+        assertThat(f.blocks.store.get(sport.id()).completed()).isFalse();
         assertThat(completion.setCompletion(f.user, free.id(), true).xpDelta()).isEqualTo(20);
     }
 

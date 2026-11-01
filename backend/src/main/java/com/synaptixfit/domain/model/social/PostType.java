@@ -7,5 +7,13 @@ public enum PostType {
     MILESTONE_REACHED,
     BADGE_UNLOCKED,
     ROUTINE,
-    CHALLENGE
+    CHALLENGE;
+
+    /**
+     * ¿Se puede publicar a mano? «Rutina» y «Reto» no: una publicación así no enlaza ninguna rutina
+     * ni reto real (no hay metadatos validados), así que solo se conservan las antiguas.
+     */
+    public boolean publishableByHand() {
+        return this != ROUTINE && this != CHALLENGE;
+    }
 }

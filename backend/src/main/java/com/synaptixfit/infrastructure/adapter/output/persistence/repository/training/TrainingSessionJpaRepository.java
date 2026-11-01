@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.adapter.output.persistence.repository.tra
 
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.TrainingSessionEntity;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,8 @@ public interface TrainingSessionJpaRepository extends JpaRepository<TrainingSess
     Page<TrainingSessionEntity> findByUsuarioIdAndCompletadaEnIsNullOrderByCreadoEnDesc(UUID usuarioId, Pageable pageable);
 
     Optional<TrainingSessionEntity> findFirstByUsuarioIdAndDiaIdAndCompletadaEnIsNullOrderByCreadoEnDesc(UUID usuarioId, UUID diaId);
+
+    List<TrainingSessionEntity> findByUsuarioIdAndCompletadaEnIsNullOrderByCreadoEnDesc(UUID usuarioId);
 
     boolean existsByDiaIdAndCompletadaEnIsNotNullAndIdNot(UUID diaId, UUID id);
 

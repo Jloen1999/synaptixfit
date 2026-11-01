@@ -9,9 +9,6 @@ enum ChallengeDraftIssue {
   invalidDates('CHALLENGE_INVALID_DATES'),
   tooManyMilestones('CHALLENGE_TOO_MANY_MILESTONES'),
   milestoneTitleTooShort(null),
-  weightsIncomplete('MILESTONE_WEIGHTS_INVALID'),
-  weightOutOfRange('MILESTONE_WEIGHTS_INVALID'),
-  weightsSum('MILESTONE_WEIGHTS_INVALID'),
   dependencyInvalid('MILESTONE_DEPENDENCY_INVALID'),
   dependencyCycle('MILESTONE_DEPENDENCY_INVALID'),
   conditionInvalid('MILESTONE_DEPENDENCY_INVALID'),
@@ -38,9 +35,6 @@ abstract final class ChallengeDraftValidator {
   static const maxMilestones = 12;
   static const sessionTargetMin = 1;
   static const sessionTargetMax = 365;
-
-  /// Margen admitido en la suma de pesos (p. ej. 3 × 33,33 = 99,99).
-  static const weightTolerance = 0.1;
 
   static ChallengeDraftIssue? validate(ChallengeDraft draft) {
     final title = draft.title.trim();
@@ -78,35 +72,7 @@ abstract final class ChallengeDraftValidator {
         return ChallengeDraftIssue.attachmentConflict;
       }
     }
-    return _validateWeights(milestones) ?? _validateDependencies(milestones);
-  }
-
-  /// Suma de los pesos indicados (para mostrarla mientras se editan).
-  static double weightSum(Iterable<double?> weights) =>
-      weights.fold(0, (sum, w) => sum + (w ?? 0));
-
-  /// Pesos automáticos: reparte 100 a partes iguales (el último absorbe el resto).
-  static List<double> autoWeights(int count) {
-    if (count == 0) return const [];
-    final base = (10000 / count).floor() / 100;
-    return [
-      for (var i = 0; i < count - 1; i++) base,
-      ((100 - base * (count - 1)) * 100).round() / 100,
-    ];
-  }
-
-  static ChallengeDraftIssue? _validateWeights(List<MilestoneDraft> drafts) {
-    final given = drafts.where((d) => d.weight != null).length;
-    if (given == 0) return null;
-    if (given != drafts.length) return ChallengeDraftIssue.weightsIncomplete;
-    for (final d in drafts) {
-      final w = d.weight!;
-      if (!(w > 0) || w > 100) return ChallengeDraftIssue.weightOutOfRange;
-    }
-    final sum = weightSum(drafts.map((d) => d.weight));
-    return (sum - 100).abs() > weightTolerance
-        ? ChallengeDraftIssue.weightsSum
-        : null;
+    return _validateDependencies(milestones);
   }
 
   static ChallengeDraftIssue? _validateDependencies(

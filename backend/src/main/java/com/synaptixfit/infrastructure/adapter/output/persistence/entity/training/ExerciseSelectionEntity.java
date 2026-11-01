@@ -44,6 +44,12 @@ public class ExerciseSelectionEntity {
     private List<Double> pesosKg;
     @Column(name = "duracion_real_segundos")
     private Integer duracionRealSegundos;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "repeticiones_por_serie")
+    private List<Integer> repeticionesPorSerie;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "segundos_isometricos_por_serie")
+    private List<Integer> segundosIsometricosPorSerie;
 
 
     public UUID getId() { return id; }
@@ -74,4 +80,8 @@ public class ExerciseSelectionEntity {
     public void setPesosKg(List<Double> v) { this.pesosKg = v; }
     public Integer getDuracionRealSegundos() { return duracionRealSegundos; }
     public void setDuracionRealSegundos(Integer v) { this.duracionRealSegundos = v; }
+    public List<Integer> getRepeticionesPorSerie() { return repeticionesPorSerie; }
+    public void setRepeticionesPorSerie(List<Integer> v) { this.repeticionesPorSerie = v; }
+    public List<Integer> getSegundosIsometricosPorSerie() { return segundosIsometricosPorSerie; }
+    public void setSegundosIsometricosPorSerie(List<Integer> v) { this.segundosIsometricosPorSerie = v; }
 }

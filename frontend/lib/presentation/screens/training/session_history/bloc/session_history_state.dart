@@ -8,6 +8,9 @@ abstract class SessionHistoryState with _$SessionHistoryState {
     @Default(HistoryStatus.loading) HistoryStatus status,
     @Default(<SessionHistoryEntry>[]) List<SessionHistoryEntry> items,
 
+    /// Sesiones sin terminar (en curso y abandonadas), arriba del historial.
+    @Default(<OpenSession>[]) List<OpenSession> open,
+
     /// Mejor marca actual de cada ejercicio (la más reciente primero).
     @Default(<PersonalRecord>[]) List<PersonalRecord> records,
     @Default(0) int page,

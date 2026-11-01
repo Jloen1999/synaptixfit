@@ -43,6 +43,33 @@ class BlockCompletionServiceTest {
         return f.blocks.save(b);
     }
 
+    private CalendarBlock routineBlock(Instant start, UUID routineDayId) {
+        return f.blocks.save(CalendarBlock.builder().id(UUID.randomUUID()).userId(f.user)
+                .range(TimeRange.ofMinutes(start, 60)).type(ActivityType.SPORT)
+                .details(new CalendarBlock.Details(null, "Semana 1 · Empuje", null, Priority.MEDIUM, false, null,
+                        UUID.randomUUID(), UUID.randomUUID(), routineDayId, null, null, null))
+                .build());
+    }
+
+    @Test
+    void aRoutineBlockFollowsItsSessionEvenOnAnotherDateAndIsNotMarkedByHand() {
+        UUID day = UUID.randomUUID();
+        CalendarBlock wednesday = routineBlock(at(2, 18, 0), day);
+        CalendarBlock nextWeek = routineBlock(at(9, 18, 0), day);
+
+        assertThatThrownBy(() -> service.setCompletion(f.user, wednesday.id(), true))
+                .extracting("code").isEqualTo("BLOCK_ROUTINE_LINKED");
+
+        // Se entrenó el martes: se marca el bloque más cercano de ese día de rutina, sin XP de bloque.
+        service.syncSportBlock(f.user, day, PlannerFakes.MONDAY.plusDays(1), true);
+        assertThat(f.blocks.store.get(wednesday.id()).completed()).isTrue();
+        assertThat(f.blocks.store.get(nextWeek.id()).completed()).isFalse();
+        assertThat(f.xp.of(f.user)).isZero();
+
+        service.syncSportBlock(f.user, day, PlannerFakes.MONDAY.plusDays(1), false);
+        assertThat(f.blocks.store.get(wednesday.id()).completed()).isFalse();
+    }
+
     @Test
     void completingGrantsCeilOfHalfHoursTimesTenOnlyOnce() {
         CalendarBlock b = block(ActivityType.STUDY, at(0, 16, 0), 75, null);

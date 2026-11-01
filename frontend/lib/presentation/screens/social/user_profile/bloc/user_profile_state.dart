@@ -14,6 +14,11 @@ abstract class UserProfileState with _$UserProfileState {
     /// Error al cargar las publicaciones (el perfil sí se cargó).
     AppError? postsError,
 
+    /// Apuntes que comparte conmigo (los primeros) y si hay más.
+    @Default(<SharedNoteSummary>[]) List<SharedNoteSummary> notes,
+    @Default(false) bool hasMoreNotes,
+    AppError? notesError,
+
     /// Acción de relación en curso.
     @Default(false) bool busy,
     @Default(false) bool refreshing,

@@ -22,6 +22,15 @@ public final class PlannerProfile {
      */
     public record Academic(int weeklyStudyGoalHours, LocalDate semesterStart, LocalDate semesterEnd) {
 
+        /**
+         * Semestre del curso (1 o 2) según cuándo empiezan las clases: de agosto a enero, el primero; de febrero
+         * a julio, el segundo. Los horarios de las universidades suelen traer los dos y hay que elegir.
+         */
+        public int semesterNumber() {
+            int month = semesterStart == null ? 9 : semesterStart.getMonthValue();
+            return month >= 8 || month == 1 ? 1 : 2;
+        }
+
         /** Objetivo semanal de estudio si el usuario no tiene perfil académico (el de la columna por defecto). */
         public static final int DEFAULT_WEEKLY_GOAL_HOURS = 14;
 

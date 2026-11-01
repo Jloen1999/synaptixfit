@@ -78,7 +78,7 @@ Todas están en `CognitiveLoad` como constantes con nombre. Los tests de `NeuroF
 |---|---|
 | Sesión de entrenamiento | Menos de 10 min: sin XP y no cuenta para retos, insignias ni racha; solo las 2 primeras del día dan XP |
 | Test o práctica | XP solo con ≥ 5 preguntas; como mucho 5 tests con XP cada 24 h (la práctica de un banco da XP una sola vez por banco y no entra en ese tope) |
-| Reto | Como mucho 140 XP entre todas sus tareas; uno de sesiones marcado a mano antes del objetivo no da XP hasta alcanzarlo |
+| Reto | Como mucho 140 XP entre todas sus tareas (cada tarea muestra la que daría de verdad con ese tope); uno de sesiones marcado a mano antes del objetivo no da XP hasta alcanzarlo |
 | Bloque del calendario | 10 XP por media hora hasta 4 h; como mucho 200 XP al día en bloques |
 | Entrega | Como mucho 5 con XP cada 24 h |
 | Pomodoro | Fecha de hoy o de ayer; para la racha, fase de foco de al menos 10 min |
@@ -104,8 +104,29 @@ Todas están en `CognitiveLoad` como constantes con nombre. Los tests de `NeuroF
 - **Avisos de Inicio:** entregas vencidas de los últimos 14 días (antes que las próximas) y bloques de ayer u hoy sin hacer (sin contar clases, que casi siempre vienen del horario importado). La fatiga alta va antes que los bloques sin hacer.
 - **Lista «Pendientes» de entregas:** `upcoming=true&includeOverdue=true` añade las vencidas sin completar de los últimos 30 días (primero). Con solo `upcoming=true` la lista empieza hoy, como antes.
 - **Racha:** la de Inicio es la efectiva (`GetStreakUseCase`): si ayer no hubo actividad, ya está rota aunque la guardada diga otra cosa.
-- **Sesiones de entreno abandonadas:** una sesión abierta más de 6 h se da por abandonada; al empezar otra se cancela (con sus series) y su día de rutina vuelve a pendiente en Inicio. Al terminar, la duración se acota a 4 h para que olvidar la sesión abierta no infle minutos ni kcal.
+- **Sesiones de entreno abandonadas:** una sesión abierta más de 6 h se da por abandonada y **nunca se borra sola**: empezar ese día devuelve `SESSION_STALE_OPEN` y la app ofrece «Terminar con lo registrado» o «Descartar». Al terminarla, la duración se acota a 4 h y la sesión se fecha al **inicio + duración** (`TrainingSession.completionInstant`): la carga, la XP y los retos cuentan en el día en que se entrenó, no en el de hoy.
+- **Desmarcar, corregir y eliminar:** solo se desmarca una sesión el mismo día en que se terminó (`SESSION_UNMARK_EXPIRED`); una de otro día se corrige (RPE y duración, que recalculan su carga y kcal; la XP no cambia) o se elimina (resta su XP y retira su carga, su avance en retos y su bloque).
+- **Sesión de rutina pasada:** hasta 7 días atrás (`SESSION_PAST_DATE_INVALID`); se fecha ese día a las 12:00 (o ahora si es hoy) y da la XP de una sesión con el tope diario de ese día.
+
+## Avance de una rutina (`Routine`, `RoutineSchedule`)
+
+- **La rutina avanza al ritmo al que se entrena (orden, no fechas).** El número de cada día (1-7) es el día de la semana preferido, no una fecha fija.
+- **Próximo día:** si un día tiene una sesión en curso (menos de 6 h), ese; si no, el primer día con ejercicios que no esté hecho ni saltado, en orden de semana y día (los días vacíos no cuentan).
+- **Fecha prevista:** la del bloque pendiente del calendario de ese día posterior al último avance; si no hay, el siguiente día de la semana preferido a partir del día siguiente al último día cerrado (`cerrado_en`), o desde la fecha de inicio (u hoy) si no se ha avanzado. **Atrasado** si esa fecha ya pasó. Se muestra también «sesión k de n de la semana» y «semana X de Y».
+- **Saltar:** completar un día salta los anteriores pendientes (reversible con «Recuperar»); un día hecho no se salta (`ROUTINE_DAY_NOT_SKIPPABLE`). Una semana está completada si todos sus días con ejercicios están hechos o saltados.
+- **Fin de ciclo:** con todo hecho o saltado la rutina pasa a completada (aviso y `RoutineCompleted`); «Repetir ciclo» pone el avance a cero con inicio hoy y conserva el historial.
+- **Una sola rutina en curso:** activar una pausa la anterior; una nueva (creada, generada, duplicada o clonada) solo queda en curso si no hay otra.
 - **Retos vencidos:** pasada su fecha de fin ya no se completan, desmarcan ni avanzan (`CHALLENGE_EXPIRED` si se intenta a mano; la sincronización con entregas, bloques y sesiones los salta sin error). Un progreso no puede registrarse con fecha fuera del periodo del reto.
+
+## Retos (ADR 0028)
+
+- **Periodo:** solo se actúa a mano entre el inicio y el fin (`Challenge.requireOpen`), esté o no completado: antes, `CHALLENGE_NOT_STARTED` (estado `UPCOMING`); después, `CHALLENGE_EXPIRED`. Las tareas se pueden preparar antes de empezar, pero no editar tras el fin.
+- **Peso de cada tarea:** `peso_i = xp(dificultad_i) / Σ xp(dificultad) × 100` (baja 20, media 40, alta 70), redondeado a centésimas; la última se queda el resto para sumar 100. Progreso del reto = `Σ peso_i × progreso_i / 100`. Antes había pesos manuales que no cambiaban la XP: ahora la dificultad es la única medida de importancia.
+- **XP por tarea mostrada:** la que dio si está completada; si no, `min(xp(dificultad), lo que queda hasta 140)` repartido en el orden de las tareas (`Challenge.milestoneXp`). La del reto es la suma.
+- **Lo vinculado manda:** una tarea con entrega o examen sigue su estado; una con bloques asignados avanza con `bloques hechos / bloques` y se completa al 100 %. Ninguna se marca a mano. Si tiene las dos cosas, manda la entrega. Un reto sin tareas vinculado lo completa su entrega; con tareas, el vínculo del reto es una referencia.
+- **Fechas de lo vinculado:** la entrega vence dentro del periodo del reto y el bloque cae dentro de él (por días, en la zona de la app). Se comprueba al vincular y al cambiar las fechas del reto (no al mover la entrega). Si la entrega se borra, la tarea vuelve a marcarse a mano.
+- **Progreso manual (retos sin tareas):** «¿Cuánto llevas?» fija un valor absoluto 0-100; bajar es una corrección y no cuenta para la racha ni se anota en el historial (que guarda lo avanzado). Desmarcar el reto lo pone a 0.
+- **Racha mostrada:** `currentStreak` si el último día con actividad fue hoy o ayer; si no, 0.
 
 ## Configuración pendiente (aviso de Inicio)
 
@@ -143,3 +164,11 @@ dispositivo. No bloquea nada: el onboarding corto deja saltar pasos y aquí se r
 - Gabbett, T. J. (2016). The training–injury prevention paradox. *British Journal of Sports Medicine*, 50(5), 273–280.
 - Mifflin, M. D. et al. (1990). A new predictive equation for resting energy expenditure. *American Journal of Clinical Nutrition*, 51(2), 241–247.
 - Herrmann, S. D. et al. (2024). 2024 Adult Compendium of Physical Activities. *Journal of Sport and Health Science*, 13(1), 6–12.
+
+## Objetivos por serie (`ExerciseParameters`, ADR 0027)
+
+- **Serie n:** usa `repsPerSet[n-1]`, `weightsKg[n-1]` e `isometricSecondsPerSet[n-1]` si existen; si la lista falta o es más corta, el valor común (`reps`, `weightKg`, `isometricSeconds`).
+- **Valor común** (referencia de calorías y progresión): lo fija el dominio del servidor (`ExerciseParameters`) cuando una lista cubre todas las series: media de las repeticiones, peso de trabajo (el mayor) y aguante más largo. Si todas las series coinciden, solo se guarda el común; las listas más largas que las series se recortan. El cliente repite la regla solo para pintar al instante.
+- **Progresión:** si sube o baja una repetición el valor común, se suma o resta a cada serie; si escala el aguante, escala cada serie en la misma proporción.
+- **Tipo de seguimiento (`TrackingKind`, dominio del servidor):** primero los datos del ejercicio planificado (duración o distancia → cardio; aguante → isométrico) y después el catálogo (distancia, o solo tiempo y aeróbico → cardio; solo tiempo → isométrico; lo demás → repeticiones). El cliente lo traduce a columnas: reps (+ kg si lleva carga), segundos (+ kg) o minutos y metros.
+- **Sustituir un ejercicio (`adaptedTo`):** según el tipo del nuevo. Repeticiones: conserva series, repeticiones y descanso, y la carga si se mide por peso. Isométrico: aguante (30 s si no tenía). Cardio: bloque de tiempo (10 min si no tenía) y la distancia si se mide por distancia.

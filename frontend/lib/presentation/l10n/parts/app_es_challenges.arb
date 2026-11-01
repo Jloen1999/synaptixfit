@@ -256,7 +256,6 @@
   "challengesUncompleteMessage": "Se restará la XP que te dio completarlo.",
   "challengesLinkExam": "Vinculado a un examen",
   "challengesLinkDelivery": "Vinculado a una entrega",
-  "challengesLinkBlock": "Vinculado a un bloque de estudio",
   "challengesLinkOpen": "Ver en el planificador",
   "challengesMilestoneNote": "Apunte adjunto",
   "challengesMilestoneFile": "Archivo adjunto",
@@ -264,14 +263,6 @@
   "challengesMilestoneAvailable": "Disponible",
   "challengesMilestoneInProgress": "En curso",
   "challengesMilestoneCompleted": "Completada",
-  "challengesMilestoneWeight": "Vale {weight} %",
-  "@challengesMilestoneWeight": {
-    "placeholders": {
-      "weight": {
-        "type": "String"
-      }
-    }
-  },
   "challengesMilestoneDependsOn": "Depende de: {titles}",
   "@challengesMilestoneDependsOn": {
     "placeholders": {
@@ -312,14 +303,6 @@
   },
   "challengesConditionXOfYOption": "X de Y",
   "challengesProgressTitle": "Registrar progreso",
-  "challengesProgressAmount": "Avance: {amount} %",
-  "@challengesProgressAmount": {
-    "placeholders": {
-      "amount": {
-        "type": "int"
-      }
-    }
-  },
   "challengesProgressTask": "Tarea",
   "challengesProgressAction": "Registrar",
   "challengesReorderTitle": "Reordenar tareas",
@@ -363,18 +346,7 @@
   },
   "challengesFormAddTask": "Añadir tarea",
   "challengesFormNoTasks": "Sin tareas: completarás el reto de una vez.",
-  "challengesFormManualWeights": "Pesos manuales",
-  "challengesFormManualWeightsHint": "Si no, el progreso se reparte a partes iguales.",
-  "challengesFormWeightSum": "Suma: {sum} %",
-  "@challengesFormWeightSum": {
-    "placeholders": {
-      "sum": {
-        "type": "String"
-      }
-    }
-  },
-  "challengesFormDistribute": "Repartir por igual",
-  "challengesFormLinkHint": "Vincula el reto a una entrega, examen o bloque: al completar uno se marca el otro.",
+  "challengesFormLinkHint": "Vincula el reto a una entrega o examen que venza dentro de sus fechas: se completará cuando lo marques como hecho en el planificador.",
   "challengesFormAddLink": "Vincular",
   "challengesFormRemoveLink": "Quitar vínculo",
   "challengesFormSave": "Guardar reto",
@@ -386,16 +358,6 @@
   "challengesIssueDates": "La fecha de fin debe ser posterior a la de inicio.",
   "challengesIssueTooMany": "Un reto puede tener como máximo 12 tareas.",
   "challengesIssueTaskTitle": "Cada tarea necesita un título de entre 3 y 80 caracteres.",
-  "challengesIssueWeightsIncomplete": "Indica el peso de todas las tareas.",
-  "challengesIssueWeightRange": "Cada peso debe ser mayor que 0 y como máximo 100.",
-  "challengesIssueWeightsSum": "Los pesos deben sumar 100 % (ahora suman {sum} %).",
-  "@challengesIssueWeightsSum": {
-    "placeholders": {
-      "sum": {
-        "type": "String"
-      }
-    }
-  },
   "challengesIssueDependency": "Revisa las dependencias entre tareas.",
   "challengesIssueCycle": "Las dependencias no pueden formar un ciclo.",
   "challengesIssueCondition": "En «X de Y», X debe estar entre 1 y el número de dependencias.",
@@ -419,7 +381,6 @@
   "challengesTaskNew": "Nueva tarea",
   "challengesTaskEdit": "Editar tarea",
   "challengesTaskTitle": "Título de la tarea",
-  "challengesTaskWeight": "Peso (%)",
   "challengesTaskDependencies": "Depende de",
   "challengesTaskNoOtherTasks": "Añade más tareas para crear dependencias.",
   "challengesTaskCondition": "Se desbloquea cuando se completen",
@@ -438,21 +399,18 @@
   "challengesAttachUnassigned": "Apuntes sin asignatura",
   "challengesLinkTitle": "Vincular",
   "challengesLinkDeadlines": "Entregas y exámenes",
-  "challengesLinkBlocks": "Bloques de estudio",
-  "challengesLinkEmpty": "No hay entregas pendientes ni bloques de estudio próximos.",
+  "challengesLinkEmpty": "No hay entregas ni exámenes pendientes.",
   "challengesLinkExamLabel": "Examen",
   "challengesLinkDeliveryLabel": "Entrega",
-  "challengesLinkBlockLabel": "Bloque de estudio",
   "challengesErrorNotFound": "No encontramos este reto.",
   "challengesErrorMilestoneNotFound": "No encontramos esta tarea.",
   "challengesErrorSubjectNotFound": "La asignatura seleccionada no existe.",
-  "challengesErrorLinkNotFound": "El examen, entrega o bloque vinculado no existe.",
+  "challengesErrorLinkNotFound": "El examen o la entrega vinculados no existen.",
   "challengesErrorAttachmentNotFound": "El apunte o archivo adjunto no existe.",
   "challengesErrorInvalidDates": "La fecha de fin debe ser posterior a la de inicio.",
   "challengesErrorTypeOutsideFocus": "Ese tipo de reto no está activo en tu cuenta. Cámbialo en tu perfil si quieres usarlo.",
   "challengesErrorAttachmentConflict": "Una tarea solo puede tener un apunte o un archivo.",
   "challengesErrorTooManyMilestones": "Un reto puede tener como máximo 12 tareas.",
-  "challengesErrorWeightsInvalid": "Los pesos de las tareas deben sumar 100 %.",
   "challengesErrorDependencyInvalid": "Las dependencias entre tareas no son válidas.",
   "challengesErrorMilestoneLocked": "Completa antes las tareas de las que depende.",
   "challengesErrorOrderInvalid": "El nuevo orden no es válido.",
@@ -514,5 +472,117 @@
   "challengesDurationWeek": "1 semana",
   "challengesDurationTwoWeeks": "2 semanas",
   "challengesDurationMonth": "1 mes",
-  "challengesDetailXpEarned": "XP ganada"
+  "challengesDetailXpEarned": "XP ganada",
+  "challengesStatusUpcoming": "Por empezar",
+  "challengesSummaryUpcoming": "Por empezar",
+  "challengesWhenDone": "Completado",
+  "challengesWhenExpiredOn": "Venció el {date}",
+  "@challengesWhenExpiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesWhenStartsOn": "Empieza el {date}",
+  "@challengesWhenStartsOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesWhenStartsTomorrow": "Empieza mañana",
+  "challengesWhenDueToday": "Vence hoy",
+  "challengesWhenDueTomorrow": "Vence mañana",
+  "challengesWhenDueIn": "{count, plural, =1{Vence en 1 día} other{Vence en {count} días}}",
+  "@challengesWhenDueIn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesWhenDueOn": "Vence el {date}",
+  "@challengesWhenDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesDateDue": "Vence",
+  "challengesDateStarts": "Empieza",
+  "challengesDateExpired": "Venció",
+  "challengesDateDone": "Hecho",
+  "challengesDateToday": "Hoy",
+  "challengesDateTomorrow": "Mañana",
+  "challengesGroupToday": "Vencen hoy",
+  "challengesGroupThisWeek": "Próximos 7 días",
+  "challengesGroupLater": "Más adelante",
+  "challengesGroupUpcoming": "Por empezar",
+  "challengesGroupExpired": "Vencidos",
+  "challengesGroupCompleted": "Completados",
+  "challengesUpcomingHint": "Aún no ha empezado: podrás avanzar desde el {date}.",
+  "@challengesUpcomingHint": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesCompletedByDeadline": "Se completa al hacer «{title}»",
+  "@challengesCompletedByDeadline": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesCompletedByDeadlineGeneric": "Se completa al hacer su entrega o examen",
+  "challengesMilestoneBlocks": "{done}/{total} bloques del calendario hechos",
+  "@challengesMilestoneBlocks": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesLinkDrivesChallenge": "El reto se completa cuando la marques como hecha en el planificador.",
+  "challengesXpOfTotal": "{earned} / {total} XP",
+  "@challengesXpOfTotal": {
+    "placeholders": {
+      "earned": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesProgressHowMuch": "¿Cuánto llevas?",
+  "challengesProgressCurrent": "Ahora llevas un {percent} %. Pon el valor actual, no lo que sumas.",
+  "@challengesProgressCurrent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "challengesProgressWillComplete": "Con el 100 % el reto queda completado.",
+  "challengesFormInOrder": "Hacer las tareas en orden",
+  "challengesFormInOrderHint": "Cada tarea se desbloquea al completar la anterior.",
+  "challengesFormInOrderReplaces": "Activarlo sustituye las dependencias que tiene el reto por este orden.",
+  "challengesFormMoreOptions": "Más opciones",
+  "challengesFormMoreOptionsHint": "Objetivo, inicio, esfuerzo, visibilidad y vínculo",
+  "challengesTaskEffortHint": "Una tarea más intensa cuenta más en el progreso y da más XP.",
+  "challengesLinkEmptyPeriod": "Solo aparecen las entregas y exámenes pendientes que vencen dentro de las fechas del reto.",
+  "challengesErrorNotStarted": "Este reto aún no ha empezado: podrás avanzar desde su fecha de inicio.",
+  "challengesErrorLinked": "Este reto se completa con su entrega o examen: márcalo como hecho en el planificador.",
+  "challengesErrorMilestoneLinked": "Esta tarea avanza con su entrega o sus bloques del calendario: márcalos como hechos en el planificador.",
+  "challengesErrorLinkOutsidePeriod": "La entrega o el examen vence fuera de las fechas del reto. Amplía el reto o elige otro.",
+  "challengesFormTasksReplaceSessions": "Este reto avanza con tus entrenamientos. Si le añades tareas, dejará de contarlos y avanzará con las tareas."
 }

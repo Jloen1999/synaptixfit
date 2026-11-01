@@ -292,16 +292,28 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
           ),
           if (result != null) ...[
             const SizedBox(height: TokensSpacing.s),
-            if (result.imported)
+            if (result.imported) ...[
               AppInlineMessage(
-                tone: AppMessageTone.warning,
+                tone: AppMessageTone.success,
                 message: l10n.plannerIcsResult(
                   result.created,
                   result.updated,
                   result.totalEvents,
                 ),
-              )
-            else ...[
+              ),
+              // Qué se ha añadido exactamente, y verlo en el calendario.
+              _IcsItemsList(items: result.items, imported: true),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: AppSecondaryButton(
+                  label: l10n.plannerScanOpenCalendar,
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  onPressed: () => context.canPop()
+                      ? context.pop()
+                      : unawaited(context.push<void>(PlannerPaths.root)),
+                ),
+              ),
+            ] else ...[
               AppInlineMessage(
                 tone: AppMessageTone.warning,
                 message: l10n.plannerIcsNotImported(
@@ -309,6 +321,7 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
                   result.totalEvents,
                 ),
               ),
+              _IcsItemsList(items: result.items, imported: false),
               if (result.match != IcsMatch.full && state.icsSubjectId != null)
                 Align(
                   alignment: Alignment.centerLeft,
@@ -384,10 +397,12 @@ class _ScanResultView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    final found = result.classesFound > 0;
     return Container(
       padding: const EdgeInsets.all(TokensSpacing.m),
       decoration: BoxDecoration(
-        color: context.palette.success.withValues(alpha: AppPill.tintAlpha),
+        color: (found ? context.palette.success : context.palette.warning)
+            .withValues(alpha: AppPill.tintAlpha),
         borderRadius: BorderRadius.circular(TokensRadius.m),
       ),
       child: Column(
@@ -395,11 +410,20 @@ class _ScanResultView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.check_circle_rounded, color: context.palette.success),
+              Icon(
+                found
+                    ? Icons.check_circle_rounded
+                    : Icons.travel_explore_rounded,
+                color: found
+                    ? context.palette.success
+                    : context.palette.warning,
+              ),
               const SizedBox(width: TokensSpacing.s),
               Expanded(
                 child: Text(
-                  l10n.plannerScanResultTitle,
+                  found
+                      ? l10n.plannerScanResultTitle
+                      : l10n.plannerScanNoMatchTitle,
                   style: context.textStyles.titleSmall,
                 ),
               ),
@@ -413,6 +437,19 @@ class _ScanResultView extends StatelessWidget {
               result.blocksUpdated,
             ),
           ),
+          // En qué se basa: semestre y asignaturas buscadas.
+          if (result.searchedSubjects.isNotEmpty) ...[
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              l10n.plannerScanBasis(
+                result.semester,
+                result.searchedSubjects.join(', '),
+              ),
+              style: context.textStyles.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ],
           if (result.unmatchedSubjects.isNotEmpty) ...[
             const SizedBox(height: TokensSpacing.s),
             Text(
@@ -442,6 +479,25 @@ class _ScanResultView extends StatelessWidget {
               ),
             ),
           ],
+          if (!found && result.documentSubjects.isNotEmpty) ...[
+            const SizedBox(height: TokensSpacing.s),
+            Text(
+              l10n.plannerScanDocumentSubjects,
+              style: context.textStyles.labelLarge,
+            ),
+            for (final s in result.documentSubjects)
+              Padding(
+                padding: const EdgeInsets.only(top: TokensSpacing.xxs),
+                child: Text('· $s', style: context.textStyles.bodySmall),
+              ),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              l10n.plannerScanNoMatchHint,
+              style: context.textStyles.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ],
           if (result.classes.isNotEmpty) ...[
             const SizedBox(height: TokensSpacing.m),
             Semantics(
@@ -457,18 +513,19 @@ class _ScanResultView extends StatelessWidget {
               unmatched: result.unmatchedSubjects.toSet(),
             ),
           ],
-          const SizedBox(height: TokensSpacing.s),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: AppSecondaryButton(
-              label: l10n.plannerScanOpenCalendar,
-              icon: const Icon(Icons.calendar_month_outlined),
-              // Se suele llegar desde el calendario: se vuelve a él; si no, se abre.
-              onPressed: () => context.canPop()
-                  ? context.pop()
-                  : unawaited(context.push<void>(PlannerPaths.root)),
+          if (found) const SizedBox(height: TokensSpacing.s),
+          if (found)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AppSecondaryButton(
+                label: l10n.plannerScanOpenCalendar,
+                icon: const Icon(Icons.calendar_month_outlined),
+                // Se suele llegar desde el calendario: se vuelve a él; si no, se abre.
+                onPressed: () => context.canPop()
+                    ? context.pop()
+                    : unawaited(context.push<void>(PlannerPaths.root)),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -565,6 +622,56 @@ class _Timetable extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Lo importado de un calendario (o lo que trae, si no se importó), por fecha:
+/// el estudiante ve exactamente qué se añade. Plegado si es largo.
+class _IcsItemsList extends StatelessWidget {
+  const _IcsItemsList({required this.items, required this.imported});
+
+  final List<IcsImportItem> items;
+  final bool imported;
+
+  static const _visible = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    final l10n = context.localizations;
+    final day = DateFormat.MMMEd(l10n.localeName);
+    final time = DateFormat.Hm(l10n.localeName);
+    Widget row(IcsImportItem i) {
+      final (icon, color) = switch (i.kind) {
+        'EXAM' => (Icons.quiz_outlined, context.palette.warning),
+        'DELIVERY' => (Icons.assignment_outlined, context.palette.accent),
+        _ => (Icons.school_outlined, context.palette.study),
+      };
+      return MergeSemantics(
+        child: ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(icon, color: color, size: TokensSize.iconS),
+          title: Text(i.title, maxLines: 2, overflow: TextOverflow.ellipsis),
+          subtitle: Text(
+            '${toBeginningOfSentenceCase(day.format(i.start))} · ${time.format(i.start)}',
+          ),
+        ),
+      );
+    }
+
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: EdgeInsets.zero,
+      initiallyExpanded: imported && items.length <= _visible,
+      title: Text(
+        imported
+            ? l10n.plannerIcsAddedList(items.length)
+            : l10n.plannerIcsContentList(items.length),
+        style: context.textStyles.labelLarge,
+      ),
+      children: [for (final i in items) row(i)],
     );
   }
 }

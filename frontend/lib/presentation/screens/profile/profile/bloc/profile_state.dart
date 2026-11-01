@@ -12,6 +12,9 @@ abstract class ProfileState with _$ProfileState {
     /// Recarga en segundo plano (pull-to-refresh) en curso.
     @Default(false) bool refreshing,
 
+    /// Solicitudes de amistad recibidas sin responder.
+    @Default(0) int pendingRequests,
+
     /// Error de la última carga (con datos previos se muestra como aviso).
     AppError? error,
   }) = _ProfileState;

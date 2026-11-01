@@ -89,6 +89,71 @@ abstract class LiveSessionState with _$LiveSessionState {
     return null;
   }
 
+  /// Clave de lo escrito en una serie aún sin marcar (borradores de la
+  /// pantalla): ejercicio, serie y campo.
+  static String draftKey(String exerciseId, int set, SetField field) =>
+      '$exerciseId/$set/${field.name}';
+
+  /// Lo que se propone para la serie [set] de [e] en el campo [f].
+  ///
+  /// Si la rutina detalla esa serie (pirámide de repeticiones o de pesos)
+  /// manda el plan; si no, lo que se hizo en la serie anterior de hoy (lo
+  /// real), la última vez (solo el peso) y, por último, lo previsto.
+  num? proposedValue(PlannedExercise e, int set, SetField f) {
+    final p = e.parameters;
+    final previous = session
+        ?.setsFor(e.id)
+        .where((x) => x.setNumber == set - 1)
+        .firstOrNull;
+    return switch (f) {
+      SetField.reps =>
+        p.repsPerSet != null
+            ? p.repsForSet(set)
+            : previous?.repsDone ?? p.repsForSet(set),
+      SetField.weight =>
+        p.weightsKg != null
+            ? p.weightForSet(set)
+            : previous?.weightKg ??
+                  lastPerformance[e.exerciseId]?.weightKg ??
+                  p.weightForSet(set),
+      SetField.hold =>
+        p.isometricSecondsPerSet != null
+            ? p.holdForSet(set)
+            : previous?.durationSeconds ?? p.holdForSet(set),
+      SetField.duration =>
+        previous?.durationSeconds != null
+            ? (previous!.durationSeconds! / 60).round()
+            : p.targetDurationSeconds == null
+            ? null
+            : (p.targetDurationSeconds! / 60).round(),
+      SetField.distance => previous?.distanceMeters ?? p.distanceMeters,
+    };
+  }
+
+  /// Cifras de la serie [set] de [e] para marcarla: lo escrito en [drafts] o
+  /// lo propuesto.
+  Map<SetField, num?> valuesFor(
+    PlannedExercise e,
+    int set,
+    Map<String, num?> drafts,
+  ) => {
+    for (final f in SetFields.of(e).fields)
+      f: drafts.containsKey(draftKey(e.id, set, f))
+          ? drafts[draftKey(e.id, set, f)]
+          : proposedValue(e, set, f),
+  };
+
+  /// Ejercicio que se está mirando: el activo o, si ya no queda ninguno por
+  /// hacer, el siguiente con series o el último.
+  PlannedExercise get viewed =>
+      exercises.where((e) => e.id == activeExerciseId).firstOrNull ??
+      upNext ??
+      exercises.last;
+
+  /// Ejercicios con todas sus series previstas apuntadas.
+  int get finishedExercises =>
+      exercises.where((e) => loggedSetsOf(e) >= e.parameters.sets).length;
+
   /// Ejercicio que toca: el activo si le quedan series; si no, el primero con
   /// series por apuntar. Nulo cuando ya no queda ninguna (toca terminar).
   PlannedExercise? get upNext {

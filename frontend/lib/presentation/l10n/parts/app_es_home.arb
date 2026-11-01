@@ -283,17 +283,6 @@
   "homeEventPresentation": "Presentación",
   "homeEventOther": "Otro",
   "homeTrainingTitle": "Próximo entrenamiento",
-  "homeTrainingWeekDay": "Semana {week} · Día {day}",
-  "@homeTrainingWeekDay": {
-    "placeholders": {
-      "week": {
-        "type": "int"
-      },
-      "day": {
-        "type": "int"
-      }
-    }
-  },
   "homeTrainingInProgress": "En curso",
   "homeTrainingStart": "Empezar",
   "homeTrainingContinue": "Continuar",
@@ -571,5 +560,6 @@
       }
     }
   },
-  "homeReviewAll": "Repasar todos"
+  "homeReviewAll": "Repasar todos",
+  "homeCommunity": "Muro de la comunidad"
 }

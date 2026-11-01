@@ -39,6 +39,8 @@ class RoutineServiceTest {
 
     private final TrainingFakes.Routines routines = new TrainingFakes.Routines();
     private final TrainingFakes.Exercises exercises = new TrainingFakes.Exercises();
+    private final java.util.Map<UUID, Visibility> privacy = new java.util.HashMap<>();
+    private final List<com.synaptixfit.domain.event.DomainEvent> events = new java.util.ArrayList<>();
     private RoutineService service;
     private Exercise bench;
     private Exercise row;
@@ -48,13 +50,16 @@ class RoutineServiceTest {
         bench = exercises.add(TrainingFakes.strength("Press de banca", "Pectoral mayor"));
         row = exercises.add(TrainingFakes.strength("Remo con barra", "Dorsal ancho"));
         UserRepositoryPort users = new UserRepositoryPort() {
-            public Optional<User> findById(UUID id) { return Optional.empty(); }
+            public Optional<User> findById(UUID id) {
+                return Optional.of(User.builder().id(id).email(id + "@example.com").fullName("Usuario")
+                        .passwordHash("hash").privacy(privacy.getOrDefault(id, Visibility.PUBLIC)).build());
+            }
             public Optional<User> findByEmail(String e) { return Optional.empty(); }
             public Optional<User> findByGoogleSubject(String s) { return Optional.empty(); }
             public boolean existsByEmail(String e) { return false; }
             public User save(User u) { return u; }
         };
-        service = new RoutineService(routines, exercises, users,
+        service = new RoutineService(routines, exercises, users, events::add,
                 Clock.fixed(Instant.parse("2026-10-05T10:00:00Z"), ZoneOffset.UTC));
     }
 
@@ -75,7 +80,7 @@ class RoutineServiceTest {
         assertThat(r.durationWeeks()).isEqualTo(2);
         assertThat(r.weeks().get(0).type()).isEqualTo(WeekType.ADAPTATION);
         assertThat(r.weeks().get(0).name()).isEqualTo("Semana 1");
-        assertThat(r.weeks().get(0).days().get(1).name()).isEqualTo("Día 3");
+        assertThat(r.weeks().get(0).days().get(1).name()).isNull();
         assertThat(r.weeks().get(1).name()).isEqualTo("Descarga");
         assertThat(r.status()).isEqualTo(RoutineStatus.ACTIVE);
         assertThat(routines.store).containsKey(r.id());
@@ -121,7 +126,7 @@ class RoutineServiceTest {
         Routine r = createTwoWeeks();
         UUID day1 = r.weeks().getFirst().days().getFirst().id();
         r.startDay(day1, java.time.LocalDate.now());
-        r.completeDay(day1);
+        r.completeDay(day1, java.time.LocalDate.now());
         routines.authors.put(OWNER, "Ana");
 
         Routine copy = service.cloneRoutine(OTHER, r.id());
@@ -134,6 +139,48 @@ class RoutineServiceTest {
         assertThat(copy.completedDays()).isZero();
         assertThat(copy.exerciseCount()).isEqualTo(3);
         assertThat(copy.allDays().getFirst().id()).isNotEqualTo(day1);
+        // La primera rutina del otro usuario queda en curso; las copias de quien ya tiene una, en pausa.
+        assertThat(copy.status()).isEqualTo(RoutineStatus.ACTIVE);
+        assertThat(service.cloneRoutine(OTHER, r.id()).status()).isEqualTo(RoutineStatus.PAUSED);
+    }
+
+    @Test
+    void onlyOneRoutineIsActiveAndActivatingPausesThePreviousOne() {
+        Routine first = createTwoWeeks();
+        Routine second = createTwoWeeks();
+        assertThat(second.status()).isEqualTo(RoutineStatus.PAUSED);
+
+        service.changeStatus(OWNER, second.id(), RoutineStatus.ACTIVE);
+
+        assertThat(routines.store.get(first.id()).status()).isEqualTo(RoutineStatus.PAUSED);
+        assertThat(routines.store.get(second.id()).status()).isEqualTo(RoutineStatus.ACTIVE);
+        assertThat(events).filteredOn(e -> e instanceof com.synaptixfit.domain.event.training.RoutineDeactivated)
+                .extracting(e -> ((com.synaptixfit.domain.event.training.RoutineDeactivated) e).routineId())
+                .containsExactly(first.id());
+    }
+
+    @Test
+    void visibilityNeverExceedsTheAuthorProfile() {
+        privacy.put(OWNER, Visibility.FRIENDS);
+        Routine r = createTwoWeeks();
+        assertThat(r.visibility()).isEqualTo(Visibility.FRIENDS);
+        privacy.put(OWNER, Visibility.PRIVATE);
+        Routine updated = service.update(new UpdateRoutineUseCase.Command(OWNER, r.id(), null, null,
+                Visibility.PUBLIC, null, null, false));
+        assertThat(updated.visibility()).isEqualTo(Visibility.PRIVATE);
+    }
+
+    @Test
+    void deletingADayAnnouncesItBeforeTheCalendarLosesTheLink() {
+        Routine r = createTwoWeeks();
+        UUID day3 = r.weeks().getFirst().days().get(1).id();
+        service.deleteDay(OWNER, r.id(), day3);
+        service.delete(OWNER, r.id());
+        assertThat(events).anySatisfy(e -> assertThat(e)
+                .isEqualTo(new com.synaptixfit.domain.event.training.RoutineDaysRemoved(OWNER, r.id(), List.of(day3),
+                        Instant.parse("2026-10-05T10:00:00Z"))));
+        assertThat(events).anySatisfy(e -> assertThat(e)
+                .isInstanceOf(com.synaptixfit.domain.event.training.RoutineDeactivated.class));
     }
 
     @Test
@@ -173,16 +220,6 @@ class RoutineServiceTest {
     }
 
     @Test
-    void pendingDayIsFirstNotCompletedOfLatestActiveRoutine() {
-        Routine r = createTwoWeeks();
-        UUID day1 = r.weeks().getFirst().days().getFirst().id();
-        assertThat(service.pendingDay(OWNER)).get().extracting(p -> p.day().id()).isEqualTo(day1);
-        r.completeDay(day1);
-        assertThat(service.pendingDay(OWNER).orElseThrow().day().number()).isEqualTo(3);
-        assertThat(service.pendingDay(OTHER)).isEmpty();
-    }
-
-    @Test
     void privatizeAllOnlySavesRoutinesThatChange() {
         createTwoWeeks();
         createTwoWeeks();
@@ -206,5 +243,26 @@ class RoutineServiceTest {
         Routine updated = service.updateExercise(OWNER, r.id(), first, new ExerciseParameters(5, 5, 180, 60.0, null, null, null, null));
         assertThat(updated.plannedExercise(first).parameters().sets()).isEqualTo(5);
         assertThat(updated.day(day.id()).status()).isEqualTo(ProgressStatus.PENDING);
+    }
+
+    @Test
+    void replacingAnExerciseKeepsItsPositionAndRejectsInactiveMissingOrForeignOnes() {
+        Routine r = createTwoWeeks();
+        UUID first = r.weeks().getFirst().days().getFirst().exercises().getFirst().id();
+        Exercise squat = exercises.add(TrainingFakes.strength("Sentadilla", "Cuádriceps"));
+
+        Routine replaced = service.replaceExercise(OWNER, r.id(), first, squat.id());
+
+        var slot = replaced.weeks().getFirst().days().getFirst().exercises().getFirst();
+        assertThat(slot.exerciseId()).isEqualTo(squat.id());
+        assertThat(slot.id()).isNotEqualTo(first);
+        assertThat(slot.parameters().sets()).isEqualTo(PARAMS.sets());
+        exercises.setActive(row.id(), false, Instant.now());
+        assertThatThrownBy(() -> service.replaceExercise(OWNER, r.id(), slot.id(), row.id()))
+                .isInstanceOf(ExerciseInactiveException.class);
+        assertThatThrownBy(() -> service.replaceExercise(OWNER, r.id(), slot.id(), UUID.randomUUID()))
+                .isInstanceOf(ExerciseNotFoundException.class);
+        assertThatThrownBy(() -> service.replaceExercise(OTHER, r.id(), slot.id(), squat.id()))
+                .isInstanceOf(RoutineNotFoundException.class);
     }
 }

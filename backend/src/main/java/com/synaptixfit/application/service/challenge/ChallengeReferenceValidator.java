@@ -8,9 +8,13 @@ import com.synaptixfit.domain.model.challenge.ChallengeLink;
 import com.synaptixfit.domain.model.challenge.MilestoneDraft;
 import com.synaptixfit.domain.port.output.challenge.ChallengeReferencePort;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
-/** Comprueba que asignaturas, vínculos y adjuntos referenciados pertenecen al usuario. */
+/**
+ * Comprueba que asignaturas, vínculos (entregas y exámenes) y adjuntos referenciados pertenecen al usuario.
+ * Que la entrega venza dentro del periodo del reto lo comprueba el propio reto al guardarse.
+ */
 public class ChallengeReferenceValidator {
 
     private final ChallengeReferencePort references;
@@ -29,21 +33,24 @@ public class ChallengeReferenceValidator {
         if (link == null) {
             return;
         }
-        boolean owned = link.type().isDeadline()
-                ? references.deadlineBelongsTo(userId, link.entityId())
-                : references.studyBlockBelongsTo(userId, link.entityId());
-        if (!owned) {
+        if (!references.deadlineBelongsTo(userId, link.entityId())) {
             throw new ChallengeLinkNotFoundException(link.entityId());
         }
     }
 
-    public void checkDrafts(UUID userId, List<MilestoneDraft> drafts) {
+    /**
+     * @param keptLinks entregas que ya estaban vinculadas al reto: no se vuelven a validar (si se borraron, la
+     *                  tarea simplemente deja de completarse por ellas y no debe impedir editar el reto)
+     */
+    public void checkDrafts(UUID userId, List<MilestoneDraft> drafts, Set<UUID> keptLinks) {
         for (MilestoneDraft d : drafts) {
             if (d.noteId() != null && d.fileId() != null) {
                 throw new MilestoneAttachmentConflictException();
             }
             checkSubject(userId, d.subjectId());
-            checkLink(userId, d.link());
+            if (d.link() != null && !keptLinks.contains(d.link().entityId())) {
+                checkLink(userId, d.link());
+            }
             if (d.noteId() != null && !references.noteBelongsTo(userId, d.noteId())) {
                 throw new MilestoneAttachmentNotFoundException(d.noteId());
             }

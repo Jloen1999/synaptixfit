@@ -61,7 +61,7 @@ class ChallengeServiceTest {
     }
 
     private static MilestoneDraft task(String title, List<Integer> deps) {
-        return new MilestoneDraft(null, title, null, null, null, null, null, null, deps, null, null);
+        return new MilestoneDraft(null, title, null, null, null, null, null, deps, null, null);
     }
 
     @Test

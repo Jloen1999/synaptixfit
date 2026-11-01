@@ -10,6 +10,7 @@ import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/models/training/routine.dart';
 import '../../../../../domain/models/training/session.dart';
 import '../../../../../domain/models/training/session_adaptation.dart';
+import '../../../../../domain/models/training/set_fields.dart';
 import '../../../../../domain/use_cases/training/load_pending_sets_use_case.dart';
 import '../../../../../domain/use_cases/training/save_pending_sets_use_case.dart';
 import '../../../../../domain/use_cases/training/get_last_performance_use_case.dart';
@@ -432,6 +433,8 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
             weightKg: r.weightKg,
             completed: r.completed,
             failedReps: r.failedReps,
+            durationSeconds: r.durationSeconds,
+            distanceMeters: r.distanceMeters,
           ),
       ],
     );

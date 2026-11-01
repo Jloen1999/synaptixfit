@@ -12,7 +12,9 @@ import com.synaptixfit.application.port.input.planner.GetScheduleConflictsUseCas
 import com.synaptixfit.application.port.input.planner.RescheduleBlockToNextFreeSlotUseCase;
 import com.synaptixfit.application.port.input.planner.RescheduleCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateCalendarBlockUseCase;
+import com.synaptixfit.application.port.input.planner.WithdrawRoutineBlocksUseCase;
 import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
+import com.synaptixfit.domain.event.planner.StudyBlockAssignmentChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
 import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.exception.planner.BlockNoFreeSlotException;
@@ -33,15 +35,22 @@ import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
-/** Bloques del calendario: consulta, alta, edición, cambio de horario, borrado y conflictos. */
+/**
+ * Bloques del calendario: consulta, alta, edición, cambio de horario, borrado y conflictos. También
+ * borra los bloques que dejan de tener sentido por otros módulos (asignatura eliminada, días de rutina
+ * saltados o quitados, rutina que deja de estar en curso).
+ */
 public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalendarBlockUseCase,
         RescheduleBlockToNextFreeSlotUseCase,
         CreateCalendarBlockUseCase, UpdateCalendarBlockUseCase, RescheduleCalendarBlockUseCase,
-        DeleteCalendarBlockUseCase, GetScheduleConflictsUseCase, DeleteSubjectBlocksUseCase {
+        DeleteCalendarBlockUseCase, GetScheduleConflictsUseCase, DeleteSubjectBlocksUseCase,
+        WithdrawRoutineBlocksUseCase {
 
     private final CalendarBlockRepositoryPort blocks;
     private final DeadlineRepositoryPort deadlines;
@@ -65,7 +74,7 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         this.weeklyLoads = weeklyLoads;
         this.zone = zone;
         this.clock = clock;
-        this.resolver = new BlockDetailsResolver(subjects, routines, challenges, deadlines);
+        this.resolver = new BlockDetailsResolver(subjects, routines, challenges, deadlines, zone);
         this.conflicts = new ConflictFlagger(blocks);
     }
 
@@ -86,7 +95,7 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         TimeRange range = new TimeRange(command.start(), command.end());
         BlockDetailsInput input = command.details();
         ActivityType type = input.type() == null ? ActivityType.STUDY : input.type();
-        CalendarBlock.Details details = resolver.resolve(command.userId(), input);
+        CalendarBlock.Details details = resolver.resolve(command.userId(), input, range);
         CalendarBlock block = CalendarBlock.builder()
                 .id(UUID.randomUUID())
                 .userId(command.userId())
@@ -108,11 +117,19 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         conflicts.refresh(command.userId(), List.of(saved), neighbours);
         int copies = type.canRepeatWeekly()
                 ? Math.max(0, Math.min(command.repeatWeeks(), CalendarBlock.MAX_WEEKLY_REPEATS)) : 0;
+        int made = 0;
         for (int week = 1; week <= copies; week++) {
-            CalendarBlock copy = blocks.save(weeklyCopy(saved, week, now));
+            CalendarBlock next = weeklyCopy(saved, week, now);
+            // Las copias de un bloque de reto se quedan dentro del periodo del reto.
+            if (!resolver.fitsChallengePeriod(command.userId(), next.details().challengeId(), next.range())) {
+                break;
+            }
+            CalendarBlock copy = blocks.save(next);
             conflicts.refresh(command.userId(), List.of(copy), conflicts.neighboursOf(copy));
+            made++;
         }
-        return new BlockChange(saved, neighbours, copies);
+        publishAssignment(command.userId(), null, saved.details().milestoneId());
+        return new BlockChange(saved, neighbours, made);
     }
 
     /** Copia de {@code original} {@code week} semanas después, a la misma hora local. */
@@ -157,8 +174,11 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
     public CalendarBlock updateBlock(UpdateCalendarBlockUseCase.Command command) {
         CalendarBlock block = owned(command.userId(), command.blockId());
         ActivityType type = command.details().type() == null ? block.type() : command.details().type();
-        block.revise(type, resolver.resolve(command.userId(), command.details()));
-        return blocks.save(block);
+        UUID previousMilestone = block.details().milestoneId();
+        block.revise(type, resolver.resolve(command.userId(), command.details(), block.range()));
+        CalendarBlock saved = blocks.save(block);
+        publishAssignment(command.userId(), previousMilestone, saved.details().milestoneId());
+        return saved;
     }
 
     @Override
@@ -171,6 +191,7 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
             TimeRange target = command.end() == null
                     ? block.range().shiftTo(command.start())
                     : new TimeRange(command.start(), command.end());
+            resolver.checkChallengePeriod(command.userId(), block.details().challengeId(), target);
             block.moveTo(target, zone.dayOfWeek(target.start()), now);
         } else if (command.end() != null) {
             block.resize(command.end(), now);
@@ -199,6 +220,35 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         blocks.findBySubject(userId, subjectId).forEach(this::remove);
     }
 
+    @Override
+    public void withdraw(WithdrawRoutineBlocksUseCase.Command c) {
+        Instant now = clock.instant();
+        List<CalendarBlock> linked = c.dayIds().isEmpty()
+                ? blocks.findByRoutine(c.userId(), c.routineId())
+                : blocks.findByRoutineDays(c.userId(), c.dayIds());
+        linked.stream()
+                .filter(b -> c.includeCompleted() || !b.completed())
+                .filter(b -> !c.onlyFuture() || b.start().isAfter(now))
+                .forEach(this::remove);
+    }
+
+    /**
+     * Avisa de que cambian los bloques de unas tareas de reto (alta, cambio de tarea o baja), para que su
+     * progreso por bloques se recalcule. Sin tareas afectadas no publica nada.
+     */
+    private void publishAssignment(UUID userId, UUID before, UUID after) {
+        Set<UUID> milestones = new HashSet<>();
+        if (before != null) {
+            milestones.add(before);
+        }
+        if (after != null) {
+            milestones.add(after);
+        }
+        if (!milestones.isEmpty() && !(before != null && before.equals(after))) {
+            events.publish(new StudyBlockAssignmentChanged(userId, milestones, clock.instant()));
+        }
+    }
+
     /** Borra el bloque restando su XP, avisa si estaba completado y recalcula conflictos y semana. */
     private void remove(CalendarBlock block) {
         UUID userId = block.userId();
@@ -208,6 +258,10 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         }
         blocks.delete(block.id());
         conflicts.refresh(userId, List.of(), neighbours);
+        if (!block.completed()) {
+            // Completado ya avisa abajo; sin completar, la tarea pasa a tener un bloque menos.
+            publishAssignment(userId, block.details().milestoneId(), null);
+        }
         weeklyLoads.refresh(userId, zone.localDate(block.start()));
         if (block.completed()) {
             events.publish(new StudyBlockCompletionChanged(userId, block.id(), block.type().code(), block.subjectId(),

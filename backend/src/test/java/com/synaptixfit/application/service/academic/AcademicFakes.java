@@ -11,7 +11,8 @@ import com.synaptixfit.domain.model.academic.Question;
 import com.synaptixfit.domain.model.academic.QuestionAttempt;
 import com.synaptixfit.domain.model.academic.QuestionBank;
 import com.synaptixfit.domain.model.academic.ReviewRecord;
-import com.synaptixfit.domain.model.academic.SharedNote;
+import com.synaptixfit.domain.model.academic.AuthoredNote;
+import com.synaptixfit.domain.model.academic.SharedNoteSummary;
 import com.synaptixfit.domain.model.academic.StudyMaterial;
 import com.synaptixfit.domain.model.academic.StudySourceType;
 import com.synaptixfit.domain.model.academic.Subject;
@@ -22,7 +23,10 @@ import com.synaptixfit.domain.model.academic.TestSession;
 import com.synaptixfit.domain.model.academic.TestSessionStatus;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
+import com.synaptixfit.domain.model.shared.AuthorAudience;
 import com.synaptixfit.domain.model.shared.Visibility;
+import com.synaptixfit.domain.model.user.User;
+import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import com.synaptixfit.domain.model.user.ExperienceChange;
 import com.synaptixfit.domain.port.output.academic.AcademicCatalogPort;
 import com.synaptixfit.domain.port.output.academic.AiDocumentRepositoryPort;
@@ -136,6 +140,24 @@ final class AcademicFakes {
         }
     };
 
+    /** Privacidad del perfil de cada usuario (pública si no se indica). */
+    final Map<UUID, Visibility> privacy = new HashMap<>();
+    /** Cómo ve quien pide a cada autor (sin entrada: autor inexistente). */
+    final Map<UUID, AuthorAudience> audiences = new HashMap<>();
+    /** Asignatura del catálogo de cada apunte compartido. */
+    final Map<UUID, UUID> authorCatalogSubject = new HashMap<>();
+
+    final UserRepositoryPort users = new UserRepositoryPort() {
+        public Optional<User> findById(UUID id) {
+            return Optional.of(User.builder().id(id).email(id + "@example.com").fullName("Usuario")
+                    .passwordHash("hash").privacy(privacy.getOrDefault(id, Visibility.PUBLIC)).build());
+        }
+        public Optional<User> findByEmail(String email) { return Optional.empty(); }
+        public Optional<User> findByGoogleSubject(String subject) { return Optional.empty(); }
+        public boolean existsByEmail(String email) { return false; }
+        public User save(User user) { return user; }
+    };
+
     final NoteRepositoryPort notes = new NoteRepositoryPort() {
         public Optional<Note> findByIdAndUser(UUID id, UUID userId) {
             return Optional.ofNullable(noteStore.get(id)).filter(n -> n.userId().equals(userId));
@@ -149,8 +171,17 @@ final class AcademicFakes {
             return new PageResult<>(all.stream().skip(page.offset()).limit(page.size()).toList(), page.page(),
                     page.size(), all.size());
         }
-        public PageResult<SharedNote> findSharedWith(UUID viewerId, PageRequest page) {
+        public PageResult<SharedNoteSummary> findShared(UUID viewerId, SharedFilter filter, PageRequest page) {
             return new PageResult<>(List.of(), page.page(), page.size(), 0);
+        }
+        public PageResult<SharedNoteSummary> findOwnShared(UUID userId, Set<Visibility> levels, UUID catalog,
+                                                           PageRequest page) {
+            return new PageResult<>(List.of(), page.page(), page.size(), 0);
+        }
+        public Optional<AuthoredNote> findAuthored(UUID viewerId, UUID noteId) {
+            return Optional.ofNullable(noteStore.get(noteId)).map(n -> new AuthoredNote(n, "Autor", null,
+                    authorCatalogSubject.get(noteId), "Catálogo",
+                    audiences.getOrDefault(n.userId(), AuthorAudience.missing())));
         }
         public List<Note> findNonPrivateByUser(UUID userId) {
             return noteStore.values().stream()

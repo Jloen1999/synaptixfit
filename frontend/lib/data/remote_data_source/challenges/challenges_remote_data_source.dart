@@ -113,10 +113,10 @@ class ChallengesRemoteDataSource {
   Future<ChallengeOutcomeDto> recordProgress(
     String challengeId, {
     String? milestoneId,
-    required double amount,
+    required double value,
   }) => _outcome(
     '$_base/$challengeId/progress',
-    data: {'milestoneId': ?milestoneId, 'amount': amount},
+    data: {'milestoneId': ?milestoneId, 'value': value},
   );
 
   Future<List<ProgressEntryDto>> progressHistory(String challengeId) async {

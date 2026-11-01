@@ -23,6 +23,8 @@ abstract class ProposedExerciseDto with _$ProposedExerciseDto {
     int? targetDurationSeconds,
     int? distanceMeters,
     int? isometricSeconds,
+    List<int>? repsPerSet,
+    List<int>? isometricSecondsPerSet,
   }) = _ProposedExerciseDto;
 
   const ProposedExerciseDto._();
@@ -43,6 +45,8 @@ abstract class ProposedExerciseDto with _$ProposedExerciseDto {
       targetDurationSeconds: p.targetDurationSeconds,
       distanceMeters: p.distanceMeters,
       isometricSeconds: p.isometricSeconds,
+      repsPerSet: p.repsPerSet,
+      isometricSecondsPerSet: p.isometricSecondsPerSet,
     );
   }
 
@@ -58,6 +62,8 @@ abstract class ProposedExerciseDto with _$ProposedExerciseDto {
       targetDurationSeconds: targetDurationSeconds,
       distanceMeters: distanceMeters,
       isometricSeconds: isometricSeconds,
+      repsPerSet: repsPerSet,
+      isometricSecondsPerSet: isometricSecondsPerSet,
     ),
   );
 }

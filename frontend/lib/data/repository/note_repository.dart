@@ -1,3 +1,4 @@
+import '../../domain/enums/shared_notes_scope.dart';
 import '../../domain/enums/visibility.dart';
 import '../../domain/models/academic/note.dart';
 import '../../domain/models/result/app_result.dart';
@@ -13,8 +14,6 @@ class NoteRepository implements NoteRepositoryContract {
 
   /// Límite de páginas al recorrer todos los apuntes.
   static const _maxPages = 10;
-
-  static const _sharedPageSize = 20;
 
   @override
   Future<AppResult<List<Note>>> getNotes({String? subjectId}) =>
@@ -85,9 +84,29 @@ class NoteRepository implements NoteRepositoryContract {
       });
 
   @override
-  Future<AppResult<SharedNotesPage>> getSharedNotes({required int page}) =>
+  Future<AppResult<SharedNoteSummaryPage>> getSharedNotes({
+    required int page,
+    SharedNotesScope scope = SharedNotesScope.all,
+    String? authorId,
+    int size = 20,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.getSharedNotes(
+      page: page,
+      size: size,
+      scope: scope.apiValue,
+      authorId: authorId,
+    )).toDomain(),
+  );
+
+  @override
+  Future<AppResult<SharedNote>> getSharedNote(String noteId) =>
       RepositoryErrorHandler.guard(
-        () async =>
-            (await _remote.getSharedNotes(page, _sharedPageSize)).toDomain(),
+        () async => (await _remote.getSharedNote(noteId)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<Note>> copySharedNote(String noteId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.copySharedNote(noteId)).toDomain(),
       );
 }

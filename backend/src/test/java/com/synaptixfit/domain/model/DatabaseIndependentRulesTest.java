@@ -15,7 +15,7 @@ import com.synaptixfit.domain.model.badge.BadgeActivitySnapshot;
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeStatus;
 import com.synaptixfit.domain.model.challenge.ChallengeSummary;
-import com.synaptixfit.domain.model.challenge.OwnerAudience;
+import com.synaptixfit.domain.model.shared.AuthorAudience;
 import com.synaptixfit.domain.model.insights.DailyLoad;
 import com.synaptixfit.domain.model.insights.PhysicalLoadHistory;
 import com.synaptixfit.domain.model.insights.PracticeSessions;
@@ -135,23 +135,27 @@ class DatabaseIndependentRulesTest {
     @Test
     void challengeStatusRuleIsTheSameForTheSummary() {
         Instant now = Instant.parse("2026-10-14T12:00:00Z");
-        assertThat(Challenge.statusOf(true, now.minusSeconds(60), now)).isEqualTo(ChallengeStatus.COMPLETED);
-        assertThat(Challenge.statusOf(false, now, now)).isEqualTo(ChallengeStatus.ACTIVE);
-        assertThat(Challenge.statusOf(false, now.minusSeconds(1), now)).isEqualTo(ChallengeStatus.EXPIRED);
+        Instant start = now.minusSeconds(3600);
+        assertThat(Challenge.statusOf(true, start, now.minusSeconds(60), now)).isEqualTo(ChallengeStatus.COMPLETED);
+        assertThat(Challenge.statusOf(false, start, now, now)).isEqualTo(ChallengeStatus.ACTIVE);
+        assertThat(Challenge.statusOf(false, start, now.minusSeconds(1), now)).isEqualTo(ChallengeStatus.EXPIRED);
+        assertThat(Challenge.statusOf(false, now.plusSeconds(60), now.plusSeconds(3600), now))
+                .isEqualTo(ChallengeStatus.UPCOMING);
+        // «active» cuenta los abiertos (en curso y por empezar) y «upcoming» desglosa los segundos.
         assertThat(ChallengeSummary.of(List.of(ChallengeStatus.ACTIVE, ChallengeStatus.EXPIRED, ChallengeStatus.ACTIVE,
-                ChallengeStatus.COMPLETED))).isEqualTo(new ChallengeSummary(2, 1, 1));
+                ChallengeStatus.COMPLETED, ChallengeStatus.UPCOMING))).isEqualTo(new ChallengeSummary(3, 1, 1, 1));
     }
 
     @Test
     void challengeVisibilityIsDecidedInTheDomainFromRawAudienceData() {
-        OwnerAudience stranger = new OwnerAudience(true, false, false);
-        OwnerAudience friend = new OwnerAudience(true, false, true);
+        AuthorAudience stranger = new AuthorAudience(true, false, Visibility.PUBLIC, false, false);
+        AuthorAudience friend = new AuthorAudience(true, false, Visibility.PUBLIC, true, false);
         assertThat(challenge(Visibility.PUBLIC).isVisibleTo(stranger)).isTrue();
         assertThat(challenge(Visibility.FRIENDS).isVisibleTo(stranger)).isFalse();
         assertThat(challenge(Visibility.FRIENDS).isVisibleTo(friend)).isTrue();
         assertThat(challenge(Visibility.PRIVATE).isVisibleTo(friend)).isFalse();
-        assertThat(challenge(Visibility.PUBLIC).isVisibleTo(new OwnerAudience(true, true, true))).isFalse();
-        assertThat(challenge(Visibility.PUBLIC).isVisibleTo(new OwnerAudience(false, false, true))).isFalse();
+        assertThat(challenge(Visibility.PUBLIC).isVisibleTo(new AuthorAudience(true, true, Visibility.PUBLIC, true, false))).isFalse();
+        assertThat(challenge(Visibility.PUBLIC).isVisibleTo(new AuthorAudience(false, false, Visibility.PUBLIC, true, false))).isFalse();
     }
 
     private static Challenge challenge(Visibility visibility) {

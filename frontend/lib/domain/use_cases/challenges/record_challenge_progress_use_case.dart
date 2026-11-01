@@ -2,12 +2,13 @@ import '../../models/challenges/challenge_outcome.dart';
 import '../../models/result/app_result.dart';
 import '../../repositories/challenges_repository_contract.dart';
 
-/// Registra progreso manual (0,01-100) en un reto o tarea.
+/// Fija el progreso manual de un reto o tarea: valor absoluto 0-100
+/// («¿cuánto llevas?»), no una cantidad que se suma.
 abstract interface class RecordChallengeProgressUseCaseContract {
   Future<AppResult<ChallengeOutcome>> call(
     String challengeId, {
     String? milestoneId,
-    required double amount,
+    required double value,
   });
 }
 
@@ -21,10 +22,10 @@ class RecordChallengeProgressUseCase
   Future<AppResult<ChallengeOutcome>> call(
     String challengeId, {
     String? milestoneId,
-    required double amount,
+    required double value,
   }) => _repository.recordProgress(
     challengeId,
     milestoneId: milestoneId,
-    amount: amount,
+    value: value,
   );
 }

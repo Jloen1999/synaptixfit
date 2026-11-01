@@ -3,6 +3,7 @@ package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 import com.synaptixfit.application.port.input.training.RoutineStructureInput;
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.training.ExerciseParameters;
+import com.synaptixfit.domain.model.training.ExerciseRef;
 import com.synaptixfit.domain.model.training.MeasurementType;
 import com.synaptixfit.domain.model.training.Modality;
 import com.synaptixfit.domain.model.training.PendingDay;
@@ -12,6 +13,7 @@ import com.synaptixfit.domain.model.training.Routine;
 import com.synaptixfit.domain.model.training.RoutineDay;
 import com.synaptixfit.domain.model.training.RoutineStatus;
 import com.synaptixfit.domain.model.training.RoutineWeek;
+import com.synaptixfit.domain.model.training.TrackingKind;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.domain.model.training.WeekType;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.LocalizedNames;
@@ -27,6 +29,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** DTOs de rutinas. */
@@ -37,7 +40,11 @@ public final class RoutineDtos {
 
     // ------------------------------------------------------------------ entrada
 
-    /** Parámetros de un ejercicio planificado (mismos rangos que el dominio). */
+    /**
+     * Parámetros de un ejercicio planificado (mismos rangos que el dominio). {@code repsPerSet},
+     * {@code weightsKg} e {@code isometricSecondsPerSet} detallan cada serie (ADR 0027); sin ellos, todas
+     * usan el valor común.
+     */
     public record ExerciseParametersRequest(@NotNull @Min(1) @Max(10) Integer sets,
                                             @NotNull @Min(1) @Max(100) Integer reps,
                                             @NotNull @Min(30) @Max(300) Integer restSeconds,
@@ -45,10 +52,12 @@ public final class RoutineDtos {
                                             @Size(max = 10) List<@NotNull @DecimalMin("0") @DecimalMax("500") Double> weightsKg,
                                             @Min(1) @Max(14400) Integer targetDurationSeconds,
                                             @Min(1) @Max(100000) Integer distanceMeters,
-                                            @Min(1) @Max(600) Integer isometricSeconds) {
+                                            @Min(1) @Max(600) Integer isometricSeconds,
+                                            @Size(max = 10) List<@NotNull @Min(1) @Max(100) Integer> repsPerSet,
+                                            @Size(max = 10) List<@NotNull @Min(1) @Max(600) Integer> isometricSecondsPerSet) {
         public ExerciseParameters toDomain() {
             return new ExerciseParameters(sets, reps, restSeconds, weightKg, weightsKg, targetDurationSeconds,
-                    distanceMeters, isometricSeconds);
+                    distanceMeters, isometricSeconds, repsPerSet, isometricSecondsPerSet);
         }
     }
 
@@ -61,10 +70,12 @@ public final class RoutineDtos {
                                          @Size(max = 10) List<@NotNull @DecimalMin("0") @DecimalMax("500") Double> weightsKg,
                                          @Min(1) @Max(14400) Integer targetDurationSeconds,
                                          @Min(1) @Max(100000) Integer distanceMeters,
-                                         @Min(1) @Max(600) Integer isometricSeconds) {
+                                         @Min(1) @Max(600) Integer isometricSeconds,
+                                         @Size(max = 10) List<@NotNull @Min(1) @Max(100) Integer> repsPerSet,
+                                         @Size(max = 10) List<@NotNull @Min(1) @Max(600) Integer> isometricSecondsPerSet) {
         public ExerciseParameters parameters() {
             return new ExerciseParameters(sets, reps, restSeconds, weightKg, weightsKg, targetDurationSeconds,
-                    distanceMeters, isometricSeconds);
+                    distanceMeters, isometricSeconds, repsPerSet, isometricSecondsPerSet);
         }
     }
 
@@ -121,6 +132,10 @@ public final class RoutineDtos {
     public record ReorderExercisesRequest(@NotEmpty List<@NotNull UUID> plannedExerciseIds) {
     }
 
+    /** Ejercicio del catálogo que sustituye al de un hueco. */
+    public record ReplaceExerciseRequest(@NotNull UUID exerciseId) {
+    }
+
     // ------------------------------------------------------------------ salida
 
     public record OriginResponse(UUID routineId, UUID ownerId, String ownerName) {
@@ -132,7 +147,9 @@ public final class RoutineDtos {
                                           double met, boolean exerciseActive, int order, int sets, int reps,
                                           int restSeconds, Double weightKg, List<Double> weightsKg,
                                           Integer targetDurationSeconds, Integer distanceMeters,
-                                          Integer isometricSeconds, Integer realDurationSeconds) {
+                                          Integer isometricSeconds, Integer realDurationSeconds,
+                                          List<Integer> repsPerSet, List<Integer> isometricSecondsPerSet,
+                                          TrackingKind trackingKind) {
         public static PlannedExerciseResponse from(PlannedExercise p) {
             ExerciseParameters x = p.parameters();
             return new PlannedExerciseResponse(p.id(), p.exerciseId(),
@@ -140,14 +157,18 @@ public final class RoutineDtos {
                     p.exercise().previewUrl(), p.exercise().modality(), p.exercise().measurementTypes(),
                     p.exercise().effectiveMet(), p.exercise().active(), p.order(), x.sets(), x.reps(), x.restSeconds(),
                     x.weightKg(), x.weightsKg(), x.targetDurationSeconds(), x.distanceMeters(), x.isometricSeconds(),
-                    p.realDurationSeconds());
+                    p.realDurationSeconds(), x.repsPerSet(), x.isometricSecondsPerSet(), p.trackingKind());
         }
     }
 
-    public record DayResponse(UUID id, int dayNumber, String name, ProgressStatus status,
+    /**
+     * Día de la rutina. {@code dayNumber} es el día de la semana preferido (1 = lunes); {@code name} es
+     * nulo si no tiene nombre propio; {@code closedOn}, el día en que se completó o se saltó.
+     */
+    public record DayResponse(UUID id, int dayNumber, String name, ProgressStatus status, LocalDate closedOn,
                               List<PlannedExerciseResponse> exercises) {
         public static DayResponse from(RoutineDay d) {
-            return new DayResponse(d.id(), d.number(), d.name(), d.status(),
+            return new DayResponse(d.id(), d.number(), d.name(), d.status(), d.closedOn(),
                     d.exercises().stream().map(PlannedExerciseResponse::from).toList());
         }
     }
@@ -164,36 +185,60 @@ public final class RoutineDtos {
     public record RoutineResponse(UUID id, UUID ownerId, String authorName, boolean owned, String name,
                                   String description, Visibility visibility, RoutineStatus status, TrainingGoal goal,
                                   LocalDate startDate, int durationWeeks, int exerciseCount, int totalDays,
-                                  int completedDays, OriginResponse origin, Instant createdAt,
+                                  int completedDays, int skippedDays, OriginResponse origin, Instant createdAt,
                                   List<WeekResponse> weeks) {
         public static RoutineResponse from(Routine r, String authorName, java.util.UUID viewerId) {
             return new RoutineResponse(r.id(), r.ownerId(), authorName, r.isOwnedBy(viewerId), r.name(),
                     r.description(), r.visibility(), r.status(), r.goal(), r.startDate(), r.durationWeeks(),
-                    r.exerciseCount(), r.totalDays(), r.completedDays(), originOf(r), r.createdAt(),
+                    r.exerciseCount(), r.totalDays(), r.completedDays(), r.skippedDays(), originOf(r), r.createdAt(),
                     r.weeks().stream().map(WeekResponse::from).toList());
         }
     }
 
-    /** Rutina sin estructura (listados). */
+    /**
+     * Rutina sin estructura (listados). {@code coverImageUrl}/{@code coverModality}: foto y modalidad del
+     * ejercicio que la representa (el primero del día que toca), para el fondo de su tarjeta.
+     */
     public record RoutineSummaryResponse(UUID id, UUID ownerId, String authorName, String name, String description,
                                          Visibility visibility, RoutineStatus status, TrainingGoal goal,
                                          LocalDate startDate, int durationWeeks, int exerciseCount, int totalDays,
-                                         int completedDays, OriginResponse origin, Instant createdAt) {
+                                         int completedDays, OriginResponse origin, Instant createdAt,
+                                         int skippedDays, String coverImageUrl, Modality coverModality) {
         public static RoutineSummaryResponse from(Routine r, String authorName) {
+            Optional<ExerciseRef> cover = r.coverExercise();
             return new RoutineSummaryResponse(r.id(), r.ownerId(), authorName, r.name(), r.description(),
                     r.visibility(), r.status(), r.goal(), r.startDate(), r.durationWeeks(), r.exerciseCount(),
-                    r.totalDays(), r.completedDays(), originOf(r), r.createdAt());
+                    r.totalDays(), r.completedDays(), originOf(r), r.createdAt(), r.skippedDays(),
+                    cover.map(ExerciseRef::stillImageUrl).orElse(null),
+                    cover.map(ExerciseRef::modality).orElse(null));
         }
     }
 
-    /** Próximo día de entrenamiento pendiente. */
-    public record PendingDayResponse(UUID routineId, String routineName, UUID weekId, int weekNumber, String weekName,
-                                     UUID dayId, int dayNumber, String dayName, ProgressStatus dayStatus,
-                                     List<PlannedExerciseResponse> exercises) {
+
+
+    /**
+     * Próximo día de entrenamiento (regla única {@code RoutineSchedule}). {@code dayStatus}: PENDING o
+     * IN_PROGRESS (en curso de verdad, no abandonada); {@code scheduledDate}: cuándo toca;
+     * {@code overdue}: esa fecha ya pasó; {@code sessionOfWeek}/{@code sessionsInWeek}: «sesión 2 de 3»;
+     * {@code staleSessionId}: sesión abandonada de ese día que hay que terminar o descartar antes.
+     */
+    public record PendingDayResponse(UUID routineId, String routineName, UUID weekId, int weekNumber, int totalWeeks,
+                                     String weekName, UUID dayId, int dayNumber, String dayName,
+                                     ProgressStatus dayStatus, LocalDate scheduledDate, boolean overdue,
+                                     int sessionOfWeek, int sessionsInWeek, UUID staleSessionId,
+                                     List<PlannedExerciseResponse> exercises, int totalDays, int completedDays,
+                                     int skippedDays, String coverImageUrl, Modality coverModality) {
         public static PendingDayResponse from(PendingDay p) {
-            return new PendingDayResponse(p.routine().id(), p.routine().name(), p.week().id(), p.week().number(),
-                    p.week().name(), p.day().id(), p.day().number(), p.day().name(), p.day().status(),
-                    p.day().exercises().stream().map(PlannedExerciseResponse::from).toList());
+            Routine r = p.routine();
+            // La foto es la del día que se propone (puede no ser el primero pendiente si hay uno en curso).
+            Optional<ExerciseRef> cover = p.day().coverExercise();
+            return new PendingDayResponse(r.id(), r.name(), p.week().id(), p.week().number(),
+                    r.durationWeeks(), p.week().name(), p.day().id(), p.day().number(), p.day().name(),
+                    p.status(), p.scheduledDate(), p.overdue(), p.sessionOfWeek(), p.sessionsInWeek(),
+                    p.staleSessionId(), p.day().exercises().stream().map(PlannedExerciseResponse::from).toList(),
+                    r.totalDays(), r.completedDays(), r.skippedDays(),
+                    cover.map(ExerciseRef::stillImageUrl).orElse(null),
+                    cover.map(ExerciseRef::modality).orElse(null));
         }
     }
 

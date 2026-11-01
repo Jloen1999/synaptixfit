@@ -475,17 +475,11 @@ class _ReviewStepState extends State<_ReviewStep> {
       ),
     );
     final l10n = context.localizations;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(l10n.academicImportTopicRemoved),
-          action: SnackBarAction(
-            label: l10n.academicImportUndo,
-            onPressed: () => _update(before),
-          ),
-        ),
-      );
+    context.showActionSnack(
+      l10n.academicImportTopicRemoved,
+      actionLabel: l10n.academicImportUndo,
+      onAction: () => _update(before),
+    );
   }
 
   Future<void> _pickDate(int index, AssessmentDraft a) async {

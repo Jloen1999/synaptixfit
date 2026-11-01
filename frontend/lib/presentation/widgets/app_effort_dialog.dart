@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../extensions/context_extensions.dart';
 import '../theme/tokens.g.dart';
+import 'app_effort_slider.dart';
 
 /// Pide el esfuerzo percibido (1-10) de un entrenamiento o de un bloque de
 /// deporte; devuelve `null` si se cancela. [confirmLabel] es la acción que
@@ -29,16 +30,6 @@ class _EffortDialog extends StatefulWidget {
 class _EffortDialogState extends State<_EffortDialog> {
   int _effort = 6;
 
-  String _description(BuildContext context) {
-    final l10n = context.localizations;
-    return switch (_effort) {
-      <= 3 => l10n.commonEffortEasy,
-      <= 6 => l10n.commonEffortModerate,
-      <= 8 => l10n.commonEffortHard,
-      _ => l10n.commonEffortMax,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -56,33 +47,10 @@ class _EffortDialogState extends State<_EffortDialog> {
           ],
           Text(l10n.commonEffortMessage),
           const SizedBox(height: TokensSpacing.l),
-          // La cifra y la palabra ya las dice el control al lector de pantalla.
-          ExcludeSemantics(
-            child: Column(
-              children: [
-                Text(
-                  '$_effort',
-                  style: context.textStyles.displaySmall?.copyWith(
-                    color: context.colors.secondary,
-                  ),
-                ),
-                Text(
-                  _description(context),
-                  style: context.textStyles.labelLarge,
-                ),
-              ],
-            ),
-          ),
-          Slider(
+          AppEffortSlider(
+            value: _effort,
             autofocus: true,
-            value: _effort.toDouble(),
-            min: 1,
-            max: 10,
-            divisions: 9,
-            label: '$_effort',
-            semanticFormatterCallback: (v) =>
-                l10n.commonEffortSemantics(v.round(), _description(context)),
-            onChanged: (v) => setState(() => _effort = v.round()),
+            onChanged: (v) => setState(() => _effort = v),
           ),
         ],
       ),

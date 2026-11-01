@@ -32,14 +32,17 @@ import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.ProgressE
 import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.RecordProgressRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.ReorderMilestonesRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.ReplaceMilestonesRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.ResponseTime;
 import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.UpdateChallengeRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.Clock;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -80,6 +83,7 @@ public class ChallengeController {
     private final UncompleteMilestoneUseCase uncompleteMilestone;
     private final RecordChallengeProgressUseCase recordProgress;
     private final Clock clock;
+    private final ZoneId zone;
 
     public ChallengeController(CreateChallengeUseCase create, GetChallengeUseCase get,
                                ListMyChallengesUseCase listMine, GetChallengeSummaryUseCase summary,
@@ -90,7 +94,8 @@ public class ChallengeController {
                                ReplaceMilestonesUseCase replaceMilestones, ReorderMilestonesUseCase reorderMilestones,
                                CompleteMilestoneUseCase completeMilestone,
                                UncompleteMilestoneUseCase uncompleteMilestone,
-                               RecordChallengeProgressUseCase recordProgress, Clock clock) {
+                               RecordChallengeProgressUseCase recordProgress, Clock clock,
+                               @Value("${synaptixfit.gamification.zone:Europe/Madrid}") String zone) {
         this.create = create;
         this.get = get;
         this.listMine = listMine;
@@ -109,6 +114,12 @@ public class ChallengeController {
         this.uncompleteMilestone = uncompleteMilestone;
         this.recordProgress = recordProgress;
         this.clock = clock;
+        this.zone = ZoneId.of(zone);
+    }
+
+    /** Instante y día de gamificación de la respuesta (estado del reto y racha vigente). */
+    private ResponseTime time() {
+        return ResponseTime.of(clock, zone);
     }
 
     // ---------------------------------------------------------------- retos
@@ -117,7 +128,7 @@ public class ChallengeController {
     @ResponseStatus(HttpStatus.CREATED)
     public ChallengeResponse create(@CurrentUserId UUID userId, @Valid @RequestBody CreateChallengeRequest request) {
         return ChallengeResponse.own(create.createChallenge(new CreateChallengeUseCase.Command(userId,
-                request.toDetails(clock.instant()), request.toDrafts())), clock.instant());
+                request.toDetails(clock.instant()), request.toDrafts())), time());
     }
 
     @GetMapping
@@ -130,7 +141,7 @@ public class ChallengeController {
                                                     @RequestParam(defaultValue = "20") int size) {
         Boolean withTasks = tasks == null ? null : tasks == TasksFilter.WITH;
         return PageResponse.from(listMine.listMyChallenges(userId, new ChallengeQuery(status, type, withTasks, q),
-                new PageRequest(page, size)), c -> ChallengeResponse.own(c, clock.instant()));
+                new PageRequest(page, size)), c -> ChallengeResponse.own(c, time()));
     }
 
     @GetMapping("/summary")
@@ -145,7 +156,7 @@ public class ChallengeController {
                                                      @RequestParam(defaultValue = "0") int page,
                                                      @RequestParam(defaultValue = "20") int size) {
         return PageResponse.from(community.listCommunityChallenges(userId, type, q, new PageRequest(page, size)),
-                cc -> ChallengeResponse.from(cc.challenge(), false, cc.ownerName(), clock.instant()));
+                cc -> ChallengeResponse.from(cc.challenge(), false, cc.ownerName(), time()));
     }
 
     @GetMapping("/milestones/pending")
@@ -156,7 +167,7 @@ public class ChallengeController {
     @GetMapping("/{challengeId}")
     public ChallengeResponse get(@CurrentUserId UUID userId, @PathVariable UUID challengeId) {
         ChallengeView view = get.getChallenge(userId, challengeId);
-        return ChallengeResponse.from(view.challenge(), view.owned(), view.ownerName(), clock.instant());
+        return ChallengeResponse.from(view.challenge(), view.owned(), view.ownerName(), time());
     }
 
     @PatchMapping("/{challengeId}")
@@ -166,7 +177,7 @@ public class ChallengeController {
                 r.title(), r.type(), r.goal(), r.visibility(), r.difficulty(), r.startAt(), r.endAt(), r.subjectId(),
                 Boolean.TRUE.equals(r.clearSubject()), r.linkedEntityType(), r.linkedEntityId(),
                 Boolean.TRUE.equals(r.clearLink()), r.sessionTarget(), Boolean.TRUE.equals(r.clearSessionTarget()))),
-                clock.instant());
+                time());
     }
 
     @DeleteMapping("/{challengeId}")
@@ -178,17 +189,17 @@ public class ChallengeController {
     @PostMapping("/{challengeId}/clone")
     @ResponseStatus(HttpStatus.CREATED)
     public ChallengeResponse cloneChallenge(@CurrentUserId UUID userId, @PathVariable UUID challengeId) {
-        return ChallengeResponse.own(cloneChallenge.cloneChallenge(userId, challengeId), clock.instant());
+        return ChallengeResponse.own(cloneChallenge.cloneChallenge(userId, challengeId), time());
     }
 
     @PostMapping("/{challengeId}/complete")
     public ChallengeOutcomeResponse complete(@CurrentUserId UUID userId, @PathVariable UUID challengeId) {
-        return ChallengeOutcomeResponse.from(complete.completeChallenge(userId, challengeId), clock.instant());
+        return ChallengeOutcomeResponse.from(complete.completeChallenge(userId, challengeId), time());
     }
 
     @PostMapping("/{challengeId}/uncomplete")
     public ChallengeOutcomeResponse uncomplete(@CurrentUserId UUID userId, @PathVariable UUID challengeId) {
-        return ChallengeOutcomeResponse.from(uncomplete.uncompleteChallenge(userId, challengeId), clock.instant());
+        return ChallengeOutcomeResponse.from(uncomplete.uncompleteChallenge(userId, challengeId), time());
     }
 
     // ---------------------------------------------------------------- progreso
@@ -197,7 +208,7 @@ public class ChallengeController {
     public ChallengeOutcomeResponse recordProgress(@CurrentUserId UUID userId, @PathVariable UUID challengeId,
                                                    @Valid @RequestBody RecordProgressRequest r) {
         return ChallengeOutcomeResponse.from(recordProgress.recordProgress(new RecordChallengeProgressUseCase.Command(
-                userId, challengeId, r.milestoneId(), r.amount(), r.recordedAt())), clock.instant());
+                userId, challengeId, r.milestoneId(), r.amount(), r.value(), r.recordedAt())), time());
     }
 
     @GetMapping("/{challengeId}/progress")
@@ -212,27 +223,27 @@ public class ChallengeController {
                                                       @Valid @RequestBody ReplaceMilestonesRequest r) {
         return ChallengeOutcomeResponse.from(replaceMilestones.replaceMilestones(new ReplaceMilestonesUseCase.Command(
                 userId, challengeId, r.milestones().stream().map(MilestoneRequest::toDraft).toList())),
-                clock.instant());
+                time());
     }
 
     @PutMapping("/{challengeId}/milestones/order")
     public ChallengeResponse reorderMilestones(@CurrentUserId UUID userId, @PathVariable UUID challengeId,
                                                @Valid @RequestBody ReorderMilestonesRequest r) {
         return ChallengeResponse.own(reorderMilestones.reorderMilestones(userId, challengeId, r.milestoneIds()),
-                clock.instant());
+                time());
     }
 
     @PostMapping("/{challengeId}/milestones/{milestoneId}/complete")
     public ChallengeOutcomeResponse completeMilestone(@CurrentUserId UUID userId, @PathVariable UUID challengeId,
                                                       @PathVariable UUID milestoneId) {
         return ChallengeOutcomeResponse.from(completeMilestone.completeMilestone(userId, challengeId, milestoneId),
-                clock.instant());
+                time());
     }
 
     @PostMapping("/{challengeId}/milestones/{milestoneId}/uncomplete")
     public ChallengeOutcomeResponse uncompleteMilestone(@CurrentUserId UUID userId, @PathVariable UUID challengeId,
                                                         @PathVariable UUID milestoneId) {
         return ChallengeOutcomeResponse.from(uncompleteMilestone.uncompleteMilestone(userId, challengeId, milestoneId),
-                clock.instant());
+                time());
     }
 }

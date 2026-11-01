@@ -27,7 +27,10 @@ class PlannerRepository implements PlannerRepositoryContract {
     'privateBlock': d.privateBlock,
     'classKind': d.classKind?.apiValue,
     'routineId': d.routineId,
+    'routineWeekId': d.routineId == null ? null : d.routineWeekId,
+    'routineDayId': d.routineId == null ? null : d.routineDayId,
     'challengeId': d.challengeId,
+    'milestoneId': d.challengeId == null ? null : d.milestoneId,
     'deadlineId': d.deadlineId,
   };
 

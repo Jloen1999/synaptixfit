@@ -1,5 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.training;
 
+import com.synaptixfit.domain.model.shared.AudienceScope;
+import com.synaptixfit.domain.model.shared.AuthorAudience;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.training.ExerciseRef;
@@ -11,6 +13,7 @@ import com.synaptixfit.domain.model.training.RoutineWeek;
 import com.synaptixfit.domain.model.training.TrainingGoal;
 import com.synaptixfit.domain.model.training.VisibleRoutine;
 import com.synaptixfit.domain.port.output.training.RoutineRepositoryPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SharedContentSql;
 import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SqlLike;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.ExerciseSelectionEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.training.RoutineDayEntity;
@@ -48,11 +51,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class RoutinePersistenceAdapter implements RoutineRepositoryPort {
 
-    /** Visibilidad para un lector: pública, o de amigos con amistad aceptada; autor activo y sin shadowban. */
-    private static final String VISIBLE_TO_VIEWER = " r.eliminado_en IS NULL AND u.eliminado_en IS NULL"
-            + " AND u.is_shadowbanned = false AND (r.visibilidad = 'public' OR (r.visibilidad = 'friends' AND EXISTS ("
-            + " SELECT 1 FROM amistades a WHERE a.estado = 'aceptada' AND ((a.solicitante_id = :viewer AND a.receptor_id = r.usuario_id)"
-            + " OR (a.receptor_id = :viewer AND a.solicitante_id = r.usuario_id)))))";
+    /**
+     * Rutina no borrada visible para un lector según {@code EffectiveVisibility} (visibilidad de la rutina
+     * y del perfil, bloqueos, autor activo y sin shadowban); los niveles llegan con
+     * {@link SharedContentSql#params}.
+     */
+    private static final String VISIBLE_TO_VIEWER = " r.eliminado_en IS NULL AND "
+            + SharedContentSql.visible(AudienceScope.ALL, "r.visibilidad", "r.usuario_id", "u");
 
     private final RoutineJpaRepository routines;
     private final RoutineWeekJpaRepository weeks;
@@ -104,10 +109,16 @@ public class RoutinePersistenceAdapter implements RoutineRepositoryPort {
     }
 
     @Override
+    public List<Routine> findActiveByOwner(UUID ownerId) {
+        return assemble(routines.findByUsuarioIdAndEstadoAndEliminadoEnIsNull(ownerId,
+                TrainingDbValues.toDb(RoutineStatus.ACTIVE)));
+    }
+
+    @Override
     public PageResult<VisibleRoutine> findCommunity(UUID viewerId, String text, TrainingGoal goal, PageRequest page) {
         StringBuilder where = new StringBuilder(" FROM rutinas r JOIN usuarios u ON u.id = r.usuario_id WHERE r.usuario_id <> :viewer AND")
                 .append(VISIBLE_TO_VIEWER);
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>(SharedContentSql.params(AudienceScope.ALL));
         params.put("viewer", viewerId);
         if (goal != null) {
             where.append(" AND r.objetivo = :goal");
@@ -133,14 +144,14 @@ public class RoutinePersistenceAdapter implements RoutineRepositoryPort {
     }
 
     @Override
-    public Optional<VisibleRoutine> findVisible(UUID routineId, UUID viewerId) {
-        Optional<String> author = jdbc.sql("SELECT u.nombre_completo FROM rutinas r JOIN usuarios u ON u.id = r.usuario_id"
-                        + " WHERE r.id = :id AND r.eliminado_en IS NULL AND (r.usuario_id = :viewer OR (" + VISIBLE_TO_VIEWER + "))")
-                .param("id", routineId).param("viewer", viewerId).query(String.class).optional();
-        if (author.isEmpty()) {
-            return Optional.empty();
-        }
-        return findById(routineId).map(r -> new VisibleRoutine(r, author.get()));
+    public Optional<AuthoredRoutine> findWithAuthor(UUID routineId, UUID viewerId) {
+        Optional<Map.Entry<String, AuthorAudience>> author = jdbc.sql("SELECT u.nombre_completo, "
+                        + SharedContentSql.audienceColumns("r.usuario_id", "u")
+                        + " FROM rutinas r JOIN usuarios u ON u.id = r.usuario_id WHERE r.id = :id AND r.eliminado_en IS NULL")
+                .param("id", routineId).param("viewer", viewerId)
+                .query((rs, n) -> Map.entry(rs.getString("nombre_completo"), SharedContentSql.audience(rs)))
+                .optional();
+        return author.flatMap(a -> findById(routineId).map(r -> new AuthoredRoutine(r, a.getKey(), a.getValue())));
     }
 
     /** Carga en bloque semanas, días, ejercicios planificados y sus ejercicios para varias rutinas. */

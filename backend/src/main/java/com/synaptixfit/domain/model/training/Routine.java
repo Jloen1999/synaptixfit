@@ -21,8 +21,13 @@ import java.util.UUID;
  *
  * <p>Reglas: entre 1 y {@link #MAX_WEEKS} semanas numeradas de forma consecutiva; el número de
  * ejercicios ({@code cantidad_ejercicios}) siempre es la suma de los de todos los días; solo se
- * puede completar si tiene días y ninguno está vacío; cualquier cambio de estructura sobre una
+ * puede completar a mano si tiene días y ninguno está vacío; cualquier cambio de estructura sobre una
  * rutina completada la reactiva.
+ *
+ * <p>Avance: la rutina avanza al ritmo al que se entrena (orden, no fechas). Completar un día salta
+ * los anteriores que quedaban; cuando todo está hecho o saltado el ciclo termina
+ * ({@link #finishCycleIfDone}). Solo una rutina por usuario está en curso a la vez (lo garantiza el
+ * caso de uso que la activa).
  */
 public final class Routine {
 
@@ -214,6 +219,21 @@ public final class Routine {
         plannedExercise(plannedExerciseId).changeParameters(parameters);
     }
 
+    public PlannedExercise replaceExercise(UUID plannedExerciseId, ExerciseRef replacement) {
+        return dayOfExercise(plannedExerciseId).replaceExercise(plannedExerciseId, replacement);
+    }
+
+    /**
+     * Ejercicio que representa la rutina (foto de su tarjeta): el primero del día que toca o, con el ciclo
+     * cerrado, el del primer día con ejercicios. Vacío si la rutina no tiene ninguno.
+     */
+    public Optional<ExerciseRef> coverExercise() {
+        List<RoutineDay> days = trainableDaysInOrder();
+        return days.stream().filter(d -> !d.status().isClosed()).findFirst()
+                .or(() -> days.stream().findFirst())
+                .flatMap(RoutineDay::coverExercise);
+    }
+
     public void reorderExercises(UUID dayId, List<UUID> orderedIds) {
         day(dayId).reorder(orderedIds);
     }
@@ -242,40 +262,131 @@ public final class Routine {
         markStarted(today);
     }
 
-    /** Se ha completado una sesión del día. */
-    public void completeDay(UUID dayId) {
-        day(dayId).markCompleted();
+    /**
+     * Se ha completado una sesión del día en la fecha {@code on}. La rutina avanza por orden: los días
+     * anteriores que quedaban por hacer se dan por saltados (se pueden recuperar con
+     * {@link #unskipDay}). Devuelve los días que se han saltado así.
+     */
+    public List<UUID> completeDay(UUID dayId, LocalDate on) {
+        RoutineDay target = day(dayId);
+        List<UUID> skipped = new ArrayList<>();
+        // Un día sin ejercicios no está en el orden de entrenamiento: no hace saltar a nadie.
+        List<RoutineDay> order = target.isTrainable() ? trainableDaysInOrder() : List.of();
+        for (RoutineDay earlier : order) {
+            if (earlier.id().equals(dayId)) {
+                break;
+            }
+            if (!earlier.status().isClosed()) {
+                earlier.markSkipped(on);
+                skipped.add(earlier.id());
+            }
+        }
+        target.markCompleted(on);
+        weeks.forEach(RoutineWeek::recomputeStatus);
+        markStarted(on);
+        return skipped;
+    }
+
+    /** Salta el día en la fecha {@code on}: deja de proponerse y cuenta para cerrar la semana. */
+    public void skipDay(UUID dayId, LocalDate on) {
+        day(dayId).markSkipped(on);
         weekOfDay(dayId).recomputeStatus();
     }
 
-    /** El día vuelve a pendiente (sesión desmarcada o cancelada sin otra completada). */
+    /** Recupera un día saltado: vuelve a estar pendiente (y la rutina, si se había terminado, sigue). */
+    public boolean unskipDay(UUID dayId) {
+        RoutineDay day = day(dayId);
+        if (day.status() != ProgressStatus.SKIPPED) {
+            return false;
+        }
+        day.markPending();
+        weekOfDay(dayId).recomputeStatus();
+        reopenCycle();
+        return true;
+    }
+
+    /** El día vuelve a pendiente (sesión desmarcada, eliminada o descartada sin otra completada). */
     public void resetDay(UUID dayId) {
         day(dayId).markPending();
         weekOfDay(dayId).recomputeStatus();
+        reopenCycle();
     }
 
-    /** Primer día no completado, recorriendo semanas y días en orden. */
-    public Optional<PendingDay> nextPendingDay() {
-        for (RoutineWeek week : weeks) {
-            for (RoutineDay day : week.days()) {
-                if (day.status() != ProgressStatus.COMPLETED) {
-                    return Optional.of(new PendingDay(this, week, day));
-                }
-            }
+    /** Todos los días entrenables están hechos o saltados (y hay al menos uno): el ciclo ha terminado. */
+    public boolean isCycleDone() {
+        List<RoutineDay> trainable = trainableDaysInOrder();
+        return !trainable.isEmpty() && trainable.stream().allMatch(d -> d.status().isClosed());
+    }
+
+    /**
+     * Cierra el ciclo si ya no queda nada por hacer: la rutina en curso pasa a completada. Devuelve si
+     * ha cambiado (para publicar {@code RoutineCompleted} una sola vez).
+     */
+    public boolean finishCycleIfDone() {
+        if (status == RoutineStatus.ACTIVE && isCycleDone()) {
+            status = RoutineStatus.COMPLETED;
+            return true;
         }
-        return Optional.empty();
+        return false;
+    }
+
+    /** Nuevo ciclo: todo el avance a cero, empieza hoy y queda en curso. Las sesiones siguen en el historial. */
+    public void restart(LocalDate today) {
+        allDays().forEach(RoutineDay::markPending);
+        weeks.forEach(RoutineWeek::recomputeStatus);
+        startDate = Objects.requireNonNull(today, "today");
+        status = RoutineStatus.ACTIVE;
+    }
+
+    /** Pasa a ser la rutina en curso (el caso de uso pausa la que lo fuera antes). */
+    public void activate() {
+        status = RoutineStatus.ACTIVE;
+    }
+
+    /** Deja de estar en curso sin perder el avance. Devuelve si estaba en curso. */
+    public boolean pause() {
+        if (status != RoutineStatus.ACTIVE) {
+            return false;
+        }
+        status = RoutineStatus.PAUSED;
+        return true;
+    }
+
+    /** Si se deshace el último paso de un ciclo terminado, la rutina vuelve a estar en curso. */
+    private void reopenCycle() {
+        if (status == RoutineStatus.COMPLETED && !isCycleDone()) {
+            status = RoutineStatus.ACTIVE;
+        }
+    }
+
+    /** Último día en que se completó o se saltó algo: el ritmo real al que avanza la rutina. */
+    public Optional<LocalDate> lastClosedOn() {
+        return allDays().stream().map(RoutineDay::closedOn).filter(Objects::nonNull).max(Comparator.naturalOrder());
+    }
+
+    /** Días con ejercicios en el orden en que se entrenan (semana y día). */
+    public List<RoutineDay> trainableDaysInOrder() {
+        return weeks.stream().flatMap(w -> w.trainableDays().stream()).toList();
+    }
+
+    /**
+     * Próximo día que toca, con su fecha prevista y si va con retraso. Regla única para rutinas,
+     * inicio y calendario: ver {@link RoutineSchedule}.
+     */
+    public Optional<PendingDay> nextPendingDay(RoutineSchedule.Context context) {
+        return RoutineSchedule.next(this, context);
     }
 
     // ------------------------------------------------------------------ copias
 
     /**
      * Copia profunda para otro usuario (clonar) o el mismo (duplicar): ids nuevos, progreso a cero,
-     * privada, activa y sin fecha de inicio.
+     * privada, en pausa y sin fecha de inicio (no cambia la rutina en curso sin que se pida).
      */
     public Routine copyFor(UUID newOwnerId, String newName, RoutineOrigin newOrigin, Instant now) {
         String copyName = newName == null || newName.isBlank() ? truncate(name + " (copia)") : newName;
         return new Routine(UUID.randomUUID(), newOwnerId, copyName, description, Visibility.PRIVATE,
-                RoutineStatus.ACTIVE, goal, null, newOrigin, now, null,
+                RoutineStatus.PAUSED, goal, null, newOrigin, now, null,
                 weeks.stream().map(RoutineWeek::copyReset).toList());
     }
 
@@ -312,6 +423,10 @@ public final class Routine {
 
     public int completedDays() {
         return (int) allDays().stream().filter(d -> d.status() == ProgressStatus.COMPLETED).count();
+    }
+
+    public int skippedDays() {
+        return (int) allDays().stream().filter(d -> d.status() == ProgressStatus.SKIPPED).count();
     }
 
     public boolean isOwnedBy(UUID userId) {

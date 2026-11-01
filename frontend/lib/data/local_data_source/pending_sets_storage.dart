@@ -41,6 +41,8 @@ class PendingSetsStorage {
     'weightKg': s.weightKg,
     'completed': s.completed,
     'failedReps': s.failedReps,
+    'durationSeconds': s.durationSeconds,
+    'distanceMeters': s.distanceMeters,
   };
 
   static SetRecord _fromJson(Map<String, dynamic> j) => SetRecord(
@@ -50,5 +52,7 @@ class PendingSetsStorage {
     weightKg: (j['weightKg'] as num?)?.toDouble(),
     completed: j['completed'] as bool? ?? true,
     failedReps: j['failedReps'] as int? ?? 0,
+    durationSeconds: j['durationSeconds'] as int?,
+    distanceMeters: j['distanceMeters'] as int?,
   );
 }

@@ -62,6 +62,11 @@ NotificationTexts notificationTexts(AppLocalizations l10n, AppNotification n) {
       description: l10n.socialNotifFriendAcceptedBody(name),
       action: l10n.socialNotifActionProfile,
     ),
+    NotificationMessageCode.routineCompleted => (
+      title: l10n.socialNotifRoutineCompletedTitle,
+      description: l10n.socialNotifRoutineCompletedBody(name),
+      action: l10n.socialNotifActionRoutine,
+    ),
   };
 }
 

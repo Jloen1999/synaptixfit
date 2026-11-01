@@ -2,7 +2,6 @@ package com.synaptixfit.domain.port.output.dashboard;
 
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.CalendarBlock;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
-import com.synaptixfit.domain.model.dashboard.DashboardReadModels.NextTrainingDay;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.TrainingTotals;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -29,12 +28,6 @@ public interface DashboardReadPort {
 
     /** Entregas y exámenes con fecha límite en [from, to), ordenados por fecha. */
     List<Deadline> deadlines(UUID userId, Instant from, Instant to);
-
-    /**
-     * Próximo día pendiente de la rutina activa, con el inicio de su sesión abierta más reciente
-     * (el estado efectivo lo decide {@code NextTrainingDay.effective}).
-     */
-    Optional<NextTrainingDay> nextTrainingDay(UUID userId);
 
     Optional<Instant> lastTrainingSession(UUID userId);
 }

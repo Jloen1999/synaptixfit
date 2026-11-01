@@ -10,8 +10,13 @@ import com.synaptixfit.application.port.input.training.AddRoutineWeekUseCase;
 import com.synaptixfit.application.port.input.training.AdminGetExerciseUseCase;
 import com.synaptixfit.application.port.input.training.AdminSearchExercisesUseCase;
 import com.synaptixfit.application.port.input.training.ApplyRecommendationUseCase;
-import com.synaptixfit.application.port.input.training.CancelTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.ChangeRoutineStatusUseCase;
+import com.synaptixfit.application.port.input.training.CorrectTrainingSessionUseCase;
+import com.synaptixfit.application.port.input.training.DeleteTrainingSessionUseCase;
+import com.synaptixfit.application.port.input.training.LogPastRoutineSessionUseCase;
+import com.synaptixfit.application.port.input.training.RestartRoutineUseCase;
+import com.synaptixfit.application.port.input.training.SkipRoutineDayUseCase;
+import com.synaptixfit.application.port.input.training.UnskipRoutineDayUseCase;
 import com.synaptixfit.application.port.input.training.CloneRoutineUseCase;
 import com.synaptixfit.application.port.input.training.CreateExerciseUseCase;
 import com.synaptixfit.application.port.input.training.CreateRoutineUseCase;
@@ -57,6 +62,7 @@ import com.synaptixfit.application.port.input.training.SuggestExerciseNamesUseCa
 import com.synaptixfit.application.port.input.training.SuggestSessionBookendsUseCase;
 import com.synaptixfit.application.port.input.training.UnmarkTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.UpdateExerciseUseCase;
+import com.synaptixfit.application.port.input.training.ReplaceRoutineExerciseUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineExerciseUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineWeekUseCase;
@@ -66,6 +72,7 @@ import com.synaptixfit.application.service.training.ExerciseCatalogService;
 import com.synaptixfit.application.service.training.ExerciseNameTranslationService;
 import com.synaptixfit.application.service.training.RecommendationService;
 import com.synaptixfit.application.service.training.RoutineGenerationService;
+import com.synaptixfit.application.service.training.RoutineProgressService;
 import com.synaptixfit.application.service.training.RoutineService;
 import com.synaptixfit.application.service.training.SessionAdaptationService;
 import com.synaptixfit.application.service.training.TrainingSessionService;
@@ -77,6 +84,7 @@ import com.synaptixfit.domain.port.output.training.ExerciseNameTranslationsRepos
 import com.synaptixfit.domain.port.output.training.ExerciseNameTranslatorPort;
 import com.synaptixfit.domain.port.output.training.ExerciseRepositoryPort;
 import com.synaptixfit.domain.port.output.training.RecommendationRepositoryPort;
+import com.synaptixfit.domain.port.output.training.RoutineCalendarPort;
 import com.synaptixfit.domain.port.output.training.RoutineGeneratorPort;
 import com.synaptixfit.domain.port.output.training.RoutineRepositoryPort;
 import com.synaptixfit.domain.port.output.training.TrainingContextPort;
@@ -106,6 +114,7 @@ public class TrainingBeanConfiguration {
     private final RecommendationRepositoryPort recommendations;
     private final TrainingContextPort context;
     private final RoutineGeneratorPort generator;
+    private final RoutineCalendarPort routineCalendar;
     private final UserRepositoryPort users;
     private final AwardExperienceUseCase awardExperience;
     private final RevokeExperienceUseCase revokeExperience;
@@ -129,6 +138,7 @@ public class TrainingBeanConfiguration {
                                      RecommendationRepositoryPort recommendations,
                                      TrainingContextPort context,
                                      RoutineGeneratorPort generator,
+                                     RoutineCalendarPort routineCalendar,
                                      UserRepositoryPort users,
                                      AwardExperienceUseCase awardExperience,
                                      RevokeExperienceUseCase revokeExperience,
@@ -147,6 +157,7 @@ public class TrainingBeanConfiguration {
         this.recommendations = recommendations;
         this.context = context;
         this.generator = generator;
+        this.routineCalendar = routineCalendar;
         this.users = users;
         this.awardExperience = awardExperience;
         this.revokeExperience = revokeExperience;
@@ -249,7 +260,7 @@ public class TrainingBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     RoutineService routineService() {
-        return new RoutineService(routines, exercises, users, clock);
+        return new RoutineService(routines, exercises, users, events, clock);
     }
 
     @Bean
@@ -338,6 +349,11 @@ public class TrainingBeanConfiguration {
     }
 
     @Bean
+    ReplaceRoutineExerciseUseCase replaceRoutineExerciseUseCase() {
+        return tx.wrap(ReplaceRoutineExerciseUseCase.class, routineService());
+    }
+
+    @Bean
     RemoveRoutineExerciseUseCase removeRoutineExerciseUseCase() {
         return tx.wrap(RemoveRoutineExerciseUseCase.class, routineService());
     }
@@ -348,13 +364,35 @@ public class TrainingBeanConfiguration {
     }
 
     @Bean
-    GetPendingTrainingDayUseCase getPendingTrainingDayUseCase() {
-        return tx.wrap(GetPendingTrainingDayUseCase.class, routineService());
+    PrivatizeUserRoutinesUseCase privatizeUserRoutinesUseCase() {
+        return tx.wrap(PrivatizeUserRoutinesUseCase.class, routineService());
+    }
+
+    // ---------------------------------------------------------------- RoutineProgressService
+
+    @Bean(autowireCandidate = false)
+    RoutineProgressService routineProgressService() {
+        return new RoutineProgressService(routines, sessions, routineCalendar, events, clock, zone);
     }
 
     @Bean
-    PrivatizeUserRoutinesUseCase privatizeUserRoutinesUseCase() {
-        return tx.wrap(PrivatizeUserRoutinesUseCase.class, routineService());
+    GetPendingTrainingDayUseCase getPendingTrainingDayUseCase() {
+        return tx.wrap(GetPendingTrainingDayUseCase.class, routineProgressService());
+    }
+
+    @Bean
+    SkipRoutineDayUseCase skipRoutineDayUseCase() {
+        return tx.wrap(SkipRoutineDayUseCase.class, routineProgressService());
+    }
+
+    @Bean
+    UnskipRoutineDayUseCase unskipRoutineDayUseCase() {
+        return tx.wrap(UnskipRoutineDayUseCase.class, routineProgressService());
+    }
+
+    @Bean
+    RestartRoutineUseCase restartRoutineUseCase() {
+        return tx.wrap(RestartRoutineUseCase.class, routineProgressService());
     }
 
     // ---------------------------------------------------------------- RoutineGenerationService
@@ -419,8 +457,18 @@ public class TrainingBeanConfiguration {
     }
 
     @Bean
-    CancelTrainingSessionUseCase cancelTrainingSessionUseCase() {
-        return tx.wrap(CancelTrainingSessionUseCase.class, trainingSessionService());
+    DeleteTrainingSessionUseCase deleteTrainingSessionUseCase() {
+        return tx.wrap(DeleteTrainingSessionUseCase.class, trainingSessionService());
+    }
+
+    @Bean
+    CorrectTrainingSessionUseCase correctTrainingSessionUseCase() {
+        return tx.wrap(CorrectTrainingSessionUseCase.class, trainingSessionService());
+    }
+
+    @Bean
+    LogPastRoutineSessionUseCase logPastRoutineSessionUseCase() {
+        return tx.wrap(LogPastRoutineSessionUseCase.class, trainingSessionService());
     }
 
     @Bean

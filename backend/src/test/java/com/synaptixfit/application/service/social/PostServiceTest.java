@@ -1,6 +1,7 @@
 package com.synaptixfit.application.service.social;
 
 import com.synaptixfit.domain.exception.social.PostAlreadySharedException;
+import com.synaptixfit.domain.exception.social.PostTypeNotAllowedException;
 import com.synaptixfit.application.port.input.social.PublishAchievementPostUseCase;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,10 +40,10 @@ class PostServiceTest {
 
     @Test
     void createPostReturnsViewOwnedByAuthor() {
-        PostView view = service.createPost(new CreatePostUseCase.Command(author.id(), PostType.ROUTINE,
-                "Mi rutina", null, "{\"rutinaId\":\"1\"}"));
+        PostView view = service.createPost(new CreatePostUseCase.Command(author.id(), PostType.MILESTONE_REACHED,
+                "Mi hito", null, "{}"));
         assertThat(view.author().id()).isEqualTo(author.id());
-        assertThat(view.type()).isEqualTo(PostType.ROUTINE);
+        assertThat(view.type()).isEqualTo(PostType.MILESTONE_REACHED);
         assertThat(fakes.posts).hasSize(1);
     }
 
@@ -54,9 +55,18 @@ class PostServiceTest {
         assertThatThrownBy(() -> service.createPost(new CreatePostUseCase.Command(author.id(),
                 PostType.SESSION_COMPLETED, "Otra vez", null, session)))
                 .isInstanceOf(PostAlreadySharedException.class);
-        service.createPost(new CreatePostUseCase.Command(author.id(), PostType.ROUTINE, "Rutina", null, "{}"));
-        service.createPost(new CreatePostUseCase.Command(author.id(), PostType.ROUTINE, "Rutina", null, "{}"));
+        service.createPost(new CreatePostUseCase.Command(author.id(), PostType.MILESTONE_REACHED, "Hito", null, "{}"));
+        service.createPost(new CreatePostUseCase.Command(author.id(), PostType.MILESTONE_REACHED, "Hito", null, "{}"));
         assertThat(fakes.posts).hasSize(3);
+    }
+
+    /** «Rutina» y «Reto» a mano no enlazaban nada real: ya no se aceptan. */
+    @Test
+    void routineAndChallengePostsCannotBePublishedByHand() {
+        for (PostType type : new PostType[] {PostType.ROUTINE, PostType.CHALLENGE}) {
+            assertThatThrownBy(() -> service.createPost(new CreatePostUseCase.Command(author.id(), type, "x", null,
+                    "{}"))).isInstanceOf(PostTypeNotAllowedException.class);
+        }
     }
 
     @Test

@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Visibility;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/challenge_difficulty.dart';
+import '../../../../../domain/enums/visibility.dart';
 import '../../../../../domain/models/challenges/challenge.dart';
 import '../../../../../domain/models/challenges/challenge_draft_validator.dart';
 import '../../../../extensions/context_extensions.dart';
@@ -127,9 +129,11 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
       initial:
           item ?? MilestoneFormItem(key: _bloc.newMilestoneKey(), title: ''),
       allItems: state.milestones,
-      manualWeights: state.manualWeights,
+      showDependencies: state.hasCustomDependencies,
       isNew: isNew,
       subjectId: state.subjectId,
+      periodFrom: state.startAt ?? DateTime.now(),
+      periodTo: state.endAt,
     );
     if (result != null && mounted) {
       _bloc.add(ChallengeFormEvent.milestoneSaved(result));
@@ -137,9 +141,12 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
   }
 
   Future<void> _pickLink() async {
+    final state = _bloc.state;
     final option = await showLinkPickerSheet(
       context,
-      subjectId: _bloc.state.subjectId,
+      subjectId: state.subjectId,
+      from: state.startAt ?? DateTime.now(),
+      to: state.endAt,
     );
     if (option == null || !mounted) return;
     _bloc.add(
@@ -229,10 +236,20 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (editing)
-                        Text(state.title, style: context.textStyles.titleLarge)
-                      else
-                        ..._detailsSections(context, state, saving),
+                      // Dos niveles: lo esencial (qué, de qué tipo, para cuándo
+                      // y en qué pasos) a la vista; el resto, en «Más opciones».
+                      if (editing) ...[
+                        Text(state.title, style: context.textStyles.titleLarge),
+                        // Las tareas sustituyen al conteo de sesiones: se dice
+                        // antes de guardar, no se descubre después.
+                        if (state.tracksTrainingSessions) ...[
+                          const SizedBox(height: TokensSpacing.s),
+                          AppInlineMessage(
+                            message: l10n.challengesFormTasksReplaceSessions,
+                          ),
+                        ],
+                      ] else
+                        _essentialSection(context, state, saving),
                       const SizedBox(height: TokensSpacing.l),
                       _TasksSection(
                         state: state,
@@ -240,11 +257,13 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
                         onAdd: () => _editMilestone(null),
                         onEdit: _editMilestone,
                       ),
+                      if (!editing) ...[
+                        const SizedBox(height: TokensSpacing.l),
+                        _moreOptions(context, state, saving),
+                      ],
                       if (state.issue case final issue?) ...[
                         const SizedBox(height: TokensSpacing.m),
-                        _IssueBanner(
-                          text: issue.text(context, weightSum: state.weightSum),
-                        ),
+                        _IssueBanner(text: issue.text(context)),
                       ],
                       const SizedBox(height: TokensSpacing.xl),
                     ],
@@ -258,33 +277,125 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
     );
   }
 
-  List<Widget> _detailsSections(
+  /// Lo esencial: título, tipo (y objetivo de sesiones si es de fitness sin
+  /// tareas), asignatura y fecha de fin.
+  Widget _essentialSection(
+    BuildContext context,
+    ChallengeFormState state,
+    bool saving,
+  ) {
+    final l10n = context.localizations;
+    return _Section(
+      title: l10n.challengesFormSectionDetails,
+      children: [
+        TextField(
+          controller: _title,
+          enabled: !saving,
+          maxLength: ChallengeDraftValidator.titleMax,
+          textInputAction: TextInputAction.next,
+          onChanged: (v) => _bloc.add(ChallengeFormEvent.titleChanged(v)),
+          decoration: InputDecoration(
+            labelText: l10n.challengesFieldTitle,
+            hintText: l10n.challengesFieldTitleHint,
+            prefixIcon: const Icon(Icons.flag_outlined),
+            errorText: state.issue == ChallengeDraftIssue.titleTooShort
+                ? l10n.challengesValidationTitle
+                : null,
+          ),
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        ChallengeTypeField(
+          label: l10n.challengesFieldType,
+          value: state.type,
+          onChanged: saving
+              ? null
+              : (t) => _bloc.add(ChallengeFormEvent.typeChanged(t)),
+        ),
+        if (state.showsSessionTarget) ...[
+          const SizedBox(height: TokensSpacing.m),
+          TextField(
+            controller: _sessionTarget,
+            enabled: !saving,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
+            onChanged: (v) => _bloc.add(
+              ChallengeFormEvent.sessionTargetChanged(int.tryParse(v)),
+            ),
+            decoration: InputDecoration(
+              labelText: l10n.challengesFieldSessionTarget,
+              hintText: l10n.challengesFieldSessionTargetHint,
+              helperText: l10n.challengesFieldSessionTargetHelper,
+              helperMaxLines: 3,
+              prefixIcon: const Icon(Icons.fitness_center_rounded),
+              errorText: state.issue == ChallengeDraftIssue.sessionTargetInvalid
+                  ? l10n.challengesIssueSessionTarget
+                  : null,
+            ),
+          ),
+        ],
+        const SizedBox(height: TokensSpacing.m),
+        ChallengeSubjectDropdown(
+          key: ValueKey(state.subjects.length),
+          subjects: state.subjects,
+          value: state.subjectId,
+          fallbackName: state.subjectName,
+          onChanged: saving
+              ? null
+              : (id) => _bloc.add(ChallengeFormEvent.subjectChanged(id)),
+        ),
+        const SizedBox(height: TokensSpacing.m),
+        ChallengeDateField(
+          label: l10n.challengesFieldEndDate,
+          text: state.endAt == null
+              ? ''
+              : ChallengeFormats.longDate(state.endAt!),
+          onTap: saving ? null : () => _pickEnd(state),
+        ),
+      ],
+    );
+  }
+
+  /// «Más opciones», plegado: objetivo, inicio, esfuerzo, visibilidad y
+  /// vínculo. Se abre solo si ya hay algo elegido en él.
+  Widget _moreOptions(
     BuildContext context,
     ChallengeFormState state,
     bool saving,
   ) {
     final l10n = context.localizations;
     final link = state.link;
-    return [
-      _Section(
-        title: l10n.challengesFormSectionDetails,
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: ExpansionTile(
+        // Abierto si ya hay algo elegido en él (p. ej. al volver de un error).
+        initiallyExpanded:
+            state.startAt != null ||
+            link != null ||
+            state.goal.trim().isNotEmpty ||
+            state.difficulty != ChallengeDifficulty.medium ||
+            state.visibility != Visibility.private,
+        expansionAnimationStyle: context.reduceMotion
+            ? AnimationStyle.noAnimation
+            : null,
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(horizontal: TokensSpacing.m),
+        childrenPadding: const EdgeInsets.fromLTRB(
+          TokensSpacing.m,
+          0,
+          TokensSpacing.m,
+          TokensSpacing.m,
+        ),
+        expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+        title: Text(
+          l10n.challengesFormMoreOptions,
+          style: context.textStyles.titleMedium,
+        ),
+        subtitle: Text(l10n.challengesFormMoreOptionsHint),
         children: [
-          TextField(
-            controller: _title,
-            enabled: !saving,
-            maxLength: ChallengeDraftValidator.titleMax,
-            textInputAction: TextInputAction.next,
-            onChanged: (v) => _bloc.add(ChallengeFormEvent.titleChanged(v)),
-            decoration: InputDecoration(
-              labelText: l10n.challengesFieldTitle,
-              hintText: l10n.challengesFieldTitleHint,
-              prefixIcon: const Icon(Icons.flag_outlined),
-              errorText: state.issue == ChallengeDraftIssue.titleTooShort
-                  ? l10n.challengesValidationTitle
-                  : null,
-            ),
-          ),
-          const SizedBox(height: TokensSpacing.s),
           TextField(
             controller: _goal,
             enabled: !saving,
@@ -300,39 +411,17 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
             ),
           ),
           const SizedBox(height: TokensSpacing.s),
-          ChallengeTypeField(
-            label: l10n.challengesFieldType,
-            value: state.type,
-            onChanged: saving
+          ChallengeDateField(
+            label: l10n.challengesFieldStartDate,
+            icon: Icons.play_circle_outline_rounded,
+            text: state.startAt == null
+                ? l10n.challengesFieldStartNow
+                : ChallengeFormats.longDate(state.startAt!),
+            onTap: saving ? null : () => _pickStart(state),
+            onClear: state.startAt == null || saving
                 ? null
-                : (t) => _bloc.add(ChallengeFormEvent.typeChanged(t)),
+                : () => _bloc.add(const ChallengeFormEvent.startChanged(null)),
           ),
-          if (state.showsSessionTarget) ...[
-            const SizedBox(height: TokensSpacing.m),
-            TextField(
-              controller: _sessionTarget,
-              enabled: !saving,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(3),
-              ],
-              onChanged: (v) => _bloc.add(
-                ChallengeFormEvent.sessionTargetChanged(int.tryParse(v)),
-              ),
-              decoration: InputDecoration(
-                labelText: l10n.challengesFieldSessionTarget,
-                hintText: l10n.challengesFieldSessionTargetHint,
-                helperText: l10n.challengesFieldSessionTargetHelper,
-                helperMaxLines: 3,
-                prefixIcon: const Icon(Icons.fitness_center_rounded),
-                errorText:
-                    state.issue == ChallengeDraftIssue.sessionTargetInvalid
-                    ? l10n.challengesIssueSessionTarget
-                    : null,
-              ),
-            ),
-          ],
           const SizedBox(height: TokensSpacing.m),
           Text(
             l10n.challengesEffortLabel,
@@ -346,58 +435,23 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
                 : (d) => _bloc.add(ChallengeFormEvent.difficultyChanged(d)),
           ),
           const SizedBox(height: TokensSpacing.m),
-          ChallengeSubjectDropdown(
-            key: ValueKey(state.subjects.length),
-            subjects: state.subjects,
-            value: state.subjectId,
-            fallbackName: state.subjectName,
-            onChanged: saving
-                ? null
-                : (id) => _bloc.add(ChallengeFormEvent.subjectChanged(id)),
+          Text(
+            l10n.challengesFormSectionVisibility,
+            style: context.textStyles.labelLarge,
           ),
-        ],
-      ),
-      const SizedBox(height: TokensSpacing.l),
-      _Section(
-        title: l10n.challengesFormSectionDates,
-        children: [
-          ChallengeDateField(
-            label: l10n.challengesFieldStartDate,
-            icon: Icons.play_circle_outline_rounded,
-            text: state.startAt == null
-                ? l10n.challengesFieldStartNow
-                : ChallengeFormats.longDate(state.startAt!),
-            onTap: saving ? null : () => _pickStart(state),
-            onClear: state.startAt == null || saving
-                ? null
-                : () => _bloc.add(const ChallengeFormEvent.startChanged(null)),
-          ),
-          const SizedBox(height: TokensSpacing.m),
-          ChallengeDateField(
-            label: l10n.challengesFieldEndDate,
-            text: state.endAt == null
-                ? ''
-                : ChallengeFormats.longDate(state.endAt!),
-            onTap: saving ? null : () => _pickEnd(state),
-          ),
-        ],
-      ),
-      const SizedBox(height: TokensSpacing.l),
-      _Section(
-        title: l10n.challengesFormSectionVisibility,
-        children: [
+          const SizedBox(height: TokensSpacing.s),
           ChallengeVisibilitySelector(
             value: state.visibility,
             onChanged: saving
                 ? null
                 : (v) => _bloc.add(ChallengeFormEvent.visibilityChanged(v)),
           ),
-        ],
-      ),
-      const SizedBox(height: TokensSpacing.l),
-      _Section(
-        title: l10n.challengesFormSectionLink,
-        children: [
+          const SizedBox(height: TokensSpacing.m),
+          Text(
+            l10n.challengesFormSectionLink,
+            style: context.textStyles.labelLarge,
+          ),
+          const SizedBox(height: TokensSpacing.xs),
           Text(
             l10n.challengesFormLinkHint,
             style: context.textStyles.bodyMedium?.copyWith(
@@ -407,7 +461,7 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
           const SizedBox(height: TokensSpacing.s),
           if (link == null)
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: AppSecondaryButton(
                 label: l10n.challengesFormAddLink,
                 icon: const Icon(Icons.link_rounded),
@@ -416,7 +470,7 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
             )
           else
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: InputChip(
                 avatar: Icon(link.type.icon),
                 label: Text(state.linkLabel ?? link.type.label(context)),
@@ -429,7 +483,7 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
             ),
         ],
       ),
-    ];
+    );
   }
 }
 
@@ -472,10 +526,7 @@ class _TasksSection extends StatelessWidget {
     final l10n = context.localizations;
     final bloc = context.read<ChallengeFormBloc>();
     final items = state.milestones;
-    final weights = state.displayWeights;
     final titles = {for (final m in items) m.key: m.title};
-    final sum = state.weightSum;
-    final sumOk = (sum - 100).abs() <= ChallengeDraftValidator.weightTolerance;
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -505,49 +556,22 @@ class _TasksSection extends StatelessWidget {
           ),
           if (items.length > 1) ...[
             const SizedBox(height: TokensSpacing.s),
+            // La forma simple de las dependencias: cada tarea, tras la anterior.
             AppFocusOutline(
               child: SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                value: state.manualWeights,
+                value: state.inOrder,
                 onChanged: enabled
-                    ? (v) =>
-                          bloc.add(ChallengeFormEvent.manualWeightsToggled(v))
+                    ? (v) => bloc.add(ChallengeFormEvent.inOrderToggled(v))
                     : null,
-                title: Text(l10n.challengesFormManualWeights),
-                subtitle: Text(l10n.challengesFormManualWeightsHint),
+                title: Text(l10n.challengesFormInOrder),
+                subtitle: Text(
+                  state.hasCustomDependencies
+                      ? l10n.challengesFormInOrderReplaces
+                      : l10n.challengesFormInOrderHint,
+                ),
               ),
             ),
-            if (state.manualWeights)
-              Row(
-                children: [
-                  Icon(
-                    sumOk ? Icons.check_circle_rounded : Icons.error_outline,
-                    size: TokensSize.iconXs,
-                    color: sumOk
-                        ? context.palette.success
-                        : context.colors.error,
-                  ),
-                  const SizedBox(width: TokensSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      l10n.challengesFormWeightSum(
-                        ChallengeFormats.number(sum),
-                      ),
-                      style: context.textStyles.labelLarge?.copyWith(
-                        color: sumOk ? null : context.colors.error,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: enabled
-                        ? () => bloc.add(
-                            const ChallengeFormEvent.weightsDistributed(),
-                          )
-                        : null,
-                    child: Text(l10n.challengesFormDistribute),
-                  ),
-                ],
-              ),
           ],
           const SizedBox(height: TokensSpacing.s),
           if (items.isEmpty)
@@ -563,11 +587,9 @@ class _TasksSection extends StatelessWidget {
               index: i,
               count: items.length,
               item: items[i],
-              weight: i < weights.length ? weights[i] : 0,
-              manualWeights: state.manualWeights,
-              dependencyTitles: [
-                for (final k in items[i].dependsOnKeys) ?titles[k],
-              ],
+              dependencyTitles: state.inOrder
+                  ? [if (i > 0) items[i - 1].title]
+                  : [for (final k in items[i].dependsOnKeys) ?titles[k]],
               enabled: enabled,
               onEdit: () => onEdit(items[i]),
             ),
@@ -588,8 +610,6 @@ class _MilestoneRow extends StatelessWidget {
     required this.index,
     required this.count,
     required this.item,
-    required this.weight,
-    required this.manualWeights,
     required this.dependencyTitles,
     required this.enabled,
     required this.onEdit,
@@ -598,8 +618,6 @@ class _MilestoneRow extends StatelessWidget {
   final int index;
   final int count;
   final MilestoneFormItem item;
-  final double weight;
-  final bool manualWeights;
   final List<String> dependencyTitles;
   final bool enabled;
   final VoidCallback onEdit;
@@ -677,15 +695,6 @@ class _MilestoneRow extends StatelessWidget {
                         spacing: TokensSpacing.s,
                         runSpacing: TokensSpacing.xs,
                         children: [
-                          AppPill(
-                            icon: Icons.pie_chart_outline_rounded,
-                            label: l10n.challengesMilestoneWeight(
-                              ChallengeFormats.number(weight),
-                            ),
-                            color: manualWeights
-                                ? context.colors.primary
-                                : context.colors.onSurfaceVariant,
-                          ),
                           AppPill(
                             icon: item.difficulty.icon,
                             label: item.difficulty.effortLabel(context),

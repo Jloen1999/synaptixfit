@@ -30,18 +30,26 @@ class TrainingDomainTest {
                 null, List.of(RoutineWeek.create(1, null, null, List.of(days))), NOW);
     }
 
+    private static final LocalDate DAY = LocalDate.of(2026, 10, 5);
+
+    private static RoutineDay trainable(int number) {
+        RoutineDay day = RoutineDay.create(number, null);
+        day.addExercise(REF, P);
+        return day;
+    }
+
     @Test
     void weekStatusIsDerivedFromItsDays() {
-        RoutineDay a = RoutineDay.create(1, null);
-        RoutineDay b = RoutineDay.create(2, null);
+        RoutineDay a = trainable(1);
+        RoutineDay b = trainable(2);
         Routine r = routine(a, b);
         RoutineWeek week = r.weeks().getFirst();
         assertThat(week.status()).isEqualTo(ProgressStatus.PENDING);
         r.startDay(a.id(), LocalDate.of(2026, 10, 5));
         assertThat(week.status()).isEqualTo(ProgressStatus.IN_PROGRESS);
-        r.completeDay(a.id());
+        r.completeDay(a.id(), DAY);
         assertThat(week.status()).isEqualTo(ProgressStatus.IN_PROGRESS);
-        r.completeDay(b.id());
+        r.completeDay(b.id(), DAY);
         assertThat(week.status()).isEqualTo(ProgressStatus.COMPLETED);
         r.resetDay(a.id());
         assertThat(week.status()).isEqualTo(ProgressStatus.IN_PROGRESS);
@@ -52,11 +60,85 @@ class TrainingDomainTest {
 
     @Test
     void completedDayDoesNotGoBackWhenAnotherSessionStarts() {
-        RoutineDay a = RoutineDay.create(1, null);
+        RoutineDay a = trainable(1);
         Routine r = routine(a);
-        r.completeDay(a.id());
+        r.completeDay(a.id(), DAY);
         r.startDay(a.id(), LocalDate.now());
         assertThat(r.day(a.id()).status()).isEqualTo(ProgressStatus.COMPLETED);
+    }
+
+    @Test
+    void completingALaterDaySkipsTheEarlierOnesAndClosesTheCycle() {
+        RoutineDay a = trainable(1);
+        RoutineDay empty = RoutineDay.create(2, null);
+        RoutineDay c = trainable(3);
+        Routine r = routine(a, empty, c);
+        RoutineWeek week = r.weeks().getFirst();
+
+        List<UUID> skipped = r.completeDay(c.id(), DAY);
+
+        assertThat(skipped).containsExactly(a.id());
+        assertThat(r.day(a.id()).status()).isEqualTo(ProgressStatus.SKIPPED);
+        assertThat(r.day(empty.id()).status()).isEqualTo(ProgressStatus.PENDING);
+        assertThat(week.status()).isEqualTo(ProgressStatus.COMPLETED);
+        assertThat(r.finishCycleIfDone()).isTrue();
+        assertThat(r.status()).isEqualTo(RoutineStatus.COMPLETED);
+        assertThat(r.finishCycleIfDone()).isFalse();
+
+        assertThat(r.unskipDay(a.id())).isTrue();
+        assertThat(r.status()).isEqualTo(RoutineStatus.ACTIVE);
+        assertThat(r.day(a.id()).closedOn()).isNull();
+        assertThat(week.status()).isEqualTo(ProgressStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void completingADayWithoutExercisesSkipsNothing() {
+        RoutineDay a = trainable(1);
+        RoutineDay empty = RoutineDay.create(3, null);
+        Routine r = routine(a, empty);
+        assertThat(r.completeDay(empty.id(), DAY)).isEmpty();
+        assertThat(r.day(a.id()).status()).isEqualTo(ProgressStatus.PENDING);
+        assertThat(r.finishCycleIfDone()).isFalse();
+    }
+
+    @Test
+    void aCompletedDayCannotBeSkippedAndRestartResetsTheCycle() {
+        RoutineDay a = trainable(1);
+        Routine r = routine(a);
+        r.completeDay(a.id(), DAY);
+        assertThatThrownBy(() -> r.skipDay(a.id(), DAY))
+                .isInstanceOf(com.synaptixfit.domain.exception.training.RoutineDayNotSkippableException.class);
+        r.finishCycleIfDone();
+        r.restart(DAY.plusDays(3));
+        assertThat(r.status()).isEqualTo(RoutineStatus.ACTIVE);
+        assertThat(r.startDate()).isEqualTo(DAY.plusDays(3));
+        assertThat(r.day(a.id()).status()).isEqualTo(ProgressStatus.PENDING);
+        assertThat(r.lastClosedOn()).isEmpty();
+    }
+
+    @Test
+    void copiesArePausedAndDayNamesAreOptional() {
+        RoutineDay a = RoutineDay.create(1, "  ");
+        Routine r = routine(a);
+        assertThat(r.day(a.id()).name()).isNull();
+        assertThat(r.copyFor(UUID.randomUUID(), null, null, NOW).status()).isEqualTo(RoutineStatus.PAUSED);
+    }
+
+    @Test
+    void anAbandonedSessionFinishesOnItsOwnDayAndOnlyTodaysSessionsCanBeUnmarked() {
+        TrainingSession s = TrainingSession.start(UUID.randomUUID(), null, null, NOW);
+        Instant twoDaysLater = NOW.plus(java.time.Duration.ofDays(2));
+        long duration = s.boundedDurationSeconds(3_600, twoDaysLater);
+        Instant completedAt = s.completionInstant(duration, twoDaysLater);
+        assertThat(completedAt).isEqualTo(NOW.plusSeconds(3_600));
+        s.complete(duration, 7, 100, 10, completedAt);
+        assertThat(s.completedOn(java.time.ZoneOffset.UTC)).isEqualTo(LocalDate.of(2026, 10, 5));
+        assertThatThrownBy(() -> s.unmark(LocalDate.of(2026, 10, 7), java.time.ZoneOffset.UTC))
+                .isInstanceOf(com.synaptixfit.domain.exception.training.SessionUnmarkExpiredException.class);
+        s.correct(5, 45, 80);
+        assertThat(s.rpe()).isEqualTo(5);
+        assertThat(s.durationMinutes()).isEqualTo(45);
+        assertThat(s.xpAwarded()).isEqualTo(10);
     }
 
     @Test
@@ -107,8 +189,12 @@ class TrainingDomainTest {
         assertThat(c.sets()).isEqualTo(1);
         assertThat(c.reps()).isEqualTo(100);
         assertThat(c.restSeconds()).isEqualTo(30);
-        assertThat(c.weightKg()).isEqualTo(41.5);
-        assertThat(c.weightsKg()).containsExactly(20.0, 500.0);
+        // Con 1 serie, la lista se recorta a esa serie y el peso común pasa a ser el suyo (ADR 0027).
+        assertThat(c.weightKg()).isEqualTo(20.0);
+        assertThat(c.weightsKg()).isNull();
+        ExerciseParameters two = ExerciseParameters.clamped(2, 10, 90, 41.26, List.of(20.1, 600.0), null, null, null);
+        assertThat(two.weightsKg()).containsExactly(20.0, 500.0);
+        assertThat(two.weightKg()).isEqualTo(500.0);
         assertThat(c.targetDurationSeconds()).isEqualTo(1);
         assertThat(c.isometricSeconds()).isEqualTo(600);
     }
@@ -134,7 +220,7 @@ class TrainingDomainTest {
         assertThat(s.durationMinutes()).isEqualTo(1);
         assertThat(s.calories()).isEqualTo(123.5);
         assertThatThrownBy(() -> s.recordSet(null, 2, 10, 20.0, true, 0)).isInstanceOf(SessionAlreadyCompletedException.class);
-        TrainingSession.CompletionSnapshot snapshot = s.unmark();
+        TrainingSession.CompletionSnapshot snapshot = s.unmark(LocalDate.of(2026, 10, 5), java.time.ZoneOffset.UTC);
         assertThat(snapshot.xpAwarded()).isEqualTo(140);
         assertThat(snapshot.rpe()).isEqualTo(8);
         assertThat(s.isCompleted()).isFalse();

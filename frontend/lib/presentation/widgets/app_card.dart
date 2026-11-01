@@ -28,6 +28,11 @@ class _AppCardState extends State<AppCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Pulsable entera: se anuncia como un botón con todo su contenido.
+    return Semantics(button: widget.onTap != null, child: _card(context));
+  }
+
+  Widget _card(BuildContext context) {
     return Card(
       color: widget.color,
       clipBehavior: Clip.antiAlias,

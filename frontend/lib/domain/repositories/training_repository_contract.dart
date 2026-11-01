@@ -47,7 +47,28 @@ abstract interface class TrainingRepositoryContract {
 
   Future<AppResult<UnmarkSessionResult>> unmarkSession(String sessionId);
 
-  Future<AppResult<Unit>> cancelSession(String sessionId);
+  /// Descarta una sesión sin terminar o elimina una terminada (el servidor
+  /// resta su XP y retira su carga).
+  Future<AppResult<Unit>> deleteSession(String sessionId);
+
+  /// Sesiones sin terminar, más recientes primero.
+  Future<AppResult<List<OpenSession>>> getOpenSessions();
+
+  /// Corrige el RPE y la duración (minutos) de una sesión terminada.
+  Future<AppResult<TrainingSession>> correctSession(
+    String sessionId, {
+    required int rpe,
+    required int durationMinutes,
+  });
+
+  /// Registra un día de rutina entrenado sin la app (hoy o hasta 7 días antes).
+  Future<AppResult<PastSessionResult>> logPastSession({
+    required String routineId,
+    required String dayId,
+    required DateTime date,
+    required int durationMinutes,
+    required int rpe,
+  });
 
   /// Check-in de hoy; `null` si todavía no se ha hecho.
   Future<AppResult<CheckIn?>> getTodayCheckIn();

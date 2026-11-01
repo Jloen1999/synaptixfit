@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/enums/visibility.dart' as vis;
 import '../../../l10n/gen_l10n/app_localizations.dart';
+import '../../../widgets/routine_day_labels.dart';
+
+export '../../../widgets/routine_day_labels.dart';
 
 /// Textos y iconos de los enums del módulo de entrenamiento.
 
@@ -123,13 +126,19 @@ extension ProgressStatusLabel on ProgressStatus {
     ProgressStatus.pending => l10n.trainingProgressPending,
     ProgressStatus.inProgress => l10n.trainingProgressInProgress,
     ProgressStatus.completed => l10n.trainingProgressCompleted,
+    ProgressStatus.skipped => l10n.trainingProgressSkipped,
   };
 
   IconData get icon => switch (this) {
     ProgressStatus.pending => Icons.radio_button_unchecked_rounded,
     ProgressStatus.inProgress => Icons.timelapse_rounded,
     ProgressStatus.completed => Icons.check_circle_rounded,
+    ProgressStatus.skipped => Icons.redo_rounded,
   };
+
+  /// Hecho o saltado: ya no se propone como próximo.
+  bool get isClosed =>
+      this == ProgressStatus.completed || this == ProgressStatus.skipped;
 }
 
 extension RecommendationTypeLabel on RecommendationType {
@@ -180,17 +189,6 @@ extension VisibilityLabel on vis.Visibility {
     vis.Visibility.public => Icons.public_rounded,
   };
 }
-
-/// Nombre del día de la semana (1 = lunes … 7 = domingo).
-String weekdayName(AppLocalizations l10n, int dayNumber) => switch (dayNumber) {
-  1 => l10n.trainingWeekday1,
-  2 => l10n.trainingWeekday2,
-  3 => l10n.trainingWeekday3,
-  4 => l10n.trainingWeekday4,
-  5 => l10n.trainingWeekday5,
-  6 => l10n.trainingWeekday6,
-  _ => l10n.trainingWeekday7,
-};
 
 /// Nombre visible de un día: el propio o el del día de la semana.
 String dayTitle(AppLocalizations l10n, int dayNumber, String? name) {

@@ -20,6 +20,8 @@ public interface RoutineJpaRepository extends JpaRepository<RoutineEntity, UUID>
 
     List<RoutineEntity> findByUsuarioIdAndEliminadoEnIsNull(UUID usuarioId);
 
+    List<RoutineEntity> findByUsuarioIdAndEstadoAndEliminadoEnIsNull(UUID usuarioId, String estado);
+
     Optional<RoutineEntity> findFirstByUsuarioIdAndEstadoAndEliminadoEnIsNullOrderByCreadoEnDesc(UUID usuarioId, String estado);
 
     List<RoutineEntity> findByIdInAndEliminadoEnIsNull(Collection<UUID> ids);

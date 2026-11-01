@@ -13,6 +13,7 @@ import com.synaptixfit.domain.model.planner.ClassKind;
 import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.planner.PlannerProfile;
 import com.synaptixfit.domain.model.planner.ScheduleEntry;
+import com.synaptixfit.domain.model.planner.ScheduleScan;
 import com.synaptixfit.domain.model.planner.SubjectRef;
 import com.synaptixfit.domain.model.planner.TimelineItem;
 import java.net.URI;
@@ -172,12 +173,43 @@ class ImportAndScanServiceTest {
     }
 
     @Test
+    void theCalendarDescriptionIdentifiesTheSubjectAndHolidaysAreLeftOut() {
+        // Como el de Programación del Campus: eventos «PR1_…», descripción «Asignatura: Programación».
+        String teacher = String.join("\r\n",
+                "BEGIN:VCALENDAR",
+                "X-WR-CALNAME:1_1_GII_GITT_Programación",
+                "X-WR-CALDESC:Asignatura: Programación (1er curso\\, 1er semestre)",
+                "BEGIN:VEVENT", "UID:t2@g", "SUMMARY:PR1_GG_T2(2/2)", "DTSTART:20261017T090000Z",
+                "DTEND:20261017T110000Z", "END:VEVENT",
+                "BEGIN:VEVENT", "UID:p9@g", "SUMMARY:PR1_ORD_D_P9", "DTSTART:20261109T130000Z",
+                "DTEND:20261109T150000Z", "END:VEVENT",
+                "BEGIN:VEVENT", "UID:fest@g", "SUMMARY:Festivo", "DTSTART:20261012T000000Z",
+                "DTEND:20261013T000000Z", "END:VEVENT",
+                "END:VCALENDAR");
+        ics = new IcsService(f.directory, f.blocks, f.deadlines, url -> teacher,
+                new TimelineService(f.blocks, f.deadlines, f.directory), f.weeklyLoadService(), PlannerFakes.ZONE,
+                PlannerFakes.CLOCK);
+        SubjectRef fp = f.directory.addSubject(f.user, "Fundamentos de la Programación", null, 2);
+
+        ImportIcsUseCase.Result result = ics.importIcs(
+                new ImportIcsUseCase.Command(f.user, fp.id(), "https://uni.example/fp.ics", false));
+
+        assertThat(result.imported()).isTrue();
+        assertThat(result.totalEvents()).isEqualTo(2);
+        assertThat(result.items()).extracting(ImportIcsUseCase.Item::title)
+                .containsExactly("PR1_GG_T2(2/2)", "PR1_ORD_D_P9");
+        assertThat(result.items()).allMatch(ImportIcsUseCase.Item::imported);
+    }
+
+    @Test
     void withoutMatchesNothingIsImportedUnlessForced() {
         SubjectRef other = f.directory.addSubject(f.user, "Química Orgánica", "QO", 3);
         ImportIcsUseCase.Result none = ics.importIcs(
                 new ImportIcsUseCase.Command(f.user, other.id(), "https://uni.example/x.ics", false));
         assertThat(none.match()).isEqualTo(ImportIcsUseCase.Match.NONE);
         assertThat(none.imported()).isFalse();
+        // Sin coincidencias se enseña lo que trae el calendario, sin importarlo.
+        assertThat(none.items()).hasSize(3).noneMatch(ImportIcsUseCase.Item::imported);
         assertThat(f.blocks.store).isEmpty();
 
         ImportIcsUseCase.Result forced = ics.importIcs(
@@ -215,9 +247,11 @@ class ImportAndScanServiceTest {
                 new ScheduleEntry("ALG", "Algebra lineal", ClassKind.THEORY, 3, LocalTime.of(9, 0), LocalTime.of(11, 0),
                         "Aula 2"),
                 new ScheduleEntry("", "Asignatura desconocida", null, 5, LocalTime.of(12, 0), LocalTime.of(13, 0), ""));
-        ScheduleScanService scan = new ScheduleScanService((content, mime, names) -> {
+        ScheduleScanService scan = new ScheduleScanService((content, mime, names, sem) -> {
             assertThat(names).containsExactly("Álgebra Lineal");
-            return pattern;
+            // Clases desde el 14 de septiembre: primer semestre.
+            assertThat(sem).isEqualTo(1);
+            return new ScheduleScan(pattern, List.of("ALG: Algebra lineal (1.º curso, 1.er semestre)"));
         }, f.directory, f.directory, f.blocks, PlannerFakes.ZONE, PlannerFakes.CLOCK);
         var command = new ScanScheduleUseCase.Command(f.user, new byte[]{1, 2, 3}, "application/pdf");
 
@@ -229,6 +263,8 @@ class ImportAndScanServiceTest {
         // 14/09 → 09/10: 4 miércoles y 4 viernes.
         assertThat(first.blocksCreated()).isEqualTo(8);
         assertThat(first.unmatchedSubjects()).containsExactly("Asignatura desconocida");
+        assertThat(first.searchedSubjects()).containsExactly("Álgebra Lineal");
+        assertThat(first.documentSubjects()).hasSize(1);
         assertThat(f.blocks.store.values()).allSatisfy(b -> {
             assertThat(b.type()).isEqualTo(ActivityType.CLASS);
             assertThat(b.fixed()).isFalse();
@@ -247,7 +283,7 @@ class ImportAndScanServiceTest {
     void scanRejectsUnsupportedFilesAndEmptyResults() {
         f.directory.academic.put(f.user, new PlannerProfile.Academic(14, LocalDate.of(2026, 9, 14),
                 LocalDate.of(2027, 1, 22)));
-        ScheduleScanService scan = new ScheduleScanService((c, m, n) -> List.of(), f.directory, f.directory,
+        ScheduleScanService scan = new ScheduleScanService((c, m, n, sem) -> new ScheduleScan(List.of(), List.of()), f.directory, f.directory,
                 f.blocks, PlannerFakes.ZONE, PlannerFakes.CLOCK);
         assertThatThrownBy(() -> scan.scan(new ScanScheduleUseCase.Command(f.user, new byte[]{1}, "text/plain")))
                 .extracting("code").isEqualTo("SCHEDULE_UNSUPPORTED_FILE");

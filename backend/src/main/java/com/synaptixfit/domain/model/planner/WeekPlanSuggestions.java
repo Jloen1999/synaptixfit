@@ -48,7 +48,8 @@ public final class WeekPlanSuggestions {
 
     /**
      * Plan heurístico heredado: estudio repartido de lunes a viernes desde las 16:00 (1-2 bloques al
-     * día), deporte a las 18:00 en lunes, miércoles, viernes, martes y jueves (por ese orden). Las
+     * día), deporte a las 18:00 primero en el día de la semana preferido de los próximos días de la
+     * rutina en curso y, si faltan, en lunes, miércoles, viernes, martes y jueves (por ese orden). Las
      * asignaturas con entregas más próximas van primero. Respeta los huecos ocupados y no propone nada
      * en el pasado ni después de las 22:00.
      */
@@ -78,9 +79,25 @@ public final class WeekPlanSuggestions {
             }
         }
         RoutineRef routine = inbox.routines().isEmpty() ? null : inbox.routines().get(0);
+        List<Integer> sportDays = new ArrayList<>();
+        // Primero el día de la semana preferido de los próximos días de la rutina, mientras sigan en
+        // orden dentro de esta semana (un número menor ya sería de la semana siguiente).
+        int lastWeekday = 0;
+        for (RoutineRef.Day day : routine == null ? List.<RoutineRef.Day>of() : routine.pendingDays()) {
+            if (day.dayNumber() <= lastWeekday) {
+                break;
+            }
+            sportDays.add(day.dayNumber());
+            lastWeekday = day.dayNumber();
+        }
+        for (int d : SPORT_DAYS) {
+            if (!sportDays.contains(d)) {
+                sportDays.add(d);
+            }
+        }
         int sessions = 0;
-        for (int i = 0; i < SPORT_DAYS.length && sessions < inbox.sportSessionsTarget(); i++) {
-            LocalDate date = inbox.weekStart().plusDays(SPORT_DAYS[i] - 1L);
+        for (int i = 0; i < sportDays.size() && sessions < inbox.sportSessionsTarget(); i++) {
+            LocalDate date = inbox.weekStart().plusDays(sportDays.get(i) - 1L);
             Optional<TimeRange> slot = freeSlot(date, SPORT_FROM, inbox.minutesPerSportSession(), busy, zone, now);
             if (slot.isPresent()) {
                 result.add(new SuggestedBlock(ActivityType.SPORT, slot.get().start(), slot.get().end(), null, null,
@@ -90,6 +107,32 @@ public final class WeekPlanSuggestions {
             }
         }
         result.sort(Comparator.comparing(SuggestedBlock::start));
+        return withRoutineDays(result, routine);
+    }
+
+    /**
+     * Enlaza los bloques de deporte propuestos, por orden de fecha, con los próximos días de la rutina en
+     * curso (la rutina avanza por orden). Así cada bloque aceptado refleja una sesión concreta: no suma
+     * XP ni carga por su cuenta y se marca al hacer la sesión. Los que sobran quedan como deporte libre.
+     * Sin días conocidos de la rutina, se dejan como vienen.
+     */
+    public static List<SuggestedBlock> withRoutineDays(List<SuggestedBlock> blocks, RoutineRef routine) {
+        if (routine == null || routine.days().isEmpty()) {
+            return blocks;
+        }
+        List<RoutineRef.Day> pending = routine.pendingDays();
+        List<SuggestedBlock> sorted = blocks.stream().sorted(Comparator.comparing(SuggestedBlock::start)).toList();
+        List<SuggestedBlock> result = new ArrayList<>();
+        int next = 0;
+        for (SuggestedBlock b : sorted) {
+            if (b.type() != ActivityType.SPORT) {
+                result.add(b);
+            } else if (next < pending.size()) {
+                result.add(b.forRoutineDay(routine, pending.get(next++)));
+            } else {
+                result.add(b.withoutRoutine());
+            }
+        }
         return result;
     }
 

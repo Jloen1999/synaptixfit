@@ -11,8 +11,8 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../training_routes.dart';
-import '../../widgets/exercise_parameters_sheet.dart';
-import '../../widgets/exercise_row.dart';
+import '../../exercise_alternatives/page/exercise_alternatives_sheet.dart';
+import '../../widgets/planned_exercise_card.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_dialogs.dart';
 import '../../widgets/training_effect_handler.dart';
@@ -138,10 +138,28 @@ class _DetailViewState extends State<_DetailView> {
             ),
           ),
         );
-        if (status != null && status != routine.status && mounted) {
+        if (status == RoutineStatus.active && mounted) {
+          await _activate();
+        } else if (status != null && status != routine.status && mounted) {
           _bloc.add(RoutineDetailEvent.statusChanged(status));
         }
     }
+  }
+
+  /// Solo una rutina está en curso: se avisa de cuál se pausará.
+  Future<void> _activate() async {
+    final l10n = context.localizations;
+    final other = _bloc.state.otherActiveRoutineName;
+    final ok = await showConfirmDialog(
+      context,
+      title: l10n.trainingStartThisRoutineTitle,
+      message: other == null
+          ? l10n.trainingStartThisRoutineMessageNone
+          : l10n.trainingStartThisRoutineMessage(other),
+      confirmLabel: l10n.trainingStartThisRoutine,
+      destructive: false,
+    );
+    if (ok && mounted) _bloc.add(const RoutineDetailEvent.activated());
   }
 
   @override
@@ -201,7 +219,7 @@ class _DetailViewState extends State<_DetailView> {
                   ],
                 ),
             ],
-            bottom: state.busy
+            bottom: state.busy || state.saving
                 ? const PreferredSize(
                     preferredSize: Size.fromHeight(4),
                     child: LinearProgressIndicator(),
@@ -240,7 +258,13 @@ class _DetailViewState extends State<_DetailView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _Header(routine: routine!),
+                        _Header(
+                          routine: routine!,
+                          busy: state.busy,
+                          onActivate: _activate,
+                          onRestart: () =>
+                              _bloc.add(const RoutineDetailEvent.restarted()),
+                        ),
                         const SizedBox(height: TokensSpacing.l),
                         if (routine.weeks.isNotEmpty) ...[
                           WeekSelector(
@@ -287,9 +311,17 @@ class _DetailViewState extends State<_DetailView> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.routine});
+  const _Header({
+    required this.routine,
+    required this.busy,
+    required this.onActivate,
+    required this.onRestart,
+  });
 
   final Routine routine;
+  final bool busy;
+  final VoidCallback onActivate;
+  final VoidCallback onRestart;
 
   @override
   Widget build(BuildContext context) {
@@ -377,6 +409,24 @@ class _Header extends StatelessWidget {
                 ),
               ],
             ),
+          ],
+          // Una rutina propia que no está en curso se empieza aquí (pausa la
+          // que lo esté); una terminada, además, puede repetir el ciclo.
+          if (r.owned && r.status != RoutineStatus.active) ...[
+            const SizedBox(height: TokensSpacing.m),
+            // Terminada no le queda nada que empezar: solo se repite el ciclo.
+            if (r.status == RoutineStatus.completed)
+              AppPrimaryButton(
+                label: l10n.trainingRepeatCycle,
+                icon: Icons.replay_rounded,
+                onPressed: busy ? null : onRestart,
+              )
+            else
+              AppPrimaryButton(
+                label: l10n.trainingStartThisRoutine,
+                icon: Icons.play_arrow_rounded,
+                onPressed: busy ? null : onActivate,
+              ),
           ],
         ],
       ),
@@ -514,16 +564,28 @@ class _WeekSection extends StatelessWidget {
   }
 }
 
-/// Primer día sin terminar de la rutina, en orden: el que toca entrenar.
+/// Primer día sin hacer ni saltar, en orden: el que toca entrenar (mismo
+/// criterio que el servidor; la tarjeta de «Próximo entrenamiento» manda).
 String? _nextDayId(Routine routine) {
   for (final week in routine.weeks) {
     for (final day in week.days) {
-      if (day.status != ProgressStatus.completed && day.exercises.isNotEmpty) {
+      if (!day.status.isClosed && day.exercises.isNotEmpty) {
         return day.id;
       }
     }
   }
   return null;
+}
+
+/// Hay días anteriores a [dayId] que siguen por hacer: entrenarlo los saltará.
+bool _skipsEarlierDays(Routine routine, String dayId) {
+  for (final week in routine.weeks) {
+    for (final day in week.days) {
+      if (day.id == dayId) return false;
+      if (!day.status.isClosed && day.exercises.isNotEmpty) return true;
+    }
+  }
+  return false;
 }
 
 /// Día de la rutina. Los ya hechos aparecen plegados (cabecera y resumen)
@@ -551,14 +613,14 @@ class _DayCard extends StatefulWidget {
 }
 
 class _DayCardState extends State<_DayCard> {
-  late bool _expanded = widget.day.status != ProgressStatus.completed;
+  late bool _expanded = !widget.day.status.isClosed;
 
   @override
   void didUpdateWidget(_DayCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Al terminarse el día se pliega solo; si se reabre, se despliega.
+    // Al terminarse o saltarse el día se pliega solo; si se reabre, se despliega.
     if (oldWidget.day.status != widget.day.status) {
-      _expanded = widget.day.status != ProgressStatus.completed;
+      _expanded = !widget.day.status.isClosed;
     }
   }
 
@@ -567,11 +629,12 @@ class _DayCardState extends State<_DayCard> {
   double? get bodyWeightKg => widget.bodyWeightKg;
   bool get busy => widget.busy;
 
-  /// Repetir un día hecho cuenta como una sesión nueva: se confirma antes.
+  /// Repetir un día hecho cuenta como una sesión nueva, y adelantarse salta
+  /// los días anteriores: los dos casos se confirman antes.
   Future<void> _train(BuildContext context) async {
     final bloc = context.read<RoutineDetailBloc>();
+    final l10n = context.localizations;
     if (day.status == ProgressStatus.completed) {
-      final l10n = context.localizations;
       final ok = await showConfirmDialog(
         context,
         title: l10n.trainingRepeatDayTitle,
@@ -579,8 +642,30 @@ class _DayCardState extends State<_DayCard> {
         confirmLabel: l10n.trainingRepeatDay,
       );
       if (!ok) return;
+    } else if (_skipsEarlierDays(routine, day.id)) {
+      final ok = await showConfirmDialog(
+        context,
+        title: l10n.trainingSkipEarlierTitle,
+        message: l10n.trainingSkipEarlierMessage,
+        confirmLabel: l10n.trainingTrain,
+        destructive: false,
+      );
+      if (!ok) return;
     }
     bloc.add(RoutineDetailEvent.sessionStarted(day.id));
+  }
+
+  Future<void> _skip(BuildContext context) async {
+    final bloc = context.read<RoutineDetailBloc>();
+    final l10n = context.localizations;
+    final ok = await showConfirmDialog(
+      context,
+      title: l10n.trainingSkipDayTitle,
+      message: l10n.trainingSkipDayMessage,
+      confirmLabel: l10n.trainingSkipDay,
+      destructive: false,
+    );
+    if (ok) bloc.add(RoutineDetailEvent.daySkipped(day.id));
   }
 
   Widget _trainButton(BuildContext context) {
@@ -597,7 +682,7 @@ class _DayCardState extends State<_DayCard> {
         icon: const Icon(Icons.play_arrow_rounded),
         label: Text(l10n.trainingContinueDay),
       ),
-      ProgressStatus.pending => FilledButton.icon(
+      ProgressStatus.pending || ProgressStatus.skipped => FilledButton.icon(
         onPressed: onPressed,
         icon: const Icon(Icons.play_arrow_rounded),
         label: Text(l10n.trainingTrain),
@@ -649,14 +734,14 @@ class _DayCardState extends State<_DayCard> {
       }
     }
 
-    Future<void> edit(PlannedExercise e) async {
-      final params = await showExerciseParametersSheet(
+    Future<void> replace(PlannedExercise e) async {
+      final chosen = await showExerciseAlternativesSheet(
         context,
-        title: e.exerciseName,
-        initial: e.parameters,
+        exerciseId: e.exerciseId,
+        exerciseName: e.exerciseName,
       );
-      if (params != null) {
-        bloc.add(RoutineDetailEvent.exerciseUpdated(e.id, params));
+      if (chosen != null && chosen.id != e.exerciseId) {
+        bloc.add(RoutineDetailEvent.exerciseReplaced(e.id, chosen.id));
       }
     }
 
@@ -798,42 +883,58 @@ class _DayCardState extends State<_DayCard> {
               ),
             if (_expanded)
               for (var i = 0; i < day.exercises.length; i++)
-                ExerciseRow(
+                Column(
                   key: ValueKey(day.exercises[i].id),
-                  position: i + 1,
-                  count: day.exercises.length,
-                  name: day.exercises[i].exerciseName,
-                  thumbnailUrl: day.exercises[i].thumbnailUrl,
-                  parameters: day.exercises[i].parameters,
-                  met: day.exercises[i].met,
-                  bodyWeightKg: bodyWeightKg,
-                  realDurationSeconds: day.exercises[i].realDurationSeconds,
-                  inactive: !day.exercises[i].exerciseActive,
-                  onTap: () => context.push(
-                    TrainingPaths.exercise(day.exercises[i].exerciseId),
-                  ),
-                  onMoveUp: !owned || busy || i == 0
-                      ? null
-                      : () => bloc.add(
-                          RoutineDetailEvent.exerciseMoved(
-                            day.id,
-                            day.exercises[i].id,
-                            up: true,
-                          ),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Separados por una línea, sin tarjeta dentro de tarjeta.
+                    const Divider(height: TokensSpacing.l),
+                    PlannedExerciseCard(
+                      bare: true,
+                      exercise: day.exercises[i],
+                      position: i + 1,
+                      count: day.exercises.length,
+                      // Los campos siguen activos mientras se guarda otra edición
+                      // en línea; con una operación completa se desactivan sin
+                      // cambiar de widget (no se pierde el foco).
+                      editable: owned,
+                      enabled: !busy,
+                      onChanged: (params) => bloc.add(
+                        RoutineDetailEvent.exerciseUpdated(
+                          day.exercises[i].id,
+                          params,
                         ),
-                  onMoveDown: !owned || busy || i == day.exercises.length - 1
-                      ? null
-                      : () => bloc.add(
-                          RoutineDetailEvent.exerciseMoved(
-                            day.id,
-                            day.exercises[i].id,
-                            up: false,
-                          ),
-                        ),
-                  onEdit: !owned || busy ? null : () => edit(day.exercises[i]),
-                  onRemove: !owned || busy
-                      ? null
-                      : () => remove(day.exercises[i]),
+                      ),
+                      onOpen: () => context.push(
+                        TrainingPaths.exercise(day.exercises[i].exerciseId),
+                      ),
+                      onReplace: !owned || busy
+                          ? null
+                          : () => replace(day.exercises[i]),
+                      onRemove: !owned || busy
+                          ? null
+                          : () => remove(day.exercises[i]),
+                      onMoveUp: !owned || busy || i == 0
+                          ? null
+                          : () => bloc.add(
+                              RoutineDetailEvent.exerciseMoved(
+                                day.id,
+                                day.exercises[i].id,
+                                up: true,
+                              ),
+                            ),
+                      onMoveDown:
+                          !owned || busy || i == day.exercises.length - 1
+                          ? null
+                          : () => bloc.add(
+                              RoutineDetailEvent.exerciseMoved(
+                                day.id,
+                                day.exercises[i].id,
+                                up: false,
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
             if (owned && _expanded) ...[
               const SizedBox(height: TokensSpacing.xs),
@@ -841,6 +942,7 @@ class _DayCardState extends State<_DayCard> {
               OverflowBar(
                 alignment: MainAxisAlignment.spaceBetween,
                 overflowAlignment: OverflowBarAlignment.end,
+                spacing: TokensSpacing.xs,
                 overflowSpacing: TokensSpacing.xs,
                 children: [
                   TextButton.icon(
@@ -848,6 +950,24 @@ class _DayCardState extends State<_DayCard> {
                     icon: const Icon(Icons.add_rounded),
                     label: Text(l10n.trainingAddExercise),
                   ),
+                  if (day.status == ProgressStatus.skipped)
+                    TextButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () => context.read<RoutineDetailBloc>().add(
+                              RoutineDetailEvent.dayUnskipped(day.id),
+                            ),
+                      icon: const Icon(Icons.undo_rounded),
+                      label: Text(l10n.trainingUnskipDay),
+                    )
+                  else if (day.status == ProgressStatus.pending &&
+                      day.exercises.isNotEmpty &&
+                      routine.status == RoutineStatus.active)
+                    TextButton.icon(
+                      onPressed: busy ? null : () => _skip(context),
+                      icon: const Icon(Icons.redo_rounded),
+                      label: Text(l10n.trainingSkipDay),
+                    ),
                   if (day.exercises.isNotEmpty) _trainButton(context),
                 ],
               ),

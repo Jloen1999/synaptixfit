@@ -20,7 +20,7 @@ sealed class ChallengeDetailEvent with _$ChallengeDetailEvent {
 
   const factory ChallengeDetailEvent.progressRecorded({
     String? milestoneId,
-    required double amount,
+    required double value,
   }) = ChallengeDetailProgressRecorded;
 
   const factory ChallengeDetailEvent.deleteRequested() =

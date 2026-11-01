@@ -60,6 +60,7 @@ void registerSocialPresentation(GetIt getIt) {
         rejectRequest: getIt(),
         removeFriendship: getIt(),
         blockUser: getIt(),
+        getSharedNotes: getIt(),
       ),
     )
     ..registerFactory(

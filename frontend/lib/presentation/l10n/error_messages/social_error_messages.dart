@@ -9,6 +9,7 @@ String? socialErrorMessage(
   'POST_NOT_FOUND' => l10n.socialErrorPostNotFound,
   'POST_FORBIDDEN' => l10n.socialErrorPostForbidden,
   'POST_ALREADY_SHARED' => l10n.socialErrorPostAlreadyShared,
+  'POST_TYPE_NOT_ALLOWED' => l10n.socialErrorPostTypeNotAllowed,
   'COMMENT_NOT_FOUND' => l10n.socialErrorCommentNotFound,
   'COMMENT_FORBIDDEN' => l10n.socialErrorCommentForbidden,
   'FRIENDSHIP_NOT_FOUND' => l10n.socialErrorFriendshipNotFound,

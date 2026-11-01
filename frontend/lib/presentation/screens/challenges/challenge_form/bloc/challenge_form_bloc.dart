@@ -73,9 +73,7 @@ class ChallengeFormBloc extends Bloc<ChallengeFormEvent, ChallengeFormState> {
     on<ChallengeFormMilestoneSaved>(_onMilestoneSaved);
     on<ChallengeFormMilestoneRemoved>(_onMilestoneRemoved);
     on<ChallengeFormMilestoneMoved>(_onMilestoneMoved);
-    on<ChallengeFormManualWeightsToggled>(_onManualWeights);
-    on<ChallengeFormWeightChanged>(_onWeightChanged);
-    on<ChallengeFormWeightsDistributed>(_onWeightsDistributed);
+    on<ChallengeFormInOrderToggled>(_onInOrderToggled);
     on<ChallengeFormSubmitted>(_onSubmitted);
   }
 
@@ -139,7 +137,6 @@ class ChallengeFormBloc extends Bloc<ChallengeFormEvent, ChallengeFormState> {
               key: m.id,
               id: m.id,
               title: m.title,
-              weight: m.weight,
               difficulty: m.difficulty,
               noteId: m.noteId,
               fileId: m.fileId,
@@ -150,11 +147,7 @@ class ChallengeFormBloc extends Bloc<ChallengeFormEvent, ChallengeFormState> {
               completed: m.completed,
             ),
         ];
-        final auto = ChallengeDraftValidator.autoWeights(items.length);
-        var manual = false;
-        for (var i = 0; i < items.length; i++) {
-          if (((items[i].weight ?? 0) - auto[i]).abs() > 0.01) manual = true;
-        }
+        final inOrder = _isChain(items);
         emit(
           state.copyWith(
             status: ChallengeFormStatus.ready,
@@ -165,8 +158,12 @@ class ChallengeFormBloc extends Bloc<ChallengeFormEvent, ChallengeFormState> {
             startAt: value.startAt,
             endAt: value.endAt,
             subjectId: value.subjectId,
-            milestones: items,
-            manualWeights: manual,
+            // En orden, la cadena se rehace al guardar: no se guardan claves.
+            milestones: inOrder
+                ? [for (final m in items) m.copyWith(dependsOnKeys: const [])]
+                : items,
+            inOrder: inOrder,
+            tracksTrainingSessions: value.tracksTrainingSessions,
           ),
         );
       case Failure(:final error):
@@ -207,14 +204,7 @@ class ChallengeFormBloc extends Bloc<ChallengeFormEvent, ChallengeFormState> {
     } else {
       list[index] = item;
     }
-    emit(
-      state.copyWith(
-        milestones: state.manualWeights && index < 0
-            ? _withWeight(list, item.key, item.weight ?? 0)
-            : list,
-        issue: null,
-      ),
-    );
+    emit(state.copyWith(milestones: list, issue: null));
   }
 
   void _onMilestoneRemoved(
@@ -252,57 +242,36 @@ class ChallengeFormBloc extends Bloc<ChallengeFormEvent, ChallengeFormState> {
     emit(state.copyWith(milestones: list));
   }
 
-  void _onManualWeights(
-    ChallengeFormManualWeightsToggled event,
+  void _onInOrderToggled(
+    ChallengeFormInOrderToggled event,
     Emitter<ChallengeFormState> emit,
   ) {
-    if (event.manual == state.manualWeights) return;
-    final auto = ChallengeDraftValidator.autoWeights(state.milestones.length);
+    if (event.inOrder == state.inOrder) return;
     emit(
       state.copyWith(
-        manualWeights: event.manual,
+        inOrder: event.inOrder,
         issue: null,
         milestones: [
-          for (var i = 0; i < state.milestones.length; i++)
-            state.milestones[i].copyWith(weight: event.manual ? auto[i] : null),
+          for (final m in state.milestones)
+            m.copyWith(
+              dependsOnKeys: const [],
+              condition: MilestoneCondition.all,
+              conditionN: 1,
+            ),
         ],
       ),
     );
   }
 
-  void _onWeightChanged(
-    ChallengeFormWeightChanged event,
-    Emitter<ChallengeFormState> emit,
-  ) {
-    emit(
-      state.copyWith(
-        milestones: _withWeight(state.milestones, event.key, event.weight),
-        issue: null,
-      ),
-    );
+  /// ¿Cada tarea depende solo de la anterior (y la primera de ninguna)?
+  static bool _isChain(List<MilestoneFormItem> items) {
+    if (items.length < 2 || items.first.dependsOnKeys.isNotEmpty) return false;
+    for (var i = 1; i < items.length; i++) {
+      final deps = items[i].dependsOnKeys;
+      if (deps.length != 1 || deps.first != items[i - 1].key) return false;
+    }
+    return true;
   }
-
-  void _onWeightsDistributed(
-    ChallengeFormWeightsDistributed event,
-    Emitter<ChallengeFormState> emit,
-  ) {
-    final auto = ChallengeDraftValidator.autoWeights(state.milestones.length);
-    emit(
-      state.copyWith(
-        issue: null,
-        milestones: [
-          for (var i = 0; i < state.milestones.length; i++)
-            state.milestones[i].copyWith(weight: auto[i]),
-        ],
-      ),
-    );
-  }
-
-  List<MilestoneFormItem> _withWeight(
-    List<MilestoneFormItem> list,
-    String key,
-    double? weight,
-  ) => [for (final m in list) m.key == key ? m.copyWith(weight: weight) : m];
 
   /// Convierte las tareas del formulario en borradores con dependencias por posición.
   List<MilestoneDraft> buildMilestoneDrafts() {
@@ -310,12 +279,26 @@ class ChallengeFormBloc extends Bloc<ChallengeFormEvent, ChallengeFormState> {
       for (var i = 0; i < state.milestones.length; i++)
         state.milestones[i].key: i,
     };
+    if (state.inOrder) {
+      // «En orden»: cada tarea depende de la anterior (AND).
+      return [
+        for (var i = 0; i < state.milestones.length; i++)
+          MilestoneDraft(
+            id: state.milestones[i].id,
+            title: state.milestones[i].title,
+            difficulty: state.milestones[i].difficulty,
+            noteId: state.milestones[i].noteId,
+            fileId: state.milestones[i].fileId,
+            link: state.milestones[i].link,
+            dependsOn: i == 0 ? const [] : [i - 1],
+          ),
+      ];
+    }
     return [
       for (final m in state.milestones)
         MilestoneDraft(
           id: m.id,
           title: m.title,
-          weight: state.manualWeights ? (m.weight ?? 0) : null,
           difficulty: m.difficulty,
           noteId: m.noteId,
           fileId: m.fileId,

@@ -13,8 +13,14 @@ abstract class RoutineDetailState with _$RoutineDetailState {
     /// Peso del perfil para estimar calorías (`null` usa el de referencia).
     double? bodyWeightKg,
 
+    /// Otra rutina propia que está en curso (se pausará al empezar esta).
+    String? otherActiveRoutineName,
+
     /// Hay una operación de edición en curso.
     @Default(false) bool busy,
+
+    /// Hay cambios en línea guardándose (los campos siguen activos).
+    @Default(false) bool saving,
     TrainingEffect? effect,
   }) = _RoutineDetailState;
 }

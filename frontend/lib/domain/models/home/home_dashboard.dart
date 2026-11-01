@@ -5,6 +5,7 @@ import '../../enums/home_acwr_zone.dart';
 import '../../enums/home_banner_type.dart';
 import '../../enums/home_event_kind.dart';
 import '../../enums/home_event_type.dart';
+import '../../enums/training_enums.dart';
 
 part 'home_dashboard.freezed.dart';
 
@@ -100,7 +101,8 @@ abstract class HomeWellbeing with _$HomeWellbeing {
   }) = _HomeWellbeing;
 }
 
-/// Próximo día de entrenamiento de la rutina activa.
+/// Próximo día de entrenamiento de la rutina en curso (misma regla que la
+/// pestaña de Rutinas: la calcula el servidor).
 @freezed
 abstract class HomeNextTrainingDay with _$HomeNextTrainingDay {
   const factory HomeNextTrainingDay({
@@ -108,10 +110,37 @@ abstract class HomeNextTrainingDay with _$HomeNextTrainingDay {
     required String routineName,
     required String dayId,
     required int weekNumber,
+    @Default(1) int totalWeeks,
     required int dayNumber,
     String? dayName,
     required bool inProgress,
+
+    /// Cuándo toca y si esa fecha ya pasó.
+    DateTime? scheduledDate,
+    @Default(false) bool overdue,
+    @Default(1) int sessionOfWeek,
+    @Default(1) int sessionsInWeek,
+
+    /// Sesión abandonada de ese día que hay que terminar o descartar antes.
+    String? staleSessionId,
+    @Default(0) int exerciseCount,
+
+    /// Avance del ciclo de la rutina (días hechos y saltados de [totalDays]).
+    @Default(0) int totalDays,
+    @Default(0) int completedDays,
+    @Default(0) int skippedDays,
+
+    /// Foto y modalidad del ejercicio que representa la rutina.
+    String? coverImageUrl,
+    Modality? coverModality,
   }) = _HomeNextTrainingDay;
+
+  const HomeNextTrainingDay._();
+
+  /// Avance del ciclo entre 0 y 1.
+  double get cycleProgress => totalDays == 0
+      ? 0
+      : ((completedDays + skippedDays) / totalDays).clamp(0, 1).toDouble();
 }
 
 /// Reto activo con su progreso (0-100).
@@ -155,6 +184,10 @@ abstract class HomeTodayEvent with _$HomeTodayEvent {
 
     /// Pendiente, en curso, hecho o no hecho/vencido.
     @Default(ItemTimeStatus.upcoming) ItemTimeStatus status,
+
+    /// Día de rutina que refleja un bloque de deporte: «Entrenar» empieza ese.
+    String? routineId,
+    String? routineDayId,
   }) = _HomeTodayEvent;
 }
 

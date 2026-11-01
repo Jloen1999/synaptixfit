@@ -13,7 +13,7 @@ String socialTimeAgo(AppLocalizations l10n, DateTime date, {DateTime? now}) {
   if (diff.inHours < 1) return l10n.socialTimeMinutes(diff.inMinutes);
   if (diff.inDays < 1) return l10n.socialTimeHours(diff.inHours);
   if (diff.inDays < 7) return l10n.socialTimeDays(diff.inDays);
-  return DateFormat('d MMM yyyy').format(date);
+  return DateFormat.yMMMd().format(date);
 }
 
 /// Etiqueta, icono y color de cada tipo de publicación.
@@ -36,13 +36,14 @@ extension PostTypeStyle on PostType {
     PostType.challenge => Icons.flag_rounded,
   };
 
-  /// Entrenamiento en `secondary`; logros en `palette.accent`; retos en `primary`.
+  /// Entrenamiento en `secondary`; logros y retos en `palette.accent` (el lima
+  /// de `primary` es para acciones).
   Color color(BuildContext context) => switch (this) {
     PostType.sessionCompleted || PostType.routine => context.colors.secondary,
     PostType.challengeCompleted ||
     PostType.milestoneReached ||
-    PostType.badgeUnlocked => context.palette.accent,
-    PostType.challenge => context.colors.primary,
+    PostType.badgeUnlocked ||
+    PostType.challenge => context.palette.accent,
   };
 }
 

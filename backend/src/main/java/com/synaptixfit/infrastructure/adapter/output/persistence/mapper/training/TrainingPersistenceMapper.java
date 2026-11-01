@@ -38,7 +38,8 @@ public final class TrainingPersistenceMapper {
 
     public static SessionSet toDomain(SessionSetEntity e) {
         return new SessionSet(e.getId(), e.getSeleccionId(), Math.max(1, e.getNumeroSerie()),
-                e.getRepeticionesRealizadas(), e.getPesoKg(), e.isCompletada(), Math.max(0, e.getFailedReps()));
+                e.getRepeticionesRealizadas(), e.getPesoKg(), e.isCompletada(), Math.max(0, e.getFailedReps()),
+                e.getDuracionSegundos(), e.getDistanciaMetros(), e.getEjercicioId());
     }
 
     public static void copy(TrainingSession s, TrainingSessionEntity e) {
@@ -64,6 +65,12 @@ public final class TrainingPersistenceMapper {
         e.setPesoKg(s.weightKg());
         e.setCompletada(s.completed());
         e.setFailedReps(s.failedReps());
+        e.setDuracionSegundos(s.durationSeconds());
+        e.setDistanciaMetros(s.distanceMeters());
+        // Una serie ya guardada conserva su ejercicio aunque su hueco desaparezca de la rutina.
+        if (s.exerciseId() != null) {
+            e.setEjercicioId(s.exerciseId());
+        }
     }
 
     // ------------------------------------------------------------------ check-in
@@ -174,6 +181,8 @@ public final class TrainingPersistenceMapper {
         m.put("targetDurationSeconds", p.targetDurationSeconds());
         m.put("distanceMeters", p.distanceMeters());
         m.put("isometricSeconds", p.isometricSeconds());
+        m.put("repsPerSet", p.repsPerSet());
+        m.put("isometricSecondsPerSet", p.isometricSecondsPerSet());
         return m;
     }
 
@@ -186,7 +195,8 @@ public final class TrainingPersistenceMapper {
             ExerciseParameters params = ExerciseParameters.clamped(intOf(m.get("sets"), 3), intOf(m.get("reps"), 10),
                     intOf(m.get("restSeconds"), 90), doubleOf(m.get("weightKg")), weights,
                     integerOf(m.get("targetDurationSeconds")), integerOf(m.get("distanceMeters")),
-                    integerOf(m.get("isometricSeconds")));
+                    integerOf(m.get("isometricSeconds")), integersOf(m.get("repsPerSet")),
+                    integersOf(m.get("isometricSecondsPerSet")));
             return new ExerciseAdjustment(planned, exerciseId == null ? null : UUID.fromString(exerciseId.toString()),
                     (String) m.get("exerciseName"), params, (String) m.get("reason"));
         } catch (RuntimeException ex) {
@@ -200,6 +210,11 @@ public final class TrainingPersistenceMapper {
 
     private static Integer integerOf(Object v) {
         return v instanceof Number n ? n.intValue() : null;
+    }
+
+    private static List<Integer> integersOf(Object v) {
+        return v instanceof List<?> l
+                ? l.stream().filter(Number.class::isInstance).map(n -> ((Number) n).intValue()).toList() : null;
     }
 
     private static Double doubleOf(Object v) {

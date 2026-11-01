@@ -220,4 +220,32 @@ void main() {
     expect(session.xpGranted, 15);
     expect(session.questions.single.correctAnswer, isNull);
   });
+
+  test('SharedNotePageDto trae resúmenes sin contenido y la asignatura del '
+      'catálogo', () {
+    final page = SharedNotePageDto.fromJson({
+      'items': [
+        {
+          'id': 'n1',
+          'authorId': 'u2',
+          'authorName': 'Luis',
+          'catalogSubjectId': 'c1',
+          'catalogSubjectName': 'Bases de Datos',
+          'title': 'Normalización',
+          'excerpt': 'Primera forma normal',
+          'visibility': 'FRIENDS',
+          'updatedAt': '2026-11-01T09:00:00Z',
+          'mine': false,
+        },
+      ],
+      'page': 0,
+      'totalPages': 2,
+    }).toDomain();
+
+    final note = page.items.single;
+    expect(note.catalogSubjectName, 'Bases de Datos');
+    expect(note.excerpt, 'Primera forma normal');
+    expect(note.visibility, Visibility.friends);
+    expect(page.hasMore, isTrue);
+  });
 }

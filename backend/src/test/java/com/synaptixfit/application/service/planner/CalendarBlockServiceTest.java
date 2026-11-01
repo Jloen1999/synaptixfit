@@ -60,6 +60,33 @@ class CalendarBlockServiceTest {
     }
 
     @Test
+    void challengeBlocksStayWithinThePeriodAndTheTaskMustBelongToTheChallenge() {
+        UUID challenge = UUID.randomUUID();
+        UUID other = UUID.randomUUID();
+        UUID task = UUID.randomUUID();
+        f.directory.challenges.computeIfAbsent(f.user, k -> new java.util.HashSet<>()).addAll(List.of(challenge, other, task));
+        f.directory.challengePeriods.put(challenge, new com.synaptixfit.domain.model.planner.ChallengeRef(challenge,
+                at(1, 0, 0), at(3, 23, 0)));
+        f.directory.milestoneChallenge.put(task, challenge);
+
+        // La tarea indica su reto aunque no se envíe, y el bloque avisa a Retos para recalcular la tarea.
+        CalendarBlock block = service.createBlock(new CreateCalendarBlockUseCase.Command(f.user, at(2, 10, 0),
+                at(2, 11, 0), false, new BlockDetailsInput(ActivityType.STUDY, null, null, null, null, false, null,
+                null, null, null, null, task, null, null, null))).block();
+        assertThat(block.details().challengeId()).isEqualTo(challenge);
+        assertThat(f.events).anyMatch(e -> e instanceof com.synaptixfit.domain.event.planner.StudyBlockAssignmentChanged);
+
+        assertThatThrownBy(() -> service.createBlock(new CreateCalendarBlockUseCase.Command(f.user, at(5, 10, 0),
+                at(5, 11, 0), false, new BlockDetailsInput(ActivityType.STUDY, null, null, null, null, false, null,
+                null, null, null, challenge, task, null, null, null))))
+                .extracting("code").isEqualTo("BLOCK_OUTSIDE_CHALLENGE_PERIOD");
+        assertThatThrownBy(() -> service.createBlock(new CreateCalendarBlockUseCase.Command(f.user, at(2, 12, 0),
+                at(2, 13, 0), false, new BlockDetailsInput(ActivityType.STUDY, null, null, null, null, false, null,
+                null, null, null, other, task, null, null, null))))
+                .extracting("code").isEqualTo("PLANNER_CHALLENGE_NOT_FOUND");
+    }
+
+    @Test
     void rejectsBlocksInThePast() {
         assertThatThrownBy(() -> create(PlannerFakes.NOW.minusSeconds(60), PlannerFakes.NOW.plusSeconds(3600),
                 ActivityType.STUDY))
@@ -256,5 +283,37 @@ class CalendarBlockServiceTest {
 
         assertThat(moved.block().start()).isEqualTo(at(0, 13, 0));
         assertThat(moved.block().end()).isEqualTo(at(0, 14, 0));
+    }
+
+    @Test
+    void withdrawingRoutineBlocksKeepsHistoryUnlessTheDayIsGone() {
+        UUID routineId = UUID.randomUUID();
+        UUID dayId = UUID.randomUUID();
+        java.util.function.BiFunction<Instant, Boolean, CalendarBlock> block = (start, done) -> {
+            CalendarBlock b = CalendarBlock.builder().id(UUID.randomUUID()).userId(f.user)
+                    .range(com.synaptixfit.domain.model.planner.TimeRange.ofMinutes(start, 60)).type(ActivityType.SPORT)
+                    .details(new CalendarBlock.Details(null, "Semana 1 · Empuje", null,
+                            com.synaptixfit.domain.model.planner.Priority.MEDIUM, false, null, routineId,
+                            UUID.randomUUID(), dayId, null, null, null))
+                    .build();
+            if (done) {
+                b.complete(start.plusSeconds(3600), null, null, null);
+            }
+            return f.blocks.save(b);
+        };
+        CalendarBlock past = block.apply(PlannerFakes.NOW.minus(Duration.ofDays(2)), false);
+        CalendarBlock done = block.apply(PlannerFakes.NOW.minus(Duration.ofDays(1)), true);
+        CalendarBlock future = block.apply(PlannerFakes.NOW.plus(Duration.ofDays(1)), false);
+
+        // Rutina pausada: solo los futuros pendientes.
+        service.withdraw(new com.synaptixfit.application.port.input.planner.WithdrawRoutineBlocksUseCase.Command(
+                f.user, routineId, java.util.Set.of(), true));
+        assertThat(f.blocks.store.keySet()).containsExactlyInAnyOrder(past.id(), done.id());
+
+        // Día quitado de la rutina: todos sus bloques, también el completado.
+        service.withdraw(new com.synaptixfit.application.port.input.planner.WithdrawRoutineBlocksUseCase.Command(
+                f.user, routineId, java.util.Set.of(dayId), false, true));
+        assertThat(f.blocks.store).isEmpty();
+        assertThat(future).isNotNull();
     }
 }

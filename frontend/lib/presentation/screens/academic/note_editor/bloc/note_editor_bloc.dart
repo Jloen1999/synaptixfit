@@ -24,6 +24,9 @@ class NoteEditorBloc extends Bloc<NoteEditorEvent, NoteEditorState> {
   }) : super(const NoteEditorState()) {
     on<NoteEditorStarted>(_onStarted);
     on<NoteEditorSubmitted>(_onSubmitted);
+    on<NoteEditorProfilePrivacyChanged>(
+      (event, emit) => emit(state.copyWith(profilePrivacy: event.privacy)),
+    );
   }
 
   final GetNoteUseCaseContract _getNote;
@@ -41,6 +44,7 @@ class NoteEditorBloc extends Bloc<NoteEditorEvent, NoteEditorState> {
         loadError: null,
         initialSubjectId: event.subjectId,
         initialQuickNote: event.quickNote,
+        profilePrivacy: event.profilePrivacy,
       ),
     );
     final subjects = await _getSubjects(archived: false);
@@ -60,6 +64,7 @@ class NoteEditorBloc extends Bloc<NoteEditorEvent, NoteEditorState> {
         (n) => state.copyWith(
           loading: false,
           note: n,
+          initialVisibility: state.allowed(n.visibility),
           initialSubjectId: n.subjectId,
           initialQuickNote: n.quickNote,
           subjects: subjects.valueOrNull ?? const [],

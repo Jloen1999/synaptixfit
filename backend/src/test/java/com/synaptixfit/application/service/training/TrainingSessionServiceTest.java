@@ -3,6 +3,15 @@ package com.synaptixfit.application.service.training;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.synaptixfit.application.port.input.training.CorrectTrainingSessionUseCase;
+import com.synaptixfit.application.port.input.training.LogPastRoutineSessionUseCase;
+import com.synaptixfit.domain.event.training.RoutineCompleted;
+import com.synaptixfit.domain.event.training.RoutineDaysSkipped;
+import com.synaptixfit.domain.event.training.RoutineDeactivated;
+import com.synaptixfit.domain.exception.training.SessionPastDateInvalidException;
+import com.synaptixfit.domain.exception.training.SessionStaleOpenException;
+import com.synaptixfit.domain.exception.training.SessionUnmarkExpiredException;
+import com.synaptixfit.domain.model.training.RoutineStatus;
 import com.synaptixfit.application.port.input.training.FinishTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
 import com.synaptixfit.domain.event.DomainEvent;
@@ -175,12 +184,26 @@ class TrainingSessionServiceTest {
     }
 
     @Test
-    void completingAllDaysCompletesTheWeek() {
+    void completingAllDaysCompletesTheWeekAndTheCycle() {
         TrainingSession a = service.start(USER, routine.id(), day1.id());
         service.finish(new FinishTrainingSessionUseCase.Command(USER, a.id(), 1800, 6, null, null));
         TrainingSession b = service.start(USER, routine.id(), day2.id());
         service.finish(new FinishTrainingSessionUseCase.Command(USER, b.id(), 1800, 6, null, null));
         assertThat(routine.weeks().getFirst().status()).isEqualTo(ProgressStatus.COMPLETED);
+        assertThat(routine.status()).isEqualTo(RoutineStatus.COMPLETED);
+        assertThat(events).filteredOn(e -> e instanceof RoutineCompleted).hasSize(1);
+        assertThat(events).filteredOn(e -> e instanceof RoutineDeactivated)
+                .singleElement().satisfies(e -> assertThat(((RoutineDeactivated) e).reason())
+                        .isEqualTo(RoutineDeactivated.Reason.COMPLETED));
+    }
+
+    @Test
+    void finishingALaterDaySkipsTheEarlierOneAndAnnouncesIt() {
+        TrainingSession b = service.start(USER, routine.id(), day2.id());
+        service.finish(new FinishTrainingSessionUseCase.Command(USER, b.id(), 1800, 6, null, null));
+        assertThat(routine.day(day1.id()).status()).isEqualTo(ProgressStatus.SKIPPED);
+        assertThat(events).filteredOn(e -> e instanceof RoutineDaysSkipped).singleElement()
+                .satisfies(e -> assertThat(((RoutineDaysSkipped) e).dayIds()).containsExactly(day1.id()));
     }
 
     @Test
@@ -216,14 +239,71 @@ class TrainingSessionServiceTest {
     }
 
     @Test
-    void cancelDeletesInProgressSessionAndResetsDay() {
+    void deleteDiscardsAnOpenSessionAndResetsDay() {
         TrainingSession s = service.start(USER, routine.id(), day1.id());
-        service.cancel(USER, s.id());
+        service.delete(USER, s.id());
         assertThat(sessions.store).isEmpty();
         assertThat(routine.day(day1.id()).status()).isEqualTo(ProgressStatus.PENDING);
-        TrainingSession done = service.start(USER, null, null);
-        service.finish(new FinishTrainingSessionUseCase.Command(USER, done.id(), 600, 5, null, null));
-        assertThatThrownBy(() -> service.cancel(USER, done.id())).isInstanceOf(SessionAlreadyCompletedException.class);
+        assertThat(revoked).isEmpty();
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    void deletingACompletedSessionRevertsXpLoadAndDay() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        service.finish(new FinishTrainingSessionUseCase.Command(USER, s.id(), 1800, 6, null, null));
+        int granted = awarded.getFirst();
+        clock.advance(java.time.Duration.ofDays(3));
+
+        service.delete(USER, s.id());
+
+        assertThat(sessions.store).isEmpty();
+        assertThat(revoked).containsExactly(granted);
+        assertThat(routine.day(day1.id()).status()).isEqualTo(ProgressStatus.PENDING);
+        assertThat(events.getLast()).isInstanceOfSatisfying(TrainingSessionCompletionChanged.class, e -> {
+            assertThat(e.completed()).isFalse();
+            assertThat(e.date()).isEqualTo(LocalDate.of(2026, 10, 5));
+        });
+    }
+
+    @Test
+    void onlyTodaysSessionsCanBeUnmarkedOlderOnesAreCorrected() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        service.finish(new FinishTrainingSessionUseCase.Command(USER, s.id(), 1800, 6, null, null));
+        clock.advance(java.time.Duration.ofDays(1));
+        assertThatThrownBy(() -> service.unmark(USER, s.id())).isInstanceOf(SessionUnmarkExpiredException.class);
+
+        TrainingSession corrected = service.correct(new CorrectTrainingSessionUseCase.Command(USER, s.id(), 9, 50));
+
+        assertThat(corrected.rpe()).isEqualTo(9);
+        assertThat(corrected.durationMinutes()).isEqualTo(50);
+        // Evento propio: el calendario no vuelve a marcar ningún bloque al corregir.
+        assertThat(events.getLast()).isInstanceOfSatisfying(
+                com.synaptixfit.domain.event.training.TrainingSessionCorrected.class, e -> {
+                    assertThat(e.durationMinutes()).isEqualTo(50);
+                    assertThat(e.date()).isEqualTo(LocalDate.of(2026, 10, 5));
+                });
+    }
+
+    @Test
+    void logPastCompletesTheDayOnThatDateAndRejectsOldDates() {
+        clock.advance(java.time.Duration.ofDays(3));
+        LocalDate yesterday = LocalDate.of(2026, 10, 7);
+
+        var result = service.logPast(new LogPastRoutineSessionUseCase.Command(USER, routine.id(), day1.id(), yesterday,
+                45, 7));
+
+        assertThat(result.session().isCompleted()).isTrue();
+        assertThat(result.session().completedOn(ZoneOffset.UTC)).isEqualTo(yesterday);
+        assertThat(routine.day(day1.id()).status()).isEqualTo(ProgressStatus.COMPLETED);
+        assertThat(routine.day(day1.id()).closedOn()).isEqualTo(yesterday);
+        assertThat(awarded).hasSize(1);
+        assertThat(events).filteredOn(e -> e instanceof TrainingSessionCompletionChanged).singleElement()
+                .satisfies(e -> assertThat(((TrainingSessionCompletionChanged) e).date()).isEqualTo(yesterday));
+        assertThatThrownBy(() -> service.logPast(new LogPastRoutineSessionUseCase.Command(USER, routine.id(),
+                day2.id(), yesterday.minusDays(8), 45, 7))).isInstanceOf(SessionPastDateInvalidException.class);
+        assertThatThrownBy(() -> service.logPast(new LogPastRoutineSessionUseCase.Command(USER, routine.id(),
+                day2.id(), yesterday.plusDays(2), 45, 7))).isInstanceOf(SessionPastDateInvalidException.class);
     }
 
     @Test
@@ -258,15 +338,20 @@ class TrainingSessionServiceTest {
     }
 
     @Test
-    void anAbandonedSessionIsNotResumedAndALeftOpenOneIsBounded() {
+    void anAbandonedSessionIsKeptAndFinishedOnTheDayItWasDone() {
         TrainingSession old = service.start(USER, routine.id(), day1.id());
         clock.advance(java.time.Duration.ofHours(7));
 
-        TrainingSession fresh = service.start(USER, routine.id(), day1.id());
+        assertThatThrownBy(() -> service.start(USER, routine.id(), day1.id()))
+                .isInstanceOf(SessionStaleOpenException.class);
+        assertThat(sessions.store).containsKey(old.id());
 
-        assertThat(fresh.id()).isNotEqualTo(old.id());
         clock.advance(java.time.Duration.ofDays(2));
-        var result = service.finish(new FinishTrainingSessionUseCase.Command(USER, fresh.id(), 86_400, 6, null, null));
+        var result = service.finish(new FinishTrainingSessionUseCase.Command(USER, old.id(), 86_400, 6, null, null));
         assertThat(result.session().durationMinutes()).isEqualTo(240);
+        assertThat(result.session().completedOn(ZoneOffset.UTC)).isEqualTo(LocalDate.of(2026, 10, 5));
+        assertThat(routine.day(day1.id()).closedOn()).isEqualTo(LocalDate.of(2026, 10, 5));
+        assertThat(events.getLast()).isInstanceOfSatisfying(TrainingSessionCompletionChanged.class,
+                e -> assertThat(e.date()).isEqualTo(LocalDate.of(2026, 10, 5)));
     }
 }

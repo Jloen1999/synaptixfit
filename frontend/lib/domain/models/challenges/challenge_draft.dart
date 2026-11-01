@@ -40,8 +40,7 @@ abstract class MilestoneDraft with _$MilestoneDraft {
     String? id,
     required String title,
 
-    /// Peso porcentual; `null` en todas las tareas reparte 100 a partes iguales.
-    double? weight,
+    /// Esfuerzo: también fija su peso en el progreso (lo calcula el servidor).
     @Default(ChallengeDifficulty.medium) ChallengeDifficulty difficulty,
     String? subjectId,
     String? noteId,

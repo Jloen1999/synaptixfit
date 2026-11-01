@@ -3,9 +3,12 @@ package com.synaptixfit.domain.model.training;
 import com.synaptixfit.domain.exception.training.SessionAlreadyCompletedException;
 import com.synaptixfit.domain.exception.training.SessionNotCompletedException;
 import com.synaptixfit.domain.exception.training.SessionSetNotFoundException;
+import com.synaptixfit.domain.exception.training.SessionUnmarkExpiredException;
 import com.synaptixfit.domain.model.shared.Guard;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -15,7 +18,10 @@ import java.util.UUID;
 /**
  * Sesión de entrenamiento. Está en curso mientras {@code completedAt} es nulo; al finalizarla se
  * fijan duración, RPE, calorías y la experiencia otorgada, que se guarda para poder restar
- * exactamente esa cantidad si se desmarca (anti-farmeo).
+ * exactamente esa cantidad si se desmarca o se elimina (anti-farmeo).
+ *
+ * <p>Una sesión abandonada (abierta más de {@link #STALE_AFTER}) nunca se borra sola: se termina con
+ * lo registrado, y entonces cuenta en el día en que se hizo ({@link #completionInstant}), o se descarta.
  */
 public final class TrainingSession {
 
@@ -78,6 +84,32 @@ public final class TrainingSession {
         return Math.max(1, Math.min(requestedSeconds, Math.min(elapsed, MAX_DURATION.toSeconds())));
     }
 
+    /**
+     * Cuándo se da por terminada: ahora, o si se abandonó, al acabar la duración registrada desde que
+     * empezó. Así la carga, la XP y los retos caen en el día en que de verdad se entrenó.
+     */
+    public Instant completionInstant(long boundedDurationSeconds, Instant now) {
+        return isStale(now) ? startedAt.plusSeconds(Math.max(1, boundedDurationSeconds)) : now;
+    }
+
+    /** Día local en que se terminó (null si sigue en curso). */
+    public LocalDate completedOn(ZoneId zone) {
+        return completedAt == null ? null : LocalDate.ofInstant(completedAt, zone);
+    }
+
+    /**
+     * Sesión de un día de rutina entrenado sin la app (registro de una sesión pasada): ya terminada,
+     * empezada {@code durationMinutes} antes de {@code completedAt}.
+     */
+    public static TrainingSession logged(UUID userId, UUID routineId, UUID dayId, Instant completedAt,
+                                         int durationMinutes, int sessionRpe, double sessionCalories, int xp) {
+        Guard.range(sessionRpe, "rpe", 1, 10);
+        Guard.range(durationMinutes, "durationMinutes", 1, (int) MAX_DURATION.toMinutes());
+        Instant started = completedAt.minus(Duration.ofMinutes(durationMinutes));
+        return new TrainingSession(UUID.randomUUID(), userId, routineId, dayId, SessionType.ROUTINE, started,
+                completedAt, durationMinutes, sessionRpe, Math.round(sessionCalories * 10) / 10.0, xp, List.of());
+    }
+
     public static TrainingSession start(UUID userId, UUID routineId, UUID dayId, Instant now) {
         SessionType type = dayId == null ? SessionType.FREE : SessionType.ROUTINE;
         return new TrainingSession(UUID.randomUUID(), userId, routineId, dayId, type, now, null, 0, null, null, 0,
@@ -87,10 +119,20 @@ public final class TrainingSession {
     /** Registra (o sustituye) la serie {@code setNumber} del ejercicio planificado indicado. */
     public SessionSet recordSet(UUID plannedExerciseId, int setNumber, Integer repsDone, Double weightKg,
                                 boolean completed, int failedReps) {
+        return recordSet(plannedExerciseId, null, setNumber, repsDone, weightKg, completed, failedReps, null, null);
+    }
+
+    /**
+     * Como {@link #recordSet(UUID, int, Integer, Double, boolean, int)}, con el ejercicio que se hizo y el
+     * tiempo y la distancia de la serie.
+     */
+    public SessionSet recordSet(UUID plannedExerciseId, UUID exerciseId, int setNumber, Integer repsDone,
+                                Double weightKg, boolean completed, int failedReps, Integer durationSeconds,
+                                Integer distanceMeters) {
         ensureInProgress();
         sets.removeIf(s -> Objects.equals(s.plannedExerciseId(), plannedExerciseId) && s.setNumber() == setNumber);
         SessionSet set = new SessionSet(UUID.randomUUID(), plannedExerciseId, setNumber, repsDone, weightKg,
-                completed, failedReps);
+                completed, failedReps, durationSeconds, distanceMeters, exerciseId);
         sets.add(set);
         return set;
     }
@@ -120,12 +162,43 @@ public final class TrainingSession {
     }
 
     /**
-     * Deshace la finalización: la sesión vuelve a estar en curso. Devuelve lo que había antes para
-     * restar la experiencia otorgada y avisar a los módulos dependientes.
+     * Corrige una sesión ya terminada (RPE y duración, que mandan sobre la carga física). La XP no
+     * cambia: se otorgó al terminarla.
      */
-    public CompletionSnapshot unmark() {
+    public void correct(int sessionRpe, int minutes, double sessionCalories) {
         if (!isCompleted()) {
             throw new SessionNotCompletedException();
+        }
+        this.rpe = Guard.range(sessionRpe, "rpe", 1, 10);
+        this.durationMinutes = Guard.range(minutes, "durationMinutes", 1, (int) MAX_DURATION.toMinutes());
+        this.calories = Math.round(sessionCalories * 10) / 10.0;
+    }
+
+    /** Se puede desmarcar: terminada ese mismo día ({@code today} en la zona {@code zone}). */
+    public boolean canUnmark(LocalDate today, ZoneId zone) {
+        return isCompleted() && completedOn(zone).equals(today);
+    }
+
+    /** Lo que había al terminarla, para retirar su XP y su carga al eliminarla. */
+    public CompletionSnapshot snapshot() {
+        if (!isCompleted()) {
+            throw new SessionNotCompletedException();
+        }
+        return new CompletionSnapshot(completedAt, durationMinutes, rpe == null ? 1 : rpe, xpAwarded);
+    }
+
+    /**
+     * Deshace la finalización: la sesión vuelve a estar en curso. Solo el mismo día en que se terminó
+     * ({@code today} en la zona {@code zone}); una de otro día volvería abierta y ya abandonada, así que
+     * se corrige o se elimina. Devuelve lo que había antes para restar la experiencia otorgada y avisar
+     * a los módulos dependientes.
+     */
+    public CompletionSnapshot unmark(LocalDate today, ZoneId zone) {
+        if (!isCompleted()) {
+            throw new SessionNotCompletedException();
+        }
+        if (!canUnmark(today, zone)) {
+            throw new SessionUnmarkExpiredException();
         }
         CompletionSnapshot snapshot = new CompletionSnapshot(completedAt, durationMinutes, rpe == null ? 1 : rpe,
                 xpAwarded);

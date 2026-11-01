@@ -11,13 +11,18 @@ import java.util.UUID;
 public record SuggestionResponse(WeekPlanSuggestions.Source source, double studyHours, int sportSessions,
                                  List<Block> blocks) {
 
-    /** Bloque propuesto; se acepta creándolo con POST /api/v1/planner/blocks. */
+    /**
+     * Bloque propuesto; se acepta creándolo con POST /api/v1/planner/blocks (con {@code routineWeekId} y
+     * {@code routineDayId} si vienen: el bloque refleja esa sesión de la rutina). {@code title}: título
+     * propuesto o nulo.
+     */
     public record Block(ActivityType type, Instant start, Instant end, UUID subjectId, String subjectName,
-                        UUID routineId, String routineName, String topic) {
+                        UUID routineId, String routineName, String topic, UUID routineWeekId, UUID routineDayId,
+                        String title) {
 
         static Block from(SuggestedBlock b) {
             return new Block(b.type(), b.start(), b.end(), b.subjectId(), b.subjectName(), b.routineId(),
-                    b.routineName(), b.topic());
+                    b.routineName(), b.topic(), b.routineWeekId(), b.routineDayId(), b.title());
         }
     }
 

@@ -84,6 +84,11 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
     }
 
     @Override
+    public List<TrainingSession> findOpen(UUID userId) {
+        return withSets(sessions.findByUsuarioIdAndCompletadaEnIsNullOrderByCreadoEnDesc(userId));
+    }
+
+    @Override
     public boolean existsCompletedForDay(UUID dayId, UUID excludingSessionId) {
         return sessions.existsByDiaIdAndCompletadaEnIsNotNullAndIdNot(dayId, excludingSessionId);
     }
@@ -124,9 +129,11 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
         }
         Map<UUID, List<CompletedSessionSummary.PerformedSet>> setsBySession = new HashMap<>();
         jdbc.sql("SELECT ss.id, ss.sesion_id, ss.seleccion_id, ss.numero_serie, ss.repeticiones_realizadas, ss.peso_kg,"
-                        + " ss.completada, ss.failed_reps, sel.ejercicio_id, e.nombre FROM series_sesion ss"
+                        + " ss.completada, ss.failed_reps, ss.duracion_segundos, ss.distancia_metros,"
+                        + " COALESCE(ss.ejercicio_id, sel.ejercicio_id) AS ejercicio_id, e.nombre FROM series_sesion ss"
                         + " LEFT JOIN seleccion_de_ejercicios sel ON sel.id = ss.seleccion_id"
-                        + " LEFT JOIN ejercicios e ON e.id = sel.ejercicio_id WHERE ss.sesion_id IN (:ids)"
+                        + " LEFT JOIN ejercicios e ON e.id = COALESCE(ss.ejercicio_id, sel.ejercicio_id)"
+                        + " WHERE ss.sesion_id IN (:ids)"
                         + " ORDER BY ss.numero_serie")
                 .param("ids", heads.stream().map(Head::id).toList())
                 .query((ResultSet rs) -> {
@@ -134,7 +141,8 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
                     SessionSet set = new SessionSet(rs.getObject("id", UUID.class), rs.getObject("seleccion_id", UUID.class),
                             Math.max(1, rs.getInt("numero_serie")), (Integer) rs.getObject("repeticiones_realizadas"),
                             weight == null ? null : ((Number) weight).doubleValue(), rs.getBoolean("completada"),
-                            Math.max(0, rs.getInt("failed_reps")));
+                            Math.max(0, rs.getInt("failed_reps")), (Integer) rs.getObject("duracion_segundos"),
+                            (Integer) rs.getObject("distancia_metros"), rs.getObject("ejercicio_id", UUID.class));
                     setsBySession.computeIfAbsent(rs.getObject("sesion_id", UUID.class), k -> new ArrayList<>())
                             .add(new CompletedSessionSummary.PerformedSet(rs.getObject("ejercicio_id", UUID.class),
                                     rs.getString("nombre"), set));

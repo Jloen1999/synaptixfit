@@ -76,7 +76,6 @@ class DashboardServiceTest {
                 .createdAt(NOW).build()));
         when(reads.trainingTotals(eq(USER), any(), any())).thenReturn(new TrainingTotals(1, 45, 350.0));
         when(reads.plannedWeeklySessions(eq(USER), any())).thenReturn(Optional.of(4));
-        when(reads.nextTrainingDay(USER)).thenReturn(Optional.empty());
         when(reads.lastTrainingSession(USER)).thenReturn(Optional.of(NOW));
         when(sources.checkIns(eq(USER), any(), any())).thenReturn(List.of());
         when(sources.completedStudyBlocks(eq(USER), any(), any())).thenReturn(List.of());
@@ -99,7 +98,7 @@ class DashboardServiceTest {
                     CompletedStudyBlock.focus(UUID.randomUUID(), mondayStudy.plusSeconds(7200), 25, null));
         };
         service = new DashboardService(users, reads, sources, cognitive, regulation, calories, studyActivity, load,
-                wellbeing, challenges, Clock.fixed(NOW, ZoneOffset.UTC), ZoneId.of("UTC"));
+                wellbeing, challenges, userId -> Optional.empty(), Clock.fixed(NOW, ZoneOffset.UTC), ZoneId.of("UTC"));
     }
 
     @Test

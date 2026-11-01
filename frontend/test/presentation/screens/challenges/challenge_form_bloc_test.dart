@@ -64,14 +64,12 @@ void main() {
 
   MilestoneFormItem item(
     String key, {
-    double? weight,
     List<String> deps = const [],
     MilestoneCondition condition = MilestoneCondition.all,
     int n = 1,
   }) => MilestoneFormItem(
     key: key,
     title: 'Tarea $key',
-    weight: weight,
     dependsOnKeys: deps,
     condition: condition,
     conditionN: n,
@@ -135,55 +133,31 @@ void main() {
   );
 
   blocTest<ChallengeFormBloc, ChallengeFormState>(
-    'activar pesos manuales reparte 100 a partes iguales',
-    build: build,
-    seed: () =>
-        readyState.copyWith(milestones: [item('a'), item('b'), item('c')]),
-    act: (b) => b.add(const ChallengeFormEvent.manualWeightsToggled(true)),
-    expect: () => [
-      readyState.copyWith(
-        manualWeights: true,
-        milestones: [
-          item('a', weight: 33.33),
-          item('b', weight: 33.33),
-          item('c', weight: 33.34),
-        ],
-      ),
-    ],
-  );
-
-  blocTest<ChallengeFormBloc, ChallengeFormState>(
-    'cambiar un peso manual actualiza solo esa tarea',
+    '«hacer en orden» quita las dependencias a medida y encadena al enviar',
+    setUp: () => when(
+      () => create(any()),
+    ).thenAnswer((_) async => Success(ChallengesFixtures.challenge())),
     build: build,
     seed: () => readyState.copyWith(
-      manualWeights: true,
-      milestones: [item('a', weight: 50), item('b', weight: 50)],
+      milestones: [
+        item('a'),
+        item('b', deps: ['a']),
+        item('c', deps: ['a']),
+      ],
     ),
-    act: (b) => b.add(const ChallengeFormEvent.weightChanged('b', 30)),
-    expect: () => [
-      readyState.copyWith(
-        manualWeights: true,
-        milestones: [item('a', weight: 50), item('b', weight: 30)],
-      ),
-    ],
-  );
-
-  blocTest<ChallengeFormBloc, ChallengeFormState>(
-    'enviar con pesos que no suman 100 muestra weightsSum',
-    build: build,
-    seed: () => readyState.copyWith(
-      manualWeights: true,
-      milestones: [item('a', weight: 50), item('b', weight: 30)],
-    ),
-    act: (b) => b.add(const ChallengeFormEvent.submitted()),
-    expect: () => [
-      readyState.copyWith(
-        manualWeights: true,
-        milestones: [item('a', weight: 50), item('b', weight: 30)],
-        issue: ChallengeDraftIssue.weightsSum,
-      ),
-    ],
-    verify: (_) => verifyNever(() => create(any())),
+    act: (b) => b
+      ..add(const ChallengeFormEvent.inOrderToggled(true))
+      ..add(const ChallengeFormEvent.submitted()),
+    skip: 1,
+    verify: (_) {
+      final draft =
+          verify(() => create(captureAny())).captured.single as ChallengeDraft;
+      expect(draft.milestones.map((m) => m.dependsOn), [
+        <int>[],
+        [0],
+        [1],
+      ]);
+    },
   );
 
   blocTest<ChallengeFormBloc, ChallengeFormState>(
@@ -261,7 +235,6 @@ void main() {
       expect(draft.milestones.first.dependsOn, [1, 2]);
       expect(draft.milestones.first.condition, MilestoneCondition.xOfY);
       expect(draft.milestones.first.conditionN, 1);
-      expect(draft.milestones.every((m) => m.weight == null), isTrue);
     },
   );
 
@@ -364,9 +337,11 @@ void main() {
         isA<ChallengeFormState>()
             .having((s) => s.mode, 'mode', ChallengeFormMode.editMilestones)
             .having((s) => s.milestones.length, 'count', 2)
-            .having((s) => s.milestones[1].dependsOnKeys, 'deps', ['m1'])
-            .having((s) => s.milestones[0].completed, 'completed', true)
-            .having((s) => s.manualWeights, 'manual', isFalse),
+            // m2 depende solo de m1: es «en orden» y la cadena se rehace al
+            // guardar.
+            .having((s) => s.inOrder, 'inOrder', isTrue)
+            .having((s) => s.milestones[1].dependsOnKeys, 'deps', isEmpty)
+            .having((s) => s.milestones[0].completed, 'completed', true),
       ],
     );
 

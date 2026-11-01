@@ -176,5 +176,36 @@
   "authResetExpiredSubtitle": "Pide otro y usa el del último correo.",
   "@errorAuthResetTokenInvalid": {
     "description": "Los 30 minutos son PasswordResetToken.TTL del backend: si cambia, cambia también este texto."
+  },
+  "commonLoadingMore": "Cargando más",
+  "commonDateDue": "Vence",
+  "commonDateOverdue": "Venció",
+  "commonDateToday": "Hoy",
+  "commonDateTomorrow": "Mañana",
+  "commonDueToday": "Vence hoy",
+  "commonDueTomorrow": "Vence mañana",
+  "commonDueIn": "{count, plural, =1{Vence en 1 día} other{Vence en {count} días}}",
+  "@commonDueIn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonDueOn": "Vence el {date}",
+  "@commonDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "commonOverdueOn": "Venció el {date}",
+  "@commonOverdueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -7,7 +7,6 @@ import com.synaptixfit.application.port.input.challenge.ChallengeOutcome;
 import com.synaptixfit.application.port.input.challenge.RecordChallengeProgressUseCase;
 import com.synaptixfit.application.port.input.challenge.ReplaceMilestonesUseCase;
 import com.synaptixfit.domain.event.challenge.ChallengeCompleted;
-import com.synaptixfit.domain.event.challenge.ChallengeLinkCompletionChanged;
 import com.synaptixfit.domain.exception.challenge.ChallengeNotFoundException;
 import com.synaptixfit.domain.exception.challenge.MilestoneAttachmentNotFoundException;
 import com.synaptixfit.domain.model.challenge.Challenge;
@@ -16,6 +15,7 @@ import com.synaptixfit.domain.model.challenge.ChallengeLink;
 import com.synaptixfit.domain.model.challenge.ChallengeType;
 import com.synaptixfit.domain.model.challenge.Difficulty;
 import com.synaptixfit.domain.model.challenge.LinkType;
+import com.synaptixfit.domain.model.challenge.LinkedDeadline;
 import com.synaptixfit.domain.model.challenge.MilestoneDraft;
 import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
 import com.synaptixfit.domain.model.shared.Visibility;
@@ -49,30 +49,78 @@ class ChallengeProgressServiceTest {
     }
 
     private static MilestoneDraft task(String title, ChallengeLink link) {
-        return new MilestoneDraft(null, title, null, Difficulty.LOW, null, null, null, link, List.of(), null, null);
+        return new MilestoneDraft(null, title, Difficulty.LOW, null, null, null, link, List.of(), null, null);
     }
 
     @Test
-    void completeAwardsXpAndPublishesEvents() {
-        UUID deadline = UUID.randomUUID();
-        Challenge c = stored(new ChallengeLink(LinkType.DELIVERY, deadline), List.of());
+    void completeAwardsXpAndPublishesOnlyChallengeCompleted() {
+        Challenge c = stored(null, List.of());
 
         ChallengeOutcome outcome = service.completeChallenge(userId, c.id());
 
         assertThat(outcome.xpDelta()).isEqualTo(40);
         assertThat(outcome.challengeCompleted()).isTrue();
         assertThat(f.awarded).containsExactly(40);
-        assertThat(f.events).hasSize(2);
-        assertThat(f.events.get(0)).isInstanceOfSatisfying(ChallengeLinkCompletionChanged.class, e -> {
-            assertThat(e.linkedEntityId()).isEqualTo(deadline);
-            assertThat(e.linkedEntityType()).isEqualTo("DELIVERY");
-            assertThat(e.completed()).isTrue();
-        });
-        assertThat(f.events.get(1)).isInstanceOf(ChallengeCompleted.class);
+        assertThat(f.events).singleElement().isInstanceOf(ChallengeCompleted.class);
 
         service.uncompleteChallenge(userId, c.id());
         assertThat(f.revoked).containsExactly(40);
         assertThat(f.netXp()).isZero();
+    }
+
+    @Test
+    void linkedChallengeIsNotCompletedByHandAndNeverTouchesTheDeadline() {
+        UUID deadline = UUID.randomUUID();
+        f.deadlines.put(deadline, new LinkedDeadline("Práctica", NOW.plusSeconds(3600), false));
+        Challenge c = stored(new ChallengeLink(LinkType.DELIVERY, deadline), List.of());
+        assertThatThrownBy(() -> service.completeChallenge(userId, c.id()))
+                .extracting("code").isEqualTo("CHALLENGE_LINKED");
+        assertThat(f.events).isEmpty();
+    }
+
+    @Test
+    void cannotActBeforeTheChallengeStarts() {
+        Challenge upcoming = f.repository.save(Challenge.create(UUID.randomUUID(), userId,
+                new ChallengeDetails("Reto futuro", null, null, Visibility.PRIVATE, Difficulty.MEDIUM,
+                        NOW.plusSeconds(86_400), NOW.plusSeconds(3 * 86_400), null, null),
+                List.of(task("Tarea uno", null)), NOW));
+        UUID a = upcoming.milestones().getFirst().id();
+        assertThatThrownBy(() -> service.completeMilestone(userId, upcoming.id(), a))
+                .extracting("code").isEqualTo("CHALLENGE_NOT_STARTED");
+        // Antes de empezar sí se pueden preparar las tareas.
+        service.replaceMilestones(new ReplaceMilestonesUseCase.Command(userId, upcoming.id(),
+                List.of(task("Tarea uno", null), task("Tarea dos", null))));
+        assertThat(f.store.get(upcoming.id()).milestones()).hasSize(2);
+    }
+
+    @Test
+    void linkingADeliveryAlreadyDoneCompletesTheTaskAndCheckingThePeriod() {
+        UUID done = UUID.randomUUID();
+        UUID late = UUID.randomUUID();
+        f.ownedRefs.add(done);
+        f.ownedRefs.add(late);
+        f.deadlines.put(done, new LinkedDeadline("Práctica 1", NOW.plusSeconds(3600), true));
+        f.deadlines.put(late, new LinkedDeadline("Práctica 2", NOW.plusSeconds(30 * 86_400), false));
+        Challenge c = stored(null, List.of(task("Tarea libre", null)));
+
+        ChallengeOutcome outcome = service.replaceMilestones(new ReplaceMilestonesUseCase.Command(userId, c.id(),
+                List.of(task("Entregar práctica 1", new ChallengeLink(LinkType.DELIVERY, done)))));
+        assertThat(outcome.challenge().milestones().getFirst().completed()).isTrue();
+        assertThat(outcome.xpDelta()).isEqualTo(20);
+
+        assertThatThrownBy(() -> service.replaceMilestones(new ReplaceMilestonesUseCase.Command(userId, c.id(),
+                List.of(task("Entregar práctica 2", new ChallengeLink(LinkType.DELIVERY, late))))))
+                .extracting("code").isEqualTo("CHALLENGE_LINK_OUTSIDE_PERIOD");
+    }
+
+    @Test
+    void absoluteProgressRecordsOnlyWhatWasGained() {
+        Challenge c = stored(null, List.of());
+        service.recordProgress(new RecordChallengeProgressUseCase.Command(userId, c.id(), null, null, 40.0, null));
+        service.recordProgress(new RecordChallengeProgressUseCase.Command(userId, c.id(), null, null, 60.0, null));
+        service.recordProgress(new RecordChallengeProgressUseCase.Command(userId, c.id(), null, null, 50.0, null));
+        assertThat(f.store.get(c.id()).progress()).isEqualTo(50.0);
+        assertThat(f.progress).extracting(p -> p.amount()).containsExactly(40.0, 20.0);
     }
 
     @Test
@@ -98,7 +146,7 @@ class ChallengeProgressServiceTest {
     }
 
     @Test
-    void deadlineSyncIsIdempotentAndDoesNotEchoTheSourceDeadline() {
+    void deadlineSyncIsIdempotentAndOneWay() {
         UUID deadline = UUID.randomUUID();
         UUID otherDeadline = UUID.randomUUID();
         Challenge linked = stored(new ChallengeLink(LinkType.EXAM, deadline), List.of());
@@ -112,7 +160,6 @@ class ChallengeProgressServiceTest {
         assertThat(f.repository.findById(withTask.id()).orElseThrow().milestones().get(0).completed()).isTrue();
         assertThat(f.repository.findById(other.id()).orElseThrow().completed()).isFalse();
         assertThat(f.netXp()).isEqualTo(40 + 20);
-        assertThat(f.events).noneMatch(e -> e instanceof ChallengeLinkCompletionChanged);
 
         service.syncDeadline(userId, deadline, true);
         assertThat(f.netXp()).isEqualTo(60);
@@ -137,6 +184,9 @@ class ChallengeProgressServiceTest {
 
         f.blocks.put(a, new StudyBlockProgress(4, 2));
         service.syncStudyBlocks(userId, a);
+        // Con bloques, la tarea solo avanza por ellos.
+        assertThatThrownBy(() -> service.completeMilestone(userId, c.id(), a)).extracting("code")
+                .isEqualTo("MILESTONE_LINKED");
         assertThat(f.repository.findById(c.id()).orElseThrow().milestone(a).progress()).isEqualTo(50.0);
 
         f.blocks.put(a, new StudyBlockProgress(4, 4));
@@ -164,7 +214,7 @@ class ChallengeProgressServiceTest {
         Challenge c = stored(null, List.of(task("Tarea uno", null)));
         UUID a = c.milestones().get(0).id();
         ChallengeOutcome outcome = service.recordProgress(
-                new RecordChallengeProgressUseCase.Command(userId, c.id(), a, 100, null));
+                new RecordChallengeProgressUseCase.Command(userId, c.id(), a, 100.0, null, null));
         assertThat(outcome.challengeCompleted()).isTrue();
         assertThat(f.progress).hasSize(1);
         assertThat(f.progress.getFirst().recordedAt()).isEqualTo(NOW);
@@ -174,7 +224,7 @@ class ChallengeProgressServiceTest {
     void replaceMilestonesValidatesAttachmentsOwnership() {
         Challenge c = stored(null, List.of());
         UUID note = UUID.randomUUID();
-        MilestoneDraft draft = new MilestoneDraft(null, "Con apunte", null, null, null, note, null, null, List.of(),
+        MilestoneDraft draft = new MilestoneDraft(null, "Con apunte", null, null, note, null, null, List.of(),
                 null, null);
         assertThatThrownBy(() -> service.replaceMilestones(
                 new ReplaceMilestonesUseCase.Command(userId, c.id(), List.of(draft))))
@@ -221,6 +271,8 @@ class ChallengeProgressServiceTest {
                 .extracting("code").isEqualTo("CHALLENGE_EXPIRED");
         assertThatThrownBy(() -> service.uncompleteChallenge(userId, expired.id()))
                 .extracting("code").isEqualTo("CHALLENGE_EXPIRED");
+        assertThatThrownBy(() -> service.replaceMilestones(new ReplaceMilestonesUseCase.Command(userId, expired.id(),
+                List.of()))).extracting("code").isEqualTo("CHALLENGE_EXPIRED");
     }
 
     @Test

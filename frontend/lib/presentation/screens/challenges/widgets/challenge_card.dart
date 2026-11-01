@@ -5,12 +5,15 @@ import '../../../../domain/models/challenges/challenge.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
+import 'challenge_date_block.dart';
 import 'challenge_labels.dart';
 import 'challenge_next_step.dart';
-import 'challenge_progress_bar.dart';
 
-/// Tarjeta de un reto en los listados (propios o de la comunidad): título,
-/// plazo, progreso, siguiente paso y datos de motivación (racha, tareas).
+/// Tarjeta de un reto en los listados (propios o de la comunidad), pensada
+/// para leerse de un vistazo y en este orden: cuándo toca (bloque de fecha a
+/// la izquierda y la frase «Vence en 3 días», en aviso si urge), qué reto es,
+/// cuánto lleva y qué toca ahora. El tipo (académico o físico) va en el acento
+/// del progreso y en una pastilla; la racha, solo si la hay.
 class ChallengeCard extends StatelessWidget {
   const ChallengeCard({
     super.key,
@@ -30,78 +33,76 @@ class ChallengeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    final now = DateTime.now();
     final accent = challenge.type.color(context);
     final status = challenge.status;
+    // El aviso es para lo que urge (hoy o mañana); lo vencido ya no urge.
+    final urgent = challenge.isUrgentAt(now);
     final nextStep = challengeNextStepText(context, challenge);
-    return AppCard(
-      onTap: onTap,
-      child: Column(
+    final percent = (challenge.progressFraction * 100).round();
+    final counts = challenge.tracksTrainingSessions
+        ? l10n.challengesSessionsProgress(
+            challenge.sessionsCompleted,
+            challenge.sessionTarget ?? 0,
+          )
+        : challenge.hasMilestones
+        ? l10n.challengesMilestonesProgress(
+            challenge.completedMilestoneCount,
+            challenge.milestoneCount,
+          )
+        : null;
+    final clone = onClone == null
+        ? null
+        : IconButton(
+            tooltip: l10n.challengesCloneTooltip,
+            onPressed: cloning ? null : onClone,
+            icon: cloning
+                ? const SizedBox.square(
+                    dimension: TokensSize.iconS,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.library_add_outlined),
+          );
+    // Con el texto grande o poco ancho, el bloque de fecha pasa a ser una
+    // franja de una línea encima y el contenido usa todo el ancho.
+    Widget body(BuildContext context, bool compact) {
+      final content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ExcludeSemantics(
-                child: Container(
-                  padding: const EdgeInsets.all(TokensSpacing.s),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: AppPill.tintAlpha),
-                    borderRadius: BorderRadius.circular(TokensRadius.m),
-                  ),
-                  child: Icon(
-                    challenge.type.icon,
-                    color: accent,
-                    size: TokensSize.iconS,
-                  ),
-                ),
-              ),
-              const SizedBox(width: TokensSpacing.m),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      challenge.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.textStyles.titleMedium,
-                    ),
-                    if (!challenge.owned) ...[
-                      const SizedBox(height: TokensSpacing.xxs),
-                      Text(
-                        l10n.challengesByAuthor(
-                          challenge.ownerName ?? l10n.challengesUnknownAuthor,
-                        ),
-                        style: context.textStyles.labelMedium?.copyWith(
-                          color: context.colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: TokensSpacing.xs),
-                    // El plazo va bajo el título (no a su lado): con el texto
-                    // al 200 % no le quita ancho al nombre del reto.
-                    ChallengeTimePill(challenge: challenge),
-                  ],
-                ),
-              ),
-              if (onClone != null) ...[
-                const SizedBox(width: TokensSpacing.s),
-                IconButton(
-                  tooltip: l10n.challengesCloneTooltip,
-                  onPressed: cloning ? null : onClone,
-                  icon: cloning
-                      ? const SizedBox.square(
-                          dimension: TokensSize.iconS,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.library_add_outlined),
-                ),
-              ],
-            ],
+          // Lo primero que se lee es cuándo toca, en palabras.
+          Text(
+            challenge.whenText(context, now),
+            style: context.textStyles.labelLarge?.copyWith(
+              color: urgent
+                  ? context.palette.warning
+                  : context.colors.onSurfaceVariant,
+            ),
           ),
-          const SizedBox(height: TokensSpacing.m),
-          ChallengeProgressBar(
-            value: challenge.progressFraction,
+          const SizedBox(height: TokensSpacing.xxs),
+          Text(
+            challenge.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: context.textStyles.titleMedium,
+          ),
+          if (!challenge.owned) ...[
+            const SizedBox(height: TokensSpacing.xxs),
+            Text(
+              l10n.challengesByAuthor(
+                challenge.ownerName ?? l10n.challengesUnknownAuthor,
+              ),
+              style: context.textStyles.labelMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const SizedBox(height: TokensSpacing.s),
+          // Al lado de la barra, solo el porcentaje: con el texto al
+          // 200 % una etiqueta larga no dejaría sitio a la barra.
+          AppCycleProgress(
+            progress: challenge.progressFraction,
+            label: l10n.challengesProgressPercent(percent),
+            semanticsLabel: l10n.challengesProgressSemantics(percent),
             color: status == ChallengeStatus.completed
                 ? context.palette.success
                 : accent,
@@ -113,52 +114,100 @@ class ChallengeCard extends StatelessWidget {
               text: nextStep,
               color: switch (status) {
                 ChallengeStatus.completed => context.palette.accent,
-                ChallengeStatus.expired => context.palette.warning,
+                ChallengeStatus.expired => context.colors.onSurfaceVariant,
+                ChallengeStatus.upcoming => context.colors.onSurfaceVariant,
                 ChallengeStatus.active => context.colors.primary,
               },
             ),
           ],
           const SizedBox(height: TokensSpacing.s),
           Wrap(
-            spacing: TokensSpacing.m,
+            spacing: TokensSpacing.s,
             runSpacing: TokensSpacing.xs,
             children: [
-              if (status != ChallengeStatus.active)
-                _Meta(
-                  icon: Icons.event_outlined,
-                  text: l10n.challengesEndedOn(
-                    ChallengeFormats.shortDate(challenge.endAt),
-                  ),
-                ),
-              if (challenge.hasMilestones)
-                _Meta(
-                  icon: Icons.checklist_rounded,
-                  text: l10n.challengesMilestonesProgress(
-                    challenge.completedMilestoneCount,
-                    challenge.milestoneCount,
-                  ),
-                ),
-              if (challenge.tracksTrainingSessions)
-                _Meta(
-                  icon: Icons.repeat_rounded,
-                  text: l10n.challengesSessionsProgress(
-                    challenge.sessionsCompleted,
-                    challenge.sessionTarget ?? 0,
-                  ),
+              AppPill(
+                icon: challenge.type.icon,
+                label: challenge.type.label(context),
+                color: accent,
+              ),
+              if (counts != null)
+                AppPill(
+                  icon: challenge.tracksTrainingSessions
+                      ? Icons.repeat_rounded
+                      : Icons.checklist_rounded,
+                  label: counts,
                 ),
               if (challenge.currentStreak > 0)
-                _Meta(
+                AppPill(
                   icon: Icons.local_fire_department_rounded,
-                  text: l10n.challengesStreakDays(challenge.currentStreak),
+                  label: l10n.challengesStreakDays(challenge.currentStreak),
                   color: context.palette.streak,
                 ),
-              _Meta(
-                icon: challenge.difficulty.icon,
-                text: challenge.difficulty.effortLabel(context),
-              ),
             ],
           ),
         ],
+      );
+      if (compact) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ChallengeDateBlock(challenge: challenge, now: now, compact: true),
+            const SizedBox(height: TokensSpacing.s),
+            content,
+          ],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ChallengeDateBlock(challenge: challenge, now: now),
+          const SizedBox(width: TokensSpacing.m),
+          Expanded(child: content),
+        ],
+      );
+    }
+
+    bool compactFor(BuildContext context, BoxConstraints constraints) =>
+        !AppDateBlock.sideBySide(context, constraints.maxWidth);
+
+    if (clone == null) {
+      return AppCard(
+        onTap: onTap,
+        child: LayoutBuilder(
+          builder: (context, constraints) =>
+              body(context, compactFor(context, constraints)),
+        ),
+      );
+    }
+    // Reto ajeno: la tarjeta no es pulsable entera; abrirlo y «clonar» son
+    // botones hermanos (sin toques anidados).
+    return AppCard(
+      padding: const EdgeInsets.all(TokensSpacing.xs),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = compactFor(context, constraints);
+          final area = AppCardTapArea(
+            onTap: onTap,
+            padding: const EdgeInsets.all(TokensSpacing.sm),
+            child: body(context, compact),
+          );
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                area,
+                Align(alignment: AlignmentDirectional.centerEnd, child: clone),
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: area),
+              clone,
+            ],
+          );
+        },
       ),
     );
   }
@@ -191,34 +240,6 @@ class _NextStepLine extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: context.textStyles.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Meta extends StatelessWidget {
-  const _Meta({required this.icon, required this.text, this.color});
-
-  final IconData icon;
-  final String text;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = color ?? context.colors.onSurfaceVariant;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: TokensSize.iconXs, color: c),
-        const SizedBox(width: TokensSpacing.xs),
-        Flexible(
-          child: Text(
-            text,
-            style: context.textStyles.labelMedium?.copyWith(
-              color: context.colors.onSurfaceVariant,
             ),
           ),
         ),

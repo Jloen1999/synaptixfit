@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.synaptixfit.domain.event.academic.ReviewScheduled;
-import com.synaptixfit.domain.event.challenge.ChallengeLinkCompletionChanged;
 import com.synaptixfit.support.EmbeddedPostgresSupport;
 import java.time.Duration;
 import java.time.Instant;
@@ -168,11 +167,8 @@ class PlannerFlowIT {
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.items[0].difficulty").value("HIGH"));
 
-        // Un reto vinculado se desmarca: la entrega se desmarca y se resta su experiencia.
-        publisher.publishEvent(new ChallengeLinkCompletionChanged(userId, "entrega", UUID.fromString(deadlineId), false,
-                Instant.now()));
-        mvc.perform(auth(get("/api/v1/planner/deadlines/" + deadlineId))).andExpect(jsonPath("$.completed").value(false));
-        mvc.perform(auth(get("/api/v1/me"))).andExpect(jsonPath("$.levelXp").value(0));
+        // La entrega es la fuente de verdad de los retos vinculados: nada del reto la desmarca (ADR 0028).
+        mvc.perform(auth(get("/api/v1/planner/deadlines/" + deadlineId))).andExpect(jsonPath("$.completed").value(true));
 
         String exam = json(post("/api/v1/planner/blocks"), """
                 {"start":"%s","end":"%s","type":"EXAM","deadlineTitle":"Parcial","location":"Aula 1"}
@@ -210,13 +206,18 @@ class PlannerFlowIT {
                 .param("r", routineId).query(UUID.class).single();
         jdbc.sql("insert into dias_rutina (semana_id, numero_dia, nombre) values (:w, 1, 'Empuje'), (:w, 2, 'Tirón')")
                 .param("w", weekId).update();
+        // Solo se reparten los días que se pueden entrenar (con ejercicios).
+        jdbc.sql("insert into seleccion_de_ejercicios (rutina_id, dia_id, ejercicio_id, indice_orden) "
+                        + "select :r, d.id, (select id from ejercicios order by nombre limit 1), 1 "
+                        + "from dias_rutina d where d.semana_id = :w")
+                .param("r", routineId).param("w", weekId).update();
 
         String distributed = json(post("/api/v1/planner/blocks/routine-distribution"), """
                 {"routineId":"%s","weekdays":[1,2,3,4,5,6,7],"startDate":"%s","preferredStart":"19:00","durationMinutes":60}
                 """.formatted(routineId, day), 201);
         assertThat((List<?>) JsonPath.read(distributed, "$")).hasSize(2);
         assertThat((String) JsonPath.read(distributed, "$[0].routineWeekId")).isEqualTo(weekId.toString());
-        assertThat((String) JsonPath.read(distributed, "$[1].topics")).isEqualTo("Tirón");
+        assertThat((String) JsonPath.read(distributed, "$[1].topics")).isEqualTo("Semana 1 · Tirón");
 
         publisher.publishEvent(new ReviewScheduled(userId, materialId, subjectId, "Repaso Tema 1",
                 tomorrow.plus(Duration.ofHours(2)), Instant.now()));

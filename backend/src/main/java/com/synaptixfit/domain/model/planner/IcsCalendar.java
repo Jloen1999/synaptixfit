@@ -37,8 +37,17 @@ public final class IcsCalendar {
 
     /** Nombre del calendario ({@code X-WR-CALNAME}), o vacío si no lo trae. */
     public static String calendarName(String raw) {
+        return header(raw, "X-WR-CALNAME");
+    }
+
+    /** Descripción del calendario ({@code X-WR-CALDESC}; p. ej. «Asignatura: Programación»), o vacío. */
+    public static String calendarDescription(String raw) {
+        return header(raw, "X-WR-CALDESC").replace("\\,", ",");
+    }
+
+    private static String header(String raw, String name) {
         for (String line : unfold(raw)) {
-            if (line.toUpperCase(Locale.ROOT).startsWith("X-WR-CALNAME")) {
+            if (line.toUpperCase(Locale.ROOT).startsWith(name)) {
                 int colon = line.indexOf(':');
                 return colon < 0 ? "" : line.substring(colon + 1).strip();
             }

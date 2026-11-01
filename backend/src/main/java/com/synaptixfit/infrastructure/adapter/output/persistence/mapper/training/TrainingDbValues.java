@@ -35,8 +35,9 @@ public final class TrainingDbValues {
     private static final Map<WeekType, String> WEEK_TYPE = Map.of(WeekType.ADAPTATION, "adaptacion",
             WeekType.LOAD, "carga", WeekType.PEAK, "pico", WeekType.DELOAD, "descarga");
     private static final Map<ProgressStatus, String> DAY_STATUS = Map.of(ProgressStatus.PENDING, "pendiente",
-            ProgressStatus.IN_PROGRESS, "en_progreso", ProgressStatus.COMPLETED, "completado");
-    /** Las semanas usan el femenino «completada». */
+            ProgressStatus.IN_PROGRESS, "en_progreso", ProgressStatus.COMPLETED, "completado",
+            ProgressStatus.SKIPPED, "saltado");
+    /** Las semanas usan el femenino «completada» y nunca quedan saltadas. */
     private static final Map<ProgressStatus, String> WEEK_STATUS = Map.of(ProgressStatus.PENDING, "pendiente",
             ProgressStatus.IN_PROGRESS, "en_progreso", ProgressStatus.COMPLETED, "completada");
     private static final Map<RoutineStatus, String> ROUTINE_STATUS = Map.of(RoutineStatus.ACTIVE, "activo",

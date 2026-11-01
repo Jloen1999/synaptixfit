@@ -143,6 +143,18 @@ final class PlannerFakes {
             return store.values().stream()
                     .filter(b -> b.userId().equals(userId) && subjectId.equals(b.subjectId())).toList();
         }
+
+        public List<CalendarBlock> findByRoutine(UUID userId, UUID routineId) {
+            return store.values().stream()
+                    .filter(b -> b.userId().equals(userId) && routineId.equals(b.details().routineId()))
+                    .sorted(Comparator.comparing(CalendarBlock::start)).toList();
+        }
+
+        public List<CalendarBlock> findByRoutineDays(UUID userId, java.util.Collection<UUID> dayIds) {
+            return store.values().stream()
+                    .filter(b -> b.userId().equals(userId) && dayIds.contains(b.details().routineDayId()))
+                    .sorted(Comparator.comparing(CalendarBlock::start)).toList();
+        }
     }
 
     // ------------------------------------------------------------------ entregas
@@ -311,12 +323,25 @@ final class PlannerFakes {
             return routines.getOrDefault(userId, Map.of()).values().stream().limit(limit).toList();
         }
 
-        public boolean ownsChallenge(UUID userId, UUID challengeId) {
-            return challenges.getOrDefault(userId, Set.of()).contains(challengeId);
+        /** Periodo de los retos dados de alta (por defecto, muy amplio) y reto de cada tarea. */
+        final Map<UUID, com.synaptixfit.domain.model.planner.ChallengeRef> challengePeriods = new HashMap<>();
+        final Map<UUID, UUID> milestoneChallenge = new HashMap<>();
+
+        public Optional<com.synaptixfit.domain.model.planner.ChallengeRef> findOwnedChallenge(UUID userId,
+                                                                                            UUID challengeId) {
+            if (!challenges.getOrDefault(userId, Set.of()).contains(challengeId)) {
+                return Optional.empty();
+            }
+            return Optional.of(challengePeriods.getOrDefault(challengeId, new com.synaptixfit.domain.model.planner
+                    .ChallengeRef(challengeId, java.time.Instant.parse("2000-01-01T00:00:00Z"),
+                    java.time.Instant.parse("2100-01-01T00:00:00Z"))));
         }
 
-        public boolean ownsMilestone(UUID userId, UUID milestoneId) {
-            return challenges.getOrDefault(userId, Set.of()).contains(milestoneId);
+        public Optional<UUID> findMilestoneChallenge(UUID userId, UUID milestoneId) {
+            if (!challenges.getOrDefault(userId, Set.of()).contains(milestoneId)) {
+                return Optional.empty();
+            }
+            return Optional.of(milestoneChallenge.getOrDefault(milestoneId, milestoneId));
         }
     }
 

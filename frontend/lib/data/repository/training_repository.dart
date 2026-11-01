@@ -110,11 +110,48 @@ class TrainingRepository implements TrainingRepositoryContract {
       );
 
   @override
-  Future<AppResult<Unit>> cancelSession(String sessionId) =>
+  Future<AppResult<Unit>> deleteSession(String sessionId) =>
       RepositoryErrorHandler.guard(() async {
-        await _remote.cancel(sessionId);
+        await _remote.delete(sessionId);
         return unit;
       });
+
+  @override
+  Future<AppResult<List<OpenSession>>> getOpenSessions() =>
+      RepositoryErrorHandler.guard(
+        () async =>
+            (await _remote.openSessions()).map((s) => s.toDomain()).toList(),
+      );
+
+  @override
+  Future<AppResult<TrainingSession>> correctSession(
+    String sessionId, {
+    required int rpe,
+    required int durationMinutes,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.correct(
+      sessionId,
+      rpe: rpe,
+      durationMinutes: durationMinutes,
+    )).toDomain(),
+  );
+
+  @override
+  Future<AppResult<PastSessionResult>> logPastSession({
+    required String routineId,
+    required String dayId,
+    required DateTime date,
+    required int durationMinutes,
+    required int rpe,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.logPast({
+      'routineId': routineId,
+      'dayId': dayId,
+      'date': formatLocalDate(date),
+      'durationMinutes': durationMinutes,
+      'rpe': rpe,
+    })).toDomain(),
+  );
 
   @override
   Future<AppResult<CheckIn?>> getTodayCheckIn() => RepositoryErrorHandler.guard(

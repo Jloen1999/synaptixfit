@@ -19,7 +19,15 @@ abstract class BlockDraft with _$BlockDraft {
     @Default(false) bool privateBlock,
     ClassKind? classKind,
     String? routineId,
+
+    /// Día de la rutina que refleja el bloque: sigue a su sesión y no se marca
+    /// a mano. Se conserva al editar el bloque.
+    String? routineWeekId,
+    String? routineDayId,
     String? challengeId,
+
+    /// Tarea del reto: cada bloque completado la hace avanzar (ADR 0028).
+    String? milestoneId,
     String? deadlineId,
 
     /// Solo al crear un examen/entrega sin [deadlineId].

@@ -121,6 +121,53 @@ void main() {
     );
 
     blocTest<NoteEditorBloc, NoteEditorState>(
+      'abre con la visibilidad rebajada a la del perfil y la recalcula si '
+      'cambia la privacidad',
+      setUp: () => when(() => getNote('n1')).thenAnswer(
+        (_) async => Success(note.copyWith(visibility: Visibility.public)),
+      ),
+      build: build,
+      act: (bloc) async {
+        bloc.add(
+          const NoteEditorEvent.started(
+            noteId: 'n1',
+            profilePrivacy: Visibility.friends,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(
+          const NoteEditorEvent.profilePrivacyChanged(Visibility.public),
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.profilePrivacy, Visibility.public);
+        expect(bloc.state.allowed(Visibility.public), Visibility.public);
+      },
+      expect: () => [
+        const NoteEditorState(profilePrivacy: Visibility.friends),
+        isA<NoteEditorState>().having(
+          (s) => s.initialVisibility,
+          'initialVisibility',
+          Visibility.friends,
+        ),
+        isA<NoteEditorState>().having(
+          (s) => s.profilePrivacy,
+          'profilePrivacy',
+          Visibility.public,
+        ),
+      ],
+    );
+
+    test(
+      'Visibility.isAllowedBy no permite pasar de la privacidad del perfil',
+      () {
+        expect(Visibility.public.isAllowedBy(Visibility.friends), isFalse);
+        expect(Visibility.friends.isAllowedBy(Visibility.friends), isTrue);
+        expect(Visibility.private.isAllowedBy(Visibility.private), isTrue);
+      },
+    );
+
+    blocTest<NoteEditorBloc, NoteEditorState>(
       'crea un apunte nuevo',
       setUp: () => when(
         () => createNote(

@@ -97,7 +97,7 @@ class TrainingFlowIT {
         assertThat((Integer) JsonPath.read(routine, "$.durationWeeks")).isEqualTo(2);
         assertThat((String) JsonPath.read(routine, "$.weeks[0].type")).isEqualTo("ADAPTATION");
         assertThat((String) JsonPath.read(routine, "$.weeks[1].type")).isEqualTo("DELOAD");
-        assertThat((String) JsonPath.read(routine, "$.weeks[0].days[1].name")).isEqualTo("Día 3");
+        assertThat((String) JsonPath.read(routine, "$.weeks[0].days[1].name")).isNull();
         String day1 = JsonPath.read(routine, "$.weeks[0].days[0].id");
         String week1 = JsonPath.read(routine, "$.weeks[0].id");
         List<String> plannedDay1 = JsonPath.read(routine, "$.weeks[0].days[0].exercises[*].id");
@@ -165,6 +165,10 @@ class TrainingFlowIT {
         assertThat((Integer) JsonPath.read(completed, "$.weeks[0].days[0].exercises[1].realDurationSeconds")).isEqualTo(600);
         String nextPending = body(get("/api/v1/training/pending-day"), token, 200);
         assertThat((Integer) JsonPath.read(nextPending, "$.dayNumber")).isEqualTo(3);
+        assertThat((Integer) JsonPath.read(nextPending, "$.sessionOfWeek")).isEqualTo(2);
+        assertThat((Integer) JsonPath.read(nextPending, "$.sessionsInWeek")).isEqualTo(2);
+        assertThat((Integer) JsonPath.read(nextPending, "$.totalWeeks")).isEqualTo(2);
+        assertThat((String) JsonPath.read(nextPending, "$.scheduledDate")).isNotBlank();
 
         // Historial con el día entrenado y récords: la primera vez marca la referencia, no un récord
         String named = body(get("/api/v1/training/history"), token, 200);
@@ -253,9 +257,152 @@ class TrainingFlowIT {
     }
 
     @Test
+    void skipStaleSessionsPastLogAndSingleActiveRoutine() throws Exception {
+        String token = register("train2@example.com");
+        String exerciseId = jdbc.sql("SELECT CAST(id AS text) FROM ejercicios WHERE COALESCE(activo, true) "
+                + "ORDER BY nombre LIMIT 1").query(String.class).single();
+        String create = """
+                {"name":"Rutina corta","goal":"HYPERTROPHY","visibility":"PRIVATE","weeks":[{"days":[
+                  {"dayNumber":1,"name":"Empuje","exercises":[{"exerciseId":"%1$s","sets":3,"reps":10,"restSeconds":90}]},
+                  {"dayNumber":3,"exercises":[{"exerciseId":"%1$s","sets":3,"reps":10,"restSeconds":90}]},
+                  {"dayNumber":5,"exercises":[{"exerciseId":"%1$s","sets":3,"reps":10,"restSeconds":90}]}]}]}
+                """.formatted(exerciseId);
+        String routine = body(post("/api/v1/routines").content(create), token, 201);
+        String routineId = JsonPath.read(routine, "$.id");
+        assertThat((String) JsonPath.read(routine, "$.status")).isEqualTo("ACTIVE");
+        String day1 = JsonPath.read(routine, "$.weeks[0].days[0].id");
+        String day2 = JsonPath.read(routine, "$.weeks[0].days[1].id");
+        String day3 = JsonPath.read(routine, "$.weeks[0].days[2].id");
+
+        // Una segunda rutina nace en pausa; activarla pausa la primera.
+        String second = body(post("/api/v1/routines/" + routineId + "/duplicate"), token, 201);
+        String secondId = JsonPath.read(second, "$.id");
+        assertThat((String) JsonPath.read(second, "$.status")).isEqualTo("PAUSED");
+        body(put("/api/v1/routines/" + secondId + "/status").content("{\"status\":\"ACTIVE\"}"), token, 200);
+        assertThat((String) JsonPath.read(body(get("/api/v1/routines/" + routineId), token, 200), "$.status"))
+                .isEqualTo("PAUSED");
+        body(put("/api/v1/routines/" + routineId + "/status").content("{\"status\":\"ACTIVE\"}"), token, 200);
+
+        // Saltar y recuperar un día
+        String skipped = body(post("/api/v1/routines/" + routineId + "/days/" + day1 + "/skip"), token, 200);
+        assertThat((String) JsonPath.read(skipped, "$.weeks[0].days[0].status")).isEqualTo("SKIPPED");
+        assertThat((String) JsonPath.read(body(get("/api/v1/training/pending-day"), token, 200), "$.dayId"))
+                .isEqualTo(day2);
+        String unskipped = body(post("/api/v1/routines/" + routineId + "/days/" + day1 + "/unskip"), token, 200);
+        assertThat((String) JsonPath.read(unskipped, "$.weeks[0].days[0].status")).isEqualTo("PENDING");
+
+        // Sesión abandonada: no se borra, bloquea empezar ese día y se termina en su fecha
+        String session = body(post("/api/v1/training/sessions")
+                .content("{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + day1 + "\"}"), token, 201);
+        String sessionId = JsonPath.read(session, "$.id");
+        jdbc.sql("UPDATE sesiones_registradas SET creado_en = :t WHERE id = :id")
+                .param("t", java.sql.Timestamp.from(java.time.Instant.now().minus(java.time.Duration.ofDays(2))))
+                .param("id", UUID.fromString(sessionId)).update();
+        mvc.perform(auth(post("/api/v1/training/sessions")
+                        .content("{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + day1 + "\"}"), token))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("SESSION_STALE_OPEN"));
+        String open = body(get("/api/v1/training/sessions/open"), token, 200);
+        assertThat((String) JsonPath.read(open, "$[0].session.id")).isEqualTo(sessionId);
+        assertThat((Boolean) JsonPath.read(open, "$[0].stale")).isTrue();
+        assertThat((String) JsonPath.read(open, "$[0].dayName")).isEqualTo("Empuje");
+        String pending = body(get("/api/v1/training/pending-day"), token, 200);
+        assertThat((String) JsonPath.read(pending, "$.staleSessionId")).isEqualTo(sessionId);
+        String finished = body(post("/api/v1/training/sessions/" + sessionId + "/finish")
+                .content("{\"durationSeconds\":3000,\"rpe\":6}"), token, 200);
+        LocalDate twoDaysAgo = LocalDate.now(java.time.ZoneId.of("Europe/Madrid")).minusDays(2);
+        assertThat(java.time.Instant.parse(JsonPath.read(finished, "$.session.completedAt"))
+                .atZone(java.time.ZoneId.of("Europe/Madrid")).toLocalDate()).isEqualTo(twoDaysAgo);
+        mvc.perform(auth(post("/api/v1/training/sessions/" + sessionId + "/unmark"), token))
+                .andExpect(status().is(422)).andExpect(jsonPath("$.code").value("SESSION_UNMARK_EXPIRED"));
+        String corrected = body(patch("/api/v1/training/sessions/" + sessionId)
+                .content("{\"rpe\":8,\"durationMinutes\":40}"), token, 200);
+        assertThat((Integer) JsonPath.read(corrected, "$.durationMinutes")).isEqualTo(40);
+
+        // Sesión pasada del último día: salta el intermedio y termina el ciclo
+        String past = body(post("/api/v1/training/sessions/past").content(
+                "{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + day3 + "\",\"date\":\""
+                        + twoDaysAgo.plusDays(1) + "\",\"durationMinutes\":45,\"rpe\":7}"), token, 201);
+        assertThat((String) JsonPath.read(past, "$.session.status")).isEqualTo("COMPLETED");
+        String done = body(get("/api/v1/routines/" + routineId), token, 200);
+        assertThat((String) JsonPath.read(done, "$.weeks[0].days[1].status")).isEqualTo("SKIPPED");
+        assertThat((String) JsonPath.read(done, "$.status")).isEqualTo("COMPLETED");
+        mvc.perform(auth(get("/api/v1/training/pending-day"), token)).andExpect(status().isNoContent());
+        mvc.perform(auth(post("/api/v1/training/sessions/past").content(
+                        "{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + day2 + "\",\"date\":\""
+                                + twoDaysAgo.minusDays(10) + "\",\"durationMinutes\":45,\"rpe\":7}"), token))
+                .andExpect(status().is(422)).andExpect(jsonPath("$.code").value("SESSION_PAST_DATE_INVALID"));
+
+        // Repetir el ciclo y eliminar una sesión terminada
+        String restarted = body(post("/api/v1/routines/" + routineId + "/restart"), token, 200);
+        assertThat((String) JsonPath.read(restarted, "$.status")).isEqualTo("ACTIVE");
+        assertThat((Integer) JsonPath.read(restarted, "$.completedDays")).isZero();
+        mvc.perform(auth(delete("/api/v1/training/sessions/" + sessionId), token)).andExpect(status().isNoContent());
+        String dashboard = body(get("/api/v1/dashboard"), token, 200);
+        assertThat((String) JsonPath.read(dashboard, "$.nextTrainingDay.dayId")).isEqualTo(day1);
+        assertThat((Integer) JsonPath.read(dashboard, "$.nextTrainingDay.sessionsInWeek")).isEqualTo(3);
+    }
+
+    /** ADR 0027: repeticiones por serie, sustituir un ejercicio, portada de la rutina y series de tiempo. */
+    @Test
+    void perSetTargetsReplaceExerciseAndTimedSets() throws Exception {
+        String token = register("perset@example.com");
+        String bench = jdbc.sql("SELECT CAST(id AS text) FROM ejercicios WHERE 'peso' = ANY (tipo_medicion)"
+                + " AND COALESCE(activo, true) ORDER BY nombre LIMIT 1").query(String.class).single();
+        String timed = jdbc.sql("SELECT CAST(id AS text) FROM ejercicios WHERE tipo_medicion = ARRAY['tiempo']"
+                + " AND COALESCE(activo, true) ORDER BY nombre LIMIT 1").query(String.class).single();
+        String routine = body(post("/api/v1/routines").content("""
+                {"name":"Por series","weeks":[{"days":[{"dayNumber":1,"exercises":[
+                  {"exerciseId":"%s","sets":3,"reps":10,"restSeconds":90,"weightKg":40,
+                   "weightsKg":[30,40,45],"repsPerSet":[12,10,8]}]}]}]}""".formatted(bench)), token, 201);
+        String routineId = JsonPath.read(routine, "$.id");
+        String planned = JsonPath.read(routine, "$.weeks[0].days[0].exercises[0].id");
+        String dayId = JsonPath.read(routine, "$.weeks[0].days[0].id");
+        assertThat((List<Integer>) JsonPath.read(routine, "$.weeks[0].days[0].exercises[0].repsPerSet"))
+                .containsExactly(12, 10, 8);
+
+        String updated = body(put("/api/v1/routines/" + routineId + "/exercises/" + planned)
+                .content("{\"sets\":2,\"reps\":10,\"restSeconds\":90,\"repsPerSet\":[10,6]}"), token, 200);
+        assertThat((List<Integer>) JsonPath.read(updated, "$.weeks[0].days[0].exercises[0].repsPerSet"))
+                .containsExactly(10, 6);
+        mvc.perform(auth(put("/api/v1/routines/" + routineId + "/exercises/" + planned)
+                        .content("{\"sets\":2,\"reps\":10,\"restSeconds\":90,\"repsPerSet\":[0]}"), token))
+                .andExpect(status().isBadRequest());
+
+        String list = body(get("/api/v1/routines"), token, 200);
+        assertThat((String) JsonPath.read(list, "$.items[0].coverModality")).isNotNull();
+
+        String replaced = body(put("/api/v1/routines/" + routineId + "/exercises/" + planned + "/exercise")
+                .content("{\"exerciseId\":\"" + timed + "\"}"), token, 200);
+        String newPlanned = JsonPath.read(replaced, "$.weeks[0].days[0].exercises[0].id");
+        assertThat(newPlanned).isNotEqualTo(planned);
+        assertThat((String) JsonPath.read(replaced, "$.weeks[0].days[0].exercises[0].exerciseId")).isEqualTo(timed);
+        assertThat((Object) JsonPath.read(replaced, "$.weeks[0].days[0].exercises[0].weightKg")).isNull();
+        assertThat((Integer) JsonPath.read(replaced, "$.weeks[0].days[0].exercises[0].isometricSeconds")).isEqualTo(30);
+
+        String session = body(post("/api/v1/training/sessions")
+                .content("{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + dayId + "\"}"), token, 201);
+        String withSet = body(post("/api/v1/training/sessions/" + JsonPath.read(session, "$.id") + "/sets").content(
+                "{\"plannedExerciseId\":\"" + newPlanned + "\",\"setNumber\":1,\"durationSeconds\":45}"), token, 200);
+        assertThat((Integer) JsonPath.read(withSet, "$.sets[0].durationSeconds")).isEqualTo(45);
+        assertThat((String) JsonPath.read(withSet, "$.sets[0].exerciseId")).isEqualTo(timed);
+        String sessionId = JsonPath.read(session, "$.id");
+        body(post("/api/v1/training/sessions/" + sessionId + "/finish")
+                .content("{\"durationSeconds\":600,\"rpe\":6}"), token, 200);
+
+        // Sustituir el hueco después: la serie hecha sigue sabiendo qué ejercicio fue.
+        body(put("/api/v1/routines/" + routineId + "/exercises/" + newPlanned + "/exercise")
+                .content("{\"exerciseId\":\"" + bench + "\"}"), token, 200);
+        String after = body(get("/api/v1/training/sessions/" + sessionId), token, 200);
+        assertThat((Object) JsonPath.read(after, "$.sets[0].plannedExerciseId")).isNull();
+        assertThat((String) JsonPath.read(after, "$.sets[0].exerciseId")).isEqualTo(timed);
+    }
+
+    @Test
     void communityCloneAndPrivacy() throws Exception {
         String author = register("author@example.com");
         String viewer = register("viewer@example.com");
+        // Un perfil privado no comparte nada: el autor abre su perfil antes de compartir.
+        mvc.perform(auth(patch("/api/v1/me").content("{\"privacy\":\"PUBLIC\"}"), author)).andExpect(status().isOk());
         String page = body(get("/api/v1/exercises").param("size", "1"), author, 200);
         String exerciseId = JsonPath.read(page, "$.items[0].id");
         String routine = body(post("/api/v1/routines").content("""

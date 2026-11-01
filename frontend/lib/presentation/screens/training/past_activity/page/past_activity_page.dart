@@ -4,16 +4,19 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/models/training/routine.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
+import '../../widgets/training_labels.dart';
 import '../bloc/past_activity_bloc.dart';
 
 /// «Apuntar actividad» (`/training/past-activity`): deporte hecho sin la app
-/// («ayer jugué al fútbol una hora»). Se elige qué, cuándo, a qué hora y cuánto;
-/// al guardar se pide el esfuerzo, como al marcar un bloque de deporte.
+/// («ayer jugué al fútbol una hora») o un día de tu rutina que entrenaste sin
+/// ella. Se elige qué, cuándo, a qué hora y cuánto; al guardar se pide el
+/// esfuerzo, como al marcar un bloque de deporte.
 class PastActivityPage extends StatelessWidget {
   const PastActivityPage({super.key});
 
@@ -45,6 +48,10 @@ class _PastActivityViewState extends State<_PastActivityView>
   int _minutes = 60;
   String? _notFinished;
 
+  /// Apuntar un día de la rutina en curso en lugar de otro deporte.
+  bool _routineMode = false;
+  String? _routineDayId;
+
   @override
   void dispose() {
     _title.dispose();
@@ -62,6 +69,45 @@ class _PastActivityViewState extends State<_PastActivityView>
         _notFinished = null;
       });
     }
+  }
+
+  void _setRoutineMode(bool value) {
+    setState(() => _routineMode = value);
+    if (value) {
+      context.read<PastActivityBloc>().add(
+        const PastActivityEvent.routineRequested(),
+      );
+    }
+  }
+
+  /// Días de la rutina que se pueden apuntar, en orden (con ejercicios).
+  static List<(RoutineWeek, RoutineDay)> _routineDays(Routine routine) => [
+    for (final week in routine.weeks)
+      for (final day in week.days)
+        if (day.exercises.isNotEmpty) (week, day),
+  ];
+
+  Future<void> _saveRoutineDay(PastActivityState state) async {
+    final l10n = context.localizations;
+    final routine = state.routine;
+    final dayId = _routineDayId ?? state.pendingDayId;
+    if (routine == null || dayId == null) return;
+    final bloc = context.read<PastActivityBloc>();
+    final effort = await showEffortDialog(
+      context,
+      confirmLabel: l10n.trainingPastActivitySave,
+      subtitle: routine.name,
+    );
+    if (effort == null) return;
+    bloc.add(
+      PastActivityEvent.routineSessionSubmitted(
+        routineId: routine.id,
+        dayId: dayId,
+        date: _day,
+        minutes: _minutes,
+        rpe: effort,
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -87,6 +133,62 @@ class _PastActivityViewState extends State<_PastActivityView>
         title: _title.text,
       ),
     );
+  }
+
+  /// Elegir el día de la rutina en curso (por defecto, el que toca).
+  List<Widget> _routineSection(BuildContext context, PastActivityState state) {
+    final l10n = context.localizations;
+    if (state.routineError case final error?) {
+      return [
+        AppErrorView(
+          error: error,
+          onRetry: () => context.read<PastActivityBloc>().add(
+            const PastActivityEvent.routineRequested(),
+          ),
+        ),
+      ];
+    }
+    if (state.loadingRoutine || !state.routineLoaded) {
+      return const [AppLoadingView()];
+    }
+    final routine = state.routine;
+    if (routine == null) {
+      return [
+        AppCard(
+          child: AppEmptyState.compact(
+            icon: Icons.fitness_center_rounded,
+            title: l10n.trainingPastActivityModeRoutine,
+            message: l10n.trainingPastActivityNoRoutine,
+          ),
+        ),
+      ];
+    }
+    final selected = _routineDayId ?? state.pendingDayId;
+    return [
+      AppSectionHeader(title: l10n.trainingPastActivityRoutineDay),
+      Wrap(
+        spacing: TokensSpacing.s,
+        runSpacing: TokensSpacing.s,
+        children: [
+          for (final (week, day) in _routineDays(routine))
+            ChoiceChip(
+              avatar: day.status.isClosed
+                  ? Icon(
+                      day.status.icon,
+                      size: TokensSize.iconXs,
+                      semanticLabel: day.status.label(l10n),
+                    )
+                  : null,
+              label: Text(
+                '${weekTitle(l10n, week.number, week.name)} · '
+                '${dayTitle(l10n, day.dayNumber, day.name)}',
+              ),
+              selected: selected == day.id,
+              onSelected: (_) => setState(() => _routineDayId = day.id),
+            ),
+        ],
+      ),
+    ];
   }
 
   @override
@@ -127,13 +229,35 @@ class _PastActivityViewState extends State<_PastActivityView>
           child: ListView(
             padding: const EdgeInsets.all(TokensSpacing.m),
             children: [
+              SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment(
+                    value: false,
+                    label: Text(l10n.trainingPastActivityModeOther),
+                    icon: const Icon(Icons.sports_soccer_outlined),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    label: Text(l10n.trainingPastActivityModeRoutine),
+                    icon: const Icon(Icons.fitness_center_rounded),
+                  ),
+                ],
+                selected: {_routineMode},
+                onSelectionChanged: (s) => _setRoutineMode(s.first),
+              ),
+              const SizedBox(height: TokensSpacing.m),
               Text(
-                l10n.trainingPastActivityIntro,
+                _routineMode
+                    ? l10n.trainingPastActivityRoutineIntro
+                    : l10n.trainingPastActivityIntro,
                 style: context.textStyles.bodyMedium?.copyWith(
                   color: context.colors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: TokensSpacing.l),
+              if (_routineMode)
+                ..._routineSection(context, state)
+              else ...[
               AppSectionHeader(title: l10n.trainingPastActivityWhat),
               Wrap(
                 spacing: TokensSpacing.s,
@@ -156,6 +280,7 @@ class _PastActivityViewState extends State<_PastActivityView>
                 maxLength: 200,
                 onChanged: (_) => setState(() {}),
               ),
+              ],
               const SizedBox(height: TokensSpacing.m),
               AppSectionHeader(title: l10n.trainingPastActivityWhen),
               Wrap(
@@ -186,6 +311,8 @@ class _PastActivityViewState extends State<_PastActivityView>
                 ],
               ),
               const SizedBox(height: TokensSpacing.m),
+              // Para un día de la rutina basta con el día: no hay hora de inicio.
+              if (!_routineMode)
               AppCard(
                 padding: EdgeInsets.zero,
                 child: AppFocusOutline(
@@ -205,7 +332,8 @@ class _PastActivityViewState extends State<_PastActivityView>
                 label: l10n.trainingPastActivityDuration,
                 value: _minutes,
                 min: 30,
-                max: 300,
+                // Una sesión de rutina dura como mucho 4 h (lo que admite el servidor).
+                max: _routineMode ? 240 : 300,
                 step: 15,
                 display: l10n.trainingPastActivityMinutes,
                 // El aviso de «aún no has terminado» deja de valer al cambiar.
@@ -227,7 +355,11 @@ class _PastActivityViewState extends State<_PastActivityView>
                 label: l10n.trainingPastActivitySave,
                 icon: Icons.check_rounded,
                 loading: state.submitting,
-                onPressed: _save,
+                onPressed: !_routineMode
+                    ? _save
+                    : state.routine == null
+                    ? null
+                    : () => _saveRoutineDay(state),
               ),
             ],
           ),

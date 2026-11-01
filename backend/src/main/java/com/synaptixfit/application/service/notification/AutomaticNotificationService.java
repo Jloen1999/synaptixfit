@@ -52,6 +52,12 @@ public class AutomaticNotificationService implements NotifyAchievementUseCase, N
             case LEVEL_UP -> send(c.userId(), "level:" + c.name(), NotificationType.MILESTONE,
                     NotificationPriority.INFORMATIVE, "¡Has subido de nivel!", "Ya eres nivel " + c.name(), "/profile",
                     "Ver perfil", NotificationMessage.of(Code.LEVEL_UP, "level", c.name()));
+            // Un aviso por rutina y día: repetir el ciclo y volver a terminarlo otro día vuelve a avisar.
+            case ROUTINE_COMPLETED -> send(c.userId(), "routine:" + c.referenceId() + ":"
+                            + LocalDate.ofInstant(clock.instant(), zone), NotificationType.MILESTONE,
+                    NotificationPriority.INFORMATIVE, "¡Rutina terminada!",
+                    "Has terminado la rutina «" + c.name() + "»", "/training/routines/" + c.referenceId(),
+                    "Ver rutina", NotificationMessage.of(Code.ROUTINE_COMPLETED, "name", c.name()));
         }
     }
 

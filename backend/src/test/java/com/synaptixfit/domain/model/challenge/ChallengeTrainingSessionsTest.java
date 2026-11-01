@@ -86,7 +86,7 @@ class ChallengeTrainingSessionsTest {
         assertThat(fitness(null).applyTrainingSessions(10, TODAY).xpDelta()).isZero();
 
         Challenge withTasks = fitness(2);
-        withTasks.replaceMilestones(List.of(new MilestoneDraft(null, "Tarea uno", null, Difficulty.LOW, null, null,
+        withTasks.replaceMilestones(List.of(new MilestoneDraft(null, "Tarea uno", Difficulty.LOW, null, null,
                 null, null, List.of(), null, null)));
         assertThat(withTasks.tracksTrainingSessions()).isFalse();
 

@@ -277,6 +277,37 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/RoutineResponse"
+  /api/v1/routines/{routineId}/exercises/{plannedExerciseId}/exercise:
+    put:
+      tags:
+      - Routines
+      operationId: replaceExercise
+      parameters:
+      - name: routineId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: plannedExerciseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceExerciseRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RoutineResponse"
   /api/v1/routines/{routineId}/days/{dayId}/exercises/order:
     put:
       tags:
@@ -969,6 +1000,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/FinishSessionResponse"
+  /api/v1/training/sessions/past:
+    post:
+      tags:
+      - Training sessions
+      operationId: logPast
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PastSessionRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastSessionResponse"
   /api/v1/training/recommendations/{recommendationId}/apply:
     post:
       tags:
@@ -1991,6 +2040,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/RoutineResponse"
+  /api/v1/routines/{routineId}/restart:
+    post:
+      tags:
+      - Routines
+      operationId: restart
+      parameters:
+      - name: routineId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RoutineResponse"
   /api/v1/routines/{routineId}/duplicate:
     post:
       tags:
@@ -2011,6 +2079,56 @@ paths:
       responses:
         "201":
           description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RoutineResponse"
+  /api/v1/routines/{routineId}/days/{dayId}/unskip:
+    post:
+      tags:
+      - Routines
+      operationId: unskipDay
+      parameters:
+      - name: routineId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: dayId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RoutineResponse"
+  /api/v1/routines/{routineId}/days/{dayId}/skip:
+    post:
+      tags:
+      - Routines
+      operationId: skipDay
+      parameters:
+      - name: routineId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: dayId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
           content:
             '*/*':
               schema:
@@ -2698,6 +2816,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/NoteResponse"
+  /api/v1/notes/shared/{noteId}/copy:
+    post:
+      tags:
+      - Academic - Notes
+      operationId: copyShared
+      parameters:
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/NoteResponse"
   /api/v1/notes/from-scan:
     post:
       tags:
@@ -2728,6 +2865,7 @@ paths:
         schema:
           type: string
           enum:
+          - UPCOMING
           - ACTIVE
           - COMPLETED
           - EXPIRED
@@ -3279,11 +3417,68 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ExerciseNamesDto"
+  /api/v1/training/sessions/{sessionId}:
+    get:
+      tags:
+      - Training sessions
+      operationId: get_7
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+    delete:
+      tags:
+      - Training sessions
+      operationId: delete_2
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
+    patch:
+      tags:
+      - Training sessions
+      operationId: correct
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrectSessionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
   /api/v1/subjects/{subjectId}:
     get:
       tags:
       - Academic - Subjects
-      operationId: get_7
+      operationId: get_8
       parameters:
       - name: subjectId
         in: path
@@ -3301,7 +3496,7 @@ paths:
     delete:
       tags:
       - Academic - Subjects
-      operationId: delete_2
+      operationId: delete_3
       parameters:
       - name: subjectId
         in: path
@@ -3402,7 +3597,7 @@ paths:
     get:
       tags:
       - Social - Posts
-      operationId: get_8
+      operationId: get_9
       parameters:
       - name: postId
         in: path
@@ -3420,7 +3615,7 @@ paths:
     delete:
       tags:
       - Social - Posts
-      operationId: delete_3
+      operationId: delete_4
       parameters:
       - name: postId
         in: path
@@ -3459,7 +3654,7 @@ paths:
     delete:
       tags:
       - Social - Comments
-      operationId: delete_4
+      operationId: delete_5
       parameters:
       - name: commentId
         in: path
@@ -3498,7 +3693,7 @@ paths:
     get:
       tags:
       - Routines
-      operationId: get_9
+      operationId: get_10
       parameters:
       - name: routineId
         in: path
@@ -3516,7 +3711,7 @@ paths:
     delete:
       tags:
       - Routines
-      operationId: delete_5
+      operationId: delete_6
       parameters:
       - name: routineId
         in: path
@@ -3690,7 +3885,7 @@ paths:
     get:
       tags:
       - Planner - Deadlines
-      operationId: get_10
+      operationId: get_11
       parameters:
       - name: deadlineId
         in: path
@@ -3708,7 +3903,7 @@ paths:
     delete:
       tags:
       - Planner - Deadlines
-      operationId: delete_6
+      operationId: delete_7
       parameters:
       - name: deadlineId
         in: path
@@ -3772,7 +3967,7 @@ paths:
     get:
       tags:
       - Academic - Notes
-      operationId: get_11
+      operationId: get_12
       parameters:
       - name: noteId
         in: path
@@ -3790,7 +3985,7 @@ paths:
     delete:
       tags:
       - Academic - Notes
-      operationId: delete_7
+      operationId: delete_8
       parameters:
       - name: noteId
         in: path
@@ -3870,7 +4065,7 @@ paths:
     get:
       tags:
       - Challenges
-      operationId: get_12
+      operationId: get_13
       parameters:
       - name: challengeId
         in: path
@@ -3888,7 +4083,7 @@ paths:
     delete:
       tags:
       - Challenges
-      operationId: delete_8
+      operationId: delete_9
       parameters:
       - name: challengeId
         in: path
@@ -3970,7 +4165,7 @@ paths:
     delete:
       tags:
       - Admin - Users
-      operationId: delete_9
+      operationId: delete_10
       parameters:
       - name: userId
         in: path
@@ -4061,39 +4256,6 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/PageResponseWeeklyPlanResponse"
-  /api/v1/training/sessions/{sessionId}:
-    get:
-      tags:
-      - Training sessions
-      operationId: get_13
-      parameters:
-      - name: sessionId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      responses:
-        "200":
-          description: OK
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/SessionResponse"
-    delete:
-      tags:
-      - Training sessions
-      operationId: cancel
-      parameters:
-      - name: sessionId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      responses:
-        "204":
-          description: No Content
   /api/v1/training/sessions/{sessionId}/highlights:
     get:
       tags:
@@ -4137,6 +4299,20 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/SessionAdaptationResponse"
+  /api/v1/training/sessions/open:
+    get:
+      tags:
+      - Training sessions
+      operationId: listOpen
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenSessionResponse"
   /api/v1/training/records:
     get:
       tags:
@@ -4430,7 +4606,7 @@ paths:
     delete:
       tags:
       - Academic - Study materials
-      operationId: delete_10
+      operationId: delete_11
       parameters:
       - name: materialId
         in: path
@@ -5061,6 +5237,28 @@ paths:
       - Academic - Notes
       operationId: shared
       parameters:
+      - name: scope
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ALL
+          enum:
+          - ALL
+          - FRIENDS
+          - PUBLIC
+      - name: authorId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: catalogSubjectId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
       - name: page
         in: query
         required: false
@@ -5081,7 +5279,26 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/PageResponseSharedNoteResponse"
+                $ref: "#/components/schemas/PageResponseSharedNoteSummaryResponse"
+  /api/v1/notes/shared/{noteId}:
+    get:
+      tags:
+      - Academic - Notes
+      operationId: sharedNote
+      parameters:
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SharedNoteResponse"
   /api/v1/me/export:
     get:
       tags:
@@ -5211,7 +5428,7 @@ paths:
     delete:
       tags:
       - Academic - Files
-      operationId: delete_11
+      operationId: delete_12
       parameters:
       - name: fileId
         in: path
@@ -6341,7 +6558,7 @@ paths:
     delete:
       tags:
       - Notifications
-      operationId: delete_12
+      operationId: delete_13
       parameters:
       - name: notificationId
         in: path
@@ -6806,6 +7023,10 @@ components:
           - PENDING
           - IN_PROGRESS
           - COMPLETED
+          - SKIPPED
+        closedOn:
+          type: string
+          format: date
         exercises:
           type: array
           items:
@@ -6890,6 +7111,22 @@ components:
         realDurationSeconds:
           type: integer
           format: int32
+        repsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+        isometricSecondsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+        trackingKind:
+          type: string
+          enum:
+          - REPETITIONS
+          - HOLD
+          - CARDIO
     RoutineResponse:
       type: object
       properties:
@@ -6945,6 +7182,9 @@ components:
         completedDays:
           type: integer
           format: int32
+        skippedDays:
+          type: integer
+          format: int32
         origin:
           $ref: "#/components/schemas/OriginResponse"
         createdAt:
@@ -6978,6 +7218,7 @@ components:
           - PENDING
           - IN_PROGRESS
           - COMPLETED
+          - SKIPPED
         days:
           type: array
           items:
@@ -7029,10 +7270,36 @@ components:
           format: int32
           maximum: 600
           minimum: 1
+        repsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+            maximum: 100
+            minimum: 1
+          maxItems: 10
+          minItems: 0
+        isometricSecondsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+            maximum: 600
+            minimum: 1
+          maxItems: 10
+          minItems: 0
       required:
       - reps
       - restSeconds
       - sets
+    ReplaceExerciseRequest:
+      type: object
+      properties:
+        exerciseId:
+          type: string
+          format: uuid
+      required:
+      - exerciseId
     ReorderExercisesRequest:
       type: object
       properties:
@@ -7725,8 +7992,7 @@ components:
         weight:
           type: number
           format: double
-          maximum: 100
-          minimum: 0.01
+          deprecated: true
         difficulty:
           type: string
           enum:
@@ -7747,7 +8013,6 @@ components:
           enum:
           - EXAM
           - DELIVERY
-          - BLOCK
         linkedEntityId:
           type: string
           format: uuid
@@ -7842,12 +8107,15 @@ components:
         status:
           type: string
           enum:
+          - UPCOMING
           - ACTIVE
           - COMPLETED
           - EXPIRED
         progress:
           type: number
           format: double
+        open:
+          type: boolean
         startAt:
           type: string
           format: date-time
@@ -7862,10 +8130,18 @@ components:
           enum:
           - EXAM
           - DELIVERY
-          - BLOCK
         linkedEntityId:
           type: string
           format: uuid
+        linkTitle:
+          type: string
+        linkDueAt:
+          type: string
+          format: date-time
+        linkCompleted:
+          type: boolean
+        completedByLink:
+          type: boolean
         currentStreak:
           type: integer
           format: int32
@@ -7969,10 +8245,24 @@ components:
           enum:
           - EXAM
           - DELIVERY
-          - BLOCK
         linkedEntityId:
           type: string
           format: uuid
+        linkTitle:
+          type: string
+        linkDueAt:
+          type: string
+          format: date-time
+        linkCompleted:
+          type: boolean
+        completedByLink:
+          type: boolean
+        studyBlocksTotal:
+          type: integer
+          format: int32
+        studyBlocksCompleted:
+          type: integer
+          format: int32
         noteId:
           type: string
           format: uuid
@@ -8381,6 +8671,15 @@ components:
         failedReps:
           type: integer
           format: int32
+        durationSeconds:
+          type: integer
+          format: int32
+        distanceMeters:
+          type: integer
+          format: int32
+        exerciseId:
+          type: string
+          format: uuid
     ExperienceResponse:
       type: object
       properties:
@@ -8430,6 +8729,16 @@ components:
           type: integer
           format: int32
           maximum: 1000
+          minimum: 0
+        durationSeconds:
+          type: integer
+          format: int32
+          maximum: 14400
+          minimum: 0
+        distanceMeters:
+          type: integer
+          format: int32
+          maximum: 100000
           minimum: 0
       required:
       - setNumber
@@ -8499,6 +8808,16 @@ components:
         isometricSeconds:
           type: integer
           format: int32
+        repsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+        isometricSecondsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
     FinishSessionResponse:
       type: object
       properties:
@@ -8546,6 +8865,41 @@ components:
         details:
           type: object
           additionalProperties: {}
+    PastSessionRequest:
+      type: object
+      properties:
+        routineId:
+          type: string
+          format: uuid
+        dayId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        durationMinutes:
+          type: integer
+          format: int32
+          maximum: 240
+          minimum: 1
+        rpe:
+          type: integer
+          format: int32
+          maximum: 10
+          minimum: 1
+      required:
+      - date
+      - dayId
+      - durationMinutes
+      - routineId
+      - rpe
+    PastSessionResponse:
+      type: object
+      properties:
+        session:
+          $ref: "#/components/schemas/SessionResponse"
+        experience:
+          $ref: "#/components/schemas/ExperienceResponse"
     QuizStartSessionRequest:
       type: object
       properties:
@@ -9778,6 +10132,24 @@ components:
           format: int32
           maximum: 600
           minimum: 1
+        repsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+            maximum: 100
+            minimum: 1
+          maxItems: 10
+          minItems: 0
+        isometricSecondsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+            maximum: 600
+            minimum: 1
+          maxItems: 10
+          minItems: 0
       required:
       - exerciseId
       - reps
@@ -9908,6 +10280,24 @@ components:
           format: int32
           maximum: 600
           minimum: 1
+        repsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+            maximum: 100
+            minimum: 1
+          maxItems: 10
+          minItems: 0
+        isometricSecondsPerSet:
+          type: array
+          items:
+            type: integer
+            format: int32
+            maximum: 600
+            minimum: 1
+          maxItems: 10
+          minItems: 0
       required:
       - exerciseId
       - reps
@@ -10314,6 +10704,14 @@ components:
           type: string
         topic:
           type: string
+        routineWeekId:
+          type: string
+          format: uuid
+        routineDayId:
+          type: string
+          format: uuid
+        title:
+          type: string
     SuggestionResponse:
       type: object
       properties:
@@ -10332,6 +10730,27 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Block"
+    ScheduleClassResponse:
+      type: object
+      properties:
+        subjectName:
+          type: string
+        classKind:
+          type: string
+          enum:
+          - THEORY
+          - PRACTICE
+        dayOfWeek:
+          type: integer
+          format: int32
+        start:
+          type: string
+          format: time-local
+        end:
+          type: string
+          format: time-local
+        room:
+          type: string
     ScheduleScanResponse:
       type: object
       properties:
@@ -10348,6 +10767,21 @@ components:
           type: array
           items:
             type: string
+        classes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduleClassResponse"
+        searchedSubjects:
+          type: array
+          items:
+            type: string
+        documentSubjects:
+          type: array
+          items:
+            type: string
+        semester:
+          type: integer
+          format: int32
     PastActivityRequest:
       type: object
       properties:
@@ -10414,6 +10848,10 @@ components:
           format: int32
         imported:
           type: boolean
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Item"
     FocusSessionRequest:
       type: object
       properties:
@@ -10639,7 +11077,6 @@ components:
             format: int32
             maximum: 7
             minimum: 1
-          minItems: 1
           uniqueItems: true
         startDate:
           type: string
@@ -10654,7 +11091,6 @@ components:
           minimum: 30
       required:
       - routineId
-      - weekdays
     NotificationResponse:
       type: object
       properties:
@@ -10703,6 +11139,7 @@ components:
           - POST_COMMENTED
           - FRIEND_REQUEST_RECEIVED
           - FRIEND_REQUEST_ACCEPTED
+          - ROUTINE_COMPLETED
         messageParams:
           type: object
           additionalProperties:
@@ -10796,7 +11233,6 @@ components:
           enum:
           - EXAM
           - DELIVERY
-          - BLOCK
         linkedEntityId:
           type: string
           format: uuid
@@ -10825,11 +11261,14 @@ components:
           format: double
           maximum: 100
           minimum: 0.01
+        value:
+          type: number
+          format: double
+          maximum: 100
+          minimum: 0
         recordedAt:
           type: string
           format: date-time
-      required:
-      - amount
     MarkBadgesNotifiedRequest:
       type: object
       properties:
@@ -11111,6 +11550,22 @@ components:
           minLength: 2
       required:
       - name
+    CorrectSessionRequest:
+      type: object
+      properties:
+        rpe:
+          type: integer
+          format: int32
+          maximum: 10
+          minimum: 1
+        durationMinutes:
+          type: integer
+          format: int32
+          maximum: 240
+          minimum: 1
+      required:
+      - durationMinutes
+      - rpe
     UpdateSubjectRequest:
       type: object
       properties:
@@ -11449,7 +11904,6 @@ components:
           enum:
           - EXAM
           - DELIVERY
-          - BLOCK
         linkedEntityId:
           type: string
           format: uuid
@@ -11595,6 +12049,23 @@ components:
           additionalProperties:
             type: integer
             format: int32
+    OpenSessionResponse:
+      type: object
+      properties:
+        session:
+          $ref: "#/components/schemas/SessionResponse"
+        stale:
+          type: boolean
+        routineName:
+          type: string
+        dayName:
+          type: string
+        dayNumber:
+          type: integer
+          format: int32
+        weekNumber:
+          type: integer
+          format: int32
     PageResponseRecommendationResponse:
       type: object
       properties:
@@ -11628,6 +12099,9 @@ components:
         weekNumber:
           type: integer
           format: int32
+        totalWeeks:
+          type: integer
+          format: int32
         weekName:
           type: string
         dayId:
@@ -11644,10 +12118,43 @@ components:
           - PENDING
           - IN_PROGRESS
           - COMPLETED
+          - SKIPPED
+        scheduledDate:
+          type: string
+          format: date
+        overdue:
+          type: boolean
+        sessionOfWeek:
+          type: integer
+          format: int32
+        sessionsInWeek:
+          type: integer
+          format: int32
+        staleSessionId:
+          type: string
+          format: uuid
         exercises:
           type: array
           items:
             $ref: "#/components/schemas/PlannedExerciseResponse"
+        totalDays:
+          type: integer
+          format: int32
+        completedDays:
+          type: integer
+          format: int32
+        skippedDays:
+          type: integer
+          format: int32
+        coverImageUrl:
+          type: string
+        coverModality:
+          type: string
+          enum:
+          - STRENGTH
+          - MOBILITY
+          - METABOLIC
+          - AEROBIC
     PageResponseSessionHistoryResponse:
       type: object
       properties:
@@ -11686,6 +12193,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PersonalRecordResponse"
+        unmarkable:
+          type: boolean
     PageResponseCheckInResponse:
       type: object
       properties:
@@ -12066,6 +12575,18 @@ components:
         createdAt:
           type: string
           format: date-time
+        skippedDays:
+          type: integer
+          format: int32
+        coverImageUrl:
+          type: string
+        coverModality:
+          type: string
+          enum:
+          - STRENGTH
+          - MOBILITY
+          - METABOLIC
+          - AEROBIC
     ProfileSummaryResponse:
       type: object
       properties:
@@ -12502,13 +13023,13 @@ components:
         totalPages:
           type: integer
           format: int32
-    PageResponseSharedNoteResponse:
+    PageResponseSharedNoteSummaryResponse:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/SharedNoteResponse"
+            $ref: "#/components/schemas/SharedNoteSummaryResponse"
         page:
           type: integer
           format: int32
@@ -12521,6 +13042,39 @@ components:
         totalPages:
           type: integer
           format: int32
+    SharedNoteSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        authorId:
+          type: string
+          format: uuid
+        authorName:
+          type: string
+        authorAvatarUrl:
+          type: string
+        catalogSubjectId:
+          type: string
+          format: uuid
+        catalogSubjectName:
+          type: string
+        title:
+          type: string
+        excerpt:
+          type: string
+        visibility:
+          type: string
+          enum:
+          - PRIVATE
+          - FRIENDS
+          - PUBLIC
+        updatedAt:
+          type: string
+          format: date-time
+        mine:
+          type: boolean
     SharedNoteResponse:
       type: object
       properties:
@@ -12534,9 +13088,11 @@ components:
           type: string
         authorAvatarUrl:
           type: string
-        subjectId:
+        catalogSubjectId:
           type: string
           format: uuid
+        catalogSubjectName:
+          type: string
         title:
           type: string
         content:
@@ -12553,6 +13109,8 @@ components:
         updatedAt:
           type: string
           format: date-time
+        mine:
+          type: boolean
     AdherenceResponse:
       type: object
       properties:
@@ -12964,6 +13522,9 @@ components:
         weekNumber:
           type: integer
           format: int32
+        totalWeeks:
+          type: integer
+          format: int32
         dayId:
           type: string
           format: uuid
@@ -12974,6 +13535,41 @@ components:
           type: string
         status:
           type: string
+        scheduledDate:
+          type: string
+          format: date
+        overdue:
+          type: boolean
+        sessionOfWeek:
+          type: integer
+          format: int32
+        sessionsInWeek:
+          type: integer
+          format: int32
+        staleSessionId:
+          type: string
+          format: uuid
+        exerciseCount:
+          type: integer
+          format: int32
+        totalDays:
+          type: integer
+          format: int32
+        completedDays:
+          type: integer
+          format: int32
+        skippedDays:
+          type: integer
+          format: int32
+        coverImageUrl:
+          type: string
+        coverModality:
+          type: string
+          enum:
+          - STRENGTH
+          - MOBILITY
+          - METABOLIC
+          - AEROBIC
     PlanDayResponse:
       type: object
       properties:
@@ -13022,6 +13618,12 @@ components:
           - DONE
           - MISSED
           - PAST
+        routineId:
+          type: string
+          format: uuid
+        routineDayId:
+          type: string
+          format: uuid
     TodayResponse:
       type: object
       properties:
@@ -13101,6 +13703,9 @@ components:
         expired:
           type: integer
           format: int64
+        upcoming:
+          type: integer
+          format: int64
         total:
           type: integer
           format: int64
@@ -13115,6 +13720,8 @@ components:
         challengeEndAt:
           type: string
           format: date-time
+        challengeType:
+          type: string
         milestone:
           $ref: "#/components/schemas/MilestoneResponse"
     UniversityResponse:

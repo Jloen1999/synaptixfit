@@ -41,6 +41,21 @@ public final class PlannedExercise {
         return new PlannedExercise(UUID.randomUUID(), exercise, parameters, order, null);
     }
 
+    /**
+     * Cómo se apunta este ejercicio planificado. Mandan primero sus datos (con duración o distancia es cardio;
+     * con aguante, isométrico) y después el catálogo ({@link ExerciseRef#trackingKind()}): así una rutina
+     * antigua se sigue viendo como se planificó.
+     */
+    public TrackingKind trackingKind() {
+        if (parameters.targetDurationSeconds() != null || parameters.distanceMeters() != null) {
+            return TrackingKind.CARDIO;
+        }
+        if (parameters.isometricSeconds() != null) {
+            return TrackingKind.HOLD;
+        }
+        return exercise.trackingKind();
+    }
+
     public UUID id() { return id; }
     public ExerciseRef exercise() { return exercise; }
     public UUID exerciseId() { return exercise.id(); }

@@ -27,6 +27,8 @@ const _rules = <String, List<String>>{
     'package:timezone',
     'package:shared_preferences',
   ],
+  // Las piezas compartidas no conocen ninguna pantalla.
+  'lib/presentation/widgets': ['/screens/'],
 };
 
 void main() {

@@ -26,22 +26,21 @@ class PostDraft {
 /// Envía el borrador y devuelve el error si falla (la hoja sigue abierta).
 typedef PostDraftSubmit = Future<AppError?> Function(PostDraft draft);
 
-/// Tipos que el usuario puede elegir al publicar a mano.
-const _selectableTypes = [
-  PostType.milestoneReached,
-  PostType.sessionCompleted,
-  PostType.routine,
-  PostType.challenge,
-];
+/// Tipos que el usuario puede elegir al publicar a mano. «Rutina» y «Reto»
+/// no se ofrecen: una publicación así no enlazaba ninguna rutina ni reto (las
+/// antiguas se siguen mostrando).
+const _selectableTypes = [PostType.milestoneReached, PostType.sessionCompleted];
 
 const _maxDescription = 2000;
 const _maxImageUrl = 2048;
 
 /// Abre la hoja para crear ([initial] nulo) o editar una publicación.
-/// Devuelve `true` si se guardó.
+/// [initialType] preselecciona el tipo al crear (atajos de la cabecera del
+/// muro). Devuelve `true` si se guardó.
 Future<bool> showPostEditorSheet(
   BuildContext context, {
   Post? initial,
+  PostType? initialType,
   required PostDraftSubmit onSubmit,
 }) async {
   final saved = await showModalBottomSheet<bool>(
@@ -49,15 +48,24 @@ Future<bool> showPostEditorSheet(
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (_) => _PostEditorSheet(initial: initial, onSubmit: onSubmit),
+    builder: (_) => _PostEditorSheet(
+      initial: initial,
+      initialType: initialType,
+      onSubmit: onSubmit,
+    ),
   );
   return saved ?? false;
 }
 
 class _PostEditorSheet extends StatefulWidget {
-  const _PostEditorSheet({required this.initial, required this.onSubmit});
+  const _PostEditorSheet({
+    required this.initial,
+    required this.initialType,
+    required this.onSubmit,
+  });
 
   final Post? initial;
+  final PostType? initialType;
   final PostDraftSubmit onSubmit;
 
   @override
@@ -70,7 +78,12 @@ class _PostEditorSheetState extends State<_PostEditorSheet> {
     text: widget.initial?.description,
   );
   late final _imageUrl = TextEditingController(text: widget.initial?.imageUrl);
-  late PostType _type = widget.initial?.type ?? PostType.milestoneReached;
+  // Un tipo que ya no se ofrece no dejaría ningún chip marcado.
+  late PostType _type =
+      widget.initial?.type ??
+      (_selectableTypes.contains(widget.initialType)
+          ? widget.initialType!
+          : PostType.milestoneReached);
   bool _sending = false;
   AppError? _error;
 

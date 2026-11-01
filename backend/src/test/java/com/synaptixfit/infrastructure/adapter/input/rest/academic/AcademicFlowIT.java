@@ -65,6 +65,8 @@ class AcademicFlowIT {
     void subjectNoteMaterialReviewAndQuizFlow() throws Exception {
         String token = register("academic-it@example.com");
         String other = register("academic-other@example.com");
+        // Solo un perfil no privado puede compartir apuntes (la visibilidad se rebaja a la del perfil).
+        perform(patch("/api/v1/me"), token, "{\"privacy\":\"PUBLIC\"}").andExpect(status().isOk());
 
         // Asignatura
         String subject = body(perform(post("/api/v1/subjects"), token,

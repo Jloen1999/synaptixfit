@@ -1,58 +1,66 @@
 import 'package:get_it/get_it.dart';
 
-import '../use_cases/training/load_pending_sets_use_case.dart';
-import '../use_cases/training/save_pending_sets_use_case.dart';
-import '../use_cases/training/search_exercises_use_case.dart';
-import '../use_cases/training/get_exercise_use_case.dart';
-import '../use_cases/training/get_exercise_filters_use_case.dart';
-import '../use_cases/training/get_my_routines_use_case.dart';
-import '../use_cases/training/get_community_routines_use_case.dart';
-import '../use_cases/training/get_routine_use_case.dart';
-import '../use_cases/training/create_routine_use_case.dart';
-import '../use_cases/training/update_routine_use_case.dart';
-import '../use_cases/training/change_routine_status_use_case.dart';
-import '../use_cases/training/delete_routine_use_case.dart';
-import '../use_cases/training/duplicate_routine_use_case.dart';
-import '../use_cases/training/clone_routine_use_case.dart';
-import '../use_cases/training/add_routine_week_use_case.dart';
-import '../use_cases/training/update_routine_week_use_case.dart';
-import '../use_cases/training/delete_routine_week_use_case.dart';
 import '../use_cases/training/add_routine_day_use_case.dart';
-import '../use_cases/training/rename_routine_day_use_case.dart';
-import '../use_cases/training/delete_routine_day_use_case.dart';
 import '../use_cases/training/add_routine_exercise_use_case.dart';
-import '../use_cases/training/reorder_routine_exercises_use_case.dart';
-import '../use_cases/training/update_routine_exercise_use_case.dart';
-import '../use_cases/training/remove_routine_exercise_use_case.dart';
+import '../use_cases/training/add_routine_week_use_case.dart';
+import '../use_cases/training/apply_recommendation_use_case.dart';
+import '../use_cases/training/cancel_session_use_case.dart';
+import '../use_cases/training/change_routine_status_use_case.dart';
+import '../use_cases/training/clone_routine_use_case.dart';
+import '../use_cases/training/correct_session_use_case.dart';
+import '../use_cases/training/create_routine_use_case.dart';
+import '../use_cases/training/delete_routine_day_use_case.dart';
+import '../use_cases/training/delete_routine_use_case.dart';
+import '../use_cases/training/delete_routine_week_use_case.dart';
+import '../use_cases/training/delete_session_use_case.dart';
+import '../use_cases/training/delete_set_use_case.dart';
+import '../use_cases/training/delete_weekly_plan_use_case.dart';
+import '../use_cases/training/discard_recommendation_use_case.dart';
+import '../use_cases/training/duplicate_routine_use_case.dart';
+import '../use_cases/training/finish_session_use_case.dart';
 import '../use_cases/training/generate_routine_use_case.dart';
-import '../use_cases/training/refine_routine_use_case.dart';
+import '../use_cases/training/get_body_weight_use_case.dart';
+import '../use_cases/training/get_check_ins_use_case.dart';
+import '../use_cases/training/get_community_routines_use_case.dart';
+import '../use_cases/training/get_exercise_alternatives_use_case.dart';
+import '../use_cases/training/get_exercise_filters_use_case.dart';
+import '../use_cases/training/get_exercise_use_case.dart';
+import '../use_cases/training/get_last_performance_use_case.dart';
+import '../use_cases/training/get_my_routines_use_case.dart';
+import '../use_cases/training/get_open_sessions_use_case.dart';
 import '../use_cases/training/get_pending_day_use_case.dart';
-import '../use_cases/training/start_session_use_case.dart';
+import '../use_cases/training/get_personal_records_use_case.dart';
+import '../use_cases/training/get_recommendations_use_case.dart';
+import '../use_cases/training/get_routine_use_case.dart';
 import '../use_cases/training/get_session_adaptation_use_case.dart';
+import '../use_cases/training/get_session_bookends_use_case.dart';
 import '../use_cases/training/get_session_highlights_use_case.dart';
+import '../use_cases/training/get_session_history_use_case.dart';
 import '../use_cases/training/get_session_use_case.dart';
 import '../use_cases/training/get_sessions_use_case.dart';
-import '../use_cases/training/get_session_history_use_case.dart';
-import '../use_cases/training/get_exercise_alternatives_use_case.dart';
-import '../use_cases/training/get_last_performance_use_case.dart';
-import '../use_cases/training/get_session_bookends_use_case.dart';
-import '../use_cases/training/get_personal_records_use_case.dart';
-import '../use_cases/training/record_set_use_case.dart';
-import '../use_cases/training/delete_set_use_case.dart';
-import '../use_cases/training/finish_session_use_case.dart';
-import '../use_cases/training/unmark_session_use_case.dart';
-import '../use_cases/training/cancel_session_use_case.dart';
 import '../use_cases/training/get_today_check_in_use_case.dart';
-import '../use_cases/training/submit_check_in_use_case.dart';
-import '../use_cases/training/get_check_ins_use_case.dart';
 import '../use_cases/training/get_weekly_plan_use_case.dart';
-import '../use_cases/training/save_weekly_plan_use_case.dart';
-import '../use_cases/training/delete_weekly_plan_use_case.dart';
 import '../use_cases/training/get_weekly_plans_use_case.dart';
-import '../use_cases/training/get_recommendations_use_case.dart';
-import '../use_cases/training/apply_recommendation_use_case.dart';
-import '../use_cases/training/discard_recommendation_use_case.dart';
-import '../use_cases/training/get_body_weight_use_case.dart';
+import '../use_cases/training/load_pending_sets_use_case.dart';
+import '../use_cases/training/log_past_session_use_case.dart';
+import '../use_cases/training/record_set_use_case.dart';
+import '../use_cases/training/refine_routine_use_case.dart';
+import '../use_cases/training/remove_routine_exercise_use_case.dart';
+import '../use_cases/training/replace_routine_exercise_use_case.dart';
+import '../use_cases/training/rename_routine_day_use_case.dart';
+import '../use_cases/training/reorder_routine_exercises_use_case.dart';
+import '../use_cases/training/restart_routine_use_case.dart';
+import '../use_cases/training/save_pending_sets_use_case.dart';
+import '../use_cases/training/save_weekly_plan_use_case.dart';
+import '../use_cases/training/search_exercises_use_case.dart';
+import '../use_cases/training/skip_routine_day_use_case.dart';
+import '../use_cases/training/start_session_use_case.dart';
+import '../use_cases/training/submit_check_in_use_case.dart';
+import '../use_cases/training/unmark_session_use_case.dart';
+import '../use_cases/training/unskip_routine_day_use_case.dart';
+import '../use_cases/training/update_routine_exercise_use_case.dart';
+import '../use_cases/training/update_routine_use_case.dart';
+import '../use_cases/training/update_routine_week_use_case.dart';
 
 /// Casos de uso del módulo training.
 void registerTrainingDomain(GetIt getIt) {
@@ -123,6 +131,9 @@ void registerTrainingDomain(GetIt getIt) {
     ..registerLazySingleton<RemoveRoutineExerciseUseCaseContract>(
       () => RemoveRoutineExerciseUseCase(getIt()),
     )
+    ..registerLazySingleton<ReplaceRoutineExerciseUseCaseContract>(
+      () => ReplaceRoutineExerciseUseCase(getIt()),
+    )
     ..registerLazySingleton<GenerateRoutineUseCaseContract>(
       () => GenerateRoutineUseCase(getIt()),
     )
@@ -182,6 +193,27 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<CancelSessionUseCaseContract>(
       () => CancelSessionUseCase(getIt()),
+    )
+    ..registerLazySingleton<DeleteSessionUseCaseContract>(
+      () => DeleteSessionUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetOpenSessionsUseCaseContract>(
+      () => GetOpenSessionsUseCase(getIt()),
+    )
+    ..registerLazySingleton<CorrectSessionUseCaseContract>(
+      () => CorrectSessionUseCase(getIt()),
+    )
+    ..registerLazySingleton<LogPastSessionUseCaseContract>(
+      () => LogPastSessionUseCase(getIt()),
+    )
+    ..registerLazySingleton<SkipRoutineDayUseCaseContract>(
+      () => SkipRoutineDayUseCase(getIt()),
+    )
+    ..registerLazySingleton<UnskipRoutineDayUseCaseContract>(
+      () => UnskipRoutineDayUseCase(getIt()),
+    )
+    ..registerLazySingleton<RestartRoutineUseCaseContract>(
+      () => RestartRoutineUseCase(getIt()),
     )
     ..registerLazySingleton<GetTodayCheckInUseCaseContract>(
       () => GetTodayCheckInUseCase(getIt()),

@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /** Tabla {@code dias_rutina}. */
@@ -25,6 +26,9 @@ public class RoutineDayEntity {
     private String estado;
     @Column(name = "creado_en")
     private Instant creadoEn;
+    /** Día en que se completó o se saltó (null si sigue por hacer). */
+    @Column(name = "cerrado_en")
+    private LocalDate cerradoEn;
 
 
     public UUID getId() { return id; }
@@ -39,4 +43,6 @@ public class RoutineDayEntity {
     public void setEstado(String v) { this.estado = v; }
     public Instant getCreadoEn() { return creadoEn; }
     public void setCreadoEn(Instant v) { this.creadoEn = v; }
+    public LocalDate getCerradoEn() { return cerradoEn; }
+    public void setCerradoEn(LocalDate v) { this.cerradoEn = v; }
 }

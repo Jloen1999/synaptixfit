@@ -60,15 +60,10 @@ sealed class ChallengeFormEvent with _$ChallengeFormEvent {
   const factory ChallengeFormEvent.milestoneMoved(String key, int delta) =
       ChallengeFormMilestoneMoved;
 
-  const factory ChallengeFormEvent.manualWeightsToggled(bool manual) =
-      ChallengeFormManualWeightsToggled;
-
-  const factory ChallengeFormEvent.weightChanged(String key, double? weight) =
-      ChallengeFormWeightChanged;
-
-  /// Reparte 100 a partes iguales entre las tareas.
-  const factory ChallengeFormEvent.weightsDistributed() =
-      ChallengeFormWeightsDistributed;
+  /// «Hacer las tareas en orden»: activarlo sustituye las dependencias que
+  /// hubiera por la cadena simple; desactivarlo las quita.
+  const factory ChallengeFormEvent.inOrderToggled(bool inOrder) =
+      ChallengeFormInOrderToggled;
 
   const factory ChallengeFormEvent.submitted() = ChallengeFormSubmitted;
 }

@@ -8,10 +8,10 @@ import 'package:synaptixfit/domain/enums/milestone_status.dart';
 import 'package:synaptixfit/domain/models/challenges/challenge.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/challenges/widgets/challenge_card.dart';
-import 'package:synaptixfit/presentation/screens/challenges/widgets/challenge_labels.dart';
 import 'package:synaptixfit/presentation/screens/challenges/widgets/dependency_graph.dart';
 import 'package:synaptixfit/presentation/screens/challenges/widgets/milestone_tile.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
+import 'package:synaptixfit/presentation/theme/tokens.g.dart';
 
 import 'challenges_fixtures.dart';
 
@@ -53,6 +53,8 @@ void main() {
     );
     expect(find.text('Reto c1'), findsOneWidget);
     expect(find.text('1/2 tareas'), findsOneWidget);
+    // El tipo, en una pastilla con su acento.
+    expect(find.text('Académico'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -78,8 +80,6 @@ void main() {
     expect(find.text('4 / 12 sesiones'), findsOneWidget);
     // Siguiente paso: lo que falta, en palabras.
     expect(find.text('Te faltan 8 sesiones'), findsOneWidget);
-    // El contador lleva su propio icono para no repetir el del tipo.
-    expect(find.byIcon(Icons.repeat_rounded), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -108,7 +108,7 @@ void main() {
       expect(find.text('Siguiente: Tarea m4'), findsOneWidget);
     });
 
-    testWidgets('con el plazo cerca, cuenta los días que quedan', (
+    testWidgets('con el plazo cerca, dice cuándo vence en palabras', (
       tester,
     ) async {
       final now = DateTime.now();
@@ -118,7 +118,7 @@ void main() {
           endAt: DateTime(now.year, now.month, now.day + 2, 23, 59),
         ),
       );
-      expect(find.text('Quedan 2 días'), findsOneWidget);
+      expect(find.text('Vence en 2 días'), findsOneWidget);
       expect(
         find.text('Márcalo como hecho cuando lo termines'),
         findsOneWidget,
@@ -141,7 +141,9 @@ void main() {
           status: ChallengeStatus.expired,
         ),
       );
-      expect(find.text('Vencido'), findsOneWidget);
+      // Frase y bloque de fecha: «Venció el 30 oct» y «Venció · 30 · oct».
+      expect(find.textContaining('Venció el 30'), findsOneWidget);
+      expect(find.text('Venció'), findsOneWidget);
       expect(
         find.text('Se acabó el plazo. Amplía la fecha para seguir.'),
         findsOneWidget,
@@ -163,17 +165,110 @@ void main() {
     });
   });
 
-  test('siguiente tarea, sesiones que faltan y pesos manuales', () {
-    // El reparto automático de 3 tareas (33,33 / 33,33 / 33,34) no es manual.
-    final auto = [
-      for (final (i, w) in [33.33, 33.33, 33.34].indexed)
-        ChallengesFixtures.milestone('a$i').copyWith(weight: w, order: i),
-    ];
-    expect(
-      ChallengesFixtures.challenge(milestones: auto).showsTaskWeights,
-      isFalse,
+  testWidgets('bloque de fecha: hoy, mañana y por empezar', (tester) async {
+    final now = DateTime.now();
+    Future<void> pump(Challenge c) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_wrap(ChallengeCard(challenge: c, onTap: () {})));
+    }
+
+    await pump(
+      ChallengesFixtures.challenge().copyWith(
+        endAt: DateTime(now.year, now.month, now.day, 23, 59),
+      ),
     );
+    expect(find.text('Vence hoy'), findsOneWidget);
+    expect(find.text('Hoy'), findsOneWidget);
+
+    await pump(
+      ChallengesFixtures.challenge().copyWith(
+        endAt: DateTime(now.year, now.month, now.day + 1, 23, 59),
+      ),
+    );
+    expect(find.text('Vence mañana'), findsOneWidget);
+
+    final start = DateTime(now.year, now.month, now.day + 10, 9);
+    await pump(
+      ChallengesFixtures.challenge().copyWith(
+        status: ChallengeStatus.upcoming,
+        startAt: start,
+        endAt: start.add(const Duration(days: 7)),
+      ),
+    );
+    expect(find.text('Empieza'), findsOneWidget);
+    expect(find.textContaining('Empieza el'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final width in [320.0, 360.0]) {
+    testWidgets(
+      'la tarjeta de comunidad al 200 % en ${width.toInt()} dp no desborda',
+      (tester) async {
+        final now = DateTime.now();
+        tester.view.physicalSize = Size(width, 1400);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            locale: const Locale('es'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: Scaffold(
+              body: SingleChildScrollView(
+                // Los mismos márgenes que la lista de retos.
+                padding: const EdgeInsets.all(TokensSpacing.m),
+                child: ChallengeCard(
+                  challenge:
+                      ChallengesFixtures.challenge(
+                        owned: false,
+                        milestones: [m1, m2],
+                      ).copyWith(
+                        endAt: DateTime(
+                          now.year,
+                          now.month,
+                          now.day + 1,
+                          23,
+                          59,
+                        ),
+                      ),
+                  onTap: () {},
+                  onClone: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text('Vence mañana'), findsOneWidget);
+        expect(find.byTooltip('Añadir a mis retos'), findsOneWidget);
+      },
+    );
+  }
+
+  test('siguiente tarea (sin las que avanzan solas) y sesiones que faltan', () {
     final m4 = ChallengesFixtures.milestone('m4');
+    final linked = ChallengesFixtures.milestone(
+      'm5',
+    ).copyWith(completedByLink: true, order: 0);
+    // La que completa su entrega no es «la siguiente»: no se marca a mano.
+    expect(
+      ChallengesFixtures.challenge(milestones: [linked, m4]).nextMilestone?.id,
+      'm4',
+    );
     expect(
       ChallengesFixtures.challenge(milestones: [m1, m2, m4]).nextMilestone?.id,
       'm4',
@@ -188,47 +283,40 @@ void main() {
       tracksTrainingSessions: true,
     );
     expect(sessions.sessionsRemaining, 0);
-    expect(
-      ChallengesFixtures.challenge(milestones: [m1, m4]).showsTaskWeights,
-      isFalse,
-    );
-    expect(
-      ChallengesFixtures.challenge(
-        milestones: [m1, m4.copyWith(weight: 30)],
-      ).showsTaskWeights,
-      isTrue,
-    );
   });
 
-  testWidgets('la tarea siguiente se marca y el peso solo si es manual', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _wrap(
-        MilestoneTile(
-          milestone: m3,
-          dependencyTitles: const [],
-          busy: false,
-          isNext: true,
+  testWidgets(
+    'la tarea siguiente se marca y una vinculada dice qué la completa',
+    (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          MilestoneTile(
+            milestone: m3,
+            dependencyTitles: const [],
+            busy: false,
+            isNext: true,
+          ),
         ),
-      ),
-    );
-    expect(find.text('Siguiente'), findsOneWidget);
-    expect(find.text('Vale 50 %'), findsNothing);
+      );
+      expect(find.text('Siguiente'), findsOneWidget);
 
-    await tester.pumpWidget(
-      _wrap(
-        MilestoneTile(
-          milestone: m3,
-          dependencyTitles: const [],
-          busy: false,
-          showWeight: true,
+      await tester.pumpWidget(
+        _wrap(
+          MilestoneTile(
+            milestone: m3.copyWith(
+              completedByLink: true,
+              studyBlocksTotal: 3,
+              studyBlocksCompleted: 2,
+            ),
+            dependencyTitles: const [],
+            busy: false,
+          ),
         ),
-      ),
-    );
-    expect(find.text('Siguiente'), findsNothing);
-    expect(find.text('Vale 50 %'), findsOneWidget);
-  });
+      );
+      expect(find.text('Siguiente'), findsNothing);
+      expect(find.text('2/3 bloques del calendario hechos'), findsOneWidget);
+    },
+  );
 
   testWidgets('el grafo dibuja un nodo por tarea en tema oscuro', (
     tester,

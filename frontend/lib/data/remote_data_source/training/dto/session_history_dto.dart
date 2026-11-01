@@ -43,6 +43,7 @@ abstract class SessionHistoryDto with _$SessionHistoryDto {
     int? dayNumber,
     int? weekNumber,
     @Default(<PersonalRecordDto>[]) List<PersonalRecordDto> records,
+    @Default(false) bool unmarkable,
   }) = _SessionHistoryDto;
 
   const SessionHistoryDto._();
@@ -57,6 +58,7 @@ abstract class SessionHistoryDto with _$SessionHistoryDto {
     dayNumber: dayNumber,
     weekNumber: weekNumber,
     records: [for (final r in records) r.toDomain()],
+    unmarkable: unmarkable,
   );
 }
 

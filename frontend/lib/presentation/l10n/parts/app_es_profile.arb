@@ -359,13 +359,13 @@
   "profileFieldAvatarUrlHint": "https://…",
   "profileAvatarUrlInvalid": "Introduce una URL válida (https://…)",
   "profilePrivacyTitle": "Privacidad del perfil",
-  "profilePrivacySubtitle": "Decide quién puede ver tu perfil, tus rutinas y tus retos.",
+  "profilePrivacySubtitle": "Decide quién ve tu perfil, tus publicaciones y lo que compartes: apuntes, rutinas y retos.",
   "profilePrivacyPublic": "Público",
-  "profilePrivacyPublicHint": "Cualquier usuario puede ver tu perfil y tu actividad compartida.",
+  "profilePrivacyPublicHint": "Cualquier usuario de SynaptixFit ve tu perfil y tus publicaciones. Cada apunte, rutina o reto lo ve quien elijas al compartirlo.",
   "profilePrivacyFriends": "Solo amigos",
-  "profilePrivacyFriendsHint": "Solo tus amigos ven tu perfil y tu actividad.",
+  "profilePrivacyFriendsHint": "Cualquiera puede encontrarte y enviarte una solicitud, pero solo tus amigos ven tu perfil, tus publicaciones y lo que compartes, aunque antes lo marcaras como público.",
   "profilePrivacyPrivate": "Privado",
-  "profilePrivacyPrivateHint": "Nadie más ve tu perfil; tus rutinas y retos pasan a ser privados.",
+  "profilePrivacyPrivateHint": "Nadie más ve tu perfil ni tus publicaciones y no apareces en las búsquedas. Tus apuntes, rutinas, retos y planes semanales pasan a ser privados.",
   "profileSettingsAccountGroup": "Cuenta",
   "profileSettingsNotificationsGroup": "Notificaciones",
   "profileSettingsPrivacyGroup": "Privacidad y datos",
@@ -569,5 +569,21 @@
   "profileWeeklyEmailHintOff": "Cada domingo, lo que has hecho en la semana y lo que viene. Te pediremos confirmarlo por correo.",
   "profileWeeklyEmailHintPending": "Te hemos enviado un correo: ábrelo y pulsa «Confirmar» para empezar a recibirlo.",
   "profileWeeklyEmailHintActive": "Activo: te llegará cada domingo a partir de las 19:00. Puedes darte de baja desde cualquier correo.",
-  "profileWeeklyEmailPendingPill": "Pendiente de confirmar"
+  "profileWeeklyEmailPendingPill": "Pendiente de confirmar",
+  "profileSocialSection": "Amigos y comunidad",
+  "profileFriends": "Amigos",
+  "profileFriendsHint": "Busca amigos y gestiona solicitudes y bloqueos",
+  "profileFriendsPending": "{count, plural, =1{1 solicitud pendiente} other{{count} solicitudes pendientes}}",
+  "@profileFriendsPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profilePublicProfile": "Ver mi perfil público",
+  "profilePublicProfileHint": "Así te ven los demás",
+  "profileCommunity": "Comunidad",
+  "profileCommunityHint": "Publicaciones de tus amigos y de la comunidad",
+  "profilePublicProfilePrivateHint": "Tu perfil es privado: solo lo ves tú"
 }

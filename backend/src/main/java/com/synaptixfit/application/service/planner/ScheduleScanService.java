@@ -9,6 +9,7 @@ import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.PlannerProfile;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.ScheduleEntry;
+import com.synaptixfit.domain.model.planner.ScheduleScan;
 import com.synaptixfit.domain.model.planner.SubjectRef;
 import com.synaptixfit.domain.model.planner.WeeklyPatternMaterializer;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
@@ -66,10 +67,16 @@ public class ScheduleScanService implements ScanScheduleUseCase {
                 .filter(PlannerProfile.Academic::hasSemesterDates)
                 .orElseThrow(SemesterDatesMissingException::new);
         List<SubjectRef> active = subjects.findActive(command.userId());
-        List<ScheduleEntry> entries = scanner.extractWeeklyPattern(command.content(), mime,
-                active.stream().map(SubjectRef::name).toList());
+        List<String> searched = active.stream().map(SubjectRef::name).toList();
+        int semester = academic.semesterNumber();
+        ScheduleScan scan = scanner.extractWeeklyPattern(command.content(), mime, searched, semester);
+        List<ScheduleEntry> entries = scan.entries();
         if (entries.isEmpty()) {
-            throw new ScheduleNothingFoundException();
+            // Sin ninguna asignatura legible no hay nada que explicar; si el documento trae otras, se enseñan.
+            if (scan.documentSubjects().isEmpty()) {
+                throw new ScheduleNothingFoundException();
+            }
+            return new Result(0, 0, 0, List.of(), List.of(), searched, scan.documentSubjects(), semester);
         }
         Instant now = clock.instant();
         WeeklyPatternMaterializer.Result pattern = WeeklyPatternMaterializer.materialize(command.userId(), entries,
@@ -95,6 +102,7 @@ public class ScheduleScanService implements ScanScheduleUseCase {
         List<ScheduleEntry> timetable = entries.stream()
                 .sorted(Comparator.comparingInt(ScheduleEntry::dayOfWeek).thenComparing(ScheduleEntry::start))
                 .toList();
-        return new Result(pattern.classes(), created, updated, pattern.unmatchedSubjects(), timetable);
+        return new Result(pattern.classes(), created, updated, pattern.unmatchedSubjects(), timetable, searched,
+                scan.documentSubjects(), semester);
     }
 }

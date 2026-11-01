@@ -9,10 +9,10 @@ import '../../../widgets/widgets.dart';
 import 'challenge_labels.dart';
 import 'challenge_progress_bar.dart';
 
-/// Tarea de un reto en el detalle: estado, XP, dependencias, adjuntos y
-/// casilla para completarla (si el reto es propio). Solo muestra lo que
-/// aporta: «Disponible» se da por hecho y el peso, solo si no es el mismo
-/// para todas las tareas.
+/// Tarea de un reto en el detalle: estado, XP real (con el tope del reto),
+/// qué la completa si no es un toque (su entrega o sus bloques), dependencias,
+/// adjuntos y casilla para completarla. Solo muestra lo que aporta:
+/// «Disponible» se da por hecho.
 class MilestoneTile extends StatelessWidget {
   const MilestoneTile({
     super.key,
@@ -20,7 +20,6 @@ class MilestoneTile extends StatelessWidget {
     required this.dependencyTitles,
     required this.busy,
     this.isNext = false,
-    this.showWeight = false,
     this.expired = false,
     this.onToggle,
     this.onOpenNote,
@@ -34,9 +33,6 @@ class MilestoneTile extends StatelessWidget {
 
   /// Es la siguiente tarea que toca: se marca con «Siguiente».
   final bool isNext;
-
-  /// Pesos manuales: cada tarea dice cuánto vale del reto.
-  final bool showWeight;
 
   /// El reto venció: la tarea pendiente ya no se puede completar.
   final bool expired;
@@ -53,6 +49,7 @@ class MilestoneTile extends StatelessWidget {
     final status = milestone.status;
     final locked = milestone.isLocked;
     final link = milestone.link;
+    final source = milestone.sourceText(context);
     return AppCard(
       padding: const EdgeInsets.fromLTRB(
         TokensSpacing.xs,
@@ -73,17 +70,26 @@ class MilestoneTile extends StatelessWidget {
                 : IconButton(
                     tooltip: locked
                         ? l10n.challengesMilestoneLockedHint
-                        : expired && !milestone.completed
-                        ? l10n.challengesExpiredHint
-                        : milestone.completed
-                        ? l10n.challengesMilestoneUncomplete(milestone.title)
-                        : l10n.challengesMilestoneComplete(milestone.title),
+                        : source ??
+                              (expired && !milestone.completed
+                                  ? l10n.challengesExpiredHint
+                                  : milestone.completed
+                                  ? l10n.challengesMilestoneUncomplete(
+                                      milestone.title,
+                                    )
+                                  : l10n.challengesMilestoneComplete(
+                                      milestone.title,
+                                    )),
                     onPressed: locked ? null : onToggle,
                     icon: Icon(
                       milestone.completed
                           ? Icons.check_box_rounded
                           : locked
                           ? Icons.lock_outline_rounded
+                          : milestone.completedByLink
+                          ? (link == null
+                                ? Icons.event_available_outlined
+                                : Icons.link_rounded)
                           : Icons.check_box_outline_blank_rounded,
                       color: status.color(context),
                     ),
@@ -121,20 +127,25 @@ class MilestoneTile extends StatelessWidget {
                         label: status.label(context),
                         color: status.color(context),
                       ),
-                    if (showWeight)
+                    // XP real: con el tope del reto puede ser 0; entonces no se
+                    // promete nada.
+                    if (milestone.xpReward > 0)
                       AppPill(
-                        icon: Icons.pie_chart_outline_rounded,
-                        label: l10n.challengesMilestoneWeight(
-                          ChallengeFormats.number(milestone.weight),
-                        ),
+                        icon: Icons.bolt_rounded,
+                        label: l10n.challengesXpGain(milestone.xpReward),
+                        color: context.palette.accent,
                       ),
-                    AppPill(
-                      icon: Icons.bolt_rounded,
-                      label: l10n.challengesXpGain(milestone.xpReward),
-                      color: context.palette.accent,
-                    ),
                   ],
                 ),
+                if (source != null) ...[
+                  const SizedBox(height: TokensSpacing.s),
+                  Text(
+                    source,
+                    style: context.textStyles.labelMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 if (status == MilestoneStatus.inProgress) ...[
                   const SizedBox(height: TokensSpacing.s),
                   ChallengeProgressBar(
@@ -170,10 +181,10 @@ class MilestoneTile extends StatelessWidget {
                           label: Text(l10n.challengesMilestoneFile),
                           onPressed: onOpenFile,
                         ),
-                      if (link != null)
+                      if (link != null && onOpenLink != null)
                         ActionChip(
                           avatar: Icon(link.type.icon),
-                          label: Text(link.type.label(context)),
+                          label: Text(context.localizations.challengesLinkOpen),
                           onPressed: onOpenLink,
                         ),
                     ],

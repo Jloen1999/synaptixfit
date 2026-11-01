@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.adapter.input.rest.academic.dto;
 
 import com.synaptixfit.domain.model.academic.Note;
 import com.synaptixfit.domain.model.academic.SharedNote;
+import com.synaptixfit.domain.model.academic.SharedNoteSummary;
 import com.synaptixfit.domain.model.academic.SignedUrl;
 import com.synaptixfit.domain.model.academic.SubjectFile;
 import com.synaptixfit.domain.model.shared.Visibility;
@@ -50,14 +51,32 @@ public final class NoteDtos {
         }
     }
 
-    public record SharedNoteResponse(UUID id, UUID authorId, String authorName, String authorAvatarUrl,
-                                     UUID subjectId, String title, String content, Visibility visibility,
-                                     Instant createdAt, Instant updatedAt) {
+    /**
+     * Resumen de un apunte compartido (sin el contenido). {@code visibility} es la efectiva y la
+     * asignatura es la del catálogo (la asignatura privada del autor no se expone).
+     */
+    public record SharedNoteSummaryResponse(UUID id, UUID authorId, String authorName, String authorAvatarUrl,
+                                            UUID catalogSubjectId, String catalogSubjectName, String title,
+                                            String excerpt, Visibility visibility, Instant updatedAt,
+                                            boolean mine) {
 
-        public static SharedNoteResponse from(SharedNote s) {
+        public static SharedNoteSummaryResponse from(SharedNoteSummary s, UUID viewerId) {
+            return new SharedNoteSummaryResponse(s.id(), s.authorId(), s.authorName(), s.authorAvatarUrl(),
+                    s.catalogSubjectId(), s.catalogSubjectName(), s.title(), s.excerpt(), s.visibility(),
+                    s.updatedAt(), s.authorId().equals(viewerId));
+        }
+    }
+
+    /** Apunte compartido completo; {@code mine} indica que es de quien lo pide. */
+    public record SharedNoteResponse(UUID id, UUID authorId, String authorName, String authorAvatarUrl,
+                                     UUID catalogSubjectId, String catalogSubjectName, String title, String content,
+                                     Visibility visibility, Instant createdAt, Instant updatedAt, boolean mine) {
+
+        public static SharedNoteResponse from(SharedNote s, UUID viewerId) {
             Note n = s.note();
-            return new SharedNoteResponse(n.id(), n.userId(), s.authorName(), s.authorAvatarUrl(), n.subjectId(),
-                    n.title(), n.content(), n.visibility(), n.createdAt(), n.updatedAt());
+            return new SharedNoteResponse(n.id(), n.userId(), s.authorName(), s.authorAvatarUrl(),
+                    s.catalogSubjectId(), s.catalogSubjectName(), n.title(), n.content(), s.visibility(),
+                    n.createdAt(), n.updatedAt(), n.userId().equals(viewerId));
         }
     }
 

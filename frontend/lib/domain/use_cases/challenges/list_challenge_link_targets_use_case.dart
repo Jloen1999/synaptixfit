@@ -2,10 +2,16 @@ import '../../models/challenges/challenge_references.dart';
 import '../../models/result/app_result.dart';
 import '../../repositories/challenge_references_repository_contract.dart';
 
-/// Entregas/exámenes pendientes y bloques de estudio de las próximas semanas
-/// a los que se puede vincular un reto o tarea, ordenados por fecha.
+/// Entregas y exámenes pendientes que vencen dentro del periodo del reto
+/// ([from]-[to], por días; sin periodo, las próximas semanas), ordenados por
+/// fecha. Los bloques de estudio no se vinculan: se asignan a una tarea desde
+/// el editor de bloques (ADR 0028).
 abstract interface class ListChallengeLinkTargetsUseCaseContract {
-  Future<AppResult<List<ChallengeLinkOption>>> call({String? subjectId});
+  Future<AppResult<List<ChallengeLinkOption>>> call({
+    String? subjectId,
+    DateTime? from,
+    DateTime? to,
+  });
 }
 
 class ListChallengeLinkTargetsUseCase
@@ -13,19 +19,24 @@ class ListChallengeLinkTargetsUseCase
   ListChallengeLinkTargetsUseCase(this._repository, {DateTime Function()? now})
     : _now = now ?? DateTime.now;
 
-  /// Horizonte de bloques futuros que se ofrecen.
+  /// Horizonte que se ofrece si no se indica el periodo.
   static const horizon = Duration(days: 28);
 
   final ChallengeReferencesRepositoryContract _repository;
   final DateTime Function() _now;
 
   @override
-  Future<AppResult<List<ChallengeLinkOption>>> call({String? subjectId}) async {
-    final from = _now();
+  Future<AppResult<List<ChallengeLinkOption>>> call({
+    String? subjectId,
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final start = from ?? _now();
+    final end = to ?? start.add(horizon);
     final result = await _repository.linkTargets(
       subjectId: subjectId,
-      from: from,
-      to: from.add(horizon),
+      from: DateTime(start.year, start.month, start.day),
+      to: DateTime(end.year, end.month, end.day, 23, 59, 59),
     );
     return result.map(
       (options) => [...options]..sort((a, b) => a.at.compareTo(b.at)),

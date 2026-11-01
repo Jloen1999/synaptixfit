@@ -112,7 +112,8 @@ void main() {
     expect(find.text('Todos'), findsOneWidget);
     expect(find.text('Activos (1)'), findsOneWidget);
     expect(find.text('Con tareas'), findsNothing);
-    expect(find.text('Académico'), findsNothing);
+    // El tipo como filtro va en la hoja (en la tarjeta sí va su pastilla).
+    expect(find.widgetWithText(FilterChip, 'Académico'), findsNothing);
     // Un filtro de la hoja activo (con tareas) y «Quitar filtros» a mano.
     expect(find.text('Filtros (1)'), findsOneWidget);
     expect(find.text('Quitar filtros'), findsOneWidget);
@@ -124,8 +125,8 @@ void main() {
     await tester.tap(find.byType(ActionChip));
     await tester.pumpAndSettle();
 
-    expect(find.text('Académico'), findsOneWidget);
-    expect(find.text('Físico'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Académico'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Físico'), findsOneWidget);
     expect(find.text('Con tareas'), findsOneWidget);
 
     await tester.tap(find.text('Sin tareas'));

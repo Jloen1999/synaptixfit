@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/models/training/routine.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import 'training_labels.dart';
 
-/// Tarjeta de rutina para listados (propias o de la comunidad).
+/// Tarjeta de rutina para listados (propias o de la comunidad), con la foto
+/// del ejercicio que la representa de fondo ([AppCoverCard]).
+///
+/// Delante, lo que hace falta para actuar: el nombre grande, si está en curso
+/// cuándo toca el próximo día ([nextDay]) y si va con retraso, y el avance del
+/// ciclo. Lo secundario (semanas, ejercicios, objetivo) va en pastillas debajo.
 class RoutineSummaryCard extends StatelessWidget {
   const RoutineSummaryCard({
     super.key,
@@ -14,6 +20,7 @@ class RoutineSummaryCard extends StatelessWidget {
     required this.onTap,
     this.showAuthor = false,
     this.trailing,
+    this.nextDay,
   });
 
   final RoutineSummary routine;
@@ -21,12 +28,19 @@ class RoutineSummaryCard extends StatelessWidget {
   final bool showAuthor;
   final Widget? trailing;
 
+  /// Próximo día si esta es la rutina en curso (lo calcula el servidor).
+  final PendingDay? nextDay;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final r = routine;
-    return AppCard(
+    final next = nextDay;
+    final active = r.status == RoutineStatus.active;
+    return AppCoverCard(
       onTap: onTap,
+      imageUrl: r.coverImageUrl,
+      padding: const EdgeInsets.all(TokensSpacing.m),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -37,9 +51,22 @@ class RoutineSummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (!showAuthor)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: TokensSpacing.xs,
+                        ),
+                        child: AppCoverPill(
+                          icon: r.status.icon,
+                          label: r.status.label(l10n),
+                          color: active
+                              ? context.colors.primary
+                              : context.colors.onSurfaceVariant,
+                        ),
+                      ),
                     Text(
                       r.name,
-                      style: context.textStyles.titleMedium,
+                      style: context.textStyles.titleLarge,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -48,7 +75,10 @@ class RoutineSummaryCard extends StatelessWidget {
                         padding: const EdgeInsets.only(top: TokensSpacing.xxs),
                         child: Row(
                           children: [
-                            AppAvatar(name: r.authorName!, radius: 10),
+                            AppAvatar(
+                              name: r.authorName!,
+                              radius: TokensSize.iconS / 2,
+                            ),
                             const SizedBox(width: TokensSpacing.xs),
                             Flexible(
                               child: Text(
@@ -68,14 +98,47 @@ class RoutineSummaryCard extends StatelessWidget {
               ?trailing,
             ],
           ),
-          if (r.description != null && r.description!.trim().isNotEmpty) ...[
+          if (next != null && next.routineId == r.id) ...[
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              nextDayHeadline(
+                l10n,
+                date: next.scheduledDate,
+                weekNumber: next.weekNumber,
+                totalWeeks: next.totalWeeks,
+                dayNumber: next.dayNumber,
+                dayName: next.dayName,
+              ),
+              style: context.textStyles.bodyMedium,
+            ),
+            if (next.overdue && next.scheduledDate != null)
+              Padding(
+                padding: const EdgeInsets.only(top: TokensSpacing.xxs),
+                child: AppCoverPill(
+                  icon: Icons.schedule_rounded,
+                  color: context.palette.warning,
+                  label: overdueSinceLabel(l10n, next.scheduledDate!),
+                ),
+              ),
+          ] else if (r.description != null &&
+              r.description!.trim().isNotEmpty) ...[
             const SizedBox(height: TokensSpacing.xs),
             Text(
               r.description!,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: context.textStyles.bodyMedium?.copyWith(
                 color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (!showAuthor && r.totalDays > 0) ...[
+            const SizedBox(height: TokensSpacing.s),
+            AppCycleProgress(
+              progress: r.progress,
+              label: l10n.trainingDaysProgress(
+                r.completedDays + r.skippedDays,
+                r.totalDays,
               ),
             ),
           ],
@@ -84,46 +147,18 @@ class RoutineSummaryCard extends StatelessWidget {
             spacing: TokensSpacing.xs,
             runSpacing: TokensSpacing.xs,
             children: [
-              if (!showAuthor)
-                AppPill(
-                  icon: r.status.icon,
-                  label: r.status.label(l10n),
-                  color: context.colors.secondary,
-                ),
-              AppPill(
+              AppCoverPill(
                 icon: Icons.calendar_view_week_rounded,
                 label: l10n.trainingWeeksCount(r.durationWeeks),
               ),
-              AppPill(
+              AppCoverPill(
                 icon: Icons.fitness_center_rounded,
                 label: l10n.trainingExercisesCount(r.exerciseCount),
               ),
               if (r.goal != null)
-                AppPill(icon: Icons.flag_outlined, label: r.goal!.label(l10n)),
+                AppCoverPill(icon: Icons.flag_outlined, label: r.goal!.label(l10n)),
             ],
           ),
-          if (!showAuthor && r.totalDays > 0) ...[
-            const SizedBox(height: TokensSpacing.s),
-            Row(
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(TokensRadius.pill),
-                    child: LinearProgressIndicator(
-                      value: r.progress,
-                      color: context.colors.secondary,
-                      backgroundColor: context.colors.secondaryContainer,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: TokensSpacing.s),
-                Text(
-                  l10n.trainingDaysProgress(r.completedDays, r.totalDays),
-                  style: context.textStyles.labelMedium,
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );

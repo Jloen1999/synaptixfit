@@ -12,6 +12,7 @@ import com.synaptixfit.application.port.input.social.ReportPostUseCase;
 import com.synaptixfit.application.port.input.social.UnlikePostUseCase;
 import com.synaptixfit.domain.exception.social.PostAlreadySharedException;
 import com.synaptixfit.domain.exception.social.PostNotFoundException;
+import com.synaptixfit.domain.exception.social.PostTypeNotAllowedException;
 import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.social.FeedPeriod;
@@ -69,6 +70,9 @@ public class PostService implements GetFeedUseCase, GetPostUseCase, CreatePostUs
 
     @Override
     public PostView createPost(CreatePostUseCase.Command command) {
+        if (!command.type().publishableByHand()) {
+            throw new PostTypeNotAllowedException(command.type());
+        }
         if (Post.uniquePerMetadata(command.type(), command.metadata())
                 && posts.existsByAuthorTypeAndMetadata(command.userId(), command.type(), command.metadata())) {
             throw new PostAlreadySharedException();

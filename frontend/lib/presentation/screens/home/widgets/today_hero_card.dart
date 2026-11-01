@@ -46,7 +46,8 @@ class TodayHeroCard extends StatelessWidget {
 
   TodayHeroAction _actionFor(HomeTodayEvent? next) => switch (next?.type) {
     HomeEventType.study || HomeEventType.review => TodayHeroAction.focus,
-    HomeEventType.sport when dashboard.nextTrainingDay != null =>
+    HomeEventType.sport
+        when next?.routineDayId != null || dashboard.nextTrainingDay != null =>
       TodayHeroAction.train,
     _ => TodayHeroAction.openPlanner,
   };

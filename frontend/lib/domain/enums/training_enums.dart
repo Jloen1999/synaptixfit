@@ -77,6 +77,23 @@ enum MeasurementType {
       _fromApi(values, (v) => v.apiValue, value, repetitions);
 }
 
+/// Qué se apunta en cada serie de un ejercicio (lo decide el servidor, ADR
+/// 0027): repeticiones (con o sin peso), segundos de aguante o un bloque de
+/// tiempo y distancia.
+enum TrackingKind {
+  repetitions('REPETITIONS'),
+  hold('HOLD'),
+  cardio('CARDIO');
+
+  const TrackingKind(this.apiValue);
+
+  final String apiValue;
+
+  /// Nulo si el servidor no lo envía (versiones anteriores).
+  static TrackingKind? tryFromApi(String? value) =>
+      values.where((v) => v.apiValue == value).firstOrNull;
+}
+
 /// Objetivo de entrenamiento (también finalidad de un ejercicio).
 enum TrainingGoal {
   hypertrophy('HYPERTROPHY'),
@@ -128,11 +145,12 @@ enum RoutineStatus {
       _fromApi(values, (v) => v.apiValue, value, active);
 }
 
-/// Progreso de una semana o un día.
+/// Progreso de una semana o un día. Solo un día queda saltado.
 enum ProgressStatus {
   pending('PENDING'),
   inProgress('IN_PROGRESS'),
-  completed('COMPLETED');
+  completed('COMPLETED'),
+  skipped('SKIPPED');
 
   const ProgressStatus(this.apiValue);
 

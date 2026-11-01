@@ -8,7 +8,8 @@ import java.util.List;
 
 /** Resultado del escaneo de horario, con el horario semanal detectado para que el estudiante lo vea. */
 public record ScheduleScanResponse(int classesFound, int blocksCreated, int blocksUpdated,
-                                   List<String> unmatchedSubjects, List<ScheduleClassResponse> classes) {
+                                   List<String> unmatchedSubjects, List<ScheduleClassResponse> classes,
+                                   List<String> searchedSubjects, List<String> documentSubjects, int semester) {
 
     /** Una clase del horario: día ISO (1 = lunes), horas locales, aula y si es teoría o práctica. */
     public record ScheduleClassResponse(String subjectName, ClassKind classKind, int dayOfWeek, LocalTime start,
@@ -22,6 +23,7 @@ public record ScheduleScanResponse(int classesFound, int blocksCreated, int bloc
 
     public static ScheduleScanResponse from(ScanScheduleUseCase.Result r) {
         return new ScheduleScanResponse(r.classesFound(), r.blocksCreated(), r.blocksUpdated(), r.unmatchedSubjects(),
-                r.classes().stream().map(ScheduleClassResponse::from).toList());
+                r.classes().stream().map(ScheduleClassResponse::from).toList(), r.searchedSubjects(),
+                r.documentSubjects(), r.semester());
     }
 }

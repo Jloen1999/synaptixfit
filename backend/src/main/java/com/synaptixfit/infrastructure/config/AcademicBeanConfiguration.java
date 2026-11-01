@@ -7,6 +7,7 @@ import com.synaptixfit.application.port.input.academic.AssignSubjectSemesterUseC
 import com.synaptixfit.application.port.input.academic.CompleteBankPracticeUseCase;
 import com.synaptixfit.application.port.input.academic.CompleteTestSessionUseCase;
 import com.synaptixfit.application.port.input.academic.ConfirmFileUploadUseCase;
+import com.synaptixfit.application.port.input.academic.CopySharedNoteUseCase;
 import com.synaptixfit.application.port.input.academic.CreateNoteUseCase;
 import com.synaptixfit.application.port.input.academic.CreateSubjectUseCase;
 import com.synaptixfit.application.port.input.academic.CreateSubjectsFromCatalogUseCase;
@@ -23,6 +24,7 @@ import com.synaptixfit.application.port.input.academic.GenerateTeachingGuideUseC
 import com.synaptixfit.application.port.input.academic.GetActiveTestSessionUseCase;
 import com.synaptixfit.application.port.input.academic.GetFileDownloadUrlUseCase;
 import com.synaptixfit.application.port.input.academic.GetNoteUseCase;
+import com.synaptixfit.application.port.input.academic.GetSharedNoteUseCase;
 import com.synaptixfit.application.port.input.academic.GetQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.GetRetentionMetricsUseCase;
 import com.synaptixfit.application.port.input.academic.GetStudyDocumentAvailabilityUseCase;
@@ -59,6 +61,7 @@ import com.synaptixfit.application.port.input.academic.UpdateTeachingGuideTopicU
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.service.academic.NoteService;
 import com.synaptixfit.application.service.academic.QuizService;
+import com.synaptixfit.application.service.academic.SharedNoteService;
 import com.synaptixfit.application.service.academic.StudyAssistantService;
 import com.synaptixfit.application.service.academic.StudyMaterialService;
 import com.synaptixfit.application.service.academic.SubjectFileService;
@@ -79,6 +82,7 @@ import com.synaptixfit.domain.port.output.academic.SubjectSemesterRepositoryPort
 import com.synaptixfit.domain.port.output.academic.TestSessionRepositoryPort;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.storage.FileStoragePort;
+import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -111,6 +115,7 @@ public class AcademicBeanConfiguration {
     private final FileStoragePort storage;
     private final DomainEventPublisherPort events;
     private final AwardExperienceUseCase awardExperience;
+    private final UserRepositoryPort users;
     private final Clock clock;
     private final ZoneId zone;
 
@@ -123,6 +128,7 @@ public class AcademicBeanConfiguration {
                                      QuestionBankRepositoryPort banks, QuestionAttemptRepositoryPort attempts,
                                      TestSessionRepositoryPort sessions, FileStoragePort storage,
                                      DomainEventPublisherPort events, AwardExperienceUseCase awardExperience,
+                                     UserRepositoryPort users,
                                      Clock clock,
                                      @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
         this.tx = tx;
@@ -143,6 +149,7 @@ public class AcademicBeanConfiguration {
         this.storage = storage;
         this.events = events;
         this.awardExperience = awardExperience;
+        this.users = users;
         this.clock = clock;
         this.zone = ZoneId.of(zone);
     }
@@ -208,7 +215,7 @@ public class AcademicBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     NoteService noteService() {
-        return new NoteService(notes, subjects, materials, aiDocuments, clock);
+        return new NoteService(notes, subjects, materials, aiDocuments, users, clock);
     }
 
     @Bean
@@ -216,9 +223,24 @@ public class AcademicBeanConfiguration {
         return tx.wrap(ListNotesUseCase.class, noteService());
     }
 
+    @Bean(autowireCandidate = false)
+    SharedNoteService sharedNoteService() {
+        return new SharedNoteService(notes, subjects, clock);
+    }
+
     @Bean
     ListSharedNotesUseCase listSharedNotesUseCase() {
-        return tx.wrap(ListSharedNotesUseCase.class, noteService());
+        return tx.wrap(ListSharedNotesUseCase.class, sharedNoteService());
+    }
+
+    @Bean
+    GetSharedNoteUseCase getSharedNoteUseCase() {
+        return tx.wrap(GetSharedNoteUseCase.class, sharedNoteService());
+    }
+
+    @Bean
+    CopySharedNoteUseCase copySharedNoteUseCase() {
+        return tx.wrap(CopySharedNoteUseCase.class, sharedNoteService());
     }
 
     @Bean

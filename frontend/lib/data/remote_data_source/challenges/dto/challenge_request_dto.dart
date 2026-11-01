@@ -59,7 +59,6 @@ abstract class MilestoneRequestDto with _$MilestoneRequestDto {
   const factory MilestoneRequestDto({
     String? id,
     required String title,
-    double? weight,
     String? difficulty,
     String? subjectId,
     String? noteId,
@@ -80,7 +79,6 @@ abstract class MilestoneRequestDto with _$MilestoneRequestDto {
     return MilestoneRequestDto(
       id: draft.id,
       title: draft.title.trim(),
-      weight: draft.weight,
       difficulty: ChallengeApiValues.difficultyToApi(draft.difficulty),
       subjectId: draft.subjectId,
       noteId: draft.noteId,

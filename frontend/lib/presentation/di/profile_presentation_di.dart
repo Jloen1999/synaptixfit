@@ -48,7 +48,11 @@ void registerProfilePresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(
-      () => ProfileBloc(getAccount: getIt(), getSummary: getIt()),
+      () => ProfileBloc(
+        getAccount: getIt(),
+        getSummary: getIt(),
+        getFriendships: getIt(),
+      ),
     )
     ..registerFactory(() => EditAccountBloc(updateAccount: getIt()))
     ..registerFactory(

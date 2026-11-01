@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
+import '../../../widgets/widgets.dart';
 import 'training_labels.dart';
 
 /// Pide un texto (renombrar). Devuelve el texto recortado o `null` si se cancela.
@@ -131,3 +132,103 @@ Future<int?> showWeekdayPicker(
     );
   },
 );
+
+/// Duración (minutos) y esfuerzo (RPE 1-10) de una sesión.
+typedef SessionFigures = ({int minutes, int rpe});
+
+/// Pide la duración y el esfuerzo de una sesión: para terminar una abandonada
+/// con lo registrado, corregir una de otro día o apuntar una pasada. Devuelve
+/// `null` si se cancela.
+Future<SessionFigures?> showSessionFiguresDialog(
+  BuildContext context, {
+  required String confirmLabel,
+  String? subtitle,
+  int initialMinutes = 60,
+  int initialRpe = 6,
+}) => showDialog<SessionFigures>(
+  context: context,
+  builder: (_) => _SessionFiguresDialog(
+    confirmLabel: confirmLabel,
+    subtitle: subtitle,
+    initialMinutes: initialMinutes,
+    initialRpe: initialRpe,
+  ),
+);
+
+class _SessionFiguresDialog extends StatefulWidget {
+  const _SessionFiguresDialog({
+    required this.confirmLabel,
+    required this.subtitle,
+    required this.initialMinutes,
+    required this.initialRpe,
+  });
+
+  final String confirmLabel;
+  final String? subtitle;
+  final int initialMinutes;
+  final int initialRpe;
+
+  @override
+  State<_SessionFiguresDialog> createState() => _SessionFiguresDialogState();
+}
+
+class _SessionFiguresDialogState extends State<_SessionFiguresDialog> {
+  /// Mismos límites que la API (1-240 min); el selector va de 5 en 5.
+  static const _minMinutes = 5;
+  static const _maxMinutes = 240;
+
+  late int _minutes = widget.initialMinutes.clamp(_minMinutes, _maxMinutes);
+  late int _rpe = widget.initialRpe.clamp(1, 10);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final subtitle = widget.subtitle;
+    return AlertDialog(
+      scrollable: true,
+      title: Text(l10n.trainingSessionFiguresTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (subtitle != null && subtitle.isNotEmpty) ...[
+            Text(subtitle, style: context.textStyles.titleSmall),
+            const SizedBox(height: TokensSpacing.s),
+          ],
+          AppStepperField(
+            label: l10n.trainingSessionDurationLabel,
+            value: _minutes,
+            min: _minMinutes,
+            max: _maxMinutes,
+            step: 5,
+            display: l10n.trainingMinutes,
+            onChanged: (v) => setState(() => _minutes = v),
+          ),
+          const SizedBox(height: TokensSpacing.m),
+          ExcludeSemantics(
+            child: Text(
+              l10n.commonEffortTitle,
+              style: context.textStyles.labelLarge,
+            ),
+          ),
+          AppEffortSlider(
+            value: _rpe,
+            onChanged: (v) => setState(() => _rpe = v),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+        FilledButton(
+          autofocus: true,
+          onPressed: () =>
+              Navigator.of(context).pop((minutes: _minutes, rpe: _rpe)),
+          child: Text(widget.confirmLabel),
+        ),
+      ],
+    );
+  }
+}

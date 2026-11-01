@@ -7,6 +7,7 @@ import com.synaptixfit.application.port.input.planner.SuggestWeekPlanUseCase;
 import com.synaptixfit.domain.exception.ExternalServiceException;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.PlanningInbox;
+import com.synaptixfit.domain.model.planner.RoutineRef;
 import com.synaptixfit.domain.model.planner.SuggestedBlock;
 import com.synaptixfit.domain.model.planner.WeekPlanSuggestions;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
@@ -17,7 +18,9 @@ import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Sugerencias de planificación semanal: IA (reglas N1-N10 y H1-H5 en el prompt) con saneado de la
@@ -78,26 +81,45 @@ public class PlanningSuggestionService implements SuggestWeekPlanUseCase {
         int maxStudyBlockMinutes = PlanningInbox.cappedStudyBlockMinutes(command.maxStudyBlockMinutes(),
                 crossRegulation.getCrossRegulation(command.userId(), zone.zone().getId()).state().maxStudyMinutes());
         UsageFocus usage = focus.focusOf(command.userId());
+        List<RoutineRef> active = withDaysOfCurrent(command.userId(),
+                routines.findActive(command.userId(), ACTIVE_ROUTINES));
+        // Un solo objetivo semanal: con rutina en curso, las sesiones que le quedan a su semana actual;
+        // sin ella, las que pide la persona.
+        int routineSessions = active.isEmpty() ? 0 : active.getFirst().pendingDaysInCurrentWeek();
         PlanningInbox inbox = new PlanningInbox(monday,
                 usage.includesAcademic() ? command.studyHours() : 0,
-                usage.includesFitness() ? command.sportSessions() : 0,
+                usage.includesFitness() ? (routineSessions > 0 ? routineSessions : command.sportSessions()) : 0,
                 command.minutesPerSportSession(), maxStudyBlockMinutes,
                 subjects.findActive(command.userId()),
                 deadlines.findAll(command.userId(), new DeadlineRepositoryPort.Query(
                         today.isAfter(weekStart) ? today : weekStart, weekEnd.plus(java.time.Duration.ofDays(7)),
                         null, true)),
-                routines.findActive(command.userId(), ACTIVE_ROUTINES),
+                active,
                 blocks.findOverlapping(command.userId(), weekStart, weekEnd, null));
         try {
             List<SuggestedBlock> proposed = assistant.suggestWeek(inbox, zone);
             List<SuggestedBlock> valid = WeekPlanSuggestions.sanitize(proposed, inbox, zone, now);
             if (!valid.isEmpty()) {
-                return new WeekPlanSuggestions.Suggestion(valid, WeekPlanSuggestions.Source.AI);
+                return new WeekPlanSuggestions.Suggestion(WeekPlanSuggestions.withRoutineDays(valid,
+                        inbox.routines().isEmpty() ? null : inbox.routines().get(0)), WeekPlanSuggestions.Source.AI);
             }
         } catch (ExternalServiceException e) {
             // IA no disponible o sin cuota: se usa el plan heurístico, como en la app antigua.
         }
         return new WeekPlanSuggestions.Suggestion(WeekPlanSuggestions.heuristic(inbox, zone, now),
                 WeekPlanSuggestions.Source.HEURISTIC);
+    }
+
+    /**
+     * La rutina en curso (la primera) con sus días, para proponer sesiones concretas en orden; las demás
+     * siguen sin días.
+     */
+    private List<RoutineRef> withDaysOfCurrent(UUID userId, List<RoutineRef> active) {
+        if (active.isEmpty()) {
+            return active;
+        }
+        List<RoutineRef> result = new ArrayList<>(active);
+        routines.findOwnedWithDays(userId, active.get(0).id()).ifPresent(r -> result.set(0, r));
+        return result;
     }
 }

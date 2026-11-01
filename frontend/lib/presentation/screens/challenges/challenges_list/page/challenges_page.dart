@@ -8,6 +8,7 @@ import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/challenge_status.dart';
 import '../../../../../domain/enums/challenge_tasks_filter.dart';
 import '../../../../../domain/enums/challenge_type.dart';
+import '../../../../../domain/models/challenges/challenge.dart';
 import '../../../../../domain/models/challenges/challenge_query.dart';
 import '../../../../../domain/models/challenges/challenge_summary.dart';
 import '../../../../extensions/context_extensions.dart';
@@ -349,18 +350,62 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
         ),
       ];
     }
+    // Agrupados por cuándo tocan (Hoy · Esta semana · Más adelante · Próximos ·
+    // Vencidos · Completados): se escanea por el día, no por la lista entera.
+    // Es solo presentación: dentro de cada grupo se respeta el orden del servidor.
+    final now = DateTime.now();
+    final groups = <ChallengeWhen, List<Challenge>>{};
+    for (final c in state.challenges) {
+      groups.putIfAbsent(c.whenAt(now), () => []).add(c);
+    }
+    final showHeaders = groups.length > 1;
     return [
-      for (final c in state.challenges)
-        Padding(
-          padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-          child: ChallengeCard(challenge: c, onTap: () => _open(c.id)),
-        ),
+      for (final when in ChallengeWhen.values)
+        if (groups[when] case final items?) ...[
+          if (showHeaders)
+            Padding(
+              padding: const EdgeInsets.only(top: TokensSpacing.s),
+              child: _GroupHeader(when: when, count: items.length),
+            ),
+          for (final c in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+              child: ChallengeCard(challenge: c, onTap: () => _open(c.id)),
+            ),
+        ],
       if (state.loadingMore)
         const Padding(
           padding: EdgeInsets.all(TokensSpacing.m),
           child: AppLoadingView(),
         ),
     ];
+  }
+}
+
+/// Cabecera de un grupo del listado («Esta semana · 3»), anunciada como título.
+class _GroupHeader extends StatelessWidget {
+  const _GroupHeader({required this.when, required this.count});
+
+  final ChallengeWhen when;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    // El aviso, solo para lo que vence hoy: lo vencido ya no urge.
+    final urgent = when == ChallengeWhen.today;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+      child: Semantics(
+        header: true,
+        child: Text(
+          l10n.challengesFilterWithCount(when.title(context), count),
+          style: context.textStyles.titleSmall?.copyWith(
+            color: urgent ? context.palette.warning : null,
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -476,6 +521,8 @@ class _Filters extends StatelessWidget {
   }
 
   int _count(ChallengeStatus s) => switch (s) {
+    ChallengeStatus.upcoming => summary.upcoming,
+    // «Activos» cuenta los abiertos, también los que aún no empiezan.
     ChallengeStatus.active => summary.active,
     ChallengeStatus.completed => summary.completed,
     ChallengeStatus.expired => summary.expired,

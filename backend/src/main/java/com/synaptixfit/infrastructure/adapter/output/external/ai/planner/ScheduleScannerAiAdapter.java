@@ -3,6 +3,7 @@ package com.synaptixfit.infrastructure.adapter.output.external.ai.planner;
 import com.synaptixfit.domain.exception.AiUnavailableException;
 import com.synaptixfit.domain.model.planner.ClassKind;
 import com.synaptixfit.domain.model.planner.ScheduleEntry;
+import com.synaptixfit.domain.model.planner.ScheduleScan;
 import com.synaptixfit.domain.model.planner.SubjectMatcher;
 import com.synaptixfit.domain.port.output.ai.AiAttachment;
 import com.synaptixfit.domain.port.output.ai.GenerativeAiPort;
@@ -37,33 +38,66 @@ public class ScheduleScannerAiAdapter implements ScheduleScannerPort {
     }
 
     @Override
-    public List<ScheduleEntry> extractWeeklyPattern(byte[] content, String mimeType, List<String> subjectNames) {
-        String raw = ai.generateJson(prompt(subjectNames), List.of(new AiAttachment(mimeType, content)), 0.0);
-        return parse(raw, json);
+    public ScheduleScan extractWeeklyPattern(byte[] content, String mimeType, List<String> subjectNames,
+                                             int semester) {
+        String raw = ai.generateJson(prompt(subjectNames, semester), List.of(new AiAttachment(mimeType, content)),
+                0.0);
+        return new ScheduleScan(parse(raw, json), documentSubjects(raw, json));
     }
 
-    static String prompt(List<String> subjects) {
+    /**
+     * Los horarios de las universidades suelen traer varios cursos y semestres, con siglas en las celdas y una
+     * leyenda («IPO : Interacción Persona-Ordenador») y prácticas por grupos («P. MDP-C (Lab. IV)»).
+     */
+    static String prompt(List<String> subjects, int semester) {
         String list = subjects.isEmpty() ? "(el usuario no tiene asignaturas configuradas)" : String.join(", ", subjects);
+        String term = semester == 2 ? "SEGUNDO" : "PRIMER";
         return """
-                Eres un analizador de datos determinista. Extrae el patrón semanal de clases del documento proporcionado y devuelve estrictamente un objeto JSON con la lista en "horarios".
-                REGLA 1: Solo busca horarios para estas asignaturas: %s. Ignora el resto.
-                REGLA 2: NUNCA inventes fechas absolutas.
-                REGLA 3: dia_semana es un entero (1=Lunes, 5=Viernes). Horas en formato HH:MM (24h).
-                REGLA 4: Si un dato no aparece en el documento, usa cadena vacía; nunca lo inventes.
+                Eres un analizador de datos determinista. Extrae el patrón semanal de clases del documento proporcionado y devuelve estrictamente un objeto JSON.
+                REGLA 1: Solo busca horarios para estas asignaturas del usuario: %s. Ignora el resto.
+                REGLA 2: Si el documento trae varios semestres, usa solo el %s semestre.
+                REGLA 3: Las celdas pueden usar siglas: relaciónalas con su asignatura mediante la leyenda del documento (p. ej. «IPO : Interacción Persona-Ordenador»). Una asignatura del usuario coincide aunque el nombre varíe un poco («Fundamentos de la Programación» y «Programación I»).
+                REGLA 4: Las prácticas suelen ir por grupos («P. MDP-C (Lab. IV)» = práctica de MDP, grupo C, en Lab. IV). Pon el grupo en "grupo" y el aula en "aula".
+                REGLA 5: NUNCA inventes fechas absolutas. dia_semana es un entero (1=Lunes, 5=Viernes). Horas en formato HH:MM (24h).
+                REGLA 6: Si un dato no aparece en el documento, usa cadena vacía; nunca lo inventes.
+                REGLA 7: En "asignaturas_documento" pon TODAS las asignaturas que aparecen en el documento (también las que no son del usuario), como «SIGLAS: Nombre (curso, semestre)».
                 Devuelve solo JSON, sin markdown. Formato exigido:
                 {
                   "horarios": [
                     {
                       "asignatura_codigo": "SIGLAS",
-                      "asignatura_nombre": "Nombre de la asignatura encontrada",
+                      "asignatura_nombre": "Nombre de la asignatura del usuario",
                       "tipo": "Teoría | Práctica",
+                      "grupo": "",
                       "dia_semana": 1,
                       "hora_inicio": "17:00",
                       "hora_fin": "19:00",
                       "aula": "Aula X"
                     }
-                  ]
-                }""".formatted(list);
+                  ],
+                  "asignaturas_documento": ["IPO: Interacción Persona-Ordenador (2.º curso, 1.er semestre)"]
+                }""".formatted(list, term);
+    }
+
+    /** Asignaturas que la IA vio en el documento (como mucho 60, sin repetir). */
+    static List<String> documentSubjects(String raw, JsonMapper json) {
+        try {
+            JsonNode root = json.readTree(raw == null ? "" : raw.strip());
+            JsonNode list = root.path("asignaturas_documento");
+            if (!list.isArray()) {
+                return List.of();
+            }
+            java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
+            for (JsonNode n : list) {
+                String v = n.asString("").strip();
+                if (!v.isEmpty() && out.size() < 60) {
+                    out.add(v.length() > 120 ? v.substring(0, 120) : v);
+                }
+            }
+            return List.copyOf(out);
+        } catch (JacksonException e) {
+            return List.of();
+        }
     }
 
     /** Sanea la respuesta: solo entradas con día 1-7, horas HH:MM y nombre. */
@@ -96,8 +130,11 @@ public class ScheduleScannerAiAdapter implements ScheduleScannerPort {
                 continue;
             }
             String room = node.path("aula").asString("").strip();
+            String group = node.path("grupo").asString("").strip();
+            // El grupo de prácticas se ve junto al aula (el usuario sabe cuál es el suyo).
+            String place = group.isEmpty() ? room : (room.isEmpty() ? "Grupo " + group : room + " · grupo " + group);
             entries.add(new ScheduleEntry(node.path("asignatura_codigo").asString("").strip(), name,
-                    kind(node.path("tipo").asString("")), day.asInt(), from, to, room.isEmpty() ? null : room));
+                    kind(node.path("tipo").asString("")), day.asInt(), from, to, place.isEmpty() ? null : place));
         }
         return entries;
     }

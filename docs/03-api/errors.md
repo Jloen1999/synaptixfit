@@ -104,6 +104,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `POST_NOT_FOUND` | 404 | La publicación no existe o no es visible | Esta publicación ya no está disponible. | Activo |
 | `POST_FORBIDDEN` | 403 | Editar o borrar una publicación ajena | Solo el autor puede modificar esta publicación. | Activo |
 | `POST_ALREADY_SHARED` | 409 | Compartir otra vez la misma sesión en el muro | Ya lo habías compartido en el muro. | Activo |
+| `POST_TYPE_NOT_ALLOWED` | 422 | Publicar a mano una publicación de tipo `ROUTINE` o `CHALLENGE` (no enlazaban ninguna rutina ni reto; las antiguas se siguen mostrando) | Ese tipo de publicación ya no se puede crear. | Activo |
 | `COMMENT_NOT_FOUND` | 404 | El comentario no existe, está borrado o no es visible | Este comentario ya no está disponible. | Activo |
 | `COMMENT_FORBIDDEN` | 403 | Editar o borrar un comentario ajeno | Solo el autor puede modificar este comentario. | Activo |
 | `FRIENDSHIP_NOT_FOUND` | 404 | La relación no existe o no es tuya | No se encontró la solicitud o amistad. | Activo |
@@ -141,14 +142,18 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `CHALLENGE_NOT_FOUND` | 404 | Reto inexistente, ajeno o no visible | No encontramos este reto. | Activo |
 | `MILESTONE_NOT_FOUND` | 404 | Tarea inexistente en ese reto | No encontramos esta tarea. | Activo |
 | `CHALLENGE_SUBJECT_NOT_FOUND` | 404 | Asignatura inexistente o ajena | La asignatura seleccionada no existe. | Activo |
-| `CHALLENGE_LINK_NOT_FOUND` | 404 | Entrega, examen o bloque vinculado inexistente o ajeno | El examen, entrega o bloque vinculado no existe. | Activo |
+| `CHALLENGE_LINK_NOT_FOUND` | 404 | Entrega o examen vinculado inexistente o ajeno | El examen o la entrega vinculados no existen. | Activo |
 | `MILESTONE_ATTACHMENT_NOT_FOUND` | 404 | Apunte o archivo adjunto inexistente o ajeno | El apunte o archivo adjunto no existe. | Activo |
 | `CHALLENGE_TYPE_OUTSIDE_FOCUS` | 422 | El ámbito del reto (académico o físico) no está en el enfoque de uso de la persona | Ese tipo de reto no está activo en tu cuenta. Cámbialo en tu perfil si quieres usarlo. | Activo |
 | `CHALLENGE_INVALID_DATES` | 400 | `endAt` no es posterior a `startAt` | La fecha de fin debe ser posterior a la de inicio. | Activo |
-| `CHALLENGE_EXPIRED` | 422 | Completar o sumar progreso a un reto cuya fecha de fin ya pasó | Este reto ya terminó: no se puede seguir avanzando. | Activo |
+| `CHALLENGE_EXPIRED` | 422 | Completar, desmarcar, sumar progreso o editar las tareas de un reto cuya fecha de fin ya pasó (aunque esté completado) | Este reto ya terminó: no se puede seguir avanzando. | Activo |
+| `CHALLENGE_NOT_STARTED` | 422 | Completar, desmarcar o registrar progreso antes de la fecha de inicio (ADR 0028) | Este reto aún no ha empezado: podrás avanzar desde su fecha de inicio. | Activo |
+| `CHALLENGE_LINKED` | 422 | Completar, desmarcar o registrar progreso a mano en un reto sin tareas vinculado a una entrega o examen: lo completa esa entrega (ADR 0028) | Este reto se completa con su entrega o examen: márcalo como hecho en el planificador. | Activo |
+| `MILESTONE_LINKED` | 422 | Marcar, desmarcar o registrar progreso a mano en una tarea vinculada a una entrega/examen o con bloques del calendario asignados (ADR 0028) | Esta tarea avanza con su entrega o sus bloques del calendario: márcalos como hechos en el planificador. | Activo |
+| `CHALLENGE_LINK_OUTSIDE_PERIOD` | 422 | La entrega o examen vinculado (al reto o a una tarea) vence fuera del periodo del reto, por días (ADR 0028) | La entrega o el examen vence fuera de las fechas del reto. Amplía el reto o elige otro. | Activo |
 | `MILESTONE_ATTACHMENT_CONFLICT` | 400 | Apunte y archivo a la vez | Una tarea solo puede tener un apunte o un archivo. | Activo |
 | `CHALLENGE_TOO_MANY_MILESTONES` | 422 | Más de 12 tareas | Un reto puede tener como máximo 12 tareas. | Activo |
-| `MILESTONE_WEIGHTS_INVALID` | 422 | Pesos que no suman 100 o incompletos | Los pesos de las tareas deben sumar 100 %. | Activo |
+| `MILESTONE_WEIGHTS_INVALID` | 422 | Pesos que no suman 100 o incompletos | Los pesos de las tareas deben sumar 100 %. | Retirado (ADR 0028: el peso lo deriva el servidor de la dificultad; `weight` se ignora) |
 | `MILESTONE_DEPENDENCY_INVALID` | 422 | Dependencia inexistente, propia, duplicada, cíclica o X_OF_Y imposible | Las dependencias entre tareas no son válidas. | Activo |
 | `MILESTONE_LOCKED` | 422 | Tarea bloqueada por sus dependencias | Completa antes las tareas de las que depende. | Activo |
 | `MILESTONE_ORDER_INVALID` | 422 | Orden que no incluye todas las tareas una vez | El nuevo orden no es válido. | Activo |
@@ -168,12 +173,14 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `BLOCK_IN_FUTURE` | 422 | Marcar como hecho un bloque que aún no ha empezado | Este bloque aún no ha empezado: márcalo cuando lo hagas. | Activo |
 | `BLOCK_NO_FREE_SLOT` | 409 | Reprogramar sin hueco libre de su duración (8:00-22:00, próximos 7 días) | No hay un hueco libre en los próximos días. Muévelo a mano. | Activo |
 | `BLOCK_COMPLETED_LOCKED` | 422 | Cambiar horario o tipo de un bloque completado | Desmarca el bloque como completado antes de cambiarlo. | Activo |
+| `BLOCK_ROUTINE_LINKED` | 409 | Marcar o desmarcar a mano un bloque de deporte enlazado a un día de rutina (sigue a su sesión) | Este bloque sigue a su sesión de la rutina: entrénalo o apúntalo desde la rutina. | Activo |
 | `BLOCK_INVALID_TIME_RANGE` | 400 | Fin ≤ inicio o menos de 30 minutos | El bloque debe durar al menos 30 minutos. | Activo |
+| `BLOCK_OUTSIDE_CHALLENGE_PERIOD` | 422 | Crear, editar o mover un bloque de un reto (o de una tarea de reto) fuera del periodo de ese reto, por días (ADR 0028) | El bloque queda fuera de las fechas de su reto. Muévelo o amplía el reto. | Activo |
 | `DEADLINE_NOT_FOUND` | 404 | La entrega no existe o es de otro usuario | No encontramos esa entrega o examen. | Activo |
 | `PLAN_NOT_FOUND` | 404 | El plan no existe o es de otro usuario | No encontramos ese plan. | Activo |
 | `PLANNER_SUBJECT_NOT_FOUND` | 404 | Asignatura inexistente o ajena | No encontramos esa asignatura. | Activo |
 | `PLANNER_ROUTINE_NOT_FOUND` | 404 | Rutina, semana o día inexistente o ajeno | No encontramos esa rutina. | Activo |
-| `PLANNER_CHALLENGE_NOT_FOUND` | 404 | Reto o tarea vinculados inexistentes o ajenos | No encontramos ese reto. | Activo |
+| `PLANNER_CHALLENGE_NOT_FOUND` | 404 | Reto o tarea vinculados inexistentes o ajenos, o tarea que no es del reto indicado | No encontramos ese reto. | Activo |
 | `PLANNER_ROUTINE_EMPTY` | 422 | La rutina no tiene días | La rutina no tiene días que añadir al calendario. | Activo |
 | `PLANNER_RANGE_TOO_LARGE` | 400 | Rango de fechas inválido o demasiado grande | El rango de fechas no es válido. | Activo |
 | `PLANNER_ICS_URL_MISSING` | 422 | Sin URL ICS en la petición ni en la asignatura (o calendario general sin URL) | Añade la URL del calendario de la asignatura. | Activo |
@@ -193,7 +200,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `SUBJECT_NOT_FOUND` | 404 | La asignatura no existe o no es tuya | No encontramos esa asignatura. | Activo |
 | `SUBJECT_CATALOG_NOT_FOUND` | 404 | La asignatura del catálogo no existe | Esa asignatura del plan de estudios no existe. | Activo |
 | `SUBJECT_SEMESTER_NOT_FOUND` | 404 | La asignatura no tiene semestre asignado | Esta asignatura no tiene curso ni semestre asignados. | Activo |
-| `NOTE_NOT_FOUND` | 404 | El apunte no existe o no es tuyo | No encontramos ese apunte. | Activo |
+| `NOTE_NOT_FOUND` | 404 | El apunte no existe, no es tuyo o (en `/notes/shared/{id}` y su copia) ya no puedes verlo | No encontramos ese apunte. | Activo |
 | `FILE_NOT_FOUND` | 404 | El archivo no existe o no es tuyo | No encontramos ese archivo. | Activo |
 | `FILE_TYPE_NOT_ALLOWED` | 400 | Tipo MIME no permitido | Ese tipo de archivo no está permitido. | Activo |
 | `FILE_TOO_LARGE` | 400 | Supera el máximo (25 MB en archivos de asignatura, 15 MB en el plan docente) | El archivo es demasiado grande. Prueba con uno más pequeño. | Activo |
@@ -228,11 +235,15 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `ROUTINE_WEEK_LIMIT` | 422 | Sin semanas, más de 52 o borrar la última | Una rutina debe tener entre 1 y 52 semanas. | Activo |
 | `ROUTINE_HAS_EMPTY_DAYS` | 422 | Completar una rutina con días vacíos | Añade ejercicios a todos los días antes de completar la rutina. | Activo |
 | `ROUTINE_REORDER_MISMATCH` | 400 | El orden no coincide con los ejercicios del día | El nuevo orden no coincide con los ejercicios del día. | Activo |
+| `ROUTINE_DAY_NOT_SKIPPABLE` | 409 | Saltar un día ya completado | Ese día ya está hecho: no se puede saltar. | Activo |
 | `SESSION_NOT_FOUND` | 404 | La sesión no existe o es ajena | No encontramos esa sesión. | Activo |
 | `SESSION_SET_NOT_FOUND` | 404 | La serie no existe en la sesión | Esa serie no existe. | Activo |
 | `SESSION_ALREADY_COMPLETED` | 409 | Modificar una sesión finalizada | Esta sesión ya está finalizada. | Activo |
-| `SESSION_NOT_COMPLETED` | 409 | Desmarcar una sesión no finalizada | Esta sesión no está finalizada. | Activo |
+| `SESSION_NOT_COMPLETED` | 409 | Desmarcar o corregir una sesión no finalizada | Esta sesión no está finalizada. | Activo |
 | `SESSION_DAY_MISMATCH` | 400 | Día sin rutina o de otra rutina | Ese día no pertenece a la rutina. | Activo |
+| `SESSION_STALE_OPEN` | 409 | Empezar un día que tiene una sesión abandonada (abierta más de 6 h) sin cerrar | Tienes una sesión de ese día sin terminar. Termínala con lo registrado o descártala antes. | Activo |
+| `SESSION_UNMARK_EXPIRED` | 422 | Desmarcar una sesión terminada otro día (se corrige o se elimina) | Solo se desmarca el mismo día. Puedes corregirla o eliminarla. | Activo |
+| `SESSION_PAST_DATE_INVALID` | 422 | Registrar una sesión pasada con fecha futura o de hace más de 7 días | Elige hoy o uno de los 7 días anteriores. | Activo |
 | `TRAINING_PROFILE_REQUIRED` | 422 | Generar rutina sin perfil de bienestar | Completa tu perfil de bienestar para generar una rutina. | Activo |
 | `TRAINING_NO_COMPATIBLE_EXERCISES` | 422 | Ningún ejercicio encaja con equipamiento y nivel | No hay ejercicios compatibles con tu equipamiento y nivel. | Activo |
 | `TRAINING_PLAN_NOT_FOUND` | 404 | No hay plan para esa semana | No tienes plan para esa semana. | Activo |

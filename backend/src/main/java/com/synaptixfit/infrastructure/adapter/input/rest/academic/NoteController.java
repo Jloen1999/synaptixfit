@@ -1,17 +1,21 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.academic;
 
+import com.synaptixfit.application.port.input.academic.CopySharedNoteUseCase;
 import com.synaptixfit.application.port.input.academic.CreateNoteUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteNoteUseCase;
 import com.synaptixfit.application.port.input.academic.GetNoteUseCase;
+import com.synaptixfit.application.port.input.academic.GetSharedNoteUseCase;
 import com.synaptixfit.application.port.input.academic.ListNotesUseCase;
 import com.synaptixfit.application.port.input.academic.ListSharedNotesUseCase;
 import com.synaptixfit.application.port.input.academic.UpdateNoteUseCase;
+import com.synaptixfit.domain.model.shared.AudienceScope;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.CreateNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.NoteResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.ScannedNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.SharedNoteResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.SharedNoteSummaryResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.UpdateNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
@@ -42,9 +46,14 @@ public class NoteController {
     private final CreateNoteUseCase createNote;
     private final UpdateNoteUseCase updateNote;
     private final DeleteNoteUseCase deleteNote;
+    private final GetSharedNoteUseCase getShared;
+    private final CopySharedNoteUseCase copyShared;
 
     public NoteController(ListNotesUseCase listNotes, ListSharedNotesUseCase listShared, GetNoteUseCase getNote,
-                          CreateNoteUseCase createNote, UpdateNoteUseCase updateNote, DeleteNoteUseCase deleteNote) {
+                          CreateNoteUseCase createNote, UpdateNoteUseCase updateNote, DeleteNoteUseCase deleteNote,
+                          GetSharedNoteUseCase getShared, CopySharedNoteUseCase copyShared) {
+        this.getShared = getShared;
+        this.copyShared = copyShared;
         this.listNotes = listNotes;
         this.listShared = listShared;
         this.getNote = getNote;
@@ -64,12 +73,32 @@ public class NoteController {
                 unassignedOnly, new PageRequest(page, size))), NoteResponse::from);
     }
 
+    /**
+     * Apuntes de otros usuarios que puedo leer. {@code scope}: {@code FRIENDS} (de mis amigos),
+     * {@code PUBLIC} (comunidad: lo que ve cualquiera) o {@code ALL}. Con mi propio {@code authorId},
+     * mis apuntes que otros pueden ver.
+     */
     @GetMapping("/shared")
-    public PageResponse<SharedNoteResponse> shared(@CurrentUserId UUID userId,
-                                                   @RequestParam(defaultValue = "0") int page,
-                                                   @RequestParam(defaultValue = "20") int size) {
-        return PageResponse.from(listShared.listSharedNotes(userId, new PageRequest(page, size)),
-                SharedNoteResponse::from);
+    public PageResponse<SharedNoteSummaryResponse> shared(@CurrentUserId UUID userId,
+                                                          @RequestParam(defaultValue = "ALL") AudienceScope scope,
+                                                          @RequestParam(required = false) UUID authorId,
+                                                          @RequestParam(required = false) UUID catalogSubjectId,
+                                                          @RequestParam(defaultValue = "0") int page,
+                                                          @RequestParam(defaultValue = "20") int size) {
+        return PageResponse.from(listShared.listSharedNotes(new ListSharedNotesUseCase.Query(userId, scope, authorId,
+                catalogSubjectId, new PageRequest(page, size))), s -> SharedNoteSummaryResponse.from(s, userId));
+    }
+
+    @GetMapping("/shared/{noteId}")
+    public SharedNoteResponse sharedNote(@CurrentUserId UUID userId, @PathVariable UUID noteId) {
+        return SharedNoteResponse.from(getShared.getSharedNote(userId, noteId), userId);
+    }
+
+    /** Guarda una copia privada del apunte en mis apuntes (en mi asignatura equivalente si la tengo). */
+    @PostMapping("/shared/{noteId}/copy")
+    @ResponseStatus(HttpStatus.CREATED)
+    public NoteResponse copyShared(@CurrentUserId UUID userId, @PathVariable UUID noteId) {
+        return NoteResponse.from(copyShared.copySharedNote(userId, noteId));
     }
 
     @GetMapping("/{noteId}")

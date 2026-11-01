@@ -1,21 +1,17 @@
 package com.synaptixfit.domain.model.challenge;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
- * Efectos de una operación sobre un reto que la aplicación debe propagar: experiencia neta
- * (positiva o negativa), vínculos con exámenes/entregas cuyo estado ha cambiado, tareas
- * desbloqueadas y transición del reto a completado.
+ * Efectos de una operación sobre un reto que la aplicación debe propagar: experiencia neta (positiva o
+ * negativa), tareas desbloqueadas y transición del reto a completado. Los vínculos con entregas y
+ * exámenes ya no se propagan: la entrega es la fuente de verdad y el reto solo la sigue (ADR 0028).
  */
 public final class ChallengeChanges {
 
     private int xpDelta;
-    private final Map<UUID, LinkCompletionChange> linkChanges = new LinkedHashMap<>();
     private final LinkedHashSet<UUID> unlockedMilestones = new LinkedHashSet<>();
     private boolean challengeCompleted;
     private boolean challengeUncompleted;
@@ -26,12 +22,6 @@ public final class ChallengeChanges {
 
     void revokeXp(int amount) {
         xpDelta -= amount;
-    }
-
-    void linkChanged(ChallengeLink link, boolean completed) {
-        if (link != null && link.type().isDeadline()) {
-            linkChanges.put(link.entityId(), new LinkCompletionChange(link, completed));
-        }
     }
 
     void unlocked(UUID milestoneId) {
@@ -51,7 +41,6 @@ public final class ChallengeChanges {
     /** Une los efectos de otra operación sobre el mismo reto. */
     public ChallengeChanges merge(ChallengeChanges other) {
         xpDelta += other.xpDelta;
-        linkChanges.putAll(other.linkChanges);
         unlockedMilestones.addAll(other.unlockedMilestones);
         if (other.challengeCompleted || other.challengeUncompleted) {
             completedTransition(other.challengeCompleted);
@@ -59,14 +48,14 @@ public final class ChallengeChanges {
         return this;
     }
 
+    /** ¿Ha cambiado algo que haya que guardar o propagar? */
+    public boolean isEmpty() {
+        return xpDelta == 0 && unlockedMilestones.isEmpty() && !challengeCompleted && !challengeUncompleted;
+    }
+
     /** Experiencia neta a sumar (positiva) o restar (negativa). */
     public int xpDelta() {
         return xpDelta;
-    }
-
-    /** Vínculos con exámenes/entregas cuyo estado ha cambiado (uno por entidad, el último estado). */
-    public List<LinkCompletionChange> linkChanges() {
-        return new ArrayList<>(linkChanges.values());
     }
 
     public List<UUID> unlockedMilestoneIds() {

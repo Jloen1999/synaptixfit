@@ -102,5 +102,15 @@
   "authResetDoneTitle": "Password changed",
   "authResetDoneSubtitle": "We’ve signed you out on all your devices.",
   "authResetExpiredTitle": "Link expired",
-  "authResetExpiredSubtitle": "Request another one and use the link in the latest email."
+  "authResetExpiredSubtitle": "Request another one and use the link in the latest email.",
+  "commonLoadingMore": "Loading more",
+  "commonDateDue": "Due",
+  "commonDateOverdue": "Was due",
+  "commonDateToday": "Today",
+  "commonDateTomorrow": "Tomorrow",
+  "commonDueToday": "Due today",
+  "commonDueTomorrow": "Due tomorrow",
+  "commonDueIn": "{count, plural, =1{Due in 1 day} other{Due in {count} days}}",
+  "commonDueOn": "Due {date}",
+  "commonOverdueOn": "Was due {date}"
 }

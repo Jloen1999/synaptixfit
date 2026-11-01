@@ -50,8 +50,17 @@ class PlannerAiAdaptersTest {
         assertThat(ScheduleScannerAiAdapter.parse("{\"horarios\": []}", JSON)).isEmpty();
         assertThatThrownBy(() -> ScheduleScannerAiAdapter.parse("no es json", JSON))
                 .isInstanceOf(AiUnavailableException.class);
-        assertThat(ScheduleScannerAiAdapter.prompt(List.of("Álgebra", "Física")))
-                .contains("Solo busca horarios para estas asignaturas: Álgebra, Física");
+        assertThat(ScheduleScannerAiAdapter.prompt(List.of("Álgebra", "Física"), 2))
+                .contains("Solo busca horarios para estas asignaturas del usuario: Álgebra, Física")
+                .contains("usa solo el SEGUNDO semestre");
+        // El grupo de prácticas se ve junto al aula; la IA también cuenta qué asignaturas trae el documento.
+        String grouped = """
+                {"horarios": [{"asignatura_nombre": "Programación", "tipo": "Práctica", "grupo": "C",
+                  "dia_semana": 1, "hora_inicio": "10:00", "hora_fin": "12:00", "aula": "Lab. IV"}],
+                 "asignaturas_documento": ["IPO: Interacción Persona-Ordenador (2.º curso, 1.er semestre)", ""]}""";
+        assertThat(ScheduleScannerAiAdapter.parse(grouped, JSON).getFirst().room()).isEqualTo("Lab. IV · grupo C");
+        assertThat(ScheduleScannerAiAdapter.documentSubjects(grouped, JSON))
+                .containsExactly("IPO: Interacción Persona-Ordenador (2.º curso, 1.er semestre)");
     }
 
     @Test

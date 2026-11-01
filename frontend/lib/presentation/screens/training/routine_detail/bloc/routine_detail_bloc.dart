@@ -20,11 +20,16 @@ import '../../../../../domain/use_cases/training/delete_routine_use_case.dart';
 import '../../../../../domain/use_cases/training/delete_routine_week_use_case.dart';
 import '../../../../../domain/use_cases/training/duplicate_routine_use_case.dart';
 import '../../../../../domain/use_cases/training/get_body_weight_use_case.dart';
+import '../../../../../domain/use_cases/training/get_my_routines_use_case.dart';
 import '../../../../../domain/use_cases/training/get_routine_use_case.dart';
 import '../../../../../domain/use_cases/training/remove_routine_exercise_use_case.dart';
 import '../../../../../domain/use_cases/training/rename_routine_day_use_case.dart';
+import '../../../../../domain/use_cases/training/replace_routine_exercise_use_case.dart';
 import '../../../../../domain/use_cases/training/reorder_routine_exercises_use_case.dart';
+import '../../../../../domain/use_cases/training/restart_routine_use_case.dart';
+import '../../../../../domain/use_cases/training/skip_routine_day_use_case.dart';
 import '../../../../../domain/use_cases/training/start_session_use_case.dart';
+import '../../../../../domain/use_cases/training/unskip_routine_day_use_case.dart';
 import '../../../../../domain/use_cases/training/update_routine_exercise_use_case.dart';
 import '../../../../../domain/use_cases/training/update_routine_use_case.dart';
 import '../../../../../domain/use_cases/training/update_routine_week_use_case.dart';
@@ -56,6 +61,11 @@ class RoutineDetailUseCases {
     required this.updateExercise,
     required this.removeExercise,
     required this.startSession,
+    required this.getMyRoutines,
+    required this.skipDay,
+    required this.unskipDay,
+    required this.restartRoutine,
+    required this.replaceExercise,
   });
 
   final GetRoutineUseCaseContract getRoutine;
@@ -76,6 +86,11 @@ class RoutineDetailUseCases {
   final UpdateRoutineExerciseUseCaseContract updateExercise;
   final RemoveRoutineExerciseUseCaseContract removeExercise;
   final StartSessionUseCaseContract startSession;
+  final GetMyRoutinesUseCaseContract getMyRoutines;
+  final SkipRoutineDayUseCaseContract skipDay;
+  final UnskipRoutineDayUseCaseContract unskipDay;
+  final RestartRoutineUseCaseContract restartRoutine;
+  final ReplaceRoutineExerciseUseCaseContract replaceExercise;
 }
 
 /// Detalle de rutina con edición en sitio (cada cambio se guarda en la API y
@@ -118,16 +133,21 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
       ),
     );
     on<RoutineDetailExerciseRemoved>(
-      (e, emit) =>
-          _mutate(emit, (id) => _uc.removeExercise(id, e.plannedExerciseId)),
-    );
-    on<RoutineDetailExerciseMoved>(_onMoved);
-    on<RoutineDetailExerciseUpdated>(
       (e, emit) => _mutate(
         emit,
-        (id) => _uc.updateExercise(id, e.plannedExerciseId, e.parameters),
+        (id) => _uc.removeExercise(id, e.plannedExerciseId),
+        message: TrainingMessage.exerciseRemoved,
       ),
     );
+    on<RoutineDetailExerciseReplaced>(
+      (e, emit) => _mutate(
+        emit,
+        (id) => _uc.replaceExercise(id, e.plannedExerciseId, e.exerciseId),
+        message: TrainingMessage.exerciseReplaced,
+      ),
+    );
+    on<RoutineDetailExerciseMoved>(_onMoved);
+    on<RoutineDetailExerciseUpdated>(_onExerciseUpdated);
     on<RoutineDetailStatusChanged>(
       (e, emit) => _mutate(emit, (id) => _uc.changeStatus(id, e.status)),
     );
@@ -148,6 +168,34 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
     on<RoutineDetailDeleted>(_onDeleted);
     on<RoutineDetailCloned>(_onCloned);
     on<RoutineDetailSessionStarted>(_onSessionStarted);
+    on<RoutineDetailDaySkipped>(
+      (e, emit) => _mutate(
+        emit,
+        (id) => _uc.skipDay(id, e.dayId),
+        message: TrainingMessage.daySkipped,
+      ),
+    );
+    on<RoutineDetailDayUnskipped>(
+      (e, emit) => _mutate(
+        emit,
+        (id) => _uc.unskipDay(id, e.dayId),
+        message: TrainingMessage.dayUnskipped,
+      ),
+    );
+    on<RoutineDetailActivated>(
+      (e, emit) => _mutate(
+        emit,
+        (id) => _uc.changeStatus(id, RoutineStatus.active),
+        message: TrainingMessage.routineStarted,
+      ),
+    );
+    on<RoutineDetailRestarted>(
+      (e, emit) => _mutate(
+        emit,
+        (id) => _uc.restartRoutine(id),
+        message: TrainingMessage.routineRestarted,
+      ),
+    );
   }
 
   final RoutineDetailUseCases _uc;
@@ -164,14 +212,20 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
     );
     final routineFuture = _uc.getRoutine(event.routineId);
     final weightFuture = _uc.getBodyWeight();
+    // Para avisar de qué rutina se pausará al empezar esta (es un extra).
+    final activeFuture = _uc.getMyRoutines(status: RoutineStatus.active, size: 5);
     final result = await routineFuture;
     final weight = (await weightFuture).valueOrNull;
+    final otherActive = (await activeFuture).valueOrNull?.items
+        .where((r) => r.id != event.routineId)
+        .firstOrNull;
     emit(
       result.fold(
         (routine) => state.copyWith(
           status: RoutineDetailStatus.ready,
           routine: routine,
           bodyWeightKg: weight,
+          otherActiveRoutineName: otherActive?.name,
         ),
         (error) => state.copyWith(
           status: RoutineDetailStatus.failure,
@@ -248,8 +302,57 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
 
   int _reorderVersion = 0;
 
-  /// Termina cuando se ha enviado el último reordenado pendiente; las demás
-  /// ediciones y la recarga esperan a que acabe para no pisarse.
+  /// Última edición en línea de cada ejercicio y cuántas faltan por guardar.
+  final _editVersions = <String, int>{};
+  int _pendingEdits = 0;
+
+  /// Edición en línea: optimista y en la misma cola que los reordenados (cada
+  /// envío espera al anterior). Solo la respuesta de la última edición de un
+  /// ejercicio cuenta, y la rutina del servidor solo se adopta cuando ya no
+  /// queda ninguna pendiente (si no, borraría lo que aún se está guardando).
+  Future<void> _onExerciseUpdated(
+    RoutineDetailExerciseUpdated event,
+    Emitter<RoutineDetailState> emit,
+  ) async {
+    final routine = state.routine;
+    final routineId = state.routineId;
+    if (routine == null || routineId == null || !routine.owned) return;
+    final id = event.plannedExerciseId;
+    final version = (_editVersions[id] ?? 0) + 1;
+    _editVersions[id] = version;
+    _pendingEdits++;
+    emit(
+      state.copyWith(
+        saving: true,
+        routine: routine.withExerciseParameters(id, event.parameters),
+      ),
+    );
+    final previous = _reorderQueue;
+    final done = Completer<void>();
+    _reorderQueue = done.future;
+    await previous;
+    final result = await _uc.updateExercise(routineId, id, event.parameters);
+    done.complete();
+    _pendingEdits--;
+    final latest = _editVersions[id] == version;
+    switch (result) {
+      case Success(value: final saved):
+        emit(
+          state.copyWith(
+            saving: _pendingEdits > 0,
+            routine: _pendingEdits == 0 && latest ? saved : state.routine,
+          ),
+        );
+      case Failure(:final error):
+        emit(state.copyWith(saving: _pendingEdits > 0));
+        _effect(emit, TrainingEffect.error(error));
+        // No se sabe qué quedó guardado: se pide la rutina al servidor.
+        add(const RoutineDetailEvent.refreshed());
+    }
+  }
+
+  /// Termina cuando se ha enviado el último reordenado o edición en línea
+  /// pendiente; las demás ediciones y la recarga esperan para no pisarse.
   Future<void> _reorderQueue = Future.value();
 
   Future<void> _onDuplicated(

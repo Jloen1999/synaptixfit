@@ -9,7 +9,13 @@ import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/recommendation.dart';
 import 'package:synaptixfit/domain/models/training/routine.dart';
 import 'package:synaptixfit/domain/models/training/training_page.dart';
+import 'package:synaptixfit/domain/models/training/session.dart';
 import 'package:synaptixfit/domain/use_cases/training/apply_recommendation_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/cancel_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/finish_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_open_sessions_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/restart_routine_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/skip_routine_day_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/discard_recommendation_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_my_routines_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_pending_day_use_case.dart';
@@ -37,6 +43,16 @@ class _MockDiscard extends Mock
 
 class _MockStart extends Mock implements StartSessionUseCaseContract {}
 
+class _MockOpen extends Mock implements GetOpenSessionsUseCaseContract {}
+
+class _MockSkip extends Mock implements SkipRoutineDayUseCaseContract {}
+
+class _MockFinish extends Mock implements FinishSessionUseCaseContract {}
+
+class _MockCancel extends Mock implements CancelSessionUseCaseContract {}
+
+class _MockRestart extends Mock implements RestartRoutineUseCaseContract {}
+
 void main() {
   late _MockPending pending;
   late _MockRoutines routines;
@@ -45,6 +61,8 @@ void main() {
   late _MockApply apply;
   late _MockDiscard discard;
   late _MockStart start;
+  late _MockOpen open;
+  late _MockSkip skip;
   late FakeDataChanges changes;
 
   const pendingDay = PendingDay(
@@ -82,7 +100,10 @@ void main() {
     apply = _MockApply();
     discard = _MockDiscard();
     start = _MockStart();
+    open = _MockOpen();
+    skip = _MockSkip();
     changes = FakeDataChanges();
+    when(() => open()).thenAnswer((_) async => const Success(<OpenSession>[]));
     when(() => pending()).thenAnswer((_) async => const Success(pendingDay));
     when(() => routines(size: any(named: 'size'))).thenAnswer(
       (_) async => const Success(
@@ -106,6 +127,11 @@ void main() {
     discardRecommendation: discard,
     startSession: start,
     watchChanges: changes.useCase,
+    getOpenSessions: open,
+    skipDay: skip,
+    finishSession: _MockFinish(),
+    discardSession: _MockCancel(),
+    restartRoutine: _MockRestart(),
   );
 
   const ready = TrainingHomeState(
@@ -173,6 +199,45 @@ void main() {
       ready.copyWith(effect: const TrainingEffect.openSession('s1')),
       ready,
     ],
+  );
+
+  blocTest<TrainingHomeBloc, TrainingHomeState>(
+    'solo muestra las sesiones abandonadas para cerrarlas',
+    setUp: () => when(() => open()).thenAnswer(
+      (_) async => Success([
+        OpenSession(session: TrainingFixtures.session(), stale: true),
+        OpenSession(
+          session: TrainingFixtures.session().copyWith(id: 's2'),
+          stale: false,
+        ),
+      ]),
+    ),
+    build: build,
+    act: (bloc) => bloc.add(const TrainingHomeEvent.started()),
+    skip: 1,
+    expect: () => [
+      ready.copyWith(
+        staleSessions: [
+          OpenSession(session: TrainingFixtures.session(), stale: true),
+        ],
+      ),
+    ],
+  );
+
+  blocTest<TrainingHomeBloc, TrainingHomeState>(
+    'saltar el día avisa y recarga (el servidor decide el siguiente)',
+    setUp: () => when(
+      () => skip('r1', 'd1'),
+    ).thenAnswer((_) async => Success(TrainingFixtures.routine())),
+    build: build,
+    seed: () => ready,
+    act: (bloc) => bloc.add(
+      const TrainingHomeEvent.daySkipped(routineId: 'r1', dayId: 'd1'),
+    ),
+    verify: (_) {
+      verify(() => skip('r1', 'd1')).called(1);
+      verify(() => pending()).called(1);
+    },
   );
 
   tearDown(() => changes.close());

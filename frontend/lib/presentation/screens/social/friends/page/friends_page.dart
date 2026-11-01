@@ -344,7 +344,7 @@ class _FriendshipTile extends StatelessWidget {
             onPressed: () =>
                 bloc.add(FriendsEvent.requestRejected(friendship.id)),
           ),
-          FilledButton.tonal(
+          FilledButton(
             onPressed: () =>
                 bloc.add(FriendsEvent.requestAccepted(friendship.id)),
             child: Text(l10n.socialAccept),
@@ -369,11 +369,21 @@ class _FriendshipTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.localizations;
     final user = friendship.user;
     return UserTile(
       name: user.fullName,
       avatarUrl: user.avatarUrl,
       level: user.level,
+      // Una solicitud recibida pide respuesta: franja de acción y una frase.
+      highlight: kind == FriendshipListKind.received
+          ? context.colors.primary
+          : null,
+      subtitle: switch (kind) {
+        FriendshipListKind.received => l10n.socialRequestReceivedHint,
+        FriendshipListKind.sent => l10n.socialRequestSentHint,
+        _ => null,
+      },
       trailing: _actions(context),
       onTap: kind == FriendshipListKind.blocked
           ? null
@@ -436,7 +446,7 @@ class _SearchResultTile extends StatelessWidget {
     return switch (user.relation) {
       FriendshipRelation.none => FilledButton.tonalIcon(
         onPressed: () => bloc.add(FriendsEvent.requestSent(user.id)),
-        icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+        icon: const Icon(Icons.person_add_alt_1_rounded),
         label: Text(l10n.socialAddFriend),
       ),
       FriendshipRelation.requestSent when friendshipId != null => TextButton(
@@ -462,9 +472,10 @@ class _SearchResultTile extends StatelessWidget {
         ),
         child: Text(l10n.socialUnblock),
       ),
-      FriendshipRelation.friends => Chip(
-        avatar: const Icon(Icons.check_rounded, size: 16),
-        label: Text(l10n.socialRelationFriends),
+      FriendshipRelation.friends => AppPill(
+        icon: Icons.check_rounded,
+        label: l10n.socialRelationFriends,
+        color: context.palette.success,
       ),
       _ => const SizedBox.shrink(),
     };

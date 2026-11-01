@@ -6,11 +6,20 @@ import 'package:synaptixfit/domain/models/planner/calendar_block.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/log_past_activity_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_pending_day_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_routine_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/log_past_session_use_case.dart';
 import 'package:synaptixfit/presentation/screens/training/past_activity/bloc/past_activity_bloc.dart';
 
 class _Log extends Mock implements LogPastActivityUseCaseContract {}
 
 class _GetAccount extends Mock implements GetAccountUseCaseContract {}
+
+class _GetPending extends Mock implements GetPendingDayUseCaseContract {}
+
+class _GetRoutine extends Mock implements GetRoutineUseCaseContract {}
+
+class _LogPastSession extends Mock implements LogPastSessionUseCaseContract {}
 
 class _FakeCompletion extends Fake implements BlockCompletion {
   _FakeCompletion(this.xpDelta);
@@ -29,8 +38,13 @@ void main() {
     getAccount = _GetAccount();
   });
 
-  PastActivityBloc build() =>
-      PastActivityBloc(logPastActivity: log, getAccount: getAccount);
+  PastActivityBloc build() => PastActivityBloc(
+    logPastActivity: log,
+    getAccount: getAccount,
+    getPendingDay: _GetPending(),
+    getRoutine: _GetRoutine(),
+    logPastSession: _LogPastSession(),
+  );
 
   blocTest<PastActivityBloc, PastActivityState>(
     'sin XP (tope del día) se guarda igual y no recarga la cuenta',

@@ -135,7 +135,7 @@ class _AcademicHomeView extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: l10n.academicSharedNotesTitle,
-            icon: const Icon(Icons.people_alt_outlined),
+            icon: const Icon(Icons.local_library_outlined),
             onPressed: () => context.push(AcademicPaths.sharedNotes),
           ),
           IconButton(
@@ -253,13 +253,18 @@ class _AcademicHomeView extends StatelessWidget {
                         TokensSpacing.xxl * 2,
                       ),
                       sliver: SliverGrid.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 260,
-                              mainAxisExtent: 148,
-                              crossAxisSpacing: TokensSpacing.s,
-                              mainAxisSpacing: TokensSpacing.s,
-                            ),
+                        // El alto y el ancho crecen con el texto: al 200 %
+                        // la tarjeta no se desborda (una columna en móvil).
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: context.scaled(
+                            TokensSize.subjectCardMaxWidth,
+                          ),
+                          mainAxisExtent: context.scaled(
+                            TokensSize.subjectCardHeight,
+                          ),
+                          crossAxisSpacing: TokensSpacing.s,
+                          mainAxisSpacing: TokensSpacing.s,
+                        ),
                         itemCount: state.subjects.length,
                         itemBuilder: (context, index) {
                           final subject = state.subjects[index];
@@ -303,16 +308,21 @@ class _DueReviews extends StatelessWidget {
               children: [
                 Icon(Icons.replay_rounded, color: context.palette.study),
                 const SizedBox(width: TokensSpacing.s),
-                Text(
-                  l10n.academicDueReviews(due.length),
-                  style: context.textStyles.titleMedium,
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.academicDueReviews(due.length),
+                      style: context.textStyles.titleMedium,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: TokensSpacing.s),
           SizedBox(
-            height: context.scaled(104),
+            height: context.scaled(TokensSize.reviewCardHeight),
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.m),
               scrollDirection: Axis.horizontal,
@@ -322,11 +332,14 @@ class _DueReviews extends StatelessWidget {
               itemBuilder: (context, index) {
                 final material = due[index];
                 return SizedBox(
-                  width: 220,
+                  width: context.scaled(TokensSize.reviewCardWidth),
                   child: AppCard(
                     onTap: () => onOpen(material),
-                    color: context.colors.tertiaryContainer.withValues(
-                      alpha: 0.5,
+                    color: Color.alphaBlend(
+                      context.palette.study.withValues(
+                        alpha: AppPill.tintAlpha,
+                      ),
+                      context.colors.surface,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

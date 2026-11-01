@@ -1,5 +1,9 @@
 package com.synaptixfit.application.port.input.planner;
 
+import java.util.List;
+
+import java.time.Instant;
+
 import java.util.UUID;
 
 /**
@@ -29,7 +33,14 @@ public interface ImportIcsUseCase {
      * @param updated    filas existentes actualizadas
      */
     record Result(Match match, int totalEvents, int matchingEvents, int classes, int exams, int deliveries,
-                  int created, int updated, boolean imported) {
+                  int created, int updated, boolean imported, List<Item> items) {
+    }
+
+    /**
+     * Un evento del calendario: los importados o, si no se importó nada, lo que trae el calendario, para que el
+     * estudiante vea exactamente qué se añade. {@code kind}: CLASS, EXAM o DELIVERY.
+     */
+    record Item(String title, Instant start, Instant end, String kind, boolean imported) {
     }
 
     Result importIcs(Command command);

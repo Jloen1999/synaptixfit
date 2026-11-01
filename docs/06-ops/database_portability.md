@@ -22,7 +22,7 @@
 |---|---|
 | `CASE` de progreso de retos en `DashboardJdbcAdapter.activeChallenges` (además, sumaba el progreso de las tareas) | `DashboardService` usa `ListMyChallengesUseCase` y `Challenge.progress()` (`ActiveChallenge.of`) |
 | `count(*) FILTER` por estado en `ChallengePersistenceAdapter.summarize` | `Challenge.statusOf` + `ChallengeSummary.of` |
-| Visibilidad de un reto ajeno decidida a medias en SQL (`ChallengeAudiencePersistenceAdapter.canView`) | El adaptador solo trae los datos (`OwnerAudience`) y decide `Challenge.isVisibleTo` |
+| Visibilidad de un reto ajeno decidida a medias en SQL (`ChallengeAudiencePersistenceAdapter.canView`) | El adaptador solo trae los datos (`AuthorAudience`, con `SharedContentSql.audienceColumns`) y decide `Challenge.isVisibleTo` → `EffectiveVisibility` |
 | Columna generada `carga_diaria` sumada en SQL (insights y SM-2) | Los puertos devuelven filas y `TrainingLoadService` / `StudyMaterialService` aplican `PhysicalLoadRecord.load(rpe, min)` + `PhysicalLoadHistory` |
 | Vista `v_analitica_semanal` (`date_trunc`, RPE medio) | `WeeklyTrainingMetric.byWeek` en `AnalyticsService` (con la zona de la app) |
 | Vista `v_admin_metricas` y `generate_series` del panel (usuario activo, «hoy» en UTC) | `AdminActivityAggregation.daily` en `AdminMetricsService` |
@@ -34,7 +34,7 @@
 | Horas y días de estudio con `EXTRACT(EPOCH)` y `CAST(… AS date)` en el contexto de entrenamiento | Sumados en Java (`TrainingContextPersistenceAdapter`) |
 | Vistas `v_admin_metricas`, `v_analitica_semanal`, `v_ejercicios_completos` | Eliminadas en `V550__portability_drop_business_views.sql` |
 
-**Excepción aceptada:** los filtros de visibilidad y de estado de los listados paginados (muro y búsqueda de usuarios en `SocialQueryJdbcAdapter`, comunidad en `ChallengeAudiencePersistenceAdapter.findCommunity`, `RoutinePersistenceAdapter` y `NotePersistenceAdapter`, estado en `ChallengePersistenceAdapter.findByOwner`) siguen en SQL porque hay que filtrar antes de paginar. Son SQL estándar y replican la regla del dominio (`ContentVisibility`, `Challenge.isVisibleTo`, `Challenge.statusOf`), que es la fuente de verdad; los tests de integración fijan su comportamiento.
+**Excepción aceptada:** los filtros de visibilidad y de estado de los listados paginados (muro y búsqueda de usuarios en `SocialQueryJdbcAdapter`, comunidad en `ChallengeAudiencePersistenceAdapter.findCommunity`, `RoutinePersistenceAdapter` y `NotePersistenceAdapter`, estado en `ChallengePersistenceAdapter.findByOwner`) siguen en SQL porque hay que filtrar antes de paginar. Son SQL estándar. Muro, retos, rutinas y apuntes usan `SharedContentSql`, que solo compara columnas con los niveles de `EffectiveVisibility` recibidos como parámetros; la búsqueda de usuarios replica `ContentVisibility.canDiscover` y el estado `Challenge.statusOf`. Un elemento suelto no se filtra en SQL: el adaptador trae `AuthorAudience` y decide el caso de uso. El dominio es la fuente de verdad y los tests de integración (`SharedContentVisibilityIT`, entre otros) fijan su comportamiento.
 
 ## 2. Lo que sigue siendo propio de PostgreSQL
 
@@ -53,6 +53,7 @@ Todo está en `backend/src/main/java/com/synaptixfit/infrastructure/adapter/outp
 | `timestamp with time zone` leído como `OffsetDateTime` | `JdbcRows.instant`, `JdbcValues.instant` y lecturas directas | — | `DATETIME(6)` guardando UTC; URL con `connectionTimeZone=UTC&preserveInstants=true` (Connector/J ≥ 8.0.23). La app ya trabaja siempre en UTC (`hibernate.jdbc.time_zone: UTC`) |
 | Columnas generadas `acwr_actual`, `carga_diaria` | Migración `V1` (y `V400`); entidades `CrossRegulationEntity`, `PhysicalLoadEntity` (`insertable = false`) | Se conservan como copia informativa; **la app no las lee** | Omitirlas (y quitar el campo de la entidad) o crearlas con `GENERATED ALWAYS AS (…) STORED` |
 | Índices parciales (`WHERE … IS NOT NULL`), `USING btree/gin`, `COMMENT ON`, secuencias `serial`, `gen_random_uuid()`, casts `::`, literales de array `'{…}'` | Migraciones `V1`, `V2` (909 literales de array en el catálogo de ejercicios), `V100`, `V150`, `V300` (`ON CONFLICT`), `V400`, `V450`, `V500`, las generadas `V700`, `V800`, `V850` y `V930` (`ARRAY[…]::text[]`, `CAST(… AS uuid)`, `VALUES` como tabla derivada) y `V940` (expresiones regulares `~` y `substring(… from '…')`, `jsonb_build_object`) | SQL de esquema propio de cada motor | Traducir (apartado 3). Un índice `UNIQUE` de MySQL ya admite varios `NULL`, así que `ux_carga_fisica_sesion` queda como índice único normal |
+| `UPDATE … FROM …` (pasar los vínculos de bloque antiguos a `horarios_academicos.hito_id`) | Migración `V1012` | Migración de datos de una sola vez | `UPDATE horarios_academicos b JOIN hitos_de_reto h ON … SET …` |
 | `cb.like(…, '\\')` (Criteria API) | `adapter/catalog/AcademicCatalogPersistenceAdapter.java:152` | Hibernate genera el escape según el dialecto | Probar; si falla, usar `'!'` como en `SqlLike` |
 
 ## 3. Checklist para cambiar a MySQL 8

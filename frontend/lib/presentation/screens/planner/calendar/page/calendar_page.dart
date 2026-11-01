@@ -125,6 +125,9 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
       case BlockEditorCompletionRequested(:final blockId):
         await _toggleCompletion(blockId);
         return;
+      case BlockEditorTrainingRequested(:final routineId):
+        unawaited(context.push<void>(PlannerExternalPaths.routine(routineId)));
+        return;
       case BlockEditorCreated(:final overlaps, :final weeklyCopies):
         // Con copias se dice cuántas; los solapes ya los avisa la franja de
         // «solapes esta semana».

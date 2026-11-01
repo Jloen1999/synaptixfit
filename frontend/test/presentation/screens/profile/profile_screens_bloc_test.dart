@@ -1,10 +1,12 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:synaptixfit/domain/enums/friendship_list_kind.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/profile/catalog.dart';
 import 'package:synaptixfit/domain/models/profile/wellness_history.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/models/social/social_page.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/get_goal_history_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/get_my_degrees_use_case.dart';
@@ -14,6 +16,7 @@ import 'package:synaptixfit/domain/use_cases/profile/link_degree_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/search_degrees_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/search_universities_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/unlink_degree_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/social/get_friendships_use_case.dart';
 import 'package:synaptixfit/presentation/screens/profile/catalog_picker/bloc/catalog_picker_bloc.dart';
 import 'package:synaptixfit/presentation/screens/profile/degrees/bloc/degrees_bloc.dart';
 import 'package:synaptixfit/presentation/screens/profile/profile/bloc/profile_bloc.dart';
@@ -24,6 +27,8 @@ import 'profile_fixtures.dart';
 class _MockAccount extends Mock implements GetAccountUseCaseContract {}
 
 class _MockSummary extends Mock implements GetProfileSummaryUseCaseContract {}
+
+class _MockFriendships extends Mock implements GetFriendshipsUseCaseContract {}
 
 class _MockDegrees extends Mock implements GetMyDegreesUseCaseContract {}
 
@@ -44,11 +49,59 @@ void main() {
   group('ProfileBloc', () {
     late _MockAccount account;
     late _MockSummary summary;
+    late _MockFriendships friendships;
 
     setUp(() {
       account = _MockAccount();
       summary = _MockSummary();
+      friendships = _MockFriendships();
+      // El recuento de solicitudes es opcional: si falla, el perfil carga igual.
+      when(
+        () => friendships(
+          kind: FriendshipListKind.received,
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer((_) async => const Failure(AppError.network()));
     });
+
+    ProfileBloc build() => ProfileBloc(
+      getAccount: account,
+      getSummary: summary,
+      getFriendships: friendships,
+    );
+
+    blocTest<ProfileBloc, ProfileState>(
+      'cuenta las solicitudes de amistad pendientes',
+      setUp: () {
+        when(
+          () => account(),
+        ).thenAnswer((_) async => const Success(testAccount));
+        when(
+          () => summary(),
+        ).thenAnswer((_) async => const Success(testSummary));
+        when(
+          () => friendships(
+            kind: FriendshipListKind.received,
+            size: any(named: 'size'),
+          ),
+        ).thenAnswer(
+          (_) async => const Success(
+            SocialPage(items: [], page: 0, totalPages: 2, totalItems: 2),
+          ),
+        );
+      },
+      build: build,
+      act: (bloc) => bloc.add(const ProfileEvent.started()),
+      skip: 1,
+      expect: () => const [
+        ProfileState(
+          status: ProfileStatus.ready,
+          account: testAccount,
+          summary: testSummary,
+          pendingRequests: 2,
+        ),
+      ],
+    );
 
     blocTest<ProfileBloc, ProfileState>(
       'carga cuenta y resumen',
@@ -60,7 +113,7 @@ void main() {
           () => summary(),
         ).thenAnswer((_) async => const Success(testSummary));
       },
-      build: () => ProfileBloc(getAccount: account, getSummary: summary),
+      build: build,
       act: (bloc) => bloc.add(const ProfileEvent.started()),
       expect: () => const [
         ProfileState(),
@@ -82,7 +135,7 @@ void main() {
           () => summary(),
         ).thenAnswer((_) async => const Failure(AppError.network()));
       },
-      build: () => ProfileBloc(getAccount: account, getSummary: summary),
+      build: build,
       act: (bloc) => bloc.add(const ProfileEvent.started()),
       expect: () => const [
         ProfileState(),
@@ -100,7 +153,7 @@ void main() {
           () => summary(),
         ).thenAnswer((_) async => const Success(testSummary));
       },
-      build: () => ProfileBloc(getAccount: account, getSummary: summary),
+      build: build,
       seed: () => const ProfileState(
         status: ProfileStatus.ready,
         account: testAccount,

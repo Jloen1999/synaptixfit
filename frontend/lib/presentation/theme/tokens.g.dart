@@ -113,6 +113,8 @@ abstract final class TokensLayout {
   static const double twoColumnBreakpoint = 880;
   static const double compactHeight = 560;
   static const double minTouchTarget = 48;
+  static const double cardSideBySideMin = 280;
+  static const double cardActionsInlineMin = 336;
 }
 
 abstract final class TokensSize {
@@ -143,10 +145,19 @@ abstract final class TokensSize {
   static const double blockStripe = 4;
   static const double heroRing = 64;
   static const double heroStat = 96;
+  static const double exerciseHero = 168;
+  static const double postImageMaxHeight = 360;
+  static const double subjectCardHeight = 184;
+  static const double subjectCardMaxWidth = 260;
+  static const double reviewCardWidth = 220;
+  static const double reviewCardHeight = 104;
 }
 
 abstract final class TokensOpacity {
   static const double glow = 0.55;
+  static const double coverScrimMax = 0.85;
+  static const double coverTintLight = 0.25;
+  static const double coverTintDark = 0.14;
 }
 
 abstract final class TokensFont {
@@ -161,5 +172,6 @@ abstract final class TokensDuration {
   static const Duration emphasized = Duration(milliseconds: 900);
   static const Duration tooltipWait = Duration(milliseconds: 600);
   static const Duration undoWindow = Duration(milliseconds: 10000);
+  static const Duration snack = Duration(milliseconds: 6000);
   static const Duration pulse = Duration(milliseconds: 1200);
 }

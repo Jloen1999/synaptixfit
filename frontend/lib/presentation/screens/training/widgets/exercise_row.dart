@@ -8,10 +8,10 @@ import '../../../widgets/widgets.dart';
 import 'exercise_thumbnail.dart';
 import 'metric_chips.dart';
 
-/// Ejercicio de un día con sus chips y, si es editable, acciones para
-/// subir/bajar (sin arrastrar, para no bloquear el scroll) y un menú con
-/// editar, cambiar y quitar. Las acciones van en una fila propia debajo para
-/// que el nombre tenga todo el ancho en un móvil estrecho con letra grande.
+/// Ejercicio de un borrador de rutina con sus chips y, si es editable,
+/// acciones con texto: subir/bajar (sin arrastrar, para no bloquear el
+/// scroll), editar series, cambiar y quitar. Van en una fila propia debajo
+/// para que el nombre tenga todo el ancho en un móvil estrecho.
 class ExerciseRow extends StatefulWidget {
   const ExerciseRow({
     super.key,
@@ -63,11 +63,6 @@ class _ExerciseRowState extends State<ExerciseRow> {
   bool get _editable =>
       widget.onMoveUp != null ||
       widget.onMoveDown != null ||
-      widget.onEdit != null ||
-      widget.onReplace != null ||
-      widget.onRemove != null;
-
-  bool get _hasMenu =>
       widget.onEdit != null ||
       widget.onReplace != null ||
       widget.onRemove != null;
@@ -155,82 +150,85 @@ class _ExerciseRowState extends State<ExerciseRow> {
       ),
     );
     if (!_editable) return info;
+    // Acciones con texto y en la misma tarjeta que su ejercicio: no hay un
+    // menú de tres puntos que obligue a adivinar a qué ejercicio se refiere.
+    // Con letra grande bajan a otra fila (OverflowBar).
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         info,
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        OverflowBar(
+          alignment: MainAxisAlignment.spaceBetween,
+          overflowAlignment: OverflowBarAlignment.start,
+          overflowSpacing: TokensSpacing.xs,
           children: [
-            IconButton(
-              focusNode: _upFocus,
-              tooltip: l10n.trainingMoveUpNamed(name),
-              onPressed: widget.onMoveUp,
-              icon: const Icon(Icons.arrow_upward_rounded),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  focusNode: _upFocus,
+                  tooltip: l10n.trainingMoveUpNamed(name),
+                  onPressed: widget.onMoveUp,
+                  icon: const Icon(Icons.arrow_upward_rounded),
+                ),
+                IconButton(
+                  focusNode: _downFocus,
+                  tooltip: l10n.trainingMoveDownNamed(name),
+                  onPressed: widget.onMoveDown,
+                  icon: const Icon(Icons.arrow_downward_rounded),
+                ),
+              ],
             ),
-            IconButton(
-              focusNode: _downFocus,
-              tooltip: l10n.trainingMoveDownNamed(name),
-              onPressed: widget.onMoveDown,
-              icon: const Icon(Icons.arrow_downward_rounded),
+            Wrap(
+              spacing: TokensSpacing.xs,
+              children: [
+                if (widget.onEdit != null)
+                  _action(
+                    widget.onEdit!,
+                    Icons.tune_rounded,
+                    l10n.trainingEditSetsShort,
+                    l10n.trainingEditSetsNamed(name),
+                  ),
+                if (widget.onReplace != null)
+                  _action(
+                    widget.onReplace!,
+                    Icons.swap_horiz_rounded,
+                    l10n.trainingReplaceShort,
+                    l10n.trainingReplaceExerciseNamed(name),
+                  ),
+                if (widget.onRemove != null)
+                  _action(
+                    widget.onRemove!,
+                    Icons.delete_outline_rounded,
+                    l10n.trainingRemoveShort,
+                    l10n.trainingRemoveExerciseNamed(name),
+                    color: context.colors.error,
+                  ),
+              ],
             ),
-            // Las acciones menos frecuentes van juntas en un menú: la fila
-            // queda limpia y cada opción lleva su texto.
-            if (_hasMenu)
-              PopupMenuButton<VoidCallback>(
-                tooltip: l10n.trainingExerciseMoreActions(name),
-                icon: const Icon(Icons.more_vert_rounded),
-                onSelected: (action) => action(),
-                itemBuilder: (context) => [
-                  if (widget.onEdit != null)
-                    _menuItem(
-                      context,
-                      widget.onEdit!,
-                      Icons.tune_rounded,
-                      l10n.trainingEditParameters,
-                    ),
-                  if (widget.onReplace != null)
-                    _menuItem(
-                      context,
-                      widget.onReplace!,
-                      Icons.swap_horiz_rounded,
-                      l10n.trainingReplaceExercise,
-                    ),
-                  if (widget.onRemove != null)
-                    _menuItem(
-                      context,
-                      widget.onRemove!,
-                      Icons.delete_outline_rounded,
-                      l10n.trainingRemoveExercise,
-                      color: context.colors.error,
-                    ),
-                ],
-              ),
           ],
         ),
       ],
     );
   }
 
-  PopupMenuItem<VoidCallback> _menuItem(
-    BuildContext context,
-    VoidCallback action,
+  /// Botón con texto corto visible y, para el lector, el nombre del ejercicio.
+  Widget _action(
+    VoidCallback onPressed,
     IconData icon,
-    String label, {
+    String label,
+    String spoken, {
     Color? color,
-  }) => PopupMenuItem(
-    value: action,
-    child: Row(
-      children: [
-        Icon(icon, color: color),
-        const SizedBox(width: TokensSpacing.m),
-        Flexible(
-          child: Text(
-            label,
-            style: color == null ? null : TextStyle(color: color),
-          ),
-        ),
-      ],
+  }) => Semantics(
+    button: true,
+    label: spoken,
+    excludeSemantics: true,
+    onTap: onPressed,
+    child: TextButton.icon(
+      style: color == null ? null : TextButton.styleFrom(foregroundColor: color),
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
     ),
   );
 }

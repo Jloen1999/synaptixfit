@@ -43,11 +43,19 @@ class ExerciseParameterChips extends StatelessWidget {
         AppPill(
           icon: Icons.repeat_rounded,
           color: context.colors.secondary,
+          // Repeticiones distintas por serie: «3 series × 12/10/8 reps».
           label: p.isometricSeconds != null
               ? l10n.trainingChipSetsHoldLabel(p.sets, p.isometricSeconds!)
+              : p.repsPerSet != null
+              ? l10n.trainingChipSetsRepsVaried(p.sets, p.repsPerSet!.join('/'))
               : l10n.trainingChipSetsRepsLabel(p.sets, p.reps),
           semanticLabel: p.isometricSeconds != null
               ? l10n.trainingChipSetsHoldSpoken(p.sets, p.isometricSeconds!)
+              : p.repsPerSet != null
+              ? l10n.trainingChipSetsRepsVariedSpoken(
+                  p.sets,
+                  p.repsPerSet!.join(', '),
+                )
               : l10n.trainingChipSetsRepsSpoken(p.sets, p.reps),
         ),
         AppPill(

@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.training;
 
+import com.synaptixfit.domain.model.shared.AuthorAudience;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.shared.Visibility;
@@ -135,6 +136,9 @@ final class TrainingFakes {
             return page(alive(r -> r.isOwnedBy(ownerId) && (status == null || r.status() == status)), page);
         }
         public List<Routine> findAllByOwner(UUID ownerId) { return alive(r -> r.isOwnedBy(ownerId)); }
+        public List<Routine> findActiveByOwner(UUID ownerId) {
+            return alive(r -> r.isOwnedBy(ownerId) && r.status() == RoutineStatus.ACTIVE);
+        }
         public Optional<Routine> findLatestActive(UUID ownerId) {
             return alive(r -> r.isOwnedBy(ownerId) && r.status() == RoutineStatus.ACTIVE).stream()
                     .max(Comparator.comparing(Routine::createdAt));
@@ -144,10 +148,9 @@ final class TrainingFakes {
                     && !shadowbanned.contains(r.ownerId())).stream()
                     .map(r -> new VisibleRoutine(r, authors.get(r.ownerId()))).toList(), page);
         }
-        public Optional<VisibleRoutine> findVisible(UUID routineId, UUID viewerId) {
-            return findById(routineId).filter(r -> r.isOwnedBy(viewerId)
-                            || (r.visibility() == Visibility.PUBLIC && !shadowbanned.contains(r.ownerId())))
-                    .map(r -> new VisibleRoutine(r, authors.get(r.ownerId())));
+        public Optional<AuthoredRoutine> findWithAuthor(UUID routineId, UUID viewerId) {
+            return findById(routineId).map(r -> new AuthoredRoutine(r, authors.get(r.ownerId()),
+                    new AuthorAudience(true, shadowbanned.contains(r.ownerId()), Visibility.PUBLIC, false, false)));
         }
         private List<Routine> alive(Predicate<Routine> p) {
             return store.values().stream().filter(r -> !r.isDeleted()).filter(p).toList();
@@ -169,6 +172,10 @@ final class TrainingFakes {
         public Optional<TrainingSession> findInProgressForDay(UUID userId, UUID dayId) {
             return store.values().stream().filter(s -> s.userId().equals(userId) && Objects.equals(s.dayId(), dayId)
                     && !s.isCompleted()).findFirst();
+        }
+        public List<TrainingSession> findOpen(UUID userId) {
+            return store.values().stream().filter(s -> s.userId().equals(userId) && !s.isCompleted())
+                    .sorted(Comparator.comparing(TrainingSession::startedAt).reversed()).toList();
         }
         public boolean existsCompletedForDay(UUID dayId, UUID excludingSessionId) {
             return store.values().stream().anyMatch(s -> Objects.equals(s.dayId(), dayId) && s.isCompleted()

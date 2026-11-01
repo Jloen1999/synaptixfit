@@ -2,7 +2,7 @@
   "@@locale": "es",
   "socialFeedTitle": "Comunidad",
   "socialFeedEmptyTitle": "Aún no hay publicaciones",
-  "socialFeedEmptyMessage": "Comparte un logro o una rutina para animar a tus compañeros.",
+  "socialFeedEmptyMessage": "Comparte un logro o un entreno para animar a tus compañeros.",
   "socialPublish": "Publicar",
   "socialPeriodAll": "Todo",
   "socialPeriodToday": "Hoy",
@@ -17,7 +17,6 @@
     }
   },
   "socialBadgeOverflow": "99+",
-  "socialLoadingMore": "Cargando más",
   "socialMoreActions": "Más acciones",
   "socialOpenProfileOf": "Ver el perfil de {name}",
   "@socialOpenProfileOf": {
@@ -322,5 +321,25 @@
   "socialNotifActionPost": "Ver publicación",
   "socialNotifActionComment": "Ver comentario",
   "socialNotifActionRequest": "Ver solicitud",
-  "socialErrorPostAlreadyShared": "Ya lo habías compartido en el muro."
+  "socialErrorPostAlreadyShared": "Ya lo habías compartido en el muro.",
+  "socialProfileNotes": "Apuntes compartidos",
+  "socialProfileNotesAll": "Ver todos",
+  "socialErrorPostTypeNotAllowed": "Ese tipo de publicación ya no se puede crear.",
+  "socialNotifRoutineCompletedTitle": "¡Rutina terminada!",
+  "socialNotifRoutineCompletedBody": "Has terminado la rutina «{name}»",
+  "@socialNotifRoutineCompletedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "socialNotifActionRoutine": "Ver rutina",
+  "socialComposerPrompt": "¿Qué quieres compartir hoy?",
+  "socialComposerAchievement": "Un logro",
+  "socialComposerSession": "Un entreno",
+  "socialRequestReceivedHint": "Quiere ser tu amigo",
+  "socialRequestSentHint": "Esperando respuesta",
+  "socialOpenPostHint": "Abrir la publicación",
+  "socialLinkBadge": "Insignia"
 }

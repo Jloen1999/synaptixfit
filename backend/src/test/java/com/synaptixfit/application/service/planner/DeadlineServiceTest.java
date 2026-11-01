@@ -54,20 +54,6 @@ class DeadlineServiceTest {
     }
 
     @Test
-    void challengeSyncIsIdempotentAndIgnoresForeignDeadlines() {
-        Deadline d = create("Examen final", DeadlineType.EXAM, at(4, 9, 0), null);
-
-        service.syncFromChallenge(f.user, d.id(), true);
-        service.syncFromChallenge(f.user, d.id(), true);
-        service.syncFromChallenge(f.otherUser, d.id(), false);
-        service.syncFromChallenge(f.user, UUID.randomUUID(), true);
-
-        assertThat(f.deadlines.store.get(d.id()).completed()).isTrue();
-        assertThat(f.events).hasSize(1);
-        assertThat(f.xp.of(f.user)).isEqualTo(30);
-    }
-
-    @Test
     void deletingACompletedDeadlineRevokesItsExperience() {
         Deadline d = create("Entrega", DeadlineType.ASSIGNMENT, at(3, 12, 0), null);
         service.setCompletion(f.user, d.id(), true);

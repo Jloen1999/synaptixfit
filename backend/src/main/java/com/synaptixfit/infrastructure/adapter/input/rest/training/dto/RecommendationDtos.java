@@ -19,13 +19,14 @@ public final class RecommendationDtos {
     /** Parámetros propuestos para un ejercicio planificado. */
     public record AdjustmentResponse(UUID plannedExerciseId, UUID exerciseId, String exerciseName, String reason,
                                      int sets, int reps, int restSeconds, Double weightKg, List<Double> weightsKg,
-                                     Integer targetDurationSeconds, Integer distanceMeters, Integer isometricSeconds) {
+                                     Integer targetDurationSeconds, Integer distanceMeters, Integer isometricSeconds,
+                                     List<Integer> repsPerSet, List<Integer> isometricSecondsPerSet) {
         static AdjustmentResponse from(ExerciseAdjustment a) {
             ExerciseParameters p = a.parameters();
             return new AdjustmentResponse(a.plannedExerciseId(), a.exerciseId(),
                     LocalizedNames.exercise(a.exerciseId(), a.exerciseName()), a.reason(), p.sets(),
                     p.reps(), p.restSeconds(), p.weightKg(), p.weightsKg(), p.targetDurationSeconds(),
-                    p.distanceMeters(), p.isometricSeconds());
+                    p.distanceMeters(), p.isometricSeconds(), p.repsPerSet(), p.isometricSecondsPerSet());
         }
     }
 

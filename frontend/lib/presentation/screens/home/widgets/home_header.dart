@@ -6,7 +6,7 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
-/// Cabecera del inicio: saludo, avatar, fecha, racha, campana y
+/// Cabecera del inicio: saludo, avatar, fecha, racha, comunidad, campana y
 /// admin. La racha lleva a la pestaña Progreso, donde está la barra de XP.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
@@ -16,6 +16,7 @@ class HomeHeader extends StatelessWidget {
     required this.isAdmin,
     required this.onProfile,
     required this.onNotifications,
+    required this.onCommunity,
     required this.onAdmin,
     required this.onProgress,
     this.now,
@@ -26,6 +27,9 @@ class HomeHeader extends StatelessWidget {
   final bool isAdmin;
   final VoidCallback onProfile;
   final VoidCallback onNotifications;
+
+  /// Abre el muro de la comunidad (publicaciones de amigos y públicas).
+  final VoidCallback onCommunity;
   final VoidCallback onAdmin;
 
   /// Abre la pestaña Progreso (nivel, racha e insignias).
@@ -63,7 +67,7 @@ class HomeHeader extends StatelessWidget {
                 child: AppAvatar(
                   name: greeting.fullName,
                   imageUrl: greeting.avatarUrl,
-                  radius: 24,
+                  radius: TokensSize.thumbnailS / 2,
                 ),
               ),
             ),
@@ -98,6 +102,14 @@ class HomeHeader extends StatelessWidget {
           ),
         ),
         _StreakChip(days: greeting.streak, onTap: onProgress),
+        // En el móvil no cabe sin cortar el saludo: allí el muro se abre desde
+        // Perfil («Amigos y comunidad»); con riel lateral sí hay sitio.
+        if (MediaQuery.sizeOf(context).width >= TokensLayout.railBreakpoint)
+          IconButton(
+            tooltip: l10n.homeCommunity,
+            onPressed: onCommunity,
+            icon: const Icon(Icons.forum_outlined),
+          ),
         IconButton(
           tooltip: l10n.homeNotificationsUnread(unreadNotifications),
           onPressed: onNotifications,

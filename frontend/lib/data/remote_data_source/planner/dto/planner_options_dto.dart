@@ -38,12 +38,14 @@ abstract class RoutineOptionDto with _$RoutineOptionDto {
   RoutineOption toDomain() => RoutineOption(id: id, name: name);
 }
 
-/// Lo que el planner necesita de `GET /api/v1/challenges`.
+/// Lo que el planner necesita de `GET /api/v1/challenges` (con sus tareas).
 @freezed
 abstract class ChallengeOptionDto with _$ChallengeOptionDto {
   const factory ChallengeOptionDto({
     required String id,
     required String title,
+    @Default(<ChallengeTaskOptionDto>[])
+    List<ChallengeTaskOptionDto> milestones,
   }) = _ChallengeOptionDto;
 
   const ChallengeOptionDto._();
@@ -51,5 +53,32 @@ abstract class ChallengeOptionDto with _$ChallengeOptionDto {
   factory ChallengeOptionDto.fromJson(Map<String, dynamic> json) =>
       _$ChallengeOptionDtoFromJson(json);
 
-  ChallengeOption toDomain() => ChallengeOption(id: id, title: title);
+  ChallengeOption toDomain() => ChallengeOption(
+    id: id,
+    title: title,
+    tasks: [for (final m in milestones) m.toDomain()],
+  );
+}
+
+/// Tarea de un reto (`MilestoneResponse`), lo justo para asignarle un bloque.
+@freezed
+abstract class ChallengeTaskOptionDto with _$ChallengeTaskOptionDto {
+  const factory ChallengeTaskOptionDto({
+    required String id,
+    required String title,
+    @Default(false) bool completed,
+    String? linkedEntityType,
+  }) = _ChallengeTaskOptionDto;
+
+  const ChallengeTaskOptionDto._();
+
+  factory ChallengeTaskOptionDto.fromJson(Map<String, dynamic> json) =>
+      _$ChallengeTaskOptionDtoFromJson(json);
+
+  ChallengeTaskOption toDomain() => ChallengeTaskOption(
+    id: id,
+    title: title,
+    completed: completed,
+    hasDeadline: linkedEntityType != null,
+  );
 }

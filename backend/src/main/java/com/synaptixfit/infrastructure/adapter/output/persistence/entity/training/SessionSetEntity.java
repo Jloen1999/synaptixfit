@@ -31,6 +31,12 @@ public class SessionSetEntity {
     private Instant creadoEn;
     @Column(name = "failed_reps")
     private int failedReps;
+    @Column(name = "duracion_segundos")
+    private Integer duracionSegundos;
+    @Column(name = "distancia_metros")
+    private Integer distanciaMetros;
+    @Column(name = "ejercicio_id")
+    private UUID ejercicioId;
 
 
     public UUID getId() { return id; }
@@ -51,4 +57,10 @@ public class SessionSetEntity {
     public void setCreadoEn(Instant v) { this.creadoEn = v; }
     public int getFailedReps() { return failedReps; }
     public void setFailedReps(int v) { this.failedReps = v; }
+    public Integer getDuracionSegundos() { return duracionSegundos; }
+    public void setDuracionSegundos(Integer v) { this.duracionSegundos = v; }
+    public Integer getDistanciaMetros() { return distanciaMetros; }
+    public void setDistanciaMetros(Integer v) { this.distanciaMetros = v; }
+    public UUID getEjercicioId() { return ejercicioId; }
+    public void setEjercicioId(UUID v) { this.ejercicioId = v; }
 }

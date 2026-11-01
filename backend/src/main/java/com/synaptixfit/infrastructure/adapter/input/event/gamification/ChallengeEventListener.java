@@ -5,6 +5,7 @@ import com.synaptixfit.application.port.input.challenge.SyncDeadlineChallengesUs
 import com.synaptixfit.application.port.input.challenge.SyncMilestoneStudyBlocksUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncTrainingSessionChallengesUseCase;
 import com.synaptixfit.domain.event.planner.DeadlineCompletionChanged;
+import com.synaptixfit.domain.event.planner.StudyBlockAssignmentChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
 import com.synaptixfit.domain.event.training.TrainingSessionCompletionChanged;
 import com.synaptixfit.domain.event.user.UserPrivacyChanged;
@@ -44,6 +45,11 @@ public class ChallengeEventListener {
         if (event.challengeMilestoneId() != null) {
             syncStudyBlocks.syncStudyBlocks(event.userId(), event.challengeMilestoneId());
         }
+    }
+
+    @EventListener
+    public void on(StudyBlockAssignmentChanged event) {
+        event.milestoneIds().forEach(id -> syncStudyBlocks.syncStudyBlocks(event.userId(), id));
     }
 
     @EventListener

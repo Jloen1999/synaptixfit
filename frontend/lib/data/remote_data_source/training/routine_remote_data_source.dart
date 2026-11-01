@@ -57,6 +57,18 @@ class RoutineRemoteDataSource {
     ),
   );
 
+  Future<RoutineDto> skipDay(String routineId, String dayId) => _routine(
+    _dio.post<Map<String, dynamic>>('$_base/$routineId/days/$dayId/skip'),
+  );
+
+  Future<RoutineDto> unskipDay(String routineId, String dayId) => _routine(
+    _dio.post<Map<String, dynamic>>('$_base/$routineId/days/$dayId/unskip'),
+  );
+
+  Future<RoutineDto> restart(String routineId) => _routine(
+    _dio.post<Map<String, dynamic>>('$_base/$routineId/restart'),
+  );
+
   Future<void> delete(String routineId) =>
       _dio.delete<void>('$_base/$routineId');
 
@@ -148,6 +160,17 @@ class RoutineRemoteDataSource {
     _dio.put<Map<String, dynamic>>(
       '$_base/$routineId/exercises/$plannedExerciseId',
       data: parameters,
+    ),
+  );
+
+  Future<RoutineDto> replaceExercise(
+    String routineId,
+    String plannedExerciseId,
+    String exerciseId,
+  ) => _routine(
+    _dio.put<Map<String, dynamic>>(
+      '$_base/$routineId/exercises/$plannedExerciseId/exercise',
+      data: {'exerciseId': exerciseId},
     ),
   );
 

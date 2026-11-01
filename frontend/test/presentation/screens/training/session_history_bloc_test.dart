@@ -8,6 +8,11 @@ import 'package:synaptixfit/domain/models/training/session.dart';
 import 'package:synaptixfit/domain/models/training/session_history.dart';
 import 'package:synaptixfit/domain/models/training/training_page.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/cancel_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/correct_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/delete_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/finish_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_open_sessions_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_personal_records_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_history_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/unmark_session_use_case.dart';
@@ -23,11 +28,23 @@ class _MockUnmark extends Mock implements UnmarkSessionUseCaseContract {}
 
 class _MockAccount extends Mock implements GetAccountUseCaseContract {}
 
+class _MockOpen extends Mock implements GetOpenSessionsUseCaseContract {}
+
+class _MockCorrect extends Mock implements CorrectSessionUseCaseContract {}
+
+class _MockDelete extends Mock implements DeleteSessionUseCaseContract {}
+
+class _MockFinish extends Mock implements FinishSessionUseCaseContract {}
+
+class _MockCancel extends Mock implements CancelSessionUseCaseContract {}
+
 void main() {
   late _MockHistory getHistory;
   late _MockRecords getRecords;
   late _MockUnmark unmark;
   late _MockAccount getAccount;
+  late _MockOpen getOpen;
+  late _MockDelete delete;
 
   final session = TrainingFixtures.session(status: SessionStatus.completed);
   final record = PersonalRecord(
@@ -51,6 +68,11 @@ void main() {
     getRecords: getRecords,
     unmark: unmark,
     getAccount: getAccount,
+    getOpen: getOpen,
+    correct: _MockCorrect(),
+    delete: delete,
+    finish: _MockFinish(),
+    discard: _MockCancel(),
   );
 
   setUp(() {
@@ -58,6 +80,11 @@ void main() {
     getRecords = _MockRecords();
     unmark = _MockUnmark();
     getAccount = _MockAccount();
+    getOpen = _MockOpen();
+    delete = _MockDelete();
+    when(
+      () => getOpen(),
+    ).thenAnswer((_) async => const Success(<OpenSession>[]));
     when(
       () => getHistory(
         page: any(named: 'page'),
@@ -127,6 +154,27 @@ void main() {
     verify: (bloc) {
       expect(bloc.state.items, isEmpty);
       verify(() => getRecords()).called(1);
+    },
+  );
+
+  blocTest<SessionHistoryBloc, SessionHistoryState>(
+    'eliminar una sesión de otro día la quita y recarga la cuenta',
+    setUp: () {
+      when(() => delete('s1')).thenAnswer((_) async => const Success(unit));
+      when(() => getAccount()).thenAnswer(
+        (_) async => const Failure(AppError.network()),
+      );
+    },
+    build: build,
+    seed: () => SessionHistoryState(
+      status: HistoryStatus.ready,
+      items: [entry],
+      records: [record],
+    ),
+    act: (bloc) => bloc.add(const SessionHistoryEvent.deleteRequested('s1')),
+    verify: (_) {
+      verify(() => delete('s1')).called(1);
+      verify(() => getAccount()).called(1);
     },
   );
 }

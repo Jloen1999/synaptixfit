@@ -8,7 +8,6 @@ import com.synaptixfit.application.port.input.planner.DeleteDeadlineUseCase;
 import com.synaptixfit.application.port.input.planner.GetDeadlineUseCase;
 import com.synaptixfit.application.port.input.planner.GetDeadlinesUseCase;
 import com.synaptixfit.application.port.input.planner.SetDeadlineCompletionUseCase;
-import com.synaptixfit.application.port.input.planner.SyncDeadlineFromChallengeUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateDeadlineUseCase;
 import com.synaptixfit.domain.event.planner.DeadlineCompletionChanged;
 import com.synaptixfit.domain.exception.planner.DeadlineNotFoundException;
@@ -31,7 +30,7 @@ import java.util.UUID;
 
 /** Entregas, exámenes y presentaciones: CRUD, consulta y completado con experiencia. */
 public class DeadlineService implements CreateDeadlineUseCase, CreateDeadlinesFromGuideUseCase, UpdateDeadlineUseCase, DeleteDeadlineUseCase,
-        GetDeadlineUseCase, GetDeadlinesUseCase, SetDeadlineCompletionUseCase, SyncDeadlineFromChallengeUseCase {
+        GetDeadlineUseCase, GetDeadlinesUseCase, SetDeadlineCompletionUseCase {
 
     private final DeadlineRepositoryPort deadlines;
     private final SubjectDirectoryPort subjects;
@@ -157,13 +156,6 @@ public class DeadlineService implements CreateDeadlineUseCase, CreateDeadlinesFr
     @Override
     public Result setCompletion(UUID userId, UUID deadlineId, boolean completed) {
         return apply(owned(userId, deadlineId), completed);
-    }
-
-    @Override
-    public void syncFromChallenge(UUID userId, UUID deadlineId, boolean completed) {
-        deadlines.findById(deadlineId)
-                .filter(d -> d.userId().equals(userId) && d.completed() != completed)
-                .ifPresent(d -> apply(d, completed));
     }
 
     /** Cambia el estado (idempotente), ajusta la experiencia una sola vez y publica el evento. */

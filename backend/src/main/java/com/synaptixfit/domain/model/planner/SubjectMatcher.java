@@ -19,7 +19,28 @@ public final class SubjectMatcher {
             "en", "para", "por", "al", "con", "of", "and", "the", "to", "for", "in", "et", "des", "du", "le", "da",
             "do", "das", "dos", "o", "i", "ii", "iii", "iv");
 
+    /**
+     * Palabras demasiado corrientes en nombres de asignaturas para decidir por sí solas que un calendario es de
+     * una («Fundamentos», «Introducción»…).
+     */
+    private static final Set<String> GENERIC_WORDS = Set.of("fundamentos", "introduccion", "principios",
+            "tecnicas", "teoria", "avanzada", "avanzadas", "avanzado", "avanzados", "aplicada", "aplicadas",
+            "aplicado", "basica", "basicas", "general", "practicas", "metodos", "sistemas", "ingenieria",
+            "informatica", "gestion", "analisis", "diseno", "desarrollo", "tecnologia", "tecnologias", "datos");
+
     private SubjectMatcher() {
+    }
+
+    /**
+     * ¿Comparten el texto y el nombre de la asignatura alguna palabra distintiva (5 letras o más, no genérica)?
+     * Sirve para el nombre o la descripción de un calendario: «1_1_GII_GITT_Programación» o «Asignatura:
+     * Programación» son de «Fundamentos de la Programación», aunque sus eventos se titulen «PR1_GG_T2».
+     */
+    public static boolean sharesDistinctiveWord(String text, String subjectName) {
+        Set<String> words = new java.util.HashSet<>(Arrays.asList(normalize(text).split(" ")));
+        return Arrays.stream(normalize(subjectName).split(" "))
+                .filter(w -> w.length() >= 5 && !GENERIC_WORDS.contains(w))
+                .anyMatch(words::contains);
     }
 
     /**

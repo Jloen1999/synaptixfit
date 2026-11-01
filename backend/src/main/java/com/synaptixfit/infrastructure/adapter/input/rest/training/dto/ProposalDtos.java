@@ -38,16 +38,20 @@ public final class ProposalDtos {
                                       @Size(max = 10) List<@NotNull Double> weightsKg,
                                       @Min(1) @Max(14400) Integer targetDurationSeconds,
                                       @Min(1) @Max(100000) Integer distanceMeters,
-                                      @Min(1) @Max(600) Integer isometricSeconds) {
+                                      @Min(1) @Max(600) Integer isometricSeconds,
+                                      @Size(max = 10) List<@NotNull @Min(1) @Max(100) Integer> repsPerSet,
+                                      @Size(max = 10) List<@NotNull @Min(1) @Max(600) Integer> isometricSecondsPerSet) {
         static ProposedExerciseDto from(RoutineProposal.ProposedExercise e) {
             ExerciseParameters p = e.parameters();
             return new ProposedExerciseDto(e.exerciseId(), LocalizedNames.exercise(e.exerciseId(), e.exerciseName()), p.sets(), p.reps(), p.restSeconds(),
-                    p.weightKg(), p.weightsKg(), p.targetDurationSeconds(), p.distanceMeters(), p.isometricSeconds());
+                    p.weightKg(), p.weightsKg(), p.targetDurationSeconds(), p.distanceMeters(), p.isometricSeconds(),
+                    p.repsPerSet(), p.isometricSecondsPerSet());
         }
 
         RoutineProposal.ProposedExercise toDomain() {
             return new RoutineProposal.ProposedExercise(exerciseId, exerciseName, new ExerciseParameters(sets, reps,
-                    restSeconds, weightKg, weightsKg, targetDurationSeconds, distanceMeters, isometricSeconds));
+                    restSeconds, weightKg, weightsKg, targetDurationSeconds, distanceMeters, isometricSeconds,
+                    repsPerSet, isometricSecondsPerSet));
         }
     }
 

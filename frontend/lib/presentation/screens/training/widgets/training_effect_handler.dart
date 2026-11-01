@@ -61,6 +61,16 @@ class TrainingEffectHandler with ErrorsMessageMixin {
         TrainingMessage.sessionAbandoned => l10n.trainingMsgSessionAbandoned,
         TrainingMessage.setSaved => l10n.trainingMsgSetSaved,
         TrainingMessage.sessionShared => l10n.trainingMsgSessionShared,
+        TrainingMessage.daySkipped => l10n.trainingDaySkipped,
+        TrainingMessage.dayUnskipped => l10n.trainingDayUnskipped,
+        TrainingMessage.sessionSavedOnItsDay => l10n.trainingSessionSavedOnItsDay,
+        TrainingMessage.sessionDiscarded => l10n.trainingSessionDiscarded,
+        TrainingMessage.sessionCorrected => l10n.trainingSessionCorrected,
+        TrainingMessage.sessionDeleted => l10n.trainingSessionDeleted,
+        TrainingMessage.routineStarted => l10n.trainingRoutineStarted,
+        TrainingMessage.routineRestarted => l10n.trainingRoutineRestarted,
+        TrainingMessage.exerciseReplaced => l10n.trainingMsgExerciseReplaced,
+        TrainingMessage.exerciseRemoved => l10n.trainingMsgExerciseRemoved,
         TrainingMessage.pendingSetDiscarded =>
           l10n.trainingMsgPendingSetDiscarded,
       };

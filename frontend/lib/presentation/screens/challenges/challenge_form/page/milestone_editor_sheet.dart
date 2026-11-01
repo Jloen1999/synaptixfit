@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../../domain/enums/challenge_difficulty.dart';
 import '../../../../../domain/enums/milestone_condition.dart';
@@ -37,9 +36,11 @@ Future<MilestoneFormItem?> showMilestoneEditorSheet(
   BuildContext context, {
   required MilestoneFormItem initial,
   required List<MilestoneFormItem> allItems,
-  required bool manualWeights,
+  required bool showDependencies,
   required bool isNew,
   String? subjectId,
+  DateTime? periodFrom,
+  DateTime? periodTo,
 }) {
   return showModalBottomSheet<MilestoneFormItem>(
     context: context,
@@ -49,9 +50,11 @@ Future<MilestoneFormItem?> showMilestoneEditorSheet(
     builder: (_) => _MilestoneEditor(
       initial: initial,
       allItems: allItems,
-      manualWeights: manualWeights,
+      showDependencies: showDependencies,
       isNew: isNew,
       subjectId: subjectId,
+      periodFrom: periodFrom,
+      periodTo: periodTo,
     ),
   );
 }
@@ -60,16 +63,25 @@ class _MilestoneEditor extends StatefulWidget {
   const _MilestoneEditor({
     required this.initial,
     required this.allItems,
-    required this.manualWeights,
+    required this.showDependencies,
     required this.isNew,
     this.subjectId,
+    this.periodFrom,
+    this.periodTo,
   });
 
   final MilestoneFormItem initial;
   final List<MilestoneFormItem> allItems;
-  final bool manualWeights;
+
+  /// Editor completo de dependencias: solo si el reto ya las tenía a medida
+  /// (lo simple es «Hacer las tareas en orden», en el formulario).
+  final bool showDependencies;
   final bool isNew;
   final String? subjectId;
+
+  /// Periodo del reto: solo se ofrecen entregas que vencen dentro.
+  final DateTime? periodFrom;
+  final DateTime? periodTo;
 
   @override
   State<_MilestoneEditor> createState() => _MilestoneEditorState();
@@ -78,7 +90,6 @@ class _MilestoneEditor extends StatefulWidget {
 class _MilestoneEditorState extends State<_MilestoneEditor> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _title;
-  late final TextEditingController _weight;
   late MilestoneFormItem _item;
 
   @override
@@ -86,24 +97,16 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
     super.initState();
     _item = widget.initial;
     _title = TextEditingController(text: _item.title);
-    final w = _item.weight;
-    _weight = TextEditingController(
-      text: w == null ? '' : ChallengeFormats.number(w),
-    );
   }
 
   @override
   void dispose() {
     _title.dispose();
-    _weight.dispose();
     super.dispose();
   }
 
   List<MilestoneFormItem> get _others =>
       widget.allItems.where((m) => m.key != _item.key).toList();
-
-  double? _parseWeight(String text) =>
-      double.tryParse(text.trim().replaceAll(',', '.'));
 
   void _toggleDependency(String key, bool selected) {
     final deps = [..._item.dependsOnKeys];
@@ -137,6 +140,8 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
     final option = await showLinkPickerSheet(
       context,
       subjectId: widget.subjectId,
+      from: widget.periodFrom,
+      to: widget.periodTo,
     );
     if (option == null || !mounted) return;
     setState(() {
@@ -149,15 +154,7 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
 
   void _save() {
     if (!_formKey.currentState!.validate()) return;
-    Navigator.pop(
-      context,
-      _item.copyWith(
-        title: _title.text.trim(),
-        weight: widget.manualWeights
-            ? _parseWeight(_weight.text)
-            : _item.weight,
-      ),
-    );
+    Navigator.pop(context, _item.copyWith(title: _title.text.trim()));
   }
 
   @override
@@ -210,28 +207,6 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
                       : null;
                 },
               ),
-              if (widget.manualWeights) ...[
-                const SizedBox(height: TokensSpacing.m),
-                TextFormField(
-                  controller: _weight,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                  ],
-                  decoration: InputDecoration(
-                    labelText: l10n.challengesTaskWeight,
-                    prefixIcon: const Icon(Icons.pie_chart_outline_rounded),
-                  ),
-                  validator: (v) {
-                    final w = _parseWeight(v ?? '');
-                    return w == null || w <= 0 || w > 100
-                        ? l10n.challengesIssueWeightRange
-                        : null;
-                  },
-                ),
-              ],
               const SizedBox(height: TokensSpacing.m),
               Text(
                 l10n.challengesEffortLabel,
@@ -243,111 +218,122 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
                 onChanged: (ChallengeDifficulty d) =>
                     setState(() => _item = _item.copyWith(difficulty: d)),
               ),
-              const SizedBox(height: TokensSpacing.l),
+              const SizedBox(height: TokensSpacing.xs),
+              // Una sola medida de importancia: el esfuerzo fija también su
+              // peso en el progreso y la XP.
               Text(
-                l10n.challengesTaskDependencies,
-                style: context.textStyles.labelLarge,
-              ),
-              const SizedBox(height: TokensSpacing.s),
-              if (_others.isEmpty)
-                Text(
-                  l10n.challengesTaskNoOtherTasks,
-                  style: context.textStyles.bodyMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: TokensSpacing.s,
-                  runSpacing: TokensSpacing.xs,
-                  children: [
-                    for (final o in _others)
-                      if (blocked.contains(o.key))
-                        Tooltip(
-                          message: l10n.challengesTaskCycleDisabled,
-                          child: FilterChip(
-                            label: Text(o.title),
-                            selected: false,
-                            onSelected: null,
-                          ),
-                        )
-                      else
-                        FilterChip(
-                          label: Text(o.title),
-                          selected: _item.dependsOnKeys.contains(o.key),
-                          onSelected: (s) => _toggleDependency(o.key, s),
-                        ),
-                  ],
+                l10n.challengesTaskEffortHint,
+                style: context.textStyles.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
                 ),
-              if (deps >= 2) ...[
-                const SizedBox(height: TokensSpacing.m),
+              ),
+              if (widget.showDependencies) ...[
+                const SizedBox(height: TokensSpacing.l),
                 Text(
-                  l10n.challengesTaskCondition,
+                  l10n.challengesTaskDependencies,
                   style: context.textStyles.labelLarge,
                 ),
                 const SizedBox(height: TokensSpacing.s),
-                SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<MilestoneCondition>(
-                    showSelectedIcon: false,
-                    segments: [
-                      ButtonSegment(
-                        value: MilestoneCondition.all,
-                        label: Text(l10n.challengesConditionAll),
-                      ),
-                      ButtonSegment(
-                        value: MilestoneCondition.any,
-                        label: Text(l10n.challengesConditionAny),
-                      ),
-                      ButtonSegment(
-                        value: MilestoneCondition.xOfY,
-                        label: Text(l10n.challengesConditionXOfYOption),
-                      ),
+                if (_others.isEmpty)
+                  Text(
+                    l10n.challengesTaskNoOtherTasks,
+                    style: context.textStyles.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: TokensSpacing.s,
+                    runSpacing: TokensSpacing.xs,
+                    children: [
+                      for (final o in _others)
+                        if (blocked.contains(o.key))
+                          Tooltip(
+                            message: l10n.challengesTaskCycleDisabled,
+                            child: FilterChip(
+                              label: Text(o.title),
+                              selected: false,
+                              onSelected: null,
+                            ),
+                          )
+                        else
+                          FilterChip(
+                            label: Text(o.title),
+                            selected: _item.dependsOnKeys.contains(o.key),
+                            onSelected: (s) => _toggleDependency(o.key, s),
+                          ),
                     ],
-                    selected: {_item.condition},
-                    onSelectionChanged: (s) => setState(
-                      () => _item = _item.copyWith(condition: s.first),
+                  ),
+                if (deps >= 2) ...[
+                  const SizedBox(height: TokensSpacing.m),
+                  Text(
+                    l10n.challengesTaskCondition,
+                    style: context.textStyles.labelLarge,
+                  ),
+                  const SizedBox(height: TokensSpacing.s),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<MilestoneCondition>(
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(
+                          value: MilestoneCondition.all,
+                          label: Text(l10n.challengesConditionAll),
+                        ),
+                        ButtonSegment(
+                          value: MilestoneCondition.any,
+                          label: Text(l10n.challengesConditionAny),
+                        ),
+                        ButtonSegment(
+                          value: MilestoneCondition.xOfY,
+                          label: Text(l10n.challengesConditionXOfYOption),
+                        ),
+                      ],
+                      selected: {_item.condition},
+                      onSelectionChanged: (s) => setState(
+                        () => _item = _item.copyWith(condition: s.first),
+                      ),
                     ),
                   ),
-                ),
-                if (_item.condition == MilestoneCondition.xOfY) ...[
-                  const SizedBox(height: TokensSpacing.s),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.challengesTaskConditionN,
-                          style: context.textStyles.bodyMedium,
+                  if (_item.condition == MilestoneCondition.xOfY) ...[
+                    const SizedBox(height: TokensSpacing.s),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.challengesTaskConditionN,
+                            style: context.textStyles.bodyMedium,
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        tooltip: l10n.challengesMoveDown,
-                        onPressed: _item.conditionN > 1
-                            ? () => setState(
-                                () => _item = _item.copyWith(
-                                  conditionN: _item.conditionN - 1,
-                                ),
-                              )
-                            : null,
-                        icon: const Icon(Icons.remove_rounded),
-                      ),
-                      Text(
-                        l10n.challengesConditionXOfY(_item.conditionN, deps),
-                        style: context.textStyles.titleMedium,
-                      ),
-                      IconButton(
-                        tooltip: l10n.challengesMoveUp,
-                        onPressed: _item.conditionN < deps
-                            ? () => setState(
-                                () => _item = _item.copyWith(
-                                  conditionN: _item.conditionN + 1,
-                                ),
-                              )
-                            : null,
-                        icon: const Icon(Icons.add_rounded),
-                      ),
-                    ],
-                  ),
+                        IconButton(
+                          tooltip: l10n.challengesMoveDown,
+                          onPressed: _item.conditionN > 1
+                              ? () => setState(
+                                  () => _item = _item.copyWith(
+                                    conditionN: _item.conditionN - 1,
+                                  ),
+                                )
+                              : null,
+                          icon: const Icon(Icons.remove_rounded),
+                        ),
+                        Text(
+                          l10n.challengesConditionXOfY(_item.conditionN, deps),
+                          style: context.textStyles.titleMedium,
+                        ),
+                        IconButton(
+                          tooltip: l10n.challengesMoveUp,
+                          onPressed: _item.conditionN < deps
+                              ? () => setState(
+                                  () => _item = _item.copyWith(
+                                    conditionN: _item.conditionN + 1,
+                                  ),
+                                )
+                              : null,
+                          icon: const Icon(Icons.add_rounded),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ],
               const SizedBox(height: TokensSpacing.l),

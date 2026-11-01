@@ -182,6 +182,7 @@ class _HomeContent extends StatelessWidget {
       isAdmin: isAdmin,
       onProfile: () => onNavigate(HomeExternalPaths.profile),
       onNotifications: () => onNavigate(HomeExternalPaths.notifications),
+      onCommunity: () => onNavigate(HomeExternalPaths.community),
       onAdmin: () => onNavigate(HomeExternalPaths.admin),
       onProgress: () => onNavigate(HomeExternalPaths.progress),
     );
@@ -204,6 +205,20 @@ class _HomeContent extends StatelessWidget {
               dayId: next.dayId,
             ),
           );
+    // «Entrenar» de «Tu día» empieza el día de rutina del bloque que toca
+    // ahora (lo que dice el calendario); sin enlace, el próximo de la rutina.
+    void trainTodayBlock() {
+      final event = TodayHeroCard.nextEvent(dashboard.todayEvents);
+      final routineId = event?.routineId;
+      final dayId = event?.routineDayId;
+      if (routineId != null && dayId != null) {
+        context.read<HomeDashboardBloc>().add(
+          HomeDashboardEvent.trainingStarted(routineId: routineId, dayId: dayId),
+        );
+      } else {
+        startTraining();
+      }
+    }
     // «Tu día»: lo primero que se ve, con lo que toca ahora y su botón.
     final hero = TodayHeroCard(
       dashboard: dashboard,
@@ -211,7 +226,7 @@ class _HomeContent extends StatelessWidget {
       starting: state.startingTraining,
       onAction: (action) => switch (action) {
         TodayHeroAction.focus => onNavigate(HomeExternalPaths.pomodoro),
-        TodayHeroAction.train => startTraining(),
+        TodayHeroAction.train => trainTodayBlock(),
         TodayHeroAction.openPlanner => onNavigate(HomeExternalPaths.planner),
       },
     );

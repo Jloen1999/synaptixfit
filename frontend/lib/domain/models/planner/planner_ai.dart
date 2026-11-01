@@ -27,6 +27,13 @@ abstract class SuggestedBlock with _$SuggestedBlock {
     String? routineId,
     String? routineName,
     String? topic,
+
+    /// Día concreto de la rutina en curso que refleja (lo asigna el servidor).
+    String? routineWeekId,
+    String? routineDayId,
+
+    /// Título propuesto («Semana 2 · Tirón»).
+    String? title,
   }) = _SuggestedBlock;
 }
 
@@ -41,6 +48,16 @@ abstract class ScheduleScanResult with _$ScheduleScanResult {
 
     /// El horario semanal detectado, ordenado por día y hora.
     @Default(<ScheduleClass>[]) List<ScheduleClass> classes,
+
+    /// Las asignaturas del usuario que se buscaron.
+    @Default(<String>[]) List<String> searchedSubjects,
+
+    /// Las asignaturas que aparecen en el documento (para explicar qué hay
+    /// cuando no coincide ninguna).
+    @Default(<String>[]) List<String> documentSubjects,
+
+    /// Semestre que se buscó (1 o 2), según las fechas del curso.
+    @Default(1) int semester,
   }) = _ScheduleScanResult;
 }
 
@@ -81,5 +98,22 @@ abstract class IcsImportResult with _$IcsImportResult {
     required int created,
     required int updated,
     required bool imported,
+
+    /// Lo importado o, si no se importó nada, lo que trae el calendario.
+    @Default(<IcsImportItem>[]) List<IcsImportItem> items,
   }) = _IcsImportResult;
+}
+
+/// Un evento del calendario importado (o que se importaría).
+@freezed
+abstract class IcsImportItem with _$IcsImportItem {
+  const factory IcsImportItem({
+    required String title,
+    required DateTime start,
+    DateTime? end,
+
+    /// CLASS, EXAM o DELIVERY.
+    required String kind,
+    required bool imported,
+  }) = _IcsImportItem;
 }

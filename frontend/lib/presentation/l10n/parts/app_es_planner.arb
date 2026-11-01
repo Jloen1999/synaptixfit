@@ -625,7 +625,7 @@
   "plannerSyncCopy": "Copiar enlace",
   "plannerSyncCopied": "Enlace copiado",
   "plannerSyncOpen": "Abrir en el calendario",
-  "plannerSyncGoogleSteps": "La app de Google Calendar del móvil no deja añadir calendarios por enlace. Pulsa «Añadir a Google Calendar» o, desde el ordenador, entra en calendar.google.com › Otros calendarios › + › Desde URL, pega el enlace y pulsa «Añadir calendario». Después aparece también en el móvil.",
+  "plannerSyncGoogleSteps": "La app de Google Calendar del móvil no deja añadir calendarios por enlace. Pulsa «Añadir a Google Calendar» y elige tu cuenta, o, desde el ordenador, entra en calendar.google.com › Otros calendarios › + › Desde URL. Después, en la app del móvil: menú › Ajustes › SynaptixFit › activa «Sincronizar». La primera vez Google puede tardar unas horas en traer los eventos.",
   "plannerSyncCampusTitle": "Exámenes y entregas del Campus Virtual",
   "plannerSyncCampusSteps": "1. En el Campus Virtual, abre Calendario › Importar o exportar calendarios › Exportar calendario.\n2. Elige todos los eventos y el periodo «Recientes y próximos 60 días».\n3. Pulsa «Obtener URL del calendario» y copia la dirección.\n4. Pégala aquí. Repítelo de vez en cuando para traer lo nuevo: no se duplica nada.",
   "plannerSyncCampusUrlLabel": "Dirección del calendario",
@@ -725,5 +725,45 @@
       }
     }
   },
-  "plannerScanNotImported": "no importada (no coincide con tus asignaturas)"
+  "plannerScanNotImported": "no importada (no coincide con tus asignaturas)",
+  "plannerScanBasis": "Basado en el {semester, plural, =1{primer} other{segundo}} semestre y en tus asignaturas: {subjects}.",
+  "@plannerScanBasis": {
+    "placeholders": {
+      "semester": {
+        "type": "int"
+      },
+      "subjects": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerScanNoMatchTitle": "Tus asignaturas no aparecen en este horario",
+  "plannerScanDocumentSubjects": "En el documento aparecen:",
+  "plannerScanNoMatchHint": "Comprueba que es el horario de tu curso y semestre, o que tus asignaturas (Académico › Asignaturas) se llaman igual o tienen las mismas siglas.",
+  "plannerIcsAddedList": "{count, plural, =1{Se ha añadido 1 evento} other{Se han añadido {count} eventos}}",
+  "@plannerIcsAddedList": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerIcsContentList": "{count, plural, =1{El calendario trae 1 evento} other{El calendario trae {count} eventos}}",
+  "@plannerIcsContentList": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerOpenRoutine": "Abrir en la rutina",
+  "plannerDistributeRoutineWeekdays": "Usar los días de la rutina",
+  "plannerDistributeRoutineWeekdaysHint": "Cada día va a su día de la semana; los ya hechos o saltados no se añaden.",
+  "plannerDistributeReplaces": "Se sustituirán los entrenamientos pendientes que esta rutina ya tenga en el calendario.",
+  "plannerErrorBlockRoutineLinked": "Este bloque sigue a su sesión de la rutina: entrénalo o apúntalo desde la rutina.",
+  "plannerFieldChallengeTask": "Tarea del reto",
+  "plannerFieldChallengeTaskHint": "Cada bloque completado hace avanzar esa tarea. El bloque debe caer dentro de las fechas del reto.",
+  "plannerNoChallengeTask": "Ninguna en concreto",
+  "plannerErrorBlockOutsideChallenge": "El bloque queda fuera de las fechas de su reto. Muévelo o amplía el reto.",
+  "plannerDeadlineDoneCaption": "Hecha"
 }

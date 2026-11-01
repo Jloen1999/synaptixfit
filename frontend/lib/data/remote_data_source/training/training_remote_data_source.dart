@@ -84,8 +84,38 @@ class TrainingRemoteDataSource {
     return UnmarkSessionResponseDto.fromJson(response.data!);
   }
 
-  Future<void> cancel(String sessionId) =>
+  /// Descarta una sesión sin terminar o elimina una terminada.
+  Future<void> delete(String sessionId) =>
       _dio.delete<void>('$_base/sessions/$sessionId');
+
+  /// Sesiones sin terminar (en curso y abandonadas).
+  Future<List<OpenSessionDto>> openSessions() async {
+    final response = await _dio.get<List<dynamic>>('$_base/sessions/open');
+    return (response.data ?? const [])
+        .map((e) => OpenSessionDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Corrige el RPE y la duración de una sesión terminada.
+  Future<SessionDto> correct(
+    String sessionId, {
+    required int rpe,
+    required int durationMinutes,
+  }) => _session(
+    _dio.patch<Map<String, dynamic>>(
+      '$_base/sessions/$sessionId',
+      data: {'rpe': rpe, 'durationMinutes': durationMinutes},
+    ),
+  );
+
+  /// Registra un día de rutina hecho sin la app (fecha `yyyy-MM-dd`).
+  Future<PastSessionResponseDto> logPast(Map<String, dynamic> body) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/sessions/past',
+      data: body,
+    );
+    return PastSessionResponseDto.fromJson(response.data!);
+  }
 
   /// `null` cuando la API responde 204 (sin check-in hoy).
   Future<CheckInDto?> todayCheckIn() async {

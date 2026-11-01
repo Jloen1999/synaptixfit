@@ -5,9 +5,11 @@ import com.synaptixfit.domain.model.challenge.ChallengeLink;
 import com.synaptixfit.domain.model.challenge.ChallengeType;
 import com.synaptixfit.domain.model.challenge.Difficulty;
 import com.synaptixfit.domain.model.challenge.LinkType;
+import com.synaptixfit.domain.model.challenge.LinkedDeadline;
 import com.synaptixfit.domain.model.challenge.Milestone;
 import com.synaptixfit.domain.model.challenge.MilestoneStatus;
 import com.synaptixfit.domain.model.challenge.ProgressEntry;
+import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
 import com.synaptixfit.domain.model.challenge.UnlockCondition;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.challenge.ChallengeEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.challenge.ChallengeProgressEntity;
@@ -16,6 +18,7 @@ import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.Visibili
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 /** Reto y tareas de dominio ↔ entidades; traduce los vocabularios en español de la BD. */
@@ -24,7 +27,12 @@ public final class ChallengePersistenceMapper {
     private ChallengePersistenceMapper() {
     }
 
-    public static Challenge toDomain(ChallengeEntity e, List<MilestoneEntity> milestones, double manualProgress) {
+    /**
+     * @param deadlines   foto de las entregas vinculadas (por id) y {@code blocks}, bloques por tarea: datos de
+     *                    solo lectura de Planificador que el reto usa para saber qué lo completa (ADR 0028)
+     */
+    public static Challenge toDomain(ChallengeEntity e, List<MilestoneEntity> milestones,
+                                     Map<UUID, LinkedDeadline> deadlines, Map<UUID, StudyBlockProgress> blocks) {
         return Challenge.builder()
                 .id(e.getId())
                 .ownerId(e.getUsuarioId())
@@ -47,10 +55,12 @@ public final class ChallengePersistenceMapper {
                 .originId(e.getOrigenId())
                 .originOwnerId(e.getOrigenPropietarioId())
                 .originOwnerName(e.getOrigenPropietarioNombre())
-                .manualProgress(manualProgress)
+                .manualProgress(e.getProgresoManual())
                 .sessionTarget(e.getSesionesObjetivo())
                 .sessionsCompleted(e.getSesionesCompletadas())
                 .milestones(milestones.stream().map(ChallengePersistenceMapper::toDomain).toList())
+                .linkedDeadlines(deadlines)
+                .studyBlocks(blocks)
                 .build();
     }
 
@@ -90,6 +100,7 @@ public final class ChallengePersistenceMapper {
         e.setOrigenPropietarioNombre(c.originOwnerName());
         e.setSesionesObjetivo(c.sessionTarget());
         e.setSesionesCompletadas(c.sessionsCompleted());
+        e.setProgresoManual(c.manualProgress());
     }
 
     public static void copyToEntity(UUID challengeId, Milestone m, MilestoneEntity e) {
@@ -150,7 +161,6 @@ public final class ChallengePersistenceMapper {
         return switch (t) {
             case EXAM -> "examen";
             case DELIVERY -> "entrega";
-            case BLOCK -> "bloque";
         };
     }
 
@@ -158,12 +168,12 @@ public final class ChallengePersistenceMapper {
         if (type == null || id == null) {
             return null;
         }
-        LinkType linkType = switch (type) {
-            case "examen" -> LinkType.EXAM;
-            case "bloque" -> LinkType.BLOCK;
-            default -> LinkType.DELIVERY;
+        // «bloque» ya no es un vínculo (V1012 lo pasó a la tarea del bloque): se ignora si quedara alguno.
+        return switch (type) {
+            case "examen" -> new ChallengeLink(LinkType.EXAM, id);
+            case "entrega" -> new ChallengeLink(LinkType.DELIVERY, id);
+            default -> null;
         };
-        return new ChallengeLink(linkType, id);
     }
 
     private static String statusToDb(MilestoneStatus s) {

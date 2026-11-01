@@ -10,6 +10,7 @@ import com.synaptixfit.domain.event.planner.FocusSessionCompleted;
 import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
 import com.synaptixfit.domain.event.training.TrainingSessionCompletionChanged;
+import com.synaptixfit.domain.event.training.TrainingSessionCorrected;
 import com.synaptixfit.domain.event.user.UserRegistered;
 import java.util.UUID;
 import org.springframework.context.event.EventListener;
@@ -47,6 +48,12 @@ public class InsightsEventListener {
     public void on(TrainingSessionCompletionChanged event) {
         recordTrainingLoad.recordTrainingLoad(new RecordTrainingLoadUseCase.Command(event.userId(), event.sessionId(),
                 event.date(), event.rpe(), event.durationMinutes(), event.completed()));
+    }
+
+    @EventListener
+    public void on(TrainingSessionCorrected event) {
+        recordTrainingLoad.recordTrainingLoad(new RecordTrainingLoadUseCase.Command(event.userId(), event.sessionId(),
+                event.date(), event.rpe(), event.durationMinutes(), true));
     }
 
     @EventListener

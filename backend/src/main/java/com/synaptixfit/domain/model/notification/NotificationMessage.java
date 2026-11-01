@@ -22,7 +22,8 @@ public record NotificationMessage(Code code, Map<String, String> params) {
         POST_LIKED,
         POST_COMMENTED,
         FRIEND_REQUEST_RECEIVED,
-        FRIEND_REQUEST_ACCEPTED
+        FRIEND_REQUEST_ACCEPTED,
+        ROUTINE_COMPLETED
     }
 
     public NotificationMessage {

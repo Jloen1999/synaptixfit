@@ -1,12 +1,15 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training;
 
-import com.synaptixfit.application.port.input.training.CancelTrainingSessionUseCase;
+import com.synaptixfit.application.port.input.training.CorrectTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.DeleteSessionSetUseCase;
+import com.synaptixfit.application.port.input.training.DeleteTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.FinishTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.GetTrainingSessionUseCase;
+import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
 import com.synaptixfit.application.port.input.training.ListTrainingSessionsUseCase;
+import com.synaptixfit.application.port.input.training.LogPastRoutineSessionUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
 import com.synaptixfit.application.port.input.training.StartTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.UnmarkTrainingSessionUseCase;
@@ -15,9 +18,13 @@ import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RecommendationDtos.RecommendationResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.PendingDayResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.CorrectSessionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.ExperienceResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.FinishSessionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.FinishSessionResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.OpenSessionResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.PastSessionRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.PastSessionResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.RecordSetRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.SessionAdaptationResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.SessionResponse;
@@ -31,6 +38,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,7 +58,10 @@ public class TrainingSessionController {
     private final DeleteSessionSetUseCase deleteSet;
     private final FinishTrainingSessionUseCase finish;
     private final UnmarkTrainingSessionUseCase unmark;
-    private final CancelTrainingSessionUseCase cancel;
+    private final DeleteTrainingSessionUseCase delete;
+    private final CorrectTrainingSessionUseCase correct;
+    private final LogPastRoutineSessionUseCase logPast;
+    private final ListOpenSessionsUseCase listOpen;
     private final ListTrainingSessionsUseCase list;
     private final GetTrainingSessionUseCase get;
     private final GetPendingTrainingDayUseCase pendingDay;
@@ -58,7 +69,9 @@ public class TrainingSessionController {
 
     public TrainingSessionController(StartTrainingSessionUseCase start, RecordSessionSetUseCase recordSet,
                                      DeleteSessionSetUseCase deleteSet, FinishTrainingSessionUseCase finish,
-                                     UnmarkTrainingSessionUseCase unmark, CancelTrainingSessionUseCase cancel,
+                                     UnmarkTrainingSessionUseCase unmark, DeleteTrainingSessionUseCase delete,
+                                     CorrectTrainingSessionUseCase correct, LogPastRoutineSessionUseCase logPast,
+                                     ListOpenSessionsUseCase listOpen,
                                      ListTrainingSessionsUseCase list, GetTrainingSessionUseCase get,
                                      GetPendingTrainingDayUseCase pendingDay,
                                      GetSessionAdaptationUseCase adaptation) {
@@ -67,14 +80,17 @@ public class TrainingSessionController {
         this.deleteSet = deleteSet;
         this.finish = finish;
         this.unmark = unmark;
-        this.cancel = cancel;
+        this.delete = delete;
+        this.correct = correct;
+        this.logPast = logPast;
+        this.listOpen = listOpen;
         this.list = list;
         this.get = get;
         this.pendingDay = pendingDay;
         this.adaptation = adaptation;
     }
 
-    /** Próximo día pendiente de la rutina activa más reciente; 204 si no hay. */
+    /** Próximo día de la rutina en curso, con fecha prevista y retraso; 204 si no hay. */
     @GetMapping("/pending-day")
     public ResponseEntity<PendingDayResponse> pendingDay(@CurrentUserId UUID userId) {
         return pendingDay.pendingDay(userId).map(PendingDayResponse::from).map(ResponseEntity::ok)
@@ -95,6 +111,21 @@ public class TrainingSessionController {
                                               @RequestParam(defaultValue = "0") int page,
                                               @RequestParam(defaultValue = "20") int size) {
         return PageResponse.from(list.list(userId, completed, new PageRequest(page, size)), SessionResponse::from);
+    }
+
+    /** Sesiones sin terminar (en curso y abandonadas), más recientes primero. */
+    @GetMapping("/sessions/open")
+    public List<OpenSessionResponse> listOpen(@CurrentUserId UUID userId) {
+        return listOpen.listOpen(userId).stream().map(OpenSessionResponse::from).toList();
+    }
+
+    /** Registra un día de rutina entrenado sin la app (hoy o hasta 7 días antes). */
+    @PostMapping("/sessions/past")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PastSessionResponse logPast(@CurrentUserId UUID userId, @Valid @RequestBody PastSessionRequest request) {
+        LogPastRoutineSessionUseCase.Result result = logPast.logPast(new LogPastRoutineSessionUseCase.Command(userId,
+                request.routineId(), request.dayId(), request.date(), request.durationMinutes(), request.rpe()));
+        return new PastSessionResponse(SessionResponse.from(result.session()), ExperienceResponse.from(result.experience()));
     }
 
     @GetMapping("/sessions/{sessionId}")
@@ -125,7 +156,10 @@ public class TrainingSessionController {
                 result.recommendations().stream().map(RecommendationResponse::from).toList());
     }
 
-    /** Deshace la finalización: el día deja de estar completado y se resta la experiencia otorgada. */
+    /**
+     * Deshace la finalización (solo el mismo día en que se terminó): el día deja de estar completado y
+     * se resta la experiencia otorgada.
+     */
     @PostMapping("/sessions/{sessionId}/unmark")
     public UnmarkSessionResponse unmark(@CurrentUserId UUID userId, @PathVariable UUID sessionId) {
         UnmarkTrainingSessionUseCase.Result result = unmark.unmark(userId, sessionId);
@@ -139,10 +173,21 @@ public class TrainingSessionController {
         return SessionAdaptationResponse.from(adaptation.adaptation(userId, sessionId, tz));
     }
 
-    /** Abandona una sesión en curso. */
+    /** Corrige el RPE y la duración de una sesión terminada (recalcula calorías y carga). */
+    @PatchMapping("/sessions/{sessionId}")
+    public SessionResponse correct(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
+                                   @Valid @RequestBody CorrectSessionRequest request) {
+        return SessionResponse.from(correct.correct(new CorrectTrainingSessionUseCase.Command(userId, sessionId,
+                request.rpe(), request.durationMinutes())));
+    }
+
+    /**
+     * Elimina una sesión: si estaba sin terminar se descarta; si estaba terminada, además se resta su XP
+     * y se retiran su carga, su avance en retos y su bloque.
+     */
     @DeleteMapping("/sessions/{sessionId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancel(@CurrentUserId UUID userId, @PathVariable UUID sessionId) {
-        cancel.cancel(userId, sessionId);
+    public void delete(@CurrentUserId UUID userId, @PathVariable UUID sessionId) {
+        delete.delete(userId, sessionId);
     }
 }

@@ -57,6 +57,8 @@ public class ChallengeEntity {
     private Integer sesionesObjetivo;
     @Column(name = "sesiones_completadas", nullable = false)
     private int sesionesCompletadas;
+    @Column(name = "progreso_manual", nullable = false)
+    private double progresoManual;
     @Column(name = "origen_id")
     private UUID origenId;
     @Column(name = "origen_propietario_id")
@@ -108,6 +110,8 @@ public class ChallengeEntity {
     public void setSesionesObjetivo(Integer sesionesObjetivo) { this.sesionesObjetivo = sesionesObjetivo; }
     public int getSesionesCompletadas() { return sesionesCompletadas; }
     public void setSesionesCompletadas(int sesionesCompletadas) { this.sesionesCompletadas = sesionesCompletadas; }
+    public double getProgresoManual() { return progresoManual; }
+    public void setProgresoManual(double progresoManual) { this.progresoManual = progresoManual; }
     public UUID getOrigenId() { return origenId; }
     public void setOrigenId(UUID origenId) { this.origenId = origenId; }
     public UUID getOrigenPropietarioId() { return origenPropietarioId; }

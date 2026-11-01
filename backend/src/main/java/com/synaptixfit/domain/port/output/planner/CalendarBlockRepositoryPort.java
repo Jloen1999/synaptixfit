@@ -30,4 +30,10 @@ public interface CalendarBlockRepositoryPort {
 
     /** Todos los bloques del usuario de esa asignatura. */
     List<CalendarBlock> findBySubject(UUID userId, UUID subjectId);
+
+    /** Todos los bloques del usuario enlazados a esa rutina, por inicio ascendente. */
+    List<CalendarBlock> findByRoutine(UUID userId, UUID routineId);
+
+    /** Todos los bloques del usuario enlazados a esos días de rutina, por inicio ascendente. */
+    List<CalendarBlock> findByRoutineDays(UUID userId, Collection<UUID> routineDayIds);
 }

@@ -10,6 +10,7 @@ import '../screens/training/live_session/bloc/live_session_bloc.dart';
 import '../screens/training/routine_detail/bloc/routine_detail_bloc.dart';
 import '../screens/training/routine_editor/bloc/routine_editor_bloc.dart';
 import '../screens/training/session_completed/bloc/session_completed_bloc.dart';
+import '../screens/training/session_detail/bloc/session_detail_bloc.dart';
 import '../screens/training/session_history/bloc/session_history_bloc.dart';
 import '../screens/training/training_home/bloc/training_home_bloc.dart';
 import '../screens/training/weekly_plan/bloc/weekly_plan_bloc.dart';
@@ -18,7 +19,13 @@ import '../screens/training/weekly_plan/bloc/weekly_plan_bloc.dart';
 void registerTrainingPresentation(GetIt getIt) {
   getIt
     ..registerFactory(
-      () => PastActivityBloc(logPastActivity: getIt(), getAccount: getIt()),
+      () => PastActivityBloc(
+        logPastActivity: getIt(),
+        getAccount: getIt(),
+        getPendingDay: getIt(),
+        getRoutine: getIt(),
+        logPastSession: getIt(),
+      ),
     )
     ..registerFactory(() => ExerciseAlternativesBloc(getAlternatives: getIt()))
     ..registerFactory(
@@ -31,6 +38,11 @@ void registerTrainingPresentation(GetIt getIt) {
         discardRecommendation: getIt(),
         startSession: getIt(),
         watchChanges: getIt(),
+        getOpenSessions: getIt(),
+        skipDay: getIt(),
+        finishSession: getIt(),
+        discardSession: getIt(),
+        restartRoutine: getIt(),
       ),
     )
     ..registerFactory(
@@ -60,7 +72,12 @@ void registerTrainingPresentation(GetIt getIt) {
           reorderExercises: getIt(),
           updateExercise: getIt(),
           removeExercise: getIt(),
+          replaceExercise: getIt(),
           startSession: getIt(),
+          getMyRoutines: getIt(),
+          skipDay: getIt(),
+          unskipDay: getIt(),
+          restartRoutine: getIt(),
         ),
       ),
     )
@@ -94,11 +111,23 @@ void registerTrainingPresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(
+      () => SessionDetailBloc(
+        getSession: getIt(),
+        getRoutine: getIt(),
+        getHighlights: getIt(),
+      ),
+    )
+    ..registerFactory(
       () => SessionHistoryBloc(
         getHistory: getIt(),
         getRecords: getIt(),
         unmark: getIt(),
         getAccount: getIt(),
+        getOpen: getIt(),
+        correct: getIt(),
+        delete: getIt(),
+        finish: getIt(),
+        discard: getIt(),
       ),
     )
     ..registerFactory(

@@ -5,6 +5,7 @@ import '../../../../domain/enums/home_acwr_zone.dart';
 import '../../../../domain/enums/home_banner_type.dart';
 import '../../../../domain/enums/home_event_kind.dart';
 import '../../../../domain/enums/home_event_type.dart';
+import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
 
 part 'home_dashboard_dto.freezed.dart';
@@ -211,9 +212,21 @@ abstract class HomeNextTrainingDayDto with _$HomeNextTrainingDayDto {
     @Default('') String routineName,
     @Default('') String dayId,
     @Default(1) int weekNumber,
+    @Default(1) int totalWeeks,
     @Default(1) int dayNumber,
     String? dayName,
     String? status,
+    String? scheduledDate,
+    @Default(false) bool overdue,
+    @Default(1) int sessionOfWeek,
+    @Default(1) int sessionsInWeek,
+    String? staleSessionId,
+    @Default(0) int exerciseCount,
+    @Default(0) int totalDays,
+    @Default(0) int completedDays,
+    @Default(0) int skippedDays,
+    String? coverImageUrl,
+    String? coverModality,
   }) = _HomeNextTrainingDayDto;
 
   const HomeNextTrainingDayDto._();
@@ -226,10 +239,30 @@ abstract class HomeNextTrainingDayDto with _$HomeNextTrainingDayDto {
     routineName: routineName,
     dayId: dayId,
     weekNumber: weekNumber,
+    totalWeeks: totalWeeks,
     dayNumber: dayNumber,
     dayName: (dayName?.trim().isEmpty ?? true) ? null : dayName,
     inProgress: status == 'IN_PROGRESS',
+    scheduledDate: _localDate(scheduledDate),
+    overdue: overdue,
+    sessionOfWeek: sessionOfWeek,
+    sessionsInWeek: sessionsInWeek,
+    staleSessionId: staleSessionId,
+    exerciseCount: exerciseCount,
+    totalDays: totalDays,
+    completedDays: completedDays,
+    skippedDays: skippedDays,
+    coverImageUrl: (coverImageUrl?.trim().isEmpty ?? true) ? null : coverImageUrl,
+    coverModality: coverModality == null
+        ? null
+        : Modality.fromApi(coverModality),
   );
+}
+
+/// Fecha sin hora de la API (`yyyy-MM-dd`) como medianoche local.
+DateTime? _localDate(String? value) {
+  final parsed = value == null ? null : DateTime.tryParse(value);
+  return parsed == null ? null : DateTime(parsed.year, parsed.month, parsed.day);
 }
 
 @freezed
@@ -292,6 +325,8 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     @Default(false) bool completed,
     String? subjectName,
     String? status,
+    String? routineId,
+    String? routineDayId,
   }) = _HomeTodayEventDto;
 
   const HomeTodayEventDto._();
@@ -309,6 +344,8 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     completed: completed,
     subjectName: subjectName,
     status: ItemTimeStatus.fromApi(status),
+    routineId: routineId,
+    routineDayId: routineDayId,
   );
 }
 

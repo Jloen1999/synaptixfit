@@ -11,7 +11,8 @@ import java.util.UUID;
  * conoce las dependencias entre tareas y aplica el XP con anti-farmeo.
  *
  * <p>{@code xpAwarded} guarda el XP exacto otorgado por el estado completado actual: al
- * descompletar se resta exactamente esa cantidad.
+ * descompletar se resta exactamente esa cantidad. {@code weight} no se elige: es la parte de su
+ * dificultad en la suma de dificultades del reto (ADR 0028).
  */
 public final class Milestone {
 
@@ -63,13 +64,12 @@ public final class Milestone {
 
     // ------------------------------------------------------------ mutaciones (las dirige Challenge)
 
-    void redefine(String title, double weight, Difficulty difficulty, UUID subjectId, UUID noteId, UUID fileId,
+    void redefine(String title, Difficulty difficulty, UUID subjectId, UUID noteId, UUID fileId,
                   ChallengeLink link, UnlockCondition condition, int conditionN) {
         if (noteId != null && fileId != null) {
             throw new MilestoneAttachmentConflictException();
         }
         this.title = Guard.length(title, "title", TITLE_MIN, TITLE_MAX);
-        this.weight = Guard.range(weight, "weight", 0.01, 100.0);
         this.difficulty = difficulty == null ? Difficulty.MEDIUM : difficulty;
         this.subjectId = subjectId;
         this.noteId = noteId;
@@ -77,6 +77,11 @@ public final class Milestone {
         this.link = link;
         this.condition = condition == null ? UnlockCondition.AND : condition;
         this.conditionN = Math.max(1, conditionN);
+    }
+
+    /** Peso derivado de la dificultad; lo reparte {@link Challenge} entre todas sus tareas. */
+    void reweigh(double newWeight) {
+        this.weight = Guard.range(newWeight, "weight", 0.01, 100.0);
     }
 
     void changeDependencies(List<UUID> newDependencies) {

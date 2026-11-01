@@ -8,7 +8,15 @@ public interface RecordSessionSetUseCase {
 
     TrainingSession recordSet(Command command);
 
+    /** Lo apuntado en la serie; tiempo y distancia, solo en ejercicios que se miden así (pueden ser nulos). */
     record Command(UUID userId, UUID sessionId, UUID plannedExerciseId, int setNumber, Integer repsDone,
-                   Double weightKg, boolean completed, int failedReps) {
+                   Double weightKg, boolean completed, int failedReps, Integer durationSeconds,
+                   Integer distanceMeters) {
+
+        public Command(UUID userId, UUID sessionId, UUID plannedExerciseId, int setNumber, Integer repsDone,
+                       Double weightKg, boolean completed, int failedReps) {
+            this(userId, sessionId, plannedExerciseId, setNumber, repsDone, weightKg, completed, failedReps, null,
+                    null);
+        }
     }
 }

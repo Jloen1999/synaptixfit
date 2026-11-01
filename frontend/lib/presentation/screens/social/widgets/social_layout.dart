@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
@@ -29,32 +28,4 @@ class SocialListSkeleton extends StatelessWidget {
   Widget build(BuildContext context) => SocialContentWidth(
     child: AppSkeletonList(count: count, height: itemHeight),
   );
-}
-
-/// Indicador al final de una lista paginada mientras carga la siguiente página.
-class LoadMoreIndicator extends StatelessWidget {
-  const LoadMoreIndicator({super.key});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(TokensSpacing.m),
-    child: Center(
-      child: SizedBox.square(
-        dimension: 24,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.4,
-          semanticsLabel: context.localizations.socialLoadingMore,
-        ),
-      ),
-    ),
-  );
-}
-
-/// Pide la siguiente página cuando el scroll se acerca al final.
-bool onScrollNearEnd(ScrollNotification notification, VoidCallback loadMore) {
-  if (notification.metrics.axis == Axis.vertical &&
-      notification.metrics.extentAfter < 400) {
-    loadMore();
-  }
-  return false;
 }

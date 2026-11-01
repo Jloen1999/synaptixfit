@@ -160,7 +160,9 @@ class SuggestionsBloc extends Bloc<SuggestionsEvent, SuggestionsState> {
           end: b.end,
           subjectId: b.subjectId,
           routineId: b.routineId,
-          topics: b.topic,
+          routineWeekId: b.routineWeekId,
+          routineDayId: b.routineDayId,
+          topics: b.title ?? b.topic,
         ),
       );
       switch (result) {

@@ -28,7 +28,10 @@ abstract class PlannedExerciseDto with _$PlannedExerciseDto {
     int? targetDurationSeconds,
     int? distanceMeters,
     int? isometricSeconds,
+    List<int>? repsPerSet,
+    List<int>? isometricSecondsPerSet,
     int? realDurationSeconds,
+    String? trackingKind,
   }) = _PlannedExerciseDto;
 
   const PlannedExerciseDto._();
@@ -58,8 +61,11 @@ abstract class PlannedExerciseDto with _$PlannedExerciseDto {
       targetDurationSeconds: targetDurationSeconds,
       distanceMeters: distanceMeters,
       isometricSeconds: isometricSeconds,
+      repsPerSet: repsPerSet,
+      isometricSecondsPerSet: isometricSecondsPerSet,
     ),
     realDurationSeconds: realDurationSeconds,
+    trackingKind: TrackingKind.tryFromApi(trackingKind),
   );
 }
 
@@ -70,6 +76,7 @@ abstract class DayDto with _$DayDto {
     required int dayNumber,
     String? name,
     String? status,
+    String? closedOn,
     List<PlannedExerciseDto>? exercises,
   }) = _DayDto;
 
@@ -82,6 +89,7 @@ abstract class DayDto with _$DayDto {
     dayNumber: dayNumber,
     name: name,
     status: ProgressStatus.fromApi(status),
+    closedOn: parseLocalDate(closedOn),
     exercises: _exercises(exercises),
   );
 }
@@ -150,6 +158,7 @@ abstract class RoutineDto with _$RoutineDto {
     @Default(0) int exerciseCount,
     @Default(0) int totalDays,
     @Default(0) int completedDays,
+    @Default(0) int skippedDays,
     OriginDto? origin,
     DateTime? createdAt,
     List<WeekDto>? weeks,
@@ -175,6 +184,7 @@ abstract class RoutineDto with _$RoutineDto {
     exerciseCount: exerciseCount,
     totalDays: totalDays,
     completedDays: completedDays,
+    skippedDays: skippedDays,
     origin: origin?.toDomain(),
     createdAt: createdAt?.toLocal(),
     weeks: ((weeks ?? const <WeekDto>[]).map((w) => w.toDomain()).toList())
@@ -200,6 +210,9 @@ abstract class RoutineSummaryDto with _$RoutineSummaryDto {
     @Default(0) int completedDays,
     OriginDto? origin,
     DateTime? createdAt,
+    @Default(0) int skippedDays,
+    String? coverImageUrl,
+    String? coverModality,
   }) = _RoutineSummaryDto;
 
   const RoutineSummaryDto._();
@@ -223,6 +236,9 @@ abstract class RoutineSummaryDto with _$RoutineSummaryDto {
     completedDays: completedDays,
     origin: origin?.toDomain(),
     createdAt: createdAt?.toLocal(),
+    skippedDays: skippedDays,
+    coverImageUrl: blankToNull(coverImageUrl),
+    coverModality: coverModality == null ? null : Modality.fromApi(coverModality),
   );
 }
 
@@ -233,12 +249,23 @@ abstract class PendingDayDto with _$PendingDayDto {
     required String routineName,
     required String weekId,
     required int weekNumber,
+    @Default(1) int totalWeeks,
     String? weekName,
     required String dayId,
     required int dayNumber,
     String? dayName,
     String? dayStatus,
+    String? scheduledDate,
+    @Default(false) bool overdue,
+    @Default(1) int sessionOfWeek,
+    @Default(1) int sessionsInWeek,
+    String? staleSessionId,
     List<PlannedExerciseDto>? exercises,
+    @Default(0) int totalDays,
+    @Default(0) int completedDays,
+    @Default(0) int skippedDays,
+    String? coverImageUrl,
+    String? coverModality,
   }) = _PendingDayDto;
 
   const PendingDayDto._();
@@ -251,12 +278,23 @@ abstract class PendingDayDto with _$PendingDayDto {
     routineName: routineName,
     weekId: weekId,
     weekNumber: weekNumber,
+    totalWeeks: totalWeeks,
     weekName: weekName,
     dayId: dayId,
     dayNumber: dayNumber,
     dayName: dayName,
     dayStatus: ProgressStatus.fromApi(dayStatus),
+    scheduledDate: parseLocalDate(scheduledDate),
+    overdue: overdue,
+    sessionOfWeek: sessionOfWeek,
+    sessionsInWeek: sessionsInWeek,
+    staleSessionId: staleSessionId,
     exercises: _exercises(exercises),
+    totalDays: totalDays,
+    completedDays: completedDays,
+    skippedDays: skippedDays,
+    coverImageUrl: blankToNull(coverImageUrl),
+    coverModality: coverModality == null ? null : Modality.fromApi(coverModality),
   );
 }
 

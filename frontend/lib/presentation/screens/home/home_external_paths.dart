@@ -9,6 +9,7 @@ abstract final class HomeExternalPaths {
   static const profile = '/profile';
   static const onboarding = '/onboarding';
   static const notifications = '/notifications';
+  static const community = '/social';
   static const admin = '/admin';
 
   static const planner = '/planner';

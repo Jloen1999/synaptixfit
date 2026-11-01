@@ -54,7 +54,10 @@ void main() {
         'difficulty': 'LOW',
         'xpReward': 20,
         'xpAwarded': 0,
-        'linkedEntityType': 'BLOCK',
+        'linkedEntityType': 'DELIVERY',
+        'linkTitle': 'Práctica 2',
+        'linkDueAt': '2026-11-02T09:00:00Z',
+        'completedByLink': true,
         'linkedEntityId': 'b1',
         'fileId': 'f1',
       },
@@ -100,7 +103,9 @@ void main() {
     expect(second.status, MilestoneStatus.locked);
     expect(second.condition, MilestoneCondition.xOfY);
     expect(second.difficulty, ChallengeDifficulty.low);
-    expect(second.link?.type, ChallengeLinkType.block);
+    expect(second.link?.type, ChallengeLinkType.delivery);
+    expect(second.linkTitle, 'Práctica 2');
+    expect(second.completedByLink, isTrue);
     expect(second.fileId, 'f1');
     expect(challenge.milestones.first.noteId, 'n1');
   });
@@ -153,10 +158,9 @@ void main() {
         entityId: 'd',
       ),
       milestones: const [
-        MilestoneDraft(title: 'Uno', weight: 40),
+        MilestoneDraft(title: 'Uno'),
         MilestoneDraft(
           title: 'Dos',
-          weight: 60,
           dependsOn: [0],
           condition: MilestoneCondition.any,
           noteId: 'n1',
@@ -176,7 +180,6 @@ void main() {
     final milestones = body['milestones'] as List;
     expect(milestones[0], {
       'title': 'Uno',
-      'weight': 40.0,
       'difficulty': 'MEDIUM',
       'dependsOn': <int>[],
     });
@@ -246,17 +249,17 @@ void main() {
     expect(work.type, ChallengeLinkType.delivery);
   });
 
-  test('ChallengeBlockDto solo es vinculable si es de estudio y pendiente', () {
-    ChallengeBlockDto block(String type, {bool completed = false}) =>
-        ChallengeBlockDto.fromJson({
-          'id': 'b',
-          'type': type,
-          'start': '2026-11-01T09:00:00Z',
-          'completed': completed,
-        });
-    expect(block('STUDY').isLinkable, isTrue);
-    expect(block('REVIEW').isLinkable, isTrue);
-    expect(block('SPORT').isLinkable, isFalse);
-    expect(block('STUDY', completed: true).isLinkable, isFalse);
+  test('ChallengeDto lee UPCOMING y el vínculo que completa el reto', () {
+    final c = ChallengeDto.fromJson({
+      ...json,
+      'status': 'UPCOMING',
+      'linkTitle': 'Examen final',
+      'completedByLink': true,
+      'milestones': <dynamic>[],
+      'milestoneCount': 0,
+    }).toDomain();
+    expect(c.status, ChallengeStatus.upcoming);
+    expect(c.linkTitle, 'Examen final');
+    expect(c.completedByLink, isTrue);
   });
 }

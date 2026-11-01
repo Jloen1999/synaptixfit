@@ -45,8 +45,7 @@ class RoutineSuggestionFocusServiceTest {
 
     @Test
     void distributesRoutineDaysOnChosenWeekdaysSkippingBusySlotsAndThePast() {
-        RoutineDistributionService service = new RoutineDistributionService(f.blocks, f.directory,
-                f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.CLOCK);
+        RoutineDistributionService service = distribution();
         // Miércoles a las 18:00 ocupado: la sesión pasa al primer hueco libre (19:00).
         f.blocks.save(CalendarBlock.builder().id(UUID.randomUUID()).userId(f.user)
                 .range(new TimeRange(at(2, 18, 0), at(2, 19, 0))).type(ActivityType.CLASS).build());
@@ -59,7 +58,8 @@ class RoutineSuggestionFocusServiceTest {
                 .containsExactly(at(0, 18, 0), at(2, 19, 0), at(4, 18, 0), at(7, 18, 0));
         assertThat(created.get(0).details().routineDayId()).isEqualTo(routine.days().get(0).id());
         assertThat(created.get(2).details().routineWeekId()).isEqualTo(routine.days().get(2).weekId());
-        assertThat(created.get(2).details().topics()).isEqualTo("Día 3");
+        assertThat(created.get(0).details().topics()).isEqualTo("Semana 1 · Empuje");
+        assertThat(created.get(2).details().topics()).isEqualTo("Semana 2 · Fuerza");
         assertThat(created).allSatisfy(b -> {
             assertThat(b.type()).isEqualTo(ActivityType.SPORT);
             assertThat(b.details().routineId()).isEqualTo(routine.id());
@@ -67,9 +67,65 @@ class RoutineSuggestionFocusServiceTest {
     }
 
     @Test
+    void withoutChosenWeekdaysEachDayGoesToItsPreferredWeekdayAndOnlyPendingDaysArePlaced() {
+        UUID week1 = UUID.randomUUID();
+        UUID week2 = UUID.randomUUID();
+        RoutineRef partly = new RoutineRef(UUID.randomUUID(), "Tres días", "Fuerza Máxima", 2, 6, List.of(
+                new RoutineRef.Day(UUID.randomUUID(), week1, 1, 1, "Empuje", false),
+                new RoutineRef.Day(UUID.randomUUID(), week1, 1, 3, "Tirón", true),
+                new RoutineRef.Day(UUID.randomUUID(), week1, 1, 5, "Pierna", true),
+                new RoutineRef.Day(UUID.randomUUID(), week2, 2, 1, "Empuje", true)));
+        f.directory.routines.put(f.user, Map.of(partly.id(), partly));
+
+        List<CalendarBlock> created = distribution().distribute(new DistributeRoutineUseCase.Command(f.user,
+                partly.id(), Set.of(), PlannerFakes.MONDAY, LocalTime.of(18, 0), 60));
+
+        // Miércoles, viernes y el lunes siguiente: el lunes de la semana 1 ya está hecho.
+        assertThat(created).extracting(CalendarBlock::start)
+                .containsExactly(at(2, 18, 0), at(4, 18, 0), at(7, 18, 0));
+        assertThat(created).extracting(b -> b.details().topics())
+                .containsExactly("Semana 1 · Tirón", "Semana 1 · Pierna", "Semana 2 · Empuje");
+    }
+
+    @Test
+    void distributingAgainReplacesTheFuturePendingBlocksOfTheRoutine() {
+        RoutineDistributionService service = distribution();
+        service.distribute(new DistributeRoutineUseCase.Command(f.user, routine.id(), Set.of(1, 3, 5),
+                PlannerFakes.MONDAY, LocalTime.of(18, 0), 60));
+        service.distribute(new DistributeRoutineUseCase.Command(f.user, routine.id(), Set.of(2, 4),
+                PlannerFakes.MONDAY, LocalTime.of(18, 0), 60));
+        assertThat(f.blocks.store.values()).hasSize(4)
+                .allSatisfy(b -> assertThat(b.dayOfWeek()).isIn(2, 4));
+    }
+
+    @Test
+    void sportSuggestionsAreLinkedToTheNextRoutineDaysInOrder() {
+        PlanningSuggestionService service = new PlanningSuggestionService((inbox, zone) -> {
+            throw new AiUnavailableException("down");
+        }, f.directory, f.deadlines, f.directory, f.blocks, f.crossRegulation, PlannerFakes.ZONE, PlannerFakes.CLOCK);
+
+        WeekPlanSuggestions.Suggestion s = service.suggest(new SuggestWeekPlanUseCase.Command(f.user,
+                PlannerFakes.MONDAY, 0, 3, 60, 90));
+
+        List<SuggestedBlock> sport = s.blocks().stream().filter(b -> b.type() == ActivityType.SPORT).toList();
+        // Un solo objetivo: los 2 días que le quedan a la semana 1 de la rutina, en orden.
+        assertThat(sport).hasSize(2);
+        assertThat(sport).extracting(SuggestedBlock::routineDayId)
+                .containsExactly(routine.days().get(0).id(), routine.days().get(1).id());
+        assertThat(sport.get(0).title()).isEqualTo("Semana 1 · Empuje");
+    }
+
+    private RoutineDistributionService distribution() {
+        // Retira como el planificador: los bloques futuros pendientes de la rutina.
+        return new RoutineDistributionService(f.blocks, f.directory, f.weeklyLoadService(),
+                c -> f.blocks.store.values().removeIf(b -> c.routineId().equals(b.details().routineId())
+                        && !b.completed() && b.start().isAfter(PlannerFakes.NOW)),
+                PlannerFakes.ZONE, PlannerFakes.CLOCK);
+    }
+
+    @Test
     void distributionRequiresAnOwnedRoutine() {
-        RoutineDistributionService service = new RoutineDistributionService(f.blocks, f.directory,
-                f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.CLOCK);
+        RoutineDistributionService service = distribution();
         assertThatThrownBy(() -> service.distribute(new DistributeRoutineUseCase.Command(f.otherUser, routine.id(),
                 Set.of(1), null, null, 60)))
                 .extracting("code").isEqualTo("PLANNER_ROUTINE_NOT_FOUND");
@@ -86,7 +142,8 @@ class RoutineSuggestionFocusServiceTest {
                 PlannerFakes.MONDAY, 10, 3, 60, 90));
 
         assertThat(s.source()).isEqualTo(WeekPlanSuggestions.Source.HEURISTIC);
-        assertThat(s.sportSessions()).isEqualTo(3);
+        // Con rutina en curso, las sesiones que le quedan a su semana (2), no las 3 pedidas.
+        assertThat(s.sportSessions()).isEqualTo(2);
         assertThat(s.studyHours()).isEqualTo(10.0);
         assertThat(s.blocks()).allSatisfy(b -> assertThat(b.start()).isAfterOrEqualTo(PlannerFakes.NOW));
     }

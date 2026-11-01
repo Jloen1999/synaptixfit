@@ -46,11 +46,34 @@ class NotesRemoteDataSource {
 
   Future<void> deleteNote(String id) => _dio.delete<void>('$_base/$id');
 
-  Future<SharedNotePageDto> getSharedNotes(int page, int size) async {
+  Future<SharedNotePageDto> getSharedNotes({
+    required int page,
+    required int size,
+    required String scope,
+    String? authorId,
+  }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '$_base/shared',
-      queryParameters: {'page': page, 'size': size},
+      queryParameters: {
+        'page': page,
+        'size': size,
+        'scope': scope,
+        'authorId': ?authorId,
+      },
     );
     return SharedNotePageDto.fromJson(response.data!);
+  }
+
+  Future<SharedNoteDto> getSharedNote(String id) async {
+    final response = await _dio.get<Map<String, dynamic>>('$_base/shared/$id');
+    return SharedNoteDto.fromJson(response.data!);
+  }
+
+  /// Copia privada en mis apuntes (`POST /notes/shared/{id}/copy`).
+  Future<NoteDto> copySharedNote(String id) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/shared/$id/copy',
+    );
+    return NoteDto.fromJson(response.data!);
   }
 }

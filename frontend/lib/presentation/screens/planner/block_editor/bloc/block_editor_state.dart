@@ -61,4 +61,9 @@ sealed class BlockEditorOutcome with _$BlockEditorOutcome {
   /// El usuario pide marcar/desmarcar el bloque (lo resuelve el calendario).
   const factory BlockEditorOutcome.completionRequested(String blockId) =
       BlockEditorCompletionRequested;
+
+  /// Bloque de un día de rutina: se abre la rutina para entrenarlo (su estado
+  /// lo marca la sesión, no la persona).
+  const factory BlockEditorOutcome.trainingRequested(String routineId) =
+      BlockEditorTrainingRequested;
 }

@@ -44,6 +44,15 @@ abstract interface class RoutineRepositoryContract {
 
   Future<AppResult<Unit>> deleteRoutine(String routineId);
 
+  /// Salta un día (deja de proponerse y sale del calendario).
+  Future<AppResult<Routine>> skipDay(String routineId, String dayId);
+
+  /// Recupera un día saltado.
+  Future<AppResult<Routine>> unskipDay(String routineId, String dayId);
+
+  /// Nuevo ciclo: avance a cero, desde hoy y en curso.
+  Future<AppResult<Routine>> restartRoutine(String routineId);
+
   Future<AppResult<Routine>> duplicateRoutine(String routineId, {String? name});
 
   Future<AppResult<Routine>> cloneRoutine(String routineId);
@@ -100,6 +109,13 @@ abstract interface class RoutineRepositoryContract {
   Future<AppResult<Routine>> removeExercise(
     String routineId,
     String plannedExerciseId,
+  );
+
+  /// Sustituye el ejercicio de un hueco por [exerciseId] (misma posición).
+  Future<AppResult<Routine>> replaceExercise(
+    String routineId,
+    String plannedExerciseId,
+    String exerciseId,
   );
 
   /// Genera una propuesta con el motor de reglas (y la IA si [useAi]).

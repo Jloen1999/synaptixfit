@@ -50,12 +50,22 @@ abstract class Exercise with _$Exercise {
     final timed =
         measurementTypes.contains(MeasurementType.time) &&
         !measurementTypes.contains(MeasurementType.repetitions);
-    if (modality == Modality.aerobic || timed) {
+    // Cardio: un bloque de minutos. Por tiempo pero no aeróbico (plancha,
+    // sentadilla isométrica): series de aguante en segundos.
+    if (modality == Modality.aerobic) {
       return const ExerciseParameters(
         sets: 1,
         reps: 1,
         restSeconds: 60,
         targetDurationSeconds: 600,
+      );
+    }
+    if (timed) {
+      return const ExerciseParameters(
+        sets: 3,
+        reps: 1,
+        restSeconds: 60,
+        isometricSeconds: 30,
       );
     }
     if (modality == Modality.mobility) {

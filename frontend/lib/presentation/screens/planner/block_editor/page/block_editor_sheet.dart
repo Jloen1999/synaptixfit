@@ -7,6 +7,7 @@ import '../../../../../domain/enums/planner_enums.dart';
 import '../../../../../domain/models/planner/block_draft.dart';
 import '../../../../../domain/models/planner/calendar_block.dart';
 import '../../../../../domain/models/planner/deadline.dart';
+import '../../../../../domain/models/planner/planner_options.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
@@ -85,6 +86,7 @@ class _EditorViewState extends State<_EditorView>
   ClassKind? _classKind;
   String? _routineId;
   String? _challengeId;
+  String? _milestoneId;
   String? _deadlineId;
   PlannerPriority _deadlineDifficulty = PlannerPriority.medium;
   final _topics = TextEditingController();
@@ -94,6 +96,10 @@ class _EditorViewState extends State<_EditorView>
   // Distribución de rutina.
   String? _distRoutineId;
   Set<int> _weekdays = {1, 3, 5};
+
+  /// Cada día de la rutina en su día de la semana (el número del día): así el
+  /// calendario coincide con lo que propone la rutina.
+  bool _routineWeekdays = true;
   late DateTime _distStart;
   int _distTime = 18 * 60;
   int _distDuration = 60;
@@ -120,6 +126,7 @@ class _EditorViewState extends State<_EditorView>
     _classKind = b?.classKind;
     _routineId = b?.routineId;
     _challengeId = b?.challengeId;
+    _milestoneId = b?.milestoneId;
     _deadlineId = b?.deadlineId;
     _topics.text = b?.topics ?? '';
     _location.text = b?.location ?? '';
@@ -170,7 +177,16 @@ class _EditorViewState extends State<_EditorView>
           privateBlock: _private,
           classKind: t == BlockType.classSession ? _classKind : null,
           routineId: t == BlockType.sport ? _routineId : null,
+          // Si sigue siendo la misma rutina, el bloque conserva su día enlazado
+          // (si no, editarlo lo convertiría en deporte libre).
+          routineWeekId: _keepsRoutineDay(t)
+              ? widget.block?.routineWeekId
+              : null,
+          routineDayId: _keepsRoutineDay(t) ? widget.block?.routineDayId : null,
           challengeId: t.usesChallenge ? _challengeId : null,
+          milestoneId: t.usesChallenge && _challengeId != null
+              ? _milestoneId
+              : null,
           deadlineId: t.usesDeadlineLink ? _deadlineId : null,
           deadlineTitle: _type.createsDeadline && _deadlineId == null
               ? _deadlineTitle.text
@@ -186,6 +202,56 @@ class _EditorViewState extends State<_EditorView>
     );
   }
 
+  /// «Tarea del reto»: las pendientes del reto elegido que avanzan con
+  /// bloques (las vinculadas a una entrega las completa esa entrega). Cada
+  /// bloque completado hace avanzar la tarea; el servidor comprueba que sea de
+  /// ese reto y que el bloque caiga en su periodo.
+  List<Widget> _taskField(BlockEditorState state) {
+    final l10n = context.localizations;
+    ChallengeOption? challenge;
+    for (final c in state.challenges) {
+      if (c.id == _challengeId) challenge = c;
+    }
+    final tasks = [
+      for (final t in challenge?.tasks ?? const <ChallengeTaskOption>[])
+        if (t.id == _milestoneId || (!t.completed && !t.hasDeadline)) t,
+    ];
+    if (tasks.isEmpty) return const [];
+    return [
+      DropdownButtonFormField<String?>(
+        key: ValueKey('task-$_challengeId'),
+        initialValue: tasks.any((t) => t.id == _milestoneId)
+            ? _milestoneId
+            : null,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: l10n.plannerFieldChallengeTask,
+          helperText: l10n.plannerFieldChallengeTaskHint,
+          helperMaxLines: 3,
+          prefixIcon: const Icon(Icons.checklist_rounded),
+        ),
+        items: [
+          DropdownMenuItem(
+            value: null,
+            child: Text(l10n.plannerNoChallengeTask),
+          ),
+          for (final t in tasks)
+            DropdownMenuItem(
+              value: t.id,
+              child: Text(t.title, overflow: TextOverflow.ellipsis),
+            ),
+        ],
+        onChanged: (v) => setState(() => _milestoneId = v),
+      ),
+      const SizedBox(height: TokensSpacing.s),
+    ];
+  }
+
+  bool _keepsRoutineDay(BlockType t) =>
+      t == BlockType.sport &&
+      _routineId != null &&
+      _routineId == widget.block?.routineId;
+
   void _distribute() {
     final routineId = _distRoutineId;
     if (routineId == null) return;
@@ -193,7 +259,7 @@ class _EditorViewState extends State<_EditorView>
       BlockEditorEvent.distributionRequested(
         RoutineDistribution(
           routineId: routineId,
-          weekdays: _weekdays,
+          weekdays: _routineWeekdays ? const {} : _weekdays,
           startDate: _distStart,
           preferredStartMinutes: _distTime,
           durationMinutes: _distDuration,
@@ -304,7 +370,10 @@ class _EditorViewState extends State<_EditorView>
                     onPressed: state.status != BlockEditorStatus.ready
                         ? null
                         : onRoutineTab
-                        ? (_distRoutineId == null ? null : _distribute)
+                        ? (_distRoutineId == null ||
+                                  (!_routineWeekdays && _weekdays.isEmpty)
+                              ? null
+                              : _distribute)
                         : _save,
                   ),
                 ],
@@ -325,8 +394,21 @@ class _EditorViewState extends State<_EditorView>
     final missed = block.timeStatus == ItemTimeStatus.missed;
     void close(BlockEditorOutcome outcome) =>
         Navigator.of(context).pop(outcome);
+    // El bloque de un día de rutina sigue a su sesión: no se marca a mano, se
+    // entrena (o se registra como sesión pasada) desde la rutina.
+    final routineDay = block.routineDayId != null && block.routineId != null;
     final actions = <Widget>[
-      if (block.timeStatus == ItemTimeStatus.upcoming && !block.completed)
+      if (routineDay)
+        AppSecondaryButton(
+          label: l10n.plannerOpenRoutine,
+          icon: const Icon(Icons.fitness_center_rounded),
+          onPressed: state.submitting
+              ? null
+              : () => close(
+                  BlockEditorOutcome.trainingRequested(block.routineId!),
+                ),
+        )
+      else if (block.timeStatus == ItemTimeStatus.upcoming && !block.completed)
         // Un bloque que aún no ha empezado no se marca como hecho.
         AppInlineMessage(
           message: l10n.plannerCompleteWhenStarted,
@@ -623,9 +705,13 @@ class _EditorViewState extends State<_EditorView>
                   child: Text(l10n.plannerFieldChallenge),
                 ),
             ],
-            onChanged: (v) => setState(() => _challengeId = v),
+            onChanged: (v) => setState(() {
+              _challengeId = v;
+              _milestoneId = null;
+            }),
           ),
           const SizedBox(height: TokensSpacing.s),
+          ..._taskField(state),
         ],
         if (_type.usesDeadlineLink)
           DropdownButtonFormField<String?>(
@@ -825,11 +911,29 @@ class _EditorViewState extends State<_EditorView>
           onChanged: (v) => setState(() => _distRoutineId = v),
         ),
         const SizedBox(height: TokensSpacing.m),
-        Text(l10n.plannerFieldWeekdays, style: context.textStyles.labelLarge),
-        const SizedBox(height: TokensSpacing.xs),
-        WeekdayPicker(
-          selected: _weekdays,
-          onChanged: (s) => setState(() => _weekdays = s),
+        AppFocusOutline(
+          child: SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.event_repeat_rounded),
+            title: Text(l10n.plannerDistributeRoutineWeekdays),
+            subtitle: Text(l10n.plannerDistributeRoutineWeekdaysHint),
+            value: _routineWeekdays,
+            onChanged: (v) => setState(() => _routineWeekdays = v),
+          ),
+        ),
+        if (!_routineWeekdays) ...[
+          Text(l10n.plannerFieldWeekdays, style: context.textStyles.labelLarge),
+          const SizedBox(height: TokensSpacing.xs),
+          WeekdayPicker(
+            selected: _weekdays,
+            onChanged: (s) => setState(() => _weekdays = s),
+          ),
+        ],
+        const SizedBox(height: TokensSpacing.s),
+        // Volver a repartir sustituye lo que ya hubiera de esa rutina.
+        AppInlineMessage(
+          message: l10n.plannerDistributeReplaces,
+          tone: AppMessageTone.warning,
         ),
         const SizedBox(height: TokensSpacing.m),
         PickerField(

@@ -22,22 +22,27 @@ Reglas:
 1. El evento es un `record` inmutable en `domain/event/<modulo>/` que implementa `DomainEvent`.
 2. Se publica **después** de guardar el cambio, desde el servicio de aplicación.
 3. El oyente vive en `infrastructure/adapter/input/event/<modulo>/` y solo traduce el evento a una llamada a un caso de uso de su módulo (retos e insignias comparten `event/gamification/`). `ArchitectureTest.inputAdaptersOnlyTalkToUseCases` impide que dependa de servicios concretos o de puertos de salida.
-4. Los oyentes son **idempotentes**: solo actúan si el estado cambia. Así se evitan los bucles entre eventos bidireccionales (entrega ⇄ reto).
+4. Los oyentes son **idempotentes**: solo actúan si el estado cambia. Así se evitan los bucles entre eventos bidireccionales.
 
 ## Catálogo
 
 | Evento | Publica | Escucha | Reacción |
 |---|---|---|---|
 | `UserRegistered` | Núcleo | Indicadores, Notificaciones | Crear estado cognitivo inicial y preferencias de notificación |
-| `UserPrivacyChanged` | Núcleo | Entrenamiento, Gamificación, Académico, Planificador | Al pasar a `PRIVATE`, rutinas, retos, apuntes y planes semanales pasan a privados |
+| `UserPrivacyChanged` | Núcleo | Entrenamiento, Gamificación, Académico, Planificador | Al pasar a `PRIVATE`, rutinas, retos, apuntes y planes semanales pasan a privados. Con `FRIENDS` no se cambia nada guardado: lo que otros ven ya lo limita la visibilidad efectiva (`EffectiveVisibility`, la más restrictiva entre contenido y perfil) |
 | `LevelUp` | Gamificación (`ExperienceService`) | Notificaciones | Aviso `MILESTONE` «has subido de nivel» (uno por nivel, clave `level:<n>`) |
-| `DeadlineCompletionChanged` | Planificador | Gamificación | Completar o descompletar retos y tareas vinculados (con su XP). También se publica con `completed=false` al **borrar** una entrega completada. Con `completed=true`, evaluar insignias |
-| `ChallengeLinkCompletionChanged` | Gamificación | Planificador | Marcar la entrega o examen vinculado |
-| `StudyBlockCompletionChanged` | Planificador | Indicadores, Gamificación | Coste cognitivo del bloque; progreso de la tarea de reto vinculada; con `completed=true`, evaluar insignias |
+| `DeadlineCompletionChanged` | Planificador | Gamificación | Completar o descompletar las tareas vinculadas y el reto sin tareas vinculado (con su XP); la entrega es la fuente de verdad y no hay camino inverso (ADR 0028: se eliminó `ChallengeLinkCompletionChanged`). Los retos vencidos no cambian. También se publica con `completed=false` al **borrar** una entrega completada. Con `completed=true`, evaluar insignias |
+| `StudyBlockCompletionChanged` | Planificador | Indicadores, Gamificación | Coste cognitivo del bloque; progreso de la tarea de reto vinculada (bloques hechos / bloques de la tarea; si la tarea tiene entrega, manda la entrega); con `completed=true`, evaluar insignias |
+| `StudyBlockAssignmentChanged` | Planificador (crear un bloque con tarea, cambiarle la tarea o borrar uno sin completar) | Gamificación | Recalcular el progreso por bloques de esas tareas (2/2 hechos → se añade otro → 2/3) (ADR 0028) |
 | `SportBlockCompletionChanged` | Planificador (bloque de deporte sin rutina: al marcarlo, desmarcarlo o borrarlo hecho) | Indicadores | Registra o retira la carga física del bloque (esfuerzo × minutos; esfuerzo 5 si no se indica) y recalcula el ACWR |
 | `ReviewAbandoned` | Académico (quitar un material del repaso) | Planificador | Borra los bloques de repaso pendientes de ese material; el material queda «abandonado» con su historial |
 | `FocusSessionCompleted` | Planificador (Pomodoro) | Indicadores, Gamificación | Recalcular la carga cognitiva de hoy; evaluar insignias y racha (el día cuenta como activo). La XP (con tope diario) la da el propio planificador |
-| `TrainingSessionCompletionChanged` | Entrenamiento | Indicadores, Gamificación, Planificador | Registrar o borrar la carga física y recalcular el ACWR; recontar los retos de fitness por sesiones (ADR 0009) y, al completar, evaluar insignias; el bloque de deporte del mismo día de rutina sigue el estado de la sesión (sin XP de bloque) |
+| `TrainingSessionCompletionChanged` | Entrenamiento (terminar, desmarcar, corregir, eliminar o registrar una sesión pasada) | Indicadores, Gamificación, Planificador | Registrar, actualizar o borrar la carga física **en la fecha de la sesión** y recalcular el ACWR; recontar los retos de fitness por sesiones (ADR 0009) y, al completar, evaluar insignias; el bloque de deporte de ese día de rutina sigue el estado de la sesión (sin XP de bloque): el de la misma fecha o, si se entrenó otro día, el más cercano. Se publica antes que `RoutineDaysSkipped`/`RoutineDeactivated` para que el bloque del día entrenado se marque antes de retirar los demás |
+| `RoutineDaysSkipped` | Entrenamiento (saltar un día o completar uno posterior, que salta los anteriores pendientes) | Planificador | Borra los bloques pendientes (no completados) de esos días de rutina, de cualquier fecha |
+| `RoutineDaysRemoved` | Entrenamiento (borrar un día o una semana de la estructura) | Planificador | Se publica **antes** de guardar el borrado: `dias_rutina` desenlaza sus bloques con `ON DELETE SET NULL` y, sin el aviso, pasarían a ser deporte libre con XP y carga. Borra sus bloques, también los completados (sin enlace contarían dos veces como actividad) |
+| `RoutineDeactivated` | Entrenamiento (`RoutineLifecycle`: pausa, también al activar otra; borrado; ciclo terminado) | Planificador | Borra los bloques **futuros** pendientes de la rutina (los pasados y los completados se quedan como historial) |
+| `TrainingSessionCorrected` | Entrenamiento (corregir RPE o duración de una sesión terminada) | Indicadores | Actualiza la carga física de esa sesión. Evento propio para que el calendario y los retos no reaccionen como a una nueva finalización |
+| `RoutineCompleted` | Entrenamiento (último día hecho o saltado, o completar a mano) | Notificaciones | Aviso `MILESTONE` «rutina terminada» (uno por rutina y día, código `ROUTINE_COMPLETED`) |
 | `CheckInSubmitted` | Entrenamiento | Gamificación, Notificaciones | Evaluar insignias y racha; si el check-in pide adaptar el entrenamiento, aviso `FATIGUE_ALERT` (uno al día) |
 | `OvertrainingDetected` | Indicadores | Notificaciones | El ACWR acaba de entrar en sobreentrenamiento: aviso `FATIGUE_ALERT` (uno al día) |
 | `ChallengeCompleted` | Gamificación | Social, Gamificación, Notificaciones | Publicación automática «reto completado» (sin duplicar si se recompleta); evaluar insignias; aviso `MILESTONE` (uno por reto, clave `challenge:<id>`: dos retos con el mismo título avisan los dos) |

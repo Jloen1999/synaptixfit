@@ -1,5 +1,8 @@
 package com.synaptixfit.domain.model.social;
 
+import com.synaptixfit.domain.model.shared.AuthorAudience;
+import com.synaptixfit.domain.model.shared.EffectiveVisibility;
+import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.user.User;
 import java.util.UUID;
 
@@ -7,8 +10,9 @@ import java.util.UUID;
  * Reglas de visibilidad del contenido social (sustituyen a las políticas RLS y a las funciones
  * {@code son_amigos}, {@code nivel_privacidad_de} y {@code excluir_si_shadowban}).
  *
- * <p>La consulta paginada del muro aplica las mismas reglas en SQL; cualquier cambio aquí debe
- * reflejarse en ella.
+ * <p>El perfil y el muro siguen la misma regla que el contenido compartido
+ * ({@link EffectiveVisibility}), tomando el perfil como un contenido público. La consulta paginada del
+ * muro aplica las mismas reglas en SQL; cualquier cambio aquí debe reflejarse en ella.
  */
 public final class ContentVisibility {
 
@@ -29,14 +33,13 @@ public final class ContentVisibility {
         if (author.id().equals(viewerId)) {
             return true;
         }
-        if (!author.isActive() || author.shadowbanned() || (relation != null && relation.isBlocked())) {
-            return false;
-        }
-        return switch (author.privacy()) {
-            case PUBLIC -> true;
-            case FRIENDS -> relation != null && relation.isAccepted();
-            case PRIVATE -> false;
-        };
+        return EffectiveVisibility.canView(Visibility.PUBLIC, audienceOf(author, relation));
+    }
+
+    /** Datos del autor vistos por otro usuario, con la relación entre ambos ({@code null} si no hay). */
+    public static AuthorAudience audienceOf(User author, Friendship relation) {
+        return new AuthorAudience(author.isActive(), author.shadowbanned(), author.privacy(),
+                relation != null && relation.isAccepted(), relation != null && relation.isBlocked());
     }
 
     /**

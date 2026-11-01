@@ -4,9 +4,11 @@ import static com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.Ins
 
 import com.synaptixfit.domain.model.dashboard.Dashboard;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChallenge;
-import com.synaptixfit.domain.model.dashboard.DashboardReadModels.NextTrainingDay;
 import com.synaptixfit.domain.model.dashboard.SmartBanner;
 import com.synaptixfit.domain.model.planner.ItemTimeStatus;
+import com.synaptixfit.domain.model.training.ExerciseRef;
+import com.synaptixfit.domain.model.training.Modality;
+import com.synaptixfit.domain.model.training.PendingDay;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.CognitiveStateResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.CrossRegulationResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.WellbeingResponse;
@@ -15,6 +17,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Resumen del inicio. Los tipos de la BD se exponen como enums en UPPER_SNAKE_CASE (ver {@link #code}). */
@@ -30,10 +33,7 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
             Map.entry("descanso", "REST"), Map.entry("comida", "MEAL"), Map.entry("sueno", "SLEEP"),
             Map.entry("examen", "EXAM"), Map.entry("entrega", "DELIVERY"), Map.entry("repaso", "REVIEW"),
             // tipo de entregas_examenes
-            Map.entry("presentacion", "PRESENTATION"), Map.entry("otro", "OTHER"),
-            // estado de dias_rutina
-            Map.entry("pendiente", "PENDING"), Map.entry("en_progreso", "IN_PROGRESS"),
-            Map.entry("completado", "COMPLETED"));
+            Map.entry("presentacion", "PRESENTATION"), Map.entry("otro", "OTHER"));
 
     /** Traduce un valor de la BD a su código de la API (desconocido: en mayúsculas). */
     static String code(String dbValue) {
@@ -55,13 +55,30 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                                int trainingMinutes, double trainingCalories, int studyMinutesCompleted) {
     }
 
-    /** {@code status}: PENDING o IN_PROGRESS. */
-    public record NextTrainingDayResponse(UUID routineId, String routineName, UUID weekId, int weekNumber, UUID dayId,
-                                          int dayNumber, String dayName, String status) {
+    /**
+     * Próximo entrenamiento (regla única {@code RoutineSchedule}). {@code status}: PENDING o IN_PROGRESS;
+     * {@code dayName} nulo si el día no tiene nombre propio (el cliente muestra el día de la semana de
+     * {@code dayNumber}); {@code staleSessionId}: sesión abandonada de ese día que hay que cerrar antes.
+     */
+    public record NextTrainingDayResponse(UUID routineId, String routineName, UUID weekId, int weekNumber,
+                                          int totalWeeks, UUID dayId, int dayNumber, String dayName, String status,
+                                          LocalDate scheduledDate, boolean overdue, int sessionOfWeek,
+                                          int sessionsInWeek, UUID staleSessionId, int exerciseCount,
+                                          int totalDays, int completedDays, int skippedDays, String coverImageUrl,
+                                          Modality coverModality) {
 
-        static NextTrainingDayResponse from(NextTrainingDay d) {
-            return d == null ? null : new NextTrainingDayResponse(d.routineId(), d.routineName(), d.weekId(),
-                    d.weekNumber(), d.dayId(), d.dayNumber(), d.dayName(), code(d.dayStatus()));
+        static NextTrainingDayResponse from(PendingDay p) {
+            if (p == null) {
+                return null;
+            }
+            Optional<ExerciseRef> cover = p.day().coverExercise();
+            return new NextTrainingDayResponse(p.routine().id(), p.routine().name(), p.week().id(),
+                    p.week().number(), p.routine().durationWeeks(), p.day().id(), p.day().number(), p.day().name(),
+                    p.status().name(), p.scheduledDate(), p.overdue(), p.sessionOfWeek(), p.sessionsInWeek(),
+                    p.staleSessionId(), p.day().exercises().size(), p.routine().totalDays(),
+                    p.routine().completedDays(), p.routine().skippedDays(),
+                    cover.map(ExerciseRef::stillImageUrl).orElse(null),
+                    cover.map(ExerciseRef::modality).orElse(null));
         }
     }
 
@@ -83,8 +100,10 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
      * {@code kind}: BLOCK o DEADLINE. {@code type}: STUDY, CLASS, REVIEW, SPORT, REST, MEAL, SLEEP (bloques)
      * o EXAM, DELIVERY, PRESENTATION, OTHER (entregas). {@code end} es null en las entregas.
      */
+    /** {@code routineId}/{@code routineDayId}: día de rutina del bloque de deporte («Entrenar» empieza ese). */
     public record TodayEventResponse(Dashboard.TodayEvent.Kind kind, UUID id, String title, String type, Instant start,
-                                     Instant end, boolean completed, String subjectName, ItemTimeStatus status) {
+                                     Instant end, boolean completed, String subjectName, ItemTimeStatus status,
+                                     UUID routineId, UUID routineDayId) {
     }
 
     /** {@code labels}: textos del usuario que el aviso cita (p. ej. el bloque sin hacer). */
@@ -110,7 +129,8 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                 d.planWeek().stream()
                         .map(p -> new PlanDayResponse(p.date(), p.planned(), p.completed(), p.missed())).toList(),
                 d.todayEvents().stream().map(e -> new TodayEventResponse(e.kind(), e.id(), e.title(), code(e.type()),
-                        e.start(), e.end(), e.completed(), e.subjectName(), e.status())).toList(),
+                        e.start(), e.end(), e.completed(), e.subjectName(), e.status(), e.routineId(),
+                        e.routineDayId())).toList(),
                 new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()));
     }
 }

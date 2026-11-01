@@ -157,7 +157,15 @@ public final class ProgressionCalculator {
         boolean sameLoad = sets == current.sets() && java.util.Objects.equals(weight, current.weightKg());
         List<Double> perSet = sameLoad ? current.weightsKg()
                 : usesWeight && weight != null && weight > 0 ? warmupWeights(weight, sets) : null;
-        return ExerciseParameters.clamped(sets, reps, rest, weight, perSet, duration, distance, iso);
+        // Las repeticiones y el aguante por serie (ADR 0027) se mueven igual que el valor común: si la
+        // progresión suma una repetición, la suma a cada serie; si escala el tiempo, escala cada serie.
+        List<Integer> repsPerSet = current.repsPerSet() == null ? null : current.repsPerSet().stream()
+                .limit(sets).map(r -> r + reps - current.reps()).toList();
+        List<Integer> isoPerSet = current.isometricSecondsPerSet() == null || iso == null
+                || current.isometricSeconds() == null ? null : current.isometricSecondsPerSet().stream()
+                .limit(sets).map(s -> (int) Math.round(s * (double) iso / current.isometricSeconds())).toList();
+        return ExerciseParameters.clamped(sets, reps, rest, weight, perSet, duration, distance, iso, repsPerSet,
+                isoPerSet);
     }
 
     private static Double scale(Double value, boolean applies, double factor) {

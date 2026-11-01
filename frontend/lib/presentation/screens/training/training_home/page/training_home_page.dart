@@ -12,6 +12,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../training_routes.dart';
 import '../../widgets/exercise_thumbnail.dart';
+import '../../widgets/open_session_card.dart';
 import '../../widgets/recommendation_card.dart';
 import '../../widgets/routine_summary_card.dart';
 import '../../widgets/training_content.dart';
@@ -148,6 +149,13 @@ class _HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final bloc = context.read<TrainingHomeBloc>();
+    // Ciclo terminado: no queda día que hacer y no hay otra rutina en curso.
+    final finished = state.pendingDay == null &&
+            !state.routines.any((r) => r.status == RoutineStatus.active)
+        ? state.routines
+              .where((r) => r.status == RoutineStatus.completed)
+              .firstOrNull
+        : null;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
@@ -161,9 +169,46 @@ class _HomeContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              for (final stale in state.staleSessions) ...[
+                OpenSessionCard(
+                  open: stale,
+                  busy: state.working,
+                  onDiscard: () => bloc.add(
+                    TrainingHomeEvent.staleDiscarded(stale.session.id),
+                  ),
+                  onFinish: (figures) => bloc.add(
+                    TrainingHomeEvent.staleFinished(
+                      stale.session.id,
+                      minutes: figures.minutes,
+                      rpe: figures.rpe,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: TokensSpacing.m),
+              ],
+              if (finished != null) ...[
+                _CycleDoneCard(
+                  routine: finished,
+                  busy: state.working,
+                  onRestart: () =>
+                      bloc.add(TrainingHomeEvent.cycleRestarted(finished.id)),
+                  onNextWithAi: () => _TrainingHomeView.open(
+                    context,
+                    TrainingPaths.newRoutine(),
+                  ),
+                ),
+                const SizedBox(height: TokensSpacing.m),
+              ],
               _PendingDayCard(
                 pendingDay: state.pendingDay,
                 starting: state.startingSession,
+                busy: state.working,
+                onSkip: (day) => bloc.add(
+                  TrainingHomeEvent.daySkipped(
+                    routineId: day.routineId,
+                    dayId: day.dayId,
+                  ),
+                ),
                 onStart: (day) => bloc.add(
                   TrainingHomeEvent.sessionStarted(
                     routineId: day.routineId,
@@ -197,6 +242,7 @@ class _HomeContent extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: TokensSpacing.s),
                     child: RoutineSummaryCard(
                       routine: routine,
+                      nextDay: state.pendingDay,
                       onTap: () => _TrainingHomeView.open(
                         context,
                         TrainingPaths.routine(routine.id),
@@ -231,6 +277,8 @@ class _PendingDayCard extends StatelessWidget {
   const _PendingDayCard({
     required this.pendingDay,
     required this.starting,
+    required this.busy,
+    required this.onSkip,
     required this.onStart,
     required this.onFreeSession,
     required this.onOpenRoutine,
@@ -238,6 +286,10 @@ class _PendingDayCard extends StatelessWidget {
 
   final PendingDay? pendingDay;
   final bool starting;
+
+  /// Otra acción del avance en curso (saltar, cerrar una sesión…).
+  final bool busy;
+  final ValueChanged<PendingDay> onSkip;
   final ValueChanged<PendingDay> onStart;
   final VoidCallback onFreeSession;
   final ValueChanged<String> onOpenRoutine;
@@ -249,11 +301,40 @@ class _PendingDayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final day = pendingDay;
-    final colors = context.colors;
-    return AppCard(
-      color: colors.secondaryContainer,
-      padding: const EdgeInsets.all(TokensSpacing.l),
-      onTap: day == null ? null : () => onOpenRoutine(day.routineId),
+    if (day == null) {
+      return AppCard(
+        padding: const EdgeInsets.all(TokensSpacing.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.trainingNoPendingDay,
+              style: context.textStyles.titleMedium,
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              l10n.trainingNoPendingDayHint,
+              style: context.textStyles.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.m),
+            AppSecondaryButton(
+              label: l10n.trainingFreeSession,
+              icon: const Icon(Icons.play_arrow_rounded),
+              onPressed: starting ? null : onFreeSession,
+            ),
+          ],
+        ),
+      );
+    }
+    // Jerarquía: qué día toca (grande), cuándo y si va con retraso, cuánto
+    // queda del ciclo y el botón para empezar. La foto del primer ejercicio
+    // de fondo dice de un vistazo qué se va a entrenar.
+    return AppCoverCard(
+      imageUrl: day.coverImageUrl,
+      // Sin toque en toda la tarjeta: lleva sus propios botones (nada de
+      // controles anidados); la rutina se abre con «Ver rutina».
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -261,7 +342,7 @@ class _PendingDayCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.bolt_rounded,
-                color: colors.onSecondaryContainer,
+                color: context.colors.primary,
                 size: TokensSize.iconS,
               ),
               const SizedBox(width: TokensSpacing.xs),
@@ -271,98 +352,199 @@ class _PendingDayCard extends StatelessWidget {
                 child: Text(
                   l10n.trainingNextWorkout,
                   style: context.textStyles.labelLarge?.copyWith(
-                    color: colors.onSecondaryContainer,
+                    color: context.colors.primary,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: TokensSpacing.s),
-          if (day == null) ...[
-            Text(
-              l10n.trainingNoPendingDay,
-              style: context.textStyles.titleMedium?.copyWith(
-                color: colors.onSecondaryContainer,
+          Text(
+            dayTitle(l10n, day.dayNumber, day.dayName),
+            style: context.textStyles.headlineSmall,
+          ),
+          // Cuándo toca, en qué semana va y qué sesión de la semana es.
+          Text(
+            [
+              nextDayHeadline(
+                l10n,
+                date: day.scheduledDate,
+                weekNumber: day.weekNumber,
+                totalWeeks: day.totalWeeks,
+                dayNumber: day.dayNumber,
               ),
+              l10n.trainingSessionOfWeek(day.sessionOfWeek, day.sessionsInWeek),
+            ].join(' · '),
+            style: context.textStyles.bodyMedium,
+          ),
+          Text(
+            day.routineName,
+            style: context.textStyles.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
             ),
-            const SizedBox(height: TokensSpacing.xs),
-            Text(
-              l10n.trainingNoPendingDayHint,
-              style: context.textStyles.bodyMedium?.copyWith(
-                color: colors.onSecondaryContainer,
-              ),
-            ),
-            const SizedBox(height: TokensSpacing.m),
-            AppSecondaryButton(
-              label: l10n.trainingFreeSession,
-              icon: const Icon(Icons.play_arrow_rounded),
-              onPressed: starting ? null : onFreeSession,
-            ),
-          ] else ...[
-            Text(
-              dayTitle(l10n, day.dayNumber, day.dayName),
-              style: context.textStyles.headlineSmall?.copyWith(
-                color: colors.onSecondaryContainer,
-              ),
-            ),
-            Text(
-              '${day.routineName} · ${weekTitle(l10n, day.weekNumber, day.weekName)}',
-              style: context.textStyles.bodyMedium?.copyWith(
-                color: colors.onSecondaryContainer,
-              ),
-            ),
-            const SizedBox(height: TokensSpacing.s),
-            AppPill(
-              icon: Icons.fitness_center_rounded,
-              color: colors.onSecondaryContainer,
-              label: l10n.trainingExercisesCount(day.exercises.length),
-            ),
-            // Los nombres de los primeros ejercicios dicen qué toca hoy mejor
-            // que solo las miniaturas.
-            if (day.exercises.isNotEmpty) ...[
-              const SizedBox(height: TokensSpacing.s),
-              for (final e in day.exercises.take(_previewCount))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
-                  child: Row(
-                    children: [
-                      ExerciseThumbnail(
-                        url: e.thumbnailUrl,
-                        size: TokensSize.thumbnailXs,
-                      ),
-                      const SizedBox(width: TokensSpacing.s),
-                      Expanded(
-                        child: Text(
-                          e.exerciseName,
-                          style: context.textStyles.bodyMedium?.copyWith(
-                            color: colors.onSecondaryContainer,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+          ),
+          const SizedBox(height: TokensSpacing.s),
+          Wrap(
+            spacing: TokensSpacing.xs,
+            runSpacing: TokensSpacing.xs,
+            children: [
+              if (day.overdue && day.scheduledDate != null)
+                AppCoverPill(
+                  icon: Icons.schedule_rounded,
+                  color: context.palette.warning,
+                  label: overdueSinceLabel(l10n, day.scheduledDate!),
                 ),
-              if (day.exercises.length > _previewCount)
-                Text(
-                  l10n.trainingRecommendationMoreExercises(
-                    day.exercises.length - _previewCount,
-                  ),
-                  style: context.textStyles.labelMedium?.copyWith(
-                    color: colors.onSecondaryContainer,
-                  ),
-                ),
+              AppCoverPill(
+                icon: Icons.fitness_center_rounded,
+                label: l10n.trainingExercisesCount(day.exercises.length),
+              ),
             ],
-            const SizedBox(height: TokensSpacing.m),
-            AppPrimaryButton(
-              // Un día empezado y sin terminar se retoma, no se empieza.
-              label: day.dayStatus == ProgressStatus.inProgress
-                  ? l10n.trainingContinueDay
-                  : l10n.trainingStart,
-              icon: Icons.play_arrow_rounded,
-              loading: starting,
-              onPressed: () => onStart(day),
+          ),
+          if (day.totalDays > 0) ...[
+            const SizedBox(height: TokensSpacing.s),
+            AppCycleProgress(
+              progress: day.cycleProgress,
+              label: l10n.trainingDaysProgress(
+                day.completedDays + day.skippedDays,
+                day.totalDays,
+              ),
             ),
           ],
+          // Los nombres de los primeros ejercicios dicen qué toca hoy mejor
+          // que solo las miniaturas.
+          if (day.exercises.isNotEmpty) ...[
+            const SizedBox(height: TokensSpacing.s),
+            for (final e in day.exercises.take(_previewCount))
+              Padding(
+                padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
+                child: Row(
+                  children: [
+                    ExerciseThumbnail(
+                      url: e.thumbnailUrl,
+                      size: TokensSize.thumbnailXs,
+                    ),
+                    const SizedBox(width: TokensSpacing.s),
+                    Expanded(
+                      child: Text(
+                        e.exerciseName,
+                        style: context.textStyles.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (day.exercises.length > _previewCount)
+              Text(
+                l10n.trainingRecommendationMoreExercises(
+                  day.exercises.length - _previewCount,
+                ),
+                style: context.textStyles.labelMedium?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
+              ),
+          ],
+          const SizedBox(height: TokensSpacing.m),
+          AppPrimaryButton(
+            // Un día empezado y sin terminar se retoma, no se empieza.
+            label: day.dayStatus == ProgressStatus.inProgress
+                ? l10n.trainingContinueDay
+                : l10n.trainingStart,
+            icon: Icons.play_arrow_rounded,
+            loading: starting,
+            onPressed: busy ? null : () => onStart(day),
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          // Saltar solo un día que no está en curso: la rutina pasa al
+          // siguiente y el calendario retira este entrenamiento.
+          OverflowBar(
+            alignment: MainAxisAlignment.spaceBetween,
+            overflowAlignment: OverflowBarAlignment.end,
+            children: [
+              TextButton.icon(
+                icon: const Icon(Icons.list_alt_rounded),
+                label: Text(l10n.trainingSeeRoutine),
+                onPressed: () => onOpenRoutine(day.routineId),
+              ),
+              if (day.dayStatus != ProgressStatus.inProgress)
+              TextButton.icon(
+                icon: const Icon(Icons.redo_rounded),
+                label: Text(l10n.trainingSkipDay),
+                onPressed: busy || starting
+                    ? null
+                    : () async {
+                        final ok = await showConfirmDialog(
+                          context,
+                          title: l10n.trainingSkipDayTitle,
+                          message: l10n.trainingSkipDayMessage,
+                          confirmLabel: l10n.trainingSkipDay,
+                          destructive: false,
+                        );
+                        if (ok) onSkip(day);
+                      },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Ciclo terminado: repetirlo (avance a cero, desde hoy) o preparar la
+/// siguiente rutina con la IA.
+class _CycleDoneCard extends StatelessWidget {
+  const _CycleDoneCard({
+    required this.routine,
+    required this.busy,
+    required this.onRestart,
+    required this.onNextWithAi,
+  });
+
+  final RoutineSummary routine;
+  final bool busy;
+  final VoidCallback onRestart;
+  final VoidCallback onNextWithAi;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.emoji_events_rounded,
+                color: context.palette.accent,
+                size: TokensSize.iconM,
+              ),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(
+                child: Text(
+                  l10n.trainingCycleDoneTitle,
+                  style: context.textStyles.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          Text(
+            l10n.trainingCycleDoneMessage(routine.name),
+            style: context.textStyles.bodyMedium,
+          ),
+          const SizedBox(height: TokensSpacing.m),
+          AppPrimaryButton(
+            label: l10n.trainingRepeatCycle,
+            icon: Icons.replay_rounded,
+            onPressed: busy ? null : onRestart,
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          AppSecondaryButton(
+            label: l10n.trainingNextWithAi,
+            icon: const Icon(Icons.auto_awesome_rounded),
+            onPressed: busy ? null : onNextWithAi,
+          ),
         ],
       ),
     );

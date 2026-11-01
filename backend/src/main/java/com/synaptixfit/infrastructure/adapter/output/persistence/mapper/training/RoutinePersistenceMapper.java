@@ -39,7 +39,7 @@ public final class RoutinePersistenceMapper {
 
     public static RoutineDay toDomain(RoutineDayEntity e, List<PlannedExercise> exercises) {
         return new RoutineDay(e.getId(), e.getNumeroDia(), e.getNombre(), TrainingDbValues.dayStatus(e.getEstado()),
-                exercises);
+                e.getCerradoEn(), exercises);
     }
 
     public static PlannedExercise toDomain(ExerciseSelectionEntity e, Map<UUID, ExerciseRef> refs) {
@@ -47,7 +47,8 @@ public final class RoutinePersistenceMapper {
         // Los datos heredados pueden estar fuera de rango: se ajustan en lugar de romper la lectura.
         ExerciseParameters params = ExerciseParameters.clamped(e.getSeries(), e.getRepeticiones(),
                 e.getSegundosDescanso(), e.getPesoKg(), e.getPesosKg(), e.getDuracionObjetivoSegundos(),
-                e.getDistanciaMetros(), e.getTiempoIsometricoSegundos());
+                e.getDistanciaMetros(), e.getTiempoIsometricoSegundos(), e.getRepeticionesPorSerie(),
+                e.getSegundosIsometricosPorSerie());
         return new PlannedExercise(e.getId(), ref, params, e.getIndiceOrden(), e.getDuracionRealSegundos());
     }
 
@@ -90,8 +91,10 @@ public final class RoutinePersistenceMapper {
         e.setId(d.id());
         e.setSemanaId(weekId);
         e.setNumeroDia(d.number());
-        e.setNombre(d.name());
+        // La columna no admite nulos: un día sin nombre propio se guarda vacío.
+        e.setNombre(d.name() == null ? "" : d.name());
         e.setEstado(TrainingDbValues.dayStatusToDb(d.status()));
+        e.setCerradoEn(d.closedOn());
     }
 
     public static void copy(PlannedExercise p, UUID routineId, UUID dayId, ExerciseSelectionEntity e) {
@@ -106,6 +109,8 @@ public final class RoutinePersistenceMapper {
         e.setIndiceOrden(p.order());
         e.setPesoKg(x.weightKg());
         e.setPesosKg(x.weightsKg());
+        e.setRepeticionesPorSerie(x.repsPerSet());
+        e.setSegundosIsometricosPorSerie(x.isometricSecondsPerSet());
         e.setDuracionObjetivoSegundos(x.targetDurationSeconds());
         e.setDistanciaMetros(x.distanceMeters());
         e.setTiempoIsometricoSegundos(x.isometricSeconds());

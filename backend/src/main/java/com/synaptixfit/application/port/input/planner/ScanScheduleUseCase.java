@@ -20,9 +20,14 @@ public interface ScanScheduleUseCase {
      * @param classesFound      clases del patrón semanal devueltas por la IA
      * @param unmatchedSubjects asignaturas del documento que no se pudieron vincular
      * @param classes           el horario semanal detectado, por día y hora, para enseñarlo
+     * @param searchedSubjects  las asignaturas del usuario que se buscaron
+     * @param documentSubjects  las asignaturas que aparecen en el documento (si no coincide ninguna, se
+     *                          enseñan para que se entienda por qué)
+     * @param semester          semestre buscado (1 o 2), según las fechas del curso
      */
     record Result(int classesFound, int blocksCreated, int blocksUpdated, List<String> unmatchedSubjects,
-                  List<ScheduleEntry> classes) {
+                  List<ScheduleEntry> classes, List<String> searchedSubjects, List<String> documentSubjects,
+                  int semester) {
     }
 
     Result scan(Command command);

@@ -23,4 +23,9 @@ public interface CalendarBlockJpaRepository extends JpaRepository<CalendarBlockE
             UUID usuarioId, UUID materialEstudioId);
 
     List<CalendarBlockEntity> findByUsuarioIdAndAsignaturaId(UUID usuarioId, UUID asignaturaId);
+
+    List<CalendarBlockEntity> findByUsuarioIdAndRutinaIdOrderByHoraInicioAsc(UUID usuarioId, UUID rutinaId);
+
+    List<CalendarBlockEntity> findByUsuarioIdAndDiaRutinaIdInOrderByHoraInicioAsc(UUID usuarioId,
+                                                                                Collection<UUID> diaRutinaIds);
 }

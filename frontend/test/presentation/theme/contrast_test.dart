@@ -126,6 +126,25 @@ void main() {
         );
       });
 
+      // Tarjeta de rutina con foto de fondo ([AppCoverCard]): la foto va a
+      // dos tonos entre la superficie y una mezcla de primary
+      // (coverTintLight / coverTintDark), así que el peor fondo posible bajo
+      // el texto es esa mezcla (también es el extremo del degradado sin
+      // foto). Las pastillas van sobre una base opaca de superficie
+      // (AppCoverPill): las cubre «pastillas tintadas».
+      test('tarjeta con foto de fondo', () {
+        final bg = Color.lerp(
+          c.surface,
+          c.primary,
+          mode == 'oscuro'
+              ? TokensOpacity.coverTintDark
+              : TokensOpacity.coverTintLight,
+        )!;
+        expectRatio('portada onSurface', c.onSurface, bg, 4.5);
+        expectRatio('portada onSurfaceVariant', c.onSurfaceVariant, bg, 4.5);
+        expectRatio('portada primary', c.primary, bg, 4.5);
+      });
+
       test('gráficos e iconos', () {
         for (final color in [
           c.accent,

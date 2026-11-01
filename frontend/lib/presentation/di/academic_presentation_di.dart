@@ -11,6 +11,7 @@ import '../screens/academic/mock_exam/bloc/mock_exam_bloc.dart';
 import '../screens/academic/note_editor/bloc/note_editor_bloc.dart';
 import '../screens/academic/note_viewer/bloc/note_viewer_bloc.dart';
 import '../screens/academic/practice_hub/bloc/practice_hub_bloc.dart';
+import '../screens/academic/shared_note_detail/bloc/shared_note_detail_bloc.dart';
 import '../screens/academic/shared_notes/bloc/shared_notes_bloc.dart';
 import '../screens/academic/subject_detail/bloc/subject_detail_bloc.dart';
 import '../screens/academic/subject_detail/bloc/subject_progress_bloc.dart';
@@ -96,6 +97,9 @@ void registerAcademicPresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(() => SharedNotesBloc(getShared: getIt()))
+    ..registerFactory(
+      () => SharedNoteDetailBloc(getNote: getIt(), copyNote: getIt()),
+    )
     ..registerFactory(
       () => FileViewerBloc(
         getContent: getIt(),

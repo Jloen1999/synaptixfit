@@ -36,6 +36,15 @@ abstract final class SocialExternalPaths {
     '/progress',
   };
 
+  /// Apunte compartido (módulo academic).
+  static String sharedNote(String noteId) => '/academic/notes/shared/$noteId';
+
+  /// Todos los apuntes que un autor comparte conmigo (módulo academic).
+  static String sharedNotesBy(String authorId) => Uri(
+    path: '/academic/notes/shared',
+    queryParameters: {'authorId': authorId},
+  ).toString();
+
   /// `true` si [url] es la raíz de una pestaña (sin contar la query).
   static bool isTabRoot(String url) => tabRoots.contains(Uri.parse(url).path);
 }

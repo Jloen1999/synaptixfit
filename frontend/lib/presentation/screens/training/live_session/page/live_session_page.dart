@@ -17,17 +17,22 @@ import '../../../../../domain/models/training/session_adaptation.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
-import '../../exercise_detail/page/exercise_how_to_sheet.dart';
 import '../../training_routes.dart';
 import '../../widgets/exercise_thumbnail.dart';
 import '../../widgets/metric_chips.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
+import '../../widgets/set_fields.dart';
 import '../bloc/live_session_bloc.dart';
+import 'live_focus_view.dart';
 import 'set_record_sheet.dart';
 
-/// Sesión de entrenamiento en vivo.
+/// Sesión de entrenamiento en vivo. Con ejercicios de rutina se entrena de uno
+/// en uno ([LiveExerciseView]): cabecera con el progreso y la tira de
+/// ejercicios, el ejercicio actual en grande con su tabla de series y una barra
+/// inferior con la acción principal o la cuenta atrás del descanso. Las
+/// sesiones libres y las ya terminadas usan la lista de series.
 class LiveSessionPage extends StatelessWidget {
   const LiveSessionPage({super.key, required this.sessionId});
 
@@ -53,6 +58,12 @@ class _LiveView extends StatefulWidget {
 class _LiveViewState extends State<_LiveView> {
   Timer? _ticker;
   late final AppLifecycleListener _lifecycle;
+
+  /// Cifras escritas en series aún sin marcar.
+  final SetDrafts _drafts = {};
+
+  /// Celdas con un valor fuera de rango (no se puede marcar su serie).
+  final Set<String> _invalid = {};
 
   LiveSessionBloc get _bloc => context.read<LiveSessionBloc>();
 
@@ -199,17 +210,82 @@ class _LiveViewState extends State<_LiveView> {
     lastTime: state.lastPerformance[exercise.exerciseId],
   );
 
+  void _onDraft(PlannedExercise e, int set, SetField f, num? v) =>
+      setState(() => _drafts[LiveSessionState.draftKey(e.id, set, f)] = v);
+
+  void _onValidity(PlannedExercise e, int set, SetField f, bool valid) =>
+      setState(() {
+        final key = LiveSessionState.draftKey(e.id, set, f);
+        valid ? _invalid.remove(key) : _invalid.add(key);
+      });
+
+  /// Marca (o vuelve a guardar) la serie [set] de [e]; lo escrito para ella
+  /// deja de ser borrador.
+  void _onLog(PlannedExercise e, int set, Map<SetField, num?> values) {
+    final existing = _bloc.state.session
+        ?.setsFor(e.id)
+        .where((s) => s.setNumber == set)
+        .firstOrNull;
+    setState(
+      () => _drafts.removeWhere((k, _) => k.startsWith('${e.id}/$set/')),
+    );
+    _bloc.add(
+      LiveSessionEvent.setRecorded(
+        setRecordFor(e, set, values, existing: existing),
+      ),
+    );
+  }
+
+  /// Serie fuera del plan: en ejercicios de repeticiones se abre la hoja para
+  /// apuntarla; en los demás se marca con lo propuesto (y se corrige en la fila).
+  void _onExtraSet(LiveSessionState state, PlannedExercise e, int set) {
+    if (SetFields.of(e).has(SetField.reps)) {
+      unawaited(
+        _editSet(
+          title: e.exerciseName,
+          plannedExerciseId: e.id,
+          setNumber: set,
+          parameters: e.parameters,
+          previous: state.session
+              ?.setsFor(e.id)
+              .where((s) => s.setNumber == set - 1)
+              .firstOrNull,
+          lastTime: state.lastPerformance[e.exerciseId],
+        ),
+      );
+      return;
+    }
+    _onLog(e, set, state.valuesFor(e, set, _drafts));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return BlocListener<LiveSessionBloc, LiveSessionState>(
-      // El descanso entre series ha llegado a cero solo (no al saltarlo): se
-      // dice en texto (también al lector) y vibra si el sistema lo permite.
-      listenWhen: (p, c) => c.restFinishedCount != p.restFinishedCount,
-      listener: (context, state) {
-        HapticFeedback.heavyImpact();
-        context.showSnack(context.localizations.trainingRestOver);
-      },
+    return MultiBlocListener(
+      listeners: [
+        // El descanso entre series ha llegado a cero solo (no al saltarlo): se
+        // dice en texto (también al lector) y vibra si el sistema lo permite.
+        BlocListener<LiveSessionBloc, LiveSessionState>(
+          listenWhen: (p, c) => c.restFinishedCount != p.restFinishedCount,
+          listener: (context, state) {
+            HapticFeedback.heavyImpact();
+            context.showSnack(context.localizations.trainingRestOver);
+          },
+        ),
+        // La cuenta atrás no es región viva (hablaría cada segundo): se
+        // anuncia al empezar el descanso y cuando quedan 10 s.
+        BlocListener<LiveSessionBloc, LiveSessionState>(
+          listenWhen: (p, c) =>
+              c.restRemaining != null &&
+              (p.restRemaining == null ||
+                  (p.restRemaining! > 10 && c.restRemaining! <= 10)),
+          listener: (context, state) => SemanticsService.sendAnnouncement(
+            View.of(context),
+            context.localizations.trainingRestSemantics(state.restRemaining!),
+            Directionality.of(context),
+          ),
+        ),
+      ],
       child: BlocConsumer<LiveSessionBloc, LiveSessionState>(
         listenWhen: (p, c) => c.effect != null && p.effect != c.effect,
         listener: (context, state) =>
@@ -220,21 +296,12 @@ class _LiveViewState extends State<_LiveView> {
               : l10n.trainingFreeSession;
           return Scaffold(
             appBar: AppPageBar(
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title),
-                  if (state.routineName != null)
-                    Text(
-                      state.routineName!,
-                      style: context.textStyles.labelMedium?.copyWith(
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ),
+              title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
               actions: [
-                if (state.status == LiveStatus.ready)
+                // En sesión de rutina el tiempo ya está en la cabecera
+                // («4 de 6 ejercicios · 32 min»).
+                if (state.status == LiveStatus.ready &&
+                    (state.isFree || state.completed))
                   Semantics(
                     label: l10n.trainingTotalTime(
                       formatClock(state.elapsedSeconds),
@@ -270,6 +337,21 @@ class _LiveViewState extends State<_LiveView> {
                     onPressed: state.finishing ? null : _abandon,
                     icon: const Icon(Icons.exit_to_app_rounded),
                   ),
+                // «Terminar» siempre a la vista y con texto, no escondido.
+                if (state.status == LiveStatus.ready &&
+                    !state.completed &&
+                    !state.isFree)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      end: TokensSpacing.s,
+                    ),
+                    child: FilledButton.tonal(
+                      onPressed: state.finishing || state.pendingSets.isNotEmpty
+                          ? null
+                          : () => _finish(state),
+                      child: Text(l10n.trainingFinishAction),
+                    ),
+                  ),
               ],
             ),
             body: switch (state.status) {
@@ -279,7 +361,7 @@ class _LiveViewState extends State<_LiveView> {
                 onRetry: () =>
                     _bloc.add(LiveSessionEvent.started(state.sessionId ?? '')),
               ),
-              LiveStatus.ready => Column(
+              LiveStatus.ready when state.completed || state.isFree => Column(
                 children: [
                   if (state.saving) const LinearProgressIndicator(),
                   if (state.restRemaining != null) _RestBanner(state: state),
@@ -288,16 +370,90 @@ class _LiveViewState extends State<_LiveView> {
                   ),
                 ],
               ),
+              LiveStatus.ready => Column(
+                children: [
+                  LiveSessionHeader(state: state),
+                  if (state.saving) const LinearProgressIndicator(),
+                  Expanded(
+                    child: LiveExerciseView(
+                      state: state,
+                      drafts: _drafts,
+                      invalid: _invalid,
+                      onDraft: _onDraft,
+                      onValidity: _onValidity,
+                      onLog: _onLog,
+                      onLoggedTap: (e, set) =>
+                          unawaited(onLoggedSetTap(context, e, set)),
+                      onExtraSet: (e, set) => _onExtraSet(state, e, set),
+                      header: [
+                        // Sin conexión: las series se guardan en el teléfono.
+                        if (state.pendingSets.isNotEmpty) ...[
+                          AppInlineMessage(
+                            message: l10n.trainingOfflinePending(
+                              state.pendingSets.length,
+                            ),
+                            tone: AppMessageTone.warning,
+                          ),
+                          const SizedBox(height: TokensSpacing.m),
+                        ],
+                        if (state.adaptation.adapted)
+                          _AdaptationCard(adaptation: state.adaptation),
+                        // Calentamiento al empezar; vuelta a la calma al acabar.
+                        if (state.loggedSets == 0 &&
+                            (state.bookends?.warmUp.isNotEmpty ?? false))
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: TokensSpacing.m,
+                            ),
+                            child: _BookendsCard(
+                              title: l10n.trainingWarmUpTitle,
+                              hint: l10n.trainingWarmUpSummary(
+                                state.bookends!.warmUp.length,
+                              ),
+                              icon: Icons.whatshot_rounded,
+                              exercises: state.bookends!.warmUp,
+                            ),
+                          ),
+                        if (state.upNext == null &&
+                            (state.bookends?.coolDown.isNotEmpty ?? false))
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: TokensSpacing.m,
+                            ),
+                            child: _BookendsCard(
+                              title: l10n.trainingCoolDownTitle,
+                              hint: l10n.trainingCoolDownSummary(
+                                state.bookends!.coolDown.length,
+                              ),
+                              icon: Icons.self_improvement_rounded,
+                              exercises: state.bookends!.coolDown,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             },
             bottomNavigationBar:
-                state.status == LiveStatus.ready && !state.completed
+                state.status != LiveStatus.ready || state.completed
+                ? null
+                : state.isFree
                 ? _BottomBar(
                     state: state,
                     onFinish: () => _finish(state),
                     onDone: (e, n) => _quickLog(state, e, n),
                     onEdit: (e, n) => _editNext(state, e, n),
                   )
-                : null,
+                : LiveSessionBottomBar(
+                    state: state,
+                    drafts: _drafts,
+                    invalid: _invalid,
+                    onLog: _onLog,
+                    onFinish: state.finishing || state.pendingSets.isNotEmpty
+                        ? null
+                        : () => _finish(state),
+                  ),
           );
         },
       ),
@@ -336,8 +492,8 @@ class _RestBanner extends StatelessWidget {
             ),
             const SizedBox(width: TokensSpacing.m),
             Expanded(
+              // Sin región viva: se anuncia al empezar y a los 10 s (listener).
               child: Semantics(
-                liveRegion: true,
                 label: l10n.trainingRestSemantics(remaining),
                 excludeSemantics: true,
                 child: Column(
@@ -411,16 +567,6 @@ double? _plannedWeight(ExerciseParameters? p, int setNumber) {
   );
 }
 
-/// Abre «Cómo se hace» del ejercicio sin salir de la sesión.
-void _openHowTo(BuildContext context, PlannedExercise exercise) => unawaited(
-  showExerciseHowToSheet(
-    context,
-    exerciseId: exercise.exerciseId,
-    name: exercise.exerciseName,
-    gifUrl: exercise.gifUrl,
-    previewUrl: exercise.previewUrl,
-  ),
-);
 
 /// Barra fija de la sesión. Mientras quedan series, muestra la que toca
 /// («Press banca · Serie 2 de 4 · 40 kg × 10 reps») con «Hecha» como acción
@@ -599,7 +745,7 @@ class _BottomBarState extends State<_BottomBar> {
               ),
               IconButton(
                 tooltip: l10n.trainingHowToNamed(up.exerciseName),
-                onPressed: () => _openHowTo(context, up),
+                onPressed: () => openHowTo(context, up),
                 icon: const Icon(Icons.ondemand_video_rounded),
               ),
             ],
@@ -993,9 +1139,9 @@ class _ExerciseCard extends StatelessWidget {
                   label: l10n.trainingHowToNamed(exercise.exerciseName),
                   button: true,
                   excludeSemantics: true,
-                  onTap: () => _openHowTo(context, exercise),
+                  onTap: () => openHowTo(context, exercise),
                   child: TextButton.icon(
-                    onPressed: () => _openHowTo(context, exercise),
+                    onPressed: () => openHowTo(context, exercise),
                     icon: const Icon(Icons.ondemand_video_rounded),
                     label: Text(l10n.trainingHowTo),
                   ),
@@ -1120,7 +1266,10 @@ class _SetRow extends StatelessWidget {
     final summary = s == null
         ? l10n.trainingSetPending
         : [
-            l10n.trainingSetReps(s.repsDone ?? 0),
+            if (s.repsDone != null) l10n.trainingSetReps(s.repsDone!),
+            if (s.durationSeconds != null) formatClock(s.durationSeconds!),
+            if (s.distanceMeters != null)
+              l10n.trainingChipDistanceM(s.distanceMeters!),
             if (s.weightKg != null)
               l10n.trainingChipWeight(formatNumber(s.weightKg!)),
             if (s.failedReps > 0) l10n.trainingSetFailed(s.failedReps),

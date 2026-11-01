@@ -9,7 +9,7 @@ part 'link_picker_bloc.freezed.dart';
 part 'link_picker_event.dart';
 part 'link_picker_state.dart';
 
-/// Selector de la entrega, examen o bloque al que vincular un reto o tarea.
+/// Selector de la entrega o examen al que vincular un reto o tarea.
 class LinkPickerBloc extends Bloc<LinkPickerEvent, LinkPickerState> {
   LinkPickerBloc({required this._listTargets})
     : super(const LinkPickerState()) {
@@ -23,7 +23,11 @@ class LinkPickerBloc extends Bloc<LinkPickerEvent, LinkPickerState> {
     Emitter<LinkPickerState> emit,
   ) async {
     emit(const LinkPickerState());
-    final result = await _listTargets(subjectId: event.subjectId);
+    final result = await _listTargets(
+      subjectId: event.subjectId,
+      from: event.from,
+      to: event.to,
+    );
     emit(
       result.fold(
         (options) =>

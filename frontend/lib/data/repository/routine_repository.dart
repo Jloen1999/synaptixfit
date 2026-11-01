@@ -91,6 +91,18 @@ class RoutineRepository implements RoutineRepositoryContract {
   ) => _routine(() => _remote.changeStatus(routineId, status.apiValue));
 
   @override
+  Future<AppResult<Routine>> skipDay(String routineId, String dayId) =>
+      _routine(() => _remote.skipDay(routineId, dayId));
+
+  @override
+  Future<AppResult<Routine>> unskipDay(String routineId, String dayId) =>
+      _routine(() => _remote.unskipDay(routineId, dayId));
+
+  @override
+  Future<AppResult<Routine>> restartRoutine(String routineId) =>
+      _routine(() => _remote.restart(routineId));
+
+  @override
   Future<AppResult<Unit>> deleteRoutine(String routineId) =>
       RepositoryErrorHandler.guard(() async {
         await _remote.delete(routineId);
@@ -188,6 +200,15 @@ class RoutineRepository implements RoutineRepositoryContract {
   );
 
   @override
+  Future<AppResult<Routine>> replaceExercise(
+    String routineId,
+    String plannedExerciseId,
+    String exerciseId,
+  ) => _routine(
+    () => _remote.replaceExercise(routineId, plannedExerciseId, exerciseId),
+  );
+
+  @override
   Future<AppResult<Routine>> removeExercise(
     String routineId,
     String plannedExerciseId,
@@ -225,4 +246,6 @@ Map<String, dynamic> parametersToJson(ExerciseParameters p) => {
   'targetDurationSeconds': ?p.targetDurationSeconds,
   'distanceMeters': ?p.distanceMeters,
   'isometricSeconds': ?p.isometricSeconds,
+  'repsPerSet': ?p.repsPerSet,
+  'isometricSecondsPerSet': ?p.isometricSecondsPerSet,
 };

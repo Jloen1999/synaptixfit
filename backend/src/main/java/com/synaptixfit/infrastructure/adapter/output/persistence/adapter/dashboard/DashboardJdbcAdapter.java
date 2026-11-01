@@ -6,7 +6,6 @@ import static com.synaptixfit.infrastructure.adapter.output.persistence.adapter.
 
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.CalendarBlock;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
-import com.synaptixfit.domain.model.dashboard.DashboardReadModels.NextTrainingDay;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.TrainingTotals;
 import com.synaptixfit.domain.port.output.dashboard.DashboardReadPort;
 import java.time.Instant;
@@ -19,8 +18,7 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Lecturas con {@link JdbcClient} para el inicio: {@code sesiones_registradas},
- * {@code plan_entrenamiento_semanal}, {@code rutinas}/{@code semanas_rutina}/{@code dias_rutina}
- * (entrenamiento), {@code horarios_academicos}, {@code entregas_examenes} (planificador),
+ * {@code plan_entrenamiento_semanal} (entrenamiento), {@code horarios_academicos}, {@code entregas_examenes} (planificador),
  * {@code asignaturas} (académico). Solo acceso a datos: los retos y su progreso los da el módulo de retos.
  */
 @Repository
@@ -59,7 +57,7 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
     public List<CalendarBlock> calendarBlocks(UUID userId, Instant from, Instant to) {
         return jdbc.sql("""
                         SELECT h.id, h.tipo_actividad, h.hora_inicio, h.hora_fin, h.completado, h.temas,
-                               a.nombre AS asignatura
+                               a.nombre AS asignatura, h.rutina_id, h.dia_rutina_id
                         FROM horarios_academicos h
                         LEFT JOIN asignaturas a ON a.id = h.asignatura_id
                         WHERE h.usuario_id = :u AND h.hora_inicio >= :from AND h.hora_inicio < :to
@@ -68,7 +66,8 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
                 .param("u", userId).param("from", param(from)).param("to", param(to))
                 .query((rs, n) -> new CalendarBlock(uuid(rs, "id"), rs.getString("tipo_actividad"),
                         instant(rs, "hora_inicio"), instant(rs, "hora_fin"), rs.getBoolean("completado"),
-                        rs.getString("asignatura"), rs.getString("temas")))
+                        rs.getString("asignatura"), rs.getString("temas"), uuid(rs, "rutina_id"),
+                        uuid(rs, "dia_rutina_id")))
                 .list();
     }
 
@@ -85,28 +84,6 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
                 .query((rs, n) -> new Deadline(uuid(rs, "id"), rs.getString("titulo"), rs.getString("tipo"),
                         instant(rs, "fecha_limite"), rs.getBoolean("esta_completado"), rs.getString("asignatura")))
                 .list();
-    }
-
-    @Override
-    public Optional<NextTrainingDay> nextTrainingDay(UUID userId) {
-        return jdbc.sql("""
-                        SELECT r.id AS rutina_id, r.nombre AS rutina, s.id AS semana_id, s.numero_semana,
-                               d.id AS dia_id, d.numero_dia, d.nombre AS dia, d.estado,
-                               (SELECT MAX(t.creado_en) FROM sesiones_registradas t
-                                 WHERE t.dia_id = d.id AND t.completada_en IS NULL) AS sesion_abierta
-                        FROM rutinas r
-                        JOIN semanas_rutina s ON s.rutina_id = r.id
-                        JOIN dias_rutina d ON d.semana_id = s.id
-                        WHERE r.usuario_id = :u AND r.estado = 'activo' AND r.eliminado_en IS NULL
-                          AND d.estado <> 'completado'
-                        ORDER BY r.creado_en DESC, s.numero_semana, d.numero_dia
-                        LIMIT 1
-                        """)
-                .param("u", userId)
-                .query((rs, n) -> new NextTrainingDay(uuid(rs, "rutina_id"), rs.getString("rutina"),
-                        uuid(rs, "semana_id"), rs.getInt("numero_semana"), uuid(rs, "dia_id"), rs.getInt("numero_dia"),
-                        rs.getString("dia"), rs.getString("estado"), instant(rs, "sesion_abierta")))
-                .optional();
     }
 
     @Override

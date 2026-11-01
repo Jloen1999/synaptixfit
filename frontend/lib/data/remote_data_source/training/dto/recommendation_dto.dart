@@ -22,6 +22,8 @@ abstract class AdjustmentDto with _$AdjustmentDto {
     int? targetDurationSeconds,
     int? distanceMeters,
     int? isometricSeconds,
+    List<int>? repsPerSet,
+    List<int>? isometricSecondsPerSet,
   }) = _AdjustmentDto;
 
   const AdjustmentDto._();
@@ -43,6 +45,8 @@ abstract class AdjustmentDto with _$AdjustmentDto {
       targetDurationSeconds: targetDurationSeconds,
       distanceMeters: distanceMeters,
       isometricSeconds: isometricSeconds,
+      repsPerSet: repsPerSet,
+      isometricSecondsPerSet: isometricSecondsPerSet,
     ),
   );
 }

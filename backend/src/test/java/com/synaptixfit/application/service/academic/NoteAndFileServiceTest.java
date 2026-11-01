@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 class NoteAndFileServiceTest {
 
     private final AcademicFakes f = new AcademicFakes();
-    private final NoteService notes = new NoteService(f.notes, f.subjects, f.materials, f.aiDocuments,
+    private final NoteService notes = new NoteService(f.notes, f.subjects, f.materials, f.aiDocuments, f.users,
             AcademicFakes.CLOCK);
     private final SubjectFileService files = new SubjectFileService(f.files, f.subjects, f.materials, f.aiDocuments,
             f.storage, AcademicFakes.CLOCK);

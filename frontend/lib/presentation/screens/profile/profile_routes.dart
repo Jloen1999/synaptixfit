@@ -31,6 +31,9 @@ abstract final class ProfilePaths {
   /// Rutas de otros módulos a las que navega este.
   static const home = '/home';
   static const adminPanel = '/admin';
+  static const friends = '/social/friends';
+  static const community = '/social';
+  static String publicProfile(String userId) => '/social/users/$userId';
 }
 
 /// Rutas a pantalla completa (sin barra inferior).

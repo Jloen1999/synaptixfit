@@ -119,7 +119,7 @@ void main() {
   });
 
   testWidgets('vencido: solo se ofrece ampliar la fecha', (tester) async {
-    show(withTasks.copyWith(status: ChallengeStatus.expired));
+    show(withTasks.copyWith(status: ChallengeStatus.expired, open: false));
     await pump(tester);
 
     expect(find.text('Ampliar fecha'), findsOneWidget);
@@ -171,7 +171,8 @@ void main() {
       await pump(tester, textScale: 2);
 
       expect(find.text('Completar siguiente tarea'), findsOneWidget);
-      expect(find.text('Registrar progreso'), findsOneWidget);
+      // Con tareas no hay «¿Cuánto llevas?»: las tareas son de sí o no.
+      expect(find.text('Registrar progreso'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

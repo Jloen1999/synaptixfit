@@ -40,10 +40,18 @@ sealed class RoutineDetailEvent with _$RoutineDetailEvent {
     required bool up,
   }) = RoutineDetailExerciseMoved;
 
+  /// Edición en línea de series, repeticiones, peso o descanso: se ve al
+  /// instante y se guarda detrás, sin bloquear los demás campos.
   const factory RoutineDetailEvent.exerciseUpdated(
     String plannedExerciseId,
     ExerciseParameters parameters,
   ) = RoutineDetailExerciseUpdated;
+
+  /// Sustituye el ejercicio de un hueco por [exerciseId] (misma posición).
+  const factory RoutineDetailEvent.exerciseReplaced(
+    String plannedExerciseId,
+    String exerciseId,
+  ) = RoutineDetailExerciseReplaced;
 
   // ---------------------------------------------------------- rutina
   const factory RoutineDetailEvent.statusChanged(RoutineStatus status) =
@@ -68,4 +76,18 @@ sealed class RoutineDetailEvent with _$RoutineDetailEvent {
   /// Empieza una sesión de un día de la rutina.
   const factory RoutineDetailEvent.sessionStarted(String dayId) =
       RoutineDetailSessionStarted;
+
+  /// Salta un día (deja de proponerse y sale del calendario).
+  const factory RoutineDetailEvent.daySkipped(String dayId) =
+      RoutineDetailDaySkipped;
+
+  /// Recupera un día saltado.
+  const factory RoutineDetailEvent.dayUnskipped(String dayId) =
+      RoutineDetailDayUnskipped;
+
+  /// Pasa a ser la rutina en curso (el servidor pausa la anterior).
+  const factory RoutineDetailEvent.activated() = RoutineDetailActivated;
+
+  /// Repite el ciclo: avance a cero, desde hoy y en curso.
+  const factory RoutineDetailEvent.restarted() = RoutineDetailRestarted;
 }

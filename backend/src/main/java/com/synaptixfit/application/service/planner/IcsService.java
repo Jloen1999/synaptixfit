@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.planner;
 import com.synaptixfit.application.port.input.planner.ExportIcsUseCase;
 import com.synaptixfit.application.port.input.planner.ImportGeneralCalendarUseCase;
 import com.synaptixfit.application.port.input.planner.ImportIcsUseCase;
+import com.synaptixfit.application.port.input.planner.ImportIcsUseCase.Item;
 import com.synaptixfit.domain.exception.planner.IcsUrlMissingException;
 import com.synaptixfit.domain.exception.planner.InvalidIcsUrlException;
 import com.synaptixfit.domain.exception.planner.PlannerSubjectNotFoundException;
@@ -47,6 +48,7 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
 
     /** Tope de eventos por importación (protege de calendarios desmesurados). */
     static final int MAX_EVENTS = 3000;
+    static final int MAX_ITEMS = 300;
 
     private final SubjectDirectoryPort subjects;
     private final CalendarBlockRepositoryPort blocks;
@@ -81,18 +83,22 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
             throw new IcsUrlMissingException();
         }
         Downloaded calendar = download(url);
-        List<IcsEvent> events = calendar.events();
+        // Festivos y «no hay clase» no son clases ni entregas.
+        List<IcsEvent> events = calendar.events().stream().filter(e -> !e.isNonTeaching()).toList();
         List<IcsEvent> matching = events.stream()
                 .filter(e -> SubjectMatcher.mentions(e.summary(), subject.name(), subject.code()))
                 .toList();
-        // Calendario propio de la asignatura (su nombre la menciona, p. ej. «2_3_GIIT_EC») cuyos eventos no
-        // repiten el nombre: todos son de ella.
-        if (matching.isEmpty() && SubjectMatcher.mentions(calendar.name(), subject.name(), subject.code())) {
+        // Calendario propio de la asignatura: su nombre o su descripción la mencionan («2_3_GIIT_EC», «Asignatura:
+        // Programación») aunque sus eventos usen otras siglas («PR1_GG_T2»). Entonces todos son de ella.
+        String header = calendar.name() + " " + calendar.description();
+        if (matching.isEmpty() && (SubjectMatcher.mentions(header, subject.name(), subject.code())
+                || SubjectMatcher.sharesDistinctiveWord(header, subject.name()))) {
             matching = events;
         }
         Match match = matching.isEmpty() ? Match.NONE : matching.size() == events.size() ? Match.FULL : Match.PARTIAL;
         if (match == Match.NONE && !command.force()) {
-            return new Result(match, events.size(), 0, 0, 0, 0, 0, 0, false);
+            // Se enseña lo que trae el calendario para que se pueda decidir con conocimiento.
+            return new Result(match, events.size(), 0, 0, 0, 0, 0, 0, false, items(events, false));
         }
         List<IcsEvent> selected = command.force() ? events : matching;
         return save(command.userId(), selected, e -> subject.id(), match, events.size(), matching.size());
@@ -123,7 +129,16 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
         return save(command.userId(), selected, e -> subjectOf.get(e.uid()), match, events.size(), subjectOf.size());
     }
 
-    private record Downloaded(String name, List<IcsEvent> events) {
+    private record Downloaded(String name, String description, List<IcsEvent> events) {
+    }
+
+    /** Como mucho {@value #MAX_ITEMS}, por fecha: lo que se importa (o lo que hay) para enseñarlo. */
+    private static List<Item> items(List<IcsEvent> events, boolean imported) {
+        return events.stream()
+                .sorted(java.util.Comparator.comparing(IcsEvent::start))
+                .limit(MAX_ITEMS)
+                .map(e -> new Item(truncate(e.summary(), 200), e.start(), e.end(), e.category().name(), imported))
+                .toList();
     }
 
     /** Solo lo que termina en el curso académico actual o después (antes de aplicar el tope de eventos). */
@@ -134,7 +149,7 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
         List<IcsEvent> events = IcsCalendar.parse(raw, zone.zone()).stream()
                 .filter(e -> !(e.end() == null ? e.start() : e.end()).isBefore(from))
                 .toList();
-        return new Downloaded(IcsCalendar.calendarName(raw),
+        return new Downloaded(IcsCalendar.calendarName(raw), IcsCalendar.calendarDescription(raw),
                 events.size() > MAX_EVENTS ? events.subList(0, MAX_EVENTS) : events);
     }
 
@@ -208,7 +223,8 @@ public class IcsService implements ImportIcsUseCase, ImportGeneralCalendarUseCas
         conflicts.refresh(userId, saved, List.of());
         saved.stream().map(b -> PlannerZone.mondayOf(zone.localDate(b.start()))).distinct()
                 .forEach(monday -> weeklyLoads.refresh(userId, monday));
-        return new Result(match, totalEvents, matchingEvents, classes, exams, deliveries, created, updated, true);
+        return new Result(match, totalEvents, matchingEvents, classes, exams, deliveries, created, updated, true,
+                items(new ArrayList<>(byUid.values()), true));
     }
 
     @Override

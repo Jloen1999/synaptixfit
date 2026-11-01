@@ -75,18 +75,11 @@ class _CommunityChallengesViewState extends State<CommunityChallengesView>
   void _onEffect(BuildContext context, CommunityChallengesEffect effect) {
     switch (effect) {
       case CommunityChallengeCloned(:final challenge):
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(context.localizations.challengesCloned),
-              action: SnackBarAction(
-                label: context.localizations.challengesViewCloned,
-                onPressed: () =>
-                    context.push(ChallengesPaths.detail(challenge.id)),
-              ),
-            ),
-          );
+        context.showActionSnack(
+          context.localizations.challengesCloned,
+          actionLabel: context.localizations.challengesViewCloned,
+          onAction: () => context.push(ChallengesPaths.detail(challenge.id)),
+        );
       case CommunityChallengesActionFailed(:final error):
         context.showSnack(errorMessage(context, error));
     }

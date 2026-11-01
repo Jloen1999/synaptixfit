@@ -20,6 +20,10 @@ String? trainingErrorMessage(AppLocalizations l10n, String code) =>
       'SESSION_ALREADY_COMPLETED' => l10n.trainingErrorSessionAlreadyCompleted,
       'SESSION_NOT_COMPLETED' => l10n.trainingErrorSessionNotCompleted,
       'SESSION_DAY_MISMATCH' => l10n.trainingErrorSessionDayMismatch,
+      'SESSION_STALE_OPEN' => l10n.trainingErrorSessionStaleOpen,
+      'SESSION_UNMARK_EXPIRED' => l10n.trainingErrorSessionUnmarkExpired,
+      'SESSION_PAST_DATE_INVALID' => l10n.trainingErrorSessionPastDateInvalid,
+      'ROUTINE_DAY_NOT_SKIPPABLE' => l10n.trainingErrorRoutineDayNotSkippable,
       'TRAINING_PROFILE_REQUIRED' => l10n.trainingErrorTrainingProfileRequired,
       'TRAINING_NO_COMPATIBLE_EXERCISES' =>
         l10n.trainingErrorTrainingNoCompatibleExercises,

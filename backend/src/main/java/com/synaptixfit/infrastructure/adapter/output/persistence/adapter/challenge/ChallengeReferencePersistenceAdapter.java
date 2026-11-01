@@ -35,11 +35,6 @@ public class ChallengeReferencePersistenceAdapter implements ChallengeReferenceP
     }
 
     @Override
-    public boolean studyBlockBelongsTo(UUID userId, UUID blockId) {
-        return owned("horarios_academicos", userId, blockId);
-    }
-
-    @Override
     public boolean noteBelongsTo(UUID userId, UUID noteId) {
         return owned("apuntes", userId, noteId);
     }

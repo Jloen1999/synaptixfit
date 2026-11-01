@@ -47,7 +47,7 @@ class SessionHistoryServiceTest {
         sessions.recent = List.of(summary(first, "2026-10-10T18:00:00Z", 60),
                 summary(second, "2026-10-13T18:00:00Z", 62.5));
         SessionHistoryService service = new SessionHistoryService(sessions, ids -> Map.of(
-                second, new SessionLabel(second, "Fuerza", "Empuje: pecho y hombro", 2, 5)));
+                second, new SessionLabel(second, "Fuerza", "Empuje: pecho y hombro", 2, 5)), java.time.Clock.systemUTC(), java.time.ZoneOffset.UTC);
 
         List<SessionHistoryEntry> items = service.listHistory(userId, new PageRequest(0, 20)).items();
 
@@ -65,7 +65,7 @@ class SessionHistoryServiceTest {
     void personalRecordsListTheBestMarkPerExercise() {
         sessions.recent = List.of(summary(UUID.randomUUID(), "2026-10-10T18:00:00Z", 60),
                 summary(UUID.randomUUID(), "2026-10-13T18:00:00Z", 55));
-        SessionHistoryService service = new SessionHistoryService(sessions, ids -> Map.of());
+        SessionHistoryService service = new SessionHistoryService(sessions, ids -> Map.of(), java.time.Clock.systemUTC(), java.time.ZoneOffset.UTC);
 
         assertThat(service.listPersonalRecords(userId)).singleElement()
                 .extracting(PersonalRecord::weightKg).isEqualTo(60.0);
@@ -78,7 +78,7 @@ class SessionHistoryServiceTest {
         sessions.recent = List.of(summary(done, "2026-10-13T18:00:00Z", 60));
         TrainingSession running = sessions.save(TrainingSession.start(userId, null, null,
                 Instant.parse("2026-10-14T18:00:00Z")));
-        SessionHistoryService service = new SessionHistoryService(sessions, ids -> Map.of());
+        SessionHistoryService service = new SessionHistoryService(sessions, ids -> Map.of(), java.time.Clock.systemUTC(), java.time.ZoneOffset.UTC);
 
         assertThat(service.highlights(userId, done).volumeKg()).isEqualTo(300.0);
         assertThatThrownBy(() -> service.highlights(userId, running.id()))

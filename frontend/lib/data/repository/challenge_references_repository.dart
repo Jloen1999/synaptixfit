@@ -38,15 +38,16 @@ class ChallengeReferencesRepository
     required DateTime from,
     required DateTime to,
   }) => RepositoryErrorHandler.guard(() async {
-    final deadlines = await _remote.upcomingDeadlines(subjectId);
-    final blocks = await _remote.blocks(
+    // Las que vencen en el periodo del reto: el servidor filtra por fechas y
+    // valida al guardar (CHALLENGE_LINK_OUTSIDE_PERIOD).
+    final deadlines = await _remote.deadlinesBetween(
+      subjectId,
       from: from,
       to: to,
-      subjectId: subjectId,
     );
     return [
-      ...deadlines.where((d) => !d.completed).map((d) => d.toDomain()),
-      ...blocks.where((b) => b.isLinkable).map((b) => b.toDomain()),
+      for (final d in deadlines)
+        if (!d.completed) d.toDomain(),
     ];
   });
 

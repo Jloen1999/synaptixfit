@@ -266,6 +266,8 @@ class CrossModuleFlowIT {
         UUID user = userId(token);
         String subject = body(post("/api/v1/subjects").content("{\"name\":\"Historia\",\"credits\":6}"), token, 201);
         String subjectId = JsonPath.read(subject, "$.id");
+        // El apunte se comparte en público: el perfil también tiene que serlo (si no, se rebaja).
+        body(patch("/api/v1/me").content("{\"privacy\":\"PUBLIC\"}"), token, 200);
         String note = body(post("/api/v1/notes").content("""
                 {"subjectId":"%s","title":"Barroco","content":"# Barroco","visibility":"PUBLIC"}""".formatted(subjectId)),
                 token, 201);
@@ -295,8 +297,7 @@ class CrossModuleFlowIT {
         assertThat(count(pendingSql, user)).isEqualTo(1);
         assertThat(totalXp(token)).isEqualTo(5);
 
-        // UserPrivacyChanged solo se publica si la privacidad cambia: se pasa a público y luego a privado.
-        body(patch("/api/v1/me").content("{\"privacy\":\"PUBLIC\"}"), token, 200);
+        // Al pasar el perfil a privado (UserPrivacyChanged), el apunte deja de compartirse.
         body(patch("/api/v1/me").content("{\"privacy\":\"PRIVATE\"}"), token, 200);
         assertThat((String) JsonPath.read(body(get("/api/v1/notes/" + noteId), token, 200), "$.visibility"))
                 .isEqualTo("PRIVATE");

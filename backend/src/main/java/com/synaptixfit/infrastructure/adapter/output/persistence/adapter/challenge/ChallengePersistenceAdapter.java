@@ -4,8 +4,10 @@ import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
 import com.synaptixfit.domain.model.challenge.ChallengeStatus;
 import com.synaptixfit.domain.model.challenge.ChallengeSummary;
+import com.synaptixfit.domain.model.challenge.LinkedDeadline;
 import com.synaptixfit.domain.model.challenge.Milestone;
 import com.synaptixfit.domain.model.challenge.ProgressEntry;
+import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.port.output.challenge.ChallengeRepositoryPort;
@@ -22,6 +24,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -35,7 +38,8 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Implementa {@link ChallengeRepositoryPort}: el reto y sus tareas se cargan y guardan juntos.
- * Los listados con filtros se resuelven con SQL ({@link JdbcClient}) sobre las tablas del módulo.
+ * Los listados con filtros se resuelven con SQL ({@link JdbcClient}) sobre las tablas del módulo. Al cargar
+ * el reto lee además, solo para consulta, sus entregas vinculadas y los bloques de cada tarea (Planificador).
  */
 @Repository
 public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
@@ -111,9 +115,12 @@ public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
         if (query.status() != null) {
             // Filtro paginado: replica en SQL estándar la regla de Challenge.statusOf (fuente de verdad).
             params.put("now", OffsetDateTime.ofInstant(now, ZoneOffset.UTC));
+            // ACTIVE = abiertos (en curso o por empezar), para que el filtro de siempre los siga mostrando.
             switch (query.status()) {
                 case COMPLETED -> where.append(" and r.esta_completado = true");
                 case ACTIVE -> where.append(" and r.esta_completado = false and r.fecha_fin >= :now");
+                case UPCOMING -> where.append(" and r.esta_completado = false and r.fecha_fin >= :now"
+                        + " and r.fecha_inicio > :now");
                 case EXPIRED -> where.append(" and r.esta_completado = false and r.fecha_fin < :now");
             }
         }
@@ -141,9 +148,11 @@ public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
     @Override
     public ChallengeSummary summarize(UUID ownerId, Instant now) {
         // Solo datos: el estado de cada reto lo decide Challenge.statusOf (la misma regla que el agregado).
-        List<ChallengeStatus> statuses = jdbc.sql("select esta_completado, fecha_fin from retos where usuario_id = :owner")
+        List<ChallengeStatus> statuses = jdbc.sql(
+                        "select esta_completado, fecha_inicio, fecha_fin from retos where usuario_id = :owner")
                 .param("owner", ownerId)
                 .query((rs, n) -> Challenge.statusOf(rs.getBoolean("esta_completado"),
+                        rs.getObject("fecha_inicio", OffsetDateTime.class).toInstant(),
                         rs.getObject("fecha_fin", OffsetDateTime.class).toInstant(), now))
                 .list();
         return ChallengeSummary.of(statuses);
@@ -206,14 +215,69 @@ public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
         for (MilestoneEntity m : milestones.findByRetoIdIn(ids)) {
             milestonesByChallenge.computeIfAbsent(m.getRetoId(), k -> new ArrayList<>()).add(m);
         }
-        Map<UUID, Double> manual = new HashMap<>();
-        for (Object[] row : progress.sumManualProgress(ids)) {
-            manual.put((UUID) row[0], ((Number) row[1]).doubleValue());
-        }
+        Set<UUID> linkIds = new HashSet<>();
+        List<UUID> milestoneIds = new ArrayList<>();
+        entities.forEach(e -> addIfPresent(linkIds, e.getEntidadVinculadaId()));
+        milestonesByChallenge.values().forEach(list -> list.forEach(m -> {
+            addIfPresent(linkIds, m.getEntidadVinculadaId());
+            milestoneIds.add(m.getId());
+        }));
+        Map<UUID, Map<UUID, LinkedDeadline>> deadlinesByOwner = linkedDeadlines(linkIds);
+        Map<UUID, StudyBlockProgress> blocks = studyBlocks(milestoneIds);
+        // Cada reto solo ve las entregas de su dueño (defensa: el vínculo ya se validó al guardarlo).
         return entities.stream()
                 .map(e -> ChallengePersistenceMapper.toDomain(e,
-                        milestonesByChallenge.getOrDefault(e.getId(), List.of()), manual.getOrDefault(e.getId(), 0.0)))
+                        milestonesByChallenge.getOrDefault(e.getId(), List.of()),
+                        deadlinesByOwner.getOrDefault(e.getUsuarioId(), Map.of()), blocks))
                 .toList();
+    }
+
+    private static void addIfPresent(Set<UUID> ids, UUID id) {
+        if (id != null) {
+            ids.add(id);
+        }
+    }
+
+    /** Foto de las entregas y exámenes vinculados por dueño (tabla de Planificador, solo lectura). */
+    private Map<UUID, Map<UUID, LinkedDeadline>> linkedDeadlines(Collection<UUID> ids) {
+        Map<UUID, Map<UUID, LinkedDeadline>> result = new HashMap<>();
+        if (ids.isEmpty()) {
+            return result;
+        }
+        jdbc.sql("""
+                        select id, usuario_id, titulo, fecha_limite, esta_completado
+                        from entregas_examenes where id in (:ids)
+                        """)
+                .param("ids", ids)
+                .query((rs, n) -> {
+                    result.computeIfAbsent(rs.getObject("usuario_id", UUID.class), k -> new HashMap<>())
+                            .put(rs.getObject("id", UUID.class), new LinkedDeadline(rs.getString("titulo"),
+                                    rs.getObject("fecha_limite", OffsetDateTime.class).toInstant(),
+                                    rs.getBoolean("esta_completado")));
+                    return null;
+                })
+                .list();
+        return result;
+    }
+
+    /** Bloques del calendario asignados a cada tarea (tabla de Planificador, solo lectura). */
+    private Map<UUID, StudyBlockProgress> studyBlocks(Collection<UUID> milestoneIds) {
+        Map<UUID, StudyBlockProgress> result = new HashMap<>();
+        if (milestoneIds.isEmpty()) {
+            return result;
+        }
+        jdbc.sql("""
+                        select hito_id, count(*) as total, sum(case when completado then 1 else 0 end) as done
+                        from horarios_academicos where hito_id in (:ids) group by hito_id
+                        """)
+                .param("ids", milestoneIds)
+                .query((rs, n) -> {
+                    result.put(rs.getObject("hito_id", UUID.class),
+                            new StudyBlockProgress(rs.getInt("total"), rs.getInt("done")));
+                    return null;
+                })
+                .list();
+        return result;
     }
 
 }

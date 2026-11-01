@@ -18,6 +18,7 @@ abstract final class ChallengeApiValues {
   };
 
   static ChallengeStatus status(String? value) => switch (value) {
+    'UPCOMING' => ChallengeStatus.upcoming,
     'COMPLETED' => ChallengeStatus.completed,
     'EXPIRED' => ChallengeStatus.expired,
     _ => ChallengeStatus.active,
@@ -56,7 +57,6 @@ abstract final class ChallengeApiValues {
   static ChallengeLinkType? linkType(String? value) => switch (value) {
     'EXAM' => ChallengeLinkType.exam,
     'DELIVERY' => ChallengeLinkType.delivery,
-    'BLOCK' => ChallengeLinkType.block,
     _ => null,
   };
 

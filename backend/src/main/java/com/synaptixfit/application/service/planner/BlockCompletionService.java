@@ -7,6 +7,7 @@ import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.application.port.input.planner.SyncSportBlockWithSessionUseCase;
 import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
+import com.synaptixfit.domain.exception.planner.BlockRoutineLinkedException;
 import com.synaptixfit.domain.exception.planner.CalendarBlockNotFoundException;
 import com.synaptixfit.domain.model.neuro.CognitiveLoad;
 import com.synaptixfit.domain.model.neuro.StudyBlockLoad;
@@ -22,6 +23,8 @@ import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,6 +38,8 @@ import java.util.UUID;
  * <p>Los bloques que reflejan una actividad de otro módulo siguen su estado por eventos: el bloque de
  * deporte de un día de rutina sigue a la sesión de entrenamiento y el bloque de repaso de un material
  * se completa al hacer el repaso SM-2. Esos bloques no dan XP propia ({@link CalendarBlock#experienceReward()}).
+ * El de un día de rutina tampoco se marca a mano ({@code BLOCK_ROUTINE_LINKED}): marcarlo no avanzaría
+ * la rutina ni sumaría carga; se empieza la sesión o se registra como sesión pasada.
  */
 public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSportBlockWithSessionUseCase,
         CompleteReviewBlockUseCase {
@@ -69,21 +74,32 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
         CalendarBlock block = blocks.findById(blockId)
                 .filter(b -> b.userId().equals(userId))
                 .orElseThrow(() -> new CalendarBlockNotFoundException(blockId));
+        if (block.type() == ActivityType.SPORT && block.details().routineDayId() != null) {
+            throw new BlockRoutineLinkedException();
+        }
         if (completed) {
             block.requireStarted(clock.instant());
         }
         return apply(block, completed, effort);
     }
 
+    /**
+     * El bloque que sigue a la sesión es el de ese día de rutina en la fecha de la sesión o, si se entrenó
+     * otro día, el más cercano a esa fecha (por días; a igual distancia, el anterior): la rutina avanza
+     * por orden, así que el calendario marca el día de rutina hecho aunque se moviera de fecha. Se elige sin
+     * mirar su estado para que repetir el evento no marque otro bloque (los oyentes deben ser idempotentes).
+     */
     @Override
     public void syncSportBlock(UUID userId, UUID routineDayId, LocalDate date, boolean completed) {
         if (routineDayId == null || date == null) {
             return;
         }
-        blocks.findOverlapping(userId, zone.startOfDay(date), zone.startOfDay(date.plusDays(1)), null).stream()
-                .filter(b -> b.type() == ActivityType.SPORT && routineDayId.equals(b.details().routineDayId()))
-                .filter(b -> zone.localDate(b.start()).equals(date))
-                .forEach(b -> apply(b, completed, null));
+        blocks.findByRoutineDays(userId, List.of(routineDayId)).stream()
+                .filter(b -> b.type() == ActivityType.SPORT)
+                .min(Comparator.comparingLong((CalendarBlock b) -> Math.abs(ChronoUnit.DAYS.between(date,
+                                zone.localDate(b.start()))))
+                        .thenComparing(CalendarBlock::start))
+                .ifPresent(b -> apply(b, completed, null));
     }
 
     @Override

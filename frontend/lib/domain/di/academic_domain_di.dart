@@ -33,6 +33,8 @@ import '../use_cases/academic/get_notes_use_case.dart';
 import '../use_cases/academic/get_question_bank_use_case.dart';
 import '../use_cases/academic/get_review_history_use_case.dart';
 import '../use_cases/academic/get_review_preview_use_case.dart';
+import '../use_cases/academic/copy_shared_note_use_case.dart';
+import '../use_cases/academic/get_shared_note_use_case.dart';
 import '../use_cases/academic/get_shared_notes_use_case.dart';
 import '../use_cases/academic/get_study_material_use_case.dart';
 import '../use_cases/academic/get_study_materials_use_case.dart';
@@ -160,6 +162,12 @@ void registerAcademicDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetSharedNotesUseCaseContract>(
       () => GetSharedNotesUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetSharedNoteUseCaseContract>(
+      () => GetSharedNoteUseCase(getIt()),
+    )
+    ..registerLazySingleton<CopySharedNoteUseCaseContract>(
+      () => CopySharedNoteUseCase(getIt()),
     )
     ..registerLazySingleton<GetStudyMaterialUseCaseContract>(
       () => GetStudyMaterialUseCase(getIt()),

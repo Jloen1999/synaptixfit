@@ -18,6 +18,7 @@ import com.synaptixfit.domain.model.challenge.ChallengeChanges;
 import com.synaptixfit.domain.model.challenge.ChallengeDetails;
 import com.synaptixfit.domain.model.challenge.ChallengeLink;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
+import com.synaptixfit.domain.model.challenge.ChallengeStatus;
 import com.synaptixfit.domain.model.challenge.ChallengeSummary;
 import com.synaptixfit.domain.model.challenge.ChallengeType;
 import com.synaptixfit.domain.exception.challenge.ChallengeTypeOutsideFocusException;
@@ -56,6 +57,7 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
     private final ChallengeReferenceValidator references;
     private final ChallengeEffects effects;
     private final TrainingSessionTracker trainingSessions;
+    private final LinkedSourcesSync linkedSources;
     private final Clock clock;
     private final ZoneId zone;
 
@@ -72,6 +74,7 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
         this.references = references;
         this.effects = effects;
         this.trainingSessions = new TrainingSessionTracker(referencePort);
+        this.linkedSources = new LinkedSourcesSync(challenges, zone);
         this.clock = clock;
         this.zone = zone;
     }
@@ -87,9 +90,9 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
         references.checkLink(command.userId(), details.link());
         List<MilestoneDraft> drafts =
                 command.milestones() == null ? List.of() : command.milestones();
-        references.checkDrafts(command.userId(), drafts);
+        references.checkDrafts(command.userId(), drafts, java.util.Set.of());
         Challenge challenge = Challenge.create(UUID.randomUUID(), command.userId(), details, drafts, clock.instant());
-        return saveCountingSessions(challenge);
+        return saveSynced(challenge, challenge.allLinks().stream().map(ChallengeLink::entityId).toList());
     }
 
     @Override
@@ -143,7 +146,10 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
 
     @Override
     public List<PendingMilestone> listPendingMilestones(UUID userId) {
-        return challenges.findActiveByOwner(userId, clock.instant()).stream()
+        Instant now = clock.instant();
+        // Solo retos en curso: las tareas de uno por empezar aún no se pueden hacer.
+        return challenges.findActiveByOwner(userId, now).stream()
+                .filter(c -> c.status(now) == ChallengeStatus.ACTIVE)
                 .flatMap(c -> c.milestones().stream()
                         .filter(m -> m.status() == MilestoneStatus.AVAILABLE || m.status() == MilestoneStatus.IN_PROGRESS)
                         .map(m -> new PendingMilestone(c, m)))
@@ -169,11 +175,17 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
                         "REQUIRED", "linkedEntityType and linkedEntityId go together");
             }
             link = new ChallengeLink(c.linkType(), c.linkId());
-            references.checkLink(c.userId(), link);
+            // El mismo vínculo que ya tenía no se revalida (su entrega pudo borrarse).
+            if (!link.equals(challenge.link())) {
+                references.checkLink(c.userId(), link);
+            }
         }
         if (c.type() != null && c.type() != challenge.type() && !c.type().allowedFor(focusOf(c.userId()))) {
             throw new ChallengeTypeOutsideFocusException();
         }
+        Instant previousStart = challenge.startAt();
+        Instant previousEnd = challenge.endAt();
+        ChallengeLink previousLink = challenge.link();
         challenge.updateDetails(new ChallengeDetails(
                 c.title() != null ? c.title() : challenge.title(),
                 c.type() != null ? c.type() : challenge.type(),
@@ -185,17 +197,29 @@ public class ChallengeService implements CreateChallengeUseCase, GetChallengeUse
                 subjectId, link,
                 c.clearSessionTarget() ? null : c.sessionTarget() != null ? c.sessionTarget() : challenge.sessionTarget()));
         challenge.touch(clock.instant());
-        return saveCountingSessions(challenge);
+        // Con fechas nuevas se revisan todos los vínculos; si no, solo el del reto si ha cambiado.
+        List<UUID> linksToCheck;
+        if (!challenge.startAt().equals(previousStart) || !challenge.endAt().equals(previousEnd)) {
+            linksToCheck = challenge.allLinks().stream().map(ChallengeLink::entityId).toList();
+        } else if (link != null && !link.equals(previousLink)) {
+            linksToCheck = List.of(link.entityId());
+        } else {
+            linksToCheck = List.of();
+        }
+        return saveSynced(challenge, linksToCheck);
     }
 
     /**
-     * Guarda el reto con el recuento de entrenamientos de su periodo ya aplicado: un reto creado con
-     * fecha de inicio pasada, o con un objetivo rebajado, puede quedar completado al guardarlo.
+     * Guarda el reto con lo que lo hace avanzar desde fuera ya aplicado: el recuento de entrenamientos de su
+     * periodo (un reto con inicio pasado, o con un objetivo rebajado, puede quedar completado) y el estado
+     * actual de sus entregas y bloques (vincular una entrega ya hecha deja la tarea completada; ampliar un
+     * reto vencido recupera lo ocurrido). Antes comprueba que {@code linksToCheck} vencen en su periodo.
      */
-    private Challenge saveCountingSessions(Challenge challenge) {
-        ChallengeChanges changes = trainingSessions.apply(challenge, LocalDate.ofInstant(clock.instant(), zone));
-        Challenge saved = challenges.save(challenge);
-        effects.apply(saved, changes, null);
+    private Challenge saveSynced(Challenge challenge, List<UUID> linksToCheck) {
+        Instant now = clock.instant();
+        ChallengeChanges changes = trainingSessions.apply(challenge, LocalDate.ofInstant(now, zone));
+        Challenge saved = linkedSources.apply(challenges.save(challenge), linksToCheck, changes, now);
+        effects.apply(saved, changes);
         return saved;
     }
 

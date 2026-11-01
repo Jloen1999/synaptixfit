@@ -102,5 +102,15 @@
   "authResetDoneTitle": "Mot de passe modifié",
   "authResetDoneSubtitle": "Nous avons fermé la session sur tous tes appareils.",
   "authResetExpiredTitle": "Lien expiré",
-  "authResetExpiredSubtitle": "Demandes-en un autre et utilise celui du dernier e-mail."
+  "authResetExpiredSubtitle": "Demandes-en un autre et utilise celui du dernier e-mail.",
+  "commonLoadingMore": "Chargement de la suite",
+  "commonDateDue": "Échéance",
+  "commonDateOverdue": "Échu",
+  "commonDateToday": "Aujourd'hui",
+  "commonDateTomorrow": "Demain",
+  "commonDueToday": "À rendre aujourd'hui",
+  "commonDueTomorrow": "À rendre demain",
+  "commonDueIn": "{count, plural, =1{À rendre dans 1 jour} other{À rendre dans {count} jours}}",
+  "commonDueOn": "À rendre le {date}",
+  "commonOverdueOn": "Échu le {date}"
 }

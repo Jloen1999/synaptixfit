@@ -4,38 +4,44 @@ import com.synaptixfit.application.port.input.academic.CreateNoteUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteNoteUseCase;
 import com.synaptixfit.application.port.input.academic.GetNoteUseCase;
 import com.synaptixfit.application.port.input.academic.ListNotesUseCase;
-import com.synaptixfit.application.port.input.academic.ListSharedNotesUseCase;
 import com.synaptixfit.application.port.input.academic.PrivatizeUserNotesUseCase;
 import com.synaptixfit.application.port.input.academic.UpdateNoteUseCase;
 import com.synaptixfit.domain.model.academic.AiDocumentSource;
 import com.synaptixfit.domain.model.academic.Note;
-import com.synaptixfit.domain.model.academic.SharedNote;
 import com.synaptixfit.domain.model.academic.StudySourceType;
-import com.synaptixfit.domain.model.shared.PageRequest;
+import com.synaptixfit.domain.model.shared.EffectiveVisibility;
 import com.synaptixfit.domain.model.shared.PageResult;
+import com.synaptixfit.domain.model.shared.Visibility;
+import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.academic.AiDocumentRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.NoteRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.SubjectRepositoryPort;
+import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import java.time.Clock;
 import java.util.UUID;
 
 /**
- * Apuntes en Markdown: CRUD propio, apuntes compartidos por otros usuarios y paso a privado de
- * todos los apuntes cuando el perfil se hace privado (evento {@code UserPrivacyChanged}).
+ * Apuntes en Markdown: CRUD propio y paso a privado de todos los apuntes cuando el perfil se hace
+ * privado (evento {@code UserPrivacyChanged}). Un apunte nunca se comparte más allá de la privacidad
+ * del perfil: la visibilidad pedida se rebaja con {@link EffectiveVisibility} (los compartidos de
+ * otros están en {@link SharedNoteService}).
  */
-public class NoteService implements ListNotesUseCase, ListSharedNotesUseCase, GetNoteUseCase, CreateNoteUseCase,
+public class NoteService implements ListNotesUseCase, GetNoteUseCase, CreateNoteUseCase,
         UpdateNoteUseCase, DeleteNoteUseCase, PrivatizeUserNotesUseCase {
 
     private final NoteRepositoryPort notes;
     private final StudyMaterialRepositoryPort materials;
     private final AiDocumentRepositoryPort aiDocuments;
+    private final UserRepositoryPort users;
     private final Clock clock;
     private final AcademicLookups lookups;
 
     public NoteService(NoteRepositoryPort notes, SubjectRepositoryPort subjects,
-                       StudyMaterialRepositoryPort materials, AiDocumentRepositoryPort aiDocuments, Clock clock) {
+                       StudyMaterialRepositoryPort materials, AiDocumentRepositoryPort aiDocuments,
+                       UserRepositoryPort users, Clock clock) {
         this.notes = notes;
+        this.users = users;
         this.materials = materials;
         this.aiDocuments = aiDocuments;
         this.clock = clock;
@@ -52,11 +58,6 @@ public class NoteService implements ListNotesUseCase, ListSharedNotesUseCase, Ge
     }
 
     @Override
-    public PageResult<SharedNote> listSharedNotes(UUID userId, PageRequest page) {
-        return notes.findSharedWith(userId, page);
-    }
-
-    @Override
     public Note getNote(UUID userId, UUID noteId) {
         return lookups.note(userId, noteId);
     }
@@ -66,8 +67,8 @@ public class NoteService implements ListNotesUseCase, ListSharedNotesUseCase, Ge
         if (c.subjectId() != null) {
             lookups.subject(c.userId(), c.subjectId());
         }
-        return notes.save(Note.create(c.userId(), c.subjectId(), c.title(), c.content(), c.visibility(),
-                c.quickNote(), clock.instant()));
+        return notes.save(Note.create(c.userId(), c.subjectId(), c.title(), c.content(),
+                allowedVisibility(c.userId(), c.visibility()), c.quickNote(), clock.instant()));
     }
 
     @Override
@@ -85,7 +86,7 @@ public class NoteService implements ListNotesUseCase, ListSharedNotesUseCase, Ge
             note.moveToSubject(lookups.subject(c.userId(), c.subjectId()).id());
         }
         if (c.visibility() != null) {
-            note.changeVisibility(c.visibility());
+            note.changeVisibility(allowedVisibility(c.userId(), c.visibility()));
         }
         if (c.quickNote() != null) {
             note.markQuickNote(c.quickNote());
@@ -122,5 +123,11 @@ public class NoteService implements ListNotesUseCase, ListSharedNotesUseCase, Ge
         materials.findByOrigin(userId, StudySourceType.NOTE, note.id()).ifPresent(m -> materials.delete(m.id()));
         aiDocuments.deleteBySource(userId, AiDocumentSource.NOTE, note.id().toString());
         notes.delete(note.id());
+    }
+
+    /** Visibilidad pedida rebajada a la privacidad del perfil (un perfil privado no comparte nada). */
+    private Visibility allowedVisibility(UUID userId, Visibility requested) {
+        Visibility profile = users.findById(userId).map(User::privacy).orElse(Visibility.PRIVATE);
+        return EffectiveVisibility.of(requested, profile);
     }
 }

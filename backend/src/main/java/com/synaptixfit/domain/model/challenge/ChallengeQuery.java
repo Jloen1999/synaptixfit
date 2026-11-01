@@ -3,7 +3,8 @@ package com.synaptixfit.domain.model.challenge;
 /**
  * Filtros del listado de retos.
  *
- * @param status    estado (null = todos)
+ * @param status    estado (null = todos). {@code ACTIVE} incluye los retos por empezar (abiertos);
+ *                  {@code UPCOMING} devuelve solo estos
  * @param type      ámbito (null = todos)
  * @param withTasks true = solo con tareas, false = solo sin tareas, null = todos
  * @param text      texto a buscar en el título (null = sin filtro)

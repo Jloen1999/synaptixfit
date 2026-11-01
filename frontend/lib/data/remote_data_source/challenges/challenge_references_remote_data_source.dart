@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
-import 'dto/challenge_api_values.dart';
 import 'dto/challenge_reference_dto.dart';
 
 /// Lecturas de otros módulos que necesitan los retos: asignaturas, apuntes,
@@ -44,37 +43,23 @@ class ChallengeReferencesRemoteDataSource {
         .toList();
   }
 
-  Future<List<ChallengeDeadlineDto>> upcomingDeadlines(
-    String? subjectId,
-  ) async {
+  /// Entregas y exámenes que vencen en [from, to] (lo filtra el servidor).
+  Future<List<ChallengeDeadlineDto>> deadlinesBetween(
+    String? subjectId, {
+    required DateTime from,
+    required DateTime to,
+  }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/api/v1/planner/deadlines',
       queryParameters: {
-        'upcoming': true,
+        'from': from.toUtc().toIso8601String(),
+        'to': to.toUtc().toIso8601String(),
         'subjectId': ?subjectId,
         'page': 0,
         'size': 100,
       },
     );
     return ChallengeDeadlinePageDto.fromJson(response.data!).items;
-  }
-
-  Future<List<ChallengeBlockDto>> blocks({
-    required DateTime from,
-    required DateTime to,
-    String? subjectId,
-  }) async {
-    final response = await _dio.get<List<dynamic>>(
-      '/api/v1/planner/blocks',
-      queryParameters: {
-        'from': ChallengeApiValues.toInstant(from),
-        'to': ChallengeApiValues.toInstant(to),
-        'subjectId': ?subjectId,
-      },
-    );
-    return response.data!
-        .map((e) => ChallengeBlockDto.fromJson(e as Map<String, dynamic>))
-        .toList();
   }
 
   Future<String> fileUrl(String fileId) async {

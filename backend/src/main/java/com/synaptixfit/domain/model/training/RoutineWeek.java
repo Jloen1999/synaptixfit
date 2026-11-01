@@ -12,8 +12,9 @@ import java.util.UUID;
 
 /**
  * Semana de una rutina. Su estado se deriva de sus días (regla única que sustituye a los dos
- * triggers heredados contradictorios): completada si todos sus días lo están, en progreso si
- * alguno está empezado o completado, pendiente en otro caso (también si no tiene días).
+ * triggers heredados contradictorios): completada si todos sus días entrenables (con ejercicios)
+ * están hechos o saltados, en progreso si alguno está empezado, hecho o saltado, pendiente en otro
+ * caso (también si no tiene días entrenables). Los días vacíos no cuentan: no se pueden entrenar.
  */
 public final class RoutineWeek {
 
@@ -90,11 +91,12 @@ public final class RoutineWeek {
     }
 
     public void recomputeStatus() {
-        if (days.isEmpty()) {
+        List<RoutineDay> trainable = days.stream().filter(RoutineDay::isTrainable).toList();
+        if (trainable.isEmpty()) {
             status = ProgressStatus.PENDING;
-        } else if (days.stream().allMatch(d -> d.status() == ProgressStatus.COMPLETED)) {
+        } else if (trainable.stream().allMatch(d -> d.status().isClosed())) {
             status = ProgressStatus.COMPLETED;
-        } else if (days.stream().anyMatch(d -> d.status() != ProgressStatus.PENDING)) {
+        } else if (trainable.stream().anyMatch(d -> d.status() != ProgressStatus.PENDING)) {
             status = ProgressStatus.IN_PROGRESS;
         } else {
             status = ProgressStatus.PENDING;
@@ -112,4 +114,9 @@ public final class RoutineWeek {
     public WeekType type() { return type; }
     public ProgressStatus status() { return status; }
     public List<RoutineDay> days() { return List.copyOf(days); }
+
+    /** Días con ejercicios, en orden: las sesiones que de verdad tiene la semana. */
+    public List<RoutineDay> trainableDays() {
+        return days.stream().filter(RoutineDay::isTrainable).toList();
+    }
 }

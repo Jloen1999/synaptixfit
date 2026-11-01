@@ -18,6 +18,9 @@ abstract class SuggestedBlockDto with _$SuggestedBlockDto {
     String? routineId,
     String? routineName,
     String? topic,
+    String? routineWeekId,
+    String? routineDayId,
+    String? title,
   }) = _SuggestedBlockDto;
 
   const SuggestedBlockDto._();
@@ -34,6 +37,9 @@ abstract class SuggestedBlockDto with _$SuggestedBlockDto {
     routineId: routineId,
     routineName: routineName,
     topic: topic,
+    routineWeekId: routineWeekId,
+    routineDayId: routineDayId,
+    title: title,
   );
 }
 
@@ -67,6 +73,9 @@ abstract class ScheduleScanDto with _$ScheduleScanDto {
     @Default(0) int blocksUpdated,
     @Default(<String>[]) List<String> unmatchedSubjects,
     @Default(<ScheduleClassDto>[]) List<ScheduleClassDto> classes,
+    @Default(<String>[]) List<String> searchedSubjects,
+    @Default(<String>[]) List<String> documentSubjects,
+    @Default(1) int semester,
   }) = _ScheduleScanDto;
 
   const ScheduleScanDto._();
@@ -80,6 +89,9 @@ abstract class ScheduleScanDto with _$ScheduleScanDto {
     blocksUpdated: blocksUpdated,
     unmatchedSubjects: unmatchedSubjects,
     classes: classes.map((c) => c.toDomain()).toList(),
+    searchedSubjects: searchedSubjects,
+    documentSubjects: documentSubjects,
+    semester: semester,
   );
 }
 
@@ -125,6 +137,7 @@ abstract class IcsImportDto with _$IcsImportDto {
     @Default(0) int created,
     @Default(0) int updated,
     @Default(false) bool imported,
+    @Default(<IcsImportItemDto>[]) List<IcsImportItemDto> items,
   }) = _IcsImportDto;
 
   const IcsImportDto._();
@@ -141,6 +154,31 @@ abstract class IcsImportDto with _$IcsImportDto {
     deliveries: deliveries,
     created: created,
     updated: updated,
+    imported: imported,
+    items: items.map((i) => i.toDomain()).toList(),
+  );
+}
+
+@freezed
+abstract class IcsImportItemDto with _$IcsImportItemDto {
+  const factory IcsImportItemDto({
+    @Default('') String title,
+    required DateTime start,
+    DateTime? end,
+    @Default('CLASS') String kind,
+    @Default(false) bool imported,
+  }) = _IcsImportItemDto;
+
+  const IcsImportItemDto._();
+
+  factory IcsImportItemDto.fromJson(Map<String, dynamic> json) =>
+      _$IcsImportItemDtoFromJson(json);
+
+  IcsImportItem toDomain() => IcsImportItem(
+    title: title,
+    start: start.toLocal(),
+    end: end?.toLocal(),
+    kind: kind,
     imported: imported,
   );
 }

@@ -248,7 +248,7 @@ class SocialFlowIT {
     void blockingHidesUsersFromEachOther() throws Exception {
         Account dani = register("Dani", "PUBLIC");
         Account eva = register("Eva", "PUBLIC");
-        mvc.perform(as(dani, post("/api/v1/social/posts")).content("{\"type\":\"ROUTINE\",\"description\":\"Rutina\"}"))
+        mvc.perform(as(dani, post("/api/v1/social/posts")).content("{\"type\":\"MILESTONE_REACHED\",\"description\":\"Hito\"}"))
                 .andExpect(status().isCreated());
 
         String block = mvc.perform(as(dani, post("/api/v1/social/friends/blocks"))

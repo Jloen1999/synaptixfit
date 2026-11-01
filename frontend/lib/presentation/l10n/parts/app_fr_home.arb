@@ -83,7 +83,6 @@
   "homeEventPresentation": "Présentation",
   "homeEventOther": "Autre",
   "homeTrainingTitle": "Prochain entraînement",
-  "homeTrainingWeekDay": "Semaine {week} · Jour {day}",
   "homeTrainingInProgress": "En cours",
   "homeTrainingStart": "Commencer",
   "homeTrainingContinue": "Continuer",
@@ -162,5 +161,6 @@
   "homePlanWeekLegendPlanned": "Prévu",
   "homePlanWeekLegendDone": "Fait",
   "homePlanWeekLegendComplete": "Journée faite",
-  "homeReviewAll": "Tout réviser"
+  "homeReviewAll": "Tout réviser",
+  "homeCommunity": "Mur de la communauté"
 }

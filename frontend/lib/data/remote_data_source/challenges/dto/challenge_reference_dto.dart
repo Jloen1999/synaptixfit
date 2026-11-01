@@ -116,35 +116,6 @@ abstract class ChallengeDeadlinePageDto with _$ChallengeDeadlinePageDto {
       _$ChallengeDeadlinePageDtoFromJson(json);
 }
 
-/// Campos de `CalendarBlockResponse` que usan los retos.
-@freezed
-abstract class ChallengeBlockDto with _$ChallengeBlockDto {
-  const factory ChallengeBlockDto({
-    required String id,
-    String? type,
-    required String start,
-    String? subjectId,
-    String? topics,
-    @Default(false) bool completed,
-  }) = _ChallengeBlockDto;
-
-  const ChallengeBlockDto._();
-
-  factory ChallengeBlockDto.fromJson(Map<String, dynamic> json) =>
-      _$ChallengeBlockDtoFromJson(json);
-
-  /// Solo los bloques de estudio o repaso se pueden vincular.
-  bool get isLinkable => !completed && (type == 'STUDY' || type == 'REVIEW');
-
-  ChallengeLinkOption toDomain() => ChallengeLinkOption(
-    id: id,
-    type: ChallengeLinkType.block,
-    title: topics ?? '',
-    at: ChallengeApiValues.instant(start),
-    subjectId: subjectId,
-  );
-}
-
 /// `SignedUrlResponse` de la API.
 @freezed
 abstract class ChallengeSignedUrlDto with _$ChallengeSignedUrlDto {

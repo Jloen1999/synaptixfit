@@ -6,9 +6,11 @@ import '../../widgets/markdown_toolbar.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/visibility.dart';
 import '../../../../extensions/context_extensions.dart';
+import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../auth/session/bloc/session_bloc.dart';
 import '../../academic_routes.dart';
 import '../../widgets/academic_visuals.dart';
 import '../../widgets/academic_widgets.dart';
@@ -35,6 +37,9 @@ class NoteEditorPage extends StatelessWidget {
           noteId: noteId,
           subjectId: subjectId,
           quickNote: quickNote,
+          profilePrivacy:
+              context.read<SessionBloc>().account?.privacy ??
+              Visibility.private,
         ),
       ),
     child: _NoteEditorView(isNew: noteId == null),
@@ -82,7 +87,7 @@ class _NoteEditorViewState extends State<_NoteEditorView>
       final note = state.note;
       _title.text = note?.title ?? '';
       _content.text = note?.content ?? '';
-      _visibility = note?.visibility ?? Visibility.private;
+      _visibility = state.initialVisibility;
       _quick = state.initialQuickNote;
       _subjectId = state.initialSubjectId;
       _initial = _current;
@@ -125,9 +130,33 @@ class _NoteEditorViewState extends State<_NoteEditorView>
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    // Si la privacidad del perfil cambia (p. ej., tras «Cambiar privacidad»), el
+    // editor la recibe y vuelve a ofrecer o a rebajar las visibilidades.
+    return BlocListener<SessionBloc, SessionState>(
+      listenWhen: (a, b) =>
+          _privacyOf(a) != null && _privacyOf(a) != _privacyOf(b),
+      listener: (context, session) => context.read<NoteEditorBloc>().add(
+        NoteEditorEvent.profilePrivacyChanged(
+          _privacyOf(session) ?? Visibility.private,
+        ),
+      ),
+      child: _editor(context, l10n),
+    );
+  }
+
+  static Visibility? _privacyOf(SessionState state) => switch (state) {
+    SessionAuthenticatedState(:final account) => account.privacy,
+    _ => null,
+  };
+
+  Widget _editor(BuildContext context, AppLocalizations l10n) {
     return BlocConsumer<NoteEditorBloc, NoteEditorState>(
       listener: (context, state) {
         _fill(state);
+        final allowed = state.allowed(_visibility);
+        if (_filled && allowed != _visibility) {
+          setState(() => _visibility = allowed);
+        }
         if (state.savedNoteId != null) {
           context.showSnack(l10n.academicNoteSaved);
           if (widget.isNew) {
@@ -203,6 +232,7 @@ class _NoteEditorViewState extends State<_NoteEditorView>
                       ],
                       subjectId: _subjectId,
                       visibility: _visibility,
+                      profilePrivacy: state.profilePrivacy,
                       quick: _quick,
                       onSubject: (v) => setState(() => _subjectId = v),
                       onVisibility: (v) => setState(() => _visibility = v),
@@ -250,6 +280,7 @@ class _MetaRow extends StatelessWidget {
     required this.subjects,
     required this.subjectId,
     required this.visibility,
+    required this.profilePrivacy,
     required this.quick,
     required this.onSubject,
     required this.onVisibility,
@@ -259,6 +290,9 @@ class _MetaRow extends StatelessWidget {
   final List<(String, String)> subjects;
   final String? subjectId;
   final Visibility visibility;
+
+  /// Privacidad del perfil: las visibilidades mayores salen deshabilitadas.
+  final Visibility profilePrivacy;
   final bool quick;
   final ValueChanged<String?> onSubject;
   final ValueChanged<Visibility> onVisibility;
@@ -268,6 +302,12 @@ class _MetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final known = subjects.any((s) => s.$1 == subjectId);
+    // Por qué hay opciones deshabilitadas: la privacidad del perfil manda.
+    final limit = switch (profilePrivacy) {
+      Visibility.private => l10n.academicVisibilityLimitPrivate,
+      Visibility.friends => l10n.academicVisibilityLimitFriends,
+      Visibility.public => null,
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -300,6 +340,8 @@ class _MetaRow extends StatelessWidget {
                 for (final v in Visibility.values)
                   ButtonSegment(
                     value: v,
+                    enabled: v.isAllowedBy(profilePrivacy),
+                    tooltip: v.isAllowedBy(profilePrivacy) ? null : limit,
                     icon: Icon(context.visibilityIcon(v)),
                     label: Text(context.visibilityLabel(v)),
                   ),
@@ -318,6 +360,39 @@ class _MetaRow extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: TokensSpacing.xs),
+        // Quién lo verá, dicho con palabras (los iconos solos no lo explican); se
+        // anuncia al cambiar de opción.
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            l10n.academicVisibilityWho(switch (visibility) {
+              Visibility.private => l10n.academicVisibilityWhoPrivate,
+              Visibility.friends => l10n.academicVisibilityWhoFriends,
+              Visibility.public => l10n.academicVisibilityWhoPublic,
+            }),
+            style: context.textStyles.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+        ),
+        if (limit != null)
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                limit,
+                style: context.textStyles.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
+              ),
+              TextButton(
+                onPressed: () =>
+                    context.push(AcademicExternalPaths.privacySettings),
+                child: Text(l10n.academicVisibilityChangePrivacy),
+              ),
+            ],
+          ),
       ],
     );
   }

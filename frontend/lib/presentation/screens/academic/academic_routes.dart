@@ -13,6 +13,7 @@ import 'mock_exam/page/mock_exam_page.dart';
 import 'note_editor/page/note_editor_page.dart';
 import 'note_viewer/page/note_viewer_page.dart';
 import 'practice_hub/page/practice_hub_page.dart';
+import 'shared_note_detail/page/shared_note_detail_page.dart';
 import 'shared_notes/page/shared_notes_page.dart';
 import 'subject_detail/page/subject_detail_page.dart';
 import 'subject_form/page/subject_form_page.dart';
@@ -28,6 +29,12 @@ abstract final class AcademicPaths {
   /// (con buscador y filtros), para no tener dos que hacen lo mismo.
   static const catalog = '/profile/subjects';
   static const sharedNotes = '/academic/notes/shared';
+
+  /// Apuntes compartidos de un autor (perfil público → «Ver todos»).
+  static String sharedNotesBy(String authorId) =>
+      _withQuery(sharedNotes, {'authorId': authorId});
+
+  static String sharedNote(String noteId) => '/academic/notes/shared/$noteId';
 
   /// Importar el plan docente en PDF; con [subjectId] completa esa asignatura.
   static String importGuide({String? subjectId}) =>
@@ -103,6 +110,19 @@ abstract final class AcademicPaths {
   }
 }
 
+/// Rutas de otros módulos a las que navega este (se escriben como texto para no
+/// depender de sus ficheros).
+abstract final class AcademicExternalPaths {
+  /// Perfil público de un usuario (módulo social).
+  static String userProfile(String userId) => '/social/users/$userId';
+
+  /// Buscar amigos y gestionar solicitudes (módulo social).
+  static const friends = '/social/friends';
+
+  /// Privacidad del perfil (módulo profile, «Editar cuenta»).
+  static const privacySettings = '/profile/account';
+}
+
 /// Rutas dentro de la pestaña (conservan la barra inferior).
 final _uuid = RegExp(
   r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
@@ -147,7 +167,13 @@ List<RouteBase> academicRoutes() => [
   ),
   GoRoute(
     path: AcademicPaths.sharedNotes,
-    builder: (context, state) => const SharedNotesPage(),
+    builder: (context, state) =>
+        SharedNotesPage(authorId: state.uri.queryParameters['authorId']),
+  ),
+  GoRoute(
+    path: '/academic/notes/shared/:noteId',
+    builder: (context, state) =>
+        SharedNoteDetailPage(noteId: state.pathParameters['noteId']!),
   ),
   GoRoute(
     path: '/academic/notes/:noteId/edit',

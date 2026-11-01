@@ -9,6 +9,7 @@ import com.synaptixfit.application.port.input.insights.GetPhysicalLoadUseCase;
 import com.synaptixfit.application.port.input.insights.GetStudyActivityUseCase;
 import com.synaptixfit.application.port.input.insights.GetStudyCaloriesTodayUseCase;
 import com.synaptixfit.application.port.input.insights.GetWellbeingUseCase;
+import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
 import com.synaptixfit.domain.exception.user.UserNotFoundException;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
 import com.synaptixfit.domain.model.challenge.ChallengeStatus;
@@ -86,6 +87,8 @@ public class DashboardService implements GetDashboardUseCase {
     private final GetPhysicalLoadUseCase physicalLoad;
     private final GetWellbeingUseCase wellbeing;
     private final ListMyChallengesUseCase challenges;
+    /** Próximo entrenamiento con la misma regla que la pestaña de Rutinas ({@code RoutineSchedule}). */
+    private final GetPendingTrainingDayUseCase pendingDays;
     /** Racha efectiva al leer (null: se usa la guardada en el usuario). */
     private final GetStreakUseCase streaks;
     private final Clock clock;
@@ -95,10 +98,10 @@ public class DashboardService implements GetDashboardUseCase {
                             GetCognitiveStateUseCase cognitiveStates, GetCrossRegulationUseCase crossRegulation,
                             GetStudyCaloriesTodayUseCase studyCalories, GetStudyActivityUseCase studyActivity,
                             GetPhysicalLoadUseCase physicalLoad,
-                            GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges, Clock clock,
-                            ZoneId defaultZone) {
+                            GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges,
+                            GetPendingTrainingDayUseCase pendingDays, Clock clock, ZoneId defaultZone) {
         this(users, reads, insightSources, cognitiveStates, crossRegulation, studyCalories, studyActivity, physicalLoad,
-                wellbeing, challenges, null, clock, defaultZone);
+                wellbeing, challenges, pendingDays, null, clock, defaultZone);
     }
 
     public DashboardService(UserRepositoryPort users, DashboardReadPort reads, InsightsSourcePort insightSources,
@@ -106,7 +109,9 @@ public class DashboardService implements GetDashboardUseCase {
                             GetStudyCaloriesTodayUseCase studyCalories, GetStudyActivityUseCase studyActivity,
                             GetPhysicalLoadUseCase physicalLoad,
                             GetWellbeingUseCase wellbeing, ListMyChallengesUseCase challenges,
-                            GetStreakUseCase streaks, Clock clock, ZoneId defaultZone) {
+                            GetPendingTrainingDayUseCase pendingDays, GetStreakUseCase streaks, Clock clock,
+                            ZoneId defaultZone) {
+        this.pendingDays = pendingDays;
         this.streaks = streaks;
         this.users = users;
         this.reads = reads;
@@ -212,7 +217,7 @@ public class DashboardService implements GetDashboardUseCase {
 
         return new Dashboard(greeting, todayKpis, weekKpis, cognitive, regulation, wellbeingNow,
                 focus.includesFitness()
-                        ? reads.nextTrainingDay(userId).map(d -> d.effective(now)).orElse(null)
+                        ? pendingDays.pendingDay(userId).orElse(null)
                         : null,
                 activeChallenges(userId, focus),
                 planWeek(weekStart, weekBlocks.stream()
@@ -274,7 +279,8 @@ public class DashboardService implements GetDashboardUseCase {
             }
             String title = b.subjectName() != null ? b.subjectName() : b.topics();
             events.add(new Dashboard.TodayEvent(Dashboard.TodayEvent.Kind.BLOCK, b.id(), title, b.activityType(),
-                    b.start(), b.end(), b.completed(), b.subjectName(), status(b, now)));
+                    b.start(), b.end(), b.completed(), b.subjectName(), status(b, now), b.routineId(),
+                    b.routineDayId()));
         }
         for (Deadline d : deadlines) {
             if (!d.dueAt().isBefore(todayStart) && d.dueAt().isBefore(tomorrowStart)) {

@@ -107,64 +107,64 @@ Future<Visibility?> showVisibilityDialog(
   );
 }
 
-/// Progreso manual elegido en el diálogo.
+/// Progreso manual elegido en el diálogo: el valor absoluto («llevas 60 %»).
 class RecordProgressInput {
-  const RecordProgressInput({this.milestoneId, required this.amount});
+  const RecordProgressInput({required this.value});
 
-  final String? milestoneId;
-  final double amount;
+  final double value;
 }
 
-/// Diálogo para registrar progreso manual (en una tarea si el reto las tiene).
+/// Diálogo «¿Cuánto llevas?» de un reto sin tareas: muestra el progreso
+/// actual y fija el nuevo valor (no suma). Con tareas no se usa: las tareas son
+/// de sí o no.
 Future<RecordProgressInput?> showRecordProgressDialog(
   BuildContext context,
   Challenge challenge,
 ) {
   final l10n = context.localizations;
-  final options = challenge.milestones
-      .where((m) => !m.completed && !m.isLocked)
-      .toList();
-  var milestoneId = options.isEmpty ? null : options.first.id;
-  var amount = 10.0;
+  final current = challenge.progress.roundToDouble().clamp(0, 99).toDouble();
+  var value = current;
   return showDialog<RecordProgressInput>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
-        title: Text(l10n.challengesProgressTitle),
+        // Con el texto al 200 % o en horizontal, el contenido se desplaza.
+        scrollable: true,
+        title: Text(l10n.challengesProgressHowMuch),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (challenge.hasMilestones) ...[
-              DropdownButtonFormField<String>(
-                initialValue: milestoneId,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: l10n.challengesProgressTask,
-                ),
-                items: [
-                  for (final m in options)
-                    DropdownMenuItem(
-                      value: m.id,
-                      child: Text(m.title, overflow: TextOverflow.ellipsis),
-                    ),
-                ],
-                onChanged: (id) => setState(() => milestoneId = id),
-              ),
-              const SizedBox(height: TokensSpacing.m),
-            ],
             Text(
-              l10n.challengesProgressAmount(amount.round()),
-              style: context.textStyles.titleMedium,
+              l10n.challengesProgressCurrent(current.round()),
+              style: context.textStyles.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.s),
+            // La cifra grande es visual: el deslizador ya anuncia el valor.
+            ExcludeSemantics(
+              child: Text(
+                l10n.challengesProgressPercent(value.round()),
+                style: context.textStyles.headlineSmall,
+              ),
             ),
             Slider(
-              value: amount,
-              min: 1,
+              value: value,
               max: 100,
-              divisions: 99,
-              label: l10n.challengesProgressPercent(amount.round()),
-              onChanged: (v) => setState(() => amount = v),
+              divisions: 20,
+              label: l10n.challengesProgressPercent(value.round()),
+              semanticFormatterCallback: (v) =>
+                  l10n.challengesProgressPercent(v.round()),
+              onChanged: (v) => setState(() => value = v),
             ),
+            if (value >= 100)
+              Text(
+                l10n.challengesProgressWillComplete,
+                style: context.textStyles.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
+              ),
           ],
         ),
         actions: [
@@ -173,14 +173,11 @@ Future<RecordProgressInput?> showRecordProgressDialog(
             child: Text(l10n.commonCancel),
           ),
           FilledButton(
-            onPressed: challenge.hasMilestones && milestoneId == null
+            onPressed: value == current
                 ? null
                 : () => Navigator.pop(
                     context,
-                    RecordProgressInput(
-                      milestoneId: milestoneId,
-                      amount: amount.roundToDouble(),
-                    ),
+                    RecordProgressInput(value: value.roundToDouble()),
                   ),
             child: Text(l10n.challengesProgressAction),
           ),

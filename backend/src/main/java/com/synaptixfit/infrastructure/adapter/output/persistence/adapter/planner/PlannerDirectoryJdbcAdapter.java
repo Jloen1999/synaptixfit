@@ -1,18 +1,23 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.planner;
 
+import com.synaptixfit.domain.model.planner.ChallengeRef;
+import java.time.OffsetDateTime;
 import com.synaptixfit.domain.model.neuro.BiologicalSex;
 import com.synaptixfit.domain.model.planner.PlannerProfile;
 import com.synaptixfit.domain.model.planner.RoutineRef;
 import com.synaptixfit.domain.model.planner.SubjectRef;
+import com.synaptixfit.domain.model.training.ProgressStatus;
 import com.synaptixfit.domain.port.output.planner.ChallengeDirectoryPort;
 import com.synaptixfit.domain.port.output.planner.PlannerProfilePort;
 import com.synaptixfit.domain.port.output.planner.RoutineDirectoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training.TrainingDbValues;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +36,10 @@ public class PlannerDirectoryJdbcAdapter implements SubjectDirectoryPort, Planne
 
     private static final String SUBJECT_COLUMNS =
             "select id, nombre, codigo, dificultad_percibida, creditos, ics_url from asignaturas ";
+    /** Valores en la BD de los estados de día de rutina que aún no están cerrados (ni hechos ni saltados). */
+    private static final List<String> OPEN_DAY_STATUSES = Arrays.stream(ProgressStatus.values())
+            .filter(st -> !st.isClosed()).map(TrainingDbValues::dayStatusToDb).toList();
+
     private static final String ROUTINE_COLUMNS =
             "select id, nombre, objetivo, duracion_semanas, cantidad_ejercicios from rutinas ";
 
@@ -119,13 +128,16 @@ public class PlannerDirectoryJdbcAdapter implements SubjectDirectoryPort, Planne
         if (routine.isEmpty()) {
             return routine;
         }
-        List<RoutineRef.Day> days = jdbc.sql("select d.id, d.semana_id, s.numero_semana, d.numero_dia, d.nombre "
+        // Qué días quedan lo decide Entrenamiento: estados abiertos de ProgressStatus y días con ejercicios.
+        List<RoutineRef.Day> days = jdbc.sql("select d.id, d.semana_id, s.numero_semana, d.numero_dia, d.nombre, "
+                        + "case when d.estado in (:open) and exists (select 1 from seleccion_de_ejercicios e "
+                        + "where e.dia_id = d.id) then 1 else 0 end as pendiente "
                         + "from dias_rutina d join semanas_rutina s on s.id = d.semana_id "
                         + "where s.rutina_id = :routineId order by s.numero_semana, d.numero_dia")
-                .param("routineId", routineId)
+                .param("routineId", routineId).param("open", OPEN_DAY_STATUSES)
                 .query((rs, n) -> new RoutineRef.Day(rs.getObject("id", UUID.class),
                         rs.getObject("semana_id", UUID.class), rs.getInt("numero_semana"), rs.getInt("numero_dia"),
-                        rs.getString("nombre")))
+                        rs.getString("nombre"), rs.getInt("pendiente") == 1))
                 .list();
         RoutineRef r = routine.get();
         return Optional.of(new RoutineRef(r.id(), r.name(), r.goal(), r.weeks(), r.exerciseCount(), days));
@@ -147,17 +159,20 @@ public class PlannerDirectoryJdbcAdapter implements SubjectDirectoryPort, Planne
     // ------------------------------------------------------------------ retos
 
     @Override
-    public boolean ownsChallenge(UUID userId, UUID challengeId) {
-        return jdbc.sql("select count(*) from retos where id = :id and usuario_id = :userId")
+    public Optional<ChallengeRef> findOwnedChallenge(UUID userId, UUID challengeId) {
+        return jdbc.sql("select id, fecha_inicio, fecha_fin from retos where id = :id and usuario_id = :userId")
                 .param("id", challengeId).param("userId", userId)
-                .query(Long.class).single() > 0;
+                .query((rs, n) -> new ChallengeRef(rs.getObject("id", UUID.class),
+                        rs.getObject("fecha_inicio", OffsetDateTime.class).toInstant(),
+                        rs.getObject("fecha_fin", OffsetDateTime.class).toInstant()))
+                .optional();
     }
 
     @Override
-    public boolean ownsMilestone(UUID userId, UUID milestoneId) {
-        return jdbc.sql("select count(*) from hitos_de_reto h join retos r on r.id = h.reto_id "
+    public Optional<UUID> findMilestoneChallenge(UUID userId, UUID milestoneId) {
+        return jdbc.sql("select r.id from hitos_de_reto h join retos r on r.id = h.reto_id "
                         + "where h.id = :id and r.usuario_id = :userId")
                 .param("id", milestoneId).param("userId", userId)
-                .query(Long.class).single() > 0;
+                .query(UUID.class).optional();
     }
 }

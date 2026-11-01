@@ -18,6 +18,9 @@ abstract class SessionSetDto with _$SessionSetDto {
     double? weightKg,
     @Default(true) bool completed,
     @Default(0) int failedReps,
+    int? durationSeconds,
+    int? distanceMeters,
+    String? exerciseId,
   }) = _SessionSetDto;
 
   const SessionSetDto._();
@@ -33,6 +36,9 @@ abstract class SessionSetDto with _$SessionSetDto {
     weightKg: weightKg,
     completed: completed,
     failedReps: failedReps,
+    durationSeconds: durationSeconds,
+    distanceMeters: distanceMeters,
+    exerciseId: exerciseId,
   );
 }
 
@@ -85,6 +91,8 @@ abstract class RecordSetRequestDto with _$RecordSetRequestDto {
     double? weightKg,
     required bool completed,
     required int failedReps,
+    int? durationSeconds,
+    int? distanceMeters,
   }) = _RecordSetRequestDto;
 
   factory RecordSetRequestDto.fromJson(Map<String, dynamic> json) =>
@@ -97,6 +105,8 @@ abstract class RecordSetRequestDto with _$RecordSetRequestDto {
     weightKg: r.weightKg,
     completed: r.completed,
     failedReps: r.failedReps,
+    durationSeconds: r.durationSeconds,
+    distanceMeters: r.distanceMeters,
   );
 }
 
@@ -157,6 +167,50 @@ abstract class UnmarkSessionResponseDto with _$UnmarkSessionResponseDto {
       _$UnmarkSessionResponseDtoFromJson(json);
 
   UnmarkSessionResult toDomain() => UnmarkSessionResult(
+    session: session.toDomain(),
+    experience: experience.toDomain(),
+  );
+}
+
+@freezed
+abstract class OpenSessionDto with _$OpenSessionDto {
+  const factory OpenSessionDto({
+    required SessionDto session,
+    @Default(false) bool stale,
+    String? routineName,
+    String? dayName,
+    int? dayNumber,
+    int? weekNumber,
+  }) = _OpenSessionDto;
+
+  const OpenSessionDto._();
+
+  factory OpenSessionDto.fromJson(Map<String, dynamic> json) =>
+      _$OpenSessionDtoFromJson(json);
+
+  OpenSession toDomain() => OpenSession(
+    session: session.toDomain(),
+    stale: stale,
+    routineName: routineName,
+    dayName: (dayName?.trim().isEmpty ?? true) ? null : dayName,
+    dayNumber: dayNumber,
+    weekNumber: weekNumber,
+  );
+}
+
+@freezed
+abstract class PastSessionResponseDto with _$PastSessionResponseDto {
+  const factory PastSessionResponseDto({
+    required SessionDto session,
+    required ExperienceDto experience,
+  }) = _PastSessionResponseDto;
+
+  const PastSessionResponseDto._();
+
+  factory PastSessionResponseDto.fromJson(Map<String, dynamic> json) =>
+      _$PastSessionResponseDtoFromJson(json);
+
+  PastSessionResult toDomain() => PastSessionResult(
     session: session.toDomain(),
     experience: experience.toDomain(),
   );

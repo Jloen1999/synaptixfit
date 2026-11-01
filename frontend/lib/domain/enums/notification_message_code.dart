@@ -9,7 +9,8 @@ enum NotificationMessageCode {
   postLiked('POST_LIKED'),
   postCommented('POST_COMMENTED'),
   friendRequestReceived('FRIEND_REQUEST_RECEIVED'),
-  friendRequestAccepted('FRIEND_REQUEST_ACCEPTED');
+  friendRequestAccepted('FRIEND_REQUEST_ACCEPTED'),
+  routineCompleted('ROUTINE_COMPLETED');
 
   const NotificationMessageCode(this.apiValue);
 

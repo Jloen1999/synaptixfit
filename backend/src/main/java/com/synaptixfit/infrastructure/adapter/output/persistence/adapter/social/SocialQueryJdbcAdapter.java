@@ -1,7 +1,9 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.social;
 
+import com.synaptixfit.domain.model.shared.AudienceScope;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
+import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.social.AuthorSummary;
 import com.synaptixfit.domain.model.social.CommentView;
 import com.synaptixfit.domain.model.social.FeedQuery;
@@ -15,7 +17,9 @@ import com.synaptixfit.domain.model.social.ReportedContentType;
 import com.synaptixfit.domain.model.social.UserCard;
 import com.synaptixfit.domain.port.output.social.ReportedContentQueryPort;
 import com.synaptixfit.domain.port.output.social.SocialQueryPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SharedContentSql;
 import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SqlLike;
+import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.VisibilityDbMapper;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.social.SocialPersistenceMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,7 +39,7 @@ import org.springframework.stereotype.Repository;
  * (contadores y «me gusta» propio como subconsultas correlacionadas, sin N+1). Lee
  * {@code usuarios} (núcleo) solo para nombre, avatar, privacidad y shadowban.
  *
- * <p>Las condiciones de visibilidad replican {@code ContentVisibility}; mantener ambas alineadas.
+ * <p>La visibilidad del muro usa {@link SharedContentSql} con los niveles de {@code EffectiveVisibility}.
  */
 @Repository
 public class SocialQueryJdbcAdapter implements SocialQueryPort, ReportedContentQueryPort {
@@ -52,13 +56,13 @@ public class SocialQueryJdbcAdapter implements SocialQueryPort, ReportedContentQ
 
     private static final String POST_FROM = " FROM actividades_sociales a JOIN usuarios u ON u.id = a.usuario_id ";
 
-    /** Visibilidad de una publicación para :viewer (privacidad del autor, amistad, shadowban y bloqueo). */
-    private static final String POST_VISIBLE = """
-            (a.usuario_id = :viewer OR (
-                u.eliminado_en IS NULL AND u.is_shadowbanned = false AND NOT %s
-                AND (u.nivel_privacidad = 'public'
-                     OR (u.nivel_privacidad = 'friends' AND %s))))
-            """.formatted(relation("a.usuario_id", "bloqueada"), relation("a.usuario_id", "aceptada"));
+    /**
+     * Visibilidad de una publicación para :viewer: la regla única de contenido compartido
+     * ({@code EffectiveVisibility}) tomando la publicación como contenido público, así que decide la
+     * privacidad del perfil del autor (más amistad, shadowban, cuenta eliminada y bloqueo).
+     */
+    private static final String POST_VISIBLE = "(a.usuario_id = :viewer OR "
+            + SharedContentSql.visible(AudienceScope.ALL, ":postVisibility", "a.usuario_id", "u") + ")";
 
     private static final String COMMENT_COLUMNS = """
             SELECT c.id, c.actividad_id, c.usuario_id, c.texto, c.creado_en, c.editado_en,
@@ -76,8 +80,9 @@ public class SocialQueryJdbcAdapter implements SocialQueryPort, ReportedContentQ
 
     @Override
     public PageResult<PostView> feed(FeedQuery query) {
-        Map<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>(SharedContentSql.params(AudienceScope.ALL));
         params.put("viewer", query.viewerId());
+        params.put("postVisibility", VisibilityDbMapper.toDb(Visibility.PUBLIC));
         StringBuilder where = new StringBuilder(" WHERE ").append(POST_VISIBLE);
         if (query.authorId() != null) {
             where.append(" AND a.usuario_id = :author");

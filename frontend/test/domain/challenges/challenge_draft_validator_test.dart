@@ -19,13 +19,11 @@ class _MockRefs extends Mock implements ChallengeReferencesRepositoryContract {}
 
 MilestoneDraft _m(
   String title, {
-  double? weight,
   List<int> deps = const [],
   MilestoneCondition condition = MilestoneCondition.all,
   int? n,
 }) => MilestoneDraft(
   title: title,
-  weight: weight,
   dependsOn: deps,
   condition: condition,
   conditionN: n,
@@ -93,38 +91,9 @@ void main() {
       );
     });
 
-    test('pesos: todos o ninguno, entre 0 y 100 y sumando 100', () {
+    test('los pesos ya no se validan: los deriva el servidor', () {
       expect(
         ChallengeDraftValidator.validateMilestones([_m('Uno'), _m('Dos')]),
-        isNull,
-      );
-      expect(
-        ChallengeDraftValidator.validateMilestones([
-          _m('Uno', weight: 50),
-          _m('Dos'),
-        ]),
-        ChallengeDraftIssue.weightsIncomplete,
-      );
-      expect(
-        ChallengeDraftValidator.validateMilestones([
-          _m('Uno', weight: 0),
-          _m('Dos', weight: 100),
-        ]),
-        ChallengeDraftIssue.weightOutOfRange,
-      );
-      expect(
-        ChallengeDraftValidator.validateMilestones([
-          _m('Uno', weight: 60),
-          _m('Dos', weight: 30),
-        ]),
-        ChallengeDraftIssue.weightsSum,
-      );
-      expect(
-        ChallengeDraftValidator.validateMilestones([
-          _m('Uno', weight: 33.33),
-          _m('Dos', weight: 33.33),
-          _m('Tres', weight: 33.33),
-        ]),
         isNull,
       );
     });
@@ -192,11 +161,6 @@ void main() {
         ChallengeDraftIssue.attachmentConflict,
       );
     });
-
-    test('autoWeights reparte 100 y el último absorbe el resto', () {
-      expect(ChallengeDraftValidator.autoWeights(3), [33.33, 33.33, 33.34]);
-      expect(ChallengeDraftValidator.autoWeights(0), isEmpty);
-    });
   });
 
   group('CreateChallengeUseCase', () {
@@ -206,54 +170,60 @@ void main() {
         ChallengeDraft(
           title: 'Reto válido',
           endAt: end,
-          milestones: [_m('Uno', weight: 10), _m('Dos', weight: 10)],
+          milestones: [
+            _m('Uno', deps: [1]),
+            _m('Dos', deps: [0]),
+          ],
         ),
       );
       expect(
         result.errorOrNull,
-        const AppError.business('MILESTONE_WEIGHTS_INVALID'),
+        const AppError.business('MILESTONE_DEPENDENCY_INVALID'),
       );
       verifyZeroInteractions(repo);
     });
   });
 
   group('ListChallengeLinkTargetsUseCase', () {
-    test('pide 4 semanas desde ahora y ordena por fecha', () async {
-      final refs = _MockRefs();
-      final now = DateTime(2026, 10, 18, 10);
-      final later = ChallengeLinkOption(
-        id: 'b',
-        type: ChallengeLinkType.block,
-        title: 'Bloque',
-        at: DateTime(2026, 10, 25),
-      );
-      final sooner = ChallengeLinkOption(
-        id: 'd',
-        type: ChallengeLinkType.exam,
-        title: 'Examen',
-        at: DateTime(2026, 10, 20),
-      );
-      when(
-        () => refs.linkTargets(
-          subjectId: any(named: 'subjectId'),
-          from: any(named: 'from'),
-          to: any(named: 'to'),
-        ),
-      ).thenAnswer((_) async => Success([later, sooner]));
+    test(
+      'sin periodo, pide 4 semanas desde hoy (días enteros) y ordena',
+      () async {
+        final refs = _MockRefs();
+        final now = DateTime(2026, 10, 18, 10);
+        final later = ChallengeLinkOption(
+          id: 'b',
+          type: ChallengeLinkType.delivery,
+          title: 'Entrega',
+          at: DateTime(2026, 10, 25),
+        );
+        final sooner = ChallengeLinkOption(
+          id: 'd',
+          type: ChallengeLinkType.exam,
+          title: 'Examen',
+          at: DateTime(2026, 10, 20),
+        );
+        when(
+          () => refs.linkTargets(
+            subjectId: any(named: 'subjectId'),
+            from: any(named: 'from'),
+            to: any(named: 'to'),
+          ),
+        ).thenAnswer((_) async => Success([later, sooner]));
 
-      final result = await ListChallengeLinkTargetsUseCase(
-        refs,
-        now: () => now,
-      )(subjectId: 's1');
+        final result = await ListChallengeLinkTargetsUseCase(
+          refs,
+          now: () => now,
+        )(subjectId: 's1');
 
-      expect(result.valueOrNull, [sooner, later]);
-      verify(
-        () => refs.linkTargets(
-          subjectId: 's1',
-          from: now,
-          to: now.add(const Duration(days: 28)),
-        ),
-      ).called(1);
-    });
+        expect(result.valueOrNull, [sooner, later]);
+        verify(
+          () => refs.linkTargets(
+            subjectId: 's1',
+            from: DateTime(2026, 10, 18),
+            to: DateTime(2026, 11, 15, 23, 59, 59),
+          ),
+        ).called(1);
+      },
+    );
   });
 }

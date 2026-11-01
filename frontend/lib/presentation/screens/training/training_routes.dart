@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/models/training/session.dart';
+import '../../../domain/models/training/session_history.dart';
 import 'check_in/page/check_in_page.dart';
 import 'community/page/community_page.dart';
 import 'exercise_detail/page/exercise_detail_page.dart';
@@ -10,6 +11,7 @@ import 'live_session/page/live_session_page.dart';
 import 'routine_detail/page/routine_detail_page.dart';
 import 'routine_editor/page/routine_editor_page.dart';
 import 'session_completed/page/session_completed_page.dart';
+import 'session_detail/page/session_detail_page.dart';
 import 'session_history/page/session_history_page.dart';
 import 'training_home/page/training_home_page.dart';
 import 'weekly_plan/page/weekly_plan_page.dart';
@@ -40,6 +42,11 @@ abstract final class TrainingPaths {
   /// Resumen de sesión completada (`extra`: `FinishSessionResult` opcional).
   static String sessionCompleted(String sessionId) =>
       '${session(sessionId)}/completed';
+
+  /// Detalle de solo lectura de una sesión terminada (`extra`:
+  /// `SessionHistoryEntry` opcional). Devuelve una `SessionDetailAction`.
+  static String sessionDetail(String sessionId) =>
+      '${session(sessionId)}/detail';
 
   static const history = '$root/history';
   static const checkIn = '$root/check-in';
@@ -99,6 +106,15 @@ List<RouteBase> trainingRoutes() => [
       sessionId: state.pathParameters['sessionId']!,
       result: state.extra is FinishSessionResult
           ? state.extra! as FinishSessionResult
+          : null,
+    ),
+  ),
+  GoRoute(
+    path: '${TrainingPaths.root}/sessions/:sessionId/detail',
+    builder: (_, state) => SessionDetailPage(
+      sessionId: state.pathParameters['sessionId']!,
+      entry: state.extra is SessionHistoryEntry
+          ? state.extra! as SessionHistoryEntry
           : null,
     ),
   ),

@@ -28,8 +28,14 @@ abstract class ChallengeFormState with _$ChallengeFormState {
     @Default(<ChallengeSubjectOption>[]) List<ChallengeSubjectOption> subjects,
     @Default(<MilestoneFormItem>[]) List<MilestoneFormItem> milestones,
 
-    /// Pesos indicados a mano (si no, se reparten a partes iguales).
-    @Default(false) bool manualWeights,
+    /// «Hacer las tareas en orden»: cada tarea depende de la anterior. Es la
+    /// forma simple de las dependencias; las demás solo se editan si el reto ya
+    /// las tenía.
+    @Default(false) bool inOrder,
+
+    /// El reto que se edita avanza con las sesiones de entrenamiento (lo dice
+    /// el servidor): añadirle tareas lo deja de hacer y hay que avisarlo.
+    @Default(false) bool tracksTrainingSessions,
 
     /// Objetivo de sesiones de entrenamiento escrito (solo se envía si aplica).
     int? sessionTarget,
@@ -54,13 +60,10 @@ abstract class ChallengeFormState with _$ChallengeFormState {
   bool get canAddMilestone =>
       milestones.length < ChallengeDraftValidator.maxMilestones;
 
-  double get weightSum =>
-      ChallengeDraftValidator.weightSum(milestones.map((m) => m.weight));
-
-  /// Pesos que se mostrarán por tarea (automáticos o manuales).
-  List<double> get displayWeights => manualWeights
-      ? milestones.map((m) => m.weight ?? 0).toList()
-      : ChallengeDraftValidator.autoWeights(milestones.length);
+  /// Dependencias a medida (no «en orden») que ya tenía el reto: solo
+  /// entonces se muestra su editor completo en cada tarea.
+  bool get hasCustomDependencies =>
+      !inOrder && milestones.any((m) => m.dependsOnKeys.isNotEmpty);
 
   String? get selectedSubjectName {
     final id = subjectId;
@@ -82,7 +85,6 @@ abstract class MilestoneFormItem with _$MilestoneFormItem {
     /// Id de la tarea existente (modo edición).
     String? id,
     required String title,
-    double? weight,
     @Default(ChallengeDifficulty.medium) ChallengeDifficulty difficulty,
     String? noteId,
     String? noteTitle,

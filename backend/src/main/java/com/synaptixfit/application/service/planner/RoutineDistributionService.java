@@ -1,6 +1,7 @@
 package com.synaptixfit.application.service.planner;
 
 import com.synaptixfit.application.port.input.planner.DistributeRoutineUseCase;
+import com.synaptixfit.application.port.input.planner.WithdrawRoutineBlocksUseCase;
 import com.synaptixfit.domain.exception.planner.PlannerRoutineNotFoundException;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.PlannerZone;
@@ -14,9 +15,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
-/** Distribución de una rutina en el calendario (bloques de deporte vinculados a sus días). */
+/**
+ * Distribución de una rutina en el calendario (bloques de deporte vinculados a sus días). Volver a
+ * repartir sustituye los bloques futuros pendientes de esa rutina, en lugar de duplicarlos.
+ */
 public class RoutineDistributionService implements DistributeRoutineUseCase {
 
     static final LocalTime DEFAULT_START = LocalTime.of(8, 0);
@@ -26,14 +31,17 @@ public class RoutineDistributionService implements DistributeRoutineUseCase {
     private final CalendarBlockRepositoryPort blocks;
     private final RoutineDirectoryPort routines;
     private final WeeklyLoadService weeklyLoads;
+    private final WithdrawRoutineBlocksUseCase withdraw;
     private final PlannerZone zone;
     private final Clock clock;
 
     public RoutineDistributionService(CalendarBlockRepositoryPort blocks, RoutineDirectoryPort routines,
-                                      WeeklyLoadService weeklyLoads, PlannerZone zone, Clock clock) {
+                                      WeeklyLoadService weeklyLoads, WithdrawRoutineBlocksUseCase withdraw,
+                                      PlannerZone zone, Clock clock) {
         this.blocks = blocks;
         this.routines = routines;
         this.weeklyLoads = weeklyLoads;
+        this.withdraw = withdraw;
         this.zone = zone;
         this.clock = clock;
     }
@@ -44,13 +52,15 @@ public class RoutineDistributionService implements DistributeRoutineUseCase {
         Instant now = clock.instant();
         RoutineRef routine = routines.findOwnedWithDays(command.userId(), command.routineId())
                 .orElseThrow(() -> new PlannerRoutineNotFoundException(command.routineId()));
+        // Sustituye lo que hubiera: los bloques futuros pendientes de esta rutina se retiran antes.
+        withdraw.withdraw(new WithdrawRoutineBlocksUseCase.Command(command.userId(), routine.id(), Set.of(), true));
         LocalDate start = command.startDate() == null ? zone.today(now) : command.startDate();
         LocalTime preferred = command.preferredStart() == null ? DEFAULT_START : command.preferredStart();
         Instant from = zone.startOfDay(start.isBefore(zone.today(now)) ? zone.today(now) : start);
         List<CalendarBlock> existing = blocks.findOverlapping(command.userId(), from,
                 from.plus(java.time.Duration.ofDays(HORIZON_DAYS)), null);
         List<CalendarBlock> created = RoutineDistribution.distribute(command.userId(), routine,
-                command.weekdays() == null ? java.util.Set.of() : command.weekdays(), start, preferred,
+                command.weekdays() == null ? Set.of() : command.weekdays(), start, preferred,
                 command.durationMinutes(), existing, zone, now, UUID::randomUUID);
         List<CalendarBlock> saved = blocks.saveAll(created);
         saved.stream().map(b -> PlannerZone.mondayOf(zone.localDate(b.start()))).distinct()

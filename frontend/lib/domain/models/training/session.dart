@@ -5,7 +5,9 @@ import 'recommendation.dart';
 
 part 'session.freezed.dart';
 
-/// Serie registrada en una sesión.
+/// Serie registrada en una sesión. Según cómo se mida el ejercicio lleva
+/// repeticiones y peso, segundos ([durationSeconds]) o metros
+/// ([distanceMeters]).
 @freezed
 abstract class SessionSet with _$SessionSet {
   const factory SessionSet({
@@ -16,6 +18,12 @@ abstract class SessionSet with _$SessionSet {
     double? weightKg,
     required bool completed,
     @Default(0) int failedReps,
+    int? durationSeconds,
+    int? distanceMeters,
+
+    /// Ejercicio que se hizo: se conserva aunque su hueco desaparezca de la
+    /// rutina (al quitarlo o sustituirlo).
+    String? exerciseId,
   }) = _SessionSet;
 }
 
@@ -57,6 +65,8 @@ abstract class SetRecord with _$SetRecord {
     double? weightKg,
     @Default(true) bool completed,
     @Default(0) int failedReps,
+    int? durationSeconds,
+    int? distanceMeters,
   }) = _SetRecord;
 }
 
@@ -79,6 +89,29 @@ abstract class FinishSessionResult with _$FinishSessionResult {
     required ExperienceChange experience,
     @Default(<Recommendation>[]) List<Recommendation> recommendations,
   }) = _FinishSessionResult;
+}
+
+/// Sesión sin terminar con el nombre de su rutina y día. [stale]: abandonada
+/// (más de 6 h abierta): se termina con lo registrado o se descarta.
+@freezed
+abstract class OpenSession with _$OpenSession {
+  const factory OpenSession({
+    required TrainingSession session,
+    required bool stale,
+    String? routineName,
+    String? dayName,
+    int? dayNumber,
+    int? weekNumber,
+  }) = _OpenSession;
+}
+
+/// Resultado de registrar una sesión pasada de un día de rutina.
+@freezed
+abstract class PastSessionResult with _$PastSessionResult {
+  const factory PastSessionResult({
+    required TrainingSession session,
+    required ExperienceChange experience,
+  }) = _PastSessionResult;
 }
 
 /// Resultado de desmarcar una sesión finalizada.

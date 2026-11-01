@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/friendship_relation.dart';
+import '../../../../../domain/models/academic/note.dart';
 import '../../../../../domain/models/social/public_profile.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
@@ -34,6 +35,34 @@ class UserProfilePage extends StatelessWidget {
 
 class _UserProfileView extends StatelessWidget {
   const _UserProfileView();
+
+  /// Apuntes que comparte conmigo: solo si hay alguno (o si falló la carga).
+  List<Widget> _sharedNotes(BuildContext context, UserProfileState state) {
+    final l10n = context.localizations;
+    if (state.notes.isEmpty && state.notesError == null) return const [];
+    return [
+      const SizedBox(height: TokensSpacing.l),
+      SocialContentWidth(
+        child: AppSectionHeader(
+          title: l10n.socialProfileNotes,
+          actionLabel: state.hasMoreNotes ? l10n.socialProfileNotesAll : null,
+          onAction: () =>
+              context.push(SocialExternalPaths.sharedNotesBy(state.userId)),
+        ),
+      ),
+      if (state.notes.isEmpty)
+        AppErrorView(
+          error: state.notesError!,
+          onRetry: () => context.read<UserProfileBloc>().add(
+            const UserProfileEvent.refreshed(),
+          ),
+        ),
+      for (final note in state.notes) ...[
+        SocialContentWidth(child: _SharedNoteTile(note: note)),
+        const SizedBox(height: TokensSpacing.s),
+      ],
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +104,8 @@ class _UserProfileView extends StatelessWidget {
                       busy: state.busy,
                     ),
                   ),
+                  if (!state.profile!.restricted)
+                    ..._sharedNotes(context, state),
                   const SizedBox(height: TokensSpacing.l),
                   SocialContentWidth(
                     child: AppSectionHeader(title: l10n.socialProfilePosts),
@@ -125,84 +156,177 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    final session = context.read<SessionBloc>().state;
-    final isMe =
-        session is SessionAuthenticatedState &&
-        session.account.id == profile.id;
+    final myId = context.select<SessionBloc, String?>((bloc) {
+      final session = bloc.state;
+      return session is SessionAuthenticatedState ? session.account.id : null;
+    });
+    final isMe = myId == profile.id;
+    final level = profile.level;
+    // Banda de color de marca tras la mitad superior del avatar: da presencia
+    // a la cabecera sin degradados ni foto.
+    final band = Color.alphaBlend(
+      context.colors.primary.withValues(alpha: AppPill.tintAlpha),
+      context.colors.surface,
+    );
     return AppCard(
-      padding: const EdgeInsets.all(TokensSpacing.l),
-      child: Column(
+      padding: EdgeInsets.zero,
+      child: Stack(
         children: [
-          AppAvatar(
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            // Hasta el centro del avatar (relleno + aro + radio).
+            height:
+                TokensSpacing.l + TokensSpacing.xs + TokensSize.medallion / 2,
+            child: ColoredBox(color: band),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(TokensSpacing.l),
+            child: _headerContent(context, isMe: isMe, level: level),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _headerContent(
+    BuildContext context, {
+    required bool isMe,
+    required int? level,
+  }) {
+    final l10n = context.localizations;
+    return Column(
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: context.colors.surface,
+              width: TokensSpacing.xs,
+            ),
+          ),
+          child: AppAvatar(
             name: profile.fullName,
             imageUrl: profile.avatarUrl,
-            radius: 40,
+            radius: TokensSize.medallion / 2,
           ),
+        ),
+        const SizedBox(height: TokensSpacing.m),
+        Text(
+          profile.fullName,
+          style: context.textStyles.headlineSmall,
+          textAlign: TextAlign.center,
+        ),
+        if (level != null) ...[
+          const SizedBox(height: TokensSpacing.s),
+          AppPill(
+            icon: Icons.military_tech_rounded,
+            label: l10n.commonLevel(level),
+            color: context.palette.accent,
+          ),
+        ],
+        const SizedBox(height: TokensSpacing.m),
+        if (profile.restricted)
+          _RestrictedNotice(relation: profile.relation)
+        else
+          Row(
+            children: [
+              Expanded(
+                child: AppMetricTile(
+                  icon: Icons.local_fire_department_rounded,
+                  color: context.palette.streak,
+                  value: '${profile.streak ?? 0}',
+                  label: l10n.socialProfileStreak,
+                  bare: true,
+                ),
+              ),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(
+                child: AppMetricTile(
+                  icon: Icons.article_rounded,
+                  color: context.colors.primary,
+                  value: '${profile.postsCount ?? 0}',
+                  label: l10n.socialProfilePostsCount,
+                  bare: true,
+                ),
+              ),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(
+                child: AppMetricTile(
+                  icon: Icons.people_alt_rounded,
+                  color: context.colors.secondary,
+                  value: '${profile.friendsCount ?? 0}',
+                  label: l10n.socialProfileFriendsCount,
+                  bare: true,
+                ),
+              ),
+            ],
+          ),
+        if (isMe) ...[
           const SizedBox(height: TokensSpacing.m),
           Text(
-            profile.fullName,
-            style: context.textStyles.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
-          if (profile.level != null) ...[
-            const SizedBox(height: TokensSpacing.xs),
-            Text(
-              l10n.commonLevel(profile.level!),
-              style: context.textStyles.labelLarge?.copyWith(
-                color: context.palette.accent,
-              ),
+            l10n.socialProfileIsMe,
+            style: context.textStyles.bodyMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
             ),
-          ],
+          ),
+        ] else ...[
           const SizedBox(height: TokensSpacing.m),
-          if (profile.restricted)
-            _RestrictedNotice(relation: profile.relation)
-          else
-            Row(
+          _RelationActions(profile: profile, busy: busy),
+        ],
+      ],
+    );
+  }
+}
+
+/// Apunte compartido del perfil: título, extracto y asignatura; abre su
+/// lectura en el módulo académico.
+class _SharedNoteTile extends StatelessWidget {
+  const _SharedNoteTile({required this.note});
+
+  final SharedNoteSummary note;
+
+  @override
+  Widget build(BuildContext context) {
+    final subject = note.catalogSubjectName;
+    return AppCard(
+      onTap: () => context.push(SocialExternalPaths.sharedNote(note.id)),
+      child: Row(
+        children: [
+          Icon(Icons.description_outlined, color: context.colors.tertiary),
+          const SizedBox(width: TokensSpacing.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: AppMetricTile(
-                    icon: Icons.local_fire_department_rounded,
-                    color: context.palette.streak,
-                    value: '${profile.streak ?? 0}',
-                    label: l10n.socialProfileStreak,
-                    bare: true,
-                  ),
+                Text(
+                  note.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textStyles.titleSmall,
                 ),
-                const SizedBox(width: TokensSpacing.s),
-                Expanded(
-                  child: AppMetricTile(
-                    icon: Icons.article_rounded,
-                    color: context.colors.primary,
-                    value: '${profile.postsCount ?? 0}',
-                    label: l10n.socialProfilePostsCount,
-                    bare: true,
+                if (note.excerpt.isNotEmpty)
+                  Text(
+                    note.excerpt,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.textStyles.bodySmall?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(width: TokensSpacing.s),
-                Expanded(
-                  child: AppMetricTile(
-                    icon: Icons.people_alt_rounded,
-                    color: context.colors.secondary,
-                    value: '${profile.friendsCount ?? 0}',
-                    label: l10n.socialProfileFriendsCount,
-                    bare: true,
+                if (subject != null && subject.isNotEmpty) ...[
+                  const SizedBox(height: TokensSpacing.xs),
+                  AppPill(
+                    label: subject,
+                    color: context.colors.tertiary,
+                    icon: Icons.school_outlined,
                   ),
-                ),
+                ],
               ],
             ),
-          if (isMe) ...[
-            const SizedBox(height: TokensSpacing.m),
-            Text(
-              l10n.socialProfileIsMe,
-              style: context.textStyles.bodyMedium?.copyWith(
-                color: context.colors.onSurfaceVariant,
-              ),
-            ),
-          ] else ...[
-            const SizedBox(height: TokensSpacing.m),
-            _RelationActions(profile: profile, busy: busy),
-          ],
+          ),
+          const Icon(Icons.chevron_right_rounded),
         ],
       ),
     );
@@ -365,7 +489,7 @@ class _RelationActions extends StatelessWidget {
               children: [
                 Icon(
                   Icons.check_circle_rounded,
-                  size: 18,
+                  size: TokensSize.iconS,
                   color: context.palette.success,
                 ),
                 const SizedBox(width: TokensSpacing.xs),

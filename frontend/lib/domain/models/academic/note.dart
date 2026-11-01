@@ -19,7 +19,31 @@ abstract class Note with _$Note {
   }) = _Note;
 }
 
-/// Apunte que un amigo ha compartido.
+/// Resumen de un apunte que otro usuario comparte (sin el contenido).
+///
+/// [visibility] es la efectiva: la más restrictiva entre la del apunte y la
+/// del perfil de su autor. La asignatura es la del plan de estudios, no la
+/// asignatura privada del autor.
+@freezed
+abstract class SharedNoteSummary with _$SharedNoteSummary {
+  const factory SharedNoteSummary({
+    required String id,
+    required String authorId,
+    required String authorName,
+    String? authorAvatarUrl,
+    String? catalogSubjectId,
+    String? catalogSubjectName,
+    required String title,
+    required String excerpt,
+    required Visibility visibility,
+    DateTime? updatedAt,
+
+    /// Es un apunte propio (solo al ver mis apuntes compartidos).
+    @Default(false) bool mine,
+  }) = _SharedNoteSummary;
+}
+
+/// Apunte compartido completo, para leerlo y guardar una copia.
 @freezed
 abstract class SharedNote with _$SharedNote {
   const factory SharedNote({
@@ -27,24 +51,26 @@ abstract class SharedNote with _$SharedNote {
     required String authorId,
     required String authorName,
     String? authorAvatarUrl,
-    String? subjectId,
+    String? catalogSubjectId,
+    String? catalogSubjectName,
     required String title,
     required String content,
     required Visibility visibility,
     DateTime? updatedAt,
+    @Default(false) bool mine,
   }) = _SharedNote;
 }
 
 /// Página de apuntes compartidos.
 @freezed
-abstract class SharedNotesPage with _$SharedNotesPage {
-  const factory SharedNotesPage({
-    required List<SharedNote> items,
+abstract class SharedNoteSummaryPage with _$SharedNoteSummaryPage {
+  const factory SharedNoteSummaryPage({
+    required List<SharedNoteSummary> items,
     required int page,
     required int totalPages,
-  }) = _SharedNotesPage;
+  }) = _SharedNoteSummaryPage;
 
-  const SharedNotesPage._();
+  const SharedNoteSummaryPage._();
 
   bool get hasMore => page + 1 < totalPages;
 }

@@ -46,6 +46,12 @@ abstract final class PlannerPaths {
       value == null ? null : DateTime.tryParse(value);
 }
 
+/// Rutas de otros módulos a las que lleva el planificador.
+abstract final class PlannerExternalPaths {
+  /// Detalle de una rutina (Entrenamiento), para entrenar el día de un bloque.
+  static String routine(String routineId) => '/training/routines/$routineId';
+}
+
 /// Rutas a pantalla completa (sin barra inferior).
 List<RouteBase> plannerRoutes() => [
   GoRoute(

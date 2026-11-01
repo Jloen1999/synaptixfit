@@ -6,16 +6,20 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/feed_period.dart';
+import '../../../../../domain/models/account/account.dart';
+import '../../../../../domain/enums/post_type.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/social/post.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../auth/session/bloc/session_bloc.dart';
 import '../../social_routes.dart';
 import '../../widgets/post_card.dart';
 import '../../widgets/post_editor_sheet.dart';
 import '../../widgets/social_dialogs.dart';
 import '../../widgets/social_feedback.dart';
+import '../../widgets/social_format.dart';
 import '../../widgets/social_layout.dart';
 import '../bloc/feed_bloc.dart';
 
@@ -103,8 +107,9 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
     return feedback is SocialFeedbackError ? feedback.error : null;
   }
 
-  Future<void> _create() => showPostEditorSheet(
+  Future<void> _create({PostType? type}) => showPostEditorSheet(
     context,
+    initialType: type,
     onSubmit: (draft) => _awaitSubmit(
       FeedEvent.postSubmitted(
         type: draft.type,
@@ -277,9 +282,16 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
           TokensSpacing.m,
           TokensSpacing.xxl * 2,
         ),
-        itemCount: state.posts.length + (state.loadingMore ? 1 : 0),
+        // La primera fila es la cabecera para publicar.
+        itemCount: state.posts.length + 1 + (state.loadingMore ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: TokensSpacing.m),
         itemBuilder: (context, index) {
+          if (index == 0) {
+            return SocialContentWidth(
+              child: _Composer(onCreate: (type) => _create(type: type)),
+            );
+          }
+          index--;
           if (index >= state.posts.length) return const LoadMoreIndicator();
           final post = state.posts[index];
           return SocialContentWidth(
@@ -344,6 +356,120 @@ class _PeriodFilter extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Cabecera del muro para publicar: tu avatar y «¿Qué quieres compartir
+/// hoy?» (abre el editor) y dos atajos con el tipo ya elegido, cada uno en el
+/// acento de su dominio (logro en naranja, entreno en lima).
+class _Composer extends StatelessWidget {
+  const _Composer({required this.onCreate});
+
+  final ValueChanged<PostType?> onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    // Se repinta si cambian el nombre o la foto del perfil.
+    final account = context.select<SessionBloc, Account?>((bloc) {
+      final session = bloc.state;
+      return session is SessionAuthenticatedState ? session.account : null;
+    });
+    const radius = BorderRadius.all(Radius.circular(TokensRadius.pill));
+    return AppCard(
+      padding: const EdgeInsets.all(TokensSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              if (account != null) ...[
+                ExcludeSemantics(
+                  child: AppAvatar(
+                    name: account.fullName,
+                    imageUrl: account.avatarUrl,
+                  ),
+                ),
+                const SizedBox(width: TokensSpacing.sm),
+              ],
+              Expanded(
+                child: Material(
+                  color: context.colors.surfaceContainerLow,
+                  // Borde como el de los campos: se ve que es donde escribir.
+                  shape: StadiumBorder(
+                    side: BorderSide(color: context.colors.outlineVariant),
+                  ),
+                  child: AppCardTapArea(
+                    onTap: () => onCreate(null),
+                    borderRadius: radius,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: TokensSpacing.m,
+                      vertical: TokensSpacing.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.socialComposerPrompt,
+                            style: context.textStyles.bodyLarge?.copyWith(
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.edit_rounded,
+                          color: context.colors.primary,
+                          size: TokensSize.iconS,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          Wrap(
+            spacing: TokensSpacing.s,
+            runSpacing: TokensSpacing.xs,
+            children: [
+              _ComposerShortcut(
+                type: PostType.milestoneReached,
+                label: l10n.socialComposerAchievement,
+                onPressed: () => onCreate(PostType.milestoneReached),
+              ),
+              _ComposerShortcut(
+                type: PostType.sessionCompleted,
+                label: l10n.socialComposerSession,
+                onPressed: () => onCreate(PostType.sessionCompleted),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Atajo de la cabecera: icono del tipo en su acento y texto normal (el
+/// contraste del texto no depende del acento).
+class _ComposerShortcut extends StatelessWidget {
+  const _ComposerShortcut({
+    required this.type,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final PostType type;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => TextButton.icon(
+    onPressed: onPressed,
+    style: TextButton.styleFrom(foregroundColor: context.colors.onSurface),
+    icon: Icon(type.icon, color: type.color(context)),
+    label: Text(label),
+  );
 }
 
 class _EmptyFeed extends StatelessWidget {

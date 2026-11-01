@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Visibility;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/visibility.dart';
 import '../../../../../domain/models/account/account.dart';
 import '../../../../../domain/models/profile/academic_profile.dart';
 import '../../../../../domain/models/profile/catalog.dart';
@@ -77,6 +78,7 @@ class _ProfileView extends StatelessWidget with ErrorsMessageMixin {
               child: _ProfileContent(
                 account: state.account!,
                 summary: state.summary!,
+                pendingRequests: state.pendingRequests,
               ),
             ),
           };
@@ -115,10 +117,15 @@ class _ProfileSkeleton extends StatelessWidget {
 }
 
 class _ProfileContent extends StatelessWidget {
-  const _ProfileContent({required this.account, required this.summary});
+  const _ProfileContent({
+    required this.account,
+    required this.summary,
+    required this.pendingRequests,
+  });
 
   final Account account;
   final ProfileSummary summary;
+  final int pendingRequests;
 
   @override
   Widget build(BuildContext context) {
@@ -176,6 +183,8 @@ class _ProfileContent extends StatelessWidget {
           _AcademicSummary(profile: summary.academic, degrees: summary.degrees),
         ],
         const SizedBox(height: TokensSpacing.l),
+        _SocialCard(account: account, pendingRequests: pendingRequests),
+        const SizedBox(height: TokensSpacing.l),
         AppCard(
           padding: EdgeInsets.zero,
           child: Column(
@@ -208,6 +217,86 @@ class _ProfileContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: TokensSpacing.l),
+      ],
+    );
+  }
+}
+
+/// Acceso a lo social desde el perfil: amigos (con las solicitudes que esperan
+/// respuesta) y cómo ven los demás mi perfil.
+class _SocialCard extends StatelessWidget {
+  const _SocialCard({required this.account, required this.pendingRequests});
+
+  final Account account;
+  final int pendingRequests;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppSectionHeader(title: l10n.profileSocialSection),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              AppFocusOutline(
+                child: ListTile(
+                  leading: const Icon(Icons.people_alt_outlined),
+                  title: Text(l10n.profileFriends),
+                  subtitle: Text(
+                    pendingRequests > 0
+                        ? l10n.profileFriendsPending(pendingRequests)
+                        : l10n.profileFriendsHint,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // El número ya lo dice el subtítulo: el globo es solo visual.
+                      if (pendingRequests > 0)
+                        ExcludeSemantics(
+                          child: Badge(
+                            label: Text(
+                              pendingRequests > 99 ? '99+' : '$pendingRequests',
+                            ),
+                          ),
+                        ),
+                      const Icon(Icons.chevron_right_rounded),
+                    ],
+                  ),
+                  onTap: () => _open(context, ProfilePaths.friends),
+                ),
+              ),
+              const Divider(height: 1),
+              AppFocusOutline(
+                child: ListTile(
+                  leading: const Icon(Icons.forum_outlined),
+                  title: Text(l10n.profileCommunity),
+                  subtitle: Text(l10n.profileCommunityHint),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => _open(context, ProfilePaths.community),
+                ),
+              ),
+              const Divider(height: 1),
+              AppFocusOutline(
+                child: ListTile(
+                  leading: const Icon(Icons.badge_outlined),
+                  title: Text(l10n.profilePublicProfile),
+                  // Con el perfil privado nadie más lo ve: decirlo tal cual.
+                  subtitle: Text(
+                    account.privacy == Visibility.private
+                        ? l10n.profilePublicProfilePrivateHint
+                        : l10n.profilePublicProfileHint,
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () =>
+                      _open(context, ProfilePaths.publicProfile(account.id)),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

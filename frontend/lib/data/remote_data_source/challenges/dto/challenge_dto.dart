@@ -30,11 +30,16 @@ abstract class ChallengeDto with _$ChallengeDto {
     @Default(false) bool completed,
     String? status,
     @Default(0) double progress,
+    @Default(true) bool open,
     required String startAt,
     required String endAt,
     String? subjectId,
     String? linkedEntityType,
     String? linkedEntityId,
+    String? linkTitle,
+    String? linkDueAt,
+    bool? linkCompleted,
+    @Default(false) bool completedByLink,
     @Default(0) int currentStreak,
     @Default(0) int bestStreak,
     String? lastActiveDay,
@@ -74,10 +79,15 @@ abstract class ChallengeDto with _$ChallengeDto {
       completed: completed,
       status: ChallengeApiValues.status(status),
       progress: progress,
+      open: open,
       startAt: ChallengeApiValues.instant(startAt),
       endAt: ChallengeApiValues.instant(endAt),
       subjectId: subjectId,
       link: ChallengeApiValues.link(linkedEntityType, linkedEntityId),
+      linkTitle: linkTitle,
+      linkDueAt: ChallengeApiValues.instantOrNull(linkDueAt),
+      linkCompleted: linkCompleted,
+      completedByLink: completedByLink,
       currentStreak: currentStreak,
       bestStreak: bestStreak,
       // Es una fecha (sin hora): no se convierte de zona horaria.
@@ -116,6 +126,12 @@ abstract class MilestoneDto with _$MilestoneDto {
     String? subjectId,
     String? linkedEntityType,
     String? linkedEntityId,
+    String? linkTitle,
+    String? linkDueAt,
+    bool? linkCompleted,
+    @Default(false) bool completedByLink,
+    @Default(0) int studyBlocksTotal,
+    @Default(0) int studyBlocksCompleted,
     String? noteId,
     String? fileId,
   }) = _MilestoneDto;
@@ -141,6 +157,12 @@ abstract class MilestoneDto with _$MilestoneDto {
     xpAwarded: xpAwarded,
     subjectId: subjectId,
     link: ChallengeApiValues.link(linkedEntityType, linkedEntityId),
+    linkTitle: linkTitle,
+    linkDueAt: ChallengeApiValues.instantOrNull(linkDueAt),
+    linkCompleted: linkCompleted,
+    completedByLink: completedByLink,
+    studyBlocksTotal: studyBlocksTotal,
+    studyBlocksCompleted: studyBlocksCompleted,
     noteId: noteId,
     fileId: fileId,
   );
@@ -199,6 +221,7 @@ abstract class ChallengeSummaryDto with _$ChallengeSummaryDto {
     @Default(0) int active,
     @Default(0) int completed,
     @Default(0) int expired,
+    @Default(0) int upcoming,
     @Default(0) int total,
   }) = _ChallengeSummaryDto;
 
@@ -211,6 +234,7 @@ abstract class ChallengeSummaryDto with _$ChallengeSummaryDto {
     active: active,
     completed: completed,
     expired: expired,
+    upcoming: upcoming,
     total: total,
   );
 }
@@ -222,6 +246,7 @@ abstract class PendingMilestoneDto with _$PendingMilestoneDto {
     required String challengeId,
     required String challengeTitle,
     required String challengeEndAt,
+    String? challengeType,
     required MilestoneDto milestone,
   }) = _PendingMilestoneDto;
 
@@ -234,6 +259,7 @@ abstract class PendingMilestoneDto with _$PendingMilestoneDto {
     challengeId: challengeId,
     challengeTitle: challengeTitle,
     challengeEndAt: ChallengeApiValues.instant(challengeEndAt),
+    challengeType: ChallengeApiValues.type(challengeType),
     milestone: milestone.toDomain(),
   );
 }

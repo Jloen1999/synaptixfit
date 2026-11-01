@@ -259,9 +259,7 @@
   "academicVisibilityPrivate": "Privado",
   "academicVisibilityFriends": "Amigos",
   "academicVisibilityPublic": "Público",
-  "academicSharedNotesTitle": "Apuntes de amigos",
-  "academicSharedEmptyTitle": "Nadie ha compartido apuntes todavía",
-  "academicSharedEmptyMessage": "Aquí verás los apuntes que tus amigos compartan contigo.",
+  "academicSharedNotesTitle": "Apuntes compartidos",
   "academicFileOpenExternal": "Abrir fuera de la app",
   "academicFileOpenFailed": "No se ha podido abrir el archivo.",
   "academicFileNoPreview": "Este tipo de archivo no tiene vista previa.",
@@ -838,6 +836,62 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "academicSharedTabFriends": "Amigos",
+  "academicSharedTabCommunity": "Comunidad",
+  "academicSharedFriendsEmptyTitle": "Tus amigos aún no comparten apuntes",
+  "academicSharedFriendsEmptyMessage": "Cuando un amigo comparta un apunte, lo verás aquí. Añade amigos para empezar.",
+  "academicSharedCommunityEmptyTitle": "Aún nadie ha compartido apuntes públicos",
+  "academicSharedCommunityEmptyMessage": "Aquí verás los apuntes que cualquier usuario de SynaptixFit comparte en público.",
+  "academicSharedAuthorEmptyTitle": "Todavía no hay apuntes compartidos contigo",
+  "academicSharedFindFriends": "Buscar amigos",
+  "academicSharedOpenAuthor": "Ver el perfil de {name}",
+  "@academicSharedOpenAuthor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicSharedNoteTitle": "Apunte compartido",
+  "academicSharedCopy": "Guardar copia en mis apuntes",
+  "academicSharedCopyHint": "La copia es privada: puedes editarla sin cambiar el original.",
+  "academicSharedCopied": "Copia guardada en tus apuntes",
+  "academicSharedOpenCopy": "Abrir mi copia",
+  "academicSharedOpenMine": "Abrir en mis apuntes",
+  "academicVisibilityWho": "Quién lo verá: {who}",
+  "@academicVisibilityWho": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "academicVisibilityWhoPrivate": "Solo tú",
+  "academicVisibilityWhoFriends": "Tus amigos",
+  "academicVisibilityWhoPublic": "Cualquier usuario de SynaptixFit",
+  "academicVisibilityLimitFriends": "Tu perfil es «Solo amigos»: tus apuntes no pueden ser públicos.",
+  "academicVisibilityLimitPrivate": "Tu perfil es privado: tus apuntes solo los ves tú.",
+  "academicVisibilityChangePrivacy": "Cambiar privacidad",
+  "academicSharedAuthorEmptyMessage": "Cuando comparta apuntes contigo, aparecerán aquí.",
+  "academicSharedShareNote": "Compartir un apunte",
+  "academicAssessmentToday": "Evaluación hoy",
+  "academicAssessmentTomorrow": "Evaluación mañana",
+  "academicAssessmentIn": "{count, plural, =1{Evaluación en 1 día} other{Evaluación en {count} días}}",
+  "@academicAssessmentIn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicAssessmentOn": "Evaluación el {date}",
+  "@academicAssessmentOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
       }
     }
   }

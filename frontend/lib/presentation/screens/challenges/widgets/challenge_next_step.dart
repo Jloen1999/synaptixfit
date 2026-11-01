@@ -6,12 +6,10 @@ import '../../../extensions/context_extensions.dart';
 import '../../../widgets/widgets.dart';
 import 'challenge_labels.dart';
 
-/// Días a partir de los que el plazo se marca como urgente (pastilla de aviso).
-const _urgentDays = 3;
-
-/// Pastilla de plazo: en un reto activo, el tiempo que queda (en aviso si
-/// quedan [_urgentDays] días o menos); si no, su estado (completado o vencido).
-/// Lleva siempre texto: el color nunca es la única señal.
+/// Pastilla de plazo: cuándo toca el reto en palabras de cada día («Vence
+/// hoy», «Vence en 3 días», «Empieza el 10 nov»), en color de aviso si vence
+/// hoy o mañana; completado o vencido, su estado. Lleva siempre texto: el
+/// color nunca es la única señal.
 class ChallengeTimePill extends StatelessWidget {
   const ChallengeTimePill({super.key, required this.challenge});
 
@@ -20,29 +18,32 @@ class ChallengeTimePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = challenge.status;
-    if (status != ChallengeStatus.active) {
+    final now = DateTime.now();
+    if (status == ChallengeStatus.completed ||
+        status == ChallengeStatus.expired) {
       return AppPill(
         icon: status.icon,
         label: status.label(context),
         color: status.color(context),
       );
     }
-    final l10n = context.localizations;
-    final days = ChallengeFormats.daysLeft(challenge.endAt, DateTime.now());
-    final urgent = days <= _urgentDays;
+    final urgent = challenge.isUrgentAt(now);
     return AppPill(
-      icon: urgent ? Icons.hourglass_bottom_rounded : Icons.event_outlined,
-      label: days <= 7
-          ? l10n.challengesDaysLeft(days < 0 ? 0 : days)
-          : l10n.challengesEndsOn(ChallengeFormats.shortDate(challenge.endAt)),
+      icon: status == ChallengeStatus.upcoming
+          ? status.icon
+          : urgent
+          ? Icons.hourglass_bottom_rounded
+          : Icons.event_outlined,
+      label: challenge.whenText(context, now),
       color: urgent ? context.palette.warning : context.colors.onSurfaceVariant,
     );
   }
 }
 
 /// Qué hacer ahora con un reto propio, en una frase: la siguiente tarea, las
-/// sesiones que faltan, la recompensa conseguida o cómo seguir si venció.
-/// `null` si no hay nada útil que decir (reto ajeno o sin datos de tareas).
+/// sesiones que faltan, qué lo completa si va vinculado, cuándo empieza, la
+/// recompensa conseguida o cómo seguir si venció. `null` si no hay nada útil
+/// que decir (reto ajeno).
 String? challengeNextStepText(BuildContext context, Challenge challenge) {
   if (!challenge.owned) return null;
   final l10n = context.localizations;
@@ -54,13 +55,28 @@ String? challengeNextStepText(BuildContext context, Challenge challenge) {
           : l10n.challengesCompletedNoXp;
     case ChallengeStatus.expired:
       return l10n.challengesExpiredHint;
+    case ChallengeStatus.upcoming:
+      return l10n.challengesUpcomingHint(
+        ChallengeFormats.weekdayDate(challenge.startAt),
+      );
     case ChallengeStatus.active:
       if (challenge.tracksTrainingSessions) {
         return l10n.challengesSessionsLeft(challenge.sessionsRemaining);
       }
+      if (challenge.completedByLink) {
+        final title = challenge.linkTitle;
+        return title == null
+            ? l10n.challengesCompletedByDeadlineGeneric
+            : l10n.challengesCompletedByDeadline(title);
+      }
       final next = challenge.nextMilestone;
       if (next != null) return l10n.challengesNextStep(next.title);
-      // Con tareas pero sin su detalle (listado) no se inventa el paso.
+      // Las tareas que quedan avanzan solas (entrega o bloques): se dice cuál.
+      for (final m in challenge.milestones) {
+        if (!m.completed && m.completedByLink) {
+          return l10n.challengesNextStep(m.title);
+        }
+      }
       if (challenge.hasMilestones) return null;
       return l10n.challengesNextMarkDone;
   }
@@ -71,5 +87,9 @@ IconData challengeNextStepIcon(Challenge challenge) =>
     switch (challenge.status) {
       ChallengeStatus.completed => Icons.emoji_events_rounded,
       ChallengeStatus.expired => Icons.update_rounded,
-      ChallengeStatus.active => Icons.arrow_forward_rounded,
+      ChallengeStatus.upcoming => Icons.schedule_rounded,
+      ChallengeStatus.active =>
+        challenge.completedByLink
+            ? Icons.link_rounded
+            : Icons.arrow_forward_rounded,
     };

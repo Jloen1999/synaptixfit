@@ -34,11 +34,16 @@ abstract class SessionHistoryEntry with _$SessionHistoryEntry {
     required TrainingSession session,
     String? routineName,
 
-    /// Nulo si el día no tiene nombre: se muestra «Día N» con [dayNumber].
+    /// Nulo si el día no tiene nombre: se muestra el día de la semana de
+    /// [dayNumber].
     String? dayName,
     int? dayNumber,
     int? weekNumber,
     @Default(<PersonalRecord>[]) List<PersonalRecord> records,
+
+    /// Terminada hoy: se puede desmarcar (lo decide el servidor). Si no, se
+    /// corrige o se elimina.
+    @Default(false) bool unmarkable,
   }) = _SessionHistoryEntry;
 }
 

@@ -1,13 +1,10 @@
 package com.synaptixfit.domain.model.challenge;
 
-/** Tipo de elemento del planificador al que se vincula un reto o tarea. */
+/**
+ * Elemento del planificador al que se vincula un reto o tarea: un examen o una entrega. Los bloques de
+ * estudio no son un vínculo: se asignan a una tarea desde el editor de bloques (ADR 0028).
+ */
 public enum LinkType {
     EXAM,
-    DELIVERY,
-    BLOCK;
-
-    /** Los exámenes y entregas se sincronizan en ambos sentidos; los bloques no. */
-    public boolean isDeadline() {
-        return this != BLOCK;
-    }
+    DELIVERY
 }

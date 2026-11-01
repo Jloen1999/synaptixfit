@@ -20,6 +20,10 @@ extension AppContext on BuildContext {
   /// 200 % (WCAG 1.4.4).
   double scaled(double size) => MediaQuery.textScalerOf(this).scale(size);
 
+  /// Texto por encima del 130 %: las tarjetas pasan a su forma apilada
+  /// (bloque de fecha encima, acciones debajo). Un solo umbral para todas.
+  bool get largeText => scaled(1) > 1.3;
+
   /// El usuario ha pedido reducir el movimiento en su sistema.
   bool get reduceMotion => MediaQuery.disableAnimationsOf(this);
 
@@ -32,6 +36,27 @@ extension AppContext on BuildContext {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Aviso con un botón ([actionLabel]) que se cierra solo como los demás.
+  /// Desde Flutter 3.29 un aviso con acción queda fijo si no se indica
+  /// `persist: false`; con lector de pantalla sigue sin cerrarse solo
+  /// (WCAG 2.2.1), lo decide el `ScaffoldMessenger`.
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showActionSnack(
+    String message, {
+    required String actionLabel,
+    required VoidCallback onAction,
+    Duration? duration,
+  }) {
+    final messenger = ScaffoldMessenger.of(this)..hideCurrentSnackBar();
+    return messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        persist: false,
+        duration: duration ?? TokensDuration.snack,
+        action: SnackBarAction(label: actionLabel, onPressed: onAction),
+      ),
+    );
+  }
+
   /// Aviso tras borrar algo con «Deshacer». El cierre del aviso decide: con
   /// la acción se deshace ([onUndo]); por tiempo, al taparlo otro aviso o al
   /// descartarlo, se confirma ([onCommit]). Con lector de pantalla el aviso no
@@ -41,16 +66,11 @@ extension AppContext on BuildContext {
     required VoidCallback onUndo,
     required VoidCallback onCommit,
   }) {
-    final messenger = ScaffoldMessenger.of(this)..hideCurrentSnackBar();
-    final controller = messenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: TokensDuration.undoWindow,
-        action: SnackBarAction(
-          label: localizations.commonUndo,
-          onPressed: onUndo,
-        ),
-      ),
+    final controller = showActionSnack(
+      message,
+      actionLabel: localizations.commonUndo,
+      onAction: onUndo,
+      duration: TokensDuration.undoWindow,
     );
     unawaited(
       controller.closed.then((reason) {

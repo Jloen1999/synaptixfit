@@ -103,4 +103,19 @@ public class CalendarBlockPersistenceAdapter implements CalendarBlockRepositoryP
         return repository.findByUsuarioIdAndAsignaturaId(userId, subjectId).stream()
                 .map(PlannerPersistenceMapper::toDomain).toList();
     }
+
+    @Override
+    public List<CalendarBlock> findByRoutine(UUID userId, UUID routineId) {
+        return repository.findByUsuarioIdAndRutinaIdOrderByHoraInicioAsc(userId, routineId).stream()
+                .map(PlannerPersistenceMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<CalendarBlock> findByRoutineDays(UUID userId, Collection<UUID> routineDayIds) {
+        if (routineDayIds.isEmpty()) {
+            return List.of();
+        }
+        return repository.findByUsuarioIdAndDiaRutinaIdInOrderByHoraInicioAsc(userId, routineDayIds).stream()
+                .map(PlannerPersistenceMapper::toDomain).toList();
+    }
 }

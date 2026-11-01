@@ -16,8 +16,12 @@ import com.synaptixfit.application.port.input.training.ListCommunityRoutinesUseC
 import com.synaptixfit.application.port.input.training.ListMyRoutinesUseCase;
 import com.synaptixfit.application.port.input.training.RefineRoutineProposalUseCase;
 import com.synaptixfit.application.port.input.training.RemoveRoutineExerciseUseCase;
+import com.synaptixfit.application.port.input.training.ReplaceRoutineExerciseUseCase;
 import com.synaptixfit.application.port.input.training.RenameRoutineDayUseCase;
 import com.synaptixfit.application.port.input.training.ReorderRoutineExercisesUseCase;
+import com.synaptixfit.application.port.input.training.RestartRoutineUseCase;
+import com.synaptixfit.application.port.input.training.SkipRoutineDayUseCase;
+import com.synaptixfit.application.port.input.training.UnskipRoutineDayUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineExerciseUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineUseCase;
 import com.synaptixfit.application.port.input.training.UpdateRoutineWeekUseCase;
@@ -38,6 +42,7 @@ import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDto
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.PlannedExerciseRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.RenameDayRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.ReorderExercisesRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.ReplaceExerciseRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.RoutineResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.RoutineSummaryResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.RoutineDtos.UpdateRoutineRequest;
@@ -82,9 +87,13 @@ public class RoutineController {
     private final AddRoutineExerciseUseCase addExercise;
     private final UpdateRoutineExerciseUseCase updateExercise;
     private final RemoveRoutineExerciseUseCase removeExercise;
+    private final ReplaceRoutineExerciseUseCase replaceExercise;
     private final ReorderRoutineExercisesUseCase reorder;
     private final GenerateRoutineProposalUseCase generate;
     private final RefineRoutineProposalUseCase refine;
+    private final SkipRoutineDayUseCase skipDay;
+    private final UnskipRoutineDayUseCase unskipDay;
+    private final RestartRoutineUseCase restart;
 
     @SuppressWarnings("java:S107")
     public RoutineController(CreateRoutineUseCase create, GetRoutineUseCase get, ListMyRoutinesUseCase listMine,
@@ -96,7 +105,9 @@ public class RoutineController {
                              RenameRoutineDayUseCase renameDay, DeleteRoutineDayUseCase deleteDay,
                              AddRoutineExerciseUseCase addExercise, UpdateRoutineExerciseUseCase updateExercise,
                              RemoveRoutineExerciseUseCase removeExercise, ReorderRoutineExercisesUseCase reorder,
-                             GenerateRoutineProposalUseCase generate, RefineRoutineProposalUseCase refine) {
+                             GenerateRoutineProposalUseCase generate, RefineRoutineProposalUseCase refine,
+                             SkipRoutineDayUseCase skipDay, UnskipRoutineDayUseCase unskipDay,
+                             RestartRoutineUseCase restart, ReplaceRoutineExerciseUseCase replaceExercise) {
         this.create = create;
         this.get = get;
         this.listMine = listMine;
@@ -118,6 +129,10 @@ public class RoutineController {
         this.reorder = reorder;
         this.generate = generate;
         this.refine = refine;
+        this.skipDay = skipDay;
+        this.unskipDay = unskipDay;
+        this.restart = restart;
+        this.replaceExercise = replaceExercise;
     }
 
     // ------------------------------------------------------------------ CRUD
@@ -188,6 +203,28 @@ public class RoutineController {
         return own(cloneRoutine.cloneRoutine(userId, routineId), userId);
     }
 
+    /** Nuevo ciclo: avance a cero, empieza hoy y queda en curso (pausa la que lo estuviera). */
+    @PostMapping("/{routineId}/restart")
+    public RoutineResponse restart(@CurrentUserId UUID userId, @PathVariable UUID routineId) {
+        return own(restart.restart(userId, routineId), userId);
+    }
+
+    // ------------------------------------------------------------------ avance
+
+    /** Salta un día: deja de proponerse y el calendario retira sus bloques pendientes. */
+    @PostMapping("/{routineId}/days/{dayId}/skip")
+    public RoutineResponse skipDay(@CurrentUserId UUID userId, @PathVariable UUID routineId,
+                                   @PathVariable UUID dayId) {
+        return own(skipDay.skip(userId, routineId, dayId), userId);
+    }
+
+    /** Recupera un día saltado (vuelve a pendiente). */
+    @PostMapping("/{routineId}/days/{dayId}/unskip")
+    public RoutineResponse unskipDay(@CurrentUserId UUID userId, @PathVariable UUID routineId,
+                                     @PathVariable UUID dayId) {
+        return own(unskipDay.unskip(userId, routineId, dayId), userId);
+    }
+
     // ------------------------------------------------------------------ estructura
 
     @PostMapping("/{routineId}/weeks")
@@ -247,6 +284,15 @@ public class RoutineController {
                                           @PathVariable UUID plannedExerciseId,
                                           @Valid @RequestBody ExerciseParametersRequest request) {
         return own(updateExercise.updateExercise(userId, routineId, plannedExerciseId, request.toDomain()), userId);
+    }
+
+    /** Sustituye el ejercicio de un hueco (misma posición; id del hueco nuevo, parámetros adaptados). */
+    @PutMapping("/{routineId}/exercises/{plannedExerciseId}/exercise")
+    public RoutineResponse replaceExercise(@CurrentUserId UUID userId, @PathVariable UUID routineId,
+                                           @PathVariable UUID plannedExerciseId,
+                                           @Valid @RequestBody ReplaceExerciseRequest request) {
+        return own(replaceExercise.replaceExercise(userId, routineId, plannedExerciseId, request.exerciseId()),
+                userId);
     }
 
     @DeleteMapping("/{routineId}/exercises/{plannedExerciseId}")

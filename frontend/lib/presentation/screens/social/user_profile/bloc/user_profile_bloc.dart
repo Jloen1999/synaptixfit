@@ -4,9 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../../domain/errors/app_error.dart';
+import '../../../../../domain/models/academic/note.dart';
 import '../../../../../domain/models/result/app_result.dart';
 import '../../../../../domain/models/social/post.dart';
 import '../../../../../domain/models/social/public_profile.dart';
+import '../../../../../domain/use_cases/academic/get_shared_notes_use_case.dart';
 import '../../../../../domain/use_cases/social/accept_friend_request_use_case.dart';
 import '../../../../../domain/use_cases/social/block_user_use_case.dart';
 import '../../../../../domain/use_cases/social/get_feed_use_case.dart';
@@ -32,7 +34,8 @@ enum ProfileRelationAction {
   unblock,
 }
 
-/// Perfil público de otro usuario, sus publicaciones y la relación conmigo.
+/// Perfil público de otro usuario, sus publicaciones, los apuntes que comparte
+/// conmigo ([GetSharedNotesUseCaseContract]) y la relación conmigo.
 class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
   UserProfileBloc({
     required this._getProfile,
@@ -43,6 +46,7 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
     required this._rejectRequest,
     required this._removeFriendship,
     required this._blockUser,
+    required this._getSharedNotes,
     this.pageSize = 20,
   }) : super(const UserProfileState()) {
     on<UserProfileStarted>(_onStarted);
@@ -60,6 +64,10 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
   final RejectFriendRequestUseCaseContract _rejectRequest;
   final RemoveFriendshipUseCaseContract _removeFriendship;
   final BlockUserUseCaseContract _blockUser;
+  final GetSharedNotesUseCaseContract _getSharedNotes;
+
+  /// Apuntes que se enseñan en el perfil; el resto, en «Ver todos».
+  static const notesPreview = 3;
   final int pageSize;
   final _likesInFlight = <String>{};
 
@@ -81,9 +89,10 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
   }
 
   Future<void> _load(Emitter<UserProfileState> emit) async {
-    final (profile, posts) = await (
+    final (profile, posts, notes) = await (
       _getProfile(userId: state.userId),
       _getFeed(authorId: state.userId, size: pageSize),
+      _getSharedNotes(page: 0, authorId: state.userId, size: notesPreview),
     ).wait;
     profile.fold(
       (value) {
@@ -96,6 +105,9 @@ class UserProfileBloc extends Bloc<UserProfileEvent, UserProfileState> {
             postsPage: page?.page ?? 0,
             hasMorePosts: page?.hasMore ?? false,
             postsError: posts.errorOrNull,
+            notes: notes.valueOrNull?.items ?? state.notes,
+            hasMoreNotes: notes.valueOrNull?.hasMore ?? false,
+            notesError: notes.errorOrNull,
             error: null,
           ),
         );

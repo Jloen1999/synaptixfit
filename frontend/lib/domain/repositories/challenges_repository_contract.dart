@@ -56,7 +56,7 @@ abstract interface class ChallengesRepositoryContract {
   Future<AppResult<ChallengeOutcome>> recordProgress(
     String challengeId, {
     String? milestoneId,
-    required double amount,
+    required double value,
   });
 
   Future<AppResult<List<ChallengeProgressEntry>>> progressHistory(

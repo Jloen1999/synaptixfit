@@ -11,6 +11,7 @@ import com.synaptixfit.application.port.input.planner.DeleteCalendarBlockUseCase
 import com.synaptixfit.application.port.input.planner.DeleteDeadlineUseCase;
 import com.synaptixfit.application.port.input.planner.DeleteStudyPlanUseCase;
 import com.synaptixfit.application.port.input.planner.DeleteSubjectBlocksUseCase;
+import com.synaptixfit.application.port.input.planner.WithdrawRoutineBlocksUseCase;
 import com.synaptixfit.application.port.input.planner.DistributeRoutineUseCase;
 import com.synaptixfit.application.port.input.planner.ExportIcsUseCase;
 import com.synaptixfit.application.port.input.planner.GetCalendarBlockUseCase;
@@ -37,7 +38,6 @@ import com.synaptixfit.application.port.input.planner.ScheduleReviewBlockUseCase
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.application.port.input.planner.SetDeadlineCompletionUseCase;
 import com.synaptixfit.application.port.input.planner.SuggestWeekPlanUseCase;
-import com.synaptixfit.application.port.input.planner.SyncDeadlineFromChallengeUseCase;
 import com.synaptixfit.application.port.input.planner.SyncSportBlockWithSessionUseCase;
 import com.synaptixfit.application.port.input.planner.SyncWeeklyLoadUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateCalendarBlockUseCase;
@@ -216,6 +216,11 @@ public class PlannerBeanConfiguration {
     }
 
     @Bean
+    WithdrawRoutineBlocksUseCase withdrawRoutineBlocksUseCase() {
+        return tx.wrap(WithdrawRoutineBlocksUseCase.class, calendarBlockService());
+    }
+
+    @Bean
     GetScheduleConflictsUseCase getScheduleConflictsUseCase() {
         return tx.wrap(GetScheduleConflictsUseCase.class, calendarBlockService());
     }
@@ -243,7 +248,8 @@ public class PlannerBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     RoutineDistributionService routineDistributionService() {
-        return new RoutineDistributionService(blocks, routines, weeklyLoadService(), zone, clock);
+        return new RoutineDistributionService(blocks, routines, weeklyLoadService(), calendarBlockService(), zone,
+                clock);
     }
 
     @Bean
@@ -306,11 +312,6 @@ public class PlannerBeanConfiguration {
     @Bean
     SetDeadlineCompletionUseCase setDeadlineCompletionUseCase() {
         return tx.wrap(SetDeadlineCompletionUseCase.class, deadlineService());
-    }
-
-    @Bean
-    SyncDeadlineFromChallengeUseCase syncDeadlineFromChallengeUseCase() {
-        return tx.wrap(SyncDeadlineFromChallengeUseCase.class, deadlineService());
     }
 
     // ---------------------------------------------------------------- plan semanal
