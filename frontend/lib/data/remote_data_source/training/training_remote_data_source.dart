@@ -76,6 +76,20 @@ class TrainingRemoteDataSource {
     _dio.delete<Map<String, dynamic>>('$_base/sessions/$sessionId/sets/$setId'),
   );
 
+  Future<SessionDto> pauseSession(String sessionId) => _session(
+    _dio.post<Map<String, dynamic>>('$_base/sessions/$sessionId/pause'),
+  );
+
+  Future<SessionDto> resumeSession(String sessionId, {DateTime? resumedAt}) =>
+      _session(
+        _dio.post<Map<String, dynamic>>(
+          '$_base/sessions/$sessionId/resume',
+          data: resumedAt == null
+              ? null
+              : {'resumedAt': resumedAt.toUtc().toIso8601String()},
+        ),
+      );
+
   Future<FinishSessionResponseDto> finish(
     String sessionId,
     Map<String, dynamic> body,

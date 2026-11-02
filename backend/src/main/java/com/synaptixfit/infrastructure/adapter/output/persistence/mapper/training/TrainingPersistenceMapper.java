@@ -34,13 +34,14 @@ public final class TrainingPersistenceMapper {
         return new TrainingSession(e.getId(), e.getUsuarioId(), e.getRutinaId(), e.getDiaId(),
                 TrainingDbValues.sessionType(e.getTipo()), e.getCreadoEn(), e.getCompletadaEn(), e.getDuracionMinutos(),
                 e.getRpe(), e.getCaloriasQuemadas(), e.getXpOtorgado(),
-                sets.stream().map(TrainingPersistenceMapper::toDomain).toList());
+                sets.stream().map(TrainingPersistenceMapper::toDomain).toList(), e.getPausadaEn(),
+                e.getSegundosEnPausa());
     }
 
     public static SessionSet toDomain(SessionSetEntity e) {
         return new SessionSet(e.getId(), e.getSeleccionId(), Math.max(1, e.getNumeroSerie()),
                 e.getRepeticionesRealizadas(), e.getPesoKg(), e.isCompletada(), Math.max(0, e.getFailedReps()),
-                e.getDuracionSegundos(), e.getDistanciaMetros(), e.getEjercicioId());
+                e.getDuracionSegundos(), e.getDistanciaMetros(), e.getEjercicioId(), e.getSegundosActivos());
     }
 
     public static void copy(TrainingSession s, TrainingSessionEntity e) {
@@ -55,6 +56,8 @@ public final class TrainingPersistenceMapper {
         e.setRpe(s.rpe());
         e.setCaloriasQuemadas(s.calories());
         e.setXpOtorgado(s.xpAwarded());
+        e.setPausadaEn(s.pausedAt());
+        e.setSegundosEnPausa((int) Math.min(Integer.MAX_VALUE, s.pausedSeconds()));
     }
 
     public static void copy(SessionSet s, UUID sessionId, SessionSetEntity e) {
@@ -68,6 +71,7 @@ public final class TrainingPersistenceMapper {
         e.setFailedReps(s.failedReps());
         e.setDuracionSegundos(s.durationSeconds());
         e.setDistanciaMetros(s.distanceMeters());
+        e.setSegundosActivos(s.activeSeconds());
         // Una serie ya guardada conserva su ejercicio aunque su hueco desaparezca de la rutina.
         if (s.exerciseId() != null) {
             e.setEjercicioId(s.exerciseId());

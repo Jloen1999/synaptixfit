@@ -18,6 +18,10 @@ import 'package:synaptixfit/domain/use_cases/training/finish_session_use_case.da
 import 'package:synaptixfit/domain/use_cases/training/get_routine_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/record_set_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/pause_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/resume_session_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_session_clock_intro_hidden_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/hide_session_clock_intro_use_case.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/bloc/live_session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_effect.dart';
 import 'package:synaptixfit/domain/models/training/session_adaptation.dart';
@@ -29,6 +33,16 @@ import 'package:synaptixfit/domain/use_cases/training/get_load_suggestions_use_c
 import 'training_fixtures.dart';
 
 class _MockGetSession extends Mock implements GetSessionUseCaseContract {}
+
+class _MockPause extends Mock implements PauseSessionUseCaseContract {}
+
+class _MockResume extends Mock implements ResumeSessionUseCaseContract {}
+
+class _MockIntroHidden extends Mock
+    implements GetSessionClockIntroHiddenUseCaseContract {}
+
+class _MockHideIntro extends Mock
+    implements HideSessionClockIntroUseCaseContract {}
 
 class _MockGetLoads extends Mock implements GetLoadSuggestionsUseCaseContract {}
 
@@ -70,6 +84,7 @@ void main() {
   late _MockGetLoads getLoads;
   late _MockLoadPending loadPending;
   late _MockSavePending savePending;
+  late _MockIntroHidden introHidden;
 
   final startedAt = DateTime(2026, 10, 18, 10);
   final now = startedAt.add(const Duration(minutes: 5));
@@ -98,6 +113,9 @@ void main() {
     savePending = _MockSavePending();
     // Sin series pendientes guardadas en el teléfono salvo en su test.
     when(() => loadPending(any())).thenAnswer((_) async => const Success([]));
+    introHidden = _MockIntroHidden();
+    // En estas pruebas no se explica el cronómetro (lo cubre live_session_timers_test).
+    when(() => introHidden()).thenAnswer((_) async => const Success(true));
     when(
       () => savePending(any(), any()),
     ).thenAnswer((_) async => const Success(unit));
@@ -126,6 +144,10 @@ void main() {
     getLoadSuggestions: getLoads,
     loadPending: loadPending,
     savePending: savePending,
+    pauseSession: _MockPause(),
+    resumeSession: _MockResume(),
+    getClockIntroHidden: introHidden,
+    hideClockIntro: _MockHideIntro(),
     clock: clock ?? () => now,
   );
 

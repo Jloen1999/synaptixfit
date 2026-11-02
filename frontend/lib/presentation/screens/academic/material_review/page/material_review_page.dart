@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -49,34 +52,6 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
 
   final List<String> queue;
 
-  /// Confirmación breve antes de guardar: el servidor no permite deshacer un
-  /// repaso, así que un toque accidental no debe registrarlo. La fila ya dice
-  /// cuándo vuelve el repaso; el diálogo solo repite la opción elegida.
-  Future<void> _confirm(BuildContext context, ReviewOption option) async {
-    final l10n = context.localizations;
-    final bloc = context.read<MaterialReviewBloc>();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(context.qualityLabel(option.quality)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            autofocus: true,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.commonSave),
-          ),
-        ],
-      ),
-    );
-    if (ok ?? false) {
-      bloc.add(MaterialReviewEvent.qualitySubmitted(option.quality));
-    }
-  }
-
   Future<void> _confirmDelete(BuildContext context) async {
     final l10n = context.localizations;
     final bloc = context.read<MaterialReviewBloc>();
@@ -91,6 +66,24 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return BlocListener<MaterialReviewBloc, MaterialReviewState>(
+      // Paso 1 hecho dentro de la pantalla (no al abrirla ya practicado): las
+      // respuestas se desbloquean sin mover el foco, así que se anuncia.
+      listenWhen: (a, b) =>
+          !a.loading && a.material != null && !a.reviewed && b.reviewed,
+      listener: (context, _) => unawaited(
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          l10n.academicReviewStep1Announce,
+          Directionality.of(context),
+        ),
+      ),
+      child: _content(context),
+    );
+  }
+
+  Widget _content(BuildContext context) {
     final l10n = context.localizations;
     return BlocConsumer<MaterialReviewBloc, MaterialReviewState>(
       listenWhen: (a, b) =>
@@ -160,34 +153,99 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
                       queue: queue,
                     )
                   else ...[
-                    Text(
-                      l10n.academicReviewQuestion,
-                      style: context.textStyles.titleMedium,
+                    // Paso 1: repasar. Valorar sin haber repasado no dice
+                    // cuánto se recuerda.
+                    _PrepareStep(material: material, state: state),
+                    const SizedBox(height: TokensSpacing.m),
+                    _StepTitle(
+                      number: 2,
+                      state: state.reviewed
+                          ? AppStepState.active
+                          : AppStepState.locked,
+                      title: l10n.academicReviewQuestion,
                     ),
+                    const SizedBox(height: TokensSpacing.xs),
+                    if (!state.reviewed)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            size: TokensSize.iconXs,
+                            color: context.colors.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: TokensSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              l10n.academicReviewLocked,
+                              style: context.textStyles.bodyMedium?.copyWith(
+                                color: context.colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else if (state.preview?.practice case final p?)
+                      Text(
+                        l10n.academicReviewSuggested(
+                          p.correct,
+                          p.answered,
+                          context.qualityLabel(p.suggestedQuality),
+                        ),
+                        style: context.textStyles.bodyMedium,
+                      ),
+                    if (state.preview?.sameIntervalForAll ?? false) ...[
+                      const SizedBox(height: TokensSpacing.xs),
+                      Text(
+                        l10n.academicReviewSameInterval,
+                        style: context.textStyles.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: TokensSpacing.xs),
                     if (state.preview != null)
                       _FatigueInfo(preview: state.preview!),
                     const SizedBox(height: TokensSpacing.s),
                     if (state.submitting) const LinearProgressIndicator(),
                     // Una sola tarjeta con las opciones en filas: se elige de
-                    // un vistazo sin seis tarjetas apiladas.
-                    AppCard(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: TokensSpacing.xs,
+                    // un vistazo sin seis tarjetas apiladas. Bloqueadas (y
+                    // atenuadas por la propia fila) hasta repasar.
+                    if (state.preview?.options.isNotEmpty ?? false)
+                      AppCard(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: TokensSpacing.xs,
+                        ),
+                        child: Column(
+                          children: [
+                            for (final option in state.preview!.options)
+                              _QualityOption(
+                                option: option,
+                                selected:
+                                    state.selectedQuality == option.quality,
+                                enabled: state.reviewed && !state.submitting,
+                                onTap: () =>
+                                    context.read<MaterialReviewBloc>().add(
+                                      MaterialReviewEvent.qualitySelected(
+                                        option.quality,
+                                      ),
+                                    ),
+                              ),
+                          ],
+                        ),
+                      )
+                    else
+                      AppEmptyState.compact(
+                        icon: Icons.cloud_off_rounded,
+                        title: l10n.academicReviewNoOptions,
+                        action: AppSecondaryButton(
+                          label: l10n.commonRetry,
+                          icon: const Icon(Icons.refresh_rounded),
+                          onPressed: () =>
+                              context.read<MaterialReviewBloc>().add(
+                                MaterialReviewEvent.started(state.materialId),
+                              ),
+                        ),
                       ),
-                      child: Column(
-                        children: [
-                          for (final option
-                              in state.preview?.options ??
-                                  const <ReviewOption>[])
-                            _QualityOption(
-                              option: option,
-                              enabled: !state.submitting,
-                              onTap: () => _confirm(context, option),
-                            ),
-                        ],
-                      ),
-                    ),
                   ],
                   const SizedBox(height: TokensSpacing.l),
                   AppSectionHeader(title: l10n.academicReviewHistory),
@@ -229,19 +287,163 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
               ),
             ),
           },
+          bottomNavigationBar:
+              material == null || state.loading || state.outcome != null
+              ? null
+              : _SaveBar(state: state),
         );
       },
     );
   }
 }
 
-/// Cabecera del material: título, dominio, próximo repaso y dos enlaces
-/// (abrir el material y practicar). Intervalo y número de repasos se omiten:
+/// Botón de guardar abajo, al alcance del pulgar: dice qué falta («Primero
+/// repásalo», «Elige cómo te fue») hasta que se puede guardar.
+class _SaveBar extends StatelessWidget {
+  const _SaveBar({required this.state});
+
+  final MaterialReviewState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final quality = state.selectedQuality;
+    final label = !state.reviewed
+        ? l10n.academicReviewDoFirst
+        : quality == null
+        ? l10n.academicReviewChooseFirst
+        : l10n.academicReviewSave;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.colors.surfaceContainerLow,
+        border: Border(top: BorderSide(color: context.colors.outlineVariant)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(TokensSpacing.m),
+          child: AppPrimaryButton(
+            label: label,
+            icon: Icons.check_rounded,
+            loading: state.submitting,
+            onPressed: !state.reviewed || quality == null || state.submitting
+                ? null
+                : () => context.read<MaterialReviewBloc>().add(
+                    MaterialReviewEvent.qualitySubmitted(quality),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Título numerado de cada paso: activo, bloqueado (neutro) o hecho (con una
+/// marca de verificación).
+class _StepTitle extends StatelessWidget {
+  const _StepTitle({
+    required this.number,
+    required this.state,
+    required this.title,
+  });
+
+  final int number;
+  final AppStepState state;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    child: Row(
+      children: [
+        AppStepBadge(number: number, state: state),
+        const SizedBox(width: TokensSpacing.s),
+        Expanded(child: Text(title, style: context.textStyles.titleMedium)),
+      ],
+    ),
+  );
+}
+
+/// Paso 1: practicar con preguntas (recomendado), recordarlo sin mirar o
+/// abrir el material. Cualquiera de los tres desbloquea la valoración.
+class _PrepareStep extends StatelessWidget {
+  const _PrepareStep({required this.material, required this.state});
+
+  final StudyMaterial material;
+  final MaterialReviewState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final bloc = context.read<MaterialReviewBloc>();
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _StepTitle(
+            number: 1,
+            state: state.reviewed ? AppStepState.done : AppStepState.active,
+            title: state.reviewed
+                ? l10n.academicReviewStep1Done
+                : l10n.academicReviewStep1,
+          ),
+          const SizedBox(height: TokensSpacing.s),
+          AppPrimaryButton(
+            label: l10n.academicReviewPractice,
+            icon: Icons.quiz_rounded,
+            onPressed: () async {
+              await context.push<void>(AcademicPaths.practice(material.id));
+              bloc.add(const MaterialReviewEvent.practiceReturned());
+            },
+          ),
+          const SizedBox(height: TokensSpacing.xxs),
+          Text(
+            l10n.academicReviewPracticeHint,
+            style: context.textStyles.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: TokensSpacing.s),
+          Wrap(
+            spacing: TokensSpacing.s,
+            runSpacing: TokensSpacing.xs,
+            children: [
+              AppSecondaryButton(
+                label: l10n.academicReviewRecall,
+                onPressed: () => bloc.add(const MaterialReviewEvent.prepared()),
+              ),
+              AppSecondaryButton(
+                label: l10n.academicReviewOpenSource,
+                onPressed: () async {
+                  await context.push<void>(
+                    material.originType == StudySourceType.note
+                        ? AcademicPaths.note(material.originId)
+                        : AcademicPaths.file(material.originId),
+                  );
+                  bloc.add(const MaterialReviewEvent.prepared());
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Cabecera del material: título, dominio y próximo repaso (practicar y abrir
+/// el material están en el paso 1). Intervalo y número de repasos se omiten:
 /// el historial de abajo ya los cuenta.
 class _MaterialHeader extends StatelessWidget {
   const _MaterialHeader({required this.material});
 
   final StudyMaterial material;
+
+  /// Tocaba antes de hoy (lo de hoy no va con retraso).
+  static bool _overdue(DateTime next) {
+    final now = DateTime.now();
+    return next.toLocal().isBefore(DateTime(now.year, now.month, now.day));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -264,36 +466,37 @@ class _MaterialHeader extends StatelessWidget {
               ),
             ],
           ),
-          if (material.nextReviewAt != null) ...[
+          if (material.nextReviewAt case final next?) ...[
             const SizedBox(height: TokensSpacing.xs),
-            Text(
-              l10n.academicNextReview(shortDate(material.nextReviewAt!)),
-              style: context.textStyles.bodyMedium?.copyWith(
-                color: context.colors.onSurfaceVariant,
-              ),
-            ),
-          ],
-          const SizedBox(height: TokensSpacing.xs),
-          // Enlaces de texto sin icono: pesan menos que dos botones y
-          // conservan el área táctil de 48 dp del tema.
-          Wrap(
-            spacing: TokensSpacing.xs,
-            children: [
-              TextButton(
-                onPressed: () => context.push(
-                  material.originType == StudySourceType.note
-                      ? AcademicPaths.note(material.originId)
-                      : AcademicPaths.file(material.originId),
+            if (_overdue(next))
+              // Tocaba un día anterior: aviso con icono y texto, no solo color.
+              Row(
+                children: [
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: TokensSize.iconXs,
+                    color: context.palette.warning,
+                  ),
+                  const SizedBox(width: TokensSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      l10n.academicReviewOverdue(shortDate(next)),
+                      style: context.textStyles.bodyMedium?.copyWith(
+                        color: context.palette.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Text(
+                l10n.academicNextReview(shortDate(next)),
+                style: context.textStyles.bodyMedium?.copyWith(
+                  color: context.colors.onSurfaceVariant,
                 ),
-                child: Text(l10n.academicReviewOpenSource),
               ),
-              TextButton(
-                onPressed: () =>
-                    context.push(AcademicPaths.practice(material.id)),
-                child: Text(l10n.academicActionPractice),
-              ),
-            ],
-          ),
+          ],
         ],
       ),
     );
@@ -334,11 +537,13 @@ class _QualityOption extends StatelessWidget {
   const _QualityOption({
     required this.option,
     required this.enabled,
+    required this.selected,
     required this.onTap,
   });
 
   final ReviewOption option;
   final bool enabled;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
@@ -349,26 +554,66 @@ class _QualityOption extends StatelessWidget {
         : option.quality == 2
         ? context.palette.warning
         : context.colors.error;
-    return AppFocusOutline(
-      child: ListTile(
-        enabled: enabled,
-        onTap: onTap,
-        minTileHeight: TokensSize.listTileMin,
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: AppPill.tintAlpha),
-          child: Text(
-            '${option.quality}',
-            style: context.textStyles.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
+    // Bloqueada: la fila ya se atenúa sola; el círculo pasa a neutro (no se
+    // atenúa dos veces). Tinte opaco sobre la superficie: la cifra mantiene
+    // su contraste también en la fila elegida.
+    final circle = enabled
+        ? Color.alphaBlend(
+            color.withValues(alpha: AppPill.tintAlpha),
+            context.colors.surface,
+          )
+        : context.colors.surfaceContainerHigh;
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      checked: selected,
+      child: AppFocusOutline(
+        child: ListTile(
+          enabled: enabled,
+          selected: selected,
+          selectedTileColor: context.colors.primaryContainer,
+          selectedColor: context.colors.onPrimaryContainer,
+          // La elegida se distingue también por el borde y la marca (no solo
+          // por el fondo, que apenas contrasta con la tarjeta).
+          shape: selected
+              ? RoundedRectangleBorder(
+                  side: BorderSide(
+                    color: context.colors.primary,
+                    width: TokensSize.focusRing,
+                  ),
+                  borderRadius: BorderRadius.circular(TokensRadius.m),
+                )
+              : null,
+          onTap: onTap,
+          minTileHeight: TokensSize.listTileMin,
+          leading: CircleAvatar(
+            backgroundColor: circle,
+            child: Text(
+              '${option.quality}',
+              style: context.textStyles.labelLarge?.copyWith(
+                color: enabled ? color : context.colors.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-        ),
-        title: Text(context.qualityLabel(option.quality)),
-        trailing: Text(
-          l10n.academicReviewInDays(option.intervalDays),
-          style: context.textStyles.labelMedium?.copyWith(
-            color: context.colors.onSurfaceVariant,
+          title: Text(context.qualityLabel(option.quality)),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.academicReviewInDays(option.intervalDays),
+                style: context.textStyles.labelMedium?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
+              ),
+              if (selected) ...[
+                const SizedBox(width: TokensSpacing.xs),
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: context.colors.primary,
+                  size: TokensSize.iconS,
+                ),
+              ],
+            ],
           ),
         ),
       ),

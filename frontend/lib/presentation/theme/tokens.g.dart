@@ -116,6 +116,9 @@ abstract final class TokensLayout {
   static const double cardSideBySideMin = 280;
   static const double cardActionsInlineMin = 336;
   static const double statsFourColumns = 560;
+  static const double coverPhotoShare = 0.4;
+  static const double coverPhotoFade = 0.4;
+  static const double bottomBarMaxShare = 0.45;
 }
 
 abstract final class TokensSize {
@@ -153,6 +156,8 @@ abstract final class TokensSize {
   static const double reviewCardWidth = 220;
   static const double reviewCardHeight = 104;
   static const double pomodoroRing = 260;
+  static const double liveDot = 8;
+  static const double stepBadge = 28;
 }
 
 abstract final class TokensOpacity {
@@ -160,6 +165,8 @@ abstract final class TokensOpacity {
   static const double coverScrimMax = 0.85;
   static const double coverTintLight = 0.25;
   static const double coverTintDark = 0.14;
+  static const double disabled = 0.5;
+  static const double blinkMin = 0.25;
 }
 
 abstract final class TokensFont {

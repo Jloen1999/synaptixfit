@@ -947,5 +947,39 @@
       }
     }
   },
-  "academicInboxMoving": "Moviendo…"
+  "academicInboxMoving": "Moviendo…",
+  "academicReviewStep1": "Primero, repásalo",
+  "academicReviewPractice": "Practicar con preguntas",
+  "academicReviewPracticeHint": "Recomendado: te proponemos la nota con tus aciertos",
+  "academicReviewRecall": "Recordarlo sin mirar",
+  "academicReviewLocked": "Se activa al hacer el paso 1, para que la nota refleje lo que recuerdas.",
+  "academicReviewStep1Done": "Repasado. Ahora, valóralo.",
+  "academicReviewSuggested": "Acertaste {correct} de {total}. Te proponemos «{label}».",
+  "@academicReviewSuggested": {
+    "placeholders": {
+      "correct": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "academicReviewSameInterval": "La última vez te costó, así que el repaso empieza de nuevo: vuelve mañana y después cada vez más espaciado.",
+  "academicReviewSave": "Guardar repaso",
+  "academicReviewChooseFirst": "Elige cómo te fue",
+  "academicReviewDoFirst": "Primero repásalo",
+  "academicReviewStep1Announce": "Paso 1 hecho: ya puedes valorar",
+  "academicReviewOverdue": "Tocaba el {date} · repásalo hoy",
+  "@academicReviewOverdue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "academicReviewNoOptions": "No se pudieron cargar las respuestas."
 }

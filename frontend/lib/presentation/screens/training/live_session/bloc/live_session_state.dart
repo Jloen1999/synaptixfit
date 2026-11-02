@@ -71,6 +71,25 @@ abstract class LiveSessionState with _$LiveSessionState {
     /// Series apuntadas sin conexión que aún no ha recibido el servidor (en
     /// orden). Se ven en la lista y se suben solas al volver la cobertura.
     @Default(<SetRecord>[]) List<SetRecord> pendingSets,
+
+    /// Cronómetro de la serie (ADR 0030): qué serie se cronometra, desde
+    /// cuándo corre (nulo si está en pausa) y los segundos ya contados antes de
+    /// la última pausa. Nulo [timerSet]: no hay cronómetro de serie.
+    String? timerExerciseId,
+    int? timerSet,
+    DateTime? timerSince,
+    @Default(0) int timerBanked,
+
+    /// Segundos que marca el cronómetro de la serie (para pintar).
+    @Default(0) int timerSeconds,
+
+    /// Sesión recién empezada: se explica que el cronómetro está en marcha
+    /// (salvo que se pidiera no volver a explicarlo).
+    @Default(false) bool explainClock,
+
+    /// Cuándo se reanudó sin que el servidor lo supiera (sin conexión). Se
+    /// reintenta con esta hora y, mientras no llegue, no se puede terminar.
+    DateTime? resumePendingAt,
   }) = _LiveSessionState;
 
   const LiveSessionState._();
@@ -78,6 +97,16 @@ abstract class LiveSessionState with _$LiveSessionState {
   bool get isFree => exercises.isEmpty;
 
   bool get completed => session?.isCompleted ?? false;
+
+  /// La sesión está en pausa: el tiempo no corre.
+  bool get paused => session?.isPaused ?? false;
+
+  /// El cronómetro de la serie [set] de [exercise] existe (en marcha o en pausa).
+  bool timerOn(PlannedExercise exercise, int set) =>
+      timerSet == set && timerExerciseId == exercise.id;
+
+  /// Corre el cronómetro de alguna serie.
+  bool get timerRunning => timerSet != null && timerSince != null;
 
   /// Series completadas frente a las planificadas.
   int get completedSets => session?.sets.where((s) => s.completed).length ?? 0;

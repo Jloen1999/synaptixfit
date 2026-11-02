@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/enums/ai_document_type.dart';
+import 'package:synaptixfit/domain/enums/mastery_state.dart';
 import 'package:synaptixfit/domain/enums/artifact_kind.dart';
 import 'package:synaptixfit/domain/enums/question_type.dart';
 import 'package:synaptixfit/domain/enums/study_source_type.dart';
@@ -649,6 +650,89 @@ void main() {
         ),
       ],
     );
+
+    blocTest<MaterialReviewBloc, MaterialReviewState>(
+      'sin repasar no se puede valorar; recordarlo sin mirar lo desbloquea',
+      build: build,
+      act: (bloc) async {
+        bloc.add(const MaterialReviewEvent.started('m1'));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.reviewed, isFalse);
+        bloc
+          ..add(const MaterialReviewEvent.prepared())
+          ..add(const MaterialReviewEvent.qualitySelected(4));
+      },
+      skip: 2,
+      expect: () => const [
+        MaterialReviewState(
+          materialId: 'm1',
+          loading: false,
+          material: material,
+          preview: preview,
+          reviewed: true,
+        ),
+        MaterialReviewState(
+          materialId: 'm1',
+          loading: false,
+          material: material,
+          preview: preview,
+          reviewed: true,
+          selectedQuality: 4,
+        ),
+      ],
+    );
+
+    blocTest<MaterialReviewBloc, MaterialReviewState>(
+      'al volver de practicar propone la nota con los aciertos',
+      setUp: () => when(() => getPreview('m1')).thenAnswer(
+        (_) async => Success(
+          preview.copyWith(
+            practice: const PracticeScore(
+              correct: 7,
+              answered: 10,
+              suggestedQuality: 3,
+            ),
+          ),
+        ),
+      ),
+      build: build,
+      seed: () => const MaterialReviewState(
+        materialId: 'm1',
+        loading: false,
+        material: material,
+        preview: preview,
+      ),
+      act: (bloc) => bloc.add(const MaterialReviewEvent.practiceReturned()),
+      verify: (bloc) {
+        expect(bloc.state.reviewed, isTrue);
+        expect(bloc.state.selectedQuality, 3);
+        expect(bloc.state.preview?.practice?.correct, 7);
+      },
+    );
+
+    test('tras un fallo todas las opciones dan el mismo intervalo (SM-2)', () {
+      const sameDay = ReviewPreview(
+        loadToday: 0,
+        maxDailyLoad: 1,
+        fatigueCoefficient: 1,
+        options: [
+          ReviewOption(
+            quality: 2,
+            adjustedQuality: 2,
+            intervalDays: 1,
+            resultingState: MasteryState.inProgress,
+          ),
+          ReviewOption(
+            quality: 5,
+            adjustedQuality: 5,
+            intervalDays: 1,
+            resultingState: MasteryState.inProgress,
+          ),
+        ],
+      );
+      expect(sameDay.sameIntervalForAll, isTrue);
+      expect(preview.sameIntervalForAll, isFalse);
+    });
 
     blocTest<MaterialReviewBloc, MaterialReviewState>(
       'quitar del repaso archiva el material y marca la pantalla para cerrarse',

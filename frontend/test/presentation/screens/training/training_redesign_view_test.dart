@@ -13,6 +13,7 @@ import 'package:synaptixfit/domain/models/training/session.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/training/exercise_detail/bloc/exercise_detail_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/bloc/live_session_bloc.dart';
+import 'package:synaptixfit/presentation/screens/training/live_session/page/live_focus_view.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/page/live_session_page.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/planned_exercise_card.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/routine_summary_card.dart';
@@ -265,7 +266,12 @@ void main() {
             height: height,
           );
           expect(tester.takeException(), isNull);
-          expect(find.text('0 de 3 ejercicios · 10 min'), findsOneWidget);
+          expect(find.text('0 de 3 ejercicios'), findsOneWidget);
+          // El tiempo real va aparte, en su píldora (con su propio color).
+          expect(find.byType(LiveClockPill), findsOneWidget);
+          expect(find.text('10:00'), findsOneWidget);
+          // El cronómetro de la serie es opcional: «Marcar» sigue a mano.
+          expect(find.text('Cronometrar'), findsOneWidget);
           expect(find.text('Press banca'), findsWidgets);
           expect(find.text('Marcar serie 2'), findsOneWidget);
           expect(find.text('Después: Plancha'), findsOneWidget);
@@ -278,6 +284,38 @@ void main() {
         },
       );
     }
+
+    testWidgets('salir a mitad de sesión explica qué pasa con cada opción', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(ready());
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      await tester.tap(find.byTooltip('Salir de la sesión'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('¿Salir sin terminar?'), findsOneWidget);
+      // Con la cifra de lo hecho: no se pierde nada.
+      expect(
+        find.text(
+          'No pierdes nada: la serie que has marcado ya está guardada.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Pausar y salir'), findsOneWidget);
+      expect(find.text('El tiempo se para hasta que vuelvas'), findsOneWidget);
+      expect(find.text('Terminar ahora'), findsOneWidget);
+      expect(
+        find.textContaining('Se guarda con lo que has hecho (1 de'),
+        findsOneWidget,
+      );
+      expect(find.text('Seguir entrenando'), findsOneWidget);
+      await tester.tap(find.text('Seguir entrenando'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('Pausar y salir'), findsNothing);
+      verifyNever(() => bloc.add(const LiveSessionEvent.pauseRequested()));
+      await tester.pumpWidget(const SizedBox());
+    });
 
     // Antes se apilaba la ruta del ejercicio (de la pestaña Entreno) sobre la
     // sesión, que es pantalla completa: go_router duplicaba el armazón y se

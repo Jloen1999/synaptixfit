@@ -31,7 +31,7 @@ typedef SetDrafts = Map<String, num?>;
 /// Con letra grande o pantalla baja se ahorra espacio (sin foto ni tira).
 bool liveCompact(BuildContext context) =>
     MediaQuery.sizeOf(context).height < TokensLayout.compactHeight ||
-    MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    context.largeText;
 
 /// Lo previsto de una serie en texto corto: «10 reps · 40 kg», «30 s», «25 min».
 String targetLabel(BuildContext context, PlannedExercise e, int set) {
@@ -99,25 +99,48 @@ class LiveSessionHeader extends StatelessWidget {
                     color: context.colors.onSurfaceVariant,
                   ),
                 ),
-              Text(
-                l10n.trainingLiveProgress(
-                  s.finishedExercises,
-                  s.exercises.length,
-                  s.elapsedSeconds ~/ 60,
-                ),
-                style: context.textStyles.labelLarge,
-              ),
-              // Lo que queda, con la duración prevista del servidor.
-              // Con el texto grande se omite: la cabecera fija ya ocupa mucho.
-              if (s.remainingEstimatedMinutes case final left?
-                  when left > 0 && !context.largeText)
-                Text(
-                  l10n.trainingRemainingMinutes(left),
-                  semanticsLabel: l10n.trainingRemainingMinutesSpoken(left),
-                  style: context.textStyles.labelMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
+              Wrap(
+                spacing: TokensSpacing.s,
+                runSpacing: TokensSpacing.xs,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                alignment: WrapAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.trainingLiveExercisesProgress(
+                      s.finishedExercises,
+                      s.exercises.length,
+                    ),
+                    style: context.textStyles.labelLarge,
                   ),
-                ),
+                  LiveClockPill(seconds: s.elapsedSeconds, paused: s.paused),
+                ],
+              ),
+              // Qué mide la píldora (también tras «No volver a explicarlo») y lo
+              // que queda según la duración prevista del servidor (gris: es
+              // una estimación).
+              Wrap(
+                spacing: TokensSpacing.s,
+                children: [
+                  // El lector ya lo oye en la píldora.
+                  ExcludeSemantics(
+                    child: Text(
+                      l10n.trainingClockRealHint,
+                      style: context.textStyles.labelMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  if (s.remainingEstimatedMinutes case final left?
+                      when left > 0)
+                    Text(
+                      l10n.trainingRemainingMinutes(left),
+                      semanticsLabel: l10n.trainingRemainingMinutesSpoken(left),
+                      style: context.textStyles.labelMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: TokensSpacing.xs),
               ClipRRect(
                 borderRadius: BorderRadius.circular(TokensRadius.pill),
@@ -825,44 +848,320 @@ class _LiveSetRow extends StatelessWidget {
         ],
       );
     }
+    final timed = state.timerOn(e, n) && done == null;
+    final timerPaused = timed && state.timerSince == null;
+    // Estado de la serie cronometrada en icono y texto, no solo en color.
+    final statusColor = timerPaused
+        ? context.palette.warning
+        : context.colors.primary;
+    final status = timed
+        ? Padding(
+            padding: const EdgeInsets.only(bottom: TokensSpacing.xxs),
+            child: ExcludeSemantics(
+              child: Row(
+                children: [
+                  Icon(
+                    timerPaused
+                        ? Icons.pause_circle_rounded
+                        : Icons.timer_outlined,
+                    size: TokensSize.iconXs,
+                    color: statusColor,
+                  ),
+                  const SizedBox(width: TokensSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      timerPaused
+                          ? l10n.trainingSetRowPaused
+                          : l10n.trainingSetRowRunning(
+                              formatClock(state.timerSeconds),
+                            ),
+                      style: context.textStyles.labelMedium?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : null;
     return Semantics(
       container: true,
-      label: current ? l10n.trainingCurrentSet : null,
-      child: Container(
-        margin: const EdgeInsets.only(top: TokensSpacing.xs),
-        padding: const EdgeInsets.all(TokensSpacing.xs),
-        // La serie que toca: fondo y borde de color (el fondo solo apenas se
-        // distingue del lienzo en claro).
-        decoration: current
-            ? BoxDecoration(
-                color: context.colors.primaryContainer,
-                border: Border.all(
-                  color: context.colors.primary,
-                  width: TokensSize.focusRing,
-                ),
-                borderRadius: BorderRadius.circular(TokensRadius.m),
-              )
-            : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            body,
-            for (final f in badInRow)
-              Padding(
-                padding: const EdgeInsets.only(top: TokensSpacing.xxs),
-                child: Text(
-                  l10n.trainingSetFieldInvalidInSet(
-                    n,
-                    f.spoken(context),
-                    formatNumber(_range(f).$1.toDouble()),
-                    formatNumber(_range(f).$2.toDouble()),
+      label: timed
+          ? (timerPaused
+                ? l10n.trainingSetTimerPaused(n)
+                : l10n.trainingSetTimerRunning(n))
+          : current
+          ? l10n.trainingCurrentSet
+          : null,
+      // El margen va fuera del brillo: así el halo rodea la fila y no se
+      // desplaza hacia arriba.
+      child: Padding(
+        padding: const EdgeInsets.only(top: TokensSpacing.xs),
+        child: _SetFocusPulse(
+          // Late solo mientras corre el cronómetro de esta serie: así se ve de
+          // un vistazo por dónde vas.
+          active: timed && !timerPaused,
+          child: Container(
+            padding: const EdgeInsets.all(TokensSpacing.xs),
+            // La serie que toca: fondo y borde de color (el fondo solo apenas se
+            // distingue del lienzo en claro). En pausa, borde de aviso.
+            decoration: current || timed
+                ? BoxDecoration(
+                    // Tinte opaco: el texto de la fila mantiene su contraste.
+                    color: timerPaused
+                        ? Color.alphaBlend(
+                            context.palette.warning.withValues(
+                              alpha: AppPill.tintAlpha,
+                            ),
+                            context.colors.surface,
+                          )
+                        : context.colors.primaryContainer,
+                    border: Border.all(
+                      color: timerPaused
+                          ? context.palette.warning
+                          : context.colors.primary,
+                      width: TokensSize.focusRing,
+                    ),
+                    borderRadius: BorderRadius.circular(TokensRadius.m),
+                  )
+                : null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ?status,
+                body,
+                if (done?.activeSeconds case final secs?)
+                  Padding(
+                    padding: const EdgeInsets.only(top: TokensSpacing.xxs),
+                    child: Text(
+                      l10n.trainingSetActiveTime(formatClock(secs)),
+                      semanticsLabel: l10n.trainingSetActiveTime(
+                        spokenClock(l10n, secs),
+                      ),
+                      style: context.textStyles.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                  style: context.textStyles.bodySmall?.copyWith(
-                    color: context.colors.error,
+                for (final f in badInRow)
+                  Padding(
+                    padding: const EdgeInsets.only(top: TokensSpacing.xxs),
+                    child: Text(
+                      l10n.trainingSetFieldInvalidInSet(
+                        n,
+                        f.spoken(context),
+                        formatNumber(_range(f).$1.toDouble()),
+                        formatNumber(_range(f).$2.toDouble()),
+                      ),
+                      style: context.textStyles.bodySmall?.copyWith(
+                        color: context.colors.error,
+                      ),
+                    ),
                   ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Brillo que late alrededor de la serie que se está haciendo. Con «reducir
+/// movimiento» del sistema queda quieto (el borde de color ya la señala).
+class _SetFocusPulse extends StatefulWidget {
+  const _SetFocusPulse({required this.active, required this.child});
+
+  final bool active;
+  final Widget child;
+
+  @override
+  State<_SetFocusPulse> createState() => _SetFocusPulseState();
+}
+
+class _SetFocusPulseState extends State<_SetFocusPulse>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: TokensDuration.pulse,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(_SetFocusPulse old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  void _sync() {
+    final animate = widget.active && !context.reduceMotion;
+    if (animate && !_controller.isAnimating) {
+      unawaited(_controller.repeat());
+    } else if (!animate && _controller.isAnimating) {
+      _controller
+        ..stop()
+        ..value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.active) return widget.child;
+    final color = context.colors.primary;
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final t = _controller.value;
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(TokensRadius.m),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: (1 - t) * TokensOpacity.glow),
+                spreadRadius: t * TokensSpacing.s,
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+/// Tiempo real de la sesión (sin pausas): píldora naranja con icono de
+/// cronómetro y un punto que late dos veces al empezar o reanudar y se queda
+/// fijo (WCAG 2.2.2); en pausa, ámbar y quieta. Se distingue de «Quedan ≈ N
+/// min», que es una estimación en gris.
+class LiveClockPill extends StatefulWidget {
+  const LiveClockPill({super.key, required this.seconds, required this.paused});
+
+  final int seconds;
+  final bool paused;
+
+  @override
+  State<LiveClockPill> createState() => _LiveClockPillState();
+}
+
+class _LiveClockPillState extends State<LiveClockPill>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _blink = AnimationController(
+    vsync: this,
+    duration: TokensDuration.pulse,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(LiveClockPill old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  /// Si estaba en pausa la última vez (nulo: aún no se ha pintado).
+  bool? _wasPaused;
+
+  void _sync() {
+    final paused = widget.paused;
+    final starting = !paused && _wasPaused != false;
+    _wasPaused = paused;
+    if (paused || context.reduceMotion) {
+      _blink
+        ..stop()
+        ..value = 0;
+    } else if (starting) {
+      // Dos latidos (ida y vuelta cada uno) y se queda fijo.
+      unawaited(_blink.repeat(reverse: true, count: 4));
+    }
+  }
+
+  @override
+  void dispose() {
+    _blink.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final clock = formatClock(widget.seconds);
+    final paused = widget.paused;
+    final foreground = paused
+        ? context.palette.warning
+        : context.palette.onAccentContainer;
+    // Tinte opaco sobre la superficie, como [AppPill]: el contraste es el
+    // mismo esté sobre la cabecera o sobre el fondo (contrast_test).
+    final background = paused
+        ? Color.alphaBlend(
+            context.palette.warning.withValues(alpha: AppPill.tintAlpha),
+            context.colors.surface,
+          )
+        : context.palette.accentContainer;
+    final spoken = spokenClock(l10n, widget.seconds);
+    return Semantics(
+      label: paused
+          ? l10n.trainingClockPausedSpoken(spoken)
+          : l10n.trainingClockSpoken(spoken),
+      excludeSemantics: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(TokensRadius.pill),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: TokensSpacing.s,
+            vertical: TokensSpacing.xxs,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FadeTransition(
+                opacity: Tween<double>(
+                  begin: 1,
+                  end: TokensOpacity.blinkMin,
+                ).animate(_blink),
+                child: Icon(
+                  paused ? Icons.pause_rounded : Icons.circle,
+                  size: paused ? TokensSize.iconXs : TokensSize.liveDot,
+                  color: paused ? foreground : context.palette.accent,
                 ),
               ),
-          ],
+              const SizedBox(width: TokensSpacing.xs),
+              Icon(
+                Icons.timer_outlined,
+                size: TokensSize.iconXs,
+                color: foreground,
+              ),
+              const SizedBox(width: TokensSpacing.xxs),
+              Text(
+                clock,
+                style: context.textStyles.titleSmall?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -931,11 +1230,13 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
       ),
       child: SafeArea(
         top: false,
-        // Con letra muy grande la barra no tapa la tabla: ocupa como mucho
-        // el 40 % de la altura y su contenido se desplaza.
+        // Con letra muy grande la barra no tapa la tabla: tiene un alto
+        // máximo y su contenido se desplaza.
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height * 0.4,
+            maxHeight:
+                MediaQuery.sizeOf(context).height *
+                TokensLayout.bottomBarMaxShare,
           ),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(TokensSpacing.m),
@@ -994,25 +1295,112 @@ class _NextPanel extends StatelessWidget {
               .firstOrNull;
     final bloc = context.read<LiveSessionBloc>();
     final Widget action;
+    Widget? timer;
     if (set != null) {
       final rowInvalid = SetFields.of(viewed).fields.any(
         (f) => invalid.contains(LiveSessionState.draftKey(viewed.id, set, f)),
       );
-      action = AppPrimaryButton(
-        label: l10n.trainingLiveSetDone(set),
-        icon: Icons.check_rounded,
-        focusNode: focus,
-        onPressed: s.saving || rowInvalid
-            ? null
-            : () {
-                SemanticsService.sendAnnouncement(
-                  View.of(context),
-                  l10n.trainingSetLogged(set),
-                  Directionality.of(context),
-                );
-                onLog(viewed, set, s.valuesFor(viewed, set, drafts));
-              },
-      );
+      // «Serie N registrada · Deshacer» lo anuncia la página.
+      void log() => onLog(viewed, set, s.valuesFor(viewed, set, drafts));
+
+      final canLog = !s.saving && !rowInvalid;
+      final timed = s.timerOn(viewed, set);
+      final running = timed && s.timerSince != null;
+      final doneLabel = timed
+          ? l10n.trainingSetDoneShort
+          : l10n.trainingLiveSetDone(set);
+      void resume() => bloc.add(const LiveSessionEvent.resumeRequested());
+      // En pausa lo principal es reanudar; «Serie hecha» sigue a mano (el
+      // cronómetro ayuda, nunca obliga: marcarla también reanuda).
+      final Widget done = s.paused
+          ? AppSecondaryButton(
+              label: doneLabel,
+              icon: const Icon(Icons.check_rounded),
+              onPressed: canLog ? log : null,
+            )
+          : AppPrimaryButton(
+              label: doneLabel,
+              icon: Icons.check_rounded,
+              focusNode: focus,
+              onPressed: canLog ? log : null,
+            );
+      final Widget secondary = s.paused
+          ? AppPrimaryButton(
+              label: l10n.trainingResume,
+              icon: Icons.play_arrow_rounded,
+              focusNode: focus,
+              onPressed: resume,
+            )
+          : !timed
+          ? AppSecondaryButton(
+              label: l10n.trainingSetTimerStart,
+              icon: const Icon(Icons.play_arrow_rounded),
+              onPressed: () =>
+                  bloc.add(LiveSessionEvent.setTimerStarted(viewed.id, set)),
+            )
+          : running
+          ? AppSecondaryButton(
+              label: l10n.trainingPause,
+              icon: const Icon(Icons.pause_rounded),
+              onPressed: () =>
+                  bloc.add(const LiveSessionEvent.pauseRequested()),
+            )
+          : AppSecondaryButton(
+              label: l10n.trainingResume,
+              icon: const Icon(Icons.play_arrow_rounded),
+              onPressed: resume,
+            );
+      // El principal, ancho y al lado del pulgar (al final de la fila).
+      final (primary, other) = s.paused ? (secondary, done) : (done, secondary);
+      action = context.largeText
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                primary,
+                const SizedBox(height: TokensSpacing.s),
+                other,
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(child: other),
+                const SizedBox(width: TokensSpacing.s),
+                Expanded(flex: 2, child: primary),
+              ],
+            );
+      if (timed) {
+        final color = running
+            ? context.colors.primary
+            : context.palette.warning;
+        timer = Semantics(
+          container: true,
+          label: running
+              ? l10n.trainingSetTimerRunning(set)
+              : l10n.trainingSetTimerPaused(set),
+          value: spokenClock(l10n, s.timerSeconds),
+          excludeSemantics: true,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  running
+                      ? l10n.trainingSetTimerRunning(set)
+                      : l10n.trainingSetTimerPaused(set),
+                  style: context.textStyles.titleSmall?.copyWith(color: color),
+                ),
+              ),
+              Text(
+                formatClock(s.timerSeconds),
+                style: context.textStyles.headlineMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        );
+      }
     } else if (following != null) {
       action = AppPrimaryButton(
         label: l10n.trainingLiveGoTo(following.exerciseName),
@@ -1034,6 +1422,32 @@ class _NextPanel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // En pausa (sin cronómetro de serie): se dice y se reanuda a un toque.
+        if (s.paused && (set == null || !s.timerOn(viewed, set))) ...[
+          Row(
+            children: [
+              Icon(
+                Icons.pause_circle_rounded,
+                color: context.palette.warning,
+                size: TokensSize.iconS,
+              ),
+              const SizedBox(width: TokensSpacing.xs),
+              Expanded(
+                child: Text(
+                  l10n.trainingPausedBanner,
+                  style: context.textStyles.titleSmall,
+                ),
+              ),
+              TextButton(
+                onPressed: () =>
+                    bloc.add(const LiveSessionEvent.resumeRequested()),
+                child: Text(l10n.trainingResume),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+        ],
+        if (timer != null) ...[timer, const SizedBox(height: TokensSpacing.xs)],
         if (set != null)
           Text(
             l10n.trainingLiveNow(

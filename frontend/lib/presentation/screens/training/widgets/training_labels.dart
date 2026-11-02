@@ -217,6 +217,19 @@ String formatClock(int totalSeconds) {
       : '$minutes:$seconds';
 }
 
+/// [formatClock] para el lector de pantalla: «0:48» se leería como una hora,
+/// así que se dice «48 segundos», «12 minutos y 5 segundos» o «1 hora y 3
+/// minutos».
+String spokenClock(AppLocalizations l10n, int totalSeconds) {
+  final s = totalSeconds < 0 ? 0 : totalSeconds;
+  final hours = s ~/ 3600;
+  final minutes = (s % 3600) ~/ 60;
+  final seconds = s % 60;
+  if (hours > 0) return l10n.trainingDurationSpokenHourMin(hours, minutes);
+  if (minutes > 0) return l10n.trainingDurationSpokenMinSec(minutes, seconds);
+  return l10n.trainingDurationSpokenSec(seconds);
+}
+
 /// Número decimal sin ceros sobrantes (`20`, `22.5`).
 String formatNumber(double value) => value == value.roundToDouble()
     ? value.toInt().toString()

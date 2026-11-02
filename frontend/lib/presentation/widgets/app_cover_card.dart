@@ -6,10 +6,15 @@ import '../theme/tokens.g.dart';
 import 'app_card.dart';
 import 'app_pill.dart';
 
-/// Tarjeta con una foto de fondo pintada a dos tonos de la marca (sin foto, un
-/// degradado del mismo tono).
+/// Tarjeta con foto. Con texto normal, la foto se ve tal cual en el lado final
+/// de la cabecera ([child], [TokensLayout.coverPhotoShare] del ancho), fundida
+/// con la superficie, y el texto queda en la zona lisa: se ve bien la foto y el
+/// texto cumple AA con cualquier imagen (no pisa la foto). El [footer]
+/// (botones, progreso, listas) va debajo a todo el ancho, sin foto. Con texto
+/// grande (necesita el ancho entero) o sin foto, se usa el fondo a dos tonos
+/// de abajo.
 ///
-/// Contraste: la foto se pasa a escala de grises y se lleva al rango que va de
+/// Contraste del fondo a dos tonos: la foto se pasa a escala de grises y se lleva al rango que va de
 /// la superficie a [tint] (una mezcla de `primary` sobre la superficie,
 /// `coverTintLight`/`coverTintDark`). Ningún píxel queda fuera de ese rango,
 /// así que el texto en `onSurface`, `onSurfaceVariant` y `primary` cumple AA
@@ -25,9 +30,14 @@ class AppCoverCard extends StatelessWidget {
     this.imageUrl,
     this.onTap,
     this.padding = const EdgeInsets.all(TokensSpacing.l),
+    this.footer,
   });
 
+  /// Cabecera: lo que se lee de un vistazo (junto a la foto).
   final Widget child;
+
+  /// Lo que necesita el ancho entero (botón principal, progreso, acciones).
+  final Widget? footer;
   final String? imageUrl;
   final VoidCallback? onTap;
   final EdgeInsetsGeometry padding;
@@ -75,10 +85,89 @@ class AppCoverCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final url = imageUrl;
+    if (url != null && !context.largeText) return _sidePhoto(context, url);
+    return _duotoneBackground(context, url);
+  }
+
+  /// Foto visible en el lado final y texto sobre la superficie lisa.
+  Widget _sidePhoto(BuildContext context, String url) {
+    final surface = context.colors.surface;
+    return AppCard(
+      color: surface,
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final photo = constraints.maxWidth * TokensLayout.coverPhotoShare;
+          final header = Stack(
+            children: [
+              PositionedDirectional(
+                top: 0,
+                bottom: 0,
+                end: 0,
+                width: photo,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: CachedNetworkImageProvider(url),
+                      fit: BoxFit.cover,
+                      // Sin foto (error de red) queda la superficie.
+                      onError: (_, _) {},
+                    ),
+                  ),
+                ),
+              ),
+              // Funde el borde de la foto con la superficie (sin corte duro).
+              PositionedDirectional(
+                top: 0,
+                bottom: 0,
+                end: 0,
+                width: photo,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: AlignmentDirectional.centerStart,
+                      end: AlignmentDirectional.centerEnd,
+                      colors: [surface, surface.withValues(alpha: 0)],
+                      stops: const [0, TokensLayout.coverPhotoFade],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: padding.add(EdgeInsetsDirectional.only(end: photo)),
+                child: child,
+              ),
+            ],
+          );
+          final footer = this.footer;
+          if (footer == null) return header;
+          final resolved = padding.resolve(Directionality.of(context));
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              header,
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  resolved.left,
+                  0,
+                  resolved.right,
+                  resolved.bottom,
+                ),
+                child: footer,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _duotoneBackground(BuildContext context, String? url) {
     final surface = context.colors.surface;
     final tinted = tint(context);
     final darkFirst = tinted.computeLuminance() < surface.computeLuminance();
-    final url = imageUrl;
     return AppCard(
       color: surface,
       padding: EdgeInsets.zero,
@@ -129,7 +218,15 @@ class AppCoverCard extends StatelessWidget {
               ),
             ),
           ),
-          Padding(padding: padding, child: child),
+          Padding(
+            padding: padding,
+            child: footer == null
+                ? child
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [child, footer!],
+                  ),
+          ),
         ],
       ),
     );

@@ -24,7 +24,11 @@ import '../../../../../domain/use_cases/training/finish_session_use_case.dart';
 import '../../../../../domain/use_cases/training/get_routine_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_adaptation_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_use_case.dart';
+import '../../../../../domain/use_cases/training/pause_session_use_case.dart';
 import '../../../../../domain/use_cases/training/record_set_use_case.dart';
+import '../../../../../domain/use_cases/training/resume_session_use_case.dart';
+import '../../../../../domain/use_cases/training/get_session_clock_intro_hidden_use_case.dart';
+import '../../../../../domain/use_cases/training/hide_session_clock_intro_use_case.dart';
 import '../../training_effect.dart';
 
 part 'live_session_bloc.freezed.dart';
@@ -48,6 +52,10 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     required this._getLoadSuggestions,
     required this._loadPending,
     required this._savePending,
+    required this._pauseSession,
+    required this._resumeSession,
+    required this._getClockIntroHidden,
+    required this._hideClockIntro,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now,
        super(const LiveSessionState()) {
@@ -107,8 +115,19 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       (_, emit) => emit(state.copyWith(restRemaining: null, restEndsAt: null)),
     );
     on<LiveSessionFinishRequested>(_onFinish);
-    on<LiveSessionPendingRetried>((_, emit) => _flushPending(emit));
+    on<LiveSessionPendingRetried>((_, emit) async {
+      await _retryResume(emit);
+      await _flushPending(emit);
+    });
     on<LiveSessionAbandonRequested>(_onAbandon);
+    on<LiveSessionSetTimerStarted>(_onSetTimerStarted);
+    on<LiveSessionPauseRequested>(_onPause);
+    on<LiveSessionResumeRequested>(_onResume);
+    on<LiveSessionClockExplained>((e, emit) async {
+      emit(state.copyWith(explainClock: false));
+      // Si no se puede guardar, la próxima vez se vuelve a explicar: no es grave.
+      if (e.hideNextTime) await _hideClockIntro();
+    });
   }
 
   final GetSessionUseCaseContract _getSession;
@@ -124,7 +143,15 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
   final GetSessionBookendsUseCaseContract _getBookends;
   final LoadPendingSetsUseCaseContract _loadPending;
   final SavePendingSetsUseCaseContract _savePending;
+  final PauseSessionUseCaseContract _pauseSession;
+  final ResumeSessionUseCaseContract _resumeSession;
+  final GetSessionClockIntroHiddenUseCaseContract _getClockIntroHidden;
+  final HideSessionClockIntroUseCaseContract _hideClockIntro;
   final DateTime Function() _clock;
+
+  /// Una sesión que lleva menos de esto abierta y sin series se acaba de
+  /// empezar: es cuando se explica el cronómetro.
+  static const _introSeconds = 120;
 
   /// Cada cuántos segundos se reintenta subir las series pendientes.
   static const _retrySeconds = 15;
@@ -194,9 +221,10 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       }
     }
 
+    // Tiempo activo: las pausas no cuentan (ADR 0030).
     final elapsed = session.isCompleted
         ? session.durationMinutes * 60
-        : math.max(0, _clock().difference(session.startedAt).inSeconds);
+        : session.activeSecondsAt(_clock());
     // Series que quedaron sin subir (sin conexión) en una apertura anterior.
     final pending = session.isCompleted
         ? const <SetRecord>[]
@@ -219,6 +247,13 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       ),
     );
     if (session.isCompleted) return;
+    if (session.sets.isEmpty &&
+        pending.isEmpty &&
+        elapsed < _introSeconds &&
+        // Si no se puede leer la preferencia, se explica.
+        !((await _getClockIntroHidden()).valueOrNull ?? false)) {
+      emit(state.copyWith(explainClock: true));
+    }
     // Ayudas que no bloquean la sesión: si fallan, simplemente no se muestran.
     final (last, bookends, loads) = await (
       _getLastPerformance(),
@@ -303,11 +338,15 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       counted = from.add(Duration(seconds: delta));
     }
     final startedAt = state.startedAt;
-    final elapsed = startedAt == null
+    final session = state.session;
+    final elapsed = session != null
+        ? session.activeSecondsAt(now)
+        : startedAt == null
         ? state.elapsedSeconds + delta
         : math.max(0, now.difference(startedAt).inSeconds);
     final active = state.activeExerciseId;
-    final seconds = active == null || delta == 0
+    // En pausa no suma el ejercicio activo (pero el reloj de referencia avanza).
+    final seconds = active == null || delta == 0 || state.paused
         ? state.exerciseSeconds
         : {
             ...state.exerciseSeconds,
@@ -319,14 +358,19 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     final retryDue =
         resumed ||
         elapsed ~/ _retrySeconds != state.elapsedSeconds ~/ _retrySeconds;
-    if (state.pendingSets.isNotEmpty && !state.saving && retryDue) {
+    final owed = state.pendingSets.isNotEmpty || state.resumePendingAt != null;
+    if (owed && !state.saving && retryDue) {
       add(const LiveSessionEvent.pendingRetried());
     }
+    final since = state.timerSince;
     emit(
       state.copyWith(
         elapsedSeconds: elapsed,
         countedUntil: counted,
         exerciseSeconds: seconds,
+        timerSeconds: since == null
+            ? state.timerBanked
+            : state.timerBanked + math.max(0, now.difference(since).inSeconds),
         restRemaining: restOver ? null : left,
         restEndsAt: restOver ? null : endsAt,
         restFinishedCount: restOver
@@ -393,22 +437,41 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     final id = state.sessionId;
     if (id == null || state.completed) return;
     final tappedAt = _clock();
+    var record = event.record;
+    // La serie que se cronometraba se guarda con su tiempo; sin cronómetro, sin
+    // él (nunca obliga). Marcarla en pausa también reanuda la sesión.
+    final timed =
+        state.timerSet == record.setNumber &&
+        state.timerExerciseId == record.plannedExerciseId;
+    if (timed && record.activeSeconds == null) {
+      final since = state.timerSince;
+      final secs =
+          state.timerBanked +
+          (since == null
+              ? 0
+              : math.max(0, tappedAt.difference(since).inSeconds));
+      record = record.copyWith(
+        activeSeconds: math.min(secs, _maxExerciseSeconds).toInt(),
+      );
+      emit(_withoutTimer(state));
+    }
+    if (state.paused) await _resumeNow(emit);
     // Mientras se guarda o se sube otra, esta espera en la cola en vez de perderse.
     if (state.saving) {
-      await _queue(emit, id, event.record, tappedAt, keepSaving: true);
+      await _queue(emit, id, record, tappedAt, keepSaving: true);
       return;
     }
     emit(state.copyWith(saving: true));
     // Con series pendientes, esta va detrás de ellas para no desordenarlas.
     if (state.pendingSets.isNotEmpty) {
-      await _queue(emit, id, event.record, tappedAt);
+      await _queue(emit, id, record, tappedAt);
       return;
     }
-    final result = await _recordSet(id, event.record);
+    final result = await _recordSet(id, record);
     switch (result) {
       // Sin conexión: la serie se guarda en el teléfono y se sube después.
       case Failure(error: NetworkError()):
-        await _queue(emit, id, event.record, tappedAt);
+        await _queue(emit, id, record, tappedAt);
         return;
       case Success(value: final session):
         emit(
@@ -417,7 +480,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
               saving: false,
               session: _withPending(session, state.pendingSets),
             ),
-            event.record,
+            record,
             tappedAt,
             // Si mientras tanto se apuntó otra, su descanso es el que vale.
             startRest: state.pendingSets.isEmpty,
@@ -479,6 +542,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
             failedReps: r.failedReps,
             durationSeconds: r.durationSeconds,
             distanceMeters: r.distanceMeters,
+            activeSeconds: r.activeSeconds,
           ),
       ],
     );
@@ -584,9 +648,11 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     final id = state.sessionId;
     if (id == null || state.finishing || state.completed) return;
     // Terminar lo calcula el servidor (experiencia, carga): antes deben subir
-    // todas las series apuntadas sin conexión.
+    // todas las series apuntadas sin conexión y la reanudación que no llegó
+    // (si no, el servidor contaría como pausa lo entrenado después).
+    await _retryResume(emit);
     await _flushPending(emit);
-    if (state.pendingSets.isNotEmpty) {
+    if (state.pendingSets.isNotEmpty || state.resumePendingAt != null) {
       _effect(emit, const TrainingEffect.error(AppError.network()));
       return;
     }
@@ -638,6 +704,152 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       case Failure(:final error):
         _effect(emit, TrainingEffect.error(error));
     }
+  }
+
+  static LiveSessionState _withoutTimer(LiveSessionState s) => s.copyWith(
+    timerExerciseId: null,
+    timerSet: null,
+    timerSince: null,
+    timerBanked: 0,
+    timerSeconds: 0,
+  );
+
+  void _onSetTimerStarted(
+    LiveSessionSetTimerStarted event,
+    Emitter<LiveSessionState> emit,
+  ) {
+    if (state.status != LiveStatus.ready || state.completed) return;
+    emit(
+      state.copyWith(
+        timerExerciseId: event.plannedExerciseId,
+        timerSet: event.setNumber,
+        timerSince: _clock(),
+        timerBanked: 0,
+        timerSeconds: 0,
+        restRemaining: null,
+        restEndsAt: null,
+      ),
+    );
+    if (state.paused) add(const LiveSessionEvent.resumeRequested());
+  }
+
+  /// Pausa al momento (también sin conexión: al terminar, el servidor nunca
+  /// guarda más tiempo del que manda el cliente) y lo confirma con el servidor.
+  Future<void> _onPause(
+    LiveSessionPauseRequested event,
+    Emitter<LiveSessionState> emit,
+  ) async {
+    final session = state.session;
+    final id = state.sessionId;
+    if (session == null || id == null || state.completed || session.isPaused) {
+      return;
+    }
+    final now = _clock();
+    final since = state.timerSince;
+    emit(
+      state.copyWith(
+        session: session.copyWith(pausedAt: now),
+        timerSince: null,
+        timerBanked: since == null
+            ? state.timerBanked
+            : state.timerBanked + math.max(0, now.difference(since).inSeconds),
+      ),
+    );
+    // Una reanudación que no llegó va antes: si no, esta pausa se juntaría con
+    // la anterior en el servidor.
+    await _retryResume(emit);
+    final result = await _pauseSession(id);
+    if (result case Success(value: final server)) {
+      final current = state.session;
+      if (current != null && current.isPaused) {
+        emit(
+          state.copyWith(
+            session: current.copyWith(
+              pausedAt: server.pausedAt ?? current.pausedAt,
+              pausedSeconds: math.max(
+                current.pausedSeconds,
+                server.pausedSeconds,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _onResume(
+    LiveSessionResumeRequested event,
+    Emitter<LiveSessionState> emit,
+  ) => _resumeNow(emit);
+
+  /// Reanuda al momento y lo confirma con el servidor (también al marcar una
+  /// serie en pausa, antes de guardarla, para que su respuesta ya venga
+  /// reanudada).
+  Future<void> _resumeNow(Emitter<LiveSessionState> emit) async {
+    final session = state.session;
+    final id = state.sessionId;
+    final pausedAt = session?.pausedAt;
+    if (session == null || id == null || state.completed || pausedAt == null) {
+      return;
+    }
+    final now = _clock();
+    emit(
+      state.copyWith(
+        session: session.copyWith(
+          pausedAt: null,
+          pausedSeconds:
+              session.pausedSeconds +
+              math.max(0, now.difference(pausedAt).inSeconds),
+        ),
+        countedUntil: now,
+        timerSince: state.timerSet != null ? now : null,
+      ),
+    );
+    // Si ya había una reanudación sin llegar, vale la primera: lo que va de
+    // una a otra se entrenó (el servidor no supo de la pausa intermedia).
+    await _sendResume(emit, id, state.resumePendingAt ?? now);
+  }
+
+  /// Avisa al servidor de que se reanudó en [at]. Sin conexión, lo deja
+  /// pendiente para reintentarlo (con esa misma hora) antes de terminar.
+  Future<void> _sendResume(
+    Emitter<LiveSessionState> emit,
+    String id,
+    DateTime at,
+  ) async {
+    final result = await _resumeSession(id, resumedAt: at);
+    switch (result) {
+      case Success(value: final server):
+        final current = state.session;
+        emit(
+          state.copyWith(
+            resumePendingAt: null,
+            // Sin conexión el servidor pudo no ver una pausa: manda la mayor.
+            session: current == null || current.isPaused
+                ? current
+                : current.copyWith(
+                    pausedSeconds: math.max(
+                      current.pausedSeconds,
+                      server.pausedSeconds,
+                    ),
+                  ),
+          ),
+        );
+      case Failure(:final error):
+        emit(
+          state.copyWith(
+            resumePendingAt: _retryable(error) ? at : null,
+          ),
+        );
+    }
+  }
+
+  /// Reintenta la reanudación que no llegó al servidor (si la hay).
+  Future<void> _retryResume(Emitter<LiveSessionState> emit) async {
+    final id = state.sessionId;
+    final at = state.resumePendingAt;
+    if (id == null || at == null || state.completed) return;
+    await _sendResume(emit, id, at);
   }
 
   void _effect(Emitter<LiveSessionState> emit, TrainingEffect effect) {

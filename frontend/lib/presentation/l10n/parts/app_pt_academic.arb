@@ -409,5 +409,19 @@
   "academicNoteDraftDiscard": "Descartar",
   "academicReviewAll": "Rever todos",
   "academicInboxMoveSpoken": "Mover «{title}» para uma disciplina",
-  "academicInboxMoving": "A mover…"
+  "academicInboxMoving": "A mover…",
+  "academicReviewStep1": "Primeiro, revê",
+  "academicReviewPractice": "Praticar com perguntas",
+  "academicReviewPracticeHint": "Recomendado: propomos a nota com as tuas respostas certas",
+  "academicReviewRecall": "Lembrar sem ver",
+  "academicReviewLocked": "Fica disponível depois do passo 1, para que a nota reflita o que recordas.",
+  "academicReviewStep1Done": "Revisto. Agora, avalia.",
+  "academicReviewSuggested": "Acertaste {correct} de {total}. Propomos «{label}».",
+  "academicReviewSameInterval": "Da última vez custou, por isso a revisão recomeça: volta amanhã e depois cada vez mais espaçada.",
+  "academicReviewSave": "Guardar revisão",
+  "academicReviewChooseFirst": "Escolhe como correu",
+  "academicReviewDoFirst": "Revê primeiro",
+  "academicReviewStep1Announce": "Passo 1 feito: já podes avaliar",
+  "academicReviewOverdue": "Era para {date} · revê-o hoje",
+  "academicReviewNoOptions": "Não foi possível carregar as respostas."
 }

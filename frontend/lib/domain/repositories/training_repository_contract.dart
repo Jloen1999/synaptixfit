@@ -40,6 +40,16 @@ abstract interface class TrainingRepositoryContract {
 
   Future<AppResult<TrainingSession>> deleteSet(String sessionId, String setId);
 
+  /// Pausa la sesión: el tiempo deja de contar hasta reanudarla (ADR 0030).
+  Future<AppResult<TrainingSession>> pauseSession(String sessionId);
+
+  /// Reanuda una sesión en pausa como si se hubiera hecho en [resumedAt]
+  /// (nulo: ahora).
+  Future<AppResult<TrainingSession>> resumeSession(
+    String sessionId, {
+    DateTime? resumedAt,
+  });
+
   /// [realDurations]: segundos reales por ejercicio planificado.
   Future<AppResult<FinishSessionResult>> finishSession(
     String sessionId, {

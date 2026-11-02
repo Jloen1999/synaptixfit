@@ -409,5 +409,19 @@
   "academicNoteDraftDiscard": "Ignorer",
   "academicReviewAll": "Tout réviser",
   "academicInboxMoveSpoken": "Déplacer « {title} » vers une matière",
-  "academicInboxMoving": "Déplacement…"
+  "academicInboxMoving": "Déplacement…",
+  "academicReviewStep1": "D’abord, révisez",
+  "academicReviewPractice": "S’entraîner avec des questions",
+  "academicReviewPracticeHint": "Recommandé : nous proposons la note selon vos bonnes réponses",
+  "academicReviewRecall": "Le retrouver sans regarder",
+  "academicReviewLocked": "Disponible après l’étape 1, pour que la note reflète ce dont vous vous souvenez.",
+  "academicReviewStep1Done": "Révisé. Maintenant, évaluez.",
+  "academicReviewSuggested": "Vous avez {correct} bonnes réponses sur {total}. Nous proposons « {label} ».",
+  "academicReviewSameInterval": "La dernière fois a été difficile, la révision recommence donc : elle revient demain puis de plus en plus espacée.",
+  "academicReviewSave": "Enregistrer la révision",
+  "academicReviewChooseFirst": "Choisissez comment ça s’est passé",
+  "academicReviewDoFirst": "Révisez d’abord",
+  "academicReviewStep1Announce": "Étape 1 terminée : vous pouvez maintenant évaluer",
+  "academicReviewOverdue": "Prévu le {date} · révisez-le aujourd’hui",
+  "academicReviewNoOptions": "Impossible de charger les réponses."
 }

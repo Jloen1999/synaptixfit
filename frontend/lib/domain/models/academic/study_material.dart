@@ -39,7 +39,29 @@ abstract class ReviewPreview with _$ReviewPreview {
     required double maxDailyLoad,
     required double fatigueCoefficient,
     @Default(<ReviewOption>[]) List<ReviewOption> options,
+
+    /// Práctica reciente con preguntas y la nota que propone el servidor con
+    /// ella (nula si no se practicó hace poco).
+    PracticeScore? practice,
   }) = _ReviewPreview;
+
+  const ReviewPreview._();
+
+  /// Todas las opciones llevan al mismo intervalo (p. ej. tras un fallo, SM-2
+  /// empieza de nuevo y tanto fallar como acertar vuelve en 1 día).
+  bool get sameIntervalForAll =>
+      options.length > 1 &&
+      options.every((o) => o.intervalDays == options.first.intervalDays);
+}
+
+/// Aciertos de la práctica reciente y nota de autoevaluación propuesta.
+@freezed
+abstract class PracticeScore with _$PracticeScore {
+  const factory PracticeScore({
+    required int correct,
+    required int answered,
+    required int suggestedQuality,
+  }) = _PracticeScore;
 }
 
 /// Resultado previsto de una autoevaluación concreta.

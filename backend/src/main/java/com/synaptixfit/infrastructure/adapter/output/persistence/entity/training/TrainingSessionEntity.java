@@ -35,6 +35,15 @@ public class TrainingSessionEntity {
     private String tipo;
     @Column(name = "xp_otorgado")
     private int xpOtorgado;
+    @Column(name = "pausada_en")
+    private Instant pausadaEn;
+    @Column(name = "segundos_en_pausa")
+    private int segundosEnPausa;
+
+    public Instant getPausadaEn() { return pausadaEn; }
+    public void setPausadaEn(Instant v) { this.pausadaEn = v; }
+    public int getSegundosEnPausa() { return segundosEnPausa; }
+    public void setSegundosEnPausa(int v) { this.segundosEnPausa = v; }
 
 
     public UUID getId() { return id; }

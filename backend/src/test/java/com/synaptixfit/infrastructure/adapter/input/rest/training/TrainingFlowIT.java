@@ -139,6 +139,21 @@ class TrainingFlowIT {
 
         body(post("/api/v1/training/sessions/" + sessionId + "/sets").content(
                 "{\"plannedExerciseId\":\"" + plannedDay1.get(0) + "\",\"setNumber\":1,\"repsDone\":8,\"weightKg\":42.5}"), token, 200);
+        // Pausar y reanudar (ADR 0030): idempotentes; la serie guarda lo que marcó su cronómetro.
+        String paused = body(post("/api/v1/training/sessions/" + sessionId + "/pause"), token, 200);
+        assertThat((String) JsonPath.read(paused, "$.pausedAt")).isNotNull();
+        body(post("/api/v1/training/sessions/" + sessionId + "/pause"), token, 200);
+        String resumed = body(post("/api/v1/training/sessions/" + sessionId + "/resume"), token, 200);
+        assertThat((Object) JsonPath.read(resumed, "$.pausedAt")).isNull();
+        // Reanudar sin conexión: el móvil manda después cuándo se reanudó de verdad.
+        body(post("/api/v1/training/sessions/" + sessionId + "/pause"), token, 200);
+        String late = body(post("/api/v1/training/sessions/" + sessionId + "/resume")
+                .content("{\"resumedAt\":\"" + java.time.Instant.now() + "\"}"), token, 200);
+        assertThat((Object) JsonPath.read(late, "$.pausedAt")).isNull();
+        String timed = body(post("/api/v1/training/sessions/" + sessionId + "/sets").content(
+                "{\"plannedExerciseId\":\"" + plannedDay1.get(0) + "\",\"setNumber\":1,\"repsDone\":8,\"weightKg\":42.5,"
+                        + "\"activeSeconds\":48}"), token, 200);
+        assertThat((Integer) JsonPath.read(timed, "$.sets[0].activeSeconds")).isEqualTo(48);
         // La duración guardada no pasa del tiempo real: la sesión empezó hace una hora.
         jdbc.sql("UPDATE sesiones_registradas SET creado_en = :t WHERE id = :id")
                 .param("t", java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(3600)))

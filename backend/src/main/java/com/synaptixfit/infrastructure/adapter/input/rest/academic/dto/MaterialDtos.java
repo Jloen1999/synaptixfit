@@ -63,14 +63,21 @@ public final class MaterialDtos {
                                        MasteryState resultingState) {
     }
 
+    /** {@code practice}: práctica reciente y nota propuesta con ella (nula si no se practicó hace poco). */
     public record ReviewPreviewResponse(double loadToday, double maxDailyLoad, double fatigueCoefficient,
-                                        List<ReviewOptionResponse> options) {
+                                        List<ReviewOptionResponse> options, PracticeScoreResponse practice) {
 
         public static ReviewPreviewResponse from(ReviewPreview p) {
             return new ReviewPreviewResponse(p.loadToday(), p.maxDailyLoad(), p.fatigueCoefficient(),
                     p.options().stream().map(o -> new ReviewOptionResponse(o.quality(), o.adjustedQuality(),
-                            o.intervalDays(), o.nextReviewAt(), o.resultingState())).toList());
+                            o.intervalDays(), o.nextReviewAt(), o.resultingState())).toList(),
+                    p.practice() == null ? null : new PracticeScoreResponse(p.practice().correct(),
+                            p.practice().answered(), p.practice().suggestedQuality()));
         }
+    }
+
+    /** Práctica reciente con preguntas del material y la nota que se propone con ella (0-5). */
+    public record PracticeScoreResponse(int correct, int answered, int suggestedQuality) {
     }
 
     public record FlashcardReviewRequest(@NotNull @Min(0) @Max(500) Integer mastered,

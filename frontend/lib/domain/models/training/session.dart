@@ -24,6 +24,10 @@ abstract class SessionSet with _$SessionSet {
     /// Ejercicio que se hizo: se conserva aunque su hueco desaparezca de la
     /// rutina (al quitarlo o sustituirlo).
     String? exerciseId,
+
+    /// Segundos que marcó el cronómetro de la serie (sin sus pausas); nulo
+    /// si se marcó sin usarlo (ADR 0030).
+    int? activeSeconds,
   }) = _SessionSet;
 }
 
@@ -43,11 +47,27 @@ abstract class TrainingSession with _$TrainingSession {
     double? calories,
     @Default(0) int xpAwarded,
     @Default(<SessionSet>[]) List<SessionSet> sets,
+
+    /// Pausa en curso (nula si no está en pausa) y segundos de las pausas ya
+    /// cerradas: no cuentan como tiempo entrenado (ADR 0030).
+    DateTime? pausedAt,
+    @Default(0) int pausedSeconds,
   }) = _TrainingSession;
 
   const TrainingSession._();
 
   bool get isCompleted => status == SessionStatus.completed;
+
+  bool get isPaused => pausedAt != null;
+
+  /// Segundos entrenados hasta [now] (desde que empezó menos las pausas), solo
+  /// para enseñar el cronómetro: la duración que cuenta la acota el servidor.
+  int activeSecondsAt(DateTime now) {
+    final elapsed = now.difference(startedAt).inSeconds;
+    final open = pausedAt == null ? 0 : now.difference(pausedAt!).inSeconds;
+    final active = elapsed - pausedSeconds - (open < 0 ? 0 : open);
+    return active < 0 ? 0 : active;
+  }
 
   /// Series de un ejercicio planificado (o libres si es nulo), ordenadas.
   List<SessionSet> setsFor(String? plannedExerciseId) =>
@@ -67,6 +87,9 @@ abstract class SetRecord with _$SetRecord {
     @Default(0) int failedReps,
     int? durationSeconds,
     int? distanceMeters,
+
+    /// Segundos del cronómetro de la serie, si se usó.
+    int? activeSeconds,
   }) = _SetRecord;
 }
 

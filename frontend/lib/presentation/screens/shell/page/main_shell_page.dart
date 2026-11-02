@@ -9,6 +9,7 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../widgets/focus_timer_bar.dart';
+import '../widgets/open_session_bar.dart';
 import '../widgets/achievements_host.dart';
 
 /// Estructura principal con las pestañas de [StatefulNavigationShell]:
@@ -100,6 +101,7 @@ class MainShellPage extends StatelessWidget {
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const OpenSessionBar(),
             const FocusTimerBar(),
             DecoratedBox(
               decoration: BoxDecoration(
@@ -165,6 +167,11 @@ class MainShellPage extends StatelessWidget {
               children: [
                 Expanded(child: AppFocusGroup(child: shell)),
                 // Abajo, como en el móvil: lejos de la barra de estado.
+                const SafeArea(
+                  top: false,
+                  left: false,
+                  child: OpenSessionBar(),
+                ),
                 const SafeArea(top: false, left: false, child: FocusTimerBar()),
               ],
             ),

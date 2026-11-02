@@ -409,5 +409,19 @@
   "academicNoteDraftDiscard": "Discard",
   "academicReviewAll": "Review all",
   "academicInboxMoveSpoken": "Move “{title}” to a subject",
-  "academicInboxMoving": "Moving…"
+  "academicInboxMoving": "Moving…",
+  "academicReviewStep1": "First, review it",
+  "academicReviewPractice": "Practise with questions",
+  "academicReviewPracticeHint": "Recommended: we suggest your rating from your correct answers",
+  "academicReviewRecall": "Recall it without looking",
+  "academicReviewLocked": "Unlocks after step 1, so the grade reflects what you remember.",
+  "academicReviewStep1Done": "Reviewed. Now rate it.",
+  "academicReviewSuggested": "You got {correct} of {total} right. We suggest “{label}”.",
+  "academicReviewSameInterval": "Last time was hard, so the review starts over: it comes back tomorrow and then further apart each time.",
+  "academicReviewSave": "Save review",
+  "academicReviewChooseFirst": "Choose how it went",
+  "academicReviewDoFirst": "Review it first",
+  "academicReviewStep1Announce": "Step 1 done: you can rate it now",
+  "academicReviewOverdue": "Was due on {date} · review it today",
+  "academicReviewNoOptions": "The answers could not be loaded."
 }

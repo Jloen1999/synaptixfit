@@ -78,6 +78,7 @@ abstract class ReviewPreviewDto with _$ReviewPreviewDto {
     @Default(0) double maxDailyLoad,
     @Default(0) double fatigueCoefficient,
     @Default(<ReviewOptionDto>[]) List<ReviewOptionDto> options,
+    PracticeScoreDto? practice,
   }) = _ReviewPreviewDto;
 
   const ReviewPreviewDto._();
@@ -92,6 +93,27 @@ abstract class ReviewPreviewDto with _$ReviewPreviewDto {
     fatigueCoefficient: fatigueCoefficient,
     options: (options.map((o) => o.toDomain()).toList()
       ..sort((a, b) => a.quality.compareTo(b.quality))),
+    practice: practice?.toDomain(),
+  );
+}
+
+@freezed
+abstract class PracticeScoreDto with _$PracticeScoreDto {
+  const factory PracticeScoreDto({
+    @Default(0) int correct,
+    @Default(0) int answered,
+    @Default(0) int suggestedQuality,
+  }) = _PracticeScoreDto;
+
+  const PracticeScoreDto._();
+
+  factory PracticeScoreDto.fromJson(Map<String, dynamic> json) =>
+      _$PracticeScoreDtoFromJson(json);
+
+  PracticeScore toDomain() => PracticeScore(
+    correct: correct,
+    answered: answered,
+    suggestedQuality: suggestedQuality.clamp(0, 5),
   );
 }
 

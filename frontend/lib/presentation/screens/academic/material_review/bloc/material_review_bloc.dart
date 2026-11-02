@@ -30,6 +30,13 @@ class MaterialReviewBloc
     on<MaterialReviewStarted>(_onStarted);
     on<MaterialReviewQualitySubmitted>(_onSubmitted);
     on<MaterialReviewRemoveRequested>(_onRemoveRequested);
+    on<MaterialReviewPrepared>(
+      (_, emit) => emit(state.copyWith(reviewed: true)),
+    );
+    on<MaterialReviewQualitySelected>(
+      (e, emit) => emit(state.copyWith(selectedQuality: e.quality)),
+    );
+    on<MaterialReviewPracticeReturned>(_onPracticeReturned);
   }
 
   final GetStudyMaterialUseCaseContract _getMaterial;
@@ -81,7 +88,27 @@ class MaterialReviewBloc
               material: material.valueOrNull,
               preview: preview.valueOrNull,
               history: history.valueOrNull ?? const [],
+              // Si ya practicó hace poco, el paso 1 está hecho y se propone la
+              // nota con sus aciertos.
+              reviewed: preview.valueOrNull?.practice != null,
+              selectedQuality: preview.valueOrNull?.practice?.suggestedQuality,
             ),
+    );
+  }
+
+  Future<void> _onPracticeReturned(
+    MaterialReviewPracticeReturned event,
+    Emitter<MaterialReviewState> emit,
+  ) async {
+    emit(state.copyWith(reviewed: true));
+    final preview = (await _getPreview(state.materialId)).valueOrNull;
+    if (preview == null) return;
+    emit(
+      state.copyWith(
+        preview: preview,
+        selectedQuality:
+            state.selectedQuality ?? preview.practice?.suggestedQuality,
+      ),
     );
   }
 

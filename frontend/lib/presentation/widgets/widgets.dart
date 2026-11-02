@@ -27,6 +27,7 @@ export 'app_secondary_button.dart';
 export 'app_section_header.dart';
 export 'app_skeleton.dart';
 export 'app_skeleton_list.dart';
+export 'app_step_badge.dart';
 export 'app_stepper_field.dart';
 export 'app_text_field.dart';
 export 'app_tile_grid.dart';

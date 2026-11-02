@@ -22,6 +22,10 @@ import java.util.UUID;
  *
  * <p>Una sesión abandonada (abierta más de {@link #STALE_AFTER}) nunca se borra sola: se termina con
  * lo registrado, y entonces cuenta en el día en que se hizo ({@link #completionInstant}), o se descarta.
+ *
+ * <p>Pausas (ADR 0030): mientras {@code pausedAt} no es nulo la sesión está en pausa; al reanudar, ese
+ * tiempo se suma a {@code pausedSeconds}. Las pausas no cuentan como entrenamiento: la duración que se
+ * guarda (y con ella la carga física y las calorías) es el tiempo activo ({@link #activeSeconds}).
  */
 public final class TrainingSession {
 
@@ -37,10 +41,19 @@ public final class TrainingSession {
     private Double calories;
     private int xpAwarded;
     private final List<SessionSet> sets;
+    private Instant pausedAt;
+    private long pausedSeconds;
 
     public TrainingSession(UUID id, UUID userId, UUID routineId, UUID dayId, SessionType type, Instant startedAt,
                            Instant completedAt, int durationMinutes, Integer rpe, Double calories, int xpAwarded,
                            List<SessionSet> sets) {
+        this(id, userId, routineId, dayId, type, startedAt, completedAt, durationMinutes, rpe, calories, xpAwarded,
+                sets, null, 0);
+    }
+
+    public TrainingSession(UUID id, UUID userId, UUID routineId, UUID dayId, SessionType type, Instant startedAt,
+                           Instant completedAt, int durationMinutes, Integer rpe, Double calories, int xpAwarded,
+                           List<SessionSet> sets, Instant pausedAt, long pausedSeconds) {
         this.id = Objects.requireNonNull(id, "id");
         this.userId = Objects.requireNonNull(userId, "userId");
         this.routineId = routineId;
@@ -53,6 +66,8 @@ public final class TrainingSession {
         this.calories = calories;
         this.xpAwarded = Math.max(0, xpAwarded);
         this.sets = new ArrayList<>(sets == null ? List.of() : sets);
+        this.pausedAt = completedAt == null ? pausedAt : null;
+        this.pausedSeconds = Math.max(0, pausedSeconds);
     }
 
     /**
@@ -75,13 +90,66 @@ public final class TrainingSession {
     }
 
     /**
-     * Duración que se guarda al terminar: la que manda el cliente, pero nunca más que el tiempo real
-     * desde que empezó ni que {@link #MAX_DURATION} (una sesión olvidada abierta no suma 24 h de
-     * carga ni de calorías).
+     * Duración que se guarda al terminar: la que manda el cliente, pero nunca más que el tiempo activo
+     * desde que empezó (sin pausas) ni que {@link #MAX_DURATION} (una sesión olvidada abierta no suma
+     * 24 h de carga ni de calorías).
      */
     public long boundedDurationSeconds(long requestedSeconds, Instant now) {
-        long elapsed = Math.max(1, Duration.between(startedAt, now).toSeconds());
-        return Math.max(1, Math.min(requestedSeconds, Math.min(elapsed, MAX_DURATION.toSeconds())));
+        long active = Math.max(1, activeSeconds(now));
+        return Math.max(1, Math.min(requestedSeconds, Math.min(active, MAX_DURATION.toSeconds())));
+    }
+
+    /** Segundos entrenados hasta {@code now}: desde que empezó, menos las pausas (también la que siga abierta). */
+    public long activeSeconds(Instant now) {
+        long elapsed = Duration.between(startedAt, now).toSeconds();
+        return Math.max(0, elapsed - pausedSecondsAt(now));
+    }
+
+    /** Segundos en pausa hasta {@code now}, incluida la pausa en curso. */
+    public long pausedSecondsAt(Instant now) {
+        long open = pausedAt == null ? 0 : Math.max(0, Duration.between(pausedAt, now).toSeconds());
+        return pausedSeconds + open;
+    }
+
+    /**
+     * Pausa la sesión (una llamada, una máquina ocupada…): el tiempo deja de contar hasta reanudarla.
+     * Pausar una sesión ya pausada no hace nada, para que un doble toque o un reintento no falle.
+     */
+    public void pause(Instant now) {
+        ensureInProgress();
+        if (pausedAt == null) {
+            pausedAt = now.isBefore(startedAt) ? startedAt : now;
+        }
+    }
+
+    /** Reanuda la sesión: el tiempo en pausa se acumula. Reanudar una sesión que no está en pausa no hace nada. */
+    public void resume(Instant now) {
+        resume(now, now);
+    }
+
+    /**
+     * Reanuda la sesión como si se hubiera hecho en {@code resumedAt}: el móvil reanuda al momento y,
+     * sin conexión, avisa más tarde. Se acota entre el inicio de la pausa y {@code now}, así que nunca
+     * descuenta menos pausa de la que hubo hasta ese toque ni inventa tiempo futuro.
+     */
+    public void resume(Instant resumedAt, Instant now) {
+        ensureInProgress();
+        if (pausedAt == null) {
+            return;
+        }
+        Instant at = resumedAt == null || resumedAt.isAfter(now) ? now : resumedAt;
+        closePause(at.isBefore(pausedAt) ? pausedAt : at);
+    }
+
+    private void closePause(Instant now) {
+        if (pausedAt != null) {
+            pausedSeconds += Math.max(0, Duration.between(pausedAt, now).toSeconds());
+            pausedAt = null;
+        }
+    }
+
+    public boolean isPaused() {
+        return pausedAt != null;
     }
 
     /**
@@ -89,7 +157,12 @@ public final class TrainingSession {
      * empezó. Así la carga, la XP y los retos caen en el día en que de verdad se entrenó.
      */
     public Instant completionInstant(long boundedDurationSeconds, Instant now) {
-        return isStale(now) ? startedAt.plusSeconds(Math.max(1, boundedDurationSeconds)) : now;
+        if (!isStale(now)) {
+            return now;
+        }
+        // Las pausas ya cerradas también pasaron ese día; una pausa que quedó abierta no (se dejó así).
+        Instant end = startedAt.plusSeconds(Math.max(1, boundedDurationSeconds) + pausedSeconds);
+        return end.isAfter(now) ? now : end;
     }
 
     /** Día local en que se terminó (null si sigue en curso). */
@@ -129,10 +202,18 @@ public final class TrainingSession {
     public SessionSet recordSet(UUID plannedExerciseId, UUID exerciseId, int setNumber, Integer repsDone,
                                 Double weightKg, boolean completed, int failedReps, Integer durationSeconds,
                                 Integer distanceMeters) {
+        return recordSet(plannedExerciseId, exerciseId, setNumber, repsDone, weightKg, completed, failedReps,
+                durationSeconds, distanceMeters, null);
+    }
+
+    /** Como el anterior, con los segundos que marcó el cronómetro de la serie (null si no se usó). */
+    public SessionSet recordSet(UUID plannedExerciseId, UUID exerciseId, int setNumber, Integer repsDone,
+                                Double weightKg, boolean completed, int failedReps, Integer durationSeconds,
+                                Integer distanceMeters, Integer activeSeconds) {
         ensureInProgress();
         sets.removeIf(s -> Objects.equals(s.plannedExerciseId(), plannedExerciseId) && s.setNumber() == setNumber);
         SessionSet set = new SessionSet(UUID.randomUUID(), plannedExerciseId, setNumber, repsDone, weightKg,
-                completed, failedReps, durationSeconds, distanceMeters, exerciseId);
+                completed, failedReps, durationSeconds, distanceMeters, exerciseId, activeSeconds);
         sets.add(set);
         return set;
     }
@@ -149,6 +230,7 @@ public final class TrainingSession {
         ensureInProgress();
         Guard.range(sessionRpe, "rpe", 1, 10);
         Guard.range((double) durationSeconds, "durationSeconds", 1, 86_400);
+        closePause(now.isBefore(startedAt) ? startedAt : now);
         this.durationMinutes = minutesOf(durationSeconds);
         this.rpe = sessionRpe;
         this.calories = Math.round(sessionCalories * 10) / 10.0;
@@ -207,6 +289,7 @@ public final class TrainingSession {
         this.rpe = null;
         this.calories = null;
         this.xpAwarded = 0;
+        this.pausedAt = null;
         return snapshot;
     }
 
@@ -235,6 +318,8 @@ public final class TrainingSession {
     public Integer rpe() { return rpe; }
     public Double calories() { return calories; }
     public int xpAwarded() { return xpAwarded; }
+    public Instant pausedAt() { return pausedAt; }
+    public long pausedSeconds() { return pausedSeconds; }
 
     public List<SessionSet> sets() {
         return sets.stream()

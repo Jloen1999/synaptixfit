@@ -9,7 +9,9 @@ import com.synaptixfit.application.port.input.training.FinishTrainingSessionUseC
 import com.synaptixfit.application.port.input.training.GetTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.ListTrainingSessionsUseCase;
 import com.synaptixfit.application.port.input.training.LogPastRoutineSessionUseCase;
+import com.synaptixfit.application.port.input.training.PauseTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
+import com.synaptixfit.application.port.input.training.ResumeTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.StartTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.UnmarkTrainingSessionUseCase;
 import com.synaptixfit.domain.event.training.TrainingSessionCompletionChanged;
@@ -73,7 +75,8 @@ import java.util.stream.Collectors;
 public class TrainingSessionService implements StartTrainingSessionUseCase, RecordSessionSetUseCase,
         DeleteSessionSetUseCase, FinishTrainingSessionUseCase, UnmarkTrainingSessionUseCase,
         DeleteTrainingSessionUseCase, CorrectTrainingSessionUseCase, LogPastRoutineSessionUseCase,
-        ListTrainingSessionsUseCase, GetTrainingSessionUseCase {
+        ListTrainingSessionsUseCase, GetTrainingSessionUseCase, PauseTrainingSessionUseCase,
+        ResumeTrainingSessionUseCase {
 
     /** Hasta cuántos días atrás se puede registrar una sesión pasada (igual que «Actividad pasada»). */
     static final int PAST_SESSION_MAX_DAYS = 7;
@@ -149,6 +152,20 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
     public TrainingSession recordSet(RecordSessionSetUseCase.Command c) {
         TrainingSession session = owned(c.userId(), c.sessionId());
         applySet(session, c);
+        return sessions.save(session);
+    }
+
+    @Override
+    public TrainingSession pause(UUID userId, UUID sessionId) {
+        TrainingSession session = owned(userId, sessionId);
+        session.pause(clock.instant());
+        return sessions.save(session);
+    }
+
+    @Override
+    public TrainingSession resume(UUID userId, UUID sessionId, Instant resumedAt) {
+        TrainingSession session = owned(userId, sessionId);
+        session.resume(resumedAt, clock.instant());
         return sessions.save(session);
     }
 
@@ -356,7 +373,7 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         }
         session.recordSet(planned.map(PlannedExercise::id).orElse(null),
                 planned.map(PlannedExercise::exerciseId).orElse(null), c.setNumber(), c.repsDone(), c.weightKg(),
-                c.completed(), c.failedReps(), c.durationSeconds(), c.distanceMeters());
+                c.completed(), c.failedReps(), c.durationSeconds(), c.distanceMeters(), c.activeSeconds());
     }
 
     private TrainingSession owned(UUID userId, UUID sessionId) {

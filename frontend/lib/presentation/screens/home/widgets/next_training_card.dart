@@ -64,6 +64,62 @@ class NextTrainingCard extends StatelessWidget {
           AppCoverCard(
             imageUrl: next.coverImageUrl,
             padding: const EdgeInsets.all(TokensSpacing.m),
+            // Progreso y botones a todo el ancho, sin la foto detrás.
+            footer: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (next.totalDays > 0) ...[
+                  const SizedBox(height: TokensSpacing.s),
+                  AppCycleProgress(
+                    progress: next.cycleProgress,
+                    label: l10n.trainingDaysProgress(
+                      next.completedDays + next.skippedDays,
+                      next.totalDays,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: TokensSpacing.m),
+                Wrap(
+                  spacing: TokensSpacing.s,
+                  runSpacing: TokensSpacing.s,
+                  children: [
+                    AppPrimaryButton(
+                      label: next.inProgress
+                          ? l10n.homeTrainingContinue
+                          : l10n.homeTrainingStart,
+                      icon: Icons.play_arrow_rounded,
+                      loading: starting,
+                      onPressed: onStart,
+                    ),
+                    if (!checkInDone)
+                      AppSecondaryButton(
+                        label: l10n.homeTrainingCheckIn,
+                        icon: const Icon(Icons.fact_check_outlined),
+                        onPressed: starting ? null : onCheckIn,
+                      ),
+                  ],
+                ),
+                if (checkInDone) ...[
+                  const SizedBox(height: TokensSpacing.s),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: TokensSize.iconXs,
+                        color: context.palette.success,
+                      ),
+                      const SizedBox(width: TokensSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          l10n.homeTrainingCheckInDone,
+                          style: context.textStyles.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -127,56 +183,6 @@ class NextTrainingCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                if (next.totalDays > 0) ...[
-                  const SizedBox(height: TokensSpacing.s),
-                  AppCycleProgress(
-                    progress: next.cycleProgress,
-                    label: l10n.trainingDaysProgress(
-                      next.completedDays + next.skippedDays,
-                      next.totalDays,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: TokensSpacing.m),
-                Wrap(
-                  spacing: TokensSpacing.s,
-                  runSpacing: TokensSpacing.s,
-                  children: [
-                    AppPrimaryButton(
-                      label: next.inProgress
-                          ? l10n.homeTrainingContinue
-                          : l10n.homeTrainingStart,
-                      icon: Icons.play_arrow_rounded,
-                      loading: starting,
-                      onPressed: onStart,
-                    ),
-                    if (!checkInDone)
-                      AppSecondaryButton(
-                        label: l10n.homeTrainingCheckIn,
-                        icon: const Icon(Icons.fact_check_outlined),
-                        onPressed: starting ? null : onCheckIn,
-                      ),
-                  ],
-                ),
-                if (checkInDone) ...[
-                  const SizedBox(height: TokensSpacing.s),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        size: TokensSize.iconXs,
-                        color: context.palette.success,
-                      ),
-                      const SizedBox(width: TokensSpacing.xs),
-                      Expanded(
-                        child: Text(
-                          l10n.homeTrainingCheckInDone,
-                          style: context.textStyles.bodySmall,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),

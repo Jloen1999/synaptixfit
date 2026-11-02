@@ -366,80 +366,10 @@ class _PendingDayCard extends StatelessWidget {
       imageUrl: day.coverImageUrl,
       // Sin toque en toda la tarjeta: lleva sus propios botones (nada de
       // controles anidados); la rutina se abre con «Ver rutina».
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      // Lo que necesita el ancho entero va al pie, sin la foto detrás.
+      footer: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.bolt_rounded,
-                color: context.colors.primary,
-                size: TokensSize.iconS,
-              ),
-              const SizedBox(width: TokensSpacing.xs),
-              // Expanded: con el texto al 200 % la etiqueta se parte en vez
-              // de desbordar la fila.
-              Expanded(
-                child: Text(
-                  l10n.trainingNextWorkout,
-                  style: context.textStyles.labelLarge?.copyWith(
-                    color: context.colors.primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          Text(
-            dayTitle(l10n, day.dayNumber, day.dayName),
-            style: context.textStyles.headlineSmall,
-          ),
-          // Cuándo toca, en qué semana va y qué sesión de la semana es.
-          Text(
-            [
-              nextDayHeadline(
-                l10n,
-                date: day.scheduledDate,
-                weekNumber: day.weekNumber,
-                totalWeeks: day.totalWeeks,
-                dayNumber: day.dayNumber,
-              ),
-              l10n.trainingSessionOfWeek(day.sessionOfWeek, day.sessionsInWeek),
-            ].join(' · '),
-            style: context.textStyles.bodyMedium,
-          ),
-          Text(
-            day.routineName,
-            style: context.textStyles.labelMedium?.copyWith(
-              color: context.colors.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          Wrap(
-            spacing: TokensSpacing.xs,
-            runSpacing: TokensSpacing.xs,
-            children: [
-              if (day.overdue && day.scheduledDate != null)
-                AppCoverPill(
-                  icon: Icons.schedule_rounded,
-                  color: context.palette.warning,
-                  label: overdueSinceLabel(l10n, day.scheduledDate!),
-                ),
-              AppCoverPill(
-                icon: Icons.fitness_center_rounded,
-                label: l10n.trainingExercisesCount(day.exercises.length),
-              ),
-              // Duración prevista (la calcula el servidor).
-              if (day.estimatedMinutes > 0)
-                AppCoverPill(
-                  icon: Icons.timer_outlined,
-                  label: l10n.trainingEstimatedMinutes(day.estimatedMinutes),
-                  semanticLabel: l10n.trainingEstimatedMinutesSpoken(
-                    day.estimatedMinutes,
-                  ),
-                ),
-            ],
-          ),
           if (day.totalDays > 0) ...[
             const SizedBox(height: TokensSpacing.s),
             AppCycleProgress(
@@ -521,6 +451,82 @@ class _PendingDayCard extends StatelessWidget {
                           );
                           if (ok) onSkip(day);
                         },
+                ),
+            ],
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.bolt_rounded,
+                color: context.colors.primary,
+                size: TokensSize.iconS,
+              ),
+              const SizedBox(width: TokensSpacing.xs),
+              // Expanded: con el texto al 200 % la etiqueta se parte en vez
+              // de desbordar la fila.
+              Expanded(
+                child: Text(
+                  l10n.trainingNextWorkout,
+                  style: context.textStyles.labelLarge?.copyWith(
+                    color: context.colors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.s),
+          Text(
+            dayTitle(l10n, day.dayNumber, day.dayName),
+            style: context.textStyles.headlineSmall,
+          ),
+          // Cuándo toca, en qué semana va y qué sesión de la semana es.
+          Text(
+            [
+              nextDayHeadline(
+                l10n,
+                date: day.scheduledDate,
+                weekNumber: day.weekNumber,
+                totalWeeks: day.totalWeeks,
+                dayNumber: day.dayNumber,
+              ),
+              l10n.trainingSessionOfWeek(day.sessionOfWeek, day.sessionsInWeek),
+            ].join(' · '),
+            style: context.textStyles.bodyMedium,
+          ),
+          Text(
+            day.routineName,
+            style: context.textStyles.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: TokensSpacing.s),
+          Wrap(
+            spacing: TokensSpacing.xs,
+            runSpacing: TokensSpacing.xs,
+            children: [
+              if (day.overdue && day.scheduledDate != null)
+                AppCoverPill(
+                  icon: Icons.schedule_rounded,
+                  color: context.palette.warning,
+                  label: overdueSinceLabel(l10n, day.scheduledDate!),
+                ),
+              AppCoverPill(
+                icon: Icons.fitness_center_rounded,
+                label: l10n.trainingExercisesCount(day.exercises.length),
+              ),
+              // Duración prevista (la calcula el servidor).
+              if (day.estimatedMinutes > 0)
+                AppCoverPill(
+                  icon: Icons.timer_outlined,
+                  label: l10n.trainingEstimatedMinutes(day.estimatedMinutes),
+                  semanticLabel: l10n.trainingEstimatedMinutesSpoken(
+                    day.estimatedMinutes,
+                  ),
                 ),
             ],
           ),

@@ -35,6 +35,12 @@ public class SessionSetEntity {
     private Integer duracionSegundos;
     @Column(name = "distancia_metros")
     private Integer distanciaMetros;
+    @Column(name = "segundos_activos")
+    private Integer segundosActivos;
+
+    public Integer getSegundosActivos() { return segundosActivos; }
+    public void setSegundosActivos(Integer v) { this.segundosActivos = v; }
+
     @Column(name = "ejercicio_id")
     private UUID ejercicioId;
 

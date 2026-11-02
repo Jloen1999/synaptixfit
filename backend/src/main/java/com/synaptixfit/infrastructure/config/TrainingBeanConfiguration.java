@@ -49,7 +49,9 @@ import com.synaptixfit.application.port.input.training.ListRecommendationsUseCas
 import com.synaptixfit.application.port.input.training.ListTrainingSessionsUseCase;
 import com.synaptixfit.application.port.input.training.ListWeeklyPlansUseCase;
 import com.synaptixfit.application.port.input.training.PrivatizeUserRoutinesUseCase;
+import com.synaptixfit.application.port.input.training.PauseTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
+import com.synaptixfit.application.port.input.training.ResumeTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.RefineRoutineProposalUseCase;
 import com.synaptixfit.application.port.input.training.RemoveRoutineExerciseUseCase;
 import com.synaptixfit.application.port.input.training.RenameRoutineDayUseCase;
@@ -456,6 +458,16 @@ public class TrainingBeanConfiguration {
     @Bean
     DeleteSessionSetUseCase deleteSessionSetUseCase() {
         return tx.wrap(DeleteSessionSetUseCase.class, trainingSessionService());
+    }
+
+    @Bean
+    PauseTrainingSessionUseCase pauseTrainingSessionUseCase() {
+        return tx.wrap(PauseTrainingSessionUseCase.class, trainingSessionService());
+    }
+
+    @Bean
+    ResumeTrainingSessionUseCase resumeTrainingSessionUseCase() {
+        return tx.wrap(ResumeTrainingSessionUseCase.class, trainingSessionService());
     }
 
     @Bean

@@ -11,7 +11,9 @@ import com.synaptixfit.application.port.input.training.GetTrainingSessionUseCase
 import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
 import com.synaptixfit.application.port.input.training.ListTrainingSessionsUseCase;
 import com.synaptixfit.application.port.input.training.LogPastRoutineSessionUseCase;
+import com.synaptixfit.application.port.input.training.PauseTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
+import com.synaptixfit.application.port.input.training.ResumeTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.StartTrainingSessionUseCase;
 import com.synaptixfit.application.port.input.training.UnmarkTrainingSessionUseCase;
 import com.synaptixfit.domain.model.shared.PageRequest;
@@ -28,12 +30,14 @@ import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDto
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.PastSessionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.PastSessionResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.RecordSetRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.ResumeSessionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.SessionAdaptationResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.SessionResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.StartSessionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.SessionDtos.UnmarkSessionResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -69,6 +73,8 @@ public class TrainingSessionController {
     private final GetPendingTrainingDayUseCase pendingDay;
     private final GetSessionAdaptationUseCase adaptation;
     private final GetLoadSuggestionsUseCase loadSuggestions;
+    private final PauseTrainingSessionUseCase pause;
+    private final ResumeTrainingSessionUseCase resume;
 
     public TrainingSessionController(StartTrainingSessionUseCase start, RecordSessionSetUseCase recordSet,
                                      DeleteSessionSetUseCase deleteSet, FinishTrainingSessionUseCase finish,
@@ -78,7 +84,10 @@ public class TrainingSessionController {
                                      ListTrainingSessionsUseCase list, GetTrainingSessionUseCase get,
                                      GetPendingTrainingDayUseCase pendingDay,
                                      GetSessionAdaptationUseCase adaptation,
-                                     GetLoadSuggestionsUseCase loadSuggestions) {
+                                     GetLoadSuggestionsUseCase loadSuggestions,
+                                     PauseTrainingSessionUseCase pause, ResumeTrainingSessionUseCase resume) {
+        this.pause = pause;
+        this.resume = resume;
         this.start = start;
         this.recordSet = recordSet;
         this.deleteSet = deleteSet;
@@ -142,6 +151,20 @@ public class TrainingSessionController {
     public SessionResponse recordSet(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
                                      @Valid @RequestBody RecordSetRequest request) {
         return SessionResponse.from(recordSet.recordSet(request.toCommand(userId, sessionId)));
+    }
+
+    /** Pausa la sesión: el tiempo deja de contar para la duración (y la carga) hasta reanudarla. */
+    @PostMapping("/sessions/{sessionId}/pause")
+    public SessionResponse pause(@CurrentUserId UUID userId, @PathVariable UUID sessionId) {
+        return SessionResponse.from(pause.pause(userId, sessionId));
+    }
+
+    /** Reanuda una sesión en pausa; el cuerpo es opcional (sin él, se reanuda ahora). */
+    @PostMapping("/sessions/{sessionId}/resume")
+    public SessionResponse resume(@CurrentUserId UUID userId, @PathVariable UUID sessionId,
+                                  @RequestBody(required = false) ResumeSessionRequest request) {
+        Instant resumedAt = request == null ? null : request.resumedAt();
+        return SessionResponse.from(resume.resume(userId, sessionId, resumedAt));
     }
 
     @DeleteMapping("/sessions/{sessionId}/sets/{setId}")

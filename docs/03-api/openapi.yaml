@@ -975,6 +975,49 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/SessionResponse"
+  /api/v1/training/sessions/{sessionId}/resume:
+    post:
+      tags:
+      - Training sessions
+      operationId: resume
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResumeSessionRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+  /api/v1/training/sessions/{sessionId}/pause:
+    post:
+      tags:
+      - Training sessions
+      operationId: pause
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
   /api/v1/training/sessions/{sessionId}/finish:
     post:
       tags:
@@ -8677,6 +8720,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SessionSetResponse"
+        pausedAt:
+          type: string
+          format: date-time
+        pausedSeconds:
+          type: integer
+          format: int64
     SessionSetResponse:
       type: object
       properties:
@@ -8709,6 +8758,9 @@ components:
         exerciseId:
           type: string
           format: uuid
+        activeSeconds:
+          type: integer
+          format: int32
     ExperienceResponse:
       type: object
       properties:
@@ -8769,8 +8821,19 @@ components:
           format: int32
           maximum: 100000
           minimum: 0
+        activeSeconds:
+          type: integer
+          format: int32
+          maximum: 14400
+          minimum: 0
       required:
       - setNumber
+    ResumeSessionRequest:
+      type: object
+      properties:
+        resumedAt:
+          type: string
+          format: date-time
     FinishSessionRequest:
       type: object
       properties:
@@ -12455,6 +12518,18 @@ components:
             - PRACTICE
             - TEACHING_GUIDE
           uniqueItems: true
+    PracticeScoreResponse:
+      type: object
+      properties:
+        correct:
+          type: integer
+          format: int32
+        answered:
+          type: integer
+          format: int32
+        suggestedQuality:
+          type: integer
+          format: int32
     ReviewOptionResponse:
       type: object
       properties:
@@ -12494,6 +12569,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReviewOptionResponse"
+        practice:
+          $ref: "#/components/schemas/PracticeScoreResponse"
     PublicProfileResponse:
       type: object
       properties:

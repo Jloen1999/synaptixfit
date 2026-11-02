@@ -13,6 +13,5 @@ class GetOpenSessionsUseCase implements GetOpenSessionsUseCaseContract {
   final TrainingRepositoryContract _repository;
 
   @override
-  Future<AppResult<List<OpenSession>>> call() =>
-      _repository.getOpenSessions();
+  Future<AppResult<List<OpenSession>>> call() => _repository.getOpenSessions();
 }

@@ -1,5 +1,10 @@
 package com.synaptixfit.application.service.academic;
 
+import java.util.Optional;
+import com.synaptixfit.domain.port.output.academic.QuestionBankRepositoryPort;
+import com.synaptixfit.domain.port.output.academic.QuestionAttemptRepositoryPort;
+import com.synaptixfit.domain.model.academic.Question;
+import com.synaptixfit.domain.model.academic.PracticeScore;
 import com.synaptixfit.application.port.input.academic.AbandonStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.academic.DeleteStudyMaterialUseCase;
 import com.synaptixfit.application.port.input.academic.GetRetentionMetricsUseCase;
@@ -70,13 +75,23 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
     private final Clock clock;
     private final ZoneId zone;
     private final AcademicLookups lookups;
+    private final QuestionBankRepositoryPort banks;
+    private final QuestionAttemptRepositoryPort attempts;
 
-    /** @param zone zona que define «hoy» para la carga física del día (la misma que usan los indicadores) */
+    /**
+     * @param zone     zona que define «hoy» para la carga física del día (la misma que usan los indicadores)
+     * @param banks    bancos de preguntas, para proponer la nota del repaso con la práctica reciente
+     *                 ({@link PracticeScore})
+     * @param attempts respuestas a esas preguntas
+     */
     public StudyMaterialService(StudyMaterialRepositoryPort materials, ReviewRecordRepositoryPort reviews,
                                 PhysicalLoadPort physicalLoad, SubjectRepositoryPort subjects,
                                 NoteRepositoryPort notes, SubjectFileRepositoryPort files,
                                 AiDocumentRepositoryPort aiDocuments, DomainEventPublisherPort events,
-                                AwardExperienceUseCase awardExperience, Clock clock, ZoneId zone) {
+                                AwardExperienceUseCase awardExperience, Clock clock, ZoneId zone,
+                                QuestionBankRepositoryPort banks, QuestionAttemptRepositoryPort attempts) {
+        this.banks = banks;
+        this.attempts = attempts;
         this.materials = materials;
         this.reviews = reviews;
         this.physicalLoad = physicalLoad;
@@ -156,7 +171,19 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
             options.add(new ReviewPreview.Option(q, round(adjusted, 2), r.intervalDays(),
                     m.nextReviewAfter(r, now), r.masteryState()));
         }
-        return new ReviewPreview(f.today(), f.max(), round(f.coefficient(), 3), options);
+        return new ReviewPreview(f.today(), f.max(), round(f.coefficient(), 3), options,
+                recentPractice(userId, m, now).orElse(null));
+    }
+
+    /** Práctica con preguntas del material en las últimas horas, para proponer la nota del repaso. */
+    private Optional<PracticeScore> recentPractice(UUID userId, StudyMaterial m, Instant now) {
+        List<UUID> questionIds = banks.findByMaterial(m.id())
+                .map(b -> banks.findQuestions(b.id()).stream().map(Question::id).toList())
+                .orElse(List.of());
+        if (questionIds.isEmpty()) {
+            return Optional.empty();
+        }
+        return PracticeScore.from(attempts.findByUserAndQuestions(userId, questionIds), m.lastReviewedAt(), now);
     }
 
     @Override

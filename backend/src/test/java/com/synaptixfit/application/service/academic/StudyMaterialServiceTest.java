@@ -8,6 +8,11 @@ import com.synaptixfit.application.port.input.academic.ReviewFlashcardsUseCase;
 import com.synaptixfit.domain.event.academic.ReviewAbandoned;
 import com.synaptixfit.domain.event.academic.ReviewCompleted;
 import com.synaptixfit.domain.model.academic.PracticeRewards;
+import com.synaptixfit.domain.model.academic.Question;
+import com.synaptixfit.domain.model.academic.QuestionAttempt;
+import com.synaptixfit.domain.model.academic.QuestionBank;
+import com.synaptixfit.domain.model.academic.QuestionDraft;
+import com.synaptixfit.domain.model.academic.QuestionType;
 import com.synaptixfit.domain.event.academic.ReviewScheduled;
 import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.exception.academic.StudyMaterialNotFoundException;
@@ -23,6 +28,8 @@ import com.synaptixfit.domain.model.academic.Subject;
 import com.synaptixfit.domain.model.insights.PhysicalLoadHistory;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -31,7 +38,8 @@ class StudyMaterialServiceTest {
 
     private final AcademicFakes f = new AcademicFakes();
     private final StudyMaterialService service = new StudyMaterialService(f.materials, f.reviews, f.physicalLoad,
-            f.subjects, f.notes, f.files, f.aiDocuments, f.events::add, f.award, AcademicFakes.CLOCK, ZoneOffset.UTC);
+            f.subjects, f.notes, f.files, f.aiDocuments, f.events::add, f.award, AcademicFakes.CLOCK, ZoneOffset.UTC,
+            f.banks, f.attempts);
     private final UUID user = UUID.randomUUID();
     private final UUID stranger = UUID.randomUUID();
 
@@ -181,7 +189,8 @@ class StudyMaterialServiceTest {
         // El repaso anticipado también avanza SM-2 (intervalo de 6 días): a la semana vuelve a tocar.
         var nextWeek = new StudyMaterialService(f.materials, f.reviews, f.physicalLoad, f.subjects, f.notes, f.files,
                 f.aiDocuments, f.events::add, f.award,
-                java.time.Clock.fixed(AcademicFakes.NOW.plus(Duration.ofDays(7)), ZoneOffset.UTC), ZoneOffset.UTC);
+                java.time.Clock.fixed(AcademicFakes.NOW.plus(Duration.ofDays(7)), ZoneOffset.UTC), ZoneOffset.UTC,
+                f.banks, f.attempts);
         assertThat(nextWeek.review(user, m.id(), 4).xpAwarded()).isEqualTo(PracticeRewards.DUE_REVIEW_XP);
         assertThat(f.xp.get(user)).isEqualTo(2 * PracticeRewards.DUE_REVIEW_XP);
     }
@@ -207,7 +216,7 @@ class StudyMaterialServiceTest {
         var later = new StudyMaterialService(f.materials, f.reviews, f.physicalLoad, f.subjects, f.notes, f.files,
                 f.aiDocuments, f.events::add, f.award,
                 java.time.Clock.fixed(AcademicFakes.NOW.plus(Duration.ofDays(2)), java.time.ZoneOffset.UTC),
-                ZoneOffset.UTC);
+                ZoneOffset.UTC, f.banks, f.attempts);
         assertThat(later.listDue(user, 10)).extracting(StudyMaterial::id).containsExactly(due.id());
 
         var metrics = service.retention(user, s.id());
@@ -215,5 +224,41 @@ class StudyMaterialServiceTest {
         assertThat(metrics.needsReview()).isEqualTo(1);
         assertThat(metrics.notEvaluated()).isEqualTo(1);
         assertThat(fresh.masteryState()).isEqualTo(MasteryState.NOT_EVALUATED);
+    }
+
+    @Test
+    void previewProposesTheGradeOnlyWithRecentPracticeAfterTheLastReview() {
+        Subject s = f.subject(user, "Física");
+        StudyMaterial m = f.material(user, s.id(), UUID.randomUUID());
+        // Sin banco de preguntas no hay propuesta.
+        assertThat(service.previewReview(user, m.id()).practice()).isNull();
+
+        // Con banco vacío, tampoco.
+        QuestionBank bank = f.banks.save(QuestionBank.create(m.id(), user, AcademicFakes.NOW));
+        assertThat(service.previewReview(user, m.id()).practice()).isNull();
+
+        // 3 de 4 respuestas bien hace 10 minutos: 75 % → «Bien» (4).
+        List<Question> questions = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            questions.add(Question.from(new QuestionDraft(QuestionType.FILL_IN_BLANK, "P" + i, null, "R" + i, null),
+                    bank.id(), i));
+        }
+        f.banks.replaceQuestions(bank.id(), questions);
+        for (int i = 0; i < 4; i++) {
+            f.attempts.save(QuestionAttempt.of(user, questions.get(i).id(), i < 3,
+                    AcademicFakes.NOW.minus(Duration.ofMinutes(10))));
+        }
+        ReviewPreview preview = service.previewReview(user, m.id());
+        assertThat(preview.practice()).isNotNull();
+        assertThat(preview.practice().correct()).isEqualTo(3);
+        assertThat(preview.practice().answered()).isEqualTo(4);
+        assertThat(preview.practice().suggestedQuality()).isEqualTo(4);
+        // Otra persona no ve la práctica ajena.
+        assertThatThrownBy(() -> service.previewReview(stranger, m.id()))
+                .isInstanceOf(StudyMaterialNotFoundException.class);
+
+        // Tras repasar, lo practicado antes ya se valoró: no se vuelve a proponer.
+        service.review(user, m.id(), 4);
+        assertThat(service.previewReview(user, m.id()).practice()).isNull();
     }
 }

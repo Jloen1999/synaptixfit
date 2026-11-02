@@ -1968,5 +1968,162 @@
         "type": "int"
       }
     }
+  },
+  "trainingClockIntroTitle": "El cronómetro ya está en marcha",
+  "trainingClockIntroEstimate": "Calculamos unos {minutes} min para hoy",
+  "@trainingClockIntroEstimate": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingClockIntroPoint1": "El tiempo de la sesión ya corre: lo ves arriba en naranja.",
+  "trainingClockIntroPoint2": "Cada serie tiene su propio cronómetro: lo empiezas y lo pausas tú. Es opcional: puedes marcar una serie sin usarlo.",
+  "trainingClockIntroPoint3": "Las pausas no cuentan: el tiempo real sirve para tu carga física y tus calorías.",
+  "trainingClockIntroHide": "No volver a explicarlo",
+  "trainingClockIntroStart": "Entendido, a entrenar",
+  "trainingClockIntroNotYet": "Ahora no: pausar y salir",
+  "trainingLiveExercisesProgress": "{done} de {total} ejercicios",
+  "@trainingLiveExercisesProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingClockSpoken": "Tiempo real de la sesión, sin pausas: {time}",
+  "@trainingClockSpoken": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingClockPausedSpoken": "Sesión en pausa. Tiempo real: {time}",
+  "@trainingClockPausedSpoken": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingPausedBanner": "Sesión en pausa: el tiempo no corre",
+  "trainingPause": "Pausar",
+  "trainingResume": "Reanudar",
+  "trainingSetTimerStart": "Cronometrar",
+  "trainingSetTimerRunning": "Serie {set} en curso",
+  "@trainingSetTimerRunning": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetTimerPaused": "Serie {set} en pausa: no cuenta",
+  "@trainingSetTimerPaused": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetDoneShort": "Serie hecha",
+  "trainingSetActiveTime": "Tardaste {time}",
+  "@trainingSetActiveTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLeaveTitle": "¿Salir sin terminar?",
+  "trainingLeaveMessage": "{count, plural, =0{Aún no has marcado ninguna serie.} =1{No pierdes nada: la serie que has marcado ya está guardada.} other{No pierdes nada: las {count} series que has marcado ya están guardadas.}}",
+  "trainingLeavePause": "Pausar y salir",
+  "trainingLeavePauseHint": "El tiempo se para hasta que vuelvas",
+  "trainingLeaveFinish": "Terminar ahora",
+  "trainingLeaveFinishHint": "Se guarda con lo que has hecho",
+  "trainingLeaveStay": "Seguir entrenando",
+  "trainingLeaveStale": "Si la dejas abierta más de 6 horas, al volver te preguntaremos si la terminas con lo hecho o la descartas.",
+  "trainingLeaveDiscard": "Descartar la sesión",
+  "trainingOpenSessionPaused": "Sesión en pausa · {time}",
+  "@trainingOpenSessionPaused": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingOpenSessionRunning": "Sesión en curso",
+  "trainingOpenSessionBack": "Volver",
+  "trainingOpenSessionSpoken": "{status}. Volver a la sesión",
+  "@trainingOpenSessionSpoken": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingLeaveExitTooltip": "Salir de la sesión",
+  "trainingClockRealHint": "Tiempo real, sin contar pausas",
+  "@trainingLeaveMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingLeaveFinishHintCount": "Se guarda con lo que has hecho ({done} de {total} series)",
+  "@trainingLeaveFinishHintCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetRowRunning": "En curso · {time}",
+  "@trainingSetRowRunning": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSetRowPaused": "En pausa",
+  "trainingDurationSpokenSec": "{seconds, plural, =1{1 segundo} other{{seconds} segundos}}",
+  "@trainingDurationSpokenSec": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingDurationSpokenMinSec": "{minutes, plural, =1{1 minuto} other{{minutes} minutos}} y {seconds, plural, =1{1 segundo} other{{seconds} segundos}}",
+  "@trainingDurationSpokenMinSec": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingDurationSpokenHourMin": "{hours, plural, =1{1 hora} other{{hours} horas}} y {minutes, plural, =1{1 minuto} other{{minutes} minutos}}",
+  "@trainingDurationSpokenHourMin": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
   }
 }

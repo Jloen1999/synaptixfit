@@ -22,6 +22,7 @@ abstract class SessionSetDto with _$SessionSetDto {
     int? durationSeconds,
     int? distanceMeters,
     String? exerciseId,
+    int? activeSeconds,
   }) = _SessionSetDto;
 
   const SessionSetDto._();
@@ -40,6 +41,7 @@ abstract class SessionSetDto with _$SessionSetDto {
     durationSeconds: durationSeconds,
     distanceMeters: distanceMeters,
     exerciseId: exerciseId,
+    activeSeconds: activeSeconds,
   );
 }
 
@@ -58,6 +60,8 @@ abstract class SessionDto with _$SessionDto {
     double? calories,
     @Default(0) int xpAwarded,
     List<SessionSetDto>? sets,
+    DateTime? pausedAt,
+    @Default(0) int pausedSeconds,
   }) = _SessionDto;
 
   const SessionDto._();
@@ -78,6 +82,8 @@ abstract class SessionDto with _$SessionDto {
     calories: calories,
     xpAwarded: xpAwarded,
     sets: (sets ?? const []).map((s) => s.toDomain()).toList(),
+    pausedAt: pausedAt?.toLocal(),
+    pausedSeconds: pausedSeconds,
   );
 }
 
@@ -94,6 +100,7 @@ abstract class RecordSetRequestDto with _$RecordSetRequestDto {
     required int failedReps,
     int? durationSeconds,
     int? distanceMeters,
+    int? activeSeconds,
   }) = _RecordSetRequestDto;
 
   factory RecordSetRequestDto.fromJson(Map<String, dynamic> json) =>
@@ -108,6 +115,7 @@ abstract class RecordSetRequestDto with _$RecordSetRequestDto {
     failedReps: r.failedReps,
     durationSeconds: r.durationSeconds,
     distanceMeters: r.distanceMeters,
+    activeSeconds: r.activeSeconds,
   );
 }
 

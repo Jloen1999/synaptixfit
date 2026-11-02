@@ -71,6 +71,8 @@ Todas están en `CognitiveLoad` como constantes con nombre. Los tests de `NeuroF
 
 - El ajuste por fatiga sube la calidad hasta +0,5 (`FatigueAdjustedRecall`), pero **solo cambia el factor de facilidad**: si el repaso falla (calidad real < 3) sigue siendo un fallo. Antes un 2 con la máxima fatiga daba 2,5, se redondeaba a 3 y contaba como acierto.
 - **Repaso adelantado:** un acierto antes de la fecha prevista se registra pero no cambia estado, intervalo ni fecha; un fallo sí reinicia (`StudyMaterial.simulate`). La vista previa muestra lo mismo.
+- **Tras un fallo todas las opciones dicen «En 1 día»:** un fallo (nota < 3) reinicia las repeticiones a 0, y en SM-2 tanto fallar como el primer acierto dan 1 día (después 6 días y luego intervalo × facilidad). No es un error; la app lo explica cuando todas las opciones tienen el mismo intervalo.
+- **Nota propuesta con la práctica (`PracticeScore`):** se valora el repaso después de repasar (practicar, abrir el material o recordarlo sin mirar). Si se practicó con preguntas del material en las últimas 6 h y después del último repaso, con al menos 3 preguntas respondidas (la última respuesta de cada una), se propone: aciertos ≥ 90 % → 5, ≥ 75 % → 4, ≥ 60 % → 3, ≥ 40 % → 2, ≥ 20 % → 1, menos → 0. El 60 % para el 3 sigue el umbral de acierto de SM-2 (nota ≥ 3). Es solo una propuesta: quien repasa elige.
 
 ## Progreso justo (ADR 0019)
 
@@ -89,7 +91,7 @@ Todas están en `CognitiveLoad` como constantes con nombre. Los tests de `NeuroF
 
 ## Duración prevista de una sesión (`SessionDurationEstimate`)
 
-Solo orienta («≈ 45 min» en el próximo día y el detalle del día; «quedan ≈ 12 min» en la sesión). La duración que cuenta para la carga (esfuerzo × minutos), las kcal y la XP es siempre la **real** (de empezar a terminar).
+Solo orienta («≈ 45 min» en el próximo día y el detalle del día; «quedan ≈ 12 min» en la sesión). La duración que cuenta para la carga (esfuerzo × minutos), las kcal y la XP es siempre la **real activa**: de empezar a terminar **menos las pausas** (`TrainingSession.activeSeconds`, ADR 0030). Decisión del propietario: una llamada o una máquina ocupada no suman carga ni calorías. El cronómetro de cada serie (`segundos_activos`) es opcional e informativo: no cambia la carga.
 
 - Por ejercicio: si ya se hizo, su duración real de la última vez (`realDurationSeconds`, que guarda la sesión en vivo). Si no: `series × (trabajo + descanso)`, con trabajo por serie = duración objetivo (cardio), o segundos de aguante (isométrico), o `3 s × repeticiones` (tempo medio de una repetición controlada). El descanso tras la última serie cubre el cambio al siguiente ejercicio.
 - Por día: suma de sus ejercicios, en minutos redondeados hacia arriba. Va en `estimatedMinutes` del día de rutina, del próximo día (`/training/...pending`) y del próximo entreno de Inicio; cada ejercicio planificado lleva `estimatedSeconds`.
@@ -130,7 +132,7 @@ Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevo
 - **Avisos de Inicio:** entregas vencidas de los últimos 14 días (antes que las próximas) y bloques de ayer u hoy sin hacer (sin contar clases, que casi siempre vienen del horario importado). La fatiga alta va antes que los bloques sin hacer.
 - **Lista «Pendientes» de entregas:** `upcoming=true&includeOverdue=true` añade las vencidas sin completar de los últimos 30 días (primero). Con solo `upcoming=true` la lista empieza hoy, como antes.
 - **Racha:** la de Inicio es la efectiva (`GetStreakUseCase`): si ayer no hubo actividad, ya está rota aunque la guardada diga otra cosa.
-- **Sesiones de entreno abandonadas:** una sesión abierta más de 6 h se da por abandonada y **nunca se borra sola**: empezar ese día devuelve `SESSION_STALE_OPEN` y la app ofrece «Terminar con lo registrado» o «Descartar». Al terminarla, la duración se acota a 4 h y la sesión se fecha al **inicio + duración** (`TrainingSession.completionInstant`): la carga, la XP y los retos cuentan en el día en que se entrenó, no en el de hoy.
+- **Sesiones de entreno abandonadas:** una sesión abierta más de 6 h se da por abandonada y **nunca se borra sola**: empezar ese día devuelve `SESSION_STALE_OPEN` y la app ofrece «Terminar con lo registrado» o «Descartar». Al terminarla, la duración (activa, sin pausas) se acota a 4 h y la sesión se fecha al **inicio + duración + pausas ya cerradas**, nunca después de ahora (`TrainingSession.completionInstant`): la carga, la XP y los retos cuentan en el día en que se entrenó, no en el de hoy.
 - **Desmarcar, corregir y eliminar:** solo se desmarca una sesión el mismo día en que se terminó (`SESSION_UNMARK_EXPIRED`); una de otro día se corrige (RPE y duración, que recalculan su carga y kcal; la XP no cambia) o se elimina (resta su XP y retira su carga, su avance en retos y su bloque).
 - **Sesión de rutina pasada:** hasta 7 días atrás (`SESSION_PAST_DATE_INVALID`); se fecha ese día a las 12:00 (o ahora si es hoy) y da la XP de una sesión con el tope diario de ese día.
 

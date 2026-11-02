@@ -65,9 +65,8 @@ class RoutineRemoteDataSource {
     _dio.post<Map<String, dynamic>>('$_base/$routineId/days/$dayId/unskip'),
   );
 
-  Future<RoutineDto> restart(String routineId) => _routine(
-    _dio.post<Map<String, dynamic>>('$_base/$routineId/restart'),
-  );
+  Future<RoutineDto> restart(String routineId) =>
+      _routine(_dio.post<Map<String, dynamic>>('$_base/$routineId/restart'));
 
   Future<void> delete(String routineId) =>
       _dio.delete<void>('$_base/$routineId');

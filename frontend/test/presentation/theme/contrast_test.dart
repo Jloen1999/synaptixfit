@@ -145,6 +145,50 @@ void main() {
         expectRatio('portada primary', c.primary, bg, 4.5);
       });
 
+      // Sesión en vivo y repaso: el tinte va opaco sobre la superficie, así
+      // que su contraste no depende de lo que haya detrás (la cabecera es
+      // surfaceContainerLow; la nota elegida, primaryContainer).
+      test('sesión en vivo y repaso', () {
+        Color tint(Color color) => Color.alphaBlend(
+          color.withValues(alpha: AppPill.tintAlpha),
+          c.surface,
+        );
+        for (final behind in [c.surfaceContainerLow, c.primaryContainer]) {
+          // Lo que hay detrás no cuenta: el tinte ya es opaco.
+          final pill = Color.alphaBlend(tint(c.warning), behind);
+          expectRatio('píldora en pausa sobre $behind', c.warning, pill, 4.5);
+        }
+        expectRatio(
+          'píldora del tiempo real',
+          c.onAccentContainer,
+          c.accentContainer,
+          4.5,
+        );
+        for (final color in [c.success, c.warning, c.error]) {
+          expectRatio('cifra de la nota $color', color, tint(color), 4.5);
+        }
+        // Serie en pausa: texto de la fila y su estado «En pausa».
+        expectRatio('fila en pausa', c.onSurface, tint(c.warning), 4.5);
+        expectRatio('estado en pausa', c.warning, tint(c.warning), 4.5);
+        // Pasos numerados (AppStepBadge): activo y bloqueado; la marca de
+        // hecho es un icono (3:1).
+        expectRatio(
+          'paso activo',
+          c.onPrimaryContainer,
+          c.primaryContainer,
+          4.5,
+        );
+        expectRatio(
+          'paso bloqueado',
+          c.onSurfaceVariant,
+          c.surfaceContainerHigh,
+          4.5,
+        );
+        expectRatio('paso hecho', c.surface, c.success, 3);
+        // Nota elegida: borde primary sobre la tarjeta (1.4.11).
+        expectRatio('borde nota elegida', c.primary, c.surface, 3);
+      });
+
       test('gráficos e iconos', () {
         for (final color in [
           c.accent,

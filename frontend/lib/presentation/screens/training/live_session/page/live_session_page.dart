@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../exercise_detail/page/exercise_how_to_sheet.dart';
@@ -64,6 +65,9 @@ class _LiveViewState extends State<_LiveView> {
   /// Celdas con un valor fuera de rango (no se puede marcar su serie).
   final Set<String> _invalid = {};
 
+  /// Se sale a propósito (pausar y salir, descartar): «atrás» ya no pregunta.
+  bool _allowPop = false;
+
   LiveSessionBloc get _bloc => context.read<LiveSessionBloc>();
 
   @override
@@ -92,10 +96,11 @@ class _LiveViewState extends State<_LiveView> {
     super.dispose();
   }
 
-  Future<void> _finish(LiveSessionState state) async {
-    // Con series previstas sin hacer, se pregunta antes de cerrar la sesión.
+  /// Terminar: pide el esfuerzo. Con series previstas sin hacer pregunta
+  /// antes, salvo que ya se eligiera «Terminar ahora» ([confirmed]).
+  Future<void> _finish(LiveSessionState state, {bool confirmed = false}) async {
     final missing = state.plannedSets - state.loggedSets;
-    if (!state.isFree && missing > 0) {
+    if (!confirmed && !state.isFree && missing > 0) {
       final l10n = context.localizations;
       final ok = await showConfirmDialog(
         context,
@@ -114,6 +119,61 @@ class _LiveViewState extends State<_LiveView> {
     }
   }
 
+  /// Al salir a mitad de sesión: pausar y salir, terminar ya o seguir. Lo
+  /// apuntado ya está guardado; se explica en una frase.
+  Future<void> _leave(LiveSessionState state) async {
+    final choice = await showModalBottomSheet<_LeaveChoice>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => _LeaveSheet(
+        marked: state.session?.sets.length ?? 0,
+        done: state.loggedSets,
+        planned: state.isFree ? 0 : state.plannedSets,
+      ),
+    );
+    if (!mounted || choice == null) return;
+    switch (choice) {
+      case _LeaveChoice.pause:
+        _pauseAndLeave();
+      case _LeaveChoice.finish:
+        await _finish(_bloc.state, confirmed: true);
+      case _LeaveChoice.discard:
+        await _abandon();
+      case _LeaveChoice.stay:
+        break;
+    }
+  }
+
+  /// Pausa la sesión (el tiempo deja de contar) y vuelve atrás; la barra
+  /// «Sesión en pausa · Volver» la retoma.
+  void _pauseAndLeave() {
+    _bloc.add(const LiveSessionEvent.pauseRequested());
+    setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.pop();
+    });
+  }
+
+  /// Sesión recién empezada: se explica que el cronómetro ya corre, que cada
+  /// serie tiene el suyo (opcional) y que las pausas no cuentan.
+  Future<void> _explainClock(LiveSessionState state) async {
+    final result = await showModalBottomSheet<(bool, bool)>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      isDismissible: false,
+      builder: (_) =>
+          _ClockIntroSheet(minutes: state.remainingEstimatedMinutes),
+    );
+    if (!mounted) return;
+    final (start, hide) = result ?? (true, false);
+    _bloc.add(LiveSessionEvent.clockExplained(hideNextTime: hide));
+    // «Ahora no»: no se pierde nada, se pausa y se sale (descartarla sigue en
+    // la hoja de salir).
+    if (!start) _pauseAndLeave();
+  }
+
   Future<void> _abandon() async {
     final l10n = context.localizations;
     final ok = await showConfirmDialog(
@@ -122,7 +182,10 @@ class _LiveViewState extends State<_LiveView> {
       message: l10n.trainingAbandonMessage,
       confirmLabel: l10n.trainingAbandon,
     );
-    if (ok && mounted) _bloc.add(const LiveSessionEvent.abandonRequested());
+    if (ok && mounted) {
+      setState(() => _allowPop = true);
+      _bloc.add(const LiveSessionEvent.abandonRequested());
+    }
   }
 
   Future<void> _editSet({
@@ -169,14 +232,7 @@ class _LiveViewState extends State<_LiveView> {
     PlannedExercise exercise,
     int setNumber,
   ) {
-    // El botón cambia de serie o desaparece: se anuncia lo hecho (4.1.3).
-    unawaited(
-      SemanticsService.sendAnnouncement(
-        View.of(context),
-        context.localizations.trainingSetLogged(setNumber),
-        Directionality.of(context),
-      ),
-    );
+    _offerUndo(exercise, setNumber);
     final proposal = _proposal(state, exercise, setNumber);
     _bloc.add(
       LiveSessionEvent.setRecorded(
@@ -218,6 +274,32 @@ class _LiveViewState extends State<_LiveView> {
         valid ? _invalid.remove(key) : _invalid.add(key);
       });
 
+  /// «Serie N registrada · Deshacer»: el aviso también lo oye el lector (el
+  /// botón cambia de serie o desaparece, 4.1.3). Deshacer borra esa serie
+  /// (también si aún no ha subido) y corta su descanso.
+  void _offerUndo(PlannedExercise e, int set) {
+    final bloc = _bloc;
+    context.showUndoSnack(
+      context.localizations.trainingSetLogged(set),
+      onUndo: () async {
+        // Mientras se guarda, el borrado se ignoraría: se espera a que acabe.
+        final ready = bloc.state.saving
+            ? await bloc.stream.firstWhere((s) => !s.saving)
+            : bloc.state;
+        final logged = ready.session
+            ?.setsFor(e.id)
+            .where((s) => s.setNumber == set)
+            .firstOrNull;
+        if (logged == null || bloc.isClosed) return;
+        bloc
+          ..add(LiveSessionEvent.setDeleted(logged.id))
+          ..add(const LiveSessionEvent.restSkipped())
+          ..add(LiveSessionEvent.exerciseSelected(e.id));
+      },
+      onCommit: () {},
+    );
+  }
+
   /// Marca (o vuelve a guardar) la serie [set] de [e]; lo escrito para ella
   /// deja de ser borrador.
   void _onLog(PlannedExercise e, int set, Map<SetField, num?> values) {
@@ -225,6 +307,7 @@ class _LiveViewState extends State<_LiveView> {
         ?.setsFor(e.id)
         .where((s) => s.setNumber == set)
         .firstOrNull;
+    if (existing == null) _offerUndo(e, set);
     setState(
       () => _drafts.removeWhere((k, _) => k.startsWith('${e.id}/$set/')),
     );
@@ -278,6 +361,10 @@ class _LiveViewState extends State<_LiveView> {
         // El descanso entre series ha llegado a cero solo (no al saltarlo): se
         // dice en texto (también al lector) y vibra si el sistema lo permite.
         BlocListener<LiveSessionBloc, LiveSessionState>(
+          listenWhen: (p, c) => !p.explainClock && c.explainClock,
+          listener: (context, state) => unawaited(_explainClock(state)),
+        ),
+        BlocListener<LiveSessionBloc, LiveSessionState>(
           listenWhen: (p, c) => c.restFinishedCount != p.restFinishedCount,
           listener: (context, state) {
             HapticFeedback.heavyImpact();
@@ -306,171 +393,202 @@ class _LiveViewState extends State<_LiveView> {
           final title = state.dayNumber != null
               ? dayTitle(l10n, state.dayNumber!, state.dayName)
               : l10n.trainingFreeSession;
-          return Scaffold(
-            appBar: AppPageBar(
-              title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-              actions: [
-                // En sesión de rutina el tiempo ya está en la cabecera
-                // («4 de 6 ejercicios · 32 min»).
-                if (state.status == LiveStatus.ready &&
-                    (state.isFree || state.completed))
-                  Semantics(
-                    label: l10n.trainingTotalTime(
-                      formatClock(state.elapsedSeconds),
-                    ),
-                    excludeSemantics: true,
-                    child: Padding(
+          // Salir con «atrás» a mitad de sesión pregunta qué hacer con el
+          // cronómetro en vez de dejarlo corriendo sin decirlo.
+          return PopScope(
+            canPop:
+                _allowPop ||
+                state.status != LiveStatus.ready ||
+                state.completed,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop) unawaited(_leave(state));
+            },
+            child: Scaffold(
+              appBar: AppPageBar(
+                title: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                actions: [
+                  // En sesión de rutina el tiempo ya está en la cabecera
+                  // («4 de 6 ejercicios · 32 min»).
+                  // Sesión libre en curso: el tiempo real, igual que en la de rutina.
+                  if (state.status == LiveStatus.ready &&
+                      state.isFree &&
+                      !state.completed)
+                    Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: TokensSpacing.s,
+                        horizontal: TokensSpacing.xs,
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.timer_outlined,
-                            size: TokensSize.iconXs,
-                            color: context.colors.secondary,
-                          ),
-                          const SizedBox(width: TokensSpacing.xs),
-                          Text(
-                            formatClock(state.elapsedSeconds),
-                            style: context.textStyles.titleMedium?.copyWith(
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
+                      child: Center(
+                        child: LiveClockPill(
+                          seconds: state.elapsedSeconds,
+                          paused: state.paused,
+                        ),
+                      ),
+                    ),
+                  if (state.status == LiveStatus.ready && state.completed)
+                    Semantics(
+                      label: l10n.trainingTotalTime(
+                        formatClock(state.elapsedSeconds),
+                      ),
+                      excludeSemantics: true,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: TokensSpacing.s,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.timer_outlined,
+                              size: TokensSize.iconXs,
+                              color: context.colors.secondary,
                             ),
-                          ),
+                            const SizedBox(width: TokensSpacing.xs),
+                            Text(
+                              formatClock(state.elapsedSeconds),
+                              style: context.textStyles.titleMedium?.copyWith(
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (state.status == LiveStatus.ready && !state.completed)
+                    IconButton(
+                      tooltip: l10n.trainingLeaveExitTooltip,
+                      onPressed: state.finishing ? null : () => _leave(state),
+                      icon: const Icon(Icons.exit_to_app_rounded),
+                    ),
+                  // «Terminar» siempre a la vista y con texto, no escondido.
+                  if (state.status == LiveStatus.ready &&
+                      !state.completed &&
+                      !state.isFree)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        end: TokensSpacing.s,
+                      ),
+                      child: FilledButton.tonal(
+                        onPressed:
+                            state.finishing || state.pendingSets.isNotEmpty
+                            ? null
+                            : () => _finish(state),
+                        child: Text(l10n.trainingFinishAction),
+                      ),
+                    ),
+                ],
+              ),
+              body: switch (state.status) {
+                LiveStatus.loading => const AppSkeletonList(height: 140),
+                LiveStatus.failure => AppErrorView(
+                  error: state.error!,
+                  onRetry: () => _bloc.add(
+                    LiveSessionEvent.started(state.sessionId ?? ''),
+                  ),
+                ),
+                LiveStatus.ready when state.completed || state.isFree => Column(
+                  children: [
+                    if (state.saving) const LinearProgressIndicator(),
+                    if (state.restRemaining != null) _RestBanner(state: state),
+                    Expanded(
+                      child: _ExerciseList(state: state, onEdit: _editSet),
+                    ),
+                  ],
+                ),
+                LiveStatus.ready => Column(
+                  children: [
+                    LiveSessionHeader(state: state),
+                    if (state.saving) const LinearProgressIndicator(),
+                    Expanded(
+                      child: LiveExerciseView(
+                        state: state,
+                        drafts: _drafts,
+                        invalid: _invalid,
+                        onDraft: _onDraft,
+                        onValidity: _onValidity,
+                        onLog: _onLog,
+                        onLoggedTap: (e, set) =>
+                            unawaited(onLoggedSetTap(context, e, set)),
+                        onExtraSet: (e, set) => _onExtraSet(state, e, set),
+                        onLoadToggled: _onLoadToggled,
+                        header: [
+                          // Sin conexión: las series se guardan en el teléfono.
+                          if (state.pendingSets.isNotEmpty) ...[
+                            AppInlineMessage(
+                              message: l10n.trainingOfflinePending(
+                                state.pendingSets.length,
+                              ),
+                              tone: AppMessageTone.warning,
+                            ),
+                            const SizedBox(height: TokensSpacing.m),
+                          ],
+                          if (state.adaptation.adapted)
+                            _AdaptationCard(
+                              adaptation: state.adaptation,
+                              exercises: state.exercises,
+                              plannedSets: state.plannedSetsById,
+                            ),
+                          // Calentamiento al empezar; vuelta a la calma al acabar.
+                          if (state.loggedSets == 0 &&
+                              (state.bookends?.warmUp.isNotEmpty ?? false))
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: TokensSpacing.m,
+                              ),
+                              child: _BookendsCard(
+                                title: l10n.trainingWarmUpTitle,
+                                hint: l10n.trainingWarmUpSummary(
+                                  state.bookends!.warmUp.length,
+                                ),
+                                icon: Icons.whatshot_rounded,
+                                exercises: state.bookends!.warmUp,
+                              ),
+                            ),
+                          if (state.upNext == null &&
+                              (state.bookends?.coolDown.isNotEmpty ?? false))
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: TokensSpacing.m,
+                              ),
+                              child: _BookendsCard(
+                                title: l10n.trainingCoolDownTitle,
+                                hint: l10n.trainingCoolDownSummary(
+                                  state.bookends!.coolDown.length,
+                                ),
+                                icon: Icons.self_improvement_rounded,
+                                exercises: state.bookends!.coolDown,
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                  ),
-                if (state.status == LiveStatus.ready && !state.completed)
-                  IconButton(
-                    tooltip: l10n.trainingAbandon,
-                    onPressed: state.finishing ? null : _abandon,
-                    icon: const Icon(Icons.exit_to_app_rounded),
-                  ),
-                // «Terminar» siempre a la vista y con texto, no escondido.
-                if (state.status == LiveStatus.ready &&
-                    !state.completed &&
-                    !state.isFree)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      end: TokensSpacing.s,
-                    ),
-                    child: FilledButton.tonal(
-                      onPressed: state.finishing || state.pendingSets.isNotEmpty
-                          ? null
-                          : () => _finish(state),
-                      child: Text(l10n.trainingFinishAction),
-                    ),
-                  ),
-              ],
-            ),
-            body: switch (state.status) {
-              LiveStatus.loading => const AppSkeletonList(height: 140),
-              LiveStatus.failure => AppErrorView(
-                error: state.error!,
-                onRetry: () =>
-                    _bloc.add(LiveSessionEvent.started(state.sessionId ?? '')),
-              ),
-              LiveStatus.ready when state.completed || state.isFree => Column(
-                children: [
-                  if (state.saving) const LinearProgressIndicator(),
-                  if (state.restRemaining != null) _RestBanner(state: state),
-                  Expanded(
-                    child: _ExerciseList(state: state, onEdit: _editSet),
-                  ),
-                ],
-              ),
-              LiveStatus.ready => Column(
-                children: [
-                  LiveSessionHeader(state: state),
-                  if (state.saving) const LinearProgressIndicator(),
-                  Expanded(
-                    child: LiveExerciseView(
+                  ],
+                ),
+              },
+              bottomNavigationBar:
+                  state.status != LiveStatus.ready || state.completed
+                  ? null
+                  : state.isFree
+                  ? _BottomBar(
+                      state: state,
+                      onFinish: () => _finish(state),
+                      onDone: (e, n) => _quickLog(state, e, n),
+                      onEdit: (e, n) => _editNext(state, e, n),
+                    )
+                  : LiveSessionBottomBar(
                       state: state,
                       drafts: _drafts,
                       invalid: _invalid,
-                      onDraft: _onDraft,
-                      onValidity: _onValidity,
                       onLog: _onLog,
-                      onLoggedTap: (e, set) =>
-                          unawaited(onLoggedSetTap(context, e, set)),
-                      onExtraSet: (e, set) => _onExtraSet(state, e, set),
-                      onLoadToggled: _onLoadToggled,
-                      header: [
-                        // Sin conexión: las series se guardan en el teléfono.
-                        if (state.pendingSets.isNotEmpty) ...[
-                          AppInlineMessage(
-                            message: l10n.trainingOfflinePending(
-                              state.pendingSets.length,
-                            ),
-                            tone: AppMessageTone.warning,
-                          ),
-                          const SizedBox(height: TokensSpacing.m),
-                        ],
-                        if (state.adaptation.adapted)
-                          _AdaptationCard(
-                            adaptation: state.adaptation,
-                            exercises: state.exercises,
-                            plannedSets: state.plannedSetsById,
-                          ),
-                        // Calentamiento al empezar; vuelta a la calma al acabar.
-                        if (state.loggedSets == 0 &&
-                            (state.bookends?.warmUp.isNotEmpty ?? false))
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: TokensSpacing.m,
-                            ),
-                            child: _BookendsCard(
-                              title: l10n.trainingWarmUpTitle,
-                              hint: l10n.trainingWarmUpSummary(
-                                state.bookends!.warmUp.length,
-                              ),
-                              icon: Icons.whatshot_rounded,
-                              exercises: state.bookends!.warmUp,
-                            ),
-                          ),
-                        if (state.upNext == null &&
-                            (state.bookends?.coolDown.isNotEmpty ?? false))
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: TokensSpacing.m,
-                            ),
-                            child: _BookendsCard(
-                              title: l10n.trainingCoolDownTitle,
-                              hint: l10n.trainingCoolDownSummary(
-                                state.bookends!.coolDown.length,
-                              ),
-                              icon: Icons.self_improvement_rounded,
-                              exercises: state.bookends!.coolDown,
-                            ),
-                          ),
-                      ],
+                      onFinish: state.finishing || state.pendingSets.isNotEmpty
+                          ? null
+                          : () => _finish(state),
                     ),
-                  ),
-                ],
-              ),
-            },
-            bottomNavigationBar:
-                state.status != LiveStatus.ready || state.completed
-                ? null
-                : state.isFree
-                ? _BottomBar(
-                    state: state,
-                    onFinish: () => _finish(state),
-                    onDone: (e, n) => _quickLog(state, e, n),
-                    onEdit: (e, n) => _editNext(state, e, n),
-                  )
-                : LiveSessionBottomBar(
-                    state: state,
-                    drafts: _drafts,
-                    invalid: _invalid,
-                    onLog: _onLog,
-                    onFinish: state.finishing || state.pendingSets.isNotEmpty
-                        ? null
-                        : () => _finish(state),
-                  ),
+            ),
           );
         },
       ),
@@ -701,7 +819,7 @@ class _BottomBarState extends State<_BottomBar> {
       // línea «Ahora toca» (el lector la sigue oyendo).
       final compact =
           MediaQuery.sizeOf(context).height < TokensLayout.compactHeight ||
-          MediaQuery.textScalerOf(context).scale(1) > 1.3;
+          context.largeText;
       // Mientras se guarda la serie anterior los botones siguen activos (si se
       // desactivaran perderían el foco), pero el toque se ignora: la serie que
       // toca aún no se ha actualizado y se apuntaría dos veces.
@@ -799,10 +917,12 @@ class _BottomBarState extends State<_BottomBar> {
       child: SafeArea(
         top: false,
         // Con letra muy grande en una pantalla baja la barra no puede tapar la
-        // lista: ocupa como mucho la mitad y su contenido se desplaza.
+        // lista: tiene un alto máximo y su contenido se desplaza.
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height / 2,
+            maxHeight:
+                MediaQuery.sizeOf(context).height *
+                TokensLayout.bottomBarMaxShare,
           ),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(TokensSpacing.m),
@@ -1446,6 +1566,219 @@ class _AdaptationCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _LeaveChoice { pause, finish, stay, discard }
+
+/// Hoja «¿Salir sin terminar?»: cada opción dice en una línea qué pasa, con
+/// las series marcadas ([marked]) y, en una rutina, cuántas de las previstas
+/// ([done] de [planned]; 0 en sesión libre).
+class _LeaveSheet extends StatelessWidget {
+  const _LeaveSheet({
+    required this.marked,
+    required this.done,
+    required this.planned,
+  });
+
+  final int marked;
+  final int done;
+  final int planned;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    Widget option(
+      _LeaveChoice choice,
+      String label,
+      String hint, {
+      required bool primary,
+    }) {
+      final text = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: context.textStyles.titleSmall?.copyWith(
+              color: primary ? context.colors.onPrimary : null,
+            ),
+          ),
+          Text(
+            hint,
+            style: context.textStyles.bodySmall?.copyWith(
+              color: primary
+                  ? context.colors.onPrimary
+                  : context.colors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      );
+      final child = Padding(
+        padding: const EdgeInsets.symmetric(vertical: TokensSpacing.s),
+        child: Align(alignment: AlignmentDirectional.centerStart, child: text),
+      );
+      return primary
+          ? FilledButton(
+              onPressed: () => Navigator.of(context).pop(choice),
+              child: child,
+            )
+          : OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(choice),
+              child: child,
+            );
+    }
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          TokensSpacing.l,
+          0,
+          TokensSpacing.l,
+          TokensSpacing.l,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                l10n.trainingLeaveTitle,
+                style: context.textStyles.titleLarge,
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(l10n.trainingLeaveMessage(marked)),
+            const SizedBox(height: TokensSpacing.m),
+            option(
+              _LeaveChoice.pause,
+              l10n.trainingLeavePause,
+              l10n.trainingLeavePauseHint,
+              primary: true,
+            ),
+            const SizedBox(height: TokensSpacing.s),
+            option(
+              _LeaveChoice.finish,
+              l10n.trainingLeaveFinish,
+              planned > 0
+                  ? l10n.trainingLeaveFinishHintCount(done, planned)
+                  : l10n.trainingLeaveFinishHint,
+              primary: false,
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(context).pop(_LeaveChoice.stay),
+              child: Text(l10n.trainingLeaveStay),
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              l10n.trainingLeaveStale,
+              style: context.textStyles.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: context.colors.error,
+              ),
+              onPressed: () => Navigator.of(context).pop(_LeaveChoice.discard),
+              child: Text(l10n.trainingLeaveDiscard),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Explicación del cronómetro al empezar: devuelve (empezar, no volver a
+/// explicarlo).
+class _ClockIntroSheet extends StatefulWidget {
+  const _ClockIntroSheet({required this.minutes});
+
+  final int? minutes;
+
+  @override
+  State<_ClockIntroSheet> createState() => _ClockIntroSheetState();
+}
+
+class _ClockIntroSheetState extends State<_ClockIntroSheet> {
+  bool _hide = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    Widget point(int n, String text) => Padding(
+      padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppStepBadge(number: n),
+          const SizedBox(width: TokensSpacing.s),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          TokensSpacing.l,
+          0,
+          TokensSpacing.l,
+          TokensSpacing.l,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                l10n.trainingClockIntroTitle,
+                style: context.textStyles.titleLarge,
+              ),
+            ),
+            if (widget.minutes case final m? when m > 0) ...[
+              const SizedBox(height: TokensSpacing.s),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                // Neutra: es una estimación (el naranja es el tiempo real).
+                child: AppPill(
+                  label: l10n.trainingClockIntroEstimate(m),
+                  icon: Icons.schedule_rounded,
+                ),
+              ),
+            ],
+            const SizedBox(height: TokensSpacing.m),
+            point(1, l10n.trainingClockIntroPoint1),
+            point(2, l10n.trainingClockIntroPoint2),
+            point(3, l10n.trainingClockIntroPoint3),
+            AppFocusOutline(
+              child: CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                value: _hide,
+                onChanged: (v) => setState(() => _hide = v ?? false),
+                title: Text(l10n.trainingClockIntroHide),
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.s),
+            AppPrimaryButton(
+              label: l10n.trainingClockIntroStart,
+              // El cronómetro ya corre: el botón confirma, no arranca nada.
+              icon: Icons.check_rounded,
+              onPressed: () => Navigator.of(context).pop((true, _hide)),
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop((false, _hide)),
+              child: Text(l10n.trainingClockIntroNotYet),
+            ),
+          ],
         ),
       ),
     );

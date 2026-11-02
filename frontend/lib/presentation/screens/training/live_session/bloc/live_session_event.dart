@@ -51,4 +51,23 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
 
   const factory LiveSessionEvent.abandonRequested() =
       LiveSessionAbandonRequested;
+
+  /// Empieza el cronómetro de la serie [setNumber] de [plannedExerciseId]
+  /// (opcional: una serie se puede marcar sin usarlo). Corta el descanso.
+  const factory LiveSessionEvent.setTimerStarted(
+    String? plannedExerciseId,
+    int setNumber,
+  ) = LiveSessionSetTimerStarted;
+
+  /// Pausa la sesión (y el cronómetro de la serie): el tiempo en pausa no
+  /// cuenta para la carga ni las kcal (ADR 0030).
+  const factory LiveSessionEvent.pauseRequested() = LiveSessionPauseRequested;
+
+  /// Reanuda la sesión (y el cronómetro de la serie, si había uno).
+  const factory LiveSessionEvent.resumeRequested() = LiveSessionResumeRequested;
+
+  /// Se cerró la explicación del cronómetro; con [hideNextTime] no se vuelve
+  /// a mostrar en este teléfono.
+  const factory LiveSessionEvent.clockExplained({required bool hideNextTime}) =
+      LiveSessionClockExplained;
 }

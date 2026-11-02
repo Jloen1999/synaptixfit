@@ -326,6 +326,26 @@ class TrainingSessionServiceTest {
     }
 
     @Test
+    void pauseAndResumeOnlyWorkOnOwnSessionsInProgress() {
+        TrainingSession s = service.start(USER, null, null);
+        assertThatThrownBy(() -> service.pause(OTHER, s.id())).isInstanceOf(SessionNotFoundException.class);
+        assertThatThrownBy(() -> service.resume(OTHER, s.id(), null)).isInstanceOf(SessionNotFoundException.class);
+
+        clock.advance(java.time.Duration.ofMinutes(10));
+        assertThat(service.pause(USER, s.id()).isPaused()).isTrue();
+        clock.advance(java.time.Duration.ofMinutes(5));
+        TrainingSession resumed = service.resume(USER, s.id(), null);
+        assertThat(resumed.isPaused()).isFalse();
+        assertThat(resumed.pausedSeconds()).isEqualTo(300);
+
+        clock.advance(java.time.Duration.ofMinutes(20));
+        service.finish(new FinishTrainingSessionUseCase.Command(USER, s.id(), 1800, 6, null, null));
+        assertThatThrownBy(() -> service.pause(USER, s.id())).isInstanceOf(SessionAlreadyCompletedException.class);
+        assertThatThrownBy(() -> service.resume(USER, s.id(), null))
+                .isInstanceOf(SessionAlreadyCompletedException.class);
+    }
+
+    @Test
     void sessionsOfOtherUsersAreNotFound() {
         TrainingSession s = service.start(USER, null, null);
         assertThatThrownBy(() -> service.get(OTHER, s.id())).isInstanceOf(SessionNotFoundException.class);

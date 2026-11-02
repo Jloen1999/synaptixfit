@@ -373,7 +373,7 @@ public class AcademicBeanConfiguration {
     @Bean(autowireCandidate = false)
     StudyMaterialService studyMaterialService() {
         return new StudyMaterialService(materials, reviews, physicalLoad, subjects, notes, files, aiDocuments, events,
-                awardExperience, clock, zone);
+                awardExperience, clock, zone, banks, attempts);
     }
 
     @Bean

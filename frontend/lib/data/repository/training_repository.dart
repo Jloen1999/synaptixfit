@@ -96,6 +96,23 @@ class TrainingRepository implements TrainingRepositoryContract {
   );
 
   @override
+  Future<AppResult<TrainingSession>> pauseSession(String sessionId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.pauseSession(sessionId)).toDomain(),
+      );
+
+  @override
+  Future<AppResult<TrainingSession>> resumeSession(
+    String sessionId, {
+    DateTime? resumedAt,
+  }) => RepositoryErrorHandler.guard(
+    () async => (await _remote.resumeSession(
+      sessionId,
+      resumedAt: resumedAt,
+    )).toDomain(),
+  );
+
+  @override
   Future<AppResult<FinishSessionResult>> finishSession(
     String sessionId, {
     required int durationSeconds,
