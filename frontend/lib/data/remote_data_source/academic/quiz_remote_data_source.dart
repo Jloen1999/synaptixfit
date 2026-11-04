@@ -57,6 +57,13 @@ class QuizRemoteDataSource {
     return FlashcardReviewResponseDto.fromJson(response.data!);
   }
 
+  Future<MockExamOptionsDto> getMockExamOptions(String subjectId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/subjects/$subjectId/mock-exam-options',
+    );
+    return MockExamOptionsDto.fromJson(response.data!);
+  }
+
   Future<TestSessionDto> start(
     List<String> materialIds,
     int? questionCount,

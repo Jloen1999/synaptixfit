@@ -45,9 +45,83 @@ class GenerationCenterBloc
     );
     on<GenerationCenterGenerateRequested>(_onGenerate);
     on<GenerationCenterDiscarded>(
-      (_, emit) => emit(state.copyWith(artifact: null, generateError: null)),
+      (_, emit) => emit(
+        state.copyWith(
+          artifact: null,
+          generateError: null,
+          edited: false,
+          beforeRemoval: null,
+        ),
+      ),
     );
     on<GenerationCenterSaveRequested>(_onSave);
+    on<GenerationCenterSummaryEdited>(
+      (event, emit) => _edit(emit, (a) => a.copyWith(markdown: event.markdown)),
+    );
+    on<GenerationCenterFlashcardEdited>(
+      (event, emit) => _edit(
+        emit,
+        (a) => a.copyWith(
+          flashcards: [...a.flashcards]..[event.index] = event.card,
+        ),
+      ),
+    );
+    on<GenerationCenterQuestionEdited>(
+      (event, emit) => _edit(
+        emit,
+        (a) => a.copyWith(
+          questions: [...a.questions]..[event.index] = event.question,
+        ),
+      ),
+    );
+    on<GenerationCenterItemRemoved>(_onItemRemoved);
+    on<GenerationCenterRemovalUndone>((_, emit) {
+      final previous = state.beforeRemoval;
+      if (previous == null) return;
+      emit(state.copyWith(artifact: previous, beforeRemoval: null));
+    });
+  }
+
+  void _edit(
+    Emitter<GenerationCenterState> emit,
+    StudyArtifact Function(StudyArtifact) change,
+  ) {
+    final artifact = state.artifact;
+    if (artifact == null) return;
+    emit(
+      state.copyWith(
+        artifact: change(artifact),
+        edited: true,
+        beforeRemoval: null,
+      ),
+    );
+  }
+
+  /// Quita la tarjeta o la pregunta [index] (según qué traiga el resultado).
+  void _onItemRemoved(
+    GenerationCenterItemRemoved event,
+    Emitter<GenerationCenterState> emit,
+  ) {
+    final artifact = state.artifact;
+    if (artifact == null) return;
+    final cards = artifact.flashcards.isNotEmpty;
+    final length = cards
+        ? artifact.flashcards.length
+        : artifact.questions.length;
+    if (event.index < 0 || event.index >= length) return;
+    emit(
+      state.copyWith(
+        artifact: cards
+            ? artifact.copyWith(
+                flashcards: [...artifact.flashcards]..removeAt(event.index),
+              )
+            : artifact.copyWith(
+                questions: [...artifact.questions]..removeAt(event.index),
+              ),
+        beforeRemoval: artifact,
+        edited: true,
+      ),
+    );
   }
 
   final GetSubjectsUseCaseContract _getSubjects;
@@ -162,7 +236,12 @@ class GenerationCenterBloc
     final result = await _generate(state.kind, state.selected.toList());
     emit(
       result.fold(
-        (a) => state.copyWith(generating: false, artifact: a),
+        (a) => state.copyWith(
+          generating: false,
+          artifact: a,
+          edited: false,
+          beforeRemoval: null,
+        ),
         (error) => state.copyWith(generating: false, generateError: error),
       ),
     );

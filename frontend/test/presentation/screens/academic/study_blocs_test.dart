@@ -11,6 +11,7 @@ import 'package:synaptixfit/domain/enums/study_source_type.dart';
 import 'package:synaptixfit/domain/enums/visibility.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/academic/study_artifact.dart';
+import 'package:synaptixfit/domain/models/academic/study_document.dart';
 import 'package:synaptixfit/domain/models/academic/subject_file.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/academic/note_draft.dart';
@@ -325,10 +326,91 @@ void main() {
   group('AiDocumentBloc', () {
     late _LoadOrGenerate loadOrGenerate;
     late _Generate generate;
+    late _SaveNote saveAsNote;
 
     setUp(() {
       loadOrGenerate = _LoadOrGenerate();
       generate = _Generate();
+      saveAsNote = _SaveNote();
+    });
+
+    const withSubject = StudyDocument(
+      id: 'd1',
+      sourceType: StudySourceType.note,
+      sourceId: 'n1',
+      type: AiDocumentType.summary,
+      subjectId: 's1',
+      markdown: 'Resumen',
+    );
+
+    blocTest<AiDocumentBloc, AiDocumentState>(
+      'un resumen de una fuente con asignatura se copia a un apunte propio',
+      setUp: () {
+        when(
+          () => loadOrGenerate(
+            StudySourceType.note,
+            'n1',
+            AiDocumentType.summary,
+          ),
+        ).thenAnswer((_) async => const Success(withSubject));
+        when(
+          () => saveAsNote(
+            subjectId: 's1',
+            title: 'Mi resumen',
+            markdown: 'Resumen',
+          ),
+        ).thenAnswer((_) async => const Success(note));
+      },
+      build: () => AiDocumentBloc(
+        loadOrGenerate: loadOrGenerate,
+        generate: generate,
+        saveAsNote: saveAsNote,
+      ),
+      act: (bloc) async {
+        bloc.add(
+          const AiDocumentEvent.started(
+            sourceType: StudySourceType.note,
+            sourceId: 'n1',
+            type: AiDocumentType.summary,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(
+          const AiDocumentEvent.saveAsNoteRequested(title: 'Mi resumen'),
+        );
+      },
+      skip: 2,
+      expect: () => [
+        const AiDocumentState(
+          sourceId: 'n1',
+          loading: false,
+          document: withSubject,
+          saving: true,
+        ),
+        AiDocumentState(
+          sourceId: 'n1',
+          loading: false,
+          document: withSubject,
+          savedNoteId: note.id,
+        ),
+      ],
+    );
+
+    test('sin asignatura o con la práctica no se ofrece copiar', () {
+      expect(const AiDocumentState(document: summaryDoc).canSaveAsNote, false);
+      expect(
+        const AiDocumentState(
+          document: StudyDocument(
+            id: 'd2',
+            sourceType: StudySourceType.note,
+            sourceId: 'n1',
+            type: AiDocumentType.practice,
+            subjectId: 's1',
+          ),
+        ).canSaveAsNote,
+        false,
+      );
+      expect(const AiDocumentState(document: withSubject).canSaveAsNote, true);
     });
 
     blocTest<AiDocumentBloc, AiDocumentState>(
@@ -347,8 +429,11 @@ void main() {
           (_) async => const Failure(AppError.business('AI_UNAVAILABLE')),
         );
       },
-      build: () =>
-          AiDocumentBloc(loadOrGenerate: loadOrGenerate, generate: generate),
+      build: () => AiDocumentBloc(
+        loadOrGenerate: loadOrGenerate,
+        generate: generate,
+        saveAsNote: saveAsNote,
+      ),
       act: (bloc) async {
         bloc.add(
           const AiDocumentEvent.started(

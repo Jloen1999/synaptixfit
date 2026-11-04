@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Badge;
 
+import '../../../../domain/enums/badge_rarity.dart';
 import '../../../../domain/models/progress/badge.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
@@ -14,36 +15,51 @@ const _greyscale = ColorFilter.matrix(<double>[
   0, 0, 0, 0.6, 0, //
 ]);
 
-/// Emoji de la insignia sobre un círculo del color de su rareza.
+/// Emoji de la insignia sobre un círculo del color de su rareza. Sirve para
+/// las insignias propias ([Badge]) y para las del perfil público de otros
+/// ([BadgeEmblem.raw]).
 class BadgeEmblem extends StatelessWidget {
-  const BadgeEmblem({super.key, required this.badge, this.size = 56});
+  BadgeEmblem({super.key, required Badge badge, this.size = 56})
+    : icon = badge.icon,
+      rarity = badge.rarity,
+      earned = badge.earned;
 
-  final Badge badge;
+  const BadgeEmblem.raw({
+    super.key,
+    required this.icon,
+    required this.rarity,
+    this.earned = true,
+    this.size = 56,
+  });
+
+  final String icon;
+  final BadgeRarity rarity;
+  final bool earned;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    final color = context.rarityColor(badge.rarity);
+    final color = context.rarityColor(rarity);
     final emblem = Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: badge.earned
+        color: earned
             ? color.withValues(alpha: 0.16)
             : context.colors.surfaceContainer,
         border: Border.all(
-          color: badge.earned ? color : context.colors.outlineVariant,
+          color: earned ? color : context.colors.outlineVariant,
           width: 2,
         ),
       ),
       child: Text(
-        badge.icon.isEmpty ? '🏅' : badge.icon,
+        icon.isEmpty ? '🏅' : icon,
         style: TextStyle(fontSize: size * 0.48),
       ),
     );
-    if (badge.earned) return emblem;
+    if (earned) return emblem;
     return Stack(
       clipBehavior: Clip.none,
       children: [

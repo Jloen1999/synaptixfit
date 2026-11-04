@@ -109,13 +109,15 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                   ),
                 ),
                 const SizedBox(height: TokensSpacing.l),
-                Row(
+                // Título y acciones en un Wrap: con texto grande las dos
+                // acciones bajan de línea en vez de cortarse.
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: TokensSpacing.s,
                   children: [
-                    Expanded(
-                      child: Text(
-                        l10n.academicNotesTitle(state.notes.length),
-                        style: context.textStyles.titleMedium,
-                      ),
+                    Text(
+                      l10n.academicNotesTitle(state.notes.length),
+                      style: context.textStyles.titleMedium,
                     ),
                     TextButton.icon(
                       onPressed: () => _openAndRefresh(
@@ -124,6 +126,14 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                       ),
                       icon: const Icon(Icons.add_rounded),
                       label: Text(l10n.academicNoteNew),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _openAndRefresh(
+                        context,
+                        AcademicPaths.scanNote(subjectId: state.subjectId),
+                      ),
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: Text(l10n.academicScanEntry),
                     ),
                   ],
                 ),

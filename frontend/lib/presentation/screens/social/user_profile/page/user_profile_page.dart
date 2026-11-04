@@ -16,6 +16,7 @@ import '../../widgets/social_dialogs.dart';
 import '../../widgets/social_feedback.dart';
 import '../../widgets/social_layout.dart';
 import '../bloc/user_profile_bloc.dart';
+import 'public_badges_section.dart';
 
 /// Perfil público de un usuario (`/social/users/:userId`).
 class UserProfilePage extends StatelessWidget {
@@ -104,8 +105,10 @@ class _UserProfileView extends StatelessWidget {
                       busy: state.busy,
                     ),
                   ),
-                  if (!state.profile!.restricted)
+                  if (!state.profile!.restricted) ...[
+                    PublicBadgesSection(profile: state.profile!),
                     ..._sharedNotes(context, state),
+                  ],
                   const SizedBox(height: TokensSpacing.l),
                   SocialContentWidth(
                     child: AppSectionHeader(title: l10n.socialProfilePosts),

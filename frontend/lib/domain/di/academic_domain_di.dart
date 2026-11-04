@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 
 import '../use_cases/academic/abandon_test_session_use_case.dart';
+import '../use_cases/academic/get_mock_exam_options_use_case.dart';
+import '../use_cases/academic/read_note_photos_use_case.dart';
 import '../use_cases/academic/answer_in_test_session_use_case.dart';
 import '../use_cases/academic/answer_question_use_case.dart';
 import '../use_cases/academic/assign_subject_semester_use_case.dart';
@@ -254,6 +256,12 @@ void registerAcademicDomain(GetIt getIt) {
     )
     ..registerLazySingleton<StartTestSessionUseCaseContract>(
       () => StartTestSessionUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetMockExamOptionsUseCaseContract>(
+      () => GetMockExamOptionsUseCase(getIt()),
+    )
+    ..registerLazySingleton<ReadNotePhotosUseCaseContract>(
+      () => ReadNotePhotosUseCase(getIt()),
     )
     ..registerLazySingleton<UpdateNoteUseCaseContract>(
       () => UpdateNoteUseCase(getIt()),

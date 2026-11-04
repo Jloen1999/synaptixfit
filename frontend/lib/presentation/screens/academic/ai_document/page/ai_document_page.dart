@@ -55,9 +55,16 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
     final l10n = context.localizations;
     return BlocConsumer<AiDocumentBloc, AiDocumentState>(
       listenWhen: (a, b) =>
-          a.actionError != b.actionError && b.actionError != null,
-      listener: (context, state) =>
-          context.showSnack(errorMessage(context, state.actionError!)),
+          (a.actionError != b.actionError && b.actionError != null) ||
+          (a.savedNoteId != b.savedNoteId && b.savedNoteId != null),
+      listener: (context, state) {
+        if (state.savedNoteId != null) {
+          context.showSnack(l10n.academicAiSavedAsNote);
+          context.pushReplacement(AcademicPaths.note(state.savedNoteId!));
+          return;
+        }
+        context.showSnack(errorMessage(context, state.actionError!));
+      },
       builder: (context, state) {
         final doc = state.document;
         return Scaffold(
@@ -123,6 +130,7 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
       AiDocumentType.mindMap when doc.mindMap != null => Column(
         children: [
           _SavedBanner(doc: doc),
+          if (state.canSaveAsNote) _SaveAsNoteRow(state: state, title: title),
           Expanded(child: MindMapView(map: doc.mindMap!)),
         ],
       ),
@@ -132,12 +140,96 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
           padding: const EdgeInsets.all(TokensSpacing.m),
           children: [
             _SavedBanner(doc: doc),
+            if (state.canSaveAsNote) _SaveAsNoteRow(state: state, title: title),
             const SizedBox(height: TokensSpacing.m),
             AcademicMarkdown(data: doc.markdown ?? ''),
           ],
         ),
       ),
     };
+  }
+}
+
+/// Lo que genera la IA no se edita aquí (se sobrescribe al regenerar): para
+/// corregirlo o guardarlo con los demás apuntes, se copia a un apunte propio.
+class _SaveAsNoteRow extends StatelessWidget {
+  const _SaveAsNoteRow({required this.state, required this.title});
+
+  final AiDocumentState state;
+  final String title;
+
+  Future<void> _save(BuildContext context) async {
+    final l10n = context.localizations;
+    final bloc = context.read<AiDocumentBloc>();
+    final doc = state.document!;
+    final controller = TextEditingController(
+      text: l10n.academicAiNoteTitle(
+        context.aiDocumentLabel(doc.type),
+        doc.sourceTitle ?? title,
+      ),
+    );
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.academicAiSaveAsNote),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.academicAiSaveAsNoteHint),
+            const SizedBox(height: TokensSpacing.m),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+              decoration: InputDecoration(
+                labelText: l10n.academicNoteTitleLabel,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: Text(l10n.commonSave),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (chosen != null) {
+      bloc.add(AiDocumentEvent.saveAsNoteRequested(title: chosen.trim()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.academicAiFixHint,
+            style: context.textStyles.bodyMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          OutlinedButton.icon(
+            onPressed: state.saving ? null : () => _save(context),
+            icon: const Icon(Icons.note_add_outlined),
+            label: Text(l10n.academicAiSaveAsNote),
+          ),
+        ],
+      ),
+    );
   }
 }
 

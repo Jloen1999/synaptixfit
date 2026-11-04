@@ -30,5 +30,9 @@ String? academicErrorMessage(
   'QUIZ_QUESTION_NOT_FOUND' => l10n.academicErrorQuizQuestionNotFound,
   'QUIZ_SESSION_NOT_FOUND' => l10n.academicErrorQuizSessionNotFound,
   'QUIZ_SESSION_NOT_IN_PROGRESS' => l10n.academicErrorQuizSessionNotInProgress,
+  'NOTE_SCAN_UNSUPPORTED_FILE' => l10n.academicErrorNoteScanUnsupportedFile,
+  'NOTE_SCAN_TOO_LARGE' => l10n.academicErrorNoteScanTooLarge,
+  'NOTE_SCAN_NOTHING_FOUND' => l10n.academicErrorNoteScanNothingFound,
+  'NOTE_SCAN_UNAVAILABLE' => l10n.academicErrorNoteScanUnavailable,
   _ => null,
 };

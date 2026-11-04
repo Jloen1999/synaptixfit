@@ -213,6 +213,10 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `STUDY_GUIDE_EMPTY` | 422 | La IA no encontró datos en la guía | No hemos podido extraer datos de la guía docente. Comprueba el documento. | Activo |
 | `TEACHING_GUIDE_IMPORT_NOT_FOUND` | 404 | La importación de plan docente no existe o es de otro usuario | No hemos encontrado ese plan docente. Vuelve a subirlo. | Activo |
 | `TEACHING_GUIDE_IMPORT_NOT_READY` | 409 | El plan docente aún se está analizando (o falló) y no se puede aplicar ni reintentar todavía | El plan docente aún se está analizando. Espera unos segundos. | Activo |
+| `NOTE_SCAN_UNSUPPORTED_FILE` | 400 | Fotos de apuntes (`POST /notes/scan-drafts`): ninguna, más de 5, vacías, de un tipo distinto de JPG/PNG/WEBP o que no se pueden abrir | Envía de 1 a 5 fotos en JPG, PNG o WEBP. | Activo |
+| `NOTE_SCAN_TOO_LARGE` | 400 | Una foto supera 10 MB o todas juntas 20 MB | Las fotos pesan demasiado. Prueba con menos páginas a la vez. | Activo |
+| `NOTE_SCAN_NOTHING_FOUND` | 422 | El OCR no encontró texto legible en las fotos | No hemos podido leer texto en las fotos. Prueba con más luz y la hoja recta. | Activo |
+| `NOTE_SCAN_UNAVAILABLE` | 503 | El lector de texto (Tesseract) no está instalado, está ocupado o falló (ADR 0040) | Ahora mismo no podemos leer fotos. Inténtalo en un rato. | Activo |
 | `TEACHING_GUIDE_IMPORT_ALREADY_APPLIED` | 409 | El plan docente ya se aplicó a una asignatura | Este plan docente ya está aplicado. | Activo |
 | `STUDY_MATERIAL_NOT_FOUND` | 404 | El material no existe o no es tuyo | No encontramos ese material de estudio. | Activo |
 | `QUIZ_BANK_NOT_FOUND` | 404 | El banco no existe o el material no tiene banco | Este material aún no tiene preguntas. | Activo |

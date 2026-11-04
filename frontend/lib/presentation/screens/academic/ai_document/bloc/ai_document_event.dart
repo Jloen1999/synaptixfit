@@ -10,4 +10,9 @@ sealed class AiDocumentEvent with _$AiDocumentEvent {
 
   /// Vuelve a generar el documento y sobrescribe el guardado.
   const factory AiDocumentEvent.regenerated() = AiDocumentRegenerated;
+
+  /// Copia el resumen o el mapa a un apunte propio (para corregirlo o
+  /// tenerlo con los demás apuntes).
+  const factory AiDocumentEvent.saveAsNoteRequested({String? title}) =
+      AiDocumentSaveAsNoteRequested;
 }

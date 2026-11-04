@@ -1,6 +1,7 @@
 import '../enums/shared_notes_scope.dart';
 import '../enums/visibility.dart';
 import '../models/academic/note.dart';
+import '../models/academic/note_scan.dart';
 import '../models/result/app_result.dart';
 import '../models/result/result.dart';
 
@@ -50,4 +51,9 @@ abstract interface class NoteRepositoryContract {
   Future<AppResult<SharedNote>> getSharedNote(String noteId);
 
   Future<AppResult<Note>> copySharedNote(String noteId);
+
+  /// Lee fotos de apuntes en papel y devuelve un borrador (no guarda nada).
+  Future<AppResult<ScannedNoteDraft>> readNotePhotos(
+    List<NotePhotoUpload> photos,
+  );
 }

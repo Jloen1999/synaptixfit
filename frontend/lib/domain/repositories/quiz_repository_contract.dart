@@ -1,3 +1,4 @@
+import '../models/academic/mock_exam_options.dart';
 import '../models/academic/quiz.dart';
 import '../models/result/app_result.dart';
 
@@ -23,6 +24,9 @@ abstract interface class QuizRepositoryContract {
     required int doubtful,
     required int failed,
   });
+
+  /// Materiales de la asignatura con preguntas para un simulacro.
+  Future<AppResult<MockExamOptions>> getMockExamOptions(String subjectId);
 
   Future<AppResult<TestSession>> startTestSession(
     List<String> materialIds, {

@@ -119,6 +119,7 @@ abstract final class TokensLayout {
   static const double coverPhotoShare = 0.4;
   static const double coverPhotoFade = 0.4;
   static const double bottomBarMaxShare = 0.45;
+  static const double segmentMinWidth = 112;
 }
 
 abstract final class TokensSize {

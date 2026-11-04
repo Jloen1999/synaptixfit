@@ -9,12 +9,14 @@ import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.social.ContentVisibility;
 import com.synaptixfit.domain.model.social.Friendship;
 import com.synaptixfit.domain.model.social.FriendshipRelation;
+import com.synaptixfit.domain.model.social.PublicBadge;
 import com.synaptixfit.domain.model.social.PublicProfile;
 import com.synaptixfit.domain.model.social.UserCard;
 import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.social.FriendshipRepositoryPort;
 import com.synaptixfit.domain.port.output.social.SocialQueryPort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
+import java.util.List;
 import java.util.UUID;
 
 /** Búsqueda de usuarios y perfil público. */
@@ -51,10 +53,13 @@ public class SocialProfileService implements SearchUsersUseCase, GetPublicProfil
         UUID friendshipId = relation == null || rel == FriendshipRelation.NONE ? null : relation.id();
         if (!ContentVisibility.canView(viewerId, target, relation)) {
             return new PublicProfile(target.id(), target.fullName(), target.avatarUrl(), target.privacy(), true,
-                    null, null, null, null, rel, friendshipId);
+                    null, null, null, null, rel, friendshipId, List.of());
         }
+        List<PublicBadge> badges = queries.visibleBadges(target.id()).stream()
+                .sorted(PublicBadge.SHOWCASE_ORDER)
+                .toList();
         return new PublicProfile(target.id(), target.fullName(), target.avatarUrl(), target.privacy(), false,
                 target.level(), target.streak(), queries.countPosts(target.id()), queries.countFriends(target.id()),
-                rel, friendshipId);
+                rel, friendshipId, badges);
     }
 }

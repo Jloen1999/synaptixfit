@@ -59,6 +59,10 @@ class ProgressTab extends StatelessWidget with ErrorsMessageMixin {
                   retention: state.retention,
                   materials: state.materials,
                 ),
+                if (state.materials.isNotEmpty) ...[
+                  const SizedBox(height: TokensSpacing.l),
+                  _MockExamCard(subjectId: state.subjectId),
+                ],
                 const SizedBox(height: TokensSpacing.l),
                 if (guide == null)
                   _GuideEmpty(subjectId: state.subjectId)
@@ -684,6 +688,47 @@ class _BibliographySection extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// Invita a un simulacro con varios temas de la asignatura: la mejor manera
+/// de saber si se llega al examen.
+class _MockExamCard extends StatelessWidget {
+  const _MockExamCard({required this.subjectId});
+
+  final String subjectId;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.quiz_rounded, color: context.palette.study),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(
+                child: Text(
+                  l10n.academicMockCardTitle,
+                  style: context.textStyles.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.xs),
+          Text(l10n.academicMockCardBody),
+          const SizedBox(height: TokensSpacing.s),
+          AppSecondaryButton(
+            label: l10n.academicMockCardAction,
+            icon: const Icon(Icons.play_arrow_rounded),
+            onPressed: () =>
+                context.push(AcademicPaths.subjectMockExam(subjectId)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RetentionSection extends StatelessWidget {

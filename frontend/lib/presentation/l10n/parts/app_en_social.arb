@@ -181,5 +181,9 @@
   "socialRequestSentHint": "Waiting for a reply",
   "socialOpenPostHint": "Open the post",
   "socialLinkBadge": "Badge",
-  "socialFindFriends": "Find friends"
+  "socialFindFriends": "Find friends",
+  "socialProfileBadges": "{count, plural, =1{1 badge} other{{count} badges}}",
+  "socialProfileBadgesAll": "See all {count}",
+  "socialProfileBadgeSemantics": "{name}, {rarity} badge. Tap to see what it is.",
+  "socialProfileBadgeEarnedOn": "Earned on {date}"
 }

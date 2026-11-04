@@ -8,6 +8,8 @@ import '../screens/academic/free_practice/bloc/free_practice_bloc.dart';
 import '../screens/academic/generation_center/bloc/generation_center_bloc.dart';
 import '../screens/academic/material_review/bloc/material_review_bloc.dart';
 import '../screens/academic/mock_exam/bloc/mock_exam_bloc.dart';
+import '../screens/academic/mock_exam_setup/bloc/mock_exam_setup_bloc.dart';
+import '../screens/academic/note_scan/bloc/note_scan_bloc.dart';
 import '../screens/academic/note_editor/bloc/note_editor_bloc.dart';
 import '../screens/academic/note_viewer/bloc/note_viewer_bloc.dart';
 import '../screens/academic/practice_hub/bloc/practice_hub_bloc.dart';
@@ -114,7 +116,11 @@ void registerAcademicPresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(
-      () => AiDocumentBloc(loadOrGenerate: getIt(), generate: getIt()),
+      () => AiDocumentBloc(
+        loadOrGenerate: getIt(),
+        generate: getIt(),
+        saveAsNote: getIt(),
+      ),
     )
     ..registerFactory(
       () => GenerationCenterBloc(
@@ -173,5 +179,13 @@ void registerAcademicPresentation(GetIt getIt) {
         getAccount: getIt(),
       ),
     )
-    ..registerFactory(() => TestResultsBloc(getSession: getIt()));
+    ..registerFactory(() => TestResultsBloc(getSession: getIt()))
+    ..registerFactory(() => MockExamSetupBloc(getOptions: getIt()))
+    ..registerFactory(
+      () => NoteScanBloc(
+        getSubjects: getIt(),
+        readPhotos: getIt(),
+        createNote: getIt(),
+      ),
+    );
 }

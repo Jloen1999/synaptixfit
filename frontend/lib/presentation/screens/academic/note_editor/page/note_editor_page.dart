@@ -393,36 +393,29 @@ class _MetaRow extends StatelessWidget {
           onChanged: onSubject,
         ),
         const SizedBox(height: TokensSpacing.m),
-        Wrap(
-          spacing: TokensSpacing.s,
-          runSpacing: TokensSpacing.s,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            SegmentedButton<Visibility>(
-              showSelectedIcon: false,
-              segments: [
-                for (final v in Visibility.values)
-                  ButtonSegment(
-                    value: v,
-                    enabled: v.isAllowedBy(profilePrivacy),
-                    tooltip: v.isAllowedBy(profilePrivacy) ? null : limit,
-                    icon: Icon(context.visibilityIcon(v)),
-                    label: Text(context.visibilityLabel(v)),
-                  ),
-              ],
-              selected: {visibility},
-              onSelectionChanged: (s) => onVisibility(s.first),
+        // Con texto grande o en francés/portugués las tres opciones no caben en
+        // una fila: AppAdaptiveChoice las pasa a una lista.
+        AppAdaptiveChoice<Visibility>(
+          values: Visibility.values,
+          selected: visibility,
+          labelOf: context.visibilityLabel,
+          iconOf: context.visibilityIcon,
+          enabledOf: (v) => v.isAllowedBy(profilePrivacy),
+          disabledHint: limit,
+          onChanged: onVisibility,
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: FilterChip(
+            avatar: const Icon(
+              Icons.sticky_note_2_outlined,
+              size: TokensSize.iconXs,
             ),
-            FilterChip(
-              avatar: const Icon(
-                Icons.sticky_note_2_outlined,
-                size: TokensSize.iconXs,
-              ),
-              label: Text(l10n.academicQuickNote),
-              selected: quick,
-              onSelected: onQuick,
-            ),
-          ],
+            label: Text(l10n.academicQuickNote),
+            selected: quick,
+            onSelected: onQuick,
+          ),
         ),
         const SizedBox(height: TokensSpacing.xs),
         // Quién lo verá, dicho con palabras (los iconos solos no lo explican); se

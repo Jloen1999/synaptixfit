@@ -128,26 +128,13 @@ class ChallengeVisibilitySelector extends StatelessWidget {
   final ValueChanged<Visibility>? onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: SegmentedButton<Visibility>(
-        showSelectedIcon: false,
-        segments: [
-          for (final v in Visibility.values)
-            ButtonSegment(
-              value: v,
-              icon: Icon(v.challengeIcon, size: TokensSize.iconXs),
-              label: Text(v.challengeLabel(context)),
-            ),
-        ],
-        selected: {value},
-        onSelectionChanged: onChanged == null
-            ? null
-            : (s) => onChanged!(s.first),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppAdaptiveChoice<Visibility>(
+    values: Visibility.values,
+    selected: value,
+    labelOf: (v) => v.challengeLabel(context),
+    iconOf: (v) => v.challengeIcon,
+    onChanged: onChanged,
+  );
 }
 
 /// Desplegable de asignatura con la opción «Sin asignatura».

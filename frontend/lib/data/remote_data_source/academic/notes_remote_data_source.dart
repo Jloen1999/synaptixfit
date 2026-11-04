@@ -82,4 +82,33 @@ class NotesRemoteDataSource {
     );
     return NoteDto.fromJson(response.data!);
   }
+
+  /// Envía las fotos (campo `files`, varias) y recibe el borrador leído.
+  /// Leer y ordenar varias páginas tarda: se da más margen que al resto.
+  Future<ScannedNoteDraftDto> readNotePhotos(
+    List<({List<int> bytes, String fileName, String mimeType})> photos,
+  ) async {
+    final form = FormData();
+    for (final photo in photos) {
+      form.files.add(
+        MapEntry(
+          'files',
+          MultipartFile.fromBytes(
+            photo.bytes,
+            filename: photo.fileName,
+            contentType: DioMediaType.parse(photo.mimeType),
+          ),
+        ),
+      );
+    }
+    final response = await _dio.post<Map<String, dynamic>>(
+      '$_base/scan-drafts',
+      data: form,
+      options: Options(
+        contentType: Headers.multipartFormDataContentType,
+        receiveTimeout: const Duration(minutes: 3),
+      ),
+    );
+    return ScannedNoteDraftDto.fromJson(response.data!);
+  }
 }

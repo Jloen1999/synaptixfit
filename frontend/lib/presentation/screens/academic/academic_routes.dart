@@ -10,7 +10,9 @@ import 'free_practice/page/free_practice_page.dart';
 import 'generation_center/page/generation_center_page.dart';
 import 'material_review/page/material_review_page.dart';
 import 'mock_exam/page/mock_exam_page.dart';
+import 'mock_exam_setup/page/mock_exam_setup_page.dart';
 import 'note_editor/page/note_editor_page.dart';
+import 'note_scan/page/note_scan_page.dart';
 import 'note_viewer/page/note_viewer_page.dart';
 import 'practice_hub/page/practice_hub_page.dart';
 import 'shared_note_detail/page/shared_note_detail_page.dart';
@@ -71,6 +73,14 @@ abstract final class AcademicPaths {
     {'subjectId': subjectId, if (quick) 'quick': '1'},
   );
 
+  /// Fotografiar apuntes en papel y pasarlos a un apunte.
+  static String scanNote({String? subjectId}) =>
+      _withQuery('/academic/notes/scan', {'subjectId': subjectId});
+
+  /// Preparar un simulacro con varios temas de la asignatura.
+  static String subjectMockExam(String subjectId) =>
+      '/academic/subjects/$subjectId/mock-exam';
+
   static String note(String noteId) => '/academic/notes/$noteId';
 
   static String editNote(String noteId) => '/academic/notes/$noteId/edit';
@@ -105,10 +115,18 @@ abstract final class AcademicPaths {
       '/academic/practice/$materialId/flashcards';
 
   /// Simulacro; `resume` reanuda la sesión en curso en lugar de crear otra.
-  static String exam(String materialId, {bool resume = false}) => _withQuery(
-    '/academic/practice/$materialId/exam',
-    {if (resume) 'resume': '1'},
-  );
+  /// Con `withMaterials` mezcla preguntas de otros materiales (simulacro de
+  /// asignatura) y `count` fija cuántas preguntas.
+  static String exam(
+    String materialId, {
+    bool resume = false,
+    List<String> withMaterials = const [],
+    int? count,
+  }) => _withQuery('/academic/practice/$materialId/exam', {
+    if (resume) 'resume': '1',
+    if (withMaterials.isNotEmpty) 'with': withMaterials.join(','),
+    if (count != null) 'count': '$count',
+  });
 
   static String testResults(String sessionId) =>
       '/academic/test-sessions/$sessionId/results';
@@ -169,9 +187,19 @@ List<RouteBase> academicRoutes() => [
         SubjectFormPage(subjectId: state.pathParameters['subjectId']),
   ),
   GoRoute(
+    path: '/academic/subjects/:subjectId/mock-exam',
+    builder: (context, state) =>
+        MockExamSetupPage(subjectId: state.pathParameters['subjectId']!),
+  ),
+  GoRoute(
     path: '/academic/subjects/:subjectId',
     builder: (context, state) =>
         SubjectDetailPage(subjectId: state.pathParameters['subjectId']!),
+  ),
+  GoRoute(
+    path: '/academic/notes/scan',
+    builder: (context, state) =>
+        NoteScanPage(subjectId: state.uri.queryParameters['subjectId']),
   ),
   GoRoute(
     path: '/academic/notes/new',
@@ -253,6 +281,11 @@ List<RouteBase> academicRoutes() => [
     builder: (context, state) => MockExamPage(
       materialId: state.pathParameters['materialId']!,
       resume: state.uri.queryParameters['resume'] == '1',
+      extraMaterialIds: [
+        for (final id in (state.uri.queryParameters['with'] ?? '').split(','))
+          if (_uuid.hasMatch(id)) id,
+      ],
+      questionCount: int.tryParse(state.uri.queryParameters['count'] ?? ''),
     ),
   ),
   GoRoute(

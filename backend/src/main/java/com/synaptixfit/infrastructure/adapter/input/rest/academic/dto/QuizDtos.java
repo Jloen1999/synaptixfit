@@ -2,11 +2,13 @@ package com.synaptixfit.infrastructure.adapter.input.rest.academic.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.synaptixfit.domain.model.academic.AnswerResult;
+import com.synaptixfit.domain.model.academic.MockExamOptions;
 import com.synaptixfit.domain.model.academic.PracticeResult;
 import com.synaptixfit.domain.model.academic.Question;
 import com.synaptixfit.domain.model.academic.QuestionBankView;
 import com.synaptixfit.domain.model.academic.QuestionType;
 import com.synaptixfit.domain.model.academic.SessionAnswer;
+import com.synaptixfit.domain.model.academic.StudySourceType;
 import com.synaptixfit.domain.model.academic.TestSession;
 import com.synaptixfit.domain.model.academic.TestSessionStatus;
 import com.synaptixfit.domain.model.academic.TestSessionView;
@@ -68,8 +70,22 @@ public final class QuizDtos {
         }
     }
 
-    @Schema(name = "QuizStartSessionRequest")
+    /** Materiales con preguntas para un simulacro de asignatura y los límites al empezarlo. */
+    public record MockExamOptionsResponse(List<MockExamSourceResponse> sources, int maxMaterials,
+                                          int suggestedQuestions, int maxQuestions) {
 
+        public static MockExamOptionsResponse from(MockExamOptions o) {
+            return new MockExamOptionsResponse(o.sources().stream().map(s -> new MockExamSourceResponse(s.materialId(),
+                    s.title(), s.originType(), s.questionCount())).toList(), o.maxMaterials(), o.suggestedQuestions(),
+                    o.maxQuestions());
+        }
+    }
+
+    public record MockExamSourceResponse(UUID materialId, String title, StudySourceType originType,
+                                         int questionCount) {
+    }
+
+    @Schema(name = "QuizStartSessionRequest")
     public record StartSessionRequest(@NotEmpty @Size(max = 10) List<@NotNull UUID> materialIds,
                                       @Min(1) @Max(50) Integer questionCount) {
     }

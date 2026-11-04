@@ -60,7 +60,10 @@ class MockExamBloc extends Bloc<MockExamEvent, MockExamState> {
       session = active.valueOrNull;
     }
     if (session == null) {
-      final started = await _start([event.materialId]);
+      final started = await _start([
+        event.materialId,
+        ...event.extraMaterialIds,
+      ], questionCount: event.questionCount);
       if (started.errorOrNull case final AppError error) {
         emit(state.copyWith(loading: false, error: error));
         return;

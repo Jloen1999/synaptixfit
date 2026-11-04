@@ -57,6 +57,9 @@ dependencies:
   # Pantalla encendida durante la sesión de entrenamiento en vivo
   wakelock_plus: ^1.8.1
 
+  # Fotografiar apuntes en papel (cámara o galería; en web y escritorio, elegir archivo)
+  image_picker: ^1.2.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

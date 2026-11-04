@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.social;
 
+import com.synaptixfit.domain.model.badge.BadgeRarity;
 import com.synaptixfit.domain.model.shared.AudienceScope;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
@@ -12,6 +13,7 @@ import com.synaptixfit.domain.model.social.FriendshipRelation;
 import com.synaptixfit.domain.model.social.FriendshipStatus;
 import com.synaptixfit.domain.model.social.FriendshipView;
 import com.synaptixfit.domain.model.social.PostView;
+import com.synaptixfit.domain.model.social.PublicBadge;
 import com.synaptixfit.domain.model.social.ReportedContent;
 import com.synaptixfit.domain.model.social.ReportedContentType;
 import com.synaptixfit.domain.model.social.UserCard;
@@ -247,6 +249,31 @@ public class SocialQueryJdbcAdapter implements SocialQueryPort, ReportedContentQ
                 .param("user", userId)
                 .query(Long.class)
                 .single();
+    }
+
+    /** Lee {@code usuario_insignias} e {@code insignias} (gamificación) solo para mostrarlas. */
+    @Override
+    public List<PublicBadge> visibleBadges(UUID userId) {
+        return jdbc.sql("""
+                        SELECT i.id, i.nombre, i.descripcion, i.icono, i.rareza, ui.obtenida_en
+                          FROM usuario_insignias ui JOIN insignias i ON i.id = ui.insignia_id
+                         WHERE ui.usuario_id = :user AND ui.visible = true
+                        """)
+                .param("user", userId)
+                .query((rs, n) -> new PublicBadge(rs.getObject("id", UUID.class), rs.getString("nombre"),
+                        rs.getString("descripcion"), rs.getString("icono"), rarity(rs.getString("rareza")),
+                        rs.getTimestamp("obtenida_en").toInstant()))
+                .list();
+    }
+
+    /** Vocabulario en español de la tabla → {@link BadgeRarity} (igual que el mapper de gamificación). */
+    private static BadgeRarity rarity(String value) {
+        return switch (value == null ? "" : value) {
+            case "rara" -> BadgeRarity.RARE;
+            case "epica" -> BadgeRarity.EPIC;
+            case "legendaria" -> BadgeRarity.LEGENDARY;
+            default -> BadgeRarity.COMMON;
+        };
     }
 
     // ---------------------------------------------------------------- moderación

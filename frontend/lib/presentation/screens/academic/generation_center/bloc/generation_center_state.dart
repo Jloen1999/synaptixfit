@@ -18,6 +18,12 @@ abstract class GenerationCenterState with _$GenerationCenterState {
     @Default(false) bool generating,
     AppError? generateError,
     StudyArtifact? artifact,
+
+    /// La persona ha corregido algo del resultado (se le dice al guardar).
+    @Default(false) bool edited,
+
+    /// Resultado antes de la última eliminación, para «Deshacer».
+    StudyArtifact? beforeRemoval,
     @Default(false) bool saving,
     AppError? saveError,
 
@@ -35,6 +41,19 @@ abstract class GenerationCenterState with _$GenerationCenterState {
     /// la IA no puede leer el archivo y por eso no sale entre las fuentes.
     FileUploadOutcome? uploadOutcome,
   }) = _GenerationCenterState;
+
+  const GenerationCenterState._();
+
+  /// Hay algo que guardar: un test o unas tarjetas sin ninguna no se guardan.
+  bool get canSave {
+    final a = artifact;
+    if (a == null) return false;
+    return switch (a.kind) {
+      ArtifactKind.flashcards => a.flashcards.isNotEmpty,
+      ArtifactKind.practiceTest => a.questions.isNotEmpty,
+      _ => (a.markdown?.trim().isNotEmpty ?? false) || a.mindMap != null,
+    };
+  }
 }
 
 /// Qué pasó con el archivo subido desde el centro de generación.

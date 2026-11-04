@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>SynaptixFit usa la cámara para fotografiar tus apuntes en papel y pasarlos a texto.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SynaptixFit abre tus fotos para pasar a texto los apuntes que elijas.</string>
 </dict>
 </plist>
