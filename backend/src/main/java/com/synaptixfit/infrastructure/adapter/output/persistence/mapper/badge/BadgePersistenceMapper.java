@@ -43,8 +43,9 @@ public final class BadgePersistenceMapper {
         };
     }
 
-    private static BadgeRarity rarity(String value) {
-        return switch (value) {
+    /** Vocabulario en español de la columna {@code rareza} → {@link BadgeRarity}. Único sitio que lo traduce. */
+    public static BadgeRarity rarity(String value) {
+        return switch (value == null ? "" : value) {
             case "rara" -> BadgeRarity.RARE;
             case "epica" -> BadgeRarity.EPIC;
             case "legendaria" -> BadgeRarity.LEGENDARY;

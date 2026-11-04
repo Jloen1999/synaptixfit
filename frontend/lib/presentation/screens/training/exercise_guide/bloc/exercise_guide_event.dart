@@ -8,4 +8,7 @@ sealed class ExerciseGuideEvent with _$ExerciseGuideEvent {
   /// Guarda la nota; vacía, la borra.
   const factory ExerciseGuideEvent.noteSaved(String text) =
       ExerciseGuideNoteSaved;
+
+  /// Vuelve a mandar la nota que no se pudo guardar.
+  const factory ExerciseGuideEvent.noteRetried() = ExerciseGuideNoteRetried;
 }

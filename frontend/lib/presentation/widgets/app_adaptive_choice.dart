@@ -19,7 +19,12 @@ class AppAdaptiveChoice<T> extends StatelessWidget {
     this.enabledOf,
     this.disabledHint,
     this.hintOf,
+    this.label,
   });
+
+  /// Nombre del grupo («Quién puede verlo»): se pinta encima y lo anuncia el
+  /// lector de pantalla al entrar en las opciones.
+  final String? label;
 
   final List<T> values;
   final T selected;
@@ -32,11 +37,12 @@ class AppAdaptiveChoice<T> extends StatelessWidget {
   /// Opciones que ahora no se pueden elegir (por defecto, todas se pueden).
   final bool Function(T value)? enabledOf;
 
-  /// Por qué una opción está bloqueada (tooltip en los botones; texto bajo
-  /// la opción en la lista).
+  /// Por qué alguna opción está bloqueada: texto visible bajo los botones o
+  /// bajo la opción en la lista (un tooltip no se ve en el móvil).
   final String? disabledHint;
 
-  /// Explicación corta de cada opción, solo en la lista.
+  /// Explicación corta de cada opción: bajo cada una en la lista y, con
+  /// botones, la de la opción elegida bajo ellos.
   final String Function(T value)? hintOf;
 
   bool _enabled(T value) => enabledOf?.call(value) ?? true;
@@ -47,11 +53,36 @@ class AppAdaptiveChoice<T> extends StatelessWidget {
       final perOption = constraints.maxWidth / values.length;
       final stacked =
           context.largeText || perOption < TokensLayout.segmentMinWidth;
-      return stacked ? _list(context) : _segments();
+      final choice = stacked ? _list(context) : _segments(context);
+      final title = label;
+      if (title == null) return choice;
+      return Semantics(
+        container: true,
+        label: title,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ExcludeSemantics(
+              child: Text(title, style: context.textStyles.titleSmall),
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            choice,
+          ],
+        ),
+      );
     },
   );
 
-  Widget _segments() => SizedBox(
+  Widget _segments(BuildContext context) {
+    final blocked = disabledHint != null && values.any((v) => !_enabled(v));
+    final hint = hintOf?.call(selected);
+    final notes = [?hint, if (blocked) disabledHint!];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
     width: double.infinity,
     child: SegmentedButton<T>(
       showSelectedIcon: false,
@@ -68,7 +99,20 @@ class AppAdaptiveChoice<T> extends StatelessWidget {
       selected: {selected},
       onSelectionChanged: onChanged == null ? null : (s) => onChanged!(s.first),
     ),
-  );
+        ),
+        for (final note in notes)
+          Padding(
+            padding: const EdgeInsets.only(top: TokensSpacing.xs),
+            child: Text(
+              note,
+              style: context.textStyles.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 
   Widget _list(BuildContext context) => RadioGroup<T>(
     groupValue: selected,
@@ -84,6 +128,8 @@ class AppAdaptiveChoice<T> extends StatelessWidget {
               value: v,
               enabled: onChanged != null && _enabled(v),
               contentPadding: EdgeInsets.zero,
+              // El círculo al final, como en el resto de ajustes de la app.
+              controlAffinity: ListTileControlAffinity.trailing,
               secondary: Icon(iconOf(v)),
               title: Text(labelOf(v)),
               subtitle: switch ((_enabled(v), hintOf)) {

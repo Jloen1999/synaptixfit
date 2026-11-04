@@ -133,7 +133,10 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                         AcademicPaths.scanNote(subjectId: state.subjectId),
                       ),
                       icon: const Icon(Icons.photo_camera_outlined),
-                      label: Text(l10n.academicScanEntry),
+                      label: Text(
+                        l10n.academicScanEntry,
+                        semanticsLabel: l10n.academicScanEntrySemantics,
+                      ),
                     ),
                   ],
                 ),

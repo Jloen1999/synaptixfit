@@ -24,6 +24,16 @@ class NoteScanBloc extends Bloc<NoteScanEvent, NoteScanState> {
     on<NoteScanStarted>(_onStarted);
     on<NoteScanPhotosAdded>(_onPhotosAdded);
     on<NoteScanPhotoRemoved>(_onPhotoRemoved);
+    on<NoteScanPhotoRestored>(_onPhotoRestored);
+    on<NoteScanCameraUnavailable>(
+      (event, emit) => emit(
+        state.copyWith(
+          cameraProblem: event.denied
+              ? NoteScanCameraProblem.denied
+              : NoteScanCameraProblem.missing,
+        ),
+      ),
+    );
     on<NoteScanReadRequested>(_onRead);
     on<NoteScanBackToPhotos>(
       (_, emit) => emit(state.copyWith(draft: null, readError: null)),
@@ -57,6 +67,7 @@ class NoteScanBloc extends Bloc<NoteScanEvent, NoteScanState> {
       state.copyWith(
         photos: [...state.photos, ...event.photos.take(room)],
         readError: null,
+        cameraProblem: null,
       ),
     );
   }
@@ -66,7 +77,21 @@ class NoteScanBloc extends Bloc<NoteScanEvent, NoteScanState> {
     Emitter<NoteScanState> emit,
   ) {
     if (event.index < 0 || event.index >= state.photos.length) return;
-    emit(state.copyWith(photos: [...state.photos]..removeAt(event.index)));
+    emit(
+      state.copyWith(
+        photos: [...state.photos]..removeAt(event.index),
+        readError: null,
+      ),
+    );
+  }
+
+  void _onPhotoRestored(
+    NoteScanPhotoRestored event,
+    Emitter<NoteScanState> emit,
+  ) {
+    if (!state.canAddMore) return;
+    final at = event.index.clamp(0, state.photos.length);
+    emit(state.copyWith(photos: [...state.photos]..insert(at, event.photo)));
   }
 
   Future<void> _onRead(

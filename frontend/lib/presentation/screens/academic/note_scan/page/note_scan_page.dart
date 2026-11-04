@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/academic/note_scan.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -50,15 +51,10 @@ class _NoteScanView extends StatelessWidget with ErrorsMessageMixin {
     final l10n = context.localizations;
     return BlocConsumer<NoteScanBloc, NoteScanState>(
       listenWhen: (a, b) =>
-          (a.savedNoteId != b.savedNoteId && b.savedNoteId != null) ||
-          (a.saveError != b.saveError && b.saveError != null),
+          a.savedNoteId != b.savedNoteId && b.savedNoteId != null,
       listener: (context, state) {
-        if (state.savedNoteId != null) {
-          context.showSnack(l10n.academicScanSaved);
-          context.pushReplacement(AcademicPaths.note(state.savedNoteId!));
-        } else {
-          context.showSnack(errorMessage(context, state.saveError!));
-        }
+        context.showSnack(l10n.academicScanSaved);
+        context.pushReplacement(AcademicPaths.note(state.savedNoteId!));
       },
       builder: (context, state) {
         final dirty = state.photos.isNotEmpty && state.savedNoteId == null;
@@ -90,21 +86,84 @@ class _NoteScanView extends StatelessWidget with ErrorsMessageMixin {
 }
 
 /// Paso 1: hacer o elegir las fotos de las páginas y mandarlas a leer.
-class _PhotosStep extends StatelessWidget with ErrorsMessageMixin {
+class _PhotosStep extends StatefulWidget {
   const _PhotosStep({required this.state});
 
   final NoteScanState state;
 
-  Future<void> _camera(BuildContext context) async {
-    final bloc = context.read<NoteScanBloc>();
-    final photo = await takeNotePhoto();
-    if (photo != null) bloc.add(NoteScanEvent.photosAdded([photo]));
+  @override
+  State<_PhotosStep> createState() => _PhotosStepState();
+}
+
+class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
+  final _readFocus = FocusNode();
+  final _firstPhotoFocus = FocusNode();
+
+  NoteScanState get state => widget.state;
+
+  @override
+  void didUpdateWidget(_PhotosStep old) {
+    super.didUpdateWidget(old);
+    // El botón «Leer» desaparece mientras se lee: al terminar se le devuelve
+    // el foco para que el teclado y el lector no se queden perdidos.
+    if (old.state.reading && !state.reading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _readFocus.canRequestFocus) _readFocus.requestFocus();
+      });
+    }
   }
 
-  Future<void> _gallery(BuildContext context) async {
+  @override
+  void dispose() {
+    _readFocus.dispose();
+    _firstPhotoFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _camera() async {
+    final bloc = context.read<NoteScanBloc>();
+    try {
+      final photo = await takeNotePhoto();
+      if (photo != null) bloc.add(NoteScanEvent.photosAdded([photo]));
+    } on NotePhotoCameraUnavailable catch (e) {
+      bloc.add(NoteScanEvent.cameraUnavailable(denied: e.denied));
+    }
+  }
+
+  Future<void> _gallery() async {
     final bloc = context.read<NoteScanBloc>();
     final photos = await pickNotePhotos(limit: state.room);
     if (photos.isNotEmpty) bloc.add(NoteScanEvent.photosAdded(photos));
+  }
+
+  void _remove(int index) {
+    final bloc = context.read<NoteScanBloc>();
+    final photo = state.photos[index];
+    bloc.add(NoteScanEvent.photoRemoved(index));
+    context.showUndoSnack(
+      context.localizations.academicScanPageRemoved(index + 1),
+      onUndo: () => bloc.add(NoteScanEvent.photoRestored(index, photo)),
+      onCommit: () {},
+    );
+    // El foco pasa a la primera página que queda.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _firstPhotoFocus.canRequestFocus) {
+        _firstPhotoFocus.requestFocus();
+      }
+    });
+  }
+
+  /// Un fallo de red o el lector ocupado se arreglan reintentando; con una
+  /// foto ilegible, rara o muy grande, reintentar fallaría igual.
+  static bool _retryHelps(AppError error) =>
+      error is NetworkError ||
+      (error is BusinessError && error.code == 'NOTE_SCAN_UNAVAILABLE');
+
+  void _changePhotos() {
+    if (!_firstPhotoFocus.canRequestFocus) return;
+    _firstPhotoFocus.requestFocus();
+    final focusContext = _firstPhotoFocus.context;
+    if (focusContext != null) Scrollable.ensureVisible(focusContext);
   }
 
   @override
@@ -112,44 +171,14 @@ class _PhotosStep extends StatelessWidget with ErrorsMessageMixin {
     final l10n = context.localizations;
     final bloc = context.read<NoteScanBloc>();
     if (state.reading) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(TokensSpacing.xl),
-          child: Semantics(
-            liveRegion: true,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.document_scanner_outlined,
-                  size: TokensSize.iconXl,
-                  color: context.colors.tertiary,
-                ),
-                const SizedBox(height: TokensSpacing.m),
-                const SizedBox(
-                  width: TokensSize.medallion * 2,
-                  child: LinearProgressIndicator(),
-                ),
-                const SizedBox(height: TokensSpacing.m),
-                Text(
-                  l10n.academicScanReading(state.photos.length),
-                  textAlign: TextAlign.center,
-                  style: context.textStyles.titleMedium,
-                ),
-                const SizedBox(height: TokensSpacing.xs),
-                Text(
-                  l10n.academicScanReadingHint,
-                  textAlign: TextAlign.center,
-                  style: context.textStyles.bodyMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      return AppWorkingView(
+        icon: Icons.document_scanner_outlined,
+        title: l10n.academicScanReading(state.photos.length),
+        hint: l10n.academicScanReadingHint,
       );
     }
+    final readError = state.readError;
+    final camera = state.cameraProblem;
     return Column(
       children: [
         Expanded(
@@ -184,7 +213,7 @@ class _PhotosStep extends StatelessWidget with ErrorsMessageMixin {
                               Icon(
                                 icon,
                                 size: TokensSize.iconS,
-                                color: context.colors.primary,
+                                color: context.palette.study,
                               ),
                               const SizedBox(width: TokensSpacing.s),
                               Expanded(child: Text(tip)),
@@ -216,18 +245,39 @@ class _PhotosStep extends StatelessWidget with ErrorsMessageMixin {
                         _PhotoThumb(
                           photo: photo,
                           page: i + 1,
-                          onRemove: () =>
-                              bloc.add(NoteScanEvent.photoRemoved(i)),
+                          focusNode: i == 0 ? _firstPhotoFocus : null,
+                          onRemove: () => _remove(i),
                         ),
                     ],
                   ),
                 ],
-                if (state.readError != null) ...[
+                if (readError != null) ...[
                   const SizedBox(height: TokensSpacing.m),
-                  AppErrorView(
-                    error: state.readError!,
-                    onRetry: () =>
-                        bloc.add(const NoteScanEvent.readRequested()),
+                  AppInlineMessage(message: errorMessage(context, readError)),
+                  const SizedBox(height: TokensSpacing.xs),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: _retryHelps(readError)
+                        ? TextButton.icon(
+                            onPressed: () =>
+                                bloc.add(const NoteScanEvent.readRequested()),
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: Text(l10n.commonRetry),
+                          )
+                        : TextButton.icon(
+                            onPressed: _changePhotos,
+                            icon: const Icon(Icons.photo_library_outlined),
+                            label: Text(l10n.academicScanChangePhotos),
+                          ),
+                  ),
+                ],
+                if (camera != null) ...[
+                  const SizedBox(height: TokensSpacing.m),
+                  AppInlineMessage(
+                    tone: AppMessageTone.warning,
+                    message: camera == NoteScanCameraProblem.denied
+                        ? l10n.academicScanCameraDenied
+                        : l10n.academicScanCameraMissing,
                   ),
                 ],
                 const SizedBox(height: TokensSpacing.l),
@@ -238,16 +288,14 @@ class _PhotosStep extends StatelessWidget with ErrorsMessageMixin {
                     AppSecondaryButton(
                       label: l10n.academicScanCamera,
                       icon: const Icon(Icons.photo_camera_rounded),
-                      onPressed: state.canAddMore
-                          ? () => _camera(context)
+                      onPressed: state.canAddMore && camera == null
+                          ? _camera
                           : null,
                     ),
                     AppSecondaryButton(
                       label: l10n.academicScanGallery,
                       icon: const Icon(Icons.photo_library_outlined),
-                      onPressed: state.canAddMore
-                          ? () => _gallery(context)
-                          : null,
+                      onPressed: state.canAddMore ? _gallery : null,
                     ),
                   ],
                 ),
@@ -270,6 +318,7 @@ class _PhotosStep extends StatelessWidget with ErrorsMessageMixin {
             child: Padding(
               padding: const EdgeInsets.all(TokensSpacing.m),
               child: AppPrimaryButton(
+                focusNode: _readFocus,
                 label: l10n.academicScanRead(state.photos.length),
                 icon: Icons.document_scanner_rounded,
                 onPressed: () => bloc.add(const NoteScanEvent.readRequested()),
@@ -287,11 +336,13 @@ class _PhotoThumb extends StatelessWidget {
     required this.photo,
     required this.page,
     required this.onRemove,
+    this.focusNode,
   });
 
   final NotePhotoUpload photo;
   final int page;
   final VoidCallback onRemove;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -307,13 +358,17 @@ class _PhotoThumb extends StatelessWidget {
               width: TokensSize.medallion,
               height: TokensSize.medallion,
               fit: BoxFit.cover,
-              semanticLabel: l10n.academicScanPage(page),
+              // El número de página ya va debajo, en texto.
+              excludeFromSemantics: true,
               errorBuilder: (_, _, _) => SizedBox(
                 width: TokensSize.medallion,
                 height: TokensSize.medallion,
                 child: ColoredBox(
                   color: context.colors.surfaceContainerHigh,
-                  child: const Icon(Icons.image_not_supported_outlined),
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    semanticLabel: l10n.academicScanPageUnreadable,
+                  ),
                 ),
               ),
             ),
@@ -323,6 +378,7 @@ class _PhotoThumb extends StatelessWidget {
             style: context.textStyles.labelMedium,
           ),
           IconButton(
+            focusNode: focusNode,
             tooltip: l10n.academicScanRemovePage(page),
             icon: const Icon(Icons.delete_outline_rounded),
             onPressed: onRemove,
@@ -344,7 +400,7 @@ class _ReviewStep extends StatefulWidget {
   State<_ReviewStep> createState() => _ReviewStepState();
 }
 
-class _ReviewStepState extends State<_ReviewStep> {
+class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
   late final TextEditingController _title;
   late final _text = TextEditingController(text: widget.draft.markdown);
 
@@ -367,6 +423,25 @@ class _ReviewStepState extends State<_ReviewStep> {
     _title.dispose();
     _text.dispose();
     super.dispose();
+  }
+
+  /// Volver a las fotos descarta el texto: si ya se corrigió, se pregunta.
+  Future<void> _backToPhotos() async {
+    final bloc = context.read<NoteScanBloc>();
+    final l10n = context.localizations;
+    final edited =
+        _text.text != widget.draft.markdown ||
+        (widget.draft.title != null && _title.text != widget.draft.title);
+    if (edited) {
+      final ok = await confirmDestructive(
+        context,
+        title: l10n.academicScanBackTitle,
+        message: l10n.academicScanBackMessage,
+        confirmLabel: l10n.academicScanBackToPhotos,
+      );
+      if (!ok) return;
+    }
+    bloc.add(const NoteScanEvent.backToPhotos());
   }
 
   @override
@@ -407,12 +482,10 @@ class _ReviewStepState extends State<_ReviewStep> {
                   ),
                 ),
                 const SizedBox(height: TokensSpacing.m),
-                TextField(
+                AppTextField(
                   controller: _title,
+                  label: l10n.academicNoteTitleLabel,
                   textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: l10n.academicNoteTitleLabel,
-                  ),
                 ),
                 const SizedBox(height: TokensSpacing.m),
                 DropdownButtonFormField<String?>(
@@ -447,8 +520,7 @@ class _ReviewStepState extends State<_ReviewStep> {
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(
-                    onPressed: () =>
-                        bloc.add(const NoteScanEvent.backToPhotos()),
+                    onPressed: _backToPhotos,
                     icon: const Icon(Icons.arrow_back_rounded),
                     label: Text(l10n.academicScanBackToPhotos),
                   ),
@@ -461,7 +533,17 @@ class _ReviewStepState extends State<_ReviewStep> {
           top: false,
           child: Padding(
             padding: const EdgeInsets.all(TokensSpacing.m),
-            child: ListenableBuilder(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.saveError != null) ...[
+                  AppInlineMessage(
+                    message: errorMessage(context, state.saveError!),
+                  ),
+                  const SizedBox(height: TokensSpacing.s),
+                ],
+                ListenableBuilder(
               listenable: Listenable.merge([_title, _text]),
               builder: (context, _) => AppPrimaryButton(
                 label: l10n.academicScanSave,
@@ -477,6 +559,8 @@ class _ReviewStepState extends State<_ReviewStep> {
                         ),
                       ),
               ),
+                ),
+              ],
             ),
           ),
         ),

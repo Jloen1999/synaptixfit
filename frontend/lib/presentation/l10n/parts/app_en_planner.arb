@@ -376,9 +376,11 @@
   "plannerClassAttendsLater": "When it ends, it will count as attended automatically. If you don't go, you can mark \"I didn't go\" once it starts.",
   "plannerPastStudySubjectsFailed": "Your subjects couldn't be loaded; you can log it without a subject.",
   "plannerPastStudyRetry": "Retry",
-  "plannerWeekClosed": "Week closed",
-  "plannerWeekClosedHint": "You've already closed this week. New blocks save on their own: no need to close it again.",
+  "plannerWeekClosed": "Week planned",
+  "plannerWeekClosedHint": "You've already planned this week. New blocks save on their own: no need to do it again.",
   "plannerDeadlineFromReminder": "We reminded you about this one",
   "plannerPomodoroResetTitle": "Start over?",
-  "plannerPomodoroResetMessage": "You'll lose the time you've done in this block. If you just need a breather, pause instead."
+  "plannerPomodoroResetMessage": "You'll lose the time you've done in this block. If you just need a breather, pause instead.",
+  "plannerWeekClosedWhat": "Explains what this means",
+  "plannerPomodoroResetKeep": "Keep going"
 }

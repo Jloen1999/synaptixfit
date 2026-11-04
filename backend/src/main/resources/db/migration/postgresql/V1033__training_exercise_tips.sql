@@ -3,7 +3,7 @@
 -- Se asignan a los ejercicios cuyo nombre en español encaja con el patrón de la familia y no con su
 -- exclusión. Si un ejercicio encajara en dos familias, se queda con la primera de la lista.
 -- ~* y !~* (expresiones regulares sin distinguir mayúsculas) son propios de PostgreSQL
--- (docs/06-ops/database_portability.md).
+-- (docs/06-ops/database_portability.md). Idempotente: no repite los consejos que ya existan.
 INSERT INTO consejos_ejercicio (ejercicio_id, idioma, claves, errores)
 SELECT DISTINCT ON (e.id, f.idioma) e.id, f.idioma, f.claves, f.errores
 FROM ejercicios e
@@ -142,4 +142,5 @@ JOIN (VALUES
 (32, 'lumbar', '^(hiperextensi(ón|ones)|extensi(ón|ones) lumbar|superman)', '(invers|una pierna)', 'pt', ARRAY['Sobe até o corpo ficar em linha, não mais.', 'Mexe a anca, com as costas direitas.', 'Fá-lo devagar e sem solavancos.']::text[], ARRAY['Arquear de mais ao subir.', 'Fazê-lo com impulso.', 'Levar o pescoço para trás.']::text[])
 ) AS f(orden, familia, patron, excluir, idioma, claves, errores)
   ON e.nombre ~* f.patron AND (f.excluir IS NULL OR e.nombre !~* f.excluir)
+WHERE NOT EXISTS (SELECT 1 FROM consejos_ejercicio c WHERE c.ejercicio_id = e.id AND c.idioma = f.idioma)
 ORDER BY e.id, f.idioma, f.orden;

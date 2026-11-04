@@ -25,5 +25,8 @@ abstract class PlannedReminder with _$PlannedReminder {
 
     /// Inicio del bloque (solo bloques).
     DateTime? startsAt,
+
+    /// Qué abrir al tocarlo cuando no es [refId] (en entregas, su id).
+    String? targetId,
   }) = _PlannedReminder;
 }

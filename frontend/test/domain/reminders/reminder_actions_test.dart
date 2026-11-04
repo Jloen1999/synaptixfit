@@ -43,6 +43,21 @@ void main() {
     expect(reminders.single.payload, 'deadline|d1');
   });
 
+  test('si el servidor manda la entrega aparte (targetId), se abre esa', () {
+    final reminders = composer.compose([
+      PlannedReminder(
+        kind: ReminderKind.exam,
+        at: at,
+        refId: 'e7:1',
+        count: 1,
+        startsAt: at.add(const Duration(days: 1)),
+        targetId: 'e7',
+      ),
+    ], texts);
+
+    expect(reminders.single.refId, 'e7');
+  });
+
   test(
     'un aviso pospuesto (con datos al final) sigue abriendo lo que anuncia',
     () {

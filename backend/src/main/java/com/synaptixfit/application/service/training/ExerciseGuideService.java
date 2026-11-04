@@ -47,6 +47,8 @@ public class ExerciseGuideService implements GetExerciseTipsUseCase, GetExercise
 
     @Override
     public Optional<ExerciseNote> note(UUID userId, UUID exerciseId) {
+        // Igual que al guardar: un ejercicio que no existe (o retirado) da 404, no una nota vacía.
+        active(exerciseId);
         return notes.find(userId, exerciseId);
     }
 

@@ -84,8 +84,11 @@ public class WeeklyPlanningController {
                 result.xpAwarded());
     }
 
-    /** ¿Se cerró ya esta semana? («Cerrar semana» se hace una vez; después se enseña «Semana cerrada»). */
-    @GetMapping("/plans/{weekStart}")
+    /**
+     * ¿Se cerró ya esta semana? («Cerrar semana» se hace una vez; después se enseña «Semana cerrada»).
+     * Va en {@code /plans/week/...} porque {@code /plans/{planId}} ya es la ruta de un plan por su id.
+     */
+    @GetMapping("/plans/week/{weekStart}")
     public WeekPlanStatusResponse planStatus(@CurrentUserId UUID userId,
                                              @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
                                              LocalDate weekStart) {

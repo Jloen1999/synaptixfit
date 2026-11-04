@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /**
  * Convierte fotos de apuntes en papel en un borrador de apunte para revisar. No guarda nada: el
- * apunte se crea después con el texto ya corregido ({@code POST /notes/from-scan}).
+ * apunte se crea después con el texto ya corregido, como cualquier otro ({@code POST /notes}).
  */
 public interface ReadNotePhotosUseCase {
 

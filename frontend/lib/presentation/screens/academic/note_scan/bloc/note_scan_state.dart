@@ -1,11 +1,15 @@
 part of 'note_scan_bloc.dart';
 
+/// Por qué no se pudo usar la cámara.
+enum NoteScanCameraProblem { denied, missing }
+
 @freezed
 abstract class NoteScanState with _$NoteScanState {
   const factory NoteScanState({
     @Default(<Subject>[]) List<Subject> subjects,
     String? subjectId,
     @Default(<NotePhotoUpload>[]) List<NotePhotoUpload> photos,
+    NoteScanCameraProblem? cameraProblem,
     @Default(false) bool reading,
     AppError? readError,
 

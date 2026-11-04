@@ -19,6 +19,7 @@ import com.synaptixfit.domain.exception.academic.QuestionBankNotFoundException;
 import com.synaptixfit.domain.exception.academic.QuestionNotFoundException;
 import com.synaptixfit.domain.exception.academic.TestSessionNotFoundException;
 import com.synaptixfit.domain.exception.academic.TestSessionNotInProgressException;
+import com.synaptixfit.domain.model.academic.MockExamOptions;
 import com.synaptixfit.domain.model.academic.AnswerResult;
 import com.synaptixfit.domain.model.academic.PracticeRewards;
 import com.synaptixfit.domain.model.academic.PracticeResult;
@@ -70,10 +71,10 @@ public class QuizService implements GetQuestionBankUseCase, GenerateQuestionBank
         CompleteBankPracticeUseCase, StartTestSessionUseCase, GetTestSessionUseCase, GetActiveTestSessionUseCase,
         ListTestSessionsUseCase, AnswerTestQuestionUseCase, CompleteTestSessionUseCase, AbandonTestSessionUseCase {
 
-    static final int DEFAULT_QUESTION_COUNT = 10;
-    static final int MAX_QUESTION_COUNT = 50;
-    static final int MAX_MATERIALS = 10;
-    static final int COMBINED_TARGET = 20;
+    static final int DEFAULT_QUESTION_COUNT = MockExamOptions.DEFAULT_QUESTIONS;
+    static final int MAX_QUESTION_COUNT = MockExamOptions.MAX_QUESTIONS;
+    static final int MAX_MATERIALS = MockExamOptions.MAX_MATERIALS;
+    static final int COMBINED_TARGET = MockExamOptions.SUGGESTED_QUESTIONS;
 
     private final QuestionBankRepositoryPort banks;
     private final QuestionAttemptRepositoryPort attempts;

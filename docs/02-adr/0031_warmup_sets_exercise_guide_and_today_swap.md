@@ -16,9 +16,11 @@ claves ni los errores típicos, en un lenguaje sencillo.
 1. **Series de calentamiento:** `series_sesion.calentamiento`. Tienen numeración propia (`Calentamiento 1`
    no pisa la `Serie 1`) y en el dominio viven aparte (`TrainingSession.warmupSets`): `sets()` solo devuelve
    las de trabajo. Así volumen, récords, propuesta de peso, sugerencias tras la sesión y el progreso del día
-   las ignoran sin tocar cada cálculo. Las kcal ya salen de las series planificadas y la carga de
-   esfuerzo × tiempo activo, así que tampoco suben por el calentamiento. La API las devuelve en
-   `warmupSets`.
+   las ignoran sin tocar cada cálculo. El historial del generador las descarta en el dominio
+   (`CompletedSessionSummary`), no en el SQL. El **tiempo** sí incluye el calentamiento: la carga
+   (esfuerzo × tiempo activo) y las kcal calculadas con el tiempo real de cada ejercicio
+   (`SessionCalories.realDurations`) cuentan esos minutos, porque calentar también es moverse; sin ese
+   tiempo, las kcal salen de las series planificadas. La API las devuelve en `warmupSets`.
 2. **«Hasta no poder más»:** `series_sesion.al_fallo`. Si alguna serie del ejercicio lo fue,
    `ProgressionCalculator` mantiene la carga en vez de subirla aunque el esfuerzo de la sesión fuera bajo
    (las repeticiones fallidas y el esfuerzo máximo siguen mandando para bajarla).

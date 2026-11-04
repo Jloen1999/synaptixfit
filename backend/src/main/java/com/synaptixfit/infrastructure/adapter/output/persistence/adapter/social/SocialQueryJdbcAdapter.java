@@ -1,6 +1,5 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.social;
 
-import com.synaptixfit.domain.model.badge.BadgeRarity;
 import com.synaptixfit.domain.model.shared.AudienceScope;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
@@ -23,6 +22,7 @@ import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SharedC
 import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SqlLike;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.VisibilityDbMapper;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.social.SocialPersistenceMapper;
+import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.badge.BadgePersistenceMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -261,19 +261,9 @@ public class SocialQueryJdbcAdapter implements SocialQueryPort, ReportedContentQ
                         """)
                 .param("user", userId)
                 .query((rs, n) -> new PublicBadge(rs.getObject("id", UUID.class), rs.getString("nombre"),
-                        rs.getString("descripcion"), rs.getString("icono"), rarity(rs.getString("rareza")),
+                        rs.getString("descripcion"), rs.getString("icono"), BadgePersistenceMapper.rarity(rs.getString("rareza")),
                         rs.getTimestamp("obtenida_en").toInstant()))
                 .list();
-    }
-
-    /** Vocabulario en español de la tabla → {@link BadgeRarity} (igual que el mapper de gamificación). */
-    private static BadgeRarity rarity(String value) {
-        return switch (value == null ? "" : value) {
-            case "rara" -> BadgeRarity.RARE;
-            case "epica" -> BadgeRarity.EPIC;
-            case "legendaria" -> BadgeRarity.LEGENDARY;
-            default -> BadgeRarity.COMMON;
-        };
     }
 
     // ---------------------------------------------------------------- moderación

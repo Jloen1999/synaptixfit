@@ -553,7 +553,9 @@ class _SavePlanButton extends StatelessWidget {
           child: const ExcludeSemantics(
             child: SizedBox.square(
               dimension: TokensSize.iconS,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(
+                strokeWidth: TokensSize.spinnerStroke,
+              ),
             ),
           ),
         ),
@@ -562,17 +564,30 @@ class _SavePlanButton extends StatelessWidget {
     if (closed) {
       final l10n = context.localizations;
       void explain() => context.showSnack(l10n.plannerWeekClosedHint);
+      // Icono propio (no solo otro color) y el lector sabe qué hace al tocarlo.
       if (compact) {
-        return IconButton(
-          tooltip: l10n.plannerWeekClosed,
-          icon: Icon(Icons.task_alt_rounded, color: context.palette.success),
-          onPressed: explain,
+        return Semantics(
+          hint: l10n.plannerWeekClosedWhat,
+          child: IconButton(
+            tooltip: l10n.plannerWeekClosed,
+            icon: Icon(
+              Icons.event_available_rounded,
+              color: context.palette.success,
+            ),
+            onPressed: explain,
+          ),
         );
       }
-      return TextButton.icon(
-        onPressed: explain,
-        icon: Icon(Icons.task_alt_rounded, color: context.palette.success),
-        label: Text(l10n.plannerWeekClosed),
+      return Semantics(
+        hint: l10n.plannerWeekClosedWhat,
+        child: TextButton.icon(
+          onPressed: explain,
+          icon: Icon(
+            Icons.event_available_rounded,
+            color: context.palette.success,
+          ),
+          label: Text(l10n.plannerWeekClosed),
+        ),
       );
     }
     if (compact) {

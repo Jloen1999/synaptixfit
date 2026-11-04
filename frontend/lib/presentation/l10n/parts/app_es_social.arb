@@ -359,7 +359,7 @@
       }
     }
   },
-  "socialProfileBadgeSemantics": "{name}, insignia {rarity}. Toca para ver qué es.",
+  "socialProfileBadgeSemantics": "{name}, insignia {rarity}.",
   "@socialProfileBadgeSemantics": {
     "placeholders": {
       "name": {
@@ -377,5 +377,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "socialProfileBadgeHint": "Ver qué es y cuándo la consiguió"
 }

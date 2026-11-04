@@ -232,9 +232,9 @@ class PlannerFlowIT {
                 .andExpect(jsonPath("$[0].studyMaterialId").value(materialId.toString()));
 
         // «Cerrar semana» solo una vez: el servidor dice si ya está cerrada.
-        mvc.perform(auth(get("/api/v1/planner/plans/" + day))).andExpect(jsonPath("$.closed").value(false));
+        mvc.perform(auth(get("/api/v1/planner/plans/week/" + day))).andExpect(jsonPath("$.closed").value(false));
         String saved = json(put("/api/v1/planner/plans/" + day), "{\"name\":\"Semana IT\",\"visibility\":\"FRIENDS\"}", 200);
-        mvc.perform(auth(get("/api/v1/planner/plans/" + day))).andExpect(jsonPath("$.closed").value(true))
+        mvc.perform(auth(get("/api/v1/planner/plans/week/" + day))).andExpect(jsonPath("$.closed").value(true))
                 .andExpect(jsonPath("$.xpAwarded").value(JsonPath.<Integer>read(saved, "$.xpAwarded")));
         assertThat((Integer) JsonPath.read(saved, "$.xpAwarded")).isGreaterThanOrEqualTo(100);
         String again = json(put("/api/v1/planner/plans/" + day), "{}", 200);

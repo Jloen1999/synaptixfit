@@ -839,9 +839,11 @@
   "plannerClassAttendsLater": "Al terminar, contará como asistida sola. Si no vas, podrás marcar «No fui» cuando empiece.",
   "plannerPastStudySubjectsFailed": "No se pudieron cargar tus asignaturas; puedes apuntarlo sin asignatura.",
   "plannerPastStudyRetry": "Reintentar",
-  "plannerWeekClosed": "Semana cerrada",
-  "plannerWeekClosedHint": "Ya cerraste esta semana. Los bloques nuevos se guardan solos: no hace falta volver a cerrarla.",
-  "plannerDeadlineFromReminder": "Te avisamos de esta",
+  "plannerWeekClosed": "Semana planificada",
+  "plannerWeekClosedHint": "Ya planificaste esta semana. Los bloques nuevos se guardan solos: no hace falta volver a hacerlo.",
+  "plannerDeadlineFromReminder": "Te avisamos de esta entrega",
   "plannerPomodoroResetTitle": "¿Empezar de cero?",
-  "plannerPomodoroResetMessage": "Se pierde el tiempo que llevas en este bloque. Si solo necesitas un respiro, mejor pausa."
+  "plannerPomodoroResetMessage": "Se pierde el tiempo que llevas en este bloque. Si solo necesitas un respiro, mejor pausa.",
+  "plannerWeekClosedWhat": "Explica qué significa",
+  "plannerPomodoroResetKeep": "Seguir"
 }

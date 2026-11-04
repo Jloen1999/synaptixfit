@@ -15,6 +15,13 @@ abstract class ExerciseGuideState with _$ExerciseGuideState {
     AppError? noteError,
     @Default(false) bool saving,
     AppError? saveError,
+
+    /// Texto que no se pudo guardar: «Reintentar» lo vuelve a mandar y así lo
+    /// escrito no se pierde.
+    String? pendingText,
+
+    /// Texto de la nota recién borrada: «Deshacer» la vuelve a guardar.
+    String? deletedText,
     ExerciseGuideNotice? notice,
     @Default(0) int noticeId,
   }) = _ExerciseGuideState;

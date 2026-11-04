@@ -4,6 +4,7 @@ import '../../app/config/app_config.dart';
 import '../../domain/repositories/account_repository_contract.dart';
 import '../../domain/repositories/auth_repository_contract.dart';
 import '../../domain/repositories/data_change_repository_contract.dart';
+import '../local_data_source/session_drafts_cleaner.dart';
 import '../local_data_source/token_storage.dart';
 import '../remote_data_source/api/api_client.dart';
 import '../remote_data_source/api/data_change_interceptor.dart';
@@ -54,6 +55,7 @@ void registerData(GetIt getIt, AppConfig config) {
         google: getIt(),
         tokens: getIt(),
         expiry: getIt(),
+        drafts: SessionDraftsCleaner(),
       ),
     )
     ..registerLazySingleton<AccountRepositoryContract>(

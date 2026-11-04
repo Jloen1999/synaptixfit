@@ -602,9 +602,12 @@ class _WarmupSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.trainingWarmupSetsTitle,
-            style: context.textStyles.titleSmall,
+          Semantics(
+            header: true,
+            child: Text(
+              l10n.trainingWarmupSetsTitle,
+              style: context.textStyles.titleSmall,
+            ),
           ),
           Text(
             l10n.trainingWarmupSetsHint,
@@ -618,7 +621,11 @@ class _WarmupSection extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(TokensRadius.s),
                 onTap: () => onWarmup(exercise, w.setNumber, w),
-                child: ConstrainedBox(
+                // Botón con su acción: «Corregir» (el lápiz es decorativo).
+                child: Semantics(
+                  button: true,
+                  hint: l10n.trainingWarmupSetFix,
+                  child: ConstrainedBox(
                   constraints: const BoxConstraints(
                     minHeight: TokensLayout.minTouchTarget,
                   ),
@@ -644,13 +651,16 @@ class _WarmupSection extends StatelessWidget {
                           style: context.textStyles.bodyMedium,
                         ),
                       ),
-                      Icon(
-                        Icons.edit_outlined,
-                        size: TokensSize.iconXs,
-                        color: context.colors.onSurfaceVariant,
+                      ExcludeSemantics(
+                        child: Icon(
+                          Icons.edit_outlined,
+                          size: TokensSize.iconXs,
+                          color: context.colors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
+                ),
                 ),
               ),
             ),
@@ -1120,7 +1130,7 @@ class _LiveSetRow extends StatelessWidget {
                     child: Row(
                       children: [
                         Icon(
-                          Icons.local_fire_department_rounded,
+                          Icons.trending_flat_rounded,
                           size: TokensSize.iconXs,
                           color: context.colors.onSurfaceVariant,
                         ),
@@ -1204,11 +1214,22 @@ class _SetFocusPulseState extends State<_SetFocusPulse>
     _sync();
   }
 
+  /// Ya latió para esta serie en marcha: no vuelve a empezar hasta pausar.
+  bool _pulsed = false;
+
   void _sync() {
     final animate = widget.active && !context.reduceMotion;
-    if (animate && !_controller.isAnimating) {
-      unawaited(_controller.repeat());
-    } else if (!animate && _controller.isAnimating) {
+    if (animate && !_pulsed) {
+      // Late unas veces y se queda quieto: un brillo que no para distrae y
+      // va contra WCAG 2.2.2; el borde ya marca la serie en marcha.
+      _pulsed = true;
+      unawaited(
+        _controller.repeat(count: 4).whenComplete(() {
+          if (mounted) _controller.value = 0;
+        }),
+      );
+    } else if (!animate) {
+      _pulsed = false;
       _controller
         ..stop()
         ..value = 0;

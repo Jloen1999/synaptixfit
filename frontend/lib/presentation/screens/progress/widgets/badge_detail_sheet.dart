@@ -52,7 +52,7 @@ class _BadgeDetailSheet extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(child: BadgeEmblem(badge: badge, size: 88)),
+              Center(child: BadgeEmblem(badge: badge, size: TokensSize.medallion)),
               const SizedBox(height: TokensSpacing.m),
               Text(
                 badge.name,

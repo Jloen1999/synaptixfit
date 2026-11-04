@@ -24,6 +24,9 @@ public interface QuestionBankRepositoryPort {
 
     List<Question> findQuestionsByIds(Collection<UUID> ids);
 
+    /** Cuántas preguntas tiene el banco, sin cargarlas. */
+    int countQuestions(UUID bankId);
+
     /** Pregunta cuyo banco pertenece al usuario. */
     Optional<Question> findQuestionOfUser(UUID questionId, UUID userId);
 }

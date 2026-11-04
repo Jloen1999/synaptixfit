@@ -120,6 +120,8 @@ abstract final class TokensLayout {
   static const double coverPhotoFade = 0.4;
   static const double bottomBarMaxShare = 0.45;
   static const double segmentMinWidth = 112;
+  static const double fabClearance = 96;
+  static const double filterMaxWidth = 280;
 }
 
 abstract final class TokensSize {
@@ -160,6 +162,10 @@ abstract final class TokensSize {
   static const double liveDot = 8;
   static const double stepBadge = 28;
   static const double guideSkeleton = 120;
+  static const double progressInline = 160;
+  static const double emblem = 56;
+  static const double spinnerStroke = 2;
+  static const double emblemBorder = 2;
 }
 
 abstract final class TokensOpacity {

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -24,20 +25,28 @@ import org.springframework.stereotype.Component;
  * estándar: no se escribe nada en disco.
  *
  * <p>Cada lectura es un proceso aparte (100-200 MB de memoria y unos segundos de CPU), así que se
- * limitan las lecturas a la vez para no asfixiar al servidor.
+ * limitan las lecturas a la vez, cada una usa un solo hilo ({@code OMP_THREAD_LIMIT=1}) y, si se
+ * configura, se lanza con un tope de memoria ({@code prlimit --as}): si una imagen rara se escapa a las
+ * comprobaciones, el sistema corta solo a Tesseract y no a la JVM, que comparte el contenedor.
  */
 @Component
 public class TesseractImageTextReader implements ImageTextReaderPort {
 
     private final String command;
     private final long timeoutSeconds;
+    private final long queueWaitSeconds;
+    private final long memoryLimitMb;
     private final Semaphore slots;
 
     public TesseractImageTextReader(@Value("${synaptixfit.ocr.command:tesseract}") String command,
                                     @Value("${synaptixfit.ocr.timeout-seconds:60}") long timeoutSeconds,
-                                    @Value("${synaptixfit.ocr.max-concurrent:2}") int maxConcurrent) {
+                                    @Value("${synaptixfit.ocr.max-concurrent:2}") int maxConcurrent,
+                                    @Value("${synaptixfit.ocr.queue-wait-seconds:10}") long queueWaitSeconds,
+                                    @Value("${synaptixfit.ocr.memory-limit-mb:0}") long memoryLimitMb) {
         this.command = command;
         this.timeoutSeconds = timeoutSeconds;
+        this.queueWaitSeconds = queueWaitSeconds;
+        this.memoryLimitMb = memoryLimitMb;
         this.slots = new Semaphore(Math.max(1, maxConcurrent));
     }
 
@@ -45,7 +54,9 @@ public class TesseractImageTextReader implements ImageTextReaderPort {
     public String read(NotePhoto photo) {
         boolean acquired;
         try {
-            acquired = slots.tryAcquire(timeoutSeconds, TimeUnit.SECONDS);
+            // Espera corta: si el lector está ocupado, es mejor decirlo pronto que dejar a la persona
+            // mirando una barra hasta que el cliente se canse.
+            acquired = slots.tryAcquire(queueWaitSeconds, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new NoteScanUnavailableException("Interrupted while waiting for OCR");
@@ -61,24 +72,22 @@ public class TesseractImageTextReader implements ImageTextReaderPort {
     }
 
     private String run(byte[] image) {
-        // --psm 3: página con columnas y párrafos (lo normal en unos apuntes).
-        List<String> args = List.of(command, "stdin", "stdout", "-l", languages(RequestLanguage.code()),
-                "--psm", "3");
+        List<String> args = commandLine(command, memoryLimitMb, languages(RequestLanguage.code()));
         Process process;
         try {
-            process = new ProcessBuilder(args).start();
+            ProcessBuilder builder = new ProcessBuilder(args);
+            builder.environment().put("OMP_THREAD_LIMIT", "1");
+            process = builder.start();
         } catch (IOException e) {
             // El programa no está instalado (p. ej. en un equipo de desarrollo sin Tesseract).
             throw new NoteScanUnavailableException("OCR program not available");
         }
         CompletableFuture<byte[]> out = CompletableFuture.supplyAsync(() -> drain(process.getInputStream()));
         CompletableFuture<byte[]> err = CompletableFuture.supplyAsync(() -> drain(process.getErrorStream()));
-        try (OutputStream in = process.getOutputStream()) {
-            in.write(image);
-        } catch (IOException e) {
-            process.destroyForcibly();
-            throw new NoteScanUnsupportedFileException();
-        }
+        // La foto se escribe en otro hilo: si Tesseract se cuelga sin leerla, el tiempo límite de abajo
+        // sigue mandando y este hilo no se queda bloqueado para siempre.
+        CompletableFuture<Boolean> written =
+                CompletableFuture.supplyAsync(() -> write(process.getOutputStream(), image));
         try {
             if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
@@ -90,6 +99,9 @@ public class TesseractImageTextReader implements ImageTextReaderPort {
                 throw unreadableImage(error) ? new NoteScanUnsupportedFileException()
                         : new NoteScanUnavailableException("OCR failed with exit code " + process.exitValue());
             }
+            if (!written.get(5, TimeUnit.SECONDS)) {
+                throw new NoteScanUnsupportedFileException();
+            }
             return text;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -97,6 +109,28 @@ public class TesseractImageTextReader implements ImageTextReaderPort {
             throw new NoteScanUnavailableException("Interrupted while reading");
         } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
             throw new NoteScanUnavailableException("Could not read OCR output");
+        }
+    }
+
+    /**
+     * Orden a ejecutar, sin shell y con argumentos fijos. {@code --psm 3}: página con columnas y
+     * párrafos (lo normal en unos apuntes). Con tope de memoria, se antepone {@code prlimit}.
+     */
+    static List<String> commandLine(String command, long memoryLimitMb, String languages) {
+        List<String> args = new ArrayList<>();
+        if (memoryLimitMb > 0) {
+            args.addAll(List.of("prlimit", "--as=" + memoryLimitMb * 1024 * 1024, "--"));
+        }
+        args.addAll(List.of(command, "stdin", "stdout", "-l", languages, "--psm", "3"));
+        return args;
+    }
+
+    private static boolean write(OutputStream stream, byte[] image) {
+        try (stream) {
+            stream.write(image);
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 

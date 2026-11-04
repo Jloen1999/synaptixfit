@@ -184,6 +184,7 @@
   "socialFindFriends": "Procurar amigos",
   "socialProfileBadges": "{count, plural, =1{1 insígnia} other{{count} insígnias}}",
   "socialProfileBadgesAll": "Ver as {count}",
-  "socialProfileBadgeSemantics": "{name}, insígnia {rarity}. Toca para ver o que é.",
-  "socialProfileBadgeEarnedOn": "Conseguida a {date}"
+  "socialProfileBadgeSemantics": "{name}, insígnia {rarity}.",
+  "socialProfileBadgeEarnedOn": "Conseguida a {date}",
+  "socialProfileBadgeHint": "Ver o que é e quando foi conquistada"
 }

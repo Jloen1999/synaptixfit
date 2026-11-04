@@ -2023,7 +2023,7 @@
       }
     }
   },
-  "trainingSetTimerPaused": "Serie {set} en pausa: no cuenta",
+  "trainingSetTimerPaused": "Serie {set} en pausa: el tiempo está parado",
   "@trainingSetTimerPaused": {
     "placeholders": {
       "set": {
@@ -2139,7 +2139,7 @@
   "trainingNoteSaved": "Nota guardada",
   "trainingNoteDeleted": "Nota borrada",
   "trainingNoteLoadError": "No se pudo cargar tu nota.",
-  "trainingWorksLabel": "Trabaja",
+  "trainingWorksLabel": "Músculos",
   "trainingEquipmentLabel": "Material",
   "trainingSwapTodayAction": "Cambiar solo hoy",
   "trainingSwapTodayTitle": "Cambiar solo hoy",
@@ -2170,8 +2170,8 @@
       }
     }
   },
-  "trainingWarmupSetsTitle": "Calentamiento",
-  "trainingWarmupSetsHint": "Series suaves para preparar el cuerpo antes de las de verdad. No cuentan como series ni para proponerte peso.",
+  "trainingWarmupSetsTitle": "Series de calentamiento",
+  "trainingWarmupSetsHint": "Series suaves para preparar el cuerpo antes de las de trabajo. No suman a tus series ni cambian el peso que te proponemos.",
   "trainingWarmupSetNumber": "Calentamiento {set}",
   "@trainingWarmupSetNumber": {
     "placeholders": {
@@ -2182,7 +2182,7 @@
   },
   "trainingWarmupAdd": "Añadir serie de calentamiento",
   "trainingToFailure": "Hasta no poder más",
-  "trainingToFailureHint": "No podías hacer ni una repetición más. Así la próxima vez no te propondremos subir el peso.",
+  "trainingToFailureHint": "Actívalo si no podías hacer ni una repetición más. Así no te propondremos subir el peso la próxima vez.",
   "trainingToFailureMark": "Hasta no poder más",
   "trainingFreeLogSet": "Apuntar serie {set}",
   "@trainingFreeLogSet": {
@@ -2197,6 +2197,47 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "trainingSetDeleted": "Serie {n} borrada",
+  "@trainingSetDeleted": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWarmupSetDeleted": "Serie de calentamiento {n} borrada",
+  "@trainingWarmupSetDeleted": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWarmupSetLogged": "Serie de calentamiento {n} apuntada",
+  "@trainingWarmupSetLogged": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWarmupSetFix": "Corregir la serie",
+  "trainingSwapTodayKeep": "Seguir con «{name}»",
+  "@trainingSwapTodayKeep": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingGuideFactLabel": "{label}: ",
+  "@trainingGuideFactLabel": {
+    "placeholders": {
+      "label": {
+        "type": "String"
       }
     }
   }

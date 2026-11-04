@@ -1,5 +1,6 @@
 export 'app_adaptive_choice.dart';
 export 'app_avatar.dart';
+export 'app_badge_emblem.dart';
 export 'app_brand_mark.dart';
 export 'app_card.dart';
 export 'app_card_tap_area.dart';
@@ -33,5 +34,6 @@ export 'app_stepper_field.dart';
 export 'app_text_field.dart';
 export 'app_tile_grid.dart';
 export 'app_undo_shortcut.dart';
-export 'xp_progress_bar.dart';
+export 'app_working_view.dart';
 export 'xp_guide_sheet.dart';
+export 'xp_progress_bar.dart';

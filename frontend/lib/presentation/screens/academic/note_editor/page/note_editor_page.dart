@@ -396,6 +396,7 @@ class _MetaRow extends StatelessWidget {
         // Con texto grande o en francés/portugués las tres opciones no caben en
         // una fila: AppAdaptiveChoice las pasa a una lista.
         AppAdaptiveChoice<Visibility>(
+          label: context.localizations.academicNoteVisibilityLabel,
           values: Visibility.values,
           selected: visibility,
           labelOf: context.visibilityLabel,

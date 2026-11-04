@@ -21,7 +21,7 @@ Despliegue detallado: [`docs/06-ops/deploy.md`](docs/06-ops/deploy.md).
 | Destination | **`infra-app-db`** (misma red que la BD; `coolify-proxy` ya está en ella) |
 | Puertos | Ninguno publicado: Traefik llega a `web:80`; `backend:8080` solo en la red interna |
 | Salud | web `GET /healthz`; backend `GET /actuator/health` (healthchecks del compose) |
-| OCR | La imagen del backend incluye Tesseract (≈ 60 MB) para leer fotos de apuntes (ADR 0040). Cada lectura es un proceso aparte de 100-200 MB **fuera** de la JVM: como mucho 2 a la vez (`SYNAPTIXFIT_OCR_MAX_CONCURRENT`), así que el límite de memoria del contenedor debe dejar ≈ 400 MB libres además del de Java (`MaxRAMPercentage=75`) |
+| OCR | La imagen del backend incluye Tesseract (≈ 60 MB) para leer fotos de apuntes (ADR 0040). Cada lectura es un proceso aparte de 100-200 MB **fuera** de la JVM: como mucho 2 a la vez (`SYNAPTIXFIT_OCR_MAX_CONCURRENT`), un hilo cada una (`OMP_THREAD_LIMIT=1`) y con tope de 768 MB por lectura (`SYNAPTIXFIT_OCR_MEMORY_LIMIT_MB`, con `prlimit`), así que el límite de memoria del contenedor debe dejar ≈ 400 MB libres además del de Java (`MaxRAMPercentage=75`) |
 | Dominio | `https://synaptixfit.jloenit.dev` (web y API en el mismo origen), Cloudflare proxied + certificado de origen `*.jloenit.dev` en Traefik |
 
 ### Rutas con credenciales y salida a Internet

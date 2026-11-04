@@ -23,6 +23,10 @@ class ExerciseGuideBloc extends Bloc<ExerciseGuideEvent, ExerciseGuideState> {
   }) : super(const ExerciseGuideState()) {
     on<ExerciseGuideStarted>(_onStarted);
     on<ExerciseGuideNoteSaved>(_onNoteSaved);
+    on<ExerciseGuideNoteRetried>((_, _) {
+      final text = state.pendingText;
+      if (text != null) add(ExerciseGuideEvent.noteSaved(text));
+    });
   }
 
   final GetExerciseTipsUseCaseContract _getTips;
@@ -55,6 +59,7 @@ class ExerciseGuideBloc extends Bloc<ExerciseGuideEvent, ExerciseGuideState> {
   ) async {
     final id = state.exerciseId;
     if (id == null || state.saving) return;
+    final before = state.note?.text;
     emit(state.copyWith(saving: true));
     final result = await _saveNote(id, event.text);
     switch (result) {
@@ -68,6 +73,8 @@ class ExerciseGuideBloc extends Bloc<ExerciseGuideEvent, ExerciseGuideState> {
                 ? ExerciseGuideNotice.deleted
                 : ExerciseGuideNotice.saved,
             saveError: null,
+            pendingText: null,
+            deletedText: value == null ? before : null,
           ),
         );
       case Failure(:final error):
@@ -77,6 +84,7 @@ class ExerciseGuideBloc extends Bloc<ExerciseGuideEvent, ExerciseGuideState> {
             noticeId: state.noticeId + 1,
             notice: ExerciseGuideNotice.failed,
             saveError: error,
+            pendingText: event.text,
           ),
         );
     }

@@ -294,6 +294,9 @@ final class AcademicFakes {
             return questionStore.values().stream().filter(q -> q.bankId().equals(bankId))
                     .sorted(Comparator.comparingInt(Question::order)).toList();
         }
+        public int countQuestions(UUID bankId) {
+            return findQuestions(bankId).size();
+        }
         public List<Question> findQuestionsByIds(Collection<UUID> ids) {
             return questionStore.values().stream().filter(q -> ids.contains(q.id())).toList();
         }

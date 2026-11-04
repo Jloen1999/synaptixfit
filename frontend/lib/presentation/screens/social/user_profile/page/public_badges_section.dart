@@ -4,7 +4,6 @@ import '../../../../../domain/models/social/public_profile.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
-import '../../../progress/widgets/badge_tile.dart';
 import '../../../progress/widgets/progress_labels.dart';
 import '../../widgets/social_layout.dart';
 
@@ -63,9 +62,12 @@ class PublicBadgesSection extends StatelessWidget {
             controller: controller,
             padding: const EdgeInsets.all(TokensSpacing.m),
             children: [
-              Text(
-                context.localizations.socialProfileBadges(badges.length),
-                style: context.textStyles.titleLarge,
+              Semantics(
+                header: true,
+                child: Text(
+                  context.localizations.socialProfileBadges(badges.length),
+                  style: context.textStyles.titleLarge,
+                ),
               ),
               const SizedBox(height: TokensSpacing.m),
               Wrap(
@@ -92,36 +94,40 @@ class PublicBadgeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    // La etiqueta va dentro del InkWell para fusionarse con su acción y su
+    // foco; por fuera, con excludeSemantics, se perderían los dos.
     return SizedBox(
       width: TokensSize.medallion,
-      child: Semantics(
-        button: true,
-        label: l10n.socialProfileBadgeSemantics(
-          badge.name,
-          l10n.badgeRarity(badge.rarity),
-        ),
-        excludeSemantics: true,
+      child: AppFocusOutline(
         child: InkWell(
           borderRadius: BorderRadius.circular(TokensRadius.m),
           onTap: () => _showDetail(context),
-          child: Padding(
-            padding: const EdgeInsets.all(TokensSpacing.xs),
-            child: Column(
-              children: [
-                BadgeEmblem.raw(
-                  icon: badge.icon,
-                  rarity: badge.rarity,
-                  size: TokensSize.thumbnailS,
-                ),
-                const SizedBox(height: TokensSpacing.xs),
-                Text(
-                  badge.name,
-                  style: context.textStyles.labelMedium,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          child: Semantics(
+            label: l10n.socialProfileBadgeSemantics(
+              badge.name,
+              l10n.badgeRarity(badge.rarity),
+            ),
+            hint: l10n.socialProfileBadgeHint,
+            excludeSemantics: true,
+            child: Padding(
+              padding: const EdgeInsets.all(TokensSpacing.xs),
+              child: Column(
+                children: [
+                  AppBadgeEmblem(
+                    icon: badge.icon,
+                    rarity: badge.rarity,
+                    size: TokensSize.thumbnailS,
+                  ),
+                  const SizedBox(height: TokensSpacing.xs),
+                  Text(
+                    badge.name,
+                    style: context.textStyles.labelMedium,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -145,16 +151,19 @@ class PublicBadgeTile extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              BadgeEmblem.raw(
+              AppBadgeEmblem(
                 icon: badge.icon,
                 rarity: badge.rarity,
                 size: TokensSize.medallion,
               ),
               const SizedBox(height: TokensSpacing.m),
-              Text(
-                badge.name,
-                style: context.textStyles.titleLarge,
-                textAlign: TextAlign.center,
+              Semantics(
+                header: true,
+                child: Text(
+                  badge.name,
+                  style: context.textStyles.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: TokensSpacing.xs),
               Text(

@@ -16,14 +16,16 @@ public record ReminderPlanResponse(List<Item> reminders) {
      * @param count    repasos vencidos (solo {@code REVIEWS})
      * @param title    título o asignatura del bloque; nulo si no tiene (solo bloques)
      * @param startsAt inicio del bloque (solo bloques)
+     * @param targetId lo que se abre al tocar el aviso si no es {@code refId} (en entregas, su id)
      */
     @Schema(name = "ReminderPlanItem")
-    public record Item(ReminderKind kind, Instant at, String refId, Integer count, String title, Instant startsAt) {
+    public record Item(ReminderKind kind, Instant at, String refId, Integer count, String title, Instant startsAt,
+                       String targetId) {
     }
 
     public static ReminderPlanResponse from(ReminderPlan plan) {
         return new ReminderPlanResponse(plan.reminders().stream()
-                .map(r -> new Item(r.kind(), r.at(), r.refId(), r.count(), r.title(), r.startsAt()))
+                .map(r -> new Item(r.kind(), r.at(), r.refId(), r.count(), r.title(), r.startsAt(), r.targetId()))
                 .toList());
     }
 }

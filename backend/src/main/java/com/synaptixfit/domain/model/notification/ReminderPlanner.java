@@ -243,7 +243,8 @@ public final class ReminderPlanner {
                 int daysLeft = (int) java.time.temporal.ChronoUnit.DAYS.between(
                         at.atZone(input.zone()).toLocalDate(), dueDay);
                 out.add(new ReminderPlan.Item(deadline.exam() ? ReminderKind.EXAM : ReminderKind.DEADLINE, at,
-                        deadline.id() + ":" + daysBefore, daysLeft, deadline.title(), deadline.dueAt()));
+                        deadline.id() + ":" + daysBefore, daysLeft, deadline.title(), deadline.dueAt(),
+                        deadline.id().toString()));
             }
         }
     }

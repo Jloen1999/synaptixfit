@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../domain/models/academic/note_scan.dart';
@@ -16,26 +17,57 @@ const _mimeByExtension = {
   'webp': 'image/webp',
 };
 
+/// La cámara no se puede usar: sin permiso ([denied]) o el dispositivo no
+/// tiene ([denied] falso). La pantalla lo explica y ofrece la galería.
+class NotePhotoCameraUnavailable implements Exception {
+  const NotePhotoCameraUnavailable({required this.denied});
+
+  final bool denied;
+}
+
 /// Hace una foto con la cámara. `null` si se cancela. En web y escritorio,
-/// donde no hay cámara del sistema, abre el selector de archivos.
+/// donde no hay cámara del sistema, abre el selector de archivos. Lanza
+/// [NotePhotoCameraUnavailable] si no hay permiso o no hay cámara.
 Future<NotePhotoUpload?> takeNotePhoto() async {
-  final file = await ImagePicker().pickImage(
-    source: ImageSource.camera,
-    maxWidth: _maxSide,
-    maxHeight: _maxSide,
-    imageQuality: _jpegQuality,
-  );
+  final XFile? file;
+  try {
+    file = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      maxWidth: _maxSide,
+      maxHeight: _maxSide,
+      imageQuality: _jpegQuality,
+    );
+  } on PlatformException catch (e) {
+    if (e.code.contains('access_denied')) {
+      throw const NotePhotoCameraUnavailable(denied: true);
+    }
+    if (e.code.contains('no_available_camera')) {
+      throw const NotePhotoCameraUnavailable(denied: false);
+    }
+    rethrow;
+  }
   return file == null ? null : _toUpload(file);
 }
 
 /// Elige fotos de la galería (como mucho [limit]). Lista vacía si se cancela.
 Future<List<NotePhotoUpload>> pickNotePhotos({required int limit}) async {
   if (limit <= 0) return const [];
+  // Con hueco para una sola, se elige una: si no, el selector deja marcar
+  // varias y las de más se descartarían sin avisar.
+  if (limit == 1) {
+    final one = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: _maxSide,
+      maxHeight: _maxSide,
+      imageQuality: _jpegQuality,
+    );
+    return one == null ? const [] : [await _toUpload(one)];
+  }
   final files = await ImagePicker().pickMultiImage(
     maxWidth: _maxSide,
     maxHeight: _maxSide,
     imageQuality: _jpegQuality,
-    limit: limit > 1 ? limit : null,
+    limit: limit,
   );
   return [for (final f in files.take(limit)) await _toUpload(f)];
 }

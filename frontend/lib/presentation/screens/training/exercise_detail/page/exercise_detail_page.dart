@@ -37,7 +37,7 @@ class ExerciseDetailPage extends StatelessWidget {
           body: switch (state) {
             ExerciseDetailLoading() => const AppSkeletonList(
               count: 3,
-              height: 160,
+              height: TokensSize.exerciseHero,
             ),
             ExerciseDetailFailure(:final error) => AppErrorView(
               error: error,

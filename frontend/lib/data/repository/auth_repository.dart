@@ -3,6 +3,7 @@ import '../../domain/models/result/app_result.dart';
 import '../../domain/models/result/result.dart';
 import '../../domain/repositories/auth_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
+import '../local_data_source/session_drafts_cleaner.dart';
 import '../local_data_source/token_storage.dart';
 import '../remote_data_source/api/session_expiry_notifier.dart';
 import '../remote_data_source/auth/auth_remote_data_source.dart';
@@ -15,12 +16,14 @@ class AuthRepository implements AuthRepositoryContract {
     required this._google,
     required this._tokens,
     required this._expiry,
+    this._drafts,
   });
 
   final AuthRemoteDataSource _remote;
   final GoogleAuthDataSource _google;
   final TokenStorage _tokens;
   final SessionExpiryNotifier _expiry;
+  final SessionDraftsCleaner? _drafts;
 
   @override
   Future<AppResult<Account>> login({
@@ -50,6 +53,8 @@ class AuthRepository implements AuthRepositoryContract {
   Future<AppResult<Unit>> logout() => RepositoryErrorHandler.guard(() async {
     final tokens = await _tokens.read();
     await _tokens.clear();
+    // Lo que la sesión en vivo dejó en el teléfono no debe verlo otra cuenta.
+    await _drafts?.clear().catchError((Object _) {});
     await _google.signOut();
     if (tokens != null) {
       // La revocación en servidor es de mejor esfuerzo: la sesión local ya está cerrada.

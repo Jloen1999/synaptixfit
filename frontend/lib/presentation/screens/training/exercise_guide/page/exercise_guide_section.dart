@@ -36,16 +36,38 @@ class _GuideView extends StatelessWidget with ErrorsMessageMixin {
     final l10n = context.localizations;
     return BlocConsumer<ExerciseGuideBloc, ExerciseGuideState>(
       listenWhen: (a, b) => a.noticeId != b.noticeId && b.notice != null,
-      listener: (context, state) => context.showSnack(switch (state.notice!) {
-        ExerciseGuideNotice.saved => l10n.trainingNoteSaved,
-        ExerciseGuideNotice.deleted => l10n.trainingNoteDeleted,
-        ExerciseGuideNotice.failed => errorMessage(context, state.saveError!),
-      }),
+      listener: (context, state) {
+        final bloc = context.read<ExerciseGuideBloc>();
+        switch (state.notice!) {
+          case ExerciseGuideNotice.saved:
+            context.showSnack(l10n.trainingNoteSaved);
+          case ExerciseGuideNotice.deleted:
+            final text = state.deletedText;
+            if (text == null) {
+              context.showSnack(l10n.trainingNoteDeleted);
+            } else {
+              context.showUndoSnack(
+                l10n.trainingNoteDeleted,
+                onUndo: () => bloc.add(ExerciseGuideEvent.noteSaved(text)),
+                onCommit: () {},
+              );
+            }
+          case ExerciseGuideNotice.failed:
+            // Lo escrito se guarda en el estado: «Reintentar» lo vuelve a mandar.
+            context.showActionSnack(
+              errorMessage(context, state.saveError!),
+              actionLabel: l10n.commonRetry,
+              onAction: () => bloc.add(const ExerciseGuideEvent.noteRetried()),
+            );
+        }
+      },
       builder: (context, state) {
         if (state.loading) {
           return const Padding(
             padding: EdgeInsets.only(top: TokensSpacing.l),
-            child: AppSkeleton(height: TokensSize.guideSkeleton),
+            child: AppSkeletonGroup(
+              child: AppSkeleton(height: TokensSize.guideSkeleton),
+            ),
           );
         }
         final tips = state.tips;
@@ -133,7 +155,8 @@ class _NoteCard extends StatelessWidget {
       isScrollControlled: true,
       showDragHandle: true,
       useSafeArea: true,
-      builder: (_) => _NoteSheet(initial: state.note?.text ?? ''),
+      builder: (_) =>
+          _NoteSheet(initial: state.pendingText ?? state.note?.text ?? ''),
     );
     if (text != null && !bloc.isClosed) {
       bloc.add(ExerciseGuideEvent.noteSaved(text));
@@ -187,9 +210,16 @@ class _NoteCard extends StatelessWidget {
             alignment: AlignmentDirectional.centerStart,
             child: TextButton.icon(
               onPressed: state.saving ? null : () => _edit(context),
-              icon: Icon(
-                note == null ? Icons.add_rounded : Icons.edit_outlined,
-              ),
+              icon: state.saving
+                  ? const SizedBox.square(
+                      dimension: TokensSize.iconS,
+                      child: CircularProgressIndicator(
+                        strokeWidth: TokensSize.spinnerStroke,
+                      ),
+                    )
+                  : Icon(
+                      note == null ? Icons.add_rounded : Icons.edit_outlined,
+                    ),
               label: Text(
                 note == null ? l10n.trainingNoteAdd : l10n.trainingNoteEdit,
               ),

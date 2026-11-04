@@ -14,8 +14,8 @@ import java.util.UUID;
 
 /**
  * Implementa {@link GetMockExamOptionsUseCase}: lista los materiales de la asignatura con preguntas
- * y los límites de {@link QuizService} al empezar un simulacro. Una asignatura tiene pocos
- * materiales, así que leer el banco de cada uno es barato.
+ * y los límites de {@link MockExamOptions} (los mismos que aplica {@link QuizService} al empezarlo).
+ * Solo cuenta las preguntas de cada banco, sin cargarlas.
  */
 public class MockExamOptionsService implements GetMockExamOptionsUseCase {
 
@@ -36,7 +36,7 @@ public class MockExamOptionsService implements GetMockExamOptionsUseCase {
         List<MockExamOptions.Source> sources = new ArrayList<>();
         for (StudyMaterial m : materials.findByUser(userId, subjectId)) {
             banks.findByMaterial(m.id())
-                    .map(bank -> banks.findQuestions(bank.id()).size())
+                    .map(bank -> banks.countQuestions(bank.id()))
                     .filter(count -> count > 0)
                     .ifPresent(count -> sources.add(
                             new MockExamOptions.Source(m.id(), m.title(), m.originType(), count)));
@@ -44,7 +44,6 @@ public class MockExamOptionsService implements GetMockExamOptionsUseCase {
         // Los que más preguntas tienen primero: suelen ser los temas más completos.
         sources.sort(Comparator.comparingInt(MockExamOptions.Source::questionCount).reversed()
                 .thenComparing(MockExamOptions.Source::title, String.CASE_INSENSITIVE_ORDER));
-        return new MockExamOptions(sources, QuizService.MAX_MATERIALS, QuizService.COMBINED_TARGET,
-                QuizService.MAX_QUESTION_COUNT);
+        return MockExamOptions.of(sources);
     }
 }

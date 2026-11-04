@@ -376,9 +376,11 @@
   "plannerClassAttendsLater": "À la fin, il comptera automatiquement comme suivi. Si tu n'y vas pas, tu pourras indiquer « Je n'y suis pas allé » dès qu'il commence.",
   "plannerPastStudySubjectsFailed": "Impossible de charger tes matières ; tu peux le noter sans matière.",
   "plannerPastStudyRetry": "Réessayer",
-  "plannerWeekClosed": "Semaine clôturée",
-  "plannerWeekClosedHint": "Tu as déjà clôturé cette semaine. Les nouveaux blocs sont enregistrés tout seuls : inutile de la clôturer à nouveau.",
-  "plannerDeadlineFromReminder": "On t'a prévenu pour celle-ci",
+  "plannerWeekClosed": "Semaine planifiée",
+  "plannerWeekClosedHint": "Tu as déjà planifié cette semaine. Les nouveaux blocs sont enregistrés tout seuls : inutile de recommencer.",
+  "plannerDeadlineFromReminder": "On t'a prévenu pour ce rendu",
   "plannerPomodoroResetTitle": "Recommencer à zéro ?",
-  "plannerPomodoroResetMessage": "Tu perds le temps déjà fait dans ce bloc. Si tu as juste besoin de souffler, mets plutôt en pause."
+  "plannerPomodoroResetMessage": "Tu perds le temps déjà fait dans ce bloc. Si tu as juste besoin de souffler, mets plutôt en pause.",
+  "plannerWeekClosedWhat": "Explique ce que cela signifie",
+  "plannerPomodoroResetKeep": "Continuer"
 }

@@ -56,6 +56,11 @@ public class QuestionBankPersistenceAdapter implements QuestionBankRepositoryPor
     }
 
     @Override
+    public int countQuestions(UUID bankId) {
+        return (int) questions.countByBankId(bankId);
+    }
+
+    @Override
     public List<Question> findQuestionsByIds(Collection<UUID> ids) {
         if (ids.isEmpty()) {
             return List.of();

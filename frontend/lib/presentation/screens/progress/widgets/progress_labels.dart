@@ -8,7 +8,6 @@ import '../../../../domain/enums/badge_criterion.dart';
 import '../../../../domain/enums/badge_rarity.dart';
 import '../../../../domain/enums/community_post_kind.dart';
 import '../../../../domain/models/progress/badge.dart';
-import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
 
 /// Formatos numéricos y de fecha del módulo (locale `es`).
@@ -132,16 +131,8 @@ extension ProgressLabels on AppLocalizations {
   };
 }
 
-/// Colores e iconos por rareza y categoría (siempre acompañados de texto).
-extension ProgressColors on BuildContext {
-  Color rarityColor(BadgeRarity rarity) => switch (rarity) {
-    BadgeRarity.common => colors.onSurfaceVariant,
-    BadgeRarity.rare => palette.sessions,
-    BadgeRarity.epic => palette.study,
-    BadgeRarity.legendary => palette.accent,
-  };
-}
-
+/// Iconos por categoría (siempre acompañados de texto). El color de cada
+/// rareza está en [BadgeRarityColor] (`widgets/app_badge_emblem.dart`).
 IconData badgeCategoryIcon(BadgeCategory? category) => switch (category) {
   null => Icons.apps_rounded,
   BadgeCategory.training => Icons.fitness_center_rounded,

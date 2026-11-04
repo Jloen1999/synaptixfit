@@ -458,6 +458,7 @@ class _Controls extends StatelessWidget {
                 title: l10n.plannerPomodoroResetTitle,
                 message: l10n.plannerPomodoroResetMessage,
                 confirmLabel: l10n.plannerPomodoroReset,
+                cancelLabel: l10n.plannerPomodoroResetKeep,
               );
               if (!ok || bloc.isClosed) return;
             }

@@ -13,6 +13,12 @@ public record ScannedNoteDraft(String title, String markdown, boolean tidied, in
     /** Menos letras o cifras que esto es ruido de la foto (sombras, bordes), no apuntes. */
     static final int MIN_READABLE_CHARS = 12;
 
+    /**
+     * Texto máximo que se manda a la IA para ordenarlo (≈ 5 páginas densas). Por encima, la respuesta
+     * no cabría entera y se perderían partes: se devuelve el texto tal cual se leyó.
+     */
+    public static final int MAX_TIDY_CHARS = 20_000;
+
     static final int TITLE_MAX = 80;
 
     /** Separador entre páginas: una regla horizontal en Markdown. */

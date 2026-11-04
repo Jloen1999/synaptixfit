@@ -26,7 +26,9 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -113,9 +115,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, statusCode, request);
         if (response != null && response.getBody() instanceof ProblemDetail problem
                 && (problem.getProperties() == null || !problem.getProperties().containsKey("code"))) {
-            problem.setProperty("code", frameworkCode(statusCode));
+            problem.setProperty("code", tooManyPhotoBytes(ex, request) ? "NOTE_SCAN_TOO_LARGE"
+                    : frameworkCode(statusCode));
         }
         return response;
+    }
+
+    /**
+     * Las fotos de apuntes que superan el límite de subida no llegan al caso de uso: se les da el
+     * mismo code que a una foto demasiado grande para que la app muestre su aviso concreto.
+     */
+    private static boolean tooManyPhotoBytes(Exception ex, WebRequest request) {
+        return ex instanceof MaxUploadSizeExceededException
+                && request instanceof ServletWebRequest servlet
+                && servlet.getRequest().getRequestURI().endsWith("/notes/scan-drafts");
     }
 
     private static HttpStatus statusFor(DomainException ex) {

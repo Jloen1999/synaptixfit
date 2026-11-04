@@ -222,7 +222,7 @@ class _LiveViewState extends State<_LiveView> {
       case SetSheetSave(:final record):
         _bloc.add(LiveSessionEvent.setRecorded(record));
       case SetSheetDelete(:final setId):
-        _bloc.add(LiveSessionEvent.setDeleted(setId));
+        _deleteWithUndo(setId, existing);
     }
   }
 
@@ -275,6 +275,41 @@ class _LiveViewState extends State<_LiveView> {
         final key = LiveSessionState.draftKey(e.id, set, f);
         valid ? _invalid.remove(key) : _invalid.add(key);
       });
+
+  /// Borra la serie y ofrece «Deshacer», que la vuelve a apuntar tal cual
+  /// estaba (borrar nunca es definitivo sin una segunda oportunidad).
+  void _deleteWithUndo(String setId, SessionSet? before) {
+    final bloc = _bloc..add(LiveSessionEvent.setDeleted(setId));
+    if (before == null) return;
+    final l10n = context.localizations;
+    context.showUndoSnack(
+      before.warmup
+          ? l10n.trainingWarmupSetDeleted(before.setNumber)
+          : l10n.trainingSetDeleted(before.setNumber),
+      onUndo: () {
+        if (bloc.isClosed) return;
+        bloc.add(
+          LiveSessionEvent.setRecorded(
+            SetRecord(
+              plannedExerciseId: before.plannedExerciseId,
+              setNumber: before.setNumber,
+              repsDone: before.repsDone,
+              weightKg: before.weightKg,
+              completed: before.completed,
+              failedReps: before.failedReps,
+              durationSeconds: before.durationSeconds,
+              distanceMeters: before.distanceMeters,
+              activeSeconds: before.activeSeconds,
+              warmup: before.warmup,
+              toFailure: before.toFailure,
+              exerciseId: before.exerciseId,
+            ),
+          ),
+        );
+      },
+      onCommit: () {},
+    );
+  }
 
   /// «Serie N registrada · Deshacer»: el aviso también lo oye el lector (el
   /// botón cambia de serie o desaparece, 4.1.3). Deshacer borra esa serie
@@ -409,9 +444,30 @@ class _LiveViewState extends State<_LiveView> {
     switch (result) {
       case SetSheetSave(:final record):
         _bloc.add(LiveSessionEvent.setRecorded(record));
+        if (existing == null) _offerWarmupUndo(e, set);
       case SetSheetDelete(:final setId):
-        _bloc.add(LiveSessionEvent.setDeleted(setId));
+        _deleteWithUndo(setId, existing);
     }
+  }
+
+  /// «Calentamiento N apuntado · Deshacer», como las series de trabajo.
+  void _offerWarmupUndo(PlannedExercise e, int set) {
+    final bloc = _bloc;
+    context.showUndoSnack(
+      context.localizations.trainingWarmupSetLogged(set),
+      onUndo: () async {
+        final ready = bloc.state.saving
+            ? await bloc.stream.firstWhere((s) => !s.saving)
+            : bloc.state;
+        final logged = ready.session
+            ?.warmupSetsFor(e.id)
+            .where((s) => s.setNumber == set)
+            .firstOrNull;
+        if (logged == null || bloc.isClosed) return;
+        bloc.add(LiveSessionEvent.setDeleted(logged.id));
+      },
+      onCommit: () {},
+    );
   }
 
   /// Sesión libre: apuntar la serie [set] (si se cronometraba, el bloc le

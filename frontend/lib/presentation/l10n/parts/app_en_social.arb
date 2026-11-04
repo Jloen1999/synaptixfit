@@ -184,6 +184,7 @@
   "socialFindFriends": "Find friends",
   "socialProfileBadges": "{count, plural, =1{1 badge} other{{count} badges}}",
   "socialProfileBadgesAll": "See all {count}",
-  "socialProfileBadgeSemantics": "{name}, {rarity} badge. Tap to see what it is.",
-  "socialProfileBadgeEarnedOn": "Earned on {date}"
+  "socialProfileBadgeSemantics": "{name}, {rarity} badge.",
+  "socialProfileBadgeEarnedOn": "Earned on {date}",
+  "socialProfileBadgeHint": "See what it is and when they earned it"
 }

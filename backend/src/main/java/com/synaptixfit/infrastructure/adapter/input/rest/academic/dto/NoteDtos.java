@@ -28,12 +28,6 @@ public final class NoteDtos {
                                     Boolean quickNote) {
     }
 
-    /** Texto leído de fotos (y ya revisado por la persona) que se guarda como apunte privado. */
-    public record ScannedNoteRequest(@NotBlank @Size(max = 200) String title,
-                                     @NotBlank @Size(max = 200_000) String text,
-                                     UUID subjectId) {
-    }
-
     /**
      * Borrador leído de fotos de apuntes. {@code tidied}: la IA lo ordenó; si es falso, es el texto
      * tal como se leyó. {@code title} puede ser nulo (el cliente propone uno).

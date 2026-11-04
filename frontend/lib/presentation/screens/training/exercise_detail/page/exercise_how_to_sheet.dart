@@ -188,7 +188,7 @@ class _WorksWith extends StatelessWidget {
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: '$label: ',
+                      text: context.localizations.trainingGuideFactLabel(label),
                       style: context.textStyles.labelLarge,
                     ),
                     TextSpan(text: items.join(', ')),

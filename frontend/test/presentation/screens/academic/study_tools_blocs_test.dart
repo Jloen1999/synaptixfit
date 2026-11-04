@@ -78,6 +78,12 @@ const _photo = NotePhotoUpload(
   mimeType: 'image/jpeg',
 );
 
+const _photo2 = NotePhotoUpload(
+  bytes: [4, 5, 6],
+  fileName: 'pagina2.jpg',
+  mimeType: 'image/jpeg',
+);
+
 void main() {
   group('MockExamSetupBloc', () {
     late _GetOptions getOptions;
@@ -203,6 +209,34 @@ void main() {
         expect(bloc.state.photos, hasLength(NoteScanState.maxPhotos - 1));
         expect(bloc.state.canAddMore, isTrue);
       },
+    );
+
+    blocTest<NoteScanBloc, NoteScanState>(
+      'deshacer devuelve la página a su sitio',
+      build: build,
+      act: (bloc) => bloc
+        ..add(const NoteScanEvent.photosAdded([_photo, _photo2]))
+        ..add(const NoteScanEvent.photoRemoved(0))
+        ..add(const NoteScanEvent.photoRestored(0, _photo)),
+      verify: (bloc) => expect(bloc.state.photos, [_photo, _photo2]),
+    );
+
+    blocTest<NoteScanBloc, NoteScanState>(
+      'sin permiso de cámara lo explica, y elegir de la galería lo quita',
+      build: build,
+      act: (bloc) => bloc
+        ..add(const NoteScanEvent.cameraUnavailable(denied: true))
+        ..add(const NoteScanEvent.photosAdded([_photo])),
+      expect: () => [
+        isA<NoteScanState>().having(
+          (s) => s.cameraProblem,
+          'cámara',
+          NoteScanCameraProblem.denied,
+        ),
+        isA<NoteScanState>()
+            .having((s) => s.cameraProblem, 'cámara', isNull)
+            .having((s) => s.photos, 'fotos', [_photo]),
+      ],
     );
 
     blocTest<NoteScanBloc, NoteScanState>(

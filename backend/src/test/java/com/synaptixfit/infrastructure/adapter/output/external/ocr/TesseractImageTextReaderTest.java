@@ -25,8 +25,16 @@ class TesseractImageTextReaderTest {
     }
 
     @Test
+    void withAMemoryCapTesseractRunsUnderPrlimitWithoutAShell() {
+        assertThat(TesseractImageTextReader.commandLine("tesseract", 768, "spa+eng")).containsExactly(
+                "prlimit", "--as=" + 768L * 1024 * 1024, "--",
+                "tesseract", "stdin", "stdout", "-l", "spa+eng", "--psm", "3");
+        assertThat(TesseractImageTextReader.commandLine("tesseract", 0, "eng")).first().isEqualTo("tesseract");
+    }
+
+    @Test
     void withoutTheProgramInstalledTheServiceSaysItIsUnavailable() {
-        TesseractImageTextReader reader = new TesseractImageTextReader("programa-que-no-existe-ocr", 5, 1);
+        TesseractImageTextReader reader = new TesseractImageTextReader("programa-que-no-existe-ocr", 5, 1, 1, 0);
         assertThatThrownBy(() -> reader.read(new NotePhoto(new byte[] {1}, "image/png")))
                 .isInstanceOf(NoteScanUnavailableException.class);
     }

@@ -53,14 +53,23 @@ class _MockExamSetupView extends StatelessWidget {
               ? SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(TokensSpacing.m),
-                    child: AppPrimaryButton(
-                      label: state.canStart
-                          ? l10n.academicMockSetupStart(state.count)
-                          : l10n.academicMockSetupPickOne,
-                      icon: Icons.play_arrow_rounded,
-                      onPressed: state.canStart
-                          ? () => _start(context, state)
-                          : null,
+                    // En escritorio el botón no se estira más que el texto.
+                    child: Center(
+                      heightFactor: 1,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: TokensLayout.readingMaxWidth,
+                        ),
+                        child: AppPrimaryButton(
+                          label: state.canStart
+                              ? l10n.academicMockSetupStart(state.count)
+                              : l10n.academicMockSetupPickOne,
+                          icon: Icons.play_arrow_rounded,
+                          onPressed: state.canStart
+                              ? () => _start(context, state)
+                              : null,
+                        ),
+                      ),
                     ),
                   ),
                 )
@@ -115,6 +124,8 @@ class _Form extends StatelessWidget {
             title: l10n.academicMockSetupWhat,
             actionLabel: state.allSelected
                 ? l10n.academicMockSetupNone
+                : options.sources.length > options.maxMaterials
+                ? l10n.academicMockSetupAllFirst(options.maxMaterials)
                 : l10n.academicMockSetupAll,
             onAction: () => bloc.add(const MockExamSetupEvent.allToggled()),
           ),
@@ -156,7 +167,16 @@ class _Form extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(
-                        l10n.academicMockSetupQuestions(source.questionCount),
+                        state.selected.contains(source.materialId) ||
+                                !state.atMaterialLimit
+                            ? l10n.academicMockSetupQuestions(
+                                source.questionCount,
+                              )
+                            : l10n.academicMockSetupMaxReached(
+                                l10n.academicMockSetupQuestions(
+                                  source.questionCount,
+                                ),
+                              ),
                       ),
                     ),
                   ),

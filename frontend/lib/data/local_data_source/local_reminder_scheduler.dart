@@ -21,21 +21,19 @@ const reminderSnoozeAction = 'snooze';
 /// ejecuta en un isolate aparte, sin la app abierta. Por eso es una función
 /// de nivel superior y lleva en el `payload` todo lo que necesita.
 @pragma('vm:entry-point')
-void reminderBackgroundTap(NotificationResponse response) {
+Future<void> reminderBackgroundTap(NotificationResponse response) async {
   if (response.actionId != reminderSnoozeAction) return;
   final plugin = FlutterLocalNotificationsPlugin();
-  // En el isolate de fondo el plugin debe iniciarse antes de programar.
-  unawaited(
-    plugin
-        .initialize(
-          settings: const InitializationSettings(
-            android: AndroidInitializationSettings(
-              NotificationsReminderScheduler.androidIcon,
-            ),
-          ),
-        )
-        .then((_) => NotificationsReminderScheduler.snooze(plugin, response)),
+  // En el isolate de fondo el plugin debe iniciarse antes de programar; se
+  // espera todo para que el isolate no termine a medias.
+  await plugin.initialize(
+    settings: const InitializationSettings(
+      android: AndroidInitializationSettings(
+        NotificationsReminderScheduler.androidIcon,
+      ),
+    ),
   );
+  await NotificationsReminderScheduler.snooze(plugin, response);
 }
 
 /// Acceso técnico a las notificaciones locales del sistema. Lo usa
@@ -169,8 +167,18 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   Future<void> replaceAll(List<Reminder> reminders, String channelName) async {
     await _ensureReady();
     // Solo los pendientes: los avisos ya mostrados se quedan en la bandeja.
-    await _plugin.cancelAllPendingNotifications();
+    // Los pospuestos que aún no han sonado se respetan: si no, abrir la app
+    // en esos minutos los borraría.
+    final snoozed = <int>{};
+    for (final pending in await _plugin.pendingNotificationRequests()) {
+      if (_isSnoozedAndWaiting(pending.payload)) {
+        snoozed.add(pending.id);
+      } else {
+        await _plugin.cancel(id: pending.id);
+      }
+    }
     for (final reminder in reminders) {
+      if (snoozed.contains(reminder.id)) continue;
       final snooze = reminder.hasActions
           ? _SnoozeData(
               title: reminder.title,
@@ -225,9 +233,20 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
         iOS: const DarwinNotificationDetails(),
       );
 
+  /// Aviso pospuesto cuya nueva hora aún no ha llegado.
+  static bool _isSnoozedAndWaiting(String? payload) {
+    if (payload == null) return false;
+    final cut = payload.lastIndexOf('|');
+    final until = cut < 0
+        ? null
+        : _SnoozeData.decode(payload.substring(cut + 1))?.until;
+    return until != null && until.isAfter(DateTime.now());
+  }
+
   /// «Posponer»: quita el aviso y lo vuelve a programar a los minutos que
   /// lleva en su `payload`, con los mismos textos y botones. Funciona con la
-  /// app cerrada ([reminderBackgroundTap]).
+  /// app cerrada ([reminderBackgroundTap]). No mira el silencio nocturno: lo
+  /// pide la persona en ese momento (ADR 0013).
   static Future<void> snooze(
     FlutterLocalNotificationsPlugin plugin,
     NotificationResponse response,
@@ -238,18 +257,17 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
     final cut = payload.lastIndexOf('|');
     final data = cut < 0 ? null : _SnoozeData.decode(payload.substring(cut + 1));
     if (data == null) return;
+    final until = DateTime.now().toUtc().add(Duration(minutes: data.minutes));
+    final again = data.copyUntil(until);
     await plugin.cancel(id: id);
     await plugin.zonedSchedule(
       id: id,
       title: data.title,
       body: data.body,
-      scheduledDate: tz.TZDateTime.from(
-        DateTime.now().toUtc().add(Duration(minutes: data.minutes)),
-        tz.UTC,
-      ),
-      notificationDetails: _details(data.channel, data),
+      scheduledDate: tz.TZDateTime.from(until, tz.UTC),
+      notificationDetails: _details(data.channel, again),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: payload,
+      payload: '${payload.substring(0, cut)}|${again.encode()}',
     );
   }
 
@@ -384,6 +402,7 @@ class _SnoozeData {
     required this.start,
     required this.snooze,
     required this.minutes,
+    this.until,
   });
 
   final String title;
@@ -393,6 +412,19 @@ class _SnoozeData {
   final String snooze;
   final int minutes;
 
+  /// Hora a la que suena tras posponerlo; nulo si no se ha pospuesto.
+  final DateTime? until;
+
+  _SnoozeData copyUntil(DateTime value) => _SnoozeData(
+    title: title,
+    body: body,
+    channel: channel,
+    start: start,
+    snooze: snooze,
+    minutes: minutes,
+    until: value,
+  );
+
   String encode() => Uri(
     queryParameters: {
       't': title,
@@ -401,6 +433,7 @@ class _SnoozeData {
       's': start,
       'z': snooze,
       'm': '$minutes',
+      if (until != null) 'u': '${until!.millisecondsSinceEpoch}',
     },
   ).query;
 
@@ -432,6 +465,10 @@ class _SnoozeData {
       start: start,
       snooze: snooze,
       minutes: minutes,
+      until: switch (int.tryParse(q['u'] ?? '')) {
+        final int ms => DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true),
+        null => null,
+      },
     );
   }
 }

@@ -49,11 +49,17 @@ public class ExerciseGuideJdbcAdapter implements ExerciseTipsRepositoryPort, Exe
                 .optional();
     }
 
+    /**
+     * Crea o sustituye la nota en una sola sentencia. En PostgreSQL una clave duplicada aborta la
+     * transacción, así que «insertar y, si falla, actualizar» no sirve: dos guardados seguidos darían
+     * error. Propio de PostgreSQL: listado en {@code database_portability.md}.
+     */
     @Override
     public void save(UUID userId, ExerciseNote note) {
-        delete(userId, note.exerciseId());
         jdbc.sql("INSERT INTO notas_ejercicio (usuario_id, ejercicio_id, texto, actualizado_en)"
-                        + " VALUES (:user, :id, :text, :at)")
+                        + " VALUES (:user, :id, :text, :at)"
+                        + " ON CONFLICT (usuario_id, ejercicio_id)"
+                        + " DO UPDATE SET texto = EXCLUDED.texto, actualizado_en = EXCLUDED.actualizado_en")
                 .param("user", userId)
                 .param("id", note.exerciseId())
                 .param("text", note.text())

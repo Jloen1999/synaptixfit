@@ -5,6 +5,7 @@ import '../../../../../domain/models/academic/study_artifact.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../widgets/academic_widgets.dart';
 
 /// Pantalla completa para corregir el texto de un resumen generado por la IA.
 /// Devuelve el texto nuevo o `null` si se cancela.
@@ -37,18 +38,25 @@ class _SummaryEditorState extends State<_SummaryEditor> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return Scaffold(
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) => _AskBeforeLosing(
+        dirty: _controller.text != widget.initial,
+        child: Scaffold(
       appBar: AppPageBar(
         title: Text(l10n.academicGenerateFixSummaryTitle),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(_controller.text),
+            onPressed: _controller.text.trim().isEmpty
+                ? null
+                : () => Navigator.of(context).pop(_controller.text),
             child: Text(l10n.academicGenerateFixDone),
           ),
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: AppContentWidth.reading(
+          child: Padding(
           padding: const EdgeInsets.all(TokensSpacing.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -77,6 +85,9 @@ class _SummaryEditorState extends State<_SummaryEditor> {
               ),
             ],
           ),
+          ),
+        ),
+      ),
         ),
       ),
     );
@@ -121,6 +132,9 @@ class _FlashcardEditorState extends State<_FlashcardEditor> {
     return _EditorSheet(
       title: l10n.academicGenerateFixCardTitle,
       canSave: _valid,
+      dirty:
+          _question.text != widget.card.question ||
+          _answer.text != widget.card.answer,
       onSave: () => Navigator.of(context).pop(
         Flashcard(question: _question.text.trim(), answer: _answer.text.trim()),
       ),
@@ -220,6 +234,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
     return _EditorSheet(
       title: l10n.academicGenerateFixQuestionTitle,
       canSave: _valid,
+      dirty: _result != widget.question,
       onSave: () => Navigator.of(context).pop(_result),
       children: [
         TextField(
@@ -298,6 +313,7 @@ class _EditorSheet extends StatelessWidget {
     required this.children,
     required this.canSave,
     required this.onSave,
+    required this.dirty,
   });
 
   final String title;
@@ -305,10 +321,15 @@ class _EditorSheet extends StatelessWidget {
   final bool canSave;
   final VoidCallback onSave;
 
+  /// Hay cambios sin guardar: cerrar la hoja pregunta antes.
+  final bool dirty;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return Padding(
+    return _AskBeforeLosing(
+      dirty: dirty,
+      child: Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
         child: SingleChildScrollView(
@@ -321,7 +342,10 @@ class _EditorSheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(title, style: context.textStyles.titleLarge),
+              Semantics(
+                header: true,
+                child: Text(title, style: context.textStyles.titleLarge),
+              ),
               const SizedBox(height: TokensSpacing.m),
               ...children,
               const SizedBox(height: TokensSpacing.l),
@@ -334,6 +358,33 @@ class _EditorSheet extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
+}
+
+/// Cerrar (atrás, deslizar la hoja o tocar fuera) con cambios sin guardar
+/// pregunta antes: corregir lo de la IA cuesta y no debe perderse sin querer.
+class _AskBeforeLosing extends StatelessWidget {
+  const _AskBeforeLosing({required this.dirty, required this.child});
+
+  final bool dirty;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: !dirty,
+    onPopInvokedWithResult: (didPop, _) async {
+      if (didPop) return;
+      final l10n = context.localizations;
+      final ok = await confirmDestructive(
+        context,
+        title: l10n.academicGenerateLoseFixTitle,
+        message: l10n.academicGenerateLoseFixMessage,
+        confirmLabel: l10n.academicGenerateLoseFixConfirm,
+      );
+      if (ok && context.mounted) Navigator.of(context).pop();
+    },
+    child: child,
+  );
 }

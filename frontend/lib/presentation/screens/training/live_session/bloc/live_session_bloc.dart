@@ -255,7 +255,13 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         activeExerciseId: _firstUnfinished(session, exercises),
       ),
     );
-    if (session.isCompleted) return;
+    if (session.isCompleted) {
+      // Terminada en otro sitio (otro dispositivo, la web o dada por
+      // abandonada): lo que quedara guardado en este teléfono ya no sirve.
+      await _savePending(session.id, const <SetRecord>[]);
+      await _saveDraft(session.id, const LiveSessionDraft());
+      return;
+    }
     // Cronómetro de la serie y cambios de hoy que solo sabe el teléfono: se
     // recuperan aunque la app se cerrara (si no se pueden leer, se empieza sin).
     _restoreDraft(

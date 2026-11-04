@@ -983,7 +983,7 @@
   },
   "academicReviewNoOptions": "No se pudieron cargar las respuestas.",
   "academicAiRegenerateTitle": "¿Escribirlo de nuevo?",
-  "academicAiRegenerateMessage": "La IA escribirá otra versión y sustituirá a la que ves ahora.",
+  "academicAiRegenerateMessage": "La IA escribirá otra versión y sustituirá a la que ves ahora. La de ahora no se podrá recuperar.",
   "academicSubjectArchiveTitle": "¿Archivar la asignatura?",
   "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el planificador. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras desde «Archivadas».",
   "academicScanEntry": "Desde una foto",
@@ -1026,7 +1026,7 @@
   },
   "academicScanCamera": "Hacer foto",
   "academicScanGallery": "Elegir de la galería",
-  "academicScanFull": "Ya tienes {max} páginas, el máximo de una vez. Lee estas y luego haz otro apunte.",
+  "academicScanFull": "Ya tienes {max} páginas, el máximo de una vez. Pasa estas a texto y luego empieza otro apunte.",
   "@academicScanFull": {
     "placeholders": {
       "max": {
@@ -1063,19 +1063,19 @@
   "academicScanLeaveTitle": "¿Salir sin guardar?",
   "academicScanLeaveMessage": "Se perderán las fotos y el texto leído.",
   "academicScanLeaveConfirm": "Salir",
-  "academicErrorNoteScanUnsupportedFile": "Envía de 1 a 5 fotos en JPG, PNG o WEBP.",
+  "academicErrorNoteScanUnsupportedFile": "Usa fotos normales (JPG o PNG), de 1 a 5 a la vez.",
   "academicErrorNoteScanTooLarge": "Las fotos pesan demasiado. Prueba con menos páginas a la vez.",
   "academicErrorNoteScanNothingFound": "No hemos podido leer texto en las fotos. Prueba con más luz y la hoja recta.",
   "academicErrorNoteScanUnavailable": "Ahora mismo no podemos leer fotos. Inténtalo en un rato.",
   "academicMockCardTitle": "Simulacro de la asignatura",
-  "academicMockCardBody": "Mezcla preguntas de varios temas, como en el examen de verdad. Así sabes qué llevas bien y qué no.",
+  "academicMockCardBody": "Mezcla preguntas de varios apuntes y archivos, como en el examen de verdad. Así sabes qué llevas bien y qué no.",
   "academicMockCardAction": "Hacer un simulacro",
   "academicMockSetupTitle": "Preparar simulacro",
-  "academicMockSetupIntro": "Elige qué temas entran y cuántas preguntas quieres. Las preguntas salen mezcladas y se corrigen al terminar.",
+  "academicMockSetupIntro": "Elige qué apuntes y archivos entran y cuántas preguntas quieres. Las preguntas salen mezcladas y se corrigen al terminar.",
   "academicMockSetupWhat": "¿Qué entra?",
   "academicMockSetupAll": "Elegir todo",
   "academicMockSetupNone": "Quitar todo",
-  "academicMockSetupLimit": "Puedes elegir hasta {max} a la vez.",
+  "academicMockSetupLimit": "Puedes elegir hasta {max} apuntes o archivos a la vez.",
   "@academicMockSetupLimit": {
     "placeholders": {
       "max": {
@@ -1092,7 +1092,7 @@
     }
   },
   "academicMockSetupHowMany": "¿Cuántas preguntas?",
-  "academicMockSetupAvailable": "Hay {count} preguntas entre lo que has elegido.",
+  "academicMockSetupAvailable": "{count, plural, =1{Hay 1 pregunta entre lo que has elegido.} other{Hay {count} preguntas entre lo que has elegido.}}",
   "@academicMockSetupAvailable": {
     "placeholders": {
       "count": {
@@ -1100,8 +1100,8 @@
       }
     }
   },
-  "academicMockSetupPickOne": "Elige al menos un tema",
-  "academicMockSetupStart": "Empezar · {count} preguntas",
+  "academicMockSetupPickOne": "Elige al menos un apunte o archivo",
+  "academicMockSetupStart": "{count, plural, =1{Empezar · 1 pregunta} other{Empezar · {count} preguntas}}",
   "@academicMockSetupStart": {
     "placeholders": {
       "count": {
@@ -1118,7 +1118,7 @@
   "academicGenerateRemove": "Quitar",
   "academicGenerateFixSummary": "Corregir el texto",
   "academicGenerateFixSummaryTitle": "Corregir el resumen",
-  "academicGenerateFixSummaryHint": "Cambia lo que esté mal o sobre. Los # son títulos y los - son listas.",
+  "academicGenerateFixSummaryHint": "Cambia lo que esté mal o sobre. Las líneas que empiezan por # son títulos; las que empiezan por un guion, listas.",
   "academicGenerateFixSummaryLabel": "Texto del resumen",
   "academicGenerateFixDone": "Listo",
   "academicGenerateFixCardTitle": "Corregir la tarjeta",
@@ -1195,5 +1195,56 @@
       }
     }
   },
-  "academicAiSavedAsNote": "Guardado como apunte. Ya puedes corregirlo."
+  "academicAiSavedAsNote": "Guardado como apunte. Ya puedes corregirlo.",
+  "academicScanCameraDenied": "Para hacer fotos, SynaptixFit necesita la cámara. Actívala en los ajustes del móvil o elige las fotos de tu galería.",
+  "academicScanCameraMissing": "Este dispositivo no tiene cámara. Elige las fotos de tu galería.",
+  "academicScanChangePhotos": "Cambiar las fotos",
+  "academicScanBackTitle": "¿Volver a las fotos?",
+  "academicScanBackMessage": "Se perderán los cambios que has hecho en el texto.",
+  "academicScanPageRemoved": "Página {page} quitada",
+  "@academicScanPageRemoved": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "academicScanPageUnreadable": "No se pudo abrir esta foto",
+  "academicMockSetupAllFirst": "Elegir los {max} primeros",
+  "@academicMockSetupAllFirst": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "academicMockSetupMaxReached": "{questions} · Quita uno para elegir este",
+  "@academicMockSetupMaxReached": {
+    "placeholders": {
+      "questions": {
+        "type": "String"
+      }
+    }
+  },
+  "academicGenerateCardRemoved": "Tarjeta quitada",
+  "academicGenerateQuestionRemoved": "Pregunta quitada",
+  "academicGenerateRegenerate": "Generar otra vez",
+  "academicGenerateCorrectAnswer": "Respuesta correcta",
+  "academicGenerateNumbered": "{n}. {text}",
+  "@academicGenerateNumbered": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "academicScanEntrySemantics": "Nuevo apunte desde una foto",
+  "academicAiRegenerateConfirm": "Escribir otra versión",
+  "academicGenerateLoseFixTitle": "¿Salir sin guardar el cambio?",
+  "academicGenerateLoseFixMessage": "Lo que has corregido aquí se perderá.",
+  "academicGenerateLoseFixConfirm": "Salir sin guardar",
+  "academicNoteVisibilityLabel": "¿Quién puede verlo?"
 }

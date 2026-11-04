@@ -81,7 +81,19 @@ class _GenerationCenterView extends StatelessWidget with ErrorsMessageMixin {
       },
       builder: (context, state) {
         final artifact = state.artifact;
-        return Scaffold(
+        return PopScope(
+          canPop: !state.edited,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            final ok = await showConfirmDialog(
+              context,
+              title: l10n.academicGenerateLoseEditsTitle,
+              message: l10n.academicGenerateLoseEditsMessage,
+              confirmLabel: l10n.academicGenerateLoseEditsConfirm,
+            );
+            if (ok && context.mounted) context.pop();
+          },
+          child: Scaffold(
           appBar: AppPageBar(title: Text(l10n.academicGenerateTitle)),
           bottomNavigationBar: artifact == null
               ? _GenerateBar(state: state)
@@ -102,9 +114,11 @@ class _GenerationCenterView extends StatelessWidget with ErrorsMessageMixin {
             _ when artifact != null => _ArtifactView(
               artifact: artifact,
               edited: state.edited,
+              canUndo: state.beforeRemoval != null,
             ),
             _ => _SetupView(state: state),
           },
+          ),
         );
       },
     );
@@ -369,7 +383,9 @@ class _ResultBar extends StatelessWidget {
           controller: controller,
           autofocus: true,
           textInputAction: TextInputAction.done,
-          onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) Navigator.of(dialogContext).pop(value);
+          },
           decoration: InputDecoration(labelText: l10n.academicNoteTitleLabel),
         ),
         actions: [
@@ -377,9 +393,14 @@ class _ResultBar extends StatelessWidget {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(l10n.commonCancel),
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: Text(l10n.commonSave),
+          ListenableBuilder(
+            listenable: controller,
+            builder: (_, _) => FilledButton(
+              onPressed: controller.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.of(dialogContext).pop(controller.text),
+              child: Text(l10n.commonSave),
+            ),
           ),
         ],
       ),
@@ -397,10 +418,16 @@ class _ResultBar extends StatelessWidget {
         state.artifact?.kind == ArtifactKind.summary ||
         state.artifact?.kind == ArtifactKind.mindMap;
     final bloc = context.read<GenerationCenterBloc>();
-    return BottomAppBar(
-      child: Row(
-        children: [
-          IconButton(
+    final save = AppPrimaryButton(
+      label: asNote
+          ? l10n.academicGenerateSaveNote
+          : l10n.academicGenerateSaveQuiz,
+      icon: asNote ? Icons.note_add_outlined : Icons.quiz_outlined,
+      loading: state.saving,
+      onPressed: state.canSave ? () => _save(context) : null,
+    );
+    final tools = [
+      IconButton(
             tooltip: l10n.academicGenerateDiscard,
             icon: const Icon(Icons.delete_outline_rounded),
             onPressed: () => _keepingEdits(
@@ -416,14 +443,29 @@ class _ResultBar extends StatelessWidget {
               () => bloc.add(const GenerationCenterEvent.generateRequested()),
             ),
           ),
-          const Spacer(),
-          AppPrimaryButton(
-            label: asNote
-                ? l10n.academicGenerateSaveNote
-                : l10n.academicGenerateSaveQuiz,
-            icon: asNote ? Icons.note_add_outlined : Icons.quiz_outlined,
-            loading: state.saving,
-            onPressed: state.canSave ? () => _save(context) : null,
+    ];
+    if (context.largeText) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(TokensSpacing.s),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(children: tools),
+              save,
+            ],
+          ),
+        ),
+      );
+    }
+    return BottomAppBar(
+      child: Row(
+        children: [
+          ...tools,
+          const SizedBox(width: TokensSpacing.s),
+          Flexible(
+            child: Align(alignment: AlignmentDirectional.centerEnd, child: save),
           ),
         ],
       ),
@@ -437,33 +479,26 @@ class _GeneratingView extends StatelessWidget {
   final ArtifactKind kind;
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(TokensSpacing.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(artifactIcon(kind), size: 40, color: context.colors.tertiary),
-          const SizedBox(height: TokensSpacing.m),
-          const SizedBox(width: 160, child: LinearProgressIndicator()),
-          const SizedBox(height: TokensSpacing.m),
-          Text(
-            context.localizations.academicAiGenerating,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    ),
+  Widget build(BuildContext context) => AppWorkingView(
+    icon: artifactIcon(kind),
+    title: context.localizations.academicAiGenerating,
   );
 }
 
 /// Resultado de la IA listo para revisar: se puede corregir el texto del
 /// resumen y cada tarjeta o pregunta, o quitar las que sobren, antes de guardar.
 class _ArtifactView extends StatelessWidget {
-  const _ArtifactView({required this.artifact, required this.edited});
+  const _ArtifactView({
+    required this.artifact,
+    required this.edited,
+    required this.canUndo,
+  });
 
   final StudyArtifact artifact;
   final bool edited;
+
+  /// Hay un «quitar» que se puede deshacer.
+  final bool canUndo;
 
   Future<void> _fixSummary(BuildContext context) async {
     final bloc = context.read<GenerationCenterBloc>();
@@ -488,10 +523,15 @@ class _ArtifactView extends StatelessWidget {
   }
 
   void _remove(BuildContext context, int index) {
+    final l10n = context.localizations;
     final bloc = context.read<GenerationCenterBloc>()
       ..add(GenerationCenterEvent.itemRemoved(index));
+    // El foco pasa al siguiente elemento de la lista (el que ocupa su sitio).
+    FocusScope.of(context).nextFocus();
     context.showUndoSnack(
-      context.localizations.academicGenerateItemRemoved,
+      artifact.flashcards.isNotEmpty
+          ? l10n.academicGenerateCardRemoved
+          : l10n.academicGenerateQuestionRemoved,
       onUndo: () => bloc.add(const GenerationCenterEvent.removalUndone()),
       onCommit: () {},
     );
@@ -555,6 +595,28 @@ class _ArtifactView extends StatelessWidget {
               icon: Icons.layers_clear_rounded,
               title: l10n.academicGenerateAllRemoved,
               message: l10n.academicGenerateAllRemovedHint,
+              action: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: TokensSpacing.s,
+                runSpacing: TokensSpacing.s,
+                children: [
+                  if (canUndo)
+                    AppSecondaryButton(
+                      label: l10n.commonUndo,
+                      icon: const Icon(Icons.undo_rounded),
+                      onPressed: () => context.read<GenerationCenterBloc>().add(
+                        const GenerationCenterEvent.removalUndone(),
+                      ),
+                    ),
+                  AppSecondaryButton(
+                    label: l10n.academicGenerateRegenerate,
+                    icon: const Icon(Icons.refresh_rounded),
+                    onPressed: () => context.read<GenerationCenterBloc>().add(
+                      const GenerationCenterEvent.generateRequested(),
+                    ),
+                  ),
+                ],
+              ),
             ),
           for (final (i, card) in artifact.flashcards.indexed)
             Padding(
@@ -584,7 +646,7 @@ class _ArtifactView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${i + 1}. ${q.statement}',
+                      l10n.academicGenerateNumbered(i + 1, q.statement),
                       style: context.textStyles.titleSmall,
                     ),
                     const SizedBox(height: TokensSpacing.xs),
@@ -594,20 +656,25 @@ class _ArtifactView extends StatelessWidget {
                           padding: const EdgeInsets.only(
                             top: TokensSpacing.xxs,
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                o == q.correctAnswer
-                                    ? Icons.check_circle_rounded
-                                    : Icons.radio_button_unchecked_rounded,
-                                size: TokensSize.iconXs,
-                                color: o == q.correctAnswer
-                                    ? context.palette.success
-                                    : context.colors.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: TokensSpacing.s),
-                              Expanded(child: Text(o)),
-                            ],
+                          child: MergeSemantics(
+                            child: Row(
+                              children: [
+                                Icon(
+                                  o == q.correctAnswer
+                                      ? Icons.check_circle_rounded
+                                      : Icons.radio_button_unchecked_rounded,
+                                  size: TokensSize.iconXs,
+                                  color: o == q.correctAnswer
+                                      ? context.palette.success
+                                      : context.colors.onSurfaceVariant,
+                                  semanticLabel: o == q.correctAnswer
+                                      ? l10n.academicGenerateCorrectAnswer
+                                      : null,
+                                ),
+                                const SizedBox(width: TokensSpacing.s),
+                                Expanded(child: Text(o)),
+                              ],
+                            ),
                           ),
                         )
                     else
@@ -653,25 +720,15 @@ class _ItemActions extends StatelessWidget {
       child: Wrap(
         spacing: TokensSpacing.s,
         children: [
-          Semantics(
-            label: fixLabel,
-            button: true,
-            excludeSemantics: true,
-            child: TextButton.icon(
-              onPressed: onFix,
-              icon: const Icon(Icons.edit_rounded),
-              label: Text(l10n.academicGenerateFix),
-            ),
+          TextButton.icon(
+            onPressed: onFix,
+            icon: const Icon(Icons.edit_rounded),
+            label: Text(l10n.academicGenerateFix, semanticsLabel: fixLabel),
           ),
-          Semantics(
-            label: removeLabel,
-            button: true,
-            excludeSemantics: true,
-            child: TextButton.icon(
-              onPressed: onRemove,
-              icon: const Icon(Icons.remove_circle_outline_rounded),
-              label: Text(l10n.academicGenerateRemove),
-            ),
+          TextButton.icon(
+            onPressed: onRemove,
+            icon: const Icon(Icons.remove_circle_outline_rounded),
+            label: Text(l10n.academicGenerateRemove, semanticsLabel: removeLabel),
           ),
         ],
       ),

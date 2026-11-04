@@ -16,6 +16,8 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionEntity, UUI
 
     List<QuestionEntity> findByIdIn(Collection<UUID> ids);
 
+    long countByBankId(UUID bankId);
+
     @Query("select q from QuestionEntity q, QuestionBankEntity b where q.id = :questionId and b.id = q.bankId "
             + "and b.userId = :userId")
     Optional<QuestionEntity> findOfUser(UUID questionId, UUID userId);

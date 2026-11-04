@@ -68,8 +68,9 @@ class ReminderComposer {
               (planned.startsAt ?? planned.at).toLocal(),
             ),
             at: planned.at,
-            // El servidor manda «entrega:días antes»: se abre la entrega.
-            refId: planned.refId.split(':').first,
+            // Se abre la entrega: su id llega aparte (`targetId`). Los servidores
+            // anteriores no lo mandan; entonces se toma de «entrega:días antes».
+            refId: planned.targetId ?? planned.refId.split(':').first,
           ),
         },
     ];

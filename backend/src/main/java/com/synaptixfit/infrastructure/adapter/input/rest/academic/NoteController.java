@@ -13,11 +13,9 @@ import com.synaptixfit.domain.exception.academic.NoteScanUnsupportedFileExceptio
 import com.synaptixfit.domain.model.academic.NotePhoto;
 import com.synaptixfit.domain.model.shared.AudienceScope;
 import com.synaptixfit.domain.model.shared.PageRequest;
-import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.CreateNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.NoteResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.ScannedNoteDraftResponse;
-import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.ScannedNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.SharedNoteResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.SharedNoteSummaryResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.UpdateNoteRequest;
@@ -128,7 +126,7 @@ public class NoteController {
 
     /**
      * Lee fotos de apuntes en papel (campo {@code files}, de 1 a 5 imágenes) y devuelve un borrador
-     * para revisar. No guarda nada: el apunte se crea con {@code POST /notes/from-scan}.
+     * para revisar. No guarda nada: el apunte se crea después con {@code POST /notes} (ADR 0040).
      */
     @PostMapping(value = "/scan-drafts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ScannedNoteDraftResponse scanDraft(@CurrentUserId UUID userId,
@@ -142,13 +140,6 @@ public class NoteController {
             }
         }
         return ScannedNoteDraftResponse.from(readPhotos.read(new ReadNotePhotosUseCase.Command(userId, photos)));
-    }
-
-    @PostMapping("/from-scan")
-    @ResponseStatus(HttpStatus.CREATED)
-    public NoteResponse fromScan(@CurrentUserId UUID userId, @Valid @RequestBody ScannedNoteRequest r) {
-        return NoteResponse.from(createNote.createNote(new CreateNoteUseCase.Command(userId, r.subjectId(),
-                r.title(), r.text(), Visibility.PRIVATE, false)));
     }
 
     @PatchMapping("/{noteId}")

@@ -98,7 +98,7 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
                             context,
                             title: l10n.academicAiRegenerateTitle,
                             message: l10n.academicAiRegenerateMessage,
-                            confirmLabel: l10n.academicAiRegenerate,
+                            confirmLabel: l10n.academicAiRegenerateConfirm,
                             destructive: false,
                           );
                           if (ok && !bloc.isClosed) {
@@ -110,7 +110,14 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
           ),
           body: Column(
             children: [
-              if (state.regenerating) const LinearProgressIndicator(),
+              if (state.regenerating)
+                Semantics(
+                  liveRegion: true,
+                  label: l10n.academicAiGenerating,
+                  child: LinearProgressIndicator(
+                    value: context.reduceMotion ? 0.5 : null,
+                  ),
+                ),
               Expanded(child: _body(context, state)),
             ],
           ),
@@ -122,7 +129,10 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
   Widget _body(BuildContext context, AiDocumentState state) {
     final l10n = context.localizations;
     if (state.loading) {
-      return _Generating(label: l10n.academicAiGenerating);
+      return AppWorkingView(
+        icon: Icons.auto_awesome_rounded,
+        title: l10n.academicAiGenerating,
+      );
     }
     if (state.error != null) {
       return AppErrorView(
@@ -193,7 +203,11 @@ class _SaveAsNoteRow extends StatelessWidget {
               controller: controller,
               autofocus: true,
               textInputAction: TextInputAction.done,
-              onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  Navigator.of(dialogContext).pop(value);
+                }
+              },
               decoration: InputDecoration(
                 labelText: l10n.academicNoteTitleLabel,
               ),
@@ -205,9 +219,14 @@ class _SaveAsNoteRow extends StatelessWidget {
             onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(l10n.commonCancel),
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: Text(l10n.commonSave),
+          ListenableBuilder(
+            listenable: controller,
+            builder: (_, _) => FilledButton(
+              onPressed: controller.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.of(dialogContext).pop(controller.text),
+              child: Text(l10n.commonSave),
+            ),
           ),
         ],
       ),
@@ -222,7 +241,7 @@ class _SaveAsNoteRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.s),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -233,42 +252,16 @@ class _SaveAsNoteRow extends StatelessWidget {
             ),
           ),
           const SizedBox(height: TokensSpacing.xs),
-          OutlinedButton.icon(
-            onPressed: state.saving ? null : () => _save(context),
+          AppSecondaryButton(
+            label: l10n.academicAiSaveAsNote,
             icon: const Icon(Icons.note_add_outlined),
-            label: Text(l10n.academicAiSaveAsNote),
+            loading: state.saving,
+            onPressed: () => _save(context),
           ),
         ],
       ),
     );
   }
-}
-
-class _Generating extends StatelessWidget {
-  const _Generating({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(TokensSpacing.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.auto_awesome_rounded,
-            size: 40,
-            color: context.colors.tertiary,
-          ),
-          const SizedBox(height: TokensSpacing.m),
-          const SizedBox(width: 160, child: LinearProgressIndicator()),
-          const SizedBox(height: TokensSpacing.m),
-          Text(label, textAlign: TextAlign.center),
-        ],
-      ),
-    ),
-  );
 }
 
 class _SavedBanner extends StatelessWidget {

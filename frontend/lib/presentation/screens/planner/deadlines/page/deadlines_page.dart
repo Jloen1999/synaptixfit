@@ -179,7 +179,7 @@ class _DeadlinesView extends StatelessWidget with ErrorsMessageMixin {
                     TokensSpacing.m,
                     TokensSpacing.s,
                     TokensSpacing.m,
-                    96,
+                    TokensLayout.fabClearance,
                   ),
                   itemCount:
                       state.visibleItems.length + (state.hasMore ? 1 : 0),
@@ -258,7 +258,9 @@ class _Filters extends StatelessWidget {
           ),
           if (state.subjects.isNotEmpty)
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 280),
+              constraints: const BoxConstraints(
+                maxWidth: TokensLayout.filterMaxWidth,
+              ),
               child: DropdownButtonFormField<String?>(
                 initialValue: state.subjectId,
                 isExpanded: true,
@@ -402,7 +404,9 @@ class _DeadlineTile extends StatelessWidget {
             dimension: TokensLayout.minTouchTarget,
             child: Padding(
               padding: EdgeInsets.all(TokensSpacing.m),
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(
+                strokeWidth: TokensSize.spinnerStroke,
+              ),
             ),
           )
         : IconButton(

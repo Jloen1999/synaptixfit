@@ -10,6 +10,14 @@ sealed class NoteScanEvent with _$NoteScanEvent {
 
   const factory NoteScanEvent.photoRemoved(int index) = NoteScanPhotoRemoved;
 
+  /// «Deshacer» tras quitar una página: vuelve a su sitio.
+  const factory NoteScanEvent.photoRestored(int index, NotePhotoUpload photo) =
+      NoteScanPhotoRestored;
+
+  /// La cámara no se pudo abrir (sin permiso o sin cámara).
+  const factory NoteScanEvent.cameraUnavailable({required bool denied}) =
+      NoteScanCameraUnavailable;
+
   /// Envía las fotos para leerlas.
   const factory NoteScanEvent.readRequested() = NoteScanReadRequested;
 

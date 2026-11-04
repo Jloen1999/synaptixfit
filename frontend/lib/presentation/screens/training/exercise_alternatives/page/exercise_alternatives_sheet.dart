@@ -117,7 +117,11 @@ class _AlternativesView extends StatelessWidget {
                             ? l10n.trainingSwapTodayEmpty
                             : l10n.trainingReplaceEmptyMessage,
                         action: todayOnly
-                            ? null
+                            ? AppSecondaryButton(
+                                label: l10n.trainingSwapTodayKeep(exerciseName),
+                                icon: const Icon(Icons.check_rounded),
+                                onPressed: () => Navigator.of(context).pop(),
+                              )
                             : AppSecondaryButton(
                                 label: l10n.trainingReplaceFromCatalog,
                                 onPressed: () => _pickFromCatalog(context),
@@ -142,8 +146,19 @@ class _AlternativesView extends StatelessWidget {
                               icon: e.category.icon,
                             ),
                             title: Text(e.name),
-                            subtitle: Text(details.join(' · ')),
-                            trailing: todayOnly
+                            // Con texto grande, «Usar hoy» baja bajo los
+                            // detalles para no robarle sitio al nombre.
+                            subtitle: todayOnly && context.largeText
+                                ? Text(
+                                    [
+                                      details.join(' · '),
+                                      l10n.trainingSwapTodayUse,
+                                    ].join('\n'),
+                                  )
+                                : Text(details.join(' · ')),
+                            trailing: todayOnly && context.largeText
+                                ? null
+                                : todayOnly
                                 ? Text(
                                     l10n.trainingSwapTodayUse,
                                     style: context.textStyles.labelLarge
