@@ -325,5 +325,13 @@
   "profilePublicProfileHint": "Como os outros te veem",
   "profileCommunity": "Comunidade",
   "profileCommunityHint": "Publicações dos teus amigos e da comunidade",
-  "profilePublicProfilePrivateHint": "O teu perfil é privado: só tu o vês"
+  "profilePublicProfilePrivateHint": "O teu perfil é privado: só tu o vês",
+  "profileReminderOptionsTitle": "Mais lembretes",
+  "profileReminderStreak": "Sequência em risco",
+  "profileReminderStreakHint": "Às 20:00 se ainda não fizeste nada hoje.",
+  "profileReminderCheckIn": "Como estás hoje?",
+  "profileReminderCheckInHint": "Às 9:00, se ainda não fizeste o registo do dia.",
+  "profileReminderClasses": "Aula daqui a 15 minutos",
+  "profileReminderClassesHint": "Com a sala, para chegares a tempo.",
+  "profileReminderSaveError": "Não foi possível guardar. Tenta outra vez."
 }

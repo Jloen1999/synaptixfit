@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.challenge;
 
+import com.synaptixfit.domain.model.challenge.LinkType;
 import com.synaptixfit.domain.exception.challenge.ChallengeLinkNotFoundException;
 import com.synaptixfit.domain.exception.challenge.ChallengeSubjectNotFoundException;
 import com.synaptixfit.domain.exception.challenge.MilestoneAttachmentConflictException;
@@ -12,7 +13,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Comprueba que asignaturas, vínculos (entregas y exámenes) y adjuntos referenciados pertenecen al usuario.
+ * Comprueba que asignaturas, vínculos (entregas, exámenes y días de rutina) y adjuntos referenciados pertenecen
+ * al usuario.
  * Que la entrega venza dentro del periodo del reto lo comprueba el propio reto al guardarse.
  */
 public class ChallengeReferenceValidator {
@@ -33,7 +35,10 @@ public class ChallengeReferenceValidator {
         if (link == null) {
             return;
         }
-        if (!references.deadlineBelongsTo(userId, link.entityId())) {
+        boolean owned = link.type() == LinkType.ROUTINE_DAY
+                ? references.routineDayBelongsTo(userId, link.entityId())
+                : references.deadlineBelongsTo(userId, link.entityId());
+        if (!owned) {
             throw new ChallengeLinkNotFoundException(link.entityId());
         }
     }

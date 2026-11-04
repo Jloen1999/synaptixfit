@@ -1,5 +1,7 @@
 package com.synaptixfit.domain.port.output.challenge;
 
+import java.util.List;
+import com.synaptixfit.domain.model.challenge.RoutineDayTarget;
 import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
 import java.time.Instant;
 import java.util.UUID;
@@ -10,6 +12,12 @@ public interface ChallengeReferencePort {
     boolean subjectBelongsTo(UUID userId, UUID subjectId);
 
     boolean deadlineBelongsTo(UUID userId, UUID deadlineId);
+
+    /** El día pertenece a una rutina (no borrada) del usuario. */
+    boolean routineDayBelongsTo(UUID userId, UUID routineDayId);
+
+    /** Días de la rutina en curso del usuario, en orden, con su estado (Entrenamiento, solo lectura). */
+    List<RoutineDayTarget> routineDayTargets(UUID userId);
 
     boolean noteBelongsTo(UUID userId, UUID noteId);
 

@@ -55,4 +55,27 @@ class PastActivityTest {
         assertThatThrownBy(() -> running.requireLoggableAt(NOW)).isInstanceOf(PastActivityOutOfRangeException.class);
         assertThatThrownBy(() -> old.requireLoggableAt(NOW)).isInstanceOf(PastActivityOutOfRangeException.class);
     }
+
+    @Test
+    void unaCarreraCortaGuardaSusMinutosRealesYElBloqueMinimoTerminaCuandoTermino() {
+        PastActivity run = new PastActivity(YESTERDAY, 25, "Correr", 7, ActivityType.SPORT, null, ActivityKind.RUN,
+                5000);
+        assertThat(run.minutes()).isEqualTo(25);
+        assertThat(run.range().end()).isEqualTo(YESTERDAY.plus(Duration.ofMinutes(25)));
+        assertThat(run.range().minutes()).isEqualTo(TimeRange.MIN_MINUTES);
+        // 25 min en 5 km: 5:00 por km y 12 km/h.
+        assertThat(run.pace()).isEqualTo(new ActivityPace(300, 12.0));
+    }
+
+    @Test
+    void laDistanciaSoloSeGuardaEnDeportesQueSeMidenAsiYConValoresRazonables() {
+        PastActivity match = new PastActivity(YESTERDAY, 60, "Fútbol", 6, ActivityType.SPORT, null,
+                ActivityKind.MATCH, 9000);
+        assertThat(match.distanceMeters()).isNull();
+        assertThat(match.pace()).isNull();
+        assertThatThrownBy(() -> new PastActivity(YESTERDAY, 30, null, 5, ActivityType.SPORT, null, ActivityKind.RUN,
+                50)).isInstanceOf(FieldValidationException.class);
+        assertThatThrownBy(() -> new PastActivity(YESTERDAY, 20, null, null, ActivityType.STUDY, null))
+                .isInstanceOf(FieldValidationException.class);
+    }
 }

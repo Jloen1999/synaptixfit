@@ -28,5 +28,7 @@ abstract class PlannedReminder with _$PlannedReminder {
 
     /// Qué abrir al tocarlo cuando no es [refId] (en entregas, su id).
     String? targetId,
+    /// Aula de la clase (solo [ReminderKind.classSoon]).
+    String? place,
   }) = _PlannedReminder;
 }

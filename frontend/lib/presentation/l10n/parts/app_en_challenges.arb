@@ -273,5 +273,10 @@
   "challengesErrorLinked": "This challenge completes with its assignment or exam: mark it done in the planner.",
   "challengesErrorMilestoneLinked": "This task advances with its assignment or calendar blocks: mark them done in the planner.",
   "challengesErrorLinkOutsidePeriod": "The assignment or exam is due outside the challenge dates. Extend the challenge or choose another one.",
-  "challengesFormTasksReplaceSessions": "This challenge advances with your workouts. If you add tasks, it will stop counting them and advance with the tasks."
+  "challengesFormTasksReplaceSessions": "This challenge advances with your workouts. If you add tasks, it will stop counting them and advance with the tasks.",
+  "challengesLinkRoutineDayLabel": "Routine day",
+  "challengesLinkRoutineDay": "Linked to a day of your routine",
+  "challengesLinkRoutineDays": "Days of your routine",
+  "challengesLinkRoutineDaysHint": "It completes itself when you train that day.",
+  "challengesLinkRoutineDayTitle": "{routine} · week {week}, {day}"
 }

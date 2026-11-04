@@ -273,5 +273,10 @@
   "challengesErrorLinked": "Este desafio conclui-se com a sua entrega ou exame: marque-o como feito no planeador.",
   "challengesErrorMilestoneLinked": "Esta tarefa avança com a sua entrega ou os seus blocos do calendário: marque-os como feitos no planeador.",
   "challengesErrorLinkOutsidePeriod": "A entrega ou o exame termina fora das datas do desafio. Prolongue o desafio ou escolha outro.",
-  "challengesFormTasksReplaceSessions": "Este desafio avança com os seus treinos. Se lhe adicionar tarefas, deixará de os contar e avançará com as tarefas."
+  "challengesFormTasksReplaceSessions": "Este desafio avança com os seus treinos. Se lhe adicionar tarefas, deixará de os contar e avançará com as tarefas.",
+  "challengesLinkRoutineDayLabel": "Dia de rotina",
+  "challengesLinkRoutineDay": "Ligado a um dia da tua rotina",
+  "challengesLinkRoutineDays": "Dias da tua rotina",
+  "challengesLinkRoutineDaysHint": "Fica feita sozinha quando treinares nesse dia.",
+  "challengesLinkRoutineDayTitle": "{routine} · semana {week}, {day}"
 }

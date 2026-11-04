@@ -16,6 +16,7 @@ import 'planner_presentation_di.dart';
 import 'social_presentation_di.dart';
 import 'admin_presentation_di.dart';
 import 'reminders_presentation_di.dart';
+import 'wellbeing_presentation_di.dart';
 
 /// Registra los blocs. Los de pantalla como factory; la sesión es única.
 void registerPresentation(GetIt getIt) {
@@ -50,4 +51,5 @@ void registerPresentation(GetIt getIt) {
   registerSocialPresentation(getIt);
   registerAdminPresentation(getIt);
   registerRemindersPresentation(getIt);
+  registerWellbeingPresentation(getIt);
 }

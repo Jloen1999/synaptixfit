@@ -1764,6 +1764,8 @@ class _AdaptationCard extends StatelessWidget {
                           l10n.trainingAdaptedOvertraining,
                         SessionAdaptationReason.highFatigue =>
                           l10n.trainingAdaptedFatigue,
+                        SessionAdaptationReason.cycleDiscomfort =>
+                          l10n.trainingAdaptedCycle,
                       }, style: style),
                     Text(
                       l10n.trainingAdaptedSets(

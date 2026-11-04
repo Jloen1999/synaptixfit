@@ -584,5 +584,23 @@
   "challengesErrorLinked": "Este reto se completa con su entrega o examen: márcalo como hecho en el planificador.",
   "challengesErrorMilestoneLinked": "Esta tarea avanza con su entrega o sus bloques del calendario: márcalos como hechos en el planificador.",
   "challengesErrorLinkOutsidePeriod": "La entrega o el examen vence fuera de las fechas del reto. Amplía el reto o elige otro.",
-  "challengesFormTasksReplaceSessions": "Este reto avanza con tus entrenamientos. Si le añades tareas, dejará de contarlos y avanzará con las tareas."
+  "challengesFormTasksReplaceSessions": "Este reto avanza con tus entrenamientos. Si le añades tareas, dejará de contarlos y avanzará con las tareas.",
+  "challengesLinkRoutineDayLabel": "Día de rutina",
+  "challengesLinkRoutineDay": "Vinculado a un día de tu rutina",
+  "challengesLinkRoutineDays": "Días de tu rutina",
+  "challengesLinkRoutineDaysHint": "Se completa sola cuando entrenes ese día.",
+  "challengesLinkRoutineDayTitle": "{routine} · semana {week}, {day}",
+  "@challengesLinkRoutineDayTitle": {
+    "placeholders": {
+      "routine": {
+        "type": "String"
+      },
+      "week": {
+        "type": "int"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  }
 }

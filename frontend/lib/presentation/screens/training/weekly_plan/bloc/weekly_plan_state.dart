@@ -18,5 +18,10 @@ abstract class WeeklyPlanState with _$WeeklyPlanState {
     @Default(false) bool saving,
     AppError? error,
     TrainingEffect? effect,
+
+    /// Días de la semana en curso de la rutina activa y su nombre (nulos sin
+    /// rutina en curso).
+    int? routineSessions,
+    String? routineName,
   }) = _WeeklyPlanState;
 }

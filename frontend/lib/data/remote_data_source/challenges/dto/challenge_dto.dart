@@ -134,6 +134,8 @@ abstract class MilestoneDto with _$MilestoneDto {
     @Default(0) int studyBlocksCompleted,
     String? noteId,
     String? fileId,
+    int? linkWeekNumber,
+    int? linkDayNumber,
   }) = _MilestoneDto;
 
   const MilestoneDto._();
@@ -165,6 +167,8 @@ abstract class MilestoneDto with _$MilestoneDto {
     studyBlocksCompleted: studyBlocksCompleted,
     noteId: noteId,
     fileId: fileId,
+    linkWeekNumber: linkWeekNumber,
+    linkDayNumber: linkDayNumber,
   );
 }
 

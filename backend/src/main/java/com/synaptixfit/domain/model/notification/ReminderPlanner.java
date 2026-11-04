@@ -169,6 +169,14 @@ public final class ReminderPlanner {
     }
 
     public ReminderPlan plan(Input input) {
+        return plan(input, List.of());
+    }
+
+    /**
+     * Igual, sumando avisos ya decididos fuera (los de bienestar, {@link WellbeingReminders}) antes del límite
+     * diario y del tope total: así todos compiten por los mismos huecos del día.
+     */
+    public ReminderPlan plan(Input input, List<ReminderPlan.Item> extra) {
         Instant end = horizonEnd(input.now(), input.days());
         if (input.preferences().dailyLimit() <= 0) {
             return ReminderPlan.empty();
@@ -183,6 +191,7 @@ public final class ReminderPlanner {
             addWeeklySummary(candidates, input, end);
         }
         addFollowUps(candidates, input, end);
+        candidates.addAll(extra);
         candidates.sort(Comparator.comparing(ReminderPlan.Item::at));
         return new ReminderPlan(applyDailyLimit(candidates, input.preferences().dailyLimit(), input.zone())
                 .stream().limit(maxReminders).toList());
@@ -244,7 +253,7 @@ public final class ReminderPlanner {
                         at.atZone(input.zone()).toLocalDate(), dueDay);
                 out.add(new ReminderPlan.Item(deadline.exam() ? ReminderKind.EXAM : ReminderKind.DEADLINE, at,
                         deadline.id() + ":" + daysBefore, daysLeft, deadline.title(), deadline.dueAt(),
-                        deadline.id().toString()));
+                        deadline.id().toString(), null));
             }
         }
     }

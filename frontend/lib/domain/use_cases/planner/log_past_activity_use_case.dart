@@ -1,5 +1,6 @@
 import '../../models/planner/calendar_block.dart';
 import '../../models/result/app_result.dart';
+import '../../models/training/sport_activity.dart';
 import '../../repositories/planner_repository_contract.dart';
 
 /// Apunta una actividad física que ya pasó (de los últimos 7 días): queda como
@@ -10,6 +11,8 @@ abstract interface class LogPastActivityUseCaseContract {
     required int minutes,
     required int effort,
     String? title,
+    ActivityKind? kind,
+    int? distanceMeters,
   });
 }
 
@@ -24,10 +27,14 @@ class LogPastActivityUseCase implements LogPastActivityUseCaseContract {
     required int minutes,
     required int effort,
     String? title,
+    ActivityKind? kind,
+    int? distanceMeters,
   }) => _repository.logPastActivity(
     start: start,
     minutes: minutes,
     effort: effort,
     title: title?.trim(),
+    kind: kind,
+    distanceMeters: distanceMeters,
   );
 }

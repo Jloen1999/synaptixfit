@@ -37,4 +37,15 @@ abstract interface class ReminderTexts {
 
   /// Botón «Posponer 10 min» de la notificación.
   String snoozeAction(int minutes);
+
+  /// Racha en riesgo, registro diario y clase a punto de empezar.
+  String wellbeingTitle(ReminderKind kind, {String? name});
+
+  String wellbeingBody(
+    ReminderKind kind, {
+    int? count,
+    String? name,
+    String? place,
+    DateTime? start,
+  });
 }

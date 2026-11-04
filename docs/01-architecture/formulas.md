@@ -152,6 +152,22 @@ Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevo
 - **Una sola rutina en curso:** activar una pausa la anterior; una nueva (creada, generada, duplicada o clonada) solo queda en curso si no hay otra.
 - **Retos vencidos:** pasada su fecha de fin ya no se completan, desmarcan ni avanzan (`CHALLENGE_EXPIRED` si se intenta a mano; la sincronización con entregas, bloques y sesiones los salta sin error). Un progreso no puede registrarse con fecha fuera del periodo del reto.
 
+## Plan por fases, plantillas y evolución (ADR 0032)
+
+- **Semana actual:** la del primer día con ejercicios sin hacer ni saltar (como el «próximo día»); si no queda ninguno, la última. **Avance:** `round(100 × (hechos + saltados) / días)`.
+- **Fechas de cada semana:** solo con fecha de inicio; semana N empieza en `inicio + 7·(N−1)` y acaba 6 días después.
+- **Al terminar:** menos de 8 semanas → repetir subiendo un poco el peso; 8 o más → cambiar de plan.
+- **Plantillas:** todas las semanas repiten los días; la semana suave (descarga) quita una serie a cada ejercicio, mínimo una.
+- **Peso máximo estimado por día** (`ExerciseProgress`): la mejor serie de trabajo completada con peso y de 1 a 12 repeticiones, con `ProgressionCalculator.oneRepMax` (la misma fórmula no lineal que la progresión de cargas). Con más repeticiones la estimación no es fiable.
+- **Tarea vinculada a un día de rutina:** se completa cuando se completa la sesión de ese día y se reabre si se desmarca. No tiene fecha límite, así que no se comprueba el periodo del reto.
+
+## Bienestar: ciclo, registro rápido y ritmo (ADR 0033)
+
+- **Estimación del ciclo (`CycleOverview`):** un ciclo empieza el primer día con regla tras un día sin ella. Duración = media de los últimos 6 ciclos completos entre 21 y 45 días, acotada a 21-40 (28 si no hay). Regla = media de los periodos apuntados, acotada a 2-8 (5 si no hay). Con la ovulación estimada 14 días antes de la próxima regla (`duración − 14`): días 1…regla → «Con la regla»; hasta 3 días antes de la ovulación → «Después de la regla»; ±2 días → «Mitad del ciclo»; después → «Días antes de la regla». Próxima regla = último inicio + duración. Sin inicio en los últimos 60 días no se estima. Es orientativo, no médico: la app lo dice.
+- **Ajuste suave por el ciclo (`SessionAdaptation`):** con el seguimiento activo y hoy energía baja o alguna molestia, factor de series 0,9 (motivo `CYCLE_DISCOMFORT`). Como el resto de motivos, se aplica el más restrictivo, no se multiplican.
+- **Causa de la fatiga (`DailyCheckIn.mainCause`):** el término que más suma en la fórmula del registro diario ((6−sueño)·5, (dolor−1)·7, (6−energía)·4, (estrés−1)·5); con empate, sueño > agujetas > energía > estrés. Solo explica, no cambia la puntuación. El registro rápido no pregunta el estrés: se conserva el de hoy o el neutro (3), que no suma.
+- **Ritmo (`ActivityPace`):** s/km = minutos·60 ÷ km (redondeado); km/h = km ÷ (minutos ÷ 60), a una décima. Nadando se enseña por 100 m (s/km ÷ 10). Se usan los minutos reales apuntados, no los del bloque.
+
 ## Retos (ADR 0028)
 
 - **Periodo:** solo se actúa a mano entre el inicio y el fin (`Challenge.requireOpen`), esté o no completado: antes, `CHALLENGE_NOT_STARTED` (estado `UPCOMING`); después, `CHALLENGE_EXPIRED`. Las tareas se pueden preparar antes de empezar, pero no editar tras el fin.

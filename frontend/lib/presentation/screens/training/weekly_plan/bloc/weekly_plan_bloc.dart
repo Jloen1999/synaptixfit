@@ -9,6 +9,7 @@ import '../../../../../domain/use_cases/training/get_weekly_plan_use_case.dart';
 import '../../../../../domain/use_cases/training/get_weekly_plans_use_case.dart';
 import '../../../../../domain/use_cases/training/save_weekly_plan_use_case.dart';
 import '../../training_effect.dart';
+import '../../../../../domain/use_cases/training/get_pending_day_use_case.dart';
 
 part 'weekly_plan_bloc.freezed.dart';
 part 'weekly_plan_event.dart';
@@ -27,6 +28,7 @@ class WeeklyPlanBloc extends Bloc<WeeklyPlanEvent, WeeklyPlanState> {
     required this._getPlans,
     required this._savePlan,
     required this._deletePlan,
+    required this._getPendingDay,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now,
        super(const WeeklyPlanState()) {
@@ -43,6 +45,7 @@ class WeeklyPlanBloc extends Bloc<WeeklyPlanEvent, WeeklyPlanState> {
   final GetWeeklyPlansUseCaseContract _getPlans;
   final SaveWeeklyPlanUseCaseContract _savePlan;
   final DeleteWeeklyPlanUseCaseContract _deletePlan;
+  final GetPendingDayUseCaseContract _getPendingDay;
   final DateTime Function() _clock;
 
   Future<void> _onStarted(
@@ -52,9 +55,26 @@ class WeeklyPlanBloc extends Bloc<WeeklyPlanEvent, WeeklyPlanState> {
     final week = mondayOf(_clock());
     emit(WeeklyPlanState(weekStart: week, currentWeek: week));
     final historyFuture = _getPlans(size: 12);
+    final pendingFuture = _getPendingDay();
     await _loadWeek(emit, week);
     final history = await historyFuture;
-    emit(state.copyWith(history: history.valueOrNull?.items ?? const []));
+    // «Según tu rutina: 3»: los días que tiene esta semana la rutina en curso
+    // (lo dice el servidor). Sin plan guardado, se propone ese número.
+    final pending = (await pendingFuture).valueOrNull;
+    final suggested = pending?.sessionsInWeek.clamp(
+      WeeklyPlanInput.minSessions,
+      WeeklyPlanInput.maxSessions,
+    );
+    emit(
+      state.copyWith(
+        history: history.valueOrNull?.items ?? const [],
+        routineSessions: suggested,
+        routineName: pending?.routineName,
+        input: state.plan == null && suggested != null
+            ? state.input.copyWith(plannedSessions: suggested)
+            : state.input,
+      ),
+    );
   }
 
   Future<void> _onWeekChanged(

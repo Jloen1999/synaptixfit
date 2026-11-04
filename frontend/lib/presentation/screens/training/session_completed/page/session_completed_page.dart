@@ -16,6 +16,9 @@ import '../../widgets/recommendation_card.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../bloc/session_completed_bloc.dart';
+import '../../../../../domain/models/challenges/challenge.dart';
+import '../../../../../domain/models/progress/streak.dart';
+import '../../../challenges/challenges_routes.dart';
 
 /// Pantalla de sesión completada.
 class SessionCompletedPage extends StatelessWidget {
@@ -129,6 +132,14 @@ class _CompletedView extends StatelessWidget {
                         _ExperienceCard(
                           experience: state.experience!,
                           withheld: state.xpWithheld,
+                        ),
+                      ],
+                      if (state.streak != null ||
+                          state.trainingChallenges.isNotEmpty) ...[
+                        const SizedBox(height: TokensSpacing.m),
+                        _AdvanceCard(
+                          streak: state.streak,
+                          challenges: state.trainingChallenges,
                         ),
                       ],
                       if (state.recommendations.isNotEmpty) ...[
@@ -424,6 +435,120 @@ class _HighlightsCard extends StatelessWidget {
                     onPressed: () => _confirm(context),
                   ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// «Tu avance»: la racha y los retos que suman entrenos, para ver qué ha
+/// aportado la sesión y lo que queda.
+class _AdvanceCard extends StatelessWidget {
+  const _AdvanceCard({required this.streak, required this.challenges});
+
+  final Streak? streak;
+  final List<Challenge> challenges;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final s = streak;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.trainingDoneProgressTitle,
+            style: context.textStyles.titleMedium,
+          ),
+          if (s != null && s.currentDays > 0) ...[
+            const SizedBox(height: TokensSpacing.s),
+            Row(
+              children: [
+                Icon(
+                  Icons.local_fire_department_rounded,
+                  color: context.palette.calories,
+                ),
+                const SizedBox(width: TokensSpacing.s),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.trainingDoneStreak(s.currentDays),
+                        style: context.textStyles.titleSmall,
+                      ),
+                      if (s.activeToday)
+                        Text(
+                          l10n.trainingDoneStreakToday,
+                          style: context.textStyles.bodySmall?.copyWith(
+                            color: context.colors.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+          for (final c in challenges) ...[
+            const SizedBox(height: TokensSpacing.m),
+            _ChallengeProgress(challenge: c),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ChallengeProgress extends StatelessWidget {
+  const _ChallengeProgress({required this.challenge});
+
+  final Challenge challenge;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final c = challenge;
+    final target = c.sessionTarget ?? 0;
+    final left = c.sessionsRemaining;
+    return AppCardTapArea(
+      semanticLabel: l10n.trainingDoneSeeChallenge(c.title),
+      onTap: () => context.go(ChallengesPaths.detail(c.id)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.flag_rounded, color: context.colors.tertiary),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(
+                child: Text(c.title, style: context.textStyles.titleSmall),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+          if (target > 0) ...[
+            const SizedBox(height: TokensSpacing.xs),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(TokensRadius.pill),
+              child: LinearProgressIndicator(
+                value: (c.sessionsCompleted / target).clamp(0, 1).toDouble(),
+                color: context.colors.tertiary,
+                backgroundColor: context.colors.tertiaryContainer,
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              [
+                l10n.trainingDoneChallengeSessions(c.sessionsCompleted, target),
+                left == 0
+                    ? l10n.trainingDoneChallengeDone
+                    : l10n.trainingDoneChallengeLeft(left),
+              ].join(' · '),
+              style: context.textStyles.bodySmall,
+            ),
+          ],
         ],
       ),
     );

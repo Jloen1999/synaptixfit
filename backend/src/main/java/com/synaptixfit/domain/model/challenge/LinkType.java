@@ -6,5 +6,7 @@ package com.synaptixfit.domain.model.challenge;
  */
 public enum LinkType {
     EXAM,
-    DELIVERY
+    DELIVERY,
+    /** Día de la rutina en curso: la tarea se completa al entrenarlo (ADR 0032). */
+    ROUTINE_DAY
 }

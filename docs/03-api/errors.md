@@ -235,12 +235,16 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `ROUTINE_NOT_FOUND` | 404 | Rutina inexistente, eliminada, ajena o no visible | No encontramos esa rutina. | Activo |
 | `ROUTINE_WEEK_NOT_FOUND` | 404 | La semana no pertenece a la rutina | Esa semana no existe. | Activo |
 | `ROUTINE_DAY_NOT_FOUND` | 404 | El día no pertenece a la rutina | Ese día no existe. | Activo |
+| `ROUTINE_TEMPLATE_NOT_FOUND` | 404 | La plantilla no existe o no tiene ejercicios | Esa plantilla ya no está disponible. | Activo |
 | `ROUTINE_EXERCISE_NOT_FOUND` | 404 | El ejercicio planificado no es de la rutina | Ese ejercicio no está en la rutina. | Activo |
 | `ROUTINE_DAY_DUPLICATED` | 409 | Ya hay un día con ese número en la semana | Esa semana ya tiene ese día. | Activo |
 | `ROUTINE_WEEK_LIMIT` | 422 | Sin semanas, más de 52 o borrar la última | Una rutina debe tener entre 1 y 52 semanas. | Activo |
 | `ROUTINE_HAS_EMPTY_DAYS` | 422 | Completar una rutina con días vacíos | Añade ejercicios a todos los días antes de completar la rutina. | Activo |
 | `ROUTINE_REORDER_MISMATCH` | 400 | El orden no coincide con los ejercicios del día | El nuevo orden no coincide con los ejercicios del día. | Activo |
 | `ROUTINE_DAY_NOT_SKIPPABLE` | 409 | Saltar un día ya completado | Ese día ya está hecho: no se puede saltar. | Activo |
+| `CYCLE_CONSENT_REQUIRED` | 422 | Activar el seguimiento del ciclo sin aceptar para qué se usan los datos (ADR 0033) | Para activarlo, marca la casilla de que aceptas. | Activo |
+| `CYCLE_TRACKING_OFF` | 409 | Apuntar un día del ciclo con el seguimiento desactivado | Activa el seguimiento del ciclo para apuntar días. | Activo |
+| `CYCLE_DAY_OUT_OF_RANGE` | 422 | Día del ciclo del futuro o de hace más de un año | Solo puedes apuntar hoy o días del último año. | Activo |
 | `SESSION_NOT_FOUND` | 404 | La sesión no existe o es ajena | No encontramos esa sesión. | Activo |
 | `SESSION_SET_NOT_FOUND` | 404 | La serie no existe en la sesión | Esa serie no existe. | Activo |
 | `SESSION_ALREADY_COMPLETED` | 409 | Modificar una sesión finalizada | Esta sesión ya está finalizada. | Activo |

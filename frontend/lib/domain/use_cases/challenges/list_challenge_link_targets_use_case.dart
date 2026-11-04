@@ -39,7 +39,15 @@ class ListChallengeLinkTargetsUseCase
       to: DateTime(end.year, end.month, end.day, 23, 59, 59),
     );
     return result.map(
-      (options) => [...options]..sort((a, b) => a.at.compareTo(b.at)),
+      // Entregas por fecha; los días de rutina (sin fecha) al final, en orden.
+      (options) => [...options]
+        ..sort((a, b) {
+          final x = a.at;
+          final y = b.at;
+          if (x != null && y != null) return x.compareTo(y);
+          if (x == null && y == null) return 0;
+          return x == null ? 1 : -1;
+        }),
     );
   }
 }

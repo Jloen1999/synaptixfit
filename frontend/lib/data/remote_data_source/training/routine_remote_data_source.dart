@@ -205,4 +205,21 @@ class RoutineRemoteDataSource {
   Future<RoutineDto> _routine(
     Future<Response<Map<String, dynamic>>> request,
   ) async => RoutineDto.fromJson((await request).data!);
+
+  /// Plantillas listas para usar, en el idioma de la app.
+  Future<List<RoutineTemplateDto>> templates() async {
+    final response = await _dio.get<List<dynamic>>(
+      '/api/v1/training/templates',
+    );
+    return (response.data ?? const [])
+        .map((e) => RoutineTemplateDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Crea una rutina propia a partir de una plantilla.
+  Future<RoutineDto> useTemplate(String templateId) => _routine(
+    _dio.post<Map<String, dynamic>>(
+      '/api/v1/training/templates/$templateId/use',
+    ),
+  );
 }

@@ -1,5 +1,10 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.challenge;
 
+import java.util.List;
+import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training.TrainingDbValues;
+import com.synaptixfit.domain.model.training.RoutineStatus;
+import com.synaptixfit.domain.model.training.ProgressStatus;
+import com.synaptixfit.domain.model.challenge.RoutineDayTarget;
 import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
 import com.synaptixfit.domain.model.training.TrainingRewards;
 import com.synaptixfit.domain.port.output.challenge.ChallengeReferencePort;
@@ -13,7 +18,8 @@ import org.springframework.stereotype.Repository;
 /**
  * Lecturas de propiedad sobre tablas de Académico ({@code asignaturas}, {@code apuntes},
  * {@code archivos_asignatura}) y Planificador ({@code entregas_examenes}, {@code horarios_academicos}),
- * y recuento de sesiones completadas de Entrenamiento ({@code sesiones_registradas}).
+ * y de Entrenamiento: recuento de sesiones completadas ({@code sesiones_registradas}) y días de la rutina en
+ * curso ({@code dias_rutina}) para vincular tareas.
  */
 @Repository
 public class ChallengeReferencePersistenceAdapter implements ChallengeReferencePort {
@@ -32,6 +38,43 @@ public class ChallengeReferencePersistenceAdapter implements ChallengeReferenceP
     @Override
     public boolean deadlineBelongsTo(UUID userId, UUID deadlineId) {
         return owned("entregas_examenes", userId, deadlineId);
+    }
+
+    @Override
+    public boolean routineDayBelongsTo(UUID userId, UUID routineDayId) {
+        return jdbc.sql("""
+                        select count(*) from dias_rutina d
+                        join semanas_rutina s on s.id = d.semana_id
+                        join rutinas r on r.id = s.rutina_id
+                        where d.id = :id and r.usuario_id = :user and r.eliminado_en is null
+                        """)
+                .param("id", routineDayId)
+                .param("user", userId)
+                .query(Long.class).single() > 0;
+    }
+
+    @Override
+    public List<RoutineDayTarget> routineDayTargets(UUID userId) {
+        String completed = TrainingDbValues.dayStatusToDb(ProgressStatus.COMPLETED);
+        String skipped = TrainingDbValues.dayStatusToDb(ProgressStatus.SKIPPED);
+        return jdbc.sql("""
+                        select d.id, r.nombre as rutina, s.numero_semana, d.numero_dia, d.nombre as dia, d.estado,
+                               (select count(*) from seleccion_de_ejercicios e where e.dia_id = d.id) as ejercicios
+                        from dias_rutina d
+                        join semanas_rutina s on s.id = d.semana_id
+                        join rutinas r on r.id = s.rutina_id
+                        where r.usuario_id = :user and r.estado = :active and r.eliminado_en is null
+                        order by s.numero_semana, d.numero_dia
+                        """)
+                .param("user", userId)
+                .param("active", TrainingDbValues.toDb(RoutineStatus.ACTIVE))
+                .query((rs, n) -> {
+                    String status = rs.getString("estado");
+                    return new RoutineDayTarget(rs.getObject("id", UUID.class), rs.getString("rutina"),
+                            rs.getInt("numero_semana"), rs.getInt("numero_dia"), rs.getString("dia"),
+                            completed.equals(status) || skipped.equals(status), rs.getLong("ejercicios") > 0);
+                })
+                .list();
     }
 
     @Override

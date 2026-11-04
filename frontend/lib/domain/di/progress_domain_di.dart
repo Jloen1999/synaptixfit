@@ -9,10 +9,14 @@ import '../use_cases/progress/get_unnotified_badges_use_case.dart';
 import '../use_cases/progress/mark_badges_notified_use_case.dart';
 import '../use_cases/progress/share_achievement_image_use_case.dart';
 import '../use_cases/progress/share_badge_use_case.dart';
+import '../use_cases/progress/get_streak_use_case.dart';
 
 /// Casos de uso del módulo progress.
 void registerProgressDomain(GetIt getIt) {
   getIt
+    ..registerLazySingleton<GetStreakUseCaseContract>(
+      () => GetStreakUseCase(getIt()),
+    )
     ..registerLazySingleton<GetProgressOverviewUseCaseContract>(
       () => GetProgressOverviewUseCase(
         account: getIt(),

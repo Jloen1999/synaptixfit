@@ -16,6 +16,7 @@ import '../../widgets/profile_layout.dart';
 import '../bloc/weekly_email_bloc.dart';
 import '../bloc/device_reminders_bloc.dart';
 import '../bloc/notification_settings_bloc.dart';
+import '../../reminder_options/page/reminder_options_section.dart';
 
 /// Preferencias de notificaciones (`/profile/settings/notifications`).
 class NotificationSettingsPage extends StatelessWidget {
@@ -273,6 +274,8 @@ class _Content extends StatelessWidget {
               // Va al final y aparte: se guarda al momento en el teléfono,
               // sin el botón «Guardar» de las preferencias de la cuenta.
               const _DeviceRemindersSection(),
+              // Avisos opcionales que se apagan uno a uno (se guardan al momento).
+              const ReminderOptionsSection(),
               const _WeeklyEmailSection(),
             ],
           ),

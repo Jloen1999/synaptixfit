@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/account/account.dart';
 import '../../../../../domain/models/training/routine.dart';
+import '../../../../../domain/models/training/sport_activity.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 import '../../../../../domain/use_cases/planner/log_past_activity_use_case.dart';
 import '../../../../../domain/use_cases/training/get_pending_day_use_case.dart';
@@ -98,6 +99,8 @@ class PastActivityBloc extends Bloc<PastActivityEvent, PastActivityState> {
       minutes: event.minutes,
       effort: event.effort,
       title: event.title,
+      kind: event.kind,
+      distanceMeters: event.distanceMeters,
     );
     switch (result.errorOrNull) {
       case final AppError error:

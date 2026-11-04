@@ -1,5 +1,7 @@
 package com.synaptixfit.application.service.training;
 
+import com.synaptixfit.domain.model.training.ExerciseProgress;
+import com.synaptixfit.application.port.input.training.GetExerciseProgressUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionHighlightsUseCase;
 import com.synaptixfit.application.port.input.training.ListLastPerformanceUseCase;
 import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
@@ -33,7 +35,8 @@ import java.util.UUID;
  * También lista las sesiones sin terminar (sección «Sin terminar»), marcando las abandonadas.
  */
 public class SessionHistoryService implements ListSessionHistoryUseCase, ListPersonalRecordsUseCase,
-        ListLastPerformanceUseCase, GetSessionHighlightsUseCase, ListOpenSessionsUseCase {
+        ListLastPerformanceUseCase, GetSessionHighlightsUseCase, ListOpenSessionsUseCase,
+        GetExerciseProgressUseCase {
 
     /** Sesiones que se recorren para los récords: de sobra para años de entrenamiento habitual. */
     static final int RECORDS_WINDOW = 1000;
@@ -97,6 +100,11 @@ public class SessionHistoryService implements ListSessionHistoryUseCase, ListPer
         }
         return SessionHighlights.of(sessionId, completed(userId))
                 .orElseThrow(() -> new SessionNotFoundException(sessionId));
+    }
+
+    @Override
+    public List<ExerciseProgress.Point> exerciseProgress(UUID userId, UUID exerciseId) {
+        return ExerciseProgress.of(exerciseId, completed(userId), zone);
     }
 
     private List<CompletedSessionSummary> completed(UUID userId) {

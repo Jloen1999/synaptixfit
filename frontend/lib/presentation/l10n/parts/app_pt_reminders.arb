@@ -36,5 +36,13 @@
   "remindersYourChallenge": "O teu desafio",
   "remindersActionStartStudy": "Começar a estudar",
   "remindersActionStartTraining": "Ir treinar",
-  "remindersActionSnooze": "Adiar {minutes} min"
+  "remindersActionSnooze": "Adiar {minutes} min",
+  "remindersStreakTitle": "A tua sequência está em risco",
+  "remindersStreakBody": "Já vais em {days} dias seguidos. Faz algo hoje para não a perder.",
+  "remindersCheckInTitle": "Como estás hoje?",
+  "remindersCheckInBody": "Diz-nos em três toques e ajustamos o teu dia.",
+  "remindersClassTitle": "{name} daqui a 15 minutos",
+  "remindersClassFallbackName": "A tua aula",
+  "remindersClassBody": "Começa às {time}.",
+  "remindersClassBodyPlace": "Começa às {time} em {place}."
 }

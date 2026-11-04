@@ -218,6 +218,43 @@ class _PlanEditor extends StatelessWidget {
           max: WeeklyPlanInput.maxSessions,
           onChanged: (v) => update(input.copyWith(plannedSessions: v)),
         ),
+        if (state.routineSessions case final n?)
+          Padding(
+            padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.fitness_center_rounded,
+                  size: TokensSize.iconS,
+                  color: context.colors.secondary,
+                ),
+                const SizedBox(width: TokensSpacing.s),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.trainingPlanByRoutine(n),
+                        style: context.textStyles.labelLarge,
+                      ),
+                      if (state.routineName case final name?)
+                        Text(
+                          l10n.trainingPlanByRoutineHint(name, n),
+                          style: context.textStyles.bodySmall?.copyWith(
+                            color: context.colors.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (input.plannedSessions != n)
+                  TextButton(
+                    onPressed: () => update(input.copyWith(plannedSessions: n)),
+                    child: Text(l10n.trainingPlanUseRoutine(n)),
+                  ),
+              ],
+            ),
+          ),
         AppStepperField(
           label: l10n.trainingMinutesPerSession,
           value: input.minutesPerSession,

@@ -4,6 +4,7 @@ import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/enums/visibility.dart' as vis;
 import '../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../widgets/routine_day_labels.dart';
+import 'package:intl/intl.dart';
 
 export '../../../widgets/routine_day_labels.dart';
 
@@ -199,6 +200,13 @@ String dayTitle(AppLocalizations l10n, int dayNumber, String? name) {
 }
 
 /// Nombre visible de una semana: el propio o «Semana N».
+/// «3 nov – 9 nov» si la semana tiene fechas; nulo si no.
+String? weekRange(AppLocalizations l10n, DateTime? start, DateTime? end) {
+  if (start == null || end == null) return null;
+  final f = DateFormat.MMMd();
+  return l10n.trainingWeekRange(f.format(start), f.format(end));
+}
+
 String weekTitle(AppLocalizations l10n, int number, String? name) {
   final trimmed = name?.trim();
   return trimmed == null || trimmed.isEmpty

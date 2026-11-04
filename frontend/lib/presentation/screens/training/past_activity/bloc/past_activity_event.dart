@@ -7,6 +7,8 @@ sealed class PastActivityEvent with _$PastActivityEvent {
     required int minutes,
     required int effort,
     String? title,
+    ActivityKind? kind,
+    int? distanceMeters,
   }) = PastActivitySubmitted;
 
   /// Carga la rutina en curso para apuntar uno de sus días.

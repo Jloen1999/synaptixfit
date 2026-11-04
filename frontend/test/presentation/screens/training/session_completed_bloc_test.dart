@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/enums/post_type.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
+import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/social/post.dart';
 import 'package:synaptixfit/domain/models/training/session_history.dart';
@@ -14,6 +15,11 @@ import 'package:synaptixfit/domain/use_cases/training/get_session_use_case.dart'
 import 'package:synaptixfit/presentation/screens/training/session_completed/bloc/session_completed_bloc.dart';
 
 import 'training_fixtures.dart';
+import 'package:synaptixfit/domain/models/progress/streak.dart';
+import 'package:synaptixfit/domain/models/challenges/challenge_page.dart';
+import 'package:synaptixfit/domain/models/challenges/challenge_query.dart';
+import 'package:synaptixfit/domain/use_cases/challenges/list_my_challenges_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/progress/get_streak_use_case.dart';
 
 class _GetSession extends Mock implements GetSessionUseCaseContract {}
 
@@ -68,6 +74,8 @@ void main() {
     discard: _Discard(),
     getHighlights: getHighlights,
     createPost: createPost,
+    getStreak: _Streak(),
+    listChallenges: _Challenges(),
   );
 
   blocTest<SessionCompletedBloc, SessionCompletedState>(
@@ -128,5 +136,30 @@ void main() {
         ),
       ).called(1);
     },
+  );
+}
+
+class _Streak implements GetStreakUseCaseContract {
+  @override
+  Future<AppResult<Streak>> call() async => const Success(
+    Streak(
+      currentDays: 4,
+      bestDays: 9,
+      activeToday: true,
+      atRisk: false,
+      daysToNextMilestone: 3,
+      milestoneProgress: 0.5,
+    ),
+  );
+}
+
+class _Challenges implements ListMyChallengesUseCaseContract {
+  @override
+  Future<AppResult<ChallengePage>> call({
+    required ChallengeQuery query,
+    int page = 0,
+    int size = 20,
+  }) async => const Success(
+    ChallengePage(items: [], page: 0, totalPages: 0, totalItems: 0),
   );
 }

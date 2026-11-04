@@ -45,9 +45,13 @@ class ChallengeReferencesRepository
       from: from,
       to: to,
     );
+    // Los días de la rutina en curso no dependen del periodo: se completan al
+    // entrenarlos (ADR 0032).
+    final days = await _remote.routineDayTargets();
     return [
       for (final d in deadlines)
         if (!d.completed) d.toDomain(),
+      ...days,
     ];
   });
 

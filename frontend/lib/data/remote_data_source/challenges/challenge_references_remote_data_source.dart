@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
 import 'dto/challenge_reference_dto.dart';
+import '../../../domain/enums/challenge_link_type.dart';
+import '../../../domain/models/challenges/challenge_references.dart';
 
 /// Lecturas de otros módulos que necesitan los retos: asignaturas, apuntes,
 /// archivos, entregas y bloques del planificador.
@@ -67,5 +69,22 @@ class ChallengeReferencesRemoteDataSource {
       '/api/v1/files/$fileId/download-url',
     );
     return ChallengeSignedUrlDto.fromJson(response.data!).url;
+  }
+
+  /// Días de la rutina en curso que se pueden vincular a una tarea.
+  Future<List<ChallengeLinkOption>> routineDayTargets() async {
+    final response = await _dio.get<List<dynamic>>(
+      '/api/v1/challenges/routine-day-targets',
+    );
+    return [
+      for (final e in (response.data ?? const []).cast<Map<String, dynamic>>())
+        ChallengeLinkOption(
+          id: e['dayId'] as String,
+          type: ChallengeLinkType.routineDay,
+          title: e['routineName'] as String? ?? '',
+          weekNumber: (e['weekNumber'] as num?)?.toInt(),
+          dayNumber: (e['dayNumber'] as num?)?.toInt(),
+        ),
+    ];
   }
 }

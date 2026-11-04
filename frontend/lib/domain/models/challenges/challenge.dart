@@ -157,6 +157,10 @@ abstract class Milestone with _$Milestone {
     @Default(0) int studyBlocksCompleted,
     String? noteId,
     String? fileId,
+
+    /// Día de rutina vinculado: semana y día de la semana (1 = lunes).
+    int? linkWeekNumber,
+    int? linkDayNumber,
   }) = _Milestone;
 
   const Milestone._();

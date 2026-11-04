@@ -71,6 +71,9 @@ import '../use_cases/training/unskip_routine_day_use_case.dart';
 import '../use_cases/training/update_routine_exercise_use_case.dart';
 import '../use_cases/training/update_routine_use_case.dart';
 import '../use_cases/training/update_routine_week_use_case.dart';
+import '../use_cases/training/list_routine_templates_use_case.dart';
+import '../use_cases/training/use_routine_template_use_case.dart';
+import '../use_cases/training/get_exercise_progress_use_case.dart';
 
 /// Casos de uso del módulo training.
 void registerTrainingDomain(GetIt getIt) {
@@ -176,6 +179,15 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetSessionHighlightsUseCaseContract>(
       () => GetSessionHighlightsUseCase(getIt()),
+    )
+    ..registerLazySingleton<ListRoutineTemplatesUseCaseContract>(
+      () => ListRoutineTemplatesUseCase(getIt()),
+    )
+    ..registerLazySingleton<UseRoutineTemplateUseCaseContract>(
+      () => UseRoutineTemplateUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetExerciseProgressUseCaseContract>(
+      () => GetExerciseProgressUseCase(getIt()),
     )
     ..registerLazySingleton<GetExerciseAlternativesUseCaseContract>(
       () => GetExerciseAlternativesUseCase(getIt()),

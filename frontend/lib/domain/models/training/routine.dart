@@ -236,6 +236,11 @@ abstract class RoutineWeek with _$RoutineWeek {
     WeekType? type,
     required ProgressStatus status,
     @Default(<RoutineDay>[]) List<RoutineDay> days,
+
+    /// Fechas de la semana si la rutina tiene fecha de inicio (las da el
+    /// servidor).
+    DateTime? startsOn,
+    DateTime? endsOn,
   }) = _RoutineWeek;
 }
 
@@ -308,6 +313,12 @@ abstract class Routine with _$Routine {
     RoutineOrigin? origin,
     DateTime? createdAt,
     @Default(<RoutineWeek>[]) List<RoutineWeek> weeks,
+
+    /// Plan por fases (lo calcula el servidor): semana en la que va, avance en
+    /// porcentaje y qué conviene hacer al terminar.
+    @Default(1) int currentWeek,
+    @Default(0) int progressPercent,
+    RoutineNextStep? nextStep,
   }) = _Routine;
 
   const Routine._();
@@ -423,4 +434,19 @@ abstract class PendingDay with _$PendingDay {
   double get cycleProgress => totalDays == 0
       ? 0
       : ((completedDays + skippedDays) / totalDays).clamp(0, 1).toDouble();
+}
+
+/// Qué conviene hacer al terminar una rutina (lo decide el servidor).
+enum RoutineNextStep {
+  /// Repetirla subiendo un poco el peso.
+  repeatStronger,
+
+  /// Cambiar de plan: otra plantilla o uno nuevo con IA.
+  newPlan;
+
+  static RoutineNextStep? tryFromApi(String? value) => switch (value) {
+    'REPEAT_STRONGER' => repeatStronger,
+    'NEW_PLAN' => newPlan,
+    _ => null,
+  };
 }

@@ -6,6 +6,7 @@ import '../models/planner/planner_options.dart';
 import '../models/planner/weekly_planning.dart';
 import '../models/result/app_result.dart';
 import '../models/result/result.dart';
+import '../models/training/sport_activity.dart';
 
 /// Calendario semanal, planificación, IA, ICS y catálogos auxiliares del planner.
 abstract interface class PlannerRepositoryContract {
@@ -47,6 +48,8 @@ abstract interface class PlannerRepositoryContract {
     required int minutes,
     required int effort,
     String? title,
+    ActivityKind? kind,
+    int? distanceMeters,
   });
 
   /// Estudio ya hecho (últimos 7 días): bloque de estudio completado.

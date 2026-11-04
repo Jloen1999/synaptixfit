@@ -27,7 +27,16 @@ enum ReminderKind {
   openSession('OPEN_SESSION'),
 
   /// «Tu reto vence mañana».
-  challengeDue('CHALLENGE_DUE');
+  challengeDue('CHALLENGE_DUE'),
+
+  /// «Tu racha está en riesgo»: hoy aún no hay actividad (por la tarde).
+  streakAtRisk('STREAK_AT_RISK'),
+
+  /// «¿Qué tal estás hoy?»: el registro diario, por la mañana.
+  checkIn('CHECK_IN'),
+
+  /// «Tu clase empieza en 15 minutos», con el aula.
+  classSoon('CLASS_SOON');
 
   const ReminderKind(this.apiValue);
 

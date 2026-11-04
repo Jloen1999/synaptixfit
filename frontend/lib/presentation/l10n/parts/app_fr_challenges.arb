@@ -273,5 +273,10 @@
   "challengesErrorLinked": "Ce défi se termine avec son rendu ou son examen : marquez-le comme fait dans le planificateur.",
   "challengesErrorMilestoneLinked": "Cette tâche avance avec son rendu ou ses créneaux du calendrier : marquez-les comme faits dans le planificateur.",
   "challengesErrorLinkOutsidePeriod": "Le rendu ou l'examen tombe en dehors des dates du défi. Prolongez le défi ou choisissez-en un autre.",
-  "challengesFormTasksReplaceSessions": "Ce défi avance avec vos entraînements. Si vous ajoutez des tâches, il cessera de les compter et avancera avec les tâches."
+  "challengesFormTasksReplaceSessions": "Ce défi avance avec vos entraînements. Si vous ajoutez des tâches, il cessera de les compter et avancera avec les tâches.",
+  "challengesLinkRoutineDayLabel": "Jour de routine",
+  "challengesLinkRoutineDay": "Lié à un jour de ta routine",
+  "challengesLinkRoutineDays": "Jours de ta routine",
+  "challengesLinkRoutineDaysHint": "Elle se valide toute seule quand tu t'entraînes ce jour-là.",
+  "challengesLinkRoutineDayTitle": "{routine} · semaine {week}, {day}"
 }

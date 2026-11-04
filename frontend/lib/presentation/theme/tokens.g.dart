@@ -166,6 +166,8 @@ abstract final class TokensSize {
   static const double emblem = 56;
   static const double spinnerStroke = 2;
   static const double emblemBorder = 2;
+  static const double chartCompact = 200;
+  static const double chartLine = 3;
 }
 
 abstract final class TokensOpacity {

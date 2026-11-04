@@ -585,5 +585,13 @@
   "profilePublicProfileHint": "Así te ven los demás",
   "profileCommunity": "Comunidad",
   "profileCommunityHint": "Publicaciones de tus amigos y de la comunidad",
-  "profilePublicProfilePrivateHint": "Tu perfil es privado: solo lo ves tú"
+  "profilePublicProfilePrivateHint": "Tu perfil es privado: solo lo ves tú",
+  "profileReminderOptionsTitle": "Más avisos",
+  "profileReminderStreak": "Racha en riesgo",
+  "profileReminderStreakHint": "A las 20:00 si aún no has hecho nada hoy.",
+  "profileReminderCheckIn": "¿Qué tal estás hoy?",
+  "profileReminderCheckInHint": "A las 9:00, si aún no has hecho el registro del día.",
+  "profileReminderClasses": "Clase en 15 minutos",
+  "profileReminderClassesHint": "Con el aula, para llegar a tiempo.",
+  "profileReminderSaveError": "No se pudo guardar el cambio. Inténtalo de nuevo."
 }

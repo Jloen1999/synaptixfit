@@ -17,6 +17,7 @@ import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
 import '../../session_detail/page/session_detail_page.dart';
+import '../../activity_history/page/activity_history_view.dart';
 import '../bloc/session_history_bloc.dart';
 
 /// Historial de entrenamiento: tus récords arriba, las sesiones sin terminar y
@@ -47,26 +48,45 @@ class _HistoryView extends StatelessWidget {
           const TrainingEffectHandler().handle(context, state.effect!),
       builder: (context, state) {
         final bloc = context.read<SessionHistoryBloc>();
-        return Scaffold(
-          appBar: AppPageBar(title: Text(l10n.trainingHistoryTitle)),
-          body: switch (state.status) {
-            HistoryStatus.loading => const AppSkeletonList(
-              count: 6,
-              height: 88,
-            ),
-            HistoryStatus.failure => AppErrorView(
-              error: state.error!,
-              onRetry: () => bloc.add(const SessionHistoryEvent.started()),
-            ),
-            HistoryStatus.ready
-                when state.items.isEmpty && state.open.isEmpty =>
-              AppEmptyState(
-                icon: Icons.history_rounded,
-                title: l10n.trainingNoSessionsTitle,
-                message: l10n.trainingNoSessionsMessage,
+        // Entrenos de rutina y, aparte, el deporte hecho fuera de ellas
+        // (partidos y actividades apuntadas, ADR 0033).
+        return DefaultTabController(
+          length: 2,
+          child: Scaffold(
+            appBar: AppPageBar(
+              title: Text(l10n.trainingHistoryTitle),
+              bottom: TabBar(
+                tabs: [
+                  Tab(text: l10n.trainingHistoryTabSessions),
+                  Tab(text: l10n.trainingHistoryTabActivities),
+                ],
               ),
-            HistoryStatus.ready => _HistoryList(state: state),
-          },
+            ),
+            body: TabBarView(
+              children: [
+                switch (state.status) {
+                  HistoryStatus.loading => const AppSkeletonList(
+                    count: 6,
+                    height: 88,
+                  ),
+                  HistoryStatus.failure => AppErrorView(
+                    error: state.error!,
+                    onRetry: () =>
+                        bloc.add(const SessionHistoryEvent.started()),
+                  ),
+                  HistoryStatus.ready
+                      when state.items.isEmpty && state.open.isEmpty =>
+                    AppEmptyState(
+                      icon: Icons.history_rounded,
+                      title: l10n.trainingNoSessionsTitle,
+                      message: l10n.trainingNoSessionsMessage,
+                    ),
+                  HistoryStatus.ready => _HistoryList(state: state),
+                },
+                const ActivityHistoryView(),
+              ],
+            ),
+          ),
         );
       },
     );

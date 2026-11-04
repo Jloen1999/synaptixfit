@@ -6,6 +6,7 @@ import 'check_in/page/check_in_page.dart';
 import 'community/page/community_page.dart';
 import 'exercise_detail/page/exercise_detail_page.dart';
 import 'exercise_explorer/page/exercise_explorer_page.dart';
+import 'cycle/page/cycle_page.dart';
 import 'past_activity/page/past_activity_page.dart';
 import 'live_session/page/live_session_page.dart';
 import 'routine_detail/page/routine_detail_page.dart';
@@ -15,6 +16,7 @@ import 'session_detail/page/session_detail_page.dart';
 import 'session_history/page/session_history_page.dart';
 import 'training_home/page/training_home_page.dart';
 import 'weekly_plan/page/weekly_plan_page.dart';
+import 'routine_templates/page/routine_templates_page.dart';
 
 /// Rutas del módulo training.
 abstract final class TrainingPaths {
@@ -52,7 +54,13 @@ abstract final class TrainingPaths {
   static const checkIn = '$root/check-in';
   static const weeklyPlan = '$root/weekly-plan';
   static const community = '$root/community';
+
+  /// Plantillas de rutina listas para usar (dentro de la pestaña).
+  static const templates = '$root/templates';
   static const pastActivity = '$root/past-activity';
+
+  /// «Mi ciclo» (opcional, ADR 0033).
+  static const cycle = '$root/cycle';
 }
 
 /// Rutas dentro de la pestaña (conservan la barra inferior).
@@ -84,6 +92,10 @@ List<RouteBase> trainingBranchRoutes() => [
             ExerciseDetailPage(exerciseId: state.pathParameters['exerciseId']!),
       ),
       GoRoute(path: 'community', builder: (_, _) => const CommunityPage()),
+      GoRoute(
+        path: 'templates',
+        builder: (_, _) => const RoutineTemplatesPage(),
+      ),
       GoRoute(path: 'history', builder: (_, _) => const SessionHistoryPage()),
       GoRoute(path: 'weekly-plan', builder: (_, _) => const WeeklyPlanPage()),
     ],
@@ -99,6 +111,7 @@ List<RouteBase> trainingRoutes() => [
     path: TrainingPaths.pastActivity,
     builder: (_, _) => const PastActivityPage(),
   ),
+  GoRoute(path: TrainingPaths.cycle, builder: (_, _) => const CyclePage()),
   // El resumen va como ruta hermana (no hija) para no reconstruir la sesión debajo.
   GoRoute(
     path: '${TrainingPaths.root}/sessions/:sessionId/completed',

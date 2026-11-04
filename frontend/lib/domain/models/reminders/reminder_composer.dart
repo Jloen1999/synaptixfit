@@ -51,6 +51,22 @@ class ReminderComposer {
             snoozeLabel: texts.snoozeAction(snoozeMinutes),
             snoozeMinutes: snoozeMinutes,
           ),
+          ReminderKind.streakAtRisk ||
+          ReminderKind.checkIn ||
+          ReminderKind.classSoon => Reminder(
+            id: _blockId('${planned.kind.name}:${planned.refId}'),
+            kind: planned.kind,
+            title: texts.wellbeingTitle(planned.kind, name: planned.title),
+            body: texts.wellbeingBody(
+              planned.kind,
+              count: planned.count,
+              name: planned.title,
+              place: planned.place,
+              start: planned.startsAt?.toLocal(),
+            ),
+            at: planned.at,
+            refId: planned.refId,
+          ),
           ReminderKind.weeklySummary => Reminder(
             id: _weeklyId,
             kind: planned.kind,

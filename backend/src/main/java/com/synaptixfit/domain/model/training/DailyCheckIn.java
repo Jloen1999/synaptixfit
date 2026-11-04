@@ -17,6 +17,8 @@ import java.util.UUID;
 public final class DailyCheckIn {
 
     public static final int ADAPTATION_THRESHOLD = 50;
+    /** Estrés neutro: el registro rápido (tres toques) no lo pregunta y no debe sumar ni restar fatiga. */
+    public static final int NEUTRAL_STRESS = 3;
 
     private final UUID id;
     private final UUID userId;
@@ -40,13 +42,16 @@ public final class DailyCheckIn {
     }
 
     public static DailyCheckIn create(UUID userId, LocalDate date, Values values, Instant now) {
-        return new DailyCheckIn(UUID.randomUUID(), userId, date, values.sleepQuality(), values.stress(),
+        return new DailyCheckIn(UUID.randomUUID(), userId, date, values.sleepQuality(),
+                values.stress() == null ? NEUTRAL_STRESS : values.stress(),
                 values.energy(), values.soreness(), values.painZones(), values.readyToTrain(), values.notes(), now);
     }
 
     public void apply(Values v) {
         this.sleepQuality = Guard.range(v.sleepQuality(), "sleepQuality", 1, 5);
-        this.stress = Guard.range(v.stress(), "stress", 1, 5);
+        // Sin estrés (registro rápido) se conserva el que hubiera hoy o, si no, el neutro.
+        this.stress = v.stress() == null ? (stress == 0 ? NEUTRAL_STRESS : stress)
+                : Guard.range(v.stress(), "stress", 1, 5);
         this.energy = Guard.range(v.energy(), "energy", 1, 5);
         this.soreness = Guard.range(v.soreness(), "soreness", 1, 5);
         List<String> zones = v.painZones() == null ? List.of()
@@ -72,6 +77,25 @@ public final class DailyCheckIn {
         return fatigueScore() > ADAPTATION_THRESHOLD;
     }
 
+    /**
+     * Lo que más suma a la puntuación de fatiga (mismos pesos que {@link #fatigueScore()}); con empate gana el
+     * primero en este orden: sueño, agujetas, energía, estrés. Sirve para explicar la adaptación en sencillo.
+     */
+    public FatigueCause mainCause() {
+        int sleep = (6 - sleepQuality) * 5;
+        int sore = (soreness - 1) * 7;
+        int low = (6 - energy) * 4;
+        int stressed = (stress - 1) * 5;
+        int max = Math.max(Math.max(sleep, sore), Math.max(low, stressed));
+        if (max == sleep) {
+            return FatigueCause.POOR_SLEEP;
+        }
+        if (max == sore) {
+            return FatigueCause.SORENESS;
+        }
+        return max == low ? FatigueCause.LOW_ENERGY : FatigueCause.STRESS;
+    }
+
     public UUID id() { return id; }
     public UUID userId() { return userId; }
     public LocalDate date() { return date; }
@@ -84,8 +108,8 @@ public final class DailyCheckIn {
     public String notes() { return notes; }
     public Instant createdAt() { return createdAt; }
 
-    /** Respuestas del check-in. */
-    public record Values(int sleepQuality, int stress, int energy, int soreness, List<String> painZones,
+    /** Respuestas del check-in; {@code stress} nulo en el registro rápido (se usa el de hoy o el neutro). */
+    public record Values(int sleepQuality, Integer stress, int energy, int soreness, List<String> painZones,
                          boolean readyToTrain, String notes) {
     }
 }

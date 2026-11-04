@@ -13,6 +13,7 @@ import '../../widgets/training_content.dart';
 import '../../widgets/training_labels.dart';
 import '../../exercise_guide/page/exercise_guide_section.dart';
 import '../bloc/exercise_detail_bloc.dart';
+import '../../exercise_progress/page/exercise_progress_section.dart';
 
 /// Detalle de un ejercicio: demostración, instrucciones, músculos y MET.
 class ExerciseDetailPage extends StatelessWidget {
@@ -109,6 +110,8 @@ class _Content extends StatelessWidget {
                 ExerciseInstructions(steps: e.instructions),
               ],
               ExerciseGuideSection(exerciseId: e.id),
+              const SizedBox(height: TokensSpacing.l),
+              ExerciseProgressSection(exerciseId: e.id),
               _ItemSection(
                 title: l10n.trainingTargetMuscles,
                 items: e.targetMuscles,

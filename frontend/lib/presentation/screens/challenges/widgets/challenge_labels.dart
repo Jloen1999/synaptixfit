@@ -12,6 +12,7 @@ import '../../../../domain/models/challenges/challenge.dart';
 import '../../../../domain/models/challenges/challenge_draft_validator.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../widgets/app_date_block.dart';
+import '../../../widgets/routine_day_labels.dart';
 
 /// Etiquetas e iconos de los enums de retos (fuente única para todas las pantallas).
 extension ChallengeDifficultyLabel on ChallengeDifficulty {
@@ -126,17 +127,22 @@ extension ChallengeLinkTypeLabel on ChallengeLinkType {
     ChallengeLinkType.exam => context.localizations.challengesLinkExamLabel,
     ChallengeLinkType.delivery =>
       context.localizations.challengesLinkDeliveryLabel,
+    ChallengeLinkType.routineDay =>
+      context.localizations.challengesLinkRoutineDayLabel,
   };
 
   /// Frase «Vinculado a…» del detalle.
   String linkedLabel(BuildContext context) => switch (this) {
     ChallengeLinkType.exam => context.localizations.challengesLinkExam,
     ChallengeLinkType.delivery => context.localizations.challengesLinkDelivery,
+    ChallengeLinkType.routineDay =>
+      context.localizations.challengesLinkRoutineDay,
   };
 
   IconData get icon => switch (this) {
     ChallengeLinkType.exam => Icons.quiz_outlined,
     ChallengeLinkType.delivery => Icons.assignment_outlined,
+    ChallengeLinkType.routineDay => Icons.fitness_center_rounded,
   };
 }
 
@@ -259,6 +265,16 @@ extension MilestoneSourceLabel on Milestone {
     final title = linkTitle;
     final due = linkDueAt;
     if (title == null) return l10n.challengesCompletedByDeadlineGeneric;
+    // Día de rutina: se dice qué día («Fuerza · semana 2, martes»).
+    if (link?.type == ChallengeLinkType.routineDay) {
+      return l10n.challengesCompletedByDeadline(
+        l10n.challengesLinkRoutineDayTitle(
+          title,
+          linkWeekNumber ?? 1,
+          weekdayName(l10n, linkDayNumber ?? 1),
+        ),
+      );
+    }
     final text = l10n.challengesCompletedByDeadline(title);
     return due == null
         ? text

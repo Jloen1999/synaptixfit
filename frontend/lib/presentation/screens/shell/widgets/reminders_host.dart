@@ -95,8 +95,21 @@ class _RemindersListener extends StatelessWidget {
             ref == null ? PlannerPaths.deadlines : PlannerPaths.deadline(ref),
           ),
         );
-      case ReminderKind.weeklySummary:
+      case ReminderKind.weeklySummary || ReminderKind.streakAtRisk:
         context.go(ProgressPaths.root);
+      case ReminderKind.checkIn:
+        unawaited(context.push<void>(TrainingPaths.checkIn));
+      case ReminderKind.classSoon:
+        unawaited(
+          context.push<void>(
+            ref == null
+                ? PlannerPaths.root
+                : Uri(
+                    path: PlannerPaths.root,
+                    queryParameters: {'block': ref},
+                  ).toString(),
+          ),
+        );
     }
   }
 

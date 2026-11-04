@@ -1,5 +1,8 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training;
 
+import java.time.LocalDate;
+import com.synaptixfit.domain.model.training.ExerciseProgress;
+import com.synaptixfit.application.port.input.training.GetExerciseProgressUseCase;
 import com.synaptixfit.application.port.input.training.GetSessionHighlightsUseCase;
 import com.synaptixfit.application.port.input.training.ListLastPerformanceUseCase;
 import com.synaptixfit.application.port.input.training.ListPersonalRecordsUseCase;
@@ -33,8 +36,12 @@ public class TrainingHistoryController {
     private final ListLastPerformanceUseCase last;
     private final GetSessionHighlightsUseCase highlights;
 
+    private final GetExerciseProgressUseCase progress;
+
     public TrainingHistoryController(ListSessionHistoryUseCase history, ListPersonalRecordsUseCase records,
-                                     ListLastPerformanceUseCase last, GetSessionHighlightsUseCase highlights) {
+                                     ListLastPerformanceUseCase last, GetSessionHighlightsUseCase highlights,
+                                     GetExerciseProgressUseCase progress) {
+        this.progress = progress;
         this.history = history;
         this.records = records;
         this.last = last;
@@ -53,6 +60,22 @@ public class TrainingHistoryController {
                                                         @RequestParam(defaultValue = "20") int size) {
         return PageResponse.from(history.listHistory(userId, new PageRequest(page, size)),
                 SessionHistoryResponse::from);
+    }
+
+    /**
+     * Evolución de un ejercicio para la gráfica: por día, el peso máximo estimado («lo máximo que podrías
+     * levantar una vez», {@link ExerciseProgress}) y la serie que lo dio. Vacía si nunca se hizo con peso.
+     */
+    @GetMapping("/exercises/{exerciseId}/progress")
+    public List<ExerciseProgressPointResponse> exerciseProgress(@CurrentUserId UUID userId,
+                                                                @PathVariable UUID exerciseId) {
+        return progress.exerciseProgress(userId, exerciseId).stream()
+                .map(p -> new ExerciseProgressPointResponse(p.date(), p.estimatedMaxKg(), p.weightKg(), p.reps()))
+                .toList();
+    }
+
+    /** Punto de la gráfica de un ejercicio. */
+    public record ExerciseProgressPointResponse(LocalDate date, double estimatedMaxKg, double weightKg, int reps) {
     }
 
     @GetMapping("/records")

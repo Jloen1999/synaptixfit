@@ -105,6 +105,10 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
                 "t.semana_inicio"));
         sections.put("dailyCheckIns", rows("estado_diario_usuario t", "t.usuario_id = :id", "t.fecha"));
         sections.put("exerciseNotes", rows("notas_ejercicio t", "t.usuario_id = :id", "t.actualizado_en"));
+        sections.put("cycleTracking", single("seguimiento_ciclo"));
+        sections.put("cycleDays", rows("dias_ciclo t", "t.usuario_id = :id", "t.fecha"));
+        sections.put("loggedActivities", rows("actividades_apuntadas t", "t.usuario_id = :id", "t.creado_en"));
+        sections.put("reminderOptions", single("opciones_avisos"));
         sections.put("recommendations", rows("recomendaciones_pendientes t", "t.usuario_id = :id", "t.creado_en"));
         // Gamificación
         sections.put("challenges", rows("retos t", "t.usuario_id = :id", "t.creado_en"));

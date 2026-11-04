@@ -8,6 +8,8 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/challenge_labels.dart';
 import '../bloc/link_picker_bloc.dart';
+import '../../../../../domain/enums/challenge_link_type.dart';
+import '../../../../widgets/routine_day_labels.dart';
 
 /// Hoja para vincular un reto o tarea a una entrega o examen que venza dentro
 /// del periodo del reto ([from]-[to]).
@@ -34,11 +36,19 @@ Future<ChallengeLinkOption?> showLinkPickerSheet(
 
 /// Texto visible de una opción de vínculo.
 String challengeLinkOptionLabel(BuildContext context, ChallengeLinkOption o) {
+  final l10n = context.localizations;
+  if (o.type == ChallengeLinkType.routineDay) {
+    return l10n.challengesLinkRoutineDayTitle(
+      o.title,
+      o.weekNumber ?? 1,
+      weekdayName(l10n, o.dayNumber ?? 1),
+    );
+  }
   final title = o.title.trim().isEmpty ? o.type.label(context) : o.title;
-  return context.localizations.challengesFeedbackJoin(
-    title,
-    ChallengeFormats.dateTime(o.at),
-  );
+  final at = o.at;
+  return at == null
+      ? title
+      : l10n.challengesFeedbackJoin(title, ChallengeFormats.dateTime(at));
 }
 
 class _LinkPickerView extends StatelessWidget {
@@ -57,17 +67,30 @@ class _LinkPickerView extends StatelessWidget {
           child: ListTile(
             leading: Icon(o.type.icon, color: context.colors.tertiary),
             title: Text(
-              o.title.trim().isEmpty ? o.type.label(context) : o.title,
+              o.type == ChallengeLinkType.routineDay
+                  ? challengeLinkOptionLabel(context, o)
+                  : o.title.trim().isEmpty
+                  ? o.type.label(context)
+                  : o.title,
             ),
-            subtitle: Text(
-              l10n.challengesFeedbackJoin(
+            subtitle: Text(switch (o.at) {
+              final at? => l10n.challengesFeedbackJoin(
                 o.type.label(context),
-                ChallengeFormats.dateTime(o.at),
+                ChallengeFormats.dateTime(at),
               ),
-            ),
+              null => l10n.challengesLinkRoutineDaysHint,
+            }),
             onTap: () => Navigator.pop(context, o),
           ),
         );
+        final deadlines = [
+          for (final o in state.options)
+            if (o.type != ChallengeLinkType.routineDay) o,
+        ];
+        final days = [
+          for (final o in state.options)
+            if (o.type == ChallengeLinkType.routineDay) o,
+        ];
         return DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.7,
@@ -120,8 +143,14 @@ class _LinkPickerView extends StatelessWidget {
                   ),
                 ],
                 LinkPickerStatus.ready => [
-                  AppSectionHeader(title: l10n.challengesLinkDeadlines),
-                  ...state.options.map(tile),
+                  if (deadlines.isNotEmpty) ...[
+                    AppSectionHeader(title: l10n.challengesLinkDeadlines),
+                    ...deadlines.map(tile),
+                  ],
+                  if (days.isNotEmpty) ...[
+                    AppSectionHeader(title: l10n.challengesLinkRoutineDays),
+                    ...days.map(tile),
+                  ],
                 ],
               },
             ],

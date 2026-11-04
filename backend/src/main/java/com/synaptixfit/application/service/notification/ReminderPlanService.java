@@ -1,14 +1,20 @@
 package com.synaptixfit.application.service.notification;
 
 import com.synaptixfit.application.port.input.challenge.ListMyChallengesUseCase;
+import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
 import com.synaptixfit.application.port.input.notification.GetReminderPlanUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
+import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
 import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
 import com.synaptixfit.domain.model.challenge.ChallengeStatus;
 import com.synaptixfit.domain.model.notification.NotificationPreferences;
 import com.synaptixfit.domain.model.notification.ReminderPlan;
+import com.synaptixfit.domain.model.notification.ReminderOptions;
 import com.synaptixfit.domain.model.notification.ReminderPlanner;
+import com.synaptixfit.domain.model.notification.WellbeingReminders;
+import com.synaptixfit.domain.model.badge.StreakStatus;
+import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.shared.PageRequest;
@@ -17,6 +23,7 @@ import com.synaptixfit.domain.model.user.UsageFocus;
 import com.synaptixfit.domain.port.output.notification.ExamCalendarPort;
 import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
 import com.synaptixfit.domain.port.output.notification.NotificationPreferencesRepositoryPort;
+import com.synaptixfit.domain.port.output.notification.ReminderOptionsRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
@@ -36,7 +43,9 @@ import java.util.stream.Collectors;
  * Implementa {@link GetReminderPlanUseCase}: reúne preferencias, enfoque de uso, repasos vencidos y
  * bloques del planificador y deja que {@link ReminderPlanner} decida. Solo lee lo que se va a avisar.
  * Los avisos de seguimiento leen el próximo día de rutina ({@link GetPendingTrainingDayUseCase}), las sesiones
- * abiertas ({@link ListOpenSessionsUseCase}) y los retos activos ({@link ListMyChallengesUseCase}).
+ * abiertas ({@link ListOpenSessionsUseCase}) y los retos activos ({@link ListMyChallengesUseCase}). Los de bienestar
+ * ({@link WellbeingReminders}: racha, registro diario y clase) leen sus opciones, la racha y el registro de hoy
+ * ({@link Wellbeing}).
  */
 public class ReminderPlanService implements GetReminderPlanUseCase {
 
@@ -58,6 +67,12 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
     private final GetPendingTrainingDayUseCase pendingDay;
     private final ListOpenSessionsUseCase openSessions;
     private final ListMyChallengesUseCase challenges;
+    private final Wellbeing wellbeing;
+
+    /** Fuentes de los avisos de bienestar; nulas: no se avisan. */
+    public record Wellbeing(ReminderOptionsRepositoryPort options, GetStreakUseCase streak,
+                            GetTodayCheckInUseCase checkIn) {
+    }
 
     public ReminderPlanService(NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
                                StudyMaterialRepositoryPort materials, CalendarBlockRepositoryPort blocks,
@@ -74,6 +89,18 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
                                ReminderPlanner planner, ExamCalendarPort exams, Clock clock, ZoneId zone,
                                GetPendingTrainingDayUseCase pendingDay, ListOpenSessionsUseCase openSessions,
                                ListMyChallengesUseCase challenges) {
+        this(preferences, focus, materials, blocks, deadlines, subjects, planner, exams, clock, zone, pendingDay,
+                openSessions, challenges, null);
+    }
+
+    /** Con las fuentes de los avisos de bienestar (nulas: no se avisan). */
+    public ReminderPlanService(NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
+                               StudyMaterialRepositoryPort materials, CalendarBlockRepositoryPort blocks,
+                               DeadlineRepositoryPort deadlines, SubjectDirectoryPort subjects,
+                               ReminderPlanner planner, ExamCalendarPort exams, Clock clock, ZoneId zone,
+                               GetPendingTrainingDayUseCase pendingDay, ListOpenSessionsUseCase openSessions,
+                               ListMyChallengesUseCase challenges, Wellbeing wellbeing) {
+        this.wellbeing = wellbeing;
         this.preferences = preferences;
         this.focus = focus;
         this.materials = materials;
@@ -115,7 +142,36 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
                 : List.of();
 
         return planner.plan(new ReminderPlanner.Input(dueReviews, upcoming, prefs, usageFocus, now, zone, days,
-                pending, true, prefs.dailyLimit() > 0 ? followUps(userId, now) : ReminderPlanner.FollowUps.NONE));
+                pending, true, prefs.dailyLimit() > 0 ? followUps(userId, now) : ReminderPlanner.FollowUps.NONE),
+                wellbeingReminders(userId, prefs, usageFocus, now, end));
+    }
+
+    /** Racha en riesgo, registro diario y clases en 15 min, según las opciones del usuario. */
+    private List<ReminderPlan.Item> wellbeingReminders(UUID userId, NotificationPreferences prefs, UsageFocus focus,
+                                                       Instant now, Instant end) {
+        if (wellbeing == null || prefs.dailyLimit() <= 0) {
+            return List.of();
+        }
+        ReminderOptions options = wellbeing.options().find(userId).orElse(ReminderOptions.DEFAULTS);
+        StreakStatus streak = options.streak() ? wellbeing.streak().getStreak(userId, zone.getId()) : null;
+        boolean checkInDone = options.checkIn() && wellbeing.checkIn().today(userId).isPresent();
+        List<WellbeingReminders.ClassBlock> classes = options.classes()
+                ? toClasses(userId, blocks.findOverlapping(userId, now, end, null)) : List.of();
+        return WellbeingReminders.plan(new WellbeingReminders.Input(prefs, focus, options, now, zone, end,
+                streak == null ? 0 : streak.currentDays(), streak != null && streak.activeToday(), checkInDone,
+                classes));
+    }
+
+    /** Clases de la ventana con su asignatura (o temas) y su aula. */
+    private List<WellbeingReminders.ClassBlock> toClasses(UUID userId, List<CalendarBlock> found) {
+        List<CalendarBlock> classes = found.stream().filter(b -> b.type() == ActivityType.CLASS).toList();
+        Set<UUID> subjectIds = classes.stream().map(CalendarBlock::subjectId).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<UUID, String> names = subjectIds.isEmpty() ? Map.of() : subjects.namesOf(userId, subjectIds);
+        return classes.stream().map(b -> new WellbeingReminders.ClassBlock(b.id(),
+                b.subjectId() != null && names.get(b.subjectId()) != null ? names.get(b.subjectId())
+                        : b.details().topics(),
+                b.details().location(), b.start(), b.completed() || b.absent())).toList();
     }
 
     /** Próximo día de rutina sin empezar, sesiones abiertas aún no abandonadas y retos activos. */

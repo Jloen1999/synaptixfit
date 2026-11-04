@@ -21,9 +21,12 @@ public final class WellbeingDtos {
     private WellbeingDtos() {
     }
 
-    /** Check-in del día (escalas 1-5). {@code readyToTrain} por defecto true. */
+    /**
+     * Check-in del día (escalas 1-5). {@code readyToTrain} por defecto true. {@code stress} es opcional: el registro
+     * rápido de tres toques no lo pregunta (se conserva el de hoy o el neutro).
+     */
     public record CheckInRequest(@NotNull @Min(1) @Max(5) Integer sleepQuality,
-                                 @NotNull @Min(1) @Max(5) Integer stress,
+                                 @Min(1) @Max(5) Integer stress,
                                  @NotNull @Min(1) @Max(5) Integer energy,
                                  @NotNull @Min(1) @Max(5) Integer soreness,
                                  @Size(max = 12) List<@NotBlank @Size(max = 40) String> painZones,

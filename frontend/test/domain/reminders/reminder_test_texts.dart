@@ -51,4 +51,17 @@ class TestReminderTexts implements ReminderTexts {
 
   @override
   String snoozeAction(int minutes) => 'snooze:$minutes';
+
+  @override
+  String wellbeingTitle(ReminderKind kind, {String? name}) =>
+      'wellbeing:${kind.name}';
+
+  @override
+  String wellbeingBody(
+    ReminderKind kind, {
+    int? count,
+    String? name,
+    String? place,
+    DateTime? start,
+  }) => '${kind.name}:${count ?? '-'}:${name ?? '-'}:${place ?? '-'}';
 }

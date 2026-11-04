@@ -1,5 +1,11 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
+import com.synaptixfit.application.port.input.notification.ChangeReminderOptionsUseCase;
+import com.synaptixfit.application.port.input.notification.GetReminderOptionsUseCase;
+import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
+import com.synaptixfit.application.service.notification.ReminderOptionsService;
+import com.synaptixfit.domain.port.output.notification.ReminderOptionsRepositoryPort;
 import com.synaptixfit.application.port.input.challenge.ListMyChallengesUseCase;
 import com.synaptixfit.application.port.input.notification.GetReminderPlanUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
@@ -55,13 +61,28 @@ public class ReminderPlanBeanConfiguration {
         this.zone = ZoneId.of(zone);
     }
 
-    /** Los avisos de seguimiento leen entrenamiento y retos con sus casos de uso. */
+    /**
+     * Los avisos de seguimiento leen entrenamiento y retos con sus casos de uso; los de bienestar, sus opciones, la
+     * racha y el registro diario de hoy.
+     */
     @Bean
     GetReminderPlanUseCase getReminderPlanUseCase(GetPendingTrainingDayUseCase pendingDay,
                                                   ListOpenSessionsUseCase openSessions,
-                                                  ListMyChallengesUseCase challenges) {
+                                                  ListMyChallengesUseCase challenges,
+                                                  ReminderOptionsRepositoryPort reminderOptions,
+                                                  GetStreakUseCase streak, GetTodayCheckInUseCase checkIn) {
         return tx.wrap(GetReminderPlanUseCase.class, new ReminderPlanService(preferences, focus, materials, blocks,
                 deadlines, subjects, new ReminderPlanner(), exams, clock, zone, pendingDay, openSessions,
-                challenges));
+                challenges, new ReminderPlanService.Wellbeing(reminderOptions, streak, checkIn)));
+    }
+
+    @Bean
+    GetReminderOptionsUseCase getReminderOptionsUseCase(ReminderOptionsRepositoryPort reminderOptions) {
+        return tx.wrap(GetReminderOptionsUseCase.class, new ReminderOptionsService(reminderOptions, clock));
+    }
+
+    @Bean
+    ChangeReminderOptionsUseCase changeReminderOptionsUseCase(ReminderOptionsRepositoryPort reminderOptions) {
+        return tx.wrap(ChangeReminderOptionsUseCase.class, new ReminderOptionsService(reminderOptions, clock));
     }
 }

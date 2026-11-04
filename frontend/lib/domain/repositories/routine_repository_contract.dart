@@ -5,6 +5,7 @@ import '../models/result/result.dart';
 import '../models/training/routine.dart';
 import '../models/training/routine_draft.dart';
 import '../models/training/training_page.dart';
+import '../models/training/routine_template.dart';
 
 /// Rutinas de entrenamiento (`/api/v1/routines`). Las operaciones de edición
 /// devuelven la rutina completa ya actualizada.
@@ -127,4 +128,10 @@ abstract interface class RoutineRepositoryContract {
 
   /// Pide a la IA que refine una propuesta (o una rutina en edición).
   Future<AppResult<RoutineProposal>> refineRoutine(RoutineProposal proposal);
+
+  /// Plantillas listas para usar (ADR 0032).
+  Future<AppResult<List<RoutineTemplate>>> listTemplates();
+
+  /// Crea una rutina propia y privada a partir de una plantilla.
+  Future<AppResult<Routine>> useTemplate(String templateId);
 }

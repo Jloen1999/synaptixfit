@@ -3,6 +3,9 @@ import '../gen_l10n/app_localizations.dart';
 /// Códigos de error del módulo training.
 String? trainingErrorMessage(AppLocalizations l10n, String code) =>
     switch (code) {
+      'CYCLE_CONSENT_REQUIRED' => l10n.trainingErrorCycleConsentRequired,
+      'CYCLE_TRACKING_OFF' => l10n.trainingErrorCycleTrackingOff,
+      'CYCLE_DAY_OUT_OF_RANGE' => l10n.trainingErrorCycleDayOutOfRange,
       'EXERCISE_NOT_FOUND' => l10n.trainingErrorExerciseNotFound,
       'EXERCISE_INACTIVE' => l10n.trainingErrorExerciseInactive,
       'EXERCISE_CATALOG_REFERENCE_INVALID' =>
@@ -10,6 +13,7 @@ String? trainingErrorMessage(AppLocalizations l10n, String code) =>
       'ROUTINE_NOT_FOUND' => l10n.trainingErrorRoutineNotFound,
       'ROUTINE_WEEK_NOT_FOUND' => l10n.trainingErrorRoutineWeekNotFound,
       'ROUTINE_DAY_NOT_FOUND' => l10n.trainingErrorRoutineDayNotFound,
+      'ROUTINE_TEMPLATE_NOT_FOUND' => l10n.trainingErrorRoutineTemplateNotFound,
       'ROUTINE_EXERCISE_NOT_FOUND' => l10n.trainingErrorRoutineExerciseNotFound,
       'ROUTINE_DAY_DUPLICATED' => l10n.trainingErrorRoutineDayDuplicated,
       'ROUTINE_WEEK_LIMIT' => l10n.trainingErrorRoutineWeekLimit,
