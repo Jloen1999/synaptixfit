@@ -2,7 +2,8 @@ part of 'deadlines_bloc.dart';
 
 @freezed
 sealed class DeadlinesEvent with _$DeadlinesEvent {
-  const factory DeadlinesEvent.started() = DeadlinesStarted;
+  /// [focusId]: entrega que se abre desde su aviso (va arriba y destacada).
+  const factory DeadlinesEvent.started({String? focusId}) = DeadlinesStarted;
 
   const factory DeadlinesEvent.refreshed() = DeadlinesRefreshed;
 

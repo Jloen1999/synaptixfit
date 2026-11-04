@@ -40,6 +40,9 @@ import com.synaptixfit.domain.model.user.ExperienceChange;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.training.RecommendationRepositoryPort;
 import com.synaptixfit.domain.port.output.training.RoutineRepositoryPort;
+import com.synaptixfit.domain.port.output.training.ExerciseRepositoryPort;
+import com.synaptixfit.domain.model.training.Exercise;
+import com.synaptixfit.domain.exception.training.ExerciseNotFoundException;
 import com.synaptixfit.domain.port.output.training.TrainingContextPort;
 import com.synaptixfit.domain.port.output.training.TrainingSessionRepositoryPort;
 import java.time.Clock;
@@ -85,6 +88,7 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
 
     private final TrainingSessionRepositoryPort sessions;
     private final RoutineRepositoryPort routines;
+    private final ExerciseRepositoryPort exercises;
     private final RecommendationRepositoryPort recommendations;
     private final TrainingContextPort context;
     private final AwardExperienceUseCase awardExperience;
@@ -99,11 +103,12 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
      *             retos, para que la carga física, la racha y el calendario caigan en el mismo día
      */
     public TrainingSessionService(TrainingSessionRepositoryPort sessions, RoutineRepositoryPort routines,
-                                  RecommendationRepositoryPort recommendations, TrainingContextPort context,
+                                  ExerciseRepositoryPort exercises, RecommendationRepositoryPort recommendations, TrainingContextPort context,
                                   AwardExperienceUseCase awardExperience, RevokeExperienceUseCase revokeExperience,
                                   DomainEventPublisherPort events, Clock clock, ZoneId zone) {
         this.sessions = sessions;
         this.routines = routines;
+        this.exercises = exercises;
         this.recommendations = recommendations;
         this.context = context;
         this.awardExperience = awardExperience;
@@ -371,9 +376,34 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
         if (c.plannedExerciseId() != null && planned.isEmpty() && !lenient) {
             throw new RoutineExerciseNotFoundException(c.plannedExerciseId());
         }
-        session.recordSet(planned.map(PlannedExercise::id).orElse(null),
-                planned.map(PlannedExercise::exerciseId).orElse(null), c.setNumber(), c.repsDone(), c.weightKg(),
-                c.completed(), c.failedReps(), c.durationSeconds(), c.distanceMeters(), c.activeSeconds());
+        UUID plannedId = planned.map(PlannedExercise::id).orElse(null);
+        UUID exerciseId = planned.map(p -> performedExercise(p, c.exerciseId(), lenient)).orElse(null);
+        if (c.warmup()) {
+            session.recordWarmupSet(plannedId, exerciseId, c.setNumber(), c.repsDone(), c.weightKg(),
+                    c.durationSeconds(), c.distanceMeters(), c.activeSeconds());
+            return;
+        }
+        session.recordSet(plannedId, exerciseId, c.setNumber(), c.repsDone(), c.weightKg(), c.completed(),
+                c.failedReps(), c.durationSeconds(), c.distanceMeters(), c.activeSeconds(), c.toFailure());
+    }
+
+    /**
+     * Ejercicio que se hizo en el hueco {@code planned}: el de la rutina o, con «Usar hoy», el que se eligió solo
+     * para esta sesión (la rutina no cambia). Debe existir y estar activo; al terminar ({@code lenient}) uno que
+     * ya no esté se apunta con el del hueco en vez de hacer fallar toda la sesión.
+     */
+    private UUID performedExercise(PlannedExercise planned, UUID chosen, boolean lenient) {
+        if (chosen == null || chosen.equals(planned.exerciseId())) {
+            return planned.exerciseId();
+        }
+        boolean usable = exercises.findById(chosen).filter(Exercise::active).isPresent();
+        if (usable) {
+            return chosen;
+        }
+        if (lenient) {
+            return planned.exerciseId();
+        }
+        throw new ExerciseNotFoundException(chosen);
     }
 
     private TrainingSession owned(UUID userId, UUID sessionId) {

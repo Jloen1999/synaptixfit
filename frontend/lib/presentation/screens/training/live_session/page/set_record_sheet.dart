@@ -57,6 +57,9 @@ class _SetSheet extends StatefulWidget {
 class _SetSheetState extends State<_SetSheet> {
   late int _reps = widget.initial.repsDone ?? 10;
   late int _failed = widget.initial.failedReps;
+  late bool _toFailure = widget.initial.toFailure;
+
+  bool get _warmup => widget.initial.warmup;
   late final _weight = TextEditingController(
     text: widget.initial.weightKg == null
         ? ''
@@ -79,8 +82,9 @@ class _SetSheetState extends State<_SetSheet> {
           repsDone: _reps,
           weightKg: weight,
           // Una sola pregunta: si no faltó ninguna repetición, está completada.
-          completed: _failed == 0,
-          failedReps: _failed,
+          completed: _warmup || _failed == 0,
+          failedReps: _warmup ? 0 : _failed,
+          toFailure: !_warmup && _toFailure,
         ),
       ),
     );
@@ -103,7 +107,9 @@ class _SetSheetState extends State<_SetSheet> {
             children: [
               Text(widget.title, style: context.textStyles.titleLarge),
               Text(
-                l10n.trainingSetNumber(widget.initial.setNumber),
+                _warmup
+                    ? l10n.trainingWarmupSetNumber(widget.initial.setNumber)
+                    : l10n.trainingSetNumber(widget.initial.setNumber),
                 style: context.textStyles.labelLarge?.copyWith(
                   color: context.colors.onSurfaceVariant,
                 ),
@@ -116,19 +122,37 @@ class _SetSheetState extends State<_SetSheet> {
                 max: 1000,
                 onChanged: (v) => setState(() => _reps = v),
               ),
-              AppStepperField(
-                label: l10n.trainingMissedReps,
-                value: _failed,
-                min: 0,
-                max: 1000,
-                onChanged: (v) => setState(() => _failed = v),
-              ),
-              Text(
-                l10n.trainingMissedRepsHint,
-                style: context.textStyles.bodySmall?.copyWith(
-                  color: context.colors.onSurfaceVariant,
+              if (_warmup)
+                Text(
+                  l10n.trainingWarmupSetsHint,
+                  style: context.textStyles.bodySmall?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                )
+              else ...[
+                AppStepperField(
+                  label: l10n.trainingMissedReps,
+                  value: _failed,
+                  min: 0,
+                  max: 1000,
+                  onChanged: (v) => setState(() => _failed = v),
                 ),
-              ),
+                Text(
+                  l10n.trainingMissedRepsHint,
+                  style: context.textStyles.bodySmall?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                ),
+                AppFocusOutline(
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _toFailure,
+                    onChanged: (v) => setState(() => _toFailure = v),
+                    title: Text(l10n.trainingToFailure),
+                    subtitle: Text(l10n.trainingToFailureHint),
+                  ),
+                ),
+              ],
               const SizedBox(height: TokensSpacing.s),
               TextFormField(
                 controller: _weight,

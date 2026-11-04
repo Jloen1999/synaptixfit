@@ -91,5 +91,15 @@
     }
   },
   "remindersYourRoutine": "tu rutina",
-  "remindersYourChallenge": "Tu reto"
+  "remindersYourChallenge": "Tu reto",
+  "remindersActionStartStudy": "Empezar a estudiar",
+  "remindersActionStartTraining": "Ir a entrenar",
+  "remindersActionSnooze": "Posponer {minutes} min",
+  "@remindersActionSnooze": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
 }

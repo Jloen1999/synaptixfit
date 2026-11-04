@@ -11,6 +11,7 @@ import '../../widgets/exercise_instructions.dart';
 import '../../widgets/exercise_media.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_labels.dart';
+import '../../exercise_guide/page/exercise_guide_section.dart';
 import '../bloc/exercise_detail_bloc.dart';
 
 /// Detalle de un ejercicio: demostración, instrucciones, músculos y MET.
@@ -107,6 +108,7 @@ class _Content extends StatelessWidget {
                 AppSectionHeader(title: l10n.trainingInstructions),
                 ExerciseInstructions(steps: e.instructions),
               ],
+              ExerciseGuideSection(exerciseId: e.id),
               _ItemSection(
                 title: l10n.trainingTargetMuscles,
                 items: e.targetMuscles,

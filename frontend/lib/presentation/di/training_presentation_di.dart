@@ -5,6 +5,7 @@ import '../screens/training/exercise_alternatives/bloc/exercise_alternatives_blo
 import '../screens/training/check_in/bloc/check_in_bloc.dart';
 import '../screens/training/community/bloc/community_bloc.dart';
 import '../screens/training/exercise_detail/bloc/exercise_detail_bloc.dart';
+import '../screens/training/exercise_guide/bloc/exercise_guide_bloc.dart';
 import '../screens/training/exercise_explorer/bloc/exercise_explorer_bloc.dart';
 import '../screens/training/live_session/bloc/live_session_bloc.dart';
 import '../screens/training/routine_detail/bloc/routine_detail_bloc.dart';
@@ -87,6 +88,13 @@ void registerTrainingPresentation(GetIt getIt) {
     )
     ..registerFactory(() => ExerciseDetailBloc(getExercise: getIt()))
     ..registerFactory(
+      () => ExerciseGuideBloc(
+        getTips: getIt(),
+        getNote: getIt(),
+        saveNote: getIt(),
+      ),
+    )
+    ..registerFactory(
       () => OpenSessionBarBloc(
         getOpenSessions: getIt(),
         watchDataChanges: getIt(),
@@ -111,6 +119,8 @@ void registerTrainingPresentation(GetIt getIt) {
         resumeSession: getIt(),
         getClockIntroHidden: getIt(),
         hideClockIntro: getIt(),
+        loadDraft: getIt(),
+        saveDraft: getIt(),
       ),
     )
     ..registerFactory(

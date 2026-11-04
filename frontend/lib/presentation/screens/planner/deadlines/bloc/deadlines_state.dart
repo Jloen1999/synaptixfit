@@ -21,6 +21,9 @@ abstract class DeadlinesState with _$DeadlinesState {
 
     /// Entregas borradas que aún se pueden deshacer (ya no se muestran).
     @Default(<String>{}) Set<String> pendingDeletionIds,
+
+    /// Entrega abierta desde su aviso: va la primera y destacada.
+    String? focusId,
   }) = _DeadlinesState;
 
   const DeadlinesState._();

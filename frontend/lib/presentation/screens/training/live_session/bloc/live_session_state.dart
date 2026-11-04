@@ -90,6 +90,11 @@ abstract class LiveSessionState with _$LiveSessionState {
     /// Cuándo se reanudó sin que el servidor lo supiera (sin conexión). Se
     /// reintenta con esta hora y, mientras no llegue, no se puede terminar.
     DateTime? resumePendingAt,
+
+    /// Huecos con el ejercicio cambiado solo hoy («Usar hoy», ADR 0031): el
+    /// ejercicio de la rutina, para enseñarlo y poder volver a él.
+    @Default(<String, PlannedExercise>{})
+    Map<String, PlannedExercise> originals,
   }) = _LiveSessionState;
 
   const LiveSessionState._();

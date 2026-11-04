@@ -47,6 +47,9 @@ class ReminderComposer {
             ),
             at: planned.at,
             refId: planned.refId,
+            startLabel: texts.startAction(planned.kind),
+            snoozeLabel: texts.snoozeAction(snoozeMinutes),
+            snoozeMinutes: snoozeMinutes,
           ),
           ReminderKind.weeklySummary => Reminder(
             id: _weeklyId,
@@ -65,10 +68,15 @@ class ReminderComposer {
               (planned.startsAt ?? planned.at).toLocal(),
             ),
             at: planned.at,
+            // El servidor manda «entrega:días antes»: se abre la entrega.
+            refId: planned.refId.split(':').first,
           ),
         },
     ];
   }
+
+  /// Minutos que se pospone un bloque desde la notificación.
+  static const snoozeMinutes = 10;
 
   static const _reviewIdBase = 100;
 

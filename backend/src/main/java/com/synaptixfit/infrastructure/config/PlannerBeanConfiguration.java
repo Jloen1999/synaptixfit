@@ -24,6 +24,7 @@ import com.synaptixfit.application.port.input.planner.GetFocusPlanUseCase;
 import com.synaptixfit.application.port.input.planner.GetFocusStatsUseCase;
 import com.synaptixfit.application.port.input.planner.GetScheduleConflictsUseCase;
 import com.synaptixfit.application.port.input.planner.GetStudyPlansUseCase;
+import com.synaptixfit.application.port.input.planner.GetWeekPlanStatusUseCase;
 import com.synaptixfit.application.port.input.planner.GetTimelineUseCase;
 import com.synaptixfit.application.port.input.planner.GetWeekBalanceUseCase;
 import com.synaptixfit.application.port.input.planner.GetWeeklyLoadsUseCase;
@@ -341,6 +342,11 @@ public class PlannerBeanConfiguration {
     @Bean
     GetStudyPlansUseCase getStudyPlansUseCase() {
         return tx.wrap(GetStudyPlansUseCase.class, studyPlanService());
+    }
+
+    @Bean
+    GetWeekPlanStatusUseCase getWeekPlanStatusUseCase() {
+        return tx.wrap(GetWeekPlanStatusUseCase.class, studyPlanService());
     }
 
     @Bean

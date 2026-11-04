@@ -18,6 +18,7 @@ import '../../../../../domain/use_cases/planner/get_week_balance_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_week_blocks_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_week_conflicts_use_case.dart';
 import '../../../../../domain/use_cases/planner/reschedule_block_use_case.dart';
+import '../../../../../domain/use_cases/planner/get_week_closed_use_case.dart';
 import '../../../../../domain/use_cases/planner/save_week_plan_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
 
@@ -36,6 +37,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     required this._reschedule,
     required this._setCompletion,
     required this._savePlan,
+    required this._getWeekClosed,
     required this._getAccount,
     required this._deleteBlock,
     required this._rescheduleNext,
@@ -137,6 +139,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   final RescheduleBlockUseCaseContract _reschedule;
   final SetBlockCompletionUseCaseContract _setCompletion;
   final SaveWeekPlanUseCaseContract _savePlan;
+  final GetWeekClosedUseCaseContract _getWeekClosed;
   final GetAccountUseCaseContract _getAccount;
   final DeleteBlockUseCaseContract _deleteBlock;
   final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleNext;
@@ -214,6 +217,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
           conflicts: weekChanged ? const [] : state.conflicts,
           deadlines: weekChanged ? const [] : state.deadlines,
           balance: weekChanged ? null : state.balance,
+          weekClosed: weekChanged ? null : state.weekClosed,
         ),
       );
     }
@@ -222,10 +226,12 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     final conflictsF = _getConflicts(weekStart);
     final timelineF = _getTimeline(from: weekStart, to: weekEnd);
     final balanceF = _getBalance(weekStart);
+    final closedF = _getWeekClosed(weekStart);
     final blocks = await blocksF;
     final conflicts = await conflictsF;
     final timeline = await timelineF;
     final balance = await balanceF;
+    final closed = await closedF;
 
     // Si el usuario ya ha cambiado de semana, se descarta este resultado.
     if (state.weekStart != weekStart) return;
@@ -259,6 +265,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
                         t.id: (t.subjectName ?? t.title)!,
                   },
             balance: balance.valueOrNull ?? state.balance,
+            weekClosed: closed.valueOrNull ?? state.weekClosed,
           ),
         );
     }
@@ -432,7 +439,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
         final account = await _refreshAccount(value.xpAwarded);
         emit(
           state
-              .copyWith(savingPlan: false)
+              .copyWith(savingPlan: false, weekClosed: true)
               .copyWith(
                 notice: CalendarNotice.planSaved(
                   xpAwarded: value.xpAwarded,

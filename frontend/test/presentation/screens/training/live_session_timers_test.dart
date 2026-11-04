@@ -22,9 +22,11 @@ import 'package:synaptixfit/domain/use_cases/training/resume_session_use_case.da
 import 'package:synaptixfit/domain/use_cases/training/save_pending_sets_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_session_clock_intro_hidden_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/hide_session_clock_intro_use_case.dart';
+import 'package:synaptixfit/domain/models/training/live_session_draft.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/bloc/live_session_bloc.dart';
 
 import 'training_fixtures.dart';
+import 'live_session_draft_fakes.dart';
 
 class _GetSession extends Mock implements GetSessionUseCaseContract {}
 
@@ -65,6 +67,8 @@ class _HideIntro extends Mock implements HideSessionClockIntroUseCaseContract {}
 /// Cronómetro por serie y pausas (ADR 0030) con escenarios reales: el
 /// cronómetro ayuda pero nunca obliga.
 void main() {
+  // Lo que guarda el teléfono: sobrevive a crear otro bloc (reabrir la app).
+  late DraftStore drafts;
   late _RecordSet recordSet;
   late _GetSession getSession;
   late _GetRoutine getRoutine;
@@ -82,6 +86,7 @@ void main() {
   setUpAll(() => registerFallbackValue(const SetRecord(setNumber: 1)));
 
   setUp(() {
+    drafts = DraftStore();
     current = startedAt.add(const Duration(minutes: 5));
     recordSet = _RecordSet();
     getSession = _GetSession();
@@ -124,6 +129,9 @@ void main() {
     ).thenAnswer((_) async => const Success(SessionAdaptation()));
     when(() => getLoads(any())).thenAnswer((_) async => const Success([]));
     when(() => loadPending(any())).thenAnswer((_) async => const Success([]));
+    when(
+      () => savePending(any(), any()),
+    ).thenAnswer((_) async => const Success(unit));
     return LiveSessionBloc(
       getSession: getSession,
       getRoutine: getRoutine,
@@ -142,6 +150,8 @@ void main() {
       resumeSession: resume,
       getClockIntroHidden: introHidden,
       hideClockIntro: hideIntro,
+      loadDraft: FakeLoadDraft(drafts),
+      saveDraft: FakeSaveDraft(drafts),
       clock: () => current,
     );
   }
@@ -389,6 +399,159 @@ void main() {
       await settle();
       await settle();
       expect(bloc.state.explainClock, isFalse);
+      await bloc.close();
+    });
+  });
+
+  group('Tanda 1: lo que no se pierde y libertad al entrenar', () {
+    setUp(() {
+      when(() => getSession('s1')).thenAnswer(
+        (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+      );
+      when(() => getRoutine(any())).thenAnswer((_) async => Success(routine));
+      when(() => introHidden()).thenAnswer((_) async => const Success(true));
+    });
+
+    test(
+      'cierro la app con la serie cronometrándose: al volver sigue contando',
+      () async {
+        final first = build()..add(const LiveSessionEvent.started('s1'));
+        await settle();
+        first.add(const LiveSessionEvent.setTimerStarted('p1', 1));
+        await settle();
+        await first.close();
+
+        // La app se cierra 40 s y se vuelve a abrir la sesión.
+        current = current.add(const Duration(seconds: 40));
+        final again = build()..add(const LiveSessionEvent.started('s1'));
+        await settle();
+        await settle();
+        expect(again.state.timerSet, 1);
+        expect(again.state.timerExerciseId, 'p1');
+        expect(again.state.timerSeconds, 40);
+        again.add(
+          const LiveSessionEvent.setRecorded(
+            SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+          ),
+        );
+        await settle();
+        expect(recorded().activeSeconds, 40);
+        // Ya marcada, no queda nada guardado del cronómetro.
+        expect(drafts.drafts['s1']?.timerSet, isNull);
+        await again.close();
+      },
+    );
+
+    test(
+      'máquina ocupada: «Usar hoy» cambia el ejercicio solo en esta sesión',
+      () async {
+        final bloc = build()..add(const LiveSessionEvent.started('s1'));
+        await settle();
+        await settle();
+        bloc.add(
+          const LiveSessionEvent.exerciseSwapped(
+            'p1',
+            ExerciseSwap(exerciseId: 'ex-otro', name: 'Press con mancuernas'),
+          ),
+        );
+        await settle();
+        final swapped = bloc.state.exercises.firstWhere((e) => e.id == 'p1');
+        expect(swapped.exerciseName, 'Press con mancuernas');
+        expect(bloc.state.originals['p1']?.exerciseId, 'ex-p1');
+
+        bloc.add(
+          const LiveSessionEvent.setRecorded(
+            SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+          ),
+        );
+        await settle();
+        // La serie se guarda con el ejercicio que se hizo de verdad.
+        expect(recorded().exerciseId, 'ex-otro');
+
+        // Reabrir la sesión conserva el cambio de hoy.
+        await bloc.close();
+        final again = build()..add(const LiveSessionEvent.started('s1'));
+        await settle();
+        await settle();
+        expect(
+          again.state.exercises.firstWhere((e) => e.id == 'p1').exerciseId,
+          'ex-otro',
+        );
+        // Y se puede volver al de la rutina.
+        again.add(const LiveSessionEvent.exerciseSwapped('p1', null));
+        await settle();
+        expect(
+          again.state.exercises.firstWhere((e) => e.id == 'p1').exerciseId,
+          'ex-p1',
+        );
+        expect(again.state.originals, isEmpty);
+        await again.close();
+      },
+    );
+
+    test(
+      'una serie de calentamiento no abre descanso ni cuenta como trabajo',
+      () async {
+        final bloc = build()..emit(ready());
+        bloc.add(
+          const LiveSessionEvent.setRecorded(
+            SetRecord(
+              plannedExerciseId: 'p1',
+              setNumber: 1,
+              repsDone: 12,
+              weightKg: 20,
+              warmup: true,
+            ),
+          ),
+        );
+        await settle();
+        expect(recorded().warmup, isTrue);
+        expect(bloc.state.restRemaining, isNull);
+        expect(bloc.state.activeExerciseId, 'p1');
+        await bloc.close();
+      },
+    );
+
+    test('sin conexión, el calentamiento pendiente va a su propia lista', () async {
+      when(
+        () => recordSet(any(), any()),
+      ).thenAnswer((_) async => const Failure(AppError.network()));
+      final bloc = build()..emit(ready());
+      bloc
+        ..add(
+          const LiveSessionEvent.setRecorded(
+            SetRecord(plannedExerciseId: 'p1', setNumber: 1, warmup: true),
+          ),
+        )
+        ..add(
+          const LiveSessionEvent.setRecorded(
+            SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+          ),
+        );
+      await settle();
+      await settle();
+      expect(bloc.state.session!.warmupSetsFor('p1'), hasLength(1));
+      expect(bloc.state.session!.setsFor('p1'), hasLength(1));
+      // Borrar el calentamiento pendiente no toca la serie de trabajo.
+      final warm = bloc.state.session!.warmupSetsFor('p1').single;
+      bloc.add(LiveSessionEvent.setDeleted(warm.id));
+      await settle();
+      expect(bloc.state.session!.warmupSetsFor('p1'), isEmpty);
+      expect(bloc.state.session!.setsFor('p1'), hasLength(1));
+      expect(bloc.state.pendingSets.single.warmup, isFalse);
+      await bloc.close();
+    });
+
+    test('en la sesión libre también se cronometra cada serie', () async {
+      final bloc = build()..emit(ready().copyWith(exercises: const []));
+      bloc.add(const LiveSessionEvent.setTimerStarted(null, 1));
+      await settle();
+      current = current.add(const Duration(seconds: 35));
+      bloc.add(
+        const LiveSessionEvent.setRecorded(SetRecord(setNumber: 1, repsDone: 8)),
+      );
+      await settle();
+      expect(recorded().activeSeconds, 35);
       await bloc.close();
     });
   });

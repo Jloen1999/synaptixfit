@@ -56,8 +56,9 @@ class _RemindersListener extends StatelessWidget {
 
   /// Abre lo que anuncia el aviso. Repasos, entrenar y retos son pestañas
   /// (`go`); el planificador y la sesión en vivo, pantallas completas (`push`,
-  /// para no destruir las pestañas). Con referencia se abre ese bloque, sesión
-  /// o reto; sin ella (avisos de una versión anterior), su pantalla.
+  /// para no destruir las pestañas). Con referencia se abre ese bloque, sesión,
+  /// reto o entrega; sin ella (avisos de una versión anterior), su pantalla.
+  /// «Empezar» en un bloque de estudio abre el Pomodoro de ese bloque.
   void _open(BuildContext context, OpenedReminder opened) {
     final ref = opened.refId;
     switch (opened.kind) {
@@ -65,6 +66,8 @@ class _RemindersListener extends StatelessWidget {
         context.go(AcademicPaths.root);
       case ReminderKind.sportBlock || ReminderKind.routineDayMissed:
         context.go(TrainingPaths.root);
+      case ReminderKind.studyBlock when opened.start && ref != null:
+        unawaited(context.push<void>(PlannerPaths.pomodoroFor(blockId: ref)));
       case ReminderKind.studyBlock:
         unawaited(
           context.push<void>(
@@ -87,7 +90,11 @@ class _RemindersListener extends StatelessWidget {
           ref == null ? ChallengesPaths.root : ChallengesPaths.detail(ref),
         );
       case ReminderKind.exam || ReminderKind.deadline:
-        unawaited(context.push<void>(PlannerPaths.deadlines));
+        unawaited(
+          context.push<void>(
+            ref == null ? PlannerPaths.deadlines : PlannerPaths.deadline(ref),
+          ),
+        );
       case ReminderKind.weeklySummary:
         context.go(ProgressPaths.root);
     }

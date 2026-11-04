@@ -43,7 +43,9 @@ public final class SessionDtos {
 
     /**
      * Serie realizada; {@code completed} por defecto true. Repetir {@code plannedExerciseId}+{@code setNumber}
-     * la sustituye. {@code durationSeconds}/{@code distanceMeters}: en ejercicios de tiempo o distancia.
+     * la sustituye. {@code durationSeconds}/{@code distanceMeters}: en ejercicios de tiempo o distancia. ADR 0031:
+     * {@code warmup} la apunta como serie de calentamiento (numeración propia); {@code toFailure}, hasta no poder
+     * más; {@code exerciseId}, el ejercicio elegido solo para esta sesión («Usar hoy»).
      */
     public record RecordSetRequest(UUID plannedExerciseId, @NotNull @Min(1) @Max(50) Integer setNumber,
                                    @Min(0) @Max(1000) Integer repsDone,
@@ -51,11 +53,13 @@ public final class SessionDtos {
                                    Boolean completed, @Min(0) @Max(1000) Integer failedReps,
                                    @Min(0) @Max(14400) Integer durationSeconds,
                                    @Min(0) @Max(100000) Integer distanceMeters,
-                                   @Min(0) @Max(14400) Integer activeSeconds) {
+                                   @Min(0) @Max(14400) Integer activeSeconds,
+                                   Boolean warmup, Boolean toFailure, UUID exerciseId) {
         public RecordSessionSetUseCase.Command toCommand(UUID userId, UUID sessionId) {
             return new RecordSessionSetUseCase.Command(userId, sessionId, plannedExerciseId, setNumber, repsDone,
                     weightKg, completed == null || completed, failedReps == null ? 0 : failedReps, durationSeconds,
-                    distanceMeters, activeSeconds);
+                    distanceMeters, activeSeconds, Boolean.TRUE.equals(warmup), Boolean.TRUE.equals(toFailure),
+                    exerciseId);
         }
     }
 
@@ -104,11 +108,12 @@ public final class SessionDtos {
 
     public record SessionSetResponse(UUID id, UUID plannedExerciseId, int setNumber, Integer repsDone, Double weightKg,
                                      boolean completed, int failedReps, Integer durationSeconds,
-                                     Integer distanceMeters, UUID exerciseId, Integer activeSeconds) {
+                                     Integer distanceMeters, UUID exerciseId, Integer activeSeconds,
+                                     boolean toFailure) {
         static SessionSetResponse from(SessionSet s) {
             return new SessionSetResponse(s.id(), s.plannedExerciseId(), s.setNumber(), s.repsDone(), s.weightKg(),
                     s.completed(), s.failedReps(), s.durationSeconds(), s.distanceMeters(), s.exerciseId(),
-                    s.activeSeconds());
+                    s.activeSeconds(), s.toFailure());
         }
     }
 
@@ -139,12 +144,13 @@ public final class SessionDtos {
     public record SessionResponse(UUID id, UUID routineId, UUID dayId, SessionType type, SessionStatus status,
                                   Instant startedAt, Instant completedAt, int durationMinutes, Integer rpe,
                                   Double calories, int xpAwarded, List<SessionSetResponse> sets,
-                                  Instant pausedAt, long pausedSeconds) {
+                                  Instant pausedAt, long pausedSeconds, List<SessionSetResponse> warmupSets) {
         public static SessionResponse from(TrainingSession s) {
             return new SessionResponse(s.id(), s.routineId(), s.dayId(), s.type(),
                     s.isCompleted() ? SessionStatus.COMPLETED : SessionStatus.IN_PROGRESS, s.startedAt(),
                     s.completedAt(), s.durationMinutes(), s.rpe(), s.calories(), s.xpAwarded(),
-                    s.sets().stream().map(SessionSetResponse::from).toList(), s.pausedAt(), s.pausedSeconds());
+                    s.sets().stream().map(SessionSetResponse::from).toList(), s.pausedAt(), s.pausedSeconds(),
+                    s.warmupSets().stream().map(SessionSetResponse::from).toList());
         }
     }
 

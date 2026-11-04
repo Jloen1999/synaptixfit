@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.planner;
 
+import com.synaptixfit.application.port.input.planner.GetWeekPlanStatusUseCase;
 import static com.synaptixfit.application.service.planner.PlannerFakes.at;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -61,6 +62,20 @@ class StudyPlanAndWeeklyLoadServiceTest {
         assertThat(f.plans.store).hasSize(1);
         assertThat(f.xp.of(f.user)).isEqualTo(110);
         assertThat(f.blocks.store.values()).filteredOn(b -> first.plan().id().equals(b.studyPlanId())).hasSize(3);
+    }
+
+    @Test
+    void weekStatusSaysWhetherTheWeekIsAlreadyClosed() {
+        block(ActivityType.STUDY, at(1, 16, 0), 60, false, null);
+        assertThat(plans.status(f.user, PlannerFakes.MONDAY.plusDays(3)))
+                .isEqualTo(new GetWeekPlanStatusUseCase.Status(PlannerFakes.MONDAY, false, 0));
+
+        plans.savePlan(new SaveWeeklyPlanUseCase.Command(f.user, PlannerFakes.MONDAY, null, null));
+
+        GetWeekPlanStatusUseCase.Status closed = plans.status(f.user, PlannerFakes.MONDAY.plusDays(6));
+        assertThat(closed.closed()).isTrue();
+        assertThat(closed.xpAwarded()).isEqualTo(105);
+        assertThat(plans.status(f.otherUser, PlannerFakes.MONDAY).closed()).isFalse();
     }
 
     @Test

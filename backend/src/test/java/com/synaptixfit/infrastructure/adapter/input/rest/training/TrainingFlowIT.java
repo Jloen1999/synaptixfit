@@ -413,6 +413,63 @@ class TrainingFlowIT {
     }
 
     @Test
+    void warmupSetsUseTodayTipsAndNotes() throws Exception {
+        String token = register("guide@example.com");
+        String bench = jdbc.sql("SELECT CAST(c.ejercicio_id AS text) FROM consejos_ejercicio c JOIN ejercicios e"
+                + " ON e.id = c.ejercicio_id WHERE c.idioma = 'es' AND 'peso' = ANY (e.tipo_medicion)"
+                + " AND COALESCE(e.activo, true) ORDER BY e.nombre LIMIT 1").query(String.class).single();
+        String other = jdbc.sql("SELECT CAST(id AS text) FROM ejercicios WHERE 'peso' = ANY (tipo_medicion)"
+                + " AND COALESCE(activo, true) AND id <> CAST(:id AS uuid) ORDER BY nombre LIMIT 1")
+                .param("id", bench).query(String.class).single();
+
+        // «Las claves» en el idioma de la app; en un idioma sin consejos, en español.
+        String tipsEn = body(get("/api/v1/exercises/" + bench + "/tips").header("Accept-Language", "en"), token, 200);
+        assertThat((List<String>) JsonPath.read(tipsEn, "$.keyPoints")).isNotEmpty();
+        assertThat((List<String>) JsonPath.read(tipsEn, "$.commonMistakes")).isNotEmpty();
+
+        // Nota propia: se guarda, se lee y un texto vacío la borra.
+        String empty = body(get("/api/v1/exercises/" + bench + "/note"), token, 200);
+        assertThat((Object) JsonPath.read(empty, "$.text")).isNull();
+        body(put("/api/v1/exercises/" + bench + "/note").content("{\"text\":\" Asiento en el 4 \"}"), token, 200);
+        assertThat((String) JsonPath.read(body(get("/api/v1/exercises/" + bench + "/note"), token, 200), "$.text"))
+                .isEqualTo("Asiento en el 4");
+        body(put("/api/v1/exercises/" + bench + "/note").content("{\"text\":\"\"}"), token, 200);
+        assertThat((Object) JsonPath.read(body(get("/api/v1/exercises/" + bench + "/note"), token, 200), "$.text"))
+                .isNull();
+
+        String routine = body(post("/api/v1/routines").content("""
+                {"name":"Calentamiento","weeks":[{"days":[{"dayNumber":1,"exercises":[
+                  {"exerciseId":"%s","sets":3,"reps":10,"restSeconds":90,"weightKg":40}]}]}]}""".formatted(bench)),
+                token, 201);
+        String routineId = JsonPath.read(routine, "$.id");
+        String planned = JsonPath.read(routine, "$.weeks[0].days[0].exercises[0].id");
+        String dayId = JsonPath.read(routine, "$.weeks[0].days[0].id");
+        String session = body(post("/api/v1/training/sessions")
+                .content("{\"routineId\":\"" + routineId + "\",\"dayId\":\"" + dayId + "\"}"), token, 201);
+        String sessionId = JsonPath.read(session, "$.id");
+        String sets = "/api/v1/training/sessions/" + sessionId + "/sets";
+
+        // Calentamiento con su propia numeración: no pisa la serie 1 de trabajo.
+        body(post(sets).content("{\"plannedExerciseId\":\"" + planned
+                + "\",\"setNumber\":1,\"repsDone\":10,\"weightKg\":20,\"warmup\":true}"), token, 200);
+        String withWork = body(post(sets).content("{\"plannedExerciseId\":\"" + planned
+                + "\",\"setNumber\":1,\"repsDone\":8,\"weightKg\":40,\"toFailure\":true,"
+                + "\"exerciseId\":\"" + other + "\"}"), token, 200);
+        assertThat((List<Object>) JsonPath.read(withWork, "$.sets")).hasSize(1);
+        assertThat((List<Object>) JsonPath.read(withWork, "$.warmupSets")).hasSize(1);
+        assertThat((Double) JsonPath.read(withWork, "$.warmupSets[0].weightKg")).isEqualTo(20.0);
+        assertThat((Boolean) JsonPath.read(withWork, "$.sets[0].toFailure")).isTrue();
+        // «Usar hoy»: la serie guarda el ejercicio elegido; la rutina no cambia.
+        assertThat((String) JsonPath.read(withWork, "$.sets[0].exerciseId")).isEqualTo(other);
+        assertThat((String) JsonPath.read(body(get("/api/v1/routines/" + routineId), token, 200),
+                "$.weeks[0].days[0].exercises[0].exerciseId")).isEqualTo(bench);
+        mvc.perform(auth(post(sets).content("{\"plannedExerciseId\":\"" + planned
+                        + "\",\"setNumber\":2,\"repsDone\":8,\"exerciseId\":\"" + UUID.randomUUID() + "\"}"), token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("EXERCISE_NOT_FOUND"));
+    }
+
+    @Test
     void communityCloneAndPrivacy() throws Exception {
         String author = register("author@example.com");
         String viewer = register("viewer@example.com");

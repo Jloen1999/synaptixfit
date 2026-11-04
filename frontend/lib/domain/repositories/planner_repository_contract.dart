@@ -66,6 +66,9 @@ abstract interface class PlannerRepositoryContract {
   // ------------------------------------------------------------ planificación
   Future<AppResult<SavedPlan>> savePlan(DateTime weekStart);
 
+  /// ¿Ya se cerró («Cerrar semana») la semana de [weekStart]?
+  Future<AppResult<bool>> isWeekClosed(DateTime weekStart);
+
   /// Carga guardada de la semana; `null` si aún no existe.
   Future<AppResult<WeeklyLoad?>> getWeeklyLoad(DateTime weekStart);
 

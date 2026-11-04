@@ -82,4 +82,12 @@ class L10nReminderTexts implements ReminderTexts {
         : name.trim();
     return _l10n.remindersBlockBody(label, _time.format(start));
   }
+
+  @override
+  String startAction(ReminderKind kind) => kind == ReminderKind.sportBlock
+      ? _l10n.remindersActionStartTraining
+      : _l10n.remindersActionStartStudy;
+
+  @override
+  String snoozeAction(int minutes) => _l10n.remindersActionSnooze(minutes);
 }

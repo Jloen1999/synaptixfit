@@ -33,5 +33,8 @@
   "remindersChallengeDueTitle": "Ton défi se termine demain",
   "remindersChallengeDueBody": "« {challenge} » se termine demain : il est encore temps.",
   "remindersYourRoutine": "ta routine",
-  "remindersYourChallenge": "Ton défi"
+  "remindersYourChallenge": "Ton défi",
+  "remindersActionStartStudy": "Commencer à étudier",
+  "remindersActionStartTraining": "Aller s'entraîner",
+  "remindersActionSnooze": "Reporter de {minutes} min"
 }

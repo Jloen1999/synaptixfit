@@ -70,4 +70,11 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
   /// a mostrar en este teléfono.
   const factory LiveSessionEvent.clockExplained({required bool hideNextTime}) =
       LiveSessionClockExplained;
+
+  /// «Usar hoy»: hace [swap] en lugar del ejercicio del hueco solo en esta
+  /// sesión; nulo, vuelve al de la rutina.
+  const factory LiveSessionEvent.exerciseSwapped(
+    String plannedExerciseId,
+    ExerciseSwap? swap,
+  ) = LiveSessionExerciseSwapped;
 }

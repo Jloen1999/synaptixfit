@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +30,9 @@ import '../../../../../domain/use_cases/training/record_set_use_case.dart';
 import '../../../../../domain/use_cases/training/resume_session_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_clock_intro_hidden_use_case.dart';
 import '../../../../../domain/use_cases/training/hide_session_clock_intro_use_case.dart';
+import '../../../../../domain/models/training/live_session_draft.dart';
+import '../../../../../domain/use_cases/training/load_live_session_draft_use_case.dart';
+import '../../../../../domain/use_cases/training/save_live_session_draft_use_case.dart';
 import '../../training_effect.dart';
 
 part 'live_session_bloc.freezed.dart';
@@ -56,6 +60,8 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     required this._resumeSession,
     required this._getClockIntroHidden,
     required this._hideClockIntro,
+    required this._loadDraft,
+    required this._saveDraft,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now,
        super(const LiveSessionState()) {
@@ -123,6 +129,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     on<LiveSessionSetTimerStarted>(_onSetTimerStarted);
     on<LiveSessionPauseRequested>(_onPause);
     on<LiveSessionResumeRequested>(_onResume);
+    on<LiveSessionExerciseSwapped>(_onExerciseSwapped);
     on<LiveSessionClockExplained>((e, emit) async {
       emit(state.copyWith(explainClock: false));
       // Si no se puede guardar, la próxima vez se vuelve a explicar: no es grave.
@@ -147,6 +154,8 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
   final ResumeSessionUseCaseContract _resumeSession;
   final GetSessionClockIntroHiddenUseCaseContract _getClockIntroHidden;
   final HideSessionClockIntroUseCaseContract _hideClockIntro;
+  final LoadLiveSessionDraftUseCaseContract _loadDraft;
+  final SaveLiveSessionDraftUseCaseContract _saveDraft;
   final DateTime Function() _clock;
 
   /// Una sesión que lleva menos de esto abierta y sin series se acaba de
@@ -247,6 +256,12 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       ),
     );
     if (session.isCompleted) return;
+    // Cronómetro de la serie y cambios de hoy que solo sabe el teléfono: se
+    // recuperan aunque la app se cerrara (si no se pueden leer, se empieza sin).
+    _restoreDraft(
+      emit,
+      (await _loadDraft(session.id)).valueOrNull ?? const LiveSessionDraft(),
+    );
     if (session.sets.isEmpty &&
         pending.isEmpty &&
         elapsed < _introSeconds &&
@@ -269,7 +284,11 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
           : _getLoadSuggestions(session.id),
     ).wait;
     // Solo las de ejercicios de este día que aún tienen series por hacer.
-    final ids = {for (final e in exercises) e.id};
+    // Un ejercicio cambiado hoy no usa la propuesta del de la rutina.
+    final ids = {
+      for (final e in exercises)
+        if (!state.originals.containsKey(e.id)) e.id,
+    };
     final loadById = {
       for (final l in loads.valueOrNull ?? const <LoadSuggestion>[])
         if (ids.contains(l.plannedExerciseId)) l.plannedExerciseId: l,
@@ -414,6 +433,8 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     DateTime at, {
     bool startRest = true,
   }) {
+    // El calentamiento no abre descanso ni cambia de ejercicio.
+    if (record.warmup) return s;
     final planned = s.exercises
         .where((e) => e.id == record.plannedExerciseId)
         .firstOrNull;
@@ -438,9 +459,21 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     if (id == null || state.completed) return;
     final tappedAt = _clock();
     var record = event.record;
+    // Ejercicio cambiado solo hoy: la serie se guarda con el que se hizo.
+    final swappedTo = state.originals.containsKey(record.plannedExerciseId)
+        ? state.exercises
+              .where((e) => e.id == record.plannedExerciseId)
+              .firstOrNull
+              ?.exerciseId
+        : null;
+    if (swappedTo != null && record.exerciseId == null) {
+      record = record.copyWith(exerciseId: swappedTo);
+    }
     // La serie que se cronometraba se guarda con su tiempo; sin cronómetro, sin
-    // él (nunca obliga). Marcarla en pausa también reanuda la sesión.
+    // él (nunca obliga). Marcarla en pausa también reanuda la sesión. El
+    // calentamiento no se cronometra.
     final timed =
+        !record.warmup &&
         state.timerSet == record.setNumber &&
         state.timerExerciseId == record.plannedExerciseId;
     if (timed && record.activeSeconds == null) {
@@ -454,6 +487,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         activeSeconds: math.min(secs, _maxExerciseSeconds).toInt(),
       );
       emit(_withoutTimer(state));
+      await _persistDraft();
     }
     if (state.paused) await _resumeNow(emit);
     // Mientras se guarda o se sube otra, esta espera en la cola en vez de perderse.
@@ -506,8 +540,9 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     DateTime tappedAt, {
     bool keepSaving = false,
   }) async {
+    // Se publica antes de guardar en el teléfono: dos series apuntadas a la
+    // vez (sin conexión) leen la cola ya actualizada y ninguna pisa a la otra.
     final pending = [...state.pendingSets, record];
-    await _savePending(sessionId, pending);
     final session = state.session;
     emit(
       _afterSet(
@@ -520,30 +555,43 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         tappedAt,
       ),
     );
+    await _savePending(sessionId, state.pendingSets);
   }
 
-  /// Añade a la sesión del servidor las series pendientes (con id local).
+  /// Añade a la sesión del servidor las series pendientes (con id local
+  /// «pending-N», N su posición en la cola): las de calentamiento van a su
+  /// lista. [sets] son las que faltan por añadir, detrás de las ya añadidas.
   TrainingSession _withPending(TrainingSession session, List<SetRecord> sets) {
     if (sets.isEmpty) return session;
-    final offset = session.sets
-        .where((s) => s.id.startsWith(pendingPrefix))
-        .length;
+    bool local(SessionSet s) => s.id.startsWith(pendingPrefix);
+    final offset =
+        session.sets.where(local).length +
+        session.warmupSets.where(local).length;
+    SessionSet toSet(int i, SetRecord r) => SessionSet(
+      id: '$pendingPrefix${offset + i}',
+      plannedExerciseId: r.plannedExerciseId,
+      setNumber: r.setNumber,
+      repsDone: r.repsDone,
+      weightKg: r.weightKg,
+      completed: r.completed,
+      failedReps: r.failedReps,
+      durationSeconds: r.durationSeconds,
+      distanceMeters: r.distanceMeters,
+      activeSeconds: r.activeSeconds,
+      exerciseId: r.exerciseId,
+      warmup: r.warmup,
+      toFailure: r.toFailure,
+    );
     return session.copyWith(
       sets: [
         ...session.sets,
         for (final (i, r) in sets.indexed)
-          SessionSet(
-            id: '$pendingPrefix${offset + i}',
-            plannedExerciseId: r.plannedExerciseId,
-            setNumber: r.setNumber,
-            repsDone: r.repsDone,
-            weightKg: r.weightKg,
-            completed: r.completed,
-            failedReps: r.failedReps,
-            durationSeconds: r.durationSeconds,
-            distanceMeters: r.distanceMeters,
-            activeSeconds: r.activeSeconds,
-          ),
+          if (!r.warmup) toSet(i, r),
+      ],
+      warmupSets: [
+        ...session.warmupSets,
+        for (final (i, r) in sets.indexed)
+          if (r.warmup) toSet(i, r),
       ],
     );
   }
@@ -597,6 +645,10 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       for (final s in session.sets)
         if (!s.id.startsWith(pendingPrefix)) s,
     ],
+    warmupSets: [
+      for (final s in session.warmupSets)
+        if (!s.id.startsWith(pendingPrefix)) s,
+    ],
   );
 
   static bool _retryable(AppError? error) => switch (error) {
@@ -615,11 +667,10 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     if (event.setId.startsWith(pendingPrefix)) {
       final session = state.session;
       if (session == null) return;
-      final local = session.sets
-          .where((s) => s.id.startsWith(pendingPrefix))
-          .toList();
-      final index = local.indexWhere((s) => s.id == event.setId);
-      if (index < 0) return;
+      // El número del id local es su posición en la cola de pendientes.
+      final index =
+          int.tryParse(event.setId.substring(pendingPrefix.length)) ?? -1;
+      if (index < 0 || index >= state.pendingSets.length) return;
       final pending = [...state.pendingSets]..removeAt(index);
       await _savePending(id, pending);
       emit(
@@ -673,6 +724,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     switch (result) {
       case Success(value: final finished):
         emit(state.copyWith(finishing: false, session: finished.session));
+        await _saveDraft(id, const LiveSessionDraft());
         // La experiencia cambia el nivel: se refresca la cuenta global.
         final account = await _getAccount();
         if (account case Success(:final value)) {
@@ -696,6 +748,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     emit(state.copyWith(finishing: false));
     switch (result) {
       case Success():
+        await _saveDraft(id, const LiveSessionDraft());
         _effect(
           emit,
           const TrainingEffect.message(TrainingMessage.sessionAbandoned),
@@ -731,6 +784,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       ),
     );
     if (state.paused) add(const LiveSessionEvent.resumeRequested());
+    unawaited(_persistDraft());
   }
 
   /// Pausa al momento (también sin conexión: al terminar, el servidor nunca
@@ -755,6 +809,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
             : state.timerBanked + math.max(0, now.difference(since).inSeconds),
       ),
     );
+    await _persistDraft();
     // Una reanudación que no llegó va antes: si no, esta pausa se juntaría con
     // la anterior en el servidor.
     await _retryResume(emit);
@@ -805,6 +860,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         timerSince: state.timerSet != null ? now : null,
       ),
     );
+    await _persistDraft();
     // Si ya había una reanudación sin llegar, vale la primera: lo que va de
     // una a otra se entrenó (el servidor no supo de la pausa intermedia).
     await _sendResume(emit, id, state.resumePendingAt ?? now);
@@ -850,6 +906,132 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     final at = state.resumePendingAt;
     if (id == null || at == null || state.completed) return;
     await _sendResume(emit, id, at);
+  }
+
+  /// Recupera lo que guardó el teléfono: ejercicios cambiados hoy y el
+  /// cronómetro de la serie (si esa serie no se marcó ya).
+  void _restoreDraft(Emitter<LiveSessionState> emit, LiveSessionDraft draft) {
+    if (draft.isEmpty) return;
+    var next = state;
+    for (final entry in draft.swaps.entries) {
+      next = _swapped(next, entry.key, entry.value);
+    }
+    final set = draft.timerSet;
+    final plannedId = draft.timerPlannedExerciseId;
+    final alreadyLogged =
+        set != null &&
+        (next.session?.setsFor(plannedId).any((s) => s.setNumber == set) ??
+            false);
+    if (set != null && !alreadyLogged) {
+      var since = draft.timerSince;
+      var banked = draft.timerBanked;
+      // Si la sesión quedó en pausa, lo que corrió hasta la pausa ya cuenta y
+      // el cronómetro espera a «Reanudar».
+      final pausedAt = next.session?.pausedAt;
+      if (since != null && pausedAt != null) {
+        banked += math.max(0, pausedAt.difference(since).inSeconds);
+        since = null;
+      }
+      final now = _clock();
+      next = next.copyWith(
+        timerExerciseId: plannedId,
+        timerSet: set,
+        timerSince: since,
+        timerBanked: banked,
+        timerSeconds: since == null
+            ? banked
+            : banked + math.max(0, now.difference(since).inSeconds),
+      );
+    }
+    emit(next);
+  }
+
+  /// Guarda en el teléfono el cronómetro y los cambios de hoy (si falla, solo
+  /// se pierde eso al cerrar la app: no bloquea la sesión).
+  Future<void> _persistDraft() async {
+    final id = state.sessionId;
+    if (id == null || state.completed) return;
+    await _saveDraft(
+      id,
+      LiveSessionDraft(
+        timerPlannedExerciseId: state.timerExerciseId,
+        timerSet: state.timerSet,
+        timerSince: state.timerSince,
+        timerBanked: state.timerBanked,
+        swaps: {
+          for (final e in state.exercises)
+            if (state.originals.containsKey(e.id))
+              e.id: ExerciseSwap(
+                exerciseId: e.exerciseId,
+                name: e.exerciseName,
+                gifUrl: e.gifUrl,
+                previewUrl: e.previewUrl,
+              ),
+        },
+      ),
+    );
+  }
+
+  /// «Usar hoy»: cambia el ejercicio de un hueco solo en esta sesión (la
+  /// rutina no cambia); sin [ExerciseSwap], vuelve al original.
+  Future<void> _onExerciseSwapped(
+    LiveSessionExerciseSwapped event,
+    Emitter<LiveSessionState> emit,
+  ) async {
+    if (state.status != LiveStatus.ready || state.completed) return;
+    final swap = event.swap;
+    if (swap == null) {
+      final original = state.originals[event.plannedExerciseId];
+      if (original == null) return;
+      emit(
+        state.copyWith(
+          exercises: [
+            for (final e in state.exercises)
+              e.id == original.id ? original : e,
+          ],
+          originals: {...state.originals}..remove(original.id),
+        ),
+      );
+    } else {
+      emit(_swapped(state, event.plannedExerciseId, swap));
+    }
+    await _persistDraft();
+  }
+
+  /// [s] con el hueco [plannedId] haciendo [swap] (sin su propuesta de carga,
+  /// que era para el ejercicio de la rutina).
+  static LiveSessionState _swapped(
+    LiveSessionState s,
+    String plannedId,
+    ExerciseSwap swap,
+  ) {
+    final current = s.exercises.where((e) => e.id == plannedId).firstOrNull;
+    if (current == null) return s;
+    final original = s.originals[plannedId] ?? current;
+    if (swap.exerciseId == original.exerciseId) {
+      return s.copyWith(
+        exercises: [
+          for (final e in s.exercises) e.id == plannedId ? original : e,
+        ],
+        originals: {...s.originals}..remove(plannedId),
+      );
+    }
+    return s.copyWith(
+      exercises: [
+        for (final e in s.exercises)
+          e.id == plannedId
+              ? original.copyWith(
+                  exerciseId: swap.exerciseId,
+                  exerciseName: swap.name,
+                  gifUrl: swap.gifUrl,
+                  previewUrl: swap.previewUrl,
+                )
+              : e,
+      ],
+      originals: {...s.originals, plannedId: original},
+      loadSuggestions: {...s.loadSuggestions}..remove(plannedId),
+      acceptedLoad: {...s.acceptedLoad}..remove(plannedId),
+    );
   }
 
   void _effect(Emitter<LiveSessionState> emit, TrainingEffect effect) {

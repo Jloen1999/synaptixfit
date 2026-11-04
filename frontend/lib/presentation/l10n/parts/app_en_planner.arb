@@ -375,5 +375,10 @@
   "plannerClassAbsentXp": "Noted: you didn't go to this class (−{xp} XP).",
   "plannerClassAttendsLater": "When it ends, it will count as attended automatically. If you don't go, you can mark \"I didn't go\" once it starts.",
   "plannerPastStudySubjectsFailed": "Your subjects couldn't be loaded; you can log it without a subject.",
-  "plannerPastStudyRetry": "Retry"
+  "plannerPastStudyRetry": "Retry",
+  "plannerWeekClosed": "Week closed",
+  "plannerWeekClosedHint": "You've already closed this week. New blocks save on their own: no need to close it again.",
+  "plannerDeadlineFromReminder": "We reminded you about this one",
+  "plannerPomodoroResetTitle": "Start over?",
+  "plannerPomodoroResetMessage": "You'll lose the time you've done in this block. If you just need a breather, pause instead."
 }

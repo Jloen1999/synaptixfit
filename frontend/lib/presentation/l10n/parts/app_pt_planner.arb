@@ -375,5 +375,10 @@
   "plannerClassAbsentXp": "Registado: não foste a esta aula (−{xp} XP).",
   "plannerClassAttendsLater": "Ao terminar, contará como assistida automaticamente. Se não fores, podes marcar «Não fui» quando começar.",
   "plannerPastStudySubjectsFailed": "Não foi possível carregar as tuas disciplinas; podes registá-lo sem disciplina.",
-  "plannerPastStudyRetry": "Tentar de novo"
+  "plannerPastStudyRetry": "Tentar de novo",
+  "plannerWeekClosed": "Semana fechada",
+  "plannerWeekClosedHint": "Já fechaste esta semana. Os blocos novos guardam-se sozinhos: não é preciso voltar a fechá-la.",
+  "plannerDeadlineFromReminder": "Avisámos-te desta",
+  "plannerPomodoroResetTitle": "Começar do zero?",
+  "plannerPomodoroResetMessage": "Perdes o tempo que levas neste bloco. Se só precisas de uma pausa, é melhor pausar."
 }

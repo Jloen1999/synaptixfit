@@ -30,6 +30,7 @@ void registerPlannerPresentation(GetIt getIt) {
         reschedule: getIt(),
         setCompletion: getIt(),
         savePlan: getIt(),
+        getWeekClosed: getIt(),
         getAccount: getIt(),
         deleteBlock: getIt(),
         rescheduleNext: getIt(),
@@ -61,6 +62,7 @@ void registerPlannerPresentation(GetIt getIt) {
     ..registerFactory(
       () => DeadlinesBloc(
         getDeadlines: getIt(),
+        getDeadline: getIt(),
         getSubjects: getIt(),
         createDeadline: getIt(),
         updateDeadline: getIt(),

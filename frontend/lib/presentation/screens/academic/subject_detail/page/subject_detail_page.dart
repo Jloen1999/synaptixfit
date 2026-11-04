@@ -128,13 +128,24 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
                 ),
                 PopupMenuButton<String>(
                   tooltip: l10n.academicMoreActions,
-                  onSelected: (value) {
+                  onSelected: (value) async {
                     if (value == 'archive') {
-                      context.read<SubjectDetailBloc>().add(
-                        const SubjectDetailEvent.archiveToggled(),
-                      );
+                      final bloc = context.read<SubjectDetailBloc>();
+                      // Archivar se explica: qué deja de verse y que nada se
+                      // pierde. Recuperarla no necesita explicación.
+                      if (!subject.archived) {
+                        final ok = await showConfirmDialog(
+                          context,
+                          title: l10n.academicSubjectArchiveTitle,
+                          message: l10n.academicSubjectArchiveMessage,
+                          confirmLabel: l10n.academicSubjectArchive,
+                          destructive: false,
+                        );
+                        if (!ok || bloc.isClosed) return;
+                      }
+                      bloc.add(const SubjectDetailEvent.archiveToggled());
                     } else {
-                      _delete(context, subject);
+                      await _delete(context, subject);
                     }
                   },
                   itemBuilder: (_) => [

@@ -74,7 +74,13 @@ class ReminderSchedulerRepository
   @override
   Stream<OpenedReminder> watchOpened() =>
       RepositoryErrorHandler.guardStream(_local.watchOpenedPayloads)
-          .map((result) => OpenedReminder.fromPayload(result.valueOrNull))
+          .map((result) {
+            final tap = result.valueOrNull;
+            return OpenedReminder.fromPayload(
+              tap?.payload,
+              start: tap?.action == reminderStartAction,
+            );
+          })
           .where((opened) => opened != null)
           .cast<OpenedReminder>();
 }

@@ -33,5 +33,8 @@
   "remindersChallengeDueTitle": "O teu desafio termina amanhã",
   "remindersChallengeDueBody": "«{challenge}» termina amanhã: ainda vais a tempo.",
   "remindersYourRoutine": "a tua rotina",
-  "remindersYourChallenge": "O teu desafio"
+  "remindersYourChallenge": "O teu desafio",
+  "remindersActionStartStudy": "Começar a estudar",
+  "remindersActionStartTraining": "Ir treinar",
+  "remindersActionSnooze": "Adiar {minutes} min"
 }

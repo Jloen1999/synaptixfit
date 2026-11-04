@@ -23,6 +23,7 @@ abstract class SessionSetDto with _$SessionSetDto {
     int? distanceMeters,
     String? exerciseId,
     int? activeSeconds,
+    @Default(false) bool toFailure,
   }) = _SessionSetDto;
 
   const SessionSetDto._();
@@ -30,7 +31,7 @@ abstract class SessionSetDto with _$SessionSetDto {
   factory SessionSetDto.fromJson(Map<String, dynamic> json) =>
       _$SessionSetDtoFromJson(json);
 
-  SessionSet toDomain() => SessionSet(
+  SessionSet toDomain({bool warmup = false}) => SessionSet(
     id: id,
     plannedExerciseId: plannedExerciseId,
     setNumber: setNumber,
@@ -42,6 +43,8 @@ abstract class SessionSetDto with _$SessionSetDto {
     distanceMeters: distanceMeters,
     exerciseId: exerciseId,
     activeSeconds: activeSeconds,
+    warmup: warmup,
+    toFailure: toFailure,
   );
 }
 
@@ -62,6 +65,7 @@ abstract class SessionDto with _$SessionDto {
     List<SessionSetDto>? sets,
     DateTime? pausedAt,
     @Default(0) int pausedSeconds,
+    List<SessionSetDto>? warmupSets,
   }) = _SessionDto;
 
   const SessionDto._();
@@ -84,6 +88,9 @@ abstract class SessionDto with _$SessionDto {
     sets: (sets ?? const []).map((s) => s.toDomain()).toList(),
     pausedAt: pausedAt?.toLocal(),
     pausedSeconds: pausedSeconds,
+    warmupSets: (warmupSets ?? const [])
+        .map((s) => s.toDomain(warmup: true))
+        .toList(),
   );
 }
 
@@ -101,6 +108,9 @@ abstract class RecordSetRequestDto with _$RecordSetRequestDto {
     int? durationSeconds,
     int? distanceMeters,
     int? activeSeconds,
+    bool? warmup,
+    bool? toFailure,
+    String? exerciseId,
   }) = _RecordSetRequestDto;
 
   factory RecordSetRequestDto.fromJson(Map<String, dynamic> json) =>
@@ -116,6 +126,10 @@ abstract class RecordSetRequestDto with _$RecordSetRequestDto {
     durationSeconds: r.durationSeconds,
     distanceMeters: r.distanceMeters,
     activeSeconds: r.activeSeconds,
+    // Solo se mandan si están puestos: un servidor anterior los ignora igual.
+    warmup: r.warmup ? true : null,
+    toFailure: r.toFailure ? true : null,
+    exerciseId: r.exerciseId,
   );
 }
 

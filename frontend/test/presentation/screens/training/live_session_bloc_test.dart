@@ -31,6 +31,7 @@ import 'package:synaptixfit/domain/models/training/set_fields.dart';
 import 'package:synaptixfit/domain/use_cases/training/get_load_suggestions_use_case.dart';
 
 import 'training_fixtures.dart';
+import 'live_session_draft_fakes.dart';
 
 class _MockGetSession extends Mock implements GetSessionUseCaseContract {}
 
@@ -71,6 +72,7 @@ class _MockGetAdaptation extends Mock
     implements GetSessionAdaptationUseCaseContract {}
 
 void main() {
+  late DraftStore drafts;
   late _MockGetSession getSession;
   late _MockGetRoutine getRoutine;
   late _MockRecordSet recordSet;
@@ -97,6 +99,7 @@ void main() {
   });
 
   setUp(() {
+    drafts = DraftStore();
     getSession = _MockGetSession();
     getRoutine = _MockGetRoutine();
     recordSet = _MockRecordSet();
@@ -148,6 +151,8 @@ void main() {
     resumeSession: _MockResume(),
     getClockIntroHidden: introHidden,
     hideClockIntro: _MockHideIntro(),
+    loadDraft: FakeLoadDraft(drafts),
+    saveDraft: FakeSaveDraft(drafts),
     clock: clock ?? () => now,
   );
 

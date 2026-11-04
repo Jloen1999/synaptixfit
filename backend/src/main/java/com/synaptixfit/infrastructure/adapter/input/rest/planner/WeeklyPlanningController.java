@@ -3,6 +3,8 @@ package com.synaptixfit.infrastructure.adapter.input.rest.planner;
 import com.synaptixfit.application.port.input.planner.DeleteStudyPlanUseCase;
 import com.synaptixfit.application.port.input.planner.GetStudyPlansUseCase;
 import com.synaptixfit.application.port.input.planner.GetWeekBalanceUseCase;
+import com.synaptixfit.application.port.input.planner.GetWeekPlanStatusUseCase;
+import com.synaptixfit.infrastructure.adapter.input.rest.planner.dto.WeekPlanStatusResponse;
 import com.synaptixfit.application.port.input.planner.GetWeeklyLoadsUseCase;
 import com.synaptixfit.application.port.input.planner.SaveWeeklyPlanUseCase;
 import com.synaptixfit.application.port.input.planner.SyncWeeklyLoadUseCase;
@@ -53,11 +55,12 @@ public class WeeklyPlanningController {
     private final UpdateWeeklyWellbeingUseCase updateWellbeing;
     private final GetWeeklyLoadsUseCase getLoads;
     private final GetWeekBalanceUseCase getBalance;
+    private final GetWeekPlanStatusUseCase planStatus;
 
     public WeeklyPlanningController(SaveWeeklyPlanUseCase savePlan, GetStudyPlansUseCase getPlans,
                                     DeleteStudyPlanUseCase deletePlan, SyncWeeklyLoadUseCase syncLoad,
                                     UpdateWeeklyWellbeingUseCase updateWellbeing, GetWeeklyLoadsUseCase getLoads,
-                                    GetWeekBalanceUseCase getBalance) {
+                                    GetWeekBalanceUseCase getBalance, GetWeekPlanStatusUseCase planStatus) {
         this.savePlan = savePlan;
         this.getPlans = getPlans;
         this.deletePlan = deletePlan;
@@ -65,6 +68,7 @@ public class WeeklyPlanningController {
         this.updateWellbeing = updateWellbeing;
         this.getLoads = getLoads;
         this.getBalance = getBalance;
+        this.planStatus = planStatus;
     }
 
     // ---------------------------------------------------------------- plan semanal
@@ -78,6 +82,14 @@ public class WeeklyPlanningController {
                 r == null ? null : r.name(), r == null ? null : r.visibility()));
         return new SavePlanResponse(StudyPlanResponse.from(result.plan()), result.blockCount(), result.deadlineCount(),
                 result.xpAwarded());
+    }
+
+    /** ¿Se cerró ya esta semana? («Cerrar semana» se hace una vez; después se enseña «Semana cerrada»). */
+    @GetMapping("/plans/{weekStart}")
+    public WeekPlanStatusResponse planStatus(@CurrentUserId UUID userId,
+                                             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                             LocalDate weekStart) {
+        return WeekPlanStatusResponse.from(planStatus.status(userId, weekStart));
     }
 
     @GetMapping("/plans")

@@ -26,6 +26,10 @@ import java.util.UUID;
  * <p>Pausas (ADR 0030): mientras {@code pausedAt} no es nulo la sesión está en pausa; al reanudar, ese
  * tiempo se suma a {@code pausedSeconds}. Las pausas no cuentan como entrenamiento: la duración que se
  * guarda (y con ella la carga física y las calorías) es el tiempo activo ({@link #activeSeconds}).
+ *
+ * <p>Series de calentamiento (ADR 0031): van en una lista aparte ({@link #warmupSets}) con su propia
+ * numeración. {@link #sets} solo devuelve las de trabajo, que son las que cuentan para el volumen, los
+ * récords, la propuesta de peso y el progreso del día.
  */
 public final class TrainingSession {
 
@@ -41,6 +45,7 @@ public final class TrainingSession {
     private Double calories;
     private int xpAwarded;
     private final List<SessionSet> sets;
+    private final List<SessionSet> warmupSets;
     private Instant pausedAt;
     private long pausedSeconds;
 
@@ -65,7 +70,9 @@ public final class TrainingSession {
         this.rpe = rpe;
         this.calories = calories;
         this.xpAwarded = Math.max(0, xpAwarded);
-        this.sets = new ArrayList<>(sets == null ? List.of() : sets);
+        List<SessionSet> all = sets == null ? List.of() : sets;
+        this.sets = new ArrayList<>(all.stream().filter(s -> !s.warmup()).toList());
+        this.warmupSets = new ArrayList<>(all.stream().filter(SessionSet::warmup).toList());
         this.pausedAt = completedAt == null ? pausedAt : null;
         this.pausedSeconds = Math.max(0, pausedSeconds);
     }
@@ -210,17 +217,42 @@ public final class TrainingSession {
     public SessionSet recordSet(UUID plannedExerciseId, UUID exerciseId, int setNumber, Integer repsDone,
                                 Double weightKg, boolean completed, int failedReps, Integer durationSeconds,
                                 Integer distanceMeters, Integer activeSeconds) {
+        return recordSet(plannedExerciseId, exerciseId, setNumber, repsDone, weightKg, completed, failedReps,
+                durationSeconds, distanceMeters, activeSeconds, false);
+    }
+
+    /** Como el anterior, indicando si la serie se hizo hasta no poder más ({@code toFailure}). */
+    public SessionSet recordSet(UUID plannedExerciseId, UUID exerciseId, int setNumber, Integer repsDone,
+                                Double weightKg, boolean completed, int failedReps, Integer durationSeconds,
+                                Integer distanceMeters, Integer activeSeconds, boolean toFailure) {
         ensureInProgress();
         sets.removeIf(s -> Objects.equals(s.plannedExerciseId(), plannedExerciseId) && s.setNumber() == setNumber);
         SessionSet set = new SessionSet(UUID.randomUUID(), plannedExerciseId, setNumber, repsDone, weightKg,
-                completed, failedReps, durationSeconds, distanceMeters, exerciseId, activeSeconds);
+                completed, failedReps, durationSeconds, distanceMeters, exerciseId, activeSeconds, false, toFailure);
         sets.add(set);
         return set;
     }
 
+    /**
+     * Registra (o sustituye) la serie de calentamiento número {@code setNumber} de un ejercicio. Tiene su propia
+     * numeración: «Calentamiento 1» no pisa la «Serie 1» de trabajo. Siempre cuenta como completada.
+     */
+    public SessionSet recordWarmupSet(UUID plannedExerciseId, UUID exerciseId, int setNumber, Integer repsDone,
+                                      Double weightKg, Integer durationSeconds, Integer distanceMeters,
+                                      Integer activeSeconds) {
+        ensureInProgress();
+        warmupSets.removeIf(s -> Objects.equals(s.plannedExerciseId(), plannedExerciseId)
+                && s.setNumber() == setNumber);
+        SessionSet set = new SessionSet(UUID.randomUUID(), plannedExerciseId, setNumber, repsDone, weightKg,
+                true, 0, durationSeconds, distanceMeters, exerciseId, activeSeconds, true, false);
+        warmupSets.add(set);
+        return set;
+    }
+
+    /** Quita una serie, de trabajo o de calentamiento. */
     public void removeSet(UUID setId) {
         ensureInProgress();
-        if (!sets.removeIf(s -> s.id().equals(setId))) {
+        if (!sets.removeIf(s -> s.id().equals(setId)) && !warmupSets.removeIf(s -> s.id().equals(setId))) {
             throw new SessionSetNotFoundException(setId);
         }
     }
@@ -326,6 +358,21 @@ public final class TrainingSession {
                 .sorted(Comparator.comparing((SessionSet s) -> String.valueOf(s.plannedExerciseId()))
                         .thenComparingInt(SessionSet::setNumber))
                 .toList();
+    }
+
+    /** Series de calentamiento (no cuentan como trabajo), en el mismo orden que {@link #sets}. */
+    public List<SessionSet> warmupSets() {
+        return warmupSets.stream()
+                .sorted(Comparator.comparing((SessionSet s) -> String.valueOf(s.plannedExerciseId()))
+                        .thenComparingInt(SessionSet::setNumber))
+                .toList();
+    }
+
+    /** Todas las series (trabajo y calentamiento), para guardarlas. */
+    public List<SessionSet> allSets() {
+        List<SessionSet> all = new ArrayList<>(sets());
+        all.addAll(warmupSets());
+        return all;
     }
 
     /** Estado de la sesión justo antes de desmarcarla. */

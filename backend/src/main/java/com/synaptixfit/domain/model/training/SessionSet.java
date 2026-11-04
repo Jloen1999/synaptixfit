@@ -10,10 +10,14 @@ import java.util.UUID;
  * sabiendo qué ejercicio fue. Lo que se apunta depende de cómo se mide: repeticiones y peso, segundos de
  * aguante o de trabajo ({@code durationSeconds}) y metros ({@code distanceMeters}). {@code activeSeconds} es lo que
  * marcó el cronómetro de la serie sin sus pausas (ADR 0030); es opcional: se puede marcar una serie sin usarlo.
+ *
+ * <p>ADR 0031: {@code warmup} marca una serie de calentamiento (aproximación): tiene su propia numeración y no
+ * cuenta como serie de trabajo (ni volumen, ni récords, ni propuesta de peso). {@code toFailure} indica que la
+ * serie se hizo «hasta no poder más»: la próxima vez no se propone subir la carga.
  */
 public record SessionSet(UUID id, UUID plannedExerciseId, int setNumber, Integer repsDone, Double weightKg,
                          boolean completed, int failedReps, Integer durationSeconds, Integer distanceMeters,
-                         UUID exerciseId, Integer activeSeconds) {
+                         UUID exerciseId, Integer activeSeconds, boolean warmup, boolean toFailure) {
 
     public static final int MAX_DURATION_SECONDS = 14_400;
     public static final int MAX_DISTANCE_METERS = 100_000;
@@ -39,6 +43,14 @@ public record SessionSet(UUID id, UUID plannedExerciseId, int setNumber, Integer
         }
     }
 
+    /** Serie de trabajo normal (ni de calentamiento ni hasta no poder más). */
+    public SessionSet(UUID id, UUID plannedExerciseId, int setNumber, Integer repsDone, Double weightKg,
+                      boolean completed, int failedReps, Integer durationSeconds, Integer distanceMeters,
+                      UUID exerciseId, Integer activeSeconds) {
+        this(id, plannedExerciseId, setNumber, repsDone, weightKg, completed, failedReps, durationSeconds,
+                distanceMeters, exerciseId, activeSeconds, false, false);
+    }
+
     /** Serie sin el tiempo de su cronómetro. */
     public SessionSet(UUID id, UUID plannedExerciseId, int setNumber, Integer repsDone, Double weightKg,
                       boolean completed, int failedReps, Integer durationSeconds, Integer distanceMeters,
@@ -50,6 +62,7 @@ public record SessionSet(UUID id, UUID plannedExerciseId, int setNumber, Integer
     /** Serie de repeticiones y peso (sin tiempo ni distancia). */
     public SessionSet(UUID id, UUID plannedExerciseId, int setNumber, Integer repsDone, Double weightKg,
                       boolean completed, int failedReps) {
-        this(id, plannedExerciseId, setNumber, repsDone, weightKg, completed, failedReps, null, null, null, null);
+        this(id, plannedExerciseId, setNumber, repsDone, weightKg, completed, failedReps, null, null, null, null,
+                false, false);
     }
 }

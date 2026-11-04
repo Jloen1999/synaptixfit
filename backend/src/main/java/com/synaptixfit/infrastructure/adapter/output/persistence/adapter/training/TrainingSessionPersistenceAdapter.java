@@ -51,14 +51,14 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
 
         Map<UUID, SessionSetEntity> existing = new HashMap<>();
         sets.findBySesionIdIn(List.of(session.id())).forEach(s -> existing.put(s.getId(), s));
-        Set<UUID> desired = session.sets().stream().map(SessionSet::id).collect(Collectors.toSet());
+        Set<UUID> desired = session.allSets().stream().map(SessionSet::id).collect(Collectors.toSet());
         List<SessionSetEntity> removed = existing.values().stream().filter(s -> !desired.contains(s.getId())).toList();
         if (!removed.isEmpty()) {
             sets.deleteAll(removed);
             sets.flush();
         }
         List<SessionSetEntity> rows = new ArrayList<>();
-        for (SessionSet s : session.sets()) {
+        for (SessionSet s : session.allSets()) {
             SessionSetEntity e = existing.get(s.id());
             if (e == null) {
                 e = new SessionSetEntity();
@@ -129,11 +129,12 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
         }
         Map<UUID, List<CompletedSessionSummary.PerformedSet>> setsBySession = new HashMap<>();
         jdbc.sql("SELECT ss.id, ss.sesion_id, ss.seleccion_id, ss.numero_serie, ss.repeticiones_realizadas, ss.peso_kg,"
-                        + " ss.completada, ss.failed_reps, ss.duracion_segundos, ss.distancia_metros,"
+                        + " ss.completada, ss.failed_reps, ss.duracion_segundos, ss.distancia_metros, ss.al_fallo,"
                         + " COALESCE(ss.ejercicio_id, sel.ejercicio_id) AS ejercicio_id, e.nombre FROM series_sesion ss"
                         + " LEFT JOIN seleccion_de_ejercicios sel ON sel.id = ss.seleccion_id"
                         + " LEFT JOIN ejercicios e ON e.id = COALESCE(ss.ejercicio_id, sel.ejercicio_id)"
-                        + " WHERE ss.sesion_id IN (:ids)"
+                        // El calentamiento no cuenta para el historial de progreso (ADR 0031).
+                        + " WHERE ss.sesion_id IN (:ids) AND NOT ss.calentamiento"
                         + " ORDER BY ss.numero_serie")
                 .param("ids", heads.stream().map(Head::id).toList())
                 .query((ResultSet rs) -> {
@@ -142,7 +143,8 @@ public class TrainingSessionPersistenceAdapter implements TrainingSessionReposit
                             Math.max(1, rs.getInt("numero_serie")), (Integer) rs.getObject("repeticiones_realizadas"),
                             weight == null ? null : ((Number) weight).doubleValue(), rs.getBoolean("completada"),
                             Math.max(0, rs.getInt("failed_reps")), (Integer) rs.getObject("duracion_segundos"),
-                            (Integer) rs.getObject("distancia_metros"), rs.getObject("ejercicio_id", UUID.class));
+                            (Integer) rs.getObject("distancia_metros"), rs.getObject("ejercicio_id", UUID.class),
+                            null, false, rs.getBoolean("al_fallo"));
                     setsBySession.computeIfAbsent(rs.getObject("sesion_id", UUID.class), k -> new ArrayList<>())
                             .add(new CompletedSessionSummary.PerformedSet(rs.getObject("ejercicio_id", UUID.class),
                                     rs.getString("nombre"), set));

@@ -104,6 +104,10 @@ public final class ProgressionCalculator {
             iso = scale(iso, isometric, 0.85);
             log = "RPE muy alto → carga -15%";
             reason = AdjustmentReason.VERY_HIGH_RPE;
+        } else if (performedSets != null && performedSets.stream().anyMatch(SessionSet::toFailure)) {
+            // ADR 0031: alguna serie fue «hasta no poder más». Aunque el RPE de la sesión fuera bajo, ese
+            // ejercicio ya llegó al límite: se repite la carga en vez de subirla.
+            log = "Serie hasta no poder más → se mantiene la carga";
         } else if (lastRpe <= 5.0) {
             weight = scale(weight, usesWeight, 1.10);
             duration = scale(duration, usesTime, 1.10);

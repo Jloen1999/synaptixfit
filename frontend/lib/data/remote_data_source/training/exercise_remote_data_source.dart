@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../domain/models/training/exercise.dart';
+import '../../../domain/models/training/exercise_guide.dart';
 import '../../../domain/models/training/training_page.dart';
 import '../api/api_client.dart';
 import 'dto/exercise_dto.dart';
@@ -73,5 +74,40 @@ class ExerciseRemoteDataSource {
   Future<ExerciseFilterOptionsDto> filters() async {
     final response = await _dio.get<Map<String, dynamic>>('$_base/filters');
     return ExerciseFilterOptionsDto.fromJson(response.data!);
+  }
+
+  /// «Las claves» y «Errores comunes» en el idioma de la app (ADR 0031).
+  Future<ExerciseTips> tips(String exerciseId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/$exerciseId/tips',
+    );
+    List<String> lines(String key) =>
+        ((response.data?[key] as List<dynamic>?) ?? const []).cast<String>();
+    return ExerciseTips(
+      keyPoints: lines('keyPoints'),
+      commonMistakes: lines('commonMistakes'),
+    );
+  }
+
+  Future<ExerciseNote?> note(String exerciseId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/$exerciseId/note',
+    );
+    return _note(response.data);
+  }
+
+  Future<ExerciseNote?> saveNote(String exerciseId, String text) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '$_base/$exerciseId/note',
+      data: {'text': text},
+    );
+    return _note(response.data);
+  }
+
+  static ExerciseNote? _note(Map<String, dynamic>? json) {
+    final text = json?['text'] as String?;
+    final at = json?['updatedAt'] as String?;
+    if (text == null || at == null) return null;
+    return ExerciseNote(text: text, updatedAt: DateTime.parse(at).toLocal());
   }
 }

@@ -423,5 +423,9 @@
   "academicReviewDoFirst": "Revê primeiro",
   "academicReviewStep1Announce": "Passo 1 feito: já podes avaliar",
   "academicReviewOverdue": "Era para {date} · revê-o hoje",
-  "academicReviewNoOptions": "Não foi possível carregar as respostas."
+  "academicReviewNoOptions": "Não foi possível carregar as respostas.",
+  "academicAiRegenerateTitle": "Escrever de novo?",
+  "academicAiRegenerateMessage": "A IA vai escrever outra versão que substitui a que vês agora.",
+  "academicSubjectArchiveTitle": "Arquivar a disciplina?",
+  "academicSubjectArchiveMessage": "Deixa de aparecer nas tuas listas e no planeador. Os apontamentos e entregas ficam guardados e podes recuperá-la quando quiseres em «Arquivadas»."
 }

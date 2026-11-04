@@ -351,6 +351,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
                 TextButton(onPressed: _goToday, child: Text(l10n.plannerToday)),
               _SavePlanButton(
                 saving: state.savingPlan,
+                closed: state.weekClosed ?? false,
                 enabled: state.status == CalendarStatus.ready,
                 compact: _compactBar(context),
                 onSave: _savePlan,
@@ -521,12 +522,17 @@ class _WeekNavigator extends StatelessWidget {
 class _SavePlanButton extends StatelessWidget {
   const _SavePlanButton({
     required this.saving,
+    required this.closed,
     required this.enabled,
     required this.compact,
     required this.onSave,
   });
 
   final bool saving;
+
+  /// Ya se cerró esta semana: se enseña «Semana cerrada» (sin botón) y, al
+  /// tocarlo, qué significa. Los bloques nuevos se guardan solos igual.
+  final bool closed;
   final bool enabled;
 
   /// Con poco ancho, solo el icono (con su nombre como tooltip), como «Hoy».
@@ -551,6 +557,22 @@ class _SavePlanButton extends StatelessWidget {
             ),
           ),
         ),
+      );
+    }
+    if (closed) {
+      final l10n = context.localizations;
+      void explain() => context.showSnack(l10n.plannerWeekClosedHint);
+      if (compact) {
+        return IconButton(
+          tooltip: l10n.plannerWeekClosed,
+          icon: Icon(Icons.task_alt_rounded, color: context.palette.success),
+          onPressed: explain,
+        );
+      }
+      return TextButton.icon(
+        onPressed: explain,
+        icon: Icon(Icons.task_alt_rounded, color: context.palette.success),
+        label: Text(l10n.plannerWeekClosed),
       );
     }
     if (compact) {

@@ -93,9 +93,15 @@ Todas están en `CognitiveLoad` como constantes con nombre. Los tests de `NeuroF
 
 Solo orienta («≈ 45 min» en el próximo día y el detalle del día; «quedan ≈ 12 min» en la sesión). La duración que cuenta para la carga (esfuerzo × minutos), las kcal y la XP es siempre la **real activa**: de empezar a terminar **menos las pausas** (`TrainingSession.activeSeconds`, ADR 0030). Decisión del propietario: una llamada o una máquina ocupada no suman carga ni calorías. El cronómetro de cada serie (`segundos_activos`) es opcional e informativo: no cambia la carga.
 
+**Series de calentamiento (ADR 0031):** no cuentan como trabajo. No suman volumen ni récords, no cuentan en el progreso del día («4 de 12 series») y no entran en la propuesta de peso ni en las sugerencias tras la sesión. Tampoco suben las kcal (salen de las series planificadas, `SessionCalories`) ni la carga (esfuerzo × tiempo activo).
+
 - Por ejercicio: si ya se hizo, su duración real de la última vez (`realDurationSeconds`, que guarda la sesión en vivo). Si no: `series × (trabajo + descanso)`, con trabajo por serie = duración objetivo (cardio), o segundos de aguante (isométrico), o `3 s × repeticiones` (tempo medio de una repetición controlada). El descanso tras la última serie cubre el cambio al siguiente ejercicio.
 - Por día: suma de sus ejercicios, en minutos redondeados hacia arriba. Va en `estimatedMinutes` del día de rutina, del próximo día (`/training/...pending`) y del próximo entreno de Inicio; cada ejercicio planificado lleva `estimatedSeconds`.
 - «Quedan»: la app suma `estimatedSeconds × series sin apuntar / series` de cada ejercicio (proporción de lo que manda el servidor; no hay regla en el cliente).
+
+## «Hasta no poder más» (ADR 0031)
+
+Si alguna serie de trabajo de un ejercicio se marcó «hasta no poder más» (`al_fallo`), `ProgressionCalculator` **mantiene la carga** de ese ejercicio en vez de subirla, aunque el esfuerzo de la sesión fuera bajo (RPE ≤ 7): ya llegó al límite. Las repeticiones fallidas (bajar 5 % por fallo, entre 70 % y 95 %) y el esfuerzo máximo (RPE ≥ 9,5 → −15 %) siguen mandando antes. Vale igual para la propuesta de carga en la sesión y para las sugerencias tras la sesión.
 
 ## Sugerencias tras la sesión: qué cambia y por qué
 

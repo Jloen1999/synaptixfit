@@ -5,6 +5,17 @@ import com.synaptixfit.application.port.input.training.GetExerciseUseCase;
 import com.synaptixfit.application.port.input.training.ListExerciseAlternativesUseCase;
 import com.synaptixfit.application.port.input.training.SearchExercisesUseCase;
 import com.synaptixfit.application.port.input.training.SuggestSessionBookendsUseCase;
+import com.synaptixfit.application.port.input.training.GetExerciseNoteUseCase;
+import com.synaptixfit.application.port.input.training.GetExerciseTipsUseCase;
+import com.synaptixfit.application.port.input.training.SaveExerciseNoteUseCase;
+import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseNoteRequest;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseNoteResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.ExerciseDtos.ExerciseTipsResponse;
+import com.synaptixfit.infrastructure.i18n.RequestLanguage;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.training.Difficulty;
 import com.synaptixfit.domain.model.training.ExerciseCategory;
@@ -35,15 +46,23 @@ public class ExerciseController {
     private final GetExerciseFilterOptionsUseCase filters;
     private final ListExerciseAlternativesUseCase alternatives;
     private final SuggestSessionBookendsUseCase bookends;
+    private final GetExerciseTipsUseCase tips;
+    private final GetExerciseNoteUseCase getNote;
+    private final SaveExerciseNoteUseCase saveNote;
 
     public ExerciseController(SearchExercisesUseCase search, GetExerciseUseCase get,
                               GetExerciseFilterOptionsUseCase filters,
-                              ListExerciseAlternativesUseCase alternatives, SuggestSessionBookendsUseCase bookends) {
+                              ListExerciseAlternativesUseCase alternatives, SuggestSessionBookendsUseCase bookends,
+                              GetExerciseTipsUseCase tips, GetExerciseNoteUseCase getNote,
+                              SaveExerciseNoteUseCase saveNote) {
         this.search = search;
         this.get = get;
         this.filters = filters;
         this.alternatives = alternatives;
         this.bookends = bookends;
+        this.tips = tips;
+        this.getNote = getNote;
+        this.saveNote = saveNote;
     }
 
     /** Calentamiento (movilidad) y vuelta a la calma (estiramientos) para los ejercicios indicados. */
@@ -81,5 +100,24 @@ public class ExerciseController {
     @GetMapping("/{exerciseId}/alternatives")
     public List<ExerciseResponse> alternatives(@PathVariable UUID exerciseId) {
         return alternatives.alternatives(exerciseId).stream().map(ExerciseResponse::from).toList();
+    }
+
+    /** «Las claves» y «Errores comunes» en el idioma de la app (o en español); listas vacías si no hay. */
+    @GetMapping("/{exerciseId}/tips")
+    public ExerciseTipsResponse tips(@PathVariable UUID exerciseId) {
+        return ExerciseTipsResponse.from(tips.tips(exerciseId, RequestLanguage.code()));
+    }
+
+    /** Nota propia sobre el ejercicio; {@code text} nulo si no hay. */
+    @GetMapping("/{exerciseId}/note")
+    public ExerciseNoteResponse note(@CurrentUserId UUID userId, @PathVariable UUID exerciseId) {
+        return ExerciseNoteResponse.from(getNote.note(userId, exerciseId));
+    }
+
+    /** Guarda la nota propia; un texto vacío la borra. */
+    @PutMapping("/{exerciseId}/note")
+    public ExerciseNoteResponse saveNote(@CurrentUserId UUID userId, @PathVariable UUID exerciseId,
+                                         @Valid @RequestBody ExerciseNoteRequest request) {
+        return ExerciseNoteResponse.from(saveNote.save(userId, exerciseId, request.text()));
     }
 }

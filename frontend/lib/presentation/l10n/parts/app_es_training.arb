@@ -2125,5 +2125,79 @@
         "type": "int"
       }
     }
+  },
+  "trainingGuideKeyPoints": "Las claves",
+  "trainingGuideMistakes": "Errores comunes",
+  "trainingNoteTitle": "Tu nota",
+  "trainingNoteHint": "Apunta lo que quieras recordar: cómo ajustaste la máquina, qué agarre te va mejor… Solo la ves tú.",
+  "trainingNoteAdd": "Añadir una nota",
+  "trainingNoteEdit": "Editar nota",
+  "trainingNoteFieldLabel": "Tu nota sobre este ejercicio",
+  "trainingNoteFieldHint": "Ej.: asiento en el 4, agarre ancho",
+  "trainingNoteSave": "Guardar nota",
+  "trainingNoteDelete": "Borrar nota",
+  "trainingNoteSaved": "Nota guardada",
+  "trainingNoteDeleted": "Nota borrada",
+  "trainingNoteLoadError": "No se pudo cargar tu nota.",
+  "trainingWorksLabel": "Trabaja",
+  "trainingEquipmentLabel": "Material",
+  "trainingSwapTodayAction": "Cambiar solo hoy",
+  "trainingSwapTodayTitle": "Cambiar solo hoy",
+  "trainingSwapTodayHint": "¿Máquina ocupada o prefieres otro? Elige uno que trabaje lo mismo que «{name}». Tu rutina no cambia: es solo para esta sesión.",
+  "@trainingSwapTodayHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSwapTodayEmpty": "No hay otro parecido en el catálogo. Puedes seguir con el de tu rutina.",
+  "trainingSwapTodayUse": "Usar hoy",
+  "trainingSwapTodayNote": "Solo hoy, en lugar de «{original}». Tu rutina no cambia.",
+  "@trainingSwapTodayNote": {
+    "placeholders": {
+      "original": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingSwapTodayUndo": "Volver al de la rutina",
+  "trainingSwapTodayDone": "Hoy haces «{name}». Tu rutina no cambia.",
+  "@trainingSwapTodayDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingWarmupSetsTitle": "Calentamiento",
+  "trainingWarmupSetsHint": "Series suaves para preparar el cuerpo antes de las de verdad. No cuentan como series ni para proponerte peso.",
+  "trainingWarmupSetNumber": "Calentamiento {set}",
+  "@trainingWarmupSetNumber": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWarmupAdd": "Añadir serie de calentamiento",
+  "trainingToFailure": "Hasta no poder más",
+  "trainingToFailureHint": "No podías hacer ni una repetición más. Así la próxima vez no te propondremos subir el peso.",
+  "trainingToFailureMark": "Hasta no poder más",
+  "trainingFreeLogSet": "Apuntar serie {set}",
+  "@trainingFreeLogSet": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingFreeSetsCount": "{count, plural, =0{Aún sin series} =1{1 serie apuntada} other{{count} series apuntadas}}",
+  "@trainingFreeSetsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

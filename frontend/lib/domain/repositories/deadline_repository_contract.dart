@@ -14,6 +14,9 @@ abstract interface class DeadlineRepositoryContract {
     int size = 20,
   });
 
+  /// Una entrega por su id (para abrirla desde su aviso).
+  Future<AppResult<Deadline>> getDeadline(String id);
+
   Future<AppResult<Deadline>> createDeadline(DeadlineDraft draft);
 
   /// Sustituye los datos; si [DeadlineDraft.subjectId] es nulo quita la asignatura.

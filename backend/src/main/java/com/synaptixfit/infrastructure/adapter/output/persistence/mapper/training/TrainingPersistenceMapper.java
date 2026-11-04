@@ -41,7 +41,8 @@ public final class TrainingPersistenceMapper {
     public static SessionSet toDomain(SessionSetEntity e) {
         return new SessionSet(e.getId(), e.getSeleccionId(), Math.max(1, e.getNumeroSerie()),
                 e.getRepeticionesRealizadas(), e.getPesoKg(), e.isCompletada(), Math.max(0, e.getFailedReps()),
-                e.getDuracionSegundos(), e.getDistanciaMetros(), e.getEjercicioId(), e.getSegundosActivos());
+                e.getDuracionSegundos(), e.getDistanciaMetros(), e.getEjercicioId(), e.getSegundosActivos(),
+                e.isCalentamiento(), e.isAlFallo());
     }
 
     public static void copy(TrainingSession s, TrainingSessionEntity e) {
@@ -72,6 +73,8 @@ public final class TrainingPersistenceMapper {
         e.setDuracionSegundos(s.durationSeconds());
         e.setDistanciaMetros(s.distanceMeters());
         e.setSegundosActivos(s.activeSeconds());
+        e.setCalentamiento(s.warmup());
+        e.setAlFallo(s.toFailure());
         // Una serie ya guardada conserva su ejercicio aunque su hueco desaparezca de la rutina.
         if (s.exerciseId() != null) {
             e.setEjercicioId(s.exerciseId());

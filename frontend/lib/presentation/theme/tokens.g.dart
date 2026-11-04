@@ -158,6 +158,7 @@ abstract final class TokensSize {
   static const double pomodoroRing = 260;
   static const double liveDot = 8;
   static const double stepBadge = 28;
+  static const double guideSkeleton = 120;
 }
 
 abstract final class TokensOpacity {

@@ -31,4 +31,10 @@ abstract interface class ReminderTexts {
   String followUpTitle(ReminderKind kind);
 
   String followUpBody(ReminderKind kind, String? name);
+
+  /// Botón «Empezar» de la notificación de un bloque (estudiar o entrenar).
+  String startAction(ReminderKind kind);
+
+  /// Botón «Posponer 10 min» de la notificación.
+  String snoozeAction(int minutes);
 }

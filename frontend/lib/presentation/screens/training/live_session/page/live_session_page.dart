@@ -24,6 +24,8 @@ import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
 import '../../widgets/set_fields.dart';
+import '../../../../../domain/models/training/live_session_draft.dart';
+import '../../exercise_alternatives/page/exercise_alternatives_sheet.dart';
 import '../bloc/live_session_bloc.dart';
 import 'live_focus_view.dart';
 import 'set_record_sheet.dart';
@@ -353,6 +355,78 @@ class _LiveViewState extends State<_LiveView> {
     _onLog(e, set, state.valuesFor(e, set, _drafts));
   }
 
+  /// «Cambiar solo hoy»: alternativas del ejercicio de la rutina; el elegido
+  /// se usa en esta sesión y la rutina no cambia (ADR 0031).
+  Future<void> _swap(LiveSessionState state, PlannedExercise e) async {
+    final original = state.originals[e.id] ?? e;
+    final bloc = _bloc;
+    final chosen = await showExerciseAlternativesSheet(
+      context,
+      exerciseId: original.exerciseId,
+      exerciseName: original.exerciseName,
+      todayOnly: true,
+    );
+    if (chosen == null || !mounted || bloc.isClosed) return;
+    bloc.add(
+      LiveSessionEvent.exerciseSwapped(
+        e.id,
+        ExerciseSwap(
+          exerciseId: chosen.id,
+          name: chosen.name,
+          gifUrl: chosen.gifUrl,
+          previewUrl: chosen.previewUrl,
+        ),
+      ),
+    );
+    context.showSnack(context.localizations.trainingSwapTodayDone(chosen.name));
+  }
+
+  /// Apunta (o corrige) una serie de calentamiento: propone lo de la anterior
+  /// de calentamiento; no cuenta como serie de trabajo.
+  Future<void> _warmup(
+    LiveSessionState state,
+    PlannedExercise e,
+    int set,
+    SessionSet? existing,
+  ) async {
+    final previous = state.session
+        ?.warmupSetsFor(e.id)
+        .where((w) => w.setNumber == set - 1)
+        .firstOrNull;
+    final result = await showSetRecordSheet(
+      context,
+      title: e.exerciseName,
+      existingSetId: existing?.id,
+      initial: SetRecord(
+        plannedExerciseId: e.id,
+        setNumber: set,
+        repsDone: existing?.repsDone ?? previous?.repsDone ?? e.parameters.reps,
+        weightKg: existing?.weightKg ?? previous?.weightKg,
+        warmup: true,
+      ),
+    );
+    if (!mounted || result == null) return;
+    switch (result) {
+      case SetSheetSave(:final record):
+        _bloc.add(LiveSessionEvent.setRecorded(record));
+      case SetSheetDelete(:final setId):
+        _bloc.add(LiveSessionEvent.setDeleted(setId));
+    }
+  }
+
+  /// Sesión libre: apuntar la serie [set] (si se cronometraba, el bloc le
+  /// pone su tiempo).
+  Future<void> _logFree(LiveSessionState state, int set) {
+    final sets = state.session?.setsFor(null) ?? const <SessionSet>[];
+    return _editSet(
+      title: context.localizations.trainingFreeSets,
+      plannedExerciseId: null,
+      setNumber: set,
+      parameters: null,
+      previous: sets.lastOrNull,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -515,6 +589,12 @@ class _LiveViewState extends State<_LiveView> {
                             unawaited(onLoggedSetTap(context, e, set)),
                         onExtraSet: (e, set) => _onExtraSet(state, e, set),
                         onLoadToggled: _onLoadToggled,
+                        onSwap: (e) => unawaited(_swap(state, e)),
+                        onUnswap: (e) => _bloc.add(
+                          LiveSessionEvent.exerciseSwapped(e.id, null),
+                        ),
+                        onWarmup: (e, set, existing) =>
+                            unawaited(_warmup(state, e, set, existing)),
                         header: [
                           // Sin conexión: las series se guardan en el teléfono.
                           if (state.pendingSets.isNotEmpty) ...[
@@ -578,6 +658,7 @@ class _LiveViewState extends State<_LiveView> {
                       onFinish: () => _finish(state),
                       onDone: (e, n) => _quickLog(state, e, n),
                       onEdit: (e, n) => _editNext(state, e, n),
+                      onFreeLog: (n) => unawaited(_logFree(state, n)),
                     )
                   : LiveSessionBottomBar(
                       state: state,
@@ -712,12 +793,16 @@ class _BottomBar extends StatefulWidget {
     required this.onFinish,
     required this.onDone,
     required this.onEdit,
+    required this.onFreeLog,
   });
 
   final LiveSessionState state;
   final VoidCallback onFinish;
   final void Function(PlannedExercise exercise, int setNumber) onDone;
   final void Function(PlannedExercise exercise, int setNumber) onEdit;
+
+  /// Sesión libre: apuntar la serie N (con su tiempo si se cronometraba).
+  final void Function(int setNumber) onFreeLog;
 
   @override
   State<_BottomBar> createState() => _BottomBarState();
@@ -757,6 +842,95 @@ class _BottomBarState extends State<_BottomBar> {
     super.dispose();
   }
 
+  /// Sesión libre: el mismo cronómetro por serie que en una rutina (opcional:
+  /// «Apuntar serie N» siempre está a mano) y «Finalizar» aparte.
+  Widget _freeControls(BuildContext context, VoidCallback? finish) {
+    final l10n = context.localizations;
+    final bloc = context.read<LiveSessionBloc>();
+    final sets = state.session?.setsFor(null) ?? const <SessionSet>[];
+    final next = sets.fold(0, (m, x) => math.max(m, x.setNumber)) + 1;
+    final timed = state.timerSet == next && state.timerExerciseId == null;
+    final running = timed && state.timerSince != null;
+    void resume() => bloc.add(const LiveSessionEvent.resumeRequested());
+    final Widget timer = state.paused
+        ? AppSecondaryButton(
+            label: l10n.trainingResume,
+            icon: const Icon(Icons.play_arrow_rounded),
+            onPressed: resume,
+          )
+        : !timed
+        ? AppSecondaryButton(
+            label: l10n.trainingSetTimerStart,
+            icon: const Icon(Icons.play_arrow_rounded),
+            onPressed: next > 50
+                ? null
+                : () => bloc.add(LiveSessionEvent.setTimerStarted(null, next)),
+          )
+        : running
+        ? AppSecondaryButton(
+            label: l10n.trainingPause,
+            icon: const Icon(Icons.pause_rounded),
+            onPressed: () => bloc.add(const LiveSessionEvent.pauseRequested()),
+          )
+        : AppSecondaryButton(
+            label: l10n.trainingResume,
+            icon: const Icon(Icons.play_arrow_rounded),
+            onPressed: resume,
+          );
+    final log = AppPrimaryButton(
+      label: timed ? l10n.trainingSetDoneShort : l10n.trainingFreeLogSet(next),
+      icon: Icons.check_rounded,
+      focusNode: _doneFocus,
+      onPressed: state.saving || next > 50 ? null : () => widget.onFreeLog(next),
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                timed
+                    ? (running
+                          ? l10n.trainingSetRowRunning(
+                              formatClock(state.timerSeconds),
+                            )
+                          : l10n.trainingSetRowPaused)
+                    : l10n.trainingFreeSetsCount(sets.length),
+                semanticsLabel: timed
+                    ? (running
+                          ? l10n.trainingSetTimerRunning(next)
+                          : l10n.trainingSetTimerPaused(next))
+                    : null,
+                style: context.textStyles.labelLarge,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: finish,
+              focusNode: _finishFocus,
+              icon: const Icon(Icons.flag_outlined),
+              label: Text(l10n.trainingFinishAction),
+            ),
+          ],
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        if (context.largeText) ...[
+          log,
+          const SizedBox(height: TokensSpacing.s),
+          timer,
+        ] else
+          Row(
+            children: [
+              Expanded(child: timer),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(flex: 2, child: log),
+            ],
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -781,7 +955,9 @@ class _BottomBarState extends State<_BottomBar> {
             ),
           );
     final Widget content;
-    if (target == null) {
+    if (state.isFree) {
+      content = _freeControls(context, finish);
+    } else if (target == null) {
       content = Row(
         children: [
           if (progress != null) Expanded(child: progress) else const Spacer(),

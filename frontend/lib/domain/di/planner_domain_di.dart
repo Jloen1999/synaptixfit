@@ -16,6 +16,7 @@ import '../use_cases/planner/delete_block_use_case.dart';
 import '../use_cases/planner/set_block_completion_use_case.dart';
 import '../use_cases/planner/distribute_routine_use_case.dart';
 import '../use_cases/planner/get_week_conflicts_use_case.dart';
+import '../use_cases/planner/get_week_closed_use_case.dart';
 import '../use_cases/planner/save_week_plan_use_case.dart';
 import '../use_cases/planner/get_weekly_load_use_case.dart';
 import '../use_cases/planner/update_weekly_wellbeing_use_case.dart';
@@ -33,6 +34,7 @@ import '../use_cases/planner/export_ics_use_case.dart';
 import '../use_cases/planner/get_planner_subjects_use_case.dart';
 import '../use_cases/planner/get_planner_routines_use_case.dart';
 import '../use_cases/planner/get_planner_challenges_use_case.dart';
+import '../use_cases/planner/get_deadline_use_case.dart';
 import '../use_cases/planner/get_deadlines_use_case.dart';
 import '../use_cases/planner/create_deadline_use_case.dart';
 import '../use_cases/planner/update_deadline_use_case.dart';
@@ -83,6 +85,9 @@ void registerPlannerDomain(GetIt getIt) {
     )
     ..registerLazySingleton<SaveWeekPlanUseCaseContract>(
       () => SaveWeekPlanUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetWeekClosedUseCaseContract>(
+      () => GetWeekClosedUseCase(getIt()),
     )
     ..registerLazySingleton<GetWeeklyLoadUseCaseContract>(
       () => GetWeeklyLoadUseCase(getIt()),
@@ -143,6 +148,9 @@ void registerPlannerDomain(GetIt getIt) {
     )
     ..registerLazySingleton<GetDeadlinesUseCaseContract>(
       () => GetDeadlinesUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetDeadlineUseCaseContract>(
+      () => GetDeadlineUseCase(getIt()),
     )
     ..registerLazySingleton<CreateDeadlineUseCaseContract>(
       () => CreateDeadlineUseCase(getIt()),

@@ -1,5 +1,8 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.training.dto;
 
+import com.synaptixfit.domain.model.training.ExerciseNote;
+import com.synaptixfit.domain.model.training.ExerciseTips;
+import java.util.Optional;
 import com.synaptixfit.domain.model.training.CatalogItem;
 import com.synaptixfit.domain.model.training.CatalogTranslations;
 import com.synaptixfit.domain.model.training.Difficulty;
@@ -147,5 +150,24 @@ public final class ExerciseDtos {
             return new SessionBookendsResponse(b.warmUp().stream().map(ExerciseResponse::from).toList(),
                     b.coolDown().stream().map(ExerciseResponse::from).toList());
         }
+    }
+
+    /** «Las claves» y «Errores comunes» de un ejercicio (ADR 0031). */
+    public record ExerciseTipsResponse(List<String> keyPoints, List<String> commonMistakes) {
+        public static ExerciseTipsResponse from(ExerciseTips t) {
+            return new ExerciseTipsResponse(t.keyPoints(), t.commonMistakes());
+        }
+    }
+
+    /** Nota propia sobre un ejercicio; {@code text} y {@code updatedAt} nulos si no hay. */
+    public record ExerciseNoteResponse(String text, Instant updatedAt) {
+        public static ExerciseNoteResponse from(Optional<ExerciseNote> note) {
+            return note.map(n -> new ExerciseNoteResponse(n.text(), n.updatedAt()))
+                    .orElse(new ExerciseNoteResponse(null, null));
+        }
+    }
+
+    /** Guardar la nota propia: hasta 500 caracteres; vacío o nulo la borra. */
+    public record ExerciseNoteRequest(@Size(max = ExerciseNote.MAX_LENGTH) String text) {
     }
 }

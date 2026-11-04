@@ -9,6 +9,7 @@ import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/use_cases/account/get_account_use_case.dart';
 import '../../../../../domain/use_cases/planner/create_deadline_use_case.dart';
 import '../../../../../domain/use_cases/planner/delete_deadline_use_case.dart';
+import '../../../../../domain/use_cases/planner/get_deadline_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_deadlines_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_planner_subjects_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_deadline_completion_use_case.dart';
@@ -22,6 +23,7 @@ part 'deadlines_state.dart';
 class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
   DeadlinesBloc({
     required this._getDeadlines,
+    required this._getDeadline,
     required this._getSubjects,
     required this._createDeadline,
     required this._updateDeadline,
@@ -42,6 +44,7 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
   }
 
   final GetDeadlinesUseCaseContract _getDeadlines;
+  final GetDeadlineUseCaseContract _getDeadline;
   final GetPlannerSubjectsUseCaseContract _getSubjects;
   final CreateDeadlineUseCaseContract _createDeadline;
   final UpdateDeadlineUseCaseContract _updateDeadline;
@@ -60,7 +63,12 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
     Emitter<DeadlinesState> emit,
   ) async {
     final subjects = await _getSubjects();
-    emit(state.copyWith(subjects: subjects.valueOrNull ?? const []));
+    emit(
+      state.copyWith(
+        subjects: subjects.valueOrNull ?? const [],
+        focusId: event.focusId,
+      ),
+    );
     await _reload(emit, silent: false);
   }
 
@@ -91,16 +99,34 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
               : state.copyWith(status: DeadlinesStatus.failure, error: error),
         );
       case Success(:final value):
+        // Primero se resuelve la entrega del aviso: el estado se lee después
+        // (mientras tanto pudo cambiar un filtro).
+        final items = await _withFocusFirst(value.items);
+        if (pendingOnly != state.pendingOnly || subjectId != state.subjectId) {
+          return;
+        }
         emit(
           state.copyWith(
             status: DeadlinesStatus.ready,
-            items: value.items,
+            items: items,
             page: value.page,
             hasMore: value.hasMore,
             error: null,
           ),
         );
     }
+  }
+
+  /// La entrega del aviso va la primera; si no está entre las cargadas (otra
+  /// página o ya entregada), se pide. Si ya no existe, la lista queda igual.
+  Future<List<Deadline>> _withFocusFirst(List<Deadline> items) async {
+    final id = state.focusId;
+    if (id == null) return items;
+    final focused =
+        items.where((d) => d.id == id).firstOrNull ??
+        (await _getDeadline(id)).valueOrNull;
+    if (focused == null) return items;
+    return [focused, ...items.where((d) => d.id != id)];
   }
 
   Future<void> _onPendingFilter(

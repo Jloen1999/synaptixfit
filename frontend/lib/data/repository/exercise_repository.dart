@@ -1,10 +1,12 @@
 import '../../domain/models/result/app_result.dart';
 import '../../domain/models/training/exercise.dart';
+import '../../domain/models/training/exercise_guide.dart';
 import '../../domain/models/training/training_page.dart';
 import '../../domain/repositories/exercise_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
 import '../remote_data_source/training/exercise_remote_data_source.dart';
 
+/// Implementa [ExerciseRepositoryContract] con [ExerciseRemoteDataSource].
 class ExerciseRepository implements ExerciseRepositoryContract {
   ExerciseRepository(this._remote);
 
@@ -54,4 +56,16 @@ class ExerciseRepository implements ExerciseRepositoryContract {
       RepositoryErrorHandler.guard(
         () async => (await _remote.filters()).toDomain(),
       );
+
+  @override
+  Future<AppResult<ExerciseTips>> getTips(String exerciseId) =>
+      RepositoryErrorHandler.guard(() => _remote.tips(exerciseId));
+
+  @override
+  Future<AppResult<ExerciseNote?>> getNote(String exerciseId) =>
+      RepositoryErrorHandler.guard(() => _remote.note(exerciseId));
+
+  @override
+  Future<AppResult<ExerciseNote?>> saveNote(String exerciseId, String text) =>
+      RepositoryErrorHandler.guard(() => _remote.saveNote(exerciseId, text));
 }

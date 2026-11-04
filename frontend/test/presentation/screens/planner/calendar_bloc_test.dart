@@ -19,6 +19,8 @@ import 'package:synaptixfit/domain/use_cases/planner/set_block_completion_use_ca
 import 'package:synaptixfit/presentation/screens/planner/calendar/bloc/calendar_bloc.dart';
 
 import 'planner_fixtures.dart';
+import 'package:synaptixfit/domain/use_cases/planner/get_week_closed_use_case.dart';
+import 'package:synaptixfit/domain/models/result/app_result.dart';
 
 class _Blocks extends Mock implements GetWeekBlocksUseCaseContract {}
 
@@ -77,6 +79,7 @@ void main() {
     reschedule: reschedule,
     setCompletion: setCompletion,
     savePlan: savePlan,
+    getWeekClosed: _WeekOpen(),
     getAccount: getAccount,
     deleteBlock: deleteBlock,
     rescheduleNext: rescheduleNext,
@@ -505,4 +508,10 @@ void main() {
       const CalendarNotice.failure(AppError.business('BLOCK_NO_FREE_SLOT')),
     ),
   );
+}
+
+/// La semana aún no está cerrada (el botón «Cerrar semana» se ve).
+class _WeekOpen implements GetWeekClosedUseCaseContract {
+  @override
+  Future<AppResult<bool>> call(DateTime weekStart) async => const Success(false);
 }

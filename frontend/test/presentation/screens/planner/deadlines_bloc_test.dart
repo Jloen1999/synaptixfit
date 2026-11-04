@@ -15,6 +15,8 @@ import 'package:synaptixfit/domain/use_cases/planner/update_deadline_use_case.da
 import 'package:synaptixfit/presentation/screens/planner/deadlines/bloc/deadlines_bloc.dart';
 
 import 'planner_fixtures.dart';
+import 'package:synaptixfit/domain/use_cases/planner/get_deadline_use_case.dart';
+import 'package:synaptixfit/domain/models/result/app_result.dart';
 
 class _Get extends Mock implements GetDeadlinesUseCaseContract {}
 
@@ -48,6 +50,7 @@ void main() {
 
   DeadlinesBloc build() => DeadlinesBloc(
     getDeadlines: getDeadlines,
+    getDeadline: _NoDeadline(),
     getSubjects: getSubjects,
     createDeadline: create,
     updateDeadline: update,
@@ -228,4 +231,11 @@ void main() {
       isA<DeadlinesState>().having((s) => s.hasMore, 'hasMore', isTrue),
     ],
   );
+}
+
+/// Sin entrega del aviso: estas pruebas no abren ninguna concreta.
+class _NoDeadline implements GetDeadlineUseCaseContract {
+  @override
+  Future<AppResult<Deadline>> call(String id) async =>
+      const Failure(AppError.notFound());
 }

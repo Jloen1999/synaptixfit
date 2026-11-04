@@ -43,6 +43,15 @@ public class SessionSetEntity {
 
     @Column(name = "ejercicio_id")
     private UUID ejercicioId;
+    @Column(name = "calentamiento")
+    private boolean calentamiento;
+    @Column(name = "al_fallo")
+    private boolean alFallo;
+
+    public boolean isCalentamiento() { return calentamiento; }
+    public void setCalentamiento(boolean v) { this.calentamiento = v; }
+    public boolean isAlFallo() { return alFallo; }
+    public void setAlFallo(boolean v) { this.alFallo = v; }
 
 
     public UUID getId() { return id; }

@@ -13,10 +13,14 @@ import '../../widgets/training_labels.dart';
 import '../bloc/exercise_alternatives_bloc.dart';
 
 /// Abre «Cambiar ejercicio» y devuelve el elegido (o `null` si se cierra).
+/// Con [todayOnly] (desde la sesión en vivo) es «Cambiar solo hoy»: explica
+/// que la rutina no cambia y cada fila dice «Usar hoy». Ahí no se ofrece el
+/// catálogo completo: es una ruta de pestaña y no se apila sobre la sesión.
 Future<Exercise?> showExerciseAlternativesSheet(
   BuildContext context, {
   required String exerciseId,
   required String exerciseName,
+  bool todayOnly = false,
 }) => showModalBottomSheet<Exercise>(
   context: context,
   showDragHandle: true,
@@ -28,6 +32,7 @@ Future<Exercise?> showExerciseAlternativesSheet(
     child: _AlternativesView(
       exerciseId: exerciseId,
       exerciseName: exerciseName,
+      todayOnly: todayOnly,
     ),
   ),
 );
@@ -36,10 +41,12 @@ class _AlternativesView extends StatelessWidget {
   const _AlternativesView({
     required this.exerciseId,
     required this.exerciseName,
+    required this.todayOnly,
   });
 
   final String exerciseId;
   final String exerciseName;
+  final bool todayOnly;
 
   /// Sin alternativas, se elige del catálogo completo: el usuario puede
   /// cambiar el ejercicio igualmente.
@@ -65,13 +72,17 @@ class _AlternativesView extends StatelessWidget {
                 Semantics(
                   header: true,
                   child: Text(
-                    l10n.trainingReplaceExercise,
+                    todayOnly
+                        ? l10n.trainingSwapTodayTitle
+                        : l10n.trainingReplaceExercise,
                     style: context.textStyles.titleLarge,
                   ),
                 ),
                 const SizedBox(height: TokensSpacing.xs),
                 Text(
-                  l10n.trainingReplaceHint(exerciseName),
+                  todayOnly
+                      ? l10n.trainingSwapTodayHint(exerciseName)
+                      : l10n.trainingReplaceHint(exerciseName),
                   style: context.textStyles.bodyMedium?.copyWith(
                     color: context.colors.onSurfaceVariant,
                   ),
@@ -102,11 +113,15 @@ class _AlternativesView extends StatelessWidget {
                       return AppEmptyState(
                         icon: Icons.swap_horiz_rounded,
                         title: l10n.trainingReplaceEmpty,
-                        message: l10n.trainingReplaceEmptyMessage,
-                        action: AppSecondaryButton(
-                          label: l10n.trainingReplaceFromCatalog,
-                          onPressed: () => _pickFromCatalog(context),
-                        ),
+                        message: todayOnly
+                            ? l10n.trainingSwapTodayEmpty
+                            : l10n.trainingReplaceEmptyMessage,
+                        action: todayOnly
+                            ? null
+                            : AppSecondaryButton(
+                                label: l10n.trainingReplaceFromCatalog,
+                                onPressed: () => _pickFromCatalog(context),
+                              ),
                       );
                     }
                     return ListView.separated(
@@ -128,7 +143,15 @@ class _AlternativesView extends StatelessWidget {
                             ),
                             title: Text(e.name),
                             subtitle: Text(details.join(' · ')),
-                            trailing: const Icon(Icons.chevron_right_rounded),
+                            trailing: todayOnly
+                                ? Text(
+                                    l10n.trainingSwapTodayUse,
+                                    style: context.textStyles.labelLarge
+                                        ?.copyWith(
+                                          color: context.colors.primary,
+                                        ),
+                                  )
+                                : const Icon(Icons.chevron_right_rounded),
                             onTap: () => Navigator.of(context).pop(e),
                           ),
                         );

@@ -82,11 +82,22 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
                 IconButton(
                   tooltip: l10n.academicAiRegenerate,
                   icon: const Icon(Icons.refresh_rounded),
+                  // Se explica antes: la versión actual se sustituye.
                   onPressed: state.regenerating
                       ? null
-                      : () => context.read<AiDocumentBloc>().add(
-                          const AiDocumentEvent.regenerated(),
-                        ),
+                      : () async {
+                          final bloc = context.read<AiDocumentBloc>();
+                          final ok = await showConfirmDialog(
+                            context,
+                            title: l10n.academicAiRegenerateTitle,
+                            message: l10n.academicAiRegenerateMessage,
+                            confirmLabel: l10n.academicAiRegenerate,
+                            destructive: false,
+                          );
+                          if (ok && !bloc.isClosed) {
+                            bloc.add(const AiDocumentEvent.regenerated());
+                          }
+                        },
                 ),
             ],
           ),

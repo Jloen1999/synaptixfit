@@ -18,6 +18,10 @@ abstract class CalendarState with _$CalendarState {
     WeekBalance? balance,
     AppError? error,
     @Default(false) bool savingPlan,
+
+    /// La semana ya se cerró: en vez del botón se enseña «Semana cerrada».
+    /// Nulo mientras no se sabe (o si no se pudo saber: el botón sigue).
+    bool? weekClosed,
     @Default(<String>{}) Set<String> busyBlockIds,
 
     /// Aviso puntual para la página; [noticeId] cambia en cada aviso nuevo.

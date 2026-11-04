@@ -7,7 +7,9 @@ part 'session.freezed.dart';
 
 /// Serie registrada en una sesión. Según cómo se mida el ejercicio lleva
 /// repeticiones y peso, segundos ([durationSeconds]) o metros
-/// ([distanceMeters]).
+/// ([distanceMeters]). ADR 0031: [warmup] marca una serie de calentamiento
+/// (numeración propia, no cuenta como trabajo) y [toFailure] una hecha hasta
+/// no poder más.
 @freezed
 abstract class SessionSet with _$SessionSet {
   const factory SessionSet({
@@ -28,6 +30,8 @@ abstract class SessionSet with _$SessionSet {
     /// Segundos que marcó el cronómetro de la serie (sin sus pausas); nulo
     /// si se marcó sin usarlo (ADR 0030).
     int? activeSeconds,
+    @Default(false) bool warmup,
+    @Default(false) bool toFailure,
   }) = _SessionSet;
 }
 
@@ -52,6 +56,10 @@ abstract class TrainingSession with _$TrainingSession {
     /// cerradas: no cuentan como tiempo entrenado (ADR 0030).
     DateTime? pausedAt,
     @Default(0) int pausedSeconds,
+
+    /// Series de calentamiento (ADR 0031): aparte de [sets], que son solo las
+    /// de trabajo.
+    @Default(<SessionSet>[]) List<SessionSet> warmupSets,
   }) = _TrainingSession;
 
   const TrainingSession._();
@@ -73,6 +81,13 @@ abstract class TrainingSession with _$TrainingSession {
   List<SessionSet> setsFor(String? plannedExerciseId) =>
       sets.where((s) => s.plannedExerciseId == plannedExerciseId).toList()
         ..sort((a, b) => a.setNumber.compareTo(b.setNumber));
+
+  /// Series de calentamiento de un ejercicio planificado, ordenadas.
+  List<SessionSet> warmupSetsFor(String? plannedExerciseId) =>
+      warmupSets
+          .where((s) => s.plannedExerciseId == plannedExerciseId)
+          .toList()
+        ..sort((a, b) => a.setNumber.compareTo(b.setNumber));
 }
 
 /// Datos de una serie para registrarla.
@@ -90,6 +105,16 @@ abstract class SetRecord with _$SetRecord {
 
     /// Segundos del cronómetro de la serie, si se usó.
     int? activeSeconds,
+
+    /// Serie de calentamiento (numeración propia; no cuenta como trabajo).
+    @Default(false) bool warmup,
+
+    /// Hecha hasta no poder más: la próxima vez no se propone subir la carga.
+    @Default(false) bool toFailure,
+
+    /// Ejercicio que se hizo de verdad cuando se cambió solo para esta
+    /// sesión («Usar hoy»); nulo: el del hueco de la rutina.
+    String? exerciseId,
   }) = _SetRecord;
 }
 

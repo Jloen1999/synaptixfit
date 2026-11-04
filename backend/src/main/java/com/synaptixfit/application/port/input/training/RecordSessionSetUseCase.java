@@ -10,11 +10,22 @@ public interface RecordSessionSetUseCase {
 
     /**
      * Lo apuntado en la serie; tiempo y distancia, solo en ejercicios que se miden así (pueden ser nulos).
-     * {@code activeSeconds}: lo que marcó el cronómetro de la serie, si se usó.
+     * {@code activeSeconds}: lo que marcó el cronómetro de la serie, si se usó. ADR 0031: {@code warmup} la
+     * apunta como serie de calentamiento (numeración propia, no cuenta como trabajo); {@code toFailure}, que se
+     * hizo hasta no poder más; {@code exerciseId}, el ejercicio que se hizo de verdad cuando se cambió solo
+     * para esta sesión («Usar hoy»; nulo: el del hueco de la rutina).
      */
     record Command(UUID userId, UUID sessionId, UUID plannedExerciseId, int setNumber, Integer repsDone,
                    Double weightKg, boolean completed, int failedReps, Integer durationSeconds,
-                   Integer distanceMeters, Integer activeSeconds) {
+                   Integer distanceMeters, Integer activeSeconds, boolean warmup, boolean toFailure,
+                   UUID exerciseId) {
+
+        public Command(UUID userId, UUID sessionId, UUID plannedExerciseId, int setNumber, Integer repsDone,
+                       Double weightKg, boolean completed, int failedReps, Integer durationSeconds,
+                       Integer distanceMeters, Integer activeSeconds) {
+            this(userId, sessionId, plannedExerciseId, setNumber, repsDone, weightKg, completed, failedReps,
+                    durationSeconds, distanceMeters, activeSeconds, false, false, null);
+        }
 
         public Command(UUID userId, UUID sessionId, UUID plannedExerciseId, int setNumber, Integer repsDone,
                        Double weightKg, boolean completed, int failedReps, Integer durationSeconds,

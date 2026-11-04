@@ -449,7 +449,20 @@ class _Controls extends StatelessWidget {
       children: [
         IconButton.outlined(
           tooltip: l10n.plannerPomodoroReset,
-          onPressed: () => bloc.add(const PomodoroEvent.resetPressed()),
+          // Con el reloj en marcha o en pausa, empezar de cero pierde lo que
+          // se lleva: se pregunta antes.
+          onPressed: () async {
+            if (state.status != PomodoroStatus.idle) {
+              final ok = await showConfirmDialog(
+                context,
+                title: l10n.plannerPomodoroResetTitle,
+                message: l10n.plannerPomodoroResetMessage,
+                confirmLabel: l10n.plannerPomodoroReset,
+              );
+              if (!ok || bloc.isClosed) return;
+            }
+            bloc.add(const PomodoroEvent.resetPressed());
+          },
           icon: const Icon(Icons.restart_alt_rounded),
         ),
         const SizedBox(width: TokensSpacing.m),

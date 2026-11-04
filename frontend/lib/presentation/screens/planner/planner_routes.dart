@@ -14,6 +14,10 @@ abstract final class PlannerPaths {
   /// y `&block=<id>` para abrir ese bloque (desde la agenda o un aviso).
   static const root = '/planner';
   static const deadlines = '/planner/deadlines';
+
+  /// Entregas con [id] destacada arriba (desde su aviso).
+  static String deadline(String id) =>
+      Uri(path: deadlines, queryParameters: {'focus': id}).toString();
   static const pomodoro = '/planner/pomodoro';
 
   /// Pomodoro que empieza por una pausa corta («Descanso guiado»).
@@ -68,7 +72,8 @@ List<RouteBase> plannerRoutes() => [
     routes: [
       GoRoute(
         path: 'deadlines',
-        builder: (context, state) => const DeadlinesPage(),
+        builder: (context, state) =>
+            DeadlinesPage(focusId: state.uri.queryParameters['focus']),
       ),
       GoRoute(
         path: 'pomodoro',

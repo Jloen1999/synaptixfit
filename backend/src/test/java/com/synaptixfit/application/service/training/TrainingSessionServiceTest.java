@@ -1,5 +1,7 @@
 package com.synaptixfit.application.service.training;
 
+import com.synaptixfit.domain.model.training.Exercise;
+import com.synaptixfit.domain.exception.training.ExerciseNotFoundException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -77,6 +79,7 @@ class TrainingSessionServiceTest {
 
     private final TrainingFakes.Sessions sessions = new TrainingFakes.Sessions();
     private final TrainingFakes.Routines routines = new TrainingFakes.Routines();
+    private final TrainingFakes.Exercises exercises = new TrainingFakes.Exercises();
     private final TrainingFakes.Recommendations recommendations = new TrainingFakes.Recommendations();
     private final List<DomainEvent> events = new ArrayList<>();
     private final List<Integer> awarded = new ArrayList<>();
@@ -96,7 +99,7 @@ class TrainingSessionServiceTest {
             public PhysiologicalContext physiologicalContext(UUID userId, LocalDate today) { return PhysiologicalContext.NONE; }
             public Optional<GoalChange> latestGoalChange(UUID userId) { return Optional.empty(); }
         };
-        service = new TrainingSessionService(sessions, routines, recommendations, context,
+        service = new TrainingSessionService(sessions, routines, exercises, recommendations, context,
                 (userId, amount) -> {
                     awarded.add(amount);
                     return new ExperienceChange(1, amount, 0, amount);
@@ -392,5 +395,61 @@ class TrainingSessionServiceTest {
         assertThat(routine.day(day1.id()).closedOn()).isEqualTo(LocalDate.of(2026, 10, 5));
         assertThat(events.getLast()).isInstanceOfSatisfying(TrainingSessionCompletionChanged.class,
                 e -> assertThat(e.date()).isEqualTo(LocalDate.of(2026, 10, 5)));
+    }
+
+    // ------------------------------------------------------------------ ADR 0031
+
+    @Test
+    void warmupSetsHaveTheirOwnNumberingAndDoNotCountAsWork() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        UUID plannedId = planned(day1).id();
+        service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(), plannedId, 1, 10, 20.0, true, 0, null,
+                null, null, true, false, null));
+        TrainingSession after = service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(), plannedId, 1,
+                10, 50.0, true, 0));
+
+        assertThat(after.sets()).singleElement().satisfies(set -> {
+            assertThat(set.weightKg()).isEqualTo(50.0);
+            assertThat(set.warmup()).isFalse();
+        });
+        assertThat(after.warmupSets()).singleElement().satisfies(set -> {
+            assertThat(set.weightKg()).isEqualTo(20.0);
+            assertThat(set.warmup()).isTrue();
+        });
+        // Borrar el calentamiento no toca la serie de trabajo.
+        TrainingSession removed = service.deleteSet(USER, s.id(), after.warmupSets().getFirst().id());
+        assertThat(removed.warmupSets()).isEmpty();
+        assertThat(removed.sets()).hasSize(1);
+    }
+
+    @Test
+    void toFailureIsStoredOnTheWorkSet() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        TrainingSession after = service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(),
+                planned(day1).id(), 1, 8, 50.0, true, 0, null, null, null, false, true, null));
+        assertThat(after.sets().getFirst().toFailure()).isTrue();
+    }
+
+    @Test
+    void useTodayRecordsTheChosenExerciseWithoutChangingTheRoutine() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        PlannedExercise slot = planned(day1);
+        Exercise swap = exercises.add(TrainingFakes.strength("Press con mancuernas", "Pectoral mayor"));
+
+        TrainingSession after = service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(), slot.id(), 1, 10,
+                20.0, true, 0, null, null, null, false, false, swap.id()));
+
+        assertThat(after.sets().getFirst().exerciseId()).isEqualTo(swap.id());
+        assertThat(after.sets().getFirst().plannedExerciseId()).isEqualTo(slot.id());
+        assertThat(planned(day1).exerciseId()).isEqualTo(slot.exerciseId());
+    }
+
+    @Test
+    void useTodayRejectsAnUnknownExercise() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        UUID unknown = UUID.randomUUID();
+        assertThatThrownBy(() -> service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(),
+                planned(day1).id(), 1, 10, 20.0, true, 0, null, null, null, false, false, unknown)))
+                .isInstanceOf(ExerciseNotFoundException.class);
     }
 }

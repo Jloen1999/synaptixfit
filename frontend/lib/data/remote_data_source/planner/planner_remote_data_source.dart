@@ -121,6 +121,14 @@ class PlannerRemoteDataSource {
     return SavePlanResponseDto.fromJson(response.data!);
   }
 
+  /// `GET /plans/{weekStart}`: si la semana ya se cerró.
+  Future<bool> isWeekClosed(String weekStart) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/plans/$weekStart',
+    );
+    return response.data?['closed'] as bool? ?? false;
+  }
+
   Future<List<WeeklyLoadDto>> getWeeklyLoads(String from, String to) async {
     final response = await _dio.get<List<dynamic>>(
       '$_base/weekly-loads',
@@ -183,6 +191,13 @@ class PlannerRemoteDataSource {
       },
     );
     return DeadlinePageDto.fromJson(response.data!);
+  }
+
+  Future<DeadlineDto> getDeadline(String id) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/deadlines/$id',
+    );
+    return DeadlineDto.fromJson(response.data!);
   }
 
   Future<DeadlineDto> createDeadline(Map<String, dynamic> body) async {

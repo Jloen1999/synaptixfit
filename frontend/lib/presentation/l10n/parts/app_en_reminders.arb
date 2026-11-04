@@ -33,5 +33,8 @@
   "remindersChallengeDueTitle": "Your challenge ends tomorrow",
   "remindersChallengeDueBody": "\"{challenge}\" ends tomorrow: there's still time.",
   "remindersYourRoutine": "your routine",
-  "remindersYourChallenge": "Your challenge"
+  "remindersYourChallenge": "Your challenge",
+  "remindersActionStartStudy": "Start studying",
+  "remindersActionStartTraining": "Go train",
+  "remindersActionSnooze": "Snooze {minutes} min"
 }

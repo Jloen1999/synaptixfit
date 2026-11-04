@@ -981,5 +981,9 @@
       }
     }
   },
-  "academicReviewNoOptions": "No se pudieron cargar las respuestas."
+  "academicReviewNoOptions": "No se pudieron cargar las respuestas.",
+  "academicAiRegenerateTitle": "¿Escribirlo de nuevo?",
+  "academicAiRegenerateMessage": "La IA escribirá otra versión y sustituirá a la que ves ahora.",
+  "academicSubjectArchiveTitle": "¿Archivar la asignatura?",
+  "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el planificador. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras desde «Archivadas»."
 }

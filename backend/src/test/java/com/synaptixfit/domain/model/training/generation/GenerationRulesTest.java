@@ -77,6 +77,22 @@ class GenerationRulesTest {
     }
 
     @Test
+    void aSetToFailureKeepsTheLoadInsteadOfRaisingIt() {
+        ExerciseParameters p = new ExerciseParameters(3, 10, 90, 50.0, null, null, null, null);
+        SessionSet toFailure = new SessionSet(UUID.randomUUID(), null, 3, 10, 50.0, true, 0, null, null, null, null,
+                false, true);
+        ProgressionCalculator.Result r = ProgressionCalculator.progress(p, REPS_WEIGHT, 4, List.of(set(0), toFailure),
+                HYP);
+        assertThat(r.changed(p)).isFalse();
+        assertThat(r.reason()).isNull();
+        // Las repeticiones fallidas siguen mandando: bajar la carga.
+        SessionSet failedToFailure = new SessionSet(UUID.randomUUID(), null, 3, 8, 50.0, false, 2, null, null, null,
+                null, false, true);
+        assertThat(ProgressionCalculator.progress(p, REPS_WEIGHT, 6, List.of(failedToFailure), HYP).reason())
+                .isEqualTo(AdjustmentReason.FAILED_REPS);
+    }
+
+    @Test
     void progressionSupportsIsometricAndTimedExercises() {
         List<MeasurementType> time = List.of(MeasurementType.TIME);
         ExerciseParameters iso = new ExerciseParameters(3, 1, 60, null, null, null, null, 30);

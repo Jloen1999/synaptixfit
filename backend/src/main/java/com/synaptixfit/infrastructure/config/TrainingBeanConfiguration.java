@@ -87,6 +87,12 @@ import com.synaptixfit.domain.port.output.training.DailyCheckInRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseNameTranslationsRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseNameTranslatorPort;
 import com.synaptixfit.domain.port.output.training.ExerciseRepositoryPort;
+import com.synaptixfit.domain.port.output.training.ExerciseTipsRepositoryPort;
+import com.synaptixfit.domain.port.output.training.ExerciseNoteRepositoryPort;
+import com.synaptixfit.application.port.input.training.GetExerciseTipsUseCase;
+import com.synaptixfit.application.port.input.training.GetExerciseNoteUseCase;
+import com.synaptixfit.application.port.input.training.SaveExerciseNoteUseCase;
+import com.synaptixfit.application.service.training.ExerciseGuideService;
 import com.synaptixfit.domain.port.output.training.RecommendationRepositoryPort;
 import com.synaptixfit.domain.port.output.training.RoutineCalendarPort;
 import com.synaptixfit.domain.port.output.training.RoutineGeneratorPort;
@@ -127,6 +133,8 @@ public class TrainingBeanConfiguration {
     private final ZoneId zone;
     private final GetCognitiveStateUseCase cognitiveState;
     private final GetCrossRegulationUseCase crossRegulation;
+    private final ExerciseTipsRepositoryPort exerciseTips;
+    private final ExerciseNoteRepositoryPort exerciseNotes;
 
     /**
      * @param zone «día» de sesiones y check-ins: la zona de los indicadores
@@ -150,6 +158,8 @@ public class TrainingBeanConfiguration {
                                      Clock clock,
                                      GetCognitiveStateUseCase cognitiveState,
                                      GetCrossRegulationUseCase crossRegulation,
+                                     ExerciseTipsRepositoryPort exerciseTips,
+                                     ExerciseNoteRepositoryPort exerciseNotes,
                                      @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
         this.tx = tx;
         this.exercises = exercises;
@@ -169,7 +179,31 @@ public class TrainingBeanConfiguration {
         this.clock = clock;
         this.cognitiveState = cognitiveState;
         this.crossRegulation = crossRegulation;
+        this.exerciseTips = exerciseTips;
+        this.exerciseNotes = exerciseNotes;
         this.zone = ZoneId.of(zone);
+    }
+
+    // ---------------------------------------------------------------- guía del ejercicio (ADR 0031)
+
+    @Bean(autowireCandidate = false)
+    ExerciseGuideService exerciseGuideService() {
+        return new ExerciseGuideService(exercises, exerciseTips, exerciseNotes, clock);
+    }
+
+    @Bean
+    GetExerciseTipsUseCase getExerciseTipsUseCase() {
+        return tx.wrap(GetExerciseTipsUseCase.class, exerciseGuideService());
+    }
+
+    @Bean
+    GetExerciseNoteUseCase getExerciseNoteUseCase() {
+        return tx.wrap(GetExerciseNoteUseCase.class, exerciseGuideService());
+    }
+
+    @Bean
+    SaveExerciseNoteUseCase saveExerciseNoteUseCase() {
+        return tx.wrap(SaveExerciseNoteUseCase.class, exerciseGuideService());
     }
 
     // ---------------------------------------------------------------- traducciones del catálogo
@@ -441,7 +475,7 @@ public class TrainingBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     TrainingSessionService trainingSessionService() {
-        return new TrainingSessionService(sessions, routines, recommendations, context, awardExperience,
+        return new TrainingSessionService(sessions, routines, exercises, recommendations, context, awardExperience,
                 revokeExperience, events, clock, zone);
     }
 

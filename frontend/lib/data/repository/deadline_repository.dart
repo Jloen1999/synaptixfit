@@ -6,6 +6,7 @@ import '../errors/repository_error_handler.dart';
 import '../remote_data_source/planner/dto/planner_json.dart';
 import '../remote_data_source/planner/planner_remote_data_source.dart';
 
+/// Implementa [DeadlineRepositoryContract] con [PlannerRemoteDataSource].
 class DeadlineRepository implements DeadlineRepositoryContract {
   DeadlineRepository(this._remote);
 
@@ -35,6 +36,12 @@ class DeadlineRepository implements DeadlineRepositoryContract {
       size: size,
     )).toDomain(),
   );
+
+  @override
+  Future<AppResult<Deadline>> getDeadline(String id) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.getDeadline(id)).toDomain(),
+      );
 
   @override
   Future<AppResult<Deadline>> createDeadline(DeadlineDraft draft) =>

@@ -423,5 +423,9 @@
   "academicReviewDoFirst": "Révisez d’abord",
   "academicReviewStep1Announce": "Étape 1 terminée : vous pouvez maintenant évaluer",
   "academicReviewOverdue": "Prévu le {date} · révisez-le aujourd’hui",
-  "academicReviewNoOptions": "Impossible de charger les réponses."
+  "academicReviewNoOptions": "Impossible de charger les réponses.",
+  "academicAiRegenerateTitle": "Le réécrire ?",
+  "academicAiRegenerateMessage": "L'IA va écrire une autre version qui remplacera celle que tu vois.",
+  "academicSubjectArchiveTitle": "Archiver la matière ?",
+  "academicSubjectArchiveMessage": "Elle n'apparaîtra plus dans tes listes ni dans le planning. Ses notes et rendus sont conservés, et tu peux la récupérer quand tu veux depuis « Archivées »."
 }

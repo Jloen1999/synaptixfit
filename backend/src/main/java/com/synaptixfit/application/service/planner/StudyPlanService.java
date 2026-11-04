@@ -4,6 +4,7 @@ import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCas
 import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
 import com.synaptixfit.application.port.input.planner.DeleteStudyPlanUseCase;
 import com.synaptixfit.application.port.input.planner.GetStudyPlansUseCase;
+import com.synaptixfit.application.port.input.planner.GetWeekPlanStatusUseCase;
 import com.synaptixfit.application.port.input.planner.PrivatizeUserStudyPlansUseCase;
 import com.synaptixfit.application.port.input.planner.SaveWeeklyPlanUseCase;
 import com.synaptixfit.domain.exception.planner.StudyPlanNotFoundException;
@@ -27,7 +28,7 @@ import java.util.UUID;
  * Al pasar el perfil a privado ({@code UserPrivacyChanged}) todos los planes pasan a privados.
  */
 public class StudyPlanService implements SaveWeeklyPlanUseCase, GetStudyPlansUseCase, DeleteStudyPlanUseCase,
-        PrivatizeUserStudyPlansUseCase {
+        PrivatizeUserStudyPlansUseCase, GetWeekPlanStatusUseCase {
 
     private final StudyPlanRepositoryPort plans;
     private final CalendarBlockRepositoryPort blocks;
@@ -83,6 +84,15 @@ public class StudyPlanService implements SaveWeeklyPlanUseCase, GetStudyPlansUse
             plans.save(saved);
         }
         return new Result(saved, weekBlocks.size(), weekDeadlines.size(), xp);
+    }
+
+    /** Cerrada si ya tiene plan guardado (eso es lo que hace «Cerrar semana»). */
+    @Override
+    public GetWeekPlanStatusUseCase.Status status(UUID userId, LocalDate weekStart) {
+        LocalDate monday = PlannerZone.mondayOf(weekStart);
+        return plans.findByUserAndWeek(userId, monday)
+                .map(p -> new GetWeekPlanStatusUseCase.Status(monday, true, p.xpPoints()))
+                .orElse(new GetWeekPlanStatusUseCase.Status(monday, false, 0));
     }
 
     @Override

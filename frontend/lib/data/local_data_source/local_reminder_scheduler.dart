@@ -8,6 +8,36 @@ import '../../domain/models/reminders/ongoing_timer.dart';
 import '../../domain/models/reminders/reminder.dart';
 import '../../domain/models/reminders/timer_alert.dart';
 
+/// Aviso tocado: su `payload` y el botón pulsado (nulo: el aviso en sí).
+typedef NotificationTap = ({String payload, String? action});
+
+/// Id del botón «Empezar» de la notificación (abre la app).
+const reminderStartAction = 'start';
+
+/// Id del botón «Posponer» (no abre la app: vuelve a programar el aviso).
+const reminderSnoozeAction = 'snooze';
+
+/// Pulsar «Posponer» con la app cerrada o en segundo plano: Android lo
+/// ejecuta en un isolate aparte, sin la app abierta. Por eso es una función
+/// de nivel superior y lleva en el `payload` todo lo que necesita.
+@pragma('vm:entry-point')
+void reminderBackgroundTap(NotificationResponse response) {
+  if (response.actionId != reminderSnoozeAction) return;
+  final plugin = FlutterLocalNotificationsPlugin();
+  // En el isolate de fondo el plugin debe iniciarse antes de programar.
+  unawaited(
+    plugin
+        .initialize(
+          settings: const InitializationSettings(
+            android: AndroidInitializationSettings(
+              NotificationsReminderScheduler.androidIcon,
+            ),
+          ),
+        )
+        .then((_) => NotificationsReminderScheduler.snooze(plugin, response)),
+  );
+}
+
 /// Acceso técnico a las notificaciones locales del sistema. Lo usa
 /// `ReminderSchedulerRepository`; puede lanzar excepciones del plugin.
 abstract interface class LocalReminderScheduler {
@@ -32,8 +62,9 @@ abstract interface class LocalReminderScheduler {
 
   Future<void> cancelOngoingTimer();
 
-  /// `payload` de cada aviso tocado, empezando por el que abrió la app.
-  Stream<String> watchOpenedPayloads();
+  /// Cada aviso tocado (y el botón pulsado), empezando por el que abrió la
+  /// app. «Posponer» no llega aquí: se resuelve sin abrir nada.
+  Stream<NotificationTap> watchOpenedPayloads();
 }
 
 /// Implementación con `flutter_local_notifications` para Android e iOS.
@@ -60,10 +91,10 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   static const _ongoingId = 2147480001;
 
   /// Icono del aviso. Se conserva en el build de release con `res/raw/keep.xml`.
-  static const _androidIcon = '@mipmap/launcher_icon';
+  static const androidIcon = '@mipmap/launcher_icon';
 
   final FlutterLocalNotificationsPlugin _plugin;
-  final _opened = StreamController<String>.broadcast();
+  final _opened = StreamController<NotificationTap>.broadcast();
 
   /// Aviso del temporizador pendiente: se vuelve a programar si se sustituyen
   /// los recordatorios (eso cancela todo lo pendiente).
@@ -77,7 +108,7 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   Future<void> _ensureReady() => _ready ??= _plugin
       .initialize(
         settings: const InitializationSettings(
-          android: AndroidInitializationSettings(_androidIcon),
+          android: AndroidInitializationSettings(androidIcon),
           // El permiso se pide solo al activar el interruptor de ajustes.
           iOS: DarwinInitializationSettings(
             requestAlertPermission: false,
@@ -86,8 +117,16 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
           ),
         ),
         onDidReceiveNotificationResponse: (response) {
-          if (response.payload case final payload?) _opened.add(payload);
+          // Con la app delante, «Posponer» también llega aquí.
+          if (response.actionId == reminderSnoozeAction) {
+            unawaited(snooze(_plugin, response));
+            return;
+          }
+          if (response.payload case final payload?) {
+            _opened.add((payload: payload, action: response.actionId));
+          }
         },
+        onDidReceiveBackgroundNotificationResponse: reminderBackgroundTap,
       )
       .then((_) {});
 
@@ -131,25 +170,87 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
     await _ensureReady();
     // Solo los pendientes: los avisos ya mostrados se quedan en la bandeja.
     await _plugin.cancelAllPendingNotifications();
-    final details = NotificationDetails(
-      android: AndroidNotificationDetails(_channelId, channelName),
-      iOS: const DarwinNotificationDetails(),
-    );
     for (final reminder in reminders) {
+      final snooze = reminder.hasActions
+          ? _SnoozeData(
+              title: reminder.title,
+              body: reminder.body,
+              channel: channelName,
+              start: reminder.startLabel!,
+              snooze: reminder.snoozeLabel!,
+              minutes: reminder.snoozeMinutes,
+            )
+          : null;
       await _plugin.zonedSchedule(
         id: reminder.id,
         title: reminder.title,
         body: reminder.body,
         scheduledDate: tz.TZDateTime.from(reminder.at.toUtc(), tz.UTC),
-        notificationDetails: details,
+        notificationDetails: _details(channelName, snooze),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: reminder.payload,
+        payload: snooze == null
+            ? reminder.payload
+            : '${reminder.payload}|${snooze.encode()}',
       );
     }
     final alert = _timerAlert;
     if (alert != null && alert.at.isAfter(DateTime.now())) {
       await _scheduleTimer(alert);
     }
+  }
+
+  /// Detalles del aviso; con [snooze], con los botones «Empezar» (abre la
+  /// app) y «Posponer» (lo vuelve a programar sin abrirla). En iOS los botones
+  /// necesitan categorías registradas al iniciar: allí el aviso va sin ellos.
+  static NotificationDetails _details(String channelName, _SnoozeData? snooze) =>
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          channelName,
+          actions: snooze == null
+              ? null
+              : [
+                  AndroidNotificationAction(
+                    reminderStartAction,
+                    snooze.start,
+                    showsUserInterface: true,
+                  ),
+                  AndroidNotificationAction(
+                    reminderSnoozeAction,
+                    snooze.snooze,
+                    cancelNotification: true,
+                  ),
+                ],
+        ),
+        iOS: const DarwinNotificationDetails(),
+      );
+
+  /// «Posponer»: quita el aviso y lo vuelve a programar a los minutos que
+  /// lleva en su `payload`, con los mismos textos y botones. Funciona con la
+  /// app cerrada ([reminderBackgroundTap]).
+  static Future<void> snooze(
+    FlutterLocalNotificationsPlugin plugin,
+    NotificationResponse response,
+  ) async {
+    final payload = response.payload;
+    final id = response.id;
+    if (payload == null || id == null) return;
+    final cut = payload.lastIndexOf('|');
+    final data = cut < 0 ? null : _SnoozeData.decode(payload.substring(cut + 1));
+    if (data == null) return;
+    await plugin.cancel(id: id);
+    await plugin.zonedSchedule(
+      id: id,
+      title: data.title,
+      body: data.body,
+      scheduledDate: tz.TZDateTime.from(
+        DateTime.now().toUtc().add(Duration(minutes: data.minutes)),
+        tz.UTC,
+      ),
+      notificationDetails: _details(data.channel, data),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: payload,
+    );
   }
 
   @override
@@ -257,17 +358,81 @@ class NotificationsReminderScheduler implements LocalReminderScheduler {
   }
 
   @override
-  Stream<String> watchOpenedPayloads() async* {
+  Stream<NotificationTap> watchOpenedPayloads() async* {
     await _ensureReady();
     if (!_launchChecked) {
       _launchChecked = true;
       final launch = await _plugin.getNotificationAppLaunchDetails();
-      final payload = launch?.notificationResponse?.payload;
+      final response = launch?.notificationResponse;
+      final payload = response?.payload;
       if ((launch?.didNotificationLaunchApp ?? false) && payload != null) {
-        yield payload;
+        yield (payload: payload, action: response?.actionId);
       }
     }
     yield* _opened.stream;
+  }
+}
+
+/// Lo que hace falta para volver a mostrar un aviso pospuesto sin abrir la
+/// app: textos, canal y botones. Viaja al final del `payload`, como consulta
+/// URL (no lleva «|», que separa las partes del `payload`).
+class _SnoozeData {
+  const _SnoozeData({
+    required this.title,
+    required this.body,
+    required this.channel,
+    required this.start,
+    required this.snooze,
+    required this.minutes,
+  });
+
+  final String title;
+  final String body;
+  final String channel;
+  final String start;
+  final String snooze;
+  final int minutes;
+
+  String encode() => Uri(
+    queryParameters: {
+      't': title,
+      'b': body,
+      'c': channel,
+      's': start,
+      'z': snooze,
+      'm': '$minutes',
+    },
+  ).query;
+
+  static _SnoozeData? decode(String query) {
+    final Map<String, String> q;
+    try {
+      q = Uri.splitQueryString(query);
+    } on FormatException {
+      return null;
+    }
+    final title = q['t'];
+    final body = q['b'];
+    final channel = q['c'];
+    final start = q['s'];
+    final snooze = q['z'];
+    final minutes = int.tryParse(q['m'] ?? '');
+    if (title == null ||
+        body == null ||
+        channel == null ||
+        start == null ||
+        snooze == null ||
+        minutes == null) {
+      return null;
+    }
+    return _SnoozeData(
+      title: title,
+      body: body,
+      channel: channel,
+      start: start,
+      snooze: snooze,
+      minutes: minutes,
+    );
   }
 }
 
@@ -303,5 +468,5 @@ class NoopReminderScheduler implements LocalReminderScheduler {
   Future<void> cancelOngoingTimer() async {}
 
   @override
-  Stream<String> watchOpenedPayloads() => const Stream.empty();
+  Stream<NotificationTap> watchOpenedPayloads() => const Stream.empty();
 }

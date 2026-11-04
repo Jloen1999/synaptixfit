@@ -423,5 +423,9 @@
   "academicReviewDoFirst": "Review it first",
   "academicReviewStep1Announce": "Step 1 done: you can rate it now",
   "academicReviewOverdue": "Was due on {date} · review it today",
-  "academicReviewNoOptions": "The answers could not be loaded."
+  "academicReviewNoOptions": "The answers could not be loaded.",
+  "academicAiRegenerateTitle": "Write it again?",
+  "academicAiRegenerateMessage": "The AI will write a new version and replace the one you see now.",
+  "academicSubjectArchiveTitle": "Archive the subject?",
+  "academicSubjectArchiveMessage": "It will stop showing in your lists and planner. Its notes and deadlines are kept, and you can bring it back any time from “Archived”."
 }

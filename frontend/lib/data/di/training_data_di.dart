@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../domain/repositories/pending_sets_repository_contract.dart';
 import '../../domain/repositories/exercise_repository_contract.dart';
+import '../../domain/repositories/live_session_draft_repository_contract.dart';
 import '../../domain/repositories/routine_repository_contract.dart';
 import '../../domain/repositories/session_clock_intro_repository_contract.dart';
 import '../../domain/repositories/training_history_repository_contract.dart';
@@ -10,10 +11,12 @@ import '../remote_data_source/training/exercise_remote_data_source.dart';
 import '../remote_data_source/training/routine_remote_data_source.dart';
 import '../remote_data_source/training/training_history_remote_data_source.dart';
 import '../remote_data_source/training/training_remote_data_source.dart';
+import '../local_data_source/live_session_draft_storage.dart';
 import '../local_data_source/pending_sets_storage.dart';
 import '../local_data_source/session_clock_intro_storage.dart';
 import '../repository/pending_sets_repository.dart';
 import '../repository/exercise_repository.dart';
+import '../repository/live_session_draft_repository.dart';
 import '../repository/routine_repository.dart';
 import '../repository/session_clock_intro_repository.dart';
 import '../repository/training_history_repository.dart';
@@ -29,6 +32,10 @@ void registerTrainingData(GetIt getIt) {
     ..registerLazySingleton(PendingSetsStorage.new)
     ..registerLazySingleton<PendingSetsRepositoryContract>(
       () => PendingSetsRepository(getIt()),
+    )
+    ..registerLazySingleton(LiveSessionDraftStorage.new)
+    ..registerLazySingleton<LiveSessionDraftRepositoryContract>(
+      () => LiveSessionDraftRepository(getIt()),
     )
     ..registerLazySingleton<SessionClockIntroStorage>(
       SharedPrefsSessionClockIntroStorage.new,

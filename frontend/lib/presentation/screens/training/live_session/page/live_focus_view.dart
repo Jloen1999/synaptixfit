@@ -302,6 +302,9 @@ class LiveExerciseView extends StatelessWidget {
     required this.onLoggedTap,
     required this.onExtraSet,
     this.onLoadToggled,
+    this.onSwap,
+    this.onUnswap,
+    this.onWarmup,
     this.header = const [],
   });
 
@@ -327,6 +330,14 @@ class LiveExerciseView extends StatelessWidget {
   /// Acepta o deshace la propuesta de carga de hoy de un ejercicio.
   final void Function(PlannedExercise e, bool accepted)? onLoadToggled;
 
+  /// «Cambiar solo hoy» y «Volver al de la rutina» (ADR 0031).
+  final void Function(PlannedExercise e)? onSwap;
+  final void Function(PlannedExercise e)? onUnswap;
+
+  /// Apuntar (o corregir, con [existing]) la serie de calentamiento [set].
+  final void Function(PlannedExercise e, int set, SessionSet? existing)?
+  onWarmup;
+
   /// Avisos que van encima (sin conexión, sesión adaptada…).
   final List<Widget> header;
 
@@ -343,6 +354,14 @@ class LiveExerciseView extends StatelessWidget {
     final current = s.nextSetOf(e);
     final last = s.lastPerformance[e.exerciseId];
     final load = current == null ? null : s.loadSuggestions[e.id];
+    final original = s.originals[e.id];
+    final warmups = s.session?.warmupSetsFor(e.id) ?? const <SessionSet>[];
+    // Calentamiento: en ejercicios de repeticiones, mientras no se empiece el
+    // trabajo (o si ya hay alguno apuntado, para poder corregirlo).
+    final showWarmup =
+        onWarmup != null &&
+        fields.has(SetField.reps) &&
+        (sets.isEmpty || warmups.isNotEmpty);
     return ListView(
       padding: const EdgeInsets.all(TokensSpacing.m),
       children: [
@@ -416,14 +435,35 @@ class LiveExerciseView extends StatelessWidget {
                   onToggled: (accepted) => onLoadToggled!(e, accepted),
                 ),
               ],
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed: () => openHowTo(context, e),
-                  icon: const Icon(Icons.ondemand_video_rounded),
-                  label: Text(l10n.trainingHowTo),
+              if (original != null) ...[
+                const SizedBox(height: TokensSpacing.s),
+                _SwappedNote(
+                  original: original,
+                  onUndo: onUnswap == null ? null : () => onUnswap!(e),
                 ),
+              ],
+              Wrap(
+                spacing: TokensSpacing.xs,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => openHowTo(context, e),
+                    icon: const Icon(Icons.ondemand_video_rounded),
+                    label: Text(l10n.trainingHowTo),
+                  ),
+                  if (onSwap != null && original == null)
+                    TextButton.icon(
+                      onPressed: () => onSwap!(e),
+                      icon: const Icon(Icons.swap_horiz_rounded),
+                      label: Text(l10n.trainingSwapTodayAction),
+                    ),
+                ],
               ),
+              if (showWarmup)
+                _WarmupSection(
+                  exercise: e,
+                  sets: warmups,
+                  onWarmup: onWarmup!,
+                ),
               const SizedBox(height: TokensSpacing.xs),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -484,6 +524,148 @@ class LiveExerciseView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// «Solo hoy haces X en lugar de Y»: el ejercicio se cambió solo para esta
+/// sesión (la rutina no cambia) y se puede volver al de la rutina.
+class _SwappedNote extends StatelessWidget {
+  const _SwappedNote({required this.original, required this.onUndo});
+
+  final PlannedExercise original;
+  final VoidCallback? onUndo;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return AppCard(
+      color: context.colors.secondaryContainer,
+      padding: const EdgeInsets.all(TokensSpacing.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.swap_horiz_rounded,
+                size: TokensSize.iconS,
+                color: context.colors.onSecondaryContainer,
+              ),
+              const SizedBox(width: TokensSpacing.s),
+              Expanded(
+                child: Text(
+                  l10n.trainingSwapTodayNote(original.exerciseName),
+                  style: context.textStyles.bodyMedium?.copyWith(
+                    color: context.colors.onSecondaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (onUndo != null)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: onUndo,
+                child: Text(l10n.trainingSwapTodayUndo),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Series de calentamiento (aproximación) de un ejercicio: aparte de las de
+/// trabajo y con su propia numeración. No cuentan como series ni para la
+/// propuesta de peso (ADR 0031); se explica en una línea.
+class _WarmupSection extends StatelessWidget {
+  const _WarmupSection({
+    required this.exercise,
+    required this.sets,
+    required this.onWarmup,
+  });
+
+  final PlannedExercise exercise;
+  final List<SessionSet> sets;
+  final void Function(PlannedExercise e, int set, SessionSet? existing)
+  onWarmup;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final next = sets.fold(0, (m, x) => math.max(m, x.setNumber)) + 1;
+    return Padding(
+      padding: const EdgeInsets.only(top: TokensSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.trainingWarmupSetsTitle,
+            style: context.textStyles.titleSmall,
+          ),
+          Text(
+            l10n.trainingWarmupSetsHint,
+            style: context.textStyles.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+          for (final w in sets)
+            AppFocusOutline(
+              borderRadius: BorderRadius.circular(TokensRadius.s),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(TokensRadius.s),
+                onTap: () => onWarmup(exercise, w.setNumber, w),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: TokensLayout.minTouchTarget,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.whatshot_rounded,
+                        size: TokensSize.iconS,
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: TokensSpacing.s),
+                      Expanded(
+                        child: Text(
+                          [
+                            l10n.trainingWarmupSetNumber(w.setNumber),
+                            if (w.weightKg != null)
+                              l10n.trainingChipWeight(
+                                formatNumber(w.weightKg!),
+                              ),
+                            if (w.repsDone != null)
+                              l10n.trainingSetReps(w.repsDone!),
+                          ].join(' · '),
+                          style: context.textStyles.bodyMedium,
+                        ),
+                      ),
+                      Icon(
+                        Icons.edit_outlined,
+                        size: TokensSize.iconXs,
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: next > 50
+                  ? null
+                  : () => onWarmup(exercise, next, null),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.trainingWarmupAdd),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -932,6 +1114,28 @@ class _LiveSetRow extends StatelessWidget {
               children: [
                 ?status,
                 body,
+                if (done?.toFailure ?? false)
+                  Padding(
+                    padding: const EdgeInsets.only(top: TokensSpacing.xxs),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.local_fire_department_rounded,
+                          size: TokensSize.iconXs,
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: TokensSpacing.xxs),
+                        Flexible(
+                          child: Text(
+                            l10n.trainingToFailureMark,
+                            style: context.textStyles.bodySmall?.copyWith(
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (done?.activeSeconds case final secs?)
                   Padding(
                     padding: const EdgeInsets.only(top: TokensSpacing.xxs),
@@ -1609,6 +1813,7 @@ Future<void> onLoggedSetTap(
         weightKg: set.weightKg,
         completed: set.completed,
         failedReps: set.failedReps,
+        toFailure: set.toFailure,
       ),
     );
     if (result == null || bloc.isClosed) return;

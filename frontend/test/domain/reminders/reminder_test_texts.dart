@@ -45,4 +45,10 @@ class TestReminderTexts implements ReminderTexts {
   @override
   String followUpBody(ReminderKind kind, String? name) =>
       '${kind.name}:${name ?? '-'}';
+
+  @override
+  String startAction(ReminderKind kind) => 'start:${kind.name}';
+
+  @override
+  String snoozeAction(int minutes) => 'snooze:$minutes';
 }

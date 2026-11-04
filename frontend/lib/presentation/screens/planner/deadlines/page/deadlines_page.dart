@@ -14,15 +14,19 @@ import '../../widgets/deadline_form_sheet.dart';
 import '../../widgets/planner_visuals.dart';
 import '../bloc/deadlines_bloc.dart';
 
-/// Entregas y exámenes (`/planner/deadlines`).
+/// Entregas y exámenes (`/planner/deadlines`). Con [focusId] (desde su
+/// aviso), esa entrega sale la primera y destacada.
 class DeadlinesPage extends StatelessWidget {
-  const DeadlinesPage({super.key});
+  const DeadlinesPage({super.key, this.focusId});
+
+  final String? focusId;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
-          getIt<DeadlinesBloc>()..add(const DeadlinesEvent.started()),
+          getIt<DeadlinesBloc>()
+            ..add(DeadlinesEvent.started(focusId: focusId)),
       child: const _DeadlinesView(),
     );
   }
@@ -200,6 +204,7 @@ class _DeadlinesView extends StatelessWidget with ErrorsMessageMixin {
                     final d = state.visibleItems[i];
                     return _DeadlineTile(
                       deadline: d,
+                      highlighted: d.id == state.focusId,
                       subjectName: state.subjectName(d.subjectId),
                       busy: state.busyIds.contains(d.id),
                       onToggle: () =>
@@ -289,6 +294,7 @@ class _Filters extends StatelessWidget {
 class _DeadlineTile extends StatelessWidget {
   const _DeadlineTile({
     required this.deadline,
+    this.highlighted = false,
     required this.subjectName,
     required this.busy,
     required this.onToggle,
@@ -297,6 +303,9 @@ class _DeadlineTile extends StatelessWidget {
   });
 
   final Deadline deadline;
+
+  /// La entrega del aviso que abrió la pantalla: lleva una marca y un borde.
+  final bool highlighted;
   final String? subjectName;
   final bool busy;
   final VoidCallback onToggle;
@@ -325,6 +334,28 @@ class _DeadlineTile extends StatelessWidget {
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (highlighted) ...[
+          Row(
+            children: [
+              Icon(
+                Icons.notifications_active_rounded,
+                size: TokensSize.iconXs,
+                color: context.colors.primary,
+              ),
+              const SizedBox(width: TokensSpacing.xs),
+              Flexible(
+                child: Text(
+                  l10n.plannerDeadlineFromReminder,
+                  style: context.textStyles.labelMedium?.copyWith(
+                    color: context.colors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.xxs),
+        ],
         Text(
           when,
           style: context.textStyles.labelLarge?.copyWith(
@@ -393,7 +424,7 @@ class _DeadlineTile extends StatelessWidget {
       onPressed: busy ? null : onDelete,
       icon: const Icon(Icons.delete_outline_rounded),
     );
-    return AppCard(
+    final card = AppCard(
       padding: const EdgeInsets.all(TokensSpacing.xs),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -453,6 +484,18 @@ class _DeadlineTile extends StatelessWidget {
           );
         },
       ),
+    );
+    if (!highlighted) return card;
+    // Borde de color además de la marca con texto: no solo color (1.4.1).
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: context.colors.primary,
+          width: TokensSize.focusRing,
+        ),
+        borderRadius: BorderRadius.circular(TokensRadius.l),
+      ),
+      child: card,
     );
   }
 }

@@ -44,6 +44,9 @@ class PendingSetsStorage {
     'durationSeconds': s.durationSeconds,
     'distanceMeters': s.distanceMeters,
     'activeSeconds': s.activeSeconds,
+    'warmup': s.warmup,
+    'toFailure': s.toFailure,
+    'exerciseId': s.exerciseId,
   };
 
   static SetRecord _fromJson(Map<String, dynamic> j) => SetRecord(
@@ -56,5 +59,8 @@ class PendingSetsStorage {
     durationSeconds: j['durationSeconds'] as int?,
     distanceMeters: j['distanceMeters'] as int?,
     activeSeconds: j['activeSeconds'] as int?,
+    warmup: j['warmup'] as bool? ?? false,
+    toFailure: j['toFailure'] as bool? ?? false,
+    exerciseId: j['exerciseId'] as String?,
   );
 }

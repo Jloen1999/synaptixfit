@@ -173,6 +173,12 @@ class PlannerRepository implements PlannerRepositoryContract {
       );
 
   @override
+  Future<AppResult<bool>> isWeekClosed(DateTime weekStart) =>
+      RepositoryErrorHandler.guard(
+        () => _remote.isWeekClosed(PlannerJson.toDate(weekStart)),
+      );
+
+  @override
   Future<AppResult<WeeklyLoad?>> getWeeklyLoad(DateTime weekStart) =>
       RepositoryErrorHandler.guard(() async {
         final date = PlannerJson.toDate(weekStart);
