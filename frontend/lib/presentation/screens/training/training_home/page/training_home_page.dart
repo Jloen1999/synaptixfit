@@ -56,6 +56,17 @@ class _TrainingHomeView extends StatelessWidget {
             AppFocusOutline(
               child: ListTile(
                 leading: Icon(
+                  Icons.view_list_rounded,
+                  color: context.colors.secondary,
+                ),
+                title: Text(l10n.trainingTemplatesEntry),
+                subtitle: Text(l10n.trainingTemplatesEntryHint),
+                onTap: () => Navigator.of(context).pop(TrainingPaths.templates),
+              ),
+            ),
+            AppFocusOutline(
+              child: ListTile(
+                leading: Icon(
                   Icons.auto_awesome_rounded,
                   color: context.colors.tertiary,
                 ),
@@ -82,7 +93,12 @@ class _TrainingHomeView extends StatelessWidget {
       ),
     );
     if (mode != null && context.mounted) {
-      await open(context, TrainingPaths.newRoutine(mode: mode));
+      await open(
+        context,
+        mode == TrainingPaths.templates
+            ? TrainingPaths.templates
+            : TrainingPaths.newRoutine(mode: mode),
+      );
     }
   }
 
@@ -251,6 +267,14 @@ class _HomeContent extends StatelessWidget {
                           onPressed: () => _TrainingHomeView.open(
                             context,
                             TrainingPaths.newRoutine(),
+                          ),
+                        ),
+                        AppSecondaryButton(
+                          label: l10n.trainingTemplatesEntry,
+                          icon: const Icon(Icons.view_list_rounded),
+                          onPressed: () => _TrainingHomeView.open(
+                            context,
+                            TrainingPaths.templates,
                           ),
                         ),
                         AppSecondaryButton(
@@ -759,6 +783,11 @@ class _QuickAccess extends StatelessWidget {
         Icons.search_rounded,
         l10n.trainingExplorerTitle,
         TrainingPaths.exercises,
+      ),
+      (
+        Icons.view_list_rounded,
+        l10n.trainingTemplatesTitle,
+        TrainingPaths.templates,
       ),
       (
         Icons.groups_rounded,

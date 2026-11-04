@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.challenge;
 
+import com.synaptixfit.domain.model.challenge.RoutineDayTarget;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
 import com.synaptixfit.domain.event.DomainEvent;
@@ -84,9 +85,12 @@ final class ChallengeFixtures {
         public List<ProgressEntry> findProgress(UUID id) { return progress; }
     };
 
+    final List<RoutineDayTarget> routineDays = new ArrayList<>();
     final ChallengeReferencePort references = new ChallengeReferencePort() {
         public boolean subjectBelongsTo(UUID u, UUID s) { return ownedRefs.contains(s); }
         public boolean deadlineBelongsTo(UUID u, UUID d) { return ownedRefs.contains(d); }
+        public boolean routineDayBelongsTo(UUID u, UUID d) { return ownedRefs.contains(d); }
+        public List<RoutineDayTarget> routineDayTargets(UUID u) { return routineDays; }
         public boolean noteBelongsTo(UUID u, UUID n) { return ownedRefs.contains(n); }
         public boolean fileBelongsTo(UUID u, UUID f) { return ownedRefs.contains(f); }
         public StudyBlockProgress studyBlockProgress(UUID u, UUID m) {

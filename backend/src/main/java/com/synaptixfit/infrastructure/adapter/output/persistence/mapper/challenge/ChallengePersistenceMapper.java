@@ -161,6 +161,7 @@ public final class ChallengePersistenceMapper {
         return switch (t) {
             case EXAM -> "examen";
             case DELIVERY -> "entrega";
+            case ROUTINE_DAY -> "dia_rutina";
         };
     }
 
@@ -172,6 +173,7 @@ public final class ChallengePersistenceMapper {
         return switch (type) {
             case "examen" -> new ChallengeLink(LinkType.EXAM, id);
             case "entrega" -> new ChallengeLink(LinkType.DELIVERY, id);
+            case "dia_rutina" -> new ChallengeLink(LinkType.ROUTINE_DAY, id);
             default -> null;
         };
     }

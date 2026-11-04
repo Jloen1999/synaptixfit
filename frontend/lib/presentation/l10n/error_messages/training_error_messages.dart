@@ -10,6 +10,7 @@ String? trainingErrorMessage(AppLocalizations l10n, String code) =>
       'ROUTINE_NOT_FOUND' => l10n.trainingErrorRoutineNotFound,
       'ROUTINE_WEEK_NOT_FOUND' => l10n.trainingErrorRoutineWeekNotFound,
       'ROUTINE_DAY_NOT_FOUND' => l10n.trainingErrorRoutineDayNotFound,
+      'ROUTINE_TEMPLATE_NOT_FOUND' => l10n.trainingErrorRoutineTemplateNotFound,
       'ROUTINE_EXERCISE_NOT_FOUND' => l10n.trainingErrorRoutineExerciseNotFound,
       'ROUTINE_DAY_DUPLICATED' => l10n.trainingErrorRoutineDayDuplicated,
       'ROUTINE_WEEK_LIMIT' => l10n.trainingErrorRoutineWeekLimit,

@@ -71,9 +71,9 @@
   "trainingStatusPaused": "En pausa",
   "trainingStatusCompleted": "Completada",
   "trainingStatusArchived": "Archivada",
-  "trainingWeekTypeAdaptation": "Adaptación",
-  "trainingWeekTypeLoad": "Carga",
-  "trainingWeekTypePeak": "Pico",
+  "trainingWeekTypeAdaptation": "Base",
+  "trainingWeekTypeLoad": "Subir",
+  "trainingWeekTypePeak": "La más dura",
   "trainingWeekTypeDeload": "Semana suave",
   "trainingProgressPending": "Pendiente",
   "trainingProgressInProgress": "En curso",
@@ -1172,9 +1172,9 @@
   "trainingGoalStabilityHint": "Mejorar el equilibrio y el control del cuerpo (abdomen y articulaciones).",
   "trainingGoalMetabolicHint": "Circuitos intensos para mejorar la forma física y gastar más energía.",
   "trainingWeekTypeAdaptationHint": "Para aprender los ejercicios con poco peso.",
-  "trainingWeekTypeLoadHint": "Se sube poco a poco el peso o las repeticiones.",
-  "trainingWeekTypePeakHint": "La semana más exigente del bloque.",
-  "trainingWeekTypeDeloadHint": "Menos volumen para recuperarte y asimilar el trabajo.",
+  "trainingWeekTypeLoadHint": "Sube un poco el peso o las repeticiones.",
+  "trainingWeekTypePeakHint": "La más exigente del plan: da lo mejor.",
+  "trainingWeekTypeDeloadHint": "Menos series para recuperarte. Así luego rindes más.",
   "trainingProgressSkipped": "Saltado",
   "trainingWeekOfTotal": "Semana {week} de {total}",
   "@trainingWeekOfTotal": {
@@ -2199,5 +2199,208 @@
         "type": "int"
       }
     }
-  }
+  },
+  "trainingPlanWeekOf": "Semana {current} de {total} · {percent} %",
+  "@trainingPlanWeekOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPlanSeeWeeks": "Qué toca cada semana",
+  "trainingPlanSheetTitle": "Tu plan, semana a semana",
+  "trainingPlanSheetIntro": "Cada semana tiene un objetivo. Así avanzas sin pasarte.",
+  "trainingPlanYouAreHere": "Estás aquí",
+  "trainingPlanWeekDone": "Hecha",
+  "trainingPlanAfterTitle": "Al terminar",
+  "trainingPlanNextRepeat": "Repite el plan subiendo un poco el peso: ya tienes la base.",
+  "trainingPlanNextNew": "Cambia de plan para seguir mejorando: elige una plantilla o crea uno nuevo.",
+  "trainingPlanSeeTemplates": "Ver plantillas",
+  "trainingWeekChip": "{week} · {range}",
+  "@trainingWeekChip": {
+    "placeholders": {
+      "week": {
+        "type": "String"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingTemplatesTitle": "Plantillas listas",
+  "trainingTemplatesIntro": "Elige una y se crea como rutina tuya. Después puedes cambiar lo que quieras.",
+  "trainingTemplatesAll": "Todas",
+  "trainingTemplatesDays": "{count} días",
+  "@trainingTemplatesDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingTemplatesAtHome": "En casa",
+  "trainingTemplatesGym": "Gimnasio",
+  "trainingTemplatesExams": "Exámenes",
+  "trainingTemplatesForExams": "Para semanas de exámenes",
+  "trainingTemplatesPerWeek": "{count} días por semana",
+  "@trainingTemplatesPerWeek": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingTemplatesMinutes": "≈ {minutes} min",
+  "@trainingTemplatesMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingTemplatesUse": "Usar esta plantilla",
+  "trainingTemplatesEmpty": "No hay plantillas con estos filtros",
+  "trainingTemplatesEmptyHint": "Quita algún filtro para ver más.",
+  "trainingTemplatesClearFilters": "Quitar filtros",
+  "trainingTemplatesCreated": "Listo: «{name}» ya es tu rutina.",
+  "@trainingTemplatesCreated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingTemplatesEntry": "Elegir una plantilla",
+  "trainingTemplatesEntryHint": "Rutinas ya hechas: por días, para casa o para semanas de exámenes.",
+  "trainingProgressTitle": "Tu evolución",
+  "trainingProgressExplain": "Lo máximo que podrías levantar una vez, calculado con tus series.",
+  "trainingProgressEmpty": "Apunta este ejercicio con peso y aquí verás cómo mejoras.",
+  "trainingProgressBest": "Tu mejor: {kg} kg",
+  "@trainingProgressBest": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingProgressLast": "Última vez: {kg} kg × {reps}",
+  "@trainingProgressLast": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingProgressUp": "+{kg} kg desde que empezaste",
+  "@trainingProgressUp": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingProgressTooltip": "≈ {max} kg (con {kg} kg × {reps})",
+  "@trainingProgressTooltip": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      },
+      "kg": {
+        "type": "String"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingProgressSemantics": "Gráfica de tu evolución: de {first} a {last} kilos en {count} días entrenados.",
+  "@trainingProgressSemantics": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingDoneProgressTitle": "Tu avance",
+  "trainingDoneStreak": "{days, plural, =1{Racha: 1 día} other{Racha: {days} días}}",
+  "@trainingDoneStreak": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingDoneStreakToday": "Hoy ya cuenta para tu racha.",
+  "trainingDoneChallengeSessions": "{done} de {target} sesiones",
+  "@trainingDoneChallengeSessions": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingDoneChallengeLeft": "{count, plural, =1{Te falta 1} other{Te faltan {count}}}",
+  "@trainingDoneChallengeLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingDoneChallengeDone": "¡Reto conseguido!",
+  "trainingDoneSeeChallenge": "Ver el reto «{title}»",
+  "@trainingDoneSeeChallenge": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingPlanByRoutine": "Según tu rutina: {count}",
+  "@trainingPlanByRoutine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPlanByRoutineHint": "Esta semana «{name}» tiene {count} días.",
+  "@trainingPlanByRoutineHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPlanUseRoutine": "Usar {count}",
+  "@trainingPlanUseRoutine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingErrorRoutineTemplateNotFound": "Esa plantilla ya no está disponible."
 }

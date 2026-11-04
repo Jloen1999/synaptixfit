@@ -160,6 +160,8 @@ abstract final class TokensSize {
   static const double liveDot = 8;
   static const double stepBadge = 28;
   static const double guideSkeleton = 120;
+  static const double chartCompact = 200;
+  static const double chartLine = 3;
 }
 
 abstract final class TokensOpacity {

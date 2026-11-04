@@ -55,6 +55,10 @@ public class ChallengeEventListener {
     @EventListener
     public void on(TrainingSessionCompletionChanged event) {
         syncTrainingSessions.syncTrainingSessions(event.userId());
+        // Las tareas vinculadas a ese día de rutina se completan (o se reabren) con él (ADR 0032).
+        if (event.routineDayId() != null) {
+            syncDeadline.syncDeadline(event.userId(), event.routineDayId(), event.completed());
+        }
     }
 
     @EventListener

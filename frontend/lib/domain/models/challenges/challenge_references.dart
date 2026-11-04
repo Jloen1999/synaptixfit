@@ -51,7 +51,13 @@ abstract class ChallengeLinkOption with _$ChallengeLinkOption {
     required String id,
     required ChallengeLinkType type,
     required String title,
-    required DateTime at,
+
+    /// Cuándo vence la entrega; nulo en un día de rutina.
+    DateTime? at,
     String? subjectId,
+
+    /// Día de rutina: semana y día de la semana (1 = lunes).
+    int? weekNumber,
+    int? dayNumber,
   }) = _ChallengeLinkOption;
 }

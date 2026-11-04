@@ -3,6 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/enums/visibility.dart';
 import '../../../../domain/models/training/routine.dart';
+import '../../../../domain/models/training/routine_template.dart';
 
 part 'routine_dto.freezed.dart';
 part 'routine_dto.g.dart';
@@ -107,6 +108,8 @@ abstract class WeekDto with _$WeekDto {
     String? type,
     String? status,
     List<DayDto>? days,
+    String? startsOn,
+    String? endsOn,
   }) = _WeekDto;
 
   const WeekDto._();
@@ -122,6 +125,8 @@ abstract class WeekDto with _$WeekDto {
     status: ProgressStatus.fromApi(status),
     days: ((days ?? const <DayDto>[]).map((d) => d.toDomain()).toList())
       ..sort((a, b) => a.dayNumber.compareTo(b.dayNumber)),
+    startsOn: parseLocalDate(startsOn),
+    endsOn: parseLocalDate(endsOn),
   );
 }
 
@@ -166,6 +171,9 @@ abstract class RoutineDto with _$RoutineDto {
     OriginDto? origin,
     DateTime? createdAt,
     List<WeekDto>? weeks,
+    @Default(1) int currentWeek,
+    @Default(0) int progressPercent,
+    String? nextStep,
   }) = _RoutineDto;
 
   const RoutineDto._();
@@ -193,6 +201,9 @@ abstract class RoutineDto with _$RoutineDto {
     createdAt: createdAt?.toLocal(),
     weeks: ((weeks ?? const <WeekDto>[]).map((w) => w.toDomain()).toList())
       ..sort((a, b) => a.number.compareTo(b.number)),
+    currentWeek: currentWeek,
+    progressPercent: progressPercent,
+    nextStep: RoutineNextStep.tryFromApi(nextStep),
   );
 }
 
@@ -330,3 +341,42 @@ String formatLocalDate(DateTime date) =>
 /// Las URLs vacías se tratan como ausentes.
 String? blankToNull(String? value) =>
     value == null || value.trim().isEmpty ? null : value;
+
+/// Plantilla de rutina (`GET /api/v1/training/templates`).
+@freezed
+abstract class RoutineTemplateDto with _$RoutineTemplateDto {
+  const factory RoutineTemplateDto({
+    required String id,
+    required String code,
+    required String name,
+    @Default('') String description,
+    String? goal,
+    @Default(false) bool atHome,
+    @Default(false) bool forExams,
+    @Default(30) int minutes,
+    @Default(4) int weeks,
+    @Default(0) int daysPerWeek,
+    @Default(<int>[]) List<int> dayNumbers,
+    @Default(0) int exerciseCount,
+  }) = _RoutineTemplateDto;
+
+  const RoutineTemplateDto._();
+
+  factory RoutineTemplateDto.fromJson(Map<String, dynamic> json) =>
+      _$RoutineTemplateDtoFromJson(json);
+
+  RoutineTemplate toDomain() => RoutineTemplate(
+    id: id,
+    code: code,
+    name: name,
+    description: description,
+    goal: TrainingGoal.tryFromApi(goal),
+    atHome: atHome,
+    forExams: forExams,
+    minutes: minutes,
+    weeks: weeks,
+    daysPerWeek: daysPerWeek,
+    dayNumbers: dayNumbers,
+    exerciseCount: exerciseCount,
+  );
+}

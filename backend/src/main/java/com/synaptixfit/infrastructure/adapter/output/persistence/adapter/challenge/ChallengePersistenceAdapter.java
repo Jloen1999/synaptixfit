@@ -1,5 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.challenge;
 
+import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.training.TrainingDbValues;
+import com.synaptixfit.domain.model.training.ProgressStatus;
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
 import com.synaptixfit.domain.model.challenge.ChallengeStatus;
@@ -254,6 +256,24 @@ public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
                             .put(rs.getObject("id", UUID.class), new LinkedDeadline(rs.getString("titulo"),
                                     rs.getObject("fecha_limite", OffsetDateTime.class).toInstant(),
                                     rs.getBoolean("esta_completado")));
+                    return null;
+                })
+                .list();
+        // Días de rutina vinculados (Entrenamiento, ADR 0032): se completan al entrenarlos.
+        String completed = TrainingDbValues.dayStatusToDb(ProgressStatus.COMPLETED);
+        jdbc.sql("""
+                        select d.id, r.usuario_id, r.nombre, d.estado, s.numero_semana, d.numero_dia
+                        from dias_rutina d
+                        join semanas_rutina s on s.id = d.semana_id
+                        join rutinas r on r.id = s.rutina_id
+                        where d.id in (:ids)
+                        """)
+                .param("ids", ids)
+                .query((rs, n) -> {
+                    result.computeIfAbsent(rs.getObject("usuario_id", UUID.class), k -> new HashMap<>())
+                            .put(rs.getObject("id", UUID.class), new LinkedDeadline(rs.getString("nombre"), null,
+                                    completed.equals(rs.getString("estado")), rs.getInt("numero_semana"),
+                                    rs.getInt("numero_dia")));
                     return null;
                 })
                 .list();

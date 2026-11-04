@@ -12,6 +12,7 @@ import com.synaptixfit.domain.model.training.ProgressStatus;
 import com.synaptixfit.domain.model.training.Routine;
 import com.synaptixfit.domain.model.training.RoutineDay;
 import com.synaptixfit.domain.model.training.RoutineStatus;
+import com.synaptixfit.domain.model.training.RoutinePlan;
 import com.synaptixfit.domain.model.training.RoutineWeek;
 import com.synaptixfit.domain.model.training.TrackingKind;
 import com.synaptixfit.domain.model.training.TrainingGoal;
@@ -179,25 +180,33 @@ public final class RoutineDtos {
         }
     }
 
+    /** Semana. {@code startsOn}/{@code endsOn}: sus fechas si la rutina tiene fecha de inicio ({@link RoutinePlan}). */
     public record WeekResponse(UUID id, int number, String name, WeekType type, ProgressStatus status,
-                               List<DayResponse> days) {
-        public static WeekResponse from(RoutineWeek w) {
+                               List<DayResponse> days, LocalDate startsOn, LocalDate endsOn) {
+        public static WeekResponse from(RoutineWeek w, RoutinePlan plan) {
+            RoutinePlan.WeekDates dates = plan.datesOf(w.number());
             return new WeekResponse(w.id(), w.number(), w.name(), w.type(), w.status(),
-                    w.days().stream().map(DayResponse::from).toList());
+                    w.days().stream().map(DayResponse::from).toList(), dates.startsOn(), dates.endsOn());
         }
     }
 
-    /** Rutina completa. {@code owned} indica si es del usuario (si no, es de la comunidad y solo se puede clonar). */
+    /**
+     * Rutina completa. {@code owned} indica si es del usuario (si no, es de la comunidad y solo se puede clonar).
+     * {@code currentWeek}, {@code progressPercent} y {@code nextStep}: el plan por fases ({@link RoutinePlan}).
+     */
     public record RoutineResponse(UUID id, UUID ownerId, String authorName, boolean owned, String name,
                                   String description, Visibility visibility, RoutineStatus status, TrainingGoal goal,
                                   LocalDate startDate, int durationWeeks, int exerciseCount, int totalDays,
                                   int completedDays, int skippedDays, OriginResponse origin, Instant createdAt,
-                                  List<WeekResponse> weeks) {
+                                  List<WeekResponse> weeks, int currentWeek, int progressPercent,
+                                  RoutinePlan.NextStep nextStep) {
         public static RoutineResponse from(Routine r, String authorName, java.util.UUID viewerId) {
+            RoutinePlan plan = RoutinePlan.of(r);
             return new RoutineResponse(r.id(), r.ownerId(), authorName, r.isOwnedBy(viewerId), r.name(),
                     r.description(), r.visibility(), r.status(), r.goal(), r.startDate(), r.durationWeeks(),
                     r.exerciseCount(), r.totalDays(), r.completedDays(), r.skippedDays(), originOf(r), r.createdAt(),
-                    r.weeks().stream().map(WeekResponse::from).toList());
+                    r.weeks().stream().map(w -> WeekResponse.from(w, plan)).toList(), plan.currentWeek(),
+                    plan.percentDone(), plan.nextStep());
         }
     }
 

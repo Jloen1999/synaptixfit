@@ -10,6 +10,7 @@ import '../errors/repository_error_handler.dart';
 import '../remote_data_source/training/dto/proposal_dto.dart';
 import '../remote_data_source/training/dto/routine_dto.dart';
 import '../remote_data_source/training/routine_remote_data_source.dart';
+import '../../domain/models/training/routine_template.dart';
 
 class RoutineRepository implements RoutineRepositoryContract {
   RoutineRepository(this._remote);
@@ -233,6 +234,18 @@ class RoutineRepository implements RoutineRepositoryContract {
         () async => (await _remote.refine(
           RoutineProposalDto.fromDomain(proposal),
         )).toDomain(),
+      );
+
+  @override
+  Future<AppResult<List<RoutineTemplate>>> listTemplates() =>
+      RepositoryErrorHandler.guard(
+        () async => [for (final t in await _remote.templates()) t.toDomain()],
+      );
+
+  @override
+  Future<AppResult<Routine>> useTemplate(String templateId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.useTemplate(templateId)).toDomain(),
       );
 }
 

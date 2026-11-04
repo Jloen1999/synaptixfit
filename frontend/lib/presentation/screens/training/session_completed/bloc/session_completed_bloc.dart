@@ -14,6 +14,12 @@ import '../../../../../domain/use_cases/training/discard_recommendation_use_case
 import '../../../../../domain/use_cases/training/get_session_highlights_use_case.dart';
 import '../../../../../domain/use_cases/training/get_session_use_case.dart';
 import '../../training_effect.dart';
+import '../../../../../domain/enums/challenge_status.dart';
+import '../../../../../domain/models/challenges/challenge.dart';
+import '../../../../../domain/models/challenges/challenge_query.dart';
+import '../../../../../domain/models/progress/streak.dart';
+import '../../../../../domain/use_cases/challenges/list_my_challenges_use_case.dart';
+import '../../../../../domain/use_cases/progress/get_streak_use_case.dart';
 
 part 'session_completed_bloc.freezed.dart';
 part 'session_completed_event.dart';
@@ -28,6 +34,8 @@ class SessionCompletedBloc
     required this._discard,
     required this._getHighlights,
     required this._createPost,
+    required this._getStreak,
+    required this._listChallenges,
   }) : super(const SessionCompletedState()) {
     on<SessionCompletedStarted>(_onStarted);
     on<SessionCompletedShareRequested>(_onShare);
@@ -44,6 +52,8 @@ class SessionCompletedBloc
   final DiscardRecommendationUseCaseContract _discard;
   final GetSessionHighlightsUseCaseContract _getHighlights;
   final CreatePostUseCaseContract _createPost;
+  final GetStreakUseCaseContract _getStreak;
+  final ListMyChallengesUseCaseContract _listChallenges;
 
   /// Con [result] (recién finalizada) no hace falta pedir nada; sin él
   /// (enlace directo) se carga la sesión y no se conoce la experiencia.
@@ -79,6 +89,22 @@ class SessionCompletedBloc
     if (highlights.valueOrNull case final h?) {
       emit(state.copyWith(highlights: h));
     }
+    // Lo que ha sumado la sesión: racha y retos que cuentan entrenos (si
+    // falla, simplemente no se muestra).
+    final streak = await _getStreak();
+    final challenges = await _listChallenges(
+      query: const ChallengeQuery(status: ChallengeStatus.active),
+      size: 10,
+    );
+    emit(
+      state.copyWith(
+        streak: streak.valueOrNull,
+        trainingChallenges: [
+          for (final c in challenges.valueOrNull?.items ?? const <Challenge>[])
+            if (c.tracksTrainingSessions) c,
+        ],
+      ),
+    );
   }
 
   Future<void> _onShare(

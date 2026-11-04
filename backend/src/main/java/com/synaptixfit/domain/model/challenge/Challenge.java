@@ -502,7 +502,8 @@ public final class Challenge {
                 continue;
             }
             Optional<LinkedDeadline> deadline = linkedDeadline(l);
-            if (deadline.isPresent()) {
+            // Un día de rutina no tiene fecha límite: no hay periodo que comprobar.
+            if (deadline.isPresent() && deadline.get().dueAt() != null) {
                 LocalDate due = LocalDate.ofInstant(deadline.get().dueAt(), zone);
                 if (due.isBefore(first) || due.isAfter(last)) {
                     throw new ChallengeLinkOutsidePeriodException(l.entityId());

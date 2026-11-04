@@ -57,11 +57,15 @@ abstract final class ChallengeApiValues {
   static ChallengeLinkType? linkType(String? value) => switch (value) {
     'EXAM' => ChallengeLinkType.exam,
     'DELIVERY' => ChallengeLinkType.delivery,
+    'ROUTINE_DAY' => ChallengeLinkType.routineDay,
     _ => null,
   };
 
-  static String linkTypeToApi(ChallengeLinkType value) =>
-      value.name.toUpperCase();
+  static String linkTypeToApi(ChallengeLinkType value) => switch (value) {
+    ChallengeLinkType.exam => 'EXAM',
+    ChallengeLinkType.delivery => 'DELIVERY',
+    ChallengeLinkType.routineDay => 'ROUTINE_DAY',
+  };
 
   static ChallengeLink? link(String? type, String? id) {
     final linkType = ChallengeApiValues.linkType(type);

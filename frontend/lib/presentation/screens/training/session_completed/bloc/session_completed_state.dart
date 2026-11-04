@@ -22,5 +22,9 @@ abstract class SessionCompletedState with _$SessionCompletedState {
     /// Ya se compartió en el muro / se está compartiendo.
     @Default(false) bool shared,
     @Default(false) bool sharing,
+
+    /// Racha y retos activos que cuentan entrenos (llegan después).
+    Streak? streak,
+    @Default(<Challenge>[]) List<Challenge> trainingChallenges,
   }) = _SessionCompletedState;
 }

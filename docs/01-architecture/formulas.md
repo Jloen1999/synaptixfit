@@ -152,6 +152,15 @@ Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevo
 - **Una sola rutina en curso:** activar una pausa la anterior; una nueva (creada, generada, duplicada o clonada) solo queda en curso si no hay otra.
 - **Retos vencidos:** pasada su fecha de fin ya no se completan, desmarcan ni avanzan (`CHALLENGE_EXPIRED` si se intenta a mano; la sincronización con entregas, bloques y sesiones los salta sin error). Un progreso no puede registrarse con fecha fuera del periodo del reto.
 
+## Plan por fases, plantillas y evolución (ADR 0032)
+
+- **Semana actual:** la del primer día con ejercicios sin hacer ni saltar (como el «próximo día»); si no queda ninguno, la última. **Avance:** `round(100 × (hechos + saltados) / días)`.
+- **Fechas de cada semana:** solo con fecha de inicio; semana N empieza en `inicio + 7·(N−1)` y acaba 6 días después.
+- **Al terminar:** menos de 8 semanas → repetir subiendo un poco el peso; 8 o más → cambiar de plan.
+- **Plantillas:** todas las semanas repiten los días; la semana suave (descarga) quita una serie a cada ejercicio, mínimo una.
+- **Peso máximo estimado por día** (`ExerciseProgress`): la mejor serie de trabajo completada con peso y de 1 a 12 repeticiones, con `ProgressionCalculator.oneRepMax` (la misma fórmula no lineal que la progresión de cargas). Con más repeticiones la estimación no es fiable.
+- **Tarea vinculada a un día de rutina:** se completa cuando se completa la sesión de ese día y se reabre si se desmarca. No tiene fecha límite, así que no se comprueba el periodo del reto.
+
 ## Retos (ADR 0028)
 
 - **Periodo:** solo se actúa a mano entre el inicio y el fin (`Challenge.requireOpen`), esté o no completado: antes, `CHALLENGE_NOT_STARTED` (estado `UPCOMING`); después, `CHALLENGE_EXPIRED`. Las tareas se pueden preparar antes de empezar, pero no editar tras el fin.

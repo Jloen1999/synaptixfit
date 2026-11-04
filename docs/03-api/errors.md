@@ -235,6 +235,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `ROUTINE_NOT_FOUND` | 404 | Rutina inexistente, eliminada, ajena o no visible | No encontramos esa rutina. | Activo |
 | `ROUTINE_WEEK_NOT_FOUND` | 404 | La semana no pertenece a la rutina | Esa semana no existe. | Activo |
 | `ROUTINE_DAY_NOT_FOUND` | 404 | El día no pertenece a la rutina | Ese día no existe. | Activo |
+| `ROUTINE_TEMPLATE_NOT_FOUND` | 404 | La plantilla no existe o no tiene ejercicios | Esa plantilla ya no está disponible. | Activo |
 | `ROUTINE_EXERCISE_NOT_FOUND` | 404 | El ejercicio planificado no es de la rutina | Ese ejercicio no está en la rutina. | Activo |
 | `ROUTINE_DAY_DUPLICATED` | 409 | Ya hay un día con ese número en la semana | Esa semana ya tiene ese día. | Activo |
 | `ROUTINE_WEEK_LIMIT` | 422 | Sin semanas, más de 52 o borrar la última | Una rutina debe tener entre 1 y 52 semanas. | Activo |

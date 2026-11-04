@@ -20,6 +20,7 @@ import '../../widgets/training_labels.dart';
 import '../../widgets/week_selector.dart';
 import '../bloc/routine_detail_bloc.dart';
 import 'routine_details_sheet.dart';
+import 'routine_plan_sheet.dart';
 
 /// Detalle de una rutina (propia: editable; ajena: solo clonar).
 class RoutineDetailPage extends StatelessWidget {
@@ -269,6 +270,10 @@ class _DetailViewState extends State<_DetailView> {
                         if (routine.weeks.isNotEmpty) ...[
                           WeekSelector(
                             count: routine.weeks.length,
+                            ranges: [
+                              for (final w in routine.weeks)
+                                weekRange(l10n, w.startsOn, w.endsOn),
+                            ],
                             selected: _week,
                             completed: {
                               for (var i = 0; i < routine.weeks.length; i++)
@@ -390,13 +395,23 @@ class _Header extends StatelessWidget {
           ),
           if (r.owned && r.totalDays > 0) ...[
             const SizedBox(height: TokensSpacing.m),
+            // «Semana 2 de 8 · 21 %»: dónde está y cuánto lleva (lo da el servidor).
+            Text(
+              l10n.trainingPlanWeekOf(
+                r.currentWeek,
+                r.weeks.length,
+                r.progressPercent,
+              ),
+              style: context.textStyles.titleSmall,
+            ),
+            const SizedBox(height: TokensSpacing.xs),
             Row(
               children: [
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(TokensRadius.pill),
                     child: LinearProgressIndicator(
-                      value: r.progress,
+                      value: r.progressPercent / 100,
                       color: context.colors.secondary,
                       backgroundColor: context.colors.secondaryContainer,
                     ),
@@ -408,6 +423,14 @@ class _Header extends StatelessWidget {
                   style: context.textStyles.labelLarge,
                 ),
               ],
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                onPressed: () => showRoutinePlanSheet(context, r),
+                icon: const Icon(Icons.table_rows_rounded),
+                label: Text(l10n.trainingPlanSeeWeeks),
+              ),
             ),
           ],
           // Una rutina propia que no está en curso se empieza aquí (pausa la
@@ -508,6 +531,14 @@ class _WeekSection extends StatelessWidget {
                       color: context.colors.onSurfaceVariant,
                     ),
                   ),
+                  if (weekRange(l10n, week.startsOn, week.endsOn)
+                      case final range?)
+                    Text(
+                      range,
+                      style: context.textStyles.labelMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
                   if (week.type != null)
                     Text(
                       week.type!.description(l10n),

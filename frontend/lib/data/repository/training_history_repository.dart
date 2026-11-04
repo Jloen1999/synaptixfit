@@ -4,6 +4,7 @@ import '../../domain/models/training/training_page.dart';
 import '../../domain/repositories/training_history_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
 import '../remote_data_source/training/training_history_remote_data_source.dart';
+import '../../domain/models/training/exercise_progress.dart';
 
 /// Implementa [TrainingHistoryRepositoryContract] con [TrainingHistoryRemoteDataSource].
 class TrainingHistoryRepository implements TrainingHistoryRepositoryContract {
@@ -44,4 +45,9 @@ class TrainingHistoryRepository implements TrainingHistoryRepositoryContract {
       RepositoryErrorHandler.guard(
         () async => [for (final r in await _remote.records()) r.toDomain()],
       );
+
+  @override
+  Future<AppResult<List<ExerciseProgressPoint>>> getExerciseProgress(
+    String exerciseId,
+  ) => RepositoryErrorHandler.guard(() => _remote.exerciseProgress(exerciseId));
 }

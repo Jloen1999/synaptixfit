@@ -1,0 +1,170 @@
+{
+  "sesiones": {
+    "fb_a": [
+      ["Sentadilla con barra", 3, 8, 120],
+      ["Press de banca con barra", 3, 8, 120],
+      ["Remo con barra y agarre prono", 3, 10, 90],
+      ["Plancha abdominal sobre antebrazos", 3, 1, 60, 30]
+    ],
+    "fb_b": [
+      ["Peso muerto rumano con mancuernas", 3, 10, 120],
+      ["Press de hombros sentado en máquina", 3, 10, 90],
+      ["Jalón al pecho con agarre abierto en polea", 3, 10, 90],
+      ["Bicho muerto", 3, 10, 60]
+    ],
+    "torso_a": [
+      ["Press de banca con barra", 4, 8, 120],
+      ["Remo con barra y agarre prono", 4, 8, 120],
+      ["Press de hombros sentado en máquina", 3, 10, 90],
+      ["Jalón al pecho con agarre abierto en polea", 3, 10, 90],
+      ["Curl con barra", 2, 12, 60],
+      ["Extensión de tríceps en polea", 2, 12, 60]
+    ],
+    "pierna_a": [
+      ["Sentadilla con barra", 4, 6, 150],
+      ["Peso muerto rumano con mancuernas", 3, 10, 120],
+      ["Prensa de piernas a 45 grados", 3, 12, 90],
+      ["Elevación de gemelos de pie", 3, 15, 60],
+      ["Plancha abdominal sobre antebrazos", 3, 1, 60, 30]
+    ],
+    "torso_b": [
+      ["Press de banca inclinado con mancuernas", 3, 10, 90],
+      ["Remo sentado en polea", 3, 10, 90],
+      ["Elevación lateral a un brazo con mancuerna", 3, 12, 60],
+      ["Face pull de pie con polea", 3, 15, 60],
+      ["Fondos de tríceps en banco", 2, 12, 60]
+    ],
+    "pierna_b": [
+      ["Peso muerto con barra", 3, 5, 180],
+      ["Sentadilla búlgara", 3, 10, 90],
+      ["Hip thrust con barra", 3, 10, 90],
+      ["Curl femoral tumbado en máquina", 3, 12, 60],
+      ["Bicho muerto", 3, 10, 60]
+    ],
+    "fuerza_a": [
+      ["Sentadilla con barra", 5, 5, 180],
+      ["Press de banca con barra", 5, 5, 180],
+      ["Remo con barra y agarre prono", 3, 6, 150]
+    ],
+    "fuerza_b": [
+      ["Sentadilla con barra", 5, 5, 180],
+      ["Press de hombros sentado en máquina", 4, 6, 150],
+      ["Peso muerto con barra", 3, 5, 180]
+    ],
+    "casa_a": [
+      ["Sentadilla", 3, 15, 60],
+      ["Flexiones", 3, 10, 60],
+      ["Remo invertido bajo una mesa", 3, 10, 60],
+      ["Puente de glúteos", 3, 15, 45],
+      ["Plancha abdominal sobre antebrazos", 3, 1, 45, 30]
+    ],
+    "casa_b": [
+      ["Zancada", 3, 12, 60],
+      ["Flexiones de rodillas", 3, 12, 60],
+      ["Superman", 3, 12, 45],
+      ["Sentadilla búlgara", 3, 10, 60],
+      ["Bicho muerto", 3, 10, 45]
+    ],
+    "cardio_casa": [
+      ["Jumping jack", 3, 30, 30],
+      ["Sentadilla con salto", 3, 12, 45],
+      ["Escalador", 3, 20, 45],
+      ["Burpee", 3, 8, 60],
+      ["Plancha abdominal sobre antebrazos", 3, 1, 30, 30]
+    ],
+    "examen_gym": [
+      ["Sentadilla goblet con mancuerna", 3, 10, 60],
+      ["Press de banca con mancuerna", 3, 10, 60],
+      ["Remo sentado en polea", 3, 10, 60],
+      ["Plancha abdominal sobre antebrazos", 2, 1, 45, 30]
+    ],
+    "examen_casa": [
+      ["Sentadilla", 3, 12, 45],
+      ["Flexiones", 3, 10, 45],
+      ["Puente de glúteos", 3, 12, 45],
+      ["Plancha abdominal sobre antebrazos", 2, 1, 45, 30]
+    ]
+  },
+  "plantillas": [
+    {
+      "codigo": "cuerpo_completo_2", "objetivo": "HYPERTROPHY", "en_casa": false, "examenes": false,
+      "minutos": 50, "semanas": 4, "dias": [[1, "fb_a"], [4, "fb_b"]],
+      "es": ["Cuerpo completo · 2 días", "Todo el cuerpo en cada sesión. Ideal si empiezas o vas justo de tiempo."],
+      "en": ["Full body · 2 days", "Your whole body every session. Great if you're starting out or short on time."],
+      "fr": ["Corps entier · 2 jours", "Tout le corps à chaque séance. Idéal pour débuter ou si tu manques de temps."],
+      "pt": ["Corpo inteiro · 2 dias", "O corpo todo em cada sessão. Ideal para começar ou se tens pouco tempo."]
+    },
+    {
+      "codigo": "cuerpo_completo_3", "objetivo": "HYPERTROPHY", "en_casa": false, "examenes": false,
+      "minutos": 50, "semanas": 4, "dias": [[1, "fb_a"], [3, "fb_b"], [5, "fb_a"]],
+      "es": ["Cuerpo completo · 3 días", "Tres sesiones alternando dos entrenos. Buena base para ganar músculo."],
+      "en": ["Full body · 3 days", "Three sessions alternating two workouts. A solid base to build muscle."],
+      "fr": ["Corps entier · 3 jours", "Trois séances en alternant deux entraînements. Une bonne base pour prendre du muscle."],
+      "pt": ["Corpo inteiro · 3 dias", "Três sessões alternando dois treinos. Uma boa base para ganhar músculo."]
+    },
+    {
+      "codigo": "torso_pierna_4", "objetivo": "HYPERTROPHY", "en_casa": false, "examenes": false,
+      "minutos": 60, "semanas": 4, "dias": [[1, "torso_a"], [2, "pierna_a"], [4, "torso_b"], [5, "pierna_b"]],
+      "es": ["Torso y pierna · 4 días", "Dos días de parte de arriba y dos de piernas. Para avanzar con más volumen."],
+      "en": ["Upper and lower · 4 days", "Two upper-body days and two leg days. To progress with more volume."],
+      "fr": ["Haut et bas du corps · 4 jours", "Deux jours pour le haut du corps et deux pour les jambes. Pour progresser avec plus de volume."],
+      "pt": ["Tronco e pernas · 4 dias", "Dois dias de tronco e dois de pernas. Para evoluir com mais volume."]
+    },
+    {
+      "codigo": "cinco_dias", "objetivo": "HYPERTROPHY", "en_casa": false, "examenes": false,
+      "minutos": 60, "semanas": 4, "dias": [[1, "torso_a"], [2, "pierna_a"], [3, "fb_b"], [4, "torso_b"], [5, "pierna_b"]],
+      "es": ["Cinco días", "Torso, pierna y un día de cuerpo completo. Para quien ya entrena con constancia."],
+      "en": ["Five days", "Upper body, legs and one full-body day. For people who already train regularly."],
+      "fr": ["Cinq jours", "Haut du corps, jambes et une journée corps entier. Pour qui s'entraîne déjà régulièrement."],
+      "pt": ["Cinco dias", "Tronco, pernas e um dia de corpo inteiro. Para quem já treina com regularidade."]
+    },
+    {
+      "codigo": "fuerza_3", "objetivo": "MAX_STRENGTH", "en_casa": false, "examenes": false,
+      "minutos": 60, "semanas": 4, "dias": [[1, "fuerza_a"], [3, "fuerza_b"], [5, "fuerza_a"]],
+      "es": ["Más fuerza · 3 días", "Pocos ejercicios básicos, pocas repeticiones y descansos largos para levantar más peso."],
+      "en": ["Get stronger · 3 days", "A few basic lifts, low reps and long rests to lift heavier."],
+      "fr": ["Plus de force · 3 jours", "Quelques exercices de base, peu de répétitions et de longs repos pour soulever plus lourd."],
+      "pt": ["Mais força · 3 dias", "Poucos exercícios básicos, poucas repetições e descansos longos para levantar mais peso."]
+    },
+    {
+      "codigo": "casa_2", "objetivo": "STRENGTH_ENDURANCE", "en_casa": true, "examenes": false,
+      "minutos": 35, "semanas": 4, "dias": [[2, "casa_a"], [5, "casa_b"]],
+      "es": ["En casa · 2 días", "Sin material: solo tu cuerpo y una mesa firme para el remo."],
+      "en": ["At home · 2 days", "No equipment: just your body and a sturdy table for rows."],
+      "fr": ["À la maison · 2 jours", "Sans matériel : ton corps et une table solide pour le tirage."],
+      "pt": ["Em casa · 2 dias", "Sem material: só o teu corpo e uma mesa firme para o remo."]
+    },
+    {
+      "codigo": "casa_3", "objetivo": "STRENGTH_ENDURANCE", "en_casa": true, "examenes": false,
+      "minutos": 35, "semanas": 4, "dias": [[1, "casa_a"], [3, "casa_b"], [5, "casa_a"]],
+      "es": ["En casa · 3 días", "Tres sesiones sin material para ponerte en forma en tu cuarto."],
+      "en": ["At home · 3 days", "Three no-equipment sessions to get fit in your room."],
+      "fr": ["À la maison · 3 jours", "Trois séances sans matériel pour te mettre en forme dans ta chambre."],
+      "pt": ["Em casa · 3 dias", "Três sessões sem material para ficares em forma no teu quarto."]
+    },
+    {
+      "codigo": "cardio_casa_3", "objetivo": "METABOLIC_CONDITIONING", "en_casa": true, "examenes": false,
+      "minutos": 25, "semanas": 4, "dias": [[1, "cardio_casa"], [3, "cardio_casa"], [5, "cardio_casa"]],
+      "es": ["Cardio en casa · 3 días", "Ejercicios rápidos que suben las pulsaciones. Para ganar fondo sin salir."],
+      "en": ["Cardio at home · 3 days", "Fast exercises that raise your heart rate. Build stamina without going out."],
+      "fr": ["Cardio à la maison · 3 jours", "Des exercices rapides qui font monter le cœur. Pour gagner en endurance sans sortir."],
+      "pt": ["Cardio em casa · 3 dias", "Exercícios rápidos que sobem o ritmo cardíaco. Para ganhar resistência sem sair."]
+    },
+    {
+      "codigo": "examenes_gimnasio", "objetivo": "STRENGTH_ENDURANCE", "en_casa": false, "examenes": true,
+      "minutos": 30, "semanas": 2, "dias": [[2, "examen_gym"], [5, "examen_gym"]],
+      "es": ["Semana de exámenes · gimnasio", "Media hora, dos días. Para no perder lo ganado mientras estudias."],
+      "en": ["Exam week · gym", "Half an hour, two days. Keep what you've gained while you study."],
+      "fr": ["Semaine d'examens · salle", "Une demi-heure, deux jours. Pour garder tes progrès pendant que tu révises."],
+      "pt": ["Semana de exames · ginásio", "Meia hora, dois dias. Para não perder o que ganhaste enquanto estudas."]
+    },
+    {
+      "codigo": "examenes_casa", "objetivo": "STRENGTH_ENDURANCE", "en_casa": true, "examenes": true,
+      "minutos": 20, "semanas": 2, "dias": [[1, "examen_casa"], [3, "examen_casa"], [5, "examen_casa"]],
+      "es": ["Semana de exámenes · en casa", "Veinte minutos sin material entre sesiones de estudio. Te despeja y te mantiene."],
+      "en": ["Exam week · at home", "Twenty no-equipment minutes between study sessions. Clears your head and keeps you fit."],
+      "fr": ["Semaine d'examens · maison", "Vingt minutes sans matériel entre deux révisions. Ça vide la tête et ça entretient."],
+      "pt": ["Semana de exames · em casa", "Vinte minutos sem material entre sessões de estudo. Desanuvia e mantém-te em forma."]
+    }
+  ]
+}

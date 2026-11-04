@@ -13,6 +13,7 @@ class WeekSelector extends StatelessWidget {
     required this.onSelected,
     this.onAdd,
     this.completed = const {},
+    this.ranges = const [],
   });
 
   final int count;
@@ -22,6 +23,9 @@ class WeekSelector extends StatelessWidget {
 
   /// Índices de semanas completadas (se marcan con un icono).
   final Set<int> completed;
+
+  /// Fechas de cada semana («3 nov – 9 nov»), si las tiene.
+  final List<String?> ranges;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +43,14 @@ class WeekSelector extends StatelessWidget {
                 avatar: completed.contains(i)
                     ? const Icon(Icons.check_rounded, size: 16)
                     : null,
-                label: Text(l10n.trainingWeekShort(i + 1)),
+                label: Text(
+                  i < ranges.length && ranges[i] != null
+                      ? l10n.trainingWeekChip(
+                          l10n.trainingWeekShort(i + 1),
+                          ranges[i]!,
+                        )
+                      : l10n.trainingWeekShort(i + 1),
+                ),
                 tooltip: weekTitle(l10n, i + 1, null),
                 onSelected: (_) => onSelected(i),
               ),

@@ -15,6 +15,7 @@ import 'session_detail/page/session_detail_page.dart';
 import 'session_history/page/session_history_page.dart';
 import 'training_home/page/training_home_page.dart';
 import 'weekly_plan/page/weekly_plan_page.dart';
+import 'routine_templates/page/routine_templates_page.dart';
 
 /// Rutas del módulo training.
 abstract final class TrainingPaths {
@@ -52,6 +53,9 @@ abstract final class TrainingPaths {
   static const checkIn = '$root/check-in';
   static const weeklyPlan = '$root/weekly-plan';
   static const community = '$root/community';
+
+  /// Plantillas de rutina listas para usar (dentro de la pestaña).
+  static const templates = '$root/templates';
   static const pastActivity = '$root/past-activity';
 }
 
@@ -84,6 +88,10 @@ List<RouteBase> trainingBranchRoutes() => [
             ExerciseDetailPage(exerciseId: state.pathParameters['exerciseId']!),
       ),
       GoRoute(path: 'community', builder: (_, _) => const CommunityPage()),
+      GoRoute(
+        path: 'templates',
+        builder: (_, _) => const RoutineTemplatesPage(),
+      ),
       GoRoute(path: 'history', builder: (_, _) => const SessionHistoryPage()),
       GoRoute(path: 'weekly-plan', builder: (_, _) => const WeeklyPlanPage()),
     ],

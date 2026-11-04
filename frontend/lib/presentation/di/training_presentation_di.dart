@@ -16,6 +16,8 @@ import '../screens/training/session_history/bloc/session_history_bloc.dart';
 import '../screens/training/training_home/bloc/training_home_bloc.dart';
 import '../screens/training/weekly_plan/bloc/weekly_plan_bloc.dart';
 import '../screens/shell/bloc/open_session_bar_bloc.dart';
+import '../screens/training/routine_templates/bloc/routine_templates_bloc.dart';
+import '../screens/training/exercise_progress/bloc/exercise_progress_bloc.dart';
 
 /// Blocs del módulo training.
 void registerTrainingPresentation(GetIt getIt) {
@@ -130,8 +132,14 @@ void registerTrainingPresentation(GetIt getIt) {
         discard: getIt(),
         getHighlights: getIt(),
         createPost: getIt(),
+        getStreak: getIt(),
+        listChallenges: getIt(),
       ),
     )
+    ..registerFactory(
+      () => RoutineTemplatesBloc(list: getIt(), use: getIt()),
+    )
+    ..registerFactory(() => ExerciseProgressBloc(get: getIt()))
     ..registerFactory(
       () => SessionDetailBloc(
         getSession: getIt(),
@@ -166,6 +174,7 @@ void registerTrainingPresentation(GetIt getIt) {
         getPlans: getIt(),
         savePlan: getIt(),
         deletePlan: getIt(),
+        getPendingDay: getIt(),
       ),
     )
     ..registerFactory(
