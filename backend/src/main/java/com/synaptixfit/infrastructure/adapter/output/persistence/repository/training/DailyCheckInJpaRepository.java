@@ -14,4 +14,8 @@ public interface DailyCheckInJpaRepository extends JpaRepository<DailyCheckInEnt
     Optional<DailyCheckInEntity> findByUsuarioIdAndFecha(UUID usuarioId, LocalDate fecha);
 
     Page<DailyCheckInEntity> findByUsuarioIdOrderByFechaDesc(UUID usuarioId, Pageable pageable);
+
+    void deleteByUsuarioId(UUID usuarioId);
+
+    void deleteByUsuarioIdAndFecha(UUID usuarioId, LocalDate fecha);
 }

@@ -2,6 +2,15 @@ import '../use_cases/profile/apply_enrollment_use_case.dart';
 import '../use_cases/profile/read_enrollment_use_case.dart';
 import 'package:get_it/get_it.dart';
 
+import '../use_cases/profile/get_device_permission_status_use_case.dart';
+import '../use_cases/profile/request_device_permission_use_case.dart';
+import '../use_cases/profile/open_permission_settings_use_case.dart';
+import '../use_cases/profile/is_permissions_intro_pending_use_case.dart';
+import '../use_cases/profile/mark_permissions_intro_seen_use_case.dart';
+import '../use_cases/profile/get_legal_document_use_case.dart';
+import '../use_cases/profile/get_legal_acceptance_use_case.dart';
+import '../use_cases/profile/accept_legal_terms_use_case.dart';
+
 import '../use_cases/profile/get_language_use_case.dart';
 import '../use_cases/profile/set_language_use_case.dart';
 import '../use_cases/profile/get_appearance_use_case.dart';
@@ -33,6 +42,30 @@ import '../use_cases/profile/disable_weekly_email_use_case.dart';
 /// Casos de uso del módulo profile.
 void registerProfileDomain(GetIt getIt) {
   getIt
+    ..registerLazySingleton<GetDevicePermissionStatusUseCaseContract>(
+      () => GetDevicePermissionStatusUseCase(getIt()),
+    )
+    ..registerLazySingleton<RequestDevicePermissionUseCaseContract>(
+      () => RequestDevicePermissionUseCase(getIt()),
+    )
+    ..registerLazySingleton<OpenPermissionSettingsUseCaseContract>(
+      () => OpenPermissionSettingsUseCase(getIt()),
+    )
+    ..registerLazySingleton<IsPermissionsIntroPendingUseCaseContract>(
+      () => IsPermissionsIntroPendingUseCase(getIt()),
+    )
+    ..registerLazySingleton<MarkPermissionsIntroSeenUseCaseContract>(
+      () => MarkPermissionsIntroSeenUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetLegalDocumentUseCaseContract>(
+      () => GetLegalDocumentUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetLegalAcceptanceUseCaseContract>(
+      () => GetLegalAcceptanceUseCase(getIt()),
+    )
+    ..registerLazySingleton<AcceptLegalTermsUseCaseContract>(
+      () => AcceptLegalTermsUseCase(getIt()),
+    )
     ..registerLazySingleton<GetAppearanceUseCaseContract>(
       () => GetAppearanceUseCase(getIt()),
     )

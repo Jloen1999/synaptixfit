@@ -162,6 +162,7 @@ abstract final class TokensSize {
   static const double liveDot = 8;
   static const double stepBadge = 28;
   static const double guideSkeleton = 120;
+  static const double permissionSkeleton = 168;
   static const double progressInline = 160;
   static const double emblem = 56;
   static const double spinnerStroke = 2;

@@ -853,5 +853,11 @@
   "trainingTemplatesUseNamed": "Use the plan “{name}”",
   "trainingActivityPaceKmSpoken": "Pace of {pace} per kilometre",
   "trainingActivityPacePer100Spoken": "Pace of {pace} per 100 metres",
-  "trainingWeekSpoken": "Week {number}, {range}"
+  "trainingWeekSpoken": "Week {number}, {range}",
+  "trainingHealthConsentTitle": "Before logging how you feel",
+  "trainingHealthConsentBody": "How you slept, your energy, soreness and pain are health data. We only use them to adapt your training, never for advertising. You can withdraw this permission whenever you want in Profile › Settings › Privacy and data.",
+  "trainingHealthConsentCheckbox": "I give SynaptixFit permission to save and use this health data",
+  "trainingHealthConsentAccept": "Give permission and continue",
+  "trainingHealthConsentRequired": "Tick the box to give your permission.",
+  "trainingErrorHealthConsentRequired": "Before logging how you feel, give us permission to save it."
 }

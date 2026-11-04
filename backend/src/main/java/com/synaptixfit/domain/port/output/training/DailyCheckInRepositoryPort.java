@@ -16,4 +16,9 @@ public interface DailyCheckInRepositoryPort {
 
     /** Más recientes primero. */
     PageResult<DailyCheckIn> findByUser(UUID userId, PageRequest page);
+
+    /** Al retirar el consentimiento de salud con «borrar mis registros» (ADR 0034). */
+    void deleteByUser(UUID userId);
+
+    void deleteByUserAndDate(UUID userId, LocalDate date);
 }

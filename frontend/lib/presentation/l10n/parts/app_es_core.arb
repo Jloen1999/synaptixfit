@@ -228,5 +228,6 @@
   "xpGuideChallenges": "Retos",
   "xpGuideChallengesDetail": "Cada tarea da XP según su dificultad; como mucho 140 XP por reto.",
   "xpGuideFooter": "Si algo no suma, la app te dice por qué.",
-  "commonArrowSpoken": " a "
+  "commonArrowSpoken": " a ",
+  "registerLegalRequired": "Marca la casilla para crear tu cuenta."
 }

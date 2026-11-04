@@ -143,6 +143,66 @@ server {
         proxy_set_header X-Forwarded-Proto https;
     }
 
+    # Textos legales públicos (ADR 0034): las direcciones que piden Google Play y el RGPD, sin iniciar sesión.
+    # El backend los genera desde el mismo texto que lee la app. «rewrite … break» conserva ?lang=.
+    location = /privacidad {
+        rewrite ^ /api/v1/legal/privacy/page break;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /condiciones {
+        rewrite ^ /api/v1/legal/terms/page break;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /eliminar-cuenta {
+        rewrite ^ /api/v1/legal/account-deletion/page break;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Las mismas en inglés.
+    location = /privacy {
+        # El «?» final evita que nginx añada detrás la consulta original (?lang=es → lang=en&lang=es).
+        rewrite ^ /api/v1/legal/privacy/page?lang=en? break;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /terms {
+        # El «?» final evita que nginx añada detrás la consulta original (?lang=es → lang=en&lang=es).
+        rewrite ^ /api/v1/legal/terms/page?lang=en? break;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /delete-account {
+        # El «?» final evita que nginx añada detrás la consulta original (?lang=es → lang=en&lang=es).
+        rewrite ^ /api/v1/legal/account-deletion/page?lang=en? break;
+        proxy_pass ${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
     location /api/ {
         proxy_pass ${BACKEND_UPSTREAM};
         proxy_http_version 1.1;

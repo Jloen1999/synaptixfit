@@ -9,10 +9,13 @@ abstract interface class AuthRepositoryContract {
     required String password,
   });
 
+  /// [acceptedLegalVersion] es la versión de la política que la persona
+  /// aceptó en el formulario: el servidor la guarda con el alta (ADR 0034).
   Future<AppResult<Account>> register({
     required String email,
     required String password,
     required String fullName,
+    String? acceptedLegalVersion,
   });
 
   /// Inicia sesión con Google. En web espera a que el usuario pulse el botón de Google.

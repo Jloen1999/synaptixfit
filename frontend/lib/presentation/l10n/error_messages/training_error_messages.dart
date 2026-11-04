@@ -4,6 +4,7 @@ import '../gen_l10n/app_localizations.dart';
 String? trainingErrorMessage(AppLocalizations l10n, String code) =>
     switch (code) {
       'CYCLE_CONSENT_REQUIRED' => l10n.trainingErrorCycleConsentRequired,
+      'HEALTH_CONSENT_REQUIRED' => l10n.trainingErrorHealthConsentRequired,
       'CYCLE_TRACKING_OFF' => l10n.trainingErrorCycleTrackingOff,
       'CYCLE_DAY_OUT_OF_RANGE' => l10n.trainingErrorCycleDayOutOfRange,
       'EXERCISE_NOT_FOUND' => l10n.trainingErrorExerciseNotFound,

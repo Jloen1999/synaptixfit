@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.domain.port.output.privacy.LegalAcceptanceRepositoryPort;
 import com.synaptixfit.application.port.input.auth.ChangePasswordUseCase;
 import com.synaptixfit.application.port.input.auth.LoginUseCase;
 import com.synaptixfit.application.port.input.auth.LoginWithGoogleUseCase;
@@ -47,6 +48,7 @@ public class BeanConfiguration {
     private final GoogleIdentityVerifierPort googleVerifier;
     private final PlatformSettingsPort platformSettings;
     private final DomainEventPublisherPort events;
+    private final LegalAcceptanceRepositoryPort legalAcceptances;
     private final Clock clock;
     private final AppProperties properties;
 
@@ -54,7 +56,8 @@ public class BeanConfiguration {
                              PasswordHasherPort passwordHasher, AccessTokenIssuerPort accessTokens,
                              RefreshTokenRepositoryPort refreshTokens, GoogleIdentityVerifierPort googleVerifier,
                              PlatformSettingsPort platformSettings, DomainEventPublisherPort events,
-                             Clock clock, AppProperties properties) {
+                             LegalAcceptanceRepositoryPort legalAcceptances, Clock clock, AppProperties properties) {
+        this.legalAcceptances = legalAcceptances;
         this.tx = tx;
         this.users = users;
         this.passwordHasher = passwordHasher;
@@ -72,7 +75,7 @@ public class BeanConfiguration {
     @Bean(autowireCandidate = false)
     AuthService authService() {
         return new AuthService(users, passwordHasher, accessTokens, refreshTokens, googleVerifier,
-                platformSettings, events, clock, properties.jwt().refreshTokenTtl());
+                platformSettings, events, legalAcceptances, clock, properties.jwt().refreshTokenTtl());
     }
 
     @Bean

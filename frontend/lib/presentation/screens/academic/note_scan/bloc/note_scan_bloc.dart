@@ -34,6 +34,9 @@ class NoteScanBloc extends Bloc<NoteScanEvent, NoteScanState> {
         ),
       ),
     );
+    on<NoteScanCameraRetried>(
+      (_, emit) => emit(state.copyWith(cameraProblem: null)),
+    );
     on<NoteScanReadRequested>(_onRead);
     on<NoteScanBackToPhotos>(
       (_, emit) => emit(state.copyWith(draft: null, readError: null)),

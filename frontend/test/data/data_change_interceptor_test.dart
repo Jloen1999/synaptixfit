@@ -89,6 +89,13 @@ void main() {
       );
     });
 
+    test('aceptar la política no refresca ninguna pantalla', () {
+      expect(
+        DataChangeInterceptor.topicsFor('PUT', '/api/v1/me/legal-acceptance'),
+        isEmpty,
+      );
+    });
+
     test('el login no avisa y un prefijo parecido no confunde', () {
       expect(
         DataChangeInterceptor.topicsFor('POST', '/api/v1/auth/login'),

@@ -9,6 +9,11 @@
     <!-- Aviso de fin de fase del Pomodoro a la hora exacta. Android 12-13 lo concede;
          en Android 14 hay que activarlo en ajustes y, si no, el aviso es inexacto. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <!-- Fotografiar apuntes (ADR 0034): se pide con una explicación justo antes de abrir la
+         cámara; sin ella se eligen fotos de la galería (selector del sistema, sin permiso). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- La cámara es opcional: sin esto, Google Play ocultaría la app en móviles sin cámara. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="SynaptixFit"
         android:name="${applicationName}"

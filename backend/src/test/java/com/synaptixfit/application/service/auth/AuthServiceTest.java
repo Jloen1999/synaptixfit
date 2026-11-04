@@ -33,6 +33,8 @@ class AuthServiceTest {
     private final Map<UUID, User> userStore = new HashMap<>();
     private final Map<String, RefreshToken> tokenStore = new HashMap<>();
     private final java.util.List<com.synaptixfit.domain.event.DomainEvent> published = new java.util.ArrayList<>();
+    private final java.util.List<com.synaptixfit.domain.model.privacy.LegalAcceptance> acceptances =
+            new java.util.ArrayList<>();
     private boolean lockdown;
     private AuthService service;
 
@@ -67,6 +69,12 @@ class AuthServiceTest {
                 idToken -> new GoogleIdentity("sub-1", "g@example.com", true, "Gina", null),
                 () -> lockdown,
                 published::add,
+                new com.synaptixfit.domain.port.output.privacy.LegalAcceptanceRepositoryPort() {
+                    public Optional<com.synaptixfit.domain.model.privacy.LegalAcceptance> latest(UUID userId) {
+                        return acceptances.stream().filter(a -> a.userId().equals(userId)).findFirst();
+                    }
+                    public void save(com.synaptixfit.domain.model.privacy.LegalAcceptance a) { acceptances.add(a); }
+                },
                 clock, Duration.ofDays(30));
     }
 
@@ -77,6 +85,26 @@ class AuthServiceTest {
         assertThat(session.refreshToken()).isNotBlank();
         assertThat(session.user().shadowbanned()).isFalse();
         assertThat(published).hasSize(1);
+    }
+
+    @Test
+    void registerStoresTheAcceptedLegalVersionWithTheAccount() {
+        String current = com.synaptixfit.domain.model.privacy.LegalTerms.CURRENT_VERSION;
+        AuthSession session = service.register(
+                new RegisterUserUseCase.Command("legal@example.com", "secret123", "Lea", current));
+        assertThat(acceptances).singleElement().satisfies(a -> {
+            assertThat(a.userId()).isEqualTo(session.user().id());
+            assertThat(a.version()).isEqualTo(current);
+        });
+    }
+
+    @Test
+    void registerWithAnOldLegalVersionIsRejectedWithoutCreatingTheAccount() {
+        assertThatThrownBy(() -> service.register(
+                new RegisterUserUseCase.Command("old@example.com", "secret123", "Olga", "1999-01-01")))
+                .isInstanceOf(com.synaptixfit.domain.exception.privacy.LegalVersionOutdatedException.class);
+        assertThat(userStore).isEmpty();
+        assertThat(acceptances).isEmpty();
     }
 
     @Test

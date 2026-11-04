@@ -40,4 +40,14 @@ sealed class HomeDashboardEvent with _$HomeDashboardEvent {
   /// La página ya ha navegado al onboarding.
   const factory HomeDashboardEvent.onboardingHandled() =
       HomeDashboardOnboardingHandled;
+
+  /// La página ya ha abierto el paso «Permisos».
+  const factory HomeDashboardEvent.permissionsIntroHandled() =
+      HomeDashboardPermissionsIntroHandled;
+
+  /// La política ya está aceptada: toca ver si falta el onboarding o el paso
+  /// «Permisos» (antes no, para no tapar la aceptación; ADR 0034).
+  const factory HomeDashboardEvent.onboardingCheckRequested({
+    required String userId,
+  }) = HomeDashboardOnboardingCheckRequested;
 }

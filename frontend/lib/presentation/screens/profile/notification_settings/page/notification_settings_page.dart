@@ -6,12 +6,14 @@ import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/profile/notification_category.dart';
 import '../../../../../domain/enums/profile/notification_mode.dart';
 import '../../../../../domain/models/profile/notification_preferences.dart';
+import '../../../../../domain/enums/device_permission.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/profile_labels.dart';
+import '../../permissions/page/permission_request_sheet.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/weekly_email_bloc.dart';
 import '../bloc/device_reminders_bloc.dart';
@@ -338,6 +340,18 @@ class _DeviceRemindersSectionState extends State<_DeviceRemindersSection>
     super.dispose();
   }
 
+  /// Antes de activarlos se explica para qué sirve el permiso; si el sistema
+  /// ya no lo vuelve a preguntar, la hoja lleva a sus ajustes.
+  Future<void> _enable(DeviceRemindersBloc bloc) async {
+    final result = await ensureDevicePermission(
+      context,
+      DevicePermission.notifications,
+    );
+    if (result == PermissionRequestResult.granted) {
+      bloc.add(const DeviceRemindersEvent.toggled(true));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -364,40 +378,38 @@ class _DeviceRemindersSectionState extends State<_DeviceRemindersSection>
     DeviceRemindersState state,
     DeviceRemindersBloc bloc,
   ) => ProfileFormSection(
-          title: l10n.remindersDeviceSectionTitle,
-          trailing: AppPill(
-            label: l10n.remindersAppliesNow,
-            icon: Icons.bolt_rounded,
-          ),
-          child: AppCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                AppFocusOutline(
-                  child: SwitchListTile(
-                    secondary: const Icon(Icons.notifications_active_outlined),
-                    title: Text(l10n.remindersDeviceToggle),
-                    subtitle: Text(l10n.remindersDeviceHint),
-                    value: state.enabled,
-                    onChanged: state.busy
-                        ? null
-                        : (on) => bloc.add(DeviceRemindersEvent.toggled(on)),
-                  ),
-                ),
-                if (state.permissionDenied) ...[
-                  const Divider(height: 1),
-                  _PermissionDeniedRow(
-                    onRetry: state.busy
-                        ? null
-                        : () => bloc.add(
-                            const DeviceRemindersEvent.toggled(true),
-                          ),
-                  ),
-                ],
-              ],
+    title: l10n.remindersDeviceSectionTitle,
+    trailing: AppPill(
+      label: l10n.remindersAppliesNow,
+      icon: Icons.bolt_rounded,
+    ),
+    child: AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          AppFocusOutline(
+            child: SwitchListTile(
+              secondary: const Icon(Icons.notifications_active_outlined),
+              title: Text(l10n.remindersDeviceToggle),
+              subtitle: Text(l10n.remindersDeviceHint),
+              value: state.enabled,
+              onChanged: state.busy
+                  ? null
+                  : (on) => on
+                        ? _enable(bloc)
+                        : bloc.add(const DeviceRemindersEvent.toggled(false)),
             ),
           ),
-        );
+          if (state.permissionDenied) ...[
+            const Divider(height: 1),
+            _PermissionDeniedRow(
+              onRetry: state.busy ? null : () => _enable(bloc),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
 /// Resumen semanal por correo: se aplica al momento, como los avisos del

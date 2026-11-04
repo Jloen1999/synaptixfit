@@ -1,6 +1,10 @@
 import '../screens/profile/enrollment_import/bloc/enrollment_import_bloc.dart';
 import 'package:get_it/get_it.dart';
 
+import '../screens/profile/legal/bloc/legal_acceptance_bloc.dart';
+import '../screens/profile/legal/bloc/legal_document_bloc.dart';
+import '../screens/profile/permissions/bloc/permissions_bloc.dart';
+
 import '../../domain/enums/app_language.dart';
 import '../../domain/enums/appearance_mode.dart';
 import '../screens/profile/appearance/bloc/appearance_bloc.dart';
@@ -23,6 +27,21 @@ import '../screens/profile/wellness_history/bloc/wellness_history_bloc.dart';
 /// Blocs del módulo profile.
 void registerProfilePresentation(GetIt getIt) {
   getIt
+    ..registerFactory(
+      () => PermissionsBloc(
+        getStatus: getIt(),
+        request: getIt(),
+        openSettings: getIt(),
+        markIntroSeen: getIt(),
+        setRemindersEnabled: getIt(),
+        markRemindersOffered: getIt(),
+      ),
+    )
+    ..registerFactory(() => LegalDocumentBloc(getDocument: getIt()))
+    // Una sola puerta para toda la app: la consulta el router (ADR 0034).
+    ..registerLazySingleton(
+      () => LegalAcceptanceBloc(getAcceptance: getIt(), accept: getIt()),
+    )
     ..registerFactory(() => EnrollmentImportBloc(read: getIt(), apply: getIt()))
     ..registerFactoryParam<LanguageBloc, AppLanguage?, void>(
       (initial, _) => LanguageBloc(

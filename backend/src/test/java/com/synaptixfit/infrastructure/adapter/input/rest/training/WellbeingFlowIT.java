@@ -76,7 +76,13 @@ class WellbeingFlowIT {
         String foreign = body(get("/api/v1/training/cycle/days").param("from", today).param("to", today), other, 200);
         assertThat((List<?>) JsonPath.read(foreign, "$.days")).isEmpty();
 
-        // Registro rápido (sin estrés) y la explicación de hoy: dormir mal + ciclo con molestias.
+        // Registro rápido (sin estrés) y la explicación de hoy: dormir mal + ciclo con molestias. Antes hace falta
+        // el consentimiento expreso para datos de salud (ADR 0034), aparte de la política.
+        String refused = body(put("/api/v1/training/check-ins/today")
+                .content("{\"sleepQuality\":1,\"energy\":1,\"soreness\":4}"), token, 422);
+        assertThat((String) JsonPath.read(refused, "$.code")).isEqualTo("HEALTH_CONSENT_REQUIRED");
+        body(put("/api/v1/me/health-consent"), token, 204);
+        assertThat((Boolean) JsonPath.read(body(get("/api/v1/me/health-consent"), token, 200), "$.given")).isTrue();
         body(put("/api/v1/training/check-ins/today")
                 .content("{\"sleepQuality\":1,\"energy\":1,\"soreness\":4}"), token, 200);
         String adaptation = body(get("/api/v1/training/adaptation/today").param("tz", "Europe/Madrid"), token, 200);
@@ -91,6 +97,11 @@ class WellbeingFlowIT {
         body(put("/api/v1/training/cycle/settings").content("{\"enabled\":false,\"deleteHistory\":true}"), token, 200);
         String empty = body(get("/api/v1/training/cycle/days").param("from", today).param("to", today), token, 200);
         assertThat((List<?>) JsonPath.read(empty, "$.days")).isEmpty();
+
+        // Retirar el consentimiento del registro diario borrando los registros: ya no queda el de hoy.
+        body(delete("/api/v1/me/health-consent").param("deleteRecords", "true"), token, 204);
+        body(get("/api/v1/training/check-ins/today"), token, 204);
+        assertThat((Boolean) JsonPath.read(body(get("/api/v1/me/health-consent"), token, 200), "$.given")).isFalse();
 
         // Carrera corta apuntada a mano: 25 min y 5 km → 5:00 por km, en el historial de actividades.
         Instant start = Instant.now().minus(3, ChronoUnit.HOURS).truncatedTo(ChronoUnit.MINUTES);

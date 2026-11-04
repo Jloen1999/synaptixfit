@@ -31,6 +31,7 @@ class AchievementsHost extends StatelessWidget {
           ),
         ),
       // Los recordatorios locales viven con el armazón, igual que los logros.
+      // La aceptación de la política es una pantalla aparte (router).
       child: _AchievementsListener(
         child: RemindersHost(child: FocusTimerHost(child: child)),
       ),

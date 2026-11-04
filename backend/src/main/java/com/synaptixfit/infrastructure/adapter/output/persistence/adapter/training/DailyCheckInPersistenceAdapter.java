@@ -42,4 +42,14 @@ public class DailyCheckInPersistenceAdapter implements DailyCheckInRepositoryPor
         return new PageResult<>(result.getContent().stream().map(TrainingPersistenceMapper::toDomain).toList(),
                 page.page(), page.size(), result.getTotalElements());
     }
+
+    @Override
+    public void deleteByUser(UUID userId) {
+        repository.deleteByUsuarioId(userId);
+    }
+
+    @Override
+    public void deleteByUserAndDate(UUID userId, LocalDate date) {
+        repository.deleteByUsuarioIdAndFecha(userId, date);
+    }
 }

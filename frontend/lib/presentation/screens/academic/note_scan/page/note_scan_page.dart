@@ -5,12 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/device_permission.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/academic/note_scan.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../profile/permissions/page/permission_request_sheet.dart';
 import '../../academic_routes.dart';
 import '../../widgets/academic_widgets.dart';
 import '../../widgets/note_photo_pick.dart';
@@ -122,6 +124,25 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
 
   Future<void> _camera() async {
     final bloc = context.read<NoteScanBloc>();
+    // Antes de abrir la cámara se explica para qué es; sin ella, la galería.
+    final permission = await ensureDevicePermission(
+      context,
+      DevicePermission.camera,
+      alternativeLabel: context.localizations.academicScanGallery,
+    );
+    if (!mounted) return;
+    if (permission == PermissionRequestResult.granted) {
+      bloc.add(const NoteScanEvent.cameraRetried());
+    }
+    switch (permission) {
+      case PermissionRequestResult.notNow:
+        return;
+      case PermissionRequestResult.alternative:
+        await _gallery();
+        return;
+      case PermissionRequestResult.granted:
+        break;
+    }
     try {
       final photo = await takeNotePhoto();
       if (photo != null) bloc.add(NoteScanEvent.photosAdded([photo]));
@@ -279,6 +300,17 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
                         ? l10n.academicScanCameraDenied
                         : l10n.academicScanCameraMissing,
                   ),
+                  // Sin callejón: la hoja del permiso ofrece «Abrir ajustes del
+                  // móvil» y, al volver con el permiso, se sigue con la cámara.
+                  if (camera == NoteScanCameraProblem.denied)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        onPressed: state.canAddMore ? _camera : null,
+                        icon: const Icon(Icons.settings_outlined),
+                        label: Text(l10n.profilePermissionOpenSettings),
+                      ),
+                    ),
                 ],
                 const SizedBox(height: TokensSpacing.l),
                 Wrap(
@@ -288,7 +320,11 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
                     AppSecondaryButton(
                       label: l10n.academicScanCamera,
                       icon: const Icon(Icons.photo_camera_rounded),
-                      onPressed: state.canAddMore && camera == null
+                      // Solo se desactiva si el móvil no tiene cámara: si se
+                      // negó el permiso, pulsarla explica cómo darlo.
+                      onPressed:
+                          state.canAddMore &&
+                              camera != NoteScanCameraProblem.missing
                           ? _camera
                           : null,
                     ),

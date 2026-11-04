@@ -15,6 +15,7 @@ import '../../../../../domain/models/planner/weekly_planning.dart';
 import '../../../../../domain/use_cases/home/get_home_dashboard_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_due_reviews_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_onboarding_status_use_case.dart';
+import '../../../../../domain/use_cases/profile/is_permissions_intro_pending_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_unread_count_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_timeline_use_case.dart';
 import '../../../../../domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
@@ -46,12 +47,19 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     required this._startSession,
     required this._setBlockCompletion,
     required this._rescheduleToNextSlot,
+    required this._permissionsIntroPending,
     this._clock = DateTime.now,
   }) : super(const HomeDashboardState()) {
     on<HomeDashboardStarted>(_onStarted);
+    on<HomeDashboardOnboardingCheckRequested>(
+      (event, emit) => _checkOnboarding(event.userId, emit),
+    );
     on<HomeDashboardRefreshed>(_onRefreshed);
     on<HomeDashboardOnboardingHandled>(
       (_, emit) => emit(state.copyWith(onboardingRequired: false)),
+    );
+    on<HomeDashboardPermissionsIntroHandled>(
+      (_, emit) => emit(state.copyWith(permissionsIntroRequired: false)),
     );
     on<HomeDashboardTrainingStarted>(_onTrainingStarted);
     on<HomeDashboardSetupSnoozed>(_onSetupSnoozed);
@@ -85,6 +93,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
   final StartSessionUseCaseContract _startSession;
   final SetBlockCompletionUseCaseContract _setBlockCompletion;
   final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleToNextSlot;
+  final IsPermissionsIntroPendingUseCaseContract _permissionsIntroPending;
 
   /// La XP y el hueco los decide el servidor; Inicio se refresca solo con el
   /// cambio de datos del planificador.
@@ -177,11 +186,21 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     }
     final loaded = await _load(emit);
     if (!loaded) return;
-    if (event.userId.isNotEmpty && _onboardingGate.shouldCheck(event.userId)) {
-      final status = await _getOnboardingStatus();
-      if (status.valueOrNull?.completed == false) {
-        emit(state.copyWith(onboardingRequired: true));
-      }
+    await _checkOnboarding(event.userId, emit);
+  }
+
+  Future<void> _checkOnboarding(
+    String userId,
+    Emitter<HomeDashboardState> emit,
+  ) async {
+    if (userId.isEmpty || !_onboardingGate.shouldCheck(userId)) return;
+    final status = await _getOnboardingStatus();
+    if (status.valueOrNull?.completed == false) {
+      emit(state.copyWith(onboardingRequired: true));
+    } else if ((await _permissionsIntroPending()).valueOrNull ?? false) {
+      // Quien ya hizo el onboarding (o estrena dispositivo) ve una vez el
+      // paso «Permisos»; quien lo hace ahora lo ve al terminarlo.
+      emit(state.copyWith(permissionsIntroRequired: true));
     }
   }
 

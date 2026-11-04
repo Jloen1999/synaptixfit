@@ -15,6 +15,9 @@ sealed class NoteScanEvent with _$NoteScanEvent {
       NoteScanPhotoRestored;
 
   /// La cámara no se pudo abrir (sin permiso o sin cámara).
+  /// Se vuelve a intentar con la cámara (tras dar el permiso o en los ajustes).
+  const factory NoteScanEvent.cameraRetried() = NoteScanCameraRetried;
+
   const factory NoteScanEvent.cameraUnavailable({required bool denied}) =
       NoteScanCameraUnavailable;
 

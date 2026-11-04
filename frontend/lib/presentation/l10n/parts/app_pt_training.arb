@@ -853,5 +853,11 @@
   "trainingTemplatesUseNamed": "Usar o modelo «{name}»",
   "trainingActivityPaceKmSpoken": "Ritmo de {pace} por quilómetro",
   "trainingActivityPacePer100Spoken": "Ritmo de {pace} por 100 metros",
-  "trainingWeekSpoken": "Semana {number}, {range}"
+  "trainingWeekSpoken": "Semana {number}, {range}",
+  "trainingHealthConsentTitle": "Antes de registar como te sentes",
+  "trainingHealthConsentBody": "Como dormiste, a tua energia, as dores musculares e as dores são dados de saúde. Só os usamos para adaptar o teu treino, nunca para publicidade. Podes retirar esta permissão quando quiseres em Perfil › Definições › Privacidade e dados.",
+  "trainingHealthConsentCheckbox": "Dou permissão à SynaptixFit para guardar e usar estes dados de saúde",
+  "trainingHealthConsentAccept": "Dar permissão e continuar",
+  "trainingHealthConsentRequired": "Marca a caixa para dares a tua permissão.",
+  "trainingErrorHealthConsentRequired": "Antes de registares como te sentes, dá-nos permissão para o guardar."
 }

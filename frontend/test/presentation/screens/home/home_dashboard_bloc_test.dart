@@ -19,6 +19,7 @@ import 'package:synaptixfit/domain/use_cases/home/snooze_home_setup_use_case.dar
 import 'package:synaptixfit/domain/use_cases/home/get_home_unread_count_use_case.dart';
 import 'package:synaptixfit/domain/models/planner/calendar_block.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_timeline_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/profile/is_permissions_intro_pending_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/set_block_completion_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/start_session_use_case.dart';
@@ -52,6 +53,9 @@ class _MockComplete extends Mock implements SetBlockCompletionUseCaseContract {}
 class _MockReschedule extends Mock
     implements RescheduleBlockToNextFreeSlotUseCaseContract {}
 
+class _MockPermissionsIntro extends Mock
+    implements IsPermissionsIntroPendingUseCaseContract {}
+
 void main() {
   late _MockDashboard getDashboard;
   late _MockReviews getReviews;
@@ -65,6 +69,7 @@ void main() {
   late _MockSnooze snooze;
   late _MockComplete complete;
   late _MockReschedule reschedule;
+  late _MockPermissionsIntro permissionsIntro;
 
   HomeDashboardBloc build() => HomeDashboardBloc(
     getDashboard: getDashboard,
@@ -79,6 +84,7 @@ void main() {
     startSession: start,
     setBlockCompletion: complete,
     rescheduleToNextSlot: reschedule,
+    permissionsIntroPending: permissionsIntro,
     clock: () => DateTime(2026, 10, 20, 9),
   );
 
@@ -96,6 +102,10 @@ void main() {
     snooze = _MockSnooze();
     complete = _MockComplete();
     reschedule = _MockReschedule();
+    permissionsIntro = _MockPermissionsIntro();
+    when(
+      () => permissionsIntro(),
+    ).thenAnswer((_) async => const Success(false));
     when(
       () => getSetup(userId: any(named: 'userId')),
     ).thenAnswer((_) async => const Success(HomeSetup()));
@@ -271,6 +281,40 @@ void main() {
       bloc.add(const HomeDashboardEvent.onboardingHandled());
     },
     expect: () => [loaded, loaded.copyWith(onboardingRequired: true), loaded],
+  );
+
+  blocTest<HomeDashboardBloc, HomeDashboardState>(
+    'con el onboarding hecho, abre una vez el paso «Permisos» si está pendiente',
+    setUp: () => when(
+      () => permissionsIntro(),
+    ).thenAnswer((_) async => const Success(true)),
+    build: build,
+    act: (bloc) async {
+      bloc.add(const HomeDashboardEvent.started(userId: 'u1'));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const HomeDashboardEvent.permissionsIntroHandled());
+    },
+    expect: () => [
+      loaded,
+      loaded.copyWith(permissionsIntroRequired: true),
+      loaded,
+    ],
+  );
+
+  blocTest<HomeDashboardBloc, HomeDashboardState>(
+    'con el onboarding pendiente no abre los permisos (van al terminarlo)',
+    setUp: () {
+      when(() => getOnboarding()).thenAnswer(
+        (_) async => const Success(HomeOnboardingStatus(completed: false)),
+      );
+      when(
+        () => permissionsIntro(),
+      ).thenAnswer((_) async => const Success(true));
+    },
+    build: build,
+    act: (bloc) => bloc.add(const HomeDashboardEvent.started(userId: 'u1')),
+    expect: () => [loaded, loaded.copyWith(onboardingRequired: true)],
+    verify: (_) => verifyNever(() => permissionsIntro()),
   );
 
   blocTest<HomeDashboardBloc, HomeDashboardState>(

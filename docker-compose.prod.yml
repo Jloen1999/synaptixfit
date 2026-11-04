@@ -41,9 +41,13 @@ services:
       MAIL_FROM: ${MAIL_FROM:-SynaptixFit <no-reply@notifications.jloenit.dev>}
       APP_PUBLIC_URL: ${APP_PUBLIC_URL:-https://synaptixfit.jloenit.dev}
       WEEKLY_EMAIL_CRON: ${WEEKLY_EMAIL_CRON:-0 0 19-23 * * SUN}
-      # El VPS es compartido (3,7 GB): la JVM usa el 75 % del límite de abajo.
-      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75
-    mem_limit: 700m
+      # Responsable y correo de la política de privacidad (ADR 0034); vacías, las páginas dicen «pendiente».
+      LEGAL_CONTROLLER_NAME: ${LEGAL_CONTROLLER_NAME:-}
+      LEGAL_CONTACT_EMAIL: ${LEGAL_CONTACT_EMAIL:-}
+      # El VPS es compartido (3,7 GB). La JVM usa el 55 % del límite de abajo (≈ 550 MB de heap, como antes)
+      # y el resto queda para su memoria fuera del heap y para Tesseract (una lectura, máx. 256 MB; ADR 0040).
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=55
+    mem_limit: 1000m
     networks:
       infra-app-db:
         # Alias único: la red la comparten otras apps del servidor y varias llaman «backend» a su

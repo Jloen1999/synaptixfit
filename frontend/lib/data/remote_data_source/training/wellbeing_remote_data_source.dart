@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../domain/models/reminders/reminder_options.dart';
 import '../../../domain/models/training/cycle.dart';
+import '../../../domain/models/training/health_consent.dart';
 import '../../../domain/models/training/sport_activity.dart';
 import '../../../domain/models/training/today_adaptation.dart';
 import '../../../domain/models/training/training_page.dart';
@@ -79,6 +80,21 @@ class WellbeingRemoteDataSource {
     '$_training/check-ins/today',
     data: WellbeingExtraDtos.quickCheckInBody(input),
   );
+
+  static const _healthConsent = '/api/v1/me/health-consent';
+
+  Future<HealthConsent> getHealthConsent() async {
+    final r = await _dio.get<Map<String, dynamic>>(_healthConsent);
+    return WellbeingExtraDtos.healthConsent(r.data!);
+  }
+
+  Future<void> giveHealthConsent() => _dio.put<void>(_healthConsent);
+
+  Future<void> withdrawHealthConsent({required bool deleteRecords}) =>
+      _dio.delete<void>(
+        _healthConsent,
+        queryParameters: {'deleteRecords': deleteRecords},
+      );
 
   Future<TrainingPage<SportActivity>> listSportActivities({
     required int page,

@@ -1,5 +1,9 @@
 package com.synaptixfit.application.service.auth;
 
+import com.synaptixfit.domain.exception.privacy.LegalVersionOutdatedException;
+import com.synaptixfit.domain.model.privacy.LegalAcceptance;
+import com.synaptixfit.domain.model.privacy.LegalTerms;
+import com.synaptixfit.domain.port.output.privacy.LegalAcceptanceRepositoryPort;
 import com.synaptixfit.application.port.input.auth.AuthSession;
 import com.synaptixfit.application.port.input.auth.ChangePasswordUseCase;
 import com.synaptixfit.application.port.input.auth.LoginUseCase;
@@ -55,13 +59,16 @@ public class AuthService implements RegisterUserUseCase, LoginUseCase, LoginWith
     private final GoogleIdentityVerifierPort googleVerifier;
     private final PlatformSettingsPort platformSettings;
     private final DomainEventPublisherPort events;
+    private final LegalAcceptanceRepositoryPort legalAcceptances;
     private final Clock clock;
     private final Duration refreshTokenTtl;
 
     public AuthService(UserRepositoryPort users, PasswordHasherPort passwordHasher,
                        AccessTokenIssuerPort accessTokens, RefreshTokenRepositoryPort refreshTokens,
                        GoogleIdentityVerifierPort googleVerifier, PlatformSettingsPort platformSettings,
-                       DomainEventPublisherPort events, Clock clock, Duration refreshTokenTtl) {
+                       DomainEventPublisherPort events, LegalAcceptanceRepositoryPort legalAcceptances,
+                       Clock clock, Duration refreshTokenTtl) {
+        this.legalAcceptances = legalAcceptances;
         this.users = users;
         this.passwordHasher = passwordHasher;
         this.accessTokens = accessTokens;
@@ -80,6 +87,11 @@ public class AuthService implements RegisterUserUseCase, LoginUseCase, LoginWith
         if (users.existsByEmail(email)) {
             throw new EmailAlreadyRegisteredException();
         }
+        String legalVersion = command.acceptedLegalVersion();
+        // Se acepta la versión que la persona ha leído: si cambió mientras se registraba, que la lea de nuevo.
+        if (legalVersion != null && !LegalTerms.CURRENT_VERSION.equals(legalVersion)) {
+            throw new LegalVersionOutdatedException();
+        }
         User user = User.builder()
                 .id(UUID.randomUUID())
                 .email(email)
@@ -88,7 +100,12 @@ public class AuthService implements RegisterUserUseCase, LoginUseCase, LoginWith
                 .shadowbanned(platformSettings.isLockdownActive())
                 .createdAt(clock.instant())
                 .build();
-        return openSession(registered(users.save(user)));
+        User saved = users.save(user);
+        if (legalVersion != null) {
+            // Misma transacción que el alta: no hay cuenta sin constancia de lo que aceptó.
+            legalAcceptances.save(new LegalAcceptance(saved.id(), legalVersion, clock.instant()));
+        }
+        return openSession(registered(saved));
     }
 
     @Override

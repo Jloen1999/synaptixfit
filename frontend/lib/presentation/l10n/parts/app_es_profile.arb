@@ -594,5 +594,76 @@
   "profileReminderClasses": "Clase en 15 minutos",
   "profileReminderClassesHint": "15 minutos antes, con el aula donde es.",
   "profileReminderSaveError": "No se pudo guardar el cambio. Inténtalo de nuevo.",
-  "profileReminderNeedsDevice": "Para recibir estos avisos, activa primero «En este móvil» aquí arriba."
+  "profileReminderNeedsDevice": "Para recibir estos avisos, activa primero «En este móvil» aquí arriba.",
+  "profilePermissionsTitle": "Permisos del móvil",
+  "profilePermissionsHint": "Notificaciones, avisos a su hora y cámara",
+  "profilePermissionsIntroTitle": "Permisos del móvil",
+  "profilePermissionsIntro": "SynaptixFit puede usar estas funciones de tu móvil para ayudarte. Tú decides: puedes cambiarlo cuando quieras y la app funciona igual sin ellas.",
+  "profilePermissionsIntroLater": "Puedes cambiarlos cuando quieras en Perfil › Ajustes › Permisos del móvil.",
+  "profilePermissionsIntroContinue": "Continuar",
+  "profilePermissionsNoneNeeded": "En este dispositivo no hace falta dar ningún permiso.",
+  "profilePermissionsDeviceNote": "Los permisos son de este móvil: en otro dispositivo se piden de nuevo.",
+  "profilePermissionNotificationsTitle": "Notificaciones",
+  "profilePermissionNotificationsWhy": "Para recordarte cuándo estudiar, entrenar o repasar, y avisarte de tus entregas.",
+  "profilePermissionNotificationsAsk": "¿Permitir las notificaciones?",
+  "profilePermissionExactAlarmsTitle": "Avisos a su hora",
+  "profilePermissionExactAlarmsWhy": "Para que los recordatorios lleguen justo a su hora. Sin este permiso llegan igual, con unos minutos de margen.",
+  "profilePermissionExactAlarmsAsk": "¿Permitir los avisos a su hora?",
+  "profilePermissionCameraTitle": "Cámara",
+  "profilePermissionCameraWhy": "Para fotografiar tus apuntes en papel y pasarlos a texto. La foto no se guarda. Sin cámara, puedes elegir fotos de tu galería.",
+  "profilePermissionCameraAsk": "¿Permitir la cámara?",
+  "profilePermissionStatusGranted": "Permitido",
+  "profilePermissionStatusDenied": "Sin permitir",
+  "profilePermissionStatusBlocked": "Bloqueado en el móvil",
+  "profilePermissionStatusLater": "Lo decides luego",
+  "profilePermissionAllow": "Permitir",
+  "profilePermissionNotNow": "Ahora no",
+  "profilePermissionOpenSettings": "Abrir ajustes del móvil",
+  "profilePermissionBlockedHint": "Antes dijiste que no y el móvil ya no vuelve a preguntar. Puedes activarlo en los ajustes del móvil; al volver, lo comprobamos.",
+  "profilePermissionDeniedHint": "No se ha permitido. Puedes volver a intentarlo cuando quieras.",
+  "profileLegalPrivacy": "Política de privacidad",
+  "profileLegalPrivacyHint": "Qué datos usamos, para qué y tus derechos",
+  "profileLegalTerms": "Condiciones de uso",
+  "profileLegalTermsHint": "Cómo se puede usar SynaptixFit",
+  "profileLegalAccountDeletion": "Eliminar tu cuenta",
+  "profileLegalVersion": "Versión del {date}",
+  "@profileLegalVersion": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileLegalReadPrivacy": "Leer la política de privacidad",
+  "profileLegalReadTerms": "Leer las condiciones de uso",
+  "profileLegalCheckbox": "He leído y acepto la política de privacidad y las condiciones de uso",
+  "profileLegalAcceptTitle": "Antes de seguir",
+  "profileLegalAcceptTitleUpdated": "Hemos actualizado la política y las condiciones",
+  "profileLegalAcceptMessage": "Para usar SynaptixFit, lee y acepta la política de privacidad y las condiciones de uso. Explican qué datos usamos, para qué y cómo puedes borrarlos.",
+  "profileLegalAcceptMessageUpdated": "Hemos cambiado la política de privacidad o las condiciones de uso. Léelas y acéptalas para seguir usando la app.",
+  "profileLegalAcceptAction": "Aceptar y seguir",
+  "profileLegalDeclineHint": "Si no quieres aceptarlas, cierra sesión. Tus datos siguen guardados y puedes pedir que se borren cuando quieras.",
+  "profileErrorLegalNotFound": "Ese texto no existe. Prueba con la política de privacidad.",
+  "profileErrorLegalVersionOutdated": "La política ha cambiado mientras la leías. Vuelve a leerla y acéptala.",
+  "profileLegalLanguageNote": "Este texto aún no está traducido a tu idioma.",
+  "profilePermissionExactAlarmsOpensSettings": "Al pulsar «Permitir» se abre una pantalla del móvil: activa la opción y vuelve a la app.",
+  "profileHealthConsentTitle": "Datos de cómo te encuentras",
+  "profileHealthConsentGiven": "Permiso dado el {date}",
+  "@profileHealthConsentGiven": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileHealthConsentGivenNoDate": "Permiso dado",
+  "profileHealthConsentNotGiven": "Sin permiso: tu registro diario no se guarda",
+  "profileHealthConsentGive": "Dar permiso",
+  "profileHealthConsentWithdraw": "Retirar",
+  "profileHealthConsentWithdrawTitle": "¿Retirar tu permiso?",
+  "profileHealthConsentWithdrawMessage": "Dejaremos de usar cómo te encuentras para adaptar tu entreno y se borrará el registro de hoy. ¿Qué hacemos con los registros anteriores?",
+  "profileHealthConsentWithdrawKeep": "Retirar y guardar los anteriores",
+  "profileHealthConsentWithdrawDelete": "Retirar y borrarlos todos",
+  "profileHealthConsentWithdrawn": "Permiso retirado",
+  "profileLegalCheckboxRequired": "Marca la casilla para seguir."
 }

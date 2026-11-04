@@ -38,8 +38,16 @@ class AuthRepository implements AuthRepositoryContract {
     required String email,
     required String password,
     required String fullName,
+    String? acceptedLegalVersion,
   }) => RepositoryErrorHandler.guard(
-    () async => _open(await _remote.register(email, password, fullName)),
+    () async => _open(
+      await _remote.register(
+        email,
+        password,
+        fullName,
+        acceptedLegalVersion: acceptedLegalVersion,
+      ),
+    ),
   );
 
   @override

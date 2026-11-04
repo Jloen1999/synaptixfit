@@ -1,6 +1,12 @@
 import 'enrollment_import/page/enrollment_import_page.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../domain/enums/legal_document_kind.dart';
+import 'legal/page/legal_acceptance_page.dart';
+import 'legal/page/legal_document_page.dart';
+import 'permissions/page/permissions_intro_page.dart';
+import 'permissions/page/permissions_page.dart';
+
 import 'change_password/page/change_password_page.dart';
 import 'degrees/page/degrees_page.dart';
 import 'edit_academic/page/edit_academic_page.dart';
@@ -27,6 +33,14 @@ abstract final class ProfilePaths {
   static const changePassword = '/profile/settings/password';
   static const notifications = '/profile/settings/notifications';
   static const onboarding = '/onboarding';
+  static const permissions = '/profile/settings/permissions';
+
+  /// Paso «Permisos» del primer inicio (fuera de las pestañas).
+  static const permissionsIntro = '/permissions-intro';
+
+  /// Textos legales: se abren con o sin sesión (desde el registro).
+  static const legalPrefix = '/legal/';
+  static String legal(LegalDocumentKind kind) => '$legalPrefix${kind.slug}';
 
   /// Rutas de otros módulos a las que navega este.
   static const home = '/home';
@@ -71,12 +85,34 @@ List<RouteBase> profileRoutes() => [
             path: 'notifications',
             builder: (_, _) => const NotificationSettingsPage(),
           ),
+          GoRoute(
+            path: 'permissions',
+            builder: (_, _) => const PermissionsPage(),
+          ),
         ],
       ),
     ],
   ),
   GoRoute(
     path: ProfilePaths.onboarding,
-    builder: (_, _) => const OnboardingPage(homePath: ProfilePaths.home),
+    // Al terminar, el paso «Permisos» (si no hace falta, sigue solo a Inicio).
+    builder: (_, _) =>
+        const OnboardingPage(homePath: ProfilePaths.permissionsIntro),
+  ),
+  GoRoute(
+    path: ProfilePaths.permissionsIntro,
+    builder: (_, _) => const PermissionsIntroPage(nextPath: ProfilePaths.home),
+  ),
+  GoRoute(
+    path: LegalAcceptancePage.path,
+    builder: (_, _) => const LegalAcceptancePage(),
+  ),
+  GoRoute(
+    path: '${ProfilePaths.legalPrefix}:document',
+    builder: (_, state) => LegalDocumentPage(
+      kind:
+          LegalDocumentKind.fromSlug(state.pathParameters['document']) ??
+          LegalDocumentKind.privacy,
+    ),
   ),
 ];

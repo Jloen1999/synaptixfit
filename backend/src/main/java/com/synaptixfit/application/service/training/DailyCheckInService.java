@@ -1,5 +1,8 @@
 package com.synaptixfit.application.service.training;
 
+import com.synaptixfit.domain.exception.training.HealthConsentRequiredException;
+import com.synaptixfit.domain.model.training.HealthConsent;
+import com.synaptixfit.domain.port.output.training.HealthConsentRepositoryPort;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
 import com.synaptixfit.application.port.input.training.ListCheckInsUseCase;
@@ -25,15 +28,18 @@ import java.util.UUID;
 public class DailyCheckInService implements SubmitDailyCheckInUseCase, GetTodayCheckInUseCase, ListCheckInsUseCase {
 
     private final DailyCheckInRepositoryPort checkIns;
+    private final HealthConsentRepositoryPort consents;
     private final AwardExperienceUseCase awardExperience;
     private final DomainEventPublisherPort events;
     private final Clock clock;
     private final ZoneId zone;
 
     /** @param zone zona que define «hoy» (la de indicadores e insignias, que leen el check-in por fecha) */
-    public DailyCheckInService(DailyCheckInRepositoryPort checkIns, AwardExperienceUseCase awardExperience,
-                               DomainEventPublisherPort events, Clock clock, ZoneId zone) {
+    public DailyCheckInService(DailyCheckInRepositoryPort checkIns, HealthConsentRepositoryPort consents,
+                               AwardExperienceUseCase awardExperience, DomainEventPublisherPort events, Clock clock,
+                               ZoneId zone) {
         this.checkIns = checkIns;
+        this.consents = consents;
         this.awardExperience = awardExperience;
         this.events = events;
         this.clock = clock;
@@ -42,6 +48,10 @@ public class DailyCheckInService implements SubmitDailyCheckInUseCase, GetTodayC
 
     @Override
     public Result submit(UUID userId, DailyCheckIn.Values values) {
+        // Sueño, energía, agujetas y dolor son datos de salud: sin consentimiento expreso no se guardan (ADR 0034).
+        if (!consents.find(userId).map(HealthConsent::active).orElse(false)) {
+            throw new HealthConsentRequiredException();
+        }
         LocalDate today = today();
         Optional<DailyCheckIn> existing = checkIns.findByUserAndDate(userId, today);
         if (existing.isPresent()) {

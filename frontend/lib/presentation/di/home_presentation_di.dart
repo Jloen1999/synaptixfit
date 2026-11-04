@@ -21,6 +21,7 @@ void registerHomePresentation(GetIt getIt) {
         startSession: getIt(),
         setBlockCompletion: getIt(),
         rescheduleToNextSlot: getIt(),
+        permissionsIntroPending: getIt(),
       ),
     );
 }

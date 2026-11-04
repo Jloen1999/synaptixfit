@@ -4,12 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../domain/enums/app_language.dart';
+import '../../../../../domain/enums/legal_document_kind.dart';
 import '../../language/bloc/language_bloc.dart';
 import '../../../../../domain/enums/appearance_mode.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
+import '../../../training/health_consent/page/health_consent_section.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../../profile_routes.dart';
@@ -155,13 +157,47 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                 children: [
                   AppFocusOutline(
                     child: ListTile(
+                      leading: const Icon(Icons.verified_user_outlined),
+                      title: Text(l10n.profilePermissionsTitle),
+                      subtitle: Text(l10n.profilePermissionsHint),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push(ProfilePaths.permissions),
+                    ),
+                  ),
+                  AppFocusOutline(
+                    child: ListTile(
+                      leading: const Icon(Icons.privacy_tip_outlined),
+                      title: Text(l10n.profileLegalPrivacy),
+                      subtitle: Text(l10n.profileLegalPrivacyHint),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push(
+                        ProfilePaths.legal(LegalDocumentKind.privacy),
+                      ),
+                    ),
+                  ),
+                  AppFocusOutline(
+                    child: ListTile(
+                      leading: const Icon(Icons.description_outlined),
+                      title: Text(l10n.profileLegalTerms),
+                      subtitle: Text(l10n.profileLegalTermsHint),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push(
+                        ProfilePaths.legal(LegalDocumentKind.terms),
+                      ),
+                    ),
+                  ),
+                  const HealthConsentSection(),
+                  AppFocusOutline(
+                    child: ListTile(
                       leading: const Icon(Icons.download_rounded),
                       title: Text(l10n.profileExportTitle),
                       subtitle: Text(l10n.profileExportHint),
                       trailing: state.exporting
                           ? const SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              dimension: TokensSize.iconS,
+                              child: CircularProgressIndicator(
+                                strokeWidth: TokensSize.spinnerStroke,
+                              ),
                             )
                           : null,
                       enabled: !state.exporting,
@@ -178,13 +214,17 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                       ),
                       title: Text(
                         l10n.profileDeleteTitle,
-                        style: TextStyle(color: context.colors.error),
+                        style: context.textStyles.bodyLarge?.copyWith(
+                          color: context.colors.error,
+                        ),
                       ),
                       subtitle: Text(l10n.profileDeleteHint),
                       trailing: state.deleting
                           ? const SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              dimension: TokensSize.iconS,
+                              child: CircularProgressIndicator(
+                                strokeWidth: TokensSize.spinnerStroke,
+                              ),
                             )
                           : null,
                       enabled: !state.deleting,

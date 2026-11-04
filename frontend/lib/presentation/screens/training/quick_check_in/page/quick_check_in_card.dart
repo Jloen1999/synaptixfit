@@ -10,6 +10,7 @@ import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../health_consent/page/health_consent_sheet.dart';
 import '../../training_routes.dart';
 import '../bloc/quick_check_in_bloc.dart';
 
@@ -160,15 +161,18 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
           icon: Icons.check_rounded,
           loading: widget.state.sending,
           onPressed: ready
-              ? () => context.read<QuickCheckInBloc>().add(
-                  QuickCheckInEvent.submitted(
-                    QuickCheckIn(
-                      sleepQuality: _sleep!,
-                      energy: _energy!,
-                      soreness: _soreness!,
-                    ),
-                  ),
-                )
+              ? () async {
+                  final bloc = context.read<QuickCheckInBloc>();
+                  final input = QuickCheckIn(
+                    sleepQuality: _sleep!,
+                    energy: _energy!,
+                    soreness: _soreness!,
+                  );
+                  // Datos de salud: antes, el permiso expreso (ADR 0034).
+                  if (await ensureHealthConsent(context)) {
+                    bloc.add(QuickCheckInEvent.submitted(input));
+                  }
+                }
               : null,
         ),
         Wrap(

@@ -228,6 +228,7 @@ class TrainingFlowIT {
 
         // Check-in: solo el primero del día da XP
         String checkIn = "{\"sleepQuality\":4,\"stress\":2,\"energy\":4,\"soreness\":2,\"painZones\":[\"piernas\"]}";
+        body(put("/api/v1/me/health-consent"), token, 204);
         String first = body(put("/api/v1/training/check-ins/today").content(checkIn), token, 200);
         assertThat((Boolean) JsonPath.read(first, "$.firstOfDay")).isTrue();
         assertThat((Integer) JsonPath.read(first, "$.xpAwarded")).isEqualTo(20);

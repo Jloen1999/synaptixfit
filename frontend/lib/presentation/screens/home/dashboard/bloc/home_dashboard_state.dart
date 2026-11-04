@@ -25,6 +25,9 @@ abstract class HomeDashboardState with _$HomeDashboardState {
     /// La página debe abrir `/onboarding` (efecto de un solo uso).
     @Default(false) bool onboardingRequired,
 
+    /// La página debe abrir el paso «Permisos» (efecto de un solo uso).
+    @Default(false) bool permissionsIntroRequired,
+
     /// Creando o recuperando la sesión de entrenamiento.
     @Default(false) bool startingTraining,
 

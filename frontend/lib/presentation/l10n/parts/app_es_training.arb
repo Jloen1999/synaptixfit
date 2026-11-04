@@ -2720,5 +2720,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "trainingHealthConsentTitle": "Antes de apuntar cómo te encuentras",
+  "trainingHealthConsentBody": "Cómo dormiste, tu energía, las agujetas y el dolor son datos de salud. Solo los usamos para adaptar tu entreno, nunca para publicidad. Puedes retirar este permiso cuando quieras en Perfil › Ajustes › Privacidad y datos.",
+  "trainingHealthConsentCheckbox": "Doy mi permiso para que SynaptixFit guarde y use estos datos de salud",
+  "trainingHealthConsentAccept": "Dar permiso y seguir",
+  "trainingHealthConsentRequired": "Marca la casilla para dar tu permiso.",
+  "trainingErrorHealthConsentRequired": "Antes de apuntar cómo te encuentras, danos tu permiso para guardarlo."
 }

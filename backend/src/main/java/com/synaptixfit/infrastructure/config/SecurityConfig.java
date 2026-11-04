@@ -60,6 +60,8 @@ public class SecurityConfig {
                         // Enlaces de los correos del resumen semanal: su token los protege (ADR 0022).
                         .requestMatchers("/api/v1/notifications/weekly-email/confirm",
                                 "/api/v1/notifications/weekly-email/unsubscribe").permitAll()
+                        // Política de privacidad, condiciones y borrado de cuenta: públicos (Google Play, ADR 0034).
+                        .requestMatchers(HttpMethod.GET, "/api/v1/legal/*", "/api/v1/legal/*/page").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth

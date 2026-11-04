@@ -82,6 +82,7 @@ import com.synaptixfit.application.service.training.WeeklyPlanService;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.training.CatalogTranslationsPort;
 import com.synaptixfit.domain.port.output.training.DailyCheckInRepositoryPort;
+import com.synaptixfit.domain.port.output.training.HealthConsentRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseNameTranslationsRepositoryPort;
 import com.synaptixfit.domain.port.output.training.ExerciseNameTranslatorPort;
 import com.synaptixfit.domain.port.output.training.ExerciseRepositoryPort;
@@ -118,6 +119,7 @@ public class TrainingBeanConfiguration {
     private final RoutineRepositoryPort routines;
     private final TrainingSessionRepositoryPort sessions;
     private final DailyCheckInRepositoryPort checkIns;
+    private final HealthConsentRepositoryPort healthConsents;
     private final WeeklyPlanRepositoryPort plans;
     private final RecommendationRepositoryPort recommendations;
     private final TrainingContextPort context;
@@ -144,6 +146,7 @@ public class TrainingBeanConfiguration {
                                      RoutineRepositoryPort routines,
                                      TrainingSessionRepositoryPort sessions,
                                      DailyCheckInRepositoryPort checkIns,
+                                     HealthConsentRepositoryPort healthConsents,
                                      WeeklyPlanRepositoryPort plans,
                                      RecommendationRepositoryPort recommendations,
                                      TrainingContextPort context,
@@ -165,6 +168,7 @@ public class TrainingBeanConfiguration {
         this.routines = routines;
         this.sessions = sessions;
         this.checkIns = checkIns;
+        this.healthConsents = healthConsents;
         this.plans = plans;
         this.recommendations = recommendations;
         this.context = context;
@@ -553,7 +557,7 @@ public class TrainingBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     DailyCheckInService dailyCheckInService() {
-        return new DailyCheckInService(checkIns, awardExperience, events, clock, zone);
+        return new DailyCheckInService(checkIns, healthConsents, awardExperience, events, clock, zone);
     }
 
     @Bean

@@ -2,6 +2,7 @@ import '../../domain/models/reminders/reminder_options.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/models/result/result.dart';
 import '../../domain/models/training/cycle.dart';
+import '../../domain/models/training/health_consent.dart';
 import '../../domain/models/training/sport_activity.dart';
 import '../../domain/models/training/today_adaptation.dart';
 import '../../domain/models/training/training_page.dart';
@@ -64,6 +65,25 @@ class WellbeingRepository implements WellbeingRepositoryContract {
         await _remote.submitQuickCheckIn(input);
         return unit;
       });
+
+  @override
+  Future<AppResult<HealthConsent>> getHealthConsent() =>
+      RepositoryErrorHandler.guard(_remote.getHealthConsent);
+
+  @override
+  Future<AppResult<Unit>> giveHealthConsent() =>
+      RepositoryErrorHandler.guard(() async {
+        await _remote.giveHealthConsent();
+        return unit;
+      });
+
+  @override
+  Future<AppResult<Unit>> withdrawHealthConsent({
+    required bool deleteRecords,
+  }) => RepositoryErrorHandler.guard(() async {
+    await _remote.withdrawHealthConsent(deleteRecords: deleteRecords);
+    return unit;
+  });
 
   @override
   Future<AppResult<TrainingPage<SportActivity>>> listSportActivities({

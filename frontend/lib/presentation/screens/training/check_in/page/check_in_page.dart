@@ -9,6 +9,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../health_consent/page/health_consent_sheet.dart';
 import '../../training_routes.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
@@ -233,9 +234,13 @@ class _FormState extends State<_Form> {
                     ? l10n.trainingCheckInSave
                     : l10n.trainingCheckInUpdateAction,
                 loading: state.submitting,
-                onPressed: () => context.read<CheckInBloc>().add(
-                  const CheckInEvent.submitted(),
-                ),
+                onPressed: () async {
+                  // Datos de salud: antes, el permiso expreso (ADR 0034).
+                  final bloc = context.read<CheckInBloc>();
+                  if (await ensureHealthConsent(context)) {
+                    bloc.add(const CheckInEvent.submitted());
+                  }
+                },
               ),
               const SizedBox(height: TokensSpacing.m),
               // Opcional y para quien quiera: no se da por hecho por el género.

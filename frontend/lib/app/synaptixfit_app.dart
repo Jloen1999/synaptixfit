@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../domain/enums/app_language.dart';
 import '../domain/enums/appearance_mode.dart';
 import '../presentation/l10n/gen_l10n/app_localizations.dart';
+import '../presentation/screens/profile/legal/bloc/legal_acceptance_bloc.dart';
 import '../presentation/screens/auth/session/bloc/session_bloc.dart';
 import '../presentation/screens/profile/appearance/bloc/appearance_bloc.dart';
 import '../presentation/screens/profile/language/bloc/language_bloc.dart';
@@ -38,7 +39,33 @@ class SynaptixFitApp extends StatefulWidget {
 class _SynaptixFitAppState extends State<SynaptixFitApp> {
   late final SessionBloc _session = getIt<SessionBloc>()
     ..add(const SessionEvent.started());
-  late final GoRouter _router = buildRouter(_session);
+  // Puerta de la política (ADR 0034): una sola instancia que consulta el router.
+  late final LegalAcceptanceBloc _legal = getIt<LegalAcceptanceBloc>();
+  late final GoRouter _router = buildRouter(_session, _legal);
+  StreamSubscription<SessionState>? _sessionChanges;
+  String? _checkedAccount;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionChanges = _session.stream.listen(_onSession);
+  }
+
+  /// Al iniciar sesión (o cambiar de cuenta) comprueba si hay que aceptar la
+  /// política; al cerrarla, la olvida para la siguiente cuenta.
+  void _onSession(SessionState state) {
+    switch (state) {
+      case SessionAuthenticatedState(:final account)
+          when account.id != _checkedAccount:
+        _checkedAccount = account.id;
+        _legal.add(const LegalAcceptanceEvent.checked());
+      case SessionUnauthenticated():
+        _checkedAccount = null;
+        _legal.add(const LegalAcceptanceEvent.reset());
+      default:
+        break;
+    }
+  }
   late final AppearanceBloc _appearance = getIt<AppearanceBloc>(
     param1: widget.initialAppearance,
   )..add(const AppearanceEvent.started());
@@ -48,6 +75,7 @@ class _SynaptixFitAppState extends State<SynaptixFitApp> {
 
   @override
   void dispose() {
+    unawaited(_sessionChanges?.cancel());
     _router.dispose();
     unawaited(_appearance.close());
     unawaited(_language.close());
@@ -65,6 +93,7 @@ class _SynaptixFitAppState extends State<SynaptixFitApp> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _session),
+        BlocProvider.value(value: _legal),
         BlocProvider.value(value: _appearance),
         BlocProvider.value(value: _language),
       ],

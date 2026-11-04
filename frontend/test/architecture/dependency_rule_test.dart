@@ -17,6 +17,7 @@ const _rules = <String, List<String>>{
     'package:shared_preferences',
     'package:flutter_local_notifications',
     'package:timezone',
+    'package:permission_handler',
   ],
   'lib/data': ['/presentation/'],
   'lib/presentation': [
@@ -26,6 +27,7 @@ const _rules = <String, List<String>>{
     'package:flutter_local_notifications',
     'package:timezone',
     'package:shared_preferences',
+    'package:permission_handler',
   ],
   // Las piezas compartidas no conocen ninguna pantalla.
   'lib/presentation/widgets': ['/screens/'],

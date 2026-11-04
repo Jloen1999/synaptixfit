@@ -59,6 +59,7 @@ dependencies:
 
   # Fotografiar apuntes en papel (cámara o galería; en web y escritorio, elegir archivo)
   image_picker: ^1.2.4
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:

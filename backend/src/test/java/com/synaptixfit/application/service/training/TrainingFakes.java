@@ -229,6 +229,22 @@ final class TrainingFakes {
         public PageResult<DailyCheckIn> findByUser(UUID userId, PageRequest page) {
             return page(store.values().stream().filter(c -> c.userId().equals(userId)).toList(), page);
         }
+        public void deleteByUser(UUID userId) {
+            store.values().removeIf(c -> c.userId().equals(userId));
+        }
+        public void deleteByUserAndDate(UUID userId, LocalDate date) {
+            store.values().removeIf(c -> c.userId().equals(userId) && c.date().equals(date));
+        }
+    }
+
+    /** Consentimientos de salud en memoria (ADR 0034). */
+    static final class HealthConsents implements com.synaptixfit.domain.port.output.training.HealthConsentRepositoryPort {
+        final Map<UUID, com.synaptixfit.domain.model.training.HealthConsent> store = new LinkedHashMap<>();
+
+        public Optional<com.synaptixfit.domain.model.training.HealthConsent> find(UUID userId) {
+            return Optional.ofNullable(store.get(userId));
+        }
+        public void save(com.synaptixfit.domain.model.training.HealthConsent c) { store.put(c.userId(), c); }
     }
 
     static final class Plans implements WeeklyPlanRepositoryPort {

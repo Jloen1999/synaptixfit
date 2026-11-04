@@ -853,5 +853,11 @@
   "trainingTemplatesUseNamed": "Utiliser le modèle « {name} »",
   "trainingActivityPaceKmSpoken": "Allure de {pace} au kilomètre",
   "trainingActivityPacePer100Spoken": "Allure de {pace} aux 100 mètres",
-  "trainingWeekSpoken": "Semaine {number}, {range}"
+  "trainingWeekSpoken": "Semaine {number}, {range}",
+  "trainingHealthConsentTitle": "Avant de noter comment tu te sens",
+  "trainingHealthConsentBody": "Ton sommeil, ton énergie, tes courbatures et tes douleurs sont des données de santé. Nous les utilisons seulement pour adapter ton entraînement, jamais pour de la publicité. Tu peux retirer cette autorisation quand tu veux dans Profil › Réglages › Confidentialité et données.",
+  "trainingHealthConsentCheckbox": "J'autorise SynaptixFit à enregistrer et utiliser ces données de santé",
+  "trainingHealthConsentAccept": "Autoriser et continuer",
+  "trainingHealthConsentRequired": "Coche la case pour donner ton autorisation.",
+  "trainingErrorHealthConsentRequired": "Avant de noter comment tu te sens, autorise-nous à l'enregistrer."
 }

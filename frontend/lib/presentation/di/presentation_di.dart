@@ -31,7 +31,9 @@ void registerPresentation(GetIt getIt) {
     ..registerFactory(() => LoginBloc(login: getIt(), loginWithGoogle: getIt()))
     ..registerFactory(() => ForgotPasswordBloc(requestReset: getIt()))
     ..registerFactory(() => ResetPasswordBloc(resetPassword: getIt()))
-    ..registerFactory(() => RegisterBloc(register: getIt()))
+    ..registerFactory(
+      () => RegisterBloc(register: getIt(), getDocument: getIt()),
+    )
     ..registerFactory(
       () => AchievementsBloc(
         getAccount: getIt(),

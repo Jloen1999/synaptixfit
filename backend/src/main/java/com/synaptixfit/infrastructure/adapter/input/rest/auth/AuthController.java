@@ -55,7 +55,8 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         return AuthResponse.from(register.register(
-                new RegisterUserUseCase.Command(request.email(), request.password(), request.fullName())));
+                new RegisterUserUseCase.Command(request.email(), request.password(), request.fullName(),
+                        request.acceptedLegalVersion())));
     }
 
     @PostMapping("/login")

@@ -104,15 +104,17 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
                 "t.sesion_id, t.numero_serie"));
         sections.put("weeklyTrainingPlans", rows("plan_entrenamiento_semanal t", "t.usuario_id = :id",
                 "t.semana_inicio"));
-        sections.put("dailyCheckIns", rows("estado_diario_usuario t", "t.usuario_id = :id", "t.fecha"));
         sections.put("exerciseNotes", rows("notas_ejercicio t", "t.usuario_id = :id", "t.actualizado_en"));
+        sections.put("healthConsent", single("consentimientos_salud"));
         if (includeHealthData) {
-            // Datos de salud (ADR 0033): solo en la copia de su dueño.
+            // Datos de salud (ADR 0033 y 0034): el registro diario y el ciclo, solo en la copia de su dueño.
+            sections.put("dailyCheckIns", rows("estado_diario_usuario t", "t.usuario_id = :id", "t.fecha"));
             sections.put("cycleTracking", single("seguimiento_ciclo"));
             sections.put("cycleDays", rows("dias_ciclo t", "t.usuario_id = :id", "t.fecha"));
         }
         sections.put("loggedActivities", rows("actividades_apuntadas t", "t.usuario_id = :id", "t.creado_en"));
         sections.put("reminderOptions", single("opciones_avisos"));
+        sections.put("legalAcceptances", rows("aceptaciones_legales t", "t.usuario_id = :id", "t.aceptada_en"));
         sections.put("recommendations", rows("recomendaciones_pendientes t", "t.usuario_id = :id", "t.creado_en"));
         // Gamificación
         sections.put("challenges", rows("retos t", "t.usuario_id = :id", "t.creado_en"));

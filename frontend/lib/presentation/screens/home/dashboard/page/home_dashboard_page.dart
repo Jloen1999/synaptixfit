@@ -14,6 +14,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../profile/legal/bloc/legal_acceptance_bloc.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../../home_external_paths.dart';
 import '../../widgets/active_challenges_section.dart';
@@ -43,11 +44,23 @@ class HomeDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userId = context.read<SessionBloc>().account?.id ?? '';
+    // El onboarding y los permisos esperan a que la política esté aceptada:
+    // si no, se abrirían encima de la pantalla de aceptación (ADR 0034).
+    final legalReady =
+        context.read<LegalAcceptanceBloc>().state.status ==
+        LegalGateStatus.accepted;
     return BlocProvider(
-      create: (_) =>
-          getIt<HomeDashboardBloc>()
-            ..add(HomeDashboardEvent.started(userId: userId)),
-      child: const HomeDashboardView(),
+      create: (_) => getIt<HomeDashboardBloc>()
+        ..add(HomeDashboardEvent.started(userId: legalReady ? userId : '')),
+      child: BlocListener<LegalAcceptanceBloc, LegalAcceptanceState>(
+        listenWhen: (a, b) =>
+            a.status != LegalGateStatus.accepted &&
+            b.status == LegalGateStatus.accepted,
+        listener: (context, _) => context.read<HomeDashboardBloc>().add(
+          HomeDashboardEvent.onboardingCheckRequested(userId: userId),
+        ),
+        child: const HomeDashboardView(),
+      ),
     );
   }
 }
@@ -97,6 +110,8 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
         child: BlocConsumer<HomeDashboardBloc, HomeDashboardState>(
           listenWhen: (previous, current) =>
               (current.onboardingRequired && !previous.onboardingRequired) ||
+              (current.permissionsIntroRequired &&
+                  !previous.permissionsIntroRequired) ||
               (current.openSessionId != null &&
                   current.openSessionId != previous.openSessionId) ||
               (current.trainingError != null &&
@@ -133,6 +148,13 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
                 const HomeDashboardEvent.onboardingHandled(),
               );
               _navigate(context, HomeExternalPaths.onboarding);
+              return;
+            }
+            if (state.permissionsIntroRequired) {
+              context.read<HomeDashboardBloc>().add(
+                const HomeDashboardEvent.permissionsIntroHandled(),
+              );
+              _navigate(context, HomeExternalPaths.permissionsIntro);
               return;
             }
             final error = state.error;

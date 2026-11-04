@@ -17,13 +17,15 @@ import 'presentation/screens/academic/academic_routes.dart';
 import 'presentation/screens/training/training_routes.dart';
 import 'presentation/screens/challenges/challenges_routes.dart';
 import 'presentation/screens/progress/progress_routes.dart';
+import 'presentation/screens/profile/legal/bloc/legal_acceptance_bloc.dart';
+import 'presentation/screens/profile/legal/page/legal_acceptance_page.dart';
 import 'presentation/screens/profile/profile_routes.dart';
 import 'presentation/screens/planner/planner_routes.dart';
 import 'presentation/screens/social/social_routes.dart';
 import 'presentation/screens/admin/admin_routes.dart';
 
 /// Navegación de la app. Cada módulo declara sus rutas en `<modulo>_routes.dart`.
-GoRouter buildRouter(SessionBloc session) {
+GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
   const publicPaths = {
     LoginPage.path,
     RegisterPage.path,
@@ -31,20 +33,34 @@ GoRouter buildRouter(SessionBloc session) {
   };
   return GoRouter(
     initialLocation: SplashPage.path,
-    refreshListenable: _StreamListenable(session.stream),
+    refreshListenable: Listenable.merge([
+      _StreamListenable(session.stream),
+      _StreamListenable(legal.stream),
+    ]),
     redirect: (context, state) {
       final location = state.matchedLocation;
       // El enlace del correo funciona con o sin sesión y no puede pasar por la
       // pantalla de carga: se perdería el token de la dirección.
       if (location == ResetPasswordPage.path) return null;
+      // Política de privacidad y condiciones: se leen con o sin sesión (el
+      // registro enlaza a ellas antes de crear la cuenta).
+      if (location.startsWith(ProfilePaths.legalPrefix)) return null;
       return switch (session.state) {
         SessionUnknown() =>
           location == SplashPage.path ? null : SplashPage.path,
         SessionUnauthenticated() =>
           publicPaths.contains(location) ? null : LoginPage.path,
+        // Sin aceptar la versión vigente de la política no se entra en nada
+        // más, tampoco en el onboarding ni en los permisos (ADR 0034).
+        SessionAuthenticatedState()
+            when legal.state.status == LegalGateStatus.required =>
+          location == LegalAcceptancePage.path
+              ? null
+              : LegalAcceptancePage.path,
         SessionAuthenticatedState(:final account) =>
           publicPaths.contains(location) ||
                   location == SplashPage.path ||
+                  location == LegalAcceptancePage.path ||
                   _hiddenByFocus(location, account.usageFocus)
               ? HomePaths.root
               : null,

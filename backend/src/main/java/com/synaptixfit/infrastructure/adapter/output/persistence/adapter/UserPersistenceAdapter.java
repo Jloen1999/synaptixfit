@@ -47,6 +47,8 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
         UserEntity entity = repository.findById(user.id()).orElseGet(UserEntity::new);
         UserPersistenceMapper.copyToEntity(user, entity);
         entity.setActualizadoEn(clock.instant());
-        return UserPersistenceMapper.toDomain(repository.save(entity));
+        // saveAndFlush: en la misma transacción otros adaptadores escriben con JDBC filas que apuntan a la cuenta
+        // (p. ej. la aceptación de la política en el alta, ADR 0034); sin volcarla, su clave foránea no la vería.
+        return UserPersistenceMapper.toDomain(repository.saveAndFlush(entity));
     }
 }

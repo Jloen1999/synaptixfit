@@ -88,6 +88,8 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `GDPR_CONFIRMATION_REQUIRED` | 400 | Falta la contraseña o la confirmación explícita de la baja | Confirma la baja con tu contraseña. | Activo |
 | `GDPR_PASSWORD_MISMATCH` | 403 | Contraseña de confirmación incorrecta (403 para no confundirlo con sesión caducada) | La contraseña no es correcta. | Activo |
 | `GDPR_LAST_ADMIN` | 422 | El último administrador activo no puede darse de baja | Eres el último administrador: nombra a otro antes de darte de baja. | Activo |
+| `LEGAL_DOCUMENT_NOT_FOUND` | 404 | Texto legal desconocido en `/api/v1/legal/{document}` (ADR 0034) | No encontramos ese documento. | Activo |
+| `LEGAL_VERSION_OUTDATED` | 409 | Se acepta una versión de la política que ya no es la vigente (ADR 0034) | La política ha cambiado mientras la leías: ábrela de nuevo y acéptala. | Activo |
 
 ## Indicadores (neurofisiología, analítica e inicio)
 
@@ -243,6 +245,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `ROUTINE_REORDER_MISMATCH` | 400 | El orden no coincide con los ejercicios del día | El nuevo orden no coincide con los ejercicios del día. | Activo |
 | `ROUTINE_DAY_NOT_SKIPPABLE` | 409 | Saltar un día ya completado | Ese día ya está hecho: no se puede saltar. | Activo |
 | `CYCLE_CONSENT_REQUIRED` | 422 | Activar el seguimiento del ciclo sin aceptar para qué se usan los datos (ADR 0033) | Para activarlo, marca la casilla de que aceptas. | Activo |
+| `HEALTH_CONSENT_REQUIRED` | 422 | Guardar el registro diario sin haber dado el consentimiento expreso para datos de salud (ADR 0034) | Antes de apuntar cómo te encuentras, danos tu permiso para guardarlo. | Activo |
 | `CYCLE_TRACKING_OFF` | 409 | Apuntar un día del ciclo con el seguimiento desactivado | Activa el seguimiento del ciclo para apuntar días. | Activo |
 | `CYCLE_DAY_OUT_OF_RANGE` | 422 | Día del ciclo del futuro o de hace más de un año | Solo puedes apuntar hoy o días del último año. | Activo |
 | `SESSION_NOT_FOUND` | 404 | La sesión no existe o es ajena | No encontramos esa sesión. | Activo |

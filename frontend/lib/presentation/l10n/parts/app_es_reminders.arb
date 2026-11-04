@@ -29,9 +29,9 @@
   "remindersDeviceToggle": "En este móvil",
   "remindersDeviceHint": "Repasos, bloques, entregas y exámenes, y el resumen del domingo",
   "remindersAppliesNow": "Se aplica al momento",
-  "remindersPermissionDeniedTitle": "Permiso desactivado en el sistema",
-  "remindersPermissionDeniedBody": "Actívalo en los ajustes del teléfono, en Notificaciones de SynaptixFit.",
-  "remindersPermissionRetry": "Volver a pedir",
+  "remindersPermissionDeniedTitle": "Las notificaciones están desactivadas en el móvil",
+  "remindersPermissionDeniedBody": "Actívalas en los ajustes del móvil, en Notificaciones de SynaptixFit.",
+  "remindersPermissionRetry": "Activar notificaciones",
   "remindersExamTitle": "{days, plural, =0{Examen hoy} =1{Examen mañana} other{Examen en {days} días}}",
   "@remindersExamTitle": {
     "placeholders": {

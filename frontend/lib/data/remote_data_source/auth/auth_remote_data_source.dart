@@ -21,11 +21,17 @@ class AuthRemoteDataSource {
   Future<AuthResponseDto> register(
     String email,
     String password,
-    String fullName,
-  ) async {
+    String fullName, {
+    String? acceptedLegalVersion,
+  }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/auth/register',
-      data: {'email': email, 'password': password, 'fullName': fullName},
+      data: {
+        'email': email,
+        'password': password,
+        'fullName': fullName,
+        'acceptedLegalVersion': ?acceptedLegalVersion,
+      },
     );
     return AuthResponseDto.fromJson(response.data!);
   }

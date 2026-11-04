@@ -9,6 +9,7 @@ import '../../../../extensions/validation_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../profile/legal/widgets/legal_consent_field.dart';
 import '../../session/bloc/session_bloc.dart';
 import '../../widgets/auth_header.dart';
 import '../../widgets/auth_layout.dart';
@@ -56,6 +57,7 @@ class _RegisterViewState extends State<_RegisterView> with ErrorsMessageMixin {
         fullName: _name.text,
         email: _email.text,
         password: _password.text,
+        language: Localizations.localeOf(context).languageCode,
       ),
     );
   }
@@ -121,6 +123,8 @@ class _RegisterViewState extends State<_RegisterView> with ErrorsMessageMixin {
                     validator: (v) => Validators.password(v)?.text(context),
                     onSubmitted: (_) => _submit(),
                   ),
+                  const SizedBox(height: TokensSpacing.m),
+                  LegalConsentField(enabled: !busy),
                   const SizedBox(height: TokensSpacing.l),
                   AppPrimaryButton(
                     label: l10n.registerAction,

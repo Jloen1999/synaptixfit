@@ -81,6 +81,11 @@ synaptixfit:
     # Resumen semanal por correo: domingo de 19 a 23 h (zona del planificador); cada pasada solo manda a
     # quien aún no lo recibió esa semana. «-» lo desactiva.
     weekly-cron: ${WEEKLY_EMAIL_CRON:0 0 19-23 * * SUN}
+  # Política de privacidad y condiciones (ADR 0034): quién responde de los datos y a qué correo escribir.
+  # Vacíos: los textos públicos dicen «pendiente de indicar». Nunca se escriben en el código.
+  legal:
+    controller-name: ${LEGAL_CONTROLLER_NAME:}
+    contact-email: ${LEGAL_CONTACT_EMAIL:}
   planner:
     # Clases dadas por asistidas solas al terminar (ADR 0029): cada 10 minutos. «-» lo desactiva.
     auto-attend-cron: ${CLASS_AUTO_ATTEND_CRON:0 */10 * * * *}

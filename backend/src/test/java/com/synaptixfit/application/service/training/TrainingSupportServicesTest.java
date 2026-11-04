@@ -63,13 +63,24 @@ class TrainingSupportServicesTest {
         private final TrainingFakes.CheckIns checkIns = new TrainingFakes.CheckIns();
         private final List<Integer> awarded = new ArrayList<>();
         private final List<DomainEvent> events = new ArrayList<>();
-        private final DailyCheckInService service = new DailyCheckInService(checkIns, (u, amount) -> {
+        private final TrainingFakes.HealthConsents consents = new TrainingFakes.HealthConsents();
+        private final DailyCheckInService service = new DailyCheckInService(checkIns, consents, (u, amount) -> {
             awarded.add(amount);
             return new ExperienceChange(1, amount, 0, amount);
         }, events::add, CLOCK, ZoneOffset.UTC);
 
         @Test
+        void withoutHealthConsentNothingIsStored() {
+            assertThatThrownBy(() -> service.submit(USER,
+                    new DailyCheckIn.Values(4, 2, 4, 1, List.of(), true, null)))
+                    .isInstanceOf(com.synaptixfit.domain.exception.training.HealthConsentRequiredException.class);
+            assertThat(checkIns.store).isEmpty();
+            assertThat(awarded).isEmpty();
+        }
+
+        @Test
         void onlyTheFirstCheckInOfTheDayAwardsXp() {
+            consents.save(com.synaptixfit.domain.model.training.HealthConsent.give(USER, NOW));
             var first = service.submit(USER, new DailyCheckIn.Values(4, 2, 4, 1, List.of("piernas"), true, null));
             assertThat(first.firstOfDay()).isTrue();
             assertThat(first.xpAwarded()).isEqualTo(20);

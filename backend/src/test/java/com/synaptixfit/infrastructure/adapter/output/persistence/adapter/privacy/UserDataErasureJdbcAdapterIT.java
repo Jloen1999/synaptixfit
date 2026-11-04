@@ -74,6 +74,9 @@ class UserDataErasureJdbcAdapterIT {
         UUID exercise = jdbc.sql("SELECT id FROM ejercicios LIMIT 1").query(UUID.class).single();
         jdbc.sql("INSERT INTO notas_ejercicio (usuario_id, ejercicio_id, texto) VALUES (:u, :e, 'rodilla')")
                 .param("u", user).param("e", exercise).update();
+        jdbc.sql("INSERT INTO aceptaciones_legales (id, usuario_id, version, aceptada_en) "
+                        + "VALUES (:id, :u, '2026-11-04', :t)")
+                .param("id", UUID.randomUUID()).param("u", user).param("t", java.sql.Timestamp.from(now)).update();
     }
 
     private long rows(String table, UUID user) {
@@ -90,6 +93,7 @@ class UserDataErasureJdbcAdapterIT {
 
         HEALTH_AND_NOTES.forEach(table -> assertThat(rows(table, user)).as(table).isZero());
         assertThat(rows("opciones_avisos", user)).isZero();
+        assertThat(rows("aceptaciones_legales", user)).isZero();
     }
 
     @Test
@@ -102,6 +106,8 @@ class UserDataErasureJdbcAdapterIT {
         HEALTH_AND_NOTES.forEach(table -> assertThat(rows(table, user)).as(table).isZero());
         // Vaciar conserva el perfil y la configuración, como las preferencias de notificación.
         assertThat(rows("opciones_avisos", user)).isEqualTo(1);
+        // La cuenta sigue en uso: se conserva la constancia de la política aceptada (ADR 0034).
+        assertThat(rows("aceptaciones_legales", user)).isEqualTo(1);
     }
 
     @Test

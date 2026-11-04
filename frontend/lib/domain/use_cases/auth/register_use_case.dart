@@ -7,6 +7,7 @@ abstract interface class RegisterUseCaseContract {
     required String email,
     required String password,
     required String fullName,
+    String? acceptedLegalVersion,
   });
 }
 
@@ -20,9 +21,11 @@ class RegisterUseCase implements RegisterUseCaseContract {
     required String email,
     required String password,
     required String fullName,
+    String? acceptedLegalVersion,
   }) => _repository.register(
     email: email.trim(),
     password: password,
     fullName: fullName.trim(),
+    acceptedLegalVersion: acceptedLegalVersion,
   );
 }

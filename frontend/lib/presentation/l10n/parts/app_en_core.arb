@@ -133,5 +133,6 @@
   "xpGuideChallenges": "Challenges",
   "xpGuideChallengesDetail": "Each task gives XP according to its difficulty; at most 140 XP per challenge.",
   "xpGuideFooter": "If something doesn’t add up, the app tells you why.",
-  "commonArrowSpoken": " to "
+  "commonArrowSpoken": " to ",
+  "registerLegalRequired": "Tick the box to create your account."
 }

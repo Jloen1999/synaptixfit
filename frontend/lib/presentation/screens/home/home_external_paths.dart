@@ -8,6 +8,7 @@ import '../../../domain/models/home/home_setup.dart';
 abstract final class HomeExternalPaths {
   static const profile = '/profile';
   static const onboarding = '/onboarding';
+  static const permissionsIntro = '/permissions-intro';
   static const notifications = '/notifications';
   static const community = '/social';
   static const admin = '/admin';

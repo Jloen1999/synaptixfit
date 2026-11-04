@@ -15,9 +15,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng \
        tesseract-ocr-fra tesseract-ocr-por \
     && rm -rf /var/lib/apt/lists/*
-# Cada lectura usa un solo hilo y, como mucho, 768 MB: si una imagen rara dispara la memoria, el
-# sistema corta solo a Tesseract (prlimit, de util-linux) y no a la JVM que comparte el contenedor.
-ENV OMP_THREAD_LIMIT=1     SYNAPTIXFIT_OCR_MEMORY_LIMIT_MB=768
+# Una lectura a la vez, con un solo hilo y como mucho 256 MB (sobra para fotos de 2400 px): si una
+# imagen rara dispara la memoria, el sistema corta solo a Tesseract (prlimit, de util-linux) y no a
+# la JVM que comparte el contenedor (límite de 1000 MB, JVM al 55 %).
+ENV OMP_THREAD_LIMIT=1     SYNAPTIXFIT_OCR_MEMORY_LIMIT_MB=256     SYNAPTIXFIT_OCR_MAX_CONCURRENT=1
 RUN useradd --system --uid 1001 app
 COPY --from=build /workspace/target/*.jar app.jar
 USER app
@@ -25,4 +26,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3   CMD curl -fsS http://127.0.0.1:8080/actuator/health || exit 1
 # Memoria según el límite del contenedor; si se agota, el proceso termina y Docker lo reinicia
 # en lugar de quedarse colgado.
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-XX:+ExitOnOutOfMemoryError", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=55", "-XX:+ExitOnOutOfMemoryError", "-jar", "app.jar"]

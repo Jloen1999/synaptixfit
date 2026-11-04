@@ -31,6 +31,8 @@ class DataChangeInterceptor extends Interceptor {
     '/api/v1/auth/',
     '/api/v1/badges/evaluate',
     '/api/v1/badges/notified',
+    // Aceptar la política (ADR 0034) no cambia nada que se vea.
+    '/api/v1/me/legal-acceptance',
   ];
 
   /// Prefijo de ruta → áreas afectadas. Casi toda acción puede dar XP o

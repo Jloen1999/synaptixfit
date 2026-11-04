@@ -62,13 +62,18 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "DELETE FROM historial_peso WHERE usuario_id = :id",
             "DELETE FROM historial_objetivos WHERE usuario_id = :id");
 
-    /** Perfil y configuración: se conservan al vaciar y se borran al anonimizar. */
+    /**
+     * Perfil y configuración: se conservan al vaciar y se borran al anonimizar. Al vaciar la cuenta sigue en uso,
+     * así que la constancia de la política aceptada (ADR 0034) se conserva; al anonimizar ya no hay a quién tratar.
+     */
     private static final List<String> PROFILE = List.of(
             "DELETE FROM perfil_bienestar_usuario WHERE usuario_id = :id",
             "DELETE FROM perfil_academico_usuario WHERE usuario_id = :id",
             "DELETE FROM usuario_carreras WHERE usuario_id = :id",
             "DELETE FROM preferencias_notificacion WHERE usuario_id = :id",
-            "DELETE FROM opciones_avisos WHERE usuario_id = :id");
+            "DELETE FROM opciones_avisos WHERE usuario_id = :id",
+            "DELETE FROM aceptaciones_legales WHERE usuario_id = :id",
+            "DELETE FROM consentimientos_salud WHERE usuario_id = :id");
 
     /** Texto libre de los registros estadísticos que se conservan al anonimizar. */
     private static final List<String> SCRUB_STATISTICS = List.of(

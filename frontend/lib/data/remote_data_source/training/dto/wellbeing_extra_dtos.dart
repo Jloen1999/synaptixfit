@@ -1,5 +1,6 @@
 import '../../../../domain/models/reminders/reminder_options.dart';
 import '../../../../domain/models/training/cycle.dart';
+import '../../../../domain/models/training/health_consent.dart';
 import '../../../../domain/models/training/session_adaptation.dart';
 import '../../../../domain/models/training/sport_activity.dart';
 import '../../../../domain/models/training/today_adaptation.dart';
@@ -16,6 +17,13 @@ abstract final class WellbeingExtraDtos {
 
   static DateTime? _date(Object? value) =>
       value is String ? DateTime.tryParse(value) : null;
+
+  static HealthConsent healthConsent(Map<String, dynamic> json) =>
+      HealthConsent(
+        given: json['given'] as bool? ?? false,
+        givenAt: _date(json['givenAt'])?.toLocal(),
+        withdrawnAt: _date(json['withdrawnAt'])?.toLocal(),
+      );
 
   static CycleDay cycleDay(Map<String, dynamic> json) => CycleDay(
     date: DateTime.parse(json['date'] as String),

@@ -6,6 +6,9 @@ import '../use_cases/training/change_cycle_tracking_use_case.dart';
 import '../use_cases/training/delete_cycle_day_use_case.dart';
 import '../use_cases/training/delete_cycle_history_use_case.dart';
 import '../use_cases/training/get_cycle_overview_use_case.dart';
+import '../use_cases/training/get_health_consent_use_case.dart';
+import '../use_cases/training/give_health_consent_use_case.dart';
+import '../use_cases/training/withdraw_health_consent_use_case.dart';
 import '../use_cases/training/get_today_adaptation_use_case.dart';
 import '../use_cases/training/list_cycle_days_use_case.dart';
 import '../use_cases/training/list_sport_activities_use_case.dart';
@@ -17,6 +20,15 @@ void registerWellbeingDomain(GetIt getIt) {
   getIt
     ..registerLazySingleton<GetCycleOverviewUseCaseContract>(
       () => GetCycleOverviewUseCase(getIt()),
+    )
+    ..registerLazySingleton<GetHealthConsentUseCaseContract>(
+      () => GetHealthConsentUseCase(getIt()),
+    )
+    ..registerLazySingleton<GiveHealthConsentUseCaseContract>(
+      () => GiveHealthConsentUseCase(getIt()),
+    )
+    ..registerLazySingleton<WithdrawHealthConsentUseCaseContract>(
+      () => WithdrawHealthConsentUseCase(getIt()),
     )
     ..registerLazySingleton<ChangeCycleTrackingUseCaseContract>(
       () => ChangeCycleTrackingUseCase(getIt()),

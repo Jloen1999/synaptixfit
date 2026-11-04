@@ -3,6 +3,7 @@ export 'app_avatar.dart';
 export 'app_badge_emblem.dart';
 export 'app_brand_mark.dart';
 export 'app_card.dart';
+export 'app_consent_checkbox.dart';
 export 'app_card_tap_area.dart';
 export 'app_chart_summary.dart';
 export 'app_confirm_dialog.dart';
