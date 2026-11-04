@@ -342,5 +342,40 @@
   "socialRequestSentHint": "Esperando respuesta",
   "socialOpenPostHint": "Abrir la publicación",
   "socialLinkBadge": "Insignia",
-  "socialFindFriends": "Buscar amigos"
+  "socialFindFriends": "Buscar amigos",
+  "socialProfileBadges": "{count, plural, =1{1 insignia} other{{count} insignias}}",
+  "@socialProfileBadges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialProfileBadgesAll": "Ver las {count}",
+  "@socialProfileBadgesAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "socialProfileBadgeSemantics": "{name}, insignia {rarity}. Toca para ver qué es.",
+  "@socialProfileBadgeSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "rarity": {
+        "type": "String"
+      }
+    }
+  },
+  "socialProfileBadgeEarnedOn": "La consiguió el {date}",
+  "@socialProfileBadgeEarnedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

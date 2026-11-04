@@ -14,22 +14,33 @@ import '../../widgets/academic_widgets.dart';
 import '../../widgets/question_view.dart';
 import '../bloc/mock_exam_bloc.dart';
 
-/// Simulacro cronometrado con sesión persistente.
+/// Simulacro cronometrado con sesión persistente. Con [extraMaterialIds] es un
+/// simulacro de asignatura que mezcla preguntas de varios apuntes y archivos.
 class MockExamPage extends StatelessWidget {
   const MockExamPage({
     super.key,
     required this.materialId,
     this.resume = false,
+    this.extraMaterialIds = const [],
+    this.questionCount,
   });
 
   final String materialId;
   final bool resume;
+  final List<String> extraMaterialIds;
+  final int? questionCount;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-    create: (_) =>
-        getIt<MockExamBloc>()
-          ..add(MockExamEvent.started(materialId: materialId, resume: resume)),
+    create: (_) => getIt<MockExamBloc>()
+      ..add(
+        MockExamEvent.started(
+          materialId: materialId,
+          resume: resume,
+          extraMaterialIds: extraMaterialIds,
+          questionCount: questionCount,
+        ),
+      ),
     child: const _MockExamView(),
   );
 }

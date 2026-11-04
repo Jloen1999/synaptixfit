@@ -1,7 +1,9 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/question_type.dart';
+import '../../../../domain/enums/study_source_type.dart';
 import '../../../../domain/enums/test_session_status.dart';
+import '../../../../domain/models/academic/mock_exam_options.dart';
 import '../../../../domain/models/academic/quiz.dart';
 
 part 'quiz_dtos.freezed.dart';
@@ -100,6 +102,50 @@ abstract class PracticeResultDto with _$PracticeResultDto {
 
   PracticeResult toDomain() =>
       PracticeResult(correct: correct, total: total, xpAwarded: xpAwarded);
+}
+
+@freezed
+abstract class MockExamOptionsDto with _$MockExamOptionsDto {
+  const factory MockExamOptionsDto({
+    @Default(<MockExamSourceDto>[]) List<MockExamSourceDto> sources,
+    @Default(10) int maxMaterials,
+    @Default(20) int suggestedQuestions,
+    @Default(50) int maxQuestions,
+  }) = _MockExamOptionsDto;
+
+  const MockExamOptionsDto._();
+
+  factory MockExamOptionsDto.fromJson(Map<String, dynamic> json) =>
+      _$MockExamOptionsDtoFromJson(json);
+
+  MockExamOptions toDomain() => MockExamOptions(
+    sources: [for (final s in sources) s.toDomain()],
+    maxMaterials: maxMaterials,
+    suggestedQuestions: suggestedQuestions,
+    maxQuestions: maxQuestions,
+  );
+}
+
+@freezed
+abstract class MockExamSourceDto with _$MockExamSourceDto {
+  const factory MockExamSourceDto({
+    required String materialId,
+    @Default('') String title,
+    String? originType,
+    @Default(0) int questionCount,
+  }) = _MockExamSourceDto;
+
+  const MockExamSourceDto._();
+
+  factory MockExamSourceDto.fromJson(Map<String, dynamic> json) =>
+      _$MockExamSourceDtoFromJson(json);
+
+  MockExamSource toDomain() => MockExamSource(
+    materialId: materialId,
+    title: title,
+    originType: StudySourceType.fromApi(originType),
+    questionCount: questionCount,
+  );
 }
 
 @freezed

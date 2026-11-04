@@ -7,6 +7,7 @@ import com.synaptixfit.application.port.input.academic.CompleteBankPracticeUseCa
 import com.synaptixfit.application.port.input.academic.CompleteTestSessionUseCase;
 import com.synaptixfit.application.port.input.academic.GenerateQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.GetActiveTestSessionUseCase;
+import com.synaptixfit.application.port.input.academic.GetMockExamOptionsUseCase;
 import com.synaptixfit.application.port.input.academic.GetQuestionBankUseCase;
 import com.synaptixfit.application.port.input.academic.GetTestSessionUseCase;
 import com.synaptixfit.application.port.input.academic.ListTestSessionsUseCase;
@@ -14,6 +15,7 @@ import com.synaptixfit.application.port.input.academic.StartTestSessionUseCase;
 import com.synaptixfit.domain.model.academic.TestSessionStatus;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.AnswerRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.AnswerResultResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.MockExamOptionsResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.PracticeCompletionRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.PracticeResultResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.QuizDtos.QuestionBankResponse;
@@ -55,13 +57,15 @@ public class QuizController {
     private final AnswerTestQuestionUseCase answerInSession;
     private final CompleteTestSessionUseCase completeSession;
     private final AbandonTestSessionUseCase abandonSession;
+    private final GetMockExamOptionsUseCase mockExamOptions;
 
     public QuizController(GetQuestionBankUseCase getBank, GenerateQuestionBankUseCase generateBank,
                           AnswerQuestionUseCase answerQuestion, CompleteBankPracticeUseCase completePractice,
                           StartTestSessionUseCase startSession, GetTestSessionUseCase getSession,
                           GetActiveTestSessionUseCase activeSession, ListTestSessionsUseCase listSessions,
                           AnswerTestQuestionUseCase answerInSession, CompleteTestSessionUseCase completeSession,
-                          AbandonTestSessionUseCase abandonSession) {
+                          AbandonTestSessionUseCase abandonSession, GetMockExamOptionsUseCase mockExamOptions) {
+        this.mockExamOptions = mockExamOptions;
         this.getBank = getBank;
         this.generateBank = generateBank;
         this.answerQuestion = answerQuestion;
@@ -73,6 +77,12 @@ public class QuizController {
         this.answerInSession = answerInSession;
         this.completeSession = completeSession;
         this.abandonSession = abandonSession;
+    }
+
+    /** Apuntes y archivos de la asignatura que pueden entrar en un simulacro, con sus límites. */
+    @GetMapping("/subjects/{subjectId}/mock-exam-options")
+    public MockExamOptionsResponse mockExamOptions(@CurrentUserId UUID userId, @PathVariable UUID subjectId) {
+        return MockExamOptionsResponse.from(mockExamOptions.getMockExamOptions(userId, subjectId));
     }
 
     @GetMapping("/study-materials/{materialId}/question-bank")

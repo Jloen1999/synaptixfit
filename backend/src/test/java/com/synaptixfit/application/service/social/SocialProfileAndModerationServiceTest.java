@@ -12,9 +12,12 @@ import com.synaptixfit.domain.model.social.Comment;
 import com.synaptixfit.domain.model.social.Friendship;
 import com.synaptixfit.domain.model.social.FriendshipRelation;
 import com.synaptixfit.domain.model.social.Post;
+import com.synaptixfit.domain.model.badge.BadgeRarity;
+import com.synaptixfit.domain.model.social.PublicBadge;
 import com.synaptixfit.domain.model.social.PublicProfile;
 import com.synaptixfit.domain.model.social.ReportedContentType;
 import com.synaptixfit.domain.model.user.User;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +69,24 @@ class SocialProfileAndModerationServiceTest {
         assertThat(opened.restricted()).isFalse();
         assertThat(opened.relation()).isEqualTo(FriendshipRelation.FRIENDS);
         assertThat(opened.friendshipId()).isEqualTo(f.id());
+    }
+
+    @Test
+    void openProfileShowsVisibleBadgesRarestFirstAndRestrictedShowsNone() {
+        User target = fakes.user("Insignias", Visibility.FRIENDS);
+        Instant old = Instant.parse("2026-09-01T10:00:00Z");
+        Instant recent = Instant.parse("2026-10-01T10:00:00Z");
+        PublicBadge common = new PublicBadge(UUID.randomUUID(), "Primer paso", "d", "👟", BadgeRarity.COMMON, recent);
+        PublicBadge epic = new PublicBadge(UUID.randomUUID(), "Imparable", "d", "🔥", BadgeRarity.EPIC, old);
+        PublicBadge commonOld = new PublicBadge(UUID.randomUUID(), "Lector", "d", "📚", BadgeRarity.COMMON, old);
+        fakes.badges.put(target.id(), List.of(commonOld, common, epic));
+
+        assertThat(profiles.getProfile(viewer.id(), target.id()).badges()).isEmpty();
+
+        fakes.friends(viewer, target);
+        assertThat(profiles.getProfile(viewer.id(), target.id()).badges())
+                .extracting(PublicBadge::name)
+                .containsExactly("Imparable", "Primer paso", "Lector");
     }
 
     @Test

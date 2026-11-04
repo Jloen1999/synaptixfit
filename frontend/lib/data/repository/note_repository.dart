@@ -1,6 +1,7 @@
 import '../../domain/enums/shared_notes_scope.dart';
 import '../../domain/enums/visibility.dart';
 import '../../domain/models/academic/note.dart';
+import '../../domain/models/academic/note_scan.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/models/result/result.dart';
 import '../../domain/repositories/note_repository_contract.dart';
@@ -72,6 +73,16 @@ class NoteRepository implements NoteRepositoryContract {
       'visibility': visibility.apiValue,
       'quickNote': quickNote,
     })).toDomain(),
+  );
+
+  @override
+  Future<AppResult<ScannedNoteDraft>> readNotePhotos(
+    List<NotePhotoUpload> photos,
+  ) => RepositoryErrorHandler.guard(
+    () async => (await _remote.readNotePhotos([
+      for (final p in photos)
+        (bytes: p.bytes, fileName: p.fileName, mimeType: p.mimeType),
+    ])).toDomain(),
   );
 
   @override

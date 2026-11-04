@@ -7,7 +7,9 @@ import com.synaptixfit.domain.model.social.FeedQuery;
 import com.synaptixfit.domain.model.social.FriendshipListKind;
 import com.synaptixfit.domain.model.social.FriendshipView;
 import com.synaptixfit.domain.model.social.PostView;
+import com.synaptixfit.domain.model.social.PublicBadge;
 import com.synaptixfit.domain.model.social.UserCard;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,4 +41,7 @@ public interface SocialQueryPort {
     long countPosts(UUID authorId);
 
     long countFriends(UUID userId);
+
+    /** Insignias ganadas que el usuario deja ver en su perfil (sin orden: lo decide el servicio). */
+    List<PublicBadge> visibleBadges(UUID userId);
 }

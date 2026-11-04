@@ -17,6 +17,7 @@ import '../../widgets/academic_widgets.dart';
 import '../../widgets/file_pick.dart';
 import '../../widgets/mind_map_view.dart';
 import '../bloc/generation_center_bloc.dart';
+import 'artifact_editors.dart';
 
 /// Centro de generación multi-fuente con IA.
 class GenerationCenterPage extends StatelessWidget {
@@ -98,7 +99,10 @@ class _GenerationCenterView extends StatelessWidget with ErrorsMessageMixin {
             GenerationCenterState(generating: true) => _GeneratingView(
               kind: state.kind,
             ),
-            _ when artifact != null => _ArtifactView(artifact: artifact),
+            _ when artifact != null => _ArtifactView(
+              artifact: artifact,
+              edited: state.edited,
+            ),
             _ => _SetupView(state: state),
           },
         );
@@ -337,6 +341,22 @@ class _ResultBar extends StatelessWidget {
 
   final GenerationCenterState state;
 
+  /// Descartar o volver a generar borra las correcciones: si las hay, se
+  /// pregunta antes (no se pierde trabajo sin querer).
+  Future<void> _keepingEdits(BuildContext context, VoidCallback action) async {
+    if (state.edited) {
+      final l10n = context.localizations;
+      final ok = await showConfirmDialog(
+        context,
+        title: l10n.academicGenerateLoseEditsTitle,
+        message: l10n.academicGenerateLoseEditsMessage,
+        confirmLabel: l10n.academicGenerateLoseEditsConfirm,
+      );
+      if (!ok) return;
+    }
+    action();
+  }
+
   Future<void> _save(BuildContext context) async {
     final l10n = context.localizations;
     final bloc = context.read<GenerationCenterBloc>();
@@ -383,13 +403,18 @@ class _ResultBar extends StatelessWidget {
           IconButton(
             tooltip: l10n.academicGenerateDiscard,
             icon: const Icon(Icons.delete_outline_rounded),
-            onPressed: () => bloc.add(const GenerationCenterEvent.discarded()),
+            onPressed: () => _keepingEdits(
+              context,
+              () => bloc.add(const GenerationCenterEvent.discarded()),
+            ),
           ),
           IconButton(
             tooltip: l10n.academicAiRegenerate,
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () =>
-                bloc.add(const GenerationCenterEvent.generateRequested()),
+            onPressed: () => _keepingEdits(
+              context,
+              () => bloc.add(const GenerationCenterEvent.generateRequested()),
+            ),
           ),
           const Spacer(),
           AppPrimaryButton(
@@ -398,7 +423,7 @@ class _ResultBar extends StatelessWidget {
                 : l10n.academicGenerateSaveQuiz,
             icon: asNote ? Icons.note_add_outlined : Icons.quiz_outlined,
             loading: state.saving,
-            onPressed: () => _save(context),
+            onPressed: state.canSave ? () => _save(context) : null,
           ),
         ],
       ),
@@ -432,10 +457,45 @@ class _GeneratingView extends StatelessWidget {
   );
 }
 
+/// Resultado de la IA listo para revisar: se puede corregir el texto del
+/// resumen y cada tarjeta o pregunta, o quitar las que sobren, antes de guardar.
 class _ArtifactView extends StatelessWidget {
-  const _ArtifactView({required this.artifact});
+  const _ArtifactView({required this.artifact, required this.edited});
 
   final StudyArtifact artifact;
+  final bool edited;
+
+  Future<void> _fixSummary(BuildContext context) async {
+    final bloc = context.read<GenerationCenterBloc>();
+    final text = await showSummaryEditor(context, artifact.markdown ?? '');
+    if (text != null && text != artifact.markdown) {
+      bloc.add(GenerationCenterEvent.summaryEdited(text));
+    }
+  }
+
+  Future<void> _fixCard(BuildContext context, int index) async {
+    final bloc = context.read<GenerationCenterBloc>();
+    final card = await showFlashcardEditor(context, artifact.flashcards[index]);
+    if (card != null) {
+      bloc.add(GenerationCenterEvent.flashcardEdited(index, card));
+    }
+  }
+
+  Future<void> _fixQuestion(BuildContext context, int index) async {
+    final bloc = context.read<GenerationCenterBloc>();
+    final q = await showQuestionEditor(context, artifact.questions[index]);
+    if (q != null) bloc.add(GenerationCenterEvent.questionEdited(index, q));
+  }
+
+  void _remove(BuildContext context, int index) {
+    final bloc = context.read<GenerationCenterBloc>()
+      ..add(GenerationCenterEvent.itemRemoved(index));
+    context.showUndoSnack(
+      context.localizations.academicGenerateItemRemoved,
+      onUndo: () => bloc.add(const GenerationCenterEvent.removalUndone()),
+      onCommit: () {},
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -443,21 +503,60 @@ class _ArtifactView extends StatelessWidget {
     if (artifact.kind == ArtifactKind.mindMap && artifact.mindMap != null) {
       return MindMapView(map: artifact.mindMap!);
     }
+    final hasText = artifact.markdown != null && artifact.markdown!.isNotEmpty;
+    final emptyList =
+        !hasText && artifact.flashcards.isEmpty && artifact.questions.isEmpty;
     return AcademicBody(
       child: ListView(
         padding: const EdgeInsets.all(TokensSpacing.m),
         children: [
           Text(artifact.title, style: context.textStyles.titleLarge),
           const SizedBox(height: TokensSpacing.s),
-          AppPill(
-            label: l10n.academicGenerateEphemeral,
-            color: context.palette.warning,
-            icon: Icons.info_outline_rounded,
+          Wrap(
+            spacing: TokensSpacing.s,
+            runSpacing: TokensSpacing.s,
+            children: [
+              AppPill(
+                label: l10n.academicGenerateEphemeral,
+                color: context.palette.warning,
+                icon: Icons.info_outline_rounded,
+              ),
+              if (edited)
+                AppPill(
+                  label: l10n.academicGenerateEditedPill,
+                  color: context.palette.success,
+                  icon: Icons.edit_note_rounded,
+                ),
+            ],
+          ),
+          const SizedBox(height: TokensSpacing.s),
+          // La IA se equivoca a veces: decirlo y dar la forma de arreglarlo.
+          Text(
+            l10n.academicGenerateReviewHint,
+            style: context.textStyles.bodyMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: TokensSpacing.m),
-          if (artifact.markdown != null && artifact.markdown!.isNotEmpty)
+          if (hasText) ...[
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: OutlinedButton.icon(
+                onPressed: () => _fixSummary(context),
+                icon: const Icon(Icons.edit_rounded),
+                label: Text(l10n.academicGenerateFixSummary),
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.m),
             AcademicMarkdown(data: artifact.markdown!),
-          for (final card in artifact.flashcards)
+          ],
+          if (emptyList)
+            AppEmptyState(
+              icon: Icons.layers_clear_rounded,
+              title: l10n.academicGenerateAllRemoved,
+              message: l10n.academicGenerateAllRemovedHint,
+            ),
+          for (final (i, card) in artifact.flashcards.indexed)
             Padding(
               padding: const EdgeInsets.only(bottom: TokensSpacing.s),
               child: AppCard(
@@ -467,6 +566,12 @@ class _ArtifactView extends StatelessWidget {
                     Text(card.question, style: context.textStyles.titleSmall),
                     const Divider(height: TokensSpacing.l),
                     Text(card.answer),
+                    _ItemActions(
+                      onFix: () => _fixCard(context, i),
+                      onRemove: () => _remove(context, i),
+                      fixLabel: l10n.academicGenerateFixCardNamed(i + 1),
+                      removeLabel: l10n.academicGenerateRemoveCardNamed(i + 1),
+                    ),
                   ],
                 ),
               ),
@@ -507,10 +612,67 @@ class _ArtifactView extends StatelessWidget {
                         )
                     else
                       Text(l10n.academicCorrectAnswer(q.correctAnswer)),
+                    _ItemActions(
+                      onFix: () => _fixQuestion(context, i),
+                      onRemove: () => _remove(context, i),
+                      fixLabel: l10n.academicGenerateFixQuestionNamed(i + 1),
+                      removeLabel: l10n.academicGenerateRemoveQuestionNamed(
+                        i + 1,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// «Corregir» y «Quitar» al pie de una tarjeta o pregunta, con su nombre
+/// completo para el lector de pantalla («Corregir la pregunta 3»).
+class _ItemActions extends StatelessWidget {
+  const _ItemActions({
+    required this.onFix,
+    required this.onRemove,
+    required this.fixLabel,
+    required this.removeLabel,
+  });
+
+  final VoidCallback onFix;
+  final VoidCallback onRemove;
+  final String fixLabel;
+  final String removeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Padding(
+      padding: const EdgeInsets.only(top: TokensSpacing.s),
+      child: Wrap(
+        spacing: TokensSpacing.s,
+        children: [
+          Semantics(
+            label: fixLabel,
+            button: true,
+            excludeSemantics: true,
+            child: TextButton.icon(
+              onPressed: onFix,
+              icon: const Icon(Icons.edit_rounded),
+              label: Text(l10n.academicGenerateFix),
+            ),
+          ),
+          Semantics(
+            label: removeLabel,
+            button: true,
+            excludeSemantics: true,
+            child: TextButton.icon(
+              onPressed: onRemove,
+              icon: const Icon(Icons.remove_circle_outline_rounded),
+              label: Text(l10n.academicGenerateRemove),
+            ),
+          ),
         ],
       ),
     );

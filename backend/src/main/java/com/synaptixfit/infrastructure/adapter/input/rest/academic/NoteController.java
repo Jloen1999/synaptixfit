@@ -7,12 +7,16 @@ import com.synaptixfit.application.port.input.academic.GetNoteUseCase;
 import com.synaptixfit.application.port.input.academic.GetSharedNoteUseCase;
 import com.synaptixfit.application.port.input.academic.ListNotesUseCase;
 import com.synaptixfit.application.port.input.academic.ListSharedNotesUseCase;
+import com.synaptixfit.application.port.input.academic.ReadNotePhotosUseCase;
 import com.synaptixfit.application.port.input.academic.UpdateNoteUseCase;
+import com.synaptixfit.domain.exception.academic.NoteScanUnsupportedFileException;
+import com.synaptixfit.domain.model.academic.NotePhoto;
 import com.synaptixfit.domain.model.shared.AudienceScope;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.CreateNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.NoteResponse;
+import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.ScannedNoteDraftResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.ScannedNoteRequest;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.SharedNoteResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.academic.dto.NoteDtos.SharedNoteSummaryResponse;
@@ -21,8 +25,12 @@ import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,8 +39,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Apuntes en Markdown (propios y compartidos). */
 @Tag(name = "Academic - Notes")
@@ -48,10 +58,13 @@ public class NoteController {
     private final DeleteNoteUseCase deleteNote;
     private final GetSharedNoteUseCase getShared;
     private final CopySharedNoteUseCase copyShared;
+    private final ReadNotePhotosUseCase readPhotos;
 
     public NoteController(ListNotesUseCase listNotes, ListSharedNotesUseCase listShared, GetNoteUseCase getNote,
                           CreateNoteUseCase createNote, UpdateNoteUseCase updateNote, DeleteNoteUseCase deleteNote,
-                          GetSharedNoteUseCase getShared, CopySharedNoteUseCase copyShared) {
+                          GetSharedNoteUseCase getShared, CopySharedNoteUseCase copyShared,
+                          ReadNotePhotosUseCase readPhotos) {
+        this.readPhotos = readPhotos;
         this.getShared = getShared;
         this.copyShared = copyShared;
         this.listNotes = listNotes;
@@ -111,6 +124,24 @@ public class NoteController {
     public NoteResponse create(@CurrentUserId UUID userId, @Valid @RequestBody CreateNoteRequest r) {
         return NoteResponse.from(createNote.createNote(new CreateNoteUseCase.Command(userId, r.subjectId(),
                 r.title(), r.content(), r.visibility(), Boolean.TRUE.equals(r.quickNote()))));
+    }
+
+    /**
+     * Lee fotos de apuntes en papel (campo {@code files}, de 1 a 5 imágenes) y devuelve un borrador
+     * para revisar. No guarda nada: el apunte se crea con {@code POST /notes/from-scan}.
+     */
+    @PostMapping(value = "/scan-drafts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ScannedNoteDraftResponse scanDraft(@CurrentUserId UUID userId,
+                                              @RequestPart("files") List<MultipartFile> files) {
+        List<NotePhoto> photos = new ArrayList<>();
+        for (MultipartFile file : files == null ? List.<MultipartFile>of() : files) {
+            try {
+                photos.add(new NotePhoto(file.getBytes(), file.getContentType()));
+            } catch (IOException e) {
+                throw new NoteScanUnsupportedFileException();
+            }
+        }
+        return ScannedNoteDraftResponse.from(readPhotos.read(new ReadNotePhotosUseCase.Command(userId, photos)));
     }
 
     @PostMapping("/from-scan")

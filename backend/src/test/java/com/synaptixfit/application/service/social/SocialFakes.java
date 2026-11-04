@@ -15,6 +15,7 @@ import com.synaptixfit.domain.model.social.FriendshipView;
 import com.synaptixfit.domain.model.social.Post;
 import com.synaptixfit.domain.model.social.PostType;
 import com.synaptixfit.domain.model.social.PostView;
+import com.synaptixfit.domain.model.social.PublicBadge;
 import com.synaptixfit.domain.model.social.UserCard;
 import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.social.CommentRepositoryPort;
@@ -46,6 +47,8 @@ final class SocialFakes {
     final Map<UUID, Friendship> friendships = new HashMap<>();
     final Set<String> likes = new HashSet<>();
     final List<CreateNotificationUseCase.Command> notifications = new ArrayList<>();
+    /** Insignias visibles por usuario (lo que devolvería la consulta de gamificación). */
+    final Map<UUID, List<PublicBadge>> badges = new HashMap<>();
 
     User user(String name, Visibility privacy) {
         return user(name, privacy, false);
@@ -171,6 +174,10 @@ final class SocialFakes {
 
             public long countFriends(UUID userId) {
                 return friendships.values().stream().filter(f -> f.involves(userId) && f.isAccepted()).count();
+            }
+
+            public List<PublicBadge> visibleBadges(UUID userId) {
+                return badges.getOrDefault(userId, List.of());
             }
         };
     }

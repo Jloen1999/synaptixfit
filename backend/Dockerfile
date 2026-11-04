@@ -9,6 +9,12 @@ RUN ./mvnw -B -q package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
+# Tesseract lee el texto de las fotos de apuntes (ADR 0040); DeepSeek solo entiende texto.
+# Diccionarios de los idiomas de la app: español, inglés, francés y portugués.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng \
+       tesseract-ocr-fra tesseract-ocr-por \
+    && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 1001 app
 COPY --from=build /workspace/target/*.jar app.jar
 USER app

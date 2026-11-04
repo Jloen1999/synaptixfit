@@ -115,6 +115,12 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
                   AcademicPaths.newNote(quick: true),
                 ),
                 option(
+                  Icons.photo_camera_outlined,
+                  l10n.academicScanEntryLong,
+                  l10n.academicScanEntryHint,
+                  AcademicPaths.scanNote(),
+                ),
+                option(
                   Icons.auto_awesome_rounded,
                   l10n.academicGenerateTitle,
                   l10n.academicGenerateHint,

@@ -1,3 +1,4 @@
+import '../../domain/models/academic/mock_exam_options.dart';
 import '../../domain/models/academic/quiz.dart';
 import '../../domain/models/result/app_result.dart';
 import '../../domain/repositories/quiz_repository_contract.dart';
@@ -51,6 +52,12 @@ class QuizRepository implements QuizRepositoryContract {
       failed,
     )).toDomain(),
   );
+
+  @override
+  Future<AppResult<MockExamOptions>> getMockExamOptions(String subjectId) =>
+      RepositoryErrorHandler.guard(
+        () async => (await _remote.getMockExamOptions(subjectId)).toDomain(),
+      );
 
   @override
   Future<AppResult<TestSession>> startTestSession(

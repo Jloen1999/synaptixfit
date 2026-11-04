@@ -985,5 +985,215 @@
   "academicAiRegenerateTitle": "¿Escribirlo de nuevo?",
   "academicAiRegenerateMessage": "La IA escribirá otra versión y sustituirá a la que ves ahora.",
   "academicSubjectArchiveTitle": "¿Archivar la asignatura?",
-  "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el planificador. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras desde «Archivadas»."
+  "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el planificador. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras desde «Archivadas».",
+  "academicScanEntry": "Desde una foto",
+  "academicScanEntryLong": "Fotografiar apuntes en papel",
+  "academicScanEntryHint": "Haz fotos de tus hojas y las pasamos a un apunte",
+  "academicScanTitle": "Fotografiar apuntes",
+  "academicScanReviewTitle": "Revisa el texto",
+  "academicScanIntro": "Haz una foto de cada página. Leemos el texto y lo ordenamos para que solo tengas que revisarlo y guardarlo.",
+  "academicScanTipLight": "Con buena luz y sin sombras sobre la hoja.",
+  "academicScanTipWhole": "Con la hoja entera, recta y llenando la foto.",
+  "academicScanTipHandwriting": "Funciona mejor con letra clara o apuntes impresos.",
+  "academicScanEmptyTitle": "Aún no hay fotos",
+  "academicScanEmptyMessage": "Empieza por la primera página: haz una foto o elígela de tu galería.",
+  "academicScanPhotos": "Páginas ({count} de {max})",
+  "@academicScanPhotos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "academicScanPage": "Página {page}",
+  "@academicScanPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "academicScanRemovePage": "Quitar la página {page}",
+  "@academicScanRemovePage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "academicScanCamera": "Hacer foto",
+  "academicScanGallery": "Elegir de la galería",
+  "academicScanFull": "Ya tienes {max} páginas, el máximo de una vez. Lee estas y luego haz otro apunte.",
+  "@academicScanFull": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "academicScanRead": "{count, plural, =1{Leer la foto} other{Leer las {count} fotos}}",
+  "@academicScanRead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicScanReading": "{count, plural, =1{Leyendo tu página…} other{Leyendo tus {count} páginas…}}",
+  "@academicScanReading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicScanReadingHint": "Puede tardar unos segundos por página. No cierres esta pantalla.",
+  "academicScanTidied": "Ordenado por la IA",
+  "academicScanTidiedHint": "La IA ha corregido errores de lectura y le ha dado formato. Revisa que diga lo mismo que tus apuntes.",
+  "academicScanRaw": "Texto tal cual se leyó",
+  "academicScanRawHint": "La IA no estaba disponible para ordenarlo. Corrige lo que no se haya leído bien.",
+  "academicScanDefaultTitle": "Apuntes escaneados",
+  "academicScanTextLabel": "Texto del apunte",
+  "academicScanBackToPhotos": "Volver a las fotos",
+  "academicScanSave": "Guardar apunte",
+  "academicScanSaved": "Apunte guardado. Solo lo ves tú.",
+  "academicScanLeaveTitle": "¿Salir sin guardar?",
+  "academicScanLeaveMessage": "Se perderán las fotos y el texto leído.",
+  "academicScanLeaveConfirm": "Salir",
+  "academicErrorNoteScanUnsupportedFile": "Envía de 1 a 5 fotos en JPG, PNG o WEBP.",
+  "academicErrorNoteScanTooLarge": "Las fotos pesan demasiado. Prueba con menos páginas a la vez.",
+  "academicErrorNoteScanNothingFound": "No hemos podido leer texto en las fotos. Prueba con más luz y la hoja recta.",
+  "academicErrorNoteScanUnavailable": "Ahora mismo no podemos leer fotos. Inténtalo en un rato.",
+  "academicMockCardTitle": "Simulacro de la asignatura",
+  "academicMockCardBody": "Mezcla preguntas de varios temas, como en el examen de verdad. Así sabes qué llevas bien y qué no.",
+  "academicMockCardAction": "Hacer un simulacro",
+  "academicMockSetupTitle": "Preparar simulacro",
+  "academicMockSetupIntro": "Elige qué temas entran y cuántas preguntas quieres. Las preguntas salen mezcladas y se corrigen al terminar.",
+  "academicMockSetupWhat": "¿Qué entra?",
+  "academicMockSetupAll": "Elegir todo",
+  "academicMockSetupNone": "Quitar todo",
+  "academicMockSetupLimit": "Puedes elegir hasta {max} a la vez.",
+  "@academicMockSetupLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "academicMockSetupQuestions": "{count, plural, =1{1 pregunta} other{{count} preguntas}}",
+  "@academicMockSetupQuestions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicMockSetupHowMany": "¿Cuántas preguntas?",
+  "academicMockSetupAvailable": "Hay {count} preguntas entre lo que has elegido.",
+  "@academicMockSetupAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicMockSetupPickOne": "Elige al menos un tema",
+  "academicMockSetupStart": "Empezar · {count} preguntas",
+  "@academicMockSetupStart": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "academicMockSetupEmptyTitle": "Aún no hay preguntas",
+  "academicMockSetupEmptyMessage": "Abre un apunte o un archivo de la asignatura y toca «Practicar»: la IA te prepara las preguntas. Luego vuelve aquí.",
+  "academicMockSetupEmptyAction": "Volver a la asignatura",
+  "academicGenerateReviewHint": "La IA a veces se equivoca. Revísalo y corrige lo que haga falta antes de guardarlo.",
+  "academicGenerateEditedPill": "Corregido por ti",
+  "academicGenerateFix": "Corregir",
+  "academicGenerateRemove": "Quitar",
+  "academicGenerateFixSummary": "Corregir el texto",
+  "academicGenerateFixSummaryTitle": "Corregir el resumen",
+  "academicGenerateFixSummaryHint": "Cambia lo que esté mal o sobre. Los # son títulos y los - son listas.",
+  "academicGenerateFixSummaryLabel": "Texto del resumen",
+  "academicGenerateFixDone": "Listo",
+  "academicGenerateFixCardTitle": "Corregir la tarjeta",
+  "academicGenerateFixQuestionTitle": "Corregir la pregunta",
+  "academicGenerateFieldQuestion": "Pregunta",
+  "academicGenerateFieldAnswer": "Respuesta",
+  "academicGenerateFieldOption": "Opción {n}",
+  "@academicGenerateFieldOption": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGenerateMarkCorrect": "Toca el círculo de la respuesta buena.",
+  "academicGenerateCorrectOption": "La opción {n} es la buena",
+  "@academicGenerateCorrectOption": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGenerateFixApply": "Guardar el cambio",
+  "academicGenerateFixCardNamed": "Corregir la tarjeta {n}",
+  "@academicGenerateFixCardNamed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGenerateRemoveCardNamed": "Quitar la tarjeta {n}",
+  "@academicGenerateRemoveCardNamed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGenerateFixQuestionNamed": "Corregir la pregunta {n}",
+  "@academicGenerateFixQuestionNamed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGenerateRemoveQuestionNamed": "Quitar la pregunta {n}",
+  "@academicGenerateRemoveQuestionNamed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "academicGenerateItemRemoved": "Quitada",
+  "academicGenerateAllRemoved": "Has quitado todo",
+  "academicGenerateAllRemovedHint": "Deshaz el último cambio o vuelve a generar para tener preguntas nuevas.",
+  "academicGenerateLoseEditsTitle": "¿Perder tus correcciones?",
+  "academicGenerateLoseEditsMessage": "Has corregido este resultado. Si lo descartas o lo generas otra vez, se perderán tus cambios.",
+  "academicGenerateLoseEditsConfirm": "Sí, perderlas",
+  "academicAiFixHint": "Para corregirlo o tenerlo con tus apuntes, guárdalo como apunte.",
+  "academicAiSaveAsNote": "Guardar como apunte",
+  "academicAiSaveAsNoteHint": "Se crea un apunte tuyo que puedes editar. Este documento no cambia.",
+  "academicAiNoteTitle": "{kind} · {source}",
+  "@academicAiNoteTitle": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "academicAiSavedAsNote": "Guardado como apunte. Ya puedes corregirlo."
 }

@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.academic.dto;
 
 import com.synaptixfit.domain.model.academic.Note;
+import com.synaptixfit.domain.model.academic.ScannedNoteDraft;
 import com.synaptixfit.domain.model.academic.SharedNote;
 import com.synaptixfit.domain.model.academic.SharedNoteSummary;
 import com.synaptixfit.domain.model.academic.SignedUrl;
@@ -27,10 +28,21 @@ public final class NoteDtos {
                                     Boolean quickNote) {
     }
 
-    /** Texto reconocido por el escáner del cliente que se guarda como apunte privado. */
+    /** Texto leído de fotos (y ya revisado por la persona) que se guarda como apunte privado. */
     public record ScannedNoteRequest(@NotBlank @Size(max = 200) String title,
                                      @NotBlank @Size(max = 200_000) String text,
                                      UUID subjectId) {
+    }
+
+    /**
+     * Borrador leído de fotos de apuntes. {@code tidied}: la IA lo ordenó; si es falso, es el texto
+     * tal como se leyó. {@code title} puede ser nulo (el cliente propone uno).
+     */
+    public record ScannedNoteDraftResponse(String title, String markdown, boolean tidied, int pages) {
+
+        public static ScannedNoteDraftResponse from(ScannedNoteDraft d) {
+            return new ScannedNoteDraftResponse(d.title(), d.markdown(), d.tidied(), d.pages());
+        }
     }
 
     /** Edición parcial: nulos sin cambios; {@code detachSubject} deja el apunte sin asignatura. */

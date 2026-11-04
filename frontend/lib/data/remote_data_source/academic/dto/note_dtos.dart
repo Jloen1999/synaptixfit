@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../domain/enums/visibility.dart';
 import '../../../../domain/models/academic/note.dart';
+import '../../../../domain/models/academic/note_scan.dart';
 
 part 'note_dtos.freezed.dart';
 part 'note_dtos.g.dart';
@@ -139,5 +140,27 @@ abstract class SharedNotePageDto with _$SharedNotePageDto {
     items: items.map((n) => n.toDomain()).toList(),
     page: page,
     totalPages: totalPages,
+  );
+}
+
+@freezed
+abstract class ScannedNoteDraftDto with _$ScannedNoteDraftDto {
+  const factory ScannedNoteDraftDto({
+    String? title,
+    @Default('') String markdown,
+    @Default(false) bool tidied,
+    @Default(1) int pages,
+  }) = _ScannedNoteDraftDto;
+
+  const ScannedNoteDraftDto._();
+
+  factory ScannedNoteDraftDto.fromJson(Map<String, dynamic> json) =>
+      _$ScannedNoteDraftDtoFromJson(json);
+
+  ScannedNoteDraft toDomain() => ScannedNoteDraft(
+    title: title,
+    markdown: markdown,
+    tidied: tidied,
+    pages: pages,
   );
 }
