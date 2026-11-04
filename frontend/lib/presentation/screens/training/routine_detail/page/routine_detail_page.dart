@@ -395,34 +395,29 @@ class _Header extends StatelessWidget {
           ),
           if (r.owned && r.totalDays > 0) ...[
             const SizedBox(height: TokensSpacing.m),
-            // «Semana 2 de 8 · 21 %»: dónde está y cuánto lleva (lo da el servidor).
+            // «Semana 2 de 8» y «5 de 24 días hechos»: dónde está y cuánto
+            // lleva (lo da el servidor); el porcentaje suelto no decía de qué.
             Text(
-              l10n.trainingPlanWeekOf(
-                r.currentWeek,
-                r.weeks.length,
-                r.progressPercent,
-              ),
+              l10n.trainingPlanWeekOf(r.currentWeek, r.weeks.length),
               style: context.textStyles.titleSmall,
             ),
             const SizedBox(height: TokensSpacing.xs),
-            Row(
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(TokensRadius.pill),
-                    child: LinearProgressIndicator(
-                      value: r.progressPercent / 100,
-                      color: context.colors.secondary,
-                      backgroundColor: context.colors.secondaryContainer,
-                    ),
-                  ),
+            ExcludeSemantics(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(TokensRadius.pill),
+                child: LinearProgressIndicator(
+                  value: r.progressPercent / 100,
+                  color: context.colors.secondary,
+                  backgroundColor: context.colors.secondaryContainer,
                 ),
-                const SizedBox(width: TokensSpacing.s),
-                Text(
-                  l10n.trainingDaysProgress(r.completedDays, r.totalDays),
-                  style: context.textStyles.labelLarge,
-                ),
-              ],
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              l10n.trainingDaysDone(r.completedDays, r.totalDays),
+              style: context.textStyles.bodySmall?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
             ),
             Align(
               alignment: AlignmentDirectional.centerStart,

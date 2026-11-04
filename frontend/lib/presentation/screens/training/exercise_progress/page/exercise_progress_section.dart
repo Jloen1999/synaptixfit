@@ -83,7 +83,7 @@ class _ProgressCard extends StatelessWidget {
                   AppPill(
                     icon: Icons.trending_up_rounded,
                     label: l10n.trainingProgressUp(kg(state.change)),
-                    color: context.colors.tertiary,
+                    color: context.palette.success,
                   ),
               ],
             ),
@@ -113,6 +113,8 @@ class _ProgressCard extends StatelessWidget {
                     ? DateFormat.MMMd().format(points[i].date)
                     : null,
                 count: points.length,
+                // La unidad en el eje: sin ella, «60» no dice nada.
+                left: (v) => '${kg(v)} kg',
               ),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(

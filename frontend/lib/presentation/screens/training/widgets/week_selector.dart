@@ -4,8 +4,10 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import 'training_labels.dart';
 
-/// Selector horizontal de semanas con botón opcional para añadir una.
-class WeekSelector extends StatelessWidget {
+/// Selector horizontal de semanas con botón opcional para añadir una. La
+/// semana elegida se desplaza hasta quedar a la vista (con las fechas, las
+/// pastillas son anchas y la semana 5 podría quedar fuera).
+class WeekSelector extends StatefulWidget {
   const WeekSelector({
     super.key,
     required this.count,
@@ -28,6 +30,37 @@ class WeekSelector extends StatelessWidget {
   final List<String?> ranges;
 
   @override
+  State<WeekSelector> createState() => _WeekSelectorState();
+}
+
+class _WeekSelectorState extends State<WeekSelector> {
+  final _selectedKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _revealSelected();
+  }
+
+  @override
+  void didUpdateWidget(WeekSelector old) {
+    super.didUpdateWidget(old);
+    if (old.selected != widget.selected) _revealSelected();
+  }
+
+  void _revealSelected() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _selectedKey.currentContext;
+      if (target == null || !mounted) return;
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0.5,
+        duration: context.motion(TokensDuration.normal),
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return SizedBox(
@@ -35,31 +68,42 @@ class WeekSelector extends StatelessWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          for (var i = 0; i < count; i++)
+          for (var i = 0; i < widget.count; i++)
             Padding(
+              key: i == widget.selected ? _selectedKey : null,
               padding: const EdgeInsets.only(right: TokensSpacing.xs),
-              child: ChoiceChip(
-                selected: i == selected,
-                avatar: completed.contains(i)
-                    ? const Icon(Icons.check_rounded, size: 16)
-                    : null,
-                label: Text(
-                  i < ranges.length && ranges[i] != null
-                      ? l10n.trainingWeekChip(
-                          l10n.trainingWeekShort(i + 1),
-                          ranges[i]!,
-                        )
-                      : l10n.trainingWeekShort(i + 1),
+              // «S2 · 3 nov – 9 nov» se lee «ese dos»: el lector oye
+              // «Semana 2, 3 nov – 9 nov».
+              child: Semantics(
+                label: i < widget.ranges.length && widget.ranges[i] != null
+                    ? l10n.trainingWeekSpoken(i + 1, widget.ranges[i]!)
+                    : weekTitle(l10n, i + 1, null),
+                selected: i == widget.selected,
+                button: true,
+                excludeSemantics: true,
+                child: ChoiceChip(
+                  selected: i == widget.selected,
+                  avatar: widget.completed.contains(i)
+                      ? const Icon(Icons.check_rounded, size: TokensSize.iconXs)
+                      : null,
+                  label: Text(
+                    i < widget.ranges.length && widget.ranges[i] != null
+                        ? l10n.trainingWeekChip(
+                            l10n.trainingWeekShort(i + 1),
+                            widget.ranges[i]!,
+                          )
+                        : l10n.trainingWeekShort(i + 1),
+                  ),
+                  tooltip: weekTitle(l10n, i + 1, null),
+                  onSelected: (_) => widget.onSelected(i),
                 ),
-                tooltip: weekTitle(l10n, i + 1, null),
-                onSelected: (_) => onSelected(i),
               ),
             ),
-          if (onAdd != null)
+          if (widget.onAdd != null)
             ActionChip(
-              avatar: const Icon(Icons.add_rounded, size: 18),
+              avatar: const Icon(Icons.add_rounded, size: TokensSize.iconS),
               label: Text(l10n.trainingAddWeek),
-              onPressed: onAdd,
+              onPressed: widget.onAdd,
             ),
         ],
       ),

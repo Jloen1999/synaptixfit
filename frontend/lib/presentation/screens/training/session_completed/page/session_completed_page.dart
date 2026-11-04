@@ -134,7 +134,9 @@ class _CompletedView extends StatelessWidget {
                           withheld: state.xpWithheld,
                         ),
                       ],
-                      if (state.streak != null ||
+                      // Misma condición que lo que pinta la tarjeta: sin racha
+                      // ni retos no hay nada que contar.
+                      if ((state.streak?.currentDays ?? 0) > 0 ||
                           state.trainingChallenges.isNotEmpty) ...[
                         const SizedBox(height: TokensSpacing.m),
                         _AdvanceCard(
@@ -457,9 +459,12 @@ class _AdvanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.trainingDoneProgressTitle,
-            style: context.textStyles.titleMedium,
+          Semantics(
+            header: true,
+            child: Text(
+              l10n.trainingDoneProgressTitle,
+              style: context.textStyles.titleMedium,
+            ),
           ),
           if (s != null && s.currentDays > 0) ...[
             const SizedBox(height: TokensSpacing.s),
@@ -467,7 +472,7 @@ class _AdvanceCard extends StatelessWidget {
               children: [
                 Icon(
                   Icons.local_fire_department_rounded,
-                  color: context.palette.calories,
+                  color: context.palette.streak,
                 ),
                 const SizedBox(width: TokensSpacing.s),
                 Expanded(
@@ -512,42 +517,45 @@ class _ChallengeProgress extends StatelessWidget {
     final c = challenge;
     final target = c.sessionTarget ?? 0;
     final left = c.sessionsRemaining;
+    final progressText = target > 0
+        ? [
+            l10n.trainingDoneChallengeSessions(c.sessionsCompleted, target),
+            left == 0
+                ? l10n.trainingDoneChallengeDone
+                : l10n.trainingDoneChallengeLeft(left),
+          ].join(' · ')
+        : null;
+    // El lector oye el título y el avance; el toque se explica como pista.
     return AppCardTapArea(
-      semanticLabel: l10n.trainingDoneSeeChallenge(c.title),
+      semanticHint: l10n.trainingDoneSeeChallenge(c.title),
       onTap: () => context.go(ChallengesPaths.detail(c.id)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(Icons.flag_rounded, color: context.colors.tertiary),
+              Icon(Icons.flag_rounded, color: context.colors.secondary),
               const SizedBox(width: TokensSpacing.s),
               Expanded(
                 child: Text(c.title, style: context.textStyles.titleSmall),
               ),
-              const Icon(Icons.chevron_right_rounded),
+              const ExcludeSemantics(child: Icon(Icons.chevron_right_rounded)),
             ],
           ),
-          if (target > 0) ...[
+          if (progressText != null) ...[
             const SizedBox(height: TokensSpacing.xs),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(TokensRadius.pill),
-              child: LinearProgressIndicator(
-                value: (c.sessionsCompleted / target).clamp(0, 1).toDouble(),
-                color: context.colors.tertiary,
-                backgroundColor: context.colors.tertiaryContainer,
+            ExcludeSemantics(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(TokensRadius.pill),
+                child: LinearProgressIndicator(
+                  value: (c.sessionsCompleted / target).clamp(0, 1).toDouble(),
+                  color: context.colors.secondary,
+                  backgroundColor: context.colors.surfaceContainerHigh,
+                ),
               ),
             ),
             const SizedBox(height: TokensSpacing.xs),
-            Text(
-              [
-                l10n.trainingDoneChallengeSessions(c.sessionsCompleted, target),
-                left == 0
-                    ? l10n.trainingDoneChallengeDone
-                    : l10n.trainingDoneChallengeLeft(left),
-              ].join(' · '),
-              style: context.textStyles.bodySmall,
-            ),
+            Text(progressText, style: context.textStyles.bodySmall),
           ],
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../domain/enums/challenge_link_type.dart';
 import '../../../../domain/enums/milestone_condition.dart';
 import '../../../../domain/enums/milestone_status.dart';
 import '../../../../domain/models/challenges/challenge.dart';
@@ -184,7 +185,11 @@ class MilestoneTile extends StatelessWidget {
                       if (link != null && onOpenLink != null)
                         ActionChip(
                           avatar: Icon(link.type.icon),
-                          label: Text(context.localizations.challengesLinkOpen),
+                          label: Text(
+                            link.type == ChallengeLinkType.routineDay
+                                ? context.localizations.challengesLinkOpenRoutine
+                                : context.localizations.challengesLinkOpen,
+                          ),
                           onPressed: onOpenLink,
                         ),
                     ],

@@ -28,6 +28,14 @@ public record CycleOverview(CycleTracking tracking, CyclePhase phase, Integer da
     public static final int DEFAULT_PERIOD = 5;
     public static final int MIN_CYCLE = 21;
     public static final int MAX_CYCLE = 40;
+    /** Ciclos más largos que esto no entran en la media (probablemente falta apuntar una regla). */
+    public static final int MAX_CYCLE_ACCEPTED = 45;
+    /** Días seguidos de regla que se cuentan como mucho al medir su duración. */
+    public static final int MAX_PERIOD_DAYS = 10;
+    public static final int MIN_PERIOD = 2;
+    public static final int MAX_PERIOD = 8;
+    /** Días alrededor de la ovulación estimada que se cuentan como «mitad del ciclo». */
+    public static final int OVULATION_WINDOW = 2;
     public static final int CYCLES_FOR_AVERAGE = 6;
     public static final int MAX_DAYS_KNOWN = 60;
     /** Días que se leen hacia atrás para estimar: de sobra para seis ciclos. */
@@ -68,10 +76,10 @@ public record CycleOverview(CycleTracking tracking, CyclePhase phase, Integer da
             return CyclePhase.PERIOD;
         }
         int ovulation = cycle - 14;
-        if (day < ovulation - 2) {
+        if (day < ovulation - OVULATION_WINDOW) {
             return CyclePhase.AFTER_PERIOD;
         }
-        if (day <= ovulation + 2) {
+        if (day <= ovulation + OVULATION_WINDOW) {
             return CyclePhase.MID_CYCLE;
         }
         return CyclePhase.BEFORE_PERIOD;
@@ -94,7 +102,7 @@ public record CycleOverview(CycleTracking tracking, CyclePhase phase, Integer da
         List<Long> lengths = new ArrayList<>();
         for (int i = 1; i < starts.size(); i++) {
             long length = ChronoUnit.DAYS.between(starts.get(i - 1), starts.get(i));
-            if (length >= MIN_CYCLE && length <= 45) {
+            if (length >= MIN_CYCLE && length <= MAX_CYCLE_ACCEPTED) {
                 lengths.add(length);
             }
         }
@@ -111,7 +119,7 @@ public record CycleOverview(CycleTracking tracking, CyclePhase phase, Integer da
         for (LocalDate start : starts) {
             int length = 0;
             CycleDay d = byDate.get(start);
-            while (d != null && d.period() && length < 10) {
+            while (d != null && d.period() && length < MAX_PERIOD_DAYS) {
                 length++;
                 d = byDate.get(start.plusDays(length));
             }
@@ -121,7 +129,7 @@ public record CycleOverview(CycleTracking tracking, CyclePhase phase, Integer da
             return DEFAULT_PERIOD;
         }
         long average = Math.round(lengths.stream().mapToInt(Integer::intValue).average().orElse(DEFAULT_PERIOD));
-        return (int) Math.max(2, Math.min(8, average));
+        return (int) Math.max(MIN_PERIOD, Math.min(MAX_PERIOD, average));
     }
 
     public boolean enabled() {

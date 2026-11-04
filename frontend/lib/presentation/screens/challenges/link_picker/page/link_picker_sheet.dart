@@ -12,7 +12,8 @@ import '../../../../../domain/enums/challenge_link_type.dart';
 import '../../../../widgets/routine_day_labels.dart';
 
 /// Hoja para vincular un reto o tarea a una entrega o examen que venza dentro
-/// del periodo del reto ([from]-[to]).
+/// del periodo del reto ([from]-[to]) o a un día de la rutina en curso (se
+/// completa al entrenarlo, ADR 0032).
 Future<ChallengeLinkOption?> showLinkPickerSheet(
   BuildContext context, {
   String? subjectId,
@@ -65,7 +66,13 @@ class _LinkPickerView extends StatelessWidget {
       builder: (context, state) {
         Widget tile(ChallengeLinkOption o) => AppFocusOutline(
           child: ListTile(
-            leading: Icon(o.type.icon, color: context.colors.tertiary),
+            // Color del dominio: entreno (cuerpo) o estudio (mente).
+            leading: Icon(
+              o.type.icon,
+              color: o.type == ChallengeLinkType.routineDay
+                  ? context.colors.secondary
+                  : context.colors.tertiary,
+            ),
             title: Text(
               o.type == ChallengeLinkType.routineDay
                   ? challengeLinkOptionLabel(context, o)
@@ -139,7 +146,7 @@ class _LinkPickerView extends StatelessWidget {
                   AppEmptyState(
                     icon: Icons.event_busy_outlined,
                     title: l10n.challengesLinkEmpty,
-                    message: l10n.challengesLinkEmptyPeriod,
+                    message: l10n.challengesLinkEmptyWithRoutine,
                   ),
                 ],
                 LinkPickerStatus.ready => [

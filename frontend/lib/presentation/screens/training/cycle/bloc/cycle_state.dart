@@ -14,6 +14,11 @@ abstract class CycleState with _$CycleState {
 
     /// Días apuntados del mes, por fecha (sin hora).
     @Default(<DateTime, CycleDay>{}) Map<DateTime, CycleDay> days,
+
+    /// El mes se está cargando o no se pudo cargar: el calendario no debe
+    /// enseñar días «sin apuntar» que quizá sí lo están.
+    @Default(false) bool daysLoading,
+    AppError? daysError,
     @Default(false) bool saving,
     AppError? error,
 

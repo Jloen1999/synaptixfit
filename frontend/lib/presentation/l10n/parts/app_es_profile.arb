@@ -588,10 +588,11 @@
   "profilePublicProfilePrivateHint": "Tu perfil es privado: solo lo ves tú",
   "profileReminderOptionsTitle": "Más avisos",
   "profileReminderStreak": "Racha en riesgo",
-  "profileReminderStreakHint": "A las 20:00 si aún no has hecho nada hoy.",
+  "profileReminderStreakHint": "Por la tarde, si aún no has entrenado ni estudiado hoy.",
   "profileReminderCheckIn": "¿Qué tal estás hoy?",
-  "profileReminderCheckInHint": "A las 9:00, si aún no has hecho el registro del día.",
+  "profileReminderCheckInHint": "Por la mañana, si aún no has contado qué tal estás.",
   "profileReminderClasses": "Clase en 15 minutos",
-  "profileReminderClassesHint": "Con el aula, para llegar a tiempo.",
-  "profileReminderSaveError": "No se pudo guardar el cambio. Inténtalo de nuevo."
+  "profileReminderClassesHint": "15 minutos antes, con el aula donde es.",
+  "profileReminderSaveError": "No se pudo guardar el cambio. Inténtalo de nuevo.",
+  "profileReminderNeedsDevice": "Para recibir estos avisos, activa primero «En este móvil» aquí arriba."
 }

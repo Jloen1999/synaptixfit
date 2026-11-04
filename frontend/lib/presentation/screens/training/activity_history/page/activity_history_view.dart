@@ -144,7 +144,7 @@ class _ActivityTile extends StatelessWidget {
       else if (kind == ActivityKind.swim && pace != null)
         (
           l10n.trainingActivityPacePer100(_clock((pace / 10).round())),
-          l10n.trainingActivityPacePer100(
+          l10n.trainingActivityPacePer100Spoken(
             l10n.trainingActivityPaceSpoken(
               (pace / 10).round() ~/ 60,
               (pace / 10).round() % 60,
@@ -154,7 +154,7 @@ class _ActivityTile extends StatelessWidget {
       else if (pace != null)
         (
           l10n.trainingActivityPace(_clock(pace)),
-          l10n.trainingActivityPace(
+          l10n.trainingActivityPaceKmSpoken(
             l10n.trainingActivityPaceSpoken(pace ~/ 60, pace % 60),
           ),
         ),
@@ -168,11 +168,12 @@ class _ActivityTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Deporte es cuerpo: color de entreno, no el de logros.
             CircleAvatar(
-              backgroundColor: context.palette.accentContainer,
+              backgroundColor: context.colors.secondaryContainer,
               child: Icon(
                 activityKindIcon(kind),
-                color: context.palette.accent,
+                color: context.colors.onSecondaryContainer,
               ),
             ),
             const SizedBox(width: TokensSpacing.m),

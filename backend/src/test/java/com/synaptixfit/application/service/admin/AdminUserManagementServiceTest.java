@@ -51,7 +51,8 @@ class AdminUserManagementServiceTest {
         erasure.users = users;
         UserDataEraser eraser = new UserDataEraser(erasure, storage, events, AdminTestFixtures.CLOCK);
         service = new AdminUserManagementService(users, tokens, audit, eraser,
-                (id, at) -> "{\"userId\":\"" + id + "\"}", AdminTestFixtures.CLOCK);
+                (id, at, requester) -> "{\"userId\":\"" + id + "\",\"requester\":\"" + requester + "\"}",
+                AdminTestFixtures.CLOCK);
         admin = users.add(AdminTestFixtures.user("admin@example.com", Role.ADMIN));
         target = users.add(AdminTestFixtures.user("target@example.com", Role.USER));
     }
@@ -198,6 +199,8 @@ class AdminUserManagementServiceTest {
 
         UserDataExport export = service.exportUserData(admin.id(), target.id());
         assertThat(export.json()).contains(target.id().toString());
+        // La copia que pide un administrador nunca lleva los datos de salud (ADR 0033).
+        assertThat(export.json()).contains("ADMINISTRATOR");
 
         ErasureReport deleted = service.deleteUser(admin.id(), target.id());
         assertThat(deleted.mode()).isEqualTo(ErasureMode.DELETED);

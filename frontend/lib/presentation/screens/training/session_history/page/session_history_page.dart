@@ -55,7 +55,11 @@ class _HistoryView extends StatelessWidget {
           child: Scaffold(
             appBar: AppPageBar(
               title: Text(l10n.trainingHistoryTitle),
+              // Desplazables: con letra grande «Actividades y partidos» no
+              // cabe en medio ancho y se cortaría.
               bottom: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 tabs: [
                   Tab(text: l10n.trainingHistoryTabSessions),
                   Tab(text: l10n.trainingHistoryTabActivities),

@@ -273,9 +273,9 @@ class _Content extends StatelessWidget {
               ),
               // Va al final y aparte: se guarda al momento en el teléfono,
               // sin el botón «Guardar» de las preferencias de la cuenta.
+              // Con ella van los avisos opcionales («Más avisos»), que se
+              // apagan uno a uno y solo existen donde hay avisos del móvil.
               const _DeviceRemindersSection(),
-              // Avisos opcionales que se apagan uno a uno (se guardan al momento).
-              const ReminderOptionsSection(),
               const _WeeklyEmailSection(),
             ],
           ),
@@ -348,7 +348,22 @@ class _DeviceRemindersSectionState extends State<_DeviceRemindersSection>
       builder: (context, state) {
         if (!state.supported) return const SizedBox.shrink();
         final bloc = context.read<DeviceRemindersBloc>();
-        return ProfileFormSection(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _deviceSection(l10n, state, bloc),
+            ReminderOptionsSection(deviceRemindersOn: state.enabled),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _deviceSection(
+    AppLocalizations l10n,
+    DeviceRemindersState state,
+    DeviceRemindersBloc bloc,
+  ) => ProfileFormSection(
           title: l10n.remindersDeviceSectionTitle,
           trailing: AppPill(
             label: l10n.remindersAppliesNow,
@@ -383,9 +398,6 @@ class _DeviceRemindersSectionState extends State<_DeviceRemindersSection>
             ),
           ),
         );
-      },
-    );
-  }
 }
 
 /// Resumen semanal por correo: se aplica al momento, como los avisos del

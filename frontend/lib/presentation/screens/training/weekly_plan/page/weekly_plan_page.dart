@@ -219,41 +219,11 @@ class _PlanEditor extends StatelessWidget {
           onChanged: (v) => update(input.copyWith(plannedSessions: v)),
         ),
         if (state.routineSessions case final n?)
-          Padding(
-            padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.fitness_center_rounded,
-                  size: TokensSize.iconS,
-                  color: context.colors.secondary,
-                ),
-                const SizedBox(width: TokensSpacing.s),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.trainingPlanByRoutine(n),
-                        style: context.textStyles.labelLarge,
-                      ),
-                      if (state.routineName case final name?)
-                        Text(
-                          l10n.trainingPlanByRoutineHint(name, n),
-                          style: context.textStyles.bodySmall?.copyWith(
-                            color: context.colors.onSurfaceVariant,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (input.plannedSessions != n)
-                  TextButton(
-                    onPressed: () => update(input.copyWith(plannedSessions: n)),
-                    child: Text(l10n.trainingPlanUseRoutine(n)),
-                  ),
-              ],
-            ),
+          _RoutineSuggestion(
+            days: n,
+            routineName: state.routineName,
+            matches: input.plannedSessions == n,
+            onUse: () => update(input.copyWith(plannedSessions: n)),
           ),
         AppStepperField(
           label: l10n.trainingMinutesPerSession,
@@ -327,6 +297,104 @@ class _PlanEditor extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Sugerencia del plan según la rutina en curso: cuántos días tiene esta
+/// semana y un botón para usar esa cifra. Cuando ya coincide, el botón da paso
+/// a una pastilla y el foco pasa a ella, para que no se pierda.
+class _RoutineSuggestion extends StatefulWidget {
+  const _RoutineSuggestion({
+    required this.days,
+    required this.routineName,
+    required this.matches,
+    required this.onUse,
+  });
+
+  final int days;
+  final String? routineName;
+  final bool matches;
+  final VoidCallback onUse;
+
+  @override
+  State<_RoutineSuggestion> createState() => _RoutineSuggestionState();
+}
+
+class _RoutineSuggestionState extends State<_RoutineSuggestion> {
+  final _matchFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _matchFocus.dispose();
+    super.dispose();
+  }
+
+  void _use() {
+    widget.onUse();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _matchFocus.requestFocus();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+      child: Wrap(
+        spacing: TokensSpacing.s,
+        runSpacing: TokensSpacing.xs,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.fitness_center_rounded,
+                size: TokensSize.iconS,
+                color: context.colors.secondary,
+              ),
+              const SizedBox(width: TokensSpacing.s),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.trainingPlanByRoutine(widget.days),
+                      style: context.textStyles.labelLarge,
+                    ),
+                    if (widget.routineName case final name?)
+                      Text(
+                        l10n.trainingPlanByRoutineHint(name),
+                        style: context.textStyles.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (widget.matches)
+            Focus(
+              focusNode: _matchFocus,
+              child: Semantics(
+                liveRegion: true,
+                child: AppPill(
+                  label: l10n.trainingPlanMatchesRoutine,
+                  icon: Icons.check_circle_rounded,
+                  color: context.palette.success,
+                ),
+              ),
+            )
+          else
+            AppSecondaryButton(
+              label: l10n.trainingPlanUseRoutine(widget.days),
+              onPressed: _use,
+            ),
+        ],
+      ),
     );
   }
 }

@@ -328,10 +328,11 @@
   "profilePublicProfilePrivateHint": "Your profile is private: only you can see it",
   "profileReminderOptionsTitle": "More reminders",
   "profileReminderStreak": "Streak at risk",
-  "profileReminderStreakHint": "At 8 pm if you haven't done anything yet today.",
+  "profileReminderStreakHint": "In the evening, if you haven’t trained or studied yet today.",
   "profileReminderCheckIn": "How are you today?",
-  "profileReminderCheckInHint": "At 9 am, if you haven't checked in yet.",
+  "profileReminderCheckInHint": "In the morning, if you haven’t said how you feel yet.",
   "profileReminderClasses": "Class in 15 minutes",
-  "profileReminderClassesHint": "With the room, so you get there on time.",
-  "profileReminderSaveError": "The change couldn't be saved. Please try again."
+  "profileReminderClassesHint": "15 minutes before, with the room where it is.",
+  "profileReminderSaveError": "The change couldn't be saved. Please try again.",
+  "profileReminderNeedsDevice": "To get these reminders, first turn on “On this phone” above."
 }

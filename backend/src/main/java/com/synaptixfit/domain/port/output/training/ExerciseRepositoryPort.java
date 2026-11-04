@@ -46,7 +46,7 @@ public interface ExerciseRepositoryPort {
 
     void setActive(UUID id, boolean active, Instant now);
 
-    /** Si algún ejercicio planificado de alguna rutina lo usa. */
+    /** Si lo usa algún ejercicio planificado de una rutina o alguna plantilla lista (entonces se desactiva, no se borra). */
     boolean isUsedInRoutines(UUID id);
 
     void delete(UUID id);

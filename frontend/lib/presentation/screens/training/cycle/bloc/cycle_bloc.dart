@@ -34,9 +34,9 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
       await _loadDays(emit);
     });
     on<CycleEnabled>(
-      (_, emit) => _apply(
+      (event, emit) => _apply(
         emit,
-        () => _change(enabled: true, consent: true),
+        () => _change(enabled: true, consent: event.consent),
         CycleNotice.saved,
       ),
     );
@@ -97,14 +97,22 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
     final today = _dateOnly(_now());
     if (to.isAfter(today)) to = today;
     if (from.isAfter(today)) {
-      emit(state.copyWith(days: const {}));
+      emit(state.copyWith(days: const {}, daysLoading: false, daysError: null));
       return;
     }
+    emit(state.copyWith(daysLoading: true, daysError: null));
     final result = await _listDays(from, to);
-    // Sin conexión se deja el mes como estaba: el resumen ya se ve.
-    final days = result.valueOrNull;
-    if (days != null) {
-      emit(state.copyWith(days: {for (final d in days) _dateOnly(d.date): d}));
+    switch (result.errorOrNull) {
+      case final AppError error:
+        // Sin conexión no se pintan días vacíos: se avisa con «Reintentar».
+        emit(state.copyWith(days: const {}, daysLoading: false, daysError: error));
+      case null:
+        emit(
+          state.copyWith(
+            daysLoading: false,
+            days: {for (final d in result.valueOrNull!) _dateOnly(d.date): d},
+          ),
+        );
     }
   }
 

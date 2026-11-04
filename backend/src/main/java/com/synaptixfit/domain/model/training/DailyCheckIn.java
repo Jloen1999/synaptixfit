@@ -44,7 +44,8 @@ public final class DailyCheckIn {
     public static DailyCheckIn create(UUID userId, LocalDate date, Values values, Instant now) {
         return new DailyCheckIn(UUID.randomUUID(), userId, date, values.sleepQuality(),
                 values.stress() == null ? NEUTRAL_STRESS : values.stress(),
-                values.energy(), values.soreness(), values.painZones(), values.readyToTrain(), values.notes(), now);
+                values.energy(), values.soreness(), values.painZones(),
+                values.readyToTrain() == null || values.readyToTrain(), values.notes(), now);
     }
 
     public void apply(Values v) {
@@ -54,18 +55,29 @@ public final class DailyCheckIn {
                 : Guard.range(v.stress(), "stress", 1, 5);
         this.energy = Guard.range(v.energy(), "energy", 1, 5);
         this.soreness = Guard.range(v.soreness(), "soreness", 1, 5);
-        List<String> zones = v.painZones() == null ? List.of()
-                : v.painZones().stream().filter(z -> z != null && !z.isBlank()).map(String::strip).distinct().toList();
-        if (zones.size() > 12 || zones.stream().anyMatch(z -> z.length() > 40)) {
-            throw new FieldValidationException("painZones", "OUT_OF_RANGE", "at most 12 zones of 40 characters");
+        // Lo que no llega (nulo) se conserva: el registro rápido solo responde sueño, energía y agujetas, y no
+        // debe borrar las zonas de dolor, las notas ni el «no estoy para entrenar» del registro completo.
+        if (v.painZones() != null) {
+            List<String> zones = v.painZones().stream().filter(z -> z != null && !z.isBlank()).map(String::strip)
+                    .distinct().toList();
+            if (zones.size() > 12 || zones.stream().anyMatch(z -> z.length() > 40)) {
+                throw new FieldValidationException("painZones", "OUT_OF_RANGE", "at most 12 zones of 40 characters");
+            }
+            this.painZones = zones;
+        } else if (painZones == null) {
+            this.painZones = List.of();
         }
-        this.painZones = zones;
-        this.readyToTrain = v.readyToTrain();
-        String n = v.notes() == null || v.notes().isBlank() ? null : v.notes().strip();
-        if (n != null && n.length() > 1000) {
-            throw new FieldValidationException("notes", "INVALID_LENGTH", "notes length must be at most 1000");
+        if (v.readyToTrain() != null) {
+            this.readyToTrain = v.readyToTrain();
         }
-        this.notes = n;
+        if (v.notes() != null) {
+            // Un texto vacío borra la nota.
+            String n = v.notes().isBlank() ? null : v.notes().strip();
+            if (n != null && n.length() > 1000) {
+                throw new FieldValidationException("notes", "INVALID_LENGTH", "notes length must be at most 1000");
+            }
+            this.notes = n;
+        }
     }
 
     public int fatigueScore() {
@@ -108,8 +120,12 @@ public final class DailyCheckIn {
     public String notes() { return notes; }
     public Instant createdAt() { return createdAt; }
 
-    /** Respuestas del check-in; {@code stress} nulo en el registro rápido (se usa el de hoy o el neutro). */
+    /**
+     * Respuestas del check-in. En el registro rápido llegan nulos {@code stress}, {@code painZones},
+     * {@code readyToTrain} y {@code notes}: se conservan los de hoy (o, si es el primero, el estrés neutro, sin
+     * zonas, listo para entrenar y sin nota). Una lista vacía o una nota en blanco sí borran.
+     */
     public record Values(int sleepQuality, Integer stress, int energy, int soreness, List<String> painZones,
-                         boolean readyToTrain, String notes) {
+                         Boolean readyToTrain, String notes) {
     }
 }

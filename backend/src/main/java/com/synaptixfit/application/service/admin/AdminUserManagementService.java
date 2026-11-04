@@ -186,7 +186,8 @@ public class AdminUserManagementService implements UpdateUserIdentityUseCase, Se
     public UserDataExport exportUserData(UUID adminId, UUID userId) {
         User user = target(userId);
         Instant now = clock.instant();
-        UserDataExport export = new UserDataExport(user.id(), now, exporter.exportAsJson(user.id(), now));
+        UserDataExport export = new UserDataExport(user.id(), now, exporter.exportAsJson(user.id(), now,
+                UserDataExportPort.Requester.ADMINISTRATOR));
         record(adminId, AuditAction.EXPORT_USER_DATA, user.id(), Map.of());
         return export;
     }

@@ -328,10 +328,11 @@
   "profilePublicProfilePrivateHint": "O teu perfil é privado: só tu o vês",
   "profileReminderOptionsTitle": "Mais lembretes",
   "profileReminderStreak": "Sequência em risco",
-  "profileReminderStreakHint": "Às 20:00 se ainda não fizeste nada hoje.",
+  "profileReminderStreakHint": "À tarde, se ainda não treinaste nem estudaste hoje.",
   "profileReminderCheckIn": "Como estás hoje?",
-  "profileReminderCheckInHint": "Às 9:00, se ainda não fizeste o registo do dia.",
+  "profileReminderCheckInHint": "De manhã, se ainda não disseste como estás.",
   "profileReminderClasses": "Aula daqui a 15 minutos",
-  "profileReminderClassesHint": "Com a sala, para chegares a tempo.",
-  "profileReminderSaveError": "Não foi possível guardar. Tenta outra vez."
+  "profileReminderClassesHint": "15 minutos antes, com a sala onde é.",
+  "profileReminderSaveError": "Não foi possível guardar. Tenta outra vez.",
+  "profileReminderNeedsDevice": "Para receber estes avisos, ativa primeiro «Neste telemóvel» aqui em cima."
 }

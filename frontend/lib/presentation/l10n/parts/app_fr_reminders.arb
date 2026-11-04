@@ -38,7 +38,7 @@
   "remindersActionStartTraining": "Aller s'entraîner",
   "remindersActionSnooze": "Reporter de {minutes} min",
   "remindersStreakTitle": "Ta série est en danger",
-  "remindersStreakBody": "Tu es à {days} jours d'affilée. Fais quelque chose aujourd'hui pour la garder.",
+  "remindersStreakBody": "Tu es à {days} jours d’affilée. Entraîne-toi ou étudie un peu aujourd’hui pour la garder.",
   "remindersCheckInTitle": "Comment ça va aujourd'hui ?",
   "remindersCheckInBody": "Dis-le en trois touches et on adapte ta journée.",
   "remindersClassTitle": "{name} dans 15 minutes",

@@ -28,11 +28,27 @@ abstract class TodayAdaptation with _$TodayAdaptation {
     @Default(<SessionAdaptationReason>[]) List<SessionAdaptationReason> reasons,
     FatigueCause? fatigueCause,
     @Default(false) bool checkInDone,
+
+    /// Respuestas del registro de hoy (1-5), nulas si aún no lo hay: con
+    /// ellas, «Cambiar» parte de lo que ya se contestó.
+    int? sleepQuality,
+    int? energy,
+    int? soreness,
   }) = _TodayAdaptation;
 
   const TodayAdaptation._();
 
   bool get adapted => reasons.isNotEmpty;
+
+  /// Lo contestado hoy en el registro rápido, si lo hay completo.
+  QuickCheckIn? get todayAnswers =>
+      sleepQuality != null && energy != null && soreness != null
+      ? QuickCheckIn(
+          sleepQuality: sleepQuality!,
+          energy: energy!,
+          soreness: soreness!,
+        )
+      : null;
 }
 
 /// Registro rápido de tres toques (escalas 1-5): cómo dormiste, la energía y

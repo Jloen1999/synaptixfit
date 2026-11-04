@@ -23,6 +23,15 @@ import 'package:synaptixfit/presentation/screens/training/cycle/bloc/cycle_bloc.
 import 'package:synaptixfit/presentation/screens/training/quick_check_in/bloc/quick_check_in_bloc.dart';
 
 import '../../../domain/reminders/reminder_test_texts.dart';
+import 'package:synaptixfit/domain/enums/data_topic.dart';
+import 'package:synaptixfit/domain/use_cases/sync/watch_data_changes_use_case.dart';
+
+/// Sin cambios de datos de otras pantallas.
+class _NoDataChanges implements WatchDataChangesUseCaseContract {
+  @override
+  Stream<Set<DataTopic>> call({required Set<DataTopic> topics}) =>
+      const Stream.empty();
+}
 
 /// Servidor de mentira del ciclo: guarda lo que se apunta y responde como el
 /// backend (apagado por defecto; activar exige consentimiento).
@@ -163,7 +172,12 @@ void main() {
         await bloc.stream.firstWhere((s) => !s.loading);
         expect(bloc.state.overview?.enabled, isFalse);
 
-        bloc.add(const CycleEvent.enabled());
+        // Sin consentimiento, el servidor no lo activa.
+        bloc.add(const CycleEvent.enabled(consent: false));
+        await bloc.stream.firstWhere((s) => s.actionError != null);
+        expect(bloc.state.overview?.enabled, isFalse);
+
+        bloc.add(const CycleEvent.enabled(consent: true));
         await bloc.stream.firstWhere((s) => s.notice == CycleNotice.saved);
         expect(bloc.state.overview?.enabled, isTrue);
 
@@ -204,7 +218,11 @@ void main() {
     () async {
       final adaptation = _Adaptation();
       final submit = _Submit(adaptation);
-      final bloc = QuickCheckInBloc(getAdaptation: adaptation, submit: submit)
+      final bloc = QuickCheckInBloc(
+        getAdaptation: adaptation,
+        submit: submit,
+        watchDataChanges: _NoDataChanges(),
+      )
         ..add(const QuickCheckInEvent.started());
       await bloc.stream.firstWhere((s) => !s.loading);
       expect(bloc.state.asking, isTrue);

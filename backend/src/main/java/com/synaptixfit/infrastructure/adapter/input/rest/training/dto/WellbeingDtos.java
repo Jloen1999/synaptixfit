@@ -33,8 +33,8 @@ public final class WellbeingDtos {
                                  Boolean readyToTrain,
                                  @Size(max = 1000) String notes) {
         public DailyCheckIn.Values toValues() {
-            return new DailyCheckIn.Values(sleepQuality, stress, energy, soreness, painZones,
-                    readyToTrain == null || readyToTrain, notes);
+            // Lo que no se envía se conserva (registro rápido); ver DailyCheckIn.Values.
+            return new DailyCheckIn.Values(sleepQuality, stress, energy, soreness, painZones, readyToTrain, notes);
         }
     }
 

@@ -62,7 +62,8 @@ class PrivacyServiceTest {
         };
         service = new PrivacyService(users, hasher, new AdminCount(),
                 new UserDataEraser(erasure, storage, events, AdminTestFixtures.CLOCK),
-                (id, at) -> "{\"exportedAt\":\"" + at + "\"}", audit, AdminTestFixtures.CLOCK);
+                (id, at, requester) -> "{\"exportedAt\":\"" + at + "\",\"requester\":\"" + requester + "\"}",
+                audit, AdminTestFixtures.CLOCK);
     }
 
     @Test
@@ -136,6 +137,8 @@ class PrivacyServiceTest {
         assertThat(export.userId()).isEqualTo(user.id());
         assertThat(export.exportedAt()).isEqualTo(AdminTestFixtures.NOW);
         assertThat(export.json()).contains(AdminTestFixtures.NOW.toString());
+        // Su propia copia sí lleva los datos de salud (ADR 0033).
+        assertThat(export.json()).contains("OWNER");
         assertThat(audit.entries).isEmpty();
         assertThatThrownBy(() -> service.exportMyData(UUID.randomUUID())).isInstanceOf(UserNotFoundException.class);
     }

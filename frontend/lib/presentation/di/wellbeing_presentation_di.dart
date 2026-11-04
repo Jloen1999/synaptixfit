@@ -19,7 +19,11 @@ void registerWellbeingPresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(
-      () => QuickCheckInBloc(getAdaptation: getIt(), submit: getIt()),
+      () => QuickCheckInBloc(
+        getAdaptation: getIt(),
+        submit: getIt(),
+        watchDataChanges: getIt(),
+      ),
     )
     ..registerFactory(
       () => ActivityHistoryBloc(list: getIt(), watchDataChanges: getIt()),

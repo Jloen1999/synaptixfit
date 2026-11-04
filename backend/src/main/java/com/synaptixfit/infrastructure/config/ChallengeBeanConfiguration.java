@@ -15,7 +15,7 @@ import com.synaptixfit.application.port.input.challenge.ListPendingMilestonesUse
 import com.synaptixfit.application.port.input.challenge.RecordChallengeProgressUseCase;
 import com.synaptixfit.application.port.input.challenge.ReorderMilestonesUseCase;
 import com.synaptixfit.application.port.input.challenge.ReplaceMilestonesUseCase;
-import com.synaptixfit.application.port.input.challenge.SyncDeadlineChallengesUseCase;
+import com.synaptixfit.application.port.input.challenge.SyncLinkedEntityChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncMilestoneStudyBlocksUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncTrainingSessionChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.UncompleteChallengeUseCase;
@@ -182,8 +182,8 @@ public class ChallengeBeanConfiguration {
     // ---------------------------------------------------------------- sincronización (oyentes)
 
     @Bean
-    SyncDeadlineChallengesUseCase syncDeadlineChallengesUseCase() {
-        return tx.wrap(SyncDeadlineChallengesUseCase.class, challengeProgressService());
+    SyncLinkedEntityChallengesUseCase syncLinkedEntityChallengesUseCase() {
+        return tx.wrap(SyncLinkedEntityChallengesUseCase.class, challengeProgressService());
     }
 
     @Bean

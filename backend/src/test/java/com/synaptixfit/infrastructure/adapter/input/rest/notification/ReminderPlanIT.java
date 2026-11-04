@@ -66,8 +66,11 @@ class ReminderPlanIT {
                 .andExpect(status().isCreated());
     }
 
-    /** Avisos de bloques (sin «Tu semana», que depende del día de la semana). */
-    private static final String BLOCKS = "$.reminders[?(@.kind != 'WEEKLY_SUMMARY')]";
+    /**
+     * Avisos de bloques: sin «Tu semana» (depende del día de la semana) ni los de bienestar (registro diario, racha
+     * y clase en 15 min, ADR 0033), que dependen de la hora a la que se ejecute.
+     */
+    private static final String BLOCKS = "$.reminders[?(@.kind in ['TRAINING', 'STUDY'])]";
 
     @Test
     void plansBlocksAndAppliesModeAndWindow() throws Exception {

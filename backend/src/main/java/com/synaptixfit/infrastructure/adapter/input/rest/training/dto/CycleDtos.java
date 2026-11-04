@@ -5,9 +5,6 @@ import com.synaptixfit.domain.model.training.CycleEnergy;
 import com.synaptixfit.domain.model.training.CycleOverview;
 import com.synaptixfit.domain.model.training.CyclePhase;
 import com.synaptixfit.domain.model.training.CycleSymptom;
-import com.synaptixfit.domain.model.training.FatigueCause;
-import com.synaptixfit.domain.model.training.SessionAdaptation;
-import com.synaptixfit.application.port.input.training.GetTodayAdaptationUseCase;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
@@ -56,15 +53,4 @@ public final class CycleDtos {
     public record CycleDaysResponse(List<CycleDayResponse> days) {
     }
 
-    /**
-     * Cómo se adapta hoy el entreno sin empezar sesión: factor de series, motivos, lo que más pesa en la fatiga (si
-     * es un motivo) y si ya hay registro diario hoy.
-     */
-    public record TodayAdaptationResponse(double volumeFactor, List<SessionAdaptation.Reason> reasons,
-                                          FatigueCause fatigueCause, boolean checkInDone) {
-        public static TodayAdaptationResponse from(GetTodayAdaptationUseCase.Result r) {
-            return new TodayAdaptationResponse(r.adaptation().volumeFactor(), r.adaptation().reasons(),
-                    r.adaptation().fatigueCause(), r.checkInDone());
-        }
-    }
 }

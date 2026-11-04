@@ -94,7 +94,7 @@ public class SessionAdaptationService implements GetSessionAdaptationUseCase, Ge
     @Override
     public GetTodayAdaptationUseCase.Result today(UUID userId, String timeZone) {
         DailyCheckIn checkIn = checkIns.findByUserAndDate(userId, today()).orElse(null);
-        return new GetTodayAdaptationUseCase.Result(todays(userId, timeZone, checkIn), checkIn != null);
+        return new GetTodayAdaptationUseCase.Result(todays(userId, timeZone, checkIn), checkIn);
     }
 
     /** Día del ciclo apuntado hoy, solo si el seguimiento está activo. */

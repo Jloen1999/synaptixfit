@@ -16,7 +16,7 @@ Cada tabla tiene **un único módulo propietario**: solo él la mapea como entid
 | Académico | `asignaturas`, `asignaturas_usuario_semestre`, `apuntes`, `archivos_asignatura`, `documentos_ia`, `importaciones_plan_docente`, `materiales_estudio`, `registros_repaso_srs`, `bancos_preguntas`, `preguntas`, `intentos_pregunta`, `test_sessions` |
 | Planificador | `horarios_academicos`, `actividades_apuntadas`, `planes_estudio`, `entregas_examenes`, `carga_academica_semanal`, `sesiones_focus`, `suscripciones_calendario` |
 | Gamificación | `retos`, `hitos_de_reto`, `progreso_de_reto`, `insignias`, `usuario_insignias` |
-| Social | `actividades_sociales`, `interacciones_sociales`, `comentarios_feed`, `amistades`, `notificaciones`, `preferencias_notificacion` |
+| Social | `actividades_sociales`, `interacciones_sociales`, `comentarios_feed`, `amistades`, `notificaciones`, `preferencias_notificacion`, `opciones_avisos` |
 | Indicadores (neurofisiología y analítica) | `estado_cognitivo_usuario`, `estado_regulacion_cruzada`, `registros_carga_fisica` |
 | Administración | `admin_auditoria`, `configuracion_global` (escritura) |
 

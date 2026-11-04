@@ -11,6 +11,10 @@ abstract class QuickCheckInState with _$QuickCheckInState {
     /// Preguntando de nuevo aunque ya estuviera hecho.
     @Default(false) bool editing,
     @Default(false) bool sending,
+
+    /// Se acaba de enviar: la explicación se anuncia al lector solo entonces,
+    /// no cada vez que se abre Rutinas con el registro ya hecho.
+    @Default(false) bool justSent,
     AppError? error,
   }) = _QuickCheckInState;
 

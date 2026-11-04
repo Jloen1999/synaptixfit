@@ -39,7 +39,10 @@ class ChartCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: context.textStyles.titleMedium),
+                    Semantics(
+                      header: true,
+                      child: Text(title, style: context.textStyles.titleMedium),
+                    ),
                     if (subtitle != null)
                       Text(
                         subtitle!,

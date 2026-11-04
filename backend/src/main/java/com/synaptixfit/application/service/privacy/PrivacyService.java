@@ -50,7 +50,8 @@ public class PrivacyService implements ExportMyDataUseCase, DeleteMyAccountUseCa
     public UserDataExport exportMyData(UUID userId) {
         User user = activeUser(userId);
         Instant now = clock.instant();
-        return new UserDataExport(user.id(), now, exporter.exportAsJson(user.id(), now));
+        return new UserDataExport(user.id(), now, exporter.exportAsJson(user.id(), now,
+                UserDataExportPort.Requester.OWNER));
     }
 
     @Override

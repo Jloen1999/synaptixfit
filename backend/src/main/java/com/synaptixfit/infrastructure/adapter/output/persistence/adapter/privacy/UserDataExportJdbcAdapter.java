@@ -27,7 +27,8 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
 
     private static final String ROUTINE_IDS = "(SELECT id FROM rutinas WHERE usuario_id = :id)";
 
-    private static final String EXPORT_SQL = buildSql();
+    private static final String OWNER_SQL = buildSql(true);
+    private static final String ADMINISTRATOR_SQL = buildSql(false);
 
     private final JdbcClient jdbc;
 
@@ -36,15 +37,15 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
     }
 
     @Override
-    public String exportAsJson(UUID userId, Instant exportedAt) {
-        return jdbc.sql(EXPORT_SQL)
+    public String exportAsJson(UUID userId, Instant exportedAt, Requester requester) {
+        return jdbc.sql(requester.includesHealthData() ? OWNER_SQL : ADMINISTRATOR_SQL)
                 .param("id", userId)
                 .param("exportedAt", JdbcValues.param(exportedAt))
                 .query(String.class)
                 .single();
     }
 
-    private static String buildSql() {
+    private static String buildSql(boolean includeHealthData) {
         Map<String, String> sections = new LinkedHashMap<>();
         sections.put("formatVersion", "1");
         sections.put("exportedAt", "CAST(:exportedAt AS timestamptz)");
@@ -105,8 +106,11 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
                 "t.semana_inicio"));
         sections.put("dailyCheckIns", rows("estado_diario_usuario t", "t.usuario_id = :id", "t.fecha"));
         sections.put("exerciseNotes", rows("notas_ejercicio t", "t.usuario_id = :id", "t.actualizado_en"));
-        sections.put("cycleTracking", single("seguimiento_ciclo"));
-        sections.put("cycleDays", rows("dias_ciclo t", "t.usuario_id = :id", "t.fecha"));
+        if (includeHealthData) {
+            // Datos de salud (ADR 0033): solo en la copia de su dueño.
+            sections.put("cycleTracking", single("seguimiento_ciclo"));
+            sections.put("cycleDays", rows("dias_ciclo t", "t.usuario_id = :id", "t.fecha"));
+        }
         sections.put("loggedActivities", rows("actividades_apuntadas t", "t.usuario_id = :id", "t.creado_en"));
         sections.put("reminderOptions", single("opciones_avisos"));
         sections.put("recommendations", rows("recomendaciones_pendientes t", "t.usuario_id = :id", "t.creado_en"));

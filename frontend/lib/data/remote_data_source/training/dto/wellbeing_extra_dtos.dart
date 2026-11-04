@@ -56,6 +56,9 @@ abstract final class WellbeingExtraDtos {
         ],
         fatigueCause: FatigueCause.fromApi(json['fatigueCause'] as String?),
         checkInDone: json['checkInDone'] as bool? ?? false,
+        sleepQuality: json['sleepQuality'] as int?,
+        energy: json['energy'] as int?,
+        soreness: json['soreness'] as int?,
       );
 
   static Map<String, dynamic> quickCheckInBody(QuickCheckIn input) => {

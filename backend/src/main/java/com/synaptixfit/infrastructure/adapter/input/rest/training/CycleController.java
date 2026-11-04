@@ -4,7 +4,6 @@ import com.synaptixfit.application.port.input.training.ChangeCycleTrackingUseCas
 import com.synaptixfit.application.port.input.training.DeleteCycleDayUseCase;
 import com.synaptixfit.application.port.input.training.DeleteCycleHistoryUseCase;
 import com.synaptixfit.application.port.input.training.GetCycleOverviewUseCase;
-import com.synaptixfit.application.port.input.training.GetTodayAdaptationUseCase;
 import com.synaptixfit.application.port.input.training.ListCycleDaysUseCase;
 import com.synaptixfit.application.port.input.training.LogCycleDayUseCase;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.CycleDtos.CycleDayRequest;
@@ -12,7 +11,6 @@ import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.CycleDtos.
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.CycleDtos.CycleDaysResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.CycleDtos.CycleOverviewResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.CycleDtos.CycleSettingsRequest;
-import com.synaptixfit.infrastructure.adapter.input.rest.training.dto.CycleDtos.TodayAdaptationResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -45,18 +43,16 @@ public class CycleController {
     private final ListCycleDaysUseCase list;
     private final DeleteCycleDayUseCase deleteDay;
     private final DeleteCycleHistoryUseCase deleteHistory;
-    private final GetTodayAdaptationUseCase todayAdaptation;
 
     public CycleController(GetCycleOverviewUseCase overview, ChangeCycleTrackingUseCase change,
                            LogCycleDayUseCase log, ListCycleDaysUseCase list, DeleteCycleDayUseCase deleteDay,
-                           DeleteCycleHistoryUseCase deleteHistory, GetTodayAdaptationUseCase todayAdaptation) {
+                           DeleteCycleHistoryUseCase deleteHistory) {
         this.overview = overview;
         this.change = change;
         this.log = log;
         this.list = list;
         this.deleteDay = deleteDay;
         this.deleteHistory = deleteHistory;
-        this.todayAdaptation = todayAdaptation;
     }
 
     @GetMapping("/cycle")
@@ -101,10 +97,4 @@ public class CycleController {
         deleteHistory.deleteAll(userId);
     }
 
-    /** Cómo se adapta hoy el entreno y por qué, sin empezar sesión. */
-    @GetMapping("/adaptation/today")
-    public TodayAdaptationResponse todayAdaptation(@CurrentUserId UUID userId,
-                                                   @RequestParam(required = false) String tz) {
-        return TodayAdaptationResponse.from(todayAdaptation.today(userId, tz));
-    }
 }

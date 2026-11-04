@@ -104,6 +104,36 @@ class CycleAndWellbeingTest {
     }
 
     @Test
+    void elRegistroRapidoNoBorraLoDelRegistroCompleto() {
+        DailyCheckIn c = DailyCheckIn.create(UUID.randomUUID(), TODAY,
+                new DailyCheckIn.Values(3, 2, 3, 3, List.of("Rodilla"), false, "Me duele al bajar"), NOW);
+
+        // Registro rápido: solo sueño, energía y agujetas.
+        c.apply(new DailyCheckIn.Values(4, null, 4, 2, null, null, null));
+
+        assertThat(c.sleepQuality()).isEqualTo(4);
+        assertThat(c.painZones()).containsExactly("Rodilla");
+        assertThat(c.notes()).isEqualTo("Me duele al bajar");
+        assertThat(c.readyToTrain()).isFalse();
+
+        // El registro completo sí puede vaciarlos a propósito.
+        c.apply(new DailyCheckIn.Values(4, 2, 4, 2, List.of(), true, ""));
+        assertThat(c.painZones()).isEmpty();
+        assertThat(c.notes()).isNull();
+        assertThat(c.readyToTrain()).isTrue();
+    }
+
+    @Test
+    void elPrimerRegistroRapidoEmpiezaSinZonasNiNotaYListoParaEntrenar() {
+        DailyCheckIn c = DailyCheckIn.create(UUID.randomUUID(), TODAY,
+                new DailyCheckIn.Values(4, null, 4, 2, null, null, null), NOW);
+        assertThat(c.painZones()).isEmpty();
+        assertThat(c.notes()).isNull();
+        assertThat(c.readyToTrain()).isTrue();
+        assertThat(c.stress()).isEqualTo(DailyCheckIn.NEUTRAL_STRESS);
+    }
+
+    @Test
     void elCicloPideUnAjusteSuaveSoloConMolestiasOEnergiaBaja() {
         CycleDay cramps = new CycleDay(TODAY, true, CycleEnergy.NORMAL, Set.of(CycleSymptom.CRAMPS), null, NOW);
         SessionAdaptation a = SessionAdaptation.of(1.0, false, null, cramps);

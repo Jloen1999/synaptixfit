@@ -88,7 +88,8 @@ abstract class CheckInRequestDto with _$CheckInRequestDto {
     soreness: i.soreness,
     painZones: i.painZones,
     readyToTrain: i.readyToTrain,
-    notes: i.notes?.trim().isEmpty ?? true ? null : i.notes!.trim(),
+    // Vacía se envía como "" para borrarla: en el servidor, una nota ausente se conserva (registro rápido).
+    notes: i.notes?.trim() ?? '',
   );
 }
 

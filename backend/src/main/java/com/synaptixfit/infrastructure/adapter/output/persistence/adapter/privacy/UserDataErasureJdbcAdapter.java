@@ -27,8 +27,14 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "DELETE FROM estado_diario_usuario WHERE usuario_id = :id",
             "DELETE FROM estado_regulacion_cruzada WHERE usuario_id = :id");
 
-    /** Contenido personal: se borra al vaciar y al anonimizar. */
+    /**
+     * Contenido personal: se borra al vaciar y al anonimizar. Los datos del ciclo son de salud (categoría
+     * especial del RGPD, ADR 0033): nunca se conservan vinculados a un id anonimizado.
+     */
     private static final List<String> PERSONAL_CONTENT = List.of(
+            "DELETE FROM dias_ciclo WHERE usuario_id = :id",
+            "DELETE FROM seguimiento_ciclo WHERE usuario_id = :id",
+            "DELETE FROM notas_ejercicio WHERE usuario_id = :id",
             "DELETE FROM sesiones_focus WHERE usuario_id = :id",
             "DELETE FROM entregas_examenes WHERE usuario_id = :id",
             "DELETE FROM planes_estudio WHERE usuario_id = :id",
@@ -61,7 +67,8 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "DELETE FROM perfil_bienestar_usuario WHERE usuario_id = :id",
             "DELETE FROM perfil_academico_usuario WHERE usuario_id = :id",
             "DELETE FROM usuario_carreras WHERE usuario_id = :id",
-            "DELETE FROM preferencias_notificacion WHERE usuario_id = :id");
+            "DELETE FROM preferencias_notificacion WHERE usuario_id = :id",
+            "DELETE FROM opciones_avisos WHERE usuario_id = :id");
 
     /** Texto libre de los registros estadísticos que se conservan al anonimizar. */
     private static final List<String> SCRUB_STATISTICS = List.of(

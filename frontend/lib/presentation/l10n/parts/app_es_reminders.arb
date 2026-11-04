@@ -103,7 +103,7 @@
     }
   },
   "remindersStreakTitle": "Tu racha está en riesgo",
-  "remindersStreakBody": "Llevas {days} días seguidos. Haz algo hoy para no perderla.",
+  "remindersStreakBody": "Llevas {days} días seguidos. Entrena o estudia un rato hoy para no perderla.",
   "@remindersStreakBody": {
     "placeholders": {
       "days": {

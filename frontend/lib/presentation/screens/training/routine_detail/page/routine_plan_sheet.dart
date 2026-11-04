@@ -75,7 +75,7 @@ class _PlanSheet extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.flag_rounded, color: context.colors.tertiary),
+                      Icon(Icons.flag_rounded, color: context.colors.secondary),
                       const SizedBox(width: TokensSpacing.s),
                       Text(
                         l10n.trainingPlanAfterTitle,

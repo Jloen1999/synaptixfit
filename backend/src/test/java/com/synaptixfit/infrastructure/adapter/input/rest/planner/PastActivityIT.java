@@ -72,7 +72,8 @@ class PastActivityIT {
                         .contentType(MediaType.APPLICATION_JSON).content(body(now.minus(Duration.ofDays(8)), 60)))
                 .andExpect(status().isUnprocessableEntity());
         mvc.perform(post("/api/v1/planner/past-activities").header("Authorization", auth)
-                        .contentType(MediaType.APPLICATION_JSON).content(body(now.minus(Duration.ofDays(1)), 10)))
+                        // Menos de 10 minutos no es una actividad (ADR 0033).
+                        .contentType(MediaType.APPLICATION_JSON).content(body(now.minus(Duration.ofDays(1)), 9)))
                 .andExpect(status().isBadRequest());
     }
 

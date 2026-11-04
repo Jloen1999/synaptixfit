@@ -14,7 +14,7 @@ La regulación cruzada ya adapta la sesión con el registro diario, el examen ce
 
 ## Decisión
 
-- **Ciclo, opcional y con consentimiento** (`seguimiento_ciclo`, `dias_ciclo`, V1040). Apagado para todo el mundo: no se da por hecho por el género. Activarlo exige aceptar expresamente para qué se usa (`CYCLE_CONSENT_REQUIRED`) y se guarda cuándo. Son datos de salud (categoría especial del RGPD): solo los lee su dueño, se borran con un toque (al desactivar se ofrece borrar todo), se borran en cascada con la cuenta y entran en la exportación. No salen del backend ni se mandan a la IA.
+- **Ciclo, opcional y con consentimiento** (`seguimiento_ciclo`, `dias_ciclo`, V1040). Apagado para todo el mundo: no se da por hecho por el género. Activarlo exige aceptar expresamente para qué se usa (`CYCLE_CONSENT_REQUIRED`) y se guarda cuándo. Son datos de salud (categoría especial del RGPD): solo los lee su dueño, se borran con un toque (al desactivar se ofrece borrar todo), se borran en cascada con la cuenta, también al anonimizarla o vaciarla (nunca quedan ligados a un id anonimizado), y entran en la exportación que pide su dueño. La copia de datos que un administrador descarga para atender una petición (`exportUserData`) **no** los lleva (`UserDataExportPort.Requester.ADMINISTRATOR`): si la persona quiere sus datos de salud, los descarga ella misma desde Privacidad. No salen del backend ni se mandan a la IA.
   - La estimación del momento del ciclo es sencilla y se presenta como tal (formulas.md).
   - El ajuste del entreno es suave: si hoy se apuntó energía baja o alguna molestia, `SessionAdaptation` recorta las series al 90 % (`CYCLE_DISCOMFORT`). No se toca la generación de rutinas (`ContextAdjuster`): un día del ciclo no debe cambiar la rutina, solo la sesión de hoy.
 - **Registro rápido de tres toques** (sueño, energía, agujetas) en la tarjeta de Rutinas, sobre el mismo `PUT /training/check-ins/today` (el estrés pasa a ser opcional y se conserva o queda neutro). `GET /training/adaptation/today` da la adaptación de hoy sin sesión, con `fatigueCause` (lo que más pesa en la fatiga) para explicarla en una frase: «Hoy harás menos series porque dormiste mal».
@@ -24,5 +24,6 @@ La regulación cruzada ya adapta la sesión con el registro diario, el examen ce
 ## Consecuencias
 
 - El cliente no estima nada: pinta la fase, el día y el ritmo que manda el servidor, y solo traduce el registro rápido a la escala 1-5.
+- La fecha de un día del ciclo va en la ruta (`PUT/DELETE /training/cycle/days/{date}`), así que los registros de acceso del proxy guardan en qué días se apuntó algo, nunca qué. Se acepta: la ruta no lleva datos de salud, los registros son del propio servidor y caducan, y moverla al cuerpo rompería la idempotencia de `PUT` por día.
 - Un APK anterior sigue funcionando: los campos nuevos son opcionales y los avisos de tipo desconocido se ignoran.
 - Pendiente: GPS en directo y Health Connect / Strava (fuera de esta decisión).

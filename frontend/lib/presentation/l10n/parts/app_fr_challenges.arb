@@ -191,7 +191,7 @@
   "challengesErrorNotFound": "Nous ne trouvons pas ce défi.",
   "challengesErrorMilestoneNotFound": "Nous ne trouvons pas cette tâche.",
   "challengesErrorSubjectNotFound": "La matière sélectionnée n’existe pas.",
-  "challengesErrorLinkNotFound": "L'examen ou le rendu lié n'existe pas.",
+  "challengesErrorLinkNotFound": "Ce que tu as lié (rendu, examen ou jour de routine) n’existe plus.",
   "challengesErrorAttachmentNotFound": "La note ou le fichier joint n’existe pas.",
   "challengesErrorInvalidDates": "La date de fin doit être postérieure à celle de début.",
   "challengesErrorTypeOutsideFocus": "Ce type de défi n’est pas activé sur ton compte. Change-le dans ton profil si tu veux l’utiliser.",
@@ -278,5 +278,9 @@
   "challengesLinkRoutineDay": "Lié à un jour de ta routine",
   "challengesLinkRoutineDays": "Jours de ta routine",
   "challengesLinkRoutineDaysHint": "Elle se valide toute seule quand tu t'entraînes ce jour-là.",
-  "challengesLinkRoutineDayTitle": "{routine} · semaine {week}, {day}"
+  "challengesLinkRoutineDayTitle": "{routine} · semaine {week}, {day}",
+  "challengesLinkOpenRoutine": "Voir dans ta routine",
+  "challengesLinkEmptyWithRoutine": "Aucun rendu ni examen dans les dates du défi, ni de jour en attente dans ta routine. Ajoute un rendu dans le planning ou commence une routine pour lier un jour.",
+  "challengesCompletedByRoutineDay": "Se termine en t’entraînant le {day} de la semaine {week} de « {routine} »",
+  "challengesCompletedByRoutineDayGeneric": "Se termine en t’entraînant ce jour-là de ta routine"
 }

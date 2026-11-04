@@ -122,7 +122,7 @@ class _CycleView extends StatelessWidget with ErrorsMessageMixin {
           body: AppContentWidth.reading(
             child: switch (state) {
               CycleState(loading: true, overview: null) =>
-                const AppLoadingView(),
+                const AppSkeletonList(),
               CycleState(error: final error?, overview: null) => AppErrorView(
                 error: error,
                 onRetry: () =>
@@ -202,7 +202,9 @@ class _IntroState extends State<_Intro> {
           icon: Icons.check_rounded,
           loading: widget.saving,
           onPressed: _consent
-              ? () => context.read<CycleBloc>().add(const CycleEvent.enabled())
+              ? () => context.read<CycleBloc>().add(
+                  CycleEvent.enabled(consent: _consent),
+                )
               : null,
         ),
       ],
@@ -233,7 +235,12 @@ class _Tracking extends StatelessWidget {
     final today = DateUtils.dateOnly(DateTime.now());
     final phase = overview.phase;
     return ListView(
-      padding: const EdgeInsets.all(TokensSpacing.m),
+      // Relleno lateral pequeño: así caben siete días de 48 dp en un móvil
+      // de 360 dp.
+      padding: const EdgeInsets.symmetric(
+        horizontal: TokensSpacing.s,
+        vertical: TokensSpacing.m,
+      ),
       children: [
         AppCard(
           child: Column(
@@ -268,11 +275,11 @@ class _Tracking extends StatelessWidget {
           ),
         ),
         const SizedBox(height: TokensSpacing.m),
-        AppSectionHeader(title: l10n.trainingCycleTitle),
+        AppSectionHeader(title: l10n.trainingCycleTodayTitle),
         AppPrimaryButton(
-          label: l10n.trainingCycleDaySheetTitle(
-            DateFormat.MMMEd(l10n.localeName).format(today),
-          ),
+          label: overview.today == null
+              ? l10n.trainingCycleLogToday
+              : l10n.trainingCycleChangeToday,
           icon: Icons.edit_calendar_rounded,
           onPressed: () =>
               showCycleDaySheet(context, date: today, current: overview.today),
@@ -288,7 +295,7 @@ class _Tracking extends StatelessWidget {
 
 /// Calendario del mes: cada día dice si hubo regla o se apuntó algo, con
 /// icono además del color. Tocar un día pasado lo abre para apuntarlo.
-class _Month extends StatelessWidget {
+class _Month extends StatelessWidget with ErrorsMessageMixin {
   const _Month({required this.state});
 
   final CycleState state;
@@ -309,7 +316,16 @@ class _Month extends StatelessWidget {
     ];
     final isCurrentMonth =
         month.year == today.year && month.month == today.month;
-    final dayLabel = DateFormat.MMMMd(l10n.localeName);
+    // Con el día de la semana: las cabeceras L-M-X no se leen.
+    final dayLabel = DateFormat.MMMMEEEEd(l10n.localeName);
+    // Alto de fila: 48 dp como mínimo y más con letra grande, para que la
+    // cifra y su marca no se corten.
+    final rowHeight = MediaQuery.textScalerOf(
+      context,
+    ).scale(TokensLayout.minTouchTarget).clamp(
+      TokensLayout.minTouchTarget,
+      double.infinity,
+    ).toDouble();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -355,10 +371,31 @@ class _Month extends StatelessWidget {
           ),
         ),
         const SizedBox(height: TokensSpacing.s),
-        GridView.count(
-          crossAxisCount: 7,
+        if (state.daysError case final error?)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppInlineMessage(message: errorMessage(context, error)),
+              const SizedBox(height: TokensSpacing.s),
+              AppSecondaryButton(
+                label: l10n.commonRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                onPressed: () => context.read<CycleBloc>().add(
+                  CycleEvent.monthChanged(month),
+                ),
+              ),
+            ],
+          )
+        else if (state.daysLoading)
+          AppSkeletonGroup(child: AppSkeleton(height: rowHeight * 6))
+        else
+        GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+            mainAxisExtent: rowHeight,
+          ),
           children: [
             for (final w in weekdays)
               ExcludeSemantics(
@@ -373,10 +410,13 @@ class _Month extends StatelessWidget {
                   final date = DateTime(month.year, month.month, d);
                   final logged = state.days[date];
                   final future = date.isAfter(today);
-                  final label = dayLabel.format(date);
+                  final isToday = date == today;
+                  final label = isToday
+                      ? l10n.trainingCycleTodayDate(dayLabel.format(date))
+                      : dayLabel.format(date);
                   return _DayCell(
                     day: d,
-                    today: date == today,
+                    today: isToday,
                     period: logged?.period ?? false,
                     logged: logged != null,
                     semanticLabel: logged == null
@@ -406,7 +446,7 @@ class _Month extends StatelessWidget {
               label: l10n.trainingCycleLegendPeriod,
             ),
             _Legend(
-              icon: Icons.circle,
+              icon: Icons.check_rounded,
               color: context.colors.primary,
               label: l10n.trainingCycleLegendLogged,
             ),
@@ -463,6 +503,7 @@ class _DayCell extends StatelessWidget {
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     '$day',
@@ -474,16 +515,17 @@ class _DayCell extends StatelessWidget {
                           : colors.onSurface,
                     ),
                   ),
+                  // Forma distinta (gota o marca), no solo color.
                   if (period)
                     Icon(
                       Icons.water_drop_rounded,
-                      size: TokensSize.iconXs / 2,
+                      size: TokensSize.iconXs,
                       color: colors.onErrorContainer,
                     )
                   else if (logged)
                     Icon(
-                      Icons.circle,
-                      size: TokensSize.iconXs / 2,
+                      Icons.check_rounded,
+                      size: TokensSize.iconXs,
                       color: colors.primary,
                     ),
                 ],

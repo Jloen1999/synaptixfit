@@ -191,7 +191,7 @@
   "challengesErrorNotFound": "We couldn't find this challenge.",
   "challengesErrorMilestoneNotFound": "We couldn't find this task.",
   "challengesErrorSubjectNotFound": "The selected subject doesn't exist.",
-  "challengesErrorLinkNotFound": "The linked exam or assignment does not exist.",
+  "challengesErrorLinkNotFound": "What you linked (assignment, exam or routine day) no longer exists.",
   "challengesErrorAttachmentNotFound": "The attached note or file doesn't exist.",
   "challengesErrorInvalidDates": "The end date must be after the start date.",
   "challengesErrorTypeOutsideFocus": "That type of challenge isn't active on your account. Change it in your profile if you want to use it.",
@@ -278,5 +278,9 @@
   "challengesLinkRoutineDay": "Linked to a day of your routine",
   "challengesLinkRoutineDays": "Days of your routine",
   "challengesLinkRoutineDaysHint": "It completes itself when you train that day.",
-  "challengesLinkRoutineDayTitle": "{routine} · week {week}, {day}"
+  "challengesLinkRoutineDayTitle": "{routine} · week {week}, {day}",
+  "challengesLinkOpenRoutine": "View in your routine",
+  "challengesLinkEmptyWithRoutine": "There are no assignments or exams within the challenge dates and no pending days in your routine. Add an assignment in the planner or start a routine to link a day.",
+  "challengesCompletedByRoutineDay": "Completed when you train on {day} of week {week} of “{routine}”",
+  "challengesCompletedByRoutineDayGeneric": "Completed when you train that day of your routine"
 }

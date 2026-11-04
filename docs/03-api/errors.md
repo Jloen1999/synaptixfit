@@ -142,7 +142,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `CHALLENGE_NOT_FOUND` | 404 | Reto inexistente, ajeno o no visible | No encontramos este reto. | Activo |
 | `MILESTONE_NOT_FOUND` | 404 | Tarea inexistente en ese reto | No encontramos esta tarea. | Activo |
 | `CHALLENGE_SUBJECT_NOT_FOUND` | 404 | Asignatura inexistente o ajena | La asignatura seleccionada no existe. | Activo |
-| `CHALLENGE_LINK_NOT_FOUND` | 404 | Entrega o examen vinculado inexistente o ajeno | El examen o la entrega vinculados no existen. | Activo |
+| `CHALLENGE_LINK_NOT_FOUND` | 404 | Entrega, examen o día de rutina vinculado inexistente o ajeno | Lo que vinculaste (entrega, examen o día de rutina) ya no existe. | Activo |
 | `MILESTONE_ATTACHMENT_NOT_FOUND` | 404 | Apunte o archivo adjunto inexistente o ajeno | El apunte o archivo adjunto no existe. | Activo |
 | `CHALLENGE_TYPE_OUTSIDE_FOCUS` | 422 | El ámbito del reto (académico o físico) no está en el enfoque de uso de la persona | Ese tipo de reto no está activo en tu cuenta. Cámbialo en tu perfil si quieres usarlo. | Activo |
 | `CHALLENGE_INVALID_DATES` | 400 | `endAt` no es posterior a `startAt` | La fecha de fin debe ser posterior a la de inicio. | Activo |

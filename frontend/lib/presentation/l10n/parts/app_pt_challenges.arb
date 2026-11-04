@@ -191,7 +191,7 @@
   "challengesErrorNotFound": "Não encontrámos este desafio.",
   "challengesErrorMilestoneNotFound": "Não encontrámos esta tarefa.",
   "challengesErrorSubjectNotFound": "A disciplina selecionada não existe.",
-  "challengesErrorLinkNotFound": "O exame ou a entrega ligados não existem.",
+  "challengesErrorLinkNotFound": "O que ligaste (entrega, exame ou dia de rotina) já não existe.",
   "challengesErrorAttachmentNotFound": "O apontamento ou ficheiro anexado não existe.",
   "challengesErrorInvalidDates": "A data de fim deve ser posterior à de início.",
   "challengesErrorTypeOutsideFocus": "Esse tipo de desafio não está ativo na tua conta. Altera-o no teu perfil se o quiseres usar.",
@@ -278,5 +278,9 @@
   "challengesLinkRoutineDay": "Ligado a um dia da tua rotina",
   "challengesLinkRoutineDays": "Dias da tua rotina",
   "challengesLinkRoutineDaysHint": "Fica feita sozinha quando treinares nesse dia.",
-  "challengesLinkRoutineDayTitle": "{routine} · semana {week}, {day}"
+  "challengesLinkRoutineDayTitle": "{routine} · semana {week}, {day}",
+  "challengesLinkOpenRoutine": "Ver na tua rotina",
+  "challengesLinkEmptyWithRoutine": "Não há entregas nem exames nas datas do desafio nem dias pendentes na tua rotina. Adiciona uma entrega no planeamento ou começa uma rotina para ligar um dia.",
+  "challengesCompletedByRoutineDay": "Conclui-se ao treinar {day} da semana {week} de «{routine}»",
+  "challengesCompletedByRoutineDayGeneric": "Conclui-se ao treinar esse dia da tua rotina"
 }

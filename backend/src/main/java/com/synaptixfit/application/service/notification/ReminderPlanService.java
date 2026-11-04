@@ -32,11 +32,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -130,8 +132,16 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
 
         int dueReviews = ReminderPlanner.wantsReviews(prefs, usageFocus)
                 ? materials.findDue(userId, now, MAX_COUNTED_REVIEWS).size() : 0;
+        // Los bloques de la ventana sirven a los avisos de bloque y a los de clase: se leen una sola vez.
+        List<List<CalendarBlock>> window = new ArrayList<>(1);
+        Supplier<List<CalendarBlock>> blocksInWindow = () -> {
+            if (window.isEmpty()) {
+                window.add(blocks.findOverlapping(userId, now, end, null));
+            }
+            return window.get(0);
+        };
         List<ReminderPlanner.Block> upcoming = ReminderPlanner.wantsBlocks(prefs, usageFocus)
-                ? toBlocks(userId, blocks.findOverlapping(userId, now, end, null)) : List.of();
+                ? toBlocks(userId, blocksInWindow.get()) : List.of();
 
         List<ReminderPlanner.Deadline> pending = ReminderPlanner.wantsDeadlines(prefs, usageFocus)
                 ? deadlines.findAll(userId, new DeadlineRepositoryPort.Query(now,
@@ -143,12 +153,13 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
 
         return planner.plan(new ReminderPlanner.Input(dueReviews, upcoming, prefs, usageFocus, now, zone, days,
                 pending, true, prefs.dailyLimit() > 0 ? followUps(userId, now) : ReminderPlanner.FollowUps.NONE),
-                wellbeingReminders(userId, prefs, usageFocus, now, end));
+                wellbeingReminders(userId, prefs, usageFocus, now, end, blocksInWindow));
     }
 
     /** Racha en riesgo, registro diario y clases en 15 min, según las opciones del usuario. */
     private List<ReminderPlan.Item> wellbeingReminders(UUID userId, NotificationPreferences prefs, UsageFocus focus,
-                                                       Instant now, Instant end) {
+                                                       Instant now, Instant end,
+                                                       Supplier<List<CalendarBlock>> blocksInWindow) {
         if (wellbeing == null || prefs.dailyLimit() <= 0) {
             return List.of();
         }
@@ -156,7 +167,7 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
         StreakStatus streak = options.streak() ? wellbeing.streak().getStreak(userId, zone.getId()) : null;
         boolean checkInDone = options.checkIn() && wellbeing.checkIn().today(userId).isPresent();
         List<WellbeingReminders.ClassBlock> classes = options.classes()
-                ? toClasses(userId, blocks.findOverlapping(userId, now, end, null)) : List.of();
+                ? toClasses(userId, blocksInWindow.get()) : List.of();
         return WellbeingReminders.plan(new WellbeingReminders.Input(prefs, focus, options, now, zone, end,
                 streak == null ? 0 : streak.currentDays(), streak != null && streak.activeToday(), checkInDone,
                 classes));

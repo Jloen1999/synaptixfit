@@ -7,7 +7,7 @@ import com.synaptixfit.application.port.input.challenge.HideUserChallengesUseCas
 import com.synaptixfit.application.port.input.challenge.RecordChallengeProgressUseCase;
 import com.synaptixfit.application.port.input.challenge.ReorderMilestonesUseCase;
 import com.synaptixfit.application.port.input.challenge.ReplaceMilestonesUseCase;
-import com.synaptixfit.application.port.input.challenge.SyncDeadlineChallengesUseCase;
+import com.synaptixfit.application.port.input.challenge.SyncLinkedEntityChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncMilestoneStudyBlocksUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncTrainingSessionChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.UncompleteChallengeUseCase;
@@ -39,7 +39,7 @@ import java.util.UUID;
  */
 public class ChallengeProgressService implements CompleteChallengeUseCase, UncompleteChallengeUseCase,
         ReplaceMilestonesUseCase, ReorderMilestonesUseCase, CompleteMilestoneUseCase, UncompleteMilestoneUseCase,
-        RecordChallengeProgressUseCase, SyncDeadlineChallengesUseCase, SyncMilestoneStudyBlocksUseCase,
+        RecordChallengeProgressUseCase, SyncLinkedEntityChallengesUseCase, SyncMilestoneStudyBlocksUseCase,
         SyncTrainingSessionChallengesUseCase, HideUserChallengesUseCase {
 
     private final ChallengeRepositoryPort challenges;
@@ -157,15 +157,15 @@ public class ChallengeProgressService implements CompleteChallengeUseCase, Uncom
     // ------------------------------------------------------------ sincronización (eventos)
 
     @Override
-    public void syncDeadline(UUID userId, UUID deadlineId, boolean completed) {
+    public void syncLinkedEntity(UUID userId, UUID entityId, boolean completed) {
         LocalDate today = today();
         Instant now = clock.instant();
-        for (Challenge challenge : challenges.findByLinkedEntity(userId, deadlineId)) {
+        for (Challenge challenge : challenges.findByLinkedEntity(userId, entityId)) {
             // Un reto vencido queda como estaba; si se amplía, la edición recupera el estado de la entrega.
             if (challenge.status(now) == ChallengeStatus.EXPIRED) {
                 continue;
             }
-            persist(challenge, challenge.applyDeadline(deadlineId, completed, today));
+            persist(challenge, challenge.applyDeadline(entityId, completed, today));
         }
     }
 

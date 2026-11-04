@@ -33,6 +33,8 @@ public record RoutineTemplate(UUID id, String code, String name, String descript
 
     public RoutineTemplate {
         Objects.requireNonNull(id, "id");
+        Guard.range(weeks, "weeks", 1, 12);
+        Guard.range(minutes, "minutes", 10, 180);
         days = List.copyOf(days);
     }
 

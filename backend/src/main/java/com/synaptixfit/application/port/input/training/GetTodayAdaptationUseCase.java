@@ -1,5 +1,6 @@
 package com.synaptixfit.application.port.input.training;
 
+import com.synaptixfit.domain.model.training.DailyCheckIn;
 import com.synaptixfit.domain.model.training.SessionAdaptation;
 import java.util.UUID;
 
@@ -9,8 +10,12 @@ import java.util.UUID;
  */
 public interface GetTodayAdaptationUseCase {
 
-    /** @param checkInDone ya hay registro diario hoy */
-    record Result(SessionAdaptation adaptation, boolean checkInDone) {
+    /** @param todayCheckIn registro diario de hoy, o nulo si aún no hay (sus respuestas rellenan «Cambiar») */
+    record Result(SessionAdaptation adaptation, DailyCheckIn todayCheckIn) {
+
+        public boolean checkInDone() {
+            return todayCheckIn != null;
+        }
     }
 
     Result today(UUID userId, String timeZone);

@@ -264,17 +264,17 @@ extension MilestoneSourceLabel on Milestone {
     }
     final title = linkTitle;
     final due = linkDueAt;
-    if (title == null) return l10n.challengesCompletedByDeadlineGeneric;
-    // Día de rutina: se dice qué día («Fuerza · semana 2, martes»).
+    // Día de rutina: se dice qué día y que se completa entrenando.
     if (link?.type == ChallengeLinkType.routineDay) {
-      return l10n.challengesCompletedByDeadline(
-        l10n.challengesLinkRoutineDayTitle(
-          title,
-          linkWeekNumber ?? 1,
-          weekdayName(l10n, linkDayNumber ?? 1),
-        ),
-      );
+      return title == null
+          ? l10n.challengesCompletedByRoutineDayGeneric
+          : l10n.challengesCompletedByRoutineDay(
+              weekdayName(l10n, linkDayNumber ?? 1),
+              linkWeekNumber ?? 1,
+              title,
+            );
     }
+    if (title == null) return l10n.challengesCompletedByDeadlineGeneric;
     final text = l10n.challengesCompletedByDeadline(title);
     return due == null
         ? text

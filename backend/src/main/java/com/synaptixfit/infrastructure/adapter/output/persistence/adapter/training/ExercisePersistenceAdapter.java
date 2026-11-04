@@ -246,7 +246,10 @@ public class ExercisePersistenceAdapter implements ExerciseRepositoryPort {
 
     @Override
     public boolean isUsedInRoutines(UUID id) {
-        return selections.existsByEjercicioId(id);
+        // También las plantillas listas (V1034): borrarlo las dejaría cojas o daría un 500 por la clave ajena.
+        return selections.existsByEjercicioId(id)
+                || jdbc.sql("SELECT EXISTS (SELECT 1 FROM plantillas_rutina_ejercicios WHERE ejercicio_id = :id)")
+                        .param("id", id).query(Boolean.class).single();
     }
 
     @Override

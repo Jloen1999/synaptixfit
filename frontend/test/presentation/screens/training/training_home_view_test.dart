@@ -24,6 +24,15 @@ import 'package:synaptixfit/presentation/screens/training/training_home/page/tra
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
 import 'training_fixtures.dart';
+import 'package:synaptixfit/domain/enums/data_topic.dart';
+import 'package:synaptixfit/domain/use_cases/sync/watch_data_changes_use_case.dart';
+
+/// Sin cambios de datos de otras pantallas.
+class _NoDataChanges implements WatchDataChangesUseCaseContract {
+  @override
+  Stream<Set<DataTopic>> call({required Set<DataTopic> topics}) =>
+      const Stream.empty();
+}
 
 class _DoneToday implements GetTodayAdaptationUseCaseContract {
   @override
@@ -85,7 +94,11 @@ void main() {
       // La tarjeta del registro rápido: hoy ya está hecho y sin adaptar.
       ..registerFactory<QuickCheckInBloc>(
         () =>
-            QuickCheckInBloc(getAdaptation: _DoneToday(), submit: _NoSubmit()),
+            QuickCheckInBloc(
+              getAdaptation: _DoneToday(),
+              submit: _NoSubmit(),
+              watchDataChanges: _NoDataChanges(),
+            ),
       );
   });
 

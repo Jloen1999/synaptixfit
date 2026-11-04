@@ -45,7 +45,10 @@ class _QuickCheckInView extends StatelessWidget {
               alignment: Alignment.topCenter,
               child: state.asking
                   ? _Questions(state: state)
-                  : _Explanation(adaptation: state.adaptation!),
+                  : _Explanation(
+                      adaptation: state.adaptation!,
+                      announce: state.justSent,
+                    ),
             ),
           );
         },
@@ -68,6 +71,16 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
   int? _soreness;
 
   @override
+  void initState() {
+    super.initState();
+    // Al cambiar, se parte de lo que ya se contestó hoy.
+    final answers = widget.state.adaptation?.todayAnswers;
+    _sleep = answers?.sleepQuality;
+    _energy = answers?.energy;
+    _soreness = answers?.soreness;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final ready = _sleep != null && _energy != null && _soreness != null;
@@ -78,8 +91,11 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
         Row(
           children: [
             CircleAvatar(
-              backgroundColor: context.palette.accentContainer,
-              child: Icon(Icons.mood_rounded, color: context.palette.accent),
+              backgroundColor: context.colors.secondaryContainer,
+              child: Icon(
+                Icons.mood_rounded,
+                color: context.colors.onSecondaryContainer,
+              ),
             ),
             const SizedBox(width: TokensSpacing.m),
             Expanded(
@@ -155,9 +171,22 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
                 )
               : null,
         ),
-        TextButton(
-          onPressed: () => context.push<void>(TrainingPaths.checkIn),
-          child: Text(l10n.trainingQuickFull),
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: TokensSpacing.s,
+          children: [
+            if (widget.state.editing)
+              TextButton(
+                onPressed: () => context.read<QuickCheckInBloc>().add(
+                  const QuickCheckInEvent.editCancelled(),
+                ),
+                child: Text(l10n.commonCancel),
+              ),
+            TextButton(
+              onPressed: () => context.push<void>(TrainingPaths.checkIn),
+              child: Text(l10n.trainingQuickFull),
+            ),
+          ],
         ),
       ],
     );
@@ -210,16 +239,29 @@ class _Question extends StatelessWidget {
 
 /// Después de registrar: entreno normal o cuánto se recorta y por qué.
 class _Explanation extends StatelessWidget {
-  const _Explanation({required this.adaptation});
+  const _Explanation({required this.adaptation, required this.announce});
 
   final TodayAdaptation adaptation;
 
-  static String _cause(AppLocalizations l10n, FatigueCause? cause) =>
+  /// Anunciar al lector (solo justo después de enviar).
+  final bool announce;
+
+  /// Sin causa del servidor no se inventa una: frase neutra.
+  static String _fatigueReason(AppLocalizations l10n, FatigueCause? cause) =>
       switch (cause) {
-        FatigueCause.poorSleep || null => l10n.trainingQuickCauseSleep,
-        FatigueCause.stress => l10n.trainingQuickCauseStress,
-        FatigueCause.lowEnergy => l10n.trainingQuickCauseEnergy,
-        FatigueCause.soreness => l10n.trainingQuickCauseSoreness,
+        null => l10n.trainingQuickReasonFatigueGeneric,
+        FatigueCause.poorSleep => l10n.trainingQuickReasonFatigue(
+          l10n.trainingQuickCauseSleep,
+        ),
+        FatigueCause.stress => l10n.trainingQuickReasonFatigue(
+          l10n.trainingQuickCauseStress,
+        ),
+        FatigueCause.lowEnergy => l10n.trainingQuickReasonFatigue(
+          l10n.trainingQuickCauseEnergy,
+        ),
+        FatigueCause.soreness => l10n.trainingQuickReasonFatigue(
+          l10n.trainingQuickCauseSoreness,
+        ),
       };
 
   @override
@@ -228,7 +270,7 @@ class _Explanation extends StatelessWidget {
     final adapted = adaptation.adapted;
     final color = adapted ? context.palette.warning : context.palette.success;
     return Semantics(
-      liveRegion: true,
+      liveRegion: announce,
       container: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -256,10 +298,10 @@ class _Explanation extends StatelessWidget {
           for (final reason in adaptation.reasons) ...[
             const SizedBox(height: TokensSpacing.xs),
             Text(switch (reason) {
-              SessionAdaptationReason.highFatigue =>
-                l10n.trainingQuickReasonFatigue(
-                  _cause(l10n, adaptation.fatigueCause),
-                ),
+              SessionAdaptationReason.highFatigue => _fatigueReason(
+                l10n,
+                adaptation.fatigueCause,
+              ),
               SessionAdaptationReason.examSoon => l10n.trainingQuickReasonExam,
               SessionAdaptationReason.overtraining =>
                 l10n.trainingQuickReasonOvertraining,
@@ -267,15 +309,22 @@ class _Explanation extends StatelessWidget {
                 l10n.trainingQuickReasonCycle,
             }, style: context.textStyles.bodyMedium),
           ],
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: TextButton.icon(
-              onPressed: () => context.read<QuickCheckInBloc>().add(
-                const QuickCheckInEvent.editRequested(),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: TokensSpacing.s,
+            children: [
+              TextButton(
+                onPressed: () => context.push<void>(TrainingPaths.checkIn),
+                child: Text(l10n.trainingQuickFull),
               ),
-              icon: const Icon(Icons.edit_rounded),
-              label: Text(l10n.trainingQuickChange),
-            ),
+              TextButton.icon(
+                onPressed: () => context.read<QuickCheckInBloc>().add(
+                  const QuickCheckInEvent.editRequested(),
+                ),
+                icon: const Icon(Icons.edit_rounded),
+                label: Text(l10n.trainingQuickChange),
+              ),
+            ],
           ),
         ],
       ),

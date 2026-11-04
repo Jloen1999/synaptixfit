@@ -405,7 +405,7 @@
   "challengesErrorNotFound": "No encontramos este reto.",
   "challengesErrorMilestoneNotFound": "No encontramos esta tarea.",
   "challengesErrorSubjectNotFound": "La asignatura seleccionada no existe.",
-  "challengesErrorLinkNotFound": "El examen o la entrega vinculados no existen.",
+  "challengesErrorLinkNotFound": "Lo que vinculaste (entrega, examen o día de rutina) ya no existe.",
   "challengesErrorAttachmentNotFound": "El apunte o archivo adjunto no existe.",
   "challengesErrorInvalidDates": "La fecha de fin debe ser posterior a la de inicio.",
   "challengesErrorTypeOutsideFocus": "Ese tipo de reto no está activo en tu cuenta. Cámbialo en tu perfil si quieres usarlo.",
@@ -599,6 +599,23 @@
         "type": "int"
       },
       "day": {
+        "type": "String"
+      }
+    }
+  },
+  "challengesLinkOpenRoutine": "Ver en tu rutina",
+  "challengesLinkEmptyWithRoutine": "No hay entregas ni exámenes en las fechas del reto ni días pendientes en tu rutina. Añade una entrega en el planificador o empieza una rutina para vincular un día.",
+  "challengesCompletedByRoutineDay": "Se completa al entrenar el {day} de la semana {week} de «{routine}»",
+  "challengesCompletedByRoutineDayGeneric": "Se completa al entrenar ese día de tu rutina",
+  "@challengesCompletedByRoutineDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "week": {
+        "type": "int"
+      },
+      "routine": {
         "type": "String"
       }
     }

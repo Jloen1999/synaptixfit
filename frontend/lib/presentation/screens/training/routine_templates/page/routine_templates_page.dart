@@ -82,6 +82,39 @@ class _TemplatesView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: TokensSpacing.m),
+                      // Sin ninguna plantilla (p. ej. un idioma sin semilla)
+                      // no hay filtros que quitar: se ofrece crear la rutina.
+                      if (state.templates.isEmpty)
+                        AppCard(
+                          child: AppEmptyState.compact(
+                            icon: Icons.view_list_rounded,
+                            title: l10n.trainingTemplatesNone,
+                            message: l10n.trainingTemplatesNoneHint,
+                            action: Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: TokensSpacing.s,
+                              runSpacing: TokensSpacing.s,
+                              children: [
+                                AppPrimaryButton(
+                                  label: l10n.trainingNewRoutineAi,
+                                  icon: Icons.auto_awesome_rounded,
+                                  onPressed: () =>
+                                      context.push(TrainingPaths.newRoutine()),
+                                ),
+                                AppSecondaryButton(
+                                  label: l10n.trainingNewRoutineManual,
+                                  icon: const Icon(Icons.edit_note_rounded),
+                                  onPressed: () => context.push(
+                                    TrainingPaths.newRoutine(
+                                      mode: TrainingPaths.modeManual,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else ...[
                       _Filters(state: state),
                       const SizedBox(height: TokensSpacing.m),
                       if (state.visible.isEmpty)
@@ -113,6 +146,7 @@ class _TemplatesView extends StatelessWidget {
                               disabled: state.usingId != null,
                             ),
                           ),
+                      ],
                     ],
                   ),
                 ),
@@ -207,6 +241,8 @@ class _TemplateCard extends StatelessWidget {
               AppPill(
                 icon: Icons.schedule_rounded,
                 label: l10n.trainingTemplatesMinutes(t.minutes),
+                // «≈» no se lee bien en voz alta.
+                semanticLabel: l10n.trainingEstimatedMinutesSpoken(t.minutes),
               ),
               AppPill(
                 icon: Icons.calendar_view_week_rounded,
@@ -240,15 +276,20 @@ class _TemplateCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: TokensSpacing.m),
-          AppPrimaryButton(
-            label: l10n.trainingTemplatesUse,
-            icon: Icons.add_task_rounded,
-            loading: busy,
-            onPressed: disabled
-                ? null
-                : () => context.read<RoutineTemplatesBloc>().add(
-                    RoutineTemplatesEvent.used(t.id),
-                  ),
+          Semantics(
+            label: l10n.trainingTemplatesUseNamed(t.name),
+            excludeSemantics: true,
+            button: true,
+            child: AppSecondaryButton(
+              label: l10n.trainingTemplatesUse,
+              icon: const Icon(Icons.add_task_rounded),
+              loading: busy,
+              onPressed: disabled
+                  ? null
+                  : () => context.read<RoutineTemplatesBloc>().add(
+                      RoutineTemplatesEvent.used(t.id),
+                    ),
+            ),
           ),
         ],
       ),

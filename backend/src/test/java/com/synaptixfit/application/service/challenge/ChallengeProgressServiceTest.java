@@ -154,26 +154,47 @@ class ChallengeProgressServiceTest {
                 task("Tarea libre", null)));
         Challenge other = stored(new ChallengeLink(LinkType.EXAM, otherDeadline), List.of());
 
-        service.syncDeadline(userId, deadline, true);
+        service.syncLinkedEntity(userId, deadline, true);
 
         assertThat(f.repository.findById(linked.id()).orElseThrow().completed()).isTrue();
         assertThat(f.repository.findById(withTask.id()).orElseThrow().milestones().get(0).completed()).isTrue();
         assertThat(f.repository.findById(other.id()).orElseThrow().completed()).isFalse();
         assertThat(f.netXp()).isEqualTo(40 + 20);
 
-        service.syncDeadline(userId, deadline, true);
+        service.syncLinkedEntity(userId, deadline, true);
         assertThat(f.netXp()).isEqualTo(60);
 
-        service.syncDeadline(userId, deadline, false);
+        service.syncLinkedEntity(userId, deadline, false);
         assertThat(f.netXp()).isZero();
         assertThat(f.repository.findById(linked.id()).orElseThrow().completed()).isFalse();
+    }
+
+    @Test
+    void routineDayTaskCompletesWhenTrainingThatDayAndReopensWhenUnmarked() {
+        UUID routineDay = UUID.randomUUID();
+        Challenge withTask = stored(null, List.of(
+                task("Entrenar el martes de la semana 2", new ChallengeLink(LinkType.ROUTINE_DAY, routineDay)),
+                task("Tarea libre", null)));
+
+        service.syncLinkedEntity(userId, routineDay, true);
+
+        Challenge afterTraining = f.repository.findById(withTask.id()).orElseThrow();
+        assertThat(afterTraining.milestones().get(0).completed()).isTrue();
+        assertThat(afterTraining.milestones().get(1).completed()).isFalse();
+        int xpAfterTraining = f.netXp();
+        assertThat(xpAfterTraining).isPositive();
+
+        service.syncLinkedEntity(userId, routineDay, false);
+
+        assertThat(f.repository.findById(withTask.id()).orElseThrow().milestones().get(0).completed()).isFalse();
+        assertThat(f.netXp()).isZero();
     }
 
     @Test
     void deadlineSyncIgnoresOtherUsers() {
         UUID deadline = UUID.randomUUID();
         stored(new ChallengeLink(LinkType.EXAM, deadline), List.of());
-        service.syncDeadline(UUID.randomUUID(), deadline, true);
+        service.syncLinkedEntity(UUID.randomUUID(), deadline, true);
         assertThat(f.awarded).isEmpty();
     }
 
@@ -288,7 +309,7 @@ class ChallengeProgressServiceTest {
                 List.of(), NOW));
         f.trainingSessions.add(NOW.minusSeconds(2 * 86_400));
 
-        service.syncDeadline(userId, deadline, true);
+        service.syncLinkedEntity(userId, deadline, true);
         service.syncTrainingSessions(userId);
 
         assertThat(f.store.get(expired.id()).completed()).isFalse();

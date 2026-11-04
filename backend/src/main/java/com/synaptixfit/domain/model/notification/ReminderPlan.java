@@ -19,15 +19,6 @@ public record ReminderPlan(List<Item> reminders) {
     }
 
     /**
-     * Un aviso.
-     *
-     * @param at       instante en que debe sonar
-     * @param refId    referencia estable: id del bloque o día local (ISO) del aviso de repasos
-     * @param count    repasos vencidos (solo {@link ReminderKind#REVIEWS})
-     * @param title    título del bloque o su asignatura; nulo si no tiene (solo bloques)
-     * @param startsAt inicio del bloque (solo bloques)
-     */
-    /**
      * Aviso del plan. Según {@code kind}: {@code count} son los repasos vencidos ({@code REVIEWS}) o los días que
      * faltan ({@code EXAM}, {@code DEADLINE}); {@code startsAt} es el inicio del bloque o la fecha de la entrega;
      * {@code title}, el del bloque o la entrega. {@code targetId} es lo que se abre al tocarlo cuando no

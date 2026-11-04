@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/challenge_link_type.dart';
 import '../../../../../domain/enums/challenge_status.dart';
 import '../../../../../domain/enums/challenge_type.dart';
 import '../../../../../domain/models/challenges/challenge.dart';
@@ -294,8 +295,12 @@ class _DetailContent extends StatelessWidget {
   final ChallengeDetailState state;
   final VoidCallback onEditTasks;
 
-  void _openLink(BuildContext context) =>
-      context.push(ChallengesExternalPaths.deadlines);
+  /// Un día de rutina se marca entrenando: se va a la pestaña Rutinas (con
+  /// `go`, porque es una pestaña); una entrega o un examen, a Entregas.
+  static void openLink(BuildContext context, ChallengeLinkType type) =>
+      type == ChallengeLinkType.routineDay
+      ? context.go(ChallengesExternalPaths.training)
+      : context.push(ChallengesExternalPaths.deadlines);
 
   @override
   Widget build(BuildContext context) {
@@ -410,7 +415,7 @@ class _DetailContent extends StatelessWidget {
                             ),
                       onOpenLink: m.link == null || !challenge.owned
                           ? null
-                          : () => _openLink(context),
+                          : () => openLink(context, m.link!.type),
                     ),
                   ),
               if (challenge.hasDependencies) ...[
@@ -436,7 +441,9 @@ class _DetailContent extends StatelessWidget {
               if (link != null) ...[
                 const SizedBox(height: TokensSpacing.s),
                 AppCard(
-                  onTap: challenge.owned ? () => _openLink(context) : null,
+                  onTap: challenge.owned
+                      ? () => openLink(context, link.type)
+                      : null,
                   child: Row(
                     children: [
                       Icon(link.type.icon, color: context.colors.tertiary),
@@ -956,10 +963,15 @@ class _BottomActions extends StatelessWidget {
             );
           } else if (challenge.completedByLink) {
             // Lo completa su entrega o examen: se va a marcarlo allí.
+            final linkType = challenge.link?.type ?? ChallengeLinkType.delivery;
             primary = AppPrimaryButton(
-              label: l10n.challengesLinkOpen,
-              icon: Icons.event_available_outlined,
-              onPressed: () => context.push(ChallengesExternalPaths.deadlines),
+              label: linkType == ChallengeLinkType.routineDay
+                  ? l10n.challengesLinkOpenRoutine
+                  : l10n.challengesLinkOpen,
+              icon: linkType == ChallengeLinkType.routineDay
+                  ? Icons.fitness_center_rounded
+                  : Icons.event_available_outlined,
+              onPressed: () => _DetailContent.openLink(context, linkType),
             );
           } else if (challenge.hasMilestones) {
             // «Completar siguiente tarea» salta las que avanzan solas.

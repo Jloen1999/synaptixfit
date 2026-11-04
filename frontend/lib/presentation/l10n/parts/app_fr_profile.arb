@@ -328,10 +328,11 @@
   "profilePublicProfilePrivateHint": "Ton profil est privé : il n’est visible que par toi",
   "profileReminderOptionsTitle": "Autres rappels",
   "profileReminderStreak": "Série en danger",
-  "profileReminderStreakHint": "À 20 h si tu n'as encore rien fait aujourd'hui.",
+  "profileReminderStreakHint": "En soirée, si tu ne t’es pas encore entraîné·e et n’as pas étudié aujourd’hui.",
   "profileReminderCheckIn": "Comment ça va aujourd'hui ?",
-  "profileReminderCheckInHint": "À 9 h, si tu n'as pas encore fait ton bilan.",
+  "profileReminderCheckInHint": "Le matin, si tu n’as pas encore dit comment tu vas.",
   "profileReminderClasses": "Cours dans 15 minutes",
-  "profileReminderClassesHint": "Avec la salle, pour arriver à l'heure.",
-  "profileReminderSaveError": "Impossible d'enregistrer. Réessaie."
+  "profileReminderClassesHint": "15 minutes avant, avec la salle où il a lieu.",
+  "profileReminderSaveError": "Impossible d'enregistrer. Réessaie.",
+  "profileReminderNeedsDevice": "Pour recevoir ces rappels, active d’abord « Sur ce téléphone » ci-dessus."
 }

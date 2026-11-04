@@ -38,7 +38,7 @@
   "remindersActionStartTraining": "Go train",
   "remindersActionSnooze": "Snooze {minutes} min",
   "remindersStreakTitle": "Your streak is at risk",
-  "remindersStreakBody": "You're on a {days}-day streak. Do something today to keep it.",
+  "remindersStreakBody": "You're on a {days}-day streak. Train or study for a while today to keep it.",
   "remindersCheckInTitle": "How are you today?",
   "remindersCheckInBody": "Tell us in three taps and we'll adjust your day.",
   "remindersClassTitle": "{name} in 15 minutes",

@@ -1,7 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.input.event.gamification;
 
 import com.synaptixfit.application.port.input.challenge.HideUserChallengesUseCase;
-import com.synaptixfit.application.port.input.challenge.SyncDeadlineChallengesUseCase;
+import com.synaptixfit.application.port.input.challenge.SyncLinkedEntityChallengesUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncMilestoneStudyBlocksUseCase;
 import com.synaptixfit.application.port.input.challenge.SyncTrainingSessionChallengesUseCase;
 import com.synaptixfit.domain.event.planner.DeadlineCompletionChanged;
@@ -20,16 +20,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class ChallengeEventListener {
 
-    private final SyncDeadlineChallengesUseCase syncDeadline;
+    private final SyncLinkedEntityChallengesUseCase syncLinked;
     private final SyncMilestoneStudyBlocksUseCase syncStudyBlocks;
     private final SyncTrainingSessionChallengesUseCase syncTrainingSessions;
     private final HideUserChallengesUseCase hideChallenges;
 
-    public ChallengeEventListener(SyncDeadlineChallengesUseCase syncDeadline,
+    public ChallengeEventListener(SyncLinkedEntityChallengesUseCase syncLinked,
                                   SyncMilestoneStudyBlocksUseCase syncStudyBlocks,
                                   SyncTrainingSessionChallengesUseCase syncTrainingSessions,
                                   HideUserChallengesUseCase hideChallenges) {
-        this.syncDeadline = syncDeadline;
+        this.syncLinked = syncLinked;
         this.syncStudyBlocks = syncStudyBlocks;
         this.syncTrainingSessions = syncTrainingSessions;
         this.hideChallenges = hideChallenges;
@@ -37,7 +37,7 @@ public class ChallengeEventListener {
 
     @EventListener
     public void on(DeadlineCompletionChanged event) {
-        syncDeadline.syncDeadline(event.userId(), event.deadlineId(), event.completed());
+        syncLinked.syncLinkedEntity(event.userId(), event.deadlineId(), event.completed());
     }
 
     @EventListener
@@ -57,7 +57,7 @@ public class ChallengeEventListener {
         syncTrainingSessions.syncTrainingSessions(event.userId());
         // Las tareas vinculadas a ese día de rutina se completan (o se reabren) con él (ADR 0032).
         if (event.routineDayId() != null) {
-            syncDeadline.syncDeadline(event.userId(), event.routineDayId(), event.completed());
+            syncLinked.syncLinkedEntity(event.userId(), event.routineDayId(), event.completed());
         }
     }
 
