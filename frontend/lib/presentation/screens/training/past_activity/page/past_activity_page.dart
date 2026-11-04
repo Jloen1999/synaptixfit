@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/models/training/routine.dart';
+import '../../../../../domain/models/training/sport_activity.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
@@ -40,6 +41,11 @@ class _PastActivityViewState extends State<_PastActivityView>
   static const _days = 7;
 
   final _title = TextEditingController();
+  final _distance = TextEditingController();
+
+  /// Clase de deporte de la sugerencia elegida (decide si se pide distancia).
+  ActivityKind? _kind;
+  String? _distanceError;
   late DateTime _day = DateUtils.dateOnly(DateTime.now());
   TimeOfDay _time = TimeOfDay(
     hour: (DateTime.now().hour - 2).clamp(0, 23),
@@ -55,6 +61,7 @@ class _PastActivityViewState extends State<_PastActivityView>
   @override
   void dispose() {
     _title.dispose();
+    _distance.dispose();
     super.dispose();
   }
 
@@ -72,7 +79,11 @@ class _PastActivityViewState extends State<_PastActivityView>
   }
 
   void _setRoutineMode(bool value) {
-    setState(() => _routineMode = value);
+    setState(() {
+      _routineMode = value;
+      // Un día de rutina dura al menos 30 min (lo que admite el servidor).
+      if (value && _minutes < 30) _minutes = 30;
+    });
     if (value) {
       context.read<PastActivityBloc>().add(
         const PastActivityEvent.routineRequested(),
@@ -110,8 +121,23 @@ class _PastActivityViewState extends State<_PastActivityView>
     );
   }
 
+  /// Metros escritos en km («5» o «5,5»); nulo si no se pide o está vacío.
+  int? _distanceMeters() {
+    if (!(_kind?.measuresDistance ?? false)) return null;
+    final text = _distance.text.trim().replaceAll(',', '.');
+    if (text.isEmpty) return null;
+    final km = double.tryParse(text);
+    return km == null ? -1 : (km * 1000).round();
+  }
+
   Future<void> _save() async {
     final l10n = context.localizations;
+    final meters = _distanceMeters();
+    if (meters != null && (meters < 100 || meters > 300000)) {
+      setState(() => _distanceError = l10n.trainingPastActivityDistanceInvalid);
+      return;
+    }
+    setState(() => _distanceError = null);
     final end = _start.add(Duration(minutes: _minutes));
     if (end.isAfter(DateTime.now())) {
       setState(() => _notFinished = l10n.trainingPastActivityNotFinished);
@@ -131,6 +157,8 @@ class _PastActivityViewState extends State<_PastActivityView>
         minutes: _minutes,
         effort: effort,
         title: _title.text,
+        kind: _kind,
+        distanceMeters: meters,
       ),
     );
   }
@@ -195,13 +223,16 @@ class _PastActivityViewState extends State<_PastActivityView>
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final today = DateUtils.dateOnly(DateTime.now());
+    // Cada sugerencia lleva su clase: con correr, andar, bici o nadar se
+    // pide la distancia para calcular el ritmo.
     final suggestions = [
-      l10n.trainingPastActivityFootball,
-      l10n.trainingPastActivityRunning,
-      l10n.trainingPastActivityGym,
-      l10n.trainingPastActivityCycling,
-      l10n.trainingPastActivitySwimming,
-      l10n.trainingPastActivityPadel,
+      (l10n.trainingPastActivityFootball, ActivityKind.match),
+      (l10n.trainingPastActivityRunning, ActivityKind.run),
+      (l10n.trainingPastActivityWalking, ActivityKind.walk),
+      (l10n.trainingPastActivityGym, ActivityKind.other),
+      (l10n.trainingPastActivityCycling, ActivityKind.bike),
+      (l10n.trainingPastActivitySwimming, ActivityKind.swim),
+      (l10n.trainingPastActivityPadel, ActivityKind.match),
     ];
     return BlocConsumer<PastActivityBloc, PastActivityState>(
       listenWhen: (a, b) =>
@@ -263,11 +294,14 @@ class _PastActivityViewState extends State<_PastActivityView>
                   spacing: TokensSpacing.s,
                   runSpacing: TokensSpacing.s,
                   children: [
-                    for (final name in suggestions)
+                    for (final (name, kind) in suggestions)
                       ChoiceChip(
                         label: Text(name),
                         selected: _title.text == name,
-                        onSelected: (_) => setState(() => _title.text = name),
+                        onSelected: (_) => setState(() {
+                          _title.text = name;
+                          _kind = kind;
+                        }),
                       ),
                   ],
                 ),
@@ -280,6 +314,29 @@ class _PastActivityViewState extends State<_PastActivityView>
                   maxLength: 200,
                   onChanged: (_) => setState(() {}),
                 ),
+                if (_kind?.measuresDistance ?? false) ...[
+                  const SizedBox(height: TokensSpacing.m),
+                  AppTextField(
+                    controller: _distance,
+                    label: l10n.trainingPastActivityDistance,
+                    icon: Icons.straighten_rounded,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onChanged: (_) => setState(() => _distanceError = null),
+                  ),
+                  Text(
+                    l10n.trainingPastActivityDistanceHint,
+                    style: context.textStyles.bodySmall?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                  if (_distanceError case final message?) ...[
+                    const SizedBox(height: TokensSpacing.s),
+                    AppInlineMessage(message: message),
+                  ],
+                ],
               ],
               const SizedBox(height: TokensSpacing.m),
               AppSectionHeader(title: l10n.trainingPastActivityWhen),
@@ -331,10 +388,11 @@ class _PastActivityViewState extends State<_PastActivityView>
               AppStepperField(
                 label: l10n.trainingPastActivityDuration,
                 value: _minutes,
-                min: 30,
-                // Una sesión de rutina dura como mucho 4 h (lo que admite el servidor).
+                // Deporte desde 10 min (una carrera corta cuenta); un día de
+                // rutina, desde 30 y como mucho 4 h (lo que admite el servidor).
+                min: _routineMode ? 30 : 10,
                 max: _routineMode ? 240 : 300,
-                step: 15,
+                step: 5,
                 display: l10n.trainingPastActivityMinutes,
                 // El aviso de «aún no has terminado» deja de valer al cambiar.
                 onChanged: (v) => setState(() {

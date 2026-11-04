@@ -36,5 +36,13 @@
   "remindersYourChallenge": "Your challenge",
   "remindersActionStartStudy": "Start studying",
   "remindersActionStartTraining": "Go train",
-  "remindersActionSnooze": "Snooze {minutes} min"
+  "remindersActionSnooze": "Snooze {minutes} min",
+  "remindersStreakTitle": "Your streak is at risk",
+  "remindersStreakBody": "You're on a {days}-day streak. Do something today to keep it.",
+  "remindersCheckInTitle": "How are you today?",
+  "remindersCheckInBody": "Tell us in three taps and we'll adjust your day.",
+  "remindersClassTitle": "{name} in 15 minutes",
+  "remindersClassFallbackName": "Your class",
+  "remindersClassBody": "Starts at {time}.",
+  "remindersClassBodyPlace": "Starts at {time} in {place}."
 }

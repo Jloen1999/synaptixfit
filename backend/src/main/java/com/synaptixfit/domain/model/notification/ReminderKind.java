@@ -19,5 +19,11 @@ public enum ReminderKind {
     /** «¿Terminaste la sesión?»: una sesión de entrenamiento sigue abierta horas después de empezar. */
     OPEN_SESSION,
     /** «Tu reto vence mañana». */
-    CHALLENGE_DUE
+    CHALLENGE_DUE,
+    /** «Tu racha está en riesgo»: hay racha y hoy aún no hay actividad (por la tarde). */
+    STREAK_AT_RISK,
+    /** «¿Qué tal estás hoy?»: el registro diario, por la mañana si aún no se ha hecho. */
+    CHECK_IN,
+    /** «Tu clase empieza en 15 minutos», con el aula. */
+    CLASS_SOON
 }

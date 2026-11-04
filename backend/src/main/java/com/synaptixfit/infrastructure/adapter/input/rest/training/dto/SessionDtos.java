@@ -4,6 +4,7 @@ import com.synaptixfit.application.port.input.training.GetSessionAdaptationUseCa
 import com.synaptixfit.application.port.input.training.RecordSessionSetUseCase;
 import com.synaptixfit.domain.model.training.AdjustmentReason;
 import com.synaptixfit.domain.model.training.OpenTrainingSession;
+import com.synaptixfit.domain.model.training.FatigueCause;
 import com.synaptixfit.domain.model.training.SessionAdaptation;
 import com.synaptixfit.domain.model.training.SessionLabel;
 import com.synaptixfit.domain.model.training.SessionSet;
@@ -117,12 +118,16 @@ public final class SessionDtos {
         }
     }
 
-    /** Adaptación de hoy: factor de volumen, motivos y series por ejercicio planificado. */
+    /**
+     * Adaptación de hoy: factor de volumen, motivos, series por ejercicio planificado y, si la fatiga alta es un
+     * motivo, lo que más pesa en ella ({@code fatigueCause}, para explicarlo en sencillo).
+     */
     public record SessionAdaptationResponse(double volumeFactor, List<SessionAdaptation.Reason> reasons,
-                                            Map<UUID, Integer> sets) {
+                                            Map<UUID, Integer> sets, FatigueCause fatigueCause) {
 
         public static SessionAdaptationResponse from(GetSessionAdaptationUseCase.Result r) {
-            return new SessionAdaptationResponse(r.adaptation().volumeFactor(), r.adaptation().reasons(), r.sets());
+            return new SessionAdaptationResponse(r.adaptation().volumeFactor(), r.adaptation().reasons(), r.sets(),
+                    r.adaptation().fatigueCause());
         }
     }
 

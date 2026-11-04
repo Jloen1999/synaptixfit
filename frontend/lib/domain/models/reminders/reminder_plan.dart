@@ -25,5 +25,8 @@ abstract class PlannedReminder with _$PlannedReminder {
 
     /// Inicio del bloque (solo bloques).
     DateTime? startsAt,
+
+    /// Aula de la clase (solo [ReminderKind.classSoon]).
+    String? place,
   }) = _PlannedReminder;
 }

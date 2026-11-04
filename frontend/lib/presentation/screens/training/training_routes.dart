@@ -6,6 +6,7 @@ import 'check_in/page/check_in_page.dart';
 import 'community/page/community_page.dart';
 import 'exercise_detail/page/exercise_detail_page.dart';
 import 'exercise_explorer/page/exercise_explorer_page.dart';
+import 'cycle/page/cycle_page.dart';
 import 'past_activity/page/past_activity_page.dart';
 import 'live_session/page/live_session_page.dart';
 import 'routine_detail/page/routine_detail_page.dart';
@@ -57,6 +58,9 @@ abstract final class TrainingPaths {
   /// Plantillas de rutina listas para usar (dentro de la pestaña).
   static const templates = '$root/templates';
   static const pastActivity = '$root/past-activity';
+
+  /// «Mi ciclo» (opcional, ADR 0033).
+  static const cycle = '$root/cycle';
 }
 
 /// Rutas dentro de la pestaña (conservan la barra inferior).
@@ -107,6 +111,7 @@ List<RouteBase> trainingRoutes() => [
     path: TrainingPaths.pastActivity,
     builder: (_, _) => const PastActivityPage(),
   ),
+  GoRoute(path: TrainingPaths.cycle, builder: (_, _) => const CyclePage()),
   // El resumen va como ruta hermana (no hija) para no reconstruir la sesión debajo.
   GoRoute(
     path: '${TrainingPaths.root}/sessions/:sessionId/completed',

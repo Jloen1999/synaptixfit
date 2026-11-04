@@ -12,6 +12,7 @@ import '../../domain/repositories/planner_repository_contract.dart';
 import '../errors/repository_error_handler.dart';
 import '../remote_data_source/planner/dto/planner_json.dart';
 import '../remote_data_source/planner/planner_remote_data_source.dart';
+import '../../domain/models/training/sport_activity.dart';
 
 class PlannerRepository implements PlannerRepositoryContract {
   PlannerRepository(this._remote);
@@ -119,12 +120,16 @@ class PlannerRepository implements PlannerRepositoryContract {
     required int minutes,
     required int effort,
     String? title,
+    ActivityKind? kind,
+    int? distanceMeters,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.logPastActivity({
       'start': PlannerJson.toInstant(start),
       'minutes': minutes,
       'effort': effort,
       if (title != null && title.isNotEmpty) 'title': title,
+      'kind': ?kind?.api,
+      'distanceMeters': ?distanceMeters,
     })).toDomain(),
   );
 

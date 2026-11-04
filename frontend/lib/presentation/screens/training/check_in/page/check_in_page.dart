@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
@@ -8,6 +9,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../training_routes.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../bloc/check_in_bloc.dart';
@@ -233,6 +235,38 @@ class _FormState extends State<_Form> {
                 loading: state.submitting,
                 onPressed: () => context.read<CheckInBloc>().add(
                   const CheckInEvent.submitted(),
+                ),
+              ),
+              const SizedBox(height: TokensSpacing.m),
+              // Opcional y para quien quiera: no se da por hecho por el género.
+              AppCard(
+                onTap: () => context.push<void>(TrainingPaths.cycle),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.water_drop_outlined,
+                      color: context.colors.primary,
+                    ),
+                    const SizedBox(width: TokensSpacing.m),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.trainingCycleEntryTitle,
+                            style: context.textStyles.titleSmall,
+                          ),
+                          Text(
+                            l10n.trainingCycleEntryHint,
+                            style: context.textStyles.bodySmall?.copyWith(
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded),
+                  ],
                 ),
               ),
               if (state.history.isNotEmpty) ...[

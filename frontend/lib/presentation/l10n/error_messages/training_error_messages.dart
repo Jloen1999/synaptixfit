@@ -3,6 +3,9 @@ import '../gen_l10n/app_localizations.dart';
 /// Códigos de error del módulo training.
 String? trainingErrorMessage(AppLocalizations l10n, String code) =>
     switch (code) {
+      'CYCLE_CONSENT_REQUIRED' => l10n.trainingErrorCycleConsentRequired,
+      'CYCLE_TRACKING_OFF' => l10n.trainingErrorCycleTrackingOff,
+      'CYCLE_DAY_OUT_OF_RANGE' => l10n.trainingErrorCycleDayOutOfRange,
       'EXERCISE_NOT_FOUND' => l10n.trainingErrorExerciseNotFound,
       'EXERCISE_INACTIVE' => l10n.trainingErrorExerciseInactive,
       'EXERCISE_CATALOG_REFERENCE_INVALID' =>

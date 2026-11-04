@@ -101,5 +101,44 @@
         "type": "int"
       }
     }
+  },
+  "remindersStreakTitle": "Tu racha está en riesgo",
+  "remindersStreakBody": "Llevas {days} días seguidos. Haz algo hoy para no perderla.",
+  "@remindersStreakBody": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersCheckInTitle": "¿Qué tal estás hoy?",
+  "remindersCheckInBody": "Cuéntanoslo en tres toques y ajustamos tu día.",
+  "remindersClassTitle": "{name} en 15 minutos",
+  "@remindersClassTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersClassFallbackName": "Tu clase",
+  "remindersClassBody": "Empieza a las {time}.",
+  "@remindersClassBody": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersClassBodyPlace": "Empieza a las {time} en {place}.",
+  "@remindersClassBodyPlace": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
   }
 }

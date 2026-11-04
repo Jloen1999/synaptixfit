@@ -6,7 +6,10 @@ part 'session_adaptation.freezed.dart';
 enum SessionAdaptationReason {
   examSoon('EXAM_SOON'),
   overtraining('OVERTRAINING'),
-  highFatigue('HIGH_FATIGUE');
+  highFatigue('HIGH_FATIGUE'),
+
+  /// Seguimiento del ciclo activo y hoy con molestias o poca energía.
+  cycleDiscomfort('CYCLE_DISCOMFORT');
 
   const SessionAdaptationReason(this.api);
 

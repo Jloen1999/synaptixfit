@@ -6,10 +6,10 @@ import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/training_enums.dart';
 import '../../../../../domain/models/training/recommendation.dart';
 import '../../../../../domain/models/training/routine.dart';
-import '../../../../../domain/models/training/wellbeing.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../quick_check_in/page/quick_check_in_card.dart';
 import '../../training_routes.dart';
 import '../../widgets/exercise_thumbnail.dart';
 import '../../widgets/open_session_card.dart';
@@ -233,11 +233,8 @@ class _HomeContent extends StatelessWidget {
                     _TrainingHomeView.open(context, TrainingPaths.routine(id)),
               ),
               const SizedBox(height: TokensSpacing.m),
-              _CheckInCard(
-                checkIn: state.todayCheckIn,
-                onOpen: () =>
-                    _TrainingHomeView.open(context, TrainingPaths.checkIn),
-              ),
+              // Tres toques y el porqué de la adaptación de hoy (ADR 0033).
+              const QuickCheckInCard(),
               const SizedBox(height: TokensSpacing.s),
               // Un partido o una carrera fuera de la app también cuenta: antes
               // solo se llegaba desde un icono de la barra superior.
@@ -621,100 +618,6 @@ class _CycleDoneCard extends StatelessWidget {
   }
 }
 
-class _CheckInCard extends StatelessWidget {
-  const _CheckInCard({required this.checkIn, required this.onOpen});
-
-  final CheckIn? checkIn;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    final c = checkIn;
-    if (c == null) {
-      return AppCard(
-        onTap: onOpen,
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: context.palette.accentContainer,
-              child: Icon(Icons.mood_rounded, color: context.palette.accent),
-            ),
-            const SizedBox(width: TokensSpacing.m),
-            // Solo la pregunta: el porqué se explica dentro del check-in.
-            Expanded(
-              child: Text(
-                l10n.trainingCheckInCtaTitle,
-                style: context.textStyles.titleSmall,
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded),
-          ],
-        ),
-      );
-    }
-    final fatigueColor = c.requiresAdaptation
-        ? context.palette.warning
-        : context.palette.success;
-    return AppCard(
-      onTap: onOpen,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.trainingCheckInToday,
-                  style: context.textStyles.titleSmall,
-                ),
-              ),
-              Text(
-                l10n.trainingFatigueScore(c.fatigueScore),
-                style: context.textStyles.labelLarge?.copyWith(
-                  color: fatigueColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(TokensRadius.pill),
-            child: LinearProgressIndicator(
-              value: c.fatigueScore / 100,
-              color: fatigueColor,
-              backgroundColor: context.colors.surfaceContainer,
-            ),
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          Row(
-            children: [
-              Icon(
-                c.requiresAdaptation
-                    ? Icons.warning_amber_rounded
-                    : Icons.check_circle_outline_rounded,
-                size: TokensSize.iconXs,
-                color: fatigueColor,
-              ),
-              const SizedBox(width: TokensSpacing.xs),
-              Expanded(
-                child: Text(
-                  c.requiresAdaptation
-                      ? l10n.trainingFatigueAdapt
-                      : l10n.trainingFatigueOk,
-                  style: context.textStyles.bodySmall,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Sugerencias del servidor plegadas: se ve la primera y el resto bajo
-/// demanda, para que no tapen las rutinas (pueden ser muchas a la vez).
 class _Recommendations extends StatefulWidget {
   const _Recommendations({
     required this.recommendations,

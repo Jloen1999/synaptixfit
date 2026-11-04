@@ -325,5 +325,13 @@
   "profilePublicProfileHint": "How others see you",
   "profileCommunity": "Community",
   "profileCommunityHint": "Posts from your friends and the community",
-  "profilePublicProfilePrivateHint": "Your profile is private: only you can see it"
+  "profilePublicProfilePrivateHint": "Your profile is private: only you can see it",
+  "profileReminderOptionsTitle": "More reminders",
+  "profileReminderStreak": "Streak at risk",
+  "profileReminderStreakHint": "At 8 pm if you haven't done anything yet today.",
+  "profileReminderCheckIn": "How are you today?",
+  "profileReminderCheckInHint": "At 9 am, if you haven't checked in yet.",
+  "profileReminderClasses": "Class in 15 minutes",
+  "profileReminderClassesHint": "With the room, so you get there on time.",
+  "profileReminderSaveError": "The change couldn't be saved. Please try again."
 }

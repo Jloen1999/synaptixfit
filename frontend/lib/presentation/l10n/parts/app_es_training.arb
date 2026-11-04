@@ -2402,5 +2402,222 @@
       }
     }
   },
-  "trainingErrorRoutineTemplateNotFound": "Esa plantilla ya no está disponible."
+  "trainingErrorRoutineTemplateNotFound": "Esa plantilla ya no está disponible.",
+  "trainingCycleTitle": "Mi ciclo",
+  "trainingCycleEntryTitle": "Seguimiento del ciclo",
+  "trainingCycleEntryHint": "Opcional. Apunta tus días de regla y cómo te sientes, y ajustamos el entreno.",
+  "trainingCycleIntroTitle": "Entrena según cómo te sientes",
+  "trainingCycleIntro": "Si lo activas, puedes apuntar los días de regla, tu energía y las molestias. Con eso calculamos en qué momento del ciclo estás y, si un día tienes molestias o poca energía, ese día el entreno es un poco más suave.",
+  "trainingCyclePrivacy": "Son datos de salud: solo los ves tú, no se comparten con nadie y puedes borrarlos cuando quieras.",
+  "trainingCycleConsent": "Acepto que SynaptixFit guarde estos datos para ajustar mi entreno",
+  "trainingCycleEnable": "Activar",
+  "trainingCycleDayOf": "Día {day} del ciclo",
+  "@trainingCycleDayOf": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingCyclePhasePeriod": "Con la regla",
+  "trainingCyclePhaseAfter": "Después de la regla",
+  "trainingCyclePhaseMid": "Mitad del ciclo",
+  "trainingCyclePhaseBefore": "Días antes de la regla",
+  "trainingCyclePhaseUnknown": "Apunta el primer día de tu regla y empezamos a calcular.",
+  "trainingCycleNext": "Próxima regla, hacia el {date}",
+  "@trainingCycleNext": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCycleEstimate": "Es una estimación con lo que apuntas, no un dato médico.",
+  "trainingCycleAdjustHint": "Los días con molestias o poca energía harás alguna serie menos.",
+  "trainingCyclePeriodToggle": "Tengo la regla",
+  "trainingCycleEnergy": "¿Cómo va tu energía?",
+  "trainingCycleEnergyLow": "Baja",
+  "trainingCycleEnergyNormal": "Normal",
+  "trainingCycleEnergyHigh": "Alta",
+  "trainingCycleSymptoms": "Molestias",
+  "trainingCycleSymptomAbdominal": "Dolor de tripa",
+  "trainingCycleSymptomBack": "Dolor de espalda baja",
+  "trainingCycleSymptomCramps": "Calambres",
+  "trainingCycleSymptomBloating": "Hinchazón",
+  "trainingCycleSymptomHeadache": "Dolor de cabeza",
+  "trainingCycleNote": "Nota (opcional)",
+  "trainingCycleSave": "Guardar el día",
+  "trainingCycleSaved": "Día guardado",
+  "trainingCycleDeleteDay": "Borrar este día",
+  "trainingCycleDayDeleted": "Día borrado",
+  "trainingCycleDaySheetTitle": "Apuntar {date}",
+  "@trainingCycleDaySheetTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCycleMonth": "Tu mes",
+  "trainingCycleMonthHint": "Toca un día para apuntarlo o corregirlo.",
+  "trainingCyclePrevMonth": "Mes anterior",
+  "trainingCycleNextMonth": "Mes siguiente",
+  "trainingCycleLegendPeriod": "Regla",
+  "trainingCycleLegendLogged": "Apuntado",
+  "trainingCycleDayPeriod": "{date}: con regla",
+  "@trainingCycleDayPeriod": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCycleDayLogged": "{date}: apuntado",
+  "@trainingCycleDayLogged": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCycleDayEmpty": "{date}: sin apuntar",
+  "@trainingCycleDayEmpty": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingCycleMenu": "Opciones del ciclo",
+  "trainingCycleDisable": "Desactivar el seguimiento",
+  "trainingCycleDisableTitle": "¿Desactivar el seguimiento?",
+  "trainingCycleDisableMessage": "El entreno dejará de tenerlo en cuenta. ¿Quieres guardar lo que has apuntado o borrarlo?",
+  "trainingCycleDisableKeep": "Desactivar y guardar",
+  "trainingCycleDisableDelete": "Desactivar y borrar todo",
+  "trainingCycleDeleteAll": "Borrar todo lo apuntado",
+  "trainingCycleDeleteAllTitle": "¿Borrar todo lo apuntado?",
+  "trainingCycleDeleteAllMessage": "Se borran todos los días del ciclo. No se puede deshacer.",
+  "trainingCycleDeleteAllConfirm": "Borrar todo",
+  "trainingCycleHistoryDeleted": "Lo apuntado se ha borrado",
+  "trainingCycleDisabled": "Seguimiento desactivado",
+  "trainingAdaptedCycle": "Molestias o poca energía en tu ciclo",
+  "trainingQuickCheckInTitle": "¿Qué tal estás hoy?",
+  "trainingQuickCheckInHint": "Tres toques y ajustamos el entreno a cómo estás.",
+  "trainingQuickSleep": "¿Cómo dormiste?",
+  "trainingQuickEnergy": "¿Cómo va tu energía?",
+  "trainingQuickSoreness": "¿Agujetas o molestias?",
+  "trainingQuickGood": "Bien",
+  "trainingQuickSoSo": "Regular",
+  "trainingQuickBad": "Mal",
+  "trainingQuickHigh": "Alta",
+  "trainingQuickMid": "Normal",
+  "trainingQuickLow": "Baja",
+  "trainingQuickSoreNone": "Nada",
+  "trainingQuickSoreSome": "Algo",
+  "trainingQuickSoreLot": "Muchas",
+  "trainingQuickSave": "Listo",
+  "trainingQuickChange": "Cambiar",
+  "trainingQuickFull": "Registro completo",
+  "trainingQuickAllGood": "Hoy entrenas normal. ¡A por ello!",
+  "trainingQuickAdapted": "Hoy harás menos series: un {percent} % de lo previsto.",
+  "@trainingQuickAdapted": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingQuickReasonFatigue": "Porque {cause}.",
+  "@trainingQuickReasonFatigue": {
+    "placeholders": {
+      "cause": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingQuickCauseSleep": "dormiste mal",
+  "trainingQuickCauseStress": "estás con mucho estrés",
+  "trainingQuickCauseEnergy": "tienes poca energía",
+  "trainingQuickCauseSoreness": "tienes agujetas o molestias",
+  "trainingQuickReasonExam": "Porque tienes un examen cerca: guardamos energía para estudiar.",
+  "trainingQuickReasonOvertraining": "Porque llevas unos días entrenando mucho más de lo normal.",
+  "trainingQuickReasonCycle": "Porque hoy apuntaste molestias o poca energía en tu ciclo.",
+  "trainingHistoryTabSessions": "Entrenos",
+  "trainingHistoryTabActivities": "Actividades y partidos",
+  "trainingActivitiesEmptyTitle": "Aún no hay actividades",
+  "trainingActivitiesEmptyMessage": "Apunta lo que hagas fuera de tus rutinas: correr, un partido, la bici…",
+  "trainingActivitiesAdd": "Apuntar actividad",
+  "trainingActivitiesMore": "Ver más",
+  "trainingActivityKindRun": "Correr",
+  "trainingActivityKindWalk": "Andar",
+  "trainingActivityKindBike": "Bici",
+  "trainingActivityKindSwim": "Nadar",
+  "trainingActivityKindMatch": "Partido",
+  "trainingActivityKindOther": "Otro deporte",
+  "trainingActivityMinutes": "{minutes} min",
+  "@trainingActivityMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingActivityDistance": "{km} km",
+  "@trainingActivityDistance": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingActivityPace": "{pace} por km",
+  "@trainingActivityPace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingActivityPacePer100": "{pace} cada 100 m",
+  "@trainingActivityPacePer100": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingActivitySpeed": "{speed} km/h",
+  "@trainingActivitySpeed": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingActivityPaceSpoken": "{minutes} minutos y {seconds} segundos",
+  "@trainingActivityPaceSpoken": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingActivityEffort": "Esfuerzo {effort} de 10",
+  "@trainingActivityEffort": {
+    "placeholders": {
+      "effort": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPastActivityWalking": "Andar",
+  "trainingPastActivityDistance": "Distancia (opcional)",
+  "trainingPastActivityDistanceHint": "En kilómetros, por ejemplo 5 o 5,5. Con ella calculamos tu ritmo.",
+  "trainingPastActivityDistanceInvalid": "Escribe una distancia entre 0,1 y 300 km.",
+  "trainingErrorCycleConsentRequired": "Para activarlo, marca la casilla de que aceptas.",
+  "trainingErrorCycleTrackingOff": "Activa el seguimiento del ciclo para apuntar días.",
+  "trainingErrorCycleDayOutOfRange": "Solo puedes apuntar hoy o días del último año."
 }

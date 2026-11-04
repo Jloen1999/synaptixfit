@@ -34,6 +34,7 @@ abstract class ReminderPlanItemDto with _$ReminderPlanItemDto {
     int? count,
     String? title,
     String? startsAt,
+    String? place,
   }) = _ReminderPlanItemDto;
 
   const ReminderPlanItemDto._();
@@ -51,6 +52,7 @@ abstract class ReminderPlanItemDto with _$ReminderPlanItemDto {
       count: count,
       title: title,
       startsAt: startsAt == null ? null : DateTime.parse(startsAt!),
+      place: place,
     );
   }
 }

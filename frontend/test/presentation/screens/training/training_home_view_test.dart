@@ -13,11 +13,29 @@ import 'package:synaptixfit/domain/enums/visibility.dart' as vis;
 import 'package:synaptixfit/domain/models/training/routine.dart';
 import 'package:synaptixfit/domain/models/training/session.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
+import 'package:synaptixfit/domain/models/result/app_result.dart';
+import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/models/training/today_adaptation.dart';
+import 'package:synaptixfit/domain/use_cases/training/get_today_adaptation_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/training/submit_quick_check_in_use_case.dart';
+import 'package:synaptixfit/presentation/screens/training/quick_check_in/bloc/quick_check_in_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_home/bloc/training_home_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_home/page/training_home_page.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
 import 'training_fixtures.dart';
+
+class _DoneToday implements GetTodayAdaptationUseCaseContract {
+  @override
+  Future<AppResult<TodayAdaptation>> call() async =>
+      const Result.success(TodayAdaptation(checkInDone: true));
+}
+
+class _NoSubmit implements SubmitQuickCheckInUseCaseContract {
+  @override
+  Future<AppResult<Unit>> call(QuickCheckIn input) async =>
+      const Result.success(unit);
+}
 
 class _MockTrainingHomeBloc
     extends MockBloc<TrainingHomeEvent, TrainingHomeState>
@@ -62,10 +80,20 @@ void main() {
         recommendations: _recommendations,
       ),
     );
-    getIt.registerFactory<TrainingHomeBloc>(() => bloc);
+    getIt
+      ..registerFactory<TrainingHomeBloc>(() => bloc)
+      // La tarjeta del registro rápido: hoy ya está hecho y sin adaptar.
+      ..registerFactory<QuickCheckInBloc>(
+        () =>
+            QuickCheckInBloc(getAdaptation: _DoneToday(), submit: _NoSubmit()),
+      );
   });
 
-  tearDown(() => getIt.unregister<TrainingHomeBloc>());
+  tearDown(() {
+    getIt
+      ..unregister<TrainingHomeBloc>()
+      ..unregister<QuickCheckInBloc>();
+  });
 
   Future<void> pump(
     WidgetTester tester, {

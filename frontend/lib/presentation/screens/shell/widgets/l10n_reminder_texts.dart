@@ -90,4 +90,34 @@ class L10nReminderTexts implements ReminderTexts {
 
   @override
   String snoozeAction(int minutes) => _l10n.remindersActionSnooze(minutes);
+
+  @override
+  String wellbeingTitle(ReminderKind kind, {String? name}) => switch (kind) {
+    ReminderKind.streakAtRisk => _l10n.remindersStreakTitle,
+    ReminderKind.checkIn => _l10n.remindersCheckInTitle,
+    _ => _l10n.remindersClassTitle(
+      name?.trim().isNotEmpty ?? false
+          ? name!.trim()
+          : _l10n.remindersClassFallbackName,
+    ),
+  };
+
+  @override
+  String wellbeingBody(
+    ReminderKind kind, {
+    int? count,
+    String? name,
+    String? place,
+    DateTime? start,
+  }) => switch (kind) {
+    ReminderKind.streakAtRisk => _l10n.remindersStreakBody(count ?? 1),
+    ReminderKind.checkIn => _l10n.remindersCheckInBody,
+    _ =>
+      place?.trim().isNotEmpty ?? false
+          ? _l10n.remindersClassBodyPlace(
+              start == null ? '' : _time.format(start),
+              place!.trim(),
+            )
+          : _l10n.remindersClassBody(start == null ? '' : _time.format(start)),
+  };
 }

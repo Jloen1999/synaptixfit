@@ -10,6 +10,7 @@ import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.Priority;
 import com.synaptixfit.domain.model.planner.TimeRange;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import java.time.Clock;
 import java.time.Instant;
@@ -28,9 +29,18 @@ public class PastActivityService implements LogPastActivityUseCase {
     private final SetBlockCompletionUseCase completion;
     private final PlannerZone zone;
     private final Clock clock;
+    private final LoggedActivityRepositoryPort logged;
 
     public PastActivityService(CalendarBlockRepositoryPort blocks, SubjectDirectoryPort subjects,
                                SetBlockCompletionUseCase completion, PlannerZone zone, Clock clock) {
+        this(blocks, subjects, completion, zone, clock, null);
+    }
+
+    /** @param logged donde se guardan la clase, los minutos reales y la distancia del deporte (nulo: no se guardan) */
+    public PastActivityService(CalendarBlockRepositoryPort blocks, SubjectDirectoryPort subjects,
+                               SetBlockCompletionUseCase completion, PlannerZone zone, Clock clock,
+                               LoggedActivityRepositoryPort logged) {
+        this.logged = logged;
         this.blocks = blocks;
         this.subjects = subjects;
         this.completion = completion;
@@ -42,7 +52,7 @@ public class PastActivityService implements LogPastActivityUseCase {
     public SetBlockCompletionUseCase.Result logPastActivity(Command command) {
         Instant now = clock.instant();
         PastActivity activity = new PastActivity(command.start(), command.minutes(), command.title(),
-                command.effort(), command.type(), command.subjectId());
+                command.effort(), command.type(), command.subjectId(), command.kind(), command.distanceMeters());
         activity.requireLoggableAt(now);
         if (activity.subjectId() != null && subjects.findOwned(command.userId(), activity.subjectId()).isEmpty()) {
             throw new PlannerSubjectNotFoundException(activity.subjectId());
@@ -61,6 +71,12 @@ public class PastActivityService implements LogPastActivityUseCase {
                 .createdAt(now)
                 .build();
         blocks.save(block);
-        return completion.setCompletion(command.userId(), block.id(), true, activity.effort());
+        SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), block.id(), true,
+                activity.effort());
+        if (logged != null && activity.type() == ActivityType.SPORT) {
+            logged.save(block.id(), command.userId(), activity.kind(), activity.minutes(), activity.distanceMeters(),
+                    now);
+        }
+        return result;
     }
 }
