@@ -334,7 +334,7 @@
   "progressAnalyticsEmptyAction": "Ir a Entreno",
   "progressVolumeTitle": "Tu entreno, semana a semana",
   "progressVolumeSubtitle": "Minutos y calorías de cada semana: gimnasio, carreras y otras actividades",
-  "progressVolumeAverage": "Media semanal: {minutes} min · {calories} kcal · {sessions} sesiones",
+  "progressVolumeAverage": "Media semanal: {minutes} min · {calories} kcal · {sessions} entrenos",
   "@progressVolumeAverage": {
     "placeholders": {
       "minutes": {

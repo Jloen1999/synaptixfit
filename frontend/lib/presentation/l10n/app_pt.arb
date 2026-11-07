@@ -2341,7 +2341,7 @@
   "progressAnalyticsEmptyAction": "Ir para Treino",
   "progressVolumeTitle": "O teu treino, semana a semana",
   "progressVolumeSubtitle": "Minutos e calorias de cada semana: ginásio, corridas e outras atividades",
-  "progressVolumeAverage": "Média semanal: {minutes} min · {calories} kcal · {sessions} sessões",
+  "progressVolumeAverage": "Média semanal: {minutes} min · {calories} kcal · {sessions} treinos",
   "progressVolumeMinutesLabel": "minutos",
   "progressVolumeCaloriesLabel": "calorias",
   "progressVolumeEmpty": "Regista sessões de treino para veres o teu volume semanal.",

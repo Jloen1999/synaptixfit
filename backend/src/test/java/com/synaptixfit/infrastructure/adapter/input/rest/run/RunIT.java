@@ -99,6 +99,12 @@ class RunIT {
                 .andExpect(jsonPath("$.items[0].kind").value("RUN"))
                 .andExpect(jsonPath("$.items[0].minutes").value(20));
 
+        // Cuenta en Progreso como un entreno más («Tu entreno, semana a semana»).
+        mvc.perform(get("/api/v1/analytics/weekly").param("period", "WEEKLY").header("Authorization", auth))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalSessions").value(1))
+                .andExpect(jsonPath("$.totalMinutes").value(20));
+
         mvc.perform(get("/api/v1/training/runs/week").header("Authorization", auth))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.dailyDistanceMeters.length()").value(7));

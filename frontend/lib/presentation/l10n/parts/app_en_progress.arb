@@ -97,7 +97,7 @@
   "progressAnalyticsEmptyAction": "Go to Training",
   "progressVolumeTitle": "Your training, week by week",
   "progressVolumeSubtitle": "Minutes and calories each week: gym, runs and other activities",
-  "progressVolumeAverage": "Weekly average: {minutes} min · {calories} kcal · {sessions} sessions",
+  "progressVolumeAverage": "Weekly average: {minutes} min · {calories} kcal · {sessions} workouts",
   "progressVolumeMinutesLabel": "minutes",
   "progressVolumeCaloriesLabel": "calories",
   "progressVolumeEmpty": "Log training sessions to see your weekly volume.",

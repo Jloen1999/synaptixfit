@@ -16,7 +16,7 @@
 
 - Se graba en el móvil y se sube la **ruta cruda**: `POST /training/runs` con `clientKey` (UUID del móvil), clase (`RUN`, `WALK`, `BIKE`), inicio, esfuerzo («¿Cuánto te ha costado?», 1-10) y puntos compactos `[lat, lon, altitud, precisión, segundos, segmento]`.
 - El servidor lo calcula todo (`RunTrack`, `RunEnergy`, formulas.md): filtrado, distancia haversine, tiempo en movimiento, ritmo, tramos por km, desnivel con suavizado e histéresis y kcal por MET. El cliente solo enseña cifras orientativas mientras graba.
-- Se apunta con el mismo caso de uso que las actividades a mano (`LogPastActivityUseCase`, origen `GPS` en `actividades_apuntadas.origen`), con los minutos **en movimiento**. Así cuenta igual en racha, XP, carga física (esfuerzo × minutos → ACWR), retos ligados, resumen semanal, «Actividades y partidos» y Progreso. La ruta y las cifras van en `carreras_gps`, ligadas al bloque en cascada.
+- Se apunta con el mismo caso de uso que las actividades a mano (`LogPastActivityUseCase`, origen `GPS` en `actividades_apuntadas.origen`), con los minutos **en movimiento**. Así cuenta igual en racha, XP, carga física (esfuerzo × minutos → ACWR), retos ligados, resumen semanal, «Actividades y partidos» y Progreso (la carga física de 28 días y «Tu entreno, semana a semana», que ahora suma las actividades hechas además de las sesiones: `AnalyticsJdbcAdapter`). La ruta y las cifras van en `carreras_gps`, ligadas al bloque en cascada.
 - **Idempotente:** `UNIQUE (usuario_id, clave_cliente)`. Reintentar desde la cola devuelve la carrera ya guardada con `xpDelta = 0`.
 - **Reglas revisadas de las actividades:**
   - Mínimo de 10 minutos (en movimiento): se mantiene. Con menos, `RUN_TOO_SHORT`; el móvil lo avisa antes de terminar y ofrece seguir o descartar.

@@ -2341,7 +2341,7 @@
   "progressAnalyticsEmptyAction": "Aller à Entraînement",
   "progressVolumeTitle": "Ton entraînement, semaine après semaine",
   "progressVolumeSubtitle": "Minutes et calories de chaque semaine : salle, courses et autres activités",
-  "progressVolumeAverage": "Moyenne hebdo : {minutes} min · {calories} kcal · {sessions} séances",
+  "progressVolumeAverage": "Moyenne hebdomadaire : {minutes} min · {calories} kcal · {sessions} entraînements",
   "progressVolumeMinutesLabel": "minutes",
   "progressVolumeCaloriesLabel": "calories",
   "progressVolumeEmpty": "Enregistre des séances d’entraînement pour voir ton volume hebdomadaire.",

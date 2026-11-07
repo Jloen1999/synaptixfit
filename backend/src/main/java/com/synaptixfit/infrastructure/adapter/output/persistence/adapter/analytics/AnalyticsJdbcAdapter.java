@@ -12,12 +12,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 /**
- * Lee {@code sesiones_registradas} (entrenamiento), {@code carga_academica_semanal} (planificador) y, para
- * «Tu estudio», recuentos de Pomodoro, bloques, repasos y simulacros.
+ * Lee {@code sesiones_registradas} y las actividades hechas (entrenamiento), {@code carga_academica_semanal}
+ * (planificador) y, para «Tu estudio», recuentos de Pomodoro, bloques, repasos y simulacros.
  * Solo trae filas: la zona y el agregado semanal ({@link WeeklyTrainingMetric#byWeek}) los aplica
  * el caso de uso.
  */
@@ -30,9 +31,14 @@ public class AnalyticsJdbcAdapter implements AnalyticsSourcePort {
         this.jdbc = jdbc;
     }
 
+    /**
+     * Sesiones de gimnasio y actividades hechas (carreras con GPS y deporte apuntado, ADR 0037): una carrera cuenta
+     * en «Tu entreno, semana a semana» igual que una sesión, con sus minutos reales, sus kcal (si las calculó el
+     * servidor) y su esfuerzo.
+     */
     @Override
     public List<CompletedSession> completedTrainingSessions(UUID userId, Instant from) {
-        return jdbc.sql("""
+        List<CompletedSession> sessions = jdbc.sql("""
                         SELECT completada_en, duracion_minutos, calorias_quemadas, rpe
                         FROM sesiones_registradas
                         WHERE usuario_id = :u AND completada_en IS NOT NULL AND completada_en >= :from
@@ -43,6 +49,21 @@ public class AnalyticsJdbcAdapter implements AnalyticsSourcePort {
                         rs.getInt("duracion_minutos"), JdbcRows.decimal(rs, "calorias_quemadas"),
                         JdbcRows.integer(rs, "rpe")))
                 .list();
+        List<CompletedSession> activities = jdbc.sql("""
+                        SELECT b.hora_fin, a.minutos_reales, c.kcal, r.rpe_sesion
+                        FROM actividades_apuntadas a
+                        JOIN horarios_academicos b ON b.id = a.bloque_id
+                        LEFT JOIN carreras_gps c ON c.bloque_id = a.bloque_id
+                        LEFT JOIN registros_carga_fisica r ON r.bloque_id = a.bloque_id
+                        WHERE a.usuario_id = :u AND b.completado = true AND b.hora_fin >= :from
+                        """)
+                .param("u", userId)
+                .param("from", JdbcRows.param(from))
+                .query((rs, n) -> new CompletedSession(JdbcRows.instant(rs, "hora_fin"),
+                        rs.getInt("minutos_reales"), JdbcRows.decimal(rs, "kcal"),
+                        JdbcRows.integer(rs, "rpe_sesion")))
+                .list();
+        return Stream.concat(sessions.stream(), activities.stream()).toList();
     }
 
     @Override
