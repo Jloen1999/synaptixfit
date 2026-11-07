@@ -22,14 +22,16 @@ void main() {
       expect(p.weightForSet(3), 40);
     });
 
-    test('cambiar una serie no toca las demás y el peso común es el de trabajo',
-        () {
-      final p = base.withSetValues(1, setReps: 12, weight: 30);
-      expect(p.repsPerSet, [12, 10, 10]);
-      expect(p.weightsKg, [30, 40, 40]);
-      expect(p.weightKg, 40);
-      expect(p.reps, 11);
-    });
+    test(
+      'cambiar una serie no toca las demás y el peso común es el de trabajo',
+      () {
+        final p = base.withSetValues(1, setReps: 12, weight: 30);
+        expect(p.repsPerSet, [12, 10, 10]);
+        expect(p.weightsKg, [30, 40, 40]);
+        expect(p.weightKg, 40);
+        expect(p.reps, 11);
+      },
+    );
 
     test('si todas las series quedan iguales basta el valor común', () {
       final p = base.withSetValues(2, setReps: 8).withSetValues(2, setReps: 10);

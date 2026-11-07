@@ -138,6 +138,12 @@ abstract final class TokensSize {
   static const double emptyBadge = 72;
   static const double emptyBadgeCompact = 48;
   static const double medallion = 88;
+  static const double mapHeight = 220;
+  static const double runMetricLarge = 56;
+  static const double routeLine = 5;
+  static const double routeMarker = 16;
+  static const double splitBar = 16;
+  static const double miniChart = 56;
   static const double listTileMin = 56;
   static const double dayChipWidth = 56;
   static const double dayChipHeight = 76;

@@ -63,7 +63,7 @@ La galería usa el selector de fotos del sistema y no necesita permiso de almace
 | Actividad en la app › Otro contenido generado | Sí | No | Funcionalidad | Apuntes, preguntas de repaso y respuestas |
 | Información y rendimiento de la app › Registros de fallos | No | — | — | No hay SDK de fallos |
 | Identificadores del dispositivo | No | — | — | No se usa id de publicidad |
-| Ubicación | No | — | — | No se pide ubicación |
+| Ubicación exacta | Sí | No | Funcionalidad de la app (grabar carreras: distancia, ritmo, desnivel y mapa de la ruta); opcional | Solo mientras se graba una carrera, con la app en uso o con el servicio en primer plano y su aviso fijo; nunca `ACCESS_BACKGROUND_LOCATION`. La ruta es privada, se cifra en tránsito, se borra con la carrera o la cuenta y se puede pedir su borrado (ADR 0037) |
 
 No hay publicidad ni venta de datos.
 
@@ -87,3 +87,14 @@ No hay publicidad ni venta de datos.
 3. Cambia la firma `release` de `build.gradle.kts` para que la lea.
 4. Activa la «Firma de apps de Google Play» (Play guarda la clave de la app y tú solo la de subida).
 5. Compila con `flutter build appbundle --release --dart-define-from-file=<copia temporal de config con la API de producción>` y sube `build/app/outputs/bundle/release/app-release.aab`.
+
+## Servicio en primer plano de tipo ubicación (ADR 0037)
+
+Play Console › Contenido de la app › **Permisos de servicios en primer plano** pide justificar `FOREGROUND_SERVICE_LOCATION`:
+
+- **Tipo:** `location` (servicio `GeolocatorLocationService` del paquete `geolocator`).
+- **Qué hace la persona:** pulsa «Empezar a correr» para grabar una carrera, un paseo o una salida en bici con el GPS.
+- **Por qué hace falta un servicio en primer plano:** la carrera debe seguir grabándose con la pantalla apagada y el móvil en el bolsillo; sin él, Android corta el GPS. Se para al pulsar «Pausar y salir», «Terminar» o «Descartar».
+- **Qué ve la persona:** el aviso fijo «Grabando tu carrera · 3,2 km · 18:40» mientras dura.
+- **Vídeo:** grabar de 20 a 30 s de la app: Entreno › Correr › «Empezar a correr» → permiso de ubicación con su explicación → pantalla apagada → aviso fijo → «Terminar».
+- **Permisos declarados:** `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `FOREGROUND_SERVICE` y `FOREGROUND_SERVICE_LOCATION`. **No** se declara `ACCESS_BACKGROUND_LOCATION`: la ubicación solo se usa con la app en uso o con el servicio en primer plano iniciado por la persona, así que no hace falta el formulario de ubicación en segundo plano.

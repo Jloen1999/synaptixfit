@@ -23,6 +23,20 @@ enum ActivityKind {
       values.where((k) => k.api == value).firstOrNull;
 }
 
+/// De dónde sale una actividad (ADR 0037): «Apuntada a mano» o «GPS de la
+/// app». Nulo si se marcó como hecho un evento del calendario.
+enum ActivitySource {
+  manual('MANUAL'),
+  gps('GPS');
+
+  const ActivitySource(this.api);
+
+  final String api;
+
+  static ActivitySource? fromApi(String? value) =>
+      values.where((s) => s.api == value).firstOrNull;
+}
+
 /// Deporte hecho fuera de las rutinas (un partido o una actividad apuntada):
 /// ritmo y velocidad los calcula el servidor.
 @freezed
@@ -37,5 +51,9 @@ abstract class SportActivity with _$SportActivity {
     int? effort,
     int? paceSecondsPerKm,
     double? speedKmh,
+    ActivitySource? source,
+
+    /// Desnivel positivo de una carrera grabada con GPS.
+    int? elevationGainMeters,
   }) = _SportActivity;
 }

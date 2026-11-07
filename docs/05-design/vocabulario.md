@@ -13,7 +13,7 @@ Regla general: palabras cotidianas, verbos en los botones, una acción útil sig
 | Hoja de crear/editar evento | Pasos «¿Qué es?», «¿Cuándo?», «Repetir y aviso»; lo demás en «Más opciones». Tipos poco usados en «Más tipos». Un personal pide «Nombre» | «Detalles», «Vínculos» como títulos de sección | El aviso no es por evento: se dice que llega «con la antelación que elegiste en Ajustes › Avisos», con botón «Ajustar los avisos» |
 | Hito de un reto (`Milestone`) | **tarea** («Tarea del reto») | — | «Tarea» se reserva para los retos |
 | Actividad hecha fuera del plan (`PastActivity`, carrera, partido…) | **actividad** («Apuntar una actividad», «Tus actividades») | — | «Actividad» se reserva para lo ya hecho/registrado |
-| Carrera grabada con GPS | «Carrera» (o «Paseo», «Bici» según el tipo); origen: «GPS de la app» / «Apuntada a mano» | «workout», «run» en español | Es una **actividad** |
+| Carrera grabada con GPS | «Carrera» (o «Paseo», «Bici» según el tipo); origen: «GPS de la app» / «Apuntada a mano» / «Marcada en el calendario» | «workout», «run» en español | Es una **actividad**. Un entreno de carrera planificado que se graba deja su evento del calendario como **Hecho** (lo marca el planificador, su dueño) |
 | Entreno de carrera por pasos | «Entreno de carrera»: pasos «Calentar», «Correr», «Recuperar», «Enfriar»; series «6 × 800 m» | «intervalos» sin explicar | Se pone en el calendario como evento de tipo Entreno |
 | Sesión de gimnasio (`TrainingSession`) | «Sesión» / «Entreno» | — | |
 | Estados de lo planificado | **Por hacer** (aún no ha llegado o es hoy), **Hecho**, **Sin hacer** (ya pasó y no se hizo) | «Planificado», «pendiente» a secas, «completado» mezclado con «hecho» | Mismos tres estados en Inicio, planificador, avisos y Progreso |

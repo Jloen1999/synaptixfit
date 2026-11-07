@@ -31,6 +31,14 @@ sealed class TrainingEffect with _$TrainingEffect {
   const factory TrainingEffect.sessionFinished(FinishSessionResult result) =
       TrainingEffectSessionFinished;
 
+  /// Día de rutina saltado: el aviso dice dónde se recupera y lleva un botón
+  /// para ir allí ([inRoutine]: ya se está en la rutina, el botón recupera).
+  const factory TrainingEffect.daySkipped({
+    required String routineId,
+    required String dayId,
+    @Default(false) bool inRoutine,
+  }) = TrainingEffectDaySkipped;
+
   /// Cerrar la pantalla (p. ej. tras borrar o abandonar).
   const factory TrainingEffect.close() = TrainingEffectClose;
 

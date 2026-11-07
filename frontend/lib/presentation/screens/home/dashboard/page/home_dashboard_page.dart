@@ -424,6 +424,7 @@ class _HomeContent extends StatelessWidget {
               ? null
               : () => onNavigate(HomeExternalPaths.routine(next.routineId)),
           onCheckIn: () => onNavigate(HomeExternalPaths.checkIn),
+          onRun: () => onNavigate(HomeExternalPaths.recordRun),
         ),
       if (setup != null && setup.visibleAt(DateTime.now()))
         SetupChecklistCard(

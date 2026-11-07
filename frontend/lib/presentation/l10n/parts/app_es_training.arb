@@ -991,7 +991,7 @@
     }
   },
   "trainingPastActivityTitle": "Apuntar actividad",
-  "trainingPastActivityIntro": "¿Hiciste deporte sin la app? Apúntalo y contará en tu carga física y en tu semana. Puedes apuntar lo de los últimos 7 días.",
+  "trainingPastActivityIntro": "¿Hiciste deporte sin la app? Apúntalo y contará en tu carga física y en tu semana. Puedes apuntar lo de los últimos 7 días; lo verás en Entreno › Historial › Actividades y partidos.",
   "trainingPastActivityWhat": "¿Qué hiciste?",
   "trainingPastActivityName": "Actividad",
   "trainingPastActivityFootball": "Fútbol",
@@ -1007,8 +1007,8 @@
   "trainingPastActivityDuration": "Duración",
   "trainingPastActivityMinutes": "{minutes} min",
   "trainingPastActivitySave": "Guardar actividad",
-  "trainingPastActivitySaved": "Actividad apuntada",
-  "trainingPastActivitySavedXp": "Actividad apuntada · +{xp} XP",
+  "trainingPastActivitySaved": "Actividad apuntada. La ves en Entreno › Historial › Actividades y partidos.",
+  "trainingPastActivitySavedXp": "Actividad apuntada · +{xp} XP. La ves en Entreno › Historial › Actividades y partidos.",
   "trainingPastActivityNotFinished": "Esa actividad aún no ha terminado: elige una hora anterior o una duración menor.",
   "@trainingPastActivityMinutes": {
     "placeholders": {
@@ -1208,12 +1208,12 @@
   },
   "trainingSkipDay": "Saltar",
   "trainingSkipDayTitle": "¿Saltar este día?",
-  "trainingSkipDayMessage": "La rutina pasará al siguiente día y el calendario quitará este entrenamiento. Puedes recuperarlo cuando quieras.",
+  "trainingSkipDayMessage": "La rutina pasa al día siguiente y el calendario quita este entreno. Para recuperarlo: abre la rutina, toca ese día y pulsa «Recuperar».",
   "trainingUnskipDay": "Recuperar",
   "trainingDaySkipped": "Día saltado",
   "trainingDayUnskipped": "Día recuperado",
   "trainingSkipEarlierTitle": "¿Entrenar este día?",
-  "trainingSkipEarlierMessage": "Aún quedan días anteriores por hacer. Al terminar este, se darán por saltados (podrás recuperarlos).",
+  "trainingSkipEarlierMessage": "Aún quedan días anteriores por hacer. Al terminar este, se darán por saltados. Para recuperarlos: en la rutina, toca cada día y pulsa «Recuperar».",
   "trainingFinishWithLogged": "Terminar con lo registrado",
   "trainingDiscardSession": "Descartar",
   "trainingDiscardSessionTitle": "¿Descartar la sesión?",
@@ -1804,7 +1804,7 @@
   },
   "trainingAdaptedDeclineTitle": "¿Hacer la sesión completa?",
   "trainingAdaptedDeclineMessage": "Hoy se recortaron series para cuidarte. Si la haces completa, entrenarás con todas las series planificadas.",
-  "trainingLoadUp": "Hoy prueba {value}",
+  "trainingLoadUp": "Siguiente paso: prueba {value}",
   "@trainingLoadUp": {
     "placeholders": {
       "value": {
@@ -1812,7 +1812,7 @@
       }
     }
   },
-  "trainingLoadDown": "Hoy baja a {value}",
+  "trainingLoadDown": "Siguiente paso: baja a {value}",
   "@trainingLoadDown": {
     "placeholders": {
       "value": {
@@ -1820,7 +1820,7 @@
       }
     }
   },
-  "trainingLoadUpPercent": "Hoy prueba {value} (+{percent} %)",
+  "trainingLoadUpPercent": "Siguiente paso: prueba {value} (+{percent} %)",
   "@trainingLoadUpPercent": {
     "placeholders": {
       "value": {
@@ -1831,7 +1831,7 @@
       }
     }
   },
-  "trainingLoadDownPercent": "Hoy baja a {value} (−{percent} %)",
+  "trainingLoadDownPercent": "Siguiente paso: baja a {value} (−{percent} %)",
   "@trainingLoadDownPercent": {
     "placeholders": {
       "value": {
@@ -1842,7 +1842,7 @@
       }
     }
   },
-  "trainingLoadUpSpoken": "Propuesta para hoy: {value}, un {percent} por ciento más.",
+  "trainingLoadUpSpoken": "Siguiente paso: prueba {value}, un {percent} por ciento más.",
   "@trainingLoadUpSpoken": {
     "placeholders": {
       "value": {
@@ -1853,7 +1853,7 @@
       }
     }
   },
-  "trainingLoadDownSpoken": "Propuesta para hoy: {value}, un {percent} por ciento menos.",
+  "trainingLoadDownSpoken": "Siguiente paso: baja a {value}, un {percent} por ciento menos.",
   "@trainingLoadDownSpoken": {
     "placeholders": {
       "value": {
@@ -1905,7 +1905,7 @@
       }
     }
   },
-  "trainingLoadWhyLowRpe": "La última vez hiciste {previous} con un esfuerzo moderado (RPE {rpe} de 10) y sin fallos.",
+  "trainingLoadWhyLowRpe": "Por qué: la última vez hiciste {previous} y te costó {rpe} de 10, sin llegar al fallo. Puedes subir un poco.",
   "@trainingLoadWhyLowRpe": {
     "placeholders": {
       "previous": {
@@ -1916,7 +1916,7 @@
       }
     }
   },
-  "trainingLoadWhyVeryLowRpe": "La última vez hiciste {previous} y te resultó muy fácil (RPE {rpe} de 10).",
+  "trainingLoadWhyVeryLowRpe": "Por qué: la última vez hiciste {previous} y te costó solo {rpe} de 10. Te sobraba fuerza.",
   "@trainingLoadWhyVeryLowRpe": {
     "placeholders": {
       "previous": {
@@ -1927,7 +1927,7 @@
       }
     }
   },
-  "trainingLoadWhyVeryHighRpe": "La última vez hiciste {previous} con un esfuerzo máximo (RPE {rpe} de 10).",
+  "trainingLoadWhyVeryHighRpe": "Por qué: la última vez hiciste {previous} y te costó {rpe} de 10, al límite. Mejor bajar un poco.",
   "@trainingLoadWhyVeryHighRpe": {
     "placeholders": {
       "previous": {
@@ -1938,7 +1938,7 @@
       }
     }
   },
-  "trainingLoadWhyFailed": "La última vez fallaste repeticiones con {previous}.",
+  "trainingLoadWhyFailed": "Por qué: la última vez no completaste todas las repeticiones con {previous}. Mejor bajar un poco.",
   "@trainingLoadWhyFailed": {
     "placeholders": {
       "previous": {
@@ -1946,7 +1946,7 @@
       }
     }
   },
-  "trainingLoadWhyOther": "La última vez hiciste {previous} (RPE {rpe} de 10).",
+  "trainingLoadWhyOther": "Por qué: la última vez hiciste {previous} y te costó {rpe} de 10.",
   "@trainingLoadWhyOther": {
     "placeholders": {
       "previous": {
@@ -2043,7 +2043,7 @@
   "trainingLeaveTitle": "¿Salir sin terminar?",
   "trainingLeaveMessage": "{count, plural, =0{Aún no has marcado ninguna serie.} =1{No pierdes nada: la serie que has marcado ya está guardada.} other{No pierdes nada: las {count} series que has marcado ya están guardadas.}}",
   "trainingLeavePause": "Pausar y salir",
-  "trainingLeavePauseHint": "El tiempo se para hasta que vuelvas",
+  "trainingLeavePauseHint": "El tiempo se para. Para volver, toca «Volver» en la barra de abajo o en Entreno › Gimnasio.",
   "trainingLeaveFinish": "Terminar ahora",
   "trainingLeaveFinishHint": "Se guarda con lo que has hecho",
   "trainingLeaveStay": "Seguir entrenando",
@@ -2445,7 +2445,7 @@
   "trainingCycleEntryHint": "Opcional, si tienes la regla: apunta tus días y cómo te sientes, y ajustamos el entreno.",
   "trainingCycleIntroTitle": "Entrena según cómo te sientes",
   "trainingCycleIntro": "Si lo activas, puedes apuntar los días de regla, tu energía y las molestias. Con eso calculamos en qué momento del ciclo estás y, si un día tienes molestias o poca energía, ese día el entreno es un poco más suave.",
-  "trainingCyclePrivacy": "Son datos de salud: solo los ves tú, no se comparten con nadie y puedes borrarlos cuando quieras.",
+  "trainingCyclePrivacy": "Son datos de salud: solo los ves tú y no se comparten con nadie. Puedes borrarlos cuando quieras aquí abajo, con «Borrar todo lo apuntado».",
   "trainingCycleConsent": "Acepto que SynaptixFit guarde estos datos para ajustar mi entreno",
   "trainingCycleEnable": "Activar",
   "trainingCycleDayOf": "Día {day} del ciclo",
@@ -2536,7 +2536,7 @@
   "trainingCycleDeleteAllMessage": "Se borran todos los días del ciclo. No se puede deshacer.",
   "trainingCycleDeleteAllConfirm": "Borrar todo",
   "trainingCycleHistoryDeleted": "Lo apuntado se ha borrado",
-  "trainingCycleDisabled": "Seguimiento desactivado",
+  "trainingCycleDisabled": "Seguimiento desactivado. Para activarlo de nuevo: en Entreno › Gimnasio, abre el registro diario y entra en «Mi ciclo».",
   "trainingAdaptedCycle": "Molestias o poca energía que apuntaste hoy",
   "trainingQuickCheckInTitle": "¿Qué tal estás hoy?",
   "trainingQuickCheckInHint": "Tres toques y ajustamos el entreno a cómo estás.",
@@ -2726,5 +2726,441 @@
   "trainingHealthConsentCheckbox": "Doy mi permiso para que SynaptixFit guarde y use estos datos de salud",
   "trainingHealthConsentAccept": "Dar permiso y seguir",
   "trainingHealthConsentRequired": "Marca la casilla para dar tu permiso.",
-  "trainingErrorHealthConsentRequired": "Antes de apuntar cómo te encuentras, danos tu permiso para guardarlo."
+  "trainingErrorHealthConsentRequired": "Antes de apuntar cómo te encuentras, danos tu permiso para guardarlo.",
+  "trainingSectionGym": "Gimnasio",
+  "trainingSectionRun": "Correr",
+  "trainingDaySkippedHere": "Día saltado. Si cambias de idea, recupéralo aquí con «Recuperar».",
+  "trainingDaySkippedWhere": "Día saltado. Para recuperarlo: abre la rutina, toca ese día y pulsa «Recuperar».",
+  "trainingPlanThisWeek": "Esta semana: {type}. {why}",
+  "@trainingPlanThisWeek": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "why": {
+        "type": "String"
+      }
+    }
+  },
+  "runKm": "{km} km",
+  "@runKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "runMeters": "{meters} m",
+  "@runMeters": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "runMinutes": "{minutes} min",
+  "@runMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "runSeconds": "{seconds} s",
+  "@runSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "runKcal": "{kcal} kcal",
+  "@runKcal": {
+    "placeholders": {
+      "kcal": {
+        "type": "int"
+      }
+    }
+  },
+  "runPaceNone": "sin ritmo todavía",
+  "runPaceSpoken": "{minutes} minutos y {seconds} segundos por kilómetro",
+  "@runPaceSpoken": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "runPaceLabelSpoken": "Ritmo medio: {pace}",
+  "@runPaceLabelSpoken": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "runPaceUnit": "Ritmo (min por km)",
+  "runPaceExplain": "Minutos que tardas en recorrer 1 km: cuanto menos, más rápido.",
+  "runKindRun": "Carrera",
+  "runKindWalk": "Paseo",
+  "runKindBike": "Bici",
+  "runSourceGps": "GPS de la app",
+  "runSourceManual": "Apuntada a mano",
+  "runSourceCalendar": "Marcada en el calendario",
+  "runStepWarmup": "Calentar",
+  "runStepRun": "Correr",
+  "runStepRecover": "Recuperar",
+  "runStepCooldown": "Enfriar",
+  "runStepLine": "{type} {amount}",
+  "@runStepLine": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "runRecovering": "{amount} recuperando",
+  "@runRecovering": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "runRepeatLine": "{times} × {amount}",
+  "@runRepeatLine": {
+    "placeholders": {
+      "times": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "runEstimate": "≈ {minutes} min",
+  "@runEstimate": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "runWorkoutUntitled": "Mi entreno de carrera",
+  "runTemplateStartName": "Empieza a correr: alterna andar y correr",
+  "runTemplateStartWhy": "Para empezar de cero sin agobiarte: 1 minuto corriendo y 2 andando, 8 veces.",
+  "runTemplateEasyName": "Rodaje suave 30 min",
+  "runTemplateEasyWhy": "A un ritmo en el que puedes hablar. Es la base para mejorar.",
+  "runTemplateIntervalsName": "Series 6 × 800 m",
+  "runTemplateIntervalsWhy": "Tramos rápidos con descansos: te hacen más rápido.",
+  "runTemplatePaceChangesName": "Cambios de ritmo",
+  "runTemplatePaceChangesWhy": "1 minuto rápido y 1 suave, 8 veces. Divertido y muy útil.",
+  "runTemplateSteadyName": "Ritmo constante 20 min",
+  "runTemplateSteadyWhy": "Un ritmo algo exigente que puedas mantener todo el rato.",
+  "runTemplateLongName": "Tirada larga",
+  "runTemplateLongWhy": "10 km tranquilos para ganar fondo. Mejor una vez por semana.",
+  "runMapUnavailable": "Mapa no disponible",
+  "runMapAttribution": "© MapTiler © OpenStreetMap",
+  "runMapHereSpoken": "Mapa con tu posición actual",
+  "runMapNoHereSpoken": "Mapa. Tu posición sale cuando permitas la ubicación al empezar a correr.",
+  "runYouAreHere": "Estás aquí",
+  "runStart": "Empezar a correr",
+  "runStartShort": "Empezar",
+  "runStartNow": "Empezar",
+  "runCreateWorkout": "Crear entreno",
+  "runCreateWorkoutTitle": "Nuevo entreno de carrera",
+  "runCreateWorkoutIntro": "Elige uno listo para usar o créalo desde cero. Luego puedes cambiarlo.",
+  "runCreateFromScratch": "Desde cero",
+  "runCreateFromScratchHint": "Tú eliges los pasos: calentar, correr, recuperar y enfriar.",
+  "runDesktopExplain": "Las carreras con GPS se graban desde la app del móvil. Aquí puedes apuntar una actividad a mano y ver todo lo que grabes.",
+  "runUnsupportedTitle": "Graba desde el móvil",
+  "runLogByHand": "Apuntar a mano",
+  "runPendingUploads": "{count, plural, =1{1 carrera espera conexión: se subirá sola, sin duplicarse.} other{{count} carreras esperan conexión: se subirán solas, sin duplicarse.}}",
+  "@runPendingUploads": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runPendingUploaded": "Ya se subieron las carreras que esperaban conexión.",
+  "runUnfinishedTitle": "Tienes una carrera sin terminar",
+  "runUnfinishedMessage": "Está guardada en este móvil. Síguela o termínala para que cuente.",
+  "runUnfinishedContinue": "Seguir con la carrera",
+  "runPlannedTitle": "En tu calendario",
+  "runPlannedWhen": "{when} · al grabarlo queda hecho",
+  "@runPlannedWhen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "runPutInCalendar": "Poner en el calendario",
+  "runScheduleDay": "¿Qué día?",
+  "runScheduleTime": "¿A qué hora?",
+  "runScheduledWhere": "Puesto en tu calendario como Entreno. Al grabarlo con el GPS, quedará hecho.",
+  "runSeeCalendar": "Ver calendario",
+  "runWeekTitle": "Esta semana",
+  "runWeekDistance": "distancia",
+  "runWeekTime": "en movimiento",
+  "runWeekElevation": "de desnivel",
+  "runWeekOutings": "salidas",
+  "runWeekEmpty": "Aún no has salido esta semana. Con tu primera salida verás aquí tu avance.",
+  "runWeekChartSpoken": "Distancia por día: {days}",
+  "@runWeekChartSpoken": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "runShare": "Compartir",
+  "runShareWeekTitle": "{distance} esta semana",
+  "@runShareWeekTitle": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "runShareWeekDetail": "{outings, plural, =1{1 salida} other{{outings} salidas}} · {time} · +{elevation} m",
+  "@runShareWeekDetail": {
+    "placeholders": {
+      "outings": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      },
+      "elevation": {
+        "type": "int"
+      }
+    }
+  },
+  "runShareTitle": "{kind} de {distance}",
+  "@runShareTitle": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "runShareDetail": "{time} · {pace} min/km · +{elevation} m",
+  "@runShareDetail": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      },
+      "elevation": {
+        "type": "int"
+      }
+    }
+  },
+  "runActivitiesTitle": "Tus actividades ({count})",
+  "@runActivitiesTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runSeeAll": "Ver todas",
+  "runActivitiesEmptyTitle": "Aún no hay actividades",
+  "runActivitiesEmptyMessage": "Graba tu primera carrera o apunta a mano lo que hiciste sin la app.",
+  "runWorkoutsTitle": "Tus entrenos de carrera",
+  "runWorkoutsEmptyTitle": "Aún no tienes entrenos de carrera",
+  "runWorkoutsEmptyMessage": "Un entreno te guía paso a paso mientras corres: calentar, correr, recuperar y enfriar.",
+  "runEditWorkout": "Cambiar entreno",
+  "runDeleteWorkout": "Borrar entreno",
+  "runDeleteWorkoutTitle": "¿Borrar este entreno?",
+  "runDeleteWorkoutMessage": "Las carreras que ya grabaste y los eventos del calendario se quedan como están.",
+  "runBatteryHelp": "¿Se corta el GPS con la pantalla apagada?",
+  "runBatteryTitle": "Que no se corte el GPS",
+  "runBatteryIntro": "Algunos móviles cortan el GPS con la pantalla apagada para ahorrar batería. Si tu ruta sale con saltos o se para, haz esto una vez:",
+  "runBatteryStep1": "En los ajustes del móvil, abre Aplicaciones › SynaptixFit › Batería.",
+  "runBatteryStep2": "Elige «Sin restricciones» (o quita la optimización de batería).",
+  "runBatteryStep3": "Mientras grabas, deja el aviso «Grabando tu carrera» en la barra de notificaciones: es lo que mantiene el GPS encendido.",
+  "runBatteryOk": "Entendido",
+  "runNotificationTitle": "Grabando tu carrera",
+  "runNotificationChannel": "Carrera en curso",
+  "runKindQuestion": "¿Qué vas a hacer?",
+  "runGuideIntro": "Te guiaremos paso a paso: verás el paso actual en grande y el móvil vibrará al cambiar.",
+  "runLocationWhy": "Usamos tu ubicación exacta solo mientras grabas, para medir la distancia, el ritmo y dibujar tu ruta. La ruta es privada: solo la ves tú.",
+  "runLocationOff": "La ubicación del móvil está apagada. Enciéndela en los ajustes rápidos y vuelve a pulsar «Empezar».",
+  "runDistance": "Distancia",
+  "runTime": "Tiempo",
+  "runPause": "Pausar",
+  "runResume": "Seguir",
+  "runFinish": "Terminar",
+  "runPausedBanner": "En pausa: lo que te muevas ahora no cuenta. Pulsa «Seguir» para continuar.",
+  "runSearchingSignal": "Buscando señal GPS… Si estás entre edificios altos, sal a un sitio más abierto.",
+  "runScreenOffHint": "Puedes apagar la pantalla: sigue grabando y verás la distancia y el tiempo en el aviso fijo.",
+  "runGuideStepOf": "Paso {current} de {total}",
+  "@runGuideStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "runGuideRemaining": "Quedan {amount}",
+  "@runGuideRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "runGuideNext": "Después: {step}",
+  "@runGuideNext": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      }
+    }
+  },
+  "runGuideNowSpoken": "Ahora: {step}",
+  "@runGuideNowSpoken": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      }
+    }
+  },
+  "runGuideDone": "Entreno completado. Puedes seguir o pulsar «Terminar».",
+  "runTooShortTitle": "Aún no cuenta",
+  "runTooShortMessage": "Llevas menos de {minutes} minutos en movimiento: así no contaría como actividad. Sigue un poco más o descártala.",
+  "@runTooShortMessage": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "runKeepGoing": "Seguir corriendo",
+  "runDiscard": "Descartar la carrera",
+  "runDiscardHint": "Se borra de este móvil y no cuenta.",
+  "runDiscarded": "Carrera descartada.",
+  "runSave": "Guardar carrera",
+  "runEffortQuestion": "¿Cuánto te ha costado?",
+  "runEffortValue": "{effort} de 10",
+  "@runEffortValue": {
+    "placeholders": {
+      "effort": {
+        "type": "int"
+      }
+    }
+  },
+  "runLeaveTitle": "¿Salir de la carrera?",
+  "runLeavePause": "Pausar y salir",
+  "runLeavePauseWhere": "Queda guardada. La sigues en Entreno › Correr, con «Seguir con la carrera».",
+  "runPausedWhere": "Carrera en pausa. Síguela en Entreno › Correr con «Seguir con la carrera».",
+  "runSavedWhere": "Carrera guardada. La tienes en Entreno › Correr › Tus actividades.",
+  "runSavedXp": "Carrera guardada · +{xp} XP. La tienes en Entreno › Correr › Tus actividades.",
+  "@runSavedXp": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "runQueuedWhere": "Sin conexión: la carrera está guardada en este móvil y se subirá sola. La verás en Entreno › Correr.",
+  "runRejectedTitle": "No se ha podido guardar",
+  "runBackToRun": "Volver a Correr",
+  "runMovingTime": "Tiempo en movimiento",
+  "runMovingTimeExplain": "Sin pausas ni ratos parado.",
+  "runElevation": "Desnivel positivo",
+  "runElevationExplain": "Los metros que subiste en total.",
+  "runElevationShort": "+{meters} m de desnivel",
+  "@runElevationShort": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "runKcalLabel": "Calorías",
+  "runRouteTitle": "Tu ruta",
+  "runRouteSpoken": "Mapa de la ruta, {distance}, con la salida y la llegada marcadas",
+  "@runRouteSpoken": {
+    "placeholders": {
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "runRoutePrivate": "Solo la ves tú. Al compartir, solo van las cifras, nunca el mapa.",
+  "runSplitsTitle": "Análisis por kilómetro",
+  "runSplitsExplain": "Tu ritmo en cada kilómetro. Barra más larga = más rápido.",
+  "runSplitKm": "Km {number}",
+  "@runSplitKm": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "runSplitSpoken": "Kilómetro {number}: {pace}",
+  "@runSplitSpoken": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "runDelete": "Borrar carrera",
+  "runDeleted": "Carrera borrada",
+  "runDeletedHint": "Se le resta su XP y deja de contar en tu semana. Pulsa «Deshacer» si fue sin querer.",
+  "runUndo": "Deshacer",
+  "runWorkoutName": "Nombre del entreno",
+  "runEditorIntro": "Cada serie de pasos se repite las veces que digas. Ejemplo: 6 veces «Correr 800 m» y «Recuperar 2 min».",
+  "runEditorAddGroup": "Añadir serie",
+  "runEditorRemoveGroup": "Quitar serie",
+  "runEditorRepeat": "Veces",
+  "runEditorTimes": "{count, plural, =1{1 vez} other{{count} veces}}",
+  "@runEditorTimes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runEditorStep": "Paso",
+  "runEditorAddStep": "Añadir paso",
+  "runEditorRemoveStep": "Quitar paso",
+  "runEditorByTime": "Por tiempo",
+  "runEditorByDistance": "Por distancia",
+  "runEditorDuration": "Duración",
+  "runEditorDistance": "Distancia",
+  "runEditorSave": "Guardar entreno",
+  "runWorkoutSavedWhere": "Entreno guardado. Lo tienes en Entreno › Correr › Tus entrenos de carrera.",
+  "runErrorTooShort": "Hacen falta al menos 10 minutos en movimiento para que cuente como actividad.",
+  "runErrorOutOfRange": "Solo se guardan carreras ya terminadas de los últimos 30 días. Puedes apuntarla a mano si fue esta semana.",
+  "runErrorRouteTooLarge": "La ruta es demasiado larga para guardarla. Prueba a apuntar la actividad a mano.",
+  "runErrorNotFound": "Esa carrera ya no existe.",
+  "runErrorWorkoutNotFound": "Ese entreno de carrera ya no existe.",
+  "runDiscardTitle": "¿Descartar la carrera?",
+  "runEditorMeasure": "¿Cómo se mide?",
+  "runSplitFastest": "Tu kilómetro más rápido",
+  "runMapStart": "Salida",
+  "runMapFinish": "Llegada"
 }

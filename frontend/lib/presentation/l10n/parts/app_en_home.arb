@@ -181,5 +181,6 @@
   "homeBannerActionTrainingToday": "See today's workout",
   "homeBannerActionNextSlot": "To next free slot",
   "homeBannerActionDone": "Done",
-  "homeBannerActionMarkInCalendar": "Mark in the calendar"
+  "homeBannerActionMarkInCalendar": "Mark in the calendar",
+  "homeStartRun": "Start running"
 }

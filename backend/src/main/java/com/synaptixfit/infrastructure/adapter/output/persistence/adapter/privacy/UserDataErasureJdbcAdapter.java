@@ -33,6 +33,10 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
      */
     private static final List<String> PERSONAL_CONTENT = List.of(
             "DELETE FROM dias_ciclo WHERE usuario_id = :id",
+            // Rutas GPS (ADR 0037): ubicación exacta, nunca se conserva ligada a un id anonimizado.
+            "DELETE FROM carreras_gps WHERE usuario_id = :id",
+            "DELETE FROM eventos_entreno_carrera WHERE usuario_id = :id",
+            "DELETE FROM entrenos_carrera WHERE usuario_id = :id",
             "DELETE FROM seguimiento_ciclo WHERE usuario_id = :id",
             "DELETE FROM notas_ejercicio WHERE usuario_id = :id",
             "DELETE FROM sesiones_focus WHERE usuario_id = :id",

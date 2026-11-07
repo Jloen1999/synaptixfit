@@ -21,7 +21,7 @@
   "commonWeekdayInitial": "{weekday, select, mon{L} tue{M} wed{M} thu{J} fri{V} sat{S} other{D}}",
   "tabHome": "Accueil",
   "tabAcademic": "Études",
-  "tabTraining": "Routines",
+  "tabTraining": "Entraînement",
   "tabChallenges": "Défis",
   "tabProgress": "Progression",
   "fieldEmail": "E-mail",

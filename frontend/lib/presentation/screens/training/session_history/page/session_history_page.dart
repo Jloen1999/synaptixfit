@@ -24,20 +24,25 @@ import '../bloc/session_history_bloc.dart';
 /// cada sesión agrupada por semana con el nombre del día que entrenaste y los
 /// récords que batiste en ella.
 class SessionHistoryPage extends StatelessWidget {
-  const SessionHistoryPage({super.key});
+  const SessionHistoryPage({super.key, this.activities = false});
+
+  /// Abrir en «Actividades y partidos» (p. ej. «Ver todas» de Correr).
+  final bool activities;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
           getIt<SessionHistoryBloc>()..add(const SessionHistoryEvent.started()),
-      child: const _HistoryView(),
+      child: _HistoryView(activities: activities),
     );
   }
 }
 
 class _HistoryView extends StatelessWidget {
-  const _HistoryView();
+  const _HistoryView({required this.activities});
+
+  final bool activities;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +57,7 @@ class _HistoryView extends StatelessWidget {
         // (partidos y actividades apuntadas, ADR 0033).
         return DefaultTabController(
           length: 2,
+          initialIndex: activities ? 1 : 0,
           child: Scaffold(
             appBar: AppPageBar(
               title: Text(l10n.trainingHistoryTitle),

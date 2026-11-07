@@ -96,8 +96,8 @@
   "progressMetricMinutes": "Minutos",
   "progressMetricCalories": "Calorías",
   "progressMetricAverageRpe": "Esfuerzo medio",
-  "progressLoadTitle": "Carga física · 28 días",
-  "progressLoadSubtitle": "Carga diaria de entrenamiento en unidades arbitrarias",
+  "progressLoadTitle": "Cuánto has entrenado · últimos 28 días",
+  "progressLoadSubtitle": "Cada día suma los minutos por lo que te costó (del 1 al 10). Cuanto más alta la barra, más duro fue.",
   "progressLoadSummary": "Hoy {today} · máximo {max} · media {average}",
   "@progressLoadSummary": {
     "placeholders": {
@@ -331,10 +331,10 @@
   "progressAnalyticsSummaryTitle": "Resumen",
   "progressAnalyticsEmptyTitle": "Sin datos de analítica",
   "progressAnalyticsEmptyMessage": "Completa sesiones de entrenamiento y registra tu estudio para ver tus estadísticas.",
-  "progressAnalyticsEmptyAction": "Ir a rutinas",
-  "progressVolumeTitle": "Volumen semanal",
-  "progressVolumeSubtitle": "Minutos y calorías por semana",
-  "progressVolumeAverage": "Media semanal: {minutes} min · {calories} kcal · {sessions} sesiones",
+  "progressAnalyticsEmptyAction": "Ir a Entreno",
+  "progressVolumeTitle": "Tu entreno, semana a semana",
+  "progressVolumeSubtitle": "Minutos y calorías de cada semana: gimnasio, carreras y otras actividades",
+  "progressVolumeAverage": "Media semanal: {minutes} min · {calories} kcal · {sessions} entrenos",
   "@progressVolumeAverage": {
     "placeholders": {
       "minutes": {
@@ -365,13 +365,13 @@
       }
     }
   },
-  "progressRpeTitle": "Tendencia del esfuerzo",
-  "progressRpeSubtitle": "Esfuerzo percibido medio por semana (1-10)",
+  "progressRpeTitle": "¿Cuánto te cuesta entrenar?",
+  "progressRpeSubtitle": "Lo que te costó cada semana, de media: 1 es muy fácil y 10, al límite",
   "progressRpeDirectionUp": "Al alza",
   "progressRpeDirectionDown": "A la baja",
   "progressRpeDirectionStable": "Estable",
-  "progressRpeDirectionInsufficient": "Datos insuficientes",
-  "progressRpeSlope": "{slope} puntos por semana",
+  "progressRpeDirectionInsufficient": "Faltan semanas para ver si sube o baja",
+  "progressRpeSlope": "Cambia {slope} puntos cada semana",
   "@progressRpeSlope": {
     "placeholders": {
       "slope": {
@@ -460,7 +460,7 @@
   "progressInsightsTitle": "Interpretación",
   "progressInsightTitleStreak": "Racha",
   "progressInsightTitleConsistency": "Constancia",
-  "progressInsightTitleVolume": "Volumen",
+  "progressInsightTitleVolume": "Cuánto entrenas",
   "progressInsightTitleCorrelation": "Estudio y entrenamiento",
   "progressInsightSeverityPositive": "Positivo",
   "progressInsightSeverityInfo": "Información",

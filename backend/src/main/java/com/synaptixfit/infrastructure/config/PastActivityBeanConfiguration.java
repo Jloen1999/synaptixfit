@@ -1,5 +1,6 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.application.port.input.planner.CompletePlannedActivityUseCase;
 import com.synaptixfit.application.port.input.planner.ListSportActivitiesUseCase;
 import com.synaptixfit.application.port.input.planner.LogPastActivityUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
@@ -26,6 +27,18 @@ public class PastActivityBeanConfiguration {
                                                   @Value("${synaptixfit.planner.zone:Europe/Madrid}") String zoneId,
                                                   Clock clock) {
         return tx.wrap(LogPastActivityUseCase.class,
+                new PastActivityService(blocks, subjects, completion, PlannerZone.of(zoneId), clock, logged));
+    }
+
+    @Bean
+    CompletePlannedActivityUseCase completePlannedActivityUseCase(TransactionalUseCaseFactory tx,
+                                                                  CalendarBlockRepositoryPort blocks,
+                                                                  SubjectDirectoryPort subjects,
+                                                                  SetBlockCompletionUseCase completion,
+                                                                  LoggedActivityRepositoryPort logged,
+                                                                  @Value("${synaptixfit.planner.zone:Europe/Madrid}")
+                                                                  String zoneId, Clock clock) {
+        return tx.wrap(CompletePlannedActivityUseCase.class,
                 new PastActivityService(blocks, subjects, completion, PlannerZone.of(zoneId), clock, logged));
     }
 

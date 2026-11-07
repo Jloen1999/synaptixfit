@@ -1,6 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.output.persistence.adapter.planner;
 
 import com.synaptixfit.domain.model.planner.ActivityKind;
+import com.synaptixfit.domain.model.planner.ActivitySource;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.LoggedSportActivity;
 import com.synaptixfit.domain.model.shared.PageRequest;
@@ -28,14 +29,16 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort {
     }
 
     @Override
-    public void save(UUID blockId, UUID userId, ActivityKind kind, int minutes, Integer distanceMeters, Instant now) {
+    public void save(UUID blockId, UUID userId, ActivityKind kind, int minutes, Integer distanceMeters,
+                     ActivitySource source, Instant now) {
         jdbc.sql("INSERT INTO actividades_apuntadas (bloque_id, usuario_id, clase, minutos_reales, distancia_metros,"
-                        + " creado_en) VALUES (:block, :user, :kind, :minutes, :distance, :now)")
+                        + " origen, creado_en) VALUES (:block, :user, :kind, :minutes, :distance, :source, :now)")
                 .param("block", blockId)
                 .param("user", userId)
                 .param("kind", kind.name())
                 .param("minutes", minutes)
                 .param("distance", distanceMeters)
+                .param("source", source.name())
                 .param("now", Timestamp.from(now))
                 .update();
     }
@@ -50,8 +53,9 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort {
                 .query(Long.class)
                 .single();
         var items = jdbc.sql("SELECT b.id, b.hora_inicio, b.hora_fin, b.temas, a.clase, a.minutos_reales,"
-                        + " a.distancia_metros, r.rpe_sesion FROM horarios_academicos b"
+                        + " a.distancia_metros, a.origen, c.desnivel_metros, r.rpe_sesion FROM horarios_academicos b"
                         + " LEFT JOIN actividades_apuntadas a ON a.bloque_id = b.id"
+                        + " LEFT JOIN carreras_gps c ON c.bloque_id = b.id"
                         + " LEFT JOIN registros_carga_fisica r ON r.bloque_id = b.id"
                         + " WHERE b.usuario_id = :user AND b.tipo_actividad = :sport AND b.completado = true"
                         + " ORDER BY b.hora_inicio DESC LIMIT :size OFFSET :offset")
@@ -68,10 +72,13 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort {
                     Instant start = real != null ? blockEnd.minus(Duration.ofMinutes(real)) : blockStart;
                     String kind = rs.getString("clase");
                     Number effort = (Number) rs.getObject("rpe_sesion");
+                    String source = rs.getString("origen");
                     return new LoggedSportActivity(rs.getObject("id", UUID.class), start, minutes,
                             rs.getString("temas"), kind == null ? null : ActivityKind.valueOf(kind),
                             (Integer) rs.getObject("distancia_metros"),
-                            effort == null ? null : (int) Math.round(effort.doubleValue()));
+                            effort == null ? null : (int) Math.round(effort.doubleValue()),
+                            source == null ? null : ActivitySource.valueOf(source),
+                            (Integer) rs.getObject("desnivel_metros"));
                 })
                 .list();
         return new PageResult<>(items, page.page(), page.size(), total);

@@ -17,7 +17,7 @@ extension BlockTypeVisuals on BlockType {
     BlockType.exam => context.colors.error,
     BlockType.delivery => context.palette.warning,
     BlockType.review => context.colors.tertiary,
-    BlockType.personal => context.palette.accent,
+    BlockType.personal => context.colors.onSurfaceVariant,
   };
 
   IconData get icon => switch (this) {

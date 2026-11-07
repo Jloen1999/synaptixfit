@@ -10,6 +10,7 @@ IconData permissionIcon(DevicePermission permission) => switch (permission) {
   DevicePermission.notifications => Icons.notifications_active_outlined,
   DevicePermission.exactAlarms => Icons.alarm_rounded,
   DevicePermission.camera => Icons.photo_camera_outlined,
+  DevicePermission.location => Icons.location_on_outlined,
 };
 
 /// Nombre corto del permiso.
@@ -19,6 +20,7 @@ String permissionTitle(BuildContext context, DevicePermission permission) {
     DevicePermission.notifications => l10n.profilePermissionNotificationsTitle,
     DevicePermission.exactAlarms => l10n.profilePermissionExactAlarmsTitle,
     DevicePermission.camera => l10n.profilePermissionCameraTitle,
+    DevicePermission.location => l10n.profilePermissionLocationTitle,
   };
 }
 
@@ -29,6 +31,7 @@ String permissionWhy(BuildContext context, DevicePermission permission) {
     DevicePermission.notifications => l10n.profilePermissionNotificationsWhy,
     DevicePermission.exactAlarms => l10n.profilePermissionExactAlarmsWhy,
     DevicePermission.camera => l10n.profilePermissionCameraWhy,
+    DevicePermission.location => l10n.profilePermissionLocationWhy,
   };
 }
 
@@ -39,6 +42,7 @@ String permissionAsk(BuildContext context, DevicePermission permission) {
     DevicePermission.notifications => l10n.profilePermissionNotificationsAsk,
     DevicePermission.exactAlarms => l10n.profilePermissionExactAlarmsAsk,
     DevicePermission.camera => l10n.profilePermissionCameraAsk,
+    DevicePermission.location => l10n.profilePermissionLocationAsk,
   };
 }
 

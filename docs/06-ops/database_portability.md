@@ -42,7 +42,7 @@ Todo está en `backend/src/main/java/com/synaptixfit/infrastructure/adapter/outp
 
 | Qué | Dónde | Por qué no se cambió | Qué haría falta en MySQL 8 |
 |---|---|---|---|
-| Columnas `jsonb` escritas con `CAST(:x AS jsonb)` y leídas con `::text` | `adapter/admin/AdminAuditJdbcAdapter.java:45, 99, 112`; `adapter/social/ModerationAuditJdbcAdapter.java` (`record`) | El tipo de columna es `jsonb` | `CAST(:x AS JSON)` y `CAST(detalle AS CHAR)`; columna `JSON` |
+| Columnas `jsonb` escritas con `CAST(:x AS jsonb)` y leídas con `::text` | `adapter/admin/AdminAuditJdbcAdapter.java:45, 99, 112`; `adapter/social/ModerationAuditJdbcAdapter.java` (`record`); `adapter/run/RecordedRunJdbcAdapter.java` (`tramos`, `ruta`) y `adapter/run/RunWorkoutJdbcAdapter.java` (`pasos`), que leen la columna como texto con `getString` | El tipo de columna es `jsonb` | `CAST(:x AS JSON)` y `CAST(detalle AS CHAR)`; columna `JSON` |
 | Exportación RGPD con `to_jsonb`, `jsonb_build_object`, `jsonb_agg`, `||` | `adapter/privacy/UserDataExportJdbcAdapter.java:53-154` | Construir el JSON en la base de datos es una sola consulta | `JSON_OBJECT` / `JSON_ARRAYAGG`, o mejor reescribirlo en Java (filas → mapas → Jackson) |
 | `INSERT … ON CONFLICT DO NOTHING` (concesión idempotente de insignias) | `adapter/badge/BadgePersistenceAdapter.java:59` | En PostgreSQL un error de clave duplicada aborta la transacción: no se puede «insertar y capturar» | `INSERT … ON DUPLICATE KEY UPDATE id = id` |
 | `INSERT … ON CONFLICT DO UPDATE` (nota propia de un ejercicio: crear o sustituir) | `adapter/training/ExerciseGuideJdbcAdapter.java` | Igual: una clave duplicada aborta la transacción, y dos guardados seguidos no deben dar error | `INSERT … ON DUPLICATE KEY UPDATE texto = VALUES(texto), …` |

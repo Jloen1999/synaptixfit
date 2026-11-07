@@ -7,6 +7,7 @@ This policy explains which of your data SynaptixFit uses, what for, who it is sh
 - We use your data to organise your studies and your training. We do not sell it or use it for advertising.
 - How you feel each day (sleep, energy, soreness, pain) and "My cycle" are health data: they are only stored if you give a separate permission, and you can withdraw it whenever you want.
 - Some features use artificial intelligence: we only send what is needed and never your name, your email or "My cycle".
+- If you record a run with GPS, we use your precise location only while you record. Your route is private: only you can see it.
 - You can download all your data or delete your account from the app at any time.
 
 ## Who looks after your data
@@ -18,7 +19,8 @@ This policy explains which of your data SynaptixFit uses, what for, who it is sh
 
 - Your account: name, email, password (stored encrypted, nobody can read it), profile photo if you add one and, if you sign in with Google, your Google identifier.
 - Your studies: university, degree, year, subjects, timetable, classes, assignments, exams, study blocks, notes, files you upload, review questions and your answers.
-- Your training: routines, sessions, sets, weights, times, activities and matches you log, challenges, streaks, level and badges.
+- Your training: routines, sessions, sets, weights, times, activities and matches you log, running workouts, challenges, streaks, level and badges.
+- Your precise location, only while you record a run with GPS (also with the screen off, with an ongoing "Recording your run" notice on the phone): the route you take, with the time and altitude of each point, to calculate distance, pace, elevation gain and per-kilometre splits and to draw the map. Location is never used outside a recording or in the background.
 - Your wellbeing profile, if you fill it in: age, sex, weight, height and activity level.
 - Your daily check-in, only if you give your permission: how you slept, stress, energy, soreness and areas with pain.
 - "My cycle", only if you turn it on: period days, energy and discomfort you log and your notes.
@@ -37,6 +39,14 @@ You can withdraw the permission whenever you want:
 - "My cycle": turn it off from its screen; you can delete everything you logged.
 
 Cycle data is only visible to you: it is not shared with anyone, not even the artificial intelligence, and it does not appear on your public profile.
+
+## Location and routes
+
+- Location is only requested right before your first run, explaining what it is for. If you do not allow it, you can log your activities by hand.
+- While you record, the route is first saved on your phone (so it is not lost if the app closes) and sent to our server when you finish or when there is a connection.
+- Your route is always private: it does not appear on your public profile or in the community. When you share a run only the figures are shared, never the map, because it could reveal where you live.
+- The map is drawn with MapTiler: your phone requests the images of the area shown (like any map). We do not send it your route, your name or your email.
+- They are deleted when you delete the run or your account. They are included in the copy of your data that you download yourself, but not in the one an administrator may prepare to handle a request.
 
 ## What we use it for
 
@@ -60,6 +70,7 @@ Only with companies we need for the app to work, which work for us and do not us
 - DeepSeek: artificial intelligence, as explained above. Its servers may be outside the European Union, including China.
 - Google: only if you sign in with your Google account, to check who you are.
 - Resend: sends the password recovery and weekly summary emails.
+- MapTiler: serves the images of the Running map; it receives the area of the map shown, not your route.
 
 When one of these companies is outside the European Union, data is sent with the contracts and safeguards required by European data protection law (GDPR).
 
@@ -68,7 +79,7 @@ When one of these companies is outside the European Union, data is sent with the
 - While you have the account.
 - If you delete something (a note, a session, a cycle day), it disappears from the app immediately.
 - If you delete your account, we delete your data and your files. Encrypted backups renew themselves and deleted data disappears from them when they expire.
-- What the app stores on your phone (drafts, scheduled reminders) is deleted when you sign out or uninstall it.
+- What the app stores on your phone (drafts, scheduled reminders, the run in progress or waiting to be sent) is deleted when you sign out or uninstall it.
 
 ## Your rights
 
@@ -83,7 +94,7 @@ If you think we do not handle your data properly, you can complain to the Spanis
 
 ## Phone permissions
 
-The app only asks for permissions when they are needed and explains first what for: notifications (reminders), on-time reminders (so reminders arrive at the exact minute) and camera (photographing notes). You can refuse or remove them in the phone settings: the app keeps working without them.
+The app only asks for permissions when they are needed and explains first what for: notifications (reminders), on-time reminders (so reminders arrive at the exact minute), camera (photographing notes) and location (recording runs, only while the app is in use; never "always"). You can refuse or remove them in the phone settings: the app keeps working without them.
 
 ## Minors
 

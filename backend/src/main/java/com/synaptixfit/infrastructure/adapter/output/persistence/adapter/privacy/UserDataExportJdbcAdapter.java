@@ -111,7 +111,10 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
             sections.put("dailyCheckIns", rows("estado_diario_usuario t", "t.usuario_id = :id", "t.fecha"));
             sections.put("cycleTracking", single("seguimiento_ciclo"));
             sections.put("cycleDays", rows("dias_ciclo t", "t.usuario_id = :id", "t.fecha"));
+            // Rutas GPS (ADR 0037): ubicación exacta, solo en la copia de su dueño.
+            sections.put("gpsRuns", rows("carreras_gps t", "t.usuario_id = :id", "t.iniciada_en"));
         }
+        sections.put("runWorkouts", rows("entrenos_carrera t", "t.usuario_id = :id", "t.creado_en"));
         sections.put("loggedActivities", rows("actividades_apuntadas t", "t.usuario_id = :id", "t.creado_en"));
         sections.put("reminderOptions", single("opciones_avisos"));
         sections.put("legalAcceptances", rows("aceptaciones_legales t", "t.usuario_id = :id", "t.aceptada_en"));

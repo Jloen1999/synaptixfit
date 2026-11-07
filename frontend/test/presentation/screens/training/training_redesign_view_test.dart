@@ -302,7 +302,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Pausar y salir'), findsOneWidget);
-      expect(find.text('El tiempo se para hasta que vuelvas'), findsOneWidget);
+      expect(find.text('El tiempo se para. Para volver, toca «Volver» en la barra de abajo o en Entreno › Gimnasio.'), findsOneWidget);
       expect(find.text('Terminar ahora'), findsOneWidget);
       expect(
         find.textContaining('Se guarda con lo que has hecho (1 de'),

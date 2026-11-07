@@ -14,6 +14,16 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <!-- La cámara es opcional: sin esto, Google Play ocultaría la app en móviles sin cámara. -->
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- Carreras con GPS (ADR 0037): ubicación exacta solo con la app en uso; se pide con una
+         explicación justo antes de la primera carrera. Con la pantalla apagada sigue grabando
+         gracias al servicio en primer plano de tipo «location» (de geolocator, con el aviso fijo
+         «Grabando tu carrera»). Nunca se pide ACCESS_BACKGROUND_LOCATION. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <!-- El GPS es opcional: sin él se apuntan las actividades a mano. -->
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
     <application
         android:label="SynaptixFit"
         android:name="${applicationName}"

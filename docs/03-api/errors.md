@@ -188,6 +188,11 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `PLANNER_RANGE_TOO_LARGE` | 400 | Rango de fechas inválido o demasiado grande | El rango de fechas no es válido. | Activo |
 | `PLANNER_ICS_URL_MISSING` | 422 | Sin URL ICS en la petición ni en la asignatura (o calendario general sin URL) | Añade la URL del calendario de la asignatura. | Activo |
 | `PLANNER_PAST_ACTIVITY_OUT_OF_RANGE` | 422 | La actividad pasada aún no ha terminado o es de hace más de 7 días | `plannerErrorPastActivityOutOfRange` | Solo puedes apuntar actividades ya terminadas de los últimos 7 días. | Activo |
+| `RUN_TOO_SHORT` | 422 | La carrera tiene menos de 10 minutos en movimiento (ADR 0037) | `runErrorTooShort` | Hacen falta al menos 10 minutos en movimiento para que cuente como actividad. | Activo |
+| `RUN_OUT_OF_RANGE` | 422 | La carrera aún no ha terminado (más de 2 min de margen de reloj) o empezó hace más de 30 días | `runErrorOutOfRange` | Solo se guardan carreras ya terminadas de los últimos 30 días. Puedes apuntarla a mano si fue esta semana. | Activo |
+| `RUN_ROUTE_TOO_LARGE` | 413 | La ruta supera 20 000 puntos o la petición pasa de 2 MB (`STATUS_BY_CODE`: es el tamaño, no un dato mal escrito) | `runErrorRouteTooLarge` | La ruta es demasiado larga para guardarla. Prueba a apuntar la actividad a mano. | Activo |
+| `RUN_NOT_FOUND` | 404 | La carrera con GPS no existe o es de otro usuario | `runErrorNotFound` | Esa carrera ya no existe. | Activo |
+| `RUN_WORKOUT_NOT_FOUND` | 404 | El entreno de carrera no existe o es de otro usuario (una plantilla desconocida es `VALIDATION_ERROR` del campo `templateCode`) | `runErrorWorkoutNotFound` | Ese entreno de carrera ya no existe. | Activo |
 | `PLANNER_PAST_ACTIVITY_TYPE_NOT_ALLOWED` | 422 | Se intenta apuntar a posteriori algo que no es deporte ni estudio | `plannerErrorPastActivityType` | Solo puedes apuntar después deporte o estudio. | Activo |
 | `PLANNER_CALENDAR_FEED_NOT_FOUND` | 404 | El enlace de suscripción al calendario no existe o se revocó | Ese enlace ya no existe: puede que lo desactivaras desde otro dispositivo. | Activo |
 | `PLANNER_ICS_URL_INVALID` | 400 | URL no http(s)/webcal o dirección local | La URL del calendario no es válida. | Activo |

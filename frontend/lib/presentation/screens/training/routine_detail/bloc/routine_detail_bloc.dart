@@ -172,7 +172,11 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
       (e, emit) => _mutate(
         emit,
         (id) => _uc.skipDay(id, e.dayId),
-        message: TrainingMessage.daySkipped,
+        effect: (id) => TrainingEffect.daySkipped(
+          routineId: id,
+          dayId: e.dayId,
+          inRoutine: true,
+        ),
       ),
     );
     on<RoutineDetailDayUnskipped>(
@@ -444,6 +448,7 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
     Emitter<RoutineDetailState> emit,
     Future<AppResult<Routine>> Function(String routineId) call, {
     TrainingMessage? message,
+    TrainingEffect Function(String routineId)? effect,
   }) async {
     final id = state.routineId;
     if (id == null || state.busy) return;
@@ -454,6 +459,7 @@ class RoutineDetailBloc extends Bloc<RoutineDetailEvent, RoutineDetailState> {
       case Success(value: final routine):
         emit(state.copyWith(busy: false, routine: routine));
         if (message != null) _effect(emit, TrainingEffect.message(message));
+        if (effect != null) _effect(emit, effect(id));
       case Failure(:final error):
         emit(state.copyWith(busy: false));
         _effect(emit, TrainingEffect.error(error));

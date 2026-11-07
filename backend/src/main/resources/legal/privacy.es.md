@@ -7,6 +7,7 @@ Esta política explica qué datos tuyos usa SynaptixFit, para qué, con quién s
 - Usamos tus datos para organizar tu estudio y tu entrenamiento. No los vendemos ni los usamos para publicidad.
 - Cómo te encuentras cada día (sueño, energía, agujetas, dolor) y «Mi ciclo» son datos de salud: solo se guardan si das tu permiso aparte, y puedes retirarlo cuando quieras.
 - Algunas funciones usan inteligencia artificial: solo le enviamos lo necesario y nunca tu nombre, tu correo ni «Mi ciclo».
+- Si grabas una carrera con el GPS, usamos tu ubicación exacta solo mientras grabas. Tu ruta es privada: solo la ves tú.
 - Puedes descargar todos tus datos o borrar tu cuenta desde la app cuando quieras.
 
 ## Quién cuida de tus datos
@@ -18,7 +19,8 @@ Esta política explica qué datos tuyos usa SynaptixFit, para qué, con quién s
 
 - Tu cuenta: nombre, correo, contraseña (guardada cifrada, nadie puede leerla), foto de perfil si la pones y, si entras con Google, tu identificador de Google.
 - Tus estudios: universidad, carrera, curso, asignaturas, horario, clases, entregas, exámenes, bloques de estudio, apuntes, archivos que subes, preguntas de repaso y tus respuestas.
-- Tu entrenamiento: rutinas, sesiones, series, pesos, tiempos, actividades y partidos que apuntas, retos, rachas, nivel e insignias.
+- Tu entrenamiento: rutinas, sesiones, series, pesos, tiempos, actividades y partidos que apuntas, entrenos de carrera, retos, rachas, nivel e insignias.
+- Tu ubicación exacta, solo mientras grabas una carrera con el GPS (también con la pantalla apagada, con un aviso fijo «Grabando tu carrera» en el móvil): la ruta que haces, con la hora de cada punto y la altitud, para calcular la distancia, el ritmo, el desnivel y los tramos por kilómetro y dibujar el mapa. Nunca se usa la ubicación fuera de la grabación ni en segundo plano.
 - Tu perfil de bienestar, si lo rellenas: edad, sexo, peso, altura y nivel de actividad.
 - Tu registro diario, solo si das tu permiso: cómo dormiste, estrés, energía, agujetas y zonas con dolor.
 - «Mi ciclo», solo si lo activas: días de regla, energía y molestias que apuntes y tus notas.
@@ -37,6 +39,14 @@ Puedes retirar el permiso cuando quieras:
 - «Mi ciclo»: desactívalo desde su pantalla; puedes borrar todo lo apuntado.
 
 Los datos del ciclo solo los ves tú: no se comparten con nadie, tampoco con la inteligencia artificial, y no aparecen en tu perfil público.
+
+## Ubicación y rutas
+
+- Solo se pide la ubicación justo antes de tu primera carrera, explicando para qué sirve. Si no la das, puedes apuntar tus actividades a mano.
+- Mientras grabas, la ruta se guarda primero en tu móvil (para no perderla si se cierra la app) y se envía a nuestro servidor al terminar o cuando haya conexión.
+- Tu ruta es siempre privada: no aparece en tu perfil público ni en la comunidad. Al compartir una carrera solo se comparten las cifras, nunca el mapa, porque podría revelar dónde vives.
+- El mapa se dibuja con MapTiler: tu móvil le pide las imágenes de la zona que se ve (como cualquier mapa). No le enviamos tu ruta, tu nombre ni tu correo.
+- Se borran al borrar la carrera o tu cuenta. Están en la copia de tus datos que descargas tú, pero no en la que puede preparar un administrador para atender una petición.
 
 ## Para qué los usamos
 
@@ -60,6 +70,7 @@ Solo con empresas que necesitamos para que la app funcione y que trabajan para n
 - DeepSeek: inteligencia artificial, como se explica arriba. Sus servidores pueden estar fuera de la Unión Europea, incluida China.
 - Google: solo si entras con tu cuenta de Google, para comprobar quién eres.
 - Resend: envía los correos de recuperar la contraseña y del resumen semanal.
+- MapTiler: sirve las imágenes del mapa de Correr; recibe la zona del mapa que se ve, no tu ruta.
 
 Cuando una de estas empresas está fuera de la Unión Europea, el envío se hace con los contratos y garantías que exige la ley europea de protección de datos (RGPD).
 
@@ -68,7 +79,7 @@ Cuando una de estas empresas está fuera de la Unión Europea, el envío se hace
 - Mientras tengas la cuenta.
 - Si borras algo (un apunte, una sesión, un día del ciclo), desaparece de la app al momento.
 - Si eliminas tu cuenta, borramos tus datos y tus archivos. Las copias de seguridad cifradas se renuevan solas y lo borrado desaparece de ellas cuando caducan.
-- Lo que la app guarda en tu móvil (borradores, avisos programados) se borra al cerrar sesión o al desinstalarla.
+- Lo que la app guarda en tu móvil (borradores, avisos programados, la carrera en curso o pendiente de enviar) se borra al cerrar sesión o al desinstalarla.
 
 ## Tus derechos
 
@@ -83,7 +94,7 @@ Si crees que no tratamos bien tus datos, puedes reclamar ante la Agencia Españo
 
 ## Permisos del móvil
 
-La app solo pide permisos cuando hacen falta y explica antes para qué: notificaciones (recordatorios), avisos a su hora (que los recordatorios lleguen en el minuto exacto) y cámara (fotografiar apuntes). Puedes negarlos o quitarlos en los ajustes del móvil: la app sigue funcionando sin ellos.
+La app solo pide permisos cuando hacen falta y explica antes para qué: notificaciones (recordatorios), avisos a su hora (que los recordatorios lleguen en el minuto exacto), cámara (fotografiar apuntes) y ubicación (grabar carreras, solo mientras la app está en uso; nunca «siempre»). Puedes negarlos o quitarlos en los ajustes del móvil: la app sigue funcionando sin ellos.
 
 ## Menores
 

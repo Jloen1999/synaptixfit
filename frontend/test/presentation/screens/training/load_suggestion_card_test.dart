@@ -7,7 +7,7 @@ import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/page/live_focus_view.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
-/// «Hoy prueba 42 kg (+5 %)»: la propuesta dice la cifra, el porqué y que solo
+/// «Siguiente paso: prueba 42,5 kg»: la propuesta dice la cifra, el porqué y que solo
 /// cambia las series que faltan; se acepta y se deshace con un toque.
 void main() {
   const up = LoadSuggestion(
@@ -66,9 +66,9 @@ void main() {
     bool? toggled;
     await pump(tester, up, onToggled: (v) => toggled = v);
 
-    expect(find.text('Hoy prueba 42,5 kg (+6 %)'), findsOneWidget);
-    expect(find.textContaining('La última vez hiciste 40 kg'), findsOneWidget);
-    expect(find.textContaining('RPE 6 de 10'), findsOneWidget);
+    expect(find.text('Siguiente paso: prueba 42,5 kg (+6 %)'), findsOneWidget);
+    expect(find.textContaining('la última vez hiciste 40 kg'), findsOneWidget);
+    expect(find.textContaining('te costó 6 de 10, sin llegar al fallo'), findsOneWidget);
     expect(find.textContaining('tu rutina sigue igual'), findsOneWidget);
     expect(
       find.bySemanticsLabel(RegExp('un 6 por ciento más')),
@@ -106,8 +106,8 @@ void main() {
         lastRpe: 8,
       ),
     );
-    expect(find.text('Hoy baja a 36 kg (−10 %)'), findsOneWidget);
-    expect(find.textContaining('fallaste repeticiones'), findsOneWidget);
+    expect(find.text('Siguiente paso: baja a 36 kg (−10 %)'), findsOneWidget);
+    expect(find.textContaining('no completaste todas las repeticiones'), findsOneWidget);
 
     await pump(
       tester,
@@ -121,7 +121,7 @@ void main() {
         lastRpe: 7,
       ),
     );
-    expect(find.text('Hoy prueba 11 repeticiones'), findsOneWidget);
+    expect(find.text('Siguiente paso: prueba 11 repeticiones'), findsOneWidget);
   });
 
   testWidgets('cabe con el texto al 200 % en 320 dp', (tester) async {

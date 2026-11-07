@@ -88,6 +88,8 @@ abstract final class WellbeingExtraDtos {
         effort: json['effort'] as int?,
         paceSecondsPerKm: json['paceSecondsPerKm'] as int?,
         speedKmh: (json['speedKmh'] as num?)?.toDouble(),
+        source: ActivitySource.fromApi(json['source'] as String?),
+        elevationGainMeters: json['elevationGainMeters'] as int?,
       );
 
   static TrainingPage<SportActivity> activities(Map<String, dynamic> json) =>

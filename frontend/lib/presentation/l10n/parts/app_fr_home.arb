@@ -181,5 +181,6 @@
   "homeBannerActionTrainingToday": "Voir l'entraînement du jour",
   "homeBannerActionNextSlot": "Au prochain créneau",
   "homeBannerActionDone": "Fait",
-  "homeBannerActionMarkInCalendar": "Marquer dans le calendrier"
+  "homeBannerActionMarkInCalendar": "Marquer dans le calendrier",
+  "homeStartRun": "Commencer à courir"
 }

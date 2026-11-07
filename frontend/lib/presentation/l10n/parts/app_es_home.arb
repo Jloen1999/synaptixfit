@@ -664,5 +664,6 @@
   "homeBannerActionTrainingToday": "Ver entreno de hoy",
   "homeBannerActionNextSlot": "Al próximo hueco",
   "homeBannerActionDone": "Hecho",
-  "homeBannerActionMarkInCalendar": "Marcar en el calendario"
+  "homeBannerActionMarkInCalendar": "Marcar en el calendario",
+  "homeStartRun": "Empezar a correr"
 }

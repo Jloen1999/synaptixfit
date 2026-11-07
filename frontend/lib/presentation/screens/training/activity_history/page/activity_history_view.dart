@@ -10,6 +10,7 @@ import '../../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../training_routes.dart';
+import '../../widgets/run_labels.dart';
 import '../bloc/activity_history_bloc.dart';
 
 /// Pestaña «Actividades y partidos» del historial: deporte hecho fuera de las
@@ -93,7 +94,7 @@ class _ActivityList extends StatelessWidget {
               ),
               const SizedBox(height: TokensSpacing.m),
               for (final activity in state.items) ...[
-                _ActivityTile(activity: activity),
+                SportActivityTile(activity: activity),
                 const SizedBox(height: TokensSpacing.s),
               ],
               if (state.hasMore)
@@ -112,8 +113,11 @@ class _ActivityList extends StatelessWidget {
   }
 }
 
-class _ActivityTile extends StatelessWidget {
-  const _ActivityTile({required this.activity});
+/// Una actividad hecha con su origen («GPS de la app», «Apuntada a mano»).
+/// Las grabadas con GPS abren su detalle (ruta y tramos por km). La usan el
+/// historial y «Tus actividades» de Correr.
+class SportActivityTile extends StatelessWidget {
+  const SportActivityTile({super.key, required this.activity});
 
   final SportActivity activity;
 
@@ -129,11 +133,16 @@ class _ActivityTile extends StatelessWidget {
       decimalDigits: 1,
     );
     final kind = activity.kind;
+    // Vocabulario: «Carrera», «Paseo», «Bici» (las mismas que su detalle).
     final title =
         activity.title ??
-        (kind == null
-            ? l10n.trainingActivityKindOther
-            : activityKindLabel(l10n, kind));
+        switch (kind) {
+          null => l10n.trainingActivityKindOther,
+          ActivityKind.run ||
+          ActivityKind.walk ||
+          ActivityKind.bike => RunLabels.kindName(l10n, kind),
+          _ => activityKindLabel(l10n, kind),
+        };
     final pace = activity.paceSecondsPerKm;
     final figures = <(String, String?)>[
       (l10n.trainingActivityMinutes(activity.minutes), null),
@@ -159,11 +168,18 @@ class _ActivityTile extends StatelessWidget {
           ),
         ),
       if (activity.effort case final e?) (l10n.trainingActivityEffort(e), null),
+      if (activity.elevationGainMeters case final up? when up > 0)
+        (l10n.runElevationShort(up), null),
+      (RunLabels.source(l10n, activity.source), null),
     ];
+    final gps = activity.source == ActivitySource.gps;
     final date = toBeginningOfSentenceCase(
       DateFormat.MMMEd(l10n.localeName).add_Hm().format(activity.start),
     );
     return AppCard(
+      onTap: gps
+          ? () => context.push(TrainingPaths.run(activity.blockId))
+          : null,
       child: MergeSemantics(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

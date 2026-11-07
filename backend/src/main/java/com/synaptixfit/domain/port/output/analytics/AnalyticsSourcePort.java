@@ -15,7 +15,7 @@ import java.util.UUID;
  */
 public interface AnalyticsSourcePort {
 
-    /** Sesiones completadas desde {@code from} (incluido). */
+    /** Sesiones de gimnasio y actividades hechas (carreras, deporte apuntado) desde {@code from} (incluido). */
     List<CompletedSession> completedTrainingSessions(UUID userId, Instant from);
 
     List<WeeklyStudyLoad> weeklyStudyLoads(UUID userId, LocalDate fromWeek);
