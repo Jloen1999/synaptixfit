@@ -13,7 +13,14 @@ import '../training_routes.dart';
 class TrainingEffectHandler with ErrorsMessageMixin {
   const TrainingEffectHandler();
 
-  void handle(BuildContext context, TrainingEffect effect) {
+  /// [onUnskipDay]: «Recuperar» del aviso de día saltado cuando ya se está
+  /// en la rutina.
+  void handle(
+    BuildContext context,
+    TrainingEffect effect, {
+    ValueChanged<String>? onUnskipDay,
+  }) {
+    final l10n = context.localizations;
     switch (effect) {
       case TrainingEffectError(:final error):
         context.showSnack(errorMessage(context, error));
@@ -32,6 +39,25 @@ class TrainingEffectHandler with ErrorsMessageMixin {
           TrainingPaths.sessionCompleted(result.session.id),
           extra: result,
         );
+      case TrainingEffectDaySkipped(
+        :final routineId,
+        :final dayId,
+        :final inRoutine,
+      ):
+        // Nunca «se puede recuperar» sin decir dónde (vocabulario.md).
+        if (inRoutine && onUnskipDay != null) {
+          context.showActionSnack(
+            l10n.trainingDaySkippedHere,
+            actionLabel: l10n.trainingUnskipDay,
+            onAction: () => onUnskipDay(dayId),
+          );
+        } else {
+          context.showActionSnack(
+            l10n.trainingDaySkippedWhere,
+            actionLabel: l10n.trainingSeeRoutine,
+            onAction: () => context.push(TrainingPaths.routine(routineId)),
+          );
+        }
       case TrainingEffectClose():
         if (context.canPop()) {
           context.pop();

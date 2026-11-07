@@ -391,5 +391,8 @@
   "profileHealthConsentWithdrawKeep": "Retirar e guardar os anteriores",
   "profileHealthConsentWithdrawDelete": "Retirar e apagar todos",
   "profileHealthConsentWithdrawn": "Permissão retirada",
-  "profileLegalCheckboxRequired": "Marca a caixa para continuar."
+  "profileLegalCheckboxRequired": "Marca a caixa para continuar.",
+  "profilePermissionLocationTitle": "Localização",
+  "profilePermissionLocationWhy": "Para gravar as tuas corridas com o GPS: distância, ritmo e rota. Só enquanto gravas, também com o ecrã desligado. Sem ela, podes registar as atividades à mão.",
+  "profilePermissionLocationAsk": "Permitir a localização?"
 }

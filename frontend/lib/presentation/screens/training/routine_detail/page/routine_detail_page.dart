@@ -168,8 +168,13 @@ class _DetailViewState extends State<_DetailView> {
     final l10n = context.localizations;
     return BlocConsumer<RoutineDetailBloc, RoutineDetailState>(
       listenWhen: (p, c) => c.effect != null && p.effect != c.effect,
-      listener: (context, state) =>
-          const TrainingEffectHandler().handle(context, state.effect!),
+      listener: (context, state) => const TrainingEffectHandler().handle(
+        context,
+        state.effect!,
+        onUnskipDay: (dayId) => context.read<RoutineDetailBloc>().add(
+          RoutineDetailEvent.dayUnskipped(dayId),
+        ),
+      ),
       builder: (context, state) {
         final routine = state.routine;
         if (routine != null && !_weekChosen) _chooseInitialWeek(routine);
@@ -401,6 +406,20 @@ class _Header extends StatelessWidget {
               l10n.trainingPlanWeekOf(r.currentWeek, r.weeks.length),
               style: context.textStyles.titleSmall,
             ),
+            // Qué toca esta semana, en una frase (vocabulario: «Semana 2 de
+            // 8» + su objetivo, nunca «mesociclo»).
+            if (r.weeks
+                    .where((w) => w.number == r.currentWeek)
+                    .firstOrNull
+                    ?.type
+                case final type?)
+              Text(
+                l10n.trainingPlanThisWeek(
+                  type.label(l10n),
+                  type.description(l10n),
+                ),
+                style: context.textStyles.bodyMedium,
+              ),
             const SizedBox(height: TokensSpacing.xs),
             ExcludeSemantics(
               child: ClipRRect(

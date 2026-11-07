@@ -45,6 +45,9 @@ abstract final class HomeExternalPaths {
   static String routine(String routineId) => '/training/routines/$routineId';
   static const checkIn = '/training/check-in';
 
+  /// Grabar una carrera con el GPS (pantalla completa, ADR 0037).
+  static const recordRun = '/training/run/record';
+
   /// Sesión en vivo (pantalla completa).
   static String session(String sessionId) => '/training/sessions/$sessionId';
   static const progress = '/progress';

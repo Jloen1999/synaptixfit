@@ -62,6 +62,10 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
         emit,
         () => _skipDay(e.routineId, e.dayId),
         TrainingMessage.daySkipped,
+        effect: TrainingEffect.daySkipped(
+          routineId: e.routineId,
+          dayId: e.dayId,
+        ),
       ),
     );
     on<TrainingHomeStaleFinished>(
@@ -173,15 +177,16 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
   Future<void> _act(
     Emitter<TrainingHomeState> emit,
     Future<AppResult<Object?>> Function() call,
-    TrainingMessage message,
-  ) async {
+    TrainingMessage message, {
+    TrainingEffect? effect,
+  }) async {
     if (state.working) return;
     emit(state.copyWith(working: true));
     final result = await call();
     emit(state.copyWith(working: false));
     switch (result) {
       case Success():
-        _effect(emit, TrainingEffect.message(message));
+        _effect(emit, effect ?? TrainingEffect.message(message));
         add(const TrainingHomeEvent.refreshed());
       case Failure(:final error):
         _effect(emit, TrainingEffect.error(error));

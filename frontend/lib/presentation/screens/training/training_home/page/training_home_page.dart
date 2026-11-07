@@ -18,9 +18,10 @@ import '../../widgets/routine_summary_card.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../../widgets/training_labels.dart';
+import '../../widgets/training_section_bar.dart';
 import '../bloc/training_home_bloc.dart';
 
-/// Pestaña Rutinas.
+/// Apartado «Gimnasio» de la pestaña Entreno (rutinas, sesiones y registro).
 class TrainingHomePage extends StatelessWidget {
   const TrainingHomePage({super.key});
 
@@ -113,6 +114,7 @@ class _TrainingHomeView extends StatelessWidget {
         return Scaffold(
           appBar: AppPageBar(
             title: Text(l10n.tabTraining),
+            bottom: const TrainingSectionBar(current: TrainingSection.gym),
             actions: [
               IconButton(
                 tooltip: l10n.trainingHistoryTitle,

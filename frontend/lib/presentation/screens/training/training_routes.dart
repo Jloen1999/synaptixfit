@@ -17,6 +17,12 @@ import 'session_history/page/session_history_page.dart';
 import 'training_home/page/training_home_page.dart';
 import 'weekly_plan/page/weekly_plan_page.dart';
 import 'routine_templates/page/routine_templates_page.dart';
+import 'run_detail/page/run_detail_page.dart';
+import 'run_home/page/run_home_page.dart';
+import 'run_recorder/page/run_recorder_page.dart';
+import 'run_workout_editor/page/run_workout_editor_page.dart';
+import 'widgets/training_section_bar.dart';
+import '../../../domain/models/training/run.dart';
 
 /// Rutas del módulo training.
 abstract final class TrainingPaths {
@@ -61,13 +67,46 @@ abstract final class TrainingPaths {
 
   /// «Mi ciclo» (opcional, ADR 0033).
   static const cycle = '$root/cycle';
+
+  /// Apartado de la pestaña Entreno («Gimnasio», «Correr»).
+  static String section(TrainingSection s) =>
+      s == TrainingSection.gym ? root : '$root?section=${s.query}';
+
+  /// Historial abierto en «Actividades y partidos».
+  static const activities = '$history?tab=activities';
+
+  /// Detalle de una carrera (dentro de la pestaña).
+  static String run(String blockId) => '$root/runs/$blockId';
+
+  /// Grabar una carrera (pantalla completa), con un entreno de carrera o
+  /// desde su evento del calendario si se indican.
+  static String recordRun({String? workoutId, String? eventId}) => Uri(
+    path: '$root/run/record',
+    queryParameters: {'workout': ?workoutId, 'event': ?eventId},
+  ).toString();
+
+  /// Crear un entreno de carrera (desde una plantilla si se indica).
+  static String newRunWorkout({String? template}) => Uri(
+    path: '$root/run-workouts/new',
+    queryParameters: {'template': ?template},
+  ).toString();
+
+  /// Cambiar un entreno de carrera (`extra`: el `RunWorkout`).
+  static String runWorkout(String id) => '$root/run-workouts/$id';
 }
 
 /// Rutas dentro de la pestaña (conservan la barra inferior).
 List<RouteBase> trainingBranchRoutes() => [
   GoRoute(
     path: TrainingPaths.root,
-    builder: (_, _) => const TrainingHomePage(),
+    // Un solo destino con apartados (`?section=`): la barra inferior se
+    // conserva y los enlaces a `/training/...` siguen funcionando.
+    builder: (_, state) => switch (TrainingSection.fromQuery(
+      state.uri.queryParameters['section'],
+    )) {
+      TrainingSection.run => const RunHomePage(),
+      TrainingSection.gym => const TrainingHomePage(),
+    },
     routes: [
       GoRoute(
         path: 'routines/new',
@@ -96,7 +135,32 @@ List<RouteBase> trainingBranchRoutes() => [
         path: 'templates',
         builder: (_, _) => const RoutineTemplatesPage(),
       ),
-      GoRoute(path: 'history', builder: (_, _) => const SessionHistoryPage()),
+      GoRoute(
+        path: 'history',
+        builder: (_, state) => SessionHistoryPage(
+          activities: state.uri.queryParameters['tab'] == 'activities',
+        ),
+      ),
+      GoRoute(
+        path: 'runs/:blockId',
+        builder: (_, state) =>
+            RunDetailPage(blockId: state.pathParameters['blockId']!),
+      ),
+      GoRoute(
+        path: 'run-workouts/new',
+        builder: (_, state) => RunWorkoutEditorPage(
+          templateCode: state.uri.queryParameters['template'],
+        ),
+      ),
+      GoRoute(
+        path: 'run-workouts/:workoutId',
+        builder: (_, state) => RunWorkoutEditorPage(
+          workoutId: state.pathParameters['workoutId'],
+          workout: state.extra is RunWorkout
+              ? state.extra! as RunWorkout
+              : null,
+        ),
+      ),
       GoRoute(path: 'weekly-plan', builder: (_, _) => const WeeklyPlanPage()),
     ],
   ),
@@ -112,6 +176,14 @@ List<RouteBase> trainingRoutes() => [
     builder: (_, _) => const PastActivityPage(),
   ),
   GoRoute(path: TrainingPaths.cycle, builder: (_, _) => const CyclePage()),
+  // Grabar una carrera, a pantalla completa como la sesión en vivo.
+  GoRoute(
+    path: '${TrainingPaths.root}/run/record',
+    builder: (_, state) => RunRecorderPage(
+      workoutId: state.uri.queryParameters['workout'],
+      eventId: state.uri.queryParameters['event'],
+    ),
+  ),
   // El resumen va como ruta hermana (no hija) para no reconstruir la sesión debajo.
   GoRoute(
     path: '${TrainingPaths.root}/sessions/:sessionId/completed',

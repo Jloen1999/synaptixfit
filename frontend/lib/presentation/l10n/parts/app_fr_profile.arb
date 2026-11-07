@@ -391,5 +391,8 @@
   "profileHealthConsentWithdrawKeep": "Retirer et garder les précédents",
   "profileHealthConsentWithdrawDelete": "Retirer et tout supprimer",
   "profileHealthConsentWithdrawn": "Autorisation retirée",
-  "profileLegalCheckboxRequired": "Coche la case pour continuer."
+  "profileLegalCheckboxRequired": "Coche la case pour continuer.",
+  "profilePermissionLocationTitle": "Localisation",
+  "profilePermissionLocationWhy": "Pour enregistrer tes courses avec le GPS : distance, allure et parcours. Uniquement pendant l’enregistrement, même écran éteint. Sans elle, tu peux noter les activités à la main.",
+  "profilePermissionLocationAsk": "Autoriser la localisation ?"
 }

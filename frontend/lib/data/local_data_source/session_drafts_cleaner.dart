@@ -1,7 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Borra del teléfono lo que la sesión en vivo guarda por sesión
-/// (`live_session_draft_*` y `pending_sets_*`). Lo usa `AuthRepository` al
+/// (`live_session_draft_*` y `pending_sets_*`) y las carreras con GPS en curso
+/// o por subir (`run_recording`, `run_pending_*`: llevan la ubicación exacta). Lo usa `AuthRepository` al
 /// cerrar sesión: así no se quedan para siempre ni los ve otra cuenta.
 class SessionDraftsCleaner {
   SessionDraftsCleaner([SharedPreferencesAsync? preferences])
@@ -9,7 +10,12 @@ class SessionDraftsCleaner {
 
   final SharedPreferencesAsync _preferences;
 
-  static const _prefixes = ['live_session_draft_', 'pending_sets_'];
+  static const _prefixes = [
+    'live_session_draft_',
+    'pending_sets_',
+    'run_recording',
+    'run_pending_',
+  ];
 
   Future<void> clear() async {
     final keys = await _preferences.getKeys();

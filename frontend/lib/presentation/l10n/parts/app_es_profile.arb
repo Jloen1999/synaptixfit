@@ -665,5 +665,8 @@
   "profileHealthConsentWithdrawKeep": "Retirar y guardar los anteriores",
   "profileHealthConsentWithdrawDelete": "Retirar y borrarlos todos",
   "profileHealthConsentWithdrawn": "Permiso retirado",
-  "profileLegalCheckboxRequired": "Marca la casilla para seguir."
+  "profileLegalCheckboxRequired": "Marca la casilla para seguir.",
+  "profilePermissionLocationTitle": "Ubicación",
+  "profilePermissionLocationWhy": "Para grabar tus carreras con el GPS: distancia, ritmo y ruta. Solo mientras grabas, también con la pantalla apagada. Sin ella, puedes apuntar las actividades a mano.",
+  "profilePermissionLocationAsk": "¿Permitir la ubicación?"
 }

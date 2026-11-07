@@ -391,5 +391,8 @@
   "profileHealthConsentWithdrawKeep": "Withdraw and keep the earlier ones",
   "profileHealthConsentWithdrawDelete": "Withdraw and delete them all",
   "profileHealthConsentWithdrawn": "Permission withdrawn",
-  "profileLegalCheckboxRequired": "Tick the box to continue."
+  "profileLegalCheckboxRequired": "Tick the box to continue.",
+  "profilePermissionLocationTitle": "Location",
+  "profilePermissionLocationWhy": "To record your runs with GPS: distance, pace and route. Only while you record, also with the screen off. Without it, you can log activities by hand.",
+  "profilePermissionLocationAsk": "Allow location?"
 }

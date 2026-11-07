@@ -3,6 +3,12 @@ import '../gen_l10n/app_localizations.dart';
 /// Códigos de error del módulo training.
 String? trainingErrorMessage(AppLocalizations l10n, String code) =>
     switch (code) {
+      // Carreras con GPS (ADR 0037).
+      'RUN_TOO_SHORT' => l10n.runErrorTooShort,
+      'RUN_OUT_OF_RANGE' => l10n.runErrorOutOfRange,
+      'RUN_ROUTE_TOO_LARGE' => l10n.runErrorRouteTooLarge,
+      'RUN_NOT_FOUND' => l10n.runErrorNotFound,
+      'RUN_WORKOUT_NOT_FOUND' => l10n.runErrorWorkoutNotFound,
       'CYCLE_CONSENT_REQUIRED' => l10n.trainingErrorCycleConsentRequired,
       'HEALTH_CONSENT_REQUIRED' => l10n.trainingErrorHealthConsentRequired,
       'CYCLE_TRACKING_OFF' => l10n.trainingErrorCycleTrackingOff,

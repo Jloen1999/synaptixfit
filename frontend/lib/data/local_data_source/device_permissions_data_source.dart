@@ -40,6 +40,9 @@ class PluginDevicePermissionsDataSource implements DevicePermissionsDataSource {
     return switch (permission) {
       DevicePermission.notifications => Permission.notification,
       DevicePermission.camera => Permission.camera,
+      // Nunca «siempre» (ACCESS_BACKGROUND_LOCATION): la grabación sigue con
+      // la pantalla apagada gracias al servicio en primer plano.
+      DevicePermission.location => Permission.locationWhenInUse,
       DevicePermission.exactAlarms =>
         _android ? Permission.scheduleExactAlarm : null,
     };

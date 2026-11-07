@@ -10,6 +10,10 @@ enum DevicePermission {
 
   /// Fotografiar apuntes en papel.
   camera,
+
+  /// Ubicación exacta mientras se graba una carrera (ADR 0037). Solo con la
+  /// app en uso: la pantalla apagada la cubre el servicio en primer plano.
+  location,
 }
 
 /// Cómo está un permiso en este dispositivo.

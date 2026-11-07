@@ -17,6 +17,7 @@ class NextTrainingCard extends StatelessWidget {
     required this.onStart,
     required this.onCheckIn,
     this.onOpenRoutine,
+    this.onRun,
     this.starting = false,
   });
 
@@ -29,6 +30,9 @@ class NextTrainingCard extends StatelessWidget {
 
   /// Abre la rutina sin empezar (ver ejercicios antes).
   final VoidCallback? onOpenRoutine;
+
+  /// «Empezar a correr» (ADR 0037): graba una carrera con el GPS.
+  final VoidCallback? onRun;
 
   /// Creando la sesión: el botón muestra que está trabajando.
   final bool starting;
@@ -96,6 +100,12 @@ class NextTrainingCard extends StatelessWidget {
                         label: l10n.homeTrainingCheckIn,
                         icon: const Icon(Icons.fact_check_outlined),
                         onPressed: starting ? null : onCheckIn,
+                      ),
+                    if (onRun case final run?)
+                      AppSecondaryButton(
+                        label: l10n.homeStartRun,
+                        icon: const Icon(Icons.directions_run_rounded),
+                        onPressed: starting ? null : run,
                       ),
                   ],
                 ),
@@ -186,15 +196,25 @@ class NextTrainingCard extends StatelessWidget {
               ],
             ),
           ),
-        if (next == null && !checkInDone) ...[
+        if (next == null && (!checkInDone || onRun != null)) ...[
           const SizedBox(height: TokensSpacing.s),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: AppSecondaryButton(
-              label: l10n.homeTrainingCheckIn,
-              icon: const Icon(Icons.fact_check_outlined),
-              onPressed: onCheckIn,
-            ),
+          Wrap(
+            spacing: TokensSpacing.s,
+            runSpacing: TokensSpacing.s,
+            children: [
+              if (!checkInDone)
+                AppSecondaryButton(
+                  label: l10n.homeTrainingCheckIn,
+                  icon: const Icon(Icons.fact_check_outlined),
+                  onPressed: onCheckIn,
+                ),
+              if (onRun case final run?)
+                AppSecondaryButton(
+                  label: l10n.homeStartRun,
+                  icon: const Icon(Icons.directions_run_rounded),
+                  onPressed: run,
+                ),
+            ],
           ),
         ],
       ],
