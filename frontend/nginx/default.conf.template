@@ -31,6 +31,9 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # Sin geolocalización en la web: las carreras con GPS se graban desde el móvil (ADR 0037). Las teselas
+    # del mapa de Correr vienen de https://api.maptiler.com: no hay Content-Security-Policy general que lo
+    # impida; si se añade, debe incluir «img-src https://api.maptiler.com» (y connect-src en CanvasKit).
     add_header Permissions-Policy "camera=(self), microphone=(), geolocation=()" always;
     # Solo se sirve por HTTPS (Cloudflare): el navegador no volverá a intentar HTTP.
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;

@@ -77,3 +77,5 @@ Plantilla completa: [`backend/.env.example`](backend/.env.example).
 ## Cliente (Flutter web)
 
 Imagen `frontend/Dockerfile`: compila con `--dart-define=API_BASE_URL=https://synaptixfit.jloenit.dev` y `GOOGLE_CLIENT_ID` (variable `GOOGLE_WEB_CLIENT_ID` del repositorio en GitHub) y sirve con nginx. Sin secretos: el cliente nunca habla con la BD, la IA ni R2 directamente.
+
+Mapa de Correr (ADR 0037): `MAP_TILES_KEY` (variable `MAP_TILES_KEY` del repositorio en GitHub, clave pública de MapTiler restringida por dominio y por paquete de Android) y, opcional, `MAP_TILES_URL` con la plantilla de teselas (`{z}`, `{x}`, `{y}`, `{key}`) para cambiar de proveedor. Los APK también la necesitan en sus `--dart-define`. Sin clave, la ruta se dibuja sobre un fondo liso con «Mapa no disponible». Las teselas se piden desde el navegador o el móvil a `api.maptiler.com`; la web no tiene `Content-Security-Policy` general (solo `sandbox` en `/storage/`), así que no hay que abrir nada en nginx. Si algún día se añade una, debe permitir `img-src https://api.maptiler.com`.

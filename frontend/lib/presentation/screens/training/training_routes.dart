@@ -80,16 +80,17 @@ abstract final class TrainingPaths {
 
   /// Grabar una carrera (pantalla completa), con un entreno de carrera o
   /// desde su evento del calendario si se indican.
-  static String recordRun({String? workoutId, String? eventId}) => Uri(
-    path: '$root/run/record',
-    queryParameters: {'workout': ?workoutId, 'event': ?eventId},
-  ).toString();
+  static String recordRun({String? workoutId, String? eventId}) => _withQuery(
+    '$root/run/record',
+    {'workout': ?workoutId, 'event': ?eventId},
+  );
 
   /// Crear un entreno de carrera (desde una plantilla si se indica).
-  static String newRunWorkout({String? template}) => Uri(
-    path: '$root/run-workouts/new',
-    queryParameters: {'template': ?template},
-  ).toString();
+  static String newRunWorkout({String? template}) =>
+      _withQuery('$root/run-workouts/new', {'template': ?template});
+
+  static String _withQuery(String path, Map<String, String> query) =>
+      Uri(path: path, queryParameters: query.isEmpty ? null : query).toString();
 
   /// Cambiar un entreno de carrera (`extra`: el `RunWorkout`).
   static String runWorkout(String id) => '$root/run-workouts/$id';

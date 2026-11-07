@@ -80,6 +80,7 @@ jobs:
           build-args: |
             API_BASE_URL=${{ vars.PUBLIC_APP_URL || 'https://synaptixfit.jloenit.dev' }}
             GOOGLE_CLIENT_ID=${{ vars.GOOGLE_WEB_CLIENT_ID }}
+            MAP_TILES_KEY=${{ vars.MAP_TILES_KEY }}
           tags: |
             ${{ env.REGISTRY }}/synaptixfit-web:latest
             ${{ env.REGISTRY }}/synaptixfit-web:${{ github.sha }}

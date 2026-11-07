@@ -47,6 +47,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>SynaptixFit usa la cámara para fotografiar tus apuntes en papel y pasarlos a texto.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SynaptixFit usa tu ubicación exacta solo mientras grabas una carrera, para medir la distancia y el ritmo y dibujar tu ruta.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>SynaptixFit abre tus fotos para pasar a texto los apuntes que elijas.</string>
 </dict>

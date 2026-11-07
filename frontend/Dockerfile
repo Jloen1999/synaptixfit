@@ -10,13 +10,16 @@ RUN flutter pub get
 COPY . .
 ARG API_BASE_URL
 ARG GOOGLE_CLIENT_ID=""
+# Clave del mapa de Correr (MapTiler, ADR 0037). Vacía: la ruta se dibuja sin mapa de fondo.
+ARG MAP_TILES_KEY=""
 # Lo generado (freezed, json, traducciones) no se versiona: se regenera aquí.
 RUN dart run build_runner build --delete-conflicting-outputs \
  && dart run tool/merge_arb.dart \
  && flutter gen-l10n \
  && flutter build web --release \
       --dart-define=API_BASE_URL=${API_BASE_URL} \
-      --dart-define=GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      --dart-define=GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID} \
+      --dart-define=MAP_TILES_KEY=${MAP_TILES_KEY}
 
 FROM nginx:1.27-alpine
 # La plantilla se resuelve al arrancar con envsubst (BACKEND_UPSTREAM, R2_UPSTREAM y MEDIA_UPSTREAM). Sin
