@@ -132,8 +132,8 @@ class RunRecorderBloc extends Bloc<RunRecorderEvent, RunRecorderState> {
         ),
       );
       _advanceGuide(emit, announce: false);
+      // El GPS no se enciende hasta pulsar «Seguir».
       await _save(resumed);
-      _subscribe();
       return;
     }
     emit(
@@ -390,9 +390,14 @@ class RunRecorderBloc extends Bloc<RunRecorderEvent, RunRecorderState> {
 
   @override
   Future<void> close() async {
-    // Cerrar la pantalla no para la carrera: queda guardada y se sigue
-    // desde «Correr» («Tienes una carrera sin terminar»).
-    await _persist();
+    // Salir de la pantalla pausa la carrera: queda guardada y se sigue desde
+    // Entreno › Correr («Tienes una carrera sin terminar»).
+    final r = state.recording;
+    if (r != null && !r.finished && r.pausedAt == null) {
+      await _save(r.copyWith(pausedAt: _clock()));
+    } else {
+      await _persist();
+    }
     await _stopTracking();
     return super.close();
   }

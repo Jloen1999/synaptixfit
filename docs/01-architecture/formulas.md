@@ -168,6 +168,21 @@ Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevo
 - **Causa de la fatiga (`DailyCheckIn.mainCause`):** el término que más suma en la fórmula del registro diario ((6−sueño)·5, (dolor−1)·7, (6−energía)·4, (estrés−1)·5); con empate, sueño > agujetas > energía > estrés. Solo explica, no cambia la puntuación. El registro rápido no pregunta el estrés: se conserva el de hoy o el neutro (3), que no suma.
 - **Ritmo (`ActivityPace`):** s/km = minutos·60 ÷ km (redondeado); km/h = km ÷ (minutos ÷ 60), a una décima. Nadando se enseña por 100 m (s/km ÷ 10). Se usan los minutos reales apuntados, no los del bloque.
 
+## Carreras con GPS (ADR 0037)
+
+Todo se calcula en el servidor (`RunTrack`, `RunEnergy`); el móvil solo manda la ruta cruda y enseña cifras orientativas mientras graba (`RunLiveStats`, mismo criterio simplificado).
+
+- **Filtrado de puntos:** fuera los de precisión peor que 25 m, los que no avanzan en el tiempo y los «saltos imposibles»: más rápido que 12 m/s corriendo o andando (por encima de un sprint de élite) o 25 m/s en bici. Cada pausa abre un segmento nuevo: entre segmentos no se suma nada.
+- **Distancia (haversine):** d = 2·R·asin(√(sin²(Δφ/2) + cos φ₁·cos φ₂·sin²(Δλ/2))), con R = 6 371 008,8 m (radio medio, UGGI). Error < 0,5 % frente al elipsoide, de sobra para una carrera.
+- **Tiempo en movimiento:** se avanza desde un punto ancla y solo cuenta un paso cuando se aleja al menos 5 m (el baile del GPS parado mide 1-4 m); el paso es movimiento si va a 0,5 m/s o más (1,8 km/h). Si pasan más de 10 s sin alejarse, se estaba parado: el ancla se mueve sin sumar tiempo.
+- **Ritmo medio:** s/km = segundos en movimiento × 1000 ÷ metros (desde 100 m). Se enseña como «min por km» con una línea: «Minutos que tardas en recorrer 1 km: cuanto menos, más rápido».
+- **Tramos por kilómetro:** se interpola el instante exacto en que se cruza cada km dentro del paso que lo contiene; el último tramo, incompleto, sale si llega a 100 m, con su ritmo por km.
+- **Desnivel positivo:** la altitud del GPS tiene ±10 m de ruido. Media móvil centrada de 5 puntos y umbral de 3 m con histéresis: la referencia solo cambia con subidas o bajadas de 3 m o más, y se suman las subidas. Sin el umbral, el ruido de una pista llana sumaría decenas de metros.
+- **Kcal:** `kcal = MET · kg · h` (como `ExerciseEnergy`, horas en movimiento, peso del perfil o 70 kg). Correr y andar con las ecuaciones metabólicas del ACSM en llano: VO₂ = 3,5 + 0,2·v (correr) y 3,5 + 0,1·v (andar), v en m/min, MET = VO₂ ÷ 3,5. Bici por velocidad (Compendium, 01010-01050): < 16 km/h 4,0; 16-19 6,8; 19-22 8,0; 22-25 10,0; ≥ 25 12,0.
+- **Carga física y XP:** la carrera es una actividad (`LogPastActivityUseCase`, origen GPS) con los **minutos en movimiento** y el esfuerzo «¿Cuánto te ha costado?» (1-10): carga = esfuerzo × minutos, el mismo registro que alimenta el ACWR (`SportBlockCompletionChanged` → `registros_carga_fisica`). Como cualquier actividad, desde 10 minutos y con el bloque mínimo de 30 min del calendario (ADR 0033).
+- **Límites:** 20 000 puntos por ruta (5,5 h a un punto por segundo; el móvil graba uno cada 2 s o 3 m), petición ≤ 2 MB, de 10 a 300 minutos en movimiento, de los últimos 30 días (las manuales, 7). La ruta que se devuelve para dibujar se reduce a 600 puntos repartidos.
+- **Entrenos de carrera:** duración prevista = pasos de tiempo + pasos de distancia a 6:00 min/km; el evento del calendario dura eso (entre 30 min y 5 h). Hasta 20 grupos, 6 pasos por grupo, 30 repeticiones y 200 pasos desplegados.
+
 ## Retos (ADR 0028)
 
 - **Periodo:** solo se actúa a mano entre el inicio y el fin (`Challenge.requireOpen`), esté o no completado: antes, `CHALLENGE_NOT_STARTED` (estado `UPCOMING`); después, `CHALLENGE_EXPIRED`. Las tareas se pueden preparar antes de empezar, pero no editar tras el fin.
@@ -213,6 +228,9 @@ dispositivo. No bloquea nada: el onboarding corto deja saltar pasos y aquí se r
 - Kleitman, N. (1982). Basic rest-activity cycle — 22 years later. *Sleep*, 5(4), 311–317.
 - Gabbett, T. J. (2016). The training–injury prevention paradox. *British Journal of Sports Medicine*, 50(5), 273–280.
 - Mifflin, M. D. et al. (1990). A new predictive equation for resting energy expenditure. *American Journal of Clinical Nutrition*, 51(2), 241–247.
+- American College of Sports Medicine (2021). *ACSM's Guidelines for Exercise Testing and Prescription*, 11.ª ed., cap. 6: ecuaciones metabólicas de andar y correr.
+- Sinnott, R. W. (1984). Virtues of the Haversine. *Sky and Telescope*, 68(2), 159.
+- Moritz, H. (2000). Geodetic Reference System 1980. *Journal of Geodesy*, 74, 128–133 (radio medio de la Tierra).
 - Herrmann, S. D. et al. (2024). 2024 Adult Compendium of Physical Activities. *Journal of Sport and Health Science*, 13(1), 6–12.
 
 ## Objetivos por serie (`ExerciseParameters`, ADR 0027)
