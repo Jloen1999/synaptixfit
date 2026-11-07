@@ -142,7 +142,7 @@ class _TiledMap extends StatelessWidget {
         TileLayer(
           urlTemplate: url,
           additionalOptions: {'key': apiKey},
-          userAgentPackageName: 'com.synaptixfit.app',
+          userAgentPackageName: 'com.jloen.synaptixfit',
         ),
         if (points.length >= 2)
           PolylineLayer(
