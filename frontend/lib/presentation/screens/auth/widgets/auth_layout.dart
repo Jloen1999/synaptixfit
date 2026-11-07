@@ -59,7 +59,7 @@ class _BrandPanel extends StatelessWidget {
     final colors = context.colors;
     final points = [
       (Icons.sync_alt_rounded, l10n.authBrandPointLoad),
-      (Icons.auto_awesome_rounded, l10n.authBrandPointReview),
+      (Icons.lightbulb_outline_rounded, l10n.authBrandPointReview),
       (Icons.emoji_events_outlined, l10n.authBrandPointProgress),
     ];
     // Plano, sin degradado: el color de marca lo pone el monograma.

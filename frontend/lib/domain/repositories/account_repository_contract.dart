@@ -8,12 +8,15 @@ import '../models/result/result.dart';
 abstract interface class AccountRepositoryContract {
   Future<AppResult<Account>> getAccount();
 
-  /// Los parámetros nulos no cambian.
+  /// Los parámetros nulos no cambian; [clearBirthDate] quita la fecha de
+  /// nacimiento (es opcional).
   Future<AppResult<Account>> updateAccount({
     String? fullName,
     String? avatarUrl,
     Visibility? privacy,
     UsageFocus? usageFocus,
+    DateTime? birthDate,
+    bool clearBirthDate = false,
   });
 
   Future<AppResult<Unit>> changePassword({

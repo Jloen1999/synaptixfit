@@ -118,7 +118,6 @@
   "socialCommentsLoadMore": "Ver más comentarios",
   "socialFriendsTitle": "Amigos",
   "socialSearchUsersHint": "Buscar personas por nombre",
-  "socialSearchClear": "Borrar búsqueda",
   "socialSearchEmptyTitle": "Sin resultados",
   "socialSearchEmptyMessage": "No hay nadie que coincida con «{query}».",
   "@socialSearchEmptyMessage": {

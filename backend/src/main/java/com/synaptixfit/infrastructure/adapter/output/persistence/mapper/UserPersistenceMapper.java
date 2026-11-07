@@ -26,6 +26,7 @@ public final class UserPersistenceMapper {
                 .passwordHash(e.getPasswordHash())
                 .googleSubject(e.getGoogleSub())
                 .usageFocus(focusToDomain(e.getEnfoque()))
+                .birthDate(e.getFechaNacimiento())
                 .onboardingCompleted(e.isOnboardingCompletado())
                 .createdAt(e.getCreadoEn())
                 .deletedAt(e.getEliminadoEn())
@@ -46,6 +47,7 @@ public final class UserPersistenceMapper {
         e.setPasswordHash(u.passwordHash());
         e.setGoogleSub(u.googleSubject());
         e.setEnfoque(focusToDb(u.usageFocus()));
+        e.setFechaNacimiento(u.birthDate());
         e.setOnboardingCompletado(u.onboardingCompleted());
         e.setCreadoEn(u.createdAt());
         e.setEliminadoEn(u.deletedAt());

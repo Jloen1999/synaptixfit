@@ -665,5 +665,15 @@
   "homeBannerActionNextSlot": "Al próximo hueco",
   "homeBannerActionDone": "Hecho",
   "homeBannerActionMarkInCalendar": "Marcar en el calendario",
-  "homeStartRun": "Empezar a correr"
+  "homeStartRun": "Empezar a correr",
+  "homeBirthdayTitle": "¡Feliz cumpleaños, {name}!",
+  "@homeBirthdayTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeBirthdayTitleNoName": "¡Feliz cumpleaños!",
+  "homeBirthdayMessage": "Que tengas un gran día. Tu plan te espera cuando quieras."
 }

@@ -55,7 +55,6 @@
   "socialCommentsLoadMore": "Voir plus de commentaires",
   "socialFriendsTitle": "Amis",
   "socialSearchUsersHint": "Chercher des personnes par nom",
-  "socialSearchClear": "Effacer la recherche",
   "socialSearchEmptyTitle": "Aucun résultat",
   "socialSearchEmptyMessage": "Personne ne correspond à « {query} ».",
   "socialTabFriends": "Amis",

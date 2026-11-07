@@ -45,7 +45,11 @@ enum ReminderKind {
   challengeTask('CHALLENGE_TASK'),
 
   /// Resumen de la mañana: lo que trae el día; solo si hay algo (ADR 0035).
-  morningSummary('MORNING_SUMMARY');
+  morningSummary('MORNING_SUMMARY'),
+
+  /// «¡Feliz cumpleaños, Ana!» la mañana de su cumpleaños (ADR 0036). Si ese
+  /// día hay resumen de la mañana, va dentro de él.
+  birthday('BIRTHDAY');
 
   const ReminderKind(this.apiValue);
 

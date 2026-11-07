@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import com.synaptixfit.domain.model.academic.CatalogSubjectSelection;
 import com.synaptixfit.domain.model.academic.RetentionMetrics;
 import com.synaptixfit.domain.model.academic.Subject;
+import com.synaptixfit.domain.model.academic.SubjectAgenda;
 import com.synaptixfit.domain.model.academic.SubjectPriority;
 import com.synaptixfit.domain.model.academic.SubjectSemester;
 import com.synaptixfit.domain.model.academic.SubjectSummary;
@@ -32,7 +33,8 @@ public final class SubjectDtos {
                                        SubjectPriority priority,
                                        Instant nextAssessmentAt,
                                        @Size(max = 150) String teacher,
-                                       @Size(max = 2048) String icsUrl) {
+                                       @Size(max = 2048) String icsUrl,
+                                       @Size(max = 100) String room) {
     }
 
     /** Edición parcial: nulos sin cambios, texto en blanco borra el valor opcional. */
@@ -46,27 +48,41 @@ public final class SubjectDtos {
                                        Boolean clearNextAssessment,
                                        @Size(max = 150) String teacher,
                                        @Size(max = 2048) String icsUrl,
-                                       Boolean archived) {
+                                       Boolean archived,
+                                       @Size(max = 100) String room) {
     }
 
+    /**
+     * Asignatura con su agenda (ADR 0036): {@code nextClassAt}/{@code nextClassPlace} (próxima clase y su aula),
+     * {@code classDays} (1 = lunes) y la próxima entrega o examen sin hacer.
+     */
     public record SubjectResponse(UUID id, String name, String code, String description, int credits,
                                   int perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt,
-                                  String teacher, boolean archived, UUID catalogSubjectId, String icsUrl,
-                                  Instant lastSyncedAt, Instant createdAt, long noteCount, long fileCount) {
+                                  String teacher, String room, boolean archived, UUID catalogSubjectId, String icsUrl,
+                                  Instant lastSyncedAt, Instant createdAt, long noteCount, long fileCount,
+                                  Instant nextClassAt, String nextClassPlace, List<Integer> classDays,
+                                  NextDeadlineResponse nextDeadline) {
 
         public static SubjectResponse from(SubjectSummary s) {
-            return from(s.subject(), s.noteCount(), s.fileCount());
+            return from(s.subject(), s.noteCount(), s.fileCount(), s.agenda());
         }
 
         public static SubjectResponse from(Subject s) {
-            return from(s, 0, 0);
+            return from(s, 0, 0, SubjectAgenda.EMPTY);
         }
 
-        private static SubjectResponse from(Subject s, long notes, long files) {
+        private static SubjectResponse from(Subject s, long notes, long files, SubjectAgenda a) {
             return new SubjectResponse(s.id(), s.name(), s.code(), s.description(), s.credits(),
-                    s.perceivedDifficulty(), s.priority(), s.nextAssessmentAt(), s.teacher(), s.archived(),
-                    s.catalogSubjectId(), s.icsUrl(), s.lastSyncedAt(), s.createdAt(), notes, files);
+                    s.perceivedDifficulty(), s.priority(), s.nextAssessmentAt(), s.teacher(), s.room(), s.archived(),
+                    s.catalogSubjectId(), s.icsUrl(), s.lastSyncedAt(), s.createdAt(), notes, files,
+                    a.nextClassAt(), a.nextClassPlace(), a.classDays(),
+                    a.nextDeadline() == null ? null : new NextDeadlineResponse(a.nextDeadline().title(),
+                            a.nextDeadline().dueAt(), a.nextDeadline().exam()));
         }
+    }
+
+    /** Próxima entrega o examen sin hacer de la asignatura. */
+    public record NextDeadlineResponse(String title, Instant dueAt, boolean exam) {
     }
 
     @Schema(name = "AcademicCatalogSubjectResponse")

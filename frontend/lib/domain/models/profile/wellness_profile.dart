@@ -30,7 +30,9 @@ abstract class WellnessProfile with _$WellnessProfile {
 @freezed
 abstract class WellnessProfileDraft with _$WellnessProfileDraft {
   const factory WellnessProfileDraft({
-    required int age,
+    /// Ya no se pide (ADR 0036): la edad sale de la fecha de nacimiento de la
+    /// cuenta. Nula conserva la que hubiera.
+    int? age,
     required Sex sex,
     required double weightKg,
     required double heightCm,

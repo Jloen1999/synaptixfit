@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../../../app/di/app_di.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
+import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../../auth/session/bloc/session_bloc.dart';
+import '../../profile_routes.dart';
 import '../../widgets/profile_layout.dart';
 import '../../widgets/wellness_profile_form.dart';
 import '../bloc/wellness_form_bloc.dart';
@@ -48,7 +51,13 @@ class _EditWellnessView extends StatelessWidget with ErrorsMessageMixin {
             a.saving != b.saving ||
             a.suggesting != b.suggesting ||
             a.suggestions != b.suggestions,
-        builder: (context, state) => WellnessFormBody(state: state),
+        builder: (context, state) => WellnessFormBody(
+          state: state,
+          // La edad ya no se pide aquí: sale de la fecha de nacimiento.
+          header: context.select((SessionBloc b) => b.account?.birthDate) == null
+              ? const _BirthDateSuggestion()
+              : null,
+        ),
       ),
     );
   }
@@ -103,5 +112,37 @@ class WellnessFormBody extends StatelessWidget {
         ],
       ),
     };
+  }
+}
+
+/// Sugiere poner la fecha de nacimiento (sin bloquear): con ella la edad de
+/// las kcal y las propuestas se actualiza sola cada año (ADR 0036).
+class _BirthDateSuggestion extends StatelessWidget {
+  const _BirthDateSuggestion();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TokensSpacing.m),
+      child: AppCard(
+        child: Row(
+          children: [
+            Icon(Icons.cake_outlined, color: context.palette.accent),
+            const SizedBox(width: TokensSpacing.m),
+            Expanded(
+              child: Text(
+                l10n.profileBirthDateSuggestion,
+                style: context.textStyles.bodyMedium,
+              ),
+            ),
+            TextButton(
+              onPressed: () => context.push(ProfilePaths.editAccount),
+              child: Text(l10n.profileBirthDateAdd),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

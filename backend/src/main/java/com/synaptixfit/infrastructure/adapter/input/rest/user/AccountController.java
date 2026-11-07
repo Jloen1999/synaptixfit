@@ -9,6 +9,7 @@ import com.synaptixfit.infrastructure.adapter.input.rest.user.dto.AccountRespons
 import com.synaptixfit.infrastructure.adapter.input.rest.user.dto.UpdateAccountRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.Clock;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,23 +29,26 @@ public class AccountController {
     private final GetCurrentUserUseCase getCurrentUser;
     private final UpdateAccountUseCase updateAccount;
     private final ChangePasswordUseCase changePassword;
+    private final Clock clock;
 
     public AccountController(GetCurrentUserUseCase getCurrentUser, UpdateAccountUseCase updateAccount,
-                             ChangePasswordUseCase changePassword) {
+                             ChangePasswordUseCase changePassword, Clock clock) {
         this.getCurrentUser = getCurrentUser;
         this.updateAccount = updateAccount;
         this.changePassword = changePassword;
+        this.clock = clock;
     }
 
     @GetMapping
     public AccountResponse me(@CurrentUserId UUID userId) {
-        return AccountResponse.from(getCurrentUser.getCurrentUser(userId));
+        return AccountResponse.from(getCurrentUser.getCurrentUser(userId), clock);
     }
 
     @PatchMapping
     public AccountResponse update(@CurrentUserId UUID userId, @Valid @RequestBody UpdateAccountRequest request) {
         return AccountResponse.from(updateAccount.updateAccount(new UpdateAccountUseCase.Command(
-                userId, request.fullName(), request.avatarUrl(), request.privacy(), request.usageFocus())));
+                userId, request.fullName(), request.avatarUrl(), request.privacy(), request.usageFocus(),
+                request.birthDate(), Boolean.TRUE.equals(request.removeBirthDate()))), clock);
     }
 
     @PutMapping("/password")

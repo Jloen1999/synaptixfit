@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../../../domain/enums/profile/activity_level.dart';
 import '../../../../domain/enums/profile/fitness_goal.dart';
-import '../../../../domain/enums/profile/goal_suggestion_source.dart';
 import '../../../../domain/enums/profile/sex.dart';
 import '../../../../domain/models/profile/wellness_history.dart';
 import '../../../../domain/models/profile/wellness_profile.dart';
@@ -49,7 +48,6 @@ class WellnessProfileForm extends StatefulWidget {
 
 class _WellnessProfileFormState extends State<WellnessProfileForm> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _age;
   late final TextEditingController _weight;
   late final TextEditingController _height;
   Sex? _sex;
@@ -71,7 +69,6 @@ class _WellnessProfileFormState extends State<WellnessProfileForm> {
     super.initState();
     final p = widget.initial;
     final decimal = NumberFormat.decimalPattern();
-    _age = TextEditingController(text: p?.age?.toString() ?? '');
     _weight = TextEditingController(
       text: p?.weightKg == null ? '' : decimal.format(p!.weightKg),
     );
@@ -94,7 +91,6 @@ class _WellnessProfileFormState extends State<WellnessProfileForm> {
 
   @override
   void dispose() {
-    _age.dispose();
     _weight.dispose();
     _height.dispose();
     super.dispose();
@@ -114,7 +110,6 @@ class _WellnessProfileFormState extends State<WellnessProfileForm> {
     }
     widget.onSubmit(
       WellnessProfileDraft(
-        age: ProfileValidators.parseInt(_age.text)!,
         sex: _sex!,
         weightKg: ProfileValidators.parseDecimal(_weight.text)!,
         heightCm: ProfileValidators.parseDecimal(_height.text)!,
@@ -140,16 +135,6 @@ class _WellnessProfileFormState extends State<WellnessProfileForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AppTextField(
-                  label: l10n.profileFieldAge,
-                  controller: _age,
-                  icon: Icons.cake_outlined,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      ProfileValidators.requiredInt(l10n, v, 15, 80),
-                ),
-                const SizedBox(height: TokensSpacing.m),
                 Text(
                   l10n.profileFieldSex,
                   style: context.textStyles.labelLarge,
@@ -253,17 +238,14 @@ class _WellnessProfileFormState extends State<WellnessProfileForm> {
             trailing: TextButton.icon(
               onPressed: widget.suggesting
                   ? null
-                  : () => widget.onSuggest(
-                      ProfileValidators.parseInt(_age.text),
-                      _sex,
-                      _activity,
-                    ),
+                  // La edad la pone el servidor con la fecha de nacimiento.
+                  : () => widget.onSuggest(null, _sex, _activity),
               icon: widget.suggesting
                   ? const SizedBox.square(
                       dimension: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.auto_awesome_rounded),
+                  : const Icon(Icons.lightbulb_outline_rounded),
               label: Text(l10n.profileGoalSuggestAction),
             ),
             child: Column(
@@ -666,7 +648,6 @@ class _GoalSuggestionsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final fromAi = suggestions.source == GoalSuggestionSource.ai;
     return AppCard(
       color: context.colors.tertiaryContainer.withValues(alpha: 0.4),
       child: Column(
@@ -675,16 +656,14 @@ class _GoalSuggestionsPanel extends StatelessWidget {
           Row(
             children: [
               Icon(
-                fromAi ? Icons.auto_awesome_rounded : Icons.rule_rounded,
+                Icons.lightbulb_outline_rounded,
                 size: 18,
                 color: context.colors.tertiary,
               ),
               const SizedBox(width: TokensSpacing.xs),
               Expanded(
                 child: Text(
-                  fromAi
-                      ? l10n.profileGoalSuggestionsFromAi
-                      : l10n.profileGoalSuggestionsFromRules,
+                  l10n.profileGoalSuggestionsFromAi,
                   style: context.textStyles.labelLarge,
                 ),
               ),

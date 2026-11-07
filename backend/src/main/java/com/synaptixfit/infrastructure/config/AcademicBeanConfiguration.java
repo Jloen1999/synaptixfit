@@ -83,6 +83,10 @@ import com.synaptixfit.domain.port.output.academic.TestSessionRepositoryPort;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.storage.FileStoragePort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
+import com.synaptixfit.domain.port.output.academic.SubjectAgendaPort;
+import com.synaptixfit.domain.port.output.academic.AcademicSearchPort;
+import com.synaptixfit.application.service.academic.AcademicSearchService;
+import com.synaptixfit.application.port.input.academic.SearchAcademicUseCase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -99,6 +103,7 @@ public class AcademicBeanConfiguration {
 
     private final TransactionalUseCaseFactory tx;
     private final SubjectRepositoryPort subjects;
+    private final SubjectAgendaPort subjectAgenda;
     private final SubjectSemesterRepositoryPort semesters;
     private final AcademicCatalogPort catalog;
     private final NoteRepositoryPort notes;
@@ -128,11 +133,12 @@ public class AcademicBeanConfiguration {
                                      QuestionBankRepositoryPort banks, QuestionAttemptRepositoryPort attempts,
                                      TestSessionRepositoryPort sessions, FileStoragePort storage,
                                      DomainEventPublisherPort events, AwardExperienceUseCase awardExperience,
-                                     UserRepositoryPort users,
+                                     UserRepositoryPort users, SubjectAgendaPort subjectAgenda,
                                      Clock clock,
                                      @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
         this.tx = tx;
         this.subjects = subjects;
+        this.subjectAgenda = subjectAgenda;
         this.semesters = semesters;
         this.catalog = catalog;
         this.notes = notes;
@@ -158,7 +164,13 @@ public class AcademicBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     SubjectService subjectService() {
-        return new SubjectService(subjects, semesters, catalog, files, aiDocuments, storage, events, clock);
+        return new SubjectService(subjects, semesters, catalog, files, aiDocuments, storage, events, clock,
+                subjectAgenda, zone);
+    }
+
+    @Bean
+    SearchAcademicUseCase searchAcademicUseCase(AcademicSearchPort academicSearch) {
+        return tx.wrap(SearchAcademicUseCase.class, new AcademicSearchService(academicSearch));
     }
 
     @Bean

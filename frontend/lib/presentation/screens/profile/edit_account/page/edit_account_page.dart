@@ -12,12 +12,14 @@ import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
+import '../../widgets/birth_date_field.dart';
 import '../../widgets/usage_focus_selector.dart';
 import '../../widgets/profile_labels.dart';
 import '../../widgets/profile_layout.dart';
 import '../bloc/edit_account_bloc.dart';
 
-/// Edición de la cuenta: nombre, avatar y privacidad del perfil.
+/// Edición de la cuenta: nombre, avatar, fecha de nacimiento, privacidad y
+/// modo de uso. Al guardar actualiza `SessionBloc` (todas las pantallas lo ven).
 class EditAccountPage extends StatelessWidget {
   const EditAccountPage({super.key});
 
@@ -44,6 +46,8 @@ class _EditAccountViewState extends State<_EditAccountView>
   late final TextEditingController _avatar;
   late Visibility _privacy;
   late UsageFocus _focus;
+  DateTime? _birthDate;
+  bool _hadBirthDate = false;
 
   @override
   void initState() {
@@ -53,6 +57,8 @@ class _EditAccountViewState extends State<_EditAccountView>
     _avatar = TextEditingController(text: account?.avatarUrl ?? '');
     _privacy = account?.privacy ?? Visibility.private;
     _focus = account?.usageFocus ?? UsageFocus.both;
+    _birthDate = account?.birthDate;
+    _hadBirthDate = _birthDate != null;
     _avatar.addListener(() => setState(() {}));
     _name.addListener(() => setState(() {}));
   }
@@ -80,6 +86,9 @@ class _EditAccountViewState extends State<_EditAccountView>
         avatarUrl: _avatar.text,
         privacy: _privacy,
         usageFocus: _focus,
+        birthDate: _birthDate,
+        // Quitarla solo si la había: sin fecha y sin cambios no se toca.
+        clearBirthDate: _hadBirthDate && _birthDate == null,
       ),
     );
   }
@@ -141,6 +150,11 @@ class _EditAccountViewState extends State<_EditAccountView>
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: TokensSpacing.m),
+              BirthDateField(
+                value: _birthDate,
+                onChanged: (v) => setState(() => _birthDate = v),
               ),
               const SizedBox(height: TokensSpacing.l),
               ProfileFormSection(

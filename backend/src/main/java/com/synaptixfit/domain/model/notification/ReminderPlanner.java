@@ -4,6 +4,7 @@ import com.synaptixfit.domain.model.challenge.DatedTask;
 import com.synaptixfit.domain.model.challenge.TaskMention;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.shared.Guard;
+import com.synaptixfit.domain.model.user.BirthDate;
 import com.synaptixfit.domain.model.user.UsageFocus;
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -53,6 +54,11 @@ import java.util.UUID;
  *       ese día hay algo después de esa hora (estudios, entrenos, clases, eventos personales, entregas o tareas de
  *       reto). Absorbe el aviso del registro diario de ese día ({@link ReminderKind#CHECK_IN}): llega uno solo, que
  *       también lo recuerda. Cuenta en el límite diario como cualquier otro.</li>
+ *   <li>Cumpleaños ({@link ReminderKind#BIRTHDAY}, ADR 0036): si la cuenta tiene fecha de nacimiento, la mañana de su
+ *       cumpleaños (el 28 de febrero en los años no bisiestos para quien nació un 29) a la hora del resumen de la
+ *       mañana o, sin resumen, a las {@link #BIRTHDAY_TIME}, retrasado por las horas de silencio. Si ese día hay
+ *       resumen, la felicitación va dentro de él: nunca dos avisos a la vez. No tiene categoría propia: llega si la
+ *       persona admite alguna ({@link #admitsAny}).</li>
  *   <li>Categorías: repasos y estudio usan {@link NotificationType#ACADEMIC}; «hora de entrenar»,
  *       {@link #TRAINING_CATEGORY} ({@code MILESTONE}), porque no hay categoría de deporte y cumplir la
  *       sesión planificada es un hito del plan. Así el modo exámenes la silencia y deja el estudio.</li>
@@ -88,6 +94,8 @@ public final class ReminderPlanner {
      */
     public static final LocalTime TASK_MORNING_TIME = ReminderOptions.DEFAULT_SUMMARY_AT;
     public static final LocalTime FOLLOW_UP_TIME = LocalTime.of(10, 0);
+    /** Hora de la felicitación si la persona no tiene resumen de la mañana. */
+    public static final LocalTime BIRTHDAY_TIME = LocalTime.of(9, 0);
     public static final Duration OPEN_SESSION_AFTER = Duration.ofHours(2);
 
     private final int maxReminders;
@@ -124,6 +132,10 @@ public final class ReminderPlanner {
     public record ChallengeDue(UUID challengeId, String title, Instant endAt) {
     }
 
+    /** Fecha de nacimiento y nombre con el que se felicita («¡Feliz cumpleaños, Ana!»). */
+    public record Birthday(BirthDate date, String name) {
+    }
+
     /** Lo que se sigue después de planificar: día de rutina, sesiones abiertas y retos (vacío si no aplica). */
     public record FollowUps(RoutineDay routineDay, List<OpenSession> openSessions, List<ChallengeDue> challenges) {
 
@@ -145,15 +157,23 @@ public final class ReminderPlanner {
      * @param weeklySummary incluir el aviso «Tu semana» del domingo
      * @param options    antelaciones y resumen de la mañana elegidos (nulas: por defecto)
      * @param tasks      tareas de reto pendientes con fecha ({@link DatedTask})
+     * @param birthday   fecha de nacimiento y nombre, o {@code null} si no la ha dado
      */
     public record Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
                         Instant now, ZoneId zone, int days, List<Deadline> deadlines, boolean weeklySummary,
-                        FollowUps followUps, ReminderOptions options, List<DatedTask> tasks) {
+                        FollowUps followUps, ReminderOptions options, List<DatedTask> tasks, Birthday birthday) {
 
         public Input {
             followUps = followUps == null ? FollowUps.NONE : followUps;
             options = options == null ? ReminderOptions.DEFAULTS : options;
             tasks = tasks == null ? List.of() : List.copyOf(tasks);
+        }
+
+        public Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
+                     Instant now, ZoneId zone, int days, List<Deadline> deadlines, boolean weeklySummary,
+                     FollowUps followUps, ReminderOptions options, List<DatedTask> tasks) {
+            this(dueReviews, blocks, preferences, focus, now, zone, days, deadlines, weeklySummary, followUps,
+                    options, tasks, null);
         }
 
         public Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
@@ -233,10 +253,12 @@ public final class ReminderPlanner {
             addWeeklySummary(candidates, input, end);
         }
         addFollowUps(candidates, input, end);
+        addBirthday(candidates, input, end);
         candidates.addAll(extra);
         candidates = mentionTasks(candidates, input, end);
         addMorningSummaries(candidates, input, end);
         candidates = absorbCheckIns(candidates, input.zone());
+        candidates = absorbBirthdays(candidates, input.zone());
         candidates.sort(Comparator.comparing(ReminderPlan.Item::at));
         return new ReminderPlan(applyDailyLimit(candidates, input.preferences().dailyLimit(), input.zone())
                 .stream().limit(maxReminders).toList());
@@ -396,6 +418,59 @@ public final class ReminderPlanner {
                 continue;
             }
             out.add(i.kind() == ReminderKind.MORNING_SUMMARY && checkInDays.contains(day) ? i.withCheckIn() : i);
+        }
+        return out;
+    }
+
+    /** La felicitación de cada cumpleaños que cae en la ventana (como mucho uno: la ventana es de una semana). */
+    private static void addBirthday(List<ReminderPlan.Item> out, Input input, Instant end) {
+        Birthday birthday = input.birthday();
+        if (birthday == null || !admitsAny(input.preferences())) {
+            return;
+        }
+        LocalTime summaryAt = input.options().morningSummaryAt();
+        LocalTime time = input.options().morningSummary() && summaryAt != null ? summaryAt : BIRTHDAY_TIME;
+        ZoneId zone = input.zone();
+        LocalDate last = end.atZone(zone).toLocalDate();
+        for (LocalDate day = input.now().atZone(zone).toLocalDate(); !day.isAfter(last); day = day.plusDays(1)) {
+            if (!birthday.date().isBirthday(day)) {
+                continue;
+            }
+            Instant at = deferQuietHours(ZonedDateTime.of(day, time, zone), input);
+            // Por la mañana: si el silencio la empuja a otro día, ya no es una felicitación de ese día.
+            if (at.isAfter(input.now()) && !at.isAfter(end) && at.atZone(zone).toLocalDate().equals(day)) {
+                out.add(new ReminderPlan.Item(ReminderKind.BIRTHDAY, at, day.toString(), null, birthday.name(),
+                        null));
+            }
+        }
+    }
+
+    /**
+     * El resumen de la mañana y la felicitación son dos avisos de la mañana: si un día hay resumen, la felicitación va
+     * dentro de él (ADR 0036). Sin resumen ese día, la felicitación llega sola.
+     */
+    private static List<ReminderPlan.Item> absorbBirthdays(List<ReminderPlan.Item> items, ZoneId zone) {
+        Map<LocalDate, String> birthdays = new HashMap<>();
+        Set<LocalDate> summaryDays = new HashSet<>();
+        for (ReminderPlan.Item i : items) {
+            LocalDate day = i.at().atZone(zone).toLocalDate();
+            if (i.kind() == ReminderKind.BIRTHDAY) {
+                birthdays.put(day, i.title());
+            } else if (i.kind() == ReminderKind.MORNING_SUMMARY) {
+                summaryDays.add(day);
+            }
+        }
+        if (birthdays.isEmpty()) {
+            return items;
+        }
+        List<ReminderPlan.Item> out = new ArrayList<>(items.size());
+        for (ReminderPlan.Item i : items) {
+            LocalDate day = i.at().atZone(zone).toLocalDate();
+            if (i.kind() == ReminderKind.BIRTHDAY && summaryDays.contains(day)) {
+                continue;
+            }
+            out.add(i.kind() == ReminderKind.MORNING_SUMMARY && birthdays.containsKey(day)
+                    ? i.withBirthday(birthdays.get(day)) : i);
         }
         return out;
     }

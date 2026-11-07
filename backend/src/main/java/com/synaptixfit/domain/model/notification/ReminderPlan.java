@@ -58,18 +58,30 @@ public record ReminderPlan(List<Item> reminders) {
             return new Item(kind, at, refId, count, title, startsAt, targetId, place, tasks,
                     summary == null ? null : summary.withCheckIn());
         }
+
+        /** El mismo resumen, que ahora empieza felicitando el cumpleaños; {@code name} va en el título. */
+        Item withBirthday(String name) {
+            return new Item(kind, at, refId, count, name, startsAt, targetId, place, tasks,
+                    summary == null ? null : summary.withBirthday());
+        }
     }
 
     /**
      * Lo que trae un día, para el resumen de la mañana: estudios (estudio y repaso), entrenos, clases y eventos
      * personales que empiezan después del resumen, entregas y exámenes que vencen ese día, tareas de reto de ese día
-     * que no van ya con uno de esos eventos, y si incluye el aviso del registro diario.
+     * que no van ya con uno de esos eventos, si incluye el aviso del registro diario y si felicita el cumpleaños
+     * (ADR 0036: ese día el resumen lleva la felicitación en vez de llegar dos avisos).
      */
     public record DaySummary(int studies, int trainings, int classes, int personal, List<SummaryDeadline> deadlines,
-                             int tasks, boolean checkIn) {
+                             int tasks, boolean checkIn, boolean birthday) {
 
         public DaySummary {
             deadlines = deadlines == null ? List.of() : List.copyOf(deadlines);
+        }
+
+        public DaySummary(int studies, int trainings, int classes, int personal, List<SummaryDeadline> deadlines,
+                          int tasks, boolean checkIn) {
+            this(studies, trainings, classes, personal, deadlines, tasks, checkIn, false);
         }
 
         /** ¿Hay algo que contar? Sin nada, no se manda resumen. */
@@ -78,7 +90,11 @@ public record ReminderPlan(List<Item> reminders) {
         }
 
         DaySummary withCheckIn() {
-            return new DaySummary(studies, trainings, classes, personal, deadlines, tasks, true);
+            return new DaySummary(studies, trainings, classes, personal, deadlines, tasks, true, birthday);
+        }
+
+        DaySummary withBirthday() {
+            return new DaySummary(studies, trainings, classes, personal, deadlines, tasks, checkIn, true);
         }
     }
 

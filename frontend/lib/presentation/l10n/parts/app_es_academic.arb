@@ -7,7 +7,7 @@
   "academicOpenPlanner": "Abrir calendario",
   "academicMoreActions": "Más acciones",
   "academicEmptyTitle": "Aún no tienes asignaturas",
-  "academicEmptyMessage": "Sube el plan docente y la IA la crea por ti, o añádela a mano con el botón +.",
+  "academicEmptyMessage": "Sube el plan docente y te proponemos la asignatura con sus temas, o añádela a mano con el botón +.",
   "academicArchivedEmptyTitle": "No tienes asignaturas archivadas",
   "academicAddFromCatalog": "Desde el plan de estudios",
   "academicAddFromCatalogHint": "Elige varias asignaturas de tu carrera",
@@ -263,7 +263,7 @@
   "academicFileOpenExternal": "Abrir fuera de la app",
   "academicFileOpenFailed": "No se ha podido abrir el archivo.",
   "academicFileNoPreview": "Este tipo de archivo no tiene vista previa.",
-  "academicAiAssistantTitle": "Asistente de IA",
+  "academicAiAssistantTitle": "Ayuda para estudiar",
   "academicAiSummary": "Resumen",
   "academicAiMindMap": "Mapa mental",
   "academicAiPractice": "Práctica",
@@ -279,7 +279,7 @@
       }
     }
   },
-  "academicAiGenerating": "La IA está preparando el contenido. Puede tardar unos segundos…",
+  "academicAiGenerating": "Estamos preparando el contenido. Puede tardar unos segundos…",
   "academicAiRegenerate": "Regenerar",
   "academicAiPracticeReady": "{count, plural, =1{1 pregunta lista} other{{count} preguntas listas}}",
   "@academicAiPracticeReady": {
@@ -295,14 +295,14 @@
   "academicMindMapExpandAll": "Desplegar todo",
   "academicMindMapCollapseAll": "Plegar todo",
   "academicGenerateTitle": "Centro de generación",
-  "academicGenerateHint": "Crea material de estudio con IA a partir de varias fuentes",
+  "academicGenerateHint": "Te proponemos resúmenes, tarjetas y preguntas a partir de tus apuntes y archivos",
   "academicGenerateNoSubjects": "Añade una asignatura con apuntes o archivos para generar material.",
   "academicGenerateStepSubject": "1. Asignatura",
   "academicGenerateStepKind": "2. ¿Qué quieres generar?",
   "academicGenerateStepSources": "3. Fuentes",
   "academicGeneratePickSubject": "Elige una asignatura",
   "academicGeneratePickSubjectFirst": "Elige primero una asignatura.",
-  "academicGenerateNoSources": "Esta asignatura no tiene apuntes ni archivos que la IA pueda leer.",
+  "academicGenerateNoSources": "Esta asignatura aún no tiene apuntes ni archivos de los que partir.",
   "academicGenerateSelectedCount": "{count} de {max}",
   "@academicGenerateSelectedCount": {
     "placeholders": {
@@ -369,7 +369,7 @@
   "academicQuality5": "Perfecto, sin dudar",
   "academicPracticeTitle": "Práctica",
   "academicPracticeNoBankTitle": "Este material aún no tiene preguntas",
-  "academicPracticeNoBankMessage": "La IA generará un banco de preguntas a partir del contenido.",
+  "academicPracticeNoBankMessage": "Te prepararemos preguntas a partir del contenido.",
   "academicPracticeGenerate": "Generar preguntas",
   "academicPracticeRegenerate": "Generar preguntas nuevas",
   "academicPracticeStart": "Empezar a practicar",
@@ -522,7 +522,7 @@
   "academicErrorFileUploadInvalid": "La subida no es válida. Vuelve a intentarlo.",
   "academicErrorFileAlreadyRegistered": "Este archivo ya estaba guardado.",
   "academicErrorStudyDocumentNotFound": "Aún no se ha generado este documento.",
-  "academicErrorStudySourceNotSupported": "La IA solo puede analizar apuntes, PDF e imágenes.",
+  "academicErrorStudySourceNotSupported": "Solo podemos leer apuntes, PDF e imágenes.",
   "academicErrorStudySourceWithoutSubject": "Asigna el apunte a una asignatura para poder repasarlo.",
   "academicErrorStudyGuideEmpty": "No hemos podido leer el plan docente. Comprueba que el PDF tiene texto y no es una foto escaneada.",
   "academicErrorStudyMaterialNotFound": "No encontramos ese material de estudio.",
@@ -545,10 +545,10 @@
   "academicModeGlobal": "Global",
   "academicNotRecoverable": "No recuperable",
   "academicImportEntry": "Importar plan docente",
-  "academicImportEntryHint": "Sube el PDF y la IA crea la asignatura",
+  "academicImportEntryHint": "Sube el PDF y te proponemos la asignatura",
   "academicImportTitle": "Importar plan docente",
   "academicImportIntroTitle": "Sube el plan docente de la asignatura",
-  "academicImportIntroBody": "La IA lo lee y tú lo revisas antes de guardar.",
+  "academicImportIntroBody": "Lo leemos por ti y tú lo revisas antes de guardar.",
   "academicImportBenefitTopics": "Temas, apartados y horas",
   "academicImportBenefitAssessments": "Pruebas y cuánto vale cada una",
   "academicImportBenefitDates": "Exámenes y entregas a tu agenda",
@@ -903,7 +903,7 @@
       }
     }
   },
-  "academicInboxHint": "Llévalos a su asignatura para repasarlos y usarlos con la IA.",
+  "academicInboxHint": "Llévalos a su asignatura para repasarlos y sacarles resúmenes y preguntas.",
   "academicInboxMove": "Mover a asignatura",
   "academicInboxMoveTitle": "Mover «{title}» a…",
   "@academicInboxMoveTitle": {
@@ -927,7 +927,7 @@
   "academicPracticeRegenerateConfirm": "Generar nuevas",
   "academicGenerateCreateNote": "Crear apunte",
   "academicGenerateUploadFile": "Subir archivo",
-  "academicGenerateFileUnreadable": "Archivo subido, pero la IA no puede leer ese tipo: prueba con un PDF, una imagen o un texto.",
+  "academicGenerateFileUnreadable": "Archivo subido, pero no podemos leer ese tipo: prueba con un PDF, una imagen o un texto.",
   "academicNoteDraftFound": "Tienes un borrador sin guardar ({when}). ¿Lo recuperas?",
   "@academicNoteDraftFound": {
     "placeholders": {
@@ -983,7 +983,7 @@
   },
   "academicReviewNoOptions": "No se pudieron cargar las respuestas.",
   "academicAiRegenerateTitle": "¿Escribirlo de nuevo?",
-  "academicAiRegenerateMessage": "La IA escribirá otra versión y sustituirá a la que ves ahora. La de ahora no se podrá recuperar.",
+  "academicAiRegenerateMessage": "Te propondremos otra versión, que sustituirá a la que ves ahora. La de ahora no se podrá recuperar.",
   "academicSubjectArchiveTitle": "¿Archivar la asignatura?",
   "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el planificador. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras desde «Archivadas».",
   "academicScanEntry": "Desde una foto",
@@ -1051,10 +1051,10 @@
     }
   },
   "academicScanReadingHint": "Puede tardar unos segundos por página. No cierres esta pantalla.",
-  "academicScanTidied": "Ordenado por la IA",
-  "academicScanTidiedHint": "La IA ha corregido errores de lectura y le ha dado formato. Revisa que diga lo mismo que tus apuntes.",
+  "academicScanTidied": "Ordenado para ti",
+  "academicScanTidiedHint": "Hemos corregido errores de lectura y le hemos dado formato. Revisa que diga lo mismo que tus apuntes.",
   "academicScanRaw": "Texto tal cual se leyó",
-  "academicScanRawHint": "La IA no estaba disponible para ordenarlo. Corrige lo que no se haya leído bien.",
+  "academicScanRawHint": "Ahora no hemos podido ordenarlo. Corrige lo que no se haya leído bien.",
   "academicScanDefaultTitle": "Apuntes escaneados",
   "academicScanTextLabel": "Texto del apunte",
   "academicScanBackToPhotos": "Volver a las fotos",
@@ -1110,9 +1110,9 @@
     }
   },
   "academicMockSetupEmptyTitle": "Aún no hay preguntas",
-  "academicMockSetupEmptyMessage": "Abre un apunte o un archivo de la asignatura y toca «Practicar»: la IA te prepara las preguntas. Luego vuelve aquí.",
+  "academicMockSetupEmptyMessage": "Abre un apunte o un archivo de la asignatura y toca «Practicar»: te preparamos preguntas con su contenido. Luego vuelve aquí.",
   "academicMockSetupEmptyAction": "Volver a la asignatura",
-  "academicGenerateReviewHint": "La IA a veces se equivoca. Revísalo y corrige lo que haga falta antes de guardarlo.",
+  "academicGenerateReviewHint": "Revisa que esté bien antes de guardarlo y corrige lo que haga falta.",
   "academicGenerateEditedPill": "Corregido por ti",
   "academicGenerateFix": "Corregir",
   "academicGenerateRemove": "Quitar",
@@ -1246,5 +1246,79 @@
   "academicGenerateLoseFixTitle": "¿Salir sin guardar el cambio?",
   "academicGenerateLoseFixMessage": "Lo que has corregido aquí se perderá.",
   "academicGenerateLoseFixConfirm": "Salir sin guardar",
-  "academicNoteVisibilityLabel": "¿Quién puede verlo?"
+  "academicNoteVisibilityLabel": "¿Quién puede verlo?",
+  "academicSubjectRoom": "Aula habitual",
+  "academicSubjectRoomHint": "Ej.: Aula 2.3. Se usa si tu horario no dice el aula de cada clase",
+  "academicNextClass": "Próxima clase: {when}",
+  "@academicNextClass": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "academicNextClassAt": "Próxima clase: {when} · {room}",
+  "@academicNextClassAt": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "room": {
+        "type": "String"
+      }
+    }
+  },
+  "academicClassDays": "Clase: {days}",
+  "@academicClassDays": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "academicNextDeliveryIn": "{days, plural, =0{Entrega hoy} =1{Entrega mañana} other{Entrega en {days} días}}",
+  "@academicNextDeliveryIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "academicNextExamIn": "{days, plural, =0{Examen hoy} =1{Examen mañana} other{Examen en {days} días}}",
+  "@academicNextExamIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "academicSearchTitle": "Buscar en Académico",
+  "academicSearchLabel": "Buscar asignaturas, apuntes, archivos y entregas",
+  "academicSearchHint": "Escribe al menos dos letras. Buscamos en asignaturas, apuntes, archivos y entregas.",
+  "academicSearchGroupSubjects": "Asignaturas",
+  "academicSearchGroupNotes": "Apuntes",
+  "academicSearchGroupFiles": "Archivos",
+  "academicSearchGroupDeadlines": "Entregas y exámenes",
+  "academicSearchMore": "Hay más: escribe algo más concreto para verlos.",
+  "academicSearchUntitled": "Sin título",
+  "academicSearchCreateNote": "Crear apunte «{query}»",
+  "@academicSearchCreateNote": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "academicSharedSearchLabel": "Buscar por título, asignatura o autor",
+  "academicClassWhenAt": "{when} · {room}",
+  "@academicClassWhenAt": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      },
+      "room": {
+        "type": "String"
+      }
+    }
+  }
 }

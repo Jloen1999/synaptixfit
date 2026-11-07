@@ -10,7 +10,15 @@ public interface UpdateSubjectUseCase {
 
     record Command(UUID userId, UUID subjectId, String name, String code, String description, Integer credits,
                    Integer perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt,
-                   boolean clearNextAssessment, String teacher, String icsUrl, Boolean archived) {}
+                   boolean clearNextAssessment, String teacher, String icsUrl, Boolean archived, String room) {
+
+        public Command(UUID userId, UUID subjectId, String name, String code, String description, Integer credits,
+                       Integer perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt,
+                       boolean clearNextAssessment, String teacher, String icsUrl, Boolean archived) {
+            this(userId, subjectId, name, code, description, credits, perceivedDifficulty, priority,
+                    nextAssessmentAt, clearNextAssessment, teacher, icsUrl, archived, null);
+        }
+    }
 
     SubjectSummary updateSubject(Command command);
 }

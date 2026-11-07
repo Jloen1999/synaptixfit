@@ -86,7 +86,7 @@ public class ProfileBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     WellnessProfileService wellnessProfileService() {
-        return new WellnessProfileService(wellnessProfiles, weightHistory, goalHistory, goalSuggestions, clock);
+        return new WellnessProfileService(wellnessProfiles, weightHistory, goalHistory, goalSuggestions, users, clock);
     }
 
     @Bean

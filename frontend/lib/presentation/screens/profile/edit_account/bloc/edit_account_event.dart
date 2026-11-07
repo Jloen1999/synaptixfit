@@ -7,5 +7,7 @@ sealed class EditAccountEvent with _$EditAccountEvent {
     required String avatarUrl,
     required Visibility privacy,
     UsageFocus? usageFocus,
+    DateTime? birthDate,
+    @Default(false) bool clearBirthDate,
   }) = EditAccountSubmitted;
 }

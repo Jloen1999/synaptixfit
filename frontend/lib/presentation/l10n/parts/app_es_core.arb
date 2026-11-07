@@ -68,7 +68,7 @@
   "registerGoToLogin": "¿Ya tienes cuenta? Inicia sesión",
   "authBrandTitle": "Tu mente y tu cuerpo, en el mismo plan",
   "authBrandPointLoad": "Lo que entrenas ajusta cuánto estudias, y al revés",
-  "authBrandPointReview": "Repaso espaciado con IA a partir de tus apuntes",
+  "authBrandPointReview": "Repasos en el momento justo, a partir de tus apuntes",
   "authBrandPointProgress": "Retos, insignias y racha que suman en los dos frentes",
   "splashLoading": "Preparando tu espacio",
   "errorServer": "Algo ha fallado en el servidor. Inténtalo de nuevo en unos minutos.",
@@ -85,10 +85,10 @@
   "errorAuthWeakPassword": "La contraseña debe tener al menos 8 caracteres, con letras y números.",
   "errorAuthGoogleCancelled": "Has cancelado el inicio de sesión con Google.",
   "errorAuthGoogleFailed": "No se ha podido iniciar sesión con Google.",
-  "errorAiUnavailable": "El asistente de IA no está disponible ahora mismo. Inténtalo más tarde.",
-  "errorAiQuotaExceeded": "Se ha alcanzado el límite de uso de la IA. Inténtalo dentro de un rato.",
+  "errorAiUnavailable": "Ahora mismo no podemos prepararlo. Inténtalo más tarde.",
+  "errorAiQuotaExceeded": "Hoy ya hemos preparado mucho contenido. Inténtalo dentro de un rato.",
   "errorStorageUnavailable": "No se ha podido acceder a los archivos. Inténtalo de nuevo.",
-  "errorAiAttachmentUnsupported": "La IA solo puede leer PDF con texto. Las imágenes y los PDF escaneados no se pueden analizar.",
+  "errorAiAttachmentUnsupported": "Solo podemos leer PDF con texto. Las imágenes y los PDF escaneados no se pueden analizar.",
   "achievementLevelTitle": "¡Nivel {level}!",
   "@achievementLevelTitle": {
     "placeholders": {
@@ -229,5 +229,33 @@
   "xpGuideChallengesDetail": "Cada tarea da XP según su dificultad; como mucho 140 XP por reto.",
   "xpGuideFooter": "Si algo no suma, la app te dice por qué.",
   "commonArrowSpoken": " a ",
-  "registerLegalRequired": "Marca la casilla para crear tu cuenta."
+  "registerLegalRequired": "Marca la casilla para crear tu cuenta.",
+  "commonListAnd": "{items} y {last}",
+  "@commonListAnd": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "commonSearchClear": "Borrar búsqueda",
+  "commonSearchNoResults": "No hay resultados para «{query}»",
+  "@commonSearchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "commonSearchResultsCount": "{count, plural, =1{1 resultado} other{{count} resultados}}",
+  "@commonSearchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

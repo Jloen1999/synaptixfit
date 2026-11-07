@@ -28,11 +28,24 @@ abstract class Account with _$Account {
 
     /// Si ya lo eligió (el onboarding lo pregunta si no).
     @Default(true) bool usageFocusChosen,
+
+    /// Fecha de nacimiento (opcional, ADR 0036). Solo la ve la propia persona.
+    DateTime? birthDate,
+
+    /// Edad calculada por el servidor con [birthDate]; nula sin fecha.
+    int? age,
   }) = _Account;
 
   const Account._();
 
   bool get isAdmin => role == UserRole.admin;
+
+  /// Nombre de pila con el que se le habla («¡Feliz cumpleaños, Ana!»).
+  String get firstName {
+    final trimmed = fullName.trim();
+    final space = trimmed.indexOf(' ');
+    return space < 0 ? trimmed : trimmed.substring(0, space);
+  }
 
   /// Progreso del nivel actual entre 0 y 1.
   double get levelProgress => levelThreshold == 0

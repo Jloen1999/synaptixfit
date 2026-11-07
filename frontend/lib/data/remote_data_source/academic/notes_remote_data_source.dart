@@ -57,6 +57,7 @@ class NotesRemoteDataSource {
     required int size,
     required String scope,
     String? authorId,
+    String? search,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '$_base/shared',
@@ -65,6 +66,7 @@ class NotesRemoteDataSource {
         'size': size,
         'scope': scope,
         'authorId': ?authorId,
+        'q': ?search,
       },
     );
     return SharedNotePageDto.fromJson(response.data!);

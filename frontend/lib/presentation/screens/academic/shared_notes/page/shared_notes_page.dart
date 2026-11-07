@@ -126,6 +126,30 @@ class _SharedNotesView extends StatelessWidget with ErrorsMessageMixin {
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<SharedNotesBloc>();
+    // El buscador va en el servidor: la lista llega por páginas (ADR 0036).
+    return Column(
+      children: [
+        AcademicBody(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              TokensSpacing.m,
+              TokensSpacing.s,
+              TokensSpacing.m,
+              0,
+            ),
+            child: AppSearchField(
+              label: context.localizations.academicSharedSearchLabel,
+              debounce: AppSearchField.serverDebounce,
+              onChanged: (q) => bloc.add(SharedNotesEvent.searchChanged(q)),
+            ),
+          ),
+        ),
+        Expanded(child: _list(bloc)),
+      ],
+    );
+  }
+
+  Widget _list(SharedNotesBloc bloc) {
     return BlocConsumer<SharedNotesBloc, SharedNotesState>(
       // Con la lista ya cargada, un fallo al refrescar se avisa sin taparla.
       listenWhen: (a, b) =>
@@ -155,7 +179,19 @@ class _SharedNotesView extends StatelessWidget with ErrorsMessageMixin {
             child: AcademicBody(
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: [_empty(context, state)],
+                children: [
+                  if (state.search.isNotEmpty)
+                    AppSearchEmpty(
+                      query: state.search,
+                      actionLabel: context.localizations
+                          .academicSearchCreateNote(state.search),
+                      onAction: () => context.push(
+                        AcademicPaths.newNote(title: state.search),
+                      ),
+                    )
+                  else
+                    _empty(context, state),
+                ],
               ),
             ),
           );

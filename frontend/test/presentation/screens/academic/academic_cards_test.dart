@@ -113,6 +113,73 @@ void main() {
     expect(painter.didExceedMaxLines, isFalse);
   });
 
+  testWidgets(
+    'la tarjeta pone en medio lo próximo: entrega urgente, si no la clase',
+    (tester) async {
+      final now = DateTime(2026, 11, 9, 8);
+      final subject = Subject(
+        id: 's2',
+        name: 'Física Cuántica',
+        code: 'FQ',
+        credits: 6,
+        perceivedDifficulty: 3,
+        priority: SubjectPriority.values.first,
+        teacher: 'Marta Ruiz',
+        archived: false,
+        noteCount: 1,
+        fileCount: 0,
+        nextClassAt: DateTime(2026, 11, 9, 10),
+        nextClassPlace: 'Aula 2.3',
+        classDays: const [1, 3],
+        nextDeadline: SubjectDeadline(
+          title: 'Práctica 2',
+          dueAt: DateTime(2026, 11, 10, 23),
+          exam: false,
+        ),
+      );
+      // Entrega mañana: va antes que la clase (lo que urge, primero).
+      expect(
+        SubjectNextUp.of(subject, now)!.urgent,
+        isTrue,
+      );
+      await _pump(
+        tester,
+        SizedBox(
+          height: TokensSize.subjectCardHeight * 2,
+          child: SubjectCard(subject: subject, onTap: () {}, now: now),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('Física Cuántica'), findsOneWidget);
+      expect(find.text('Entrega mañana'), findsOneWidget);
+      expect(find.text('Marta Ruiz'), findsOneWidget);
+
+      // Sin entrega urgente: la próxima clase con su aula.
+      await _pump(
+        tester,
+        SizedBox(
+          height: TokensSize.subjectCardHeight * 2,
+          child: SubjectCard(
+            subject: subject.copyWith(
+              nextDeadline: SubjectDeadline(
+                title: 'Examen',
+                dueAt: DateTime(2026, 11, 20, 9),
+                exam: true,
+              ),
+            ),
+            onTap: () {},
+            now: now,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      // En la tarjeta, en corto (el icono ya dice «clase»); el lector oye la
+      // frase entera.
+      expect(find.bySemanticsLabel(RegExp('Próxima clase:')), findsOneWidget);
+      expect(find.textContaining('Aula 2.3'), findsOneWidget);
+    },
+  );
+
   testWidgets('el apunte compartido separa autor y lectura (200 %, 320 dp)', (
     tester,
   ) async {

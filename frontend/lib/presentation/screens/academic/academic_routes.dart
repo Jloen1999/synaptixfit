@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/enums/ai_document_type.dart';
 import '../../../domain/enums/study_source_type.dart';
 import 'academic_home/page/academic_home_page.dart';
+import 'academic_search/page/academic_search_page.dart';
 import 'ai_document/page/ai_document_page.dart';
 import 'file_viewer/page/file_viewer_page.dart';
 import 'flashcards/page/flashcards_page.dart';
@@ -58,6 +59,10 @@ abstract final class AcademicPaths {
   /// Entregas y exámenes (módulo planner).
   static const deadlines = '/planner/deadlines';
 
+  /// Una entrega concreta, destacada arriba en la lista de entregas.
+  static String deadline(String id) =>
+      Uri(path: deadlines, queryParameters: {'focus': id}).toString();
+
   /// Pomodoro (módulo planner) vinculado a una asignatura.
   static String pomodoro({required String subjectId, required String title}) =>
       _withQuery('/planner/pomodoro', {'subjectId': subjectId, 'title': title});
@@ -67,11 +72,19 @@ abstract final class AcademicPaths {
   static String editSubject(String subjectId) =>
       '/academic/subjects/$subjectId/edit';
 
-  /// Nuevo apunte; `quick` lo marca como nota rápida.
-  static String newNote({String? subjectId, bool quick = false}) => _withQuery(
-    '/academic/notes/new',
-    {'subjectId': subjectId, if (quick) 'quick': '1'},
-  );
+  /// Nuevo apunte; `quick` lo marca como nota rápida y `title` lo propone.
+  static String newNote({
+    String? subjectId,
+    bool quick = false,
+    String? title,
+  }) => _withQuery('/academic/notes/new', {
+    'subjectId': subjectId,
+    if (quick) 'quick': '1',
+    'title': title,
+  });
+
+  /// Buscador único de Académico (ADR 0036).
+  static const search = '/academic/search';
 
   /// Fotografiar apuntes en papel y pasarlos a un apunte.
   static String scanNote({String? subjectId}) =>
@@ -206,7 +219,12 @@ List<RouteBase> academicRoutes() => [
     builder: (context, state) => NoteEditorPage(
       subjectId: state.uri.queryParameters['subjectId'],
       quickNote: state.uri.queryParameters['quick'] == '1',
+      initialTitle: state.uri.queryParameters['title'],
     ),
+  ),
+  GoRoute(
+    path: AcademicPaths.search,
+    builder: (context, state) => const AcademicSearchPage(),
   ),
   GoRoute(
     path: AcademicPaths.sharedNotes,

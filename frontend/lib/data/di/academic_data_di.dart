@@ -1,5 +1,8 @@
 import 'package:get_it/get_it.dart';
 
+import '../../domain/repositories/academic_search_repository_contract.dart';
+import '../remote_data_source/academic/academic_search_remote_data_source.dart';
+import '../repository/academic_search_repository.dart';
 import '../../domain/repositories/file_export_repository_contract.dart';
 import '../../domain/repositories/note_draft_repository_contract.dart';
 import '../../domain/repositories/note_repository_contract.dart';
@@ -31,6 +34,10 @@ import '../repository/teaching_guide_import_repository.dart';
 void registerAcademicData(GetIt getIt) {
   getIt
     ..registerLazySingleton(() => SubjectsRemoteDataSource(getIt()))
+    ..registerLazySingleton(() => AcademicSearchRemoteDataSource(getIt()))
+    ..registerLazySingleton<AcademicSearchRepositoryContract>(
+      () => AcademicSearchRepository(getIt()),
+    )
     ..registerLazySingleton(() => NotesRemoteDataSource(getIt()))
     ..registerLazySingleton(NoteDraftStorage.new)
     ..registerLazySingleton<NoteDraftRepositoryContract>(

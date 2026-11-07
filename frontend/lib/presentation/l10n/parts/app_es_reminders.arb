@@ -335,5 +335,15 @@
         "type": "String"
       }
     }
-  }
+  },
+  "remindersBirthdayTitle": "¡Feliz cumpleaños, {name}!",
+  "@remindersBirthdayTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersBirthdayTitleNoName": "¡Feliz cumpleaños!",
+  "remindersBirthdayBody": "Que tengas un gran día."
 }

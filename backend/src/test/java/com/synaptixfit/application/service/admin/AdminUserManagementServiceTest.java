@@ -149,6 +149,7 @@ class AdminUserManagementServiceTest {
     void wipeErasesContentResetsProgressAndKeepsTheAccount() {
         erasure.keys = List.of("k1", "k2");
         storage.failing.add("k2");
+        target.changeBirthDate(java.time.LocalDate.of(2004, 5, 6), java.time.LocalDate.of(2026, 11, 7));
 
         ErasureReport report = service.wipeUserData(admin.id(), target.id());
 
@@ -161,6 +162,7 @@ class AdminUserManagementServiceTest {
         assertThat(wiped.level()).isEqualTo(1);
         assertThat(wiped.levelXp()).isZero();
         assertThat(wiped.streak()).isZero();
+        assertThat(wiped.birthDate()).isNull();
         assertThat(storage.deleted).containsExactly("k1");
         assertThat(audit.entries).singleElement().extracting(AuditEntry::action)
                 .isEqualTo(AuditAction.WIPE_USER_DATA);

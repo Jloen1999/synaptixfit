@@ -24,11 +24,16 @@ abstract class SubjectDto with _$SubjectDto {
     String? priority,
     DateTime? nextAssessmentAt,
     String? teacher,
+    String? room,
     @Default(false) bool archived,
     String? catalogSubjectId,
     DateTime? createdAt,
     @Default(0) int noteCount,
     @Default(0) int fileCount,
+    DateTime? nextClassAt,
+    String? nextClassPlace,
+    @Default(<int>[]) List<int> classDays,
+    SubjectDeadlineDto? nextDeadline,
   }) = _SubjectDto;
 
   const SubjectDto._();
@@ -46,12 +51,34 @@ abstract class SubjectDto with _$SubjectDto {
     priority: SubjectPriority.fromApi(priority),
     nextAssessmentAt: nextAssessmentAt?.toLocal(),
     teacher: teacher,
+    room: room,
     archived: archived,
     catalogSubjectId: catalogSubjectId,
     createdAt: createdAt?.toLocal(),
     noteCount: noteCount,
     fileCount: fileCount,
+    nextClassAt: nextClassAt?.toLocal(),
+    nextClassPlace: nextClassPlace,
+    classDays: classDays,
+    nextDeadline: nextDeadline?.toDomain(),
   );
+}
+
+@freezed
+abstract class SubjectDeadlineDto with _$SubjectDeadlineDto {
+  const factory SubjectDeadlineDto({
+    required String title,
+    required DateTime dueAt,
+    @Default(false) bool exam,
+  }) = _SubjectDeadlineDto;
+
+  const SubjectDeadlineDto._();
+
+  factory SubjectDeadlineDto.fromJson(Map<String, dynamic> json) =>
+      _$SubjectDeadlineDtoFromJson(json);
+
+  SubjectDeadline toDomain() =>
+      SubjectDeadline(title: title, dueAt: dueAt.toLocal(), exam: exam);
 }
 
 @freezed

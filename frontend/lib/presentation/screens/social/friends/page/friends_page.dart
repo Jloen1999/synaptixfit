@@ -53,11 +53,6 @@ class _FriendsViewState extends State<_FriendsView> {
     super.dispose();
   }
 
-  void _clearSearch() {
-    _search.clear();
-    context.read<FriendsBloc>().add(const FriendsEvent.queryChanged(''));
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -77,25 +72,11 @@ class _FriendsViewState extends State<_FriendsView> {
                   TokensSpacing.m,
                   TokensSpacing.s,
                 ),
-                child: ListenableBuilder(
-                  listenable: _search,
-                  builder: (context, _) => TextField(
-                    controller: _search,
-                    textInputAction: TextInputAction.search,
-                    onChanged: (value) => context.read<FriendsBloc>().add(
-                      FriendsEvent.queryChanged(value),
-                    ),
-                    decoration: InputDecoration(
-                      labelText: l10n.socialSearchUsersHint,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: _search.text.isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: l10n.socialSearchClear,
-                              icon: const Icon(Icons.close_rounded),
-                              onPressed: _clearSearch,
-                            ),
-                    ),
+                child: AppSearchField(
+                  label: l10n.socialSearchUsersHint,
+                  controller: _search,
+                  onChanged: (value) => context.read<FriendsBloc>().add(
+                    FriendsEvent.queryChanged(value),
                   ),
                 ),
               ),

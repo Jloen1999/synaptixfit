@@ -14,7 +14,8 @@ import java.util.UUID;
 /**
  * Perfil físico y de entrenamiento del usuario (onboarding físico).
  *
- * <p>Reglas: edad 15-80, peso 30-250 kg, altura 120-230 cm, IMC derivado de peso y altura,
+ * <p>Reglas: edad declarada 15-80 y opcional (desde ADR 0036 la edad sale de la fecha de nacimiento de la cuenta;
+ * esta es la que se dio antes y solo se usa si no hay fecha, ver {@code BirthDate#effectiveAge}), peso 30-250 kg, altura 120-230 cm, IMC derivado de peso y altura,
  * minutos por sesión 10-180 y días disponibles como conjunto no vacío de días ISO (1 = lunes,
  * 7 = domingo). El número de días por semana se deriva siempre de ese conjunto, así no puede
  * contradecirlo (en el sistema antiguo {@code dias_disponibles_semana} y {@code dias_disponibles}
@@ -40,7 +41,7 @@ public final class WellnessProfile {
 
     private final UUID id;
     private final UUID userId;
-    private int age;
+    private Integer age;
     private Sex sex;
     private String city;
     private BodyMeasurement measurement;
@@ -76,8 +77,9 @@ public final class WellnessProfile {
         return new Builder();
     }
 
-    public void changeAge(int newAge) {
-        this.age = Guard.range(newAge, "age", MIN_AGE, MAX_AGE);
+    /** Edad declarada; {@code null} la deja sin dar (se usa la fecha de nacimiento). */
+    public void changeAge(Integer newAge) {
+        this.age = newAge == null ? null : Guard.range(newAge, "age", MIN_AGE, MAX_AGE);
     }
 
     public void changeSex(Sex newSex) {
@@ -189,7 +191,7 @@ public final class WellnessProfile {
 
     public UUID id() { return id; }
     public UUID userId() { return userId; }
-    public int age() { return age; }
+    public Integer age() { return age; }
     public Sex sex() { return sex; }
     public String city() { return city; }
     public BodyMeasurement measurement() { return measurement; }
@@ -211,7 +213,7 @@ public final class WellnessProfile {
     public static final class Builder {
         private UUID id;
         private UUID userId;
-        private int age;
+        private Integer age;
         private Sex sex;
         private String city;
         private BodyMeasurement measurement;
@@ -227,7 +229,7 @@ public final class WellnessProfile {
 
         public Builder id(UUID v) { this.id = v; return this; }
         public Builder userId(UUID v) { this.userId = v; return this; }
-        public Builder age(int v) { this.age = v; return this; }
+        public Builder age(Integer v) { this.age = v; return this; }
         public Builder sex(Sex v) { this.sex = v; return this; }
         public Builder city(String v) { this.city = v; return this; }
         public Builder measurement(BodyMeasurement v) { this.measurement = v; return this; }

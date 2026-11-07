@@ -27,6 +27,8 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import com.synaptixfit.application.service.admin.AdminTestFixtures;
+import com.synaptixfit.domain.model.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +38,7 @@ class WellnessProfileServiceTest {
     private final ProfileTestDoubles.Wellness profiles = new ProfileTestDoubles.Wellness();
     private final ProfileTestDoubles.Weights weights = new ProfileTestDoubles.Weights();
     private final ProfileTestDoubles.Goals goals = new ProfileTestDoubles.Goals();
+    private final AdminTestFixtures.InMemoryUsers users = new AdminTestFixtures.InMemoryUsers();
     private MutableClock clock;
     private GoalSuggestionPort ai;
     private GoalSuggestionContext lastContext;
@@ -48,7 +51,7 @@ class WellnessProfileServiceTest {
             lastContext = ctx;
             throw new AiUnavailableException("no key");
         };
-        service = new WellnessProfileService(profiles, weights, goals, ctx -> ai.suggest(ctx), clock);
+        service = new WellnessProfileService(profiles, weights, goals, ctx -> ai.suggest(ctx), users, clock);
     }
 
     private SaveWellnessProfileUseCase.Command fullCommand(double weight, TrainingGoal goal) {
@@ -165,6 +168,31 @@ class WellnessProfileServiceTest {
         assertThat(result.suggestions().get(0).goal()).isEqualTo(TrainingGoal.HYPERTROPHY);
         assertThat(lastContext.age()).isEqualTo(22);
         assertThat(lastContext.activityLevel()).isEqualTo(ActivityLevel.MODERATE);
+    }
+
+    @Test
+    void suggestionsUseTheAgeFromTheBirthDateBeforeTheDeclaredOne() {
+        service.saveWellnessProfile(fullCommand(60, TrainingGoal.HYPERTROPHY));
+        User user = User.builder().id(userId).email("ana@uni.es")
+                .fullName("Ana").passwordHash("h").birthDate(java.time.LocalDate.of(2000, 10, 2)).build();
+        users.add(user);
+
+        service.suggestGoals(new SuggestGoalsUseCase.Command(userId, null, null, null, null));
+
+        // 2026-10-01: aún no ha cumplido los 26.
+        assertThat(lastContext.age()).isEqualTo(25);
+    }
+
+    @Test
+    void creatingWithoutAgeKeepsItEmptyAndReplacingWithoutAgeKeepsTheOldOne() {
+        WellnessProfile created = service.saveWellnessProfile(new SaveWellnessProfileUseCase.Command(userId, null,
+                Sex.FEMALE, null, 60, 165, null, TrainingGoal.HYPERTROPHY, List.of(), List.of(), null, null));
+        assertThat(created.age()).isNull();
+
+        service.saveWellnessProfile(fullCommand(60, TrainingGoal.HYPERTROPHY));
+        WellnessProfile replaced = service.saveWellnessProfile(new SaveWellnessProfileUseCase.Command(userId, null,
+                Sex.FEMALE, null, 60, 165, null, TrainingGoal.HYPERTROPHY, List.of(), List.of(), null, null));
+        assertThat(replaced.age()).isEqualTo(22);
     }
 
     @Test

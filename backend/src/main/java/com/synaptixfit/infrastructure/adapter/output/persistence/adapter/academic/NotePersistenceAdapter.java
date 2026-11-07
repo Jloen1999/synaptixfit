@@ -9,6 +9,7 @@ import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.port.output.academic.NoteRepositoryPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SqlLike;
 import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SharedContentSql;
 import com.synaptixfit.infrastructure.adapter.output.persistence.entity.academic.NoteEntity;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.VisibilityDbMapper;
@@ -97,6 +98,12 @@ public class NotePersistenceAdapter implements NoteRepositoryPort {
         if (filter.authorId() != null) {
             where.append(" AND a.usuario_id = :author");
             params.put("author", filter.authorId());
+        }
+        if (filter.folded() != null) {
+            where.append(" AND (").append(SqlLike.containsFolded("a.titulo", "q")).append(" OR ")
+                    .append(SqlLike.containsFolded("c.nombre", "q")).append(" OR ")
+                    .append(SqlLike.containsFolded("u.nombre_completo", "q")).append(')');
+            params.put("q", SqlLike.contains(filter.folded()));
         }
         return summaries(where, params, filter.catalogSubjectId(), page);
     }

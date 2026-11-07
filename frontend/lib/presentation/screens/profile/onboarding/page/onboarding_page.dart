@@ -20,6 +20,7 @@ import '../../subject_selector/bloc/subject_selector_bloc.dart';
 import '../../subject_selector/page/subject_selector_page.dart';
 import '../../widgets/onboarding_step_indicator.dart';
 import '../../widgets/profile_layout.dart';
+import '../../widgets/birth_date_field.dart';
 import '../../widgets/usage_focus_selector.dart';
 import '../bloc/onboarding_bloc.dart';
 
@@ -427,6 +428,7 @@ class _FocusStep extends StatefulWidget {
 
 class _FocusStepState extends State<_FocusStep> {
   UsageFocus _focus = UsageFocus.both;
+  DateTime? _birthDate;
 
   @override
   Widget build(BuildContext context) {
@@ -439,11 +441,18 @@ class _FocusStepState extends State<_FocusStep> {
           onChanged: (value) => setState(() => _focus = value),
         ),
         const SizedBox(height: TokensSpacing.m),
+        // Opcional: sirve para felicitarle y para calcular su edad (kcal,
+        // propuestas). Se puede seguir sin darla.
+        BirthDateField(
+          value: _birthDate,
+          onChanged: (value) => setState(() => _birthDate = value),
+        ),
+        const SizedBox(height: TokensSpacing.m),
         AppPrimaryButton(
           label: widget.submitLabel,
           loading: widget.busy,
           onPressed: () => context.read<OnboardingBloc>().add(
-            OnboardingEvent.focusSubmitted(focus),
+            OnboardingEvent.focusSubmitted(focus, birthDate: _birthDate),
           ),
         ),
       ],

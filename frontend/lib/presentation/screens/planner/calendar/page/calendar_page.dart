@@ -645,7 +645,7 @@ class _PlannerMenu extends StatelessWidget {
       ),
       (
         PlannerPaths.suggestions,
-        Icons.auto_awesome_rounded,
+        Icons.lightbulb_outline_rounded,
         l10n.plannerMenuSuggestions,
       ),
       (PlannerPaths.pomodoro, Icons.timer_rounded, l10n.plannerMenuPomodoro),

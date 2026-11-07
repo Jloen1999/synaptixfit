@@ -43,7 +43,7 @@
   "registerGoToLogin": "Déjà un compte ? Connecte-toi",
   "authBrandTitle": "Ton esprit et ton corps, dans le même plan",
   "authBrandPointLoad": "Ce que tu t’entraînes règle combien tu étudies, et inversement",
-  "authBrandPointReview": "Révisions espacées avec l’IA à partir de tes notes",
+  "authBrandPointReview": "Des révisions au bon moment, à partir de tes notes",
   "authBrandPointProgress": "Défis, badges et série qui comptent des deux côtés",
   "splashLoading": "Préparation de ton espace",
   "errorServer": "Le serveur a rencontré un problème. Réessaie dans quelques minutes.",
@@ -60,10 +60,10 @@
   "errorAuthWeakPassword": "Le mot de passe doit contenir au moins 8 caractères, avec des lettres et des chiffres.",
   "errorAuthGoogleCancelled": "Tu as annulé la connexion avec Google.",
   "errorAuthGoogleFailed": "Impossible de se connecter avec Google.",
-  "errorAiUnavailable": "L’assistant IA n’est pas disponible pour le moment. Réessaie plus tard.",
-  "errorAiQuotaExceeded": "La limite d’utilisation de l’IA est atteinte. Réessaie dans un moment.",
+  "errorAiUnavailable": "Nous ne pouvons pas le préparer pour le moment. Réessaie plus tard.",
+  "errorAiQuotaExceeded": "Nous avons déjà préparé beaucoup de contenu aujourd'hui. Réessaie dans un moment.",
   "errorStorageUnavailable": "Impossible d’accéder aux fichiers. Réessaie.",
-  "errorAiAttachmentUnsupported": "L’IA ne peut lire que les PDF contenant du texte. Les images et les PDF scannés ne peuvent pas être analysés.",
+  "errorAiAttachmentUnsupported": "Nous ne pouvons lire que des PDF avec du texte. Les images et les PDF scannés ne peuvent pas être analysés.",
   "achievementLevelTitle": "Niveau {level} !",
   "achievementLevelMessage": "Tout ce que tu étudies et tout ce que tu t’entraînes compte. Continue comme ça.",
   "achievementBadgesTitle": "{count, plural, =1{Nouveau badge !} other{{count} nouveaux badges !}}",
@@ -134,5 +134,9 @@
   "xpGuideChallengesDetail": "Chaque tâche donne de l'XP selon sa difficulté ; au maximum 140 XP par défi.",
   "xpGuideFooter": "Si quelque chose ne compte pas, l’appli te dit pourquoi.",
   "commonArrowSpoken": " à ",
-  "registerLegalRequired": "Coche la case pour créer ton compte."
+  "registerLegalRequired": "Coche la case pour créer ton compte.",
+  "commonListAnd": "{items} et {last}",
+  "commonSearchClear": "Effacer la recherche",
+  "commonSearchNoResults": "Aucun résultat pour « {query} »",
+  "commonSearchResultsCount": "{count, plural, =1{1 résultat} other{{count} résultats}}"
 }

@@ -123,13 +123,9 @@ class _ExplorerViewState extends State<_ExplorerView> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: TextField(
+                      child: AppSearchField(
+                        label: l10n.trainingSearchExercises,
                         controller: _search,
-                        textInputAction: TextInputAction.search,
-                        decoration: InputDecoration(
-                          labelText: l10n.trainingSearchExercises,
-                          prefixIcon: const Icon(Icons.search_rounded),
-                        ),
                         onChanged: _onQuery,
                       ),
                     ),

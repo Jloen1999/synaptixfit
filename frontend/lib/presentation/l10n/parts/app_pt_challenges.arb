@@ -11,7 +11,6 @@
   "challengesPendingComplete": "Marcar «{title}» como feita",
   "challengesListTitle": "Os teus desafios",
   "challengesSearchHint": "Procurar desafios",
-  "challengesSearchClear": "Limpar pesquisa",
   "challengesFilterAll": "Todos",
   "challengesFilterWithTasks": "Com tarefas",
   "challengesFilterWithoutTasks": "Sem tarefas",

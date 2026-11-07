@@ -44,7 +44,7 @@ public final class AcademicPersistenceMapper {
                 .id(e.getId()).userId(e.getUserId()).name(e.getName()).code(e.getCode())
                 .description(e.getDescription()).credits(e.getCredits())
                 .perceivedDifficulty(e.getPerceivedDifficulty()).priority(AcademicDbCodes.priority(e.getPriority()))
-                .nextAssessmentAt(e.getNextAssessmentAt()).teacher(e.getTeacher()).archived(e.isArchived())
+                .nextAssessmentAt(e.getNextAssessmentAt()).teacher(e.getTeacher()).room(e.getRoom()).archived(e.isArchived())
                 .catalogSubjectId(e.getCatalogSubjectId()).icsUrl(e.getIcsUrl()).lastSyncedAt(e.getLastSyncedAt())
                 .createdAt(e.getCreatedAt())
                 .build();
@@ -61,6 +61,7 @@ public final class AcademicPersistenceMapper {
         e.setPriority(AcademicDbCodes.priority(s.priority()));
         e.setNextAssessmentAt(s.nextAssessmentAt());
         e.setTeacher(s.teacher());
+        e.setRoom(s.room());
         e.setArchived(s.archived());
         e.setCatalogSubjectId(s.catalogSubjectId());
         e.setIcsUrl(s.icsUrl());

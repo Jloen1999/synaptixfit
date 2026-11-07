@@ -128,6 +128,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `PROFILE_WELLNESS_NOT_FOUND` | 404 | El usuario aún no tiene perfil de bienestar | Todavía no has completado tu perfil físico. | Activo |
 | `PROFILE_ACADEMIC_NOT_FOUND` | 404 | El usuario aún no tiene perfil académico | Todavía no has configurado tu perfil académico. | Activo |
 | `PROFILE_INVALID_CLASS_DATES` | 400 | Fin de clases anterior al inicio | La fecha de fin de clases no puede ser anterior a la de inicio. | Activo |
+| `INVALID_BIRTH_DATE` | 400 | Fecha de nacimiento futura o con una edad fuera de 14-100 años (`BirthDate`, ADR 0036) | Revisa la fecha de nacimiento: no puede ser futura y la edad debe estar entre 14 y 100 años. | Activo |
 | `ENROLLMENT_CONSENT_REQUIRED` | 422 | Se intenta leer un documento de matrícula sin el permiso expreso del usuario | Necesitamos tu permiso para leer el documento. | Activo |
 | `ENROLLMENT_FILE_INVALID` | 400 | El documento de matrícula está vacío, dañado, no es un PDF o pasa de 5 MB | Sube un PDF de 5 MB como máximo. | Activo |
 | `ENROLLMENT_TOO_MANY_SUBJECTS` | 400 | Se piden más de 40 asignaturas al aplicar la matrícula | Has elegido demasiadas asignaturas de una vez. | Activo |

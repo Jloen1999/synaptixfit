@@ -42,8 +42,9 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
         return dbValue == null ? null : CODES.getOrDefault(dbValue, dbValue.toUpperCase(java.util.Locale.ROOT));
     }
 
+    /** {@code birthday}: hoy es su cumpleaños (tarjeta de felicitación en Inicio, ADR 0036). */
     public record GreetingResponse(String fullName, String avatarUrl, int level, int levelXp, int levelThreshold,
-                                   int streak) {
+                                   int streak, boolean birthday) {
     }
 
     public record TodayResponse(LocalDate date, double trainingCalories, double studyCalories, double totalCalories,
@@ -130,7 +131,8 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
         Dashboard.WeekKpis w = d.week();
         return new DashboardResponse(
                 new GreetingResponse(d.greeting().fullName(), d.greeting().avatarUrl(), d.greeting().level(),
-                        d.greeting().levelXp(), d.greeting().levelThreshold(), d.greeting().streak()),
+                        d.greeting().levelXp(), d.greeting().levelThreshold(), d.greeting().streak(),
+                        d.greeting().birthday()),
                 new TodayResponse(t.date(), round(t.trainingCalories(), 1), round(t.studyCalories(), 1),
                         round(t.totalCalories(), 1), t.sessions(), t.trainingMinutes(), t.studyMinutesCompleted(),
                         t.studyMinutesPlanned(), round(t.physicalLoad(), 2)),

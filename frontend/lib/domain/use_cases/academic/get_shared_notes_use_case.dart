@@ -4,12 +4,14 @@ import '../../models/result/app_result.dart';
 import '../../repositories/note_repository_contract.dart';
 
 /// Apuntes que otros usuarios comparten y puedo leer, por ámbito (amigos o
-/// comunidad) o de un autor ([authorId]).
+/// comunidad) o de un autor ([authorId]); [search] busca en el servidor por
+/// título, asignatura o autor (la lista va paginada).
 abstract interface class GetSharedNotesUseCaseContract {
   Future<AppResult<SharedNoteSummaryPage>> call({
     required int page,
     SharedNotesScope scope = SharedNotesScope.all,
     String? authorId,
+    String? search,
     int size = 20,
   });
 }
@@ -24,11 +26,13 @@ class GetSharedNotesUseCase implements GetSharedNotesUseCaseContract {
     required int page,
     SharedNotesScope scope = SharedNotesScope.all,
     String? authorId,
+    String? search,
     int size = 20,
   }) => _repository.getSharedNotes(
     page: page,
     scope: scope,
     authorId: authorId,
+    search: search,
     size: size,
   );
 }

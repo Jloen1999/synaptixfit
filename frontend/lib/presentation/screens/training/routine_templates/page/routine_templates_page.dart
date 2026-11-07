@@ -97,7 +97,7 @@ class _TemplatesView extends StatelessWidget {
                               children: [
                                 AppPrimaryButton(
                                   label: l10n.trainingNewRoutineAi,
-                                  icon: Icons.auto_awesome_rounded,
+                                  icon: Icons.lightbulb_outline_rounded,
                                   onPressed: () =>
                                       context.push(TrainingPaths.newRoutine()),
                                 ),

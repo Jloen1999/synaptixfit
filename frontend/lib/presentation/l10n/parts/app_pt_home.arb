@@ -182,5 +182,8 @@
   "homeBannerActionNextSlot": "Para o próximo espaço livre",
   "homeBannerActionDone": "Feito",
   "homeBannerActionMarkInCalendar": "Marcar no calendário",
-  "homeStartRun": "Começar a correr"
+  "homeStartRun": "Começar a correr",
+  "homeBirthdayTitle": "Parabéns, {name}!",
+  "homeBirthdayTitleNoName": "Parabéns!",
+  "homeBirthdayMessage": "Tem um ótimo dia. O teu plano espera por ti quando quiseres."
 }

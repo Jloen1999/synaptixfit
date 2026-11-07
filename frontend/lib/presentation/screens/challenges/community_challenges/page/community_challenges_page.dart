@@ -137,27 +137,10 @@ class _CommunityChallengesViewState extends State<CommunityChallengesView>
                         ),
                       ),
                       const SizedBox(height: TokensSpacing.m),
-                      ValueListenableBuilder(
-                        valueListenable: _search,
-                        builder: (context, value, _) => TextField(
-                          controller: _search,
-                          onChanged: _onSearch,
-                          textInputAction: TextInputAction.search,
-                          decoration: InputDecoration(
-                            labelText: l10n.challengesSearchHint,
-                            prefixIcon: const Icon(Icons.search_rounded),
-                            suffixIcon: value.text.isEmpty
-                                ? null
-                                : IconButton(
-                                    tooltip: l10n.challengesSearchClear,
-                                    icon: const Icon(Icons.close_rounded),
-                                    onPressed: () {
-                                      _search.clear();
-                                      _filter(type: state.type, search: '');
-                                    },
-                                  ),
-                          ),
-                        ),
+                      AppSearchField(
+                        label: l10n.challengesSearchHint,
+                        controller: _search,
+                        onChanged: _onSearch,
                       ),
                       const SizedBox(height: TokensSpacing.s),
                       Wrap(

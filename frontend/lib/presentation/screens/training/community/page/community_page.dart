@@ -76,12 +76,8 @@ class _CommunityViewState extends State<_CommunityView> {
                   0,
                 ),
                 child: TrainingContent(
-                  child: TextField(
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      labelText: l10n.trainingSearchRoutines,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                    ),
+                  child: AppSearchField(
+                    label: l10n.trainingSearchRoutines,
                     onChanged: _onQuery,
                   ),
                 ),
@@ -124,6 +120,11 @@ class _CommunityViewState extends State<_CommunityView> {
                     error: state.error!,
                     onRetry: () => bloc.add(const CommunityEvent.refreshed()),
                   ),
+                  // Con algo escrito, «sin resultados» y no «la comunidad
+                  // está vacía» (vocabulario, fila Buscador).
+                  CommunityStatus.ready
+                      when state.items.isEmpty && state.query.trim().isNotEmpty =>
+                    AppSearchEmpty(query: state.query),
                   CommunityStatus.ready when state.items.isEmpty =>
                     AppEmptyState(
                       icon: Icons.groups_rounded,

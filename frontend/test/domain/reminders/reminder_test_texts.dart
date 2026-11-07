@@ -78,6 +78,12 @@ class TestReminderTexts implements ReminderTexts {
       'task:$daysLeft:${task ?? '-'}:${challenge ?? '-'}';
 
   @override
+  String birthdayTitle(String? name) => 'Feliz cumpleaños, ${name ?? ''}';
+
+  @override
+  String get birthdayBody => 'Que tengas un gran día';
+
+  @override
   String get morningSummaryTitle => 'summary';
 
   @override

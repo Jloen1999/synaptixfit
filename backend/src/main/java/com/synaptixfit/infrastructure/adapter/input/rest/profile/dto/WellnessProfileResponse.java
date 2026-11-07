@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 /** Perfil de bienestar. {@code bmi} lo calcula el servidor; {@code primaryGoalLabel} es el texto en español. */
-public record WellnessProfileResponse(UUID id, int age, Sex sex, String city, double weightKg, double heightCm,
+public record WellnessProfileResponse(UUID id, Integer age, Sex sex, String city, double weightKg, double heightCm,
                                       double bmi, ActivityLevel activityLevel, TrainingGoal primaryGoal,
                                       String primaryGoalLabel, List<String> goals, List<String> equipment,
                                       List<Integer> availableDays, int daysPerWeek, int minutesPerSession,

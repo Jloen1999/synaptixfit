@@ -68,5 +68,8 @@
   "remindersTaskMention": "tâche « {task} » du défi « {challenge} »",
   "remindersTaskMentionChallenge": "défi « {challenge} »",
   "remindersTaskMentionList": "tâches de défi {tasks}",
-  "remindersQuoted": "« {text} »"
+  "remindersQuoted": "« {text} »",
+  "remindersBirthdayTitle": "Joyeux anniversaire, {name} !",
+  "remindersBirthdayTitleNoName": "Joyeux anniversaire !",
+  "remindersBirthdayBody": "Passe une excellente journée."
 }

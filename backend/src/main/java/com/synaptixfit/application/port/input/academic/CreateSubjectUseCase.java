@@ -10,7 +10,15 @@ public interface CreateSubjectUseCase {
 
     record Command(UUID userId, String name, String code, String description, Integer credits,
                    Integer perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt, String teacher,
-                   String icsUrl) {}
+                   String icsUrl, String room) {
+
+        public Command(UUID userId, String name, String code, String description, Integer credits,
+                       Integer perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt,
+                       String teacher, String icsUrl) {
+            this(userId, name, code, description, credits, perceivedDifficulty, priority, nextAssessmentAt, teacher,
+                    icsUrl, null);
+        }
+    }
 
     Subject createSubject(Command command);
 }

@@ -99,7 +99,10 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     Emitter<OnboardingState> emit,
   ) async {
     emit(state.copyWith(busy: true, actionError: null));
-    final result = await _updateAccount(usageFocus: event.focus);
+    final result = await _updateAccount(
+      usageFocus: event.focus,
+      birthDate: event.birthDate,
+    );
     if (result.errorOrNull case final error?) {
       emit(state.copyWith(busy: false, actionError: error));
       return;

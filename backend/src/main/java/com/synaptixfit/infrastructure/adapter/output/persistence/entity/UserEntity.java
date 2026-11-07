@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /** Tabla {@code usuarios}. */
@@ -38,6 +39,8 @@ public class UserEntity {
     private boolean shadowbanned;
     @Column(name = "enfoque")
     private String enfoque;
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
     @Column(name = "onboarding_completado", nullable = false)
     private boolean onboardingCompletado;
     @Column(name = "creado_en", nullable = false, updatable = false)
@@ -78,6 +81,8 @@ public class UserEntity {
     public Instant getEliminadoEn() { return eliminadoEn; }
     public void setEliminadoEn(Instant eliminadoEn) { this.eliminadoEn = eliminadoEn; }
 
+    public LocalDate getFechaNacimiento() { return fechaNacimiento; }
+    public void setFechaNacimiento(LocalDate fechaNacimiento) { this.fechaNacimiento = fechaNacimiento; }
     public String getEnfoque() { return enfoque; }
     public void setEnfoque(String enfoque) { this.enfoque = enfoque; }
     public boolean isOnboardingCompletado() { return onboardingCompletado; }

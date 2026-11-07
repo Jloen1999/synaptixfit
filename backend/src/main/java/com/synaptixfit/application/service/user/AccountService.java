@@ -8,9 +8,10 @@ import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.util.UUID;
 
-/** Consulta y edición de la cuenta propia. */
+/** Consulta y edición de la cuenta propia (nombre, foto, privacidad, modo de uso y fecha de nacimiento). */
 public class AccountService implements GetCurrentUserUseCase, UpdateAccountUseCase {
 
     private final UserRepositoryPort users;
@@ -45,6 +46,11 @@ public class AccountService implements GetCurrentUserUseCase, UpdateAccountUseCa
         }
         if (command.usageFocus() != null) {
             user.chooseFocus(command.usageFocus());
+        }
+        if (command.removeBirthDate()) {
+            user.removeBirthDate();
+        } else if (command.birthDate() != null) {
+            user.changeBirthDate(command.birthDate(), LocalDate.now(clock));
         }
         User saved = users.save(user);
         if (privacyChanged) {

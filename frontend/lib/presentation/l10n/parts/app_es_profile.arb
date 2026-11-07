@@ -151,7 +151,6 @@
   "profileEditWellnessTitle": "Perfil físico",
   "profileWellnessAboutYou": "Sobre ti",
   "profileWellnessMeasures": "Medidas",
-  "profileFieldAge": "Edad",
   "profileFieldSex": "Sexo",
   "profileFieldWeight": "Peso (kg)",
   "profileFieldHeight": "Altura (cm)",
@@ -206,8 +205,7 @@
   "profileBmiOverweight": "Sobrepeso",
   "profileBmiObesity": "Obesidad",
   "profileGoalSuggestAction": "Recomiéndame",
-  "profileGoalSuggestionsFromAi": "Sugerencias de la IA",
-  "profileGoalSuggestionsFromRules": "Sugerencias según tu perfil",
+  "profileGoalSuggestionsFromAi": "Te sugerimos, según tu edad, tu nivel de actividad y tu ciudad",
   "profileGoalUseSuggestion": "Elegir",
   "profileSexMale": "Hombre",
   "profileSexFemale": "Mujer",
@@ -710,5 +708,12 @@
   "profileLegalCheckboxRequired": "Marca la casilla para seguir.",
   "profilePermissionLocationTitle": "Ubicación",
   "profilePermissionLocationWhy": "Para grabar tus carreras con el GPS: distancia, ritmo y ruta. Solo mientras grabas, también con la pantalla apagada. Sin ella, puedes apuntar las actividades a mano.",
-  "profilePermissionLocationAsk": "¿Permitir la ubicación?"
+  "profilePermissionLocationAsk": "¿Permitir la ubicación?",
+  "profileBirthDateLabel": "Fecha de nacimiento (opcional)",
+  "profileBirthDateEmpty": "Sin fecha · elígela",
+  "profileBirthDateHint": "Calculamos tu edad con ella para las kcal y las propuestas, y te felicitamos el día de tu cumpleaños. No sale en tu perfil público.",
+  "profileBirthDateRemove": "Quitar la fecha",
+  "profileBirthDateSuggestion": "Pon tu fecha de nacimiento: tu edad se actualizará sola y te felicitaremos en tu cumpleaños.",
+  "profileBirthDateAdd": "Añadir",
+  "profileErrorInvalidBirthDate": "Revisa la fecha de nacimiento: no puede ser futura y la edad debe estar entre 14 y 100 años."
 }

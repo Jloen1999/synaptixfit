@@ -19,8 +19,8 @@ public class WellnessProfileEntity {
     private UUID id;
     @Column(name = "usuario_id", nullable = false, updatable = false)
     private UUID usuarioId;
-    @Column(name = "edad", nullable = false)
-    private int edad;
+    @Column(name = "edad")
+    private Integer edad;
     @Column(name = "sexo", nullable = false)
     private String sexo;
     @Column(name = "ciudad")
@@ -59,8 +59,8 @@ public class WellnessProfileEntity {
     public void setId(UUID id) { this.id = id; }
     public UUID getUsuarioId() { return usuarioId; }
     public void setUsuarioId(UUID usuarioId) { this.usuarioId = usuarioId; }
-    public int getEdad() { return edad; }
-    public void setEdad(int edad) { this.edad = edad; }
+    public Integer getEdad() { return edad; }
+    public void setEdad(Integer edad) { this.edad = edad; }
     public String getSexo() { return sexo; }
     public void setSexo(String sexo) { this.sexo = sexo; }
     public String getCiudad() { return ciudad; }

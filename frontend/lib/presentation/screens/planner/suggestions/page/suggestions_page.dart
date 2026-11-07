@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
-import '../../../../../domain/enums/planner_enums.dart';
 import '../../../../../domain/models/planner/planner_ai.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -135,7 +134,6 @@ class _SuggestionsView extends StatelessWidget with ErrorsMessageMixin {
   ) {
     final l10n = context.localizations;
     final bloc = context.read<SuggestionsBloc>();
-    final isAi = suggestion.source == SuggestionSource.ai;
     if (suggestion.blocks.isEmpty) {
       return [
         AppEmptyState(
@@ -155,14 +153,14 @@ class _SuggestionsView extends StatelessWidget with ErrorsMessageMixin {
       Row(
         children: [
           Icon(
-            isAi ? Icons.auto_awesome_rounded : Icons.rule_rounded,
-            color: isAi ? context.colors.tertiary : context.colors.outline,
+            Icons.lightbulb_outline_rounded,
+            color: context.colors.tertiary,
             size: 20,
           ),
           const SizedBox(width: TokensSpacing.s),
           Expanded(
             child: Text(
-              isAi ? l10n.plannerSourceAi : l10n.plannerSourceHeuristic,
+              l10n.plannerSourceAi,
               style: context.textStyles.titleSmall,
             ),
           ),
@@ -270,7 +268,7 @@ class _GoalsCard extends StatelessWidget {
             label: state.suggestion == null
                 ? l10n.plannerGenerate
                 : l10n.plannerRegenerate,
-            icon: Icons.auto_awesome_rounded,
+            icon: Icons.lightbulb_outline_rounded,
             loading: state.status == SuggestionsStatus.generating,
             onPressed: busy
                 ? null

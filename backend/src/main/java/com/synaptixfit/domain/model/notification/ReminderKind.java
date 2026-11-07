@@ -2,8 +2,8 @@ package com.synaptixfit.domain.model.notification;
 
 /**
  * Qué recuerda un aviso del plan de recordatorios del móvil ({@link ReminderPlanner}). El móvil descarta los tipos que
- * no conoce, así que se pueden añadir tipos nuevos (p. ej. el cumpleaños cuando el perfil tenga la fecha de
- * nacimiento, ADR 0035) sin romper las versiones anteriores de la app.
+ * no conoce, así que se pueden añadir tipos nuevos (como el cumpleaños, ADR 0036) sin romper las versiones anteriores
+ * de la app.
  */
 public enum ReminderKind {
     /** Repasos espaciados (SM-2) vencidos. */
@@ -35,5 +35,10 @@ public enum ReminderKind {
     /** Tarea de reto con fecha que ningún otro aviso menciona: «Mañana: Repasar tema 3 · reto Aprobar Física». */
     CHALLENGE_TASK,
     /** Resumen de la mañana, solo si hay algo: «Hoy: 2 estudios, 1 entreno y 1 tarea de reto». */
-    MORNING_SUMMARY
+    MORNING_SUMMARY,
+    /**
+     * «¡Feliz cumpleaños, Ana!» la mañana de su cumpleaños (ADR 0036). Si ese día hay resumen de la mañana, va dentro
+     * de él ({@link ReminderPlan.DaySummary#birthday()}) en vez de llegar aparte.
+     */
+    BIRTHDAY
 }

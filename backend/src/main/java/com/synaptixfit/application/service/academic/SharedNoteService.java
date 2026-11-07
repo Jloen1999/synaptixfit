@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.academic;
 import com.synaptixfit.application.port.input.academic.CopySharedNoteUseCase;
 import com.synaptixfit.application.port.input.academic.GetSharedNoteUseCase;
 import com.synaptixfit.application.port.input.academic.ListSharedNotesUseCase;
+import com.synaptixfit.domain.model.academic.AcademicSearch;
 import com.synaptixfit.domain.exception.academic.NoteNotFoundException;
 import com.synaptixfit.domain.model.academic.AuthoredNote;
 import com.synaptixfit.domain.model.academic.Note;
@@ -43,8 +44,9 @@ public class SharedNoteService implements ListSharedNotesUseCase, GetSharedNoteU
             return notes.findOwnShared(q.userId(), EffectiveVisibility.sharedLevels(), q.catalogSubjectId(), q.page());
         }
         AudienceScope scope = q.scope() == null ? AudienceScope.ALL : q.scope();
+        String folded = q.search() == null || q.search().isBlank() ? null : AcademicSearch.fold(q.search().strip());
         return notes.findShared(q.userId(), new NoteRepositoryPort.SharedFilter(scope, q.authorId(),
-                q.catalogSubjectId()), q.page());
+                q.catalogSubjectId(), folded), q.page());
     }
 
     @Override

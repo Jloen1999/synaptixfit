@@ -245,7 +245,7 @@ class _GenerateBanner extends StatelessWidget {
       color: context.colors.tertiaryContainer.withValues(alpha: 0.5),
       child: Row(
         children: [
-          Icon(Icons.auto_awesome_rounded, color: context.colors.tertiary),
+          Icon(Icons.lightbulb_outline_rounded, color: context.colors.tertiary),
           const SizedBox(width: TokensSpacing.m),
           Expanded(
             child: Column(
@@ -358,7 +358,7 @@ class _SourceMenu extends StatelessWidget {
           PopupMenuItem(
             value: _SourceAction.assistant,
             child: ListTile(
-              leading: const Icon(Icons.auto_awesome_rounded),
+              leading: const Icon(Icons.lightbulb_outline_rounded),
               title: Text(l10n.academicAiAssistantTitle),
             ),
           ),
@@ -461,7 +461,14 @@ class _NoteTile extends StatelessWidget {
               : Icons.description_outlined,
           color: context.colors.tertiary,
         ),
-        title: Text(note.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(
+          note.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: context.textStyles.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         subtitle: Row(
           children: [
             Icon(
@@ -524,6 +531,9 @@ class _FileTile extends StatelessWidget {
           file.fileName,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          style: context.textStyles.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
         subtitle: Text(
           [

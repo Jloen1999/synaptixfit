@@ -500,7 +500,7 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
                       ? AppPill(
                           label: l10n.academicScanTidied,
                           color: context.palette.success,
-                          icon: Icons.auto_awesome_rounded,
+                          icon: Icons.lightbulb_outline_rounded,
                         )
                       : AppPill(
                           label: l10n.academicScanRaw,

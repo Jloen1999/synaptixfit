@@ -12,8 +12,16 @@ import java.util.UUID;
  */
 public interface ListSharedNotesUseCase {
 
-    /** {@code scope} nulo equivale a {@link AudienceScope#ALL}; {@code authorId} y {@code catalogSubjectId} son opcionales. */
-    record Query(UUID userId, AudienceScope scope, UUID authorId, UUID catalogSubjectId, PageRequest page) {
+    /**
+     * {@code scope} nulo equivale a {@link AudienceScope#ALL}; {@code authorId}, {@code catalogSubjectId} y
+     * {@code search} (título, asignatura o autor, sin distinguir tildes; ADR 0036) son opcionales.
+     */
+    record Query(UUID userId, AudienceScope scope, UUID authorId, UUID catalogSubjectId, PageRequest page,
+                 String search) {
+
+        public Query(UUID userId, AudienceScope scope, UUID authorId, UUID catalogSubjectId, PageRequest page) {
+            this(userId, scope, authorId, catalogSubjectId, page, null);
+        }
     }
 
     PageResult<SharedNoteSummary> listSharedNotes(Query query);

@@ -194,7 +194,7 @@ public class DashboardService implements GetDashboardUseCase {
         // una racha que ya se rompió.
         int streak = streaks == null ? user.streak() : streaks.getStreak(userId, tz).currentDays();
         Dashboard.Greeting greeting = new Dashboard.Greeting(user.fullName(), user.avatarUrl(), user.level(),
-                user.levelXp(), user.levelThreshold(), streak);
+                user.levelXp(), user.levelThreshold(), streak, user.hasBirthdayOn(today));
         Dashboard.TodayKpis todayKpis = new Dashboard.TodayKpis(today, trainingToday.calories(),
                 studyToday.totalCalories(), trainingToday.sessions(), trainingToday.minutes(),
                 studyToday.studyMinutes(), studyPlanned, loadToday);

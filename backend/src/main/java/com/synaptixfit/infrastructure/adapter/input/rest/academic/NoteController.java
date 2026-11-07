@@ -23,6 +23,7 @@ import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.PageResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,10 +95,11 @@ public class NoteController {
                                                           @RequestParam(defaultValue = "ALL") AudienceScope scope,
                                                           @RequestParam(required = false) UUID authorId,
                                                           @RequestParam(required = false) UUID catalogSubjectId,
+                                                          @RequestParam(required = false) @Size(max = 100) String q,
                                                           @RequestParam(defaultValue = "0") int page,
                                                           @RequestParam(defaultValue = "20") int size) {
         return PageResponse.from(listShared.listSharedNotes(new ListSharedNotesUseCase.Query(userId, scope, authorId,
-                catalogSubjectId, new PageRequest(page, size))), s -> SharedNoteSummaryResponse.from(s, userId));
+                catalogSubjectId, new PageRequest(page, size), q)), s -> SharedNoteSummaryResponse.from(s, userId));
     }
 
     @GetMapping("/shared/{noteId}")

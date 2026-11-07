@@ -37,7 +37,19 @@ abstract class HomeGreeting with _$HomeGreeting {
     required int levelXp,
     required int levelThreshold,
     required int streak,
+
+    /// Hoy es su cumpleaños (lo decide el servidor con su zona, ADR 0036).
+    @Default(false) bool birthday,
   }) = _HomeGreeting;
+
+  const HomeGreeting._();
+
+  /// Nombre de pila con el que se le felicita.
+  String get firstName {
+    final trimmed = fullName.trim();
+    final space = trimmed.indexOf(' ');
+    return space < 0 ? trimmed : trimmed.substring(0, space);
+  }
 }
 
 /// Indicadores de hoy.

@@ -19,6 +19,7 @@ import '../../../auth/session/bloc/session_bloc.dart';
 import '../../home_external_paths.dart';
 import '../../widgets/active_challenges_section.dart';
 import '../../widgets/agenda_section.dart';
+import '../../widgets/birthday_card.dart';
 import '../../widgets/home_header.dart';
 import '../../widgets/home_skeleton.dart';
 import '../../widgets/next_training_card.dart';
@@ -476,6 +477,11 @@ class _HomeContent extends StatelessWidget {
           children: [
             header,
             const SizedBox(height: TokensSpacing.m),
+            // Solo ese día y arriba: es lo primero que debe ver (ADR 0036).
+            if (dashboard.greeting.birthday) ...[
+              BirthdayCard(name: dashboard.greeting.firstName),
+              _gap,
+            ],
             if (urgent) ...[banner, _gap],
             hero,
             _gap,

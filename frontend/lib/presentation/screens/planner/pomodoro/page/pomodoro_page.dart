@@ -108,6 +108,33 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
 
   static String _clock(int seconds) => PomodoroBloc.clockText(seconds);
 
+  /// «Concentración 2 de 4 · luego 5 min de descanso» o «Descanso de 5 min ·
+  /// luego concentración 3 de 4»: qué fase es y qué viene después.
+  static String _phaseHeader(
+    BuildContext context,
+    PomodoroState state,
+    PomodoroConfig config,
+  ) {
+    final l10n = context.localizations;
+    final total = config.cyclesBeforeLongBreak;
+    final done = state.completedFocusCycles % total;
+    if (state.phase == FocusPhase.focus) {
+      final current = done + 1;
+      final breakMinutes = current >= total
+          ? config.longBreakMinutes
+          : config.shortBreakMinutes;
+      return l10n.plannerPomodoroFocusHeader(current, total, breakMinutes);
+    }
+    final minutes = state.phase == FocusPhase.longBreak
+        ? config.longBreakMinutes
+        : config.shortBreakMinutes;
+    // Tras el descanso largo se empieza otra tanda.
+    final next = state.phase == FocusPhase.longBreak || done == 0
+        ? 1
+        : done + 1;
+    return l10n.plannerPomodoroBreakHeader(minutes, next, total);
+  }
+
   void _onNotice(BuildContext context, PomodoroNotice notice) {
     final l10n = context.localizations;
     switch (notice) {
@@ -157,9 +184,6 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
         final config = bloc.config;
         final color = _phaseColor(context, state.phase);
         final phaseLabel = _phaseLabel(context, state.phase);
-        final cycle =
-            state.completedFocusCycles % config.cyclesBeforeLongBreak +
-            (state.phase == FocusPhase.focus ? 1 : 0);
         return Scaffold(
           appBar: AppPageBar.reading(title: Text(l10n.plannerPomodoroTitle)),
           body: Center(
@@ -193,17 +217,10 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                     _SubjectPicker(state: state),
                     const SizedBox(height: TokensSpacing.m),
                   ],
-                  Center(
-                    child: Chip(
-                      avatar: Icon(
-                        state.phase == FocusPhase.focus
-                            ? Icons.psychology_rounded
-                            : Icons.free_breakfast_rounded,
-                        color: color,
-                        size: TokensSize.iconXs,
-                      ),
-                      label: Text(phaseLabel),
-                    ),
+                  _PhaseHeader(
+                    phase: state.phase,
+                    color: color,
+                    text: _phaseHeader(context, state, config),
                   ),
                   const SizedBox(height: TokensSpacing.m),
                   Center(
@@ -246,19 +263,6 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                                           ],
                                         ),
                                   ),
-                                ),
-                                Text(
-                                  l10n.plannerPomodoroCycle(
-                                    cycle.clamp(
-                                      1,
-                                      config.cyclesBeforeLongBreak,
-                                    ),
-                                    config.cyclesBeforeLongBreak,
-                                  ),
-                                  style: context.textStyles.labelLarge
-                                      ?.copyWith(
-                                        color: context.colors.onSurfaceVariant,
-                                      ),
                                 ),
                               ],
                             ),
@@ -427,9 +431,10 @@ class _Controls extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final bloc = context.read<PomodoroBloc>();
+    final focus = state.phase == FocusPhase.focus;
     final (label, icon, event) = switch (state.status) {
       PomodoroStatus.idle => (
-        l10n.plannerPomodoroStart,
+        focus ? l10n.plannerPomodoroStartFocus : l10n.plannerPomodoroStartBreak,
         Icons.play_arrow_rounded,
         const PomodoroEvent.startPressed(),
       ),
@@ -444,11 +449,35 @@ class _Controls extends StatelessWidget {
         const PomodoroEvent.resumePressed(),
       ),
     };
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    // Cada botón dice lo que hace (antes, iconos sueltos de «siguiente» y
+    // «reiniciar»): el principal, en grande; cambiar de fase y empezar de
+    // cero, debajo y con texto (vocabulario, «Pomodoro»).
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        IconButton.outlined(
-          tooltip: l10n.plannerPomodoroReset,
+        AppPrimaryButton(
+          label: label,
+          icon: icon,
+          onPressed: () => bloc.add(event),
+        ),
+        const SizedBox(height: TokensSpacing.s),
+        Tooltip(
+          message: focus
+              ? l10n.plannerPomodoroToBreakHint
+              : l10n.plannerPomodoroToFocusHint,
+          child: OutlinedButton.icon(
+            onPressed: () => bloc.add(const PomodoroEvent.skipPressed()),
+            icon: Icon(
+              focus ? Icons.free_breakfast_rounded : Icons.psychology_rounded,
+            ),
+            label: Text(
+              focus
+                  ? l10n.plannerPomodoroToBreak
+                  : l10n.plannerPomodoroToFocus,
+            ),
+          ),
+        ),
+        TextButton.icon(
           // Con el reloj en marcha o en pausa, empezar de cero pierde lo que
           // se lleva: se pregunta antes.
           onPressed: () async {
@@ -465,20 +494,52 @@ class _Controls extends StatelessWidget {
             bloc.add(const PomodoroEvent.resetPressed());
           },
           icon: const Icon(Icons.restart_alt_rounded),
-        ),
-        const SizedBox(width: TokensSpacing.m),
-        AppPrimaryButton(
-          label: label,
-          icon: icon,
-          onPressed: () => bloc.add(event),
-        ),
-        const SizedBox(width: TokensSpacing.m),
-        IconButton.outlined(
-          tooltip: l10n.plannerPomodoroSkip,
-          onPressed: () => bloc.add(const PomodoroEvent.skipPressed()),
-          icon: const Icon(Icons.skip_next_rounded),
+          label: Text(l10n.plannerPomodoroReset),
         ),
       ],
+    );
+  }
+}
+
+/// Fase actual y lo que viene después, con el icono en el color de la fase
+/// («Concentración 2 de 4 · luego 5 min de descanso»).
+class _PhaseHeader extends StatelessWidget {
+  const _PhaseHeader({
+    required this.phase,
+    required this.color,
+    required this.text,
+  });
+
+  final FocusPhase phase;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    // Región viva: al pasar al descanso (o volver) el lector anuncia la fase.
+    return Semantics(
+      header: true,
+      liveRegion: true,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            phase == FocusPhase.focus
+                ? Icons.psychology_rounded
+                : Icons.free_breakfast_rounded,
+            color: color,
+            size: TokensSize.iconM,
+          ),
+          const SizedBox(width: TokensSpacing.s),
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: context.textStyles.titleMedium,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

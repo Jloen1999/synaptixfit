@@ -26,11 +26,15 @@ class NoteEditorPage extends StatelessWidget {
     this.noteId,
     this.subjectId,
     this.quickNote = false,
+    this.initialTitle,
   });
 
   final String? noteId;
   final String? subjectId;
   final bool quickNote;
+
+  /// Título propuesto para un apunte nuevo (p. ej. lo buscado sin resultados).
+  final String? initialTitle;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
@@ -46,14 +50,15 @@ class NoteEditorPage extends StatelessWidget {
               Visibility.private,
         ),
       ),
-    child: _NoteEditorView(isNew: noteId == null),
+    child: _NoteEditorView(isNew: noteId == null, initialTitle: initialTitle),
   );
 }
 
 class _NoteEditorView extends StatefulWidget {
-  const _NoteEditorView({required this.isNew});
+  const _NoteEditorView({required this.isNew, this.initialTitle});
 
   final bool isNew;
+  final String? initialTitle;
 
   @override
   State<_NoteEditorView> createState() => _NoteEditorViewState();
@@ -136,7 +141,7 @@ class _NoteEditorViewState extends State<_NoteEditorView>
     _filled = true;
     setState(() {
       final note = state.note;
-      _title.text = note?.title ?? '';
+      _title.text = note?.title ?? widget.initialTitle ?? '';
       _content.text = note?.content ?? '';
       _visibility = state.initialVisibility;
       _quick = state.initialQuickNote;

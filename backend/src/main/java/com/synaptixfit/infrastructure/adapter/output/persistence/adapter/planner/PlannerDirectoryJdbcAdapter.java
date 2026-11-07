@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import java.time.Clock;
+import com.synaptixfit.domain.model.user.BirthDate;
 
 /**
  * Lecturas del planificador sobre tablas de otros módulos (asignaturas, perfiles, rutinas, retos)
@@ -45,7 +47,10 @@ public class PlannerDirectoryJdbcAdapter implements SubjectDirectoryPort, Planne
 
     private final JdbcClient jdbc;
 
-    public PlannerDirectoryJdbcAdapter(JdbcClient jdbc) {
+    private final Clock clock;
+
+    public PlannerDirectoryJdbcAdapter(JdbcClient jdbc, Clock clock) {
+        this.clock = clock;
         this.jdbc = jdbc;
     }
 
@@ -88,11 +93,15 @@ public class PlannerDirectoryJdbcAdapter implements SubjectDirectoryPort, Planne
 
     @Override
     public Optional<PlannerProfile.Metabolic> findMetabolic(UUID userId) {
-        return jdbc.sql("select peso_kg, altura_cm, edad, sexo from perfil_bienestar_usuario "
-                        + "where usuario_id = :userId order by actualizado_en desc limit 1")
+        // Edad calculada con la fecha de nacimiento de la cuenta (ADR 0036); la del perfil solo si no hay fecha.
+        return jdbc.sql("select p.peso_kg, p.altura_cm, p.edad, p.sexo, u.fecha_nacimiento"
+                        + " from perfil_bienestar_usuario p join usuarios u on u.id = p.usuario_id"
+                        + " where p.usuario_id = :userId order by p.actualizado_en desc limit 1")
                 .param("userId", userId)
                 .query((rs, n) -> new PlannerProfile.Metabolic(rs.getDouble("peso_kg"), rs.getDouble("altura_cm"),
-                        rs.getInt("edad"), sex(rs.getString("sexo"))))
+                        BirthDate.effectiveAge(rs.getObject("fecha_nacimiento", LocalDate.class),
+                                rs.getObject("edad", Integer.class), LocalDate.now(clock)),
+                        sex(rs.getString("sexo"))))
                 .optional();
     }
 

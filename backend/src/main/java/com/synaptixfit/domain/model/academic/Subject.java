@@ -26,6 +26,7 @@ public final class Subject {
     private SubjectPriority priority;
     private Instant nextAssessmentAt;
     private String teacher;
+    private String room;
     private boolean archived;
     private final UUID catalogSubjectId;
     private String icsUrl;
@@ -43,6 +44,7 @@ public final class Subject {
         this.priority = b.priority == null ? SubjectPriority.MEDIUM : b.priority;
         this.nextAssessmentAt = b.nextAssessmentAt;
         this.teacher = TextRules.optional(b.teacher, "teacher", 150);
+        this.room = TextRules.optional(b.room, "room", 100);
         this.archived = b.archived;
         this.catalogSubjectId = b.catalogSubjectId;
         this.icsUrl = TextRules.optional(b.icsUrl, "icsUrl", 2048);
@@ -86,6 +88,11 @@ public final class Subject {
         this.teacher = TextRules.optional(value, "teacher", 150);
     }
 
+    /** Aula habitual (opcional): se usa si la próxima clase del horario no dice dónde es. */
+    public void changeRoom(String value) {
+        this.room = TextRules.optional(value, "room", 100);
+    }
+
     public void changeIcsUrl(String value) {
         this.icsUrl = TextRules.optional(value, "icsUrl", 2048);
     }
@@ -108,6 +115,7 @@ public final class Subject {
     public SubjectPriority priority() { return priority; }
     public Instant nextAssessmentAt() { return nextAssessmentAt; }
     public String teacher() { return teacher; }
+    public String room() { return room; }
     public boolean archived() { return archived; }
     public UUID catalogSubjectId() { return catalogSubjectId; }
     public String icsUrl() { return icsUrl; }
@@ -126,6 +134,7 @@ public final class Subject {
         private SubjectPriority priority;
         private Instant nextAssessmentAt;
         private String teacher;
+        private String room;
         private boolean archived;
         private UUID catalogSubjectId;
         private String icsUrl;
@@ -142,6 +151,7 @@ public final class Subject {
         public Builder priority(SubjectPriority v) { this.priority = v; return this; }
         public Builder nextAssessmentAt(Instant v) { this.nextAssessmentAt = v; return this; }
         public Builder teacher(String v) { this.teacher = v; return this; }
+        public Builder room(String v) { this.room = v; return this; }
         public Builder archived(boolean v) { this.archived = v; return this; }
         public Builder catalogSubjectId(UUID v) { this.catalogSubjectId = v; return this; }
         public Builder icsUrl(String v) { this.icsUrl = v; return this; }

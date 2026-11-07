@@ -50,7 +50,7 @@ abstract class WellnessProfileDto with _$WellnessProfileDto {
 
 /// Cuerpo de PUT/PATCH `/profile/wellness` a partir del borrador del formulario.
 Map<String, dynamic> wellnessDraftToJson(WellnessProfileDraft draft) => {
-  'age': draft.age,
+  'age': ?draft.age,
   'sex': draft.sex.apiValue,
   'weightKg': draft.weightKg,
   'heightCm': draft.heightCm,

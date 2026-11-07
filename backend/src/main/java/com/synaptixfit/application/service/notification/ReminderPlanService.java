@@ -30,6 +30,7 @@ import com.synaptixfit.domain.port.output.notification.ReminderOptionsRepository
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
+import com.synaptixfit.domain.port.output.user.BirthdayPort;
 import com.synaptixfit.domain.port.output.user.UsageFocusPort;
 import java.time.Clock;
 import java.time.Duration;
@@ -75,9 +76,14 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
     private final ListMyChallengesUseCase challenges;
     private final Wellbeing wellbeing;
 
-    /** Fuentes de los avisos de bienestar; nulas: no se avisan. */
+    /** Fuentes de los avisos de bienestar y del cumpleaños; nulas: no se avisan. */
     public record Wellbeing(ReminderOptionsRepositoryPort options, GetStreakUseCase streak,
-                            GetTodayCheckInUseCase checkIn) {
+                            GetTodayCheckInUseCase checkIn, BirthdayPort birthdays) {
+
+        public Wellbeing(ReminderOptionsRepositoryPort options, GetStreakUseCase streak,
+                         GetTodayCheckInUseCase checkIn) {
+            this(options, streak, checkIn, null);
+        }
     }
 
     public ReminderPlanService(NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
@@ -170,8 +176,10 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
                 day == null ? null : new DatedTask.RoutineDayRef(day.dayId(),
                         day.scheduledDate().atStartOfDay(zone).toInstant()),
                 now);
+        ReminderPlanner.Birthday birthday = wellbeing == null || wellbeing.birthdays() == null ? null
+                : wellbeing.birthdays().birthdayOf(userId).orElse(null);
         return planner.plan(new ReminderPlanner.Input(dueReviews, upcoming, prefs, usageFocus, now, zone, days,
-                pending, true, followUps(userId, day, active), options, tasks),
+                pending, true, followUps(userId, day, active), options, tasks, birthday),
                 wellbeingReminders(userId, prefs, usageFocus, options, now, end, blocksInWindow));
     }
 

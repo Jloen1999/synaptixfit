@@ -61,6 +61,7 @@ abstract class HomeGreetingDto with _$HomeGreetingDto {
     @Default(0) int levelXp,
     @Default(0) int levelThreshold,
     @Default(0) int streak,
+    @Default(false) bool birthday,
   }) = _HomeGreetingDto;
 
   const HomeGreetingDto._();
@@ -75,6 +76,7 @@ abstract class HomeGreetingDto with _$HomeGreetingDto {
     levelXp: levelXp,
     levelThreshold: levelThreshold,
     streak: streak,
+    birthday: birthday,
   );
 }
 

@@ -21,7 +21,8 @@ This policy explains which of your data SynaptixFit uses, what for, who it is sh
 - Your studies: university, degree, year, subjects, timetable, classes, assignments, exams, study blocks, notes, files you upload, review questions and your answers.
 - Your training: routines, sessions, sets, weights, times, activities and matches you log, running workouts, challenges, streaks, level and badges.
 - Your precise location, only while you record a run with GPS (also with the screen off, with an ongoing "Recording your run" notice on the phone): the route you take, with the time and altitude of each point, to calculate distance, pace, elevation gain and per-kilometre splits and to draw the map. Location is never used outside a recording or in the background.
-- Your wellbeing profile, if you fill it in: age, sex, weight, height and activity level.
+- Your date of birth, if you give it (it is optional): we use it to work out your age for calories and suggestions, and to wish you a happy birthday. It never shows on your public profile, it is included in the copy of your data you download and it is deleted when you empty or delete your account.
+- Your wellbeing profile, if you fill it in: sex, weight, height, activity level and, if you gave it before the date of birth existed, your age.
 - Your daily check-in, only if you give your permission: how you slept, stress, energy, soreness and areas with pain.
 - "My cycle", only if you turn it on: period days, energy and discomfort you log and your notes.
 - Photos of paper notes: we read them to turn them into text and do not keep the photo. Only the note you decide to save is stored.
@@ -59,7 +60,7 @@ We do not sell your data or use it for advertising.
 
 ## Artificial intelligence
 
-Some features use DeepSeek, an artificial intelligence provider: generating routines, summaries and review questions, tidying the text of note photos, reading timetables or enrolments and suggesting goals. We only send what each request needs and never your name or your email. When generating a routine, for example, we send your age, sex, weight, height, activity level, your study hours and, if you gave the daily check-in permission, how you are today (sleep, stress, areas with pain). "My cycle" data is never sent.
+Some features use DeepSeek, an artificial intelligence provider: generating routines, summaries and review questions, tidying the text of note photos, reading timetables or enrolments and suggesting goals. We only send what each request needs and never your name or your email. When suggesting a routine, for example, we send your age (worked out, never your date of birth), sex, weight, height, activity level, your study hours and, if you gave the daily check-in permission, how you are today (sleep, stress, areas with pain). "My cycle" data is never sent.
 
 ## Who it is shared with
 

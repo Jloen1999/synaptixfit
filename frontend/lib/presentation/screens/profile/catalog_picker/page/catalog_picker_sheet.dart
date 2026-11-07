@@ -111,16 +111,12 @@ class _CatalogPickerViewState extends State<_CatalogPickerView> {
                     ),
                   ),
                 const SizedBox(height: TokensSpacing.s),
-                TextField(
+                AppSearchField(
+                  label: university == null
+                      ? l10n.profileCatalogSearchUniversity
+                      : l10n.profileCatalogSearchDegree,
                   controller: _search,
                   onChanged: _onQuery,
-                  textInputAction: TextInputAction.search,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    labelText: university == null
-                        ? l10n.profileCatalogSearchUniversity
-                        : l10n.profileCatalogSearchDegree,
-                  ),
                 ),
                 const SizedBox(height: TokensSpacing.s),
                 Expanded(child: _results(context, state)),

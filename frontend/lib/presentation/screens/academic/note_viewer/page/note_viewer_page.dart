@@ -112,7 +112,7 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
               IconButton(
                 tooltip: l10n.academicAiAssistantTitle,
                 icon: Icon(
-                  Icons.auto_awesome_rounded,
+                  Icons.lightbulb_outline_rounded,
                   color: context.colors.tertiary,
                 ),
                 onPressed: () => _assistant(context, state),

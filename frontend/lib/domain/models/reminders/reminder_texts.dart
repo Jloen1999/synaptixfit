@@ -51,6 +51,12 @@ abstract interface class ReminderTexts {
 
   String morningSummaryBody(ReminderDaySummary summary);
 
+  /// Felicitación: «¡Feliz cumpleaños, Ana!» ([name] vacío: sin nombre).
+  String birthdayTitle(String? name);
+
+  /// Cuerpo de la felicitación cuando llega sola (sin resumen ese día).
+  String get birthdayBody;
+
   /// Añade a [body] las tareas de reto que van con ese aviso («… · tarea
   /// «Repasar tema 3» del reto Aprobar Física»). Con [tasks] vacía, [body].
   String withTasks(String body, List<ReminderTask> tasks);

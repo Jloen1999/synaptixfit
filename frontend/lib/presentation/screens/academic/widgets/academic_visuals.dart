@@ -241,3 +241,43 @@ String sentenceCase(String text) {
   final lower = t.toLowerCase();
   return lower[0].toUpperCase() + lower.substring(1);
 }
+
+/// «Próxima clase: lun 10:00 · Aula 2.3» (sin aula, sin la parte final).
+/// [short] quita «Próxima clase:» para la tarjeta, donde lo dice el icono.
+String nextClassText(
+  BuildContext context,
+  DateTime at,
+  String? place, {
+  bool short = false,
+}) {
+  final l10n = context.localizations;
+  // Hora en el formato del idioma (24 h en es/fr/pt, 12 h en inglés).
+  final when = DateFormat.E(l10n.localeName).add_jm().format(at);
+  final room = place?.trim();
+  if (short) {
+    return room == null || room.isEmpty ? when : l10n.academicClassWhenAt(when, room);
+  }
+  return room == null || room.isEmpty
+      ? l10n.academicNextClass(when)
+      : l10n.academicNextClassAt(when, room);
+}
+
+/// «Clase: lun y mié» con los días de clase (1 = lunes), o nulo sin días.
+String? classDaysText(BuildContext context, List<int> days) {
+  if (days.isEmpty) return null;
+  final l10n = context.localizations;
+  final names = DateFormat.E(l10n.localeName);
+  // El 1 de enero de 2024 fue lunes: sirve de semana de referencia.
+  final labels = [for (final d in days) names.format(DateTime(2024, 1, d))];
+  return l10n.academicClassDays(_joinList(context, labels));
+}
+
+String _joinList(BuildContext context, List<String> items) {
+  if (items.length == 1) return items.first;
+  final l10n = context.localizations;
+  return l10n.commonListAnd(
+    items.sublist(0, items.length - 1).join(', '),
+    items.last,
+  );
+}
+

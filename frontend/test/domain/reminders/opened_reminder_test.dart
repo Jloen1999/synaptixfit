@@ -88,8 +88,9 @@ void main() {
       ReminderKind.fromApi('MORNING_SUMMARY'),
       ReminderKind.morningSummary,
     );
-    // Hueco para el aviso de cumpleaños: aún no existe en esta versión.
-    expect(ReminderKind.fromApi('BIRTHDAY'), isNull);
+    // Felicitación de cumpleaños (ADR 0036).
+    expect(ReminderKind.fromApi('BIRTHDAY'), ReminderKind.birthday);
+    expect(ReminderKind.fromApi('FUTURE_KIND'), isNull);
   });
 
   test('el plan del servidor trae los tipos nuevos', () {

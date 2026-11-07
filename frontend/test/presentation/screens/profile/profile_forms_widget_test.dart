@@ -49,7 +49,8 @@ void main() {
     await tester.tap(find.text('Guardar'));
     await tester.pump();
     expect(sent, isNotNull);
-    expect(sent!.age, 21);
+    // La edad ya no se pide aquí (ADR 0036): sale de la fecha de nacimiento.
+    expect(sent!.age, isNull);
     expect(sent!.availableDays, [1, 3, 5]);
     expect(sent!.minutesPerSession, 45);
   });

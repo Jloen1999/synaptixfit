@@ -98,6 +98,7 @@ abstract class ReminderPlanSummaryDto with _$ReminderPlanSummaryDto {
     List<ReminderPlanSummaryDeadlineDto> deadlines,
     @Default(0) int tasks,
     @Default(false) bool checkIn,
+    @Default(false) bool birthday,
   }) = _ReminderPlanSummaryDto;
 
   const ReminderPlanSummaryDto._();
@@ -115,6 +116,7 @@ abstract class ReminderPlanSummaryDto with _$ReminderPlanSummaryDto {
         .toList(),
     tasks: tasks,
     checkIn: checkIn,
+    birthday: birthday,
   );
 }
 

@@ -86,6 +86,12 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "UPDATE estado_diario_usuario SET notas = NULL WHERE usuario_id = :id",
             "UPDATE estado_cognitivo_usuario SET rmr_base = NULL WHERE usuario_id = :id");
 
+    /**
+     * Fecha de nacimiento (ADR 0036): es un dato personal de la cuenta, así que se borra tanto al vaciar como al
+     * anonimizar (la cuenta la vuelve a pedir como opcional).
+     */
+    private static final String CLEAR_BIRTH_DATE = "UPDATE usuarios SET fecha_nacimiento = NULL WHERE id = :id";
+
     private static final String RESET_COGNITIVE_STATE = """
             UPDATE estado_cognitivo_usuario
                SET carga_cognitiva_actual = 0, capacidad_atencion_actual = 1, duracion_ultimo_bloque_min = 0,
@@ -113,6 +119,7 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
     public int wipeContent(UUID userId, Instant at) {
         int deleted = execute(STATISTICAL_CONTENT, userId) + execute(PERSONAL_CONTENT, userId);
         jdbc.sql(RESET_COGNITIVE_STATE).param("id", userId).param("at", JdbcValues.param(at)).update();
+        jdbc.sql(CLEAR_BIRTH_DATE).param("id", userId).update();
         return deleted;
     }
 
@@ -120,6 +127,7 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
     public int erasePersonalData(UUID userId) {
         int deleted = execute(PERSONAL_CONTENT, userId) + execute(PROFILE, userId);
         execute(SCRUB_STATISTICS, userId);
+        jdbc.sql(CLEAR_BIRTH_DATE).param("id", userId).update();
         return deleted;
     }
 

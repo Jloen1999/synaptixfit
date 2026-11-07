@@ -53,9 +53,9 @@ La galería usa el selector de fotos del sistema y no necesita permiso de almace
 | Información personal › Nombre | Sí | Sí | Funcionalidad de la app, gestión de la cuenta | Nombre del perfil |
 | Información personal › Dirección de correo | Sí | Sí | Gestión de la cuenta, comunicaciones de la app | Inicio de sesión, recuperar contraseña, resumen semanal opcional |
 | Información personal › IDs de usuario | Sí | Sí | Gestión de la cuenta | Id interno; id de Google si se entra con Google |
-| Información personal › Otra información | Sí | No | Funcionalidad | Universidad, carrera, curso, asignaturas, horario |
+| Información personal › Otra información | Sí | No | Funcionalidad, personalización | Universidad, carrera, curso, asignaturas, horario y fecha de nacimiento (opcional, ADR 0036: edad para las kcal y las propuestas, y felicitar el cumpleaños; nunca en el perfil público; se borra al vaciar o eliminar la cuenta y sale en la exportación de la persona) |
 | Salud y forma física › Información de salud | Sí | No | Funcionalidad, personalización | Registro diario (sueño, estrés, agujetas, zonas con dolor) y «Mi ciclo» (opcional, con consentimiento explícito) |
-| Salud y forma física › Información de forma física | Sí | No | Funcionalidad, personalización | Rutinas, sesiones, series, pesos, actividades, edad, sexo, peso y altura del perfil de bienestar |
+| Salud y forma física › Información de forma física | Sí | No | Funcionalidad, personalización | Rutinas, sesiones, series, pesos, actividades, sexo, peso y altura del perfil de bienestar (la edad se calcula con la fecha de nacimiento o es la que se dio antes) |
 | Fotos y vídeos › Fotos | Sí | No | Funcionalidad | Fotos de apuntes: se leen para pasarlas a texto y **no se guardan** (marcar «tratado de forma efímera») |
 | Archivos y documentos | Sí | No | Funcionalidad | Archivos que sube la persona (Cloudflare R2) |
 | Mensajes › Otros mensajes en la app | Sí | No | Funcionalidad | Publicaciones y comentarios de la comunidad |

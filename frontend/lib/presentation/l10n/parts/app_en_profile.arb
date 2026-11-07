@@ -64,7 +64,6 @@
   "profileEditWellnessTitle": "Fitness profile",
   "profileWellnessAboutYou": "About you",
   "profileWellnessMeasures": "Measurements",
-  "profileFieldAge": "Age",
   "profileFieldSex": "Sex",
   "profileFieldWeight": "Weight (kg)",
   "profileFieldHeight": "Height (cm)",
@@ -85,8 +84,7 @@
   "profileBmiOverweight": "Overweight",
   "profileBmiObesity": "Obesity",
   "profileGoalSuggestAction": "Recommend one",
-  "profileGoalSuggestionsFromAi": "AI suggestions",
-  "profileGoalSuggestionsFromRules": "Suggestions based on your profile",
+  "profileGoalSuggestionsFromAi": "Suggested for you, based on your age, activity level and city",
   "profileGoalUseSuggestion": "Choose",
   "profileSexMale": "Male",
   "profileSexFemale": "Female",
@@ -414,5 +412,12 @@
   "profileLegalCheckboxRequired": "Tick the box to continue.",
   "profilePermissionLocationTitle": "Location",
   "profilePermissionLocationWhy": "To record your runs with GPS: distance, pace and route. Only while you record, also with the screen off. Without it, you can log activities by hand.",
-  "profilePermissionLocationAsk": "Allow location?"
+  "profilePermissionLocationAsk": "Allow location?",
+  "profileBirthDateLabel": "Date of birth (optional)",
+  "profileBirthDateEmpty": "No date · choose it",
+  "profileBirthDateHint": "We use it to work out your age for calories and suggestions, and to wish you a happy birthday. It never shows on your public profile.",
+  "profileBirthDateRemove": "Remove the date",
+  "profileBirthDateSuggestion": "Add your date of birth: your age will update on its own and we'll wish you a happy birthday.",
+  "profileBirthDateAdd": "Add",
+  "profileErrorInvalidBirthDate": "Check your date of birth: it can't be in the future and your age must be between 14 and 100."
 }

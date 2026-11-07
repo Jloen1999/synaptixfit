@@ -56,6 +56,7 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
                     'nivel', u.nivel, 'xp_nivel_actual', u.xp_nivel_actual, 'racha_actual', u.racha_actual,
                     'nivel_privacidad', u.nivel_privacidad, 'rol', u.rol, 'is_shadowbanned', u.is_shadowbanned,
                     'tiene_contrasena', u.password_hash IS NOT NULL, 'google_vinculado', u.google_sub IS NOT NULL,
+                    'enfoque', u.enfoque, 'fecha_nacimiento', u.fecha_nacimiento,
                     'creado_en', u.creado_en, 'actualizado_en', u.actualizado_en, 'eliminado_en', u.eliminado_en)
                    FROM usuarios u WHERE u.id = :id)""");
         // Perfil

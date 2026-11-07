@@ -23,6 +23,9 @@ import com.synaptixfit.domain.port.output.profile.GoalHistoryRepositoryPort;
 import com.synaptixfit.domain.port.output.profile.GoalSuggestionPort;
 import com.synaptixfit.domain.port.output.profile.WeightHistoryRepositoryPort;
 import com.synaptixfit.domain.port.output.profile.WellnessProfileRepositoryPort;
+import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
+import com.synaptixfit.domain.model.user.BirthDate;
+import com.synaptixfit.domain.model.user.User;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -45,15 +48,17 @@ public class WellnessProfileService implements GetWellnessProfileUseCase, SaveWe
     private final WeightHistoryRepositoryPort weights;
     private final GoalHistoryRepositoryPort goalHistory;
     private final GoalSuggestionPort goalSuggestions;
+    private final UserRepositoryPort users;
     private final Clock clock;
 
     public WellnessProfileService(WellnessProfileRepositoryPort profiles, WeightHistoryRepositoryPort weights,
                                   GoalHistoryRepositoryPort goalHistory, GoalSuggestionPort goalSuggestions,
-                                  Clock clock) {
+                                  UserRepositoryPort users, Clock clock) {
         this.profiles = profiles;
         this.weights = weights;
         this.goalHistory = goalHistory;
         this.goalSuggestions = goalSuggestions;
+        this.users = users;
         this.clock = clock;
     }
 
@@ -93,7 +98,10 @@ public class WellnessProfileService implements GetWellnessProfileUseCase, SaveWe
         }
         WellnessProfile profile = existing.get();
         TrainingGoal previousGoal = profile.primaryGoal();
-        profile.changeAge(c.age());
+        // Sin edad (la app nueva pide la fecha de nacimiento) se conserva la que hubiera.
+        if (c.age() != null) {
+            profile.changeAge(c.age());
+        }
         profile.changeSex(c.sex());
         profile.changeCity(c.city());
         boolean measurementChanged = profile.changeMeasurement(measurement);
@@ -170,7 +178,7 @@ public class WellnessProfileService implements GetWellnessProfileUseCase, SaveWe
     public GoalSuggestions suggestGoals(SuggestGoalsUseCase.Command c) {
         Optional<WellnessProfile> profile = profiles.findByUserId(c.userId());
         GoalSuggestionContext context = new GoalSuggestionContext(
-                c.age() != null ? c.age() : profile.map(WellnessProfile::age).orElse(null),
+                c.age() != null ? c.age() : knownAge(c.userId(), profile),
                 c.sex() != null ? c.sex() : profile.map(WellnessProfile::sex).orElse(null),
                 c.activityLevel() != null ? c.activityLevel() : profile.map(WellnessProfile::activityLevel).orElse(null),
                 c.city() != null && !c.city().isBlank() ? c.city().strip() : profile.map(WellnessProfile::city).orElse(null));
@@ -184,6 +192,15 @@ public class WellnessProfileService implements GetWellnessProfileUseCase, SaveWe
             // La IA es opcional: si no responde (o se agota la cuota) se usan las reglas deterministas.
         }
         return GoalSuggestionRules.suggest(context);
+    }
+
+    /**
+     * Edad conocida para orientar los objetivos: la calculada con la fecha de nacimiento o, si no hay, la que se dio
+     * en el perfil físico (ADR 0036). Sin ninguna, {@code null}: los objetivos no se orientan por edad.
+     */
+    private Integer knownAge(UUID userId, Optional<WellnessProfile> profile) {
+        LocalDate birthDate = users.findById(userId).map(User::birthDate).orElse(null);
+        return BirthDate.knownAge(birthDate, profile.map(WellnessProfile::age).orElse(null), LocalDate.now(clock));
     }
 
     private WellnessProfile persistChanges(WellnessProfile profile, boolean measurementChanged,

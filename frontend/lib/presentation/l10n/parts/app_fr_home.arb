@@ -182,5 +182,8 @@
   "homeBannerActionNextSlot": "Au prochain créneau",
   "homeBannerActionDone": "Fait",
   "homeBannerActionMarkInCalendar": "Marquer dans le calendrier",
-  "homeStartRun": "Commencer à courir"
+  "homeStartRun": "Commencer à courir",
+  "homeBirthdayTitle": "Joyeux anniversaire, {name} !",
+  "homeBirthdayTitleNoName": "Joyeux anniversaire !",
+  "homeBirthdayMessage": "Passe une excellente journée. Ton plan t'attend quand tu veux."
 }

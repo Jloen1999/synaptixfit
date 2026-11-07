@@ -84,7 +84,11 @@ class MainShellPage extends StatelessWidget {
     final all = _destinations(context);
     final destinations = [for (final b in branches) all[b]];
     final selected = branches.indexOf(shell.currentIndex);
-    if (selected < 0) {
+    // Solo cuando el armazón está a la vista: si el modo de uso cambia desde
+    // Perfil (pantalla completa encima), saltar ya cerraría Perfil y la
+    // persona no vería que se guardó. Al volver, `ModalRoute.of` reconstruye.
+    final visible = ModalRoute.of(context)?.isCurrent ?? true;
+    if (selected < 0 && visible) {
       // La pestaña actual ya no existe con este enfoque: se va a Inicio en
       // vez de marcar una pestaña que no es la que se ve.
       WidgetsBinding.instance.addPostFrameCallback((_) => _select(0));

@@ -18,7 +18,12 @@ class ProfileConstrained extends StatelessWidget {
       AppContentWidth(maxWidth: profileMaxContentWidth, child: child);
 }
 
-/// Lista desplazable con ancho limitado y márgenes del sistema de diseño.
+/// Cuerpo desplazable con ancho limitado y márgenes del sistema de diseño.
+///
+/// Monta todos los hijos a la vez (no es una lista perezosa): las pantallas
+/// del perfil son formularios cortos y, en una lista perezosa, el `Form` de
+/// arriba se desmontaba al bajar hasta «Guardar» y el guardado no hacía nada
+/// (fallo 12, ADR 0036).
 class ProfileScrollBody extends StatelessWidget {
   const ProfileScrollBody({
     super.key,
@@ -33,13 +38,16 @@ class ProfileScrollBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return SingleChildScrollView(
       controller: controller,
       physics: physics,
       padding: const EdgeInsets.all(TokensSpacing.m),
-      children: [
-        for (final child in children) ProfileConstrained(child: child),
-      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final child in children) ProfileConstrained(child: child),
+        ],
+      ),
     );
   }
 }

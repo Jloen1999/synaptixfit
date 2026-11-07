@@ -83,8 +83,15 @@ void main() {
               'checkIn': true,
             },
           },
-          // Hueco para avisos futuros (p. ej. el cumpleaños): se descartan.
-          {'kind': 'BIRTHDAY', 'at': '2026-11-09T07:00:00Z', 'refId': 'b'},
+          // Felicitación (ADR 0036): llega sola cuando no hay resumen.
+          {
+            'kind': 'BIRTHDAY',
+            'at': '2026-11-10T08:00:00Z',
+            'refId': '2026-11-10',
+            'title': 'Ana',
+          },
+          // Los tipos que esta versión no conoce se descartan.
+          {'kind': 'FUTURE_KIND', 'at': '2026-11-09T07:00:00Z', 'refId': 'f'},
         ],
       }).toDomain();
 
@@ -92,7 +99,9 @@ void main() {
         ReminderKind.personalEvent,
         ReminderKind.challengeTask,
         ReminderKind.morningSummary,
+        ReminderKind.birthday,
       ]);
+      expect(plan[3].title, 'Ana');
       expect(plan[0].tasks, isEmpty);
       expect(plan[1].targetId, 'ch1');
       expect(

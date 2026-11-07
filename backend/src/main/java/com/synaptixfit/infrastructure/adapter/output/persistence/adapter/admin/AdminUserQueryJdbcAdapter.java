@@ -30,6 +30,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import java.time.Clock;
+import com.synaptixfit.domain.model.user.BirthDate;
 
 /**
  * Implementa {@link AdminUserQueryPort}: lecturas con JdbcClient sobre {@code usuarios} y las
@@ -130,7 +132,10 @@ public class AdminUserQueryJdbcAdapter implements AdminUserQueryPort {
 
     private final JdbcClient jdbc;
 
-    public AdminUserQueryJdbcAdapter(JdbcClient jdbc) {
+    private final Clock clock;
+
+    public AdminUserQueryJdbcAdapter(JdbcClient jdbc, Clock clock) {
+        this.clock = clock;
         this.jdbc = jdbc;
     }
 
@@ -192,14 +197,17 @@ public class AdminUserQueryJdbcAdapter implements AdminUserQueryPort {
     @Override
     public Optional<WellbeingProfileSnapshot> findWellbeingProfile(UUID userId) {
         return jdbc.sql("""
-                        SELECT edad, sexo, peso_kg, altura_cm, imc, nivel_actividad, objetivo_principal,
-                               dias_disponibles_semana, minutos_por_sesion, onboarding_completado
-                          FROM perfil_bienestar_usuario WHERE usuario_id = :id
-                         ORDER BY actualizado_en DESC LIMIT 1
+                        SELECT p.edad, p.sexo, p.peso_kg, p.altura_cm, p.imc, p.nivel_actividad,
+                               p.objetivo_principal, p.dias_disponibles_semana, p.minutos_por_sesion,
+                               p.onboarding_completado, u.fecha_nacimiento
+                          FROM perfil_bienestar_usuario p JOIN usuarios u ON u.id = p.usuario_id
+                         WHERE p.usuario_id = :id
+                         ORDER BY p.actualizado_en DESC LIMIT 1
                         """)
                 .param("id", userId)
                 .query((rs, n) -> new WellbeingProfileSnapshot(
-                        rs.getInt("edad"),
+                        knownAge(rs.getObject("fecha_nacimiento", LocalDate.class),
+                                rs.getObject("edad", Integer.class)),
                         rs.getString("sexo"),
                         rs.getObject("peso_kg", Double.class),
                         rs.getObject("altura_cm", Double.class),
@@ -364,5 +372,10 @@ public class AdminUserQueryJdbcAdapter implements AdminUserQueryPort {
             case STREAK -> "racha_actual " + dir;
         };
         return " ORDER BY " + expression + ", id";
+    }
+
+    /** Edad que se sabe: la calculada con la fecha de nacimiento o la que se dio; nunca la de referencia. */
+    private Integer knownAge(LocalDate birthDate, Integer declared) {
+        return BirthDate.knownAge(birthDate, declared, LocalDate.now(clock));
     }
 }

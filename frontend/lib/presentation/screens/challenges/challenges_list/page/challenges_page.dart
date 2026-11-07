@@ -263,13 +263,10 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
                         // (o ya hay una búsqueda escrita): con pocos, estorba.
                         if (state.summary.total > _searchThreshold ||
                             _search.text.isNotEmpty) ...[
-                          _SearchField(
+                          AppSearchField(
+                            label: context.localizations.challengesSearchHint,
                             controller: _search,
                             onChanged: _onSearch,
-                            onClear: () {
-                              _search.clear();
-                              _setQuery(state.query.copyWith(search: null));
-                            },
                           ),
                           const SizedBox(height: TokensSpacing.s),
                         ],
@@ -403,42 +400,6 @@ class _GroupHeader extends StatelessWidget {
           style: context.textStyles.titleSmall?.copyWith(
             color: urgent ? context.palette.warning : null,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchField extends StatelessWidget {
-  const _SearchField({
-    required this.controller,
-    required this.onChanged,
-    required this.onClear,
-  });
-
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    return ValueListenableBuilder(
-      valueListenable: controller,
-      builder: (context, value, _) => TextField(
-        controller: controller,
-        onChanged: onChanged,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          labelText: l10n.challengesSearchHint,
-          prefixIcon: const Icon(Icons.search_rounded),
-          suffixIcon: value.text.isEmpty
-              ? null
-              : IconButton(
-                  tooltip: l10n.challengesSearchClear,
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: onClear,
-                ),
         ),
       ),
     );

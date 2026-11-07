@@ -143,14 +143,10 @@ class _SubjectSelectorViewState extends State<SubjectSelectorView>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ?widget.header,
-                    TextField(
+                    AppSearchField(
+                      label: l10n.profileSubjectsSearch,
                       controller: _search,
                       onChanged: _onQuery,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.search_rounded),
-                        labelText: l10n.profileSubjectsSearch,
-                      ),
                     ),
                     const SizedBox(height: TokensSpacing.s),
                     SingleChildScrollView(

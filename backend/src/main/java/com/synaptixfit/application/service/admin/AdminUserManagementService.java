@@ -147,6 +147,8 @@ public class AdminUserManagementService implements UpdateUserIdentityUseCase, Se
         ErasureReport report = eraser.wipeContent(user.id());
         user.resetProgress(1, 0);
         user.updateStreak(0);
+        // La fecha de nacimiento es un dato personal: se va con el contenido (ADR 0036).
+        user.removeBirthDate();
         users.save(user);
         Map<String, Object> details = reportDetails(report);
         details.put("before", before);

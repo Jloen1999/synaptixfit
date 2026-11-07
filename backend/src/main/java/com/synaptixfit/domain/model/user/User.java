@@ -4,6 +4,7 @@ import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.shared.Visibility;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
@@ -33,6 +34,7 @@ public final class User {
     private String passwordHash;
     private String googleSubject;
     private UsageFocus usageFocus;
+    private LocalDate birthDate;
     private boolean onboardingCompleted;
     private final Instant createdAt;
     private Instant deletedAt;
@@ -51,6 +53,7 @@ public final class User {
         this.passwordHash = b.passwordHash;
         this.googleSubject = b.googleSubject;
         this.usageFocus = b.usageFocus;
+        this.birthDate = b.birthDate;
         this.onboardingCompleted = b.onboardingCompleted;
         this.createdAt = b.createdAt == null ? Instant.now() : b.createdAt;
         this.deletedAt = b.deletedAt;
@@ -135,6 +138,26 @@ public final class User {
         this.usageFocus = Guard.notNull(focus, "usageFocus");
     }
 
+    /** Pone o cambia la fecha de nacimiento, validada con el día de hoy ({@link BirthDate#of}). */
+    public void changeBirthDate(LocalDate newBirthDate, LocalDate today) {
+        this.birthDate = BirthDate.of(newBirthDate, today).value();
+    }
+
+    /** Quita la fecha de nacimiento (es opcional). */
+    public void removeBirthDate() {
+        this.birthDate = null;
+    }
+
+    /** Edad cumplida ese día, o {@code null} si no hay fecha de nacimiento. */
+    public Integer ageOn(LocalDate day) {
+        return birthDate == null ? null : new BirthDate(birthDate).ageOn(day);
+    }
+
+    /** ¿Cumple años ese día? Falso sin fecha de nacimiento. */
+    public boolean hasBirthdayOn(LocalDate day) {
+        return birthDate != null && new BirthDate(birthDate).isBirthday(day);
+    }
+
     /** Marca el onboarding como cerrado por el usuario. */
     public void completeOnboarding() {
         this.onboardingCompleted = true;
@@ -158,11 +181,12 @@ public final class User {
         this.levelXp = Math.max(0, Math.min(newLevelXp, thresholdFor(this.level) - 1));
     }
 
-    /** Anonimiza la cuenta (RGPD): borra datos personales y credenciales. */
+    /** Anonimiza la cuenta (RGPD): borra datos personales (también la fecha de nacimiento) y credenciales. */
     public void anonymize(Instant when) {
         this.email = "deleted+" + id + "@synaptixfit.invalid";
         this.fullName = "Usuario eliminado";
         this.avatarUrl = null;
+        this.birthDate = null;
         this.passwordHash = null;
         this.googleSubject = null;
         this.privacy = Visibility.PRIVATE;
@@ -204,6 +228,7 @@ public final class User {
     public String passwordHash() { return passwordHash; }
     public String googleSubject() { return googleSubject; }
     public UsageFocus usageFocus() { return usageFocus; }
+    public LocalDate birthDate() { return birthDate; }
     public boolean onboardingCompleted() { return onboardingCompleted; }
     public Instant createdAt() { return createdAt; }
     public Instant deletedAt() { return deletedAt; }
@@ -223,6 +248,7 @@ public final class User {
         private String passwordHash;
         private String googleSubject;
         private UsageFocus usageFocus;
+        private LocalDate birthDate;
         private boolean onboardingCompleted;
         private Instant createdAt;
         private Instant deletedAt;
@@ -240,6 +266,7 @@ public final class User {
         public Builder passwordHash(String v) { this.passwordHash = v; return this; }
         public Builder googleSubject(String v) { this.googleSubject = v; return this; }
         public Builder usageFocus(UsageFocus v) { this.usageFocus = v; return this; }
+        public Builder birthDate(LocalDate v) { this.birthDate = v; return this; }
         public Builder onboardingCompleted(boolean v) { this.onboardingCompleted = v; return this; }
         public Builder createdAt(Instant v) { this.createdAt = v; return this; }
         public Builder deletedAt(Instant v) { this.deletedAt = v; return this; }

@@ -85,10 +85,22 @@ class ReminderComposer {
             // «tarea:momento» y no sirve para abrir nada.
             refId: planned.targetId ?? planned.tasks.firstOrNull?.challengeId,
           ),
+          ReminderKind.birthday => Reminder(
+            id: _blockId('${planned.kind.name}:${planned.refId}'),
+            kind: planned.kind,
+            title: texts.birthdayTitle(planned.title),
+            body: texts.birthdayBody,
+            at: planned.at,
+            refId: planned.refId,
+          ),
           ReminderKind.morningSummary => Reminder(
             id: _blockId('${planned.kind.name}:${planned.refId}'),
             kind: planned.kind,
-            title: texts.morningSummaryTitle,
+            // El día de su cumpleaños el resumen empieza felicitándole: un solo
+            // aviso por la mañana (ADR 0036).
+            title: (planned.summary?.birthday ?? false)
+                ? texts.birthdayTitle(planned.title)
+                : texts.morningSummaryTitle,
             body: texts.morningSummaryBody(
               planned.summary ?? const ReminderDaySummary(),
             ),

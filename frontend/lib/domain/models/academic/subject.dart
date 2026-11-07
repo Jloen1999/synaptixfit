@@ -4,7 +4,9 @@ import '../../enums/subject_priority.dart';
 
 part 'subject.freezed.dart';
 
-/// Asignatura del usuario.
+/// Asignatura del usuario con lo próximo que tiene (ADR 0036): la próxima clase
+/// y su aula, los días de clase y la próxima entrega o examen, que calcula el
+/// servidor con el horario y las entregas del planificador.
 @freezed
 abstract class Subject with _$Subject {
   const factory Subject({
@@ -17,12 +19,31 @@ abstract class Subject with _$Subject {
     required SubjectPriority priority,
     DateTime? nextAssessmentAt,
     String? teacher,
+
+    /// Aula habitual (opcional): la de la próxima clase si el horario no la da.
+    String? room,
     required bool archived,
     String? catalogSubjectId,
     DateTime? createdAt,
     required int noteCount,
     required int fileCount,
+    DateTime? nextClassAt,
+    String? nextClassPlace,
+
+    /// Días con clase en las próximas dos semanas (1 = lunes).
+    @Default(<int>[]) List<int> classDays,
+    SubjectDeadline? nextDeadline,
   }) = _Subject;
+}
+
+/// Próxima entrega o examen sin hacer de una asignatura.
+@freezed
+abstract class SubjectDeadline with _$SubjectDeadline {
+  const factory SubjectDeadline({
+    required String title,
+    required DateTime dueAt,
+    required bool exam,
+  }) = _SubjectDeadline;
 }
 
 /// Datos editables de una asignatura (alta y edición).
@@ -36,6 +57,7 @@ abstract class SubjectInput with _$SubjectInput {
     int? perceivedDifficulty,
     SubjectPriority? priority,
     String? teacher,
+    String? room,
     DateTime? nextAssessmentAt,
   }) = _SubjectInput;
 }

@@ -25,6 +25,8 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import java.time.Clock;
+import com.synaptixfit.domain.model.user.BirthDate;
 
 /**
  * Lecturas (solo SQL, sin entidades) de tablas de otros módulos: perfil de bienestar, historial de
@@ -37,9 +39,13 @@ public class TrainingContextPersistenceAdapter implements TrainingContextPort {
     private final JdbcClient jdbc;
     private final ZoneId zone;
 
+    private final Clock clock;
+
     public TrainingContextPersistenceAdapter(JdbcClient jdbc,
-                                             @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
+                                             @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone,
+                                             Clock clock) {
         this.jdbc = jdbc;
+        this.clock = clock;
         this.zone = ZoneId.of(zone);
     }
 
@@ -51,11 +57,16 @@ public class TrainingContextPersistenceAdapter implements TrainingContextPort {
 
     @Override
     public Optional<TrainingProfile> profile(UUID userId) {
-        return jdbc.sql("SELECT edad, sexo, peso_kg, altura_cm, imc, nivel_actividad, objetivo_principal,"
-                        + " equipamiento_disponible, dias_disponibles_semana, minutos_por_sesion, dias_disponibles"
-                        + " FROM perfil_bienestar_usuario WHERE usuario_id = :u LIMIT 1")
+        // Edad calculada con la fecha de nacimiento de la cuenta (ADR 0036); la del perfil solo si no hay fecha.
+        return jdbc.sql("SELECT p.edad, p.sexo, p.peso_kg, p.altura_cm, p.imc, p.nivel_actividad, p.objetivo_principal,"
+                        + " p.equipamiento_disponible, p.dias_disponibles_semana, p.minutos_por_sesion,"
+                        + " p.dias_disponibles, u.fecha_nacimiento"
+                        + " FROM perfil_bienestar_usuario p JOIN usuarios u ON u.id = p.usuario_id"
+                        + " WHERE p.usuario_id = :u LIMIT 1")
                 .param("u", userId)
-                .query((rs, n) -> new TrainingProfile(rs.getInt("edad"), rs.getString("sexo"), rs.getDouble("peso_kg"),
+                .query((rs, n) -> new TrainingProfile(BirthDate.effectiveAge(
+                                rs.getObject("fecha_nacimiento", LocalDate.class), rs.getObject("edad", Integer.class),
+                                LocalDate.now(clock.withZone(zone))), rs.getString("sexo"), rs.getDouble("peso_kg"),
                         rs.getDouble("altura_cm"), rs.getDouble("imc"),
                         TrainingDbValues.activityLevel(rs.getString("nivel_actividad")),
                         TrainingGoal.fromLabelOrDefault(rs.getString("objetivo_principal")),

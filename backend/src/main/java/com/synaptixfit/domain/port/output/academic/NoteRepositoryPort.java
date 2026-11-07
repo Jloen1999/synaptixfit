@@ -23,7 +23,12 @@ public interface NoteRepositoryPort {
      * Filtros de los apuntes compartidos: ámbito (amigos, comunidad o todo), autor y asignatura del
      * catálogo. Nulos sin filtrar.
      */
-    record SharedFilter(AudienceScope scope, UUID authorId, UUID catalogSubjectId) {
+    /** {@code folded}: texto buscado ya plegado ({@code AcademicSearch.fold}), o {@code null} sin búsqueda. */
+    record SharedFilter(AudienceScope scope, UUID authorId, UUID catalogSubjectId, String folded) {
+
+        public SharedFilter(AudienceScope scope, UUID authorId, UUID catalogSubjectId) {
+            this(scope, authorId, catalogSubjectId, null);
+        }
     }
 
     Optional<Note> findByIdAndUser(UUID id, UUID userId);

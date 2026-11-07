@@ -18,6 +18,19 @@ class SharedNotesBloc extends Bloc<SharedNotesEvent, SharedNotesState> {
     on<SharedNotesStarted>(_onStarted);
     on<SharedNotesRefreshed>(_onRefreshed);
     on<SharedNotesMoreRequested>(_onMore);
+    on<SharedNotesSearchChanged>(_onSearch);
+  }
+
+  Future<void> _onSearch(
+    SharedNotesSearchChanged event,
+    Emitter<SharedNotesState> emit,
+  ) async {
+    final search = event.search.trim();
+    if (search == state.search) return;
+    emit(
+      state.copyWith(search: search, loading: true, error: null, items: []),
+    );
+    await _load(emit);
   }
 
   final GetSharedNotesUseCaseContract _getShared;
@@ -46,11 +59,15 @@ class SharedNotesBloc extends Bloc<SharedNotesEvent, SharedNotesState> {
   }
 
   Future<void> _load(Emitter<SharedNotesState> emit) async {
+    final search = state.search;
     final result = await _getShared(
       page: 0,
       scope: state.scope,
       authorId: state.authorId,
+      search: search.isEmpty ? null : search,
     );
+    // Mientras tanto se buscó otra cosa: esta respuesta ya no vale.
+    if (state.search != search) return;
     emit(
       result.fold(
         (page) => state.copyWith(
@@ -76,6 +93,7 @@ class SharedNotesBloc extends Bloc<SharedNotesEvent, SharedNotesState> {
       page: next,
       scope: state.scope,
       authorId: state.authorId,
+      search: state.search.isEmpty ? null : state.search,
     );
     emit(
       result.fold(

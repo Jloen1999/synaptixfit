@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import java.time.Clock;
+import com.synaptixfit.domain.model.user.BirthDate;
 
 /**
  * Lecturas con {@link JdbcClient} de tablas de otros módulos: {@code entregas_examenes},
@@ -43,7 +45,10 @@ public class InsightsSourceJdbcAdapter implements InsightsSourcePort {
 
     private final JdbcClient jdbc;
 
-    public InsightsSourceJdbcAdapter(JdbcClient jdbc) {
+    private final Clock clock;
+
+    public InsightsSourceJdbcAdapter(JdbcClient jdbc, Clock clock) {
+        this.clock = clock;
         this.jdbc = jdbc;
     }
 
@@ -130,9 +135,14 @@ public class InsightsSourceJdbcAdapter implements InsightsSourcePort {
 
     @Override
     public Optional<BodyProfile> bodyProfile(UUID userId) {
-        return jdbc.sql("SELECT peso_kg, altura_cm, edad, sexo FROM perfil_bienestar_usuario WHERE usuario_id = :u LIMIT 1")
+        // Edad calculada con la fecha de nacimiento de la cuenta (ADR 0036); la del perfil solo si no hay fecha.
+        return jdbc.sql("SELECT p.peso_kg, p.altura_cm, p.edad, p.sexo, u.fecha_nacimiento"
+                        + " FROM perfil_bienestar_usuario p JOIN usuarios u ON u.id = p.usuario_id"
+                        + " WHERE p.usuario_id = :u LIMIT 1")
                 .param("u", userId)
-                .query((rs, n) -> new BodyProfile(rs.getDouble("peso_kg"), rs.getDouble("altura_cm"), rs.getInt("edad"),
+                .query((rs, n) -> new BodyProfile(rs.getDouble("peso_kg"), rs.getDouble("altura_cm"),
+                        BirthDate.effectiveAge(rs.getObject("fecha_nacimiento", LocalDate.class),
+                                rs.getObject("edad", Integer.class), LocalDate.now(clock)),
                         sex(rs.getString("sexo"))))
                 .optional();
     }

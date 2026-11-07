@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 
 import '../screens/academic/academic_home/bloc/academic_home_bloc.dart';
+import '../screens/academic/academic_search/bloc/academic_search_bloc.dart';
 import '../screens/academic/ai_document/bloc/ai_document_bloc.dart';
 import '../screens/academic/file_viewer/bloc/file_viewer_bloc.dart';
 import '../screens/academic/flashcards/bloc/flashcards_bloc.dart';
@@ -25,6 +26,7 @@ import '../screens/academic/test_results/bloc/test_results_bloc.dart';
 /// Blocs del módulo academic.
 void registerAcademicPresentation(GetIt getIt) {
   getIt
+    ..registerFactory(() => AcademicSearchBloc(search: getIt()))
     ..registerFactory(
       () => AcademicHomeBloc(
         getSubjects: getIt(),

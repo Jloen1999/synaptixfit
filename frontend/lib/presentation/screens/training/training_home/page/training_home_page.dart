@@ -68,7 +68,7 @@ class _TrainingHomeView extends StatelessWidget {
             AppFocusOutline(
               child: ListTile(
                 leading: Icon(
-                  Icons.auto_awesome_rounded,
+                  Icons.lightbulb_outline_rounded,
                   color: context.colors.tertiary,
                 ),
                 title: Text(l10n.trainingNewRoutineAi),
@@ -262,7 +262,7 @@ class _HomeContent extends StatelessWidget {
                       children: [
                         AppPrimaryButton(
                           label: l10n.trainingNewRoutineAi,
-                          icon: Icons.auto_awesome_rounded,
+                          icon: Icons.lightbulb_outline_rounded,
                           onPressed: () => _TrainingHomeView.open(
                             context,
                             TrainingPaths.newRoutine(),
@@ -611,7 +611,7 @@ class _CycleDoneCard extends StatelessWidget {
           const SizedBox(height: TokensSpacing.xs),
           AppSecondaryButton(
             label: l10n.trainingNextWithAi,
-            icon: const Icon(Icons.auto_awesome_rounded),
+            icon: const Icon(Icons.lightbulb_outline_rounded),
             onPressed: busy ? null : onNextWithAi,
           ),
         ],

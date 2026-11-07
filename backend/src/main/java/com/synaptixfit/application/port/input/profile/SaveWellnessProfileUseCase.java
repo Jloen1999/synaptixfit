@@ -15,7 +15,7 @@ import java.util.UUID;
  */
 public interface SaveWellnessProfileUseCase {
 
-    record Command(UUID userId, int age, Sex sex, String city, double weightKg, double heightCm,
+    record Command(UUID userId, Integer age, Sex sex, String city, double weightKg, double heightCm,
                    ActivityLevel activityLevel, TrainingGoal primaryGoal, List<String> goals, List<String> equipment,
                    List<Integer> availableDays, Integer minutesPerSession) {}
 

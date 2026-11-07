@@ -204,7 +204,7 @@ class _ParametersStep extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.auto_awesome_rounded,
+                      Icons.lightbulb_outline_rounded,
                       color: context.colors.onTertiaryContainer,
                     ),
                     const SizedBox(width: TokensSpacing.m),
@@ -252,7 +252,7 @@ class _ParametersStep extends StatelessWidget {
               const SizedBox(height: TokensSpacing.xl),
               AppPrimaryButton(
                 label: l10n.trainingGenerate,
-                icon: Icons.auto_awesome_rounded,
+                icon: Icons.lightbulb_outline_rounded,
                 onPressed: () =>
                     bloc.add(const RoutineEditorEvent.generateRequested()),
               ),
@@ -572,13 +572,10 @@ class _ProposalBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final proposal = state.proposal!;
-    final refined = proposal.aiRefined;
-    final background = refined
-        ? context.colors.tertiaryContainer
-        : context.palette.accentContainer;
-    final foreground = refined
-        ? context.colors.onTertiaryContainer
-        : context.palette.onAccentContainer;
+    // Se diga igual venga de donde venga la propuesta: a la persona le sirve
+    // en qué datos se basa, no cómo se calculó (vocabulario, «Propuestas…»).
+    final background = context.colors.tertiaryContainer;
+    final foreground = context.colors.onTertiaryContainer;
     return Padding(
       padding: const EdgeInsets.only(bottom: TokensSpacing.m),
       child: AppCard(
@@ -589,13 +586,13 @@ class _ProposalBanner extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  refined ? Icons.auto_awesome_rounded : Icons.rule_rounded,
+                  Icons.lightbulb_outline_rounded,
                   color: foreground,
                 ),
                 const SizedBox(width: TokensSpacing.s),
                 Expanded(
                   child: Text(
-                    refined ? l10n.trainingAiRefined : l10n.trainingRulesEngine,
+                    l10n.trainingRulesEngine,
                     style: context.textStyles.titleSmall?.copyWith(
                       color: foreground,
                     ),
@@ -603,15 +600,6 @@ class _ProposalBanner extends StatelessWidget {
                 ),
               ],
             ),
-            if (!refined && proposal.aiNotice != null) ...[
-              const SizedBox(height: TokensSpacing.xs),
-              Text(
-                proposal.aiNotice!,
-                style: context.textStyles.bodySmall?.copyWith(
-                  color: foreground,
-                ),
-              ),
-            ],
             if (proposal.adjustmentReasons.isNotEmpty) ...[
               const SizedBox(height: TokensSpacing.s),
               Text(
@@ -905,7 +893,7 @@ class _EditorBottomBar extends StatelessWidget {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.auto_awesome_rounded),
+                    : const Icon(Icons.lightbulb_outline_rounded),
                 label: Text(l10n.trainingRefineAi),
               ),
             ),

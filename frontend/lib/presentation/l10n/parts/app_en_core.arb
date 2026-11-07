@@ -43,7 +43,7 @@
   "registerGoToLogin": "Already have an account? Sign in",
   "authBrandTitle": "Your mind and your body, in the same plan",
   "authBrandPointLoad": "What you train adjusts how much you study, and the other way around",
-  "authBrandPointReview": "AI spaced review built from your notes",
+  "authBrandPointReview": "Reviews at just the right time, built from your notes",
   "authBrandPointProgress": "Challenges, badges and streaks that count on both fronts",
   "splashLoading": "Getting your space ready",
   "errorServer": "Something went wrong on the server. Try again in a few minutes.",
@@ -60,10 +60,10 @@
   "errorAuthWeakPassword": "The password must have at least 8 characters, with letters and numbers.",
   "errorAuthGoogleCancelled": "You cancelled the Google sign-in.",
   "errorAuthGoogleFailed": "We couldn't sign you in with Google.",
-  "errorAiUnavailable": "The AI assistant isn't available right now. Try again later.",
-  "errorAiQuotaExceeded": "The AI usage limit has been reached. Try again in a while.",
+  "errorAiUnavailable": "We can't prepare it right now. Try again later.",
+  "errorAiQuotaExceeded": "We've prepared a lot of content already today. Try again in a while.",
   "errorStorageUnavailable": "We couldn't access the files. Try again.",
-  "errorAiAttachmentUnsupported": "The AI can only read PDFs with text. Images and scanned PDFs can't be analyzed.",
+  "errorAiAttachmentUnsupported": "We can only read PDFs with text. Images and scanned PDFs can't be analysed.",
   "achievementLevelTitle": "Level {level}!",
   "achievementLevelMessage": "Everything you study and train counts. Keep it up.",
   "achievementBadgesTitle": "{count, plural, =1{New badge!} other{{count} new badges!}}",
@@ -134,5 +134,9 @@
   "xpGuideChallengesDetail": "Each task gives XP according to its difficulty; at most 140 XP per challenge.",
   "xpGuideFooter": "If something doesn’t add up, the app tells you why.",
   "commonArrowSpoken": " to ",
-  "registerLegalRequired": "Tick the box to create your account."
+  "registerLegalRequired": "Tick the box to create your account.",
+  "commonListAnd": "{items} and {last}",
+  "commonSearchClear": "Clear search",
+  "commonSearchNoResults": "No results for “{query}”",
+  "commonSearchResultsCount": "{count, plural, =1{1 result} other{{count} results}}"
 }

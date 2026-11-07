@@ -21,7 +21,8 @@ Esta política explica qué datos tuyos usa SynaptixFit, para qué, con quién s
 - Tus estudios: universidad, carrera, curso, asignaturas, horario, clases, entregas, exámenes, bloques de estudio, apuntes, archivos que subes, preguntas de repaso y tus respuestas.
 - Tu entrenamiento: rutinas, sesiones, series, pesos, tiempos, actividades y partidos que apuntas, entrenos de carrera, retos, rachas, nivel e insignias.
 - Tu ubicación exacta, solo mientras grabas una carrera con el GPS (también con la pantalla apagada, con un aviso fijo «Grabando tu carrera» en el móvil): la ruta que haces, con la hora de cada punto y la altitud, para calcular la distancia, el ritmo, el desnivel y los tramos por kilómetro y dibujar el mapa. Nunca se usa la ubicación fuera de la grabación ni en segundo plano.
-- Tu perfil de bienestar, si lo rellenas: edad, sexo, peso, altura y nivel de actividad.
+- Tu fecha de nacimiento, si la das (es opcional): con ella calculamos tu edad para las calorías y las propuestas, y te felicitamos el día de tu cumpleaños. Nunca sale en tu perfil público, está en la copia de tus datos que descargas y se borra al vaciar o eliminar tu cuenta.
+- Tu perfil de bienestar, si lo rellenas: sexo, peso, altura, nivel de actividad y, si la diste antes de existir la fecha de nacimiento, tu edad.
 - Tu registro diario, solo si das tu permiso: cómo dormiste, estrés, energía, agujetas y zonas con dolor.
 - «Mi ciclo», solo si lo activas: días de regla, energía y molestias que apuntes y tus notas.
 - Fotos de apuntes en papel: las leemos para pasarlas a texto y no guardamos la foto. Solo se guarda el apunte que tú decidas guardar.
@@ -59,7 +60,7 @@ No vendemos tus datos ni los usamos para publicidad.
 
 ## Inteligencia artificial
 
-Algunas funciones usan DeepSeek, un proveedor de inteligencia artificial: generar rutinas, resúmenes y preguntas de repaso, ordenar el texto de fotos de apuntes, leer horarios o matrículas y sugerir objetivos. Solo le enviamos lo necesario para cada petición y nunca tu nombre ni tu correo. Al generar una rutina, por ejemplo, enviamos tu edad, sexo, peso, altura, nivel de actividad, tus horas de estudio y, si diste el permiso del registro diario, cómo estás hoy (sueño, estrés, zonas con dolor). Los datos de «Mi ciclo» no se envían nunca.
+Algunas funciones usan DeepSeek, un proveedor de inteligencia artificial: generar rutinas, resúmenes y preguntas de repaso, ordenar el texto de fotos de apuntes, leer horarios o matrículas y sugerir objetivos. Solo le enviamos lo necesario para cada petición y nunca tu nombre ni tu correo. Al proponerte una rutina, por ejemplo, enviamos tu edad (calculada, nunca tu fecha de nacimiento), sexo, peso, altura, nivel de actividad, tus horas de estudio y, si diste el permiso del registro diario, cómo estás hoy (sueño, estrés, zonas con dolor). Los datos de «Mi ciclo» no se envían nunca.
 
 ## Con quién se comparten
 

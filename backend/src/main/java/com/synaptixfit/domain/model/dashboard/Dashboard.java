@@ -24,7 +24,16 @@ public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, Cogni
         todayEvents = List.copyOf(todayEvents);
     }
 
-    public record Greeting(String fullName, String avatarUrl, int level, int levelXp, int levelThreshold, int streak) {
+    /**
+     * Saludo de Inicio. {@code birthday}: hoy (en su zona) es su cumpleaños y se enseña la tarjeta de felicitación
+     * (ADR 0036; los nacidos el 29 de febrero, el 28 en los años no bisiestos).
+     */
+    public record Greeting(String fullName, String avatarUrl, int level, int levelXp, int levelThreshold, int streak,
+                           boolean birthday) {
+
+        public Greeting(String fullName, String avatarUrl, int level, int levelXp, int levelThreshold, int streak) {
+            this(fullName, avatarUrl, level, levelXp, levelThreshold, streak, false);
+        }
     }
 
     /** KPIs de hoy. Las calorías de estudio salen de la fórmula 1. */

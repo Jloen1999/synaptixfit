@@ -190,6 +190,30 @@ void main() {
       expect(reminders.single.payload, 'morningSummary|2026-11-08');
     });
 
+    test('cumpleaños: solo felicita y, con resumen, lo encabeza', () {
+      final reminders = composer.compose([
+        PlannedReminder(
+          kind: ReminderKind.birthday,
+          at: DateTime(2026, 11, 9, 9),
+          refId: '2026-11-09',
+          title: 'Ana',
+        ),
+        PlannedReminder(
+          kind: ReminderKind.morningSummary,
+          at: DateTime(2027, 11, 9, 8),
+          refId: '2027-11-09',
+          title: 'Ana',
+          summary: const ReminderDaySummary(studies: 1, birthday: true),
+        ),
+      ], texts);
+
+      expect(reminders[0].title, 'Feliz cumpleaños, Ana');
+      expect(reminders[0].body, 'Que tengas un gran día');
+      expect(reminders[0].payload, 'birthday|2026-11-09');
+      expect(reminders[1].title, 'Feliz cumpleaños, Ana');
+      expect(reminders[1].body, 'summary:1:0:false');
+    });
+
     test('las tareas de reto van dentro del aviso del evento o la entrega', () {
       const task = ReminderTask(
         challengeId: 'ch1',

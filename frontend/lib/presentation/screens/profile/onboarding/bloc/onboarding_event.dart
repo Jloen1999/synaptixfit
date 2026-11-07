@@ -10,9 +10,11 @@ sealed class OnboardingEvent with _$OnboardingEvent {
     required String password,
   }) = OnboardingAccountSubmitted;
 
-  /// Enfoque de uso elegido (estudios, deporte o ambos).
-  const factory OnboardingEvent.focusSubmitted(UsageFocus focus) =
-      OnboardingFocusSubmitted;
+  /// Enfoque de uso elegido (estudios, deporte o ambos) y, si la dio, la fecha de nacimiento (opcional, ADR 0036).
+  const factory OnboardingEvent.focusSubmitted(
+    UsageFocus focus, {
+    DateTime? birthDate,
+  }) = OnboardingFocusSubmitted;
 
   /// El formulario del paso actual se ha guardado.
   const factory OnboardingEvent.stepCompleted() = OnboardingStepCompleted;

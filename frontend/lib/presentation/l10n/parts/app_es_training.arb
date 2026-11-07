@@ -1,13 +1,13 @@
 {
   "@@locale": "es",
   "trainingNewRoutine": "Nueva rutina",
-  "trainingNewRoutineAi": "Crear con IA",
+  "trainingNewRoutineAi": "Proponme una rutina",
   "trainingNewRoutineAiHint": "Te proponemos una rutina según tu perfil y tu carga académica",
   "trainingNewRoutineManual": "Crear desde cero",
   "trainingNewRoutineManualHint": "Diseña tú las semanas, días y ejercicios",
   "trainingMyRoutines": "Mis rutinas",
   "trainingNoRoutinesTitle": "Aún no tienes rutinas",
-  "trainingNoRoutinesMessage": "Crea tu primera rutina: la IA la prepara con tus objetivos o la montas tú desde cero.",
+  "trainingNoRoutinesMessage": "Crea tu primera rutina: te proponemos una con tus objetivos o la montas tú desde cero.",
   "trainingNextWorkout": "Próximo entrenamiento",
   "trainingNoPendingDay": "No tienes días pendientes",
   "trainingNoPendingDayHint": "Activa una rutina o haz una sesión libre.",
@@ -244,7 +244,7 @@
       }
     }
   },
-  "trainingAiIntro": "Generaremos una rutina a partir de tu perfil de bienestar, tu equipamiento y tu carga académica. Después podrás editarla y refinarla con IA.",
+  "trainingAiIntro": "Te proponemos una rutina según tu perfil, tu material y tu carga de estudio. Después podrás cambiarla.",
   "trainingDurationTitle": "Duración",
   "trainingDurationWeeks": "Semanas",
   "trainingGoalOptional": "Objetivo (opcional)",
@@ -252,8 +252,7 @@
   "trainingGenerate": "Generar propuesta",
   "trainingGenerating": "Generando tu rutina…",
   "trainingGeneratingHint": "Puede tardar hasta un minuto.",
-  "trainingAiRefined": "Propuesta refinada con IA",
-  "trainingRulesEngine": "Propuesta del motor de reglas",
+  "trainingRulesEngine": "Según tu perfil, tu material y tu carga de estudio",
   "trainingAdjustmentReasons": "Ajustes aplicados",
   "trainingGeneralData": "Datos generales",
   "trainingRoutineName": "Nombre de la rutina",
@@ -289,7 +288,7 @@
     }
   },
   "trainingExerciseInactive": "Ya no disponible",
-  "trainingRefineAi": "Refinar con IA",
+  "trainingRefineAi": "Mejorar la propuesta",
   "trainingSaveRoutine": "Guardar rutina",
   "trainingDiscardRoutineTitle": "¿Descartar la rutina?",
   "trainingDiscardRoutineMessage": "Perderás los cambios que no hayas guardado.",
@@ -1266,7 +1265,7 @@
     }
   },
   "trainingRepeatCycle": "Repetir ciclo",
-  "trainingNextWithAi": "Generar la siguiente con IA",
+  "trainingNextWithAi": "Proponer la siguiente",
   "trainingRoutineRestarted": "Nuevo ciclo empezado",
   "trainingPastActivityModeOther": "Otro deporte",
   "trainingPastActivityModeRoutine": "Día de mi rutina",
@@ -2662,7 +2661,7 @@
     "description": "Pastilla cuando las sesiones del plan ya coinciden con la rutina."
   },
   "trainingTemplatesNone": "Aún no hay plantillas",
-  "trainingTemplatesNoneHint": "Mientras tanto, crea tu rutina con la IA o a mano.",
+  "trainingTemplatesNoneHint": "Mientras tanto, pide que te propongamos una rutina o créala a mano.",
   "trainingCycleTodayTitle": "Hoy",
   "trainingCycleLogToday": "Apuntar hoy",
   "trainingCycleChangeToday": "Cambiar lo de hoy",

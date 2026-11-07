@@ -45,6 +45,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
   final _name = TextEditingController();
   final _code = TextEditingController();
   final _teacher = TextEditingController();
+  final _room = TextEditingController();
   final _description = TextEditingController();
   final _credits = TextEditingController();
   int _difficulty = 3;
@@ -59,6 +60,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
     _name.dispose();
     _code.dispose();
     _teacher.dispose();
+    _room.dispose();
     _description.dispose();
     _credits.dispose();
     super.dispose();
@@ -72,6 +74,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
       _name.text = subject.name;
       _code.text = subject.code ?? '';
       _teacher.text = subject.teacher ?? '';
+      _room.text = subject.room ?? '';
       _description.text = subject.description ?? '';
       _credits.text = subject.credits > 0 ? '${subject.credits}' : '';
       _difficulty = subject.perceivedDifficulty.clamp(1, 5);
@@ -96,6 +99,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
           name: _name.text.trim(),
           code: _trimmed(_code),
           teacher: _trimmed(_teacher),
+          room: _trimmed(_room),
           description: _trimmed(_description),
           credits: int.tryParse(_credits.text.trim()),
           perceivedDifficulty: _difficulty,
@@ -206,6 +210,13 @@ class _SubjectFormViewState extends State<_SubjectFormView>
                       label: l10n.academicSubjectTeacher,
                       controller: _teacher,
                       icon: Icons.person_outline_rounded,
+                    ),
+                    const SizedBox(height: TokensSpacing.m),
+                    AppTextField(
+                      label: l10n.academicSubjectRoom,
+                      hint: l10n.academicSubjectRoomHint,
+                      controller: _room,
+                      icon: Icons.meeting_room_outlined,
                     ),
                     const SizedBox(height: TokensSpacing.l),
                     Text(

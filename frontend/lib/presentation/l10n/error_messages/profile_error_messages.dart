@@ -6,6 +6,7 @@ String? profileErrorMessage(AppLocalizations l10n, String code) =>
       'PROFILE_WELLNESS_NOT_FOUND' => l10n.profileErrorWellnessNotFound,
       'PROFILE_ACADEMIC_NOT_FOUND' => l10n.profileErrorAcademicNotFound,
       'PROFILE_INVALID_CLASS_DATES' => l10n.profileErrorInvalidClassDates,
+      'INVALID_BIRTH_DATE' => l10n.profileErrorInvalidBirthDate,
       'PROFILE_ONBOARDING_WELLNESS_REQUIRED' =>
         l10n.profileErrorOnboardingWellnessRequired,
       'CATALOG_UNIVERSITY_NOT_FOUND' => l10n.profileErrorUniversityNotFound,

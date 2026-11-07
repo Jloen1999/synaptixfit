@@ -228,9 +228,13 @@ class _SubjectHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    final days = classDaysText(context, subject.classDays);
     final details = [
       if (subject.teacher != null && subject.teacher!.isNotEmpty)
         (Icons.person_outline_rounded, subject.teacher!),
+      if (subject.room != null && subject.room!.isNotEmpty)
+        (Icons.meeting_room_outlined, subject.room!),
+      if (days != null) (Icons.event_repeat_rounded, days),
       if (subject.credits > 0)
         (Icons.stars_outlined, l10n.academicCreditsShort(subject.credits)),
       if (semester != null)

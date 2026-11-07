@@ -45,6 +45,7 @@ abstract interface class NoteRepositoryContract {
     required int page,
     SharedNotesScope scope = SharedNotesScope.all,
     String? authorId,
+    String? search,
     int size = 20,
   });
 

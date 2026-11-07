@@ -16,7 +16,7 @@ import java.util.List;
  * son opcionales (onboarding corto): sin ellos se usan los valores por defecto o se conservan.
  */
 public record WellnessProfileRequest(
-        @NotNull @Min(15) @Max(80) Integer age,
+        @Min(15) @Max(80) Integer age,
         @NotNull Sex sex,
         @Size(max = 100) String city,
         @NotNull @DecimalMin("30") @DecimalMax("250") Double weightKg,

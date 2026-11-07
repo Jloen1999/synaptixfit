@@ -64,7 +64,6 @@
   "profileEditWellnessTitle": "Profil physique",
   "profileWellnessAboutYou": "À propos de toi",
   "profileWellnessMeasures": "Mensurations",
-  "profileFieldAge": "Âge",
   "profileFieldSex": "Sexe",
   "profileFieldWeight": "Poids (kg)",
   "profileFieldHeight": "Taille (cm)",
@@ -85,8 +84,7 @@
   "profileBmiOverweight": "Surpoids",
   "profileBmiObesity": "Obésité",
   "profileGoalSuggestAction": "Conseille-moi",
-  "profileGoalSuggestionsFromAi": "Suggestions de l’IA",
-  "profileGoalSuggestionsFromRules": "Suggestions selon ton profil",
+  "profileGoalSuggestionsFromAi": "Suggestions selon ton âge, ton niveau d’activité et ta ville",
   "profileGoalUseSuggestion": "Choisir",
   "profileSexMale": "Homme",
   "profileSexFemale": "Femme",
@@ -414,5 +412,12 @@
   "profileLegalCheckboxRequired": "Coche la case pour continuer.",
   "profilePermissionLocationTitle": "Localisation",
   "profilePermissionLocationWhy": "Pour enregistrer tes courses avec le GPS : distance, allure et parcours. Uniquement pendant l’enregistrement, même écran éteint. Sans elle, tu peux noter les activités à la main.",
-  "profilePermissionLocationAsk": "Autoriser la localisation ?"
+  "profilePermissionLocationAsk": "Autoriser la localisation ?",
+  "profileBirthDateLabel": "Date de naissance (facultatif)",
+  "profileBirthDateEmpty": "Pas de date · choisis-la",
+  "profileBirthDateHint": "Nous l'utilisons pour calculer ton âge (kcal et propositions) et te souhaiter ton anniversaire. Elle n'apparaît jamais sur ton profil public.",
+  "profileBirthDateRemove": "Retirer la date",
+  "profileBirthDateSuggestion": "Ajoute ta date de naissance : ton âge se mettra à jour tout seul et nous te souhaiterons ton anniversaire.",
+  "profileBirthDateAdd": "Ajouter",
+  "profileErrorInvalidBirthDate": "Vérifie ta date de naissance : elle ne peut pas être future et l'âge doit être compris entre 14 et 100 ans."
 }

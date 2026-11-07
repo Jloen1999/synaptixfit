@@ -151,6 +151,7 @@ class SubjectRepository implements SubjectRepositoryContract {
     'perceivedDifficulty': ?input.perceivedDifficulty,
     if (input.priority != null) 'priority': input.priority!.apiValue,
     'teacher': ?input.teacher,
+    'room': ?input.room,
     if (input.nextAssessmentAt != null)
       'nextAssessmentAt': input.nextAssessmentAt!.toUtc().toIso8601String(),
   };

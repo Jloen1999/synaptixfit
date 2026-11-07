@@ -35,6 +35,8 @@ public class SubjectEntity {
     private Instant nextAssessmentAt;
     @Column(name = "docente")
     private String teacher;
+    @Column(name = "aula")
+    private String room;
     @Column(name = "archivado", nullable = false)
     private boolean archived;
     @Column(name = "catalogo_asignatura_id")
@@ -64,6 +66,8 @@ public class SubjectEntity {
     public void setPriority(String priority) { this.priority = priority; }
     public Instant getNextAssessmentAt() { return nextAssessmentAt; }
     public void setNextAssessmentAt(Instant nextAssessmentAt) { this.nextAssessmentAt = nextAssessmentAt; }
+    public String getRoom() { return room; }
+    public void setRoom(String room) { this.room = room; }
     public String getTeacher() { return teacher; }
     public void setTeacher(String teacher) { this.teacher = teacher; }
     public boolean isArchived() { return archived; }

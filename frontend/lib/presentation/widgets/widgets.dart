@@ -26,6 +26,7 @@ export 'app_page_bar.dart';
 export 'app_pill.dart';
 export 'app_primary_button.dart';
 export 'app_scroll_behavior.dart';
+export 'app_search_field.dart';
 export 'app_secondary_button.dart';
 export 'app_section_header.dart';
 export 'app_skeleton.dart';

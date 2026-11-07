@@ -19,6 +19,7 @@ import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import com.synaptixfit.domain.port.output.user.UsageFocusPort;
+import com.synaptixfit.domain.port.output.user.BirthdayPort;
 import java.time.Clock;
 import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,17 +64,18 @@ public class ReminderPlanBeanConfiguration {
 
     /**
      * Los avisos de seguimiento leen entrenamiento y retos con sus casos de uso; los de bienestar, sus opciones, la
-     * racha y el registro diario de hoy.
+     * racha y el registro diario de hoy; el cumpleaños, la fecha de nacimiento de la cuenta (ADR 0036).
      */
     @Bean
     GetReminderPlanUseCase getReminderPlanUseCase(GetPendingTrainingDayUseCase pendingDay,
                                                   ListOpenSessionsUseCase openSessions,
                                                   ListMyChallengesUseCase challenges,
                                                   ReminderOptionsRepositoryPort reminderOptions,
-                                                  GetStreakUseCase streak, GetTodayCheckInUseCase checkIn) {
+                                                  GetStreakUseCase streak, GetTodayCheckInUseCase checkIn,
+                                                  BirthdayPort birthdays) {
         return tx.wrap(GetReminderPlanUseCase.class, new ReminderPlanService(preferences, focus, materials, blocks,
                 deadlines, subjects, new ReminderPlanner(), exams, clock, zone, pendingDay, openSessions,
-                challenges, new ReminderPlanService.Wellbeing(reminderOptions, streak, checkIn)));
+                challenges, new ReminderPlanService.Wellbeing(reminderOptions, streak, checkIn, birthdays)));
     }
 
     @Bean

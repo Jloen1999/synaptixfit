@@ -20,7 +20,9 @@ import com.synaptixfit.domain.model.academic.CatalogSubjectSelection;
 import com.synaptixfit.domain.model.academic.Subject;
 import com.synaptixfit.domain.model.academic.SubjectFile;
 import com.synaptixfit.domain.model.academic.SubjectSemester;
+import com.synaptixfit.domain.model.academic.SubjectAgenda;
 import com.synaptixfit.domain.model.academic.SubjectSummary;
+import com.synaptixfit.domain.port.output.academic.SubjectAgendaPort;
 import com.synaptixfit.domain.port.output.academic.AcademicCatalogPort;
 import com.synaptixfit.domain.port.output.academic.AiDocumentRepositoryPort;
 import com.synaptixfit.domain.port.output.academic.SubjectFileRepositoryPort;
@@ -31,6 +33,9 @@ import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.event.academic.SubjectDeleted;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -45,6 +50,8 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
         ListSubjectSemestersUseCase, AssignSubjectSemesterUseCase, RemoveSubjectSemesterUseCase {
 
     static final int MAX_CATALOG_BATCH = 50;
+    /** Ventana para buscar la próxima clase: un cuatrimestre con vacaciones de por medio. */
+    static final int CLASS_LOOKAHEAD_DAYS = 60;
 
     private final SubjectRepositoryPort subjects;
     private final SubjectSemesterRepositoryPort semesters;
@@ -55,11 +62,23 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
     private final DomainEventPublisherPort events;
     private final Clock clock;
     private final AcademicLookups lookups;
+    private final SubjectAgendaPort agenda;
+    private final ZoneId zone;
 
     public SubjectService(SubjectRepositoryPort subjects, SubjectSemesterRepositoryPort semesters,
                           AcademicCatalogPort catalog, SubjectFileRepositoryPort files,
                           AiDocumentRepositoryPort aiDocuments, FileStoragePort storage,
                           DomainEventPublisherPort events, Clock clock) {
+        this(subjects, semesters, catalog, files, aiDocuments, storage, events, clock, null, ZoneId.of("UTC"));
+    }
+
+    /** Con la agenda de cada asignatura (próxima clase, días de clase y próxima entrega, ADR 0036). */
+    public SubjectService(SubjectRepositoryPort subjects, SubjectSemesterRepositoryPort semesters,
+                          AcademicCatalogPort catalog, SubjectFileRepositoryPort files,
+                          AiDocumentRepositoryPort aiDocuments, FileStoragePort storage,
+                          DomainEventPublisherPort events, Clock clock, SubjectAgendaPort agenda, ZoneId zone) {
+        this.agenda = agenda;
+        this.zone = zone;
         this.subjects = subjects;
         this.events = events;
         this.semesters = semesters;
@@ -95,6 +114,7 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
                 .priority(c.priority())
                 .nextAssessmentAt(c.nextAssessmentAt())
                 .teacher(c.teacher())
+                .room(c.room())
                 .icsUrl(c.icsUrl())
                 .createdAt(clock.instant())
                 .build();
@@ -126,6 +146,9 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
             s.scheduleNextAssessment(null);
         } else if (c.nextAssessmentAt() != null) {
             s.scheduleNextAssessment(c.nextAssessmentAt());
+        }
+        if (c.room() != null) {
+            s.changeRoom(c.room());
         }
         if (c.teacher() != null) {
             s.changeTeacher(c.teacher());
@@ -244,12 +267,20 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
         if (list.isEmpty()) {
             return List.of();
         }
-        Map<UUID, SubjectRepositoryPort.ContentCount> counts =
-                subjects.countContents(userId, list.stream().map(Subject::id).toList());
+        List<UUID> ids = list.stream().map(Subject::id).toList();
+        Map<UUID, SubjectRepositoryPort.ContentCount> counts = subjects.countContents(userId, ids);
+        Instant now = clock.instant();
+        // Hasta dónde se miran clases: la próxima puede estar tras unas vacaciones; los días, dos semanas desde ella.
+        Map<UUID, List<SubjectAgenda.ClassSlot>> classes = agenda == null ? Map.of()
+                : agenda.upcomingClasses(userId, ids, now, now.plus(Duration.ofDays(CLASS_LOOKAHEAD_DAYS)));
+        Map<UUID, List<SubjectAgenda.Deadline>> deadlines = agenda == null ? Map.of()
+                : agenda.pendingDeadlines(userId, ids, now);
         return list.stream().map(s -> {
             SubjectRepositoryPort.ContentCount c = counts.getOrDefault(s.id(),
                     new SubjectRepositoryPort.ContentCount(0, 0));
-            return new SubjectSummary(s, c.notes(), c.files());
+            SubjectAgenda next = SubjectAgenda.of(classes.getOrDefault(s.id(), List.of()),
+                    deadlines.getOrDefault(s.id(), List.of()), s.room(), zone);
+            return new SubjectSummary(s, c.notes(), c.files(), next);
         }).toList();
     }
 

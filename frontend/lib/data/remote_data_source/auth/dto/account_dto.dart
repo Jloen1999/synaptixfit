@@ -25,6 +25,8 @@ abstract class AccountDto with _$AccountDto {
     required bool googleLinked,
     String? usageFocus,
     @Default(true) bool usageFocusChosen,
+    String? birthDate,
+    int? age,
   }) = _AccountDto;
 
   const AccountDto._();
@@ -47,5 +49,7 @@ abstract class AccountDto with _$AccountDto {
     googleLinked: googleLinked,
     usageFocus: UsageFocus.fromApi(usageFocus),
     usageFocusChosen: usageFocusChosen,
+    birthDate: birthDate == null ? null : DateTime.tryParse(birthDate!),
+    age: age,
   );
 }

@@ -878,19 +878,21 @@ class _TimelineSection extends StatelessWidget {
                                   : context.colors.tertiary,
                             ),
                           ),
+                          // Relevancia visual (ADR 0036): el título, en
+                          // grande; cuándo vence, en medio y en color de aviso
+                          // si es hoy o mañana; el tipo, en pequeño.
                           title: Text(
                             item.title.isEmpty
                                 ? context.timelineLabel(item.type)
                                 : item.title,
-                            style: item.completed
-                                ? context.textStyles.bodyLarge?.copyWith(
-                                    decoration: TextDecoration.lineThrough,
-                                  )
-                                : null,
+                            style: context.textStyles.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              decoration: item.completed
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
                           ),
-                          subtitle: Text(
-                            '${context.timelineLabel(item.type)} · ${dateTime(item.start)}',
-                          ),
+                          subtitle: _TimelineWhen(item: item),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -907,7 +909,7 @@ class _TimelineSection extends StatelessWidget {
                           // su día del calendario o la lista de entregas.
                           onTap: () => context.push(
                             item.isDeadline
-                                ? AcademicPaths.deadlines
+                                ? AcademicPaths.deadline(item.id)
                                 : AcademicPaths.plannerBlock(
                                     item.id,
                                     item.start,
@@ -917,6 +919,48 @@ class _TimelineSection extends StatelessWidget {
                       ),
                   ],
                 ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Cuándo es lo de la línea de tiempo: una entrega sin hacer dice cuánto
+/// falta («Vence en 3 días») en tamaño medio; lo demás, tipo y fecha en
+/// pequeño.
+class _TimelineWhen extends StatelessWidget {
+  const _TimelineWhen({required this.item});
+
+  final SubjectTimelineItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = context.timelineLabel(item.type);
+    final now = DateTime.now();
+    if (!item.isDeadline || item.completed) {
+      return Text(
+        '$type · ${dateTime(item.start)}',
+        style: context.textStyles.bodySmall?.copyWith(
+          color: context.colors.onSurfaceVariant,
+        ),
+      );
+    }
+    final soon = AppDueDates.isSoon(item.start, now);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppDueDates.text(context, item.start, now),
+          style: context.textStyles.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: soon ? context.palette.warning : context.colors.tertiary,
+          ),
+        ),
+        Text(
+          type,
+          style: context.textStyles.bodySmall?.copyWith(
+            color: context.colors.onSurfaceVariant,
+          ),
         ),
       ],
     );

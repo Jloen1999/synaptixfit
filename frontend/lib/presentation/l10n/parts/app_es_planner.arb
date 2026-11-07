@@ -93,7 +93,7 @@
   "plannerConflictsHint": "Son eventos que ocupan la misma hora, así que no podrás hacer los dos. Toca uno para cambiarlo de hora o borrarlo.",
   "plannerDeadlinesThisWeek": "Entregas de la semana",
   "plannerMenuDeadlines": "Entregas y exámenes",
-  "plannerMenuSuggestions": "Sugerencias con IA",
+  "plannerMenuSuggestions": "Sugerir un plan",
   "plannerMenuPomodoro": "Pomodoro",
   "plannerMenuScheduleImport": "Importar o exportar horario",
   "plannerMoreOptions": "Más opciones",
@@ -108,7 +108,7 @@
   },
   "plannerReminderSettings": "Ajustar los avisos",
   "plannerAddBlock": "Añadir al calendario",
-  "plannerEmptyWeekHint": "Semana libre: toca una franja para añadir un evento o pide sugerencias a la IA.",
+  "plannerEmptyWeekHint": "Semana libre: toca una franja para añadir un evento o pide que te sugiramos un plan.",
   "plannerDragHint": "Mantén pulsado un evento para moverlo y arrastra su borde inferior para cambiar la duración.",
   "plannerResizeHandle": "Cambiar duración",
   "plannerBlockSemantics": "{type}, de {start} a {end}",
@@ -350,7 +350,7 @@
   "plannerLoadMore": "Cargar más",
   "plannerMarkDone": "Marcar como completada",
   "plannerMarkUndone": "Marcar como pendiente",
-  "plannerSuggestionsTitle": "Sugerencias con IA",
+  "plannerSuggestionsTitle": "Te sugerimos un plan",
   "plannerSuggestionsIntro": "Indica tus objetivos y te propondremos cuándo estudiar y hacer deporte en los huecos libres de la semana.",
   "plannerThisWeek": "Esta semana",
   "plannerNextWeekShort": "Próxima semana",
@@ -374,8 +374,7 @@
   },
   "plannerGenerate": "Generar propuesta",
   "plannerRegenerate": "Generar de nuevo",
-  "plannerSourceAi": "Propuesta de la IA",
-  "plannerSourceHeuristic": "Propuesta automática (la IA no estaba disponible)",
+  "plannerSourceAi": "Según tus entregas, exámenes, clases y huecos libres",
   "plannerSelectAll": "Seleccionar todo",
   "plannerSelectNone": "Quitar selección",
   "plannerAcceptSelected": "{count, plural, =0{Elige eventos} =1{Añadir 1 evento} other{Añadir {count} eventos}}",
@@ -410,7 +409,7 @@
   "plannerNoSuggestionsMessage": "No hay más propuestas con estos objetivos.",
   "plannerOpenCalendar": "Ver calendario",
   "plannerScheduleTitle": "Importar horario",
-  "plannerScanSection": "Escanear horario con IA",
+  "plannerScanSection": "Escanear el horario",
   "plannerScanIntro": "Sube el PDF o una foto de tu horario y crearemos las clases de todo el semestre.",
   "plannerPickFile": "Elegir PDF o imagen",
   "plannerUploading": "Subiendo… {percent} %",
@@ -486,24 +485,11 @@
   "plannerPhaseFocus": "Concentración",
   "plannerPhaseShortBreak": "Descanso corto",
   "plannerPhaseLongBreak": "Descanso largo",
-  "plannerPomodoroStart": "Iniciar",
   "plannerPomodoroPause": "Pausar",
-  "plannerPomodoroResume": "Reanudar",
-  "plannerPomodoroReset": "Reiniciar",
-  "plannerPomodoroSkip": "Saltar fase",
-  "plannerPomodoroCycle": "Ciclo {current} de {total}",
-  "@plannerPomodoroCycle": {
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
+  "plannerPomodoroResume": "Seguir",
+  "plannerPomodoroReset": "Empezar de cero",
   "plannerPomodoroFocusDone": "¡Buen trabajo! Toca descansar.",
-  "plannerPomodoroBreakDone": "Descanso terminado. ¡A por el siguiente ciclo!",
+  "plannerPomodoroBreakDone": "Descanso terminado. ¡A por la siguiente concentración!",
   "plannerPomodoroRecordFailed": "No se ha podido guardar la sesión.",
   "plannerPomodoroXpEarned": "¡Buen trabajo! +{xp} XP por tu concentración",
   "@plannerPomodoroXpEarned": {
@@ -691,9 +677,9 @@
   "plannerSyncLinkReady": "Enlace creado. Guárdalo ahora: no podrás volver a verlo.",
   "plannerErrorPastActivityOutOfRange": "Solo puedes apuntar actividades ya terminadas de los últimos 7 días.",
   "plannerPomodoroAlertFocusTitle": "Concentración terminada",
-  "plannerPomodoroAlertFocusBody": "Tómate el descanso. Abre SynaptixFit para seguir.",
+  "plannerPomodoroAlertFocusBody": "Toca para empezar el descanso.",
   "plannerPomodoroAlertBreakTitle": "Descanso terminado",
-  "plannerPomodoroAlertBreakBody": "Cuando quieras, vuelve a concentrarte.",
+  "plannerPomodoroAlertBreakBody": "Toca para volver a concentrarte.",
   "plannerPomodoroAlertChannel": "Temporizador",
   "plannerConflictWhen": "{day} · coinciden de {start} a {end}",
   "@plannerConflictWhen": {
@@ -716,7 +702,7 @@
   },
   "plannerPomodoroOngoingFocus": "Concentración en marcha",
   "plannerPomodoroOngoingBreak": "Descanso en marcha",
-  "plannerPomodoroOngoingPaused": "Pomodoro en pausa",
+  "plannerPomodoroOngoingPaused": "Pomodoro en pausa · toca para seguir",
   "plannerPomodoroOngoingEndsAt": "Termina a las {time}",
   "@plannerPomodoroOngoingEndsAt": {
     "placeholders": {
@@ -889,5 +875,39 @@
         "type": "String"
       }
     }
-  }
+  },
+  "plannerPomodoroToBreak": "Pasar al descanso",
+  "plannerPomodoroToFocus": "Volver a concentrarme",
+  "plannerPomodoroStartFocus": "Empezar a concentrarme",
+  "plannerPomodoroStartBreak": "Empezar el descanso",
+  "plannerPomodoroFocusHeader": "Concentración {current} de {total} · luego {minutes} min de descanso",
+  "@plannerPomodoroFocusHeader": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroBreakHeader": "Descanso de {minutes} min · luego concentración {next} de {total}",
+  "@plannerPomodoroBreakHeader": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "plannerPomodoroToBreakHint": "Termina la concentración ahora y empieza el descanso.",
+  "plannerPomodoroToFocusHint": "Termina el descanso ahora y vuelve a la concentración."
 }

@@ -182,5 +182,8 @@
   "homeBannerActionNextSlot": "To next free slot",
   "homeBannerActionDone": "Done",
   "homeBannerActionMarkInCalendar": "Mark in the calendar",
-  "homeStartRun": "Start running"
+  "homeStartRun": "Start running",
+  "homeBirthdayTitle": "Happy birthday, {name}!",
+  "homeBirthdayTitleNoName": "Happy birthday!",
+  "homeBirthdayMessage": "Have a great day. Your plan is waiting whenever you want."
 }

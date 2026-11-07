@@ -13,7 +13,7 @@ public record AdminUserDetailResponse(AdminUserAccountResponse account, Wellbein
                                       AcademicProfile academicProfile) {
 
     /** Perfil de bienestar. */
-    public record WellbeingProfile(int age, String sex, Double weightKg, Double heightCm, Double bmi,
+    public record WellbeingProfile(Integer age, String sex, Double weightKg, Double heightCm, Double bmi,
                                    String activityLevel, String mainGoal, int availableDaysPerWeek,
                                    int minutesPerSession, boolean onboardingCompleted) {
 

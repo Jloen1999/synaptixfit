@@ -338,7 +338,7 @@ class _GenerateBar extends StatelessWidget {
       padding: const EdgeInsets.all(TokensSpacing.m),
       child: AppPrimaryButton(
         label: context.localizations.academicGenerateAction,
-        icon: Icons.auto_awesome_rounded,
+        icon: Icons.lightbulb_outline_rounded,
         loading: state.generating,
         onPressed: state.selected.isEmpty || state.generating
             ? null

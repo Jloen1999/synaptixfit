@@ -121,7 +121,7 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
                   AcademicPaths.scanNote(),
                 ),
                 option(
-                  Icons.auto_awesome_rounded,
+                  Icons.lightbulb_outline_rounded,
                   l10n.academicGenerateTitle,
                   l10n.academicGenerateHint,
                   AcademicPaths.generate(),
@@ -195,6 +195,13 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
+                  // El buscador, lo primero: encuentra cualquier asignatura,
+                  // apunte, archivo o entrega sin bajar por las listas.
+                  SliverToBoxAdapter(
+                    child: _SearchEntry(
+                      onTap: () => context.push(AcademicPaths.search),
+                    ),
+                  ),
                   if (state.due.isNotEmpty && !state.showArchived)
                     SliverToBoxAdapter(
                       child: _DueReviews(
@@ -664,6 +671,69 @@ class _InboxRow extends StatelessWidget {
         const SizedBox(width: TokensSpacing.xs),
         move,
       ],
+    );
+  }
+}
+
+/// Entrada al buscador de Académico: parece un campo de búsqueda y abre la
+/// pantalla del buscador (ADR 0036).
+class _SearchEntry extends StatelessWidget {
+  const _SearchEntry({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        TokensSpacing.m,
+        TokensSpacing.s,
+        TokensSpacing.m,
+        TokensSpacing.xs,
+      ),
+      child: Semantics(
+        button: true,
+        child: AppFocusOutline(
+          borderRadius: BorderRadius.circular(TokensRadius.l),
+          child: Material(
+            color: context.colors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(TokensRadius.l),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(TokensRadius.l),
+              onTap: onTap,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: TokensLayout.minTouchTarget,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: TokensSpacing.m,
+                    vertical: TokensSpacing.s,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: TokensSpacing.s),
+                      Expanded(
+                        child: Text(
+                          l10n.academicSearchLabel,
+                          style: context.textStyles.bodyLarge?.copyWith(
+                            color: context.colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

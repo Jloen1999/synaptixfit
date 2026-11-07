@@ -202,7 +202,7 @@ class _NoBank extends StatelessWidget {
           : l10n.academicPracticeNoBankMessage,
       action: AppPrimaryButton(
         label: l10n.academicPracticeGenerate,
-        icon: Icons.auto_awesome_rounded,
+        icon: Icons.lightbulb_outline_rounded,
         loading: generating,
         onPressed: () => context.read<PracticeHubBloc>().add(
           const PracticeHubEvent.bankRequested(),

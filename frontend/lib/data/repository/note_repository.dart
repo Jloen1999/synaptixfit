@@ -117,6 +117,7 @@ class NoteRepository implements NoteRepositoryContract {
     required int page,
     SharedNotesScope scope = SharedNotesScope.all,
     String? authorId,
+    String? search,
     int size = 20,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.getSharedNotes(
@@ -124,6 +125,7 @@ class NoteRepository implements NoteRepositoryContract {
       size: size,
       scope: scope.apiValue,
       authorId: authorId,
+      search: search,
     )).toDomain(),
   );
 

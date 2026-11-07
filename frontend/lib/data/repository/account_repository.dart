@@ -22,14 +22,26 @@ class AccountRepository implements AccountRepositoryContract {
     String? avatarUrl,
     Visibility? privacy,
     UsageFocus? usageFocus,
+    DateTime? birthDate,
+    bool clearBirthDate = false,
   }) => RepositoryErrorHandler.guard(
     () async => (await _remote.updateMe({
       'fullName': ?fullName,
       'avatarUrl': ?avatarUrl,
       if (privacy != null) 'privacy': privacy.apiValue,
       if (usageFocus != null) 'usageFocus': usageFocus.apiValue,
+      if (clearBirthDate)
+        'removeBirthDate': true
+      else if (birthDate != null)
+        'birthDate': _day(birthDate),
     })).toDomain(),
   );
+
+  /// Día sin hora (`yyyy-MM-dd`): la fecha de nacimiento no tiene zona.
+  static String _day(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
 
   @override
   Future<AppResult<Unit>> changePassword({

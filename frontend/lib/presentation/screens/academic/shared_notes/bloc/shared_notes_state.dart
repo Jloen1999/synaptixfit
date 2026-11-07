@@ -5,6 +5,9 @@ abstract class SharedNotesState with _$SharedNotesState {
   const factory SharedNotesState({
     @Default(SharedNotesScope.all) SharedNotesScope scope,
     String? authorId,
+
+    /// Lo buscado ('' = sin búsqueda).
+    @Default('') String search,
     @Default(true) bool loading,
     AppError? error,
     @Default(<SharedNoteSummary>[]) List<SharedNoteSummary> items,

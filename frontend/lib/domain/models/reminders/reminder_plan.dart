@@ -71,6 +71,9 @@ abstract class ReminderDaySummary with _$ReminderDaySummary {
 
     /// Ese día no llega aviso aparte del registro diario: va aquí.
     @Default(false) bool checkIn,
+
+    /// Es su cumpleaños: el resumen empieza felicitándole (ADR 0036).
+    @Default(false) bool birthday,
   }) = _ReminderDaySummary;
 }
 

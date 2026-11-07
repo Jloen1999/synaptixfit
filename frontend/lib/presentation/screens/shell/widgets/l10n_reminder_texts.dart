@@ -115,6 +115,17 @@ class L10nReminderTexts implements ReminderTexts {
   String get morningSummaryTitle => _l10n.remindersMorningSummaryTitle;
 
   @override
+  String birthdayTitle(String? name) {
+    final first = name?.trim();
+    return first == null || first.isEmpty
+        ? _l10n.remindersBirthdayTitleNoName
+        : _l10n.remindersBirthdayTitle(first);
+  }
+
+  @override
+  String get birthdayBody => _l10n.remindersBirthdayBody;
+
+  @override
   String morningSummaryBody(ReminderDaySummary summary) {
     final items = [
       if (summary.studies > 0) _l10n.remindersSummaryStudies(summary.studies),

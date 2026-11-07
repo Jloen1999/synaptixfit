@@ -87,7 +87,7 @@ public class SubjectController {
     public SubjectResponse create(@CurrentUserId UUID userId, @Valid @RequestBody CreateSubjectRequest r) {
         return SubjectResponse.from(createSubject.createSubject(new CreateSubjectUseCase.Command(userId, r.name(),
                 r.code(), r.description(), r.credits(), r.perceivedDifficulty(), r.priority(), r.nextAssessmentAt(),
-                r.teacher(), r.icsUrl())));
+                r.teacher(), r.icsUrl(), r.room())));
     }
 
     @PatchMapping("/{subjectId}")
@@ -95,7 +95,8 @@ public class SubjectController {
                                   @Valid @RequestBody UpdateSubjectRequest r) {
         return SubjectResponse.from(updateSubject.updateSubject(new UpdateSubjectUseCase.Command(userId, subjectId,
                 r.name(), r.code(), r.description(), r.credits(), r.perceivedDifficulty(), r.priority(),
-                r.nextAssessmentAt(), Boolean.TRUE.equals(r.clearNextAssessment()), r.teacher(), r.icsUrl(), r.archived())));
+                r.nextAssessmentAt(), Boolean.TRUE.equals(r.clearNextAssessment()), r.teacher(), r.icsUrl(), r.archived(),
+                r.room())));
     }
 
     @DeleteMapping("/{subjectId}")

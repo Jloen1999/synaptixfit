@@ -101,7 +101,7 @@ class _RemindersListener extends StatelessWidget {
         context.go(ProgressPaths.root);
       case ReminderKind.checkIn:
         unawaited(context.push<void>(TrainingPaths.checkIn));
-      case ReminderKind.morningSummary:
+      case ReminderKind.morningSummary || ReminderKind.birthday:
         context.go(HomePaths.root);
       // «Empezar» en un evento personal solo abre la app: también el evento.
       case ReminderKind.classSoon || ReminderKind.personalEvent:

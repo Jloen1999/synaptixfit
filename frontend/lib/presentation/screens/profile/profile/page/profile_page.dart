@@ -173,6 +173,18 @@ class _ProfileContent extends StatelessWidget {
             ),
           ),
         ],
+        // Fecha de nacimiento (ADR 0036): se sugiere sin bloquear; quien ya
+        // dio su edad sigue igual hasta que la ponga.
+        if (account.birthDate == null && summary.onboarding.completed) ...[
+          const SizedBox(height: TokensSpacing.m),
+          _MissingCard(
+            icon: Icons.cake_outlined,
+            color: context.palette.accent,
+            message: l10n.profileBirthDateSuggestion,
+            actionLabel: l10n.profileBirthDateAdd,
+            onAction: () => _open(context, ProfilePaths.editAccount),
+          ),
+        ],
         // Solo los perfiles del ámbito que la persona usa.
         if (account.usageFocus.includesFitness) ...[
           const SizedBox(height: TokensSpacing.l),

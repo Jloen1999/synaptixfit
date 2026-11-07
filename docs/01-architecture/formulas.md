@@ -118,6 +118,16 @@ Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevo
 - **Por serie (`perSet`):** el servidor da la cifra de cada serie planificada: en una pirámide, el peso y el aguante se mueven en la misma proporción (peso a 0,5 kg) y las repeticiones en la misma diferencia; si no, la cifra propuesta.
 - **En la app:** aceptarla («Usar en las series que faltan») rellena con `perSet` las series que faltan de ese ejercicio. No toca la rutina ni las series ya apuntadas.
 
+## Edad (ADR 0036)
+
+La edad ya no se pide ni se guarda: sale de la fecha de nacimiento opcional de la cuenta (`usuarios.fecha_nacimiento`, `BirthDate`) el día que hace falta. Todas las fórmulas que usan la edad la toman de `BirthDate.effectiveAge(fechaNacimiento, edadDada, hoy)`:
+
+1. Con fecha de nacimiento: años cumplidos ese día (quien nació el 29 de febrero cumple el 28 en los años no bisiestos).
+2. Sin fecha: la edad que la persona dio en el perfil físico antes de existir la fecha (`perfil_bienestar_usuario.edad`).
+3. Sin ninguna: **21 años**, la edad típica de un estudiante de grado (`BirthDate.REFERENCE_AGE`). En Mifflin-St Jeor cada año resta 5 kcal/día al metabolismo en reposo, así que el error es pequeño; en la propuesta de rutina, 21 años no activa los límites de menores de 18 ni de mayores de 50.
+
+La usan: el gasto del estudio (fórmula 1, `PlannerDirectoryJdbcAdapter.findMetabolic` e `InsightsSourceJdbcAdapter.bodyProfile`), la propuesta de rutina (`TrainingContextPersistenceAdapter.profile`) y los objetivos sugeridos (`WellnessProfileService.suggestGoals`, que sin ninguna edad no orienta por edad en vez de usar la de referencia). Validación de la fecha (dominio): no futura y edad entre 14 y 100 años (`INVALID_BIRTH_DATE`).
+
 ## «Tu estudio» (Progreso) y valores por defecto
 
 - **Semana:** de lunes a domingo en la zona de la app (`StudyWeekSummary`).
