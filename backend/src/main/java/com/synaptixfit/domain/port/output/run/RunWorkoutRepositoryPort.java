@@ -20,7 +20,7 @@ public interface RunWorkoutRepositoryPort {
     /** Del más reciente al más antiguo. */
     List<RunWorkout> findAll(UUID userId);
 
-    void delete(UUID workoutId);
+    void delete(UUID userId, UUID workoutId);
 
     void linkEvent(UUID blockId, UUID workoutId, UUID userId);
 

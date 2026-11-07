@@ -79,8 +79,11 @@ public class RunWorkoutJdbcAdapter implements RunWorkoutRepositoryPort {
     }
 
     @Override
-    public void delete(UUID workoutId) {
-        jdbc.sql("DELETE FROM entrenos_carrera WHERE id = :id").param("id", workoutId).update();
+    public void delete(UUID userId, UUID workoutId) {
+        jdbc.sql("DELETE FROM entrenos_carrera WHERE id = :id AND usuario_id = :user")
+                .param("id", workoutId)
+                .param("user", userId)
+                .update();
     }
 
     @Override

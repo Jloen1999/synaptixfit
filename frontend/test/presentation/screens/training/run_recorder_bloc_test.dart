@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/run.dart';
-import 'package:synaptixfit/domain/models/training/sport_activity.dart';
 import 'package:synaptixfit/domain/use_cases/training/discard_run_recording_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/finish_run_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/is_location_service_enabled_use_case.dart';

@@ -10,6 +10,7 @@ import com.synaptixfit.application.port.input.run.ListRunWorkoutTemplatesUseCase
 import com.synaptixfit.application.port.input.run.ListRunWorkoutsUseCase;
 import com.synaptixfit.application.port.input.run.ScheduleRunWorkoutUseCase;
 import com.synaptixfit.application.port.input.run.UpdateRunWorkoutUseCase;
+import com.synaptixfit.domain.exception.FieldValidationException;
 import com.synaptixfit.domain.exception.run.RunWorkoutNotFoundException;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.PlannerZone;
@@ -67,7 +68,7 @@ public class RunWorkoutService implements ListRunWorkoutsUseCase, ListRunWorkout
     public RunWorkout createWorkout(CreateRunWorkoutUseCase.Command command) {
         String template = command.templateCode();
         if (template != null && RunWorkoutTemplates.ALL.stream().noneMatch(t -> t.code().equals(template))) {
-            throw new RunWorkoutNotFoundException(template);
+            throw new FieldValidationException("templateCode", "INVALID", "unknown run workout template");
         }
         Instant now = clock.instant();
         return workouts.save(new RunWorkout(UUID.randomUUID(), command.userId(), command.name(), template,
@@ -82,7 +83,7 @@ public class RunWorkoutService implements ListRunWorkoutsUseCase, ListRunWorkout
 
     @Override
     public void deleteWorkout(UUID userId, UUID workoutId) {
-        workouts.delete(owned(userId, workoutId).id());
+        workouts.delete(userId, owned(userId, workoutId).id());
     }
 
     @Override

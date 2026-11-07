@@ -82,6 +82,25 @@ void main() {
     },
   );
 
+  test(
+    'un fallo que no es una regla (409, 429 de un proxy…) no la pierde',
+    () async {
+      remote.failure = const AppError.conflict();
+      final result = await FinishRunUseCase(local, remote)(
+        recording,
+        effort: 5,
+      );
+      expect(result.valueOrNull, isNull);
+      expect(local.queue.keys, [recording.clientKey]);
+      remote.failure = const AppError.unknown();
+      expect(
+        (await UploadPendingRunsUseCase(local, remote)()).valueOrNull,
+        isEmpty,
+      );
+      expect(local.queue.keys, [recording.clientKey]);
+    },
+  );
+
   test('la carrera guardada en el teléfono se recupera igual', () {
     final back = RunRecordingStorage.decode(
       RunRecordingStorage.encode(
@@ -129,12 +148,14 @@ class _Local implements RunRecordingRepositoryContract {
 class _Remote implements RunRepositoryContract {
   bool offline = false;
   String? reject;
+  AppError? failure;
   final sent = <RunRecording>[];
 
   @override
   Future<AppResult<RunSaved>> upload(RunRecording recording) async {
     if (offline) return const Failure(AppError.network());
     if (reject case final code?) return Failure(AppError.business(code));
+    if (failure case final f?) return Failure(f);
     sent.add(recording);
     return Success(
       RunSaved(

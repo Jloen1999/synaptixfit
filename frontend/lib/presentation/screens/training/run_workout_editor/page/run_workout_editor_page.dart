@@ -96,7 +96,15 @@ class _EditorViewState extends State<_EditorView> with ErrorsMessageMixin {
           ),
           body: switch (state) {
             RunWorkoutEditorState(loading: true) => const AppLoadingView(),
-            RunWorkoutEditorState(:final error?) => AppErrorView(error: error),
+            RunWorkoutEditorState(:final error?) => AppErrorView(
+              error: error,
+              onRetry: () => context.read<RunWorkoutEditorBloc>().add(
+                RunWorkoutEditorEvent.started(
+                  workoutId: state.workoutId,
+                  defaultName: l10n.runWorkoutUntitled,
+                ),
+              ),
+            ),
             _ => AppContentWidth.reading(
               child: ListView(
                 padding: const EdgeInsets.all(TokensSpacing.m),
@@ -271,26 +279,21 @@ class _StepRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: TokensSpacing.xs),
-          SegmentedButton<RunMeasure>(
-            showSelectedIcon: false,
-            segments: [
-              ButtonSegment(
-                value: RunMeasure.time,
-                icon: const Icon(Icons.timer_outlined),
-                label: Text(l10n.runEditorByTime),
-              ),
-              ButtonSegment(
-                value: RunMeasure.distance,
-                icon: const Icon(Icons.straighten_rounded),
-                label: Text(l10n.runEditorByDistance),
-              ),
-            ],
-            selected: {value.measure},
-            onSelectionChanged: (s) => change(
+          AppAdaptiveChoice<RunMeasure>(
+            label: l10n.runEditorMeasure,
+            values: RunMeasure.values,
+            selected: value.measure,
+            labelOf: (m) => m == RunMeasure.time
+                ? l10n.runEditorByTime
+                : l10n.runEditorByDistance,
+            iconOf: (m) => m == RunMeasure.time
+                ? Icons.timer_outlined
+                : Icons.straighten_rounded,
+            onChanged: (m) => change(
               RunStep(
                 type: value.type,
-                measure: s.first,
-                value: s.first == RunMeasure.time ? 300 : 1000,
+                measure: m,
+                value: m == RunMeasure.time ? 300 : 1000,
               ),
             ),
           ),

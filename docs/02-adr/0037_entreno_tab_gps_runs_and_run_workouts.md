@@ -36,7 +36,7 @@
 
 - `entrenos_carrera` con grupos de pasos (`WARMUP`, `RUN`, `RECOVER`, `COOLDOWN`; por tiempo o distancia) y repeticiones. Seis plantillas en el servidor (solo código y pasos); el nombre y el porqué los pone el cliente en cada idioma.
 - **«Poner en el calendario»** lo hace el servidor con `CreateCalendarBlockUseCase` (contrato del planificador, sin tocar su hoja): evento de tipo Entreno con el nombre del entreno y su duración prevista, ligado en `eventos_entreno_carrera`.
-- Al grabarlo desde ese evento (`plannedBlockId`): si ya había empezado, **ese evento queda hecho** (`SetBlockCompletionUseCase`) y la carrera se guarda en él; si era más tarde (se corrió antes), el evento se borra y la carrera se apunta en su hora real. El planificador no mueve eventos al pasado y así no quedan dos cosas para lo mismo.
+- Al grabarlo desde ese evento (`plannedBlockId`): si ya había empezado, **ese evento queda hecho** como actividad (`CompletePlannedActivityUseCase`, del planificador: completa con el esfuerzo y guarda clase, minutos, distancia y origen en `actividades_apuntadas`, tabla suya) y la carrera se guarda en él; si era más tarde (se corrió antes), el evento se borra y la carrera se apunta en su hora real. El planificador no mueve eventos al pasado y así no quedan dos cosas para lo mismo.
 - Mientras se graba, `RunGuide` (cliente) lleva el paso actual, lo que queda y el siguiente; al cambiar vibra y lo anuncia el lector de pantalla.
 
 ### Pestaña Entreno
@@ -49,6 +49,7 @@
 
 - `flutter_map` con teselas ráster de MapTiler: `MAP_TILES_KEY` y, opcional, `MAP_TILES_URL` (plantilla con `{z}/{x}/{y}` y `{key}`) por `--dart-define`; en el CI web, `vars.MAP_TILES_KEY`. Atribución «© MapTiler © OpenStreetMap». Sin clave, la ruta se dibuja sobre un fondo liso con «Mapa no disponible».
 - Compartir manda una imagen **solo con cifras** (la tarjeta de logros), nunca el mapa.
+- Excepción a «solo el backend llama a servicios externos» (CLAUDE.md): las teselas del mapa las pide el móvil o el navegador directamente a MapTiler, como cualquier mapa; solo viaja la zona visible, nunca la ruta. La clave es pública y se restringe por dominio y paquete de Android en MapTiler.
 
 ### Privacidad
 
@@ -64,4 +65,5 @@
 
 - Un APK anterior sigue funcionando: los campos nuevos de «Actividades y partidos» (`source`, `elevationGainMeters`) son opcionales.
 - La carga física de una carrera de menos de 30 min queda algo por encima (bloque mínimo del calendario), igual que en las actividades a mano.
+- La cola del móvil solo descarta una carrera si el servidor la rechaza por una regla (`RUN_TOO_SHORT`, `RUN_OUT_OF_RANGE`, `RUN_ROUTE_TOO_LARGE` o validación); con cualquier otro fallo se queda para reintentar.
 - Pendiente: Strava y Health Connect; en iOS falta el modo de fondo de ubicación (`UIBackgroundModes`) para grabar con la pantalla apagada; un aviso del plan para «el entreno de carrera de hoy» (lo decide `ReminderPlanner`, de Notificaciones).

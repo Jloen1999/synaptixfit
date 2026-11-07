@@ -3687,9 +3687,9 @@
   "runDeletedHint": "Son XP est retiré et elle ne compte plus dans ta semaine. Appuie sur « Annuler » si c’était une erreur.",
   "runUndo": "Annuler",
   "runWorkoutName": "Nom de l’entraînement",
-  "runEditorIntro": "Chaque bloc se répète autant de fois que tu veux. Exemple : 6 fois « Courir 800 m » et « Récupérer 2 min ».",
-  "runEditorAddGroup": "Ajouter un bloc",
-  "runEditorRemoveGroup": "Retirer le bloc",
+  "runEditorIntro": "Chaque série d’étapes se répète autant de fois que tu veux. Exemple : 6 fois « Courir 800 m » et « Récupérer 2 min ».",
+  "runEditorAddGroup": "Ajouter une série",
+  "runEditorRemoveGroup": "Retirer la série",
   "runEditorRepeat": "Fois",
   "runEditorTimes": "{count, plural, =1{1 fois} other{{count} fois}}",
   "runEditorStep": "Étape",
@@ -3705,5 +3705,10 @@
   "runErrorOutOfRange": "Seules les courses terminées des 30 derniers jours sont enregistrées. Tu peux la noter à la main si c’était cette semaine.",
   "runErrorRouteTooLarge": "Le parcours est trop long pour être enregistré. Essaie de noter l’activité à la main.",
   "runErrorNotFound": "Cette course n’existe plus.",
-  "runErrorWorkoutNotFound": "Cet entraînement de course n’existe plus."
+  "runErrorWorkoutNotFound": "Cet entraînement de course n’existe plus.",
+  "runDiscardTitle": "Abandonner la course ?",
+  "runEditorMeasure": "Comment se mesure-t-elle ?",
+  "runSplitFastest": "Ton kilomètre le plus rapide",
+  "runMapStart": "Départ",
+  "runMapFinish": "Arrivée"
 }

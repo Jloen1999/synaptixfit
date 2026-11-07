@@ -3687,9 +3687,9 @@
   "runDeletedHint": "Its XP is taken back and it no longer counts in your week. Press “Undo” if it was a mistake.",
   "runUndo": "Undo",
   "runWorkoutName": "Workout name",
-  "runEditorIntro": "Each block repeats as many times as you say. Example: 6 times “Run 800 m” and “Recover 2 min”.",
-  "runEditorAddGroup": "Add block",
-  "runEditorRemoveGroup": "Remove block",
+  "runEditorIntro": "Each set of steps repeats as many times as you say. Example: 6 times “Run 800 m” and “Recover 2 min”.",
+  "runEditorAddGroup": "Add set",
+  "runEditorRemoveGroup": "Remove set",
   "runEditorRepeat": "Times",
   "runEditorTimes": "{count, plural, =1{once} other{{count} times}}",
   "runEditorStep": "Step",
@@ -3705,5 +3705,10 @@
   "runErrorOutOfRange": "Only finished runs from the last 30 days can be saved. You can log it by hand if it was this week.",
   "runErrorRouteTooLarge": "The route is too long to save. Try logging the activity by hand.",
   "runErrorNotFound": "That run no longer exists.",
-  "runErrorWorkoutNotFound": "That running workout no longer exists."
+  "runErrorWorkoutNotFound": "That running workout no longer exists.",
+  "runDiscardTitle": "Discard the run?",
+  "runEditorMeasure": "How is it measured?",
+  "runSplitFastest": "Your fastest kilometre",
+  "runMapStart": "Start",
+  "runMapFinish": "Finish"
 }

@@ -3687,9 +3687,9 @@
   "runDeletedHint": "A XP é retirada e deixa de contar na tua semana. Carrega em «Anular» se foi sem querer.",
   "runUndo": "Anular",
   "runWorkoutName": "Nome do treino",
-  "runEditorIntro": "Cada bloco repete-se as vezes que disseres. Exemplo: 6 vezes «Correr 800 m» e «Recuperar 2 min».",
-  "runEditorAddGroup": "Adicionar bloco",
-  "runEditorRemoveGroup": "Remover bloco",
+  "runEditorIntro": "Cada série de passos repete-se as vezes que disseres. Exemplo: 6 vezes «Correr 800 m» e «Recuperar 2 min».",
+  "runEditorAddGroup": "Adicionar série",
+  "runEditorRemoveGroup": "Remover série",
   "runEditorRepeat": "Vezes",
   "runEditorTimes": "{count, plural, =1{1 vez} other{{count} vezes}}",
   "runEditorStep": "Passo",
@@ -3705,5 +3705,10 @@
   "runErrorOutOfRange": "Só se guardam corridas já terminadas dos últimos 30 dias. Podes registá-la à mão se foi esta semana.",
   "runErrorRouteTooLarge": "A rota é demasiado longa para guardar. Experimenta registar a atividade à mão.",
   "runErrorNotFound": "Essa corrida já não existe.",
-  "runErrorWorkoutNotFound": "Esse treino de corrida já não existe."
+  "runErrorWorkoutNotFound": "Esse treino de corrida já não existe.",
+  "runDiscardTitle": "Descartar a corrida?",
+  "runEditorMeasure": "Como se mede?",
+  "runSplitFastest": "O teu quilómetro mais rápido",
+  "runMapStart": "Partida",
+  "runMapFinish": "Chegada"
 }

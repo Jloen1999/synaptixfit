@@ -6,9 +6,11 @@ import '../../repositories/run_repository_contract.dart';
 
 /// Termina una carrera con su «¿Cuánto te ha costado?»: la pone en la cola del
 /// teléfono, olvida la carrera en curso y la intenta subir. Sin conexión
-/// devuelve `null` (queda en la cola y se sube sola más tarde, sin duplicarse);
-/// si el servidor la rechaza por una regla (muy corta, muy antigua), sale de la
-/// cola y se devuelve el error para explicarlo.
+/// o con cualquier fallo que no sea una regla, devuelve `null` (queda en la
+/// cola y se sube sola más tarde, sin duplicarse): una grabación nunca se pierde
+/// por un fallo de red o del servidor. Solo si el servidor la rechaza por una
+/// regla (muy corta, muy antigua, ruta enorme) sale de la cola y se devuelve el
+/// error para explicarlo.
 abstract interface class FinishRunUseCaseContract {
   Future<AppResult<RunSaved?>> call(
     RunRecording recording, {
@@ -36,18 +38,27 @@ class FinishRunUseCase implements FinishRunUseCaseContract {
       case Success(:final value):
         await _local.removePending(finished.clientKey);
         return Success(value);
-      case Failure(:final error) when isRetriable(error):
-        return const Success(null);
-      case Failure(:final error):
+      case Failure(:final error) when isRejected(error):
         await _local.removePending(finished.clientKey);
         return Failure(error);
+      case Failure():
+        return const Success(null);
     }
   }
 
-  /// Errores que se arreglan solos al reintentar (sin conexión, servidor caído,
-  /// sesión caducada): la carrera se queda en la cola.
-  static bool isRetriable(AppError error) => switch (error) {
-    NetworkError() || ServerError() || UnauthorizedError() => true,
+  /// Códigos con los que el servidor rechaza la carrera por una regla: no se
+  /// arreglarían reintentando (ADR 0037).
+  static const rejectedCodes = {
+    'RUN_TOO_SHORT',
+    'RUN_OUT_OF_RANGE',
+    'RUN_ROUTE_TOO_LARGE',
+  };
+
+  /// Solo estos fallos sacan la carrera de la cola; cualquier otro (red,
+  /// servidor, sesión caducada, un proxy) la deja para reintentar.
+  static bool isRejected(AppError error) => switch (error) {
+    BusinessError(:final code) => rejectedCodes.contains(code),
+    ValidationError() => true,
     _ => false,
   };
 }

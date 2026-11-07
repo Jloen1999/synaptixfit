@@ -1,5 +1,6 @@
 package com.synaptixfit.application.service.run;
 
+import com.synaptixfit.application.port.input.planner.CompletePlannedActivityUseCase;
 import com.synaptixfit.application.port.input.planner.DeleteCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.GetCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.LogPastActivityUseCase;
@@ -27,7 +28,6 @@ import com.synaptixfit.domain.model.run.RunTrack;
 import com.synaptixfit.domain.model.run.RunWeek;
 import com.synaptixfit.domain.model.run.RunWorkout;
 import com.synaptixfit.domain.model.shared.Guard;
-import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import com.synaptixfit.domain.port.output.run.RecordedRunRepositoryPort;
 import com.synaptixfit.domain.port.output.run.RunWorkoutRepositoryPort;
 import com.synaptixfit.domain.port.output.training.TrainingContextPort;
@@ -47,8 +47,8 @@ import java.util.UUID;
  * carga física (esfuerzo × minutos en movimiento, el mismo modelo que alimenta el ACWR), retos ligados y la semana
  * igual que cualquier otra. Si se grabó desde un evento con entreno de carrera:
  * <ul>
- *   <li>si el evento ya había empezado, ese evento queda hecho ({@link SetBlockCompletionUseCase}) y la carrera se
- *   guarda en él;</li>
+ *   <li>si el evento ya había empezado, ese evento queda hecho como actividad
+ *   ({@link CompletePlannedActivityUseCase}) y la carrera se guarda en él;</li>
  *   <li>si aún no había empezado (se corrió antes de la hora), el evento se borra y la carrera se apunta en su hora
  *   real: el planificador no mueve eventos al pasado y así no quedan dos cosas para lo mismo.</li>
  * </ul>
@@ -63,26 +63,23 @@ public class RunService implements RecordRunUseCase, GetRunUseCase, DeleteRunUse
     private final RecordedRunRepositoryPort runs;
     private final RunWorkoutRepositoryPort workouts;
     private final LogPastActivityUseCase logActivity;
-    private final SetBlockCompletionUseCase completion;
+    private final CompletePlannedActivityUseCase completePlanned;
     private final GetCalendarBlockUseCase getBlock;
     private final DeleteCalendarBlockUseCase deleteBlock;
-    private final LoggedActivityRepositoryPort logged;
     private final TrainingContextPort context;
     private final PlannerZone zone;
     private final Clock clock;
 
     public RunService(RecordedRunRepositoryPort runs, RunWorkoutRepositoryPort workouts,
-                      LogPastActivityUseCase logActivity, SetBlockCompletionUseCase completion,
+                      LogPastActivityUseCase logActivity, CompletePlannedActivityUseCase completePlanned,
                       GetCalendarBlockUseCase getBlock, DeleteCalendarBlockUseCase deleteBlock,
-                      LoggedActivityRepositoryPort logged, TrainingContextPort context, PlannerZone zone,
-                      Clock clock) {
+                      TrainingContextPort context, PlannerZone zone, Clock clock) {
         this.runs = runs;
         this.workouts = workouts;
         this.logActivity = logActivity;
-        this.completion = completion;
+        this.completePlanned = completePlanned;
         this.getBlock = getBlock;
         this.deleteBlock = deleteBlock;
-        this.logged = logged;
         this.context = context;
         this.zone = zone;
         this.clock = clock;
@@ -136,10 +133,9 @@ public class RunService implements RecordRunUseCase, GetRunUseCase, DeleteRunUse
                 if (planned.get().start().isAfter(now)) {
                     deleteBlock.deleteBlock(userId, planned.get().id());
                 } else {
-                    SetBlockCompletionUseCase.Result done = completion.setCompletion(userId, planned.get().id(), true,
-                            effort);
-                    logged.save(planned.get().id(), userId, command.kind(), minutes, distance, ActivitySource.GPS,
-                            now);
+                    SetBlockCompletionUseCase.Result done = completePlanned.completePlannedActivity(
+                            new CompletePlannedActivityUseCase.Command(userId, planned.get().id(), effort,
+                                    command.kind(), minutes, distance, ActivitySource.GPS));
                     blockId = planned.get().id();
                     xpDelta = done.xpDelta();
                 }

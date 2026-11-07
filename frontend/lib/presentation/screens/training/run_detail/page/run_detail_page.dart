@@ -254,6 +254,21 @@ class _Content extends StatelessWidget {
             ),
             const SizedBox(height: TokensSpacing.s),
             _Splits(splits: run.splits),
+            if (run.splits.length > 1)
+              Row(
+                children: [
+                  Icon(
+                    Icons.bolt_rounded,
+                    color: context.colors.primary,
+                    size: TokensSize.iconS,
+                  ),
+                  const SizedBox(width: TokensSpacing.xs),
+                  Text(
+                    l10n.runSplitFastest,
+                    style: context.textStyles.bodySmall,
+                  ),
+                ],
+              ),
           ],
         ],
       ),
@@ -277,10 +292,14 @@ class _Splits extends StatelessWidget {
       children: [
         for (final s in splits)
           Semantics(
-            label: l10n.runSplitSpoken(
-              s.number,
-              RunLabels.paceSpoken(l10n, s.paceSecondsPerKm),
-            ),
+            label: [
+              l10n.runSplitSpoken(
+                s.number,
+                RunLabels.paceSpoken(l10n, s.paceSecondsPerKm),
+              ),
+              if (s.paceSecondsPerKm == fastest && splits.length > 1)
+                l10n.runSplitFastest,
+            ].join('. '),
             child: ExcludeSemantics(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
@@ -310,11 +329,13 @@ class _Splits extends StatelessWidget {
                             alignment: AlignmentDirectional.centerStart,
                             child: Container(
                               width: box.maxWidth * share,
-                              height: TokensSize.progressBar * 2,
+                              height: TokensSize.splitBar,
                               decoration: BoxDecoration(
+                                // Contraste ≥ 3:1 con la superficie (1.4.11);
+                                // el más rápido además lleva icono (1.4.1).
                                 color: s.paceSecondsPerKm == fastest
                                     ? context.colors.primary
-                                    : context.colors.secondaryContainer,
+                                    : context.colors.outline,
                                 borderRadius: BorderRadius.circular(
                                   TokensRadius.s,
                                 ),
@@ -325,6 +346,12 @@ class _Splits extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: TokensSpacing.s),
+                    if (s.paceSecondsPerKm == fastest && splits.length > 1)
+                      Icon(
+                        Icons.bolt_rounded,
+                        color: context.colors.primary,
+                        size: TokensSize.iconS,
+                      ),
                     Text(
                       RunLabels.pace(s.paceSecondsPerKm),
                       style: context.textStyles.titleSmall,

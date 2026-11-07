@@ -246,10 +246,13 @@ class _Content extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        l10n.runUnfinishedTitle,
-                        style: context.textStyles.titleMedium?.copyWith(
-                          color: context.colors.onSecondaryContainer,
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          l10n.runUnfinishedTitle,
+                          style: context.textStyles.titleMedium?.copyWith(
+                            color: context.colors.onSecondaryContainer,
+                          ),
                         ),
                       ),
                       const SizedBox(height: TokensSpacing.xs),
@@ -630,17 +633,18 @@ class _WeekCard extends StatelessWidget {
               ].join(', '),
             ),
             child: ExcludeSemantics(
-              child: SizedBox(
-                height: TokensSize.miniChart + TokensSpacing.ml,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (var i = 0; i < 7; i++)
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
+              child: Column(
+                children: [
+                  // Solo la zona de las barras tiene alto fijo: los días van
+                  // debajo y crecen con la letra (texto al 200 %).
+                  SizedBox(
+                    height: TokensSize.miniChart,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        for (var i = 0; i < 7; i++)
+                          Expanded(
+                            child: Container(
                               margin: const EdgeInsets.symmetric(
                                 horizontal: TokensSpacing.xs,
                               ),
@@ -653,19 +657,30 @@ class _WeekCard extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: i < daily.length && daily[i] > 0
                                     ? context.colors.primary
-                                    : context.colors.outlineVariant,
+                                    : context.colors.outline,
                                 borderRadius: BorderRadius.circular(
                                   TokensRadius.s,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: TokensSpacing.xxs),
-                            Text(days[i], style: context.textStyles.labelSmall),
-                          ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: TokensSpacing.xxs),
+                  Row(
+                    children: [
+                      for (var i = 0; i < 7; i++)
+                        Expanded(
+                          child: Text(
+                            days[i],
+                            textAlign: TextAlign.center,
+                            style: context.textStyles.labelSmall,
+                          ),
                         ),
-                      ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

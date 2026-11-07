@@ -1,10 +1,12 @@
 package com.synaptixfit.application.service.planner;
 
+import com.synaptixfit.application.port.input.planner.CompletePlannedActivityUseCase;
 import com.synaptixfit.application.port.input.planner.LogPastActivityUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.domain.exception.planner.PlannerSubjectNotFoundException;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
+import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.planner.PastActivity;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.Priority;
@@ -20,9 +22,10 @@ import java.util.UUID;
  * Implementa {@link LogPastActivityUseCase}: guarda el bloque ya pasado (deporte o estudio) y lo completa con
  * {@link SetBlockCompletionUseCase}, así se aplican las mismas reglas (topes de XP, carga física con el esfuerzo o
  * carga cognitiva, semana) que al marcarlo desde el calendario. La asignatura se comprueba con
- * {@link SubjectDirectoryPort}.
+ * {@link SubjectDirectoryPort}. También implementa {@link CompletePlannedActivityUseCase}: dejar hecho como actividad un
+ * evento ya en el calendario (la carrera grabada desde su entreno, ADR 0037).
  */
-public class PastActivityService implements LogPastActivityUseCase {
+public class PastActivityService implements LogPastActivityUseCase, CompletePlannedActivityUseCase {
 
     private final CalendarBlockRepositoryPort blocks;
     private final SubjectDirectoryPort subjects;
@@ -49,7 +52,7 @@ public class PastActivityService implements LogPastActivityUseCase {
     }
 
     @Override
-    public SetBlockCompletionUseCase.Result logPastActivity(Command command) {
+    public SetBlockCompletionUseCase.Result logPastActivity(LogPastActivityUseCase.Command command) {
         Instant now = clock.instant();
         PastActivity activity = new PastActivity(command.start(), command.minutes(), command.title(),
                 command.effort(), command.type(), command.subjectId(), command.kind(), command.distanceMeters(),
@@ -77,6 +80,18 @@ public class PastActivityService implements LogPastActivityUseCase {
         if (logged != null && activity.type() == ActivityType.SPORT) {
             logged.save(block.id(), command.userId(), activity.kind(), activity.minutes(), activity.distanceMeters(),
                     activity.source(), now);
+        }
+        return result;
+    }
+
+    @Override
+    public SetBlockCompletionUseCase.Result completePlannedActivity(CompletePlannedActivityUseCase.Command command) {
+        int effort = Guard.range(command.effort(), "effort", 1, 10);
+        SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), command.blockId(), true,
+                effort);
+        if (logged != null) {
+            logged.save(command.blockId(), command.userId(), command.kind(), command.minutes(),
+                    command.distanceMeters(), command.source(), clock.instant());
         }
         return result;
     }

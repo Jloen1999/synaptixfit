@@ -1,10 +1,10 @@
 package com.synaptixfit.infrastructure.config;
 
+import com.synaptixfit.application.port.input.planner.CompletePlannedActivityUseCase;
 import com.synaptixfit.application.port.input.planner.CreateCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.DeleteCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.GetCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.LogPastActivityUseCase;
-import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.application.port.input.run.CreateRunWorkoutUseCase;
 import com.synaptixfit.application.port.input.run.DeleteRunUseCase;
 import com.synaptixfit.application.port.input.run.DeleteRunWorkoutUseCase;
@@ -19,7 +19,6 @@ import com.synaptixfit.application.port.input.run.UpdateRunWorkoutUseCase;
 import com.synaptixfit.application.service.run.RunService;
 import com.synaptixfit.application.service.run.RunWorkoutService;
 import com.synaptixfit.domain.model.planner.PlannerZone;
-import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import com.synaptixfit.domain.port.output.run.RecordedRunRepositoryPort;
 import com.synaptixfit.domain.port.output.run.RunWorkoutRepositoryPort;
 import com.synaptixfit.domain.port.output.training.TrainingContextPort;
@@ -39,30 +38,28 @@ public class RunBeanConfiguration {
     private final RecordedRunRepositoryPort runs;
     private final RunWorkoutRepositoryPort workouts;
     private final LogPastActivityUseCase logActivity;
-    private final SetBlockCompletionUseCase completion;
+    private final CompletePlannedActivityUseCase completePlanned;
     private final GetCalendarBlockUseCase getBlock;
     private final CreateCalendarBlockUseCase createBlock;
     private final DeleteCalendarBlockUseCase deleteBlock;
-    private final LoggedActivityRepositoryPort logged;
     private final TrainingContextPort context;
     private final PlannerZone zone;
     private final Clock clock;
 
     public RunBeanConfiguration(TransactionalUseCaseFactory tx, RecordedRunRepositoryPort runs,
                                 RunWorkoutRepositoryPort workouts, LogPastActivityUseCase logActivity,
-                                SetBlockCompletionUseCase completion, GetCalendarBlockUseCase getBlock,
+                                CompletePlannedActivityUseCase completePlanned, GetCalendarBlockUseCase getBlock,
                                 CreateCalendarBlockUseCase createBlock, DeleteCalendarBlockUseCase deleteBlock,
-                                LoggedActivityRepositoryPort logged, TrainingContextPort context,
+                                TrainingContextPort context,
                                 @Value("${synaptixfit.planner.zone:Europe/Madrid}") String zoneId, Clock clock) {
         this.tx = tx;
         this.runs = runs;
         this.workouts = workouts;
         this.logActivity = logActivity;
-        this.completion = completion;
+        this.completePlanned = completePlanned;
         this.getBlock = getBlock;
         this.createBlock = createBlock;
         this.deleteBlock = deleteBlock;
-        this.logged = logged;
         this.context = context;
         this.zone = PlannerZone.of(zoneId);
         this.clock = clock;
@@ -70,7 +67,7 @@ public class RunBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     RunService runService() {
-        return new RunService(runs, workouts, logActivity, completion, getBlock, deleteBlock, logged, context, zone,
+        return new RunService(runs, workouts, logActivity, completePlanned, getBlock, deleteBlock, context, zone,
                 clock);
     }
 

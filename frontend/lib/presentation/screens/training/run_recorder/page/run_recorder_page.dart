@@ -141,15 +141,19 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
     final choice = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (sheet) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.l),
-              child: Text(
-                l10n.runLeaveTitle,
-                style: sheet.textStyles.titleLarge,
+              child: Semantics(
+                header: true,
+                child: Text(
+                  l10n.runLeaveTitle,
+                  style: sheet.textStyles.titleLarge,
+                ),
               ),
             ),
             AppFocusOutline(
@@ -190,8 +194,21 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
         context.showSnack(l10n.runPausedWhere);
         _toRunHome();
       case 'discard':
-        _bloc.add(const RunRecorderEvent.discardRequested());
+        await _confirmDiscard();
     }
+  }
+
+  /// Descartar borra la carrera del móvil: se confirma antes (WCAG 3.3.4).
+  Future<void> _confirmDiscard() async {
+    final l10n = context.localizations;
+    final ok = await showConfirmDialog(
+      context,
+      title: l10n.runDiscardTitle,
+      message: l10n.runDiscardHint,
+      confirmLabel: l10n.runDiscard,
+      cancelLabel: l10n.runKeepGoing,
+    );
+    if (ok && mounted) _bloc.add(const RunRecorderEvent.discardRequested());
   }
 
   void _listen(BuildContext context, RunRecorderState state) {
@@ -333,25 +350,18 @@ class _Ready extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(TokensSpacing.m),
         children: [
-          Text(l10n.runKindQuestion, style: context.textStyles.titleMedium),
-          const SizedBox(height: TokensSpacing.s),
-          SegmentedButton<ActivityKind>(
-            showSelectedIcon: false,
-            segments: [
-              for (final k in const [
-                ActivityKind.run,
-                ActivityKind.walk,
-                ActivityKind.bike,
-              ])
-                ButtonSegment(
-                  value: k,
-                  icon: Icon(RunLabels.kindIcon(k)),
-                  label: Text(RunLabels.kindName(l10n, k)),
-                ),
+          // Con letra grande pasa a lista: no se corta (WCAG 1.4.4 y 1.4.10).
+          AppAdaptiveChoice<ActivityKind>(
+            label: l10n.runKindQuestion,
+            values: const [
+              ActivityKind.run,
+              ActivityKind.walk,
+              ActivityKind.bike,
             ],
-            selected: {state.kind},
-            onSelectionChanged: (s) =>
-                bloc.add(RunRecorderEvent.kindChanged(s.first)),
+            selected: state.kind,
+            labelOf: (k) => RunLabels.kindName(l10n, k),
+            iconOf: RunLabels.kindIcon,
+            onChanged: (k) => bloc.add(RunRecorderEvent.kindChanged(k)),
           ),
           if (workout != null) ...[
             const SizedBox(height: TokensSpacing.l),
@@ -429,8 +439,10 @@ class _Recording extends StatelessWidget {
             ),
           if (step != null) ...[
             const SizedBox(height: TokensSpacing.s),
+            // Sin liveRegion: «Quedan…» cambia cada segundo; el cambio de paso
+            // ya se anuncia una vez.
             Semantics(
-              liveRegion: true,
+              container: true,
               child: AppCard(
                 color: context.colors.primaryContainer,
                 child: Column(

@@ -33,7 +33,7 @@ class RunMap extends StatelessWidget {
   Widget build(BuildContext context) {
     final config = getIt.isRegistered<AppConfig>() ? getIt<AppConfig>() : null;
     final key = config?.mapTilesKey;
-    return Semantics(
+    final map = Semantics(
       label: semanticLabel,
       image: true,
       child: ClipRRect(
@@ -54,7 +54,52 @@ class RunMap extends StatelessWidget {
         ),
       ),
     );
+    if (route.length < 2) return map;
+    // Leyenda: la salida y la llegada no se distinguen solo por el color.
+    final l10n = context.localizations;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        map,
+        const SizedBox(height: TokensSpacing.xs),
+        ExcludeSemantics(
+          child: Wrap(
+            spacing: TokensSpacing.m,
+            children: [
+              _Legend(
+                icon: Icons.circle,
+                color: context.colors.primary,
+                label: l10n.runMapStart,
+              ),
+              _Legend(
+                icon: Icons.flag_rounded,
+                color: context.colors.error,
+                label: l10n.runMapFinish,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
+}
+
+class _Legend extends StatelessWidget {
+  const _Legend({required this.icon, required this.color, required this.label});
+
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, color: color, size: TokensSize.iconXs),
+      const SizedBox(width: TokensSpacing.xs),
+      Text(label, style: context.textStyles.bodySmall),
+    ],
+  );
 }
 
 class _TiledMap extends StatelessWidget {
@@ -103,9 +148,9 @@ class _TiledMap extends StatelessWidget {
             polylines: [
               Polyline(
                 points: points,
-                strokeWidth: TokensSpacing.xs + 1,
+                strokeWidth: TokensSize.routeLine,
                 color: colors.primary,
-                borderStrokeWidth: TokensSpacing.xxs,
+                borderStrokeWidth: TokensSize.focusRing,
                 borderColor: colors.surface,
               ),
             ],
@@ -150,7 +195,7 @@ class _Dot extends StatelessWidget {
       shape: BoxShape.circle,
       border: Border.all(
         color: context.colors.surface,
-        width: TokensSpacing.xxs,
+        width: TokensSize.focusRing,
       ),
     ),
     child: flag
@@ -270,13 +315,26 @@ class _RoutePainter extends CustomPainter {
       Paint()
         ..color = line
         ..style = PaintingStyle.stroke
-        ..strokeWidth = TokensSpacing.xs
+        ..strokeWidth = TokensSize.routeLine
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
+    // Salida redonda y llegada cuadrada: no se distinguen solo por el color
+    // (WCAG 1.4.1); la leyenda de [RunMap] lo explica.
     canvas
-      ..drawCircle(at(route.first), TokensSpacing.s, Paint()..color = start)
-      ..drawCircle(at(route.last), TokensSpacing.s, Paint()..color = end);
+      ..drawCircle(
+        at(route.first),
+        TokensSize.routeMarker / 2,
+        Paint()..color = start,
+      )
+      ..drawRect(
+        Rect.fromCenter(
+          center: at(route.last),
+          width: TokensSize.routeMarker,
+          height: TokensSize.routeMarker,
+        ),
+        Paint()..color = end,
+      );
   }
 
   @override

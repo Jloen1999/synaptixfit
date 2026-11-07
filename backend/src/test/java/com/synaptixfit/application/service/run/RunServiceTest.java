@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.run;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.synaptixfit.application.port.input.planner.CompletePlannedActivityUseCase;
 import com.synaptixfit.application.port.input.planner.LogPastActivityUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.application.port.input.run.RecordRunUseCase;
@@ -13,7 +14,6 @@ import com.synaptixfit.domain.model.planner.ActivityKind;
 import com.synaptixfit.domain.model.planner.ActivitySource;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
-import com.synaptixfit.domain.model.planner.LoggedSportActivity;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.Priority;
 import com.synaptixfit.domain.model.planner.TimeRange;
@@ -24,9 +24,6 @@ import com.synaptixfit.domain.model.run.RunStep;
 import com.synaptixfit.domain.model.run.RunWeek;
 import com.synaptixfit.domain.model.run.RunWorkout;
 import com.synaptixfit.domain.model.run.TrackPoint;
-import com.synaptixfit.domain.model.shared.PageRequest;
-import com.synaptixfit.domain.model.shared.PageResult;
-import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import com.synaptixfit.domain.port.output.run.RecordedRunRepositoryPort;
 import com.synaptixfit.domain.port.output.run.RunWorkoutRepositoryPort;
 import com.synaptixfit.domain.port.output.training.TrainingContextPort;
@@ -110,7 +107,7 @@ class RunServiceTest {
             }
 
             @Override
-            public void delete(UUID workoutId) {
+            public void delete(UUID userId, UUID workoutId) {
                 workouts.remove(workoutId);
             }
 
@@ -134,28 +131,17 @@ class RunServiceTest {
             CalendarBlock block = block(c.start(), Math.max(30, c.minutes()));
             return new SetBlockCompletionUseCase.Result(block, 15);
         };
-        SetBlockCompletionUseCase completion = (userId, blockId, done, effort) -> {
-            completed.add(blockId);
-            return new SetBlockCompletionUseCase.Result(blocks.get(blockId), 15);
-        };
-        LoggedActivityRepositoryPort loggedRepo = new LoggedActivityRepositoryPort() {
-            @Override
-            public void save(UUID blockId, UUID userId, ActivityKind kind, int minutes, Integer distanceMeters,
-                             ActivitySource source, Instant now) {
-                loggedSources.add(source);
-            }
-
-            @Override
-            public PageResult<LoggedSportActivity> findSportActivities(UUID userId, PageRequest page) {
-                return new PageResult<>(List.of(), 0, 20, 0);
-            }
+        CompletePlannedActivityUseCase completePlanned = c -> {
+            completed.add(c.blockId());
+            loggedSources.add(c.source());
+            return new SetBlockCompletionUseCase.Result(blocks.get(c.blockId()), 15);
         };
         TrainingContextPort context = (TrainingContextPort) Proxy.newProxyInstance(getClass().getClassLoader(),
                 new Class<?>[] {TrainingContextPort.class}, (proxy, method, args) -> Optional.of(70.0));
-        service = new RunService(runs, workoutRepo, logActivity, completion,
+        service = new RunService(runs, workoutRepo, logActivity, completePlanned,
                 (userId, blockId) -> Optional.ofNullable(blocks.get(blockId))
                         .orElseThrow(() -> new CalendarBlockNotFoundException(blockId)),
-                (userId, blockId) -> deleted.add(blockId), loggedRepo, context, PlannerZone.of("Europe/Madrid"),
+                (userId, blockId) -> deleted.add(blockId), context, PlannerZone.of("Europe/Madrid"),
                 Clock.fixed(NOW, ZoneOffset.UTC));
     }
 

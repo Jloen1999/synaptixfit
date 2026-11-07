@@ -133,11 +133,16 @@ class SportActivityTile extends StatelessWidget {
       decimalDigits: 1,
     );
     final kind = activity.kind;
+    // Vocabulario: «Carrera», «Paseo», «Bici» (las mismas que su detalle).
     final title =
         activity.title ??
-        (kind == null
-            ? l10n.trainingActivityKindOther
-            : activityKindLabel(l10n, kind));
+        switch (kind) {
+          null => l10n.trainingActivityKindOther,
+          ActivityKind.run ||
+          ActivityKind.walk ||
+          ActivityKind.bike => RunLabels.kindName(l10n, kind),
+          _ => activityKindLabel(l10n, kind),
+        };
     final pace = activity.paceSecondsPerKm;
     final figures = <(String, String?)>[
       (l10n.trainingActivityMinutes(activity.minutes), null),
