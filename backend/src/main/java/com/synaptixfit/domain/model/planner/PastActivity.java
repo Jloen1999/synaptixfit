@@ -27,9 +27,10 @@ import java.util.UUID;
  * @param subjectId      asignatura del estudio (opcional); se ignora en deporte
  * @param kind           clase de deporte (por defecto {@link ActivityKind#OTHER}); nula en estudio
  * @param distanceMeters distancia, solo en clases que se miden así ({@link ActivityKind#measuresDistance()})
+ * @param source         a mano o con el GPS de la app (ADR 0037): cambia cuántos días atrás se acepta
  */
 public record PastActivity(Instant start, int minutes, String title, Integer effort, ActivityType type,
-                           UUID subjectId, ActivityKind kind, Integer distanceMeters) {
+                           UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source) {
 
     public static final int MAX_DAYS_BACK = 7;
     /** Como mucho 5 horas: más no es una sesión normal y descuadraría la carga. */
@@ -41,6 +42,7 @@ public record PastActivity(Instant start, int minutes, String title, Integer eff
 
     public PastActivity {
         Guard.notNull(start, "start");
+        source = source == null ? ActivitySource.MANUAL : source;
         type = type == null ? ActivityType.SPORT : type;
         if (type != ActivityType.SPORT && type != ActivityType.STUDY) {
             throw new PastActivityTypeNotAllowedException();
@@ -69,6 +71,11 @@ public record PastActivity(Instant start, int minutes, String title, Integer eff
         }
     }
 
+    public PastActivity(Instant start, int minutes, String title, Integer effort, ActivityType type,
+                        UUID subjectId, ActivityKind kind, Integer distanceMeters) {
+        this(start, minutes, title, effort, type, subjectId, kind, distanceMeters, ActivitySource.MANUAL);
+    }
+
     public PastActivity(Instant start, int minutes, String title, Integer effort, ActivityType type, UUID subjectId) {
         this(start, minutes, title, effort, type, subjectId, null, null);
     }
@@ -89,9 +96,12 @@ public record PastActivity(Instant start, int minutes, String title, Integer eff
         return start.plus(Duration.ofMinutes(minutes));
     }
 
-    /** Terminada y de los últimos {@link #MAX_DAYS_BACK} días. */
+    /**
+     * Terminada y de los últimos {@link #MAX_DAYS_BACK} días si es a mano, o de los últimos 30 si se grabó con el GPS:
+     * puede llegar tarde desde la cola de envíos del móvil (ADR 0037).
+     */
     public void requireLoggableAt(Instant now) {
-        if (end().isAfter(now) || start.isBefore(now.minus(Duration.ofDays(MAX_DAYS_BACK)))) {
+        if (end().isAfter(now) || start.isBefore(now.minus(Duration.ofDays(source.maxDaysBack())))) {
             throw new PastActivityOutOfRangeException();
         }
     }

@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public interface UserDataExportPort {
 
-    /** Quién pide la copia: decide si llevan los datos de salud. */
+    /** Quién pide la copia: decide si llevan los datos de salud y las rutas GPS (ubicación exacta, ADR 0037). */
     enum Requester {
         OWNER,
         ADMINISTRATOR;

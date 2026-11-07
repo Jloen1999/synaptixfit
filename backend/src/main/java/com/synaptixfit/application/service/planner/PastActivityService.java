@@ -52,7 +52,8 @@ public class PastActivityService implements LogPastActivityUseCase {
     public SetBlockCompletionUseCase.Result logPastActivity(Command command) {
         Instant now = clock.instant();
         PastActivity activity = new PastActivity(command.start(), command.minutes(), command.title(),
-                command.effort(), command.type(), command.subjectId(), command.kind(), command.distanceMeters());
+                command.effort(), command.type(), command.subjectId(), command.kind(), command.distanceMeters(),
+                command.source());
         activity.requireLoggableAt(now);
         if (activity.subjectId() != null && subjects.findOwned(command.userId(), activity.subjectId()).isEmpty()) {
             throw new PlannerSubjectNotFoundException(activity.subjectId());
@@ -75,7 +76,7 @@ public class PastActivityService implements LogPastActivityUseCase {
                 activity.effort());
         if (logged != null && activity.type() == ActivityType.SPORT) {
             logged.save(block.id(), command.userId(), activity.kind(), activity.minutes(), activity.distanceMeters(),
-                    now);
+                    activity.source(), now);
         }
         return result;
     }

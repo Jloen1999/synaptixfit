@@ -45,7 +45,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /** Excepciones a la regla «categoría → estado». Vacío salvo casos justificados. */
     private static final Map<String, HttpStatus> STATUS_BY_CODE = Map.of(
-            "AI_QUOTA_EXCEEDED", HttpStatus.TOO_MANY_REQUESTS
+            "AI_QUOTA_EXCEEDED", HttpStatus.TOO_MANY_REQUESTS,
+            // Ruta de carrera demasiado grande (ADR 0037): es el tamaño de la petición, no un dato mal escrito.
+            "RUN_ROUTE_TOO_LARGE", HttpStatus.CONTENT_TOO_LARGE
     );
 
     @ExceptionHandler(DomainException.class)

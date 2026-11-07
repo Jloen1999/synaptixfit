@@ -5,6 +5,7 @@ import com.synaptixfit.application.port.input.planner.LogPastActivityUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
 import com.synaptixfit.domain.model.planner.ActivityKind;
 import com.synaptixfit.domain.model.planner.ActivityPace;
+import com.synaptixfit.domain.model.planner.ActivitySource;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.LoggedSportActivity;
 import com.synaptixfit.domain.model.shared.PageRequest;
@@ -51,16 +52,17 @@ public class PastActivityController {
 
     /**
      * Deporte hecho: minutos reales (si se apuntó a mano) o los del bloque, distancia, esfuerzo y, con distancia,
-     * ritmo en segundos por km y velocidad en km/h (los calcula el servidor).
+     * ritmo en segundos por km y velocidad en km/h (los calcula el servidor). {@code source}: {@code MANUAL}
+     * (apuntada a mano), {@code GPS} (grabada con la app, tiene ruta y detalle) o nulo (marcada en el calendario).
      */
     public record SportActivityResponse(UUID blockId, Instant start, int minutes, String title, ActivityKind kind,
                                         Integer distanceMeters, Integer effort, Integer paceSecondsPerKm,
-                                        Double speedKmh) {
+                                        Double speedKmh, ActivitySource source, Integer elevationGainMeters) {
         static SportActivityResponse from(LoggedSportActivity a) {
             ActivityPace pace = a.pace();
             return new SportActivityResponse(a.blockId(), a.start(), a.minutes(), a.title(), a.kind(),
                     a.distanceMeters(), a.effort(), pace == null ? null : pace.secondsPerKm(),
-                    pace == null ? null : pace.kmPerHour());
+                    pace == null ? null : pace.kmPerHour(), a.source(), a.elevationGainMeters());
         }
     }
 
