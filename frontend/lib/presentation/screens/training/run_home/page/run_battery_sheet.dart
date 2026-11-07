@@ -1,11 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/device_permission.dart';
+import '../../../../../domain/use_cases/profile/open_permission_settings_use_case.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 
 /// Ayuda breve: algunos móviles cortan el GPS con la pantalla apagada para
-/// ahorrar batería. Tres pasos sencillos y qué notarás si pasa.
+/// ahorrar batería. Tres pasos sencillos, qué notarás si pasa y un botón que
+/// abre los ajustes de la app en el móvil (de ahí se entra en «Batería»).
 Future<void> showRunBatterySheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
@@ -49,6 +54,18 @@ Future<void> showRunBatterySheet(BuildContext context) =>
                 point(2, l10n.runBatteryStep2),
                 point(3, l10n.runBatteryStep3),
                 const SizedBox(height: TokensSpacing.s),
+                // En el navegador no hay ajustes de la app que abrir.
+                if (!kIsWeb) ...[
+                  AppSecondaryButton(
+                    label: l10n.runBatteryOpenSettings,
+                    icon: const Icon(AppIcons.settings),
+                    onPressed: () =>
+                        getIt<OpenPermissionSettingsUseCaseContract>()(
+                          DevicePermission.location,
+                        ),
+                  ),
+                  const SizedBox(height: TokensSpacing.s),
+                ],
                 AppPrimaryButton(
                   label: l10n.runBatteryOk,
                   icon: Icons.check_rounded,

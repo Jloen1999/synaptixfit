@@ -113,6 +113,7 @@ class TodayHeroCard extends StatelessWidget {
           const SizedBox(height: TokensSpacing.s),
           LayoutBuilder(
             builder: (context, constraints) {
+              final markable = next != null && canMarkNow(next, onMarkDone);
               final wide =
                   constraints.maxWidth >= TokensLayout.twoColumnBreakpoint;
               final summary = Row(
@@ -156,11 +157,19 @@ class TodayHeroCard extends StatelessWidget {
                 children: [
                   summary,
                   const SizedBox(height: TokensSpacing.s),
+                  if (markable) ...[
+                    _MarkDoneButton(
+                      busy: completingIds.contains(next.id),
+                      onPressed: () => onMarkDone!(next),
+                    ),
+                    const SizedBox(height: TokensSpacing.s),
+                  ],
                   _ActionButton(
                     action: action,
                     hasEvent: next != null,
                     hasBlocks: blocks.isNotEmpty,
                     starting: starting,
+                    secondary: markable,
                     onPressed: () => onAction(action),
                   ),
                   const SizedBox(height: TokensSpacing.s),
@@ -271,6 +280,7 @@ class _NextUp extends StatelessWidget {
       hasEvent: event != null,
       hasBlocks: hasBlocks,
       starting: starting,
+      secondary: event != null && canMarkNow(event, onMarkDone),
       onPressed: onAction,
     );
     final classesNote = classes == 0
@@ -335,24 +345,49 @@ class _NextUp extends StatelessWidget {
           ],
         ),
         if (when != null) Text(when, style: muted),
-        // Ya empezado: se marca aquí sin ir a la agenda.
-        if (onMarkDone != null &&
-            now &&
-            (event.type == HomeEventType.study ||
-                event.type == HomeEventType.review ||
-                event.type == HomeEventType.personal))
-          TextButton.icon(
-            onPressed: completingIds.contains(event.id)
-                ? null
-                : () => onMarkDone!(event),
-            icon: const Icon(Icons.task_alt_rounded),
-            label: Text(l10n.homeTodayMarkDone),
-          ),
         ?classesNote,
+        // Ya empezado: «Marcar como hecho» es lo principal y lo demás pasa a
+        // secundario (en móvil lo pinta la tarjeta, a lo ancho).
+        if (showButton && canMarkNow(event, onMarkDone)) ...[
+          const SizedBox(height: TokensSpacing.s),
+          _MarkDoneButton(
+            busy: completingIds.contains(event.id),
+            onPressed: () => onMarkDone!(event),
+          ),
+        ],
         if (showButton) ...[const SizedBox(height: TokensSpacing.s), button],
       ],
     );
   }
+}
+
+/// Lo que ya ha empezado y se marca desde aquí (estudio, repaso y personal):
+/// entonces «Marcar como hecho» es el botón principal de «Tu día».
+bool canMarkNow(
+  HomeTodayEvent event,
+  ValueChanged<HomeTodayEvent>? onMarkDone,
+) =>
+    onMarkDone != null &&
+    !event.completed &&
+    event.status == ItemTimeStatus.inProgress &&
+    (event.type == HomeEventType.study ||
+        event.type == HomeEventType.review ||
+        event.type == HomeEventType.personal);
+
+/// «Marcar como hecho» a lo ancho, como acción principal de «Tu día».
+class _MarkDoneButton extends StatelessWidget {
+  const _MarkDoneButton({required this.busy, required this.onPressed});
+
+  final bool busy;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => AppPrimaryButton(
+    label: context.localizations.homeTodayMarkDone,
+    icon: Icons.task_alt_rounded,
+    loading: busy,
+    onPressed: busy ? null : onPressed,
+  );
 }
 
 /// Botón principal de «Tu día»: concentrarse, entrenar o abrir el calendario.
@@ -363,6 +398,7 @@ class _ActionButton extends StatelessWidget {
     required this.hasBlocks,
     required this.starting,
     required this.onPressed,
+    this.secondary = false,
   });
 
   final TodayHeroAction action;
@@ -371,21 +407,25 @@ class _ActionButton extends StatelessWidget {
   final bool starting;
   final VoidCallback onPressed;
 
+  /// Pasa a secundario cuando lo principal es «Marcar como hecho».
+  final bool secondary;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final (label, icon) = switch (action) {
-      TodayHeroAction.focus => (l10n.homeTodayFocus, Icons.timer_outlined),
+      TodayHeroAction.focus => (l10n.homeTodayFocus, AppIcons.focusTimer),
       TodayHeroAction.train => (l10n.homeTodayTrain, Icons.play_arrow_rounded),
       TodayHeroAction.openPlanner => (
         !hasEvent && !hasBlocks
             ? l10n.homeTodayPlanDay
             : l10n.homeTodayOpenCalendar,
-        Icons.calendar_month_outlined,
+        AppIcons.calendar,
       ),
     };
     // Sin nada planificado, planificar es lo principal de la pantalla.
-    return action == TodayHeroAction.openPlanner && (hasEvent || hasBlocks)
+    return secondary ||
+            (action == TodayHeroAction.openPlanner && (hasEvent || hasBlocks))
         ? AppSecondaryButton(
             label: label,
             icon: Icon(icon),

@@ -85,7 +85,7 @@ class _RunHomeView extends StatelessWidget with ErrorsMessageMixin {
             IconButton(
               tooltip: l10n.trainingHistoryTitle,
               onPressed: () => open(context, TrainingPaths.activities),
-              icon: const Icon(Icons.history_rounded),
+              icon: const Icon(AppIcons.history),
             ),
           ],
           bottom: const TrainingSectionBar(current: TrainingSection.run),
@@ -316,7 +316,7 @@ class _Content extends StatelessWidget {
               const SizedBox(height: TokensSpacing.s),
               AppSecondaryButton(
                 label: l10n.runCreateWorkout,
-                icon: const Icon(Icons.add_rounded),
+                icon: const Icon(AppIcons.add),
                 onPressed: () => _createWorkout(context),
               ),
               if (state.pendingUploads > 0) ...[
@@ -375,7 +375,7 @@ class _Content extends StatelessWidget {
                   message: l10n.runWorkoutsEmptyMessage,
                   action: TextButton.icon(
                     onPressed: () => _createWorkout(context),
-                    icon: const Icon(Icons.add_rounded),
+                    icon: const Icon(AppIcons.add),
                     label: Text(l10n.runCreateWorkout),
                   ),
                 )
@@ -507,12 +507,12 @@ class _WorkoutTile extends StatelessWidget {
               IconButton(
                 tooltip: l10n.runDeleteWorkout,
                 onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline_rounded),
+                icon: const Icon(AppIcons.delete),
               ),
               IconButton(
                 tooltip: l10n.runEditWorkout,
                 onPressed: onEdit,
-                icon: const Icon(Icons.edit_outlined),
+                icon: const Icon(AppIcons.edit),
               ),
               TextButton.icon(
                 onPressed: onSchedule,
@@ -599,7 +599,7 @@ class _WeekCard extends StatelessWidget {
               if (week.outings > 0)
                 TextButton.icon(
                   onPressed: () => _share(context),
-                  icon: const Icon(Icons.ios_share_rounded),
+                  icon: const Icon(AppIcons.share),
                   label: Text(l10n.runShare),
                 ),
             ],

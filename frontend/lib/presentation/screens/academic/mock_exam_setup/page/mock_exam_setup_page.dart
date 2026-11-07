@@ -89,7 +89,7 @@ class _MockExamSetupView extends StatelessWidget {
               message: l10n.academicMockSetupEmptyMessage,
               action: AppSecondaryButton(
                 label: l10n.academicMockSetupEmptyAction,
-                icon: const Icon(Icons.arrow_back_rounded),
+                icon: const Icon(AppIcons.back),
                 onPressed: () => context.pop(),
               ),
             ),

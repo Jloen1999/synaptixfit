@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
 import '../../../../../domain/enums/badge_category.dart';
@@ -8,6 +9,7 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../progress_routes.dart';
 import '../../widgets/badge_detail_sheet.dart';
 import '../../widgets/badge_tile.dart';
 import '../../widgets/progress_labels.dart';
@@ -40,12 +42,21 @@ class _BadgesView extends StatelessWidget with ErrorsMessageMixin {
     return BlocConsumer<BadgesBloc, BadgesState>(
       listenWhen: (_, current) => current.feedback != null,
       listener: (context, state) {
+        // Compartir dice dónde queda la publicación y lleva allí.
+        if (state.feedback is BadgesShared) {
+          context.showActionSnack(
+            l10n.progressBadgeShared,
+            actionLabel: l10n.commonView,
+            onAction: () => context.push(ProgressExternalPaths.socialWall),
+          );
+          return;
+        }
         final message = switch (state.feedback) {
           BadgesVisibilityChanged(:final visible) =>
             visible
                 ? l10n.progressBadgeShownDone
                 : l10n.progressBadgeHiddenDone,
-          BadgesShared() => l10n.progressBadgeShared,
+          BadgesShared() => null,
           BadgesActionFailed(:final error) => errorMessage(context, error),
           null => null,
         };

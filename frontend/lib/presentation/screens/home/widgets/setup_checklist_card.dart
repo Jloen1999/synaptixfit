@@ -108,7 +108,7 @@ class _SetupChecklistCardState extends State<SetupChecklistCard> {
     HomeSetupTask.subjects => Icons.class_outlined,
     HomeSetupTask.wellnessProfile => Icons.monitor_weight_outlined,
     HomeSetupTask.routine => Icons.fitness_center_rounded,
-    HomeSetupTask.weekPlan => Icons.calendar_month_outlined,
+    HomeSetupTask.weekPlan => AppIcons.calendar,
     HomeSetupTask.academicProfile => Icons.school_outlined,
   };
 

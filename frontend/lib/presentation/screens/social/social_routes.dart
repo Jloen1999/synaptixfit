@@ -14,6 +14,9 @@ abstract final class SocialPaths {
   static const postPattern = '/social/posts/:postId';
   static const friends = '/social/friends';
   static const friendRequests = '/social/friends/requests';
+
+  /// Amigos con la pestaña «Bloqueados» abierta (desde el aviso de bloquear).
+  static const blocked = '/social/friends/blocked';
   static const userPattern = '/social/users/:userId';
   static const notifications = '/notifications';
 
@@ -67,6 +70,11 @@ List<RouteBase> socialRoutes() => [
         PostDetailPage(postId: state.pathParameters['postId']!),
   ),
   GoRoute(path: SocialPaths.friends, builder: (_, _) => const FriendsPage()),
+  GoRoute(
+    path: SocialPaths.blocked,
+    builder: (_, _) =>
+        const FriendsPage(initialTab: FriendshipListKind.blocked),
+  ),
   GoRoute(
     path: SocialPaths.friendRequests,
     builder: (_, _) =>

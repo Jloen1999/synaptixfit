@@ -34,9 +34,10 @@ class SubjectSelectorPage extends StatelessWidget {
             title: Text(context.localizations.profileSubjectsTitle),
             actions: [
               // Atajo opcional: añadir las asignaturas desde la matrícula.
-              IconButton(
-                tooltip: context.localizations.profileEnrollmentEntry,
+              // Con texto visible: el icono de subir archivo no dice qué hace.
+              TextButton.icon(
                 icon: const Icon(Icons.upload_file_rounded),
+                label: Text(context.localizations.profileEnrollmentShort),
                 onPressed: () async {
                   await context.push<void>(ProfilePaths.enrollmentImport);
                   if (context.mounted) {
@@ -239,10 +240,13 @@ class _SubjectSelectorViewState extends State<SubjectSelectorView>
             state.course != null ||
             state.semester != null ||
             state.query.trim().isNotEmpty;
+        if (state.items.isEmpty && state.query.trim().isNotEmpty) {
+          return AppSearchEmpty(query: state.query);
+        }
         if (state.items.isEmpty) {
           return filtered
               ? AppEmptyState(
-                  icon: Icons.filter_alt_off_rounded,
+                  icon: AppIcons.clearFilters,
                   title: l10n.profileSubjectsNoMatches,
                 )
               : AppEmptyState(

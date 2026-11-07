@@ -23,9 +23,11 @@ abstract class AcademicHomeState with _$AcademicHomeState {
 /// Aviso puntual de la pestaña tras mover una nota.
 @freezed
 sealed class AcademicHomeNotice with _$AcademicHomeNotice {
-  /// Nota llevada a [subjectName].
-  const factory AcademicHomeNotice.noteMoved(String subjectName) =
-      AcademicHomeNoticeNoteMoved;
+  /// Nota llevada a [subjectName] ([subjectId] para el botón «Ver»).
+  const factory AcademicHomeNotice.noteMoved(
+    String subjectName,
+    String subjectId,
+  ) = AcademicHomeNoticeNoteMoved;
 
   const factory AcademicHomeNotice.failed(AppError error) =
       AcademicHomeNoticeFailed;

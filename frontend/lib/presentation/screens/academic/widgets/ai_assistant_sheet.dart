@@ -37,10 +37,7 @@ Future<void> showAiAssistantSheet(
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.lightbulb_outline_rounded,
-                  color: sheetContext.colors.tertiary,
-                ),
+                Icon(AppIcons.proposal, color: sheetContext.colors.tertiary),
                 const SizedBox(width: TokensSpacing.s),
                 Expanded(
                   child: Text(

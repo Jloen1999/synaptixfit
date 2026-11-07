@@ -17,7 +17,6 @@
     }
   },
   "socialBadgeOverflow": "99+",
-  "socialMoreActions": "Más acciones",
   "socialOpenProfileOf": "Ver el perfil de {name}",
   "@socialOpenProfileOf": {
     "placeholders": {
@@ -118,15 +117,6 @@
   "socialCommentsLoadMore": "Ver más comentarios",
   "socialFriendsTitle": "Amigos",
   "socialSearchUsersHint": "Buscar personas por nombre",
-  "socialSearchEmptyTitle": "Sin resultados",
-  "socialSearchEmptyMessage": "No hay nadie que coincida con «{query}».",
-  "@socialSearchEmptyMessage": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "socialTabFriends": "Amigos",
   "socialTabReceived": "Recibidas",
   "socialTabSent": "Enviadas",
@@ -220,7 +210,7 @@
   "socialMsgRequestRejected": "Solicitud rechazada",
   "socialMsgRequestCancelled": "Solicitud cancelada",
   "socialMsgFriendRemoved": "Amigo eliminado",
-  "socialMsgUserBlocked": "Usuario bloqueado",
+  "socialMsgUserBlocked": "Usuario bloqueado. Para desbloquearlo: Comunidad › Amigos › Bloqueados.",
   "socialMsgUserUnblocked": "Usuario desbloqueado",
   "socialMsgAllNotificationsRead": "Todas las notificaciones están leídas",
   "socialMsgNotificationDeleted": "Notificación eliminada",
@@ -377,5 +367,6 @@
       }
     }
   },
-  "socialProfileBadgeHint": "Ver qué es y cuándo la consiguió"
+  "socialProfileBadgeHint": "Ver qué es y cuándo la consiguió",
+  "socialSearchEmptyHint": "Comprueba que esté bien escrito o prueba con otra parte del nombre."
 }

@@ -116,7 +116,7 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
               if (material != null)
                 IconButton(
                   tooltip: l10n.academicMaterialRemove,
-                  icon: const Icon(Icons.bookmark_remove_outlined),
+                  icon: const Icon(AppIcons.remove),
                   onPressed: state.removing
                       ? null
                       : () => _confirmDelete(context),

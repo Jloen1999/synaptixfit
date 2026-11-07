@@ -185,5 +185,6 @@
   "homeStartRun": "Commencer à courir",
   "homeBirthdayTitle": "Joyeux anniversaire, {name} !",
   "homeBirthdayTitleNoName": "Joyeux anniversaire !",
-  "homeBirthdayMessage": "Passe une excellente journée. Ton plan t'attend quand tu veux."
+  "homeBirthdayMessage": "Passe une excellente journée. Ton plan t'attend quand tu veux.",
+  "homeSetupSnoozedWhere": "Masqué pendant 7 jours. Ensuite, il réapparaîtra ici, dans Accueil."
 }

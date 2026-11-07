@@ -312,7 +312,7 @@ class _AuditTile extends StatelessWidget {
           Icon(
             entry.action.isDestructive
                 ? Icons.warning_amber_rounded
-                : Icons.history_rounded,
+                : AppIcons.history,
             color: color,
             size: 20,
           ),

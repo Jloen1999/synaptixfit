@@ -52,9 +52,22 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
           _apply(emit, () => _logDay(event.day), CycleNotice.saved),
     );
     on<CycleDayDeleted>((event, emit) async {
-      emit(state.copyWith(saving: true, actionError: null, notice: null));
+      emit(
+        state.copyWith(
+          saving: true,
+          actionError: null,
+          notice: null,
+          deletedDay: state.days[_dateOnly(event.date)],
+        ),
+      );
       final result = await _deleteDay(event.date);
       await _afterAction(emit, result.errorOrNull, CycleNotice.deleted);
+    });
+    on<CycleUndoExpired>((event, emit) {
+      final day = state.deletedDay;
+      if (day != null && _dateOnly(day.date) == _dateOnly(event.date)) {
+        emit(state.copyWith(deletedDay: null));
+      }
     });
     on<CycleHistoryDeleted>((_, emit) async {
       emit(state.copyWith(saving: true, actionError: null, notice: null));
@@ -105,7 +118,9 @@ class CycleBloc extends Bloc<CycleEvent, CycleState> {
     switch (result.errorOrNull) {
       case final AppError error:
         // Sin conexión no se pintan días vacíos: se avisa con «Reintentar».
-        emit(state.copyWith(days: const {}, daysLoading: false, daysError: error));
+        emit(
+          state.copyWith(days: const {}, daysLoading: false, daysError: error),
+        );
       case null:
         emit(
           state.copyWith(

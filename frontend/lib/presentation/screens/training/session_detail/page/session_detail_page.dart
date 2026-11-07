@@ -164,12 +164,12 @@ class _DetailView extends StatelessWidget {
                             child: entry.unmarkable
                                 ? AppSecondaryButton(
                                     label: l10n.trainingUnmark,
-                                    icon: const Icon(Icons.undo_rounded),
+                                    icon: const Icon(AppIcons.undo),
                                     onPressed: () => _unmark(context, entry),
                                   )
                                 : AppSecondaryButton(
                                     label: l10n.trainingCorrectSession,
-                                    icon: const Icon(Icons.edit_outlined),
+                                    icon: const Icon(AppIcons.edit),
                                     onPressed: () => _correct(context, entry),
                                   ),
                           ),
@@ -184,7 +184,7 @@ class _DetailView extends StatelessWidget {
                               ),
                               child: AppSecondaryButton(
                                 label: l10n.trainingDeleteSession,
-                                icon: const Icon(Icons.delete_outline_rounded),
+                                icon: const Icon(AppIcons.delete),
                                 onPressed: () => _delete(context, entry),
                               ),
                             ),

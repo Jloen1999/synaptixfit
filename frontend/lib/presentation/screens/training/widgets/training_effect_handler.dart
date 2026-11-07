@@ -24,6 +24,13 @@ class TrainingEffectHandler with ErrorsMessageMixin {
     switch (effect) {
       case TrainingEffectError(:final error):
         context.showSnack(errorMessage(context, error));
+      // Publicar dice dónde queda y lleva allí (vocabulario.md).
+      case TrainingEffectMessage(message: TrainingMessage.sessionShared):
+        context.showActionSnack(
+          l10n.trainingMsgSessionShared,
+          actionLabel: l10n.commonView,
+          onAction: () => context.push(TrainingPaths.communityWall),
+        );
       case TrainingEffectMessage(:final message):
         context.showSnack(messageText(context.localizations, message));
       case TrainingEffectOpenRoutine(:final routineId, :final replace):

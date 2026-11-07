@@ -1,3 +1,4 @@
+export '../theme/app_icons.dart';
 export 'app_adaptive_choice.dart';
 export 'app_avatar.dart';
 export 'app_badge_emblem.dart';
@@ -27,6 +28,7 @@ export 'app_pill.dart';
 export 'app_primary_button.dart';
 export 'app_scroll_behavior.dart';
 export 'app_search_field.dart';
+export 'app_segmented_choice.dart';
 export 'app_secondary_button.dart';
 export 'app_section_header.dart';
 export 'app_skeleton.dart';

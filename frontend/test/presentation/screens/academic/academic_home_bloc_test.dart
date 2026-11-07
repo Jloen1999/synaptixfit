@@ -159,7 +159,7 @@ void main() {
         AcademicHomeState(
           loading: false,
           subjects: const [subject],
-          notice: AcademicHomeNotice.noteMoved(subject.name),
+          notice: AcademicHomeNotice.noteMoved(subject.name, subject.id),
         ),
       ],
     );

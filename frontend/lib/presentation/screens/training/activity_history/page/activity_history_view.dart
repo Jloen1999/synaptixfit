@@ -78,7 +78,7 @@ class _ActivityList extends StatelessWidget {
             message: l10n.trainingActivitiesEmptyMessage,
             action: AppPrimaryButton(
               label: l10n.trainingActivitiesAdd,
-              icon: Icons.add_rounded,
+              icon: AppIcons.add,
               onPressed: () => _add(context),
             ),
           );
@@ -89,7 +89,7 @@ class _ActivityList extends StatelessWidget {
             children: [
               AppSecondaryButton(
                 label: l10n.trainingActivitiesAdd,
-                icon: const Icon(Icons.add_rounded),
+                icon: const Icon(AppIcons.add),
                 onPressed: () => _add(context),
               ),
               const SizedBox(height: TokensSpacing.m),

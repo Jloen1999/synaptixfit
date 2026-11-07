@@ -101,7 +101,7 @@ class _AdminUsersViewState extends State<_AdminUsersView> {
                         textInputAction: TextInputAction.search,
                         decoration: InputDecoration(
                           labelText: l10n.adminUsersSearchHint,
-                          prefixIcon: const Icon(Icons.search_rounded),
+                          prefixIcon: const Icon(AppIcons.search),
                           isDense: true,
                         ),
                       ),
@@ -207,7 +207,7 @@ class _FilterButton extends StatelessWidget {
       child: IconButton.outlined(
         tooltip: context.localizations.adminFiltersTitle,
         onPressed: onPressed,
-        icon: const Icon(Icons.tune_rounded),
+        icon: const Icon(AppIcons.filters),
       ),
     );
   }

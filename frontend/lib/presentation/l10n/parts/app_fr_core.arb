@@ -138,5 +138,6 @@
   "commonListAnd": "{items} et {last}",
   "commonSearchClear": "Effacer la recherche",
   "commonSearchNoResults": "Aucun résultat pour « {query} »",
-  "commonSearchResultsCount": "{count, plural, =1{1 résultat} other{{count} résultats}}"
+  "commonSearchResultsCount": "{count, plural, =1{1 résultat} other{{count} résultats}}",
+  "commonView": "Voir"
 }

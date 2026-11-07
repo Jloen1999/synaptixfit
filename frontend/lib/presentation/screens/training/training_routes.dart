@@ -78,6 +78,9 @@ abstract final class TrainingPaths {
   /// Detalle de una carrera (dentro de la pestaña).
   static String run(String blockId) => '$root/runs/$blockId';
 
+  /// Muro de la Comunidad (fuera del módulo): «Ver» tras publicar.
+  static const communityWall = '/social';
+
   /// Grabar una carrera (pantalla completa), con un entreno de carrera o
   /// desde su evento del calendario si se indican.
   static String recordRun({String? workoutId, String? eventId}) => _withQuery(

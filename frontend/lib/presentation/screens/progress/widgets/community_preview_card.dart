@@ -49,7 +49,7 @@ class CommunityPreviewCard extends StatelessWidget {
             )
           else if (items.isEmpty)
             InlineNotice(
-              icon: Icons.forum_outlined,
+              icon: AppIcons.community,
               message: l10n.progressCommunityEmpty,
             )
           else

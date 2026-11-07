@@ -306,7 +306,9 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
                           ),
                         ),
                         IconButton(
-                          tooltip: l10n.challengesMoveDown,
+                          tooltip: l10n.commonDecrease(
+                            l10n.challengesTaskConditionN,
+                          ),
                           onPressed: _item.conditionN > 1
                               ? () => setState(
                                   () => _item = _item.copyWith(
@@ -321,7 +323,9 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
                           style: context.textStyles.titleMedium,
                         ),
                         IconButton(
-                          tooltip: l10n.challengesMoveUp,
+                          tooltip: l10n.commonIncrease(
+                            l10n.challengesTaskConditionN,
+                          ),
                           onPressed: _item.conditionN < deps
                               ? () => setState(
                                   () => _item = _item.copyWith(
@@ -329,7 +333,7 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
                                   ),
                                 )
                               : null,
-                          icon: const Icon(Icons.add_rounded),
+                          icon: const Icon(AppIcons.add),
                         ),
                       ],
                     ),

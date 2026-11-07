@@ -12,8 +12,6 @@ import '../comments/bloc/comments_bloc.dart';
 import 'comment_widgets.dart';
 import 'social_format.dart';
 
-enum _PostAction { edit, delete, report }
-
 /// Tarjeta de publicación del muro, pensada para leerse de un vistazo: quién
 /// (avatar con el icono del tipo y nombre, que llevan a su perfil), qué pasó
 /// (tipo en su acento y cuándo), el texto y la imagen (abren el detalle), lo
@@ -66,34 +64,9 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
-  List<PopupMenuEntry<_PostAction>> _menu(BuildContext context) {
-    final l10n = context.localizations;
-    return post.mine
-        ? [
-            if (widget.onEdit != null)
-              PopupMenuItem(
-                value: _PostAction.edit,
-                child: Text(l10n.commonEdit),
-              ),
-            if (widget.onDelete != null)
-              PopupMenuItem(
-                value: _PostAction.delete,
-                child: Text(l10n.commonDelete),
-              ),
-          ]
-        : [
-            if (widget.onReport != null)
-              PopupMenuItem(
-                value: _PostAction.report,
-                child: Text(l10n.socialReport),
-              ),
-          ];
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final menu = _menu(context);
     final link = post.link;
     final linkRoute = link?.route;
     final onAuthorTap = widget.onAuthorTap;
@@ -121,16 +94,25 @@ class _PostCardState extends State<PostCard> {
                         : () => onAuthorTap(post.author.id),
                   ),
                 ),
-                if (menu.isNotEmpty)
-                  PopupMenuButton<_PostAction>(
-                    tooltip: l10n.socialMoreActions,
-                    icon: const Icon(Icons.more_vert_rounded),
-                    onSelected: (action) => switch (action) {
-                      _PostAction.edit => widget.onEdit?.call(),
-                      _PostAction.delete => widget.onDelete?.call(),
-                      _PostAction.report => widget.onReport?.call(),
-                    },
-                    itemBuilder: (_) => menu,
+                // Como mucho dos acciones: a la vista, sin menú de tres puntos.
+                if (post.mine) ...[
+                  if (widget.onEdit != null)
+                    IconButton(
+                      tooltip: l10n.commonEdit,
+                      icon: const Icon(AppIcons.edit),
+                      onPressed: widget.onEdit,
+                    ),
+                  if (widget.onDelete != null)
+                    IconButton(
+                      tooltip: l10n.commonDelete,
+                      icon: const Icon(AppIcons.delete),
+                      onPressed: widget.onDelete,
+                    ),
+                ] else if (widget.onReport != null)
+                  IconButton(
+                    tooltip: l10n.socialReport,
+                    icon: const Icon(AppIcons.report),
+                    onPressed: widget.onReport,
                   ),
               ],
             ),

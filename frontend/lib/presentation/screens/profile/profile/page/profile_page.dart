@@ -45,7 +45,7 @@ class _ProfileView extends StatelessWidget with ErrorsMessageMixin {
         actions: [
           IconButton(
             tooltip: l10n.profileSettingsTitle,
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(AppIcons.settings),
             onPressed: () => _open(context, ProfilePaths.settings),
           ),
         ],
@@ -218,7 +218,7 @@ class _ProfileContent extends StatelessWidget {
               ],
               AppFocusOutline(
                 child: ListTile(
-                  leading: const Icon(Icons.settings_outlined),
+                  leading: const Icon(AppIcons.settings),
                   title: Text(l10n.profileSettingsTitle),
                   subtitle: Text(l10n.profileSettingsHint),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -255,7 +255,7 @@ class _SocialCard extends StatelessWidget {
             children: [
               AppFocusOutline(
                 child: ListTile(
-                  leading: const Icon(Icons.people_alt_outlined),
+                  leading: const Icon(AppIcons.friends),
                   title: Text(l10n.profileFriends),
                   subtitle: Text(
                     pendingRequests > 0
@@ -283,7 +283,7 @@ class _SocialCard extends StatelessWidget {
               const Divider(height: 1),
               AppFocusOutline(
                 child: ListTile(
-                  leading: const Icon(Icons.forum_outlined),
+                  leading: const Icon(AppIcons.community),
                   title: Text(l10n.profileCommunity),
                   subtitle: Text(l10n.profileCommunityHint),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -373,7 +373,7 @@ class _AccountHeader extends StatelessWidget {
               ),
               IconButton(
                 tooltip: l10n.profileEditAccountTitle,
-                icon: const Icon(Icons.edit_outlined),
+                icon: const Icon(AppIcons.edit),
                 onPressed: () => _open(context, ProfilePaths.editAccount),
               ),
             ],
@@ -481,7 +481,7 @@ class _WellnessSummary extends StatelessWidget {
                   value: p.activityLevel?.label(l10n) ?? '—',
                 ),
                 ProfileInfoRow(
-                  icon: Icons.calendar_month_outlined,
+                  icon: AppIcons.calendar,
                   label: l10n.profileFieldAvailableDays,
                   value: p.availableDays.isEmpty
                       ? '—'

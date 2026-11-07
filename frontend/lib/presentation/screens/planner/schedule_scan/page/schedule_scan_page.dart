@@ -307,7 +307,7 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
                 alignment: AlignmentDirectional.centerStart,
                 child: AppSecondaryButton(
                   label: l10n.plannerScanOpenCalendar,
-                  icon: const Icon(Icons.calendar_month_outlined),
+                  icon: const Icon(AppIcons.calendar),
                   onPressed: () => context.canPop()
                       ? context.pop()
                       : unawaited(context.push<void>(PlannerPaths.root)),
@@ -367,7 +367,7 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
     final l10n = context.localizations;
     return _section(
       context,
-      icon: Icons.ios_share_rounded,
+      icon: AppIcons.share,
       color: context.colors.secondary,
       title: l10n.plannerExportSection,
       intro: l10n.plannerExportIntro,
@@ -379,7 +379,7 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.file_download_outlined),
+              : const Icon(AppIcons.export),
           onPressed: state.exporting
               ? null
               : () => _bloc.add(const ScheduleScanEvent.exportRequested()),
@@ -462,7 +462,7 @@ class _ScanResultView extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.help_outline_rounded,
+                      AppIcons.help,
                       size: TokensSize.iconXs,
                       color: context.palette.warning,
                     ),
@@ -519,7 +519,7 @@ class _ScanResultView extends StatelessWidget {
               alignment: AlignmentDirectional.centerStart,
               child: AppSecondaryButton(
                 label: l10n.plannerScanOpenCalendar,
-                icon: const Icon(Icons.calendar_month_outlined),
+                icon: const Icon(AppIcons.calendar),
                 // Se suele llegar desde el calendario: se vuelve a él; si no, se abre.
                 onPressed: () => context.canPop()
                     ? context.pop()

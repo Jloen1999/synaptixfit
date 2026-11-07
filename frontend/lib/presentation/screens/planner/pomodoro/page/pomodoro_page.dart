@@ -471,9 +471,7 @@ class _Controls extends StatelessWidget {
               focus ? Icons.free_breakfast_rounded : Icons.psychology_rounded,
             ),
             label: Text(
-              focus
-                  ? l10n.plannerPomodoroToBreak
-                  : l10n.plannerPomodoroToFocus,
+              focus ? l10n.plannerPomodoroToBreak : l10n.plannerPomodoroToFocus,
             ),
           ),
         ),

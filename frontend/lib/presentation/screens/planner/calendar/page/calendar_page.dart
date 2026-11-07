@@ -366,7 +366,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
               if (_compactBar(context))
                 IconButton(
                   tooltip: l10n.plannerToday,
-                  icon: const Icon(Icons.today_rounded),
+                  icon: const Icon(AppIcons.today),
                   onPressed: _goToday,
                 )
               else
@@ -386,7 +386,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
           floatingActionButton: FloatingActionButton.extended(
             heroTag: 'planner-add-block',
             onPressed: () => _openEditor(start: _nextSlot(state.weekStart)),
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.add),
             label: Text(l10n.plannerAddBlock),
           ),
           body: SafeArea(
@@ -645,7 +645,7 @@ class _PlannerMenu extends StatelessWidget {
       ),
       (
         PlannerPaths.suggestions,
-        Icons.lightbulb_outline_rounded,
+        AppIcons.proposal,
         l10n.plannerMenuSuggestions,
       ),
       (PlannerPaths.pomodoro, Icons.timer_rounded, l10n.plannerMenuPomodoro),

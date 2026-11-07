@@ -109,10 +109,7 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
               if (file.aiReadable)
                 IconButton(
                   tooltip: l10n.academicAiAssistantTitle,
-                  icon: Icon(
-                    Icons.lightbulb_outline_rounded,
-                    color: context.colors.tertiary,
-                  ),
+                  icon: Icon(AppIcons.proposal, color: context.colors.tertiary),
                   onPressed: () => showAiAssistantSheet(
                     context,
                     sourceType: StudySourceType.file,
@@ -123,24 +120,14 @@ class _FileViewerView extends StatelessWidget with ErrorsMessageMixin {
                 ),
               IconButton(
                 tooltip: l10n.academicFileOpenExternal,
-                icon: const Icon(Icons.open_in_new_rounded),
+                icon: const Icon(AppIcons.openExternal),
                 onPressed: () => _openExternal(context, content.url.url),
               ),
-              PopupMenuButton<String>(
-                tooltip: l10n.academicMoreActions,
-                onSelected: (_) => _delete(context, file),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.delete_outline_rounded,
-                        color: context.colors.error,
-                      ),
-                      title: Text(l10n.commonDelete),
-                    ),
-                  ),
-                ],
+              // Una sola acción: a la vista, sin menú de tres puntos.
+              IconButton(
+                tooltip: l10n.academicFileDeleteAction,
+                icon: Icon(AppIcons.delete, color: context.colors.error),
+                onPressed: () => _delete(context, file),
               ),
             ],
           ),
@@ -239,7 +226,7 @@ class _Preview extends StatelessWidget {
       message: '${fileSize(file.sizeBytes)} · ${l10n.academicFileNoPreview}',
       action: AppPrimaryButton(
         label: l10n.academicFileOpenExternal,
-        icon: Icons.open_in_new_rounded,
+        icon: AppIcons.openExternal,
         onPressed: () => onOpen(context, content.url.url),
       ),
     );

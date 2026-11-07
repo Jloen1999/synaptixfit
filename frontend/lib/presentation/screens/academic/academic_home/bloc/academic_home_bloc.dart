@@ -29,7 +29,8 @@ class AcademicHomeBloc extends Bloc<AcademicHomeEvent, AcademicHomeState>
     required this._moveNote,
     required this._watchChanges,
   }) : super(const AcademicHomeState()) {
-    on<AcademicHomeStarted>((_, emit) {
+    on<AcademicHomeStarted>((event, emit) {
+      if (event.archived) emit(state.copyWith(showArchived: true));
       watchDataChanges(
         _watchChanges,
         topics: const {DataTopic.academic, DataTopic.planner},
@@ -73,7 +74,7 @@ class AcademicHomeBloc extends Bloc<AcademicHomeEvent, AcademicHomeState>
             for (final n in state.inbox)
               if (n.id != event.noteId) n,
           ],
-          notice: AcademicHomeNotice.noteMoved(name ?? ''),
+          notice: AcademicHomeNotice.noteMoved(name ?? '', event.subjectId),
         ),
         (error) => state.copyWith(
           movingNoteIds: moving,

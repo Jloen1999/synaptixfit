@@ -142,32 +142,50 @@ class _ChoiceTile extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             borderRadius: radius,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: TokensLayout.minTouchTarget,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: TokensSpacing.xs,
-                  vertical: TokensSpacing.s,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ExcludeSemantics(child: Icon(icon, color: iconColor)),
-                    const SizedBox(height: TokensSpacing.xs),
-                    Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style: context.textStyles.labelLarge?.copyWith(
+            // El elegido lleva una marca de verificación, no solo otro color.
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                if (selected)
+                  PositionedDirectional(
+                    top: TokensSpacing.xs,
+                    end: TokensSpacing.xs,
+                    child: ExcludeSemantics(
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        size: TokensSize.iconXs,
                         color: foreground,
-                        fontWeight: selected ? FontWeight.w800 : null,
                       ),
                     ),
-                  ],
+                  ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: TokensLayout.minTouchTarget,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: TokensSpacing.xs,
+                      vertical: TokensSpacing.s,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ExcludeSemantics(child: Icon(icon, color: iconColor)),
+                        const SizedBox(height: TokensSpacing.xs),
+                        Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: context.textStyles.labelLarge?.copyWith(
+                            color: foreground,
+                            fontWeight: selected ? FontWeight.w800 : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

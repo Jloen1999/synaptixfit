@@ -132,7 +132,7 @@ class _ReviewItem extends StatelessWidget {
               children: [
                 Icon(
                   !question.answered
-                      ? Icons.remove_circle_outline_rounded
+                      ? AppIcons.remove
                       : correct
                       ? Icons.check_circle_rounded
                       : Icons.cancel_rounded,

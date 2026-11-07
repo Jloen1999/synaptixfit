@@ -909,5 +909,7 @@
     }
   },
   "plannerPomodoroToBreakHint": "Termina la concentración ahora y empieza el descanso.",
-  "plannerPomodoroToFocusHint": "Termina el descanso ahora y vuelve a la concentración."
+  "plannerPomodoroToFocusHint": "Termina el descanso ahora y vuelve a la concentración.",
+  "plannerStepRepeat": "Repetir",
+  "plannerDeadlineGone": "Esa entrega ya no existe: se borró. Si la necesitas, créala otra vez con «Nueva entrega»."
 }

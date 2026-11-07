@@ -56,7 +56,7 @@ class SmartBannerContent {
         actionPath: HomeExternalPaths.deadlines,
       ),
       HomeBannerType.missedBlocks => SmartBannerContent(
-        icon: Icons.history_rounded,
+        icon: AppIcons.history,
         title: _missedTitle(context, banner),
         message: l10n.homeBannerMissedBlocksMessage(asInt('count')),
         tone: SmartBannerTone.warning,
@@ -207,7 +207,7 @@ class _MissedBlockBanner extends StatelessWidget {
                     color: accent.withValues(alpha: AppPill.tintAlpha),
                     borderRadius: BorderRadius.circular(TokensRadius.m),
                   ),
-                  child: Icon(Icons.history_rounded, color: accent),
+                  child: Icon(AppIcons.history, color: accent),
                 ),
                 const SizedBox(width: TokensSpacing.sm),
                 Expanded(
@@ -243,9 +243,7 @@ class _MissedBlockBanner extends StatelessWidget {
                   label: sport
                       ? l10n.homeBannerActionMarkInCalendar
                       : l10n.homeBannerActionDone,
-                  icon: Icon(
-                    sport ? Icons.calendar_month_outlined : Icons.check_rounded,
-                  ),
+                  icon: Icon(sport ? AppIcons.calendar : Icons.check_rounded),
                   loading: busy == HomeBannerAction.complete,
                   onPressed: busy == null ? onComplete : null,
                 ),

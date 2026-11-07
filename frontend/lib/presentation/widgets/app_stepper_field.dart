@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../extensions/context_extensions.dart';
 import '../theme/tokens.g.dart';
 
+import '../theme/app_icons.dart';
+
 /// Selector numérico con botones − / + (objetivos táctiles de 48 dp). El valor
 /// se anuncia al cambiar y, al llegar a un extremo, el foco pasa al botón
 /// contrario en vez de perderse (WCAG 2.4.3 y 4.1.3).
@@ -97,7 +99,7 @@ class _AppStepperFieldState extends State<AppStepperField> {
             onPressed: _canIncrease
                 ? () => w.onChanged(_clamped(w.value + w.step))
                 : null,
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.add),
           ),
         ],
       ),

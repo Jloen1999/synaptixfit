@@ -675,5 +675,6 @@
     }
   },
   "homeBirthdayTitleNoName": "¡Feliz cumpleaños!",
-  "homeBirthdayMessage": "Que tengas un gran día. Tu plan te espera cuando quieras."
+  "homeBirthdayMessage": "Que tengas un gran día. Tu plan te espera cuando quieras.",
+  "homeSetupSnoozedWhere": "Lo ocultamos 7 días. Después volverá a salir aquí, en Inicio."
 }

@@ -424,7 +424,7 @@ class _GradeSimulator extends StatelessWidget {
                             onPressed: saving
                                 ? null
                                 : () => _editGrade(context, a),
-                            icon: const Icon(Icons.add_rounded),
+                            icon: const Icon(AppIcons.add),
                             label: Text(l10n.academicGradeAdd),
                           )
                         : _GradeChip(

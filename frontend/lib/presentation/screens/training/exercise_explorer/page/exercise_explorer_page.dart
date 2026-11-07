@@ -136,7 +136,7 @@ class _ExplorerViewState extends State<_ExplorerView> {
                       child: IconButton.filledTonal(
                         tooltip: l10n.trainingFilters,
                         onPressed: () => _openFilters(state),
-                        icon: const Icon(Icons.tune_rounded),
+                        icon: const Icon(AppIcons.filters),
                       ),
                     ),
                   ],
@@ -177,6 +177,24 @@ class _ExplorerViewState extends State<_ExplorerView> {
                       ExerciseExplorerEvent.criteriaChanged(state.criteria),
                     ),
                   ),
+                  ExplorerStatus.ready
+                      when state.items.isEmpty &&
+                          (state.criteria.query?.trim().isNotEmpty ?? false) =>
+                    AppSearchEmpty(
+                      query: state.criteria.query!.trim(),
+                      message: active > 0 || state.criteria.category != null
+                          ? l10n.trainingNoExercisesMessage
+                          : null,
+                      actionLabel: active > 0 || state.criteria.category != null
+                          ? l10n.trainingClearFilters
+                          : null,
+                      actionIcon: AppIcons.clearFilters,
+                      onAction: () => _bloc.add(
+                        ExerciseExplorerEvent.criteriaChanged(
+                          ExerciseSearchCriteria(query: state.criteria.query),
+                        ),
+                      ),
+                    ),
                   ExplorerStatus.ready when state.items.isEmpty =>
                     AppEmptyState(
                       icon: Icons.search_off_rounded,

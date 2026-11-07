@@ -186,7 +186,7 @@ class _SetSheetState extends State<_SetSheet> {
                   onPressed: () => Navigator.of(
                     context,
                   ).pop(SetSheetDelete(widget.existingSetId!)),
-                  icon: const Icon(Icons.delete_outline_rounded),
+                  icon: const Icon(AppIcons.delete),
                   label: Text(l10n.trainingDeleteSet),
                 ),
               ],

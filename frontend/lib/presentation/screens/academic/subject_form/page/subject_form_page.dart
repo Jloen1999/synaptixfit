@@ -264,7 +264,7 @@ class _SubjectFormViewState extends State<_SubjectFormView>
                               ? null
                               : IconButton(
                                   tooltip: l10n.academicSubjectClearDate,
-                                  icon: const Icon(Icons.close_rounded),
+                                  icon: const Icon(AppIcons.close),
                                   onPressed: () =>
                                       setState(() => _nextAssessment = null),
                                 ),

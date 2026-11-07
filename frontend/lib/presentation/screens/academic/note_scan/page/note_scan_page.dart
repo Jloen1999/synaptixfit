@@ -307,7 +307,7 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
                       alignment: AlignmentDirectional.centerStart,
                       child: TextButton.icon(
                         onPressed: state.canAddMore ? _camera : null,
-                        icon: const Icon(Icons.settings_outlined),
+                        icon: const Icon(AppIcons.settings),
                         label: Text(l10n.profilePermissionOpenSettings),
                       ),
                     ),
@@ -416,7 +416,7 @@ class _PhotoThumb extends StatelessWidget {
           IconButton(
             focusNode: focusNode,
             tooltip: l10n.academicScanRemovePage(page),
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: const Icon(AppIcons.remove),
             onPressed: onRemove,
           ),
         ],
@@ -500,7 +500,7 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
                       ? AppPill(
                           label: l10n.academicScanTidied,
                           color: context.palette.success,
-                          icon: Icons.lightbulb_outline_rounded,
+                          icon: AppIcons.proposal,
                         )
                       : AppPill(
                           label: l10n.academicScanRaw,
@@ -557,7 +557,7 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
                   alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(
                     onPressed: _backToPhotos,
-                    icon: const Icon(Icons.arrow_back_rounded),
+                    icon: const Icon(AppIcons.back),
                     label: Text(l10n.academicScanBackToPhotos),
                   ),
                 ),
@@ -580,21 +580,21 @@ class _ReviewStepState extends State<_ReviewStep> with ErrorsMessageMixin {
                   const SizedBox(height: TokensSpacing.s),
                 ],
                 ListenableBuilder(
-              listenable: Listenable.merge([_title, _text]),
-              builder: (context, _) => AppPrimaryButton(
-                label: l10n.academicScanSave,
-                icon: Icons.check_rounded,
-                loading: state.saving,
-                onPressed:
-                    _title.text.trim().isEmpty || _text.text.trim().isEmpty
-                    ? null
-                    : () => bloc.add(
-                        NoteScanEvent.saveRequested(
-                          title: _title.text,
-                          markdown: _text.text,
-                        ),
-                      ),
-              ),
+                  listenable: Listenable.merge([_title, _text]),
+                  builder: (context, _) => AppPrimaryButton(
+                    label: l10n.academicScanSave,
+                    icon: Icons.check_rounded,
+                    loading: state.saving,
+                    onPressed:
+                        _title.text.trim().isEmpty || _text.text.trim().isEmpty
+                        ? null
+                        : () => bloc.add(
+                            NoteScanEvent.saveRequested(
+                              title: _title.text,
+                              markdown: _text.text,
+                            ),
+                          ),
+                  ),
                 ),
               ],
             ),

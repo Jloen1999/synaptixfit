@@ -63,7 +63,7 @@ class _CompletedView extends StatelessWidget {
               IconButton(
                 tooltip: l10n.commonClose,
                 onPressed: () => _done(context),
-                icon: const Icon(Icons.close_rounded),
+                icon: const Icon(AppIcons.close),
               ),
             ],
           ),
@@ -278,7 +278,7 @@ class _ExperienceCard extends StatelessWidget {
             child: TextButton.icon(
               style: TextButton.styleFrom(foregroundColor: onCard),
               onPressed: () => showXpGuideSheet(context),
-              icon: const Icon(Icons.help_outline_rounded),
+              icon: const Icon(AppIcons.help),
               label: Text(l10n.xpGuideOpen),
             ),
           ),

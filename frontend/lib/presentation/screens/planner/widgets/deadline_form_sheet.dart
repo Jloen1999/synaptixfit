@@ -191,19 +191,14 @@ class _DeadlineFormSheetState extends State<DeadlineFormSheet> {
               onChanged: (v) => setState(() => _subjectId = v),
             ),
             const SizedBox(height: TokensSpacing.m),
-            Text(
-              l10n.plannerFieldDifficulty,
-              style: context.textStyles.labelLarge,
-            ),
-            const SizedBox(height: TokensSpacing.xs),
-            SegmentedButton<PlannerPriority>(
-              showSelectedIcon: false,
-              segments: [
-                for (final p in PlannerPriority.values)
-                  ButtonSegment(value: p, label: Text(p.label(context))),
-              ],
-              selected: {_difficulty},
-              onSelectionChanged: (s) => setState(() => _difficulty = s.first),
+            AppSegmentedChoice<PlannerPriority>(
+              label: l10n.plannerFieldDifficulty,
+              values: PlannerPriority.values,
+              selected: _difficulty,
+              labelOf: (p) => p.label(context),
+              onChanged: (p) {
+                if (p != null) setState(() => _difficulty = p);
+              },
             ),
             const SizedBox(height: TokensSpacing.m),
             AppTextField(

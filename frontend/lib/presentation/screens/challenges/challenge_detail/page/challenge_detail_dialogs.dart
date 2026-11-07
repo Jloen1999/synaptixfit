@@ -16,7 +16,7 @@ Future<bool> showDeleteChallengeDialog(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      icon: const Icon(Icons.delete_outline_rounded),
+      icon: const Icon(AppIcons.delete),
       title: Text(l10n.challengesDeleteTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -243,14 +243,14 @@ Future<List<String>?> showReorderMilestonesSheet(
                             IconButton(
                               tooltip: l10n.challengesMoveUp,
                               onPressed: i == 0 ? null : () => move(i, -1),
-                              icon: const Icon(Icons.arrow_upward_rounded),
+                              icon: const Icon(AppIcons.moveUp),
                             ),
                             IconButton(
                               tooltip: l10n.challengesMoveDown,
                               onPressed: i == order.length - 1
                                   ? null
                                   : () => move(i, 1),
-                              icon: const Icon(Icons.arrow_downward_rounded),
+                              icon: const Icon(AppIcons.moveDown),
                             ),
                           ],
                         ),

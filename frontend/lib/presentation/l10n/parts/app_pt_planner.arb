@@ -400,5 +400,7 @@
   "plannerPomodoroFocusHeader": "Concentração {current} de {total} · depois {minutes} min de descanso",
   "plannerPomodoroBreakHeader": "Descanso de {minutes} min · depois concentração {next} de {total}",
   "plannerPomodoroToBreakHint": "Termina a concentração agora e começa o descanso.",
-  "plannerPomodoroToFocusHint": "Termina o descanso agora e volta à concentração."
+  "plannerPomodoroToFocusHint": "Termina o descanso agora e volta à concentração.",
+  "plannerStepRepeat": "Repetir",
+  "plannerDeadlineGone": "Essa entrega já não existe: foi apagada. Se precisares dela, cria-a de novo com «Nova entrega»."
 }

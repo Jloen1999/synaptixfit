@@ -217,9 +217,7 @@ class _NoteCard extends StatelessWidget {
                         strokeWidth: TokensSize.spinnerStroke,
                       ),
                     )
-                  : Icon(
-                      note == null ? Icons.add_rounded : Icons.edit_outlined,
-                    ),
+                  : Icon(note == null ? AppIcons.add : AppIcons.edit),
               label: Text(
                 note == null ? l10n.trainingNoteAdd : l10n.trainingNoteEdit,
               ),
@@ -299,7 +297,7 @@ class _NoteSheetState extends State<_NoteSheet> {
             const SizedBox(height: TokensSpacing.s),
             TextButton.icon(
               onPressed: () => Navigator.of(context).pop(''),
-              icon: const Icon(Icons.delete_outline_rounded),
+              icon: const Icon(AppIcons.delete),
               label: Text(l10n.trainingNoteDelete),
             ),
           ],

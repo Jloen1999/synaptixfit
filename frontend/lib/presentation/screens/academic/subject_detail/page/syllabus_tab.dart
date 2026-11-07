@@ -124,7 +124,7 @@ class SyllabusTab extends StatelessWidget with ErrorsMessageMixin {
                         context,
                         AcademicPaths.newNote(subjectId: state.subjectId),
                       ),
-                      icon: const Icon(Icons.add_rounded),
+                      icon: const Icon(AppIcons.add),
                       label: Text(l10n.academicNoteNew),
                     ),
                     TextButton.icon(
@@ -245,7 +245,7 @@ class _GenerateBanner extends StatelessWidget {
       color: context.colors.tertiaryContainer.withValues(alpha: 0.5),
       child: Row(
         children: [
-          Icon(Icons.lightbulb_outline_rounded, color: context.colors.tertiary),
+          Icon(AppIcons.proposal, color: context.colors.tertiary),
           const SizedBox(width: TokensSpacing.m),
           Expanded(
             child: Column(
@@ -350,6 +350,14 @@ class _SourceMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    // Sin IA solo queda «Eliminar»: a la vista, sin menú de tres puntos.
+    if (!aiEnabled) {
+      return IconButton(
+        tooltip: l10n.commonDelete,
+        icon: Icon(AppIcons.delete, color: context.colors.error),
+        onPressed: () => onSelected(_SourceAction.delete),
+      );
+    }
     return PopupMenuButton<_SourceAction>(
       tooltip: l10n.academicMoreActions,
       onSelected: onSelected,
@@ -358,7 +366,7 @@ class _SourceMenu extends StatelessWidget {
           PopupMenuItem(
             value: _SourceAction.assistant,
             child: ListTile(
-              leading: const Icon(Icons.lightbulb_outline_rounded),
+              leading: const Icon(AppIcons.proposal),
               title: Text(l10n.academicAiAssistantTitle),
             ),
           ),
@@ -381,10 +389,7 @@ class _SourceMenu extends StatelessWidget {
         PopupMenuItem(
           value: _SourceAction.delete,
           child: ListTile(
-            leading: Icon(
-              Icons.delete_outline_rounded,
-              color: context.colors.error,
-            ),
+            leading: Icon(AppIcons.delete, color: context.colors.error),
             title: Text(l10n.commonDelete),
           ),
         ),

@@ -292,7 +292,7 @@ class _PlanEditor extends StatelessWidget {
                     );
                     if (ok) bloc.add(const WeeklyPlanEvent.deleted());
                   },
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: const Icon(AppIcons.delete),
             label: Text(l10n.trainingDeletePlanTitle),
           ),
         ],

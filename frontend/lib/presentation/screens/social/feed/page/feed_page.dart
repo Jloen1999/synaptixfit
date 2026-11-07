@@ -194,7 +194,7 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
           actions: [
             IconButton(
               tooltip: l10n.socialFriendsTitle,
-              icon: const Icon(Icons.people_alt_outlined),
+              icon: const Icon(AppIcons.friends),
               onPressed: () => _push(SocialPaths.friends),
             ),
             BlocSelector<FeedBloc, FeedState, int>(
@@ -209,7 +209,7 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
                   label: Text(
                     unread > 99 ? l10n.socialBadgeOverflow : '$unread',
                   ),
-                  child: const Icon(Icons.notifications_none_rounded),
+                  child: const Icon(AppIcons.notifications),
                 ),
               ),
             ),
@@ -256,7 +256,7 @@ class _FeedViewState extends State<_FeedView> with WidgetsBindingObserver {
                           child: Center(
                             child: FilledButton.icon(
                               onPressed: _showNewPosts,
-                              icon: const Icon(Icons.arrow_upward_rounded),
+                              icon: const Icon(AppIcons.moveUp),
                               label: Text(
                                 l10n.socialNewPosts(state.newPosts.length),
                               ),
@@ -496,7 +496,7 @@ class _EmptyFeed extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
           child: AppEmptyState(
-            icon: Icons.forum_outlined,
+            icon: AppIcons.community,
             title: l10n.socialFeedEmptyTitle,
             message: l10n.socialFeedEmptyMessage,
             action: Wrap(

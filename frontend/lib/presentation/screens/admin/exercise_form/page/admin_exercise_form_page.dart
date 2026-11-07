@@ -310,7 +310,7 @@ class _AdminExerciseFormViewState extends State<_AdminExerciseFormView>
                         _steps.length >= AdminExerciseDraft.instructionsMax
                         ? null
                         : _addStep,
-                    icon: const Icon(Icons.add_rounded),
+                    icon: const Icon(AppIcons.add),
                     label: Text(l10n.adminExerciseAddStep),
                   ),
                   children: [
@@ -722,17 +722,17 @@ class _StepRow extends StatelessWidget {
           IconButton(
             tooltip: l10n.adminExerciseStepUp,
             onPressed: index == 0 ? null : onMoveUp,
-            icon: const Icon(Icons.arrow_upward_rounded),
+            icon: const Icon(AppIcons.moveUp),
           ),
           IconButton(
             tooltip: l10n.adminExerciseStepDown,
             onPressed: index == count - 1 ? null : onMoveDown,
-            icon: const Icon(Icons.arrow_downward_rounded),
+            icon: const Icon(AppIcons.moveDown),
           ),
           IconButton(
             tooltip: l10n.adminExerciseStepRemove,
             onPressed: onRemove,
-            icon: const Icon(Icons.close_rounded),
+            icon: const Icon(AppIcons.close),
           ),
         ],
       ),

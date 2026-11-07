@@ -68,6 +68,24 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
     if (ok) bloc.add(const SubjectDetailEvent.deleteRequested());
   }
 
+  /// Archivar se explica antes (qué deja de verse y que nada se pierde);
+  /// restaurar no necesita explicación.
+  Future<void> _toggleArchived(BuildContext context, Subject subject) async {
+    final l10n = context.localizations;
+    final bloc = context.read<SubjectDetailBloc>();
+    if (!subject.archived) {
+      final ok = await showConfirmDialog(
+        context,
+        title: l10n.academicSubjectArchiveTitle,
+        message: l10n.academicSubjectArchiveMessage,
+        confirmLabel: l10n.academicSubjectArchive,
+        destructive: false,
+      );
+      if (!ok || bloc.isClosed) return;
+    }
+    bloc.add(const SubjectDetailEvent.archiveToggled());
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -75,13 +93,25 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
       listenWhen: (a, b) =>
           a.deleted != b.deleted ||
           a.actionError != b.actionError ||
-          a.subject?.archived != b.subject?.archived,
+          (a.subject != null &&
+              b.subject != null &&
+              a.subject!.archived != b.subject!.archived),
       listener: (context, state) {
+        final archivedNow = state.subject?.archived;
         if (state.deleted) {
           context.showSnack(l10n.academicSubjectDeleted);
           context.pop(true);
         } else if (state.actionError != null) {
           context.showSnack(errorMessage(context, state.actionError!));
+        } else if (archivedNow == true) {
+          // Nunca «se puede recuperar» sin decir dónde (vocabulario.md).
+          context.showActionSnack(
+            l10n.academicSubjectArchivedWhere,
+            actionLabel: l10n.commonView,
+            onAction: () => context.go(AcademicPaths.archived),
+          );
+        } else if (archivedNow == false) {
+          context.showSnack(l10n.academicSubjectUnarchivedWhere);
         }
       },
       builder: (context, state) {
@@ -113,7 +143,7 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
                 // Pomodoro con el tiempo contando para esta asignatura.
                 IconButton(
                   tooltip: l10n.academicSubjectFocus(subject.name),
-                  icon: const Icon(Icons.timer_outlined),
+                  icon: const Icon(AppIcons.focusTimer),
                   onPressed: () => context.push(
                     AcademicPaths.pomodoro(
                       subjectId: subject.id,
@@ -123,58 +153,13 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
                 ),
                 IconButton(
                   tooltip: l10n.commonEdit,
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(AppIcons.edit),
                   onPressed: () => _edit(context, subject),
                 ),
-                PopupMenuButton<String>(
-                  tooltip: l10n.academicMoreActions,
-                  onSelected: (value) async {
-                    if (value == 'archive') {
-                      final bloc = context.read<SubjectDetailBloc>();
-                      // Archivar se explica: qué deja de verse y que nada se
-                      // pierde. Recuperarla no necesita explicación.
-                      if (!subject.archived) {
-                        final ok = await showConfirmDialog(
-                          context,
-                          title: l10n.academicSubjectArchiveTitle,
-                          message: l10n.academicSubjectArchiveMessage,
-                          confirmLabel: l10n.academicSubjectArchive,
-                          destructive: false,
-                        );
-                        if (!ok || bloc.isClosed) return;
-                      }
-                      bloc.add(const SubjectDetailEvent.archiveToggled());
-                    } else {
-                      await _delete(context, subject);
-                    }
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 'archive',
-                      child: ListTile(
-                        leading: Icon(
-                          subject.archived
-                              ? Icons.unarchive_outlined
-                              : Icons.archive_outlined,
-                        ),
-                        title: Text(
-                          subject.archived
-                              ? l10n.academicSubjectUnarchive
-                              : l10n.academicSubjectArchive,
-                        ),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.delete_outline_rounded,
-                          color: context.colors.error,
-                        ),
-                        title: Text(l10n.commonDelete),
-                      ),
-                    ),
-                  ],
+                IconButton(
+                  tooltip: l10n.academicSubjectDeleteAction,
+                  icon: Icon(AppIcons.delete, color: context.colors.error),
+                  onPressed: () => _delete(context, subject),
                 ),
               ],
               bottom: PreferredSize(
@@ -200,6 +185,8 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
                     subject: subject,
                     semester: state.semester,
                     color: color,
+                    busy: state.busy,
+                    onArchiveToggled: () => _toggleArchived(context, subject),
                   ),
                 ),
                 const Expanded(
@@ -219,11 +206,15 @@ class _SubjectHeader extends StatelessWidget {
     required this.subject,
     required this.semester,
     required this.color,
+    required this.busy,
+    required this.onArchiveToggled,
   });
 
   final Subject subject;
   final SubjectSemester? semester;
   final Color color;
+  final bool busy;
+  final VoidCallback onArchiveToggled;
 
   @override
   Widget build(BuildContext context) {
@@ -276,27 +267,44 @@ class _SubjectHeader extends StatelessWidget {
           ),
           const SizedBox(width: TokensSpacing.m),
           Expanded(
-            child: Wrap(
-              spacing: TokensSpacing.s,
-              runSpacing: TokensSpacing.xs,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (subject.archived)
-                  AppPill(
-                    label: l10n.academicSubjectArchivedBadge,
-                    color: context.colors.onSurfaceVariant,
-                    icon: Icons.archive_outlined,
-                  ),
-                AppPill(
-                  label: context.priorityLabel(subject.priority),
-                  color: color,
-                  icon: Icons.flag_outlined,
+                Wrap(
+                  spacing: TokensSpacing.s,
+                  runSpacing: TokensSpacing.xs,
+                  children: [
+                    if (subject.archived)
+                      AppPill(
+                        label: l10n.academicSubjectArchivedBadge,
+                        color: context.colors.onSurfaceVariant,
+                        icon: AppIcons.archive,
+                      ),
+                    AppPill(
+                      label: context.priorityLabel(subject.priority),
+                      color: color,
+                      icon: Icons.flag_outlined,
+                    ),
+                    for (final (icon, text) in details)
+                      AppPill(
+                        label: text,
+                        color: context.colors.onSurfaceVariant,
+                        icon: icon,
+                      ),
+                  ],
                 ),
-                for (final (icon, text) in details)
-                  AppPill(
-                    label: text,
-                    color: context.colors.onSurfaceVariant,
-                    icon: icon,
+                // Acción con texto (antes escondida en un menú de tres puntos).
+                TextButton.icon(
+                  onPressed: busy ? null : onArchiveToggled,
+                  icon: Icon(
+                    subject.archived ? AppIcons.unarchive : AppIcons.archive,
                   ),
+                  label: Text(
+                    subject.archived
+                        ? l10n.academicSubjectUnarchive
+                        : l10n.academicSubjectArchive,
+                  ),
+                ),
               ],
             ),
           ),

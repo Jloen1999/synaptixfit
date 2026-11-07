@@ -97,7 +97,7 @@ class _TemplatesView extends StatelessWidget {
                               children: [
                                 AppPrimaryButton(
                                   label: l10n.trainingNewRoutineAi,
-                                  icon: Icons.lightbulb_outline_rounded,
+                                  icon: AppIcons.proposal,
                                   onPressed: () =>
                                       context.push(TrainingPaths.newRoutine()),
                                 ),
@@ -115,37 +115,37 @@ class _TemplatesView extends StatelessWidget {
                           ),
                         )
                       else ...[
-                      _Filters(state: state),
-                      const SizedBox(height: TokensSpacing.m),
-                      if (state.visible.isEmpty)
-                        AppCard(
-                          child: AppEmptyState.compact(
-                            icon: Icons.filter_alt_off_rounded,
-                            title: l10n.trainingTemplatesEmpty,
-                            message: l10n.trainingTemplatesEmptyHint,
-                            action: AppSecondaryButton(
-                              label: l10n.trainingTemplatesClearFilters,
-                              icon: const Icon(Icons.clear_all_rounded),
-                              onPressed: () => bloc.add(
-                                const RoutineTemplatesEvent.filterChanged(
-                                  TemplateFilter(),
+                        _Filters(state: state),
+                        const SizedBox(height: TokensSpacing.m),
+                        if (state.visible.isEmpty)
+                          AppCard(
+                            child: AppEmptyState.compact(
+                              icon: AppIcons.clearFilters,
+                              title: l10n.trainingTemplatesEmpty,
+                              message: l10n.trainingTemplatesEmptyHint,
+                              action: AppSecondaryButton(
+                                label: l10n.trainingTemplatesClearFilters,
+                                icon: const Icon(Icons.clear_all_rounded),
+                                onPressed: () => bloc.add(
+                                  const RoutineTemplatesEvent.filterChanged(
+                                    TemplateFilter(),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        )
-                      else
-                        for (final t in state.visible)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: TokensSpacing.s,
+                          )
+                        else
+                          for (final t in state.visible)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: TokensSpacing.s,
+                              ),
+                              child: _TemplateCard(
+                                template: t,
+                                busy: state.usingId == t.id,
+                                disabled: state.usingId != null,
+                              ),
                             ),
-                            child: _TemplateCard(
-                              template: t,
-                              busy: state.usingId == t.id,
-                              disabled: state.usingId != null,
-                            ),
-                          ),
                       ],
                     ],
                   ),

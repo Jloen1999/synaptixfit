@@ -130,7 +130,7 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
     final l10n = context.localizations;
     if (state.loading) {
       return AppWorkingView(
-        icon: Icons.lightbulb_outline_rounded,
+        icon: AppIcons.proposal,
         title: l10n.academicAiGenerating,
       );
     }

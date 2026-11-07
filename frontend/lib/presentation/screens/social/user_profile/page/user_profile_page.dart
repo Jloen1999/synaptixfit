@@ -374,8 +374,6 @@ class _RestrictedNotice extends StatelessWidget {
   }
 }
 
-enum _MenuAction { block }
-
 class _RelationActions extends StatelessWidget {
   const _RelationActions({required this.profile, required this.busy});
 
@@ -514,24 +512,22 @@ class _RelationActions extends StatelessWidget {
               style: context.textStyles.bodyMedium,
             ),
           ),
-        Row(
-          children: [
-            ...primary,
-            if (profile.relation != FriendshipRelation.blocked)
-              PopupMenuButton<_MenuAction>(
-                tooltip: l10n.socialMoreActions,
-                icon: const Icon(Icons.more_vert_rounded),
-                onSelected: (_) =>
-                    _run(context, ProfileRelationAction.block, confirm: true),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: _MenuAction.block,
-                    child: Text(l10n.socialBlock),
-                  ),
-                ],
+        Row(children: primary),
+        // Antes en un menú de tres puntos con una sola acción: ahora a la
+        // vista y con texto, en su propia fila (cabe con el texto al 200 %).
+        if (profile.relation != FriendshipRelation.blocked)
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: context.colors.error,
               ),
-          ],
-        ),
+              onPressed: () =>
+                  _run(context, ProfileRelationAction.block, confirm: true),
+              icon: const Icon(AppIcons.block),
+              label: Text(l10n.socialBlock),
+            ),
+          ),
       ],
     );
   }

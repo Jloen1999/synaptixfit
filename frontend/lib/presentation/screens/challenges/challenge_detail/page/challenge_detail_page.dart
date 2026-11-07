@@ -215,7 +215,7 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                       ),
                     _menuItem(
                       _MenuAction.edit,
-                      Icons.edit_outlined,
+                      AppIcons.edit,
                       l10n.challengesDetailEdit,
                     ),
                     _menuItem(
@@ -238,7 +238,7 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                     ),
                     _menuItem(
                       _MenuAction.delete,
-                      Icons.delete_outline_rounded,
+                      AppIcons.delete,
                       l10n.challengesDetailDelete,
                     ),
                   ],
@@ -443,9 +443,7 @@ class _DetailContent extends StatelessWidget {
               if (link != null) ...[
                 const SizedBox(height: TokensSpacing.s),
                 AppCard(
-                  onTap: challenge.owned
-                      ? () => openLink(context, link)
-                      : null,
+                  onTap: challenge.owned ? () => openLink(context, link) : null,
                   child: Row(
                     children: [
                       Icon(link.type.icon, color: context.colors.tertiary),
@@ -813,7 +811,7 @@ class _DetailsCard extends StatelessWidget {
             ),
           if (origin != null)
             _InfoRow(
-              icon: Icons.copy_all_rounded,
+              icon: AppIcons.copyToMine,
               text: l10n.challengesClonedFrom(origin),
             ),
         ],
@@ -921,7 +919,7 @@ class _BottomActions extends StatelessWidget {
     if (!challenge.owned) {
       primary = AppPrimaryButton(
         label: l10n.challengesClone,
-        icon: Icons.library_add_outlined,
+        icon: AppIcons.copyToMine,
         loading: busy,
         onPressed: () => bloc.add(const ChallengeDetailEvent.cloneRequested()),
       );

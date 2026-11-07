@@ -143,15 +143,13 @@ class PlanWeekBar extends StatelessWidget {
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        for (final day in days)
-                          Expanded(child: dayButton(day)),
+                        for (final day in days) Expanded(child: dayButton(day)),
                       ],
                     );
                   }
                   const perRow = 4;
                   final width =
-                      (constraints.maxWidth -
-                          TokensSpacing.xs * (perRow - 1)) /
+                      (constraints.maxWidth - TokensSpacing.xs * (perRow - 1)) /
                       perRow;
                   return Wrap(
                     spacing: TokensSpacing.xs,
@@ -348,50 +346,50 @@ class _DayButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(TokensRadius.m),
           child: ExcludeSemantics(
             child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: TokensSpacing.xs),
-            child: Column(
-              children: [
-                SizedBox(
-                  height: height,
-                  width: TokensSize.iconS,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // Sin nada planificado: una línea base neutra, no un
-                      // «Por hacer».
-                      if (segments.isEmpty)
-                        Divider(
-                          height: TokensSize.focusRing,
-                          thickness: TokensSize.focusRing,
-                          color: context.colors.outlineVariant,
-                        ),
-                      for (final (i, (kind, h)) in segments.indexed) ...[
-                        if (i > 0) const SizedBox(height: TokensSpacing.xxs),
-                        _SegmentBox(
-                          kind: kind,
-                          height: h * fit - TokensSpacing.xxs,
-                          width: TokensSize.iconS,
-                        ),
+              padding: const EdgeInsets.symmetric(vertical: TokensSpacing.xs),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: height,
+                    width: TokensSize.iconS,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Sin nada planificado: una línea base neutra, no un
+                        // «Por hacer».
+                        if (segments.isEmpty)
+                          Divider(
+                            height: TokensSize.focusRing,
+                            thickness: TokensSize.focusRing,
+                            color: context.colors.outlineVariant,
+                          ),
+                        for (final (i, (kind, h)) in segments.indexed) ...[
+                          if (i > 0) const SizedBox(height: TokensSpacing.xxs),
+                          _SegmentBox(
+                            kind: kind,
+                            height: h * fit - TokensSpacing.xxs,
+                            width: TokensSize.iconS,
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: TokensSpacing.xs),
-                // Con texto grande se encoge en vez de cortarse («10/12»).
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    l10n.homePlanDayCount(day.completed, day.planned),
-                    maxLines: 1,
-                    style: context.textStyles.labelSmall?.copyWith(
-                      color: context.colors.onSurfaceVariant,
                     ),
                   ),
-                ),
-                Text(label.toUpperCase(), style: dayStyle),
-              ],
+                  const SizedBox(height: TokensSpacing.xs),
+                  // Con texto grande se encoge en vez de cortarse («10/12»).
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      l10n.homePlanDayCount(day.completed, day.planned),
+                      maxLines: 1,
+                      style: context.textStyles.labelSmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  Text(label.toUpperCase(), style: dayStyle),
+                ],
+              ),
             ),
-          ),
           ),
         ),
       ),

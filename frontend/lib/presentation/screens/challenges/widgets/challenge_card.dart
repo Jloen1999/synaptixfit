@@ -61,7 +61,7 @@ class ChallengeCard extends StatelessWidget {
                     dimension: TokensSize.iconS,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.library_add_outlined),
+                : const Icon(AppIcons.copyToMine),
           );
     // Con el texto grande o poco ancho, el bloque de fecha pasa a ser una
     // franja de una línea encima y el contenido usa todo el ancho.

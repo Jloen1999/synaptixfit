@@ -121,23 +121,14 @@ class _DetailsSheetState extends State<_DetailsSheet> {
                 onChanged: (v) => setState(() => _goal = v),
               ),
               const SizedBox(height: TokensSpacing.m),
-              Text(
-                l10n.trainingVisibility,
-                style: context.textStyles.labelLarge,
-              ),
-              const SizedBox(height: TokensSpacing.xs),
-              SegmentedButton<vis.Visibility>(
-                segments: [
-                  for (final v in vis.Visibility.values)
-                    ButtonSegment(
-                      value: v,
-                      icon: Icon(v.icon),
-                      label: Text(v.label(l10n)),
-                    ),
-                ],
-                selected: {_visibility},
-                onSelectionChanged: (s) =>
-                    setState(() => _visibility = s.first),
+              // Con el texto grande pasa a lista: ninguna opción se corta.
+              AppAdaptiveChoice<vis.Visibility>(
+                label: l10n.trainingVisibility,
+                values: vis.Visibility.values,
+                selected: _visibility,
+                labelOf: (v) => v.label(l10n),
+                iconOf: (v) => v.icon,
+                onChanged: (v) => setState(() => _visibility = v),
               ),
               const SizedBox(height: TokensSpacing.l),
               AppPrimaryButton(label: l10n.commonSave, onPressed: _save),

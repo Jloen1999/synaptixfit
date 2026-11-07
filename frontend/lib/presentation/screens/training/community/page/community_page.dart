@@ -123,7 +123,8 @@ class _CommunityViewState extends State<_CommunityView> {
                   // Con algo escrito, «sin resultados» y no «la comunidad
                   // está vacía» (vocabulario, fila Buscador).
                   CommunityStatus.ready
-                      when state.items.isEmpty && state.query.trim().isNotEmpty =>
+                      when state.items.isEmpty &&
+                          state.query.trim().isNotEmpty =>
                     AppSearchEmpty(query: state.query),
                   CommunityStatus.ready when state.items.isEmpty =>
                     AppEmptyState(
@@ -182,7 +183,7 @@ class _CommunityViewState extends State<_CommunityView> {
                                                 r.id,
                                               ),
                                             ),
-                                      icon: const Icon(Icons.download_rounded),
+                                      icon: const Icon(AppIcons.copyToMine),
                                     ),
                             ),
                           );

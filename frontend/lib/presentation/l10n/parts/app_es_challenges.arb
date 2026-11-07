@@ -127,7 +127,7 @@
   },
   "challengesClone": "Añadir a mis retos",
   "challengesCloneTooltip": "Añadir a mis retos",
-  "challengesCloned": "Reto añadido a tus retos",
+  "challengesCloned": "Reto añadido. Lo tienes en Retos › Mis retos.",
   "challengesViewCloned": "Ver",
   "challengesXpGain": "+{xp} XP",
   "@challengesXpGain": {

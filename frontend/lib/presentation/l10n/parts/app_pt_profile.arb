@@ -25,7 +25,7 @@
   "profileDegreesHint": "As disciplinas destes cursos aparecerão no seletor de disciplinas.",
   "profileDegreesLinkAction": "Associar curso",
   "profileDegreesLinked": "Curso associado",
-  "profileDegreesUnlinked": "Curso desassociado",
+  "profileDegreesUnlinked": "Curso desassociado. Para o voltares a ter, usa «Associar curso» neste ecrã.",
   "profileDegreesEmptyTitle": "Sem cursos associados",
   "profileDegreesEmptyMessage": "Associa o teu curso para escolheres as disciplinas do plano de estudos.",
   "profileDegreesUnlinkTitle": "Desassociar curso?",
@@ -224,7 +224,7 @@
   "profileDailyLimitValue": "{count} por dia",
   "profileExportTitle": "Exportar os meus dados",
   "profileExportHint": "Descarrega um ficheiro JSON com toda a tua informação",
-  "profileExportDone": "Dados exportados",
+  "profileExportDone": "Dados guardados na pasta que escolheste (no navegador, em Transferências).",
   "profileExportCancelled": "Exportação cancelada",
   "profileDeleteTitle": "Eliminar a minha conta",
   "profileDeleteHint": "Apaga a tua conta e os teus dados de forma permanente",
@@ -419,5 +419,6 @@
   "profileBirthDateRemove": "Remover a data",
   "profileBirthDateSuggestion": "Indica a tua data de nascimento: a tua idade atualiza-se sozinha e damos-te os parabéns no teu aniversário.",
   "profileBirthDateAdd": "Adicionar",
-  "profileErrorInvalidBirthDate": "Revê a data de nascimento: não pode ser futura e a idade deve estar entre 14 e 100 anos."
+  "profileErrorInvalidBirthDate": "Revê a data de nascimento: não pode ser futura e a idade deve estar entre 14 e 100 anos.",
+  "profileEnrollmentShort": "Importar matrícula"
 }

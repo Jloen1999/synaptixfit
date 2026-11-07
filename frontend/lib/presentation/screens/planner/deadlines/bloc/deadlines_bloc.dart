@@ -105,9 +105,11 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
         if (pendingOnly != state.pendingOnly || subjectId != state.subjectId) {
           return;
         }
+        final focusId = state.focusId;
         emit(
           state.copyWith(
             status: DeadlinesStatus.ready,
+            focusMissing: focusId != null && !items.any((d) => d.id == focusId),
             items: items,
             page: value.page,
             hasMore: value.hasMore,

@@ -283,7 +283,7 @@ class _Explanation extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                adapted ? Icons.tune_rounded : Icons.check_circle_rounded,
+                adapted ? AppIcons.filters : Icons.check_circle_rounded,
                 color: color,
               ),
               const SizedBox(width: TokensSpacing.s),
@@ -325,7 +325,7 @@ class _Explanation extends StatelessWidget {
                 onPressed: () => context.read<QuickCheckInBloc>().add(
                   const QuickCheckInEvent.editRequested(),
                 ),
-                icon: const Icon(Icons.edit_rounded),
+                icon: const Icon(AppIcons.edit),
                 label: Text(l10n.trainingQuickChange),
               ),
             ],

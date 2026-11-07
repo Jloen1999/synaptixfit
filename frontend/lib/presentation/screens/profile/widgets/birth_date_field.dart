@@ -111,7 +111,7 @@ class _BirthDateFieldState extends State<BirthDateField> {
                 widget.onChanged(null);
                 _focus.requestFocus();
               },
-              icon: const Icon(Icons.close_rounded, size: TokensSize.iconS),
+              icon: const Icon(AppIcons.close, size: TokensSize.iconS),
               label: Text(l10n.profileBirthDateRemove),
             ),
           ),

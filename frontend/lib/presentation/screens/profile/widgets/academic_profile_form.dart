@@ -344,11 +344,11 @@ class _DegreeTile extends StatelessWidget {
             IconButton(
               tooltip: l10n.profileAcademicClearDegree,
               onPressed: onClear,
-              icon: const Icon(Icons.close_rounded),
+              icon: const Icon(AppIcons.close),
             )
           else
             Icon(
-              Icons.search_rounded,
+              AppIcons.search,
               color: context.colors.onSurfaceVariant,
               semanticLabel: l10n.profileAcademicPickDegree,
             ),

@@ -28,6 +28,8 @@ Regla general: palabras cotidianas, verbos en los botones, una acción útil sig
 | Agenda de la asignatura | «Próxima clase: lun 10:00 · Aula 2.3», «Entrega mañana», «Examen en 3 días», «Clase: lun y mié», «Aula habitual» | «sesión» para una clase | Relevancia visual: nombre en grande, lo próximo en medio, profesor en pequeño |
 | Pomodoro | «Concentración» / «Descanso»; botones «Pasar al descanso» / «Volver a concentrarme», «Empezar a concentrarme» / «Empezar el descanso», «Empezar de cero»; arriba «Concentración 2 de 4 · luego 5 min de descanso» | icono «siguiente» sin texto, «Saltar fase», «Ciclo 2 de 4» | |
 | Resumen de la mañana (`MORNING_SUMMARY`) | «Hoy: 2 estudios, 1 entreno, entrega de Física y 1 tarea de reto» | «digest», «resumen diario» | Solo si hay algo; incluye el recordatorio del registro diario de ese día (ADR 0035) |
+| Avisos de dónde queda algo | «Asignatura archivada. La tienes en Académico › Archivadas» + «Ver»; «Usuario bloqueado. Para desbloquearlo: Comunidad › Amigos › Bloqueados» + «Ver»; «Reto añadido. Lo tienes en Retos › Mis retos» | «se puede recuperar», «queda guardado» sin decir dónde | La ruta usa los nombres que se ven (pestaña › apartado). Si el aviso abre ya la pantalla, basta con el texto; si no, lleva «Ver» (`showActionSnack`) |
+| Copiar algo de otra persona | «Añadir a mis rutinas», «Añadir a mis retos»; origen: «Copiada de Ana» | «Clonar», «clonada» | Icono `AppIcons.copyToMine` en los dos |
 | Antelación de los avisos | «Avisarme antes de…»: «15 min antes», «1 y 3 días antes», «La tarde anterior», «La mañana del día» | «lead time», «offset» | Opciones cerradas en Perfil › Ajustes › Notificaciones › «Más avisos» |
 
 ## 2. Dueños de cada pieza compartida

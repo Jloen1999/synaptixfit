@@ -173,10 +173,7 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
             ),
             AppFocusOutline(
               child: ListTile(
-                leading: Icon(
-                  Icons.delete_outline_rounded,
-                  color: sheet.colors.error,
-                ),
+                leading: Icon(AppIcons.delete, color: sheet.colors.error),
                 title: Text(l10n.runDiscard),
                 subtitle: Text(l10n.runDiscardHint),
                 onTap: () => Navigator.of(sheet).pop('discard'),

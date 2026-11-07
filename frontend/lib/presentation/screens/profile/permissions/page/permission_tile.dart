@@ -173,7 +173,7 @@ class PermissionTile extends StatelessWidget {
               alignment: AlignmentDirectional.centerEnd,
               child: TextButton.icon(
                 onPressed: busy ? null : onOpenSettings,
-                icon: const Icon(Icons.open_in_new_rounded),
+                icon: const Icon(AppIcons.openExternal),
                 label: Text(l10n.profilePermissionOpenSettings),
               ),
             ),
@@ -193,7 +193,7 @@ class PermissionTile extends StatelessWidget {
                 if (blocked)
                   AppSecondaryButton(
                     label: l10n.profilePermissionOpenSettings,
-                    icon: const Icon(Icons.open_in_new_rounded),
+                    icon: const Icon(AppIcons.openExternal),
                     onPressed: busy ? null : onOpenSettings,
                   )
                 else

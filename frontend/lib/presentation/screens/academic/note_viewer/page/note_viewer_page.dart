@@ -111,20 +111,17 @@ class _NoteViewerView extends StatelessWidget with ErrorsMessageMixin {
             actions: [
               IconButton(
                 tooltip: l10n.academicAiAssistantTitle,
-                icon: Icon(
-                  Icons.lightbulb_outline_rounded,
-                  color: context.colors.tertiary,
-                ),
+                icon: Icon(AppIcons.proposal, color: context.colors.tertiary),
                 onPressed: () => _assistant(context, state),
               ),
               IconButton(
                 tooltip: l10n.commonEdit,
-                icon: const Icon(Icons.edit_outlined),
+                icon: const Icon(AppIcons.edit),
                 onPressed: () => _edit(context, note),
               ),
               IconButton(
                 tooltip: l10n.commonDelete,
-                icon: const Icon(Icons.delete_outline_rounded),
+                icon: const Icon(AppIcons.delete),
                 onPressed: () => _delete(context, note),
               ),
             ],

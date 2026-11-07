@@ -227,7 +227,7 @@ class _ReportCard extends StatelessWidget {
               if (item.postId != null)
                 TextButton.icon(
                   onPressed: () => context.push(_socialPostPath(item.postId!)),
-                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                  icon: const Icon(AppIcons.openExternal, size: 18),
                   label: Text(l10n.adminReportsOpenPost),
                 ),
               OutlinedButton.icon(
@@ -271,7 +271,7 @@ class _ReportCard extends StatelessWidget {
                         dimension: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.delete_outline_rounded, size: 18),
+                    : const Icon(AppIcons.delete, size: 18),
                 label: Text(l10n.adminReportsRemove),
               ),
             ],

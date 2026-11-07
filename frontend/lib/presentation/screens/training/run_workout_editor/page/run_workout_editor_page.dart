@@ -129,7 +129,7 @@ class _EditorViewState extends State<_EditorView> with ErrorsMessageMixin {
                   ],
                   AppSecondaryButton(
                     label: l10n.runEditorAddGroup,
-                    icon: const Icon(Icons.add_rounded),
+                    icon: const Icon(AppIcons.add),
                     onPressed: () =>
                         bloc.add(const RunWorkoutEditorEvent.groupAdded()),
                   ),
@@ -189,7 +189,7 @@ class _GroupCard extends StatelessWidget {
                   tooltip: l10n.runEditorRemoveGroup,
                   onPressed: () =>
                       bloc.add(RunWorkoutEditorEvent.groupRemoved(index)),
-                  icon: const Icon(Icons.delete_outline_rounded),
+                  icon: const Icon(AppIcons.remove),
                 ),
             ],
           ),
@@ -216,7 +216,7 @@ class _GroupCard extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: () =>
                     bloc.add(RunWorkoutEditorEvent.stepAdded(index)),
-                icon: const Icon(Icons.add_rounded),
+                icon: const Icon(AppIcons.add),
                 label: Text(l10n.runEditorAddStep),
               ),
             ),
@@ -274,7 +274,7 @@ class _StepRow extends StatelessWidget {
                   tooltip: l10n.runEditorRemoveStep,
                   onPressed: () =>
                       bloc.add(RunWorkoutEditorEvent.stepRemoved(index, step)),
-                  icon: const Icon(Icons.remove_circle_outline_rounded),
+                  icon: const Icon(AppIcons.remove),
                 ),
             ],
           ),

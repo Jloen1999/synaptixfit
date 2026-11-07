@@ -64,7 +64,7 @@ class SubjectCard extends StatelessWidget {
                         const Spacer(),
                         if (subject.archived)
                           Icon(
-                            Icons.archive_outlined,
+                            AppIcons.archive,
                             size: TokensSize.iconS,
                             color: context.colors.onSurfaceVariant,
                             semanticLabel: l10n.academicSubjectArchivedBadge,

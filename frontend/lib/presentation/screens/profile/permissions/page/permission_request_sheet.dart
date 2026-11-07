@@ -166,7 +166,7 @@ class _PermissionRequestSheetState extends State<_PermissionRequestSheet> {
                   if (blocked)
                     AppPrimaryButton(
                       label: l10n.profilePermissionOpenSettings,
-                      icon: Icons.open_in_new_rounded,
+                      icon: AppIcons.openExternal,
                       focusNode: _primaryFocus,
                       onPressed: () =>
                           bloc.add(PermissionsEvent.settingsOpened(permission)),

@@ -218,7 +218,7 @@ class ChallengeDateField extends StatelessWidget {
                     tooltip: MaterialLocalizations.of(
                       context,
                     ).deleteButtonTooltip,
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(AppIcons.close),
                     onPressed: onClear,
                   ),
           ),

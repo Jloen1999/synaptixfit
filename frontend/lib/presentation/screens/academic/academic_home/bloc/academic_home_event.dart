@@ -2,7 +2,9 @@ part of 'academic_home_bloc.dart';
 
 @freezed
 sealed class AcademicHomeEvent with _$AcademicHomeEvent {
-  const factory AcademicHomeEvent.started() = AcademicHomeStarted;
+  /// [archived]: abre con el filtro «Archivadas» (desde el aviso de archivar).
+  const factory AcademicHomeEvent.started({@Default(false) bool archived}) =
+      AcademicHomeStarted;
 
   /// Recarga sin mostrar el esqueleto (pull-to-refresh o al volver).
   const factory AcademicHomeEvent.refreshed() = AcademicHomeRefreshed;

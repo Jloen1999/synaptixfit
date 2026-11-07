@@ -400,5 +400,7 @@
   "plannerPomodoroFocusHeader": "Concentration {current} sur {total} · puis {minutes} min de pause",
   "plannerPomodoroBreakHeader": "Pause de {minutes} min · puis concentration {next} sur {total}",
   "plannerPomodoroToBreakHint": "Termine la concentration maintenant et commence la pause.",
-  "plannerPomodoroToFocusHint": "Termine la pause maintenant et reprend la concentration."
+  "plannerPomodoroToFocusHint": "Termine la pause maintenant et reprend la concentration.",
+  "plannerStepRepeat": "Répétition",
+  "plannerDeadlineGone": "Ce rendu n’existe plus : il a été supprimé. Si tu en as besoin, recrée-le avec « Nouveau rendu »."
 }

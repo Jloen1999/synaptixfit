@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../extensions/context_extensions.dart';
 import '../theme/tokens.g.dart';
 
+import '../theme/app_icons.dart';
+
 /// Buscador único de la app (ADR 0036): el mismo en Académico, ejercicios,
 /// retos, rutinas de la comunidad y apuntes compartidos. Lupa, botón para
 /// borrar lo escrito y, si se da [debounce], espera a que se deje de teclear
@@ -90,12 +92,12 @@ class _AppSearchFieldState extends State<AppSearchField> {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           labelText: widget.label,
-          prefixIcon: const Icon(Icons.search_rounded),
+          prefixIcon: const Icon(AppIcons.search),
           suffixIcon: value.text.isEmpty
               ? null
               : IconButton(
                   tooltip: l10n.commonSearchClear,
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(AppIcons.close),
                   onPressed: _clear,
                 ),
         ),
@@ -176,12 +178,21 @@ class AppSearchEmpty extends StatelessWidget {
   const AppSearchEmpty({
     super.key,
     required this.query,
+    this.message,
     this.actionLabel,
+    this.actionIcon = AppIcons.add,
     this.onAction,
   });
 
   final String query;
+
+  /// Pista opcional bajo el título («Prueba con otra búsqueda…»).
+  final String? message;
   final String? actionLabel;
+
+  /// «+» para crear lo buscado; otro icono si la acción es otra (quitar
+  /// filtros).
+  final IconData actionIcon;
   final VoidCallback? onAction;
 
   @override
@@ -206,11 +217,21 @@ class AppSearchEmpty extends StatelessWidget {
               style: context.textStyles.titleMedium,
             ),
           ),
+          if (message case final hint?) ...[
+            const SizedBox(height: TokensSpacing.xs),
+            Text(
+              hint,
+              textAlign: TextAlign.center,
+              style: context.textStyles.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+          ],
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: TokensSpacing.m),
             FilledButton.tonalIcon(
               onPressed: onAction,
-              icon: const Icon(Icons.add_rounded),
+              icon: Icon(actionIcon),
               label: Text(actionLabel!),
             ),
           ],

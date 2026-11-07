@@ -202,7 +202,7 @@ class _NoBank extends StatelessWidget {
           : l10n.academicPracticeNoBankMessage,
       action: AppPrimaryButton(
         label: l10n.academicPracticeGenerate,
-        icon: Icons.lightbulb_outline_rounded,
+        icon: AppIcons.proposal,
         loading: generating,
         onPressed: () => context.read<PracticeHubBloc>().add(
           const PracticeHubEvent.bankRequested(),
@@ -224,7 +224,7 @@ class _BankStats extends StatelessWidget {
       children: [
         Expanded(
           child: AppMetricTile(
-            icon: Icons.help_outline_rounded,
+            icon: AppIcons.help,
             color: context.colors.tertiary,
             value: '${bank.questions.length}',
             label: l10n.academicPracticeQuestions,

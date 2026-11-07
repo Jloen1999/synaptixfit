@@ -59,7 +59,7 @@ class _FriendsViewState extends State<_FriendsView> {
     return BlocListener<FriendsBloc, FriendsState>(
       listenWhen: (_, current) => current.feedback != null,
       listener: (context, state) =>
-          showSocialFeedback(context, state.feedback!),
+          showSocialFeedback(context, state.feedback!, inFriends: true),
       child: Scaffold(
         appBar: AppPageBar.reading(title: Text(l10n.socialFriendsTitle)),
         body: SocialContentWidth(
@@ -321,7 +321,7 @@ class _FriendshipTile extends StatelessWidget {
         children: [
           IconButton(
             tooltip: l10n.socialReject,
-            icon: const Icon(Icons.close_rounded),
+            icon: const Icon(AppIcons.close),
             onPressed: () =>
                 bloc.add(FriendsEvent.requestRejected(friendship.id)),
           ),
@@ -388,10 +388,9 @@ class _SearchResults extends StatelessWidget {
         UserSearchStatus.idle || UserSearchStatus.loading =>
           const SocialListSkeleton(itemHeight: 64, count: 4),
         UserSearchStatus.failure => AppErrorView(error: state.searchError!),
-        UserSearchStatus.loaded when state.results.isEmpty => AppEmptyState(
-          icon: Icons.person_search_outlined,
-          title: l10n.socialSearchEmptyTitle,
-          message: l10n.socialSearchEmptyMessage(state.query),
+        UserSearchStatus.loaded when state.results.isEmpty => AppSearchEmpty(
+          query: state.query,
+          message: l10n.socialSearchEmptyHint,
         ),
         UserSearchStatus.loaded => ListView.separated(
           padding: const EdgeInsets.all(TokensSpacing.m),

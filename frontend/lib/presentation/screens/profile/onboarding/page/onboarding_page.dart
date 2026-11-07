@@ -76,7 +76,7 @@ class _OnboardingView extends StatelessWidget with ErrorsMessageMixin {
               leading: state.index > 0 && !state.busy
                   ? IconButton(
                       tooltip: context.localizations.commonBack,
-                      icon: const Icon(Icons.arrow_back_rounded),
+                      icon: const Icon(AppIcons.back),
                       onPressed: () =>
                           bloc.add(const OnboardingEvent.previousRequested()),
                     )

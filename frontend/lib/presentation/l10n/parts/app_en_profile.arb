@@ -25,7 +25,7 @@
   "profileDegreesHint": "Subjects from these degrees will show up in the subject picker.",
   "profileDegreesLinkAction": "Link degree",
   "profileDegreesLinked": "Degree linked",
-  "profileDegreesUnlinked": "Degree unlinked",
+  "profileDegreesUnlinked": "Degree unlinked. To get it back, use “Link degree” on this screen.",
   "profileDegreesEmptyTitle": "No linked degrees",
   "profileDegreesEmptyMessage": "Link your degree to pick your subjects from the curriculum.",
   "profileDegreesUnlinkTitle": "Unlink degree?",
@@ -224,7 +224,7 @@
   "profileDailyLimitValue": "{count} a day",
   "profileExportTitle": "Export my data",
   "profileExportHint": "Download a JSON file with all your information",
-  "profileExportDone": "Data exported",
+  "profileExportDone": "Data saved in the folder you chose (in the browser, in Downloads).",
   "profileExportCancelled": "Export cancelled",
   "profileDeleteTitle": "Delete my account",
   "profileDeleteHint": "Permanently delete your account and data",
@@ -419,5 +419,6 @@
   "profileBirthDateRemove": "Remove the date",
   "profileBirthDateSuggestion": "Add your date of birth: your age will update on its own and we'll wish you a happy birthday.",
   "profileBirthDateAdd": "Add",
-  "profileErrorInvalidBirthDate": "Check your date of birth: it can't be in the future and your age must be between 14 and 100."
+  "profileErrorInvalidBirthDate": "Check your date of birth: it can't be in the future and your age must be between 14 and 100.",
+  "profileEnrollmentShort": "Import enrolment"
 }

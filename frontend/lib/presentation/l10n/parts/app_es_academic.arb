@@ -320,7 +320,7 @@
   "academicGenerateSaveNote": "Guardar como apunte",
   "academicGenerateSaveQuiz": "Guardar preguntas",
   "academicGenerateSaveTitle": "Guardar resultado",
-  "academicGenerateSavedNote": "Guardado como apunte",
+  "academicGenerateSavedNote": "Guardado como apunte. Lo tienes en su asignatura, en «Apuntes y archivos».",
   "academicGenerateSavedQuiz": "Preguntas guardadas para practicar",
   "academicGenerateEphemeral": "Sin guardar: se perderá si sales",
   "academicReviewTitle": "Repaso espaciado",
@@ -829,7 +829,7 @@
   },
   "academicFlashcardsExportAnki": "Exportar a Anki",
   "academicFlashcardsAnkiDeck": "SynaptixFit",
-  "academicFlashcardsAnkiExported": "Archivo guardado. En Anki (ordenador): Archivo › Importar y elige el archivo; en AnkiDroid: menú ⋮ › Importar.",
+  "academicFlashcardsAnkiExported": "Archivo guardado en la carpeta que elegiste (en el navegador, en Descargas). En Anki (ordenador): Archivo › Importar y elige el archivo; en AnkiDroid: menú ⋮ › Importar.",
   "academicReviewNext": "{count, plural, =1{Siguiente repaso (queda 1)} other{Siguiente repaso (quedan {count})}}",
   "academicReviewStopQueue": "Dejarlo por hoy",
   "@academicReviewNext": {
@@ -858,7 +858,7 @@
   "academicSharedNoteTitle": "Apunte compartido",
   "academicSharedCopy": "Guardar copia en mis apuntes",
   "academicSharedCopyHint": "La copia es privada: puedes editarla sin cambiar el original.",
-  "academicSharedCopied": "Copia guardada en tus apuntes",
+  "academicSharedCopied": "Copia guardada en tus apuntes: en esa asignatura si la tienes o, si no, en Académico, entre los apuntes sin asignatura.",
   "academicSharedOpenCopy": "Abrir mi copia",
   "academicSharedOpenMine": "Abrir en mis apuntes",
   "academicVisibilityWho": "Quién lo verá: {who}",
@@ -913,7 +913,7 @@
       }
     }
   },
-  "academicInboxMoved": "Apunte movido a {subject}",
+  "academicInboxMoved": "Apunte movido a {subject}. Lo tienes en su pestaña «Apuntes y archivos».",
   "@academicInboxMoved": {
     "placeholders": {
       "subject": {
@@ -985,7 +985,7 @@
   "academicAiRegenerateTitle": "¿Escribirlo de nuevo?",
   "academicAiRegenerateMessage": "Te propondremos otra versión, que sustituirá a la que ves ahora. La de ahora no se podrá recuperar.",
   "academicSubjectArchiveTitle": "¿Archivar la asignatura?",
-  "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el planificador. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras desde «Archivadas».",
+  "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el planificador. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras en Académico › Archivadas.",
   "academicScanEntry": "Desde una foto",
   "academicScanEntryLong": "Fotografiar apuntes en papel",
   "academicScanEntryHint": "Haz fotos de tus hojas y las pasamos a un apunte",
@@ -1059,7 +1059,7 @@
   "academicScanTextLabel": "Texto del apunte",
   "academicScanBackToPhotos": "Volver a las fotos",
   "academicScanSave": "Guardar apunte",
-  "academicScanSaved": "Apunte guardado. Solo lo ves tú.",
+  "academicScanSaved": "Apunte guardado (solo lo ves tú). Lo tienes en su asignatura, en «Apuntes y archivos»; si no elegiste ninguna, en Académico, entre los apuntes sin asignatura.",
   "academicScanLeaveTitle": "¿Salir sin guardar?",
   "academicScanLeaveMessage": "Se perderán las fotos y el texto leído.",
   "academicScanLeaveConfirm": "Salir",
@@ -1195,7 +1195,7 @@
       }
     }
   },
-  "academicAiSavedAsNote": "Guardado como apunte. Ya puedes corregirlo.",
+  "academicAiSavedAsNote": "Guardado como apunte en su asignatura, en «Apuntes y archivos». Ya puedes corregirlo.",
   "academicScanCameraDenied": "Para hacer fotos, SynaptixFit necesita la cámara. Actívala en los ajustes del móvil o elige las fotos de tu galería.",
   "academicScanCameraMissing": "Este dispositivo no tiene cámara. Elige las fotos de tu galería.",
   "academicScanChangePhotos": "Cambiar las fotos",
@@ -1320,5 +1320,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "academicSubjectDeleteAction": "Eliminar la asignatura",
+  "academicFileDeleteAction": "Eliminar el archivo",
+  "academicSubjectArchivedWhere": "Asignatura archivada. La tienes en Académico › Archivadas.",
+  "academicSubjectUnarchivedWhere": "Asignatura restaurada: vuelve a salir en Académico y en el planificador."
 }

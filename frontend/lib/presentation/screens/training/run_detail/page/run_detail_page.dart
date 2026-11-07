@@ -115,12 +115,12 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
                 IconButton(
                   tooltip: l10n.runShare,
                   onPressed: () => _share(context, run),
-                  icon: const Icon(Icons.ios_share_rounded),
+                  icon: const Icon(AppIcons.share),
                 ),
                 IconButton(
                   tooltip: l10n.runDelete,
                   onPressed: () => _delete(context),
-                  icon: const Icon(Icons.delete_outline_rounded),
+                  icon: const Icon(AppIcons.delete),
                 ),
               ],
             ],
@@ -134,12 +134,12 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
               ),
             ),
             RunDetailState(pendingDelete: true) => AppEmptyState(
-              icon: Icons.delete_outline_rounded,
+              icon: AppIcons.delete,
               title: l10n.runDeleted,
               message: l10n.runDeletedHint,
               action: AppSecondaryButton(
                 label: l10n.runUndo,
-                icon: const Icon(Icons.undo_rounded),
+                icon: const Icon(AppIcons.undo),
                 onPressed: () => context.read<RunDetailBloc>().add(
                   const RunDetailEvent.deleteUndone(),
                 ),

@@ -18,12 +18,16 @@ import '../bloc/academic_home_bloc.dart';
 
 /// Pestaña Académico: cuadrícula de asignaturas, repasos pendientes y accesos.
 class AcademicHomePage extends StatelessWidget {
-  const AcademicHomePage({super.key});
+  const AcademicHomePage({super.key, this.showArchived = false});
+
+  /// Abre con el filtro «Archivadas» puesto (`/academic?view=archived`).
+  final bool showArchived;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) =>
-        getIt<AcademicHomeBloc>()..add(const AcademicHomeEvent.started()),
+        getIt<AcademicHomeBloc>()
+          ..add(AcademicHomeEvent.started(archived: showArchived)),
     child: const _AcademicHomeView(),
   );
 }
@@ -121,7 +125,7 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
                   AcademicPaths.scanNote(),
                 ),
                 option(
-                  Icons.lightbulb_outline_rounded,
+                  AppIcons.proposal,
                   l10n.academicGenerateTitle,
                   l10n.academicGenerateHint,
                   AcademicPaths.generate(),
@@ -144,19 +148,19 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
         actions: [
           IconButton(
             tooltip: l10n.academicSharedNotesTitle,
-            icon: const Icon(Icons.local_library_outlined),
+            icon: const Icon(AppIcons.sharedNotes),
             onPressed: () => context.push(AcademicPaths.sharedNotes),
           ),
           IconButton(
             tooltip: l10n.academicOpenPlanner,
-            icon: const Icon(Icons.calendar_month_rounded),
+            icon: const Icon(AppIcons.calendar),
             onPressed: () => context.push(AcademicPaths.planner),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSheet(context),
-        icon: const Icon(Icons.add_rounded),
+        icon: const Icon(AppIcons.add),
         label: Text(l10n.academicAdd),
       ),
       body: BlocConsumer<AcademicHomeBloc, AcademicHomeState>(
@@ -166,14 +170,21 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
           context.read<AcademicHomeBloc>().add(
             const AcademicHomeEvent.noticeHandled(),
           );
-          context.showSnack(switch (notice) {
-            AcademicHomeNoticeNoteMoved(:final subjectName) =>
-              l10n.academicInboxMoved(subjectName),
-            AcademicHomeNoticeFailed(:final error) => errorMessage(
-              context,
-              error,
-            ),
-          });
+          switch (notice) {
+            // Dice dónde queda el apunte y lleva allí.
+            case AcademicHomeNoticeNoteMoved(
+              :final subjectName,
+              :final subjectId,
+            ):
+              context.showActionSnack(
+                l10n.academicInboxMoved(subjectName),
+                actionLabel: l10n.commonView,
+                onAction: () =>
+                    _open(context, AcademicPaths.subject(subjectId)),
+              );
+            case AcademicHomeNoticeFailed(:final error):
+              context.showSnack(errorMessage(context, error));
+          }
         },
         builder: (context, state) {
           if (state.loading && state.subjects.isEmpty) {
@@ -281,7 +292,7 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
                       hasScrollBody: false,
                       child: AppEmptyState(
                         icon: state.showArchived
-                            ? Icons.archive_outlined
+                            ? AppIcons.archive
                             : Icons.school_outlined,
                         title: state.showArchived
                             ? l10n.academicArchivedEmptyTitle
@@ -714,7 +725,7 @@ class _SearchEntry extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(
-                        Icons.search_rounded,
+                        AppIcons.search,
                         color: context.colors.onSurfaceVariant,
                       ),
                       const SizedBox(width: TokensSpacing.s),

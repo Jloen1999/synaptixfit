@@ -68,7 +68,7 @@ class _DegreesView extends StatelessWidget with ErrorsMessageMixin {
       appBar: AppPageBar.reading(title: Text(l10n.profileDegreesTitle)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _link(context),
-        icon: const Icon(Icons.add_rounded),
+        icon: const Icon(AppIcons.add),
         label: Text(l10n.profileDegreesLinkAction),
       ),
       body: BlocConsumer<DegreesBloc, DegreesState>(
@@ -111,7 +111,7 @@ class _DegreesView extends StatelessWidget with ErrorsMessageMixin {
                   message: l10n.profileDegreesEmptyMessage,
                   action: AppPrimaryButton(
                     label: l10n.profileDegreesLinkAction,
-                    icon: Icons.add_rounded,
+                    icon: AppIcons.add,
                     onPressed: () => _link(context),
                   ),
                 );
@@ -195,10 +195,10 @@ class _DegreeCard extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            tooltip: l10n.profileDegreesUnlinkAction,
-            icon: const Icon(Icons.link_off_rounded),
+          // Con texto: el icono de «enlace roto» no se entiende solo.
+          TextButton(
             onPressed: onUnlink,
+            child: Text(l10n.profileDegreesUnlinkAction),
           ),
         ],
       ),

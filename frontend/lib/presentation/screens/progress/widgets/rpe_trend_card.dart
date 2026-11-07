@@ -9,6 +9,8 @@ import 'chart_card.dart';
 import 'chart_style.dart';
 import 'progress_labels.dart';
 
+import '../../../theme/app_icons.dart';
+
 /// Tendencia semanal del RPE en línea, con la dirección de la tendencia.
 class RpeTrendCard extends StatelessWidget {
   const RpeTrendCard({super.key, required this.trend});
@@ -130,7 +132,7 @@ class _DirectionChip extends StatelessWidget {
         context.colors.primary,
       ),
       TrendDirection.insufficientData => (
-        Icons.help_outline_rounded,
+        AppIcons.help,
         context.colors.onSurfaceVariant,
       ),
     };

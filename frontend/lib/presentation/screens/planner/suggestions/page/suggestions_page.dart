@@ -38,11 +38,26 @@ class _SuggestionsView extends StatelessWidget with ErrorsMessageMixin {
         :final firstError,
       ):
         if (failed == 0) {
-          context.showSnack(l10n.plannerAccepted(created));
+          // Dice dónde quedan y lleva allí.
+          context.showActionSnack(
+            l10n.plannerAccepted(created),
+            actionLabel: l10n.plannerOpenCalendar,
+            onAction: () => _openCalendar(
+              context,
+              context.read<SuggestionsBloc>().state.weekStart,
+            ),
+          );
         } else if (created == 0 && firstError != null) {
           context.showSnack(errorMessage(context, firstError));
         } else {
-          context.showSnack(l10n.plannerAcceptedPartial(created, failed));
+          context.showActionSnack(
+            l10n.plannerAcceptedPartial(created, failed),
+            actionLabel: l10n.plannerOpenCalendar,
+            onAction: () => _openCalendar(
+              context,
+              context.read<SuggestionsBloc>().state.weekStart,
+            ),
+          );
         }
       case SuggestionsNoticeFailure(:final error):
         context.showSnack(errorMessage(context, error));
@@ -68,7 +83,7 @@ class _SuggestionsView extends StatelessWidget with ErrorsMessageMixin {
               IconButton(
                 tooltip: l10n.plannerOpenCalendar,
                 onPressed: () => _openCalendar(context, state.weekStart),
-                icon: const Icon(Icons.calendar_month_rounded),
+                icon: const Icon(AppIcons.calendar),
               ),
             ],
           ),
@@ -152,11 +167,7 @@ class _SuggestionsView extends StatelessWidget with ErrorsMessageMixin {
     return [
       Row(
         children: [
-          Icon(
-            Icons.lightbulb_outline_rounded,
-            color: context.colors.tertiary,
-            size: 20,
-          ),
+          Icon(AppIcons.proposal, color: context.colors.tertiary, size: 20),
           const SizedBox(width: TokensSpacing.s),
           Expanded(
             child: Text(
@@ -268,7 +279,7 @@ class _GoalsCard extends StatelessWidget {
             label: state.suggestion == null
                 ? l10n.plannerGenerate
                 : l10n.plannerRegenerate,
-            icon: Icons.lightbulb_outline_rounded,
+            icon: AppIcons.proposal,
             loading: state.status == SuggestionsStatus.generating,
             onPressed: busy
                 ? null

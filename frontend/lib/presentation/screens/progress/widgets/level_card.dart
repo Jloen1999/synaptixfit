@@ -83,7 +83,7 @@ class LevelCard extends StatelessWidget {
             alignment: AlignmentDirectional.centerStart,
             child: TextButton.icon(
               onPressed: () => showXpGuideSheet(context),
-              icon: const Icon(Icons.help_outline_rounded),
+              icon: const Icon(AppIcons.help),
               label: Text(l10n.xpGuideOpen),
             ),
           ),

@@ -57,7 +57,7 @@ class _FlashcardsView extends StatelessWidget with ErrorsMessageMixin {
               if (state.cards.isNotEmpty)
                 IconButton(
                   tooltip: l10n.academicFlashcardsExportAnki,
-                  icon: const Icon(Icons.file_download_outlined),
+                  icon: const Icon(AppIcons.export),
                   onPressed: state.exportingAnki
                       ? null
                       : () => bloc.add(

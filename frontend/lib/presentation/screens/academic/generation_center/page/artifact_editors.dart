@@ -43,51 +43,51 @@ class _SummaryEditorState extends State<_SummaryEditor> {
       builder: (context, _) => _AskBeforeLosing(
         dirty: _controller.text != widget.initial,
         child: Scaffold(
-      appBar: AppPageBar(
-        title: Text(l10n.academicGenerateFixSummaryTitle),
-        actions: [
-          TextButton(
-            onPressed: _controller.text.trim().isEmpty
-                ? null
-                : () => Navigator.of(context).pop(_controller.text),
-            child: Text(l10n.academicGenerateFixDone),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: AppContentWidth.reading(
-          child: Padding(
-          padding: const EdgeInsets.all(TokensSpacing.m),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.academicGenerateFixSummaryHint,
-                style: context.textStyles.bodyMedium?.copyWith(
-                  color: context.colors.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: TokensSpacing.s),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  autofocus: true,
-                  expands: true,
-                  maxLines: null,
-                  minLines: null,
-                  keyboardType: TextInputType.multiline,
-                  textAlignVertical: TextAlignVertical.top,
-                  decoration: InputDecoration(
-                    labelText: l10n.academicGenerateFixSummaryLabel,
-                    alignLabelWithHint: true,
-                  ),
-                ),
+          appBar: AppPageBar(
+            title: Text(l10n.academicGenerateFixSummaryTitle),
+            actions: [
+              TextButton(
+                onPressed: _controller.text.trim().isEmpty
+                    ? null
+                    : () => Navigator.of(context).pop(_controller.text),
+                child: Text(l10n.academicGenerateFixDone),
               ),
             ],
           ),
+          body: SafeArea(
+            child: AppContentWidth.reading(
+              child: Padding(
+                padding: const EdgeInsets.all(TokensSpacing.m),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      l10n.academicGenerateFixSummaryHint,
+                      style: context.textStyles.bodyMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: TokensSpacing.s),
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        autofocus: true,
+                        expands: true,
+                        maxLines: null,
+                        minLines: null,
+                        keyboardType: TextInputType.multiline,
+                        textAlignVertical: TextAlignVertical.top,
+                        decoration: InputDecoration(
+                          labelText: l10n.academicGenerateFixSummaryLabel,
+                          alignLabelWithHint: true,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
         ),
       ),
     );
@@ -330,34 +330,36 @@ class _EditorSheet extends StatelessWidget {
     return _AskBeforeLosing(
       dirty: dirty,
       child: Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(
-            left: TokensSpacing.l,
-            right: TokensSpacing.l,
-            bottom: TokensSpacing.l,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Semantics(
-                header: true,
-                child: Text(title, style: context.textStyles.titleLarge),
-              ),
-              const SizedBox(height: TokensSpacing.m),
-              ...children,
-              const SizedBox(height: TokensSpacing.l),
-              AppPrimaryButton(
-                label: l10n.academicGenerateFixApply,
-                icon: Icons.check_rounded,
-                onPressed: canSave ? onSave : null,
-              ),
-            ],
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(
+              left: TokensSpacing.l,
+              right: TokensSpacing.l,
+              bottom: TokensSpacing.l,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(title, style: context.textStyles.titleLarge),
+                ),
+                const SizedBox(height: TokensSpacing.m),
+                ...children,
+                const SizedBox(height: TokensSpacing.l),
+                AppPrimaryButton(
+                  label: l10n.academicGenerateFixApply,
+                  icon: Icons.check_rounded,
+                  onPressed: canSave ? onSave : null,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

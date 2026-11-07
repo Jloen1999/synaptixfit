@@ -68,7 +68,7 @@ class _TrainingHomeView extends StatelessWidget {
             AppFocusOutline(
               child: ListTile(
                 leading: Icon(
-                  Icons.lightbulb_outline_rounded,
+                  AppIcons.proposal,
                   color: context.colors.tertiary,
                 ),
                 title: Text(l10n.trainingNewRoutineAi),
@@ -119,14 +119,14 @@ class _TrainingHomeView extends StatelessWidget {
               IconButton(
                 tooltip: l10n.trainingHistoryTitle,
                 onPressed: () => open(context, TrainingPaths.history),
-                icon: const Icon(Icons.history_rounded),
+                icon: const Icon(AppIcons.history),
               ),
             ],
           ),
           floatingActionButton: state.status == HomeStatus.ready
               ? FloatingActionButton.extended(
                   onPressed: () => _newRoutine(context),
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(AppIcons.add),
                   label: Text(l10n.trainingNewRoutine),
                 )
               : null,
@@ -262,7 +262,7 @@ class _HomeContent extends StatelessWidget {
                       children: [
                         AppPrimaryButton(
                           label: l10n.trainingNewRoutineAi,
-                          icon: Icons.lightbulb_outline_rounded,
+                          icon: AppIcons.proposal,
                           onPressed: () => _TrainingHomeView.open(
                             context,
                             TrainingPaths.newRoutine(),
@@ -611,7 +611,7 @@ class _CycleDoneCard extends StatelessWidget {
           const SizedBox(height: TokensSpacing.xs),
           AppSecondaryButton(
             label: l10n.trainingNextWithAi,
-            icon: const Icon(Icons.lightbulb_outline_rounded),
+            icon: const Icon(AppIcons.proposal),
             onPressed: busy ? null : onNextWithAi,
           ),
         ],
@@ -684,11 +684,7 @@ class _QuickAccess extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final items = [
-      (
-        Icons.search_rounded,
-        l10n.trainingExplorerTitle,
-        TrainingPaths.exercises,
-      ),
+      (AppIcons.search, l10n.trainingExplorerTitle, TrainingPaths.exercises),
       (
         Icons.view_list_rounded,
         l10n.trainingTemplatesTitle,
@@ -700,7 +696,7 @@ class _QuickAccess extends StatelessWidget {
         TrainingPaths.community,
       ),
       (
-        Icons.calendar_month_rounded,
+        AppIcons.calendar,
         l10n.trainingWeeklyPlanTitle,
         TrainingPaths.weeklyPlan,
       ),

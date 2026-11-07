@@ -490,19 +490,17 @@ void main() {
 
     blocTest<HomeDashboardBloc, HomeDashboardState>(
       'marca el evento con el estado del servidor y ofrece deshacer',
-      setUp: () =>
-          when(() => complete('b1', completed: true)).thenAnswer(
-            (_) async => Success(
-              BlockCompletion(
-                block: block(id: 'b1', start: DateTime(2026, 10, 20, 8))
-                    .copyWith(
-                      completed: true,
-                      timeStatus: ItemTimeStatus.done,
-                    ),
-                xpDelta: 0,
-              ),
-            ),
+      setUp: () => when(() => complete('b1', completed: true)).thenAnswer(
+        (_) async => Success(
+          BlockCompletion(
+            block: block(
+              id: 'b1',
+              start: DateTime(2026, 10, 20, 8),
+            ).copyWith(completed: true, timeStatus: ItemTimeStatus.done),
+            xpDelta: 0,
           ),
+        ),
+      ),
       build: build,
       seed: () => withEvent,
       act: (bloc) => bloc.add(
@@ -526,14 +524,49 @@ void main() {
             completed: true,
             xpDelta: 0,
           ),
+          // Ctrl+Z puede deshacerlo.
+          lastUndoable: const HomeCompletionNoticeDone(
+            id: 'b1',
+            kind: HomeEventKind.block,
+            completed: true,
+            xpDelta: 0,
+          ),
         ),
       ],
     );
 
     blocTest<HomeDashboardBloc, HomeDashboardState>(
+      'Ctrl+Z deshace lo último marcado y no se puede deshacer dos veces',
+      setUp: () => when(() => complete('b1', completed: false)).thenAnswer(
+        (_) async => Success(
+          BlockCompletion(
+            block: block(id: 'b1', start: DateTime(2026, 10, 20, 8)),
+            xpDelta: 0,
+          ),
+        ),
+      ),
+      build: build,
+      seed: () => withEvent.copyWith(
+        lastUndoable: const HomeCompletionNoticeDone(
+          id: 'b1',
+          kind: HomeEventKind.block,
+          completed: true,
+          xpDelta: 0,
+        ),
+      ),
+      act: (bloc) => bloc
+        ..add(const HomeDashboardEvent.undoRequested())
+        ..add(const HomeDashboardEvent.undoRequested()),
+      verify: (bloc) {
+        verify(() => complete('b1', completed: false)).called(1);
+        expect(bloc.state.lastUndoable, isNull);
+      },
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
       'desmarcar una entrega devuelve la XP que dio',
-      setUp: () => when(() => completeDeadline('d1', completed: false))
-          .thenAnswer(
+      setUp: () =>
+          when(() => completeDeadline('d1', completed: false)).thenAnswer(
             (_) async =>
                 Success(DeadlineCompletion(deadline: deadline(), xpDelta: -25)),
           ),
@@ -558,8 +591,9 @@ void main() {
 
     blocTest<HomeDashboardBloc, HomeDashboardState>(
       'si falla, avisa con el error y no cambia nada',
-      setUp: () => when(() => complete('b1', completed: true))
-          .thenAnswer((_) async => const Failure(AppError.network())),
+      setUp: () => when(
+        () => complete('b1', completed: true),
+      ).thenAnswer((_) async => const Failure(AppError.network())),
       build: build,
       seed: () => withEvent,
       act: (bloc) => bloc.add(

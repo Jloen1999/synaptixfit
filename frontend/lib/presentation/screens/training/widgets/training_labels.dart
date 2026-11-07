@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/enums/visibility.dart' as vis;
 import '../../../l10n/gen_l10n/app_localizations.dart';
+import '../../../theme/app_icons.dart';
 import '../../../widgets/routine_day_labels.dart';
 import 'package:intl/intl.dart';
 
@@ -101,7 +102,7 @@ extension RoutineStatusLabel on RoutineStatus {
     RoutineStatus.active => Icons.play_circle_outline_rounded,
     RoutineStatus.paused => Icons.pause_circle_outline_rounded,
     RoutineStatus.completed => Icons.check_circle_outline_rounded,
-    RoutineStatus.archived => Icons.inventory_2_outlined,
+    RoutineStatus.archived => AppIcons.archive,
   };
 }
 

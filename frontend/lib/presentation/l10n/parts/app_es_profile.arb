@@ -46,7 +46,7 @@
   "profileDegreesHint": "Las asignaturas de estas carreras aparecerán en el selector de asignaturas.",
   "profileDegreesLinkAction": "Vincular carrera",
   "profileDegreesLinked": "Carrera vinculada",
-  "profileDegreesUnlinked": "Carrera desvinculada",
+  "profileDegreesUnlinked": "Carrera desvinculada. Para volver a tenerla, usa «Vincular carrera» en esta pantalla.",
   "profileDegreesEmptyTitle": "Sin carreras vinculadas",
   "profileDegreesEmptyMessage": "Vincula tu carrera para elegir tus asignaturas del plan de estudios.",
   "profileDegreesUnlinkTitle": "¿Desvincular carrera?",
@@ -420,7 +420,7 @@
   },
   "profileExportTitle": "Exportar mis datos",
   "profileExportHint": "Descarga un archivo JSON con toda tu información",
-  "profileExportDone": "Datos exportados",
+  "profileExportDone": "Datos guardados en la carpeta que elegiste (en el navegador, en Descargas).",
   "profileExportCancelled": "Exportación cancelada",
   "profileDeleteTitle": "Eliminar mi cuenta",
   "profileDeleteHint": "Borra tu cuenta y tus datos de forma permanente",
@@ -715,5 +715,6 @@
   "profileBirthDateRemove": "Quitar la fecha",
   "profileBirthDateSuggestion": "Pon tu fecha de nacimiento: tu edad se actualizará sola y te felicitaremos en tu cumpleaños.",
   "profileBirthDateAdd": "Añadir",
-  "profileErrorInvalidBirthDate": "Revisa la fecha de nacimiento: no puede ser futura y la edad debe estar entre 14 y 100 años."
+  "profileErrorInvalidBirthDate": "Revisa la fecha de nacimiento: no puede ser futura y la edad debe estar entre 14 y 100 años.",
+  "profileEnrollmentShort": "Importar matrícula"
 }

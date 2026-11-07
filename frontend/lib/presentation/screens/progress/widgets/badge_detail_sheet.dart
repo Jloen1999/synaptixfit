@@ -52,7 +52,9 @@ class _BadgeDetailSheet extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(child: BadgeEmblem(badge: badge, size: TokensSize.medallion)),
+              Center(
+                child: BadgeEmblem(badge: badge, size: TokensSize.medallion),
+              ),
               const SizedBox(height: TokensSpacing.m),
               Text(
                 badge.name,
@@ -144,14 +146,14 @@ class _BadgeDetailSheet extends StatelessWidget {
                 const SizedBox(height: TokensSpacing.s),
                 AppSecondaryButton(
                   label: l10n.progressBadgeShare,
-                  icon: const Icon(Icons.share_rounded),
+                  icon: const Icon(AppIcons.share),
                   onPressed: busy ? null : () => _share(context, badge),
                 ),
                 const SizedBox(height: TokensSpacing.s),
                 // Fuera de la app (WhatsApp, Instagram…), como imagen.
                 AppSecondaryButton(
                   label: l10n.progressBadgeShareImage,
-                  icon: const Icon(Icons.ios_share_rounded),
+                  icon: const Icon(AppIcons.share),
                   onPressed: () => _shareImage(context, badge),
                 ),
               ],

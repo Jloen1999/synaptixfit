@@ -69,7 +69,11 @@ class _EditorView extends StatefulWidget {
 class _EditorViewState extends State<_EditorView>
     with SingleTickerProviderStateMixin, ErrorsMessageMixin {
   /// Pasos numerados de la hoja (el tercero siempre está: el aviso).
-  static const _steps = 3;
+  /// Descanso, comida y sueño no llevan aviso (`ReminderPlanner`).
+  bool get _hasReminder => switch (_type) {
+    BlockType.rest || BlockType.meal || BlockType.sleep => false,
+    _ => true,
+  };
 
   /// Atajos de duración para los tipos con inicio y fin libres.
   static const _quickDurations = [30, 60, 120];
@@ -140,8 +144,7 @@ class _EditorViewState extends State<_EditorView>
     final start = b?.start ?? widget.start;
     final end = b?.end ?? widget.start.add(const Duration(hours: 1));
     _type =
-        b?.type ??
-        (focus.includesAcademic ? BlockType.study : BlockType.sport);
+        b?.type ?? (focus.includesAcademic ? BlockType.study : BlockType.sport);
     _day = DateTime(start.year, start.month, start.day);
     _startMin = start.hour * 60 + start.minute;
     _endMin = end.day != start.day ? 24 * 60 - 1 : end.hour * 60 + end.minute;
@@ -395,15 +398,12 @@ class _EditorViewState extends State<_EditorView>
                           : () => Navigator.of(context).pop(
                               BlockEditorOutcome.deleteRequested(widget.block!),
                             ),
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        color: context.colors.error,
-                      ),
+                      icon: Icon(AppIcons.delete, color: context.colors.error),
                     ),
                   IconButton(
                     tooltip: l10n.commonClose,
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(AppIcons.close),
                   ),
                 ],
               ),
@@ -531,7 +531,7 @@ class _EditorViewState extends State<_EditorView>
               : l10n.plannerMarkCompleted,
           icon: Icon(
             block.completed
-                ? Icons.undo_rounded
+                ? AppIcons.undo
                 : Icons.check_circle_outline_rounded,
           ),
           onPressed: state.submitting
@@ -550,7 +550,7 @@ class _EditorViewState extends State<_EditorView>
       if (!block.completed && !missed && block.type.isStudy)
         AppSecondaryButton(
           label: l10n.plannerFocusOnBlock,
-          icon: const Icon(Icons.timer_outlined),
+          icon: const Icon(AppIcons.focusTimer),
           onPressed: state.submitting
               ? null
               : () => close(BlockEditorOutcome.focusRequested(block)),
@@ -581,6 +581,11 @@ class _EditorViewState extends State<_EditorView>
     // Entre pasos, más aire que entre campos: se ve dónde empieza cada uno.
     const stepGap = SizedBox(height: TokensSpacing.l);
     final canRepeat = !_editing && _type.canRepeatWeekly;
+    // El paso 3 solo sale si hay algo que elegir o explicar: sin aviso
+    // (descanso, comida, sueño) se queda en «Repetir» o desaparece.
+    final hasReminder = _hasReminder;
+    final showStep3 = canRepeat || hasReminder;
+    final steps = showStep3 ? 3 : 2;
     return ListView(
       padding: const EdgeInsets.all(TokensSpacing.m),
       children: [
@@ -594,7 +599,7 @@ class _EditorViewState extends State<_EditorView>
           ),
           gap,
         ],
-        _StepHeader(number: 1, total: _steps, title: l10n.plannerStepWhat),
+        _StepHeader(number: 1, total: steps, title: l10n.plannerStepWhat),
         small,
         BlockTypePicker(
           label: l10n.plannerFieldType,
@@ -608,7 +613,7 @@ class _EditorViewState extends State<_EditorView>
         ),
         if (_type.requiresName) ...[gap, ..._nameField(context, state)],
         stepGap,
-        _StepHeader(number: 2, total: _steps, title: l10n.plannerStepWhen),
+        _StepHeader(number: 2, total: steps, title: l10n.plannerStepWhen),
         small,
         if (locked) ...[
           AppInlineMessage(
@@ -630,45 +635,49 @@ class _EditorViewState extends State<_EditorView>
         ),
         small,
         ..._timeFields(context, locked),
-        stepGap,
-        _StepHeader(
-          number: 3,
-          total: _steps,
-          title: canRepeat
-              ? l10n.plannerStepRepeatReminder
-              : l10n.plannerStepReminder,
-        ),
-        small,
-        // Exámenes y entregas no se repiten: cada uno tiene su fecha.
-        if (canRepeat) ...[
-          AppFocusOutline(
-            child: SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _repeat,
-              onChanged: (v) => setState(() => _repeat = v),
-              title: Text(l10n.plannerRepeatWeekly),
-              subtitle: Text(l10n.plannerRepeatWeeklyHint),
-              secondary: const Icon(Icons.event_repeat_rounded),
-            ),
+        if (showStep3) ...[
+          stepGap,
+          _StepHeader(
+            number: 3,
+            total: steps,
+            title: !hasReminder
+                ? l10n.plannerStepRepeat
+                : canRepeat
+                ? l10n.plannerStepRepeatReminder
+                : l10n.plannerStepReminder,
           ),
-          if (_repeat)
-            Padding(
-              // Alineado con el texto del interruptor (después de su icono).
-              padding: const EdgeInsetsDirectional.only(
-                start: TokensSize.iconM + TokensSpacing.m,
-              ),
-              child: AppStepperField(
-                label: l10n.plannerRepeatWeeksLabel,
-                value: _repeatTotalWeeks,
-                min: 2,
-                max: _maxRepeatTotalWeeks,
-                display: l10n.plannerRepeatWeeks,
-                onChanged: (v) => setState(() => _repeatTotalWeeks = v),
+          small,
+          // Exámenes y entregas no se repiten: cada uno tiene su fecha.
+          if (canRepeat) ...[
+            AppFocusOutline(
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _repeat,
+                onChanged: (v) => setState(() => _repeat = v),
+                title: Text(l10n.plannerRepeatWeekly),
+                subtitle: Text(l10n.plannerRepeatWeeklyHint),
+                secondary: const Icon(Icons.event_repeat_rounded),
               ),
             ),
-          small,
+            if (_repeat)
+              Padding(
+                // Alineado con el texto del interruptor (después de su icono).
+                padding: const EdgeInsetsDirectional.only(
+                  start: TokensSize.iconM + TokensSpacing.m,
+                ),
+                child: AppStepperField(
+                  label: l10n.plannerRepeatWeeksLabel,
+                  value: _repeatTotalWeeks,
+                  min: 2,
+                  max: _maxRepeatTotalWeeks,
+                  display: l10n.plannerRepeatWeeks,
+                  onChanged: (v) => setState(() => _repeatTotalWeeks = v),
+                ),
+              ),
+            small,
+          ],
+          if (hasReminder) _reminderNote(context),
         ],
-        _reminderNote(context),
         stepGap,
         _moreOptionsToggle(context),
         if (_moreOptions) ...[small, ..._advancedFields(context, state)],
@@ -713,11 +722,7 @@ class _EditorViewState extends State<_EditorView>
   /// Ajustes › Avisos, igual para todos) y botón para cambiarla.
   Widget _reminderNote(BuildContext context) {
     final l10n = context.localizations;
-    // Descanso, comida y sueño no llevan aviso (`ReminderPlanner`).
-    final hasReminder = switch (_type) {
-      BlockType.rest || BlockType.meal || BlockType.sleep => false,
-      _ => true,
-    };
+    final hasReminder = _hasReminder;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -727,7 +732,7 @@ class _EditorViewState extends State<_EditorView>
             ExcludeSemantics(
               child: Icon(
                 hasReminder
-                    ? Icons.notifications_outlined
+                    ? AppIcons.notifications
                     : Icons.notifications_off_outlined,
                 color: context.colors.onSurfaceVariant,
               ),
@@ -782,7 +787,7 @@ class _EditorViewState extends State<_EditorView>
         child: AppFocusOutline(
           child: ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.tune_rounded),
+            leading: const Icon(AppIcons.filters),
             title: Text(
               l10n.plannerMoreOptions,
               style: context.textStyles.titleMedium,
@@ -864,35 +869,26 @@ class _EditorViewState extends State<_EditorView>
       ],
       if (_type.usesPriority) ...[
         small,
-        Text(l10n.plannerFieldPriority, style: context.textStyles.labelLarge),
-        const SizedBox(height: TokensSpacing.xs),
-        SegmentedButton<PlannerPriority?>(
-          showSelectedIcon: false,
-          emptySelectionAllowed: true,
-          segments: [
-            for (final p in PlannerPriority.values)
-              ButtonSegment(value: p, label: Text(p.label(context))),
-          ],
-          selected: {_priority},
-          onSelectionChanged: (s) =>
-              setState(() => _priority = s.isEmpty ? null : s.first),
+        // Con el texto al 200 % pasa a chips en varias filas: no se corta.
+        AppSegmentedChoice<PlannerPriority>(
+          label: l10n.plannerFieldPriority,
+          values: PlannerPriority.values,
+          selected: _priority,
+          allowEmpty: true,
+          labelOf: (p) => p.label(context),
+          onChanged: (p) => setState(() => _priority = p),
         ),
         small,
       ],
       if (_type == BlockType.classSession) ...[
         small,
-        Text(l10n.plannerFieldClassKind, style: context.textStyles.labelLarge),
-        const SizedBox(height: TokensSpacing.xs),
-        SegmentedButton<ClassKind?>(
-          showSelectedIcon: false,
-          emptySelectionAllowed: true,
-          segments: [
-            for (final k in ClassKind.values)
-              ButtonSegment(value: k, label: Text(k.label(context))),
-          ],
-          selected: {_classKind},
-          onSelectionChanged: (s) =>
-              setState(() => _classKind = s.isEmpty ? null : s.first),
+        AppSegmentedChoice<ClassKind>(
+          label: l10n.plannerFieldClassKind,
+          values: ClassKind.values,
+          selected: _classKind,
+          allowEmpty: true,
+          labelOf: (k) => k.label(context),
+          onChanged: (k) => setState(() => _classKind = k),
         ),
         small,
       ],
@@ -990,17 +986,14 @@ class _EditorViewState extends State<_EditorView>
           icon: Icons.title_rounded,
         ),
         small,
-        Text(l10n.plannerFieldDifficulty, style: context.textStyles.labelLarge),
-        const SizedBox(height: TokensSpacing.xs),
-        SegmentedButton<PlannerPriority>(
-          showSelectedIcon: false,
-          segments: [
-            for (final p in PlannerPriority.values)
-              ButtonSegment(value: p, label: Text(p.label(context))),
-          ],
-          selected: {_deadlineDifficulty},
-          onSelectionChanged: (s) =>
-              setState(() => _deadlineDifficulty = s.first),
+        AppSegmentedChoice<PlannerPriority>(
+          label: l10n.plannerFieldDifficulty,
+          values: PlannerPriority.values,
+          selected: _deadlineDifficulty,
+          labelOf: (p) => p.label(context),
+          onChanged: (p) {
+            if (p != null) setState(() => _deadlineDifficulty = p);
+          },
         ),
       ],
     ];
@@ -1261,9 +1254,7 @@ class _StepHeader extends StatelessWidget {
           children: [
             AppStepBadge(number: number),
             const SizedBox(width: TokensSpacing.s),
-            Expanded(
-              child: Text(title, style: context.textStyles.titleMedium),
-            ),
+            Expanded(child: Text(title, style: context.textStyles.titleMedium)),
           ],
         ),
       ),

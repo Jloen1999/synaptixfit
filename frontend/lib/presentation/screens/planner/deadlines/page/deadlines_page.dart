@@ -25,8 +25,7 @@ class DeadlinesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
-          getIt<DeadlinesBloc>()
-            ..add(DeadlinesEvent.started(focusId: focusId)),
+          getIt<DeadlinesBloc>()..add(DeadlinesEvent.started(focusId: focusId)),
       child: const _DeadlinesView(),
     );
   }
@@ -108,7 +107,7 @@ class _DeadlinesView extends StatelessWidget with ErrorsMessageMixin {
           floatingActionButton: FloatingActionButton.extended(
             heroTag: 'planner-add-deadline',
             onPressed: state.saving ? null : () => _openForm(context),
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.add),
             label: Text(l10n.plannerNewDeadline),
           ),
           body: Center(
@@ -162,13 +161,21 @@ class _DeadlinesView extends StatelessWidget with ErrorsMessageMixin {
           child: state.visibleItems.isEmpty
               ? ListView(
                   children: [
+                    if (state.focusMissing)
+                      Padding(
+                        padding: const EdgeInsets.all(TokensSpacing.m),
+                        child: AppInlineMessage(
+                          message: l10n.plannerDeadlineGone,
+                          tone: AppMessageTone.warning,
+                        ),
+                      ),
                     AppEmptyState(
                       icon: Icons.event_available_rounded,
                       title: l10n.plannerDeadlinesEmptyTitle,
                       message: l10n.plannerDeadlinesEmptyMessage,
                       action: AppPrimaryButton(
                         label: l10n.plannerNewDeadline,
-                        icon: Icons.add_rounded,
+                        icon: AppIcons.add,
                         onPressed: () => _openForm(context),
                       ),
                     ),
@@ -182,10 +189,21 @@ class _DeadlinesView extends StatelessWidget with ErrorsMessageMixin {
                     TokensLayout.fabClearance,
                   ),
                   itemCount:
-                      state.visibleItems.length + (state.hasMore ? 1 : 0),
+                      state.visibleItems.length +
+                      (state.hasMore ? 1 : 0) +
+                      (state.focusMissing ? 1 : 0),
                   separatorBuilder: (_, _) =>
                       const SizedBox(height: TokensSpacing.s),
-                  itemBuilder: (context, i) {
+                  itemBuilder: (context, index) {
+                    // Aviso de una entrega borrada: se dice y debajo están
+                    // las demás (la acción útil es elegir otra o crearla).
+                    if (state.focusMissing && index == 0) {
+                      return AppInlineMessage(
+                        message: l10n.plannerDeadlineGone,
+                        tone: AppMessageTone.warning,
+                      );
+                    }
+                    final i = state.focusMissing ? index - 1 : index;
                     if (i == state.visibleItems.length) {
                       return Center(
                         child: state.loadingMore
@@ -426,7 +444,7 @@ class _DeadlineTile extends StatelessWidget {
     final delete = IconButton(
       tooltip: l10n.commonDelete,
       onPressed: busy ? null : onDelete,
-      icon: const Icon(Icons.delete_outline_rounded),
+      icon: const Icon(AppIcons.delete),
     );
     final card = AppCard(
       padding: const EdgeInsets.all(TokensSpacing.xs),

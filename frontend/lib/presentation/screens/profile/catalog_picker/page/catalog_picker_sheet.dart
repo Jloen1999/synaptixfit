@@ -82,7 +82,7 @@ class _CatalogPickerViewState extends State<_CatalogPickerView> {
                     if (university != null)
                       IconButton(
                         tooltip: l10n.commonBack,
-                        icon: const Icon(Icons.arrow_back_rounded),
+                        icon: const Icon(AppIcons.back),
                         onPressed: () {
                           _resetSearch();
                           context.read<CatalogPickerBloc>().add(
@@ -152,6 +152,12 @@ class _CatalogPickerViewState extends State<_CatalogPickerView> {
       case CatalogPickerStatus.ready:
         final university = state.university;
         if (university == null) {
+          if (state.universities.isEmpty && state.query.trim().isNotEmpty) {
+            return AppSearchEmpty(
+              query: state.query,
+              message: l10n.profileCatalogNoResultsHint,
+            );
+          }
           if (state.universities.isEmpty) {
             return AppEmptyState(
               icon: Icons.account_balance_outlined,
@@ -179,6 +185,12 @@ class _CatalogPickerViewState extends State<_CatalogPickerView> {
                 ),
               );
             },
+          );
+        }
+        if (state.degrees.isEmpty && state.query.trim().isNotEmpty) {
+          return AppSearchEmpty(
+            query: state.query,
+            message: l10n.profileCatalogNoResultsHint,
           );
         }
         if (state.degrees.isEmpty) {

@@ -112,7 +112,7 @@ class _SelectDialogState extends State<_SelectDialog> {
               onChanged: (v) => setState(() => _filter = v),
               decoration: InputDecoration(
                 labelText: l10n.adminSelectSearch,
-                prefixIcon: const Icon(Icons.search_rounded),
+                prefixIcon: const Icon(AppIcons.search),
                 isDense: true,
               ),
             ),

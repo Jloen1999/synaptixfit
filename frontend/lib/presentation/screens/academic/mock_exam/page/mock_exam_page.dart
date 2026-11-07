@@ -124,7 +124,7 @@ class _MockExamView extends StatelessWidget with ErrorsMessageMixin {
               if (session != null)
                 IconButton(
                   tooltip: l10n.academicExamAbandon,
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(AppIcons.close),
                   onPressed: state.finishing
                       ? null
                       : () => _confirmAbandon(context),

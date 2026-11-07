@@ -596,7 +596,7 @@ class _TasksSection extends StatelessWidget {
           const SizedBox(height: TokensSpacing.s),
           AppSecondaryButton(
             label: l10n.challengesFormAddTask,
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.add),
             onPressed: enabled && state.canAddMilestone ? onAdd : null,
           ),
         ],
@@ -652,7 +652,7 @@ class _MilestoneRow extends StatelessWidget {
                         ChallengeFormEvent.milestoneMoved(item.key, -1),
                       )
                     : null,
-                icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                icon: const Icon(AppIcons.moveUp),
               ),
               CircleAvatar(
                 radius: context.scaled(TokensSize.iconM) / 2,
@@ -671,7 +671,7 @@ class _MilestoneRow extends StatelessWidget {
                         ChallengeFormEvent.milestoneMoved(item.key, 1),
                       )
                     : null,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                icon: const Icon(AppIcons.moveDown),
               ),
             ],
           ),
@@ -755,7 +755,7 @@ class _MilestoneRow extends StatelessWidget {
               IconButton(
                 tooltip: l10n.challengesFormEditTaskTooltip,
                 onPressed: enabled ? onEdit : null,
-                icon: const Icon(Icons.edit_outlined),
+                icon: const Icon(AppIcons.edit),
               ),
               IconButton(
                 tooltip: l10n.challengesFormRemoveTaskTooltip,
@@ -764,7 +764,7 @@ class _MilestoneRow extends StatelessWidget {
                         ChallengeFormEvent.milestoneRemoved(item.key),
                       )
                     : null,
-                icon: const Icon(Icons.delete_outline_rounded),
+                icon: const Icon(AppIcons.delete),
               ),
             ],
           ),

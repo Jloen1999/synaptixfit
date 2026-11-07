@@ -246,7 +246,7 @@ class _NoteEditorViewState extends State<_NoteEditorView>
                       ? l10n.academicNoteEditMode
                       : l10n.academicNotePreview,
                   icon: Icon(
-                    _preview ? Icons.edit_outlined : Icons.visibility_outlined,
+                    _preview ? AppIcons.edit : Icons.visibility_outlined,
                   ),
                   onPressed: () => setState(() => _preview = !_preview),
                 ),

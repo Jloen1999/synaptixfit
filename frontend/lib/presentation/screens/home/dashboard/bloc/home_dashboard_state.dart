@@ -50,6 +50,10 @@ abstract class HomeDashboardState with _$HomeDashboardState {
     /// Resultado de marcar o desmarcar (efecto de un solo uso: aviso con
     /// «Deshacer»).
     HomeCompletionNotice? completionNotice,
+
+    /// Lo último marcado o desmarcado que aún se puede deshacer con Ctrl+Z
+    /// (no se limpia al mostrar el aviso, como [completionNotice]).
+    HomeCompletionNoticeDone? lastUndoable,
   }) = _HomeDashboardState;
 }
 

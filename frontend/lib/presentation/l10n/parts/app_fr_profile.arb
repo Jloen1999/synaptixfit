@@ -25,7 +25,7 @@
   "profileDegreesHint": "Les matières de ces filières apparaîtront dans le sélecteur de matières.",
   "profileDegreesLinkAction": "Lier une filière",
   "profileDegreesLinked": "Filière liée",
-  "profileDegreesUnlinked": "Filière déliée",
+  "profileDegreesUnlinked": "Filière déliée. Pour la retrouver, utilise « Lier une filière » sur cet écran.",
   "profileDegreesEmptyTitle": "Aucune filière liée",
   "profileDegreesEmptyMessage": "Lie ta filière pour choisir tes matières du programme.",
   "profileDegreesUnlinkTitle": "Délier la filière ?",
@@ -224,7 +224,7 @@
   "profileDailyLimitValue": "{count} par jour",
   "profileExportTitle": "Exporter mes données",
   "profileExportHint": "Télécharge un fichier JSON avec toutes tes informations",
-  "profileExportDone": "Données exportées",
+  "profileExportDone": "Données enregistrées dans le dossier choisi (dans le navigateur, dans Téléchargements).",
   "profileExportCancelled": "Export annulé",
   "profileDeleteTitle": "Supprimer mon compte",
   "profileDeleteHint": "Supprime définitivement ton compte et tes données",
@@ -419,5 +419,6 @@
   "profileBirthDateRemove": "Retirer la date",
   "profileBirthDateSuggestion": "Ajoute ta date de naissance : ton âge se mettra à jour tout seul et nous te souhaiterons ton anniversaire.",
   "profileBirthDateAdd": "Ajouter",
-  "profileErrorInvalidBirthDate": "Vérifie ta date de naissance : elle ne peut pas être future et l'âge doit être compris entre 14 et 100 ans."
+  "profileErrorInvalidBirthDate": "Vérifie ta date de naissance : elle ne peut pas être future et l'âge doit être compris entre 14 et 100 ans.",
+  "profileEnrollmentShort": "Importer l’inscription"
 }

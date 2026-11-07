@@ -793,7 +793,7 @@ class _RestBanner extends StatelessWidget {
               tooltip: l10n.trainingRestMore,
               onPressed: () =>
                   bloc.add(const LiveSessionEvent.restAdjusted(15)),
-              icon: const Icon(Icons.add_rounded),
+              icon: const Icon(AppIcons.add),
             ),
             TextButton(
               onPressed: () => bloc.add(const LiveSessionEvent.restSkipped()),
@@ -1110,7 +1110,7 @@ class _BottomBarState extends State<_BottomBar> {
               IconButton(
                 tooltip: l10n.trainingHowToNamed(up.exerciseName),
                 onPressed: () => openHowTo(context, up),
-                icon: const Icon(Icons.ondemand_video_rounded),
+                icon: const Icon(AppIcons.howTo),
               ),
             ],
           ),
@@ -1120,7 +1120,7 @@ class _BottomBarState extends State<_BottomBar> {
               Flexible(
                 child: AppSecondaryButton(
                   label: l10n.commonEdit,
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(AppIcons.edit),
                   onPressed: () => ifIdle(() => widget.onEdit(up, next)),
                 ),
               ),
@@ -1523,7 +1523,7 @@ class _ExerciseCard extends StatelessWidget {
                   onTap: () => openHowTo(context, exercise),
                   child: TextButton.icon(
                     onPressed: () => openHowTo(context, exercise),
-                    icon: const Icon(Icons.ondemand_video_rounded),
+                    icon: const Icon(AppIcons.howTo),
                     label: Text(l10n.trainingHowTo),
                   ),
                 ),
@@ -1540,7 +1540,7 @@ class _ExerciseCard extends StatelessWidget {
                                 .where((s) => s.setNumber == rows)
                                 .firstOrNull,
                           ),
-                    icon: const Icon(Icons.add_rounded),
+                    icon: const Icon(AppIcons.add),
                     label: Text(l10n.trainingExtraSet),
                   ),
               ],
@@ -1609,7 +1609,7 @@ class _FreeSetsCard extends StatelessWidget {
                         parameters: null,
                         previous: sets.lastOrNull,
                       ),
-                icon: const Icon(Icons.add_rounded),
+                icon: const Icon(AppIcons.add),
                 label: Text(l10n.trainingAddSet),
               ),
             ),
@@ -1686,7 +1686,7 @@ class _SetRow extends StatelessWidget {
               ),
               if (!readOnly)
                 Icon(
-                  s == null ? Icons.add_rounded : Icons.edit_outlined,
+                  s == null ? AppIcons.add : AppIcons.edit,
                   size: TokensSize.iconXs,
                   color: context.colors.onSurfaceVariant,
                 ),
@@ -1741,7 +1741,7 @@ class _AdaptationCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.tune_rounded, color: onColor),
+              Icon(AppIcons.filters, color: onColor),
               const SizedBox(width: TokensSpacing.s),
               Expanded(
                 child: Column(
@@ -1926,4 +1926,3 @@ class _LeaveSheet extends StatelessWidget {
     );
   }
 }
-

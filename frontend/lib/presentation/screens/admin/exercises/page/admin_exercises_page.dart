@@ -115,7 +115,7 @@ class _AdminExercisesViewState extends State<_AdminExercisesView>
                         onChanged: _onSearchChanged,
                         decoration: InputDecoration(
                           labelText: l10n.adminExercisesSearchHint,
-                          prefixIcon: const Icon(Icons.search_rounded),
+                          prefixIcon: const Icon(AppIcons.search),
                           isDense: true,
                         ),
                       ),
@@ -126,7 +126,7 @@ class _AdminExercisesViewState extends State<_AdminExercisesView>
                         minimumSize: const Size(0, 44),
                       ),
                       onPressed: _openForm,
-                      icon: const Icon(Icons.add_rounded),
+                      icon: const Icon(AppIcons.add),
                       label: Text(l10n.adminExercisesNew),
                     ),
                   ],
@@ -212,7 +212,7 @@ class _AdminExercisesViewState extends State<_AdminExercisesView>
         message: l10n.adminExercisesEmptyMessage,
         action: AppPrimaryButton(
           label: l10n.adminExercisesNew,
-          icon: Icons.add_rounded,
+          icon: AppIcons.add,
           onPressed: _openForm,
         ),
       );
@@ -399,17 +399,14 @@ class _ExerciseTile extends StatelessWidget {
               PopupMenuItem(
                 value: 'edit',
                 child: ListTile(
-                  leading: const Icon(Icons.edit_outlined),
+                  leading: const Icon(AppIcons.edit),
                   title: Text(l10n.commonEdit),
                 ),
               ),
               PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(
-                    Icons.delete_outline_rounded,
-                    color: colors.error,
-                  ),
+                  leading: Icon(AppIcons.delete, color: colors.error),
                   title: Text(l10n.commonDelete),
                 ),
               ),

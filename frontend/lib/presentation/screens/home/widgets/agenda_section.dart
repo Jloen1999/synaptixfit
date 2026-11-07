@@ -615,14 +615,28 @@ class _EventTile extends StatelessWidget {
           ),
         );
       case _EventAction.start when onStartTraining != null:
-        return TextButton(
-          onPressed: onStartTraining,
-          child: Text(l10n.homeTrainingStart),
+        // El lector oye qué se empieza, no solo «Empezar».
+        return Semantics(
+          label: '${l10n.homeTrainingStart}: $title',
+          excludeSemantics: true,
+          button: true,
+          onTap: onStartTraining,
+          child: TextButton(
+            onPressed: onStartTraining,
+            child: Text(l10n.homeTrainingStart),
+          ),
         );
       case _EventAction.didIt when onSetCompleted != null:
-        return TextButton(
-          onPressed: busy ? null : () => _toggle(context, true),
-          child: Text(l10n.homeAgendaDidIt),
+        return Semantics(
+          label: '${l10n.homeAgendaDidIt}: $title',
+          excludeSemantics: true,
+          button: true,
+          enabled: !busy,
+          onTap: busy ? null : () => _toggle(context, true),
+          child: TextButton(
+            onPressed: busy ? null : () => _toggle(context, true),
+            child: Text(l10n.homeAgendaDidIt),
+          ),
         );
       default:
         return null;
@@ -674,7 +688,7 @@ class _EventTile extends StatelessWidget {
                 color: context.colors.error,
               ),
             ItemTimeStatus.missed => AppPill(
-              icon: Icons.history_rounded,
+              icon: AppIcons.history,
               label: l10n.homeAgendaMissed,
               color: context.palette.warning,
             ),
@@ -686,12 +700,16 @@ class _EventTile extends StatelessWidget {
             _ => null,
           };
     // Con texto grande la pastilla baja bajo el subtítulo para no comerse el título.
-    final largeText = context.scaled(1) > 1.3;
+    final largeText = context.largeText;
     final subtitleText = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(subtitle, maxLines: largeText ? 2 : 1, overflow: TextOverflow.ellipsis),
+        Text(
+          subtitle,
+          maxLines: largeText ? 2 : 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         for (final task in tasks)
           Row(
             children: [
@@ -717,7 +735,9 @@ class _EventTile extends StatelessWidget {
     );
     final action = _actionWidget(context, title);
 
-    return AppFocusOutline(
+    // La fila abre el evento y la acción (casilla, «Empezar», «Ya lo hice»)
+    // va al lado, como hermana: sin una zona de toque dentro de otra.
+    final tile = AppFocusOutline(
       child: ListTile(
         minTileHeight: TokensSize.listTileMin,
         onTap: onTap,
@@ -752,10 +772,7 @@ class _EventTile extends StatelessWidget {
               )
             : subtitleText,
         trailing: action != null
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [?(largeText ? null : statusPill), action],
-              )
+            ? (largeText ? null : statusPill)
             : event.completed
             ? Tooltip(
                 message: l10n.homeAgendaCompleted,
@@ -769,6 +786,32 @@ class _EventTile extends StatelessWidget {
             ? null
             : statusPill,
       ),
+    );
+    if (action == null) return tile;
+    // Con texto grande un botón con texto («Empezar», «Ya lo hice») baja bajo
+    // la fila: al lado dejaría el título sin sitio. La casilla cabe siempre.
+    if (largeText && _action != _EventAction.check) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          tile,
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: TokensSize.iconM + TokensSpacing.m * 2,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: action,
+            ),
+          ),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: tile),
+        action,
+      ],
     );
   }
 

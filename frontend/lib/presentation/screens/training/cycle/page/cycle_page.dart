@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -88,6 +90,25 @@ class _CycleView extends StatelessWidget with ErrorsMessageMixin {
           context.showSnack(errorMessage(context, error));
           return;
         }
+        // Borrar un día se deshace volviendo a apuntarlo tal cual estaba.
+        if (state.notice == CycleNotice.deleted) {
+          if (state.deletedDay case final day?) {
+            final bloc = context.read<CycleBloc>();
+            final controller = context.showActionSnack(
+              l10n.trainingCycleDayDeleted,
+              actionLabel: l10n.commonUndo,
+              duration: TokensDuration.undoWindow,
+              onAction: () => bloc.add(CycleEvent.dayLogged(day)),
+            );
+            // Ctrl+Z vale mientras se ve el aviso, como su «Deshacer».
+            unawaited(
+              controller.closed.then((_) {
+                if (!bloc.isClosed) bloc.add(CycleEvent.undoExpired(day.date));
+              }),
+            );
+            return;
+          }
+        }
         context.showSnack(switch (state.notice!) {
           CycleNotice.saved => l10n.trainingCycleSaved,
           CycleNotice.deleted => l10n.trainingCycleDayDeleted,
@@ -98,39 +119,32 @@ class _CycleView extends StatelessWidget with ErrorsMessageMixin {
       builder: (context, state) {
         final overview = state.overview;
         final enabled = overview?.enabled ?? false;
-        return Scaffold(
-          appBar: AppPageBar.reading(
-            title: Text(l10n.trainingCycleTitle),
-            actions: [
-              if (enabled)
-                PopupMenuButton<_MenuAction>(
-                  tooltip: l10n.trainingCycleMenu,
-                  onSelected: (a) => _menu(context, a),
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: _MenuAction.deleteAll,
-                      child: Text(l10n.trainingCycleDeleteAll),
-                    ),
-                    PopupMenuItem(
-                      value: _MenuAction.disable,
-                      child: Text(l10n.trainingCycleDisable),
-                    ),
-                  ],
+        // Ctrl+Z (Cmd+Z) deshace el borrado de un día mientras dura su aviso.
+        return AppUndoShortcut(
+          onUndo: () {
+            final day = state.deletedDay;
+            if (day == null) return;
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            context.read<CycleBloc>().add(CycleEvent.dayLogged(day));
+          },
+          child: Scaffold(
+            appBar: AppPageBar.reading(title: Text(l10n.trainingCycleTitle)),
+            body: AppContentWidth.reading(
+              child: switch (state) {
+                CycleState(loading: true, overview: null) =>
+                  const AppSkeletonList(),
+                CycleState(error: final error?, overview: null) => AppErrorView(
+                  error: error,
+                  onRetry: () =>
+                      context.read<CycleBloc>().add(const CycleEvent.started()),
                 ),
-            ],
-          ),
-          body: AppContentWidth.reading(
-            child: switch (state) {
-              CycleState(loading: true, overview: null) =>
-                const AppSkeletonList(),
-              CycleState(error: final error?, overview: null) => AppErrorView(
-                error: error,
-                onRetry: () =>
-                    context.read<CycleBloc>().add(const CycleEvent.started()),
-              ),
-              _ when !enabled => _Intro(saving: state.saving),
-              _ => _Tracking(state: state),
-            },
+                _ when !enabled => _Intro(saving: state.saving),
+                _ => _Tracking(
+                  state: state,
+                  onManage: (action) => _menu(context, action),
+                ),
+              },
+            ),
           ),
         );
       },
@@ -221,9 +235,10 @@ String _phaseLabel(AppLocalizations l10n, CyclePhase phase) => switch (phase) {
 
 /// Seguimiento activo: resumen, hoy y el mes.
 class _Tracking extends StatelessWidget {
-  const _Tracking({required this.state});
+  const _Tracking({required this.state, required this.onManage});
 
   final CycleState state;
+  final ValueChanged<_MenuAction> onManage;
 
   @override
   Widget build(BuildContext context) {
@@ -288,6 +303,26 @@ class _Tracking extends StatelessWidget {
         Text(l10n.trainingCycleAdjustHint, style: muted),
         const SizedBox(height: TokensSpacing.l),
         _Month(state: state),
+        // Antes en un menú de tres puntos: a la vista y con texto.
+        const SizedBox(height: TokensSpacing.l),
+        AppSectionHeader(title: l10n.trainingCycleMenu),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: () => onManage(_MenuAction.disable),
+            icon: const Icon(Icons.toggle_off_outlined),
+            label: Text(l10n.trainingCycleDisable),
+          ),
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: () => onManage(_MenuAction.deleteAll),
+            style: TextButton.styleFrom(foregroundColor: context.colors.error),
+            icon: const Icon(AppIcons.delete),
+            label: Text(l10n.trainingCycleDeleteAll),
+          ),
+        ),
       ],
     );
   }
@@ -320,12 +355,10 @@ class _Month extends StatelessWidget with ErrorsMessageMixin {
     final dayLabel = DateFormat.MMMMEEEEd(l10n.localeName);
     // Alto de fila: 48 dp como mínimo y más con letra grande, para que la
     // cifra y su marca no se corten.
-    final rowHeight = MediaQuery.textScalerOf(
-      context,
-    ).scale(TokensLayout.minTouchTarget).clamp(
-      TokensLayout.minTouchTarget,
-      double.infinity,
-    ).toDouble();
+    final rowHeight = MediaQuery.textScalerOf(context)
+        .scale(TokensLayout.minTouchTarget)
+        .clamp(TokensLayout.minTouchTarget, double.infinity)
+        .toDouble();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -389,53 +422,53 @@ class _Month extends StatelessWidget with ErrorsMessageMixin {
         else if (state.daysLoading)
           AppSkeletonGroup(child: AppSkeleton(height: rowHeight * 6))
         else
-        GridView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7,
-            mainAxisExtent: rowHeight,
-          ),
-          children: [
-            for (final w in weekdays)
-              ExcludeSemantics(
-                child: Center(
-                  child: Text(w, style: context.textStyles.labelMedium),
+          GridView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisExtent: rowHeight,
+            ),
+            children: [
+              for (final w in weekdays)
+                ExcludeSemantics(
+                  child: Center(
+                    child: Text(w, style: context.textStyles.labelMedium),
+                  ),
                 ),
-              ),
-            for (var i = 0; i < offset; i++) const SizedBox.shrink(),
-            for (var d = 1; d <= daysInMonth; d++)
-              Builder(
-                builder: (context) {
-                  final date = DateTime(month.year, month.month, d);
-                  final logged = state.days[date];
-                  final future = date.isAfter(today);
-                  final isToday = date == today;
-                  final label = isToday
-                      ? l10n.trainingCycleTodayDate(dayLabel.format(date))
-                      : dayLabel.format(date);
-                  return _DayCell(
-                    day: d,
-                    today: isToday,
-                    period: logged?.period ?? false,
-                    logged: logged != null,
-                    semanticLabel: logged == null
-                        ? l10n.trainingCycleDayEmpty(label)
-                        : logged.period
-                        ? l10n.trainingCycleDayPeriod(label)
-                        : l10n.trainingCycleDayLogged(label),
-                    onTap: future
-                        ? null
-                        : () => showCycleDaySheet(
-                            context,
-                            date: date,
-                            current: logged,
-                          ),
-                  );
-                },
-              ),
-          ],
-        ),
+              for (var i = 0; i < offset; i++) const SizedBox.shrink(),
+              for (var d = 1; d <= daysInMonth; d++)
+                Builder(
+                  builder: (context) {
+                    final date = DateTime(month.year, month.month, d);
+                    final logged = state.days[date];
+                    final future = date.isAfter(today);
+                    final isToday = date == today;
+                    final label = isToday
+                        ? l10n.trainingCycleTodayDate(dayLabel.format(date))
+                        : dayLabel.format(date);
+                    return _DayCell(
+                      day: d,
+                      today: isToday,
+                      period: logged?.period ?? false,
+                      logged: logged != null,
+                      semanticLabel: logged == null
+                          ? l10n.trainingCycleDayEmpty(label)
+                          : logged.period
+                          ? l10n.trainingCycleDayPeriod(label)
+                          : l10n.trainingCycleDayLogged(label),
+                      onTap: future
+                          ? null
+                          : () => showCycleDaySheet(
+                              context,
+                              date: date,
+                              current: logged,
+                            ),
+                    );
+                  },
+                ),
+            ],
+          ),
         const SizedBox(height: TokensSpacing.s),
         Wrap(
           spacing: TokensSpacing.m,
@@ -708,7 +741,7 @@ class _DaySheetState extends State<_DaySheet> {
                 const SizedBox(height: TokensSpacing.s),
                 AppSecondaryButton(
                   label: l10n.trainingCycleDeleteDay,
-                  icon: const Icon(Icons.delete_outline_rounded),
+                  icon: const Icon(AppIcons.delete),
                   onPressed: () {
                     context.read<CycleBloc>().add(
                       CycleEvent.dayDeleted(widget.date),

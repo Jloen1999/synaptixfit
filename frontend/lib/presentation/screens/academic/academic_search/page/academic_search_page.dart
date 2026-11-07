@@ -73,7 +73,9 @@ class AcademicSearchBody extends StatelessWidget {
             Expanded(
               child: BlocBuilder<AcademicSearchBloc, AcademicSearchState>(
                 builder: (context, state) => switch (state.status) {
-                  AcademicSearchStatus.idle => _Hint(text: l10n.academicSearchHint),
+                  AcademicSearchStatus.idle => _Hint(
+                    text: l10n.academicSearchHint,
+                  ),
                   AcademicSearchStatus.loading =>
                     state.result == null
                         ? const AppSkeletonList(count: 5, height: 56)
@@ -233,15 +235,12 @@ class _HitTile extends StatelessWidget {
     final due = hit.at;
     final subtitle = [
       if (hit.context != null && hit.context!.isNotEmpty) hit.context!,
-      if (due != null)
-        AppDueDates.text(context, due, DateTime.now()),
+      if (due != null) AppDueDates.text(context, due, DateTime.now()),
     ].join(' · ');
     final soon = due != null && AppDueDates.isSoon(due, DateTime.now());
     return AppFocusOutline(
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: TokensSpacing.s,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: TokensSpacing.s),
         leading: Icon(_icon, color: context.colors.primary),
         title: AppHighlightedText(
           text: hit.title.isEmpty ? l10n.academicSearchUntitled : hit.title,

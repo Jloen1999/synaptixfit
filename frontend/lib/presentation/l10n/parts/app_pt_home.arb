@@ -185,5 +185,6 @@
   "homeStartRun": "Começar a correr",
   "homeBirthdayTitle": "Parabéns, {name}!",
   "homeBirthdayTitleNoName": "Parabéns!",
-  "homeBirthdayMessage": "Tem um ótimo dia. O teu plano espera por ti quando quiseres."
+  "homeBirthdayMessage": "Tem um ótimo dia. O teu plano espera por ti quando quiseres.",
+  "homeSetupSnoozedWhere": "Ocultado durante 7 dias. Depois volta a aparecer aqui, no Início."
 }

@@ -245,7 +245,7 @@ class _WellnessProfileFormState extends State<WellnessProfileForm> {
                       dimension: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.lightbulb_outline_rounded),
+                  : const Icon(AppIcons.proposal),
               label: Text(l10n.profileGoalSuggestAction),
             ),
             child: Column(
@@ -655,11 +655,7 @@ class _GoalSuggestionsPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.lightbulb_outline_rounded,
-                size: 18,
-                color: context.colors.tertiary,
-              ),
+              Icon(AppIcons.proposal, size: 18, color: context.colors.tertiary),
               const SizedBox(width: TokensSpacing.xs),
               Expanded(
                 child: Text(

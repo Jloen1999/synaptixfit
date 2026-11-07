@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/enums/ai_document_type.dart';
@@ -26,6 +27,10 @@ import 'test_results/page/test_results_page.dart';
 /// Rutas del módulo academic.
 abstract final class AcademicPaths {
   static const root = '/academic';
+
+  /// Académico con el filtro «Archivadas» puesto (el aviso de archivar
+  /// lleva aquí).
+  static const archived = '/academic?view=archived';
   static const newSubject = '/academic/subjects/new';
 
   /// Elegir asignaturas del plan de estudios: una sola pantalla, la del perfil
@@ -177,7 +182,11 @@ final _uuid = RegExp(
 List<RouteBase> academicBranchRoutes() => [
   GoRoute(
     path: AcademicPaths.root,
-    builder: (context, state) => const AcademicHomePage(),
+    builder: (context, state) {
+      final archived = state.uri.queryParameters['view'] == 'archived';
+      // La clave rehace la pantalla al llegar con otro filtro desde un aviso.
+      return AcademicHomePage(key: ValueKey(archived), showArchived: archived);
+    },
   ),
 ];
 

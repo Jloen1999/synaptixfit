@@ -24,6 +24,10 @@ abstract class DeadlinesState with _$DeadlinesState {
 
     /// Entrega abierta desde su aviso: va la primera y destacada.
     String? focusId,
+
+    /// El aviso apuntaba a una entrega que ya no existe (se borró): la
+    /// pantalla lo dice en vez de abrir la lista sin más.
+    @Default(false) bool focusMissing,
   }) = _DeadlinesState;
 
   const DeadlinesState._();

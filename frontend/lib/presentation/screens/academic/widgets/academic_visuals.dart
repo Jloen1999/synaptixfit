@@ -255,7 +255,9 @@ String nextClassText(
   final when = DateFormat.E(l10n.localeName).add_jm().format(at);
   final room = place?.trim();
   if (short) {
-    return room == null || room.isEmpty ? when : l10n.academicClassWhenAt(when, room);
+    return room == null || room.isEmpty
+        ? when
+        : l10n.academicClassWhenAt(when, room);
   }
   return room == null || room.isEmpty
       ? l10n.academicNextClass(when)
@@ -280,4 +282,3 @@ String _joinList(BuildContext context, List<String> items) {
     items.last,
   );
 }
-

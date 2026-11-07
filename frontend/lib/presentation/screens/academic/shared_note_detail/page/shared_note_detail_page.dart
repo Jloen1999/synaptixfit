@@ -197,7 +197,7 @@ class _BottomAction extends StatelessWidget {
           const SizedBox(height: TokensSpacing.s),
           AppSecondaryButton(
             label: l10n.academicSharedOpenCopy,
-            icon: const Icon(Icons.open_in_new_rounded),
+            icon: const Icon(AppIcons.openExternal),
             onPressed: () => context.push(AcademicPaths.note(copy)),
           ),
         ],
@@ -217,7 +217,7 @@ class _BottomAction extends StatelessWidget {
         const SizedBox(height: TokensSpacing.s),
         AppPrimaryButton(
           label: l10n.academicSharedCopy,
-          icon: Icons.content_copy_rounded,
+          icon: AppIcons.copyToMine,
           loading: copying,
           onPressed: copying
               ? null

@@ -438,7 +438,7 @@ class _ActionsCard extends StatelessWidget {
 
     final actions = <_ActionSpec>[
       _ActionSpec(
-        icon: Icons.edit_outlined,
+        icon: AppIcons.edit,
         label: l10n.adminUserEditIdentity,
         busy: state.busyAction == AdminUserAction.identity,
         onPressed: !canEdit

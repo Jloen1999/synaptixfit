@@ -44,7 +44,7 @@ class ActiveChallengesSection extends StatelessWidget {
               message: l10n.homeChallengesEmptyMessage,
               action: AppSecondaryButton(
                 label: l10n.homeChallengesCreate,
-                icon: const Icon(Icons.add_rounded),
+                icon: const Icon(AppIcons.add),
                 onPressed: onCreate,
               ),
             ),

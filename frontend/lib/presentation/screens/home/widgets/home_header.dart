@@ -108,7 +108,7 @@ class HomeHeader extends StatelessWidget {
           IconButton(
             tooltip: l10n.homeCommunity,
             onPressed: onCommunity,
-            icon: const Icon(Icons.forum_outlined),
+            icon: const Icon(AppIcons.community),
           ),
         IconButton(
           tooltip: l10n.homeNotificationsUnread(unreadNotifications),
@@ -118,7 +118,7 @@ class HomeHeader extends StatelessWidget {
             label: Text(
               unreadNotifications > 99 ? '99+' : '$unreadNotifications',
             ),
-            child: const Icon(Icons.notifications_outlined),
+            child: const Icon(AppIcons.notifications),
           ),
         ),
         if (isAdmin)

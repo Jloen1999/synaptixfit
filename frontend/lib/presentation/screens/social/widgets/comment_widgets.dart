@@ -113,28 +113,25 @@ class CommentTile extends StatelessWidget {
               ),
             ),
           ),
-          PopupMenuButton<_CommentAction>(
-            tooltip: l10n.socialMoreActions,
-            icon: const Icon(Icons.more_vert_rounded, size: 20),
-            onSelected: (action) => _onAction(context, action),
-            itemBuilder: (_) => comment.mine
-                ? [
-                    PopupMenuItem(
-                      value: _CommentAction.edit,
-                      child: Text(l10n.commonEdit),
-                    ),
-                    PopupMenuItem(
-                      value: _CommentAction.delete,
-                      child: Text(l10n.commonDelete),
-                    ),
-                  ]
-                : [
-                    PopupMenuItem(
-                      value: _CommentAction.report,
-                      child: Text(l10n.socialReport),
-                    ),
-                  ],
-          ),
+          // Una o dos acciones: a la vista con su icono de siempre (lápiz,
+          // papelera, reportar), sin menú de tres puntos.
+          if (comment.mine) ...[
+            IconButton(
+              tooltip: l10n.commonEdit,
+              icon: const Icon(AppIcons.edit),
+              onPressed: () => _onAction(context, _CommentAction.edit),
+            ),
+            IconButton(
+              tooltip: l10n.commonDelete,
+              icon: const Icon(AppIcons.delete),
+              onPressed: () => _onAction(context, _CommentAction.delete),
+            ),
+          ] else
+            IconButton(
+              tooltip: l10n.socialReport,
+              icon: const Icon(AppIcons.report),
+              onPressed: () => _onAction(context, _CommentAction.report),
+            ),
         ],
       ),
     );
@@ -211,10 +208,7 @@ class _CommentInputState extends State<CommentInput> {
                   : IconButton(
                       tooltip: l10n.socialCommentSend,
                       onPressed: _send,
-                      icon: Icon(
-                        Icons.send_rounded,
-                        color: context.colors.primary,
-                      ),
+                      icon: Icon(AppIcons.send, color: context.colors.primary),
                     ),
             ),
           ],

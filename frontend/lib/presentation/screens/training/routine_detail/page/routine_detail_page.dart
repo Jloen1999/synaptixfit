@@ -194,7 +194,7 @@ class _DetailViewState extends State<_DetailView> {
                     PopupMenuItem(
                       value: _MenuAction.edit,
                       child: ListTile(
-                        leading: const Icon(Icons.edit_outlined),
+                        leading: const Icon(AppIcons.edit),
                         title: Text(l10n.trainingEditDetails),
                       ),
                     ),
@@ -208,7 +208,7 @@ class _DetailViewState extends State<_DetailView> {
                     PopupMenuItem(
                       value: _MenuAction.duplicate,
                       child: ListTile(
-                        leading: const Icon(Icons.copy_rounded),
+                        leading: const Icon(AppIcons.duplicate),
                         title: Text(l10n.trainingDuplicate),
                       ),
                     ),
@@ -216,7 +216,7 @@ class _DetailViewState extends State<_DetailView> {
                       value: _MenuAction.delete,
                       child: ListTile(
                         leading: Icon(
-                          Icons.delete_outline_rounded,
+                          AppIcons.delete,
                           color: context.colors.error,
                         ),
                         title: Text(l10n.commonDelete),
@@ -237,7 +237,7 @@ class _DetailViewState extends State<_DetailView> {
                   onPressed: state.busy
                       ? null
                       : () => _bloc.add(const RoutineDetailEvent.cloned()),
-                  icon: const Icon(Icons.download_rounded),
+                  icon: const Icon(AppIcons.copyToMine),
                   label: Text(l10n.trainingClone),
                 )
               : null,
@@ -567,14 +567,14 @@ class _WeekSection extends StatelessWidget {
               IconButton(
                 tooltip: l10n.trainingRenameWeek,
                 onPressed: busy ? null : renameWeek,
-                icon: const Icon(Icons.edit_outlined),
+                icon: const Icon(AppIcons.edit),
               ),
               IconButton(
                 tooltip: l10n.trainingDeleteWeekTitle,
                 onPressed: busy || routine.weeks.length <= 1
                     ? null
                     : deleteWeek,
-                icon: const Icon(Icons.delete_outline_rounded),
+                icon: const Icon(AppIcons.delete),
               ),
             ],
           ],
@@ -601,7 +601,7 @@ class _WeekSection extends StatelessWidget {
         if (owned && week.days.length < 7)
           AppSecondaryButton(
             label: l10n.trainingAddDay,
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.add),
             onPressed: busy ? null : addDay,
           ),
       ],
@@ -880,12 +880,12 @@ class _DayCardState extends State<_DayCard> {
           IconButton(
             tooltip: l10n.trainingRenameDay,
             onPressed: busy ? null : rename,
-            icon: const Icon(Icons.edit_outlined),
+            icon: const Icon(AppIcons.edit),
           ),
           IconButton(
             tooltip: l10n.trainingDeleteDay,
             onPressed: busy ? null : delete,
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: const Icon(AppIcons.delete),
           ),
         ],
       ],
@@ -1003,7 +1003,7 @@ class _DayCardState extends State<_DayCard> {
                 children: [
                   TextButton.icon(
                     onPressed: busy ? null : addExercise,
-                    icon: const Icon(Icons.add_rounded),
+                    icon: const Icon(AppIcons.add),
                     label: Text(l10n.trainingAddExercise),
                   ),
                   if (day.status == ProgressStatus.skipped)
@@ -1013,7 +1013,7 @@ class _DayCardState extends State<_DayCard> {
                           : () => context.read<RoutineDetailBloc>().add(
                               RoutineDetailEvent.dayUnskipped(day.id),
                             ),
-                      icon: const Icon(Icons.undo_rounded),
+                      icon: const Icon(AppIcons.undo),
                       label: Text(l10n.trainingUnskipDay),
                     )
                   else if (day.status == ProgressStatus.pending &&

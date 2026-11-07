@@ -92,7 +92,7 @@ class _Intro extends StatelessWidget {
       (Icons.check_circle_outline_rounded, l10n.profileEnrollmentPrivacyRead),
       (Icons.visibility_off_outlined, l10n.profileEnrollmentPrivacyHidden),
       (Icons.cloud_outlined, l10n.profileEnrollmentPrivacyAi),
-      (Icons.delete_outline_rounded, l10n.profileEnrollmentPrivacyNotStored),
+      (AppIcons.delete, l10n.profileEnrollmentPrivacyNotStored),
     ];
     return ListView(
       padding: const EdgeInsets.all(TokensSpacing.m),
@@ -213,14 +213,11 @@ class _Review extends StatelessWidget with ErrorsMessageMixin {
                 runSpacing: TokensSpacing.xs,
                 children: [
                   if (p.academicYear != null)
-                    AppPill(
-                      icon: Icons.calendar_month_outlined,
-                      label: p.academicYear!,
-                    ),
+                    AppPill(icon: AppIcons.calendar, label: p.academicYear!),
                   AppPill(
                     icon: p.degreeId != null
                         ? Icons.verified_outlined
-                        : Icons.help_outline_rounded,
+                        : AppIcons.help,
                     label: p.degreeId != null
                         ? l10n.profileEnrollmentDegreeFound
                         : l10n.profileEnrollmentDegreeNotFound,

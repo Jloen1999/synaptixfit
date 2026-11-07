@@ -169,13 +169,13 @@ class _ExerciseRowState extends State<ExerciseRow> {
                   focusNode: _upFocus,
                   tooltip: l10n.trainingMoveUpNamed(name),
                   onPressed: widget.onMoveUp,
-                  icon: const Icon(Icons.arrow_upward_rounded),
+                  icon: const Icon(AppIcons.moveUp),
                 ),
                 IconButton(
                   focusNode: _downFocus,
                   tooltip: l10n.trainingMoveDownNamed(name),
                   onPressed: widget.onMoveDown,
-                  icon: const Icon(Icons.arrow_downward_rounded),
+                  icon: const Icon(AppIcons.moveDown),
                 ),
               ],
             ),
@@ -185,7 +185,7 @@ class _ExerciseRowState extends State<ExerciseRow> {
                 if (widget.onEdit != null)
                   _action(
                     widget.onEdit!,
-                    Icons.tune_rounded,
+                    AppIcons.filters,
                     l10n.trainingEditSetsShort,
                     l10n.trainingEditSetsNamed(name),
                   ),
@@ -199,7 +199,7 @@ class _ExerciseRowState extends State<ExerciseRow> {
                 if (widget.onRemove != null)
                   _action(
                     widget.onRemove!,
-                    Icons.delete_outline_rounded,
+                    AppIcons.delete,
                     l10n.trainingRemoveShort,
                     l10n.trainingRemoveExerciseNamed(name),
                     color: context.colors.error,

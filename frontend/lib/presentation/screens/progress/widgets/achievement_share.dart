@@ -201,7 +201,7 @@ class _AchievementShareDialogState extends State<_AchievementShareDialog>
         ),
         AppPrimaryButton(
           label: l10n.achievementShareAction,
-          icon: Icons.ios_share_rounded,
+          icon: AppIcons.share,
           loading: _rendering,
           onPressed: _share,
         ),

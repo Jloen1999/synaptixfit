@@ -10,7 +10,6 @@
   "socialPeriodMonth": "Este mês",
   "socialNewPosts": "{count, plural, =1{Há 1 publicação nova} other{Há {count} publicações novas}}",
   "socialBadgeOverflow": "99+",
-  "socialMoreActions": "Mais ações",
   "socialOpenProfileOf": "Ver o perfil de {name}",
   "socialTimeNow": "agora",
   "socialTimeMinutes": "há {count} min",
@@ -55,8 +54,6 @@
   "socialCommentsLoadMore": "Ver mais comentários",
   "socialFriendsTitle": "Amigos",
   "socialSearchUsersHint": "Procurar pessoas por nome",
-  "socialSearchEmptyTitle": "Sem resultados",
-  "socialSearchEmptyMessage": "Não há ninguém que corresponda a «{query}».",
   "socialTabFriends": "Amigos",
   "socialTabReceived": "Recebidos",
   "socialTabSent": "Enviados",
@@ -122,7 +119,7 @@
   "socialMsgRequestRejected": "Pedido recusado",
   "socialMsgRequestCancelled": "Pedido cancelado",
   "socialMsgFriendRemoved": "Amigo removido",
-  "socialMsgUserBlocked": "Utilizador bloqueado",
+  "socialMsgUserBlocked": "Utilizador bloqueado. Para o desbloquear: Comunidade › Amigos › Bloqueados.",
   "socialMsgUserUnblocked": "Utilizador desbloqueado",
   "socialMsgAllNotificationsRead": "Todas as notificações estão lidas",
   "socialMsgNotificationDeleted": "Notificação eliminada",
@@ -185,5 +182,6 @@
   "socialProfileBadgesAll": "Ver as {count}",
   "socialProfileBadgeSemantics": "{name}, insígnia {rarity}.",
   "socialProfileBadgeEarnedOn": "Conseguida a {date}",
-  "socialProfileBadgeHint": "Ver o que é e quando foi conquistada"
+  "socialProfileBadgeHint": "Ver o que é e quando foi conquistada",
+  "socialSearchEmptyHint": "Verifica se está bem escrito ou experimenta outra parte do nome."
 }

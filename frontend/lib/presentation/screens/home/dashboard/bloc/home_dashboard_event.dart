@@ -36,11 +36,21 @@ sealed class HomeDashboardEvent with _$HomeDashboardEvent {
   /// «Marcar como hecho» o «Desmarcar» de un evento o una entrega de la agenda
   /// (y «Deshacer» del aviso, que pide lo contrario). Desmarcar devuelve la XP
   /// que dio; lo decide el servidor (ADR 0035).
+  /// [undo]: viene de «Deshacer» (o de Ctrl+Z): no se puede deshacer otra vez.
   const factory HomeDashboardEvent.completionSet({
     required String id,
     required HomeEventKind kind,
     required bool completed,
+    @Default(false) bool undo,
   }) = HomeDashboardCompletionSet;
+
+  /// Ctrl+Z en escritorio y web: deshace lo último marcado o desmarcado.
+  const factory HomeDashboardEvent.undoRequested() = HomeDashboardUndoRequested;
+
+  /// Se cerró el aviso de «Deshacer» de [id]: Ctrl+Z ya no lo deshace (si
+  /// entretanto se marcó otra cosa, esa sigue pudiéndose deshacer).
+  const factory HomeDashboardEvent.undoExpired(String id) =
+      HomeDashboardUndoExpired;
 
   /// La página ya ha avisado del resultado de marcar o desmarcar.
   const factory HomeDashboardEvent.completionNoticeHandled() =

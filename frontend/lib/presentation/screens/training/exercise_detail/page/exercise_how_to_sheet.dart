@@ -106,7 +106,7 @@ class _HowToSheet extends StatelessWidget {
                           context,
                         ).closeButtonTooltip,
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(AppIcons.close),
                       ),
                     ],
                   ),

@@ -94,30 +94,30 @@ class _GenerationCenterView extends StatelessWidget with ErrorsMessageMixin {
             if (ok && context.mounted) context.pop();
           },
           child: Scaffold(
-          appBar: AppPageBar(title: Text(l10n.academicGenerateTitle)),
-          bottomNavigationBar: artifact == null
-              ? _GenerateBar(state: state)
-              : _ResultBar(state: state),
-          body: switch (state) {
-            GenerationCenterState(loading: true) => const AppSkeletonList(
-              count: 5,
-            ),
-            GenerationCenterState(:final error?) => AppErrorView(
-              error: error,
-              onRetry: () => context.read<GenerationCenterBloc>().add(
-                const GenerationCenterEvent.started(),
+            appBar: AppPageBar(title: Text(l10n.academicGenerateTitle)),
+            bottomNavigationBar: artifact == null
+                ? _GenerateBar(state: state)
+                : _ResultBar(state: state),
+            body: switch (state) {
+              GenerationCenterState(loading: true) => const AppSkeletonList(
+                count: 5,
               ),
-            ),
-            GenerationCenterState(generating: true) => _GeneratingView(
-              kind: state.kind,
-            ),
-            _ when artifact != null => _ArtifactView(
-              artifact: artifact,
-              edited: state.edited,
-              canUndo: state.beforeRemoval != null,
-            ),
-            _ => _SetupView(state: state),
-          },
+              GenerationCenterState(:final error?) => AppErrorView(
+                error: error,
+                onRetry: () => context.read<GenerationCenterBloc>().add(
+                  const GenerationCenterEvent.started(),
+                ),
+              ),
+              GenerationCenterState(generating: true) => _GeneratingView(
+                kind: state.kind,
+              ),
+              _ when artifact != null => _ArtifactView(
+                artifact: artifact,
+                edited: state.edited,
+                canUndo: state.beforeRemoval != null,
+              ),
+              _ => _SetupView(state: state),
+            },
           ),
         );
       },
@@ -338,7 +338,7 @@ class _GenerateBar extends StatelessWidget {
       padding: const EdgeInsets.all(TokensSpacing.m),
       child: AppPrimaryButton(
         label: context.localizations.academicGenerateAction,
-        icon: Icons.lightbulb_outline_rounded,
+        icon: AppIcons.proposal,
         loading: state.generating,
         onPressed: state.selected.isEmpty || state.generating
             ? null
@@ -428,21 +428,21 @@ class _ResultBar extends StatelessWidget {
     );
     final tools = [
       IconButton(
-            tooltip: l10n.academicGenerateDiscard,
-            icon: const Icon(Icons.delete_outline_rounded),
-            onPressed: () => _keepingEdits(
-              context,
-              () => bloc.add(const GenerationCenterEvent.discarded()),
-            ),
-          ),
-          IconButton(
-            tooltip: l10n.academicAiRegenerate,
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => _keepingEdits(
-              context,
-              () => bloc.add(const GenerationCenterEvent.generateRequested()),
-            ),
-          ),
+        tooltip: l10n.academicGenerateDiscard,
+        icon: const Icon(AppIcons.delete),
+        onPressed: () => _keepingEdits(
+          context,
+          () => bloc.add(const GenerationCenterEvent.discarded()),
+        ),
+      ),
+      IconButton(
+        tooltip: l10n.academicAiRegenerate,
+        icon: const Icon(Icons.refresh_rounded),
+        onPressed: () => _keepingEdits(
+          context,
+          () => bloc.add(const GenerationCenterEvent.generateRequested()),
+        ),
+      ),
     ];
     if (context.largeText) {
       return SafeArea(
@@ -465,7 +465,10 @@ class _ResultBar extends StatelessWidget {
           ...tools,
           const SizedBox(width: TokensSpacing.s),
           Flexible(
-            child: Align(alignment: AlignmentDirectional.centerEnd, child: save),
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: save,
+            ),
           ),
         ],
       ),
@@ -583,7 +586,7 @@ class _ArtifactView extends StatelessWidget {
               alignment: AlignmentDirectional.centerStart,
               child: OutlinedButton.icon(
                 onPressed: () => _fixSummary(context),
-                icon: const Icon(Icons.edit_rounded),
+                icon: const Icon(AppIcons.edit),
                 label: Text(l10n.academicGenerateFixSummary),
               ),
             ),
@@ -603,7 +606,7 @@ class _ArtifactView extends StatelessWidget {
                   if (canUndo)
                     AppSecondaryButton(
                       label: l10n.commonUndo,
-                      icon: const Icon(Icons.undo_rounded),
+                      icon: const Icon(AppIcons.undo),
                       onPressed: () => context.read<GenerationCenterBloc>().add(
                         const GenerationCenterEvent.removalUndone(),
                       ),
@@ -722,13 +725,16 @@ class _ItemActions extends StatelessWidget {
         children: [
           TextButton.icon(
             onPressed: onFix,
-            icon: const Icon(Icons.edit_rounded),
+            icon: const Icon(AppIcons.edit),
             label: Text(l10n.academicGenerateFix, semanticsLabel: fixLabel),
           ),
           TextButton.icon(
             onPressed: onRemove,
-            icon: const Icon(Icons.remove_circle_outline_rounded),
-            label: Text(l10n.academicGenerateRemove, semanticsLabel: removeLabel),
+            icon: const Icon(AppIcons.remove),
+            label: Text(
+              l10n.academicGenerateRemove,
+              semanticsLabel: removeLabel,
+            ),
           ),
         ],
       ),

@@ -185,5 +185,6 @@
   "homeStartRun": "Start running",
   "homeBirthdayTitle": "Happy birthday, {name}!",
   "homeBirthdayTitleNoName": "Happy birthday!",
-  "homeBirthdayMessage": "Have a great day. Your plan is waiting whenever you want."
+  "homeBirthdayMessage": "Have a great day. Your plan is waiting whenever you want.",
+  "homeSetupSnoozedWhere": "Hidden for 7 days. After that it will show up here again, on Home."
 }

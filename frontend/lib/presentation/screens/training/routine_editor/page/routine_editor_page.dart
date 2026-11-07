@@ -73,7 +73,7 @@ class _EditorView extends StatelessWidget {
             appBar: AppPageBar.reading(
               leading: IconButton(
                 tooltip: l10n.commonClose,
-                icon: const Icon(Icons.close_rounded),
+                icon: const Icon(AppIcons.close),
                 onPressed: () => _close(context, state),
               ),
               title: Text(
@@ -204,7 +204,7 @@ class _ParametersStep extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.lightbulb_outline_rounded,
+                      AppIcons.proposal,
                       color: context.colors.onTertiaryContainer,
                     ),
                     const SizedBox(width: TokensSpacing.m),
@@ -252,7 +252,7 @@ class _ParametersStep extends StatelessWidget {
               const SizedBox(height: TokensSpacing.xl),
               AppPrimaryButton(
                 label: l10n.trainingGenerate,
-                icon: Icons.lightbulb_outline_rounded,
+                icon: AppIcons.proposal,
                 onPressed: () =>
                     bloc.add(const RoutineEditorEvent.generateRequested()),
               ),
@@ -509,23 +509,15 @@ class _EditingStepState extends State<_EditingStep> {
                 onChanged: (v) => _bloc.add(RoutineEditorEvent.goalChanged(v)),
               ),
               const SizedBox(height: TokensSpacing.m),
-              Text(
-                l10n.trainingVisibility,
-                style: context.textStyles.labelLarge,
-              ),
-              const SizedBox(height: TokensSpacing.xs),
-              SegmentedButton<vis.Visibility>(
-                segments: [
-                  for (final v in vis.Visibility.values)
-                    ButtonSegment(
-                      value: v,
-                      icon: Icon(v.icon),
-                      label: Text(v.label(l10n)),
-                    ),
-                ],
-                selected: {draft.visibility},
-                onSelectionChanged: (s) =>
-                    _bloc.add(RoutineEditorEvent.visibilityChanged(s.first)),
+              // Con el texto grande pasa a lista: ninguna opción se corta.
+              AppAdaptiveChoice<vis.Visibility>(
+                label: l10n.trainingVisibility,
+                values: vis.Visibility.values,
+                selected: draft.visibility,
+                labelOf: (v) => v.label(l10n),
+                iconOf: (v) => v.icon,
+                onChanged: (v) =>
+                    _bloc.add(RoutineEditorEvent.visibilityChanged(v)),
               ),
               const SizedBox(height: TokensSpacing.l),
               AppSectionHeader(title: l10n.trainingStructure),
@@ -585,10 +577,7 @@ class _ProposalBanner extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.lightbulb_outline_rounded,
-                  color: foreground,
-                ),
+                Icon(AppIcons.proposal, color: foreground),
                 const SizedBox(width: TokensSpacing.s),
                 Expanded(
                   child: Text(
@@ -700,12 +689,12 @@ class _WeekEditor extends StatelessWidget {
             IconButton(
               tooltip: l10n.trainingRenameWeek,
               onPressed: onRename,
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(AppIcons.edit),
             ),
             IconButton(
               tooltip: l10n.trainingDeleteWeekTitle,
               onPressed: canRemove ? onRemove : null,
-              icon: const Icon(Icons.delete_outline_rounded),
+              icon: const Icon(AppIcons.delete),
             ),
           ],
         ),
@@ -752,12 +741,12 @@ class _WeekEditor extends StatelessWidget {
                       IconButton(
                         tooltip: l10n.trainingRenameDay,
                         onPressed: () => onRenameDay(d, week.days[d]),
-                        icon: const Icon(Icons.edit_outlined),
+                        icon: const Icon(AppIcons.edit),
                       ),
                       IconButton(
                         tooltip: l10n.trainingDeleteDay,
                         onPressed: () => onRemoveDay(d),
-                        icon: const Icon(Icons.delete_outline_rounded),
+                        icon: const Icon(AppIcons.delete),
                       ),
                     ],
                   ),
@@ -824,7 +813,7 @@ class _WeekEditor extends StatelessWidget {
                               RoutineDraft.maxExercisesPerDay
                           ? null
                           : () => onAddExercise(d),
-                      icon: const Icon(Icons.add_rounded),
+                      icon: const Icon(AppIcons.add),
                       label: Text(l10n.trainingAddExercise),
                     ),
                   ),
@@ -834,7 +823,7 @@ class _WeekEditor extends StatelessWidget {
           ),
         AppSecondaryButton(
           label: l10n.trainingAddDay,
-          icon: const Icon(Icons.add_rounded),
+          icon: const Icon(AppIcons.add),
           onPressed: onAddDay,
         ),
       ],
@@ -893,7 +882,7 @@ class _EditorBottomBar extends StatelessWidget {
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.lightbulb_outline_rounded),
+                    : const Icon(AppIcons.proposal),
                 label: Text(l10n.trainingRefineAi),
               ),
             ),

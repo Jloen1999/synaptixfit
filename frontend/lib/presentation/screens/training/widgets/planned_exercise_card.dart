@@ -185,13 +185,13 @@ class _PlannedExerciseCardState extends State<PlannedExerciseCard> {
                     focusNode: _upFocus,
                     tooltip: l10n.trainingMoveUpNamed(name),
                     onPressed: widget.onMoveUp,
-                    icon: const Icon(Icons.arrow_upward_rounded),
+                    icon: const Icon(AppIcons.moveUp),
                   ),
                   IconButton(
                     focusNode: _downFocus,
                     tooltip: l10n.trainingMoveDownNamed(name),
                     onPressed: widget.onMoveDown,
-                    icon: const Icon(Icons.arrow_downward_rounded),
+                    icon: const Icon(AppIcons.moveDown),
                   ),
                 ],
               ),
@@ -221,7 +221,7 @@ class _PlannedExerciseCardState extends State<PlannedExerciseCard> {
                           foregroundColor: context.colors.error,
                         ),
                         onPressed: widget.onRemove,
-                        icon: const Icon(Icons.delete_outline_rounded),
+                        icon: const Icon(AppIcons.delete),
                         label: Text(l10n.trainingRemoveShort),
                       ),
                     ),
@@ -440,7 +440,7 @@ class _PlannedSetsTableState extends State<PlannedSetsTable> {
       onPressed: !widget.enabled || p.sets <= ExerciseParameters.minSets
           ? null
           : () => _removeSet(n),
-      icon: const Icon(Icons.remove_circle_outline_rounded),
+      icon: const Icon(AppIcons.remove),
     );
 
     final table = LayoutBuilder(
@@ -596,7 +596,7 @@ class _PlannedSetsTableState extends State<PlannedSetsTable> {
               child: TextButton.icon(
                 focusNode: _addFocus,
                 onPressed: canAdd ? add : null,
-                icon: const Icon(Icons.add_rounded),
+                icon: const Icon(AppIcons.add),
                 label: Text(l10n.trainingAddSet),
               ),
             ),

@@ -400,5 +400,7 @@
   "plannerPomodoroFocusHeader": "Focus {current} of {total} · then a {minutes}-min break",
   "plannerPomodoroBreakHeader": "{minutes}-min break · then focus {next} of {total}",
   "plannerPomodoroToBreakHint": "Ends focus now and starts your break.",
-  "plannerPomodoroToFocusHint": "Ends the break now and goes back to focus."
+  "plannerPomodoroToFocusHint": "Ends the break now and goes back to focus.",
+  "plannerStepRepeat": "Repeat",
+  "plannerDeadlineGone": "That deadline no longer exists: it was deleted. If you need it, create it again with “New deadline”."
 }

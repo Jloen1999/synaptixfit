@@ -310,7 +310,7 @@ class _Link extends StatelessWidget {
           if (onStudyNow case final onPressed?)
             TextButton.icon(
               onPressed: onPressed,
-              icon: const Icon(Icons.timer_outlined),
+              icon: const Icon(AppIcons.focusTimer),
               label: Text(l10n.homeBalanceStudyNow),
             ),
         ],

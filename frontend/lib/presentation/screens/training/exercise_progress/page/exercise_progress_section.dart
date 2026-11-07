@@ -73,7 +73,7 @@ class _ProgressCard extends StatelessWidget {
                   color: color,
                 ),
                 AppPill(
-                  icon: Icons.history_rounded,
+                  icon: AppIcons.history,
                   label: l10n.trainingProgressLast(
                     kg(points.last.weightKg),
                     points.last.reps,

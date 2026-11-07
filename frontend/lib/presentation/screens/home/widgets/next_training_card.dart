@@ -59,7 +59,7 @@ class NextTrainingCard extends StatelessWidget {
               message: l10n.homeTrainingEmptyMessage,
               action: AppPrimaryButton(
                 label: l10n.homeTrainingCreate,
-                icon: Icons.add_rounded,
+                icon: AppIcons.add,
                 onPressed: onStart,
               ),
             ),

@@ -87,7 +87,7 @@ class _HistoryView extends StatelessWidget {
                   HistoryStatus.ready
                       when state.items.isEmpty && state.open.isEmpty =>
                     AppEmptyState(
-                      icon: Icons.history_rounded,
+                      icon: AppIcons.history,
                       title: l10n.trainingNoSessionsTitle,
                       message: l10n.trainingNoSessionsMessage,
                     ),

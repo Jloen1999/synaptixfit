@@ -143,7 +143,7 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                 children: [
                   AppFocusOutline(
                     child: ListTile(
-                      leading: const Icon(Icons.notifications_outlined),
+                      leading: const Icon(AppIcons.notifications),
                       title: Text(l10n.profileNotificationsTitle),
                       subtitle: Text(l10n.profileNotificationsHint),
                       trailing: const Icon(Icons.chevron_right_rounded),
@@ -237,7 +237,7 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                 children: [
                   AppFocusOutline(
                     child: ListTile(
-                      leading: const Icon(Icons.logout_rounded),
+                      leading: const Icon(AppIcons.leave),
                       title: Text(l10n.profileLogoutAction),
                       onTap: () => _logout(context),
                     ),

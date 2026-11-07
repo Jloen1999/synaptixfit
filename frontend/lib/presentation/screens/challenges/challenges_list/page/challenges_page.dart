@@ -80,7 +80,7 @@ class _ChallengesView extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _create(context),
-          icon: const Icon(Icons.add_rounded),
+          icon: const Icon(AppIcons.add),
           label: Text(l10n.challengesNew),
         ),
         body: const TabBarView(
@@ -316,6 +316,22 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
     }
     if (state.challenges.isEmpty) {
       final filtered = state.query.isFiltered;
+      final search = state.query.search?.trim() ?? '';
+      // Con algo escrito, el mismo «No hay resultados para «x»» que en el
+      // resto de buscadores (vocabulario, fila Buscador).
+      if (search.isNotEmpty) {
+        return [
+          AppSearchEmpty(
+            query: search,
+            actionLabel: l10n.challengesFilterClear,
+            actionIcon: AppIcons.clearFilters,
+            onAction: () {
+              _search.clear();
+              _setQuery(const ChallengeQuery());
+            },
+          ),
+        ];
+      }
       return [
         AppEmptyState(
           icon: Icons.flag_outlined,
@@ -468,7 +484,7 @@ class _Filters extends StatelessWidget {
         // El número de filtros activos va en la propia etiqueta («Filtros
         // (2)»): se ve y el lector de pantalla lo lee, sin depender del color.
         ActionChip(
-          avatar: const Icon(Icons.tune_rounded),
+          avatar: const Icon(AppIcons.filters),
           label: Text(
             extra > 0
                 ? l10n.challengesFilterWithCount(l10n.challengesFilters, extra)

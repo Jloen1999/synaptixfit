@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../extensions/context_extensions.dart';
 import '../theme/tokens.g.dart';
 
+import '../theme/app_icons.dart';
+
 /// Abre la hoja «Cómo se gana XP»: explica de dónde sale la experiencia y sus
 /// topes. Es solo texto: la XP la calcula el servidor (reglas en
 /// `docs/01-architecture/formulas.md`, «Progreso justo»); si cambian, se
@@ -37,7 +39,7 @@ class _XpGuideSheet extends StatelessWidget {
         l10n.xpGuideCheckInDetail,
       ),
       (
-        Icons.calendar_month_outlined,
+        AppIcons.calendar,
         palette.study,
         l10n.xpGuideBlocks,
         l10n.xpGuideBlocksDetail,

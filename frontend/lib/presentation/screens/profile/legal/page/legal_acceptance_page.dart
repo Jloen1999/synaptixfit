@@ -122,7 +122,7 @@ class _LegalAcceptanceViewState extends State<_LegalAcceptanceView>
                         const SizedBox(height: TokensSpacing.s),
                         AppSecondaryButton(
                           label: l10n.profileLogoutAction,
-                          icon: const Icon(Icons.logout_rounded),
+                          icon: const Icon(AppIcons.leave),
                           loading: _leaving,
                           onPressed: busy ? null : _logout,
                         ),

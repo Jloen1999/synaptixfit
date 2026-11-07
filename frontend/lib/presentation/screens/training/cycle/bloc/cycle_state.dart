@@ -25,5 +25,8 @@ abstract class CycleState with _$CycleState {
     /// Error al guardar o borrar (la pantalla sigue a la vista).
     AppError? actionError,
     CycleNotice? notice,
+
+    /// El día recién borrado, para «Deshacer» (se vuelve a apuntar igual).
+    CycleDay? deletedDay,
   }) = _CycleState;
 }

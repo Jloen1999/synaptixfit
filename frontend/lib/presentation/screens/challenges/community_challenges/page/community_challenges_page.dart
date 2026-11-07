@@ -180,6 +180,17 @@ class _CommunityChallengesViewState extends State<CommunityChallengesView>
                             ],
                           ),
                         )
+                      else if (state.challenges.isEmpty &&
+                          (state.search?.trim().isNotEmpty ?? false))
+                        AppSearchEmpty(
+                          query: state.search!.trim(),
+                          actionLabel: l10n.challengesFilterClear,
+                          actionIcon: AppIcons.clearFilters,
+                          onAction: () {
+                            _search.clear();
+                            _filter(type: null, search: '');
+                          },
+                        )
                       else if (state.challenges.isEmpty && filtered)
                         AppEmptyState(
                           icon: Icons.search_off_rounded,

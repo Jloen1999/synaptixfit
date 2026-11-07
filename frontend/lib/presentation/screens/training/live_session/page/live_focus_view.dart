@@ -447,7 +447,7 @@ class LiveExerciseView extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     onPressed: () => openHowTo(context, e),
-                    icon: const Icon(Icons.ondemand_video_rounded),
+                    icon: const Icon(AppIcons.howTo),
                     label: Text(l10n.trainingHowTo),
                   ),
                   if (onSwap != null && original == null)
@@ -459,11 +459,7 @@ class LiveExerciseView extends StatelessWidget {
                 ],
               ),
               if (showWarmup)
-                _WarmupSection(
-                  exercise: e,
-                  sets: warmups,
-                  onWarmup: onWarmup!,
-                ),
+                _WarmupSection(exercise: e, sets: warmups, onWarmup: onWarmup!),
               const SizedBox(height: TokensSpacing.xs),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -516,7 +512,7 @@ class LiveExerciseView extends StatelessWidget {
                 child: TextButton.icon(
                   // Hasta 50 series por ejercicio (límite de la API).
                   onPressed: rows >= 50 ? null : () => onExtraSet(e, rows + 1),
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(AppIcons.add),
                   label: Text(l10n.trainingExtraSet),
                 ),
               ),
@@ -626,41 +622,41 @@ class _WarmupSection extends StatelessWidget {
                   button: true,
                   hint: l10n.trainingWarmupSetFix,
                   child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: TokensLayout.minTouchTarget,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.whatshot_rounded,
-                        size: TokensSize.iconS,
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: TokensSpacing.s),
-                      Expanded(
-                        child: Text(
-                          [
-                            l10n.trainingWarmupSetNumber(w.setNumber),
-                            if (w.weightKg != null)
-                              l10n.trainingChipWeight(
-                                formatNumber(w.weightKg!),
-                              ),
-                            if (w.repsDone != null)
-                              l10n.trainingSetReps(w.repsDone!),
-                          ].join(' · '),
-                          style: context.textStyles.bodyMedium,
-                        ),
-                      ),
-                      ExcludeSemantics(
-                        child: Icon(
-                          Icons.edit_outlined,
-                          size: TokensSize.iconXs,
+                    constraints: const BoxConstraints(
+                      minHeight: TokensLayout.minTouchTarget,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.whatshot_rounded,
+                          size: TokensSize.iconS,
                           color: context.colors.onSurfaceVariant,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: TokensSpacing.s),
+                        Expanded(
+                          child: Text(
+                            [
+                              l10n.trainingWarmupSetNumber(w.setNumber),
+                              if (w.weightKg != null)
+                                l10n.trainingChipWeight(
+                                  formatNumber(w.weightKg!),
+                                ),
+                              if (w.repsDone != null)
+                                l10n.trainingSetReps(w.repsDone!),
+                            ].join(' · '),
+                            style: context.textStyles.bodyMedium,
+                          ),
+                        ),
+                        ExcludeSemantics(
+                          child: Icon(
+                            AppIcons.edit,
+                            size: TokensSize.iconXs,
+                            color: context.colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 ),
               ),
             ),
@@ -670,7 +666,7 @@ class _WarmupSection extends StatelessWidget {
               onPressed: next > 50
                   ? null
                   : () => onWarmup(exercise, next, null),
-              icon: const Icon(Icons.add_rounded),
+              icon: const Icon(AppIcons.add),
               label: Text(l10n.trainingWarmupAdd),
             ),
           ),

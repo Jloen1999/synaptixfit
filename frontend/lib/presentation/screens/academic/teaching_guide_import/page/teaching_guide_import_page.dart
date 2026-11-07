@@ -945,7 +945,7 @@ class _TopicTile extends StatelessWidget {
       subtitle: details.isEmpty ? null : Text(details.join(' · ')),
       trailing: IconButton(
         tooltip: l10n.academicImportRemoveTopicNamed(number, topic.title),
-        icon: const Icon(Icons.close_rounded),
+        icon: const Icon(AppIcons.close),
         onPressed: onRemove,
       ),
     );
@@ -1025,7 +1025,7 @@ class _AssessmentTile extends StatelessWidget {
                 ),
                 IconButton(
                   tooltip: l10n.academicImportClearDateOf(a.name),
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(AppIcons.close),
                   onPressed: onClearDate,
                 ),
               ],

@@ -45,28 +45,28 @@ class MainShellPage extends StatelessWidget {
     final l10n = context.localizations;
     return [
       (
-        icon: Icons.home_outlined,
-        selected: Icons.home_rounded,
+        icon: AppIcons.tabHome,
+        selected: AppIcons.tabHomeSelected,
         label: l10n.tabHome,
       ),
       (
-        icon: Icons.school_outlined,
-        selected: Icons.school_rounded,
+        icon: AppIcons.tabAcademic,
+        selected: AppIcons.tabAcademicSelected,
         label: l10n.tabAcademic,
       ),
       (
-        icon: Icons.fitness_center_outlined,
-        selected: Icons.fitness_center_rounded,
+        icon: AppIcons.tabTraining,
+        selected: AppIcons.tabTrainingSelected,
         label: l10n.tabTraining,
       ),
       (
-        icon: Icons.flag_outlined,
-        selected: Icons.flag_rounded,
+        icon: AppIcons.tabChallenges,
+        selected: AppIcons.tabChallengesSelected,
         label: l10n.tabChallenges,
       ),
       (
-        icon: Icons.insights_outlined,
-        selected: Icons.insights_rounded,
+        icon: AppIcons.tabProgress,
+        selected: AppIcons.tabProgressSelected,
         label: l10n.tabProgress,
       ),
     ];

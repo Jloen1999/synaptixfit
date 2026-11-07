@@ -44,7 +44,7 @@
   "challengesClonedFrom": "Copiado de {name}",
   "challengesClone": "Adicionar aos meus desafios",
   "challengesCloneTooltip": "Adicionar aos meus desafios",
-  "challengesCloned": "Desafio adicionado aos teus desafios",
+  "challengesCloned": "Desafio adicionado. Encontras em Desafios › Os meus desafios.",
   "challengesViewCloned": "Ver",
   "challengesXpGain": "+{xp} XP",
   "challengesXpLoss": "−{xp} XP",

@@ -51,8 +51,9 @@ class HomeDashboardPage extends StatelessWidget {
         context.read<LegalAcceptanceBloc>().state.status ==
         LegalGateStatus.accepted;
     return BlocProvider(
-      create: (_) => getIt<HomeDashboardBloc>()
-        ..add(HomeDashboardEvent.started(userId: legalReady ? userId : '')),
+      create: (_) =>
+          getIt<HomeDashboardBloc>()
+            ..add(HomeDashboardEvent.started(userId: legalReady ? userId : '')),
       child: BlocListener<LegalAcceptanceBloc, LegalAcceptanceState>(
         listenWhen: (a, b) =>
             a.status != LegalGateStatus.accepted &&
@@ -98,7 +99,10 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
 
   /// Resultado de marcar o desmarcar desde la agenda, con «Deshacer», que
   /// pide lo contrario (y devuelve o recupera la misma XP en el servidor).
-  void _showCompletionNotice(BuildContext context, HomeCompletionNotice notice) {
+  void _showCompletionNotice(
+    BuildContext context,
+    HomeCompletionNotice notice,
+  ) {
     final l10n = context.localizations;
     switch (notice) {
       case HomeCompletionNoticeDone(
@@ -130,7 +134,7 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
             ? status
             : l10n.homeCompletionNotice(title, status);
         final bloc = context.read<HomeDashboardBloc>();
-        context.showActionSnack(
+        final controller = context.showActionSnack(
           message,
           duration: TokensDuration.undoWindow,
           actionLabel: l10n.commonUndo,
@@ -139,8 +143,15 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
               id: id,
               kind: kind,
               completed: !completed,
+              undo: true,
             ),
           ),
+        );
+        // Ctrl+Z vale mientras se ve el aviso, como su «Deshacer».
+        unawaited(
+          controller.closed.then((_) {
+            if (!bloc.isClosed) bloc.add(HomeDashboardEvent.undoExpired(id));
+          }),
         );
       case HomeCompletionNoticeFailed(:final error):
         context.showSnack(errorMessage(context, error));
@@ -157,108 +168,117 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: BlocConsumer<HomeDashboardBloc, HomeDashboardState>(
-          listenWhen: (previous, current) =>
-              (current.onboardingRequired && !previous.onboardingRequired) ||
-              (current.permissionsIntroRequired &&
-                  !previous.permissionsIntroRequired) ||
-              (current.openSessionId != null &&
-                  current.openSessionId != previous.openSessionId) ||
-              (current.trainingError != null &&
-                  current.trainingError != previous.trainingError) ||
-              (current.bannerNotice != null &&
-                  current.bannerNotice != previous.bannerNotice) ||
-              (current.completionNotice != null &&
-                  current.completionNotice != previous.completionNotice) ||
-              (current.error != null &&
-                  current.error != previous.error &&
-                  current.dashboard != null),
-          listener: (context, state) {
-            final completionNotice = state.completionNotice;
-            if (completionNotice != null) {
-              context.read<HomeDashboardBloc>().add(
-                const HomeDashboardEvent.completionNoticeHandled(),
-              );
-              _showCompletionNotice(context, completionNotice);
-              return;
-            }
-            final bannerNotice = state.bannerNotice;
-            if (bannerNotice != null) {
-              context.read<HomeDashboardBloc>().add(
-                const HomeDashboardEvent.bannerNoticeHandled(),
-              );
-              _showBannerNotice(context, bannerNotice);
-              return;
-            }
-            final sessionId = state.openSessionId;
-            final trainingError = state.trainingError;
-            if (sessionId != null || trainingError != null) {
-              context.read<HomeDashboardBloc>().add(
-                const HomeDashboardEvent.trainingHandled(),
-              );
-              if (sessionId != null) {
-                _navigate(context, HomeExternalPaths.session(sessionId));
-              } else {
-                context.showSnack(errorMessage(context, trainingError!));
+    // Ctrl+Z (Cmd+Z) deshace lo último marcado, como «Deshacer» del aviso.
+    return AppUndoShortcut(
+      onUndo: () {
+        final bloc = context.read<HomeDashboardBloc>();
+        if (bloc.state.lastUndoable == null) return;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        bloc.add(const HomeDashboardEvent.undoRequested());
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: BlocConsumer<HomeDashboardBloc, HomeDashboardState>(
+            listenWhen: (previous, current) =>
+                (current.onboardingRequired && !previous.onboardingRequired) ||
+                (current.permissionsIntroRequired &&
+                    !previous.permissionsIntroRequired) ||
+                (current.openSessionId != null &&
+                    current.openSessionId != previous.openSessionId) ||
+                (current.trainingError != null &&
+                    current.trainingError != previous.trainingError) ||
+                (current.bannerNotice != null &&
+                    current.bannerNotice != previous.bannerNotice) ||
+                (current.completionNotice != null &&
+                    current.completionNotice != previous.completionNotice) ||
+                (current.error != null &&
+                    current.error != previous.error &&
+                    current.dashboard != null),
+            listener: (context, state) {
+              final completionNotice = state.completionNotice;
+              if (completionNotice != null) {
+                context.read<HomeDashboardBloc>().add(
+                  const HomeDashboardEvent.completionNoticeHandled(),
+                );
+                _showCompletionNotice(context, completionNotice);
+                return;
               }
-              return;
-            }
-            if (state.onboardingRequired) {
-              context.read<HomeDashboardBloc>().add(
-                const HomeDashboardEvent.onboardingHandled(),
-              );
-              _navigate(context, HomeExternalPaths.onboarding);
-              return;
-            }
-            if (state.permissionsIntroRequired) {
-              context.read<HomeDashboardBloc>().add(
-                const HomeDashboardEvent.permissionsIntroHandled(),
-              );
-              _navigate(context, HomeExternalPaths.permissionsIntro);
-              return;
-            }
-            final error = state.error;
-            if (error != null) {
-              context.showSnack(
-                '${context.localizations.homeRefreshFailed} '
-                '${errorMessage(context, error)}',
-              );
-            }
-          },
-          builder: (context, state) {
-            final dashboard = state.dashboard;
-            final Widget content;
-            if (dashboard != null) {
-              content = _HomeContent(
-                dashboard: dashboard,
-                state: state,
-                onNavigate: (path) => _navigate(context, path),
-              );
-            } else if (state.status == HomeDashboardStatus.failure &&
-                state.error != null) {
-              content = Padding(
-                padding: const EdgeInsets.only(top: TokensSpacing.xxl),
-                child: AppErrorView(
-                  error: state.error!,
-                  onRetry: () => context.read<HomeDashboardBloc>().add(
-                    const HomeDashboardEvent.refreshed(),
+              final bannerNotice = state.bannerNotice;
+              if (bannerNotice != null) {
+                context.read<HomeDashboardBloc>().add(
+                  const HomeDashboardEvent.bannerNoticeHandled(),
+                );
+                _showBannerNotice(context, bannerNotice);
+                return;
+              }
+              final sessionId = state.openSessionId;
+              final trainingError = state.trainingError;
+              if (sessionId != null || trainingError != null) {
+                context.read<HomeDashboardBloc>().add(
+                  const HomeDashboardEvent.trainingHandled(),
+                );
+                if (sessionId != null) {
+                  _navigate(context, HomeExternalPaths.session(sessionId));
+                } else {
+                  context.showSnack(errorMessage(context, trainingError!));
+                }
+                return;
+              }
+              if (state.onboardingRequired) {
+                context.read<HomeDashboardBloc>().add(
+                  const HomeDashboardEvent.onboardingHandled(),
+                );
+                _navigate(context, HomeExternalPaths.onboarding);
+                return;
+              }
+              if (state.permissionsIntroRequired) {
+                context.read<HomeDashboardBloc>().add(
+                  const HomeDashboardEvent.permissionsIntroHandled(),
+                );
+                _navigate(context, HomeExternalPaths.permissionsIntro);
+                return;
+              }
+              final error = state.error;
+              if (error != null) {
+                context.showSnack(
+                  '${context.localizations.homeRefreshFailed} '
+                  '${errorMessage(context, error)}',
+                );
+              }
+            },
+            builder: (context, state) {
+              final dashboard = state.dashboard;
+              final Widget content;
+              if (dashboard != null) {
+                content = _HomeContent(
+                  dashboard: dashboard,
+                  state: state,
+                  onNavigate: (path) => _navigate(context, path),
+                );
+              } else if (state.status == HomeDashboardStatus.failure &&
+                  state.error != null) {
+                content = Padding(
+                  padding: const EdgeInsets.only(top: TokensSpacing.xxl),
+                  child: AppErrorView(
+                    error: state.error!,
+                    onRetry: () => context.read<HomeDashboardBloc>().add(
+                      const HomeDashboardEvent.refreshed(),
+                    ),
                   ),
+                );
+              } else {
+                content = const HomeSkeleton();
+              }
+              return RefreshIndicator(
+                onRefresh: () => _refresh(context),
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(TokensSpacing.m),
+                  children: [AppContentWidth.wide(child: content)],
                 ),
               );
-            } else {
-              content = const HomeSkeleton();
-            }
-            return RefreshIndicator(
-              onRefresh: () => _refresh(context),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(TokensSpacing.m),
-                children: [AppContentWidth.wide(child: content)],
-              ),
-            );
-          },
+            },
+          ),
         ),
       ),
     );
@@ -382,9 +402,8 @@ class _HomeContent extends StatelessWidget {
         reviews: state.dueReviews,
         onOpenPlanner: () => onNavigate(HomeExternalPaths.planner),
         completingIds: state.completingIds,
-        onSetCompleted: (event, completed) => context
-            .read<HomeDashboardBloc>()
-            .add(
+        onSetCompleted: (event, completed) =>
+            context.read<HomeDashboardBloc>().add(
               HomeDashboardEvent.completionSet(
                 id: event.id,
                 kind: event.kind,
@@ -431,9 +450,13 @@ class _HomeContent extends StatelessWidget {
         SetupChecklistCard(
           setup: setup,
           onOpen: (task) => onNavigate(HomeExternalPaths.setupTask(task)),
-          onLater: () => context.read<HomeDashboardBloc>().add(
-            const HomeDashboardEvent.setupSnoozed(),
-          ),
+          onLater: () {
+            context.read<HomeDashboardBloc>().add(
+              const HomeDashboardEvent.setupSnoozed(),
+            );
+            // Dice cuándo y dónde vuelve (vocabulario.md).
+            context.showSnack(context.localizations.homeSetupSnoozedWhere);
+          },
         ),
       // Un aviso informativo va después del próximo entreno: no lo tapa.
       if (!urgent) banner,

@@ -4,6 +4,8 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import 'training_labels.dart';
 
+import '../../../theme/app_icons.dart';
+
 /// Selector horizontal de semanas con botón opcional para añadir una. La
 /// semana elegida se desplaza hasta quedar a la vista (con las fechas, las
 /// pastillas son anchas y la semana 5 podría quedar fuera).
@@ -101,7 +103,7 @@ class _WeekSelectorState extends State<WeekSelector> {
             ),
           if (widget.onAdd != null)
             ActionChip(
-              avatar: const Icon(Icons.add_rounded, size: TokensSize.iconS),
+              avatar: const Icon(AppIcons.add, size: TokensSize.iconS),
               label: Text(l10n.trainingAddWeek),
               onPressed: widget.onAdd,
             ),

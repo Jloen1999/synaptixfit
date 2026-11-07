@@ -68,6 +68,24 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     on<HomeDashboardBannerBlockCompleted>(_onBannerBlockCompleted);
     on<HomeDashboardBannerBlockRescheduled>(_onBannerBlockRescheduled);
     on<HomeDashboardCompletionSet>(_onCompletionSet);
+    on<HomeDashboardUndoExpired>((event, emit) {
+      if (state.lastUndoable?.id == event.id) {
+        emit(state.copyWith(lastUndoable: null));
+      }
+    });
+    on<HomeDashboardUndoRequested>((_, emit) {
+      final last = state.lastUndoable;
+      if (last == null) return;
+      emit(state.copyWith(lastUndoable: null));
+      add(
+        HomeDashboardEvent.completionSet(
+          id: last.id,
+          kind: last.kind,
+          completed: !last.completed,
+          undo: true,
+        ),
+      );
+    });
     on<HomeDashboardCompletionNoticeHandled>(
       (_, emit) => emit(state.copyWith(completionNotice: null)),
     );
@@ -151,6 +169,12 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
             ? e.copyWith(completed: completed, status: status)
             : e;
         final dashboard = state.dashboard;
+        final notice = HomeCompletionNoticeDone(
+          id: event.id,
+          kind: event.kind,
+          completed: completed,
+          xpDelta: xpDelta,
+        );
         emit(
           state.copyWith(
             completingIds: busy,
@@ -158,12 +182,8 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
               todayEvents: dashboard.todayEvents.map(update).toList(),
             ),
             upcoming: state.upcoming.map(update).toList(),
-            completionNotice: HomeCompletionNotice.done(
-              id: event.id,
-              kind: event.kind,
-              completed: completed,
-              xpDelta: xpDelta,
-            ),
+            completionNotice: notice,
+            lastUndoable: event.undo ? null : notice,
           ),
         );
       },

@@ -18,5 +18,8 @@ sealed class CycleEvent with _$CycleEvent {
 
   const factory CycleEvent.dayDeleted(DateTime date) = CycleDayDeleted;
 
+  /// Se cerró el aviso de «Deshacer»: Ctrl+Z ya no recupera el día.
+  const factory CycleEvent.undoExpired(DateTime date) = CycleUndoExpired;
+
   const factory CycleEvent.historyDeleted() = CycleHistoryDeleted;
 }

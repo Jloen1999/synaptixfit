@@ -315,8 +315,8 @@
       }
     }
   },
-  "trainingClone": "Clonar",
-  "trainingClonedFrom": "Clonada de {author}",
+  "trainingClone": "Añadir a mis rutinas",
+  "trainingClonedFrom": "Copiada de {author}",
   "@trainingClonedFrom": {
     "placeholders": {
       "author": {
@@ -678,8 +678,8 @@
   "trainingMsgRecommendationDiscarded": "Sugerencia descartada",
   "trainingMsgRoutineSaved": "Rutina guardada",
   "trainingMsgRoutineDeleted": "Rutina eliminada",
-  "trainingMsgRoutineDuplicated": "Rutina duplicada",
-  "trainingMsgRoutineCloned": "Rutina clonada en tus rutinas",
+  "trainingMsgRoutineDuplicated": "Rutina duplicada. La copia está en Entreno › Gimnasio, con tus rutinas.",
+  "trainingMsgRoutineCloned": "Rutina añadida. La tienes en Entreno › Gimnasio, con tus rutinas.",
   "trainingMsgCheckInSaved": "Guardado: adaptamos tu día a cómo estás",
   "trainingMsgPlanSaved": "Plan semanal guardado",
   "trainingMsgPlanDeleted": "Plan semanal eliminado",
@@ -955,7 +955,7 @@
       }
     }
   },
-  "trainingMsgSessionShared": "Publicado en el muro",
+  "trainingMsgSessionShared": "Publicado. Lo tienes en Comunidad (Inicio › Muro de la comunidad).",
   "trainingMsgPendingSetDiscarded": "Una serie guardada sin conexión no se pudo subir y se ha descartado. Revísala y apúntala de nuevo.",
   "@trainingMsgPendingSetDiscarded": {
     "description": "Aviso: una serie de la cola sin conexión fue rechazada por el servidor."
@@ -2989,7 +2989,7 @@
   "runBatteryHelp": "¿Se corta el GPS con la pantalla apagada?",
   "runBatteryTitle": "Que no se corte el GPS",
   "runBatteryIntro": "Algunos móviles cortan el GPS con la pantalla apagada para ahorrar batería. Si tu ruta sale con saltos o se para, haz esto una vez:",
-  "runBatteryStep1": "En los ajustes del móvil, abre Aplicaciones › SynaptixFit › Batería.",
+  "runBatteryStep1": "Toca «Abrir los ajustes de la app» (o, en los ajustes del móvil, Aplicaciones › SynaptixFit) y entra en «Batería».",
   "runBatteryStep2": "Elige «Sin restricciones» (o quita la optimización de batería).",
   "runBatteryStep3": "Mientras grabas, deja el aviso «Grabando tu carrera» en la barra de notificaciones: es lo que mantiene el GPS encendido.",
   "runBatteryOk": "Entendido",
@@ -3161,5 +3161,6 @@
   "runEditorMeasure": "¿Cómo se mide?",
   "runSplitFastest": "Tu kilómetro más rápido",
   "runMapStart": "Salida",
-  "runMapFinish": "Llegada"
+  "runMapFinish": "Llegada",
+  "runBatteryOpenSettings": "Abrir los ajustes de la app"
 }

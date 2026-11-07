@@ -257,5 +257,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "commonView": "Ver"
 }

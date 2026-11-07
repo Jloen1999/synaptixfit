@@ -172,7 +172,7 @@ class TimeBlockTile extends StatelessWidget {
         Tooltip(
           message: context.localizations.plannerMissedLabel,
           child: Icon(
-            Icons.history_rounded,
+            AppIcons.history,
             size: TokensSize.iconXs,
             color: context.palette.warning,
           ),

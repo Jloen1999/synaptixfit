@@ -10,7 +10,6 @@
   "socialPeriodMonth": "Ce mois-ci",
   "socialNewPosts": "{count, plural, =1{1 nouvelle publication} other{{count} nouvelles publications}}",
   "socialBadgeOverflow": "99+",
-  "socialMoreActions": "Plus d’actions",
   "socialOpenProfileOf": "Voir le profil de {name}",
   "socialTimeNow": "à l’instant",
   "socialTimeMinutes": "il y a {count} min",
@@ -55,8 +54,6 @@
   "socialCommentsLoadMore": "Voir plus de commentaires",
   "socialFriendsTitle": "Amis",
   "socialSearchUsersHint": "Chercher des personnes par nom",
-  "socialSearchEmptyTitle": "Aucun résultat",
-  "socialSearchEmptyMessage": "Personne ne correspond à « {query} ».",
   "socialTabFriends": "Amis",
   "socialTabReceived": "Reçues",
   "socialTabSent": "Envoyées",
@@ -122,7 +119,7 @@
   "socialMsgRequestRejected": "Demande refusée",
   "socialMsgRequestCancelled": "Demande annulée",
   "socialMsgFriendRemoved": "Ami retiré",
-  "socialMsgUserBlocked": "Utilisateur bloqué",
+  "socialMsgUserBlocked": "Utilisateur bloqué. Pour le débloquer : Communauté › Amis › Bloqués.",
   "socialMsgUserUnblocked": "Utilisateur débloqué",
   "socialMsgAllNotificationsRead": "Toutes les notifications sont lues",
   "socialMsgNotificationDeleted": "Notification supprimée",
@@ -185,5 +182,6 @@
   "socialProfileBadgesAll": "Voir les {count}",
   "socialProfileBadgeSemantics": "{name}, badge {rarity}.",
   "socialProfileBadgeEarnedOn": "Obtenu le {date}",
-  "socialProfileBadgeHint": "Voir ce que c'est et quand elle a été obtenue"
+  "socialProfileBadgeHint": "Voir ce que c'est et quand elle a été obtenue",
+  "socialSearchEmptyHint": "Vérifie l’orthographe ou essaie une autre partie du nom."
 }

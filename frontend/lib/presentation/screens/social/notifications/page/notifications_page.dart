@@ -71,7 +71,7 @@ class _NotificationsView extends StatelessWidget {
             else
               IconButton(
                 tooltip: l10n.socialNotificationsMarkAllRead,
-                icon: const Icon(Icons.done_all_rounded),
+                icon: const Icon(AppIcons.markAllRead),
                 onPressed: state.hasUnread
                     ? () => bloc.add(const NotificationsEvent.allMarkedRead())
                     : null,
@@ -148,7 +148,7 @@ class _NotificationsView extends StatelessWidget {
                       minHeight: constraints.maxHeight,
                     ),
                     child: AppEmptyState(
-                      icon: Icons.notifications_none_rounded,
+                      icon: AppIcons.notifications,
                       title: state.unreadOnly
                           ? l10n.socialNotificationsEmptyUnread
                           : l10n.socialNotificationsEmpty,
@@ -204,7 +204,7 @@ class _NotificationsView extends StatelessWidget {
                           borderRadius: BorderRadius.circular(TokensRadius.l),
                         ),
                         child: Icon(
-                          Icons.delete_outline_rounded,
+                          AppIcons.delete,
                           color: context.colors.onErrorContainer,
                           semanticLabel: l10n.commonDelete,
                         ),
@@ -367,7 +367,7 @@ class _PriorityLabel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          critical ? Icons.priority_high_rounded : Icons.lightbulb_outline,
+          critical ? Icons.priority_high_rounded : AppIcons.proposal,
           size: 14,
           color: color,
         ),

@@ -37,10 +37,10 @@ class _AdminHubView extends StatelessWidget with ErrorsMessageMixin {
     final l10n = context.localizations;
     final tabs = [
       (Icons.insights_outlined, l10n.adminTabMetrics),
-      (Icons.people_alt_outlined, l10n.adminTabUsers),
+      (AppIcons.friends, l10n.adminTabUsers),
       (Icons.flag_outlined, l10n.adminTabContent),
       (Icons.fitness_center_outlined, l10n.adminTabExercises),
-      (Icons.history_rounded, l10n.adminTabAudit),
+      (AppIcons.history, l10n.adminTabAudit),
     ];
     return BlocListener<AdminHubBloc, AdminHubState>(
       // Solo al terminar un cambio de bloqueo (no en la carga inicial).
