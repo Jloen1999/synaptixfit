@@ -8,7 +8,10 @@ import java.time.Clock;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Avisos opcionales del móvil; sin nada guardado, {@link ReminderOptions#DEFAULTS}. Guarda con su puerto. */
+/**
+ * Opciones de avisos del móvil; sin nada guardado, {@link ReminderOptions#DEFAULTS}. Un cambio se aplica sobre lo
+ * guardado ({@link ReminderOptions#with}), que valida las opciones cerradas, y se guarda con su puerto.
+ */
 public class ReminderOptionsService implements GetReminderOptionsUseCase, ChangeReminderOptionsUseCase {
 
     private final ReminderOptionsRepositoryPort options;
@@ -25,8 +28,9 @@ public class ReminderOptionsService implements GetReminderOptionsUseCase, Change
     }
 
     @Override
-    public ReminderOptions change(UUID userId, ReminderOptions changed) {
-        options.save(userId, Objects.requireNonNull(changed, "options"), clock.instant());
+    public ReminderOptions change(UUID userId, ReminderOptions.Change change) {
+        ReminderOptions changed = get(userId).with(Objects.requireNonNull(change, "change"));
+        options.save(userId, changed, clock.instant());
         return changed;
     }
 }

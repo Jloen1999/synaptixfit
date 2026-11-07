@@ -15,7 +15,12 @@ import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
 /// Agenda: tira deslizable con hoy y los 6 días siguientes; debajo, lo que
-/// hay el día elegido (bloques y entregas) y, hoy, los repasos urgentes.
+/// hay el día elegido (eventos y entregas) y, hoy, los repasos urgentes.
+///
+/// Cada estudio, repaso, evento personal y entrega lleva su casilla «Marcar
+/// como hecho» (ADR 0035; desmarcar devuelve la XP, lo decide el servidor); un
+/// entreno de rutina lleva «Empezar» y uno suelto «Ya lo hice». Si el evento
+/// adelanta una tarea de reto, la fila lo dice.
 class AgendaSection extends StatefulWidget {
   const AgendaSection({
     super.key,
@@ -27,6 +32,9 @@ class AgendaSection extends StatefulWidget {
     required this.onOpenEvent,
     required this.onOpenReview,
     this.onReviewAll,
+    this.onSetCompleted,
+    this.onStartTraining,
+    this.completingIds = const {},
     this.now,
   });
 
@@ -48,6 +56,16 @@ class AgendaSection extends StatefulWidget {
 
   /// Repasa todos los pendientes seguidos (se muestra con dos o más).
   final VoidCallback? onReviewAll;
+
+  /// Marca (true) o desmarca (false) un evento o una entrega; sin él, la
+  /// agenda no ofrece casillas.
+  final void Function(HomeTodayEvent event, bool completed)? onSetCompleted;
+
+  /// «Empezar» de un entreno de rutina (el día de rutina del evento).
+  final ValueChanged<HomeTodayEvent>? onStartTraining;
+
+  /// Eventos que se están marcando o desmarcando.
+  final Set<String> completingIds;
 
   /// Momento de referencia (inyectable en tests).
   final DateTime? now;
@@ -164,7 +182,16 @@ class _AgendaSectionState extends State<AgendaSection> {
                   for (final event in _visibleEvents(context, events))
                     _EventTile(
                       event: event,
+                      isToday: _selected == 0,
+                      busy: widget.completingIds.contains(event.id),
                       onTap: () => widget.onOpenEvent(event),
+                      onSetCompleted: widget.onSetCompleted == null
+                          ? null
+                          : (completed) =>
+                                widget.onSetCompleted!(event, completed),
+                      onStartTraining: widget.onStartTraining == null
+                          ? null
+                          : () => widget.onStartTraining!(event),
                     ),
                   if (_hidden(context, events) > 0 || _expanded)
                     Align(
@@ -512,11 +539,95 @@ class _DayDotsState extends State<_DayDots>
 Color eventColor(BuildContext context, HomeTodayEvent event) =>
     _EventTile.visual(context, event).$2;
 
+/// Qué se puede hacer con un evento desde la agenda.
+enum _EventAction { none, check, start, didIt }
+
 class _EventTile extends StatelessWidget {
-  const _EventTile({required this.event, required this.onTap});
+  const _EventTile({
+    required this.event,
+    required this.onTap,
+    this.isToday = true,
+    this.busy = false,
+    this.onSetCompleted,
+    this.onStartTraining,
+  });
 
   final HomeTodayEvent event;
   final VoidCallback onTap;
+  final bool isToday;
+  final bool busy;
+  final ValueChanged<bool>? onSetCompleted;
+  final VoidCallback? onStartTraining;
+
+  /// Estudio, repaso, personal y entregas se marcan con casilla; los entrenos
+  /// se empiezan (rutina) o se apuntan («Ya lo hice»); clases, descanso,
+  /// comida y sueño no se marcan desde aquí.
+  _EventAction get _action {
+    if (event.kind == HomeEventKind.deadline) return _EventAction.check;
+    // Un evento de otro día aún no se puede marcar: no se ofrece una acción
+    // que siempre fallaría (las entregas sí se pueden adelantar).
+    if (!isToday) return _EventAction.none;
+    return switch (event.type) {
+      HomeEventType.study ||
+      HomeEventType.review ||
+      HomeEventType.personal => _EventAction.check,
+      HomeEventType.sport when event.routineDayId != null =>
+        event.completed || !isToday || event.routineId == null
+            ? _EventAction.none
+            : _EventAction.start,
+      HomeEventType.sport =>
+        event.completed ? _EventAction.check : _EventAction.didIt,
+      _ => _EventAction.none,
+    };
+  }
+
+  /// Lo que aún no ha empezado no se puede marcar (lo dice el servidor con el
+  /// estado): se explica en vez de mandar una petición que fallaría.
+  void _toggle(BuildContext context, bool completed) {
+    if (completed &&
+        event.kind == HomeEventKind.block &&
+        event.status == ItemTimeStatus.upcoming) {
+      context.showSnack(context.localizations.plannerErrorBlockInFuture);
+      return;
+    }
+    onSetCompleted?.call(completed);
+  }
+
+  Widget? _actionWidget(BuildContext context, String title) {
+    final l10n = context.localizations;
+    switch (_action) {
+      case _EventAction.check when onSetCompleted != null:
+        final label = event.completed
+            ? l10n.homeAgendaUnmark(title)
+            : l10n.homeAgendaMarkDone(title);
+        // Mientras se guarda, la casilla sigue (desactivada) para no perder
+        // el foco.
+        return Tooltip(
+          message: label,
+          excludeFromSemantics: true,
+          child: SizedBox.square(
+            dimension: TokensLayout.minTouchTarget,
+            child: Checkbox(
+              value: event.completed,
+              semanticLabel: label,
+              onChanged: busy ? null : (v) => _toggle(context, v ?? false),
+            ),
+          ),
+        );
+      case _EventAction.start when onStartTraining != null:
+        return TextButton(
+          onPressed: onStartTraining,
+          child: Text(l10n.homeTrainingStart),
+        );
+      case _EventAction.didIt when onSetCompleted != null:
+        return TextButton(
+          onPressed: busy ? null : () => _toggle(context, true),
+          child: Text(l10n.homeAgendaDidIt),
+        );
+      default:
+        return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -534,12 +645,22 @@ class _EventTile extends StatelessWidget {
     final subtitle = [
       ?when,
       eventTypeLabel(context, event.type),
-      // Sin repetir la asignatura cuando el bloque ya se llama así.
+      // Sin repetir la asignatura cuando el evento ya se llama así.
       if (subject != null &&
           subject.isNotEmpty &&
           subject.toLowerCase() != event.title.toLowerCase())
         readableEventTitle(subject),
     ].join(' · ');
+    // La tarea de reto que avanza con este evento, en vez de repetirla aparte.
+    final tasks = [
+      for (final t in event.tasks)
+        t.title == null
+            ? l10n.homeAgendaTaskChallenge(t.challengeTitle)
+            : l10n.homeAgendaTask(t.title!, t.challengeTitle),
+    ];
+    final title = event.title.isEmpty
+        ? eventTypeLabel(context, event.type)
+        : readableEventTitle(event.title);
 
     // Lo que ya pasó sin hacerse se dice (no se ve igual que lo que viene):
     // una entrega vencida en rojo; un bloque sin hacer, en aviso.
@@ -566,11 +687,35 @@ class _EventTile extends StatelessWidget {
           };
     // Con texto grande la pastilla baja bajo el subtítulo para no comerse el título.
     final largeText = context.scaled(1) > 1.3;
-    final subtitleText = Text(
-      subtitle,
-      maxLines: largeText ? 2 : 1,
-      overflow: TextOverflow.ellipsis,
+    final subtitleText = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(subtitle, maxLines: largeText ? 2 : 1, overflow: TextOverflow.ellipsis),
+        for (final task in tasks)
+          Row(
+            children: [
+              Icon(
+                Icons.flag_outlined,
+                size: TokensSize.iconXs,
+                color: context.palette.accent,
+              ),
+              const SizedBox(width: TokensSpacing.xxs),
+              Expanded(
+                child: Text(
+                  task,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.textStyles.labelMedium?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+      ],
     );
+    final action = _actionWidget(context, title);
 
     return AppFocusOutline(
       child: ListTile(
@@ -585,9 +730,7 @@ class _EventTile extends StatelessWidget {
           child: Icon(icon, color: color, size: TokensSize.iconS),
         ),
         title: Text(
-          event.title.isEmpty
-              ? eventTypeLabel(context, event.type)
-              : readableEventTitle(event.title),
+          title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: event.completed
@@ -608,7 +751,12 @@ class _EventTile extends StatelessWidget {
                 ],
               )
             : subtitleText,
-        trailing: event.completed
+        trailing: action != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [?(largeText ? null : statusPill), action],
+              )
+            : event.completed
             ? Tooltip(
                 message: l10n.homeAgendaCompleted,
                 child: Icon(
@@ -652,6 +800,10 @@ class _EventTile extends StatelessWidget {
         Icons.assignment_late_outlined,
         context.palette.warning,
       ),
+      HomeEventType.personal => (
+        Icons.person_outline_rounded,
+        context.colors.onSurfaceVariant,
+      ),
       HomeEventType.other => (
         Icons.event_outlined,
         context.colors.onSurfaceVariant,
@@ -688,6 +840,7 @@ String eventTypeLabel(BuildContext context, HomeEventType type) {
     HomeEventType.exam => l10n.homeEventExam,
     HomeEventType.delivery => l10n.homeEventDelivery,
     HomeEventType.presentation => l10n.homeEventPresentation,
+    HomeEventType.personal => l10n.homeEventPersonal,
     HomeEventType.other => l10n.homeEventOther,
   };
 }

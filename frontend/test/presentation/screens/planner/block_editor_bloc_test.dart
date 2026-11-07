@@ -180,6 +180,79 @@ void main() {
   );
 
   blocTest<BlockEditorBloc, BlockEditorState>(
+    'un evento personal sin nombre no se envía',
+    build: build,
+    act: (bloc) => bloc.add(
+      BlockEditorEvent.saveRequested(
+        draft().copyWith(type: BlockType.personal, topics: '   '),
+      ),
+    ),
+    expect: () => [
+      isA<BlockEditorState>()
+          .having((s) => s.issue, 'issue', BlockEditorIssue.nameMissing)
+          .having((s) => s.nameMissing, 'nameMissing', true),
+    ],
+    verify: (_) => verifyNever(() => create(any())),
+  );
+
+  blocTest<BlockEditorBloc, BlockEditorState>(
+    'un evento personal con nombre se crea',
+    setUp: () => when(
+      () => create(any()),
+    ).thenAnswer((_) async => Success(BlockChange(block: existing))),
+    build: build,
+    act: (bloc) => bloc.add(
+      BlockEditorEvent.saveRequested(
+        draft().copyWith(
+          type: BlockType.personal,
+          subjectId: null,
+          topics: 'Dentista',
+        ),
+      ),
+    ),
+    expect: () => [
+      isA<BlockEditorState>().having((s) => s.submitting, 'submitting', true),
+      isA<BlockEditorState>().having(
+        (s) => s.outcome,
+        'outcome',
+        const BlockEditorOutcome.created(overlaps: 0),
+      ),
+    ],
+    verify: (_) => verify(
+      () => create(
+        any(
+          that: isA<BlockDraft>()
+              .having((d) => d.type, 'type', BlockType.personal)
+              .having((d) => d.topics, 'topics', 'Dentista'),
+        ),
+      ),
+    ).called(1),
+  );
+
+  blocTest<BlockEditorBloc, BlockEditorState>(
+    'si el servidor rechaza el nombre, el error de campo marca «Nombre»',
+    setUp: () => when(() => create(any())).thenAnswer(
+      (_) async => const Failure(
+        AppError.validation(
+          fields: [FieldError(field: 'topics', code: 'REQUIRED')],
+        ),
+      ),
+    ),
+    build: build,
+    act: (bloc) => bloc.add(
+      BlockEditorEvent.saveRequested(
+        draft().copyWith(type: BlockType.personal, topics: 'Dentista'),
+      ),
+    ),
+    skip: 1,
+    expect: () => [
+      isA<BlockEditorState>()
+          .having((s) => s.submitting, 'submitting', false)
+          .having((s) => s.nameMissing, 'nameMissing', true),
+    ],
+  );
+
+  blocTest<BlockEditorBloc, BlockEditorState>(
     'al editar guarda los datos y reprograma si cambia el horario',
     setUp: () {
       when(

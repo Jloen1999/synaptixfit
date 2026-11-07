@@ -75,7 +75,7 @@ public class AutomaticNotificationService implements NotifyAchievementUseCase, N
                 String ratio = String.format(Locale.ROOT, "%.2f", c.acwr() == null ? 0 : c.acwr());
                 send(c.userId(), key, NotificationType.FATIGUE_ALERT, NotificationPriority.RECOMMENDED,
                         "Riesgo de sobreentrenamiento", "Tu carga de esta semana es " + ratio
-                                + " veces tu media del mes: prioriza el descanso y acorta los bloques de estudio.",
+                                + " veces tu media del mes: prioriza el descanso y estudia en ratos más cortos.",
                         "/progress", "Ver indicadores", NotificationMessage.of(Code.OVERTRAINING, "ratio", ratio));
             }
         }

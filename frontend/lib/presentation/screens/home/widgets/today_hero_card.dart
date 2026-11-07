@@ -19,9 +19,11 @@ bool isClassEvent(HomeTodayEvent e) =>
 /// Qué hace la persona al pulsar el botón principal de «Tu día».
 enum TodayHeroAction { focus, train, openPlanner }
 
-/// «Tu día», lo primero de Inicio: cuánto llevas de hoy (anillo con los bloques
+/// «Tu día», lo primero de Inicio: cuánto llevas de hoy (anillo con los eventos
 /// hechos), qué toca ahora o a continuación con su botón directo, y tres cifras
-/// (estudio, entreno y nivel). Responde de un vistazo a «¿qué hago ahora?».
+/// (estudio, entreno y nivel). Responde de un vistazo a «¿qué hago ahora?». Lo
+/// que ya ha empezado (estudio, repaso o personal) se marca aquí mismo como
+/// hecho, igual que en la agenda (ADR 0035).
 class TodayHeroCard extends StatelessWidget {
   const TodayHeroCard({
     super.key,
@@ -29,7 +31,12 @@ class TodayHeroCard extends StatelessWidget {
     required this.focus,
     required this.onAction,
     this.starting = false,
+    this.onMarkDone,
+    this.completingIds = const {},
   });
+
+  /// Eventos que se están marcando (el botón se desactiva mientras).
+  final Set<String> completingIds;
 
   final HomeDashboard dashboard;
   final UsageFocus focus;
@@ -37,6 +44,9 @@ class TodayHeroCard extends StatelessWidget {
 
   /// Se está abriendo la sesión de entrenamiento.
   final bool starting;
+
+  /// Marca como hecho el evento que toca ahora; sin él no se ofrece.
+  final ValueChanged<HomeTodayEvent>? onMarkDone;
 
   /// Bloque en curso o, si no hay, el siguiente que aún no ha empezado.
   static HomeTodayEvent? nextEvent(List<HomeTodayEvent> events) {
@@ -112,6 +122,8 @@ class TodayHeroCard extends StatelessWidget {
                   const SizedBox(width: TokensSpacing.m),
                   Expanded(
                     child: _NextUp(
+                      onMarkDone: onMarkDone,
+                      completingIds: completingIds,
                       next: next,
                       hasBlocks: blocks.isNotEmpty,
                       action: action,
@@ -222,6 +234,8 @@ class _ProgressRing extends StatelessWidget {
 
 class _NextUp extends StatelessWidget {
   const _NextUp({
+    this.onMarkDone,
+    this.completingIds = const {},
     required this.next,
     required this.hasBlocks,
     required this.action,
@@ -232,6 +246,8 @@ class _NextUp extends StatelessWidget {
   });
 
   final HomeTodayEvent? next;
+  final ValueChanged<HomeTodayEvent>? onMarkDone;
+  final Set<String> completingIds;
 
   /// Clases de hoy, que van fuera del anillo: se dicen en una línea aparte.
   final int classes;
@@ -319,6 +335,19 @@ class _NextUp extends StatelessWidget {
           ],
         ),
         if (when != null) Text(when, style: muted),
+        // Ya empezado: se marca aquí sin ir a la agenda.
+        if (onMarkDone != null &&
+            now &&
+            (event.type == HomeEventType.study ||
+                event.type == HomeEventType.review ||
+                event.type == HomeEventType.personal))
+          TextButton.icon(
+            onPressed: completingIds.contains(event.id)
+                ? null
+                : () => onMarkDone!(event),
+            icon: const Icon(Icons.task_alt_rounded),
+            label: Text(l10n.homeTodayMarkDone),
+          ),
         ?classesNote,
         if (showButton) ...[const SizedBox(height: TokensSpacing.s), button],
       ],

@@ -295,12 +295,14 @@ class _DetailContent extends StatelessWidget {
   final ChallengeDetailState state;
   final VoidCallback onEditTasks;
 
-  /// Un día de rutina se marca entrenando: se va a la pestaña Rutinas (con
-  /// `go`, porque es una pestaña); una entrega o un examen, a Entregas.
-  static void openLink(BuildContext context, ChallengeLinkType type) =>
-      type == ChallengeLinkType.routineDay
+  /// Un día de rutina se marca entrenando: se va a la pestaña Entreno (con
+  /// `go`, porque es una pestaña); una entrega o un examen, a esa entrega en
+  /// Entregas y exámenes, la primera y destacada. Sin su id la lista solo
+  /// enseñaba la primera página de pendientes y la de la tarea no aparecía.
+  static void openLink(BuildContext context, ChallengeLink link) =>
+      link.type == ChallengeLinkType.routineDay
       ? context.go(ChallengesExternalPaths.training)
-      : context.push(ChallengesExternalPaths.deadlines);
+      : context.push(ChallengesExternalPaths.deadline(link.entityId));
 
   @override
   Widget build(BuildContext context) {
@@ -415,7 +417,7 @@ class _DetailContent extends StatelessWidget {
                             ),
                       onOpenLink: m.link == null || !challenge.owned
                           ? null
-                          : () => openLink(context, m.link!.type),
+                          : () => openLink(context, m.link!),
                     ),
                   ),
               if (challenge.hasDependencies) ...[
@@ -442,7 +444,7 @@ class _DetailContent extends StatelessWidget {
                 const SizedBox(height: TokensSpacing.s),
                 AppCard(
                   onTap: challenge.owned
-                      ? () => openLink(context, link.type)
+                      ? () => openLink(context, link)
                       : null,
                   child: Row(
                     children: [
@@ -963,7 +965,8 @@ class _BottomActions extends StatelessWidget {
             );
           } else if (challenge.completedByLink) {
             // Lo completa su entrega o examen: se va a marcarlo allí.
-            final linkType = challenge.link?.type ?? ChallengeLinkType.delivery;
+            final link = challenge.link;
+            final linkType = link?.type ?? ChallengeLinkType.delivery;
             primary = AppPrimaryButton(
               label: linkType == ChallengeLinkType.routineDay
                   ? l10n.challengesLinkOpenRoutine
@@ -971,7 +974,9 @@ class _BottomActions extends StatelessWidget {
               icon: linkType == ChallengeLinkType.routineDay
                   ? Icons.fitness_center_rounded
                   : Icons.event_available_outlined,
-              onPressed: () => _DetailContent.openLink(context, linkType),
+              onPressed: () => link == null
+                  ? context.push(ChallengesExternalPaths.deadlines)
+                  : _DetailContent.openLink(context, link),
             );
           } else if (challenge.hasMilestones) {
             // «Completar siguiente tarea» salta las que avanzan solas.

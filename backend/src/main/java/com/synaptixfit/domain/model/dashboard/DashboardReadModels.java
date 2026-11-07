@@ -22,13 +22,20 @@ public final class DashboardReadModels {
      * @param activityType tipo en la BD ('estudio', 'clase', 'deporte', 'repaso', …)
      * @param routineId    rutina enlazada (bloques de deporte de una rutina)
      * @param routineDayId día de rutina que refleja el bloque: «Entrenar» empieza ese día
+     * @param milestoneId  tarea de reto a la que está asignado (la hace avanzar)
      */
     public record CalendarBlock(UUID id, String activityType, Instant start, Instant end, boolean completed,
-                                String subjectName, String topics, UUID routineId, UUID routineDayId) {
+                                String subjectName, String topics, UUID routineId, UUID routineDayId,
+                                UUID milestoneId) {
 
         public CalendarBlock(UUID id, String activityType, Instant start, Instant end, boolean completed,
                              String subjectName, String topics) {
-            this(id, activityType, start, end, completed, subjectName, topics, null, null);
+            this(id, activityType, start, end, completed, subjectName, topics, null, null, null);
+        }
+
+        public CalendarBlock(UUID id, String activityType, Instant start, Instant end, boolean completed,
+                             String subjectName, String topics, UUID routineId, UUID routineDayId) {
+            this(id, activityType, start, end, completed, subjectName, topics, routineId, routineDayId, null);
         }
     }
 

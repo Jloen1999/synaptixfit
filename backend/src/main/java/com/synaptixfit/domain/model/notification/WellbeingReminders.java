@@ -2,6 +2,7 @@ package com.synaptixfit.domain.model.notification;
 
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.user.UsageFocus;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,8 +22,8 @@ import java.util.UUID;
  *       ({@link NotificationType#MILESTONE}): la racha es un logro.</li>
  *   <li>Registro diario: a las {@link #CHECK_IN_TIME} de cada día de la ventana; hoy solo si aún no se ha hecho.
  *       Categoría de fatiga ({@link NotificationType#FATIGUE_ALERT}): el registro mide la fatiga.</li>
- *   <li>Clase a punto de empezar: {@link ReminderPlanner#LEAD_TIME} antes, con el aula. Categoría académica y
- *       enfoque que muestre las clases. Se descartan las completadas o marcadas como «No fui».</li>
+ *   <li>Clase a punto de empezar: los minutos elegidos antes ({@link ReminderOptions#eventLeadMinutes()}), con el
+ *       aula. Categoría académica y enfoque que muestre las clases. Se descartan las completadas o marcadas como «No fui».</li>
  * </ul>
  * Cada uno se puede apagar en {@link ReminderOptions}. Las horas de silencio retrasan el aviso como en el resto;
  * el de la clase se descarta si llegaría a la hora de empezar o después.
@@ -78,7 +79,8 @@ public final class WellbeingReminders {
                 if (c.done() || !c.start().isAfter(in.now()) || c.start().isAfter(in.end())) {
                     continue;
                 }
-                Instant at = deferQuietHours(c.start().minus(ReminderPlanner.LEAD_TIME).atZone(in.zone()), in);
+                Duration lead = Duration.ofMinutes(in.options().eventLeadMinutes());
+                Instant at = deferQuietHours(c.start().minus(lead).atZone(in.zone()), in);
                 if (at.isAfter(in.now()) && at.isBefore(c.start())) {
                     out.add(new ReminderPlan.Item(ReminderKind.CLASS_SOON, at, c.id().toString(), null, c.title(),
                             c.start(), null, c.place()));

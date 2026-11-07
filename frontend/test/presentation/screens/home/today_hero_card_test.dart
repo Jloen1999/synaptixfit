@@ -100,7 +100,7 @@ void main() {
     expect(find.text('Ahora'), findsOneWidget);
     expect(find.text('Bloque 2'), findsOneWidget);
     expect(
-      find.bySemanticsLabel('Has hecho 1 de 2 bloques de hoy'),
+      find.bySemanticsLabel('Has hecho 1 de 2 eventos de hoy'),
       findsOneWidget,
     );
     await tester.tap(find.text('Concentrarme'));

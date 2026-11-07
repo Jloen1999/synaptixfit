@@ -463,6 +463,7 @@
   "profileErrorGdprPasswordMismatch": "La contraseña no es correcta.",
   "profileErrorGdprLastAdmin": "Eres el último administrador: nombra a otro antes de darte de baja.",
   "profileErrorQuietHours": "Indica la hora de inicio y de fin del silencio (distintas).",
+  "profileErrorReminderOptions": "No se pudo guardar esa opción de avisos. Elige una de la lista.",
   "profileOnboardingFocusTitle": "¿Para qué usarás SynaptixFit?",
   "profileOnboardingFocusSubtitle": "Solo verás lo que usas. Cámbialo en Perfil.",
   "profileFocusBoth": "Estudios y deporte",
@@ -591,10 +592,51 @@
   "profileReminderStreakHint": "Por la tarde, si aún no has entrenado ni estudiado hoy.",
   "profileReminderCheckIn": "¿Qué tal estás hoy?",
   "profileReminderCheckInHint": "Por la mañana, si aún no has contado qué tal estás.",
-  "profileReminderClasses": "Clase en 15 minutos",
-  "profileReminderClassesHint": "15 minutos antes, con el aula donde es.",
-  "profileReminderSaveError": "No se pudo guardar el cambio. Inténtalo de nuevo.",
+  "profileReminderClasses": "Clase a punto de empezar",
+  "profileReminderClassesHint": "Antes de cada clase, con el aula donde es. Cuánto antes, lo eliges abajo.",
+  "profileReminderSaveError": "No se pudo guardar el cambio y se ha quedado como estaba.",
   "profileReminderNeedsDevice": "Para recibir estos avisos, activa primero «En este móvil» aquí arriba.",
+  "profileReminderTimingTitle": "Cuándo te avisamos",
+  "profileReminderEventLead": "Eventos y clases",
+  "profileReminderEventLeadHint": "Cuánto antes de que empiecen.",
+  "profileReminderLeadMinutes": "{minutes} min antes",
+  "@profileReminderLeadMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "profileReminderLeadHours": "{hours, plural, =1{1 h antes} other{{hours} h antes}}",
+  "@profileReminderLeadHours": {
+    "description": "Antelación en horas enteras (60 min = «1 h antes»).",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "profileReminderDeadlineDays": "Entregas y exámenes",
+  "profileReminderDeadlineDaysHint": "Puedes marcar varios días.",
+  "profileReminderDaysBefore": "{days, plural, =1{1 día antes} other{{days} días antes}}",
+  "@profileReminderDaysBefore": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "profileReminderDeadlineKeepOne": "Deja al menos un día marcado: así no se te pasa ninguna entrega ni ningún examen.",
+  "profileReminderTaskTiming": "Tareas de reto",
+  "profileReminderTaskEvening": "La tarde anterior",
+  "profileReminderTaskEveningHint": "El día antes, por la tarde, para que te dé tiempo a prepararla.",
+  "profileReminderTaskMorning": "La mañana del día",
+  "profileReminderTaskMorningHint": "Ese mismo día por la mañana; con el resumen de la mañana, llegan incluidas en él.",
+  "profileReminderMorningSummary": "Resumen de la mañana",
+  "profileReminderMorningSummaryHint": "Lo que tienes hoy, en un solo aviso. Solo llega si hay algo y, si tienes activado «¿Qué tal estás hoy?», lo trae también.",
+  "profileReminderMorningSummaryAt": "Hora del resumen",
+  "profileReminderSaving": "Guardando…",
+  "profileReminderSaved": "Guardado",
   "profilePermissionsTitle": "Permisos del móvil",
   "profilePermissionsHint": "Notificaciones, avisos a su hora y cámara",
   "profilePermissionsIntroTitle": "Permisos del móvil",

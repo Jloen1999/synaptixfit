@@ -73,6 +73,9 @@ Las 62 migraciones de Supabase se consolidaron en `V1__baseline_schema.sql`. `V2
 | `V1042`: tabla `opciones_avisos` (`usuario_id`, `racha`, `registro_diario`, `clases`; sin fila, todos encendidos) | Avisos opcionales del móvil que se apagan uno a uno (ADR 0033) |
 | `V1043`: tabla `aceptaciones_legales` (`usuario_id`, `version`, `aceptada_en`; una fila por versión aceptada) | Constancia de la política de privacidad y las condiciones aceptadas (ADR 0034) |
 | `V1044`: tabla `consentimientos_salud` (`usuario_id`, `consentido_en`, `retirado_en`) | Consentimiento expreso y separado para guardar el registro diario, que son datos de salud (ADR 0034) |
+| `V1045`: `ck_horarios_tipo_actividad` admite `'personal'` | Eventos del día a día (médico, trabajo, recados) con nombre libre en `temas`; sin XP ni carga de estudio (ADR 0035) |
+| `V1046`: `opciones_avisos.antelacion_eventos_min` (5/15/30/60, por defecto 15), `entregas_1_dia`/`entregas_3_dias`/`entregas_7_dias` (por defecto 1 y 3), `tareas_reto` (`EVENING_BEFORE`/`MORNING_OF`) y `hora_resumen` (`time`, por defecto 08:00; nula = sin resumen) | Antelación de los avisos a elección y resumen de la mañana; los valores por defecto repiten los avisos de antes (ADR 0035) |
+| `V1047`: descripción de la insignia `bloques_estudio` sin «bloques» | Vocabulario común: «evento» en vez de «bloque» (`docs/05-design/vocabulario.md`) |
 | `V1030`: `horarios_academicos.ausente` (por defecto `FALSE`) e índice parcial por `hora_fin` de las clases sin completar ni ausencia | Clases dadas por asistidas al terminar; «No fui» deja la ausencia para que no vuelvan a completarse (ADR 0029) |
 | `V980`: `suscripciones_resumen_semanal` (una por usuario; doble confirmación, solo la huella del token de confirmación; ADR 0022) | Resumen semanal por correo |
 | `V970`: `restablecimientos_contrasena` (solo la huella SHA-256, caduca a los 30 min, un uso; ADR 0021) | Recuperar la contraseña por correo |

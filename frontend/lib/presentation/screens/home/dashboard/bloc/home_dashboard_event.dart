@@ -33,6 +33,19 @@ sealed class HomeDashboardEvent with _$HomeDashboardEvent {
   const factory HomeDashboardEvent.bannerBlockRescheduled(String blockId) =
       HomeDashboardBannerBlockRescheduled;
 
+  /// «Marcar como hecho» o «Desmarcar» de un evento o una entrega de la agenda
+  /// (y «Deshacer» del aviso, que pide lo contrario). Desmarcar devuelve la XP
+  /// que dio; lo decide el servidor (ADR 0035).
+  const factory HomeDashboardEvent.completionSet({
+    required String id,
+    required HomeEventKind kind,
+    required bool completed,
+  }) = HomeDashboardCompletionSet;
+
+  /// La página ya ha avisado del resultado de marcar o desmarcar.
+  const factory HomeDashboardEvent.completionNoticeHandled() =
+      HomeDashboardCompletionNoticeHandled;
+
   /// La página ya ha avisado del resultado de la acción del aviso.
   const factory HomeDashboardEvent.bannerNoticeHandled() =
       HomeDashboardBannerNoticeHandled;

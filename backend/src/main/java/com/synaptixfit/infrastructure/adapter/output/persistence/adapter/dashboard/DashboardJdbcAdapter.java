@@ -57,7 +57,7 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
     public List<CalendarBlock> calendarBlocks(UUID userId, Instant from, Instant to) {
         return jdbc.sql("""
                         SELECT h.id, h.tipo_actividad, h.hora_inicio, h.hora_fin, h.completado, h.temas,
-                               a.nombre AS asignatura, h.rutina_id, h.dia_rutina_id
+                               a.nombre AS asignatura, h.rutina_id, h.dia_rutina_id, h.hito_id
                         FROM horarios_academicos h
                         LEFT JOIN asignaturas a ON a.id = h.asignatura_id
                         WHERE h.usuario_id = :u AND h.hora_inicio >= :from AND h.hora_inicio < :to
@@ -67,7 +67,7 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
                 .query((rs, n) -> new CalendarBlock(uuid(rs, "id"), rs.getString("tipo_actividad"),
                         instant(rs, "hora_inicio"), instant(rs, "hora_fin"), rs.getBoolean("completado"),
                         rs.getString("asignatura"), rs.getString("temas"), uuid(rs, "rutina_id"),
-                        uuid(rs, "dia_rutina_id")))
+                        uuid(rs, "dia_rutina_id"), uuid(rs, "hito_id")))
                 .list();
     }
 

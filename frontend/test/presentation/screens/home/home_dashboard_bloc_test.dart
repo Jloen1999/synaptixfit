@@ -22,6 +22,9 @@ import 'package:synaptixfit/domain/use_cases/planner/get_timeline_use_case.dart'
 import 'package:synaptixfit/domain/use_cases/profile/is_permissions_intro_pending_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/set_block_completion_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/planner/set_deadline_completion_use_case.dart';
+import 'package:synaptixfit/domain/models/planner/deadline.dart';
+import 'package:synaptixfit/domain/enums/item_time_status.dart';
 import 'package:synaptixfit/domain/use_cases/training/start_session_use_case.dart';
 import 'package:synaptixfit/presentation/screens/home/dashboard/bloc/home_dashboard_bloc.dart';
 import 'package:synaptixfit/presentation/screens/home/home_onboarding_gate.dart';
@@ -50,6 +53,9 @@ class _MockSnooze extends Mock implements SnoozeHomeSetupUseCaseContract {}
 
 class _MockComplete extends Mock implements SetBlockCompletionUseCaseContract {}
 
+class _MockCompleteDeadline extends Mock
+    implements SetDeadlineCompletionUseCaseContract {}
+
 class _MockReschedule extends Mock
     implements RescheduleBlockToNextFreeSlotUseCaseContract {}
 
@@ -68,6 +74,7 @@ void main() {
   late _MockSetup getSetup;
   late _MockSnooze snooze;
   late _MockComplete complete;
+  late _MockCompleteDeadline completeDeadline;
   late _MockReschedule reschedule;
   late _MockPermissionsIntro permissionsIntro;
 
@@ -84,6 +91,7 @@ void main() {
     startSession: start,
     setBlockCompletion: complete,
     rescheduleToNextSlot: reschedule,
+    setDeadlineCompletion: completeDeadline,
     permissionsIntroPending: permissionsIntro,
     clock: () => DateTime(2026, 10, 20, 9),
   );
@@ -101,6 +109,7 @@ void main() {
     getSetup = _MockSetup();
     snooze = _MockSnooze();
     complete = _MockComplete();
+    completeDeadline = _MockCompleteDeadline();
     reschedule = _MockReschedule();
     permissionsIntro = _MockPermissionsIntro();
     when(
@@ -460,6 +469,112 @@ void main() {
         HomeDashboardState(bannerBusy: HomeBannerAction.reschedule),
         HomeDashboardState(
           bannerNotice: HomeBannerNotice.failed(AppError.network()),
+        ),
+      ],
+    );
+  });
+
+  group('marcar desde la agenda (ADR 0035)', () {
+    final event = HomeTodayEvent(
+      id: 'b1',
+      kind: HomeEventKind.block,
+      type: HomeEventType.personal,
+      title: 'Dentista',
+      start: DateTime(2026, 10, 20, 8),
+      completed: false,
+      status: ItemTimeStatus.missed,
+    );
+    final withEvent = loaded.copyWith(
+      dashboard: homeDashboardFixture.copyWith(todayEvents: [event]),
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      'marca el evento con el estado del servidor y ofrece deshacer',
+      setUp: () =>
+          when(() => complete('b1', completed: true)).thenAnswer(
+            (_) async => Success(
+              BlockCompletion(
+                block: block(id: 'b1', start: DateTime(2026, 10, 20, 8))
+                    .copyWith(
+                      completed: true,
+                      timeStatus: ItemTimeStatus.done,
+                    ),
+                xpDelta: 0,
+              ),
+            ),
+          ),
+      build: build,
+      seed: () => withEvent,
+      act: (bloc) => bloc.add(
+        const HomeDashboardEvent.completionSet(
+          id: 'b1',
+          kind: HomeEventKind.block,
+          completed: true,
+        ),
+      ),
+      expect: () => [
+        withEvent.copyWith(completingIds: {'b1'}),
+        withEvent.copyWith(
+          dashboard: homeDashboardFixture.copyWith(
+            todayEvents: [
+              event.copyWith(completed: true, status: ItemTimeStatus.done),
+            ],
+          ),
+          completionNotice: const HomeCompletionNotice.done(
+            id: 'b1',
+            kind: HomeEventKind.block,
+            completed: true,
+            xpDelta: 0,
+          ),
+        ),
+      ],
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      'desmarcar una entrega devuelve la XP que dio',
+      setUp: () => when(() => completeDeadline('d1', completed: false))
+          .thenAnswer(
+            (_) async =>
+                Success(DeadlineCompletion(deadline: deadline(), xpDelta: -25)),
+          ),
+      build: build,
+      act: (bloc) => bloc.add(
+        const HomeDashboardEvent.completionSet(
+          id: 'd1',
+          kind: HomeEventKind.deadline,
+          completed: false,
+        ),
+      ),
+      verify: (bloc) => expect(
+        bloc.state.completionNotice,
+        const HomeCompletionNotice.done(
+          id: 'd1',
+          kind: HomeEventKind.deadline,
+          completed: false,
+          xpDelta: -25,
+        ),
+      ),
+    );
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      'si falla, avisa con el error y no cambia nada',
+      setUp: () => when(() => complete('b1', completed: true))
+          .thenAnswer((_) async => const Failure(AppError.network())),
+      build: build,
+      seed: () => withEvent,
+      act: (bloc) => bloc.add(
+        const HomeDashboardEvent.completionSet(
+          id: 'b1',
+          kind: HomeEventKind.block,
+          completed: true,
+        ),
+      ),
+      expect: () => [
+        withEvent.copyWith(completingIds: {'b1'}),
+        withEvent.copyWith(
+          completionNotice: const HomeCompletionNotice.failed(
+            AppError.network(),
+          ),
         ),
       ],
     );

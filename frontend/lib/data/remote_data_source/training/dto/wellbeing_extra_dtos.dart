@@ -1,3 +1,5 @@
+import '../../../../domain/enums/reminder_task_timing.dart';
+import '../../../../domain/models/profile/notification_preferences.dart';
 import '../../../../domain/models/reminders/reminder_options.dart';
 import '../../../../domain/models/training/cycle.dart';
 import '../../../../domain/models/training/health_consent.dart';
@@ -99,16 +101,38 @@ abstract final class WellbeingExtraDtos {
         totalItems: json['totalItems'] as int? ?? 0,
       );
 
-  static ReminderOptions reminderOptions(Map<String, dynamic> json) =>
-      ReminderOptions(
-        streak: json['streak'] as bool? ?? true,
-        checkIn: json['checkIn'] as bool? ?? true,
-        classes: json['classes'] as bool? ?? true,
-      );
+  /// Lo que falte (servidores anteriores a ADR 0035) toma el valor por defecto.
+  static ReminderOptions reminderOptions(Map<String, dynamic> json) {
+    const defaults = ReminderOptions();
+    final days = json['deadlineDaysBefore'];
+    final at = ClockTime.tryParse(json['morningSummaryAt'] as String?);
+    return ReminderOptions(
+      streak: json['streak'] as bool? ?? true,
+      checkIn: json['checkIn'] as bool? ?? true,
+      classes: json['classes'] as bool? ?? true,
+      eventLeadMinutes:
+          (json['eventLeadMinutes'] as num?)?.toInt() ??
+          defaults.eventLeadMinutes,
+      deadlineDaysBefore: days is List && days.isNotEmpty
+          ? ([for (final d in days.whereType<num>()) d.toInt()]..sort())
+          : defaults.deadlineDaysBefore,
+      taskTiming:
+          ReminderTaskTiming.fromApi(json['taskTiming'] as String?) ??
+          defaults.taskTiming,
+      morningSummary: json['morningSummary'] as bool? ?? true,
+      morningSummaryAt: at ?? defaults.morningSummaryAt,
+    );
+  }
 
+  /// Se manda todo; con el resumen apagado la hora va nula (no cambia).
   static Map<String, dynamic> reminderOptionsBody(ReminderOptions o) => {
     'streak': o.streak,
     'checkIn': o.checkIn,
     'classes': o.classes,
+    'eventLeadMinutes': o.eventLeadMinutes,
+    'deadlineDaysBefore': o.deadlineDaysBefore,
+    'taskTiming': o.taskTiming.apiValue,
+    'morningSummary': o.morningSummary,
+    'morningSummaryAt': o.morningSummary ? o.morningSummaryAt.apiValue : null,
   };
 }

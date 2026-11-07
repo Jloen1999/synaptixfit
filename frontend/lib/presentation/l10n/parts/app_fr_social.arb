@@ -150,7 +150,7 @@
   "socialNotifFatigueTitle": "Aujourd’hui, mieux vaut adapter l’entraînement",
   "socialNotifFatigueBody": "Tu nous as dit que tu es très fatigué : baisse l’intensité ou prends un jour de repos.",
   "socialNotifOvertrainingTitle": "Risque de surentraînement",
-  "socialNotifOvertrainingBody": "Ta charge cette semaine est {ratio} fois ta moyenne du mois : privilégie le repos et raccourcis les blocs d’étude.",
+  "socialNotifOvertrainingBody": "Ta charge cette semaine est {ratio} fois ta moyenne du mois : privilégie le repos et étudie par périodes plus courtes.",
   "socialNotifPostLikedTitle": "Nouveau j’aime",
   "socialNotifPostLikedBody": "{name} a aimé ta publication",
   "socialNotifPostCommentedTitle": "Nouveau commentaire",

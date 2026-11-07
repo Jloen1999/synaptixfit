@@ -1,8 +1,11 @@
 package com.synaptixfit.domain.model.notification;
 
+import com.synaptixfit.domain.model.challenge.DatedTask;
+import com.synaptixfit.domain.model.challenge.TaskMention;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.user.UsageFocus;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -10,11 +13,16 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -26,13 +34,25 @@ import java.util.UUID;
  * <ul>
  *   <li>Repasos: a las 19:00 de los tres próximos días (hoy solo si aún no han pasado), si hay
  *       vencidos. Más de un día para que siga avisando aunque no se abra la app.</li>
- *   <li>Bloques de deporte, estudio y repaso: 15 minutos antes de empezar. Se descartan los
- *       completados, los ya empezados y el resto de tipos (clases, exámenes, entregas…).</li>
+ *   <li>Eventos de deporte, estudio, repaso y personales: los minutos elegidos antes de empezar
+ *       ({@link ReminderOptions#eventLeadMinutes()}, 15 por defecto). Se descartan los completados, los ya
+ *       empezados y el resto de tipos (las clases van en {@link WellbeingReminders}; exámenes y entregas, por su
+ *       entrega). Lo personal no tiene categoría propia: se avisa si la persona admite alguna
+ *       ({@link #admitsAny}), porque son sus citas y no deben callarse en época de exámenes.</li>
  *   <li>«Tu semana»: el domingo a las {@link #WEEKLY_TIME}, para mirar cómo ha ido y planificar la siguiente
  *       (categoría académica o de hitos, la que esté activa).</li>
- *   <li>Entregas y exámenes pendientes: a las 18:00 de tres días antes y del día antes
- *       ({@link #DEADLINE_DAYS_BEFORE}). Antes la app no avisaba de ninguno: con tres días aún hay margen
- *       para organizarse y el día antes sirve de último aviso. Categoría académica.</li>
+ *   <li>Entregas y exámenes pendientes: a las 18:00 de los días antes elegidos
+ *       ({@link ReminderOptions#deadlineDaysBefore()}; por defecto 3 y 1: con tres días aún hay margen para
+ *       organizarse y el día antes sirve de último aviso). Categoría académica.</li>
+ *   <li>Tareas de reto con fecha ({@link DatedTask}): nunca dos avisos por lo mismo. Si su entrega o su evento ya
+ *       tiene aviso, ese aviso menciona la tarea; si no, la tarea tiene el suyo
+ *       ({@link ReminderKind#CHALLENGE_TASK}) la tarde anterior a las {@link #DEADLINE_TIME} o la mañana del día
+ *       ({@link ReminderOptions#taskTiming()}); por la mañana y con resumen, va dentro del resumen. Categoría de
+ *       hitos. Al tocarlo se abre el reto.</li>
+ *   <li>Resumen de la mañana ({@link ReminderKind#MORNING_SUMMARY}): a la hora elegida (8:00 por defecto), solo si
+ *       ese día hay algo después de esa hora (estudios, entrenos, clases, eventos personales, entregas o tareas de
+ *       reto). Absorbe el aviso del registro diario de ese día ({@link ReminderKind#CHECK_IN}): llega uno solo, que
+ *       también lo recuerda. Cuenta en el límite diario como cualquier otro.</li>
  *   <li>Categorías: repasos y estudio usan {@link NotificationType#ACADEMIC}; «hora de entrenar»,
  *       {@link #TRAINING_CATEGORY} ({@code MILESTONE}), porque no hay categoría de deporte y cumplir la
  *       sesión planificada es un hito del plan. Así el modo exámenes la silencia y deja el estudio.</li>
@@ -40,8 +60,8 @@ import java.util.UUID;
  *       {@link ActivityType#visibleFor} (los repasos cuentan como {@link ActivityType#REVIEW}).</li>
  *   <li>Horas de silencio: a diferencia de las notificaciones de la app (que se descartan porque ya
  *       ocurrieron), un recordatorio se retrasa al final del silencio
- *       ({@link NotificationPreferences#afterQuietHours}); el de un bloque se descarta si llegaría a la
- *       hora de empezar o después.</li>
+ *       ({@link NotificationPreferences#afterQuietHours}); el de un evento o una tarea se descarta si llegaría a
+ *       la hora de empezar o después.</li>
  *   <li>Límite diario: como mucho {@code dailyLimit} avisos por día local, por orden de hora; 0 deja
  *       pasar solo las críticas, y un recordatorio nunca lo es, así que no hay avisos.</li>
  *   <li>Tope total de {@link #DEFAULT_MAX_REMINDERS}: iOS solo guarda 64 avisos pendientes por app.</li>
@@ -57,13 +77,16 @@ public final class ReminderPlanner {
     public static final NotificationType STUDY_CATEGORY = NotificationType.ACADEMIC;
     public static final NotificationType TRAINING_CATEGORY = NotificationType.MILESTONE;
     public static final LocalTime REVIEW_TIME = LocalTime.of(19, 0);
-    public static final Duration LEAD_TIME = Duration.ofMinutes(15);
     public static final int REVIEW_DAYS = 3;
     public static final int MAX_DAYS = 7;
     public static final int DEFAULT_MAX_REMINDERS = 60;
     public static final LocalTime DEADLINE_TIME = LocalTime.of(18, 0);
     public static final LocalTime WEEKLY_TIME = LocalTime.of(20, 0);
-    public static final List<Integer> DEADLINE_DAYS_BEFORE = List.of(3, 1);
+    /**
+     * Hora del aviso de una tarea de reto «la mañana del día» cuando no hay resumen de la mañana que la lleve: la
+     * misma que el resumen por defecto, para que ambos avisos se sientan uno solo.
+     */
+    public static final LocalTime TASK_MORNING_TIME = ReminderOptions.DEFAULT_SUMMARY_AT;
     public static final LocalTime FOLLOW_UP_TIME = LocalTime.of(10, 0);
     public static final Duration OPEN_SESSION_AFTER = Duration.ofHours(2);
 
@@ -120,13 +143,24 @@ public final class ReminderPlanner {
      * @param days       ventana en días (1..{@link #MAX_DAYS})
      * @param deadlines  entregas y exámenes pendientes que vencen antes de {@link #deadlineHorizon}
      * @param weeklySummary incluir el aviso «Tu semana» del domingo
+     * @param options    antelaciones y resumen de la mañana elegidos (nulas: por defecto)
+     * @param tasks      tareas de reto pendientes con fecha ({@link DatedTask})
      */
     public record Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
                         Instant now, ZoneId zone, int days, List<Deadline> deadlines, boolean weeklySummary,
-                        FollowUps followUps) {
+                        FollowUps followUps, ReminderOptions options, List<DatedTask> tasks) {
 
         public Input {
             followUps = followUps == null ? FollowUps.NONE : followUps;
+            options = options == null ? ReminderOptions.DEFAULTS : options;
+            tasks = tasks == null ? List.of() : List.copyOf(tasks);
+        }
+
+        public Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
+                     Instant now, ZoneId zone, int days, List<Deadline> deadlines, boolean weeklySummary,
+                     FollowUps followUps) {
+            this(dueReviews, blocks, preferences, focus, now, zone, days, deadlines, weeklySummary, followUps,
+                    ReminderOptions.DEFAULTS, List.of());
         }
 
         public Input(int dueReviews, List<Block> blocks, NotificationPreferences preferences, UsageFocus focus,
@@ -142,7 +176,7 @@ public final class ReminderPlanner {
 
     /** Hasta dónde hace falta leer entregas: la que vence justo después de la ventana aún se avisa antes. */
     public static Instant deadlineHorizon(Instant now, int days) {
-        int maxBefore = DEADLINE_DAYS_BEFORE.stream().mapToInt(Integer::intValue).max().orElse(0);
+        int maxBefore = ReminderOptions.DEADLINE_DAY_OPTIONS.stream().mapToInt(Integer::intValue).max().orElse(0);
         return horizonEnd(now, days).plus(Duration.ofDays(maxBefore + 1L));
     }
 
@@ -162,10 +196,18 @@ public final class ReminderPlanner {
                 || allows(ActivityType.DELIVERY, preferences, focus));
     }
 
-    /** ¿Hace falta leer los bloques del planificador? */
+    /**
+     * ¿Hace falta leer los eventos del planificador? Casi siempre: además de sus avisos, los usan el resumen de la
+     * mañana y las tareas de reto.
+     */
     public static boolean wantsBlocks(NotificationPreferences preferences, UsageFocus focus) {
         return preferences.dailyLimit() > 0 && (allows(ActivityType.STUDY, preferences, focus)
-                || allows(ActivityType.SPORT, preferences, focus));
+                || allows(ActivityType.SPORT, preferences, focus) || admitsAny(preferences));
+    }
+
+    /** ¿Admite la persona alguna categoría? Sirve a lo que no tiene categoría propia (eventos personales). */
+    public static boolean admitsAny(NotificationPreferences preferences) {
+        return Arrays.stream(NotificationType.values()).anyMatch(preferences::admits);
     }
 
     public ReminderPlan plan(Input input) {
@@ -192,9 +234,170 @@ public final class ReminderPlanner {
         }
         addFollowUps(candidates, input, end);
         candidates.addAll(extra);
+        candidates = mentionTasks(candidates, input, end);
+        addMorningSummaries(candidates, input, end);
+        candidates = absorbCheckIns(candidates, input.zone());
         candidates.sort(Comparator.comparing(ReminderPlan.Item::at));
         return new ReminderPlan(applyDailyLimit(candidates, input.preferences().dailyLimit(), input.zone())
                 .stream().limit(maxReminders).toList());
+    }
+
+    /**
+     * Sin duplicados: cada aviso de una entrega o un evento menciona las tareas de reto que avanzan con él; las tareas
+     * que ningún aviso menciona reciben el suyo (o van en el resumen de la mañana).
+     */
+    private static List<ReminderPlan.Item> mentionTasks(List<ReminderPlan.Item> items, Input input, Instant end) {
+        if (input.tasks().isEmpty()) {
+            return items;
+        }
+        Set<DatedTask> covered = new HashSet<>();
+        List<ReminderPlan.Item> out = new ArrayList<>(items.size());
+        for (ReminderPlan.Item item : items) {
+            String anchor = anchorOf(item);
+            List<DatedTask> mentioned = anchor == null ? List.of() : input.tasks().stream()
+                    .filter(t -> t.anchorId().toString().equals(anchor)).toList();
+            covered.addAll(mentioned);
+            out.add(mentioned.isEmpty() ? item : item.withTasks(mentioned.stream().map(DatedTask::mention).toList()));
+        }
+        if (!input.preferences().admits(NotificationType.MILESTONE)) {
+            return out;
+        }
+        ReminderOptions options = input.options();
+        boolean morning = options.taskTiming() == ReminderOptions.TaskTiming.MORNING_OF;
+        for (DatedTask task : input.tasks()) {
+            LocalDate taskDay = task.at().atZone(input.zone()).toLocalDate();
+            // Por la mañana y con resumen antes de la tarea, va dentro del resumen de ese día.
+            if (covered.contains(task) || (morning && options.morningSummary()
+                    && deferQuietHours(ZonedDateTime.of(taskDay, options.morningSummaryAt(), input.zone()), input)
+                    .isBefore(dueOf(task, input.zone())))) {
+                continue;
+            }
+            ZonedDateTime planned = morning
+                    ? ZonedDateTime.of(taskDay, TASK_MORNING_TIME, input.zone())
+                    : ZonedDateTime.of(taskDay.minusDays(1), DEADLINE_TIME, input.zone());
+            Instant at = deferQuietHours(planned, input);
+            if (!at.isAfter(input.now()) || at.isAfter(end) || !at.isBefore(dueOf(task, input.zone()))) {
+                continue;
+            }
+            int daysLeft = (int) ChronoUnit.DAYS.between(at.atZone(input.zone()).toLocalDate(), taskDay);
+            String ref = (task.milestoneId() == null ? task.challengeId() : task.milestoneId()) + ":"
+                    + options.taskTiming().name();
+            out.add(new ReminderPlan.Item(ReminderKind.CHALLENGE_TASK, at, ref, daysLeft, task.title(), task.at(),
+                    task.challengeId().toString(), null, List.of(task.mention()), null));
+        }
+        return out;
+    }
+
+    /** Id de la entrega o el evento del que avisa un aviso (con el que se cruzan las tareas de reto). */
+    private static String anchorOf(ReminderPlan.Item item) {
+        return switch (item.kind()) {
+            case EXAM, DEADLINE -> item.targetId();
+            case STUDY, TRAINING, PERSONAL_EVENT, CLASS_SOON -> item.refId();
+            default -> null;
+        };
+    }
+
+    /** Hasta cuándo sirve avisar de una tarea: su hora o, si solo tiene día (rutina), el final de ese día. */
+    private static Instant dueOf(DatedTask task, ZoneId zone) {
+        if (task.anchor() != DatedTask.Anchor.ROUTINE_DAY) {
+            return task.at();
+        }
+        return task.at().atZone(zone).toLocalDate().plusDays(1).atStartOfDay(zone).toInstant();
+    }
+
+    /**
+     * Un resumen por cada mañana de la ventana que tenga algo después de la hora del resumen. Los eventos y las
+     * entregas se cuentan una vez; una tarea de reto, solo si no va ya con uno de ellos.
+     */
+    private static void addMorningSummaries(List<ReminderPlan.Item> out, Input input, Instant end) {
+        LocalTime time = input.options().morningSummaryAt();
+        NotificationPreferences prefs = input.preferences();
+        if (time == null || !(prefs.admits(STUDY_CATEGORY) || prefs.admits(TRAINING_CATEGORY))) {
+            return;
+        }
+        ZoneId zone = input.zone();
+        LocalDate last = end.atZone(zone).toLocalDate();
+        for (LocalDate day = input.now().atZone(zone).toLocalDate(); !day.isAfter(last); day = day.plusDays(1)) {
+            Instant at = deferQuietHours(ZonedDateTime.of(day, time, zone), input);
+            if (!at.isAfter(input.now()) || at.isAfter(end)) {
+                continue;
+            }
+            ReminderPlan.DaySummary summary = summaryOf(input, day, at);
+            if (!summary.isEmpty()) {
+                LocalDate summaryDay = day;
+                List<TaskMention> tasks = summary.tasks() == 0 ? List.of() : input.tasks().stream()
+                        .filter(t -> t.at().atZone(zone).toLocalDate().equals(summaryDay))
+                        .filter(t -> !dueOf(t, zone).isBefore(at))
+                        .map(DatedTask::mention).toList();
+                out.add(new ReminderPlan.Item(ReminderKind.MORNING_SUMMARY, at, day.toString(), null, null, null,
+                        null, null, tasks, summary));
+            }
+        }
+    }
+
+    /** Lo que trae {@code day} desde {@code from} (la hora del resumen) hasta el final del día. */
+    static ReminderPlan.DaySummary summaryOf(Input input, LocalDate day, Instant from) {
+        ZoneId zone = input.zone();
+        Instant dayEnd = day.plusDays(1).atStartOfDay(zone).toInstant();
+        Set<String> counted = new HashSet<>();
+        int studies = 0;
+        int trainings = 0;
+        int classes = 0;
+        int personal = 0;
+        for (Block b : input.blocks()) {
+            if (b.completed() || b.start().isBefore(from) || !b.start().isBefore(dayEnd)
+                    || !b.type().visibleFor(input.focus())) {
+                continue;
+            }
+            switch (b.type()) {
+                case STUDY, REVIEW -> studies++;
+                case SPORT -> trainings++;
+                case CLASS -> classes++;
+                case PERSONAL -> personal++;
+                default -> {
+                    continue;
+                }
+            }
+            counted.add(b.id().toString());
+        }
+        List<ReminderPlan.SummaryDeadline> deadlines = new ArrayList<>();
+        for (Deadline d : input.deadlines()) {
+            if (!d.dueAt().isBefore(from) && d.dueAt().isBefore(dayEnd)) {
+                deadlines.add(new ReminderPlan.SummaryDeadline(d.title(), d.exam()));
+                counted.add(d.id().toString());
+            }
+        }
+        int tasks = input.preferences().admits(NotificationType.MILESTONE) ? (int) input.tasks().stream()
+                .filter(t -> !counted.contains(t.anchorId().toString()))
+                .filter(t -> t.at().atZone(zone).toLocalDate().equals(day))
+                .filter(t -> !dueOf(t, zone).isBefore(from))
+                .count() : 0;
+        return new ReminderPlan.DaySummary(studies, trainings, classes, personal, deadlines, tasks, false);
+    }
+
+    /**
+     * El resumen y el registro diario son los dos avisos de la mañana: si un día hay resumen, el registro va dentro
+     * de él en vez de llegar aparte (ADR 0035). Sin resumen ese día, el registro llega solo a su hora.
+     */
+    private static List<ReminderPlan.Item> absorbCheckIns(List<ReminderPlan.Item> items, ZoneId zone) {
+        Set<LocalDate> summaryDays = new HashSet<>();
+        Set<LocalDate> checkInDays = new HashSet<>();
+        for (ReminderPlan.Item i : items) {
+            if (i.kind() == ReminderKind.MORNING_SUMMARY) {
+                summaryDays.add(i.at().atZone(zone).toLocalDate());
+            } else if (i.kind() == ReminderKind.CHECK_IN) {
+                checkInDays.add(i.at().atZone(zone).toLocalDate());
+            }
+        }
+        List<ReminderPlan.Item> out = new ArrayList<>(items.size());
+        for (ReminderPlan.Item i : items) {
+            LocalDate day = i.at().atZone(zone).toLocalDate();
+            if (i.kind() == ReminderKind.CHECK_IN && summaryDays.contains(day)) {
+                continue;
+            }
+            out.add(i.kind() == ReminderKind.MORNING_SUMMARY && checkInDays.contains(day) ? i.withCheckIn() : i);
+        }
+        return out;
     }
 
     private static void addReviews(List<ReminderPlan.Item> out, Input input, Instant end) {
@@ -226,7 +429,8 @@ public final class ReminderPlanner {
             if (!block.start().isAfter(input.now()) || block.start().isAfter(end)) {
                 continue;
             }
-            Instant at = deferQuietHours(block.start().minus(LEAD_TIME).atZone(input.zone()), input);
+            Duration lead = Duration.ofMinutes(input.options().eventLeadMinutes());
+            Instant at = deferQuietHours(block.start().minus(lead).atZone(input.zone()), input);
             // Si el aviso ya pasó o el silencio lo empuja hasta el inicio, sobra.
             if (!at.isAfter(input.now()) || !at.isBefore(block.start())) {
                 continue;
@@ -242,14 +446,14 @@ public final class ReminderPlanner {
                 continue;
             }
             LocalDate dueDay = deadline.dueAt().atZone(input.zone()).toLocalDate();
-            for (int daysBefore : DEADLINE_DAYS_BEFORE) {
+            for (int daysBefore : input.options().deadlineDaysBefore()) {
                 ZonedDateTime planned = ZonedDateTime.of(dueDay.minusDays(daysBefore), DEADLINE_TIME, input.zone());
                 Instant at = deferQuietHours(planned, input);
                 if (!at.isAfter(input.now()) || at.isAfter(end) || !at.isBefore(deadline.dueAt())) {
                     continue;
                 }
                 // Días que faltan desde el aviso real (el silencio puede haberlo movido al día siguiente).
-                int daysLeft = (int) java.time.temporal.ChronoUnit.DAYS.between(
+                int daysLeft = (int) ChronoUnit.DAYS.between(
                         at.atZone(input.zone()).toLocalDate(), dueDay);
                 out.add(new ReminderPlan.Item(deadline.exam() ? ReminderKind.EXAM : ReminderKind.DEADLINE, at,
                         deadline.id() + ":" + daysBefore, daysLeft, deadline.title(), deadline.dueAt(),
@@ -264,7 +468,7 @@ public final class ReminderPlanner {
             return;
         }
         LocalDate day = input.now().atZone(input.zone()).toLocalDate()
-                .with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY));
+                .with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
         ZonedDateTime planned = ZonedDateTime.of(day, WEEKLY_TIME, input.zone());
         if (!planned.toInstant().isAfter(input.now())) {
             planned = planned.plusWeeks(1);
@@ -317,12 +521,16 @@ public final class ReminderPlanner {
         return switch (type) {
             case SPORT -> ReminderKind.TRAINING;
             case STUDY, REVIEW -> ReminderKind.STUDY;
+            case PERSONAL -> ReminderKind.PERSONAL_EVENT;
             default -> null;
         };
     }
 
     /** Categoría y modo de las preferencias más el ámbito del enfoque de uso. */
     private static boolean allows(ActivityType type, NotificationPreferences preferences, UsageFocus focus) {
+        if (type == ActivityType.PERSONAL) {
+            return admitsAny(preferences);
+        }
         NotificationType category = type == ActivityType.SPORT ? TRAINING_CATEGORY : STUDY_CATEGORY;
         return type.visibleFor(focus) && preferences.admits(category);
     }

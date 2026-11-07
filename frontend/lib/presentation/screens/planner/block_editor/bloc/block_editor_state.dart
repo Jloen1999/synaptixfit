@@ -3,7 +3,9 @@ part of 'block_editor_bloc.dart';
 enum BlockEditorStatus { loading, ready }
 
 /// Problemas de validación que se detectan antes de llamar a la API.
-enum BlockEditorIssue { inPast, tooShort, noWeekdays }
+/// [nameMissing]: un evento personal necesita nombre (lo exige también el
+/// servidor, que lo guarda en los temas).
+enum BlockEditorIssue { inPast, tooShort, noWeekdays, nameMissing }
 
 @freezed
 abstract class BlockEditorState with _$BlockEditorState {
@@ -30,6 +32,17 @@ abstract class BlockEditorState with _$BlockEditorState {
   const BlockEditorState._();
 
   bool get isEditing => block != null;
+
+  /// Falta el nombre del evento personal: lo detecta la hoja antes de enviar
+  /// o lo devuelve el servidor como error del campo `topics`.
+  bool get nameMissing =>
+      issue == BlockEditorIssue.nameMissing ||
+      switch (error) {
+        ValidationError(:final fields) => fields.any(
+          (f) => f.field == 'topics',
+        ),
+        _ => false,
+      };
 }
 
 /// Lo que ha pasado en la hoja; el calendario recarga y lo comunica.

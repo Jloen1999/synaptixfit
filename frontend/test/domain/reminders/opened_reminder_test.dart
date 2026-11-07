@@ -66,6 +66,32 @@ void main() {
     },
   );
 
+  test('los avisos de ADR 0035 se abren por su tipo y referencia', () {
+    expect(
+      OpenedReminder.fromPayload('personalEvent|p1'),
+      const OpenedReminder(kind: ReminderKind.personalEvent, refId: 'p1'),
+    );
+    expect(
+      OpenedReminder.fromPayload('challengeTask|ch1'),
+      const OpenedReminder(kind: ReminderKind.challengeTask, refId: 'ch1'),
+    );
+    expect(
+      OpenedReminder.fromPayload('morningSummary|2026-11-08'),
+      const OpenedReminder(
+        kind: ReminderKind.morningSummary,
+        refId: '2026-11-08',
+      ),
+    );
+    expect(ReminderKind.fromApi('PERSONAL_EVENT'), ReminderKind.personalEvent);
+    expect(ReminderKind.fromApi('CHALLENGE_TASK'), ReminderKind.challengeTask);
+    expect(
+      ReminderKind.fromApi('MORNING_SUMMARY'),
+      ReminderKind.morningSummary,
+    );
+    // Hueco para el aviso de cumpleaños: aún no existe en esta versión.
+    expect(ReminderKind.fromApi('BIRTHDAY'), isNull);
+  });
+
   test('el plan del servidor trae los tipos nuevos', () {
     expect(ReminderKind.fromApi('CHALLENGE_DUE'), ReminderKind.challengeDue);
     expect(ReminderKind.fromApi('OPEN_SESSION'), ReminderKind.openSession);

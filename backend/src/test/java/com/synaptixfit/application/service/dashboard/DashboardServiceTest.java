@@ -85,7 +85,7 @@ class DashboardServiceTest {
                 .createdAt(NOW).sessionTarget(4).sessionsCompleted(1).build();
         ListMyChallengesUseCase challenges = (u, query, page) -> {
             assertThat(query.status()).isEqualTo(ChallengeStatus.ACTIVE);
-            assertThat(page.size()).isEqualTo(DashboardService.TOP_CHALLENGES);
+            assertThat(page.size()).isEqualTo(DashboardService.MAX_CHALLENGES);
             return new PageResult<>(List.of(fitness), 0, page.size(), 1);
         };
         // Actividad de la semana: un bloque completado de 60 min y un Pomodoro suelto de 25 min.

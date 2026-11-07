@@ -57,9 +57,14 @@ class ReminderPlannerTest {
         return new ReminderPlanner.Block(UUID.nameUUIDFromBytes(id.getBytes()), type, start, title, completed);
     }
 
+    /** Opciones por defecto sin resumen de la mañana: los casos antiguos comprueban el resto de reglas. */
+    private static final ReminderOptions NO_SUMMARY = ReminderOptions.DEFAULTS.with(
+            new ReminderOptions.Change(null, null, null, null, null, null, null, false));
+
     private List<ReminderPlan.Item> plan(int reviews, List<ReminderPlanner.Block> blocks,
                                          NotificationPreferences preferences, UsageFocus focus, Instant now) {
-        return planner.plan(new ReminderPlanner.Input(reviews, blocks, preferences, focus, now, ZONE, 7)).reminders();
+        return planner.plan(new ReminderPlanner.Input(reviews, blocks, preferences, focus, now, ZONE, 7, List.of(),
+                false, null, NO_SUMMARY, List.of())).reminders();
     }
 
     private List<ReminderPlan.Item> plan(int reviews, List<ReminderPlanner.Block> blocks) {

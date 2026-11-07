@@ -1,8 +1,9 @@
-import '../../../../../domain/enums/item_time_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/item_time_status.dart';
 import '../../../../../domain/enums/planner_enums.dart';
 import '../../../../../domain/models/planner/block_draft.dart';
 import '../../../../../domain/models/planner/calendar_block.dart';
@@ -12,13 +13,17 @@ import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
+import '../../planner_routes.dart';
+import '../../widgets/block_type_picker.dart';
 import '../../widgets/planner_focus.dart';
 import '../../widgets/planner_form_fields.dart';
 import '../../widgets/planner_visuals.dart';
 import '../bloc/block_editor_bloc.dart';
 
-/// Hoja de creación/edición de un bloque. Al crear incluye la pestaña para
-/// distribuir una rutina completa. Devuelve un [BlockEditorOutcome] al cerrarse.
+/// Hoja de crear/editar un evento del calendario en tres pasos («¿Qué es?»,
+/// «¿Cuándo?», «Repetir y aviso») y «Más opciones» con lo que aplica a su
+/// tipo. Al crear incluye la pestaña para repartir una rutina. Devuelve un
+/// [BlockEditorOutcome] al cerrarse; lo resuelve el calendario.
 class BlockEditorSheet extends StatelessWidget {
   const BlockEditorSheet({super.key, this.block, this.start});
 
@@ -63,12 +68,20 @@ class _EditorView extends StatefulWidget {
 
 class _EditorViewState extends State<_EditorView>
     with SingleTickerProviderStateMixin, ErrorsMessageMixin {
-  late final TabController _tabs = TabController(
-    length: widget.block == null ? 2 : 1,
-    vsync: this,
-  );
+  /// Pasos numerados de la hoja (el tercero siempre está: el aviso).
+  static const _steps = 3;
 
-  // Bloque.
+  /// Atajos de duración para los tipos con inicio y fin libres.
+  static const _quickDurations = [30, 60, 120];
+
+  /// Esta semana y 15 más: el límite del servidor (`MAX_WEEKLY_REPEATS`).
+  static const _maxRepeatTotalWeeks = 16;
+
+  /// La pestaña «Distribuir rutina» solo al crear y si se ve el deporte.
+  late final bool _withRoutineTab;
+  late final TabController _tabs;
+
+  // Evento.
   late BlockType _type;
   late DateTime _day;
   late int _startMin;
@@ -80,9 +93,6 @@ class _EditorViewState extends State<_EditorView>
   /// «Repetir cada semana» (solo al crear): semanas en total, esta incluida.
   bool _repeat = false;
   int _repeatTotalWeeks = 4;
-
-  /// Esta semana y 15 más: el límite del servidor (`MAX_WEEKLY_REPEATS`).
-  static const _maxRepeatTotalWeeks = 16;
   ClassKind? _classKind;
   String? _routineId;
   String? _challengeId;
@@ -92,6 +102,19 @@ class _EditorViewState extends State<_EditorView>
   final _topics = TextEditingController();
   final _location = TextEditingController();
   final _deadlineTitle = TextEditingController();
+
+  /// Nombre de un evento personal («Dentista»). Va al servidor en los temas,
+  /// pero se edita aparte para no mezclarlo con los temas de un estudio.
+  final _name = TextEditingController();
+  final _nameFocus = FocusNode();
+  final _nameKey = GlobalKey();
+
+  /// Aviso de nombre vacío que la persona ya está corrigiendo (escribió
+  /// después): no se repite hasta el siguiente intento de guardar.
+  int? _nameErrorHandled;
+
+  /// «Más opciones» desplegado: de entrada solo si al editar ya hay algo.
+  late bool _moreOptions;
 
   // Distribución de rutina.
   String? _distRoutineId;
@@ -110,13 +133,15 @@ class _EditorViewState extends State<_EditorView>
   void initState() {
     super.initState();
     final b = widget.block;
+    final focus = context.usageFocus;
+    _withRoutineTab = b == null && focus.allowsBlock(BlockType.sport);
+    _tabs = TabController(length: _withRoutineTab ? 2 : 1, vsync: this)
+      ..addListener(() => setState(() {}));
     final start = b?.start ?? widget.start;
     final end = b?.end ?? widget.start.add(const Duration(hours: 1));
     _type =
         b?.type ??
-        (context.usageFocus.includesAcademic
-            ? BlockType.study
-            : BlockType.sport);
+        (focus.includesAcademic ? BlockType.study : BlockType.sport);
     _day = DateTime(start.year, start.month, start.day);
     _startMin = start.hour * 60 + start.minute;
     _endMin = end.day != start.day ? 24 * 60 - 1 : end.hour * 60 + end.minute;
@@ -128,10 +153,24 @@ class _EditorViewState extends State<_EditorView>
     _challengeId = b?.challengeId;
     _milestoneId = b?.milestoneId;
     _deadlineId = b?.deadlineId;
-    _topics.text = b?.topics ?? '';
+    if (b != null && b.type.requiresName) {
+      _name.text = b.topics ?? '';
+    } else {
+      _topics.text = b?.topics ?? '';
+    }
     _location.text = b?.location ?? '';
+    _moreOptions =
+        b != null &&
+        (b.subjectId != null ||
+            _topics.text.isNotEmpty ||
+            _location.text.isNotEmpty ||
+            b.priority != null ||
+            b.classKind != null ||
+            b.privateBlock ||
+            b.routineId != null ||
+            b.challengeId != null ||
+            b.deadlineId != null);
     _distStart = _day;
-    _tabs.addListener(() => setState(() {}));
   }
 
   @override
@@ -140,6 +179,8 @@ class _EditorViewState extends State<_EditorView>
     _topics.dispose();
     _location.dispose();
     _deadlineTitle.dispose();
+    _name.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
@@ -161,6 +202,10 @@ class _EditorViewState extends State<_EditorView>
     });
   }
 
+  void _setDuration(int minutes) => setState(
+    () => _endMin = (_startMin + minutes).clamp(_startMin, 24 * 60 - 1),
+  );
+
   void _save() {
     final t = _type;
     context.read<BlockEditorBloc>().add(
@@ -171,14 +216,16 @@ class _EditorViewState extends State<_EditorView>
           end: _at(_endMin),
           // Lo que no se muestra para este tipo no se guarda.
           subjectId: t.usesSubject ? _subjectId : null,
-          topics: t.usesTopics ? _topics.text : '',
+          topics: t.requiresName
+              ? _name.text.trim()
+              : (t.usesTopics ? _topics.text : ''),
           location: t.usesLocation ? _location.text : '',
           priority: t.usesPriority ? _priority : null,
           privateBlock: _private,
           classKind: t == BlockType.classSession ? _classKind : null,
           routineId: t == BlockType.sport ? _routineId : null,
-          // Si sigue siendo la misma rutina, el bloque conserva su día enlazado
-          // (si no, editarlo lo convertiría en deporte libre).
+          // Si sigue siendo la misma rutina, el evento conserva su día
+          // enlazado (si no, editarlo lo convertiría en deporte libre).
           routineWeekId: _keepsRoutineDay(t)
               ? widget.block?.routineWeekId
               : null,
@@ -188,13 +235,13 @@ class _EditorViewState extends State<_EditorView>
               ? _milestoneId
               : null,
           deadlineId: t.usesDeadlineLink ? _deadlineId : null,
-          deadlineTitle: _type.createsDeadline && _deadlineId == null
+          deadlineTitle: t.createsDeadline && _deadlineId == null
               ? _deadlineTitle.text
               : null,
-          deadlineDifficulty: _type.createsDeadline && _deadlineId == null
+          deadlineDifficulty: t.createsDeadline && _deadlineId == null
               ? _deadlineDifficulty
               : null,
-          repeatWeeks: !_editing && _repeat && _type.canRepeatWeekly
+          repeatWeeks: !_editing && _repeat && t.canRepeatWeekly
               ? _repeatTotalWeeks - 1
               : 0,
         ),
@@ -202,10 +249,24 @@ class _EditorViewState extends State<_EditorView>
     );
   }
 
+  /// Lleva al campo «Nombre» y le da el foco cuando falta (lo diga la hoja o
+  /// el servidor), aunque la persona esté abajo del todo.
+  void _revealName() {
+    final target = _nameKey.currentContext;
+    if (target != null) {
+      Scrollable.ensureVisible(
+        target,
+        duration: TokensDuration.normal,
+        alignment: 0.1,
+      );
+    }
+    _nameFocus.requestFocus();
+  }
+
   /// «Tarea del reto»: las pendientes del reto elegido que avanzan con
-  /// bloques (las vinculadas a una entrega las completa esa entrega). Cada
-  /// bloque completado hace avanzar la tarea; el servidor comprueba que sea de
-  /// ese reto y que el bloque caiga en su periodo.
+  /// eventos (las vinculadas a una entrega las completa esa entrega). Cada
+  /// evento hecho hace avanzar la tarea; el servidor comprueba que sea de ese
+  /// reto y que el evento caiga en su periodo.
   List<Widget> _taskField(BlockEditorState state) {
     final l10n = context.localizations;
     ChallengeOption? challenge;
@@ -268,14 +329,22 @@ class _EditorViewState extends State<_EditorView>
     );
   }
 
+  /// El aviso de nombre vacío se ve mientras la persona no lo corrija.
+  bool _showsNameError(BlockEditorState state) =>
+      state.nameMissing && _nameErrorHandled != state.feedbackId;
+
   String? _feedback(BuildContext context, BlockEditorState state) {
     final l10n = context.localizations;
+    if (state.nameMissing) {
+      return _showsNameError(state) ? l10n.plannerIssueNameMissing : null;
+    }
     final issue = state.issue;
     if (issue != null) {
       return switch (issue) {
         BlockEditorIssue.inPast => l10n.plannerInPast,
         BlockEditorIssue.tooShort => l10n.plannerIssueTooShort,
         BlockEditorIssue.noWeekdays => l10n.plannerIssueNoWeekdays,
+        BlockEditorIssue.nameMissing => l10n.plannerIssueNameMissing,
       };
     }
     final error = state.error;
@@ -286,11 +355,20 @@ class _EditorViewState extends State<_EditorView>
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return BlocConsumer<BlockEditorBloc, BlockEditorState>(
-      listenWhen: (a, b) => a.outcome != b.outcome && b.outcome != null,
-      listener: (context, state) => Navigator.of(context).pop(state.outcome),
+      listenWhen: (a, b) =>
+          (a.outcome != b.outcome && b.outcome != null) ||
+          (a.feedbackId != b.feedbackId && b.nameMissing),
+      listener: (context, state) {
+        final outcome = state.outcome;
+        if (outcome != null) {
+          Navigator.of(context).pop(outcome);
+        } else {
+          _revealName();
+        }
+      },
       builder: (context, state) {
         final feedback = _feedback(context, state);
-        final onRoutineTab = !_editing && _tabs.index == 1;
+        final onRoutineTab = _withRoutineTab && _tabs.index == 1;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -299,11 +377,14 @@ class _EditorViewState extends State<_EditorView>
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      _editing
-                          ? l10n.plannerEditBlockTitle
-                          : l10n.plannerNewBlockTitle,
-                      style: context.textStyles.titleLarge,
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        _editing
+                            ? l10n.plannerEditBlockTitle(_type.apiValue)
+                            : l10n.plannerNewBlockTitle,
+                        style: context.textStyles.titleLarge,
+                      ),
                     ),
                   ),
                   if (_editing)
@@ -327,7 +408,7 @@ class _EditorViewState extends State<_EditorView>
                 ],
               ),
             ),
-            if (!_editing)
+            if (_withRoutineTab)
               TabBar(
                 controller: _tabs,
                 tabs: [
@@ -342,7 +423,7 @@ class _EditorViewState extends State<_EditorView>
                       controller: _tabs,
                       children: [
                         _blockForm(context, state),
-                        if (!_editing) _routineForm(context, state),
+                        if (_withRoutineTab) _routineForm(context, state),
                       ],
                     ),
             ),
@@ -394,7 +475,7 @@ class _EditorViewState extends State<_EditorView>
     final missed = block.timeStatus == ItemTimeStatus.missed;
     void close(BlockEditorOutcome outcome) =>
         Navigator.of(context).pop(outcome);
-    // El bloque de un día de rutina sigue a su sesión: no se marca a mano, se
+    // El evento de un día de rutina sigue a su sesión: no se marca a mano, se
     // entrena (o se registra como sesión pasada) desde la rutina.
     final routineDay = block.routineDayId != null && block.routineId != null;
     final actions = <Widget>[
@@ -409,7 +490,7 @@ class _EditorViewState extends State<_EditorView>
                 ),
         )
       else if (block.timeStatus == ItemTimeStatus.upcoming && !block.completed)
-        // Un bloque que aún no ha empezado no se marca como hecho.
+        // Un evento que aún no ha empezado no se marca como hecho.
         block.type == BlockType.classSession
             ? _note(context, l10n.plannerClassAttendsLater)
             : AppInlineMessage(
@@ -494,17 +575,16 @@ class _EditorViewState extends State<_EditorView>
   Widget _blockForm(BuildContext context, BlockEditorState state) {
     final l10n = context.localizations;
     final locked = widget.block?.isLocked ?? false;
-    final deadlines = state.deadlines
-        .where((d) => _subjectId == null || d.subjectId == _subjectId)
-        .toList();
-    // La entrega ya vinculada se conserva aunque no esté en la lista de pendientes.
-    final linkedMissing =
-        _deadlineId != null && !deadlines.any((d) => d.id == _deadlineId);
+    final focus = context.usageFocus;
+    const small = SizedBox(height: TokensSpacing.s);
     const gap = SizedBox(height: TokensSpacing.m);
+    // Entre pasos, más aire que entre campos: se ve dónde empieza cada uno.
+    const stepGap = SizedBox(height: TokensSpacing.l);
+    final canRepeat = !_editing && _type.canRepeatWeekly;
     return ListView(
       padding: const EdgeInsets.all(TokensSpacing.m),
       children: [
-        // Acciones del bloque arriba del formulario: el pie fijo solo lleva
+        // Acciones del evento arriba del formulario: el pie fijo solo lleva
         // el botón principal (con texto grande no se come la pantalla).
         if (_editing) ...[..._blockActions(context, state), gap],
         if (state.optionsError != null) ...[
@@ -514,48 +594,28 @@ class _EditorViewState extends State<_EditorView>
           ),
           gap,
         ],
-        // El grupo de abajo ya lo dice al lector: no se lee dos veces.
-        ExcludeSemantics(
-          child: Text(
-            l10n.plannerFieldType,
-            style: context.textStyles.titleSmall,
-          ),
-        ),
-        const SizedBox(height: TokensSpacing.s),
-        // Grupo con nombre: el lector dice «Tipo» al entrar en las opciones.
-        Semantics(
-          container: true,
-          explicitChildNodes: true,
+        _StepHeader(number: 1, total: _steps, title: l10n.plannerStepWhat),
+        small,
+        BlockTypePicker(
           label: l10n.plannerFieldType,
-          child: Wrap(
-            spacing: TokensSpacing.xs,
-            runSpacing: TokensSpacing.xs,
-            children: [
-              for (final t in BlockType.values.where(
-                (t) => t == _type || context.usageFocus.allowsBlock(t),
-              ))
-                ChoiceChip(
-                  avatar: Icon(
-                    t.icon,
-                    size: TokensSize.iconXs,
-                    color: t.color(context),
-                  ),
-                  label: Text(t.label(context)),
-                  selected: _type == t,
-                  onSelected: (_) => _changeType(t),
-                ),
-            ],
-          ),
+          // El tipo actual se conserva aunque el modo de uso ya no lo ofrezca.
+          types: [
+            for (final t in BlockType.values)
+              if (t == _type || focus.allowsBlock(t)) t,
+          ],
+          selected: _type,
+          onChanged: _changeType,
         ),
-        gap,
-        Text(l10n.plannerSchedule, style: context.textStyles.titleSmall),
-        const SizedBox(height: TokensSpacing.s),
+        if (_type.requiresName) ...[gap, ..._nameField(context, state)],
+        stepGap,
+        _StepHeader(number: 2, total: _steps, title: l10n.plannerStepWhen),
+        small,
         if (locked) ...[
           AppInlineMessage(
             message: l10n.plannerBlockLockedHint,
             tone: AppMessageTone.warning,
           ),
-          const SizedBox(height: TokensSpacing.s),
+          small,
         ],
         PickerField(
           label: l10n.plannerFieldDate,
@@ -568,97 +628,19 @@ class _EditorViewState extends State<_EditorView>
                   if (picked != null) setState(() => _day = picked);
                 },
         ),
-        const SizedBox(height: TokensSpacing.s),
+        small,
         ..._timeFields(context, locked),
-        gap,
-        Text(l10n.plannerDetails, style: context.textStyles.titleSmall),
-        const SizedBox(height: TokensSpacing.s),
-        if (_type.usesSubject) ...[
-          DropdownButtonFormField<String?>(
-            initialValue: _subjectId,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: l10n.plannerFieldSubject,
-              prefixIcon: const Icon(Icons.class_rounded),
-            ),
-            items: [
-              DropdownMenuItem(value: null, child: Text(l10n.plannerNoSubject)),
-              for (final s in state.subjects)
-                DropdownMenuItem(value: s.id, child: Text(s.name)),
-              if (_subjectId != null &&
-                  !state.subjects.any((s) => s.id == _subjectId))
-                DropdownMenuItem(
-                  value: _subjectId,
-                  child: Text(l10n.plannerFieldSubject),
-                ),
-            ],
-            onChanged: (v) => setState(() {
-              _subjectId = v;
-              if (_deadlineId != null &&
-                  v != null &&
-                  !state.deadlines.any(
-                    (d) => d.id == _deadlineId && d.subjectId == v,
-                  )) {
-                _deadlineId = null;
-              }
-            }),
-          ),
-          const SizedBox(height: TokensSpacing.s),
-        ],
-        if (_type.usesTopics) ...[
-          AppTextField(
-            label: l10n.plannerFieldTopics,
-            hint: l10n.plannerFieldTopicsHint,
-            controller: _topics,
-            icon: Icons.notes_rounded,
-            maxLines: 3,
-          ),
-          const SizedBox(height: TokensSpacing.s),
-        ],
-        if (_type.usesLocation)
-          AppTextField(
-            label: l10n.plannerFieldLocation,
-            controller: _location,
-            icon: Icons.place_outlined,
-          ),
-        if (_type.usesPriority) ...[
-          const SizedBox(height: TokensSpacing.m),
-          Text(l10n.plannerFieldPriority, style: context.textStyles.labelLarge),
-          const SizedBox(height: TokensSpacing.xs),
-          SegmentedButton<PlannerPriority?>(
-            showSelectedIcon: false,
-            emptySelectionAllowed: true,
-            segments: [
-              for (final p in PlannerPriority.values)
-                ButtonSegment(value: p, label: Text(p.label(context))),
-            ],
-            selected: {_priority},
-            onSelectionChanged: (s) =>
-                setState(() => _priority = s.isEmpty ? null : s.first),
-          ),
-        ],
-        if (_type == BlockType.classSession) ...[
-          const SizedBox(height: TokensSpacing.m),
-          Text(
-            l10n.plannerFieldClassKind,
-            style: context.textStyles.labelLarge,
-          ),
-          const SizedBox(height: TokensSpacing.xs),
-          SegmentedButton<ClassKind?>(
-            showSelectedIcon: false,
-            emptySelectionAllowed: true,
-            segments: [
-              for (final k in ClassKind.values)
-                ButtonSegment(value: k, label: Text(k.label(context))),
-            ],
-            selected: {_classKind},
-            onSelectionChanged: (s) =>
-                setState(() => _classKind = s.isEmpty ? null : s.first),
-          ),
-        ],
+        stepGap,
+        _StepHeader(
+          number: 3,
+          total: _steps,
+          title: canRepeat
+              ? l10n.plannerStepRepeatReminder
+              : l10n.plannerStepReminder,
+        ),
+        small,
         // Exámenes y entregas no se repiten: cada uno tiene su fecha.
-        if (!_editing && _type.canRepeatWeekly) ...[
-          const SizedBox(height: TokensSpacing.s),
+        if (canRepeat) ...[
           AppFocusOutline(
             child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -684,130 +666,349 @@ class _EditorViewState extends State<_EditorView>
                 onChanged: (v) => setState(() => _repeatTotalWeeks = v),
               ),
             ),
+          small,
         ],
-        const SizedBox(height: TokensSpacing.s),
-        AppFocusOutline(
-          child: SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _private,
-            onChanged: (v) => setState(() => _private = v),
-            title: Text(l10n.plannerFieldPrivate),
-            subtitle: Text(l10n.plannerFieldPrivateHint),
-            secondary: const Icon(Icons.lock_outline_rounded),
-          ),
-        ),
-        if (_type == BlockType.sport ||
-            _type.usesChallenge ||
-            _type.usesDeadlineLink) ...[
-          gap,
-          Text(l10n.plannerLinks, style: context.textStyles.titleSmall),
-          const SizedBox(height: TokensSpacing.s),
-        ],
-        if (_type == BlockType.sport) ...[
-          DropdownButtonFormField<String?>(
-            initialValue: _routineId,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: l10n.plannerFieldRoutine,
-              prefixIcon: const Icon(Icons.fitness_center_rounded),
-            ),
-            items: [
-              DropdownMenuItem(value: null, child: Text(l10n.plannerNoRoutine)),
-              for (final r in state.routines)
-                DropdownMenuItem(value: r.id, child: Text(r.name)),
-            ],
-            onChanged: (v) => setState(() => _routineId = v),
-          ),
-          const SizedBox(height: TokensSpacing.s),
-        ],
-        if (_type.usesChallenge) ...[
-          DropdownButtonFormField<String?>(
-            initialValue: _challengeId,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: l10n.plannerFieldChallenge,
-              prefixIcon: const Icon(Icons.emoji_events_outlined),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: null,
-                child: Text(l10n.plannerNoChallenge),
-              ),
-              for (final c in state.challenges)
-                DropdownMenuItem(value: c.id, child: Text(c.title)),
-              if (_challengeId != null &&
-                  !state.challenges.any((c) => c.id == _challengeId))
-                DropdownMenuItem(
-                  value: _challengeId,
-                  child: Text(l10n.plannerFieldChallenge),
-                ),
-            ],
-            onChanged: (v) => setState(() {
-              _challengeId = v;
-              _milestoneId = null;
-            }),
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          ..._taskField(state),
-        ],
-        if (_type.usesDeadlineLink)
-          DropdownButtonFormField<String?>(
-            key: ValueKey('deadline-$_subjectId-$_type'),
-            initialValue: _deadlineId,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: l10n.plannerFieldDeadline,
-              prefixIcon: const Icon(Icons.event_note_rounded),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: null,
-                child: Text(
-                  _type.createsDeadline && !_editing
-                      ? l10n.plannerNoDeadline
-                      : l10n.plannerNoDeadlineLink,
-                ),
-              ),
-              for (final d in deadlines)
-                DropdownMenuItem(value: d.id, child: Text(_deadlineLabel(d))),
-              if (linkedMissing)
-                DropdownMenuItem(
-                  value: _deadlineId,
-                  child: Text(l10n.plannerFieldDeadline),
-                ),
-            ],
-            onChanged: (v) => setState(() => _deadlineId = v),
-          ),
-        if (_type.createsDeadline && _deadlineId == null && !_editing) ...[
-          const SizedBox(height: TokensSpacing.s),
-          AppTextField(
-            label: l10n.plannerFieldDeadlineTitle,
-            hint: l10n.plannerFieldDeadlineTitleHint,
-            controller: _deadlineTitle,
-            icon: Icons.title_rounded,
-          ),
-          const SizedBox(height: TokensSpacing.s),
-          Text(
-            l10n.plannerFieldDifficulty,
-            style: context.textStyles.labelLarge,
-          ),
-          const SizedBox(height: TokensSpacing.xs),
-          SegmentedButton<PlannerPriority>(
-            showSelectedIcon: false,
-            segments: [
-              for (final p in PlannerPriority.values)
-                ButtonSegment(value: p, label: Text(p.label(context))),
-            ],
-            selected: {_deadlineDifficulty},
-            onSelectionChanged: (s) =>
-                setState(() => _deadlineDifficulty = s.first),
-          ),
-        ],
+        _reminderNote(context),
+        stepGap,
+        _moreOptionsToggle(context),
+        if (_moreOptions) ...[small, ..._advancedFields(context, state)],
       ],
     );
   }
 
-  /// Hora del bloque según su tipo (ver [BlockType.timeInput]).
+  /// «Nombre» de un evento personal: obligatorio. Su error sale aquí tanto si
+  /// lo detecta la hoja como si lo devuelve el servidor.
+  List<Widget> _nameField(BuildContext context, BlockEditorState state) {
+    final l10n = context.localizations;
+    return [
+      // Qué cabe en «Personal», antes del campo: con texto grande la ayuda
+      // del propio campo se cortaría.
+      Text(l10n.plannerFieldNameHelper, style: context.textStyles.bodyLarge),
+      const SizedBox(height: TokensSpacing.s),
+      KeyedSubtree(
+        key: _nameKey,
+        child: AppTextField(
+          label: l10n.plannerFieldName,
+          hint: l10n.plannerFieldNameHint,
+          controller: _name,
+          focusNode: _nameFocus,
+          icon: Icons.label_outline_rounded,
+          textCapitalization: TextCapitalization.sentences,
+          textInputAction: TextInputAction.done,
+          errorText: _showsNameError(state)
+              ? l10n.plannerIssueNameMissing
+              : null,
+          onChanged: (_) {
+            final current = context.read<BlockEditorBloc>().state;
+            if (_showsNameError(current)) {
+              setState(() => _nameErrorHandled = current.feedbackId);
+            }
+          },
+        ),
+      ),
+    ];
+  }
+
+  /// Cuándo avisa el servidor de este tipo de evento (la antelación es la de
+  /// Ajustes › Avisos, igual para todos) y botón para cambiarla.
+  Widget _reminderNote(BuildContext context) {
+    final l10n = context.localizations;
+    // Descanso, comida y sueño no llevan aviso (`ReminderPlanner`).
+    final hasReminder = switch (_type) {
+      BlockType.rest || BlockType.meal || BlockType.sleep => false,
+      _ => true,
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ExcludeSemantics(
+              child: Icon(
+                hasReminder
+                    ? Icons.notifications_outlined
+                    : Icons.notifications_off_outlined,
+                color: context.colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: TokensSpacing.m),
+            Expanded(
+              child: Text(
+                l10n.plannerReminderLine(_type.apiValue),
+                style: context.textStyles.bodyLarge,
+              ),
+            ),
+          ],
+        ),
+        if (hasReminder)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: TokensSize.iconM + TokensSpacing.s,
+            ),
+            child: TextButton(
+              onPressed: () =>
+                  context.push(PlannerExternalPaths.notificationSettings),
+              child: Text(l10n.plannerReminderSettings),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Nombres de lo que hay en «Más opciones» para este tipo: se leen sin
+  /// desplegarlo.
+  List<String> _advancedLabels(BuildContext context) {
+    final l10n = context.localizations;
+    final t = _type;
+    return [
+      if (t.usesSubject) l10n.plannerFieldSubject,
+      if (t.usesTopics && !t.requiresName) l10n.plannerFieldTopics,
+      if (t.usesLocation) l10n.plannerFieldLocation,
+      if (t.usesPriority) l10n.plannerFieldPriority,
+      if (t == BlockType.classSession) l10n.plannerFieldClassKind,
+      l10n.plannerFieldPrivate,
+      if (t == BlockType.sport) l10n.plannerFieldRoutine,
+      if (t.usesChallenge) l10n.plannerFieldChallenge,
+      if (t.usesDeadlineLink) l10n.plannerFieldDeadline,
+    ];
+  }
+
+  Widget _moreOptionsToggle(BuildContext context) {
+    final l10n = context.localizations;
+    return MergeSemantics(
+      child: Semantics(
+        expanded: _moreOptions,
+        child: AppFocusOutline(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.tune_rounded),
+            title: Text(
+              l10n.plannerMoreOptions,
+              style: context.textStyles.titleMedium,
+            ),
+            subtitle: Text(_advancedLabels(context).join(' · ')),
+            trailing: Icon(
+              _moreOptions
+                  ? Icons.expand_less_rounded
+                  : Icons.expand_more_rounded,
+            ),
+            onTap: () => setState(() => _moreOptions = !_moreOptions),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Lo avanzado, solo lo que aplica a este tipo.
+  List<Widget> _advancedFields(BuildContext context, BlockEditorState state) {
+    final l10n = context.localizations;
+    final deadlines = state.deadlines
+        .where((d) => _subjectId == null || d.subjectId == _subjectId)
+        .toList();
+    // La entrega ya vinculada se conserva aunque no esté en la lista de pendientes.
+    final linkedMissing =
+        _deadlineId != null && !deadlines.any((d) => d.id == _deadlineId);
+    const small = SizedBox(height: TokensSpacing.s);
+    const gap = SizedBox(height: TokensSpacing.m);
+    return [
+      if (_type.usesSubject) ...[
+        DropdownButtonFormField<String?>(
+          initialValue: _subjectId,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: l10n.plannerFieldSubject,
+            prefixIcon: const Icon(Icons.class_rounded),
+          ),
+          items: [
+            DropdownMenuItem(value: null, child: Text(l10n.plannerNoSubject)),
+            for (final s in state.subjects)
+              DropdownMenuItem(value: s.id, child: Text(s.name)),
+            if (_subjectId != null &&
+                !state.subjects.any((s) => s.id == _subjectId))
+              DropdownMenuItem(
+                value: _subjectId,
+                child: Text(l10n.plannerFieldSubject),
+              ),
+          ],
+          onChanged: (v) => setState(() {
+            _subjectId = v;
+            if (_deadlineId != null &&
+                v != null &&
+                !state.deadlines.any(
+                  (d) => d.id == _deadlineId && d.subjectId == v,
+                )) {
+              _deadlineId = null;
+            }
+          }),
+        ),
+        small,
+      ],
+      if (_type.usesTopics && !_type.requiresName) ...[
+        AppTextField(
+          label: l10n.plannerFieldTopics,
+          hint: l10n.plannerFieldTopicsHint,
+          controller: _topics,
+          icon: Icons.notes_rounded,
+          maxLines: 3,
+        ),
+        small,
+      ],
+      if (_type.usesLocation) ...[
+        AppTextField(
+          label: l10n.plannerFieldLocation,
+          controller: _location,
+          icon: Icons.place_outlined,
+        ),
+        small,
+      ],
+      if (_type.usesPriority) ...[
+        small,
+        Text(l10n.plannerFieldPriority, style: context.textStyles.labelLarge),
+        const SizedBox(height: TokensSpacing.xs),
+        SegmentedButton<PlannerPriority?>(
+          showSelectedIcon: false,
+          emptySelectionAllowed: true,
+          segments: [
+            for (final p in PlannerPriority.values)
+              ButtonSegment(value: p, label: Text(p.label(context))),
+          ],
+          selected: {_priority},
+          onSelectionChanged: (s) =>
+              setState(() => _priority = s.isEmpty ? null : s.first),
+        ),
+        small,
+      ],
+      if (_type == BlockType.classSession) ...[
+        small,
+        Text(l10n.plannerFieldClassKind, style: context.textStyles.labelLarge),
+        const SizedBox(height: TokensSpacing.xs),
+        SegmentedButton<ClassKind?>(
+          showSelectedIcon: false,
+          emptySelectionAllowed: true,
+          segments: [
+            for (final k in ClassKind.values)
+              ButtonSegment(value: k, label: Text(k.label(context))),
+          ],
+          selected: {_classKind},
+          onSelectionChanged: (s) =>
+              setState(() => _classKind = s.isEmpty ? null : s.first),
+        ),
+        small,
+      ],
+      AppFocusOutline(
+        child: SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _private,
+          onChanged: (v) => setState(() => _private = v),
+          title: Text(l10n.plannerFieldPrivate),
+          subtitle: Text(l10n.plannerFieldPrivateHint),
+          secondary: const Icon(Icons.lock_outline_rounded),
+        ),
+      ),
+      if (_type == BlockType.sport) ...[
+        gap,
+        DropdownButtonFormField<String?>(
+          initialValue: _routineId,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: l10n.plannerFieldRoutine,
+            prefixIcon: const Icon(Icons.fitness_center_rounded),
+          ),
+          items: [
+            DropdownMenuItem(value: null, child: Text(l10n.plannerNoRoutine)),
+            for (final r in state.routines)
+              DropdownMenuItem(value: r.id, child: Text(r.name)),
+          ],
+          onChanged: (v) => setState(() => _routineId = v),
+        ),
+      ],
+      if (_type.usesChallenge) ...[
+        gap,
+        DropdownButtonFormField<String?>(
+          initialValue: _challengeId,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: l10n.plannerFieldChallenge,
+            prefixIcon: const Icon(Icons.emoji_events_outlined),
+          ),
+          items: [
+            DropdownMenuItem(value: null, child: Text(l10n.plannerNoChallenge)),
+            for (final c in state.challenges)
+              DropdownMenuItem(value: c.id, child: Text(c.title)),
+            if (_challengeId != null &&
+                !state.challenges.any((c) => c.id == _challengeId))
+              DropdownMenuItem(
+                value: _challengeId,
+                child: Text(l10n.plannerFieldChallenge),
+              ),
+          ],
+          onChanged: (v) => setState(() {
+            _challengeId = v;
+            _milestoneId = null;
+          }),
+        ),
+        small,
+        ..._taskField(state),
+      ],
+      if (_type.usesDeadlineLink) ...[
+        if (!_type.usesChallenge) gap,
+        DropdownButtonFormField<String?>(
+          key: ValueKey('deadline-$_subjectId-$_type'),
+          initialValue: _deadlineId,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: l10n.plannerFieldDeadline,
+            prefixIcon: const Icon(Icons.event_note_rounded),
+          ),
+          items: [
+            DropdownMenuItem(
+              value: null,
+              child: Text(
+                _type.createsDeadline && !_editing
+                    ? l10n.plannerNoDeadline
+                    : l10n.plannerNoDeadlineLink,
+              ),
+            ),
+            for (final d in deadlines)
+              DropdownMenuItem(value: d.id, child: Text(_deadlineLabel(d))),
+            if (linkedMissing)
+              DropdownMenuItem(
+                value: _deadlineId,
+                child: Text(l10n.plannerFieldDeadline),
+              ),
+          ],
+          onChanged: (v) => setState(() => _deadlineId = v),
+        ),
+      ],
+      if (_type.createsDeadline && _deadlineId == null && !_editing) ...[
+        small,
+        AppTextField(
+          label: l10n.plannerFieldDeadlineTitle,
+          hint: l10n.plannerFieldDeadlineTitleHint,
+          controller: _deadlineTitle,
+          icon: Icons.title_rounded,
+        ),
+        small,
+        Text(l10n.plannerFieldDifficulty, style: context.textStyles.labelLarge),
+        const SizedBox(height: TokensSpacing.xs),
+        SegmentedButton<PlannerPriority>(
+          showSelectedIcon: false,
+          segments: [
+            for (final p in PlannerPriority.values)
+              ButtonSegment(value: p, label: Text(p.label(context))),
+          ],
+          selected: {_deadlineDifficulty},
+          onSelectionChanged: (s) =>
+              setState(() => _deadlineDifficulty = s.first),
+        ),
+      ],
+    ];
+  }
+
+  /// Hora del evento según su tipo (ver [BlockType.timeInput]): una entrega
+  /// pide su hora límite; examen, comida y descanso, inicio y duración
+  /// típica; el resto, inicio, fin y atajos de duración.
   List<Widget> _timeFields(BuildContext context, bool locked) {
     final l10n = context.localizations;
     Future<void> pickStart() async {
@@ -846,69 +1047,79 @@ class _EditorViewState extends State<_EditorView>
           ),
         ];
       case BlockTimeInput.duration:
-        final current = _endMin - _startMin;
-        final options = {
-          ..._type.durationOptions,
-          if (current > 0) current,
-        }.toList()..sort();
         return [
           startField,
           const SizedBox(height: TokensSpacing.m),
-          ExcludeSemantics(
-            child: Text(
-              l10n.plannerFieldBlockDuration,
-              style: context.textStyles.labelLarge,
-            ),
-          ),
-          const SizedBox(height: TokensSpacing.xs),
-          Semantics(
-            container: true,
-            explicitChildNodes: true,
-            label: l10n.plannerFieldBlockDuration,
-            child: Wrap(
-              spacing: TokensSpacing.xs,
-              runSpacing: TokensSpacing.xs,
-              children: [
-                for (final m in options)
-                  ChoiceChip(
-                    label: Text(PlannerFormats.duration(l10n, m)),
-                    selected: current == m,
-                    onSelected: locked
-                        ? null
-                        : (_) => setState(
-                            () => _endMin = (_startMin + m).clamp(
-                              _startMin,
-                              24 * 60 - 1,
-                            ),
-                          ),
-                  ),
-              ],
-            ),
-          ),
+          _durationChoices(context, _type.durationOptions, locked),
         ];
       case BlockTimeInput.range:
+        final endField = PickerField(
+          label: l10n.plannerFieldEnd,
+          value: PlannerFormats.minutes(_endMin),
+          icon: Icons.schedule_rounded,
+          onTap: locked
+              ? null
+              : () async {
+                  final m = await pickPlannerTime(context, _endMin);
+                  if (m != null) setState(() => _endMin = m);
+                },
+        );
         return [
-          Row(
-            children: [
-              Expanded(child: startField),
-              const SizedBox(width: TokensSpacing.s),
-              Expanded(
-                child: PickerField(
-                  label: l10n.plannerFieldEnd,
-                  value: PlannerFormats.minutes(_endMin),
-                  icon: Icons.schedule_rounded,
-                  onTap: locked
-                      ? null
-                      : () async {
-                          final m = await pickPlannerTime(context, _endMin);
-                          if (m != null) setState(() => _endMin = m);
-                        },
-                ),
-              ),
-            ],
-          ),
+          // Con texto grande, uno debajo del otro: la hora no se corta.
+          if (context.largeText) ...[
+            startField,
+            const SizedBox(height: TokensSpacing.s),
+            endField,
+          ] else
+            Row(
+              children: [
+                Expanded(child: startField),
+                const SizedBox(width: TokensSpacing.s),
+                Expanded(child: endField),
+              ],
+            ),
+          const SizedBox(height: TokensSpacing.m),
+          _durationChoices(context, _quickDurations, locked),
         ];
     }
+  }
+
+  /// Duraciones en un toque. La actual se añade si no es una de ellas, para
+  /// que siempre se vea cuánto dura. Ninguna baja de 30 min, el mínimo.
+  Widget _durationChoices(BuildContext context, List<int> base, bool locked) {
+    final l10n = context.localizations;
+    final current = _endMin - _startMin;
+    final options = {...base, if (current > 0) current}.toList()..sort();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // El grupo de abajo ya lo dice al lector: no se lee dos veces.
+        ExcludeSemantics(
+          child: Text(
+            l10n.plannerFieldBlockDuration,
+            style: context.textStyles.labelLarge,
+          ),
+        ),
+        const SizedBox(height: TokensSpacing.xs),
+        Semantics(
+          container: true,
+          explicitChildNodes: true,
+          label: l10n.plannerFieldBlockDuration,
+          child: Wrap(
+            spacing: TokensSpacing.xs,
+            runSpacing: TokensSpacing.xs,
+            children: [
+              for (final m in options)
+                ChoiceChip(
+                  label: Text(PlannerFormats.duration(l10n, m)),
+                  selected: current == m,
+                  onSelected: locked ? null : (_) => _setDuration(m),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   String _deadlineLabel(Deadline d) =>
@@ -1022,6 +1233,40 @@ class _EditorViewState extends State<_EditorView>
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Cabecera de un paso: número en círculo y pregunta. El lector de pantalla
+/// la oye como encabezado («Paso 1 de 3: ¿Qué es?») y puede saltar de paso
+/// en paso.
+class _StepHeader extends StatelessWidget {
+  const _StepHeader({
+    required this.number,
+    required this.total,
+    required this.title,
+  });
+
+  final int number;
+  final int total;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      label: context.localizations.plannerStepSemantics(number, total, title),
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            AppStepBadge(number: number),
+            const SizedBox(width: TokensSpacing.s),
+            Expanded(
+              child: Text(title, style: context.textStyles.titleMedium),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

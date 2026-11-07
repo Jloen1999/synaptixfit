@@ -98,8 +98,14 @@ class ReminderPlanServiceTest {
         // «Tu semana» el domingo 25 a las 20:00 (Madrid).
         assertThat(plan.reminders()).filteredOn(r -> r.kind() == ReminderKind.WEEKLY_SUMMARY)
                 .singleElement().satisfies(r -> assertThat(r.at()).isEqualTo(Instant.parse("2026-10-25T19:00:00Z")));
+        // El resumen de la mañana del jueves cuenta el estudio y el entreno (ADR 0035).
+        assertThat(plan.reminders()).filteredOn(r -> r.kind() == ReminderKind.MORNING_SUMMARY).singleElement()
+                .satisfies(r -> {
+                    assertThat(r.summary().studies()).isEqualTo(1);
+                    assertThat(r.summary().trainings()).isEqualTo(1);
+                });
         // Por defecto el límite diario es 10: no recorta nada.
-        assertThat(plan.reminders()).hasSize(6);
+        assertThat(plan.reminders()).hasSize(7);
     }
 
     @Test
@@ -157,9 +163,10 @@ class ReminderPlanServiceTest {
         when(blocks.findOverlapping(any(), any(), any(), any())).thenReturn(List.of(
                 block(ActivityType.SPORT, NOW.plus(Duration.ofDays(1)), "Pierna", SUBJECT)));
 
-        // Solo hitos activos: el bloque de deporte y «Tu semana» (que también usa esa categoría).
+        // Solo hitos activos: el resumen de la mañana y el evento de deporte, y «Tu semana» (que también usa esa
+        // categoría).
         assertThat(service.getReminderPlan(USER, 7).reminders()).extracting(ReminderPlan.Item::kind)
-                .containsExactly(ReminderKind.TRAINING, ReminderKind.WEEKLY_SUMMARY);
+                .containsExactly(ReminderKind.MORNING_SUMMARY, ReminderKind.TRAINING, ReminderKind.WEEKLY_SUMMARY);
         verify(subjects, never()).namesOf(any(), any());
     }
 }

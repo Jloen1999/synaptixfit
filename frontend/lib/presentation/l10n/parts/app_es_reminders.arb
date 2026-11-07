@@ -23,11 +23,33 @@
       }
     }
   },
-  "remindersSportFallbackName": "Tu entrenamiento",
-  "remindersStudyFallbackName": "Tu bloque de estudio",
+  "remindersSportFallbackName": "Tu entreno",
+  "remindersStudyFallbackName": "Tu estudio",
+  "remindersPersonalFallbackName": "Tu evento",
+  "remindersPersonalTitle": "{name} a las {time}",
+  "@remindersPersonalTitle": {
+    "description": "Aviso de un evento personal: «Dentista a las 17:00».",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersPersonalBody": "{minutes, plural, =0{Empieza ahora} other{Empieza en {minutes} min}}",
+  "@remindersPersonalBody": {
+    "description": "Cuánto falta para un evento personal (la antelación la elige la persona).",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "remindersDeviceSectionTitle": "Recordatorios",
   "remindersDeviceToggle": "En este móvil",
-  "remindersDeviceHint": "Repasos, bloques, entregas y exámenes, y el resumen del domingo",
+  "remindersDeviceHint": "Repasos, eventos del calendario, entregas y exámenes, tareas de reto, el resumen de la mañana y el del domingo",
   "remindersAppliesNow": "Se aplica al momento",
   "remindersPermissionDeniedTitle": "Las notificaciones están desactivadas en el móvil",
   "remindersPermissionDeniedBody": "Actívalas en los ajustes del móvil, en Notificaciones de SynaptixFit.",
@@ -65,7 +87,7 @@
   "remindersExamFallbackName": "Tu examen",
   "remindersDeadlineFallbackName": "Tu entrega",
   "remindersOfferTitle": "¿Te avisamos?",
-  "remindersOfferMessage": "Podemos recordarte en este móvil los repasos, los bloques que empiezan y las entregas y exámenes que se acercan. Puedes cambiarlo cuando quieras en Ajustes, en Recordatorios.",
+  "remindersOfferMessage": "Podemos recordarte en este móvil los repasos, los eventos que empiezan, las entregas y exámenes que se acercan y las tareas de tus retos, y mandarte cada mañana un resumen de tu día. Puedes cambiarlo cuando quieras en Ajustes, en Recordatorios.",
   "remindersOfferAccept": "Activar recordatorios",
   "remindersWeeklyTitle": "Tu semana",
   "remindersWeeklyBody": "Mira cómo te ha ido y planifica la próxima.",
@@ -94,6 +116,7 @@
   "remindersYourChallenge": "Tu reto",
   "remindersActionStartStudy": "Empezar a estudiar",
   "remindersActionStartTraining": "Ir a entrenar",
+  "remindersActionStartPersonal": "Empezar",
   "remindersActionSnooze": "Posponer {minutes} min",
   "@remindersActionSnooze": {
     "placeholders": {
@@ -113,11 +136,15 @@
   },
   "remindersCheckInTitle": "¿Qué tal estás hoy?",
   "remindersCheckInBody": "Cuéntanoslo en tres toques y ajustamos tu día.",
-  "remindersClassTitle": "{name} en 15 minutos",
+  "remindersClassTitle": "{minutes, plural, =0{{name} empieza ya} other{{name} en {minutes} min}}",
   "@remindersClassTitle": {
+    "description": "Clase a punto de empezar; los minutos salen del aviso (no son fijos).",
     "placeholders": {
       "name": {
         "type": "String"
+      },
+      "minutes": {
+        "type": "int"
       }
     }
   },
@@ -137,6 +164,174 @@
         "type": "String"
       },
       "place": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersChallengeTaskTitle": "Tarea de reto",
+  "remindersChallengeTaskBody": "{days, plural, =0{Hoy} =1{Mañana} other{En {days} días}}: {task} · reto «{challenge}»",
+  "@remindersChallengeTaskBody": {
+    "description": "Tarea de reto con fecha: «Mañana: Repasar tema 3 · reto «Aprobar Física»».",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "task": {
+        "type": "String"
+      },
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersChallengeTaskBodyChallenge": "{days, plural, =0{Hoy} =1{Mañana} other{En {days} días}}: reto «{challenge}»",
+  "@remindersChallengeTaskBodyChallenge": {
+    "description": "Fecha de un reto sin tareas.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersMorningSummaryTitle": "Tu día",
+  "remindersMorningSummaryBody": "Hoy: {items}",
+  "@remindersMorningSummaryBody": {
+    "description": "Resumen de la mañana; items es una lista natural «a, b y c».",
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersMorningSummaryCheckIn": "{summary}. Cuéntanos también qué tal estás.",
+  "@remindersMorningSummaryCheckIn": {
+    "description": "Resumen que además recuerda el registro diario (ese día no llega aviso aparte).",
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersMorningSummaryEmpty": "Mira lo que trae hoy.",
+  "remindersSummaryStudies": "{count, plural, =1{1 estudio} other{{count} estudios}}",
+  "@remindersSummaryStudies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersSummaryTrainings": "{count, plural, =1{1 entreno} other{{count} entrenos}}",
+  "@remindersSummaryTrainings": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersSummaryClasses": "{count, plural, =1{1 clase} other{{count} clases}}",
+  "@remindersSummaryClasses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersSummaryPersonal": "{count, plural, =1{1 evento personal} other{{count} eventos personales}}",
+  "@remindersSummaryPersonal": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersSummaryDeadline": "{kind, select, exam{examen de {name}} other{entrega de {name}}}",
+  "@remindersSummaryDeadline": {
+    "description": "Entrega o examen dentro del resumen; kind es exam u other.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersSummaryDeadlineUnnamed": "{kind, select, exam{un examen} other{una entrega}}",
+  "@remindersSummaryDeadlineUnnamed": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersSummaryTasks": "{count, plural, =1{1 tarea de reto} other{{count} tareas de reto}}",
+  "@remindersSummaryTasks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remindersListAnd": "{items} y {last}",
+  "@remindersListAnd": {
+    "description": "Cierre de una lista natural: «a, b y c» (items ya va separado por comas).",
+    "placeholders": {
+      "items": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersWithTasks": "{text} · {tasks}",
+  "@remindersWithTasks": {
+    "description": "Aviso que menciona las tareas de reto que van con él.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "tasks": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersTaskMention": "tarea «{task}» del reto «{challenge}»",
+  "@remindersTaskMention": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersTaskMentionChallenge": "reto «{challenge}»",
+  "@remindersTaskMentionChallenge": {
+    "placeholders": {
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersTaskMentionList": "tareas de reto {tasks}",
+  "@remindersTaskMentionList": {
+    "description": "Varias tareas mencionadas; tasks es la lista con comillas: «a» y «b».",
+    "placeholders": {
+      "tasks": {
+        "type": "String"
+      }
+    }
+  },
+  "remindersQuoted": "«{text}»",
+  "@remindersQuoted": {
+    "placeholders": {
+      "text": {
         "type": "String"
       }
     }

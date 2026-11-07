@@ -44,7 +44,8 @@ class ProfileScrollBody extends StatelessWidget {
   }
 }
 
-/// Título de un bloque de formulario con subtítulo opcional.
+/// Título de un bloque de formulario (encabezado para el lector de pantalla)
+/// con subtítulo y pastilla de estado ([trailing]) opcionales.
 class ProfileFormSection extends StatelessWidget {
   const ProfileFormSection({
     super.key,
@@ -61,19 +62,28 @@ class ProfileFormSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final heading = Semantics(
+      header: true,
+      child: Text(title, style: context.textStyles.titleMedium),
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: TokensSpacing.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(title, style: context.textStyles.titleMedium),
-              ),
-              ?trailing,
-            ],
-          ),
+          // Con texto grande la pastilla de [trailing] va debajo del título:
+          // en una fila, en francés o portugués, lo dejaría sin sitio.
+          if (trailing != null && context.largeText) ...[
+            heading,
+            const SizedBox(height: TokensSpacing.xs),
+            Align(alignment: AlignmentDirectional.centerStart, child: trailing),
+          ] else
+            Row(
+              children: [
+                Expanded(child: heading),
+                ?trailing,
+              ],
+            ),
           if (subtitle != null) ...[
             const SizedBox(height: TokensSpacing.xxs),
             Text(

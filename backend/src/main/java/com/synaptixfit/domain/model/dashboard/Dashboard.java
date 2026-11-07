@@ -1,5 +1,6 @@
 package com.synaptixfit.domain.model.dashboard;
 
+import com.synaptixfit.domain.model.challenge.TaskMention;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChallenge;
 import com.synaptixfit.domain.model.insights.CognitiveState;
 import com.synaptixfit.domain.model.insights.CrossRegulationView;
@@ -66,9 +67,26 @@ public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, Cogni
      */
     public record TodayEvent(Kind kind, UUID id, String title, String type, Instant start, Instant end,
                              boolean completed, String subjectName, ItemTimeStatus status, UUID routineId,
-                             UUID routineDayId) {
+                             UUID routineDayId, List<TaskMention> tasks) {
 
         public enum Kind { BLOCK, DEADLINE }
+
+        public TodayEvent {
+            tasks = tasks == null ? List.of() : List.copyOf(tasks);
+        }
+
+        public TodayEvent(Kind kind, UUID id, String title, String type, Instant start, Instant end,
+                          boolean completed, String subjectName, ItemTimeStatus status, UUID routineId,
+                          UUID routineDayId) {
+            this(kind, id, title, type, start, end, completed, subjectName, status, routineId, routineDayId,
+                    List.of());
+        }
+
+        /** El mismo evento diciendo qué tareas de reto hace avanzar (ADR 0035). */
+        public TodayEvent withTasks(List<TaskMention> advanced) {
+            return new TodayEvent(kind, id, title, type, start, end, completed, subjectName, status, routineId,
+                    routineDayId, advanced);
+        }
 
         public TodayEvent(Kind kind, UUID id, String title, String type, Instant start, Instant end,
                           boolean completed, String subjectName, ItemTimeStatus status) {

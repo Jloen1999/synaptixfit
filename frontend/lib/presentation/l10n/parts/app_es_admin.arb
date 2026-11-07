@@ -272,7 +272,7 @@
       }
     }
   },
-  "adminStatsStudyBlocks": "Bloques completados",
+  "adminStatsStudyBlocks": "Estudios hechos",
   "adminStatsStudyMinutes": "Minutos de estudio",
   "adminStatsFocusSessions": "Sesiones de foco",
   "adminStatsFocusMinutes": "Minutos de foco",
@@ -354,7 +354,7 @@
   "adminTimelineChallengeCreated": "Reto creado",
   "adminTimelineChallengeCompleted": "Reto completado",
   "adminTimelineBadgeEarned": "Insignia obtenida",
-  "adminTimelineStudyBlockCompleted": "Bloque de estudio completado",
+  "adminTimelineStudyBlockCompleted": "Estudio marcado como hecho",
   "adminTimelineDeadlineCompleted": "Entrega completada",
   "adminTimelineNoteCreated": "Apunte creado",
   "adminTimelineFocusSession": "Sesión de foco",

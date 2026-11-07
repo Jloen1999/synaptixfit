@@ -10,8 +10,9 @@ import 'suggestions/page/suggestions_page.dart';
 
 /// Rutas del módulo planner (todas a pantalla completa, sin barra inferior).
 abstract final class PlannerPaths {
-  /// Calendario semanal. Acepta `?week=yyyy-MM-dd` (cualquier día de la semana)
-  /// y `&block=<id>` para abrir ese bloque (desde la agenda o un aviso).
+  /// Calendario semanal. Acepta `?week=yyyy-MM-dd` (cualquier día de la semana),
+  /// `&block=<id>` para abrir ese evento (desde la agenda o un aviso) y
+  /// `&day=yyyy-MM-dd` para colocarse en ese día (desde «Tu semana»).
   static const root = '/planner';
   static const deadlines = '/planner/deadlines';
 
@@ -59,6 +60,10 @@ abstract final class PlannerPaths {
 abstract final class PlannerExternalPaths {
   /// Detalle de una rutina (Entrenamiento), para entrenar el día de un bloque.
   static String routine(String routineId) => '/training/routines/$routineId';
+
+  /// Ajustes › Avisos (Perfil, pantalla completa): la antelación de los avisos
+  /// es global, no de cada evento.
+  static const notificationSettings = '/profile/settings/notifications';
 }
 
 /// Rutas a pantalla completa (sin barra inferior).
@@ -68,6 +73,7 @@ List<RouteBase> plannerRoutes() => [
     builder: (context, state) => CalendarPage(
       initialWeek: PlannerPaths.parseWeek(state.uri.queryParameters['week']),
       initialBlockId: state.uri.queryParameters['block'],
+      initialDay: PlannerPaths.parseWeek(state.uri.queryParameters['day']),
     ),
     routes: [
       GoRoute(

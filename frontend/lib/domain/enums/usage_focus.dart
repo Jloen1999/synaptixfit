@@ -24,8 +24,8 @@ enum UsageFocus {
   static UsageFocus fromApi(String? value) =>
       values.firstWhere((f) => f.apiValue == value, orElse: () => both);
 
-  /// Bloques del planificador de su ámbito: lo académico con estudios, el
-  /// deporte con deporte; descanso, comida y sueño siempre.
+  /// Eventos del planificador de su ámbito: lo académico con estudios, el
+  /// deporte con deporte; descanso, comida, sueño y lo personal siempre.
   bool allowsBlock(BlockType type) => switch (type) {
     BlockType.sport => includesFitness,
     BlockType.study ||

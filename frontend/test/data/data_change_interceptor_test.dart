@@ -96,6 +96,17 @@ void main() {
       );
     });
 
+    test('cambiar las opciones de avisos reprograma el plan del móvil', () {
+      // `RemindersBloc` escucha DataTopic.social para volver a pedir el plan.
+      expect(
+        DataChangeInterceptor.topicsFor(
+          'PUT',
+          '/api/v1/notifications/reminder-options',
+        ),
+        contains(DataTopic.social),
+      );
+    });
+
     test('el login no avisa y un prefijo parecido no confunde', () {
       expect(
         DataChangeInterceptor.topicsFor('POST', '/api/v1/auth/login'),

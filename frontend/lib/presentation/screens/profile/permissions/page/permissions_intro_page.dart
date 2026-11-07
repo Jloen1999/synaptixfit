@@ -85,9 +85,7 @@ class _PermissionsIntroView extends StatelessWidget with ErrorsMessageMixin {
                 : state.statuses.isEmpty && state.error != null
                 ? AppErrorView(
                     error: state.error!,
-                    onRetry: () => bloc.add(
-                      const PermissionsEvent.started(),
-                    ),
+                    onRetry: () => bloc.add(const PermissionsEvent.started()),
                   )
                 : ProfileScrollBody(
                     children: [

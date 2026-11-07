@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Tipo de actividad de un bloque del calendario.
+ * Tipo de un evento del calendario ({@link CalendarBlock}). La persona lo ve con el nombre del tipo («Estudio»,
+ * «Entreno», «Personal»…) y, en genérico, como «evento» (ver {@code docs/05-design/vocabulario.md}).
  *
  * <p>{@link #code()} es el código canónico del vocabulario del producto (el que guarda la base de
  * datos y viaja en los eventos de dominio, p. ej. {@code "clase"}).
@@ -20,7 +21,12 @@ public enum ActivityType {
     SLEEP("sueno"),
     EXAM("examen"),
     DELIVERY("entrega"),
-    REVIEW("repaso");
+    REVIEW("repaso"),
+    /**
+     * El día a día que no es ni estudio ni deporte (médico, trabajo, recados…), con nombre libre en los temas
+     * (ADR 0035). No da XP ni carga de estudio, se ve con cualquier modo de uso y se marca como hecho.
+     */
+    PERSONAL("personal");
 
     private final String code;
 
@@ -36,9 +42,20 @@ public enum ActivityType {
         return Arrays.stream(values()).filter(t -> t.code.equals(code)).findFirst().orElse(STUDY);
     }
 
-    /** Completar el bloque da experiencia (descanso, comida y sueño no la dan: evita farmeo). */
+    /**
+     * Completar el bloque da experiencia. Descanso, comida y sueño no la dan (evita farmeo), y lo personal
+     * tampoco: la XP premia el estudio y el deporte, no apuntar recados.
+     */
     public boolean grantsExperience() {
-        return this != REST && this != MEAL && this != SLEEP;
+        return this != REST && this != MEAL && this != SLEEP && this != PERSONAL;
+    }
+
+    /**
+     * Cuenta en el plan de la semana («12 de 18 hechos», Inicio y Progreso): lo que se planifica para hacerse y se
+     * marca. Descanso, comida y sueño no; lo personal sí, aunque no dé XP.
+     */
+    public boolean countsInWeekPlan() {
+        return grantsExperience() || this == PERSONAL;
     }
 
     /**
@@ -61,8 +78,8 @@ public enum ActivityType {
 
     /**
      * Si el tipo pertenece a un ámbito que la persona usa: lo académico (estudio, clase, repaso,
-     * exámenes y entregas) solo con estudios, el deporte solo con deporte; descanso, comida y sueño
-     * siempre.
+     * exámenes y entregas) solo con estudios, el deporte solo con deporte; descanso, comida, sueño y lo
+     * personal siempre.
      */
     public boolean visibleFor(UsageFocus focus) {
         if (isCognitive()) {
@@ -88,11 +105,16 @@ public enum ActivityType {
     }
 
     /**
-     * Tiene seguimiento: si pasa sin completarse queda «no hecho» ({@link ItemTimeStatus#MISSED}).
+     * Tiene seguimiento: si pasa sin completarse queda «Sin hacer» ({@link ItemTimeStatus#MISSED}).
      * Exámenes y entregas se siguen por su entrega; descanso, comida y sueño no se marcan.
      */
     public boolean isTrackable() {
-        return this == STUDY || this == REVIEW || this == SPORT || this == CLASS;
+        return this == STUDY || this == REVIEW || this == SPORT || this == CLASS || this == PERSONAL;
+    }
+
+    /** Necesita un nombre propio (en los temas): lo personal no tiene asignatura ni rutina que lo nombre. */
+    public boolean requiresName() {
+        return this == PERSONAL;
     }
 
     /**

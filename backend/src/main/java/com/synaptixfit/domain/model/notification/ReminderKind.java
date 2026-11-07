@@ -1,6 +1,10 @@
 package com.synaptixfit.domain.model.notification;
 
-/** Qué recuerda un aviso del plan de recordatorios del móvil ({@link ReminderPlanner}). */
+/**
+ * Qué recuerda un aviso del plan de recordatorios del móvil ({@link ReminderPlanner}). El móvil descarta los tipos que
+ * no conoce, así que se pueden añadir tipos nuevos (p. ej. el cumpleaños cuando el perfil tenga la fecha de
+ * nacimiento, ADR 0035) sin romper las versiones anteriores de la app.
+ */
 public enum ReminderKind {
     /** Repasos espaciados (SM-2) vencidos. */
     REVIEWS,
@@ -24,6 +28,12 @@ public enum ReminderKind {
     STREAK_AT_RISK,
     /** «¿Qué tal estás hoy?»: el registro diario, por la mañana si aún no se ha hecho. */
     CHECK_IN,
-    /** «Tu clase empieza en 15 minutos», con el aula. */
-    CLASS_SOON
+    /** «Tu clase empieza pronto» (con la antelación elegida), con el aula. */
+    CLASS_SOON,
+    /** Evento personal a punto de empezar (ADR 0035). */
+    PERSONAL_EVENT,
+    /** Tarea de reto con fecha que ningún otro aviso menciona: «Mañana: Repasar tema 3 · reto Aprobar Física». */
+    CHALLENGE_TASK,
+    /** Resumen de la mañana, solo si hay algo: «Hoy: 2 estudios, 1 entreno y 1 tarea de reto». */
+    MORNING_SUMMARY
 }

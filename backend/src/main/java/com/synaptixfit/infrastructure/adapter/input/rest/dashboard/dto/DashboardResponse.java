@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.adapter.input.rest.dashboard.dto;
 
 import static com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.InsightsResponses.round;
 
+import com.synaptixfit.domain.model.challenge.TaskMention;
 import com.synaptixfit.domain.model.dashboard.Dashboard;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChallenge;
 import com.synaptixfit.domain.model.dashboard.SmartBanner;
@@ -32,6 +33,7 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
             Map.entry("estudio", "STUDY"), Map.entry("deporte", "SPORT"), Map.entry("clase", "CLASS"),
             Map.entry("descanso", "REST"), Map.entry("comida", "MEAL"), Map.entry("sueno", "SLEEP"),
             Map.entry("examen", "EXAM"), Map.entry("entrega", "DELIVERY"), Map.entry("repaso", "REVIEW"),
+            Map.entry("personal", "PERSONAL"),
             // tipo de entregas_examenes
             Map.entry("presentacion", "PRESENTATION"), Map.entry("otro", "OTHER"));
 
@@ -99,13 +101,24 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
     }
 
     /**
-     * {@code kind}: BLOCK o DEADLINE. {@code type}: STUDY, CLASS, REVIEW, SPORT, REST, MEAL, SLEEP (bloques)
+     * {@code kind}: BLOCK o DEADLINE. {@code type}: STUDY, CLASS, REVIEW, SPORT, REST, MEAL, SLEEP, PERSONAL (bloques)
      * o EXAM, DELIVERY, PRESENTATION, OTHER (entregas). {@code end} es null en las entregas.
      */
-    /** {@code routineId}/{@code routineDayId}: día de rutina del bloque de deporte («Entrenar» empieza ese). */
+    /**
+     * {@code routineId}/{@code routineDayId}: día de rutina del bloque de deporte («Entrenar» empieza ese).
+     * {@code tasks}: tareas de reto que avanzan al marcar este evento o esta entrega (ADR 0035).
+     */
     public record TodayEventResponse(Dashboard.TodayEvent.Kind kind, UUID id, String title, String type, Instant start,
                                      Instant end, boolean completed, String subjectName, ItemTimeStatus status,
-                                     UUID routineId, UUID routineDayId) {
+                                     UUID routineId, UUID routineDayId, List<TaskMentionResponse> tasks) {
+    }
+
+    /** Tarea de reto que avanza con un evento; {@code title} nulo: el propio reto (sin tareas, va con su entrega). */
+    public record TaskMentionResponse(UUID challengeId, String challengeTitle, UUID milestoneId, String title) {
+
+        public static TaskMentionResponse from(TaskMention t) {
+            return new TaskMentionResponse(t.challengeId(), t.challengeTitle(), t.milestoneId(), t.title());
+        }
     }
 
     /** {@code labels}: textos del usuario que el aviso cita (p. ej. el bloque sin hacer). */
@@ -132,7 +145,7 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                         .map(p -> new PlanDayResponse(p.date(), p.planned(), p.completed(), p.missed())).toList(),
                 d.todayEvents().stream().map(e -> new TodayEventResponse(e.kind(), e.id(), e.title(), code(e.type()),
                         e.start(), e.end(), e.completed(), e.subjectName(), e.status(), e.routineId(),
-                        e.routineDayId())).toList(),
+                        e.routineDayId(), e.tasks().stream().map(TaskMentionResponse::from).toList())).toList(),
                 new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()));
     }
 }

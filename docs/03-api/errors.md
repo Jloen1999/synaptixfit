@@ -119,6 +119,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `NOTIFICATION_NOT_FOUND` | 404 | La notificación no existe o es ajena | Esta notificación ya no existe. | Activo |
 | `NOTIFICATION_WEEKLY_EMAIL_LINK_INVALID` | 404 | El enlace de confirmación o de baja del resumen semanal no existe o ya se usó | — (página web del backend) | Enlace no válido: gestiona el resumen en Ajustes › Notificaciones. | Activo |
 | `NOTIFICATION_INVALID_QUIET_HOURS` | 400 | Solo una de las horas de silencio, o inicio igual a fin | Indica la hora de inicio y de fin del silencio (distintas). | Activo |
+| `REMINDER_OPTIONS_INVALID` | 400 | Antelación, días antes de una entrega o hora del resumen fuera de las opciones (ADR 0035) | No se pudo guardar esa opción de avisos. Elige una de la lista. | Activo |
 
 ## Perfil y catálogo académico
 
@@ -151,7 +152,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `CHALLENGE_EXPIRED` | 422 | Completar, desmarcar, sumar progreso o editar las tareas de un reto cuya fecha de fin ya pasó (aunque esté completado) | Este reto ya terminó: no se puede seguir avanzando. | Activo |
 | `CHALLENGE_NOT_STARTED` | 422 | Completar, desmarcar o registrar progreso antes de la fecha de inicio (ADR 0028) | Este reto aún no ha empezado: podrás avanzar desde su fecha de inicio. | Activo |
 | `CHALLENGE_LINKED` | 422 | Completar, desmarcar o registrar progreso a mano en un reto sin tareas vinculado a una entrega o examen: lo completa esa entrega (ADR 0028) | Este reto se completa con su entrega o examen: márcalo como hecho en el planificador. | Activo |
-| `MILESTONE_LINKED` | 422 | Marcar, desmarcar o registrar progreso a mano en una tarea vinculada a una entrega/examen o con bloques del calendario asignados (ADR 0028) | Esta tarea avanza con su entrega o sus bloques del calendario: márcalos como hechos en el planificador. | Activo |
+| `MILESTONE_LINKED` | 422 | Marcar, desmarcar o registrar progreso a mano en una tarea vinculada a una entrega/examen o con bloques del calendario asignados (ADR 0028) | Esta tarea avanza con su entrega o sus eventos del calendario: márcalos como hechos en el planificador. | Activo |
 | `CHALLENGE_LINK_OUTSIDE_PERIOD` | 422 | La entrega o examen vinculado (al reto o a una tarea) vence fuera del periodo del reto, por días (ADR 0028) | La entrega o el examen vence fuera de las fechas del reto. Amplía el reto o elige otro. | Activo |
 | `MILESTONE_ATTACHMENT_CONFLICT` | 400 | Apunte y archivo a la vez | Una tarea solo puede tener un apunte o un archivo. | Activo |
 | `CHALLENGE_TOO_MANY_MILESTONES` | 422 | Más de 12 tareas | Un reto puede tener como máximo 12 tareas. | Activo |
@@ -169,15 +170,15 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 
 | `code` | HTTP | Significado | Texto (es) | Estado |
 |---|---|---|---|---|
-| `BLOCK_NOT_FOUND` | 404 | El bloque no existe o es de otro usuario | No encontramos ese bloque. | Activo |
-| `BLOCK_IN_PAST` | 422 | Crear, mover o redimensionar hacia el pasado | No puedes colocar bloques en una hora o fecha pasada. | Activo |
-| `BLOCK_LOCKED` | 422 | Bloque fijo o inamovible | Este bloque es fijo y no se puede mover. | Activo |
-| `BLOCK_IN_FUTURE` | 422 | Marcar como hecho un bloque que aún no ha empezado | Este bloque aún no ha empezado: márcalo cuando lo hagas. | Activo |
+| `BLOCK_NOT_FOUND` | 404 | El bloque no existe o es de otro usuario | No encontramos ese evento. | Activo |
+| `BLOCK_IN_PAST` | 422 | Crear, mover o redimensionar hacia el pasado | No puedes colocar eventos en una hora o fecha pasada. | Activo |
+| `BLOCK_LOCKED` | 422 | Bloque fijo o inamovible | Este evento es fijo y no se puede mover. | Activo |
+| `BLOCK_IN_FUTURE` | 422 | Marcar como hecho un bloque que aún no ha empezado | Este evento aún no ha empezado: márcalo cuando lo hagas. | Activo |
 | `BLOCK_NO_FREE_SLOT` | 409 | Reprogramar sin hueco libre de su duración (8:00-22:00, próximos 7 días) | No hay un hueco libre en los próximos días. Muévelo a mano. | Activo |
-| `BLOCK_COMPLETED_LOCKED` | 422 | Cambiar horario o tipo de un bloque completado | Desmarca el bloque como completado antes de cambiarlo. | Activo |
-| `BLOCK_ROUTINE_LINKED` | 409 | Marcar o desmarcar a mano un bloque de deporte enlazado a un día de rutina (sigue a su sesión) | Este bloque sigue a su sesión de la rutina: entrénalo o apúntalo desde la rutina. | Activo |
-| `BLOCK_INVALID_TIME_RANGE` | 400 | Fin ≤ inicio o menos de 30 minutos | El bloque debe durar al menos 30 minutos. | Activo |
-| `BLOCK_OUTSIDE_CHALLENGE_PERIOD` | 422 | Crear, editar o mover un bloque de un reto (o de una tarea de reto) fuera del periodo de ese reto, por días (ADR 0028) | El bloque queda fuera de las fechas de su reto. Muévelo o amplía el reto. | Activo |
+| `BLOCK_COMPLETED_LOCKED` | 422 | Cambiar horario o tipo de un bloque completado | Ya está hecho: desmárcalo antes de cambiarlo. | Activo |
+| `BLOCK_ROUTINE_LINKED` | 409 | Marcar o desmarcar a mano un bloque de deporte enlazado a un día de rutina (sigue a su sesión) | Este entreno va con su sesión de la rutina: hazlo o apúntalo desde la rutina. | Activo |
+| `BLOCK_INVALID_TIME_RANGE` | 400 | Fin ≤ inicio o menos de 30 minutos | El evento debe durar al menos 30 minutos. | Activo |
+| `BLOCK_OUTSIDE_CHALLENGE_PERIOD` | 422 | Crear, editar o mover un bloque de un reto (o de una tarea de reto) fuera del periodo de ese reto, por días (ADR 0028) | El evento queda fuera de las fechas de su reto. Muévelo o amplía el reto. | Activo |
 | `DEADLINE_NOT_FOUND` | 404 | La entrega no existe o es de otro usuario | No encontramos esa entrega o examen. | Activo |
 | `PLAN_NOT_FOUND` | 404 | El plan no existe o es de otro usuario | No encontramos ese plan. | Activo |
 | `PLANNER_SUBJECT_NOT_FOUND` | 404 | Asignatura inexistente o ajena | No encontramos esa asignatura. | Activo |

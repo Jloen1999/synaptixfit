@@ -15,6 +15,10 @@ abstract final class HomeExternalPaths {
 
   static const planner = '/planner';
   static const deadlines = '/planner/deadlines';
+
+  /// Entregas con [id] la primera y destacada (aunque esté en otra página).
+  static String deadline(String id) =>
+      Uri(path: deadlines, queryParameters: {'focus': id}).toString();
   static const pomodoro = '/planner/pomodoro';
 
   /// Pomodoro que empieza por una pausa («Descanso guiado»).
@@ -28,17 +32,21 @@ abstract final class HomeExternalPaths {
     queryParameters: {'blockId': blockId, 'title': ?title},
   ).toString();
 
-  /// Calendario abierto en el día de [day] y, con [blockId], en ese bloque.
-  static String plannerAt(DateTime day, {String? blockId}) => Uri(
-    path: planner,
-    queryParameters: {
-      'week':
-          '${day.year.toString().padLeft(4, '0')}-'
-          '${day.month.toString().padLeft(2, '0')}-'
-          '${day.day.toString().padLeft(2, '0')}',
-      'block': ?blockId,
-    },
-  ).toString();
+  /// Calendario abierto en el día de [day] y, con [blockId], en ese evento;
+  /// sin él, colocado en ese día.
+  static String plannerAt(DateTime day, {String? blockId}) {
+    final date =
+        '${day.year.toString().padLeft(4, '0')}-'
+        '${day.month.toString().padLeft(2, '0')}-'
+        '${day.day.toString().padLeft(2, '0')}';
+    return Uri(
+      path: planner,
+      queryParameters: {
+        'week': date,
+        if (blockId != null) 'block': blockId else 'day': date,
+      },
+    ).toString();
+  }
 
   static const training = '/training';
   static const newRoutine = '/training/routines/new';

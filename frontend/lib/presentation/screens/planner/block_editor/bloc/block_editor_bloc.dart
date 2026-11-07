@@ -20,7 +20,8 @@ part 'block_editor_bloc.freezed.dart';
 part 'block_editor_event.dart';
 part 'block_editor_state.dart';
 
-/// Hoja de creación/edición de un bloque y distribución de rutinas.
+/// Hoja de crear/editar un evento del calendario y de repartir una rutina:
+/// valida antes de enviar y llama a los casos de uso del planificador.
 class BlockEditorBloc extends Bloc<BlockEditorEvent, BlockEditorState> {
   BlockEditorBloc({
     required this._getSubjects,
@@ -106,6 +107,10 @@ class BlockEditorBloc extends Bloc<BlockEditorEvent, BlockEditorState> {
         original.start != draft.start ||
         original.end != draft.end;
 
+    if (draft.type.requiresName && (draft.topics ?? '').trim().isEmpty) {
+      emit(_issue(BlockEditorIssue.nameMissing));
+      return;
+    }
     if (draft.end.difference(draft.start).inMinutes < minDurationMinutes) {
       emit(_issue(BlockEditorIssue.tooShort));
       return;

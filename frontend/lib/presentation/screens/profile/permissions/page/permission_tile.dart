@@ -152,7 +152,9 @@ class PermissionTile extends StatelessWidget {
           ],
           // «Permitir» en esta opción abre una pantalla del sistema, no una
           // pregunta: se avisa antes para que no sorprenda.
-          if (!granted && !blocked && permission == DevicePermission.exactAlarms)
+          if (!granted &&
+              !blocked &&
+              permission == DevicePermission.exactAlarms)
             Padding(
               padding: const EdgeInsets.only(top: TokensSpacing.s),
               child: Text(

@@ -20,6 +20,7 @@ import '../../../../../domain/use_cases/home/get_home_unread_count_use_case.dart
 import '../../../../../domain/use_cases/planner/get_timeline_use_case.dart';
 import '../../../../../domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
+import '../../../../../domain/use_cases/planner/set_deadline_completion_use_case.dart';
 import '../../../../../domain/use_cases/training/start_session_use_case.dart';
 import '../../home_onboarding_gate.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
@@ -47,6 +48,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     required this._startSession,
     required this._setBlockCompletion,
     required this._rescheduleToNextSlot,
+    required this._setDeadlineCompletion,
     required this._permissionsIntroPending,
     this._clock = DateTime.now,
   }) : super(const HomeDashboardState()) {
@@ -65,6 +67,10 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     on<HomeDashboardSetupSnoozed>(_onSetupSnoozed);
     on<HomeDashboardBannerBlockCompleted>(_onBannerBlockCompleted);
     on<HomeDashboardBannerBlockRescheduled>(_onBannerBlockRescheduled);
+    on<HomeDashboardCompletionSet>(_onCompletionSet);
+    on<HomeDashboardCompletionNoticeHandled>(
+      (_, emit) => emit(state.copyWith(completionNotice: null)),
+    );
     on<HomeDashboardBannerNoticeHandled>(
       (_, emit) => emit(state.copyWith(bannerNotice: null)),
     );
@@ -93,6 +99,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
   final StartSessionUseCaseContract _startSession;
   final SetBlockCompletionUseCaseContract _setBlockCompletion;
   final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleToNextSlot;
+  final SetDeadlineCompletionUseCaseContract _setDeadlineCompletion;
   final IsPermissionsIntroPendingUseCaseContract _permissionsIntroPending;
 
   /// La XP y el hueco los decide el servidor; Inicio se refresca solo con el
@@ -110,6 +117,60 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
         bannerNotice: result.fold(
           (value) => HomeBannerNotice.completed(value.xpDelta),
           HomeBannerNotice.failed,
+        ),
+      ),
+    );
+  }
+
+  /// Marca o desmarca con las mismas reglas que el planificador (XP, retos
+  /// ligados, racha: todo en el servidor). Lo cambiado se pinta ya con el
+  /// estado que devuelve el servidor; el resto llega con el refresco de datos.
+  Future<void> _onCompletionSet(
+    HomeDashboardCompletionSet event,
+    Emitter<HomeDashboardState> emit,
+  ) async {
+    if (state.completingIds.contains(event.id)) return;
+    emit(state.copyWith(completingIds: {...state.completingIds, event.id}));
+    final isDeadline = event.kind == HomeEventKind.deadline;
+    final result = isDeadline
+        ? (await _setDeadlineCompletion(
+            event.id,
+            completed: event.completed,
+          )).map(
+            (v) => (v.deadline.completed, v.deadline.timeStatus, v.xpDelta),
+          )
+        : (await _setBlockCompletion(
+            event.id,
+            completed: event.completed,
+          )).map((v) => (v.block.completed, v.block.timeStatus, v.xpDelta));
+    final busy = {...state.completingIds}..remove(event.id);
+    result.fold(
+      (value) {
+        final (completed, status, xpDelta) = value;
+        HomeTodayEvent update(HomeTodayEvent e) => e.id == event.id
+            ? e.copyWith(completed: completed, status: status)
+            : e;
+        final dashboard = state.dashboard;
+        emit(
+          state.copyWith(
+            completingIds: busy,
+            dashboard: dashboard?.copyWith(
+              todayEvents: dashboard.todayEvents.map(update).toList(),
+            ),
+            upcoming: state.upcoming.map(update).toList(),
+            completionNotice: HomeCompletionNotice.done(
+              id: event.id,
+              kind: event.kind,
+              completed: completed,
+              xpDelta: xpDelta,
+            ),
+          ),
+        );
+      },
+      (error) => emit(
+        state.copyWith(
+          completingIds: busy,
+          completionNotice: HomeCompletionNotice.failed(error),
         ),
       ),
     );
@@ -292,6 +353,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
               BlockType.exam => HomeEventType.exam,
               BlockType.delivery => HomeEventType.delivery,
               BlockType.review => HomeEventType.review,
+              BlockType.personal => HomeEventType.personal,
               null => HomeEventType.other,
             },
       // Sin título, la agenda muestra el tipo («Estudio», «Deporte»...).

@@ -40,10 +40,13 @@ class ReminderComposer {
             id: _blockId(planned.refId),
             kind: planned.kind,
             title: texts.blockTitle(planned.kind),
-            body: texts.blockBody(
-              planned.kind,
-              planned.title,
-              (planned.startsAt ?? planned.at).toLocal(),
+            body: texts.withTasks(
+              texts.blockBody(
+                planned.kind,
+                planned.title,
+                (planned.startsAt ?? planned.at).toLocal(),
+              ),
+              planned.tasks,
             ),
             at: planned.at,
             refId: planned.refId,
@@ -51,18 +54,66 @@ class ReminderComposer {
             snoozeLabel: texts.snoozeAction(snoozeMinutes),
             snoozeMinutes: snoozeMinutes,
           ),
+          ReminderKind.personalEvent => Reminder(
+            id: _blockId(planned.refId),
+            kind: planned.kind,
+            title: texts.personalTitle(
+              planned.title,
+              (planned.startsAt ?? planned.at).toLocal(),
+            ),
+            body: texts.withTasks(
+              texts.personalBody(_leadMinutes(planned) ?? 0),
+              planned.tasks,
+            ),
+            at: planned.at,
+            refId: planned.refId,
+            startLabel: texts.startAction(planned.kind),
+            snoozeLabel: texts.snoozeAction(snoozeMinutes),
+            snoozeMinutes: snoozeMinutes,
+          ),
+          ReminderKind.challengeTask => Reminder(
+            id: _blockId('${planned.kind.name}:${planned.refId}'),
+            kind: planned.kind,
+            title: texts.challengeTaskTitle,
+            body: texts.challengeTaskBody(
+              planned.count ?? 1,
+              planned.title,
+              planned.tasks.firstOrNull?.challengeTitle,
+            ),
+            at: planned.at,
+            // Se abre el reto (`targetId`); el `refId` del servidor es
+            // «tarea:momento» y no sirve para abrir nada.
+            refId: planned.targetId ?? planned.tasks.firstOrNull?.challengeId,
+          ),
+          ReminderKind.morningSummary => Reminder(
+            id: _blockId('${planned.kind.name}:${planned.refId}'),
+            kind: planned.kind,
+            title: texts.morningSummaryTitle,
+            body: texts.morningSummaryBody(
+              planned.summary ?? const ReminderDaySummary(),
+            ),
+            at: planned.at,
+            refId: planned.refId,
+          ),
           ReminderKind.streakAtRisk ||
           ReminderKind.checkIn ||
           ReminderKind.classSoon => Reminder(
             id: _blockId('${planned.kind.name}:${planned.refId}'),
             kind: planned.kind,
-            title: texts.wellbeingTitle(planned.kind, name: planned.title),
-            body: texts.wellbeingBody(
+            title: texts.wellbeingTitle(
               planned.kind,
-              count: planned.count,
               name: planned.title,
-              place: planned.place,
-              start: planned.startsAt?.toLocal(),
+              minutes: _leadMinutes(planned),
+            ),
+            body: texts.withTasks(
+              texts.wellbeingBody(
+                planned.kind,
+                count: planned.count,
+                name: planned.title,
+                place: planned.place,
+                start: planned.startsAt?.toLocal(),
+              ),
+              planned.tasks,
             ),
             at: planned.at,
             refId: planned.refId,
@@ -78,10 +129,13 @@ class ReminderComposer {
             id: _blockId(planned.refId),
             kind: planned.kind,
             title: texts.deadlineTitle(planned.kind, planned.count ?? 1),
-            body: texts.deadlineBody(
-              planned.kind,
-              planned.title,
-              (planned.startsAt ?? planned.at).toLocal(),
+            body: texts.withTasks(
+              texts.deadlineBody(
+                planned.kind,
+                planned.title,
+                (planned.startsAt ?? planned.at).toLocal(),
+              ),
+              planned.tasks,
             ),
             at: planned.at,
             // Se abre la entrega: su id llega aparte (`targetId`). Los servidores
@@ -90,6 +144,16 @@ class ReminderComposer {
           ),
         },
     ];
+  }
+
+  /// Minutos entre el aviso y el inicio: la antelación la elige la persona
+  /// (5, 15, 30 o 60) y el silencio nocturno puede acortarla, así que no es
+  /// fija. Nulo si el aviso no trae inicio.
+  static int? _leadMinutes(PlannedReminder planned) {
+    final start = planned.startsAt;
+    if (start == null) return null;
+    final seconds = start.difference(planned.at).inSeconds;
+    return seconds <= 0 ? 0 : (seconds / 60).round();
   }
 
   /// Minutos que se pospone un bloque desde la notificación.

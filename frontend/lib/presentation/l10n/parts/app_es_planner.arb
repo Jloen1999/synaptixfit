@@ -25,7 +25,7 @@
     }
   },
   "plannerSavePlan": "Cerrar semana",
-  "plannerPlanSaved": "{count, plural, =0{Semana cerrada} =1{Semana cerrada con 1 bloque} other{Semana cerrada con {count} bloques}}",
+  "plannerPlanSaved": "{count, plural, =0{Semana cerrada} =1{Semana cerrada con 1 evento} other{Semana cerrada con {count} eventos}}",
   "@plannerPlanSaved": {
     "placeholders": {
       "count": {
@@ -41,8 +41,8 @@
       }
     }
   },
-  "plannerBlockCompleted": "Bloque completado",
-  "plannerBlockCompletedXp": "Bloque completado · +{xp} XP",
+  "plannerBlockCompleted": "Marcado como hecho",
+  "plannerBlockCompletedXp": "Marcado como hecho · +{xp} XP",
   "@plannerBlockCompletedXp": {
     "placeholders": {
       "xp": {
@@ -50,8 +50,8 @@
       }
     }
   },
-  "plannerBlockUncompleted": "Bloque desmarcado",
-  "plannerBlockUncompletedXp": "Bloque desmarcado · −{xp} XP",
+  "plannerBlockUncompleted": "Desmarcado",
+  "plannerBlockUncompletedXp": "Desmarcado · −{xp} XP",
   "@plannerBlockUncompletedXp": {
     "placeholders": {
       "xp": {
@@ -59,7 +59,7 @@
       }
     }
   },
-  "plannerOverlapWarning": "{count, plural, =1{Ojo: a esta hora ya tienes otro bloque} other{Ojo: a esta hora ya tienes {count} bloques}}",
+  "plannerOverlapWarning": "{count, plural, =1{Ojo: a esta hora ya tienes otro evento} other{Ojo: a esta hora ya tienes {count} eventos}}",
   "@plannerOverlapWarning": {
     "placeholders": {
       "count": {
@@ -67,9 +67,9 @@
       }
     }
   },
-  "plannerBlockLocked": "Este bloque es fijo y no se puede mover.",
-  "plannerCompletedLocked": "Desmarca el bloque como completado antes de moverlo.",
-  "plannerInPast": "No puedes colocar bloques en una hora o fecha pasada.",
+  "plannerBlockLocked": "Este evento es fijo y no se puede mover.",
+  "plannerCompletedLocked": "Ya está hecho: desmárcalo antes de moverlo.",
+  "plannerInPast": "No puedes colocar eventos en una hora o fecha pasada.",
   "plannerConflictsBanner": "{count, plural, =1{1 choque de horario esta semana} other{{count} choques de horario esta semana}}",
   "@plannerConflictsBanner": {
     "placeholders": {
@@ -90,16 +90,26 @@
       }
     }
   },
-  "plannerConflictsHint": "Son bloques que ocupan la misma hora, así que no podrás hacer los dos. Toca uno para cambiarlo de hora o borrarlo.",
+  "plannerConflictsHint": "Son eventos que ocupan la misma hora, así que no podrás hacer los dos. Toca uno para cambiarlo de hora o borrarlo.",
   "plannerDeadlinesThisWeek": "Entregas de la semana",
   "plannerMenuDeadlines": "Entregas y exámenes",
   "plannerMenuSuggestions": "Sugerencias con IA",
   "plannerMenuPomodoro": "Pomodoro",
   "plannerMenuScheduleImport": "Importar o exportar horario",
   "plannerMoreOptions": "Más opciones",
-  "plannerAddBlock": "Nuevo bloque",
-  "plannerEmptyWeekHint": "Semana libre: toca una franja para añadir un bloque o pide sugerencias a la IA.",
-  "plannerDragHint": "Mantén pulsado un bloque para moverlo y arrastra su borde inferior para cambiar la duración.",
+  "plannerReminderLine": "{type, select, STUDY{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} REVIEW{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} SPORT{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} PERSONAL{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} CLASS{Si tienes activado el aviso de clases en «Más avisos», te avisaremos poco antes de empezar.} EXAM{Te avisaremos del examen los días antes que elegiste en «Más avisos».} DELIVERY{Te avisaremos de la entrega los días antes que elegiste en «Más avisos».} other{Este tipo de evento no lleva aviso.}}",
+  "@plannerReminderLine": {
+    "description": "Cuándo avisa el servidor de un evento según su tipo (ReminderPlanner); type es el código del tipo (STUDY, CLASS, PERSONAL…). La antelación es la global de Ajustes › Avisos.",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerReminderSettings": "Ajustar los avisos",
+  "plannerAddBlock": "Añadir al calendario",
+  "plannerEmptyWeekHint": "Semana libre: toca una franja para añadir un evento o pide sugerencias a la IA.",
+  "plannerDragHint": "Mantén pulsado un evento para moverlo y arrastra su borde inferior para cambiar la duración.",
   "plannerResizeHandle": "Cambiar duración",
   "plannerBlockSemantics": "{type}, de {start} a {end}",
   "@plannerBlockSemantics": {
@@ -130,7 +140,7 @@
     }
   },
   "plannerTypeStudy": "Estudio",
-  "plannerTypeSport": "Deporte",
+  "plannerTypeSport": "Entreno",
   "plannerTypeClass": "Clase",
   "plannerTypeRest": "Descanso",
   "plannerTypeMeal": "Comida",
@@ -138,6 +148,7 @@
   "plannerTypeExam": "Examen",
   "plannerTypeDelivery": "Entrega",
   "plannerTypeReview": "Repaso",
+  "plannerTypePersonal": "Personal",
   "plannerPriorityLow": "Baja",
   "plannerPriorityMedium": "Media",
   "plannerPriorityHigh": "Alta",
@@ -202,11 +213,36 @@
     }
   },
   "plannerNoLoadYet": "Aún no hay carga registrada para esta semana. Recalcúlala para generarla.",
-  "plannerNewBlockTitle": "Nuevo bloque",
-  "plannerEditBlockTitle": "Editar bloque",
-  "plannerTabBlock": "Bloque",
+  "plannerNewBlockTitle": "Nuevo evento",
+  "plannerEditBlockTitle": "{type, select, STUDY{Editar estudio} SPORT{Editar entreno} CLASS{Editar clase} REST{Editar descanso} MEAL{Editar comida} SLEEP{Editar sueño} EXAM{Editar examen} DELIVERY{Editar entrega} REVIEW{Editar repaso} PERSONAL{Editar evento personal} other{Editar evento}}",
+  "plannerTabBlock": "Un evento",
   "plannerTabRoutine": "Distribuir rutina",
   "plannerFieldType": "Tipo",
+  "plannerStepWhat": "¿Qué es?",
+  "plannerStepWhen": "¿Cuándo?",
+  "plannerStepRepeatReminder": "Repetir y aviso",
+  "plannerStepReminder": "Aviso",
+  "plannerStepSemantics": "Paso {step} de {total}: {title}",
+  "@plannerStepSemantics": {
+    "description": "Lo que lee el lector de pantalla en la cabecera de cada paso de la hoja de evento.",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerMoreTypes": "Más tipos",
+  "plannerFewerTypes": "Menos tipos",
+  "plannerFieldName": "Nombre",
+  "plannerFieldNameHint": "Por ejemplo, Dentista o Trabajo",
+  "plannerFieldNameHelper": "Trabajo, médico, recados, quedadas… No cuenta como estudio ni da XP.",
+  "plannerIssueNameMissing": "Escribe un nombre, por ejemplo «Dentista».",
   "plannerFieldSubject": "Asignatura",
   "plannerNoSubject": "Sin asignatura",
   "plannerFieldDate": "Día",
@@ -216,7 +252,7 @@
   "plannerFieldTopicsHint": "Qué vas a trabajar",
   "plannerFieldLocation": "Ubicación",
   "plannerFieldPriority": "Prioridad",
-  "plannerFieldPrivate": "Bloque privado",
+  "plannerFieldPrivate": "Evento privado",
   "plannerFieldPrivateHint": "Solo tú lo verás",
   "plannerFieldClassKind": "Tipo de clase",
   "plannerFieldRoutine": "Rutina",
@@ -232,18 +268,18 @@
   "plannerLinks": "Vínculos",
   "plannerDetails": "Detalles",
   "plannerSchedule": "Horario",
-  "plannerCreateBlock": "Crear bloque",
+  "plannerCreateBlock": "Añadir al calendario",
   "plannerSaveChanges": "Guardar cambios",
-  "plannerDeleteBlock": "Eliminar bloque",
-  "plannerMarkCompleted": "Marcar completado",
-  "plannerMarkPending": "Desmarcar completado",
-  "plannerBlockLockedHint": "Bloque fijo: el horario no se puede cambiar.",
-  "plannerIssueTooShort": "El bloque debe durar al menos 30 minutos.",
+  "plannerDeleteBlock": "Eliminar evento",
+  "plannerMarkCompleted": "Marcar como hecho",
+  "plannerMarkPending": "Desmarcar",
+  "plannerBlockLockedHint": "Este evento es fijo: no puedes cambiar el día ni la hora.",
+  "plannerIssueTooShort": "El evento debe durar al menos 30 minutos.",
   "plannerIssueNoWeekdays": "Elige al menos un día de la semana.",
   "plannerOptionsError": "No se han podido cargar todas las opciones.",
-  "plannerBlockCreated": "Bloque creado",
-  "plannerBlockUpdated": "Bloque actualizado",
-  "plannerBlockDeleted": "Bloque eliminado",
+  "plannerBlockCreated": "Añadido al calendario",
+  "plannerBlockUpdated": "Cambios guardados",
+  "plannerBlockDeleted": "Borrado del calendario",
   "plannerRoutineDistributed": "{count, plural, =0{No se ha añadido ninguna sesión} =1{1 sesión añadida al calendario} other{{count} sesiones añadidas al calendario}}",
   "@plannerRoutineDistributed": {
     "placeholders": {
@@ -315,7 +351,7 @@
   "plannerMarkDone": "Marcar como completada",
   "plannerMarkUndone": "Marcar como pendiente",
   "plannerSuggestionsTitle": "Sugerencias con IA",
-  "plannerSuggestionsIntro": "Indica tus objetivos y te propondremos bloques de estudio y deporte en los huecos libres de la semana.",
+  "plannerSuggestionsIntro": "Indica tus objetivos y te propondremos cuándo estudiar y hacer deporte en los huecos libres de la semana.",
   "plannerThisWeek": "Esta semana",
   "plannerNextWeekShort": "Próxima semana",
   "plannerStudyHoursGoal": "Horas de estudio",
@@ -342,7 +378,7 @@
   "plannerSourceHeuristic": "Propuesta automática (la IA no estaba disponible)",
   "plannerSelectAll": "Seleccionar todo",
   "plannerSelectNone": "Quitar selección",
-  "plannerAcceptSelected": "{count, plural, =0{Elige bloques} =1{Añadir 1 bloque} other{Añadir {count} bloques}}",
+  "plannerAcceptSelected": "{count, plural, =0{Elige eventos} =1{Añadir 1 evento} other{Añadir {count} eventos}}",
   "@plannerAcceptSelected": {
     "placeholders": {
       "count": {
@@ -350,7 +386,7 @@
       }
     }
   },
-  "plannerAccepted": "{count, plural, =1{1 bloque añadido al calendario} other{{count} bloques añadidos al calendario}}",
+  "plannerAccepted": "{count, plural, =1{1 evento añadido al calendario} other{{count} eventos añadidos al calendario}}",
   "@plannerAccepted": {
     "placeholders": {
       "count": {
@@ -371,7 +407,7 @@
   },
   "plannerSuggestionExpired": "Ya ha empezado",
   "plannerNoSuggestionsTitle": "Sin propuestas",
-  "plannerNoSuggestionsMessage": "No quedan bloques que proponer con estos objetivos.",
+  "plannerNoSuggestionsMessage": "No hay más propuestas con estos objetivos.",
   "plannerOpenCalendar": "Ver calendario",
   "plannerScheduleTitle": "Importar horario",
   "plannerScanSection": "Escanear horario con IA",
@@ -387,7 +423,7 @@
   },
   "plannerAnalyzing": "Analizando el horario…",
   "plannerScanResultTitle": "Horario sincronizado",
-  "plannerScanResultSummary": "{classes} clases detectadas · {created} bloques creados · {updated} actualizados",
+  "plannerScanResultSummary": "{classes} clases detectadas · {created} añadidas al calendario · {updated} actualizadas",
   "@plannerScanResultSummary": {
     "placeholders": {
       "classes": {
@@ -443,7 +479,7 @@
   "plannerIcsForce": "Importar igualmente",
   "plannerIcsNoSubjects": "Añade asignaturas en Académico para importar su calendario.",
   "plannerExportSection": "Exportar mi calendario",
-  "plannerExportIntro": "Descarga tus bloques y entregas en un archivo .ics para Google Calendar, Outlook o Apple Calendar.",
+  "plannerExportIntro": "Descarga tus eventos y entregas en un archivo .ics para Google Calendar, Outlook o Apple Calendar.",
   "plannerExportAction": "Exportar .ics",
   "plannerExported": "Calendario exportado",
   "plannerPomodoroTitle": "Pomodoro",
@@ -495,11 +531,11 @@
       }
     }
   },
-  "plannerErrorBlockNotFound": "No encontramos ese bloque.",
-  "plannerErrorBlockInPast": "No puedes colocar bloques en una hora o fecha pasada.",
-  "plannerErrorBlockLocked": "Este bloque es fijo y no se puede mover.",
-  "plannerErrorBlockCompletedLocked": "Desmarca el bloque como completado antes de cambiarlo.",
-  "plannerErrorBlockInvalidTimeRange": "El bloque debe durar al menos 30 minutos.",
+  "plannerErrorBlockNotFound": "No encontramos ese evento.",
+  "plannerErrorBlockInPast": "No puedes colocar eventos en una hora o fecha pasada.",
+  "plannerErrorBlockLocked": "Este evento es fijo y no se puede mover.",
+  "plannerErrorBlockCompletedLocked": "Ya está hecho: desmárcalo antes de cambiarlo.",
+  "plannerErrorBlockInvalidTimeRange": "El evento debe durar al menos 30 minutos.",
   "plannerErrorDeadlineNotFound": "No encontramos esa entrega o examen.",
   "plannerErrorPlanNotFound": "No encontramos ese plan.",
   "plannerErrorSubjectNotFound": "No encontramos esa asignatura.",
@@ -538,7 +574,7 @@
       }
     }
   },
-  "plannerPomodoroPlanFatigue": "Hoy, bloques más cortos por tu carga física; pausas de {minutes} min",
+  "plannerPomodoroPlanFatigue": "Hoy, concentración más corta por tu carga física; pausas de {minutes} min",
   "@plannerPomodoroPlanFatigue": {
     "placeholders": {
       "minutes": {
@@ -557,7 +593,7 @@
       }
     }
   },
-  "plannerBlockCreatedRepeated": "Bloque creado para las próximas {weeks} semanas",
+  "plannerBlockCreatedRepeated": "Añadido al calendario para las próximas {weeks} semanas",
   "@plannerBlockCreatedRepeated": {
     "placeholders": {
       "weeks": {
@@ -565,7 +601,7 @@
       }
     }
   },
-  "plannerPomodoroBlockLabel": "Duración del bloque",
+  "plannerPomodoroBlockLabel": "Tiempo de concentración",
   "plannerRepeatWeeksLabel": "Semanas en total",
   "plannerRescheduleNext": "Reprogramar al próximo hueco",
   "plannerRescheduledTo": "Reprogramado para el {when}",
@@ -578,7 +614,7 @@
   },
   "plannerMissedLabel": "Sin hacer",
   "plannerCompleteWhenStarted": "Podrás marcarlo como hecho cuando empiece.",
-  "plannerErrorBlockInFuture": "Este bloque aún no ha empezado: márcalo cuando lo hagas.",
+  "plannerErrorBlockInFuture": "Este evento aún no ha empezado: márcalo cuando lo hagas.",
   "plannerErrorBlockNoFreeSlot": "No hay un hueco libre en los próximos días. Muévelo a mano.",
   "plannerFieldBlockDuration": "Duración",
   "plannerDurationHours": "{hours} h",
@@ -621,7 +657,7 @@
   "plannerSyncRevoke": "Desactivar enlace",
   "plannerSyncRevokeTitle": "¿Desactivar el enlace?",
   "plannerSyncRevokeMessage": "Tu calendario externo dejará de recibir el planificador. Quítalo también de Google Calendar para que desaparezca lo que ya se ve.",
-  "plannerSyncSaveLinkWarning": "Guárdalo ahora: no podrás volver a verlo. Funciona como una contraseña: quien tenga el enlace puede ver tus bloques, exámenes y entregas (no cambiarlos). No lo compartas; si crees que alguien lo tiene, crea uno nuevo.",
+  "plannerSyncSaveLinkWarning": "Guárdalo ahora: no podrás volver a verlo. Funciona como una contraseña: quien tenga el enlace puede ver tus eventos, exámenes y entregas (no cambiarlos). No lo compartas; si crees que alguien lo tiene, crea uno nuevo.",
   "plannerSyncCopy": "Copiar enlace",
   "plannerSyncCopied": "Enlace copiado",
   "plannerSyncOpen": "Abrir en el calendario",
@@ -654,10 +690,10 @@
   "plannerSyncSeeDeadlines": "Ver entregas y exámenes",
   "plannerSyncLinkReady": "Enlace creado. Guárdalo ahora: no podrás volver a verlo.",
   "plannerErrorPastActivityOutOfRange": "Solo puedes apuntar actividades ya terminadas de los últimos 7 días.",
-  "plannerPomodoroAlertFocusTitle": "Bloque de concentración terminado",
+  "plannerPomodoroAlertFocusTitle": "Concentración terminada",
   "plannerPomodoroAlertFocusBody": "Tómate el descanso. Abre SynaptixFit para seguir.",
   "plannerPomodoroAlertBreakTitle": "Descanso terminado",
-  "plannerPomodoroAlertBreakBody": "Cuando quieras, empieza el siguiente bloque.",
+  "plannerPomodoroAlertBreakBody": "Cuando quieras, vuelve a concentrarte.",
   "plannerPomodoroAlertChannel": "Temporizador",
   "plannerConflictWhen": "{day} · coinciden de {start} a {end}",
   "@plannerConflictWhen": {
@@ -760,17 +796,17 @@
   "plannerDistributeRoutineWeekdays": "Usar los días de la rutina",
   "plannerDistributeRoutineWeekdaysHint": "Cada día va a su día de la semana; los ya hechos o saltados no se añaden.",
   "plannerDistributeReplaces": "Se sustituirán los entrenamientos pendientes que esta rutina ya tenga en el calendario.",
-  "plannerErrorBlockRoutineLinked": "Este bloque sigue a su sesión de la rutina: entrénalo o apúntalo desde la rutina.",
+  "plannerErrorBlockRoutineLinked": "Este entreno va con su sesión de la rutina: hazlo o apúntalo desde la rutina.",
   "plannerFieldChallengeTask": "Tarea del reto",
-  "plannerFieldChallengeTaskHint": "Cada bloque completado hace avanzar esa tarea. El bloque debe caer dentro de las fechas del reto.",
+  "plannerFieldChallengeTaskHint": "Cada evento hecho hace avanzar esa tarea. El evento debe caer dentro de las fechas del reto.",
   "plannerNoChallengeTask": "Ninguna en concreto",
-  "plannerErrorBlockOutsideChallenge": "El bloque queda fuera de las fechas de su reto. Muévelo o amplía el reto.",
+  "plannerErrorBlockOutsideChallenge": "El evento queda fuera de las fechas de su reto. Muévelo o amplía el reto.",
   "plannerDeadlineDoneCaption": "Hecha",
   "plannerPomodoroSubjectLabel": "¿Qué estudias?",
   "plannerPomodoroNoSubject": "Sin asignatura",
   "plannerClosePlanTitle": "¿Cerrar la semana?",
-  "plannerClosePlanMessage": "Das por planificada esta semana y, la primera vez, sumas XP por cada bloque que has planificado. No hace falta para guardar: los bloques se guardan solos y puedes seguir cambiándolos.",
-  "plannerPomodoroBlockQuestion": "¿Terminaste este bloque?",
+  "plannerClosePlanMessage": "Das por planificada esta semana y, la primera vez, sumas XP por cada evento que has planificado. No hace falta para guardar: los eventos se guardan solos y puedes seguir cambiándolos.",
+  "plannerPomodoroBlockQuestion": "¿Terminaste lo que tenías planeado?",
   "plannerPomodoroBlockQuestionNamed": "¿Terminaste «{name}»?",
   "@plannerPomodoroBlockQuestionNamed": {
     "placeholders": {
@@ -782,8 +818,8 @@
   "plannerPomodoroBlockHint": "Si ya está, márcalo como hecho en tu calendario. Si no, sigue con otro Pomodoro.",
   "plannerPomodoroBlockYes": "Sí, está hecho",
   "plannerPomodoroBlockNotYet": "Aún no",
-  "plannerPomodoroBlockMarked": "Bloque marcado como hecho.",
-  "plannerPomodoroBlockMarkedXp": "Bloque marcado como hecho · +{xp} XP",
+  "plannerPomodoroBlockMarked": "Marcado como hecho.",
+  "plannerPomodoroBlockMarkedXp": "Marcado como hecho · +{xp} XP",
   "@plannerPomodoroBlockMarkedXp": {
     "placeholders": {
       "xp": {
@@ -794,7 +830,7 @@
   "plannerErrorPastActivityType": "Solo puedes apuntar después deporte o estudio.",
   "plannerMenuPastStudy": "Apuntar estudio hecho",
   "plannerPastStudyTitle": "Apuntar estudio hecho",
-  "plannerPastStudyIntro": "¿Estudiaste sin la app? Apúntalo aquí (de hoy o de los 6 días anteriores): queda como un bloque hecho y cuenta para tu semana, tu XP y tu carga de estudio.",
+  "plannerPastStudyIntro": "¿Estudiaste sin la app? Apúntalo aquí (de hoy o de los 6 días anteriores): queda en tu calendario como estudio hecho y cuenta para tu semana, tu XP y tu carga de estudio.",
   "plannerPastStudySubject": "Asignatura",
   "plannerPastStudyNoSubject": "Sin asignatura",
   "plannerPastStudyWhat": "Qué estudiaste (opcional)",
@@ -840,10 +876,18 @@
   "plannerPastStudySubjectsFailed": "No se pudieron cargar tus asignaturas; puedes apuntarlo sin asignatura.",
   "plannerPastStudyRetry": "Reintentar",
   "plannerWeekClosed": "Semana planificada",
-  "plannerWeekClosedHint": "Ya planificaste esta semana. Los bloques nuevos se guardan solos: no hace falta volver a hacerlo.",
+  "plannerWeekClosedHint": "Ya planificaste esta semana. Los eventos nuevos se guardan solos: no hace falta volver a hacerlo.",
   "plannerDeadlineFromReminder": "Te avisamos de esta entrega",
   "plannerPomodoroResetTitle": "¿Empezar de cero?",
-  "plannerPomodoroResetMessage": "Se pierde el tiempo que llevas en este bloque. Si solo necesitas un respiro, mejor pausa.",
+  "plannerPomodoroResetMessage": "Se pierde el tiempo que llevas contado. Si solo necesitas un respiro, mejor pausa.",
   "plannerWeekClosedWhat": "Explica qué significa",
-  "plannerPomodoroResetKeep": "Seguir"
+  "plannerPomodoroResetKeep": "Seguir",
+  "@plannerEditBlockTitle": {
+    "description": "Título de la hoja al editar; type es el código del tipo de evento (STUDY, SPORT, PERSONAL…).",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  }
 }

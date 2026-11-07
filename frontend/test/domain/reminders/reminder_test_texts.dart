@@ -1,4 +1,5 @@
 import 'package:synaptixfit/domain/enums/reminder_kind.dart';
+import 'package:synaptixfit/domain/models/reminders/reminder_plan.dart';
 import 'package:synaptixfit/domain/models/reminders/reminder_texts.dart';
 
 /// Textos de prueba que dejan ver qué datos recibió cada aviso.
@@ -53,8 +54,41 @@ class TestReminderTexts implements ReminderTexts {
   String snoozeAction(int minutes) => 'snooze:$minutes';
 
   @override
-  String wellbeingTitle(ReminderKind kind, {String? name}) =>
-      'wellbeing:${kind.name}';
+  String wellbeingTitle(ReminderKind kind, {String? name, int? minutes}) =>
+      minutes == null
+      ? 'wellbeing:${kind.name}'
+      : 'wellbeing:${kind.name}:${minutes}min';
+
+  @override
+  String personalTitle(String? name, DateTime start) {
+    final time =
+        '${start.hour.toString().padLeft(2, '0')}:'
+        '${start.minute.toString().padLeft(2, '0')}';
+    return 'personal:${name ?? '-'}@$time';
+  }
+
+  @override
+  String personalBody(int minutes) => 'in:$minutes';
+
+  @override
+  String get challengeTaskTitle => 'task';
+
+  @override
+  String challengeTaskBody(int daysLeft, String? task, String? challenge) =>
+      'task:$daysLeft:${task ?? '-'}:${challenge ?? '-'}';
+
+  @override
+  String get morningSummaryTitle => 'summary';
+
+  @override
+  String morningSummaryBody(ReminderDaySummary summary) =>
+      'summary:${summary.studies}:${summary.deadlines.length}:'
+      '${summary.checkIn}';
+
+  @override
+  String withTasks(String body, List<ReminderTask> tasks) => tasks.isEmpty
+      ? body
+      : '$body+${tasks.map((t) => t.title ?? t.challengeTitle).join(',')}';
 
   @override
   String wellbeingBody(

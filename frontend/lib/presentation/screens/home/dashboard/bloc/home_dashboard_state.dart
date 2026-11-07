@@ -43,7 +43,31 @@ abstract class HomeDashboardState with _$HomeDashboardState {
 
     /// Resultado de la acción del aviso (efecto de un solo uso).
     HomeBannerNotice? bannerNotice,
+
+    /// Eventos y entregas que se están marcando o desmarcando.
+    @Default(<String>{}) Set<String> completingIds,
+
+    /// Resultado de marcar o desmarcar (efecto de un solo uso: aviso con
+    /// «Deshacer»).
+    HomeCompletionNotice? completionNotice,
   }) = _HomeDashboardState;
+}
+
+/// Qué pasó al marcar o desmarcar desde Inicio; la página lo dice con un
+/// aviso que ofrece «Deshacer».
+@freezed
+sealed class HomeCompletionNotice with _$HomeCompletionNotice {
+  /// Marcado ([completed]) o desmarcado; [xpDelta] es la XP ganada o
+  /// devuelta (puede ser 0).
+  const factory HomeCompletionNotice.done({
+    required String id,
+    required HomeEventKind kind,
+    required bool completed,
+    required int xpDelta,
+  }) = HomeCompletionNoticeDone;
+
+  const factory HomeCompletionNotice.failed(AppError error) =
+      HomeCompletionNoticeFailed;
 }
 
 /// Acciones del aviso de bloques sin hacer.

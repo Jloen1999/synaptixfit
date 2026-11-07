@@ -110,7 +110,7 @@ void main() {
     // Solo en «Tu día»: «Tu equilibrio» ya no lo repite.
     expect(find.text('Concentrarme'), findsOneWidget);
     // La regulación cruzada termina en una recomendación de una línea.
-    expect(find.textContaining('bloques de 52 min'), findsOneWidget);
+    expect(find.textContaining('concentración de 52 min'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -190,7 +190,11 @@ void main() {
 
         await pump(tester, textScale: 2, width: 360);
 
-        final pill = find.text('Sin hacer');
+        // La pastilla de la agenda (la leyenda de «Tu semana» también dice
+        // «Sin hacer»).
+        final pill = find
+            .descendant(of: find.byType(ListTile), matching: find.text('Sin hacer'))
+            .first;
         expect(pill, findsOneWidget);
         // Debajo del título, no a su derecha.
         expect(

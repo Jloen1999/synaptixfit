@@ -333,6 +333,7 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     String? status,
     String? routineId,
     String? routineDayId,
+    @Default(<HomeTaskMentionDto>[]) List<HomeTaskMentionDto> tasks,
   }) = _HomeTodayEventDto;
 
   const HomeTodayEventDto._();
@@ -352,6 +353,28 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     status: ItemTimeStatus.fromApi(status),
     routineId: routineId,
     routineDayId: routineDayId,
+    tasks: tasks.map((t) => t.toDomain()).toList(),
+  );
+}
+
+/// Tarea de reto que avanza con un evento de hoy (`tasks` de cada evento).
+@freezed
+abstract class HomeTaskMentionDto with _$HomeTaskMentionDto {
+  const factory HomeTaskMentionDto({
+    required String challengeId,
+    @Default('') String challengeTitle,
+    String? title,
+  }) = _HomeTaskMentionDto;
+
+  const HomeTaskMentionDto._();
+
+  factory HomeTaskMentionDto.fromJson(Map<String, dynamic> json) =>
+      _$HomeTaskMentionDtoFromJson(json);
+
+  HomeTaskMention toDomain() => HomeTaskMention(
+    challengeId: challengeId,
+    challengeTitle: challengeTitle,
+    title: title,
   );
 }
 

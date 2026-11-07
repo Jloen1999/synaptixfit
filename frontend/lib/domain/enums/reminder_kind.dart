@@ -35,8 +35,17 @@ enum ReminderKind {
   /// «¿Qué tal estás hoy?»: el registro diario, por la mañana.
   checkIn('CHECK_IN'),
 
-  /// «Tu clase empieza en 15 minutos», con el aula.
-  classSoon('CLASS_SOON');
+  /// Clase a punto de empezar, con el aula (la antelación la elige la persona).
+  classSoon('CLASS_SOON'),
+
+  /// Evento personal (dentista, trabajo…) a punto de empezar.
+  personalEvent('PERSONAL_EVENT'),
+
+  /// Tarea de reto con fecha que ningún otro aviso menciona (ADR 0035).
+  challengeTask('CHALLENGE_TASK'),
+
+  /// Resumen de la mañana: lo que trae el día; solo si hay algo (ADR 0035).
+  morningSummary('MORNING_SUMMARY');
 
   const ReminderKind(this.apiValue);
 

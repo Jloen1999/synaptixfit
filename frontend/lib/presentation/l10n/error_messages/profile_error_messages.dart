@@ -20,6 +20,7 @@ String? profileErrorMessage(AppLocalizations l10n, String code) =>
       'GDPR_LAST_ADMIN' => l10n.profileErrorGdprLastAdmin,
       // Lo emite el módulo de notificaciones, pero se muestra en Ajustes.
       'NOTIFICATION_INVALID_QUIET_HOURS' => l10n.profileErrorQuietHours,
+      'REMINDER_OPTIONS_INVALID' => l10n.profileErrorReminderOptions,
       'LEGAL_DOCUMENT_NOT_FOUND' => l10n.profileErrorLegalNotFound,
       'LEGAL_VERSION_OUTDATED' => l10n.profileErrorLegalVersionOutdated,
       _ => null,

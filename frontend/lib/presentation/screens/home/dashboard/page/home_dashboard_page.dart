@@ -95,6 +95,57 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
     });
   }
 
+  /// Resultado de marcar o desmarcar desde la agenda, con «Deshacer», que
+  /// pide lo contrario (y devuelve o recupera la misma XP en el servidor).
+  void _showCompletionNotice(BuildContext context, HomeCompletionNotice notice) {
+    final l10n = context.localizations;
+    switch (notice) {
+      case HomeCompletionNoticeDone(
+        :final id,
+        :final kind,
+        :final completed,
+        :final xpDelta,
+      ):
+        final xp = xpDelta.abs();
+        final status = completed
+            ? (xp > 0
+                  ? l10n.plannerBlockCompletedXp(xp)
+                  : l10n.plannerBlockCompleted)
+            : (xp > 0
+                  ? l10n.plannerBlockUncompletedXp(xp)
+                  : l10n.plannerBlockUncompleted);
+        // Se nombra lo marcado: el aviso se lee sin mirar la lista.
+        final state = context.read<HomeDashboardBloc>().state;
+        final event = [
+          ...?state.dashboard?.todayEvents,
+          ...state.upcoming,
+        ].where((e) => e.id == id).firstOrNull;
+        final title = event == null
+            ? null
+            : event.title.isEmpty
+            ? eventTypeLabel(context, event.type)
+            : readableEventTitle(event.title);
+        final message = title == null
+            ? status
+            : l10n.homeCompletionNotice(title, status);
+        final bloc = context.read<HomeDashboardBloc>();
+        context.showActionSnack(
+          message,
+          duration: TokensDuration.undoWindow,
+          actionLabel: l10n.commonUndo,
+          onAction: () => bloc.add(
+            HomeDashboardEvent.completionSet(
+              id: id,
+              kind: kind,
+              completed: !completed,
+            ),
+          ),
+        );
+      case HomeCompletionNoticeFailed(:final error):
+        context.showSnack(errorMessage(context, error));
+    }
+  }
+
   Future<void> _refresh(BuildContext context) async {
     final bloc = context.read<HomeDashboardBloc>()
       ..add(const HomeDashboardEvent.refreshed());
@@ -118,10 +169,20 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
                   current.trainingError != previous.trainingError) ||
               (current.bannerNotice != null &&
                   current.bannerNotice != previous.bannerNotice) ||
+              (current.completionNotice != null &&
+                  current.completionNotice != previous.completionNotice) ||
               (current.error != null &&
                   current.error != previous.error &&
                   current.dashboard != null),
           listener: (context, state) {
+            final completionNotice = state.completionNotice;
+            if (completionNotice != null) {
+              context.read<HomeDashboardBloc>().add(
+                const HomeDashboardEvent.completionNoticeHandled(),
+              );
+              _showCompletionNotice(context, completionNotice);
+              return;
+            }
             final bannerNotice = state.bannerNotice;
             if (bannerNotice != null) {
               context.read<HomeDashboardBloc>().add(
@@ -297,6 +358,14 @@ class _HomeContent extends StatelessWidget {
       dashboard: dashboard,
       focus: focus,
       starting: state.startingTraining,
+      completingIds: state.completingIds,
+      onMarkDone: (event) => context.read<HomeDashboardBloc>().add(
+        HomeDashboardEvent.completionSet(
+          id: event.id,
+          kind: event.kind,
+          completed: true,
+        ),
+      ),
       onAction: (action) => switch (action) {
         TodayHeroAction.focus => focusOnNext(),
         TodayHeroAction.train => trainTodayBlock(),
@@ -311,9 +380,25 @@ class _HomeContent extends StatelessWidget {
         focus: focus,
         reviews: state.dueReviews,
         onOpenPlanner: () => onNavigate(HomeExternalPaths.planner),
+        completingIds: state.completingIds,
+        onSetCompleted: (event, completed) => context
+            .read<HomeDashboardBloc>()
+            .add(
+              HomeDashboardEvent.completionSet(
+                id: event.id,
+                kind: event.kind,
+                completed: completed,
+              ),
+            ),
+        onStartTraining: (event) => context.read<HomeDashboardBloc>().add(
+          HomeDashboardEvent.trainingStarted(
+            routineId: event.routineId!,
+            dayId: event.routineDayId!,
+          ),
+        ),
         onOpenEvent: (event) => onNavigate(
           event.kind == HomeEventKind.deadline
-              ? HomeExternalPaths.deadlines
+              ? HomeExternalPaths.deadline(event.id)
               : HomeExternalPaths.plannerAt(
                   event.start ?? DateTime.now(),
                   blockId: event.id,
@@ -374,7 +459,7 @@ class _HomeContent extends StatelessWidget {
           days: dashboard.planWeek,
           week: dashboard.week,
           focus: focus,
-          onOpenPlanner: () => onNavigate(HomeExternalPaths.planner),
+          onOpenDay: (day) => onNavigate(HomeExternalPaths.plannerAt(day)),
         ),
     ];
 

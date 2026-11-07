@@ -13,6 +13,7 @@ import '../../../widgets/widgets.dart';
 import '../../../../domain/models/reminders/reminder.dart';
 import '../../academic/academic_routes.dart';
 import '../../challenges/challenges_routes.dart';
+import '../../home/home_routes.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../../planner/planner_routes.dart';
 import '../../progress/progress_routes.dart';
@@ -58,6 +59,7 @@ class _RemindersListener extends StatelessWidget {
   /// (`go`); el planificador y la sesión en vivo, pantallas completas (`push`,
   /// para no destruir las pestañas). Con referencia se abre ese bloque, sesión,
   /// reto o entrega; sin ella (avisos de una versión anterior), su pantalla.
+  /// El resumen de la mañana abre Inicio («Tu día»).
   /// «Empezar» en un bloque de estudio abre el Pomodoro de ese bloque.
   void _open(BuildContext context, OpenedReminder opened) {
     final ref = opened.refId;
@@ -85,7 +87,7 @@ class _RemindersListener extends StatelessWidget {
         } else {
           unawaited(context.push<void>(TrainingPaths.session(ref)));
         }
-      case ReminderKind.challengeDue:
+      case ReminderKind.challengeDue || ReminderKind.challengeTask:
         context.go(
           ref == null ? ChallengesPaths.root : ChallengesPaths.detail(ref),
         );
@@ -99,7 +101,10 @@ class _RemindersListener extends StatelessWidget {
         context.go(ProgressPaths.root);
       case ReminderKind.checkIn:
         unawaited(context.push<void>(TrainingPaths.checkIn));
-      case ReminderKind.classSoon:
+      case ReminderKind.morningSummary:
+        context.go(HomePaths.root);
+      // «Empezar» en un evento personal solo abre la app: también el evento.
+      case ReminderKind.classSoon || ReminderKind.personalEvent:
         unawaited(
           context.push<void>(
             ref == null

@@ -11,7 +11,9 @@ import com.synaptixfit.application.port.input.insights.GetStudyCaloriesTodayUseC
 import com.synaptixfit.application.port.input.insights.GetWellbeingUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
 import com.synaptixfit.domain.exception.user.UserNotFoundException;
+import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
+import com.synaptixfit.domain.model.challenge.TaskMention;
 import com.synaptixfit.domain.model.challenge.ChallengeStatus;
 import com.synaptixfit.domain.model.challenge.ChallengeType;
 import com.synaptixfit.domain.model.dashboard.BannerContext;
@@ -47,9 +49,10 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -66,14 +69,16 @@ import java.util.stream.Collectors;
 public class DashboardService implements GetDashboardUseCase {
 
     static final int TOP_CHALLENGES = 3;
+    /** Retos en curso que se leen para relacionar tareas y eventos de hoy: de sobra para un uso normal. */
+    static final int MAX_CHALLENGES = 50;
     static final int STREAK_LOOKBACK_DAYS = 30;
     static final int FATIGUE_WINDOW_DAYS = 3;
     static final int UPCOMING_DAYS = 7;
     /**
-     * Bloques que no cuentan como "planificados" en la barra semanal: los mismos que no dan XP
-     * (descanso, comida y sueño), según la definición única de {@link ActivityType}.
+     * Eventos que no cuentan en el plan de la semana («Tu semana»): descanso, comida y sueño, según la definición
+     * única de {@link ActivityType#countsInWeekPlan()} (lo personal sí cuenta, aunque no dé XP).
      */
-    static final Set<String> NON_PLAN_TYPES = Set.copyOf(ActivityType.codesWhere(t -> !t.grantsExperience()));
+    static final Set<String> NON_PLAN_TYPES = Set.copyOf(ActivityType.codesWhere(t -> !t.countsInWeekPlan()));
     /** Bloques que no se muestran como evento (la entrega/examen ya aparece por sí mismo). */
     static final Set<String> DEADLINE_BLOCK_TYPES = Set.of(ActivityType.EXAM.code(), ActivityType.DELIVERY.code());
 
@@ -157,12 +162,14 @@ public class DashboardService implements GetDashboardUseCase {
                 ? reads.deadlines(userId, todayStart, now.plus(Duration.ofDays(UPCOMING_DAYS)))
                 : List.of();
 
-        // Bloques que se quedaron sin hacer ayer u hoy (de lo que la persona usa). Las clases no
-        // cuentan para el aviso: casi siempre vienen del horario importado y pocos las marcan.
+        // Eventos que se quedaron sin hacer ayer u hoy (de lo que la persona usa). Las clases no
+        // cuentan para el aviso: casi siempre vienen del horario importado y pocos las marcan. Lo personal
+        // tampoco: el aviso anima a recuperar estudio o entreno, no a reprochar un recado.
         Instant yesterdayStart = TimeZones.startOfDay(today.minusDays(1), zone);
         List<CalendarBlock> missed = reads.calendarBlocks(userId, yesterdayStart, tomorrowStart).stream()
                 .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus))
                 .filter(b -> ActivityType.fromCode(b.activityType()) != ActivityType.CLASS)
+                .filter(b -> ActivityType.fromCode(b.activityType()) != ActivityType.PERSONAL)
                 .filter(b -> status(b, now) == ItemTimeStatus.MISSED)
                 .toList();
         int missedBlocks = missed.size();
@@ -181,6 +188,7 @@ public class DashboardService implements GetDashboardUseCase {
         int studyWeekCompleted = StudyActivity.minutes(
                 studyActivity.getStudyActivity(userId, weekStartInstant, weekEndInstant));
 
+        List<Challenge> active = activeChallenges(userId, focus);
         Integer planned = reads.plannedWeeklySessions(userId, weekStart).orElse(null);
         // La racha guardada solo se recalcula al evaluar insignias: se lee la de hoy para no mostrar
         // una racha que ya se rompió.
@@ -219,22 +227,46 @@ public class DashboardService implements GetDashboardUseCase {
                 focus.includesFitness()
                         ? pendingDays.pendingDay(userId).orElse(null)
                         : null,
-                activeChallenges(userId, focus),
+                active.stream().limit(TOP_CHALLENGES).map(ActiveChallenge::of).toList(),
                 planWeek(weekStart, weekBlocks.stream()
                         .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus)).toList(), zone, now),
-                todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart, now),
+                withTasks(todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart, now), todayBlocks,
+                        active.stream().filter(c -> c.status(now) == ChallengeStatus.ACTIVE).toList()),
                 banner);
     }
 
     /**
-     * Retos activos (no completados ni vencidos) que terminan antes, con el progreso del dominio, solo
-     * del ámbito que usa la persona.
+     * Retos activos (no completados ni vencidos) del ámbito que usa la persona, los que terminan antes primero. Los
+     * {@link #TOP_CHALLENGES} primeros se destacan; todos sirven para decir qué tarea adelanta cada evento de hoy.
      */
-    private List<ActiveChallenge> activeChallenges(UUID userId, UsageFocus focus) {
+    private List<Challenge> activeChallenges(UUID userId, UsageFocus focus) {
         return challenges.listMyChallenges(userId,
                         new ChallengeQuery(ChallengeStatus.ACTIVE, ChallengeType.onlyFor(focus), null, null),
-                        new PageRequest(0, TOP_CHALLENGES))
-                .items().stream().map(ActiveChallenge::of).toList();
+                        new PageRequest(0, MAX_CHALLENGES))
+                .items();
+    }
+
+    /**
+     * Cada evento de hoy con las tareas de reto que hace avanzar (ADR 0035): un evento, la tarea a la que está
+     * asignado; una entrega, las tareas (o el reto) que se completan con ella. Así una tarea no sale dos veces y la
+     * fila lo sigue diciendo después de marcarla. Solo cuentan los retos en curso.
+     */
+    static List<Dashboard.TodayEvent> withTasks(List<Dashboard.TodayEvent> events, List<CalendarBlock> blocks,
+                                                List<Challenge> active) {
+        if (active.isEmpty()) {
+            return events;
+        }
+        Map<UUID, TaskMention> byMilestone = TaskMention.byMilestone(active);
+        Map<UUID, List<TaskMention>> byDeadline = TaskMention.byDeadline(active);
+        Map<UUID, UUID> milestoneOfBlock = new HashMap<>();
+        blocks.stream().filter(b -> b.milestoneId() != null).forEach(b -> milestoneOfBlock.put(b.id(), b.milestoneId()));
+        return events.stream().map(e -> {
+            if (e.kind() == Dashboard.TodayEvent.Kind.DEADLINE) {
+                return e.withTasks(byDeadline.getOrDefault(e.id(), List.of()));
+            }
+            TaskMention task = byMilestone.get(milestoneOfBlock.get(e.id()));
+            return task == null ? e : e.withTasks(List.of(task));
+        }).toList();
     }
 
     private static int minutes(List<CalendarBlock> blocks) {

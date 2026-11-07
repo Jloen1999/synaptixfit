@@ -141,6 +141,8 @@ abstract final class TokensSize {
   static const double listTileMin = 56;
   static const double dayChipWidth = 56;
   static const double dayChipHeight = 76;
+  static const double weekBarHeight = 72;
+  static const double weekSegmentMin = 8;
   static const double dot = 5;
   static const double recordCardWidth = 168;
   static const double recordCardHeight = 92;

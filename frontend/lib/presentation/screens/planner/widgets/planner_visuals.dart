@@ -17,6 +17,7 @@ extension BlockTypeVisuals on BlockType {
     BlockType.exam => context.colors.error,
     BlockType.delivery => context.palette.warning,
     BlockType.review => context.colors.tertiary,
+    BlockType.personal => context.palette.accent,
   };
 
   IconData get icon => switch (this) {
@@ -29,6 +30,7 @@ extension BlockTypeVisuals on BlockType {
     BlockType.exam => Icons.quiz_rounded,
     BlockType.delivery => Icons.assignment_turned_in_rounded,
     BlockType.review => Icons.replay_rounded,
+    BlockType.personal => Icons.person_outline_rounded,
   };
 
   String label(BuildContext context) {
@@ -43,6 +45,7 @@ extension BlockTypeVisuals on BlockType {
       BlockType.exam => l10n.plannerTypeExam,
       BlockType.delivery => l10n.plannerTypeDelivery,
       BlockType.review => l10n.plannerTypeReview,
+      BlockType.personal => l10n.plannerTypePersonal,
     };
   }
 }

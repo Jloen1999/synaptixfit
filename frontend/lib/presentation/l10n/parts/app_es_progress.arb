@@ -241,7 +241,7 @@
       }
     }
   },
-  "progressBadgeCriterionStudyBlocks": "Completa {n, plural, =1{1 bloque} other{{n} bloques}} de estudio",
+  "progressBadgeCriterionStudyBlocks": "Completa {n, plural, =1{1 evento} other{{n} eventos}} de estudio",
   "@progressBadgeCriterionStudyBlocks": {
     "placeholders": {
       "n": {
@@ -575,7 +575,7 @@
   "progressCorrelationNoVariation": "Tus datos apenas cambian de una semana a otra: aún no se ve relación.",
   "progressStudyTitle": "Tu estudio",
   "progressStudySubtitle": "Esta semana",
-  "progressStudyEmpty": "Aún no hay estudio esta semana. Un bloque de concentración ya cuenta.",
+  "progressStudyEmpty": "Aún no hay estudio esta semana. Un rato de concentración ya cuenta.",
   "progressStudyFocus": "Concentrarme",
   "progressStudyMinutes": "{minutes} min",
   "@progressStudyMinutes": {
@@ -586,7 +586,7 @@
     }
   },
   "progressStudyFocusLabel": "Concentración",
-  "progressStudyBlocksLabel": "Bloques hechos",
+  "progressStudyBlocksLabel": "Estudios hechos",
   "progressStudyAdherence": "{percent} % del plan",
   "@progressStudyAdherence": {
     "placeholders": {
@@ -683,7 +683,7 @@
     }
   },
   "progressBySubjectTitle": "Por asignatura (últimas {weeks} semanas)",
-  "progressBySubjectEmpty": "Cuando completes bloques de estudio o repasos, aquí verás cuánto dedicas a cada asignatura.",
+  "progressBySubjectEmpty": "Cuando completes eventos de estudio o repasos, aquí verás cuánto dedicas a cada asignatura.",
   "progressBySubjectMinutes": "{minutes} min",
   "progressBySubjectHours": "{hours} h {minutes} min",
   "progressBySubjectHoursOnly": "{hours} h",

@@ -24,7 +24,12 @@ import '../bloc/calendar_bloc.dart';
 
 /// Calendario semanal (`/planner`).
 class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key, this.initialWeek, this.initialBlockId});
+  const CalendarPage({
+    super.key,
+    this.initialWeek,
+    this.initialBlockId,
+    this.initialDay,
+  });
 
   /// Cualquier día de la semana que se abre (la actual si es nulo).
   final DateTime? initialWeek;
@@ -32,20 +37,28 @@ class CalendarPage extends StatelessWidget {
   /// Bloque que se enseña al abrir (se centra en él y se abre su ficha).
   final String? initialBlockId;
 
+  /// Día en que se coloca el lienzo al abrir (p. ej. desde «Tu semana» de
+  /// Inicio); sin bloque pedido, se centra en su mañana.
+  final DateTime? initialDay;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
           getIt<CalendarBloc>()..add(CalendarEvent.started(week: initialWeek)),
-      child: _CalendarView(initialBlockId: initialBlockId),
+      child: _CalendarView(
+        initialBlockId: initialBlockId,
+        initialDay: initialDay,
+      ),
     );
   }
 }
 
 class _CalendarView extends StatefulWidget {
-  const _CalendarView({this.initialBlockId});
+  const _CalendarView({this.initialBlockId, this.initialDay});
 
   final String? initialBlockId;
+  final DateTime? initialDay;
 
   @override
   State<_CalendarView> createState() => _CalendarViewState();
@@ -297,10 +310,19 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   /// Inicio del bloque pedido al abrir: el lienzo se coloca en su hora y su día
   /// en lugar de en «ahora».
   DateTime? _focusOf(CalendarState state) {
+    if (_focusDone) return null;
     final id = widget.initialBlockId;
-    if (id == null || _focusDone) return null;
+    final day = widget.initialDay;
+    if (id == null) {
+      return day == null
+          ? null
+          : DateTime(day.year, day.month, day.day, _dayFocusHour);
+    }
     return state.blocks.where((b) => b.id == id).firstOrNull?.start;
   }
+
+  /// Hora en que se coloca el lienzo al abrir un día sin bloque concreto.
+  static const _dayFocusHour = 8;
 
   /// «Cerrar semana» no guarda cambios (los bloques se guardan solos): da por
   /// planificada la semana y, la primera vez, suma XP. Se explica antes.

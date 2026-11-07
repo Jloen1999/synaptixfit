@@ -2,7 +2,8 @@
 /// UPPER_SNAKE_CASE de la API.
 library;
 
-/// Tipo de bloque del calendario (9 tipos).
+/// Tipo de evento del calendario. La persona lo ve por su nombre («Estudio»,
+/// «Personal»…) o, en genérico, como «evento» (`docs/05-design/vocabulario.md`).
 enum BlockType {
   study('STUDY'),
   sport('SPORT'),
@@ -12,7 +13,12 @@ enum BlockType {
   sleep('SLEEP'),
   exam('EXAM'),
   delivery('DELIVERY'),
-  review('REVIEW');
+  review('REVIEW'),
+
+  /// El día a día que no es estudio ni deporte (médico, trabajo, recados…),
+  /// con nombre libre. Sin XP ni carga de estudio; se ve con cualquier modo
+  /// de uso (ADR 0035; lo decide `ActivityType` del servidor).
+  personal('PERSONAL');
 
   const BlockType(this.apiValue);
 
@@ -79,13 +85,25 @@ enum BlockType {
       ? (endMin - momentDurationMinutes).clamp(0, endMin)
       : startMin;
 
-  /// Temas o notas: lo que se va a estudiar, repasar o entra en el examen.
+  /// Temas o notas: lo que se va a estudiar, repasar o entra en el examen. En
+  /// un evento personal es su nombre («Dentista»).
   bool get usesTopics =>
-      this == study || this == review || this == exam || this == classSession;
+      this == study ||
+      this == review ||
+      this == exam ||
+      this == classSession ||
+      this == personal;
 
-  /// Lugar: donde hay que ir (aula, biblioteca, gimnasio).
+  /// Necesita un nombre propio (va en los temas): lo valida también el servidor.
+  bool get requiresName => this == personal;
+
+  /// Lugar: donde hay que ir (aula, biblioteca, gimnasio, consulta).
   bool get usesLocation =>
-      this == study || this == classSession || this == exam || this == sport;
+      this == study ||
+      this == classSession ||
+      this == exam ||
+      this == sport ||
+      this == personal;
 
   /// Prioridad: lo que compite por el tiempo (no clases, comidas ni sueño).
   bool get usesPriority =>

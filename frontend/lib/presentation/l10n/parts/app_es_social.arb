@@ -269,7 +269,7 @@
   "socialNotifFatigueTitle": "Hoy conviene adaptar el entrenamiento",
   "socialNotifFatigueBody": "Nos has contado que estás muy cansado: baja la intensidad o tómate el día de descanso.",
   "socialNotifOvertrainingTitle": "Riesgo de sobreentrenamiento",
-  "socialNotifOvertrainingBody": "Tu carga de esta semana es {ratio} veces tu media del mes: prioriza el descanso y acorta los bloques de estudio.",
+  "socialNotifOvertrainingBody": "Tu carga de esta semana es {ratio} veces tu media del mes: prioriza el descanso y estudia en ratos más cortos.",
   "@socialNotifOvertrainingBody": {
     "placeholders": {
       "ratio": {

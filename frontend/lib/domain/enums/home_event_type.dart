@@ -10,6 +10,9 @@ enum HomeEventType {
   exam,
   delivery,
   presentation,
+
+  /// Evento personal (médico, trabajo, recados…).
+  personal,
   other;
 
   static HomeEventType fromApi(String? value) => switch (value) {
@@ -23,6 +26,7 @@ enum HomeEventType {
     'EXAM' => exam,
     'DELIVERY' => delivery,
     'PRESENTATION' => presentation,
+    'PERSONAL' => personal,
     _ => other,
   };
 }

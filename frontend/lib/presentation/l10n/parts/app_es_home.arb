@@ -86,7 +86,7 @@
     }
   },
   "homeBannerLowAdherenceTitle": "Tu plan de estudio se queda corto",
-  "homeBannerLowAdherenceMessage": "Vas al {adherence} % esta semana. Ajusta tus bloques.",
+  "homeBannerLowAdherenceMessage": "Vas al {adherence} % esta semana. Ajusta tu plan.",
   "@homeBannerLowAdherenceMessage": {
     "placeholders": {
       "adherence": {
@@ -104,7 +104,7 @@
     }
   },
   "homeBannerAttentionDepletedTitle": "Tu atención necesita una pausa",
-  "homeBannerAttentionDepletedMessage": "Atención al {attention} %: descansa antes del siguiente bloque.",
+  "homeBannerAttentionDepletedMessage": "Atención al {attention} %: descansa antes de seguir estudiando.",
   "@homeBannerAttentionDepletedMessage": {
     "placeholders": {
       "attention": {
@@ -250,7 +250,7 @@
       }
     }
   },
-  "homeAgendaDayPending": "{count, plural, =1{1 pendiente} other{{count} pendientes}}",
+  "homeAgendaDayPending": "{count, plural, =1{1 por hacer} other{{count} por hacer}}",
   "@homeAgendaDayPending": {
     "placeholders": {
       "count": {
@@ -269,7 +269,59 @@
       }
     }
   },
-  "homeAgendaCompleted": "Completado",
+  "homeAgendaCompleted": "Hecho",
+  "homeTodayMarkDone": "Marcar como hecho",
+  "homeCompletionNotice": "{title}: {status}",
+  "@homeCompletionNotice": {
+    "description": "Aviso tras marcar o desmarcar desde Inicio, con el nombre del evento.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "homeAgendaMarkDone": "Marcar «{title}» como hecho",
+  "@homeAgendaMarkDone": {
+    "description": "Casilla de un evento o una entrega en la agenda de Inicio.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "homeAgendaUnmark": "Desmarcar «{title}»",
+  "@homeAgendaUnmark": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "homeAgendaDidIt": "Ya lo hice",
+  "homeAgendaTask": "Cuenta para la tarea «{task}» del reto {challenge}",
+  "@homeAgendaTask": {
+    "description": "Tarea de reto que avanza al marcar este evento o esta entrega.",
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
+  "homeAgendaTaskChallenge": "Cuenta para el reto {challenge}",
+  "@homeAgendaTaskChallenge": {
+    "description": "Reto sin tareas que se completa con esta entrega.",
+    "placeholders": {
+      "challenge": {
+        "type": "String"
+      }
+    }
+  },
   "homeAgendaReviewAction": "Repasar",
   "homeEventStudy": "Estudio",
   "homeEventClass": "Clase",
@@ -281,6 +333,7 @@
   "homeEventExam": "Examen",
   "homeEventDelivery": "Entrega",
   "homeEventPresentation": "Presentación",
+  "homeEventPersonal": "Personal",
   "homeEventOther": "Otro",
   "homeTrainingTitle": "Próximo entrenamiento",
   "homeTrainingInProgress": "En curso",
@@ -314,35 +367,73 @@
   "homeChallengeAcademic": "Reto académico",
   "homeChallengeFitness": "Reto físico",
   "homePlanWeekTitle": "Tu semana",
-  "homePlanWeekSummary": "{completed} de {planned} bloques completados",
+  "homePlanWeekSummary": "{completed} de {planned, plural, =1{1 hecho} other{{planned} hechos}} esta semana",
   "@homePlanWeekSummary": {
+    "description": "Título de «Tu semana»: eventos hechos de los planificados (sin descanso, comida ni sueño).",
     "placeholders": {
       "completed": {
         "type": "int"
       },
       "planned": {
+        "type": "int"
+      }
+    }
+  },
+  "homePlanWeekPending": "{count, plural, =1{1 por hacer} other{{count} por hacer}}",
+  "@homePlanWeekPending": {
+    "description": "Eventos de la semana que aún no han llegado o son de hoy.",
+    "placeholders": {
+      "count": {
         "type": "int"
       }
     }
   },
   "homePlanWeekEmpty": "Aún no has planificado esta semana.",
-  "homePlanDaySemantics": "{day}: {completed} de {planned} bloques{missed, plural, =0{} =1{, 1 sin hacer} other{, {missed} sin hacer}}",
+  "homePlanWeekPlan": "Planificar la semana",
+  "homePlanDaySemantics": "{day}: {done} de {planned} hechos",
   "@homePlanDaySemantics": {
+    "description": "Lectura de un día de «Tu semana», igual que el «2/3» visible; luego van por hacer y sin hacer si los hay.",
     "placeholders": {
       "day": {
         "type": "String"
       },
-      "completed": {
+      "done": {
         "type": "int"
       },
       "planned": {
         "type": "int"
+      }
+    }
+  },
+  "homePlanDayToday": "Hoy, {day}",
+  "@homePlanDayToday": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homePlanDayEmpty": "{day}: nada planificado",
+  "@homePlanDayEmpty": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homePlanDayCount": "{done}/{total}",
+  "@homePlanDayCount": {
+    "description": "Bajo cada día de «Tu semana»: hechos de los planificados ese día.",
+    "placeholders": {
+      "done": {
+        "type": "int"
       },
-      "missed": {
+      "total": {
         "type": "int"
       }
     }
   },
+  "homePlanDayOpen": "Abrir este día en el planificador",
   "homeRefreshFailed": "No se ha podido actualizar el inicio.",
   "homeErrorInvalidTimeZone": "La zona horaria indicada no es válida.",
   "homeBalanceTitle": "Tu equilibrio",
@@ -367,7 +458,7 @@
   "homeBalanceStudyNow": "Concentrarme",
   "homeStateTitle": "Tu estado",
   "homeTrainingSeeRoutine": "Ver rutina",
-  "homeBalanceFocusPlan": "Hoy, bloques de {minutes} min con pausas de {breakMinutes} min",
+  "homeBalanceFocusPlan": "Hoy, concentración de {minutes} min con pausas de {breakMinutes} min",
   "@homeBalanceFocusPlan": {
     "placeholders": {
       "minutes": {
@@ -398,7 +489,7 @@
     }
   },
   "homeBannerOverdueDeadlinesMessage": "{count, plural, =1{Si aún puedes, entrégala hoy; si no, márcala o habla con tu profesor.} other{Si aún puedes, entrégalas hoy; si no, márcalas o habla con tu profesor.}}",
-  "homeBannerMissedBlocksTitle": "{count, plural, =1{1 bloque se quedó sin hacer} other{{count} bloques se quedaron sin hacer}}",
+  "homeBannerMissedBlocksTitle": "{count, plural, =1{1 evento se quedó sin hacer} other{{count} eventos se quedaron sin hacer}}",
   "@homeBannerMissedBlocksTitle": {
     "placeholders": {
       "count": {
@@ -472,7 +563,7 @@
       }
     }
   },
-  "homeBannerMissedBlockMany": "{name} ({when}) y {others, plural, =1{1 bloque más} other{{others} bloques más}} se quedaron sin hacer",
+  "homeBannerMissedBlockMany": "{name} ({when}) y {others, plural, =1{1 evento más} other{{others} eventos más}} se quedaron sin hacer",
   "@homeBannerMissedBlockMany": {
     "placeholders": {
       "name": {
@@ -504,7 +595,7 @@
     }
   },
   "homeTodayTitle": "Tu día",
-  "homeTodayProgressSemantics": "{total, plural, =0{No tienes bloques planificados hoy} =1{Has hecho {done} de 1 bloque de hoy} other{Has hecho {done} de {total} bloques de hoy}}",
+  "homeTodayProgressSemantics": "{total, plural, =0{No tienes eventos planificados hoy} =1{Has hecho {done} de 1 evento de hoy} other{Has hecho {done} de {total} eventos de hoy}}",
   "homeTodayNow": "Ahora",
   "homeTodayNext": "A continuación",
   "homeTodayFocus": "Concentrarme",
@@ -518,9 +609,9 @@
   "homeTodayStudyOf": "{done} de {planned} min",
   "homeTodayMinutes": "{minutes} min",
   "homeTodayXp": "{remaining} XP para el nivel {next}",
-  "homePlanWeekLegendPlanned": "Planificado",
   "homePlanWeekLegendDone": "Hecho",
-  "homePlanWeekLegendComplete": "Día completo",
+  "homePlanWeekLegendPending": "Por hacer",
+  "homePlanWeekLegendMissed": "Sin hacer",
   "@homeTodayProgressSemantics": {
     "placeholders": {
       "done": {
@@ -562,7 +653,7 @@
   },
   "homeReviewAll": "Repasar todos",
   "homeCommunity": "Muro de la comunidad",
-  "homeTodayClassesNote": "{count, plural, =1{Además, 1 clase (no cuenta como bloque)} other{Además, {count} clases (no cuentan como bloques)}}",
+  "homeTodayClassesNote": "{count, plural, =1{Además, 1 clase (no cuenta para el progreso de hoy)} other{Además, {count} clases (no cuentan para el progreso de hoy)}}",
   "@homeTodayClassesNote": {
     "placeholders": {
       "count": {

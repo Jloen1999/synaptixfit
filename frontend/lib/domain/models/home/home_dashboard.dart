@@ -188,10 +188,25 @@ abstract class HomeTodayEvent with _$HomeTodayEvent {
     /// Pendiente, en curso, hecho o no hecho/vencido.
     @Default(ItemTimeStatus.upcoming) ItemTimeStatus status,
 
-    /// Día de rutina que refleja un bloque de deporte: «Entrenar» empieza ese.
+    /// Día de rutina que refleja un evento de entreno: «Empezar» abre ese día.
     String? routineId,
     String? routineDayId,
+
+    /// Tareas de reto que avanzan al marcar este evento (ADR 0035): se
+    /// nombran en la fila para que la tarea no salga dos veces.
+    @Default(<HomeTaskMention>[]) List<HomeTaskMention> tasks,
   }) = _HomeTodayEvent;
+}
+
+/// Tarea de reto que hace avanzar un evento de hoy. [title] nulo: el propio
+/// reto (sin tareas, se completa con su entrega).
+@freezed
+abstract class HomeTaskMention with _$HomeTaskMention {
+  const factory HomeTaskMention({
+    required String challengeId,
+    required String challengeTitle,
+    String? title,
+  }) = _HomeTaskMention;
 }
 
 /// Banner inteligente: el cliente redacta el texto a partir del tipo y sus parámetros.

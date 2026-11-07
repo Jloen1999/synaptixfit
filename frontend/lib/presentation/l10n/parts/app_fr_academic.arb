@@ -79,7 +79,7 @@
   "academicMasteryAbandoned": "Abandonné",
   "academicNextReview": "Prochaine révision : {date}",
   "academicTimelineTitle": "Prochains événements",
-  "academicTimelineEmpty": "Aucun bloc ni rendu de cette matière dans les trois prochains mois.",
+  "academicTimelineEmpty": "Aucun événement ni rendu de cette matière dans les trois prochains mois.",
   "academicTimelineStudy": "Étude",
   "academicTimelineClass": "Cours",
   "academicTimelineReview": "Révision",

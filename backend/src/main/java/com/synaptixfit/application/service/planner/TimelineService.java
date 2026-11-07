@@ -23,10 +23,12 @@ import java.util.stream.Stream;
 /** Línea de tiempo unificada (bloques + entregas) para el inicio y la vista de asignatura. */
 public class TimelineService implements GetTimelineUseCase {
 
-    private static final Map<ActivityType, String> DEFAULT_TITLES = new EnumMap<>(Map.of(
-            ActivityType.STUDY, "Estudio", ActivityType.SPORT, "Deporte", ActivityType.CLASS, "Clase",
-            ActivityType.REST, "Descanso", ActivityType.MEAL, "Comida", ActivityType.SLEEP, "Sueño",
-            ActivityType.EXAM, "Examen", ActivityType.DELIVERY, "Entrega", ActivityType.REVIEW, "Repaso"));
+    private static final Map<ActivityType, String> DEFAULT_TITLES = new EnumMap<>(Map.ofEntries(
+            Map.entry(ActivityType.STUDY, "Estudio"), Map.entry(ActivityType.SPORT, "Deporte"),
+            Map.entry(ActivityType.CLASS, "Clase"), Map.entry(ActivityType.REST, "Descanso"),
+            Map.entry(ActivityType.MEAL, "Comida"), Map.entry(ActivityType.SLEEP, "Sueño"),
+            Map.entry(ActivityType.EXAM, "Examen"), Map.entry(ActivityType.DELIVERY, "Entrega"),
+            Map.entry(ActivityType.REVIEW, "Repaso"), Map.entry(ActivityType.PERSONAL, "Personal")));
 
     private final CalendarBlockRepositoryPort blocks;
     private final DeadlineRepositoryPort deadlines;

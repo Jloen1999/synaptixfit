@@ -540,7 +540,7 @@
     }
   },
   "challengesCompletedByDeadlineGeneric": "Se completa al hacer su entrega o examen",
-  "challengesMilestoneBlocks": "{done}/{total} bloques del calendario hechos",
+  "challengesMilestoneBlocks": "{done}/{total} eventos del calendario hechos",
   "@challengesMilestoneBlocks": {
     "placeholders": {
       "done": {
@@ -582,7 +582,7 @@
   "challengesLinkEmptyPeriod": "Solo aparecen las entregas y exámenes pendientes que vencen dentro de las fechas del reto.",
   "challengesErrorNotStarted": "Este reto aún no ha empezado: podrás avanzar desde su fecha de inicio.",
   "challengesErrorLinked": "Este reto se completa con su entrega o examen: márcalo como hecho en el planificador.",
-  "challengesErrorMilestoneLinked": "Esta tarea avanza con su entrega o sus bloques del calendario: márcalos como hechos en el planificador.",
+  "challengesErrorMilestoneLinked": "Esta tarea avanza con su entrega o sus eventos del calendario: márcalos como hechos en el planificador.",
   "challengesErrorLinkOutsidePeriod": "La entrega o el examen vence fuera de las fechas del reto. Amplía el reto o elige otro.",
   "challengesFormTasksReplaceSessions": "Este reto avanza con tus entrenamientos. Si le añades tareas, dejará de contarlos y avanzará con las tareas.",
   "challengesLinkRoutineDayLabel": "Día de rutina",

@@ -146,6 +146,57 @@ void main() {
     );
 
     blocTest<RemindersBloc, RemindersState>(
+      'al guardar las opciones de avisos (/notifications) vuelve a pedir el plan',
+      build: build,
+      act: (bloc) async {
+        bloc.add(
+          const RemindersEvent.started(focus: UsageFocus.both, texts: texts),
+        );
+        await Future<void>.delayed(Duration.zero);
+        changesController.add({DataTopic.social});
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      },
+      verify: (_) => verify(() => sync(texts: texts)).called(2),
+    );
+
+    blocTest<RemindersBloc, RemindersState>(
+      'el resumen de la mañana y la tarea de reto tocados quedan pendientes',
+      build: build,
+      act: (bloc) async {
+        bloc.add(
+          const RemindersEvent.started(focus: UsageFocus.both, texts: texts),
+        );
+        await Future<void>.delayed(Duration.zero);
+        openedController.add(
+          OpenedReminder.fromPayload('morningSummary|2026-11-08')!,
+        );
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const RemindersEvent.openHandled());
+        await Future<void>.delayed(Duration.zero);
+        openedController.add(OpenedReminder.fromPayload('challengeTask|c1')!);
+        await Future<void>.delayed(Duration.zero);
+      },
+      expect: () => const [
+        RemindersState(scheduled: 2),
+        RemindersState(
+          scheduled: 2,
+          openRequest: OpenedReminder(
+            kind: ReminderKind.morningSummary,
+            refId: '2026-11-08',
+          ),
+        ),
+        RemindersState(scheduled: 2),
+        RemindersState(
+          scheduled: 2,
+          openRequest: OpenedReminder(
+            kind: ReminderKind.challengeTask,
+            refId: 'c1',
+          ),
+        ),
+      ],
+    );
+
+    blocTest<RemindersBloc, RemindersState>(
       'al cambiar el enfoque vuelve a pedir el plan',
       build: build,
       act: (bloc) => bloc

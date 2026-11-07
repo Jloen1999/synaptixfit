@@ -186,7 +186,7 @@
     }
   },
   "academicTimelineTitle": "Próximos eventos",
-  "academicTimelineEmpty": "No hay bloques ni entregas de esta asignatura en los próximos tres meses.",
+  "academicTimelineEmpty": "No hay eventos ni entregas de esta asignatura en los próximos tres meses.",
   "academicTimelineStudy": "Estudio",
   "academicTimelineClass": "Clase",
   "academicTimelineReview": "Repaso",

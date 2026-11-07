@@ -118,6 +118,7 @@ public final class CalendarBlock {
         this.dayOfWeek = b.dayOfWeek < 1 || b.dayOfWeek > 7 ? 1 : b.dayOfWeek;
         this.type = b.type == null ? ActivityType.STUDY : b.type;
         this.details = b.details == null ? Details.empty() : b.details;
+        requireName(this.type, this.details);
         this.hasConflict = b.hasConflict;
         this.studyPlanId = b.studyPlanId;
         this.completed = b.completed;
@@ -228,6 +229,7 @@ public final class CalendarBlock {
         if (completed && (newType != type || mirrors(newType, newDetails) != mirrorsTrackedActivity())) {
             throw new BlockAlreadyCompletedException();
         }
+        requireName(newType, newDetails);
         this.type = newType;
         this.details = newDetails;
     }
@@ -328,6 +330,13 @@ public final class CalendarBlock {
 
     public boolean isLocked() {
         return fixed || immovable;
+    }
+
+    /** Un evento personal se nombra con sus temas («Dentista»): sin nombre no se sabría qué es. */
+    private static void requireName(ActivityType type, Details details) {
+        if (type.requiresName() && details.topics() == null) {
+            throw new FieldValidationException("topics", "REQUIRED", "A personal event needs a name");
+        }
     }
 
     private static String optionalText(String value, String field, int max) {

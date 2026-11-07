@@ -79,7 +79,7 @@
   "academicMasteryAbandoned": "Dropped",
   "academicNextReview": "Next review: {date}",
   "academicTimelineTitle": "Upcoming events",
-  "academicTimelineEmpty": "There are no blocks or deadlines for this subject in the next three months.",
+  "academicTimelineEmpty": "There are no events or deadlines for this subject in the next three months.",
   "academicTimelineStudy": "Study",
   "academicTimelineClass": "Class",
   "academicTimelineReview": "Review",

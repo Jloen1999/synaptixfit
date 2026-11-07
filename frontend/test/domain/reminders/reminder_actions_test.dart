@@ -13,11 +13,13 @@ void main() {
   const texts = TestReminderTexts();
   final at = DateTime.utc(2026, 11, 4, 16);
 
-  test('los bloques llevan «Empezar» y «Posponer 10 min»', () {
+  test('los eventos llevan «Empezar» y «Posponer 10 min»', () {
     final reminders = composer.compose([
       PlannedReminder(kind: ReminderKind.studyBlock, at: at, refId: 'b1'),
       PlannedReminder(kind: ReminderKind.sportBlock, at: at, refId: 'b2'),
       PlannedReminder(kind: ReminderKind.weeklySummary, at: at, refId: 'w'),
+      PlannedReminder(kind: ReminderKind.personalEvent, at: at, refId: 'p1'),
+      PlannedReminder(kind: ReminderKind.morningSummary, at: at, refId: 'd'),
     ], texts);
 
     expect(reminders[0].hasActions, isTrue);
@@ -26,6 +28,10 @@ void main() {
     expect(reminders[1].startLabel, 'start:sportBlock');
     // El resumen de la semana no es algo que «empezar».
     expect(reminders[2].hasActions, isFalse);
+    // El evento personal también se pospone; «Empezar» solo abre la app.
+    expect(reminders[3].startLabel, 'start:personalEvent');
+    expect(reminders[3].snoozeLabel, 'snooze:10');
+    expect(reminders[4].hasActions, isFalse);
   });
 
   test('el aviso de una entrega abre esa entrega (sin los días antes)', () {

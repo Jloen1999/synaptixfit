@@ -150,7 +150,7 @@
   "socialNotifFatigueTitle": "Today's a good day to adapt your training",
   "socialNotifFatigueBody": "You told us you're very tired: lower the intensity or take a rest day.",
   "socialNotifOvertrainingTitle": "Risk of overtraining",
-  "socialNotifOvertrainingBody": "This week's load is {ratio} times your monthly average: prioritize rest and shorten your study blocks.",
+  "socialNotifOvertrainingBody": "This week's load is {ratio} times your monthly average: prioritize rest and study in shorter stretches.",
   "socialNotifPostLikedTitle": "New like",
   "socialNotifPostLikedBody": "{name} liked your post",
   "socialNotifPostCommentedTitle": "New comment",

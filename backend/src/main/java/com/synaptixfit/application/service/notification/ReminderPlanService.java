@@ -6,7 +6,10 @@ import com.synaptixfit.application.port.input.notification.GetReminderPlanUseCas
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
 import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
 import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
+import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeQuery;
+import com.synaptixfit.domain.model.challenge.ChallengeType;
+import com.synaptixfit.domain.model.challenge.DatedTask;
 import com.synaptixfit.domain.model.challenge.ChallengeStatus;
 import com.synaptixfit.domain.model.notification.NotificationPreferences;
 import com.synaptixfit.domain.model.notification.ReminderPlan;
@@ -47,7 +50,8 @@ import java.util.stream.Collectors;
  * Los avisos de seguimiento leen el próximo día de rutina ({@link GetPendingTrainingDayUseCase}), las sesiones
  * abiertas ({@link ListOpenSessionsUseCase}) y los retos activos ({@link ListMyChallengesUseCase}). Los de bienestar
  * ({@link WellbeingReminders}: racha, registro diario y clase) leen sus opciones, la racha y el registro de hoy
- * ({@link Wellbeing}).
+ * ({@link Wellbeing}). Las tareas de reto con fecha ({@link DatedTask}) salen de los retos activos, de los eventos de la
+ * ventana y del próximo día de rutina; las antelaciones y el resumen de la mañana, de {@link ReminderOptions}.
  */
 public class ReminderPlanService implements GetReminderPlanUseCase {
 
@@ -143,6 +147,8 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
         List<ReminderPlanner.Block> upcoming = ReminderPlanner.wantsBlocks(prefs, usageFocus)
                 ? toBlocks(userId, blocksInWindow.get()) : List.of();
 
+        ReminderOptions options = wellbeing == null ? ReminderOptions.DEFAULTS
+                : wellbeing.options().find(userId).orElse(ReminderOptions.DEFAULTS);
         List<ReminderPlanner.Deadline> pending = ReminderPlanner.wantsDeadlines(prefs, usageFocus)
                 ? deadlines.findAll(userId, new DeadlineRepositoryPort.Query(now,
                         ReminderPlanner.deadlineHorizon(now, days), null, true)).stream()
@@ -151,19 +157,31 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
                         .toList()
                 : List.of();
 
+        if (prefs.dailyLimit() <= 0) {
+            return ReminderPlan.empty();
+        }
+        ReminderPlanner.RoutineDay day = nextRoutineDay(userId);
+        List<Challenge> active = activeChallenges(userId, usageFocus, now);
+        List<CalendarBlock> events = ReminderPlanner.wantsBlocks(prefs, usageFocus) ? blocksInWindow.get() : List.of();
+        List<DatedTask> tasks = DatedTask.of(active, events.stream()
+                        .map(b -> new DatedTask.EventRef(b.id(), b.details().milestoneId(), b.details().routineDayId(),
+                                b.start(), b.completed()))
+                        .toList(),
+                day == null ? null : new DatedTask.RoutineDayRef(day.dayId(),
+                        day.scheduledDate().atStartOfDay(zone).toInstant()),
+                now);
         return planner.plan(new ReminderPlanner.Input(dueReviews, upcoming, prefs, usageFocus, now, zone, days,
-                pending, true, prefs.dailyLimit() > 0 ? followUps(userId, now) : ReminderPlanner.FollowUps.NONE),
-                wellbeingReminders(userId, prefs, usageFocus, now, end, blocksInWindow));
+                pending, true, followUps(userId, day, active), options, tasks),
+                wellbeingReminders(userId, prefs, usageFocus, options, now, end, blocksInWindow));
     }
 
-    /** Racha en riesgo, registro diario y clases en 15 min, según las opciones del usuario. */
+    /** Racha en riesgo, registro diario y clase a punto de empezar, según las opciones del usuario. */
     private List<ReminderPlan.Item> wellbeingReminders(UUID userId, NotificationPreferences prefs, UsageFocus focus,
-                                                       Instant now, Instant end,
+                                                       ReminderOptions options, Instant now, Instant end,
                                                        Supplier<List<CalendarBlock>> blocksInWindow) {
         if (wellbeing == null || prefs.dailyLimit() <= 0) {
             return List.of();
         }
-        ReminderOptions options = wellbeing.options().find(userId).orElse(ReminderOptions.DEFAULTS);
         StreakStatus streak = options.streak() ? wellbeing.streak().getStreak(userId, zone.getId()) : null;
         boolean checkInDone = options.checkIn() && wellbeing.checkIn().today(userId).isPresent();
         List<WellbeingReminders.ClassBlock> classes = options.classes()
@@ -185,21 +203,31 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
                 b.details().location(), b.start(), b.completed() || b.absent())).toList();
     }
 
-    /** Próximo día de rutina sin empezar, sesiones abiertas aún no abandonadas y retos activos. */
-    private ReminderPlanner.FollowUps followUps(UUID userId, Instant now) {
-        ReminderPlanner.RoutineDay day = pendingDay == null ? null : pendingDay.pendingDay(userId)
+    /** Próximo día de rutina sin empezar y con fecha prevista; nulo si no hay. */
+    private ReminderPlanner.RoutineDay nextRoutineDay(UUID userId) {
+        return pendingDay == null ? null : pendingDay.pendingDay(userId)
                 .filter(p -> p.status() == ProgressStatus.PENDING && p.scheduledDate() != null)
                 .map(p -> new ReminderPlanner.RoutineDay(p.day().id(), p.routine().name(), p.scheduledDate()))
                 .orElse(null);
+    }
+
+    /** Retos propios en curso ahora del ámbito que usa la persona (con sus tareas y lo que las completa). */
+    private List<Challenge> activeChallenges(UUID userId, UsageFocus usageFocus, Instant now) {
+        return challenges == null ? List.of() : challenges.listMyChallenges(userId,
+                        new ChallengeQuery(ChallengeStatus.ACTIVE, ChallengeType.onlyFor(usageFocus), null, null),
+                        new PageRequest(0, MAX_CHALLENGES)).items().stream()
+                .filter(c -> c.status(now) == ChallengeStatus.ACTIVE)
+                .toList();
+    }
+
+    /** Próximo día de rutina, sesiones abiertas aún no abandonadas y retos activos. */
+    private ReminderPlanner.FollowUps followUps(UUID userId, ReminderPlanner.RoutineDay day, List<Challenge> active) {
         List<ReminderPlanner.OpenSession> open = openSessions == null ? List.of() : openSessions.listOpen(userId)
                 .stream().filter(o -> !o.stale())
                 .map(o -> new ReminderPlanner.OpenSession(o.session().id(),
                         o.label() == null ? null : o.label().routineName(), o.session().startedAt()))
                 .toList();
-        List<ReminderPlanner.ChallengeDue> due = challenges == null ? List.of() : challenges.listMyChallenges(
-                        userId, new ChallengeQuery(ChallengeStatus.ACTIVE, null, null, null),
-                        new PageRequest(0, MAX_CHALLENGES)).items().stream()
-                .filter(c -> c.status(now) == ChallengeStatus.ACTIVE)
+        List<ReminderPlanner.ChallengeDue> due = active.stream()
                 .map(c -> new ReminderPlanner.ChallengeDue(c.id(), c.title(), c.endAt()))
                 .toList();
         return new ReminderPlanner.FollowUps(day, open, due);

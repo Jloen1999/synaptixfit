@@ -33,6 +33,11 @@ abstract final class ChallengesPaths {
 abstract final class ChallengesExternalPaths {
   static String note(String noteId) => '/academic/notes/$noteId';
   static const deadlines = '/planner/deadlines';
+
+  /// Entregas y exámenes con [id] la primera y destacada (aunque esté en otra
+  /// página, vencida o ya hecha).
+  static String deadline(String id) =>
+      Uri(path: deadlines, queryParameters: {'focus': id}).toString();
   static const planner = '/planner';
 
   /// Pestaña Rutinas: se navega con `go` (es una pestaña, no una pantalla).

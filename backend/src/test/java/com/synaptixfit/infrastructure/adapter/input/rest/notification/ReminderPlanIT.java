@@ -110,6 +110,44 @@ class ReminderPlanIT {
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
+    /** ADR 0035: evento personal, antelación elegida, resumen de la mañana y opciones cerradas. */
+    @Test
+    void personalEventsChosenLeadAndMorningSummary() throws Exception {
+        mvc.perform(auth(post("/api/v1/planner/blocks")).content("""
+                        {"start":"%s","end":"%s","type":"PERSONAL"}
+                        """.formatted(tomorrow, tomorrow.plus(Duration.ofHours(1)))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        createBlock("PERSONAL", tomorrow, "Dentista");
+        mvc.perform(auth(put("/api/v1/notifications/reminder-options")).content("""
+                        {"streak":true,"checkIn":true,"classes":true,"eventLeadMinutes":30,
+                         "deadlineDaysBefore":[7],"taskTiming":"MORNING_OF","morningSummaryAt":"07:30"}
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eventLeadMinutes").value(30))
+                .andExpect(jsonPath("$.deadlineDaysBefore", contains(7)))
+                .andExpect(jsonPath("$.morningSummary").value(true));
+        // Una app anterior solo manda los interruptores: lo elegido se conserva.
+        mvc.perform(auth(put("/api/v1/notifications/reminder-options")).content("""
+                        {"streak":false,"checkIn":true,"classes":true}
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.eventLeadMinutes").value(30))
+                .andExpect(jsonPath("$.taskTiming").value("MORNING_OF"));
+        mvc.perform(auth(put("/api/v1/notifications/reminder-options")).content("""
+                        {"streak":true,"checkIn":true,"classes":true,"eventLeadMinutes":10}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("REMINDER_OPTIONS_INVALID"));
+
+        mvc.perform(auth(get("/api/v1/notifications/reminder-plan")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reminders[?(@.kind == 'PERSONAL_EVENT')].title", contains("Dentista")))
+                .andExpect(jsonPath("$.reminders[?(@.kind == 'PERSONAL_EVENT')].at",
+                        contains(tomorrow.minus(Duration.ofMinutes(30)).toString())))
+                .andExpect(jsonPath("$.reminders[?(@.kind == 'MORNING_SUMMARY')].summary.personal", hasItem(1)));
+    }
+
     @Test
     void requiresAuthentication() throws Exception {
         mvc.perform(get("/api/v1/notifications/reminder-plan")).andExpect(status().isUnauthorized());
