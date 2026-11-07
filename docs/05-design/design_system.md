@@ -27,6 +27,7 @@ La app **arranca en oscuro** por defecto; en Ajustes → Apariencia se elige Osc
 | `tertiary` · `study` (violeta `#A78BFA` / `#6D28D9`) | Mente: estudio, repaso e IA |
 | `accent` · `streak` (naranja `#FB923C`–`#FDBA74` / `#B03A0A`) | XP, niveles, rachas, insignias — vía `context.palette.accent`. Sobre `accentContainer`, el texto va en `onAccentContainer` |
 | `calories` (rosa) | Energía gastada en las métricas |
+| `cycle` · `cycleContainer` (magenta `#A21CAF` / `#E879F9`) | «Mi ciclo»: días de regla y su leyenda — vía `context.palette.cycle`. No es el `error`: la regla no es un fallo. Sobre `cycleContainer`, el texto va en `onCycleContainer` |
 | `success` · `warning` · `error` | Estados (siempre con icono o texto, nunca solo color) |
 
 Superficies: `background` para el lienzo, `surface` para tarjetas y `surfaceContainer*` para rellenos. Todos los colores de texto superan 4,5:1 sobre `surface`, `background` y `surfaceContainerHigh`, también tintados al 12 %. En oscuro, el texto secundario `#9CA3AF` da 6,9:1 sobre la tarjeta y 7,7:1 sobre el lienzo; el lima da 15:1 con su texto oscuro.

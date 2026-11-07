@@ -18,9 +18,9 @@ This policy explains which of your data SynaptixFit uses, what for, who it is sh
 ## Which data we use
 
 - Your account: name, email, password (stored encrypted, nobody can read it), profile photo if you add one and, if you sign in with Google, your Google identifier.
-- Your studies: university, degree, year, subjects, timetable, classes, assignments, exams, study blocks, notes, files you upload, review questions and your answers.
+- Your studies: university, degree, year, subjects, timetable, classes, assignments, exams, study sessions in your calendar, notes, files you upload, review questions and your answers.
 - Your training: routines, sessions, sets, weights, times, activities and matches you log, running workouts, challenges, streaks, level and badges.
-- Your precise location, only while you record a run with GPS (also with the screen off, with an ongoing "Recording your run" notice on the phone): the route you take, with the time and altitude of each point, to calculate distance, pace, elevation gain and per-kilometre splits and to draw the map. Location is never used outside a recording or in the background.
+- Your precise location, only while you record a run with GPS (also with the screen off, with an ongoing "Recording your run" notice on the phone): the route you take, with the time and altitude of each point, to calculate distance, pace, elevation gain and per-kilometre splits and to draw the map. Location is never used when you are not recording.
 - Your date of birth, if you give it (it is optional): we use it to work out your age for calories and suggestions, and to wish you a happy birthday. It never shows on your public profile, it is included in the copy of your data you download and it is deleted when you empty or delete your account.
 - Your wellbeing profile, if you fill it in: sex, weight, height, activity level and, if you gave it before the date of birth existed, your age.
 - Your daily check-in, only if you give your permission: how you slept, stress, energy, soreness and areas with pain.
@@ -95,7 +95,7 @@ If you think we do not handle your data properly, you can complain to the Spanis
 
 ## Phone permissions
 
-The app only asks for permissions when they are needed and explains first what for: notifications (reminders), on-time reminders (so reminders arrive at the exact minute), camera (photographing notes) and location (recording runs, only while the app is in use; never "always"). You can refuse or remove them in the phone settings: the app keeps working without them.
+The app only asks for permissions when they are needed and explains first what for: notifications (reminders), on-time reminders (so reminders arrive at the exact minute), camera (photographing notes) and location (recording runs: only while you record, even with the screen off; never when you are not recording). You can refuse or remove them in the phone settings: the app keeps working without them.
 
 ## Minors
 

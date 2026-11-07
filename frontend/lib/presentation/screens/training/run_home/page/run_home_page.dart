@@ -40,6 +40,9 @@ class RunHomePage extends StatelessWidget {
 class _RunHomeView extends StatelessWidget with ErrorsMessageMixin {
   const _RunHomeView();
 
+  /// Tope de espera de «tirar para recargar» si el bloc no emite nada nuevo.
+  static const _refreshWait = Duration(seconds: 10);
+
   /// Abre una pantalla y recarga al volver.
   static Future<void> open(
     BuildContext context,
@@ -91,15 +94,25 @@ class _RunHomeView extends StatelessWidget with ErrorsMessageMixin {
           bottom: const TrainingSectionBar(current: TrainingSection.run),
         ),
         body: switch (state.status) {
-          RunHomeStatus.loading => const AppSkeletonList(height: 120),
+          RunHomeStatus.loading => const AppSkeletonList(
+            height: TokensSize.skeletonCard,
+          ),
           RunHomeStatus.failure => AppErrorView(
             error: state.error!,
             onRetry: () =>
                 context.read<RunHomeBloc>().add(const RunHomeEvent.started()),
           ),
           RunHomeStatus.ready => RefreshIndicator(
-            onRefresh: () async =>
-                context.read<RunHomeBloc>().add(const RunHomeEvent.refreshed()),
+            // El indicador gira hasta que llegan los datos nuevos (con tope,
+            // por si no cambia nada), no solo un instante.
+            onRefresh: () async {
+              final bloc = context.read<RunHomeBloc>()
+                ..add(const RunHomeEvent.refreshed());
+              await bloc.stream.first.timeout(
+                _refreshWait,
+                onTimeout: () => bloc.state,
+              );
+            },
             child: _Content(state: state),
           ),
         },
@@ -309,8 +322,10 @@ class _Content extends StatelessWidget {
                 AppPrimaryButton(
                   label: l10n.runLogByHand,
                   icon: Icons.edit_note_rounded,
-                  onPressed: () =>
-                      _RunHomeView.open(context, TrainingPaths.pastActivity),
+                  onPressed: () => _RunHomeView.open(
+                    context,
+                    TrainingPaths.logActivity(from: TrainingSection.run),
+                  ),
                 ),
               ],
               const SizedBox(height: TokensSpacing.s),
@@ -354,8 +369,10 @@ class _Content extends StatelessWidget {
                   title: l10n.runActivitiesEmptyTitle,
                   message: l10n.runActivitiesEmptyMessage,
                   action: TextButton.icon(
-                    onPressed: () =>
-                        _RunHomeView.open(context, TrainingPaths.pastActivity),
+                    onPressed: () => _RunHomeView.open(
+                      context,
+                      TrainingPaths.logActivity(from: TrainingSection.run),
+                    ),
                     icon: const Icon(Icons.edit_note_rounded),
                     label: Text(l10n.runLogByHand),
                   ),
@@ -399,7 +416,12 @@ class _Content extends StatelessWidget {
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(
-                    onPressed: () => showRunBatterySheet(context),
+                    onPressed: () => showRunBatterySheet(
+                      context,
+                      onOpenSettings: () => context.read<RunHomeBloc>().add(
+                        const RunHomeEvent.batterySettingsOpened(),
+                      ),
+                    ),
                     icon: const Icon(Icons.battery_saver_rounded),
                     label: Text(l10n.runBatteryHelp),
                   ),
@@ -428,7 +450,7 @@ class _PlannedTile extends StatelessWidget {
     return AppCard(
       child: Row(
         children: [
-          Icon(Icons.event_rounded, color: context.colors.secondary),
+          Icon(AppIcons.calendar, color: context.colors.secondary),
           const SizedBox(width: TokensSpacing.m),
           Expanded(
             child: Column(
@@ -453,7 +475,10 @@ class _PlannedTile extends StatelessWidget {
                   eventId: planned.blockId,
                 ),
               ),
-              child: Text(l10n.runStartShort),
+              child: Text(
+                l10n.runStartShort,
+                semanticsLabel: l10n.runStartNamed(planned.workoutName),
+              ),
             ),
         ],
       ),
@@ -504,19 +529,21 @@ class _WorkoutTile extends StatelessWidget {
             overflowAlignment: OverflowBarAlignment.end,
             spacing: TokensSpacing.xs,
             children: [
+              // Con el nombre: en la lista hay varios entrenos y el lector
+              // no debe oír «Borrar entreno» repetido sin saber cuál.
               IconButton(
-                tooltip: l10n.runDeleteWorkout,
+                tooltip: l10n.runDeleteWorkoutNamed(workout.name),
                 onPressed: onDelete,
                 icon: const Icon(AppIcons.delete),
               ),
               IconButton(
-                tooltip: l10n.runEditWorkout,
+                tooltip: l10n.runEditWorkoutNamed(workout.name),
                 onPressed: onEdit,
                 icon: const Icon(AppIcons.edit),
               ),
               TextButton.icon(
                 onPressed: onSchedule,
-                icon: const Icon(Icons.event_rounded),
+                icon: const Icon(AppIcons.calendar),
                 label: Text(l10n.runPutInCalendar),
               ),
               if (supported)
@@ -526,7 +553,10 @@ class _WorkoutTile extends StatelessWidget {
                     TrainingPaths.recordRun(workoutId: workout.id),
                   ),
                   icon: const Icon(Icons.play_arrow_rounded),
-                  label: Text(l10n.runStartShort),
+                  label: Text(
+                    l10n.runStartShort,
+                    semanticsLabel: l10n.runStartNamed(workout.name),
+                  ),
                 ),
             ],
           ),

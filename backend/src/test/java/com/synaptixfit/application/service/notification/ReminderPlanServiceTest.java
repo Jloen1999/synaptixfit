@@ -24,13 +24,19 @@ import com.synaptixfit.domain.model.planner.Deadline;
 import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.planner.Priority;
 import com.synaptixfit.domain.model.planner.TimeRange;
+import com.synaptixfit.domain.model.run.PlannedRun;
 import com.synaptixfit.domain.model.user.UsageFocus;
+import com.synaptixfit.domain.model.user.User;
+import com.synaptixfit.application.port.input.run.ListPlannedRunsUseCase;
+import java.time.LocalDate;
 import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
 import com.synaptixfit.domain.port.output.notification.NotificationPreferencesRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import com.synaptixfit.domain.port.output.user.UsageFocusPort;
+import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
+import com.synaptixfit.domain.port.output.notification.ReminderOptionsRepositoryPort;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,13 +65,15 @@ class ReminderPlanServiceTest {
     private final CalendarBlockRepositoryPort blocks = mock(CalendarBlockRepositoryPort.class);
     private final DeadlineRepositoryPort deadlines = mock(DeadlineRepositoryPort.class);
     private final SubjectDirectoryPort subjects = mock(SubjectDirectoryPort.class);
+    private final ReminderOptionsRepositoryPort options = mock(ReminderOptionsRepositoryPort.class);
+    private final UserRepositoryPort users = mock(UserRepositoryPort.class);
     private ReminderPlanService service;
 
     @BeforeEach
     void setUp() {
-        service = new ReminderPlanService(preferences, focus, materials, blocks, deadlines, subjects,
-                new ReminderPlanner(), (userId, from, to) -> false,
-                Clock.fixed(NOW, ZoneOffset.UTC), ZONE);
+        service = new ReminderPlanService(new ReminderPlanService.Stores(preferences, options, focus, users,
+                        materials, blocks, deadlines, subjects, (userId, from, to) -> false),
+                new ReminderPlanner(), Clock.fixed(NOW, ZoneOffset.UTC), ZONE, null, null);
         when(preferences.findByUserId(USER)).thenReturn(Optional.empty());
         when(focus.focusOf(USER)).thenReturn(UsageFocus.BOTH);
         when(materials.findDue(eq(USER), eq(NOW), anyInt()))
@@ -168,5 +176,34 @@ class ReminderPlanServiceTest {
         assertThat(service.getReminderPlan(USER, 7).reminders()).extracting(ReminderPlan.Item::kind)
                 .containsExactly(ReminderKind.MORNING_SUMMARY, ReminderKind.TRAINING, ReminderKind.WEEKLY_SUMMARY);
         verify(subjects, never()).namesOf(any(), any());
+    }
+
+    @Test
+    void aPlannedRunGivesOneRunWorkoutReminderInsteadOfTheTrainingOne() {
+        CalendarBlock run = block(ActivityType.SPORT, NOW.plus(Duration.ofDays(1)), "6 × 800 m", null);
+        when(blocks.findOverlapping(any(), any(), any(), any())).thenReturn(List.of(run));
+        ListPlannedRunsUseCase planned = userId -> List.of(new PlannedRun(run.id(), UUID.randomUUID(), "6 × 800 m",
+                run.start(), run.start().plus(Duration.ofHours(1))));
+        service = new ReminderPlanService(new ReminderPlanService.Stores(preferences, options, focus, users,
+                materials, blocks, deadlines, subjects, (userId, from, to) -> false),
+                new ReminderPlanner(), Clock.fixed(NOW, ZoneOffset.UTC), ZONE,
+                new ReminderPlanService.FollowUpSources(null, null, null, planned), null);
+
+        List<ReminderPlan.Item> reminders = service.getReminderPlan(USER, 7).reminders();
+
+        assertThat(reminders).filteredOn(r -> r.refId().equals(run.id().toString()))
+                .singleElement().satisfies(r -> assertThat(r.kind()).isEqualTo(ReminderKind.RUN_WORKOUT));
+        assertThat(reminders).noneMatch(r -> r.kind() == ReminderKind.TRAINING);
+    }
+
+    @Test
+    void congratulatesByTheFirstNameOfTheAccount() {
+        when(users.findById(USER)).thenReturn(Optional.of(User.builder().id(USER).email("ana@example.com")
+                .fullName("  Ana María López").passwordHash("x").birthDate(LocalDate.of(2000, 10, 22))
+                .createdAt(NOW).build()));
+
+        assertThat(service.getReminderPlan(USER, 7).reminders())
+                .filteredOn(r -> r.kind() == ReminderKind.MORNING_SUMMARY || r.kind() == ReminderKind.BIRTHDAY)
+                .anySatisfy(r -> assertThat(r.title()).isEqualTo("Ana"));
     }
 }

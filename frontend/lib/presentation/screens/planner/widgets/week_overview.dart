@@ -51,10 +51,7 @@ class ConflictBanner extends StatelessWidget {
                       style: context.textStyles.labelLarge,
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: context.colors.onSurfaceVariant,
-                  ),
+                  Icon(AppIcons.next, color: context.colors.onSurfaceVariant),
                 ],
               ),
             ),
@@ -267,10 +264,8 @@ class WeekDeadlinesStrip extends StatelessWidget {
           final type = d.deadlineType;
           return ActionChip(
             avatar: Icon(
-              d.completed
-                  ? Icons.check_circle_rounded
-                  : (type?.icon ?? Icons.flag_rounded),
-              size: 18,
+              d.completed ? AppIcons.done : (type?.icon ?? AppIcons.delivery),
+              size: TokensSize.iconS,
               color: d.completed
                   ? context.palette.success
                   : context.colors.error,

@@ -50,10 +50,18 @@ abstract class SportActivity with _$SportActivity {
     int? distanceMeters,
     int? effort,
     int? paceSecondsPerKm,
+
+    /// Ritmo por 100 m (natación); lo calcula el servidor.
+    int? paceSecondsPer100m,
     double? speedKmh,
     ActivitySource? source,
 
     /// Desnivel positivo de una carrera grabada con GPS.
     int? elevationGainMeters,
   }) = _SportActivity;
+
+  /// Minutos (en movimiento, si es con GPS) para que algo cuente como
+  /// actividad. Lo decide el servidor (`RUN_TOO_SHORT` y la validación de
+  /// «Apuntar actividad»); el móvil solo lo usa para avisar antes.
+  static const minMinutes = 10;
 }

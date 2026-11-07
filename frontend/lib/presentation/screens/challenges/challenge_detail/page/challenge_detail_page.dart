@@ -335,7 +335,7 @@ class _DetailContent extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(
-                        Icons.visibility_outlined,
+                        AppIcons.readOnly,
                         color: context.colors.onPrimaryContainer,
                       ),
                       const SizedBox(width: TokensSpacing.s),
@@ -483,7 +483,7 @@ class _DetailContent extends StatelessWidget {
                       // que no le quita ancho al título con el texto grande.
                       if (challenge.owned)
                         Icon(
-                          Icons.chevron_right_rounded,
+                          AppIcons.next,
                           color: context.colors.onSurfaceVariant,
                         ),
                     ],
@@ -977,7 +977,7 @@ class _BottomActions extends StatelessWidget {
                   : _DetailContent.openLink(context, link),
             );
           } else if (challenge.hasMilestones) {
-            // «Completar siguiente tarea» salta las que avanzan solas.
+            // La siguiente tarea a marcar salta las que avanzan solas.
             if (next != null) {
               primary = AppPrimaryButton(
                 label: l10n.challengesDetailCompleteNext,

@@ -162,16 +162,10 @@ public class DashboardService implements GetDashboardUseCase {
                 ? reads.deadlines(userId, todayStart, now.plus(Duration.ofDays(UPCOMING_DAYS)))
                 : List.of();
 
-        // Eventos que se quedaron sin hacer ayer u hoy (de lo que la persona usa). Las clases no
-        // cuentan para el aviso: casi siempre vienen del horario importado y pocos las marcan. Lo personal
-        // tampoco: el aviso anima a recuperar estudio o entreno, no a reprochar un recado.
+        // Eventos que se quedaron sin hacer ayer u hoy; qué cuenta lo decide el dominio.
         Instant yesterdayStart = TimeZones.startOfDay(today.minusDays(1), zone);
-        List<CalendarBlock> missed = reads.calendarBlocks(userId, yesterdayStart, tomorrowStart).stream()
-                .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus))
-                .filter(b -> ActivityType.fromCode(b.activityType()) != ActivityType.CLASS)
-                .filter(b -> ActivityType.fromCode(b.activityType()) != ActivityType.PERSONAL)
-                .filter(b -> status(b, now) == ItemTimeStatus.MISSED)
-                .toList();
+        List<CalendarBlock> missed = SmartBannerRules.missedForBanner(
+                reads.calendarBlocks(userId, yesterdayStart, tomorrowStart), focus, now);
         int missedBlocks = missed.size();
         int overdueDeadlines = focus.includesAcademic()
                 ? (int) reads.deadlines(userId, now.minus(Duration.ofDays(OVERDUE_DAYS)), now).stream()
@@ -258,14 +252,25 @@ public class DashboardService implements GetDashboardUseCase {
         }
         Map<UUID, TaskMention> byMilestone = TaskMention.byMilestone(active);
         Map<UUID, List<TaskMention>> byDeadline = TaskMention.byDeadline(active);
+        Map<UUID, List<TaskMention>> byRoutineDay = TaskMention.byRoutineDay(active);
         Map<UUID, UUID> milestoneOfBlock = new HashMap<>();
+        Map<UUID, UUID> routineDayOfBlock = new HashMap<>();
         blocks.stream().filter(b -> b.milestoneId() != null).forEach(b -> milestoneOfBlock.put(b.id(), b.milestoneId()));
+        blocks.stream().filter(b -> b.routineDayId() != null)
+                .forEach(b -> routineDayOfBlock.put(b.id(), b.routineDayId()));
         return events.stream().map(e -> {
             if (e.kind() == Dashboard.TodayEvent.Kind.DEADLINE) {
                 return e.withTasks(byDeadline.getOrDefault(e.id(), List.of()));
             }
-            TaskMention task = byMilestone.get(milestoneOfBlock.get(e.id()));
-            return task == null ? e : e.withTasks(List.of(task));
+            // La tarea asignada al evento y las que avanzan al entrenar su día de rutina, sin repetir.
+            List<TaskMention> tasks = new ArrayList<>();
+            TaskMention assigned = byMilestone.get(milestoneOfBlock.get(e.id()));
+            if (assigned != null) {
+                tasks.add(assigned);
+            }
+            byRoutineDay.getOrDefault(routineDayOfBlock.get(e.id()), List.of()).stream()
+                    .filter(t -> !tasks.contains(t)).forEach(tasks::add);
+            return tasks.isEmpty() ? e : e.withTasks(tasks);
         }).toList();
     }
 

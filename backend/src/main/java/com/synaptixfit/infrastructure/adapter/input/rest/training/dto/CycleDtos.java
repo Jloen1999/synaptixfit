@@ -41,11 +41,13 @@ public final class CycleDtos {
      * Resumen. Sin activar, solo {@code enabled: false}. Activo: momento estimado ({@code phase}, nulo si aún no se
      * puede estimar), día del ciclo, duración media, desde cuándo se espera la próxima regla y lo apuntado hoy.
      */
-    public record CycleOverviewResponse(boolean enabled, Instant consentedAt, CyclePhase phase, Integer dayOfCycle,
-                                        int cycleLength, LocalDate nextPeriodFrom, CycleDayResponse today) {
+    public record CycleOverviewResponse(boolean enabled, Instant consentedAt, Instant withdrawnAt, CyclePhase phase,
+                                        Integer dayOfCycle, int cycleLength, LocalDate nextPeriodFrom,
+                                        CycleDayResponse today) {
         public static CycleOverviewResponse from(CycleOverview o) {
-            return new CycleOverviewResponse(o.enabled(), o.consentedAt(), o.phase(), o.dayOfCycle(), o.cycleLength(),
-                    o.nextPeriodFrom(), o.today() == null ? null : CycleDayResponse.from(o.today()));
+            return new CycleOverviewResponse(o.enabled(), o.consentedAt(), o.withdrawnAt(), o.phase(),
+                    o.dayOfCycle(), o.cycleLength(), o.nextPeriodFrom(),
+                    o.today() == null ? null : CycleDayResponse.from(o.today()));
         }
     }
 

@@ -262,7 +262,7 @@ class _GenerateBanner extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded),
+          const Icon(AppIcons.next),
         ],
       ),
     );
@@ -342,10 +342,17 @@ class _SavedDocIcons extends StatelessWidget {
 enum _SourceAction { assistant, review, practice, delete }
 
 class _SourceMenu extends StatelessWidget {
-  const _SourceMenu({required this.onSelected, required this.aiEnabled});
+  const _SourceMenu({
+    required this.onSelected,
+    required this.aiEnabled,
+    required this.title,
+  });
 
   final ValueChanged<_SourceAction> onSelected;
   final bool aiEnabled;
+
+  /// Nombre del apunte o archivo: el botón dice qué borra.
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -353,7 +360,7 @@ class _SourceMenu extends StatelessWidget {
     // Sin IA solo queda «Eliminar»: a la vista, sin menú de tres puntos.
     if (!aiEnabled) {
       return IconButton(
-        tooltip: l10n.commonDelete,
+        tooltip: l10n.academicDeleteNamed(title),
         icon: Icon(AppIcons.delete, color: context.colors.error),
         onPressed: () => onSelected(_SourceAction.delete),
       );
@@ -499,6 +506,7 @@ class _NoteTile extends StatelessWidget {
             ),
             _SourceMenu(
               aiEnabled: true,
+              title: note.title,
               onSelected: (action) => _handleSourceAction(
                 context,
                 action: action,
@@ -557,6 +565,7 @@ class _FileTile extends StatelessWidget {
             ),
             _SourceMenu(
               aiEnabled: file.aiReadable,
+              title: file.fileName,
               onSelected: (action) => _handleSourceAction(
                 context,
                 action: action,

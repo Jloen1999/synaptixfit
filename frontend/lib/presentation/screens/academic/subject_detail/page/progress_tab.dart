@@ -84,7 +84,7 @@ class ProgressTab extends StatelessWidget with ErrorsMessageMixin {
                     child: TextButton.icon(
                       onPressed: () =>
                           _reimport(context, state.subjectId, guide),
-                      icon: const Icon(Icons.refresh_rounded),
+                      icon: const Icon(AppIcons.refresh),
                       label: Text(
                         context.localizations.academicGuideRegenerate,
                       ),
@@ -824,7 +824,7 @@ class _RetentionSection extends StatelessWidget {
                             ? context.masteryLabel(m.masteryState)
                             : '${context.masteryLabel(m.masteryState)} · ${l10n.academicNextReview(shortDate(m.nextReviewAt!))}',
                       ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(AcademicPaths.review(m.id)),
                     ),
                   ),
@@ -902,7 +902,7 @@ class _TimelineSection extends StatelessWidget {
                                   color: context.palette.success,
                                   semanticLabel: l10n.academicCompleted,
                                 ),
-                              const Icon(Icons.chevron_right_rounded),
+                              const Icon(AppIcons.next),
                             ],
                           ),
                           // Abre lo mismo que la agenda de Inicio: el bloque en

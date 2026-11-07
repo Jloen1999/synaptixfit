@@ -31,6 +31,22 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort {
     @Override
     public void save(UUID blockId, UUID userId, ActivityKind kind, int minutes, Integer distanceMeters,
                      ActivitySource source, Instant now) {
+        // Guardar o reemplazar: un evento desmarcado conserva su fila y, al volver a hacerlo (p. ej. grabando otra vez
+        // la carrera), se sustituye en vez de chocar con la clave primaria. SQL estándar (ADR 0012), sin ON CONFLICT.
+        int updated = jdbc.sql("UPDATE actividades_apuntadas SET clase = :kind, minutos_reales = :minutes,"
+                        + " distancia_metros = :distance, origen = :source, creado_en = :now"
+                        + " WHERE bloque_id = :block AND usuario_id = :user")
+                .param("block", blockId)
+                .param("user", userId)
+                .param("kind", kind.name())
+                .param("minutes", minutes)
+                .param("distance", distanceMeters)
+                .param("source", source.name())
+                .param("now", Timestamp.from(now))
+                .update();
+        if (updated > 0) {
+            return;
+        }
         jdbc.sql("INSERT INTO actividades_apuntadas (bloque_id, usuario_id, clase, minutos_reales, distancia_metros,"
                         + " origen, creado_en) VALUES (:block, :user, :kind, :minutes, :distance, :source, :now)")
                 .param("block", blockId)

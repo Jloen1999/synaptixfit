@@ -125,7 +125,7 @@
       }
     }
   },
-  "plannerCompletedLabel": "Completado",
+  "plannerCompletedLabel": "Hecho",
   "plannerFixedLabel": "Fijo",
   "plannerPrivateLabel": "Privado",
   "plannerTimeRange": "{start} – {end}",
@@ -303,9 +303,9 @@
   },
   "plannerDistributeAction": "Distribuir rutina",
   "plannerNoRoutinesTitle": "No tienes rutinas",
-  "plannerNoRoutinesMessage": "Crea una rutina en la pestaña Rutinas para poder distribuirla.",
+  "plannerNoRoutinesMessage": "Crea una rutina en Entreno › Gimnasio para poder repartirla en la semana.",
   "plannerDeadlinesTitle": "Entregas y exámenes",
-  "plannerFilterPending": "Pendientes",
+  "plannerFilterPending": "Por hacer",
   "plannerFilterAll": "Todas",
   "plannerFilterSubjectAll": "Todas las asignaturas",
   "plannerNewDeadline": "Nueva entrega",
@@ -327,8 +327,8 @@
   "plannerDeadlineCreated": "Entrega creada",
   "plannerDeadlineUpdated": "Entrega actualizada",
   "plannerDeadlineDeleted": "Entrega eliminada",
-  "plannerDeadlineCompleted": "Entrega completada",
-  "plannerDeadlineCompletedXp": "Entrega completada · +{xp} XP",
+  "plannerDeadlineCompleted": "Entrega hecha",
+  "plannerDeadlineCompletedXp": "Entrega hecha · +{xp} XP",
   "@plannerDeadlineCompletedXp": {
     "placeholders": {
       "xp": {
@@ -336,7 +336,7 @@
       }
     }
   },
-  "plannerDeadlinePending": "Entrega marcada como pendiente",
+  "plannerDeadlinePending": "Entrega desmarcada",
   "plannerDueOn": "Vence el {date}",
   "@plannerDueOn": {
     "placeholders": {
@@ -348,8 +348,6 @@
   "plannerOverdue": "Vencida",
   "plannerImported": "Importada",
   "plannerLoadMore": "Cargar más",
-  "plannerMarkDone": "Marcar como completada",
-  "plannerMarkUndone": "Marcar como pendiente",
   "plannerSuggestionsTitle": "Te sugerimos un plan",
   "plannerSuggestionsIntro": "Indica tus objetivos y te propondremos cuándo estudiar y hacer deporte en los huecos libres de la semana.",
   "plannerThisWeek": "Esta semana",
@@ -911,5 +909,32 @@
   "plannerPomodoroToBreakHint": "Termina la concentración ahora y empieza el descanso.",
   "plannerPomodoroToFocusHint": "Termina el descanso ahora y vuelve a la concentración.",
   "plannerStepRepeat": "Repetir",
-  "plannerDeadlineGone": "Esa entrega ya no existe: se borró. Si la necesitas, créala otra vez con «Nueva entrega»."
+  "plannerDeadlineGone": "Esa entrega ya no existe: se borró. Si la necesitas, créala otra vez con «Nueva entrega».",
+  "plannerDeleteDeadlineNamed": "Eliminar «{title}»",
+  "@plannerDeleteDeadlineNamed": {
+    "description": "Botón de papelera en la tarjeta de una entrega: nombra cuál se borra.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerMarkDoneNamed": "Marcar «{title}» como hecho",
+  "@plannerMarkDoneNamed": {
+    "description": "Casilla de una entrega: nombra qué se marca.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "plannerUnmarkNamed": "Desmarcar «{title}»",
+  "@plannerUnmarkNamed": {
+    "description": "Casilla de una entrega ya hecha: nombra qué se desmarca.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  }
 }

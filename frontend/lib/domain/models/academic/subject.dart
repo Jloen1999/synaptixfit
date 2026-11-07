@@ -33,7 +33,40 @@ abstract class Subject with _$Subject {
     /// Días con clase en las próximas dos semanas (1 = lunes).
     @Default(<int>[]) List<int> classDays,
     SubjectDeadline? nextDeadline,
+
+    /// Lo que destaca la tarjeta, ya elegido por el servidor (lo urgente
+    /// primero); nulo si no hay nada próximo.
+    SubjectNextUp? nextUp,
   }) = _Subject;
+}
+
+/// Qué es lo próximo de una asignatura.
+enum SubjectNextUpKind {
+  delivery('DELIVERY'),
+  exam('EXAM'),
+  classSession('CLASS'),
+  assessment('ASSESSMENT');
+
+  const SubjectNextUpKind(this.apiValue);
+
+  final String apiValue;
+
+  static SubjectNextUpKind? fromApi(String? value) =>
+      values.where((k) => k.apiValue == value).firstOrNull;
+}
+
+/// Lo próximo de la asignatura tal como lo decide el servidor: qué es, cuándo,
+/// dónde (solo clases), cuántos días naturales faltan en la zona del móvil y
+/// si urge (hoy o mañana). La tarjeta solo lo pinta.
+@freezed
+abstract class SubjectNextUp with _$SubjectNextUp {
+  const factory SubjectNextUp({
+    required SubjectNextUpKind kind,
+    required DateTime at,
+    String? place,
+    required int daysLeft,
+    required bool urgent,
+  }) = _SubjectNextUp;
 }
 
 /// Próxima entrega o examen sin hacer de una asignatura.

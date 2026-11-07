@@ -54,11 +54,11 @@ class SubjectServiceTest {
         archived.archive();
         f.subjects.save(archived);
 
-        List<SubjectSummary> active = service.listSubjects(user, false);
+        List<SubjectSummary> active = service.listSubjects(user, false, null);
         assertThat(active).hasSize(1);
         assertThat(active.getFirst().noteCount()).isEqualTo(2);
         assertThat(active.getFirst().fileCount()).isEqualTo(1);
-        assertThat(service.listSubjects(user, true)).extracting(x -> x.subject().name()).containsExactly("Historia");
+        assertThat(service.listSubjects(user, true, null)).extracting(x -> x.subject().name()).containsExactly("Historia");
     }
 
     @Test
@@ -72,7 +72,7 @@ class SubjectServiceTest {
         assertThat(updated.subject().archived()).isTrue();
         assertThat(updated.subject().name()).isEqualTo("Redes");
 
-        assertThatThrownBy(() -> service.getSubject(stranger, s.id()))
+        assertThatThrownBy(() -> service.getSubject(stranger, s.id(), null))
                 .isInstanceOf(SubjectNotFoundException.class)
                 .hasFieldOrPropertyWithValue("code", "SUBJECT_NOT_FOUND");
         assertThatThrownBy(() -> service.deleteSubject(stranger, s.id())).isInstanceOf(SubjectNotFoundException.class);

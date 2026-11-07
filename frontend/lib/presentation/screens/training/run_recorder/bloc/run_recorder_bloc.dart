@@ -8,7 +8,9 @@ import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/models/training/run.dart';
 import '../../../../../domain/models/training/run_live.dart';
+import '../../../../../domain/enums/device_permission.dart';
 import '../../../../../domain/models/training/sport_activity.dart';
+import '../../../../../domain/use_cases/profile/open_permission_settings_use_case.dart';
 import '../../../../../domain/use_cases/training/discard_run_recording_use_case.dart';
 import '../../../../../domain/use_cases/training/finish_run_use_case.dart';
 import '../../../../../domain/use_cases/training/is_location_service_enabled_use_case.dart';
@@ -51,6 +53,7 @@ class RunRecorderBloc extends Bloc<RunRecorderEvent, RunRecorderState> {
     required this._listWorkouts,
     required this._serviceEnabled,
     required this._track,
+    required this._openSettings,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now,
        super(const RunRecorderState()) {
@@ -64,6 +67,9 @@ class RunRecorderBloc extends Bloc<RunRecorderEvent, RunRecorderState> {
     on<RunRecorderFinishRequested>(_onFinish);
     on<RunRecorderDiscardRequested>(_onDiscard);
     on<RunRecorderPersistRequested>((_, emit) => _persist());
+    on<RunRecorderBatterySettingsOpened>((_, _) async {
+      await _openSettings(DevicePermission.location);
+    });
     on<RunRecorderGpsFailed>(
       (e, emit) => emit(state.copyWith(gpsError: e.error)),
     );
@@ -76,6 +82,7 @@ class RunRecorderBloc extends Bloc<RunRecorderEvent, RunRecorderState> {
   final ListRunWorkoutsUseCaseContract _listWorkouts;
   final IsLocationServiceEnabledUseCaseContract _serviceEnabled;
   final TrackRunUseCaseContract _track;
+  final OpenPermissionSettingsUseCaseContract _openSettings;
   final DateTime Function() _clock;
 
   StreamSubscription<Object?>? _gps;
@@ -92,9 +99,6 @@ class RunRecorderBloc extends Bloc<RunRecorderEvent, RunRecorderState> {
   /// El aviso fijo se pone al día cada pocos segundos (no cada segundo, para
   /// no gastar batería).
   static const _notifyEverySeconds = 5;
-
-  /// Minutos en movimiento para que cuente como actividad (como el servidor).
-  static const minMinutes = 10;
 
   Future<void> _onStarted(
     RunRecorderStarted e,

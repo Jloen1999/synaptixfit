@@ -13,7 +13,8 @@ part 'academic_search_state.dart';
 /// La página ya espera a que se deje de teclear; aquí se descartan las
 /// respuestas que llegan tarde (de un texto anterior) para no pintar
 /// resultados que no corresponden a lo escrito.
-class AcademicSearchBloc extends Bloc<AcademicSearchEvent, AcademicSearchState> {
+class AcademicSearchBloc
+    extends Bloc<AcademicSearchEvent, AcademicSearchState> {
   AcademicSearchBloc({required this._search})
     : super(const AcademicSearchState()) {
     on<AcademicSearchQueryChanged>(_onQuery);
@@ -49,10 +50,8 @@ class AcademicSearchBloc extends Bloc<AcademicSearchEvent, AcademicSearchState> 
     if (request != _request) return;
     emit(
       result.fold(
-        (found) => state.copyWith(
-          status: AcademicSearchStatus.ready,
-          result: found,
-        ),
+        (found) =>
+            state.copyWith(status: AcademicSearchStatus.ready, result: found),
         (error) =>
             state.copyWith(status: AcademicSearchStatus.failure, error: error),
       ),

@@ -63,16 +63,16 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 
 | `code` | HTTP | Significado | Clave `.arb` | Texto (es) | Estado |
 |---|---|---|---|---|---|
-| `AUTH_INVALID_CREDENTIALS` | 401 | Email o contraseña incorrectos | `errorAuthInvalidCredentials` | Email o contraseña incorrectos. | Activo |
-| `AUTH_INVALID_REFRESH_TOKEN` | 401 | Token de refresco inválido, caducado o revocado | `errorUnauthorized` | Tu sesión ha caducado. Vuelve a iniciar sesión. | Activo |
-| `AUTH_INVALID_GOOGLE_TOKEN` | 401 | ID token de Google no verificable | `errorAuthGoogleFailed` | No se ha podido iniciar sesión con Google. | Activo |
-| `AUTH_ACCOUNT_DISABLED` | 403 | Cuenta eliminada o desactivada | `errorAuthAccountDisabled` | Esta cuenta está desactivada. | Activo |
-| `AUTH_EMAIL_ALREADY_REGISTERED` | 409 | Ya existe una cuenta con ese email | `errorAuthEmailAlreadyRegistered` | Ya existe una cuenta con ese email. | Activo |
-| `AUTH_RESET_TOKEN_INVALID` | 400 | El enlace para restablecer la contraseña no existe, ya se usó o caducó | `errorAuthResetTokenInvalid` | Este enlace ya no sirve: caduca a los 30 minutos y solo se puede usar una vez. Pide otro. | Activo |
-| `AUTH_WEAK_PASSWORD` | 400 | Contraseña fuera de la política (≥ 8, letras y números) | `errorAuthWeakPassword` | La contraseña debe tener al menos 8 caracteres, con letras y números. | Activo |
-| `USER_NOT_FOUND` | 404 | El usuario no existe | `errorNotFound` | No hemos encontrado lo que buscas. | Activo |
-| `GOOGLE_SIGN_IN_CANCELLED` | — (cliente) | El usuario cerró el diálogo de Google | `errorAuthGoogleCancelled` | Has cancelado el inicio de sesión con Google. | Activo |
-| `GOOGLE_SIGN_IN_FAILED` | — (cliente) | Fallo del SDK de Google o sin ID token | `errorAuthGoogleFailed` | No se ha podido iniciar sesión con Google. | Activo |
+| `AUTH_INVALID_CREDENTIALS` | 401 | Email o contraseña incorrectos | Email o contraseña incorrectos. | Activo |
+| `AUTH_INVALID_REFRESH_TOKEN` | 401 | Token de refresco inválido, caducado o revocado | Tu sesión ha caducado. Vuelve a iniciar sesión. | Activo |
+| `AUTH_INVALID_GOOGLE_TOKEN` | 401 | ID token de Google no verificable | No se ha podido iniciar sesión con Google. | Activo |
+| `AUTH_ACCOUNT_DISABLED` | 403 | Cuenta eliminada o desactivada | Esta cuenta está desactivada. | Activo |
+| `AUTH_EMAIL_ALREADY_REGISTERED` | 409 | Ya existe una cuenta con ese email | Ya existe una cuenta con ese email. | Activo |
+| `AUTH_RESET_TOKEN_INVALID` | 400 | El enlace para restablecer la contraseña no existe, ya se usó o caducó | Este enlace ya no sirve: caduca a los 30 minutos y solo se puede usar una vez. Pide otro. | Activo |
+| `AUTH_WEAK_PASSWORD` | 400 | Contraseña fuera de la política (≥ 8, letras y números) | La contraseña debe tener al menos 8 caracteres, con letras y números. | Activo |
+| `USER_NOT_FOUND` | 404 | El usuario no existe | No hemos encontrado lo que buscas. | Activo |
+| `GOOGLE_SIGN_IN_CANCELLED` | — (cliente) | El usuario cerró el diálogo de Google | Has cancelado el inicio de sesión con Google. | Activo |
+| `GOOGLE_SIGN_IN_FAILED` | — (cliente) | Fallo del SDK de Google o sin ID token | No se ha podido iniciar sesión con Google. | Activo |
 
 <!-- Las secciones de cada módulo se añaden debajo. -->
 
@@ -155,6 +155,7 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `CHALLENGE_LINKED` | 422 | Completar, desmarcar o registrar progreso a mano en un reto sin tareas vinculado a una entrega o examen: lo completa esa entrega (ADR 0028) | Este reto se completa con su entrega o examen: márcalo como hecho en el planificador. | Activo |
 | `MILESTONE_LINKED` | 422 | Marcar, desmarcar o registrar progreso a mano en una tarea vinculada a una entrega/examen o con bloques del calendario asignados (ADR 0028) | Esta tarea avanza con su entrega o sus eventos del calendario: márcalos como hechos en el planificador. | Activo |
 | `CHALLENGE_LINK_OUTSIDE_PERIOD` | 422 | La entrega o examen vinculado (al reto o a una tarea) vence fuera del periodo del reto, por días (ADR 0028) | La entrega o el examen vence fuera de las fechas del reto. Amplía el reto o elige otro. | Activo |
+| `CHALLENGE_ROUTINE_DAY_NOT_LINKABLE` | 422 | El día de rutina elegido para una tarea no es de la rutina en curso, no tiene ejercicios o ya está hecho o saltado (ADR 0032) | Ese día de entreno ya no se puede usar: elige otro de tu rutina actual. | Activo |
 | `MILESTONE_ATTACHMENT_CONFLICT` | 400 | Apunte y archivo a la vez | Una tarea solo puede tener un apunte o un archivo. | Activo |
 | `CHALLENGE_TOO_MANY_MILESTONES` | 422 | Más de 12 tareas | Un reto puede tener como máximo 12 tareas. | Activo |
 | `MILESTONE_WEIGHTS_INVALID` | 422 | Pesos que no suman 100 o incompletos | Los pesos de las tareas deben sumar 100 %. | Retirado (ADR 0028: el peso lo deriva el servidor de la dificultad; `weight` se ignora) |
@@ -188,13 +189,8 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `PLANNER_ROUTINE_EMPTY` | 422 | La rutina no tiene días | La rutina no tiene días que añadir al calendario. | Activo |
 | `PLANNER_RANGE_TOO_LARGE` | 400 | Rango de fechas inválido o demasiado grande | El rango de fechas no es válido. | Activo |
 | `PLANNER_ICS_URL_MISSING` | 422 | Sin URL ICS en la petición ni en la asignatura (o calendario general sin URL) | Añade la URL del calendario de la asignatura. | Activo |
-| `PLANNER_PAST_ACTIVITY_OUT_OF_RANGE` | 422 | La actividad pasada aún no ha terminado o es de hace más de 7 días | `plannerErrorPastActivityOutOfRange` | Solo puedes apuntar actividades ya terminadas de los últimos 7 días. | Activo |
-| `RUN_TOO_SHORT` | 422 | La carrera tiene menos de 10 minutos en movimiento (ADR 0037) | `runErrorTooShort` | Hacen falta al menos 10 minutos en movimiento para que cuente como actividad. | Activo |
-| `RUN_OUT_OF_RANGE` | 422 | La carrera aún no ha terminado (más de 2 min de margen de reloj) o empezó hace más de 30 días | `runErrorOutOfRange` | Solo se guardan carreras ya terminadas de los últimos 30 días. Puedes apuntarla a mano si fue esta semana. | Activo |
-| `RUN_ROUTE_TOO_LARGE` | 413 | La ruta supera 20 000 puntos o la petición pasa de 2 MB (`STATUS_BY_CODE`: es el tamaño, no un dato mal escrito) | `runErrorRouteTooLarge` | La ruta es demasiado larga para guardarla. Prueba a apuntar la actividad a mano. | Activo |
-| `RUN_NOT_FOUND` | 404 | La carrera con GPS no existe o es de otro usuario | `runErrorNotFound` | Esa carrera ya no existe. | Activo |
-| `RUN_WORKOUT_NOT_FOUND` | 404 | El entreno de carrera no existe o es de otro usuario (una plantilla desconocida es `VALIDATION_ERROR` del campo `templateCode`) | `runErrorWorkoutNotFound` | Ese entreno de carrera ya no existe. | Activo |
-| `PLANNER_PAST_ACTIVITY_TYPE_NOT_ALLOWED` | 422 | Se intenta apuntar a posteriori algo que no es deporte ni estudio | `plannerErrorPastActivityType` | Solo puedes apuntar después deporte o estudio. | Activo |
+| `PLANNER_PAST_ACTIVITY_OUT_OF_RANGE` | 422 | La actividad pasada aún no ha terminado o es de hace más de 7 días | Solo puedes apuntar actividades ya terminadas de los últimos 7 días. | Activo |
+| `PLANNER_PAST_ACTIVITY_TYPE_NOT_ALLOWED` | 422 | Se intenta apuntar a posteriori algo que no es deporte ni estudio | Solo puedes apuntar después deporte o estudio. | Activo |
 | `PLANNER_CALENDAR_FEED_NOT_FOUND` | 404 | El enlace de suscripción al calendario no existe o se revocó | Ese enlace ya no existe: puede que lo desactivaras desde otro dispositivo. | Activo |
 | `PLANNER_ICS_URL_INVALID` | 400 | URL no http(s)/webcal o dirección local | La URL del calendario no es válida. | Activo |
 | `PLANNER_ICS_UNAVAILABLE` | 503 | No se pudo descargar o supera 5 MB | No hemos podido descargar el calendario. Inténtalo más tarde. | Activo |
@@ -268,3 +264,8 @@ Códigos de campo: `REQUIRED`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_FORMAT
 | `TRAINING_PLAN_NOT_FOUND` | 404 | No hay plan para esa semana | No tienes plan para esa semana. | Activo |
 | `TRAINING_RECOMMENDATION_NOT_FOUND` | 404 | La sugerencia no existe o es ajena | No encontramos esa sugerencia. | Activo |
 | `TRAINING_RECOMMENDATION_APPLIED` | 409 | La sugerencia ya se aplicó | Ya aplicaste esta sugerencia. | Activo |
+| `RUN_TOO_SHORT` | 422 | La carrera tiene menos de 10 minutos en movimiento (ADR 0037) | Hacen falta al menos 10 minutos en movimiento para que cuente como actividad. | Activo |
+| `RUN_OUT_OF_RANGE` | 422 | La carrera aún no ha terminado (más de 2 min de margen de reloj) o empezó hace más de 30 días | Solo se guardan carreras ya terminadas de los últimos 30 días. Puedes apuntarla a mano si fue esta semana. | Activo |
+| `RUN_ROUTE_TOO_LARGE` | 413 | La ruta supera 20 000 puntos o la petición pasa de 2 MB, se declare o no su tamaño (`STATUS_BY_CODE`: es el tamaño, no un dato mal escrito) | La ruta es demasiado larga para guardarla. Prueba a apuntar la actividad a mano. | Activo |
+| `RUN_NOT_FOUND` | 404 | La carrera con GPS no existe o es de otro usuario | Esa carrera ya no existe. | Activo |
+| `RUN_WORKOUT_NOT_FOUND` | 404 | El entreno de carrera no existe o es de otro usuario (una plantilla desconocida es `VALIDATION_ERROR` del campo `templateCode`) | Ese entreno de carrera ya no existe. | Activo |

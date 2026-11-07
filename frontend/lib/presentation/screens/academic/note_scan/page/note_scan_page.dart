@@ -282,7 +282,7 @@ class _PhotosStepState extends State<_PhotosStep> with ErrorsMessageMixin {
                         ? TextButton.icon(
                             onPressed: () =>
                                 bloc.add(const NoteScanEvent.readRequested()),
-                            icon: const Icon(Icons.refresh_rounded),
+                            icon: const Icon(AppIcons.refresh),
                             label: Text(l10n.commonRetry),
                           )
                         : TextButton.icon(

@@ -167,7 +167,7 @@ class TimeBlockTile extends StatelessWidget {
     );
     final statusIcons = [
       if (block.completed)
-        Icon(Icons.check_circle_rounded, size: 14, color: color),
+        Icon(AppIcons.done, size: TokensSize.iconXs, color: color),
       if (_missed)
         Tooltip(
           message: context.localizations.plannerMissedLabel,
@@ -180,13 +180,13 @@ class TimeBlockTile extends StatelessWidget {
       if (block.isLocked)
         Icon(
           Icons.lock_rounded,
-          size: 12,
+          size: TokensSize.iconXs,
           color: context.colors.onSurfaceVariant,
         ),
     ];
     final header = Row(
       children: [
-        Icon(block.type.icon, size: 14, color: color),
+        Icon(block.type.icon, size: TokensSize.iconXs, color: color),
         const SizedBox(width: TokensSpacing.xs),
         Expanded(
           child: Text(

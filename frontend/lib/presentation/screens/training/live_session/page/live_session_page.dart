@@ -537,23 +537,9 @@ class _LiveViewState extends State<_LiveView> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 actions: [
-                  // En sesión de rutina el tiempo ya está en la cabecera
-                  // («4 de 6 ejercicios · 32 min»).
-                  // Sesión libre en curso: el tiempo real, igual que en la de rutina.
-                  if (state.status == LiveStatus.ready &&
-                      state.isFree &&
-                      !state.completed)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: TokensSpacing.xs,
-                      ),
-                      child: Center(
-                        child: LiveClockPill(
-                          seconds: state.elapsedSeconds,
-                          paused: state.paused,
-                        ),
-                      ),
-                    ),
+                  // En curso el tiempo va bajo la barra con su explicación
+                  // (`LiveClockSummary`), igual en la sesión libre y en la de
+                  // rutina; aquí solo el total al terminar.
                   if (state.status == LiveStatus.ready && state.completed)
                     Semantics(
                       label: l10n.trainingTotalTime(
@@ -609,7 +595,9 @@ class _LiveViewState extends State<_LiveView> {
                 ],
               ),
               body: switch (state.status) {
-                LiveStatus.loading => const AppSkeletonList(height: 140),
+                LiveStatus.loading => const AppSkeletonList(
+                  height: TokensSize.skeletonCardTall,
+                ),
                 LiveStatus.failure => AppErrorView(
                   error: state.error!,
                   onRetry: () => _bloc.add(
@@ -618,6 +606,19 @@ class _LiveViewState extends State<_LiveView> {
                 ),
                 LiveStatus.ready when state.completed || state.isFree => Column(
                   children: [
+                    if (state.isFree && !state.completed)
+                      Material(
+                        color: context.colors.surfaceContainerLow,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: TokensSpacing.m,
+                            vertical: TokensSpacing.s,
+                          ),
+                          child: TrainingContent(
+                            child: LiveClockSummary(state: state),
+                          ),
+                        ),
+                      ),
                     if (state.saving) const LinearProgressIndicator(),
                     if (state.restRemaining != null) _RestBanner(state: state),
                     Expanded(

@@ -35,27 +35,32 @@ public class CycleJdbcAdapter implements CycleRepositoryPort {
 
     @Override
     public Optional<CycleTracking> findTracking(UUID userId) {
-        return jdbc.sql("SELECT activo, consentimiento_en FROM seguimiento_ciclo WHERE usuario_id = :user")
+        return jdbc.sql("SELECT activo, consentimiento_en, consentimiento_retirado_en FROM seguimiento_ciclo"
+                        + " WHERE usuario_id = :user")
                 .param("user", userId)
-                .query((rs, n) -> new CycleTracking(rs.getBoolean("activo"), instant(rs, "consentimiento_en")))
+                .query((rs, n) -> new CycleTracking(rs.getBoolean("activo"), instant(rs, "consentimiento_en"),
+                        instant(rs, "consentimiento_retirado_en")))
                 .optional();
     }
 
     @Override
     public void saveTracking(UUID userId, CycleTracking tracking, Instant now) {
         int updated = jdbc.sql("UPDATE seguimiento_ciclo SET activo = :on, consentimiento_en = :consent,"
-                        + " actualizado_en = :now WHERE usuario_id = :user")
+                        + " consentimiento_retirado_en = :withdrawn, actualizado_en = :now WHERE usuario_id = :user")
                 .param("on", tracking.enabled())
                 .param("consent", timestamp(tracking.consentedAt()))
+                .param("withdrawn", timestamp(tracking.withdrawnAt()))
                 .param("now", Timestamp.from(now))
                 .param("user", userId)
                 .update();
         if (updated == 0) {
-            jdbc.sql("INSERT INTO seguimiento_ciclo (usuario_id, activo, consentimiento_en, actualizado_en)"
-                            + " VALUES (:user, :on, :consent, :now)")
+            jdbc.sql("INSERT INTO seguimiento_ciclo (usuario_id, activo, consentimiento_en,"
+                            + " consentimiento_retirado_en, actualizado_en)"
+                            + " VALUES (:user, :on, :consent, :withdrawn, :now)")
                     .param("user", userId)
                     .param("on", tracking.enabled())
                     .param("consent", timestamp(tracking.consentedAt()))
+                    .param("withdrawn", timestamp(tracking.withdrawnAt()))
                     .param("now", Timestamp.from(now))
                     .update();
         }

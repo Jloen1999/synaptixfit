@@ -84,14 +84,14 @@ class MilestoneTile extends StatelessWidget {
                     onPressed: locked ? null : onToggle,
                     icon: Icon(
                       milestone.completed
-                          ? Icons.check_box_rounded
+                          ? AppIcons.done
                           : locked
                           ? Icons.lock_outline_rounded
                           : milestone.completedByLink
                           ? (link == null
                                 ? Icons.event_available_outlined
                                 : Icons.link_rounded)
-                          : Icons.check_box_outline_blank_rounded,
+                          : AppIcons.todo,
                       color: status.color(context),
                     ),
                   ),
@@ -187,7 +187,9 @@ class MilestoneTile extends StatelessWidget {
                           avatar: Icon(link.type.icon),
                           label: Text(
                             link.type == ChallengeLinkType.routineDay
-                                ? context.localizations.challengesLinkOpenRoutine
+                                ? context
+                                      .localizations
+                                      .challengesLinkOpenRoutine
                                 : context.localizations.challengesLinkOpen,
                           ),
                           onPressed: onOpenLink,

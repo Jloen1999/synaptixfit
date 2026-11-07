@@ -169,7 +169,7 @@ class _FriendshipList extends StatelessWidget {
         message: l10n.socialSentEmptyMessage,
       ),
       FriendshipListKind.blocked => (
-        icon: Icons.block_outlined,
+        icon: AppIcons.block,
         title: l10n.socialBlockedEmptyTitle,
         message: l10n.socialBlockedEmptyMessage,
       ),
@@ -312,7 +312,7 @@ class _FriendshipTile extends StatelessWidget {
     if (busy) return const BusyIndicator();
     return switch (kind) {
       FriendshipListKind.friends => IconButton(
-        tooltip: l10n.socialRemoveFriend,
+        tooltip: l10n.socialRemoveFriendNamed(friendship.user.fullName),
         icon: const Icon(Icons.person_remove_outlined),
         onPressed: () => _remove(context),
       ),

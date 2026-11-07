@@ -48,7 +48,7 @@ class StudyWeekCard extends StatelessWidget {
             const SizedBox(height: TokensSpacing.s),
             AppSecondaryButton(
               label: l10n.commonRetry,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const Icon(AppIcons.refresh),
               onPressed: onRetry,
             ),
           ],
@@ -64,7 +64,7 @@ class StudyWeekCard extends StatelessWidget {
           title: l10n.progressStudyEmpty,
           action: AppSecondaryButton(
             label: l10n.progressStudyFocus,
-            icon: const Icon(Icons.timer_outlined),
+            icon: const Icon(AppIcons.focusTimer),
             onPressed: onFocus,
           ),
         ),
@@ -101,7 +101,7 @@ class StudyWeekCard extends StatelessWidget {
             children: [
               AppMetricTile(
                 bare: true,
-                icon: Icons.timer_outlined,
+                icon: AppIcons.focusTimer,
                 color: study,
                 value: l10n.progressStudyMinutes(data.focusMinutes),
                 label: l10n.progressStudyFocusLabel,

@@ -158,6 +158,13 @@ public final class User {
         return birthDate != null && new BirthDate(birthDate).isBirthday(day);
     }
 
+    /** Nombre de pila (la primera palabra del nombre completo), con el que se saluda y se felicita. */
+    public String firstName() {
+        String trimmed = fullName == null ? "" : fullName.strip();
+        int space = trimmed.indexOf(' ');
+        return space < 0 ? trimmed : trimmed.substring(0, space);
+    }
+
     /** Marca el onboarding como cerrado por el usuario. */
     public void completeOnboarding() {
         this.onboardingCompleted = true;

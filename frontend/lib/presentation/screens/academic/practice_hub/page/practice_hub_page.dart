@@ -143,7 +143,7 @@ class _PracticeHubView extends StatelessWidget with ErrorsMessageMixin {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.refresh_rounded),
+                            : const Icon(AppIcons.refresh),
                         label: Text(l10n.academicPracticeRegenerate),
                       ),
                     ),
@@ -293,7 +293,7 @@ class _ModeCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded),
+          const Icon(AppIcons.next),
         ],
       ),
     ),

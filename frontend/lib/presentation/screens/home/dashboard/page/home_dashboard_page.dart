@@ -285,7 +285,7 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
   }
 }
 
-class _HomeContent extends StatelessWidget {
+class _HomeContent extends StatefulWidget {
   const _HomeContent({
     required this.dashboard,
     required this.state,
@@ -296,7 +296,26 @@ class _HomeContent extends StatelessWidget {
   final HomeDashboardState state;
   final ValueChanged<String> onNavigate;
 
+  @override
+  State<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<_HomeContent> {
   static const _gap = SizedBox(height: TokensSpacing.l);
+
+  /// Título de «Tu equilibrio»: recibe el foco al ocultar «Primeros pasos»
+  /// con «Ahora no» (el botón desaparece; WCAG 2.4.3).
+  final _afterSetupFocus = FocusNode(debugLabel: 'home-after-setup');
+
+  HomeDashboard get dashboard => widget.dashboard;
+  HomeDashboardState get state => widget.state;
+  ValueChanged<String> get onNavigate => widget.onNavigate;
+
+  @override
+  void dispose() {
+    _afterSetupFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -380,13 +399,7 @@ class _HomeContent extends StatelessWidget {
       focus: focus,
       starting: state.startingTraining,
       completingIds: state.completingIds,
-      onMarkDone: (event) => context.read<HomeDashboardBloc>().add(
-        HomeDashboardEvent.completionSet(
-          id: event.id,
-          kind: event.kind,
-          completed: true,
-        ),
-      ),
+      onMarkDone: (event) => _setCompleted(context, event, completed: true),
       onAction: (action) => switch (action) {
         TodayHeroAction.focus => focusOnNext(),
         TodayHeroAction.train => trainTodayBlock(),
@@ -403,13 +416,7 @@ class _HomeContent extends StatelessWidget {
         onOpenPlanner: () => onNavigate(HomeExternalPaths.planner),
         completingIds: state.completingIds,
         onSetCompleted: (event, completed) =>
-            context.read<HomeDashboardBloc>().add(
-              HomeDashboardEvent.completionSet(
-                id: event.id,
-                kind: event.kind,
-                completed: completed,
-              ),
-            ),
+            _setCompleted(context, event, completed: completed),
         onStartTraining: (event) => context.read<HomeDashboardBloc>().add(
           HomeDashboardEvent.trainingStarted(
             routineId: event.routineId!,
@@ -456,6 +463,7 @@ class _HomeContent extends StatelessWidget {
             );
             // Dice cuándo y dónde vuelve (vocabulario.md).
             context.showSnack(context.localizations.homeSetupSnoozedWhere);
+            AppFocusAnchor.focusSoon(_afterSetupFocus);
           },
         ),
       // Un aviso informativo va después del próximo entreno: no lo tapa.
@@ -467,6 +475,7 @@ class _HomeContent extends StatelessWidget {
         wellbeing: dashboard.wellbeing,
         focus: focus,
         onOpenAnalytics: () => onNavigate(HomeExternalPaths.analytics),
+        headerFocusNode: _afterSetupFocus,
       ),
     ];
     // Columna secundaria: metas y semana. Las cifras detalladas están en la
@@ -544,4 +553,33 @@ class _HomeContent extends StatelessWidget {
       },
     );
   }
+}
+
+/// Marca o desmarca un evento de hoy con los mismos casos de uso que el
+/// planificador; si es un deporte que registra carga física (lo dice el
+/// servidor), antes pregunta el esfuerzo con el mismo diálogo que él, así
+/// marcar lo mismo desde Inicio o desde el calendario tiene el mismo efecto.
+Future<void> _setCompleted(
+  BuildContext context,
+  HomeTodayEvent event, {
+  required bool completed,
+}) async {
+  final bloc = context.read<HomeDashboardBloc>();
+  int? effort;
+  if (completed && event.tracksPhysicalLoad) {
+    effort = await showEffortDialog(
+      context,
+      confirmLabel: context.localizations.plannerSportDoneAction,
+      subtitle: event.title.isEmpty ? null : readableEventTitle(event.title),
+    );
+    if (effort == null) return;
+  }
+  bloc.add(
+    HomeDashboardEvent.completionSet(
+      id: event.id,
+      kind: event.kind,
+      completed: completed,
+      effort: effort,
+    ),
+  );
 }

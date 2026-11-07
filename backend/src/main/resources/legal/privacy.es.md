@@ -18,9 +18,9 @@ Esta política explica qué datos tuyos usa SynaptixFit, para qué, con quién s
 ## Qué datos usamos
 
 - Tu cuenta: nombre, correo, contraseña (guardada cifrada, nadie puede leerla), foto de perfil si la pones y, si entras con Google, tu identificador de Google.
-- Tus estudios: universidad, carrera, curso, asignaturas, horario, clases, entregas, exámenes, bloques de estudio, apuntes, archivos que subes, preguntas de repaso y tus respuestas.
+- Tus estudios: universidad, carrera, curso, asignaturas, horario, clases, entregas, exámenes, eventos de estudio del calendario, apuntes, archivos que subes, preguntas de repaso y tus respuestas.
 - Tu entrenamiento: rutinas, sesiones, series, pesos, tiempos, actividades y partidos que apuntas, entrenos de carrera, retos, rachas, nivel e insignias.
-- Tu ubicación exacta, solo mientras grabas una carrera con el GPS (también con la pantalla apagada, con un aviso fijo «Grabando tu carrera» en el móvil): la ruta que haces, con la hora de cada punto y la altitud, para calcular la distancia, el ritmo, el desnivel y los tramos por kilómetro y dibujar el mapa. Nunca se usa la ubicación fuera de la grabación ni en segundo plano.
+- Tu ubicación exacta, solo mientras grabas una carrera con el GPS (también con la pantalla apagada, con un aviso fijo «Grabando tu carrera» en el móvil): la ruta que haces, con la hora de cada punto y la altitud, para calcular la distancia, el ritmo, el desnivel y los tramos por kilómetro y dibujar el mapa. Nunca se usa la ubicación cuando no estás grabando.
 - Tu fecha de nacimiento, si la das (es opcional): con ella calculamos tu edad para las calorías y las propuestas, y te felicitamos el día de tu cumpleaños. Nunca sale en tu perfil público, está en la copia de tus datos que descargas y se borra al vaciar o eliminar tu cuenta.
 - Tu perfil de bienestar, si lo rellenas: sexo, peso, altura, nivel de actividad y, si la diste antes de existir la fecha de nacimiento, tu edad.
 - Tu registro diario, solo si das tu permiso: cómo dormiste, estrés, energía, agujetas y zonas con dolor.
@@ -95,7 +95,7 @@ Si crees que no tratamos bien tus datos, puedes reclamar ante la Agencia Españo
 
 ## Permisos del móvil
 
-La app solo pide permisos cuando hacen falta y explica antes para qué: notificaciones (recordatorios), avisos a su hora (que los recordatorios lleguen en el minuto exacto), cámara (fotografiar apuntes) y ubicación (grabar carreras, solo mientras la app está en uso; nunca «siempre»). Puedes negarlos o quitarlos en los ajustes del móvil: la app sigue funcionando sin ellos.
+La app solo pide permisos cuando hacen falta y explica antes para qué: notificaciones (recordatorios), avisos a su hora (que los recordatorios lleguen en el minuto exacto), cámara (fotografiar apuntes) y ubicación (grabar carreras: solo mientras grabas, aunque apagues la pantalla; nunca cuando no estás grabando). Puedes negarlos o quitarlos en los ajustes del móvil: la app sigue funcionando sin ellos.
 
 ## Menores
 

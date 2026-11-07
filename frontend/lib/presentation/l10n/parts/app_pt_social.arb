@@ -183,5 +183,10 @@
   "socialProfileBadgeSemantics": "{name}, insígnia {rarity}.",
   "socialProfileBadgeEarnedOn": "Conseguida a {date}",
   "socialProfileBadgeHint": "Ver o que é e quando foi conquistada",
-  "socialSearchEmptyHint": "Verifica se está bem escrito ou experimenta outra parte do nome."
+  "socialSearchEmptyHint": "Verifica se está bem escrito ou experimenta outra parte do nome.",
+  "socialEditCommentTooltip": "Editar o teu comentário",
+  "socialDeleteCommentTooltip": "Eliminar o teu comentário",
+  "socialEditPostTooltip": "Editar a tua publicação",
+  "socialDeletePostTooltip": "Eliminar a tua publicação",
+  "socialRemoveFriendNamed": "Remover {name} dos teus amigos"
 }

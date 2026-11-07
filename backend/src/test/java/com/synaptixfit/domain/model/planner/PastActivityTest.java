@@ -64,7 +64,9 @@ class PastActivityTest {
         assertThat(run.range().end()).isEqualTo(YESTERDAY.plus(Duration.ofMinutes(25)));
         assertThat(run.range().minutes()).isEqualTo(TimeRange.MIN_MINUTES);
         // 25 min en 5 km: 5:00 por km y 12 km/h.
-        assertThat(run.pace()).isEqualTo(new ActivityPace(300, 12.0));
+        assertThat(run.pace()).isEqualTo(new ActivityPace(300, 12.0, 30));
+        // Nadando 1500 m en 30 min: 2:00 por 100 m.
+        assertThat(ActivityPace.of(30, 1500).secondsPer100m()).isEqualTo(120);
     }
 
     @Test

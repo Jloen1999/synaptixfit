@@ -19,7 +19,8 @@ import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import com.synaptixfit.domain.port.output.user.UsageFocusPort;
-import com.synaptixfit.domain.port.output.user.BirthdayPort;
+import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
+import com.synaptixfit.application.port.input.run.ListPlannedRunsUseCase;
 import java.time.Clock;
 import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,12 +44,14 @@ public class ReminderPlanBeanConfiguration {
     private final SubjectDirectoryPort subjects;
     private final Clock clock;
     private final ZoneId zone;
+    private final ReminderOptionsRepositoryPort reminderOptions;
 
     public ReminderPlanBeanConfiguration(TransactionalUseCaseFactory tx,
                                          NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
                                          StudyMaterialRepositoryPort materials, CalendarBlockRepositoryPort blocks,
                                          DeadlineRepositoryPort deadlines, SubjectDirectoryPort subjects,
-                                         ExamCalendarPort exams, Clock clock,
+                                         ExamCalendarPort exams, ReminderOptionsRepositoryPort reminderOptions,
+                                         Clock clock,
                                          @Value("${synaptixfit.notifications.zone:Europe/Madrid}") String zone) {
         this.tx = tx;
         this.preferences = preferences;
@@ -60,31 +63,41 @@ public class ReminderPlanBeanConfiguration {
         this.exams = exams;
         this.clock = clock;
         this.zone = ZoneId.of(zone);
+        this.reminderOptions = reminderOptions;
     }
 
     /**
-     * Los avisos de seguimiento leen entrenamiento y retos con sus casos de uso; los de bienestar, sus opciones, la
-     * racha y el registro diario de hoy; el cumpleaños, la fecha de nacimiento de la cuenta (ADR 0036).
+     * Los avisos de seguimiento leen entrenamiento, retos y carreras programadas con sus casos de uso; los de
+     * bienestar, la racha y el registro diario de hoy; las opciones y el cumpleaños, sus puertos (ADR 0035 y 0036).
      */
     @Bean
     GetReminderPlanUseCase getReminderPlanUseCase(GetPendingTrainingDayUseCase pendingDay,
                                                   ListOpenSessionsUseCase openSessions,
                                                   ListMyChallengesUseCase challenges,
-                                                  ReminderOptionsRepositoryPort reminderOptions,
-                                                  GetStreakUseCase streak, GetTodayCheckInUseCase checkIn,
-                                                  BirthdayPort birthdays) {
-        return tx.wrap(GetReminderPlanUseCase.class, new ReminderPlanService(preferences, focus, materials, blocks,
-                deadlines, subjects, new ReminderPlanner(), exams, clock, zone, pendingDay, openSessions,
-                challenges, new ReminderPlanService.Wellbeing(reminderOptions, streak, checkIn, birthdays)));
+                                                  ListPlannedRunsUseCase plannedRuns,
+                                                  UserRepositoryPort users,
+                                                  GetStreakUseCase streak, GetTodayCheckInUseCase checkIn) {
+        return tx.wrap(GetReminderPlanUseCase.class, new ReminderPlanService(
+                new ReminderPlanService.Stores(preferences, reminderOptions, focus, users, materials, blocks,
+                        deadlines, subjects, exams),
+                new ReminderPlanner(), clock, zone,
+                new ReminderPlanService.FollowUpSources(pendingDay, openSessions, challenges, plannedRuns),
+                new ReminderPlanService.Wellbeing(streak, checkIn)));
+    }
+
+    /** Una sola instancia para leer y cambiar las opciones; cada contrato se expone envuelto en su transacción. */
+    @Bean(autowireCandidate = false)
+    ReminderOptionsService reminderOptionsService() {
+        return new ReminderOptionsService(reminderOptions, clock);
     }
 
     @Bean
-    GetReminderOptionsUseCase getReminderOptionsUseCase(ReminderOptionsRepositoryPort reminderOptions) {
-        return tx.wrap(GetReminderOptionsUseCase.class, new ReminderOptionsService(reminderOptions, clock));
+    GetReminderOptionsUseCase getReminderOptionsUseCase() {
+        return tx.wrap(GetReminderOptionsUseCase.class, reminderOptionsService());
     }
 
     @Bean
-    ChangeReminderOptionsUseCase changeReminderOptionsUseCase(ReminderOptionsRepositoryPort reminderOptions) {
-        return tx.wrap(ChangeReminderOptionsUseCase.class, new ReminderOptionsService(reminderOptions, clock));
+    ChangeReminderOptionsUseCase changeReminderOptionsUseCase() {
+        return tx.wrap(ChangeReminderOptionsUseCase.class, reminderOptionsService());
     }
 }

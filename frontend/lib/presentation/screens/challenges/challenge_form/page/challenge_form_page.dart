@@ -753,12 +753,12 @@ class _MilestoneRow extends StatelessWidget {
           Column(
             children: [
               IconButton(
-                tooltip: l10n.challengesFormEditTaskTooltip,
+                tooltip: l10n.challengesFormEditTaskNamed(item.title),
                 onPressed: enabled ? onEdit : null,
                 icon: const Icon(AppIcons.edit),
               ),
               IconButton(
-                tooltip: l10n.challengesFormRemoveTaskTooltip,
+                tooltip: l10n.challengesFormRemoveTaskNamed(item.title),
                 onPressed: enabled
                     ? () => bloc.add(
                         ChallengeFormEvent.milestoneRemoved(item.key),

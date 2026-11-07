@@ -88,7 +88,7 @@ class _AdminUserDetailView extends StatelessWidget with ErrorsMessageMixin {
                   onPressed: state.status.isLoading
                       ? null
                       : () => bloc.add(const AdminUserDetailEvent.refreshed()),
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const Icon(AppIcons.refresh),
                 ),
               ],
               bottom: detail == null

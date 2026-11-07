@@ -99,4 +99,15 @@ class RoutinePlanAndProgressTest {
         assertThat(points.getFirst().estimatedMaxKg()).isGreaterThan(70.0);
         assertThat(points.getLast().estimatedMaxKg()).isGreaterThan(points.getFirst().estimatedMaxKg());
     }
+
+    @Test
+    void aFinishedPlanHasNoCurrentWeek() {
+        Routine r = routine(1, LocalDate.of(2026, 11, 2));
+        r.weeks().getFirst().trainableDays().forEach(d -> r.completeDay(d.id(), LocalDate.of(2026, 11, 3)));
+
+        RoutinePlan plan = RoutinePlan.of(r);
+
+        assertThat(plan.currentWeek()).isNull();
+        assertThat(plan.percentDone()).isEqualTo(100);
+    }
 }

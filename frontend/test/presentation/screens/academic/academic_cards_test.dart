@@ -66,6 +66,12 @@ void main() {
       archived: false,
       noteCount: 4,
       fileCount: 2,
+      nextUp: SubjectNextUp(
+        kind: SubjectNextUpKind.assessment,
+        at: DateTime(today.year, today.month, today.day + 1, 9),
+        daysLeft: 1,
+        urgent: true,
+      ),
     );
     await _pump(
       tester,
@@ -90,10 +96,11 @@ void main() {
           height: TokensSize.subjectCardHeight,
           child: SubjectCard(
             subject: subject.copyWith(
-              nextAssessmentAt: DateTime(
-                today.year,
-                today.month,
-                today.day + 5,
+              nextUp: SubjectNextUp(
+                kind: SubjectNextUpKind.assessment,
+                at: DateTime(today.year, today.month, today.day + 5),
+                daysLeft: 5,
+                urgent: false,
               ),
             ),
             onTap: () {},
@@ -114,9 +121,8 @@ void main() {
   });
 
   testWidgets(
-    'la tarjeta pone en medio lo próximo: entrega urgente, si no la clase',
+    'la tarjeta pinta lo próximo que elige el servidor: entrega o clase',
     (tester) async {
-      final now = DateTime(2026, 11, 9, 8);
       final subject = Subject(
         id: 's2',
         name: 'Física Cuántica',
@@ -136,17 +142,19 @@ void main() {
           dueAt: DateTime(2026, 11, 10, 23),
           exam: false,
         ),
+        nextUp: SubjectNextUp(
+          kind: SubjectNextUpKind.delivery,
+          at: DateTime(2026, 11, 10, 23),
+          daysLeft: 1,
+          urgent: true,
+        ),
       );
-      // Entrega mañana: va antes que la clase (lo que urge, primero).
-      expect(
-        SubjectNextUp.of(subject, now)!.urgent,
-        isTrue,
-      );
+      expect(SubjectNextUpView.of(subject)!.urgent, isTrue);
       await _pump(
         tester,
         SizedBox(
           height: TokensSize.subjectCardHeight * 2,
-          child: SubjectCard(subject: subject, onTap: () {}, now: now),
+          child: SubjectCard(subject: subject, onTap: () {}),
         ),
       );
       expect(tester.takeException(), isNull);
@@ -161,14 +169,15 @@ void main() {
           height: TokensSize.subjectCardHeight * 2,
           child: SubjectCard(
             subject: subject.copyWith(
-              nextDeadline: SubjectDeadline(
-                title: 'Examen',
-                dueAt: DateTime(2026, 11, 20, 9),
-                exam: true,
+              nextUp: SubjectNextUp(
+                kind: SubjectNextUpKind.classSession,
+                at: DateTime(2026, 11, 9, 10),
+                place: 'Aula 2.3',
+                daysLeft: 0,
+                urgent: false,
               ),
             ),
             onTap: () {},
-            now: now,
           ),
         ),
       );

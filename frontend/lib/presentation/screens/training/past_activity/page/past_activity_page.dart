@@ -11,25 +11,34 @@ import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
+import '../../activity_history/page/activity_history_view.dart';
+import '../../training_routes.dart';
 import '../../widgets/training_labels.dart';
+import '../../widgets/training_section_bar.dart';
 import '../bloc/past_activity_bloc.dart';
 
 /// «Apuntar actividad» (`/training/past-activity`): deporte hecho sin la app
 /// («ayer jugué al fútbol una hora») o un día de tu rutina que entrenaste sin
-/// ella. Se elige qué, cuándo, a qué hora y cuánto; al guardar se pide el
-/// esfuerzo, como al marcar un bloque de deporte.
+/// ella. Se elige el tipo (y la distancia si se mide así), cuándo, a qué hora
+/// y cuánto; al guardar se pide el esfuerzo, como al marcar un bloque de
+/// deporte. [from] es el apartado desde el que se abrió (nulo: el historial):
+/// el aviso final dice dónde queda según a dónde se vuelve.
 class PastActivityPage extends StatelessWidget {
-  const PastActivityPage({super.key});
+  const PastActivityPage({super.key, this.from});
+
+  final TrainingSection? from;
 
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (_) => getIt<PastActivityBloc>(),
-    child: const _PastActivityView(),
+    child: _PastActivityView(from: from),
   );
 }
 
 class _PastActivityView extends StatefulWidget {
-  const _PastActivityView();
+  const _PastActivityView({required this.from});
+
+  final TrainingSection? from;
 
   @override
   State<_PastActivityView> createState() => _PastActivityViewState();
@@ -43,8 +52,11 @@ class _PastActivityViewState extends State<_PastActivityView>
   final _title = TextEditingController();
   final _distance = TextEditingController();
 
-  /// Clase de deporte de la sugerencia elegida (decide si se pide distancia).
+  /// Tipo elegido: decide si se pide la distancia y en qué unidad.
   ActivityKind? _kind;
+
+  /// Nadando la distancia va en metros (largos de piscina); lo demás, en km.
+  bool get _inMeters => _kind == ActivityKind.swim;
   String? _distanceError;
   late DateTime _day = DateUtils.dateOnly(DateTime.now());
   TimeOfDay _time = TimeOfDay(
@@ -121,12 +133,16 @@ class _PastActivityViewState extends State<_PastActivityView>
     );
   }
 
-  /// Metros escritos en km («5» o «5,5»); nulo si no se pide o está vacío.
+  /// Metros escritos en km («5» o «5,5») o, nadando, en metros («1500»);
+  /// nulo si no se pide o está vacío y -1 si no es un número.
   int? _distanceMeters() {
     if (!(_kind?.measuresDistance ?? false)) return null;
-    final text = _distance.text.trim().replaceAll(',', '.');
+    final text = _distance.text.trim();
     if (text.isEmpty) return null;
-    final km = double.tryParse(text);
+    if (_inMeters) {
+      return int.tryParse(text.replaceAll(RegExp(r'[\s.,]'), '')) ?? -1;
+    }
+    final km = double.tryParse(text.replaceAll(',', '.'));
     return km == null ? -1 : (km * 1000).round();
   }
 
@@ -134,7 +150,11 @@ class _PastActivityViewState extends State<_PastActivityView>
     final l10n = context.localizations;
     final meters = _distanceMeters();
     if (meters != null && (meters < 100 || meters > 300000)) {
-      setState(() => _distanceError = l10n.trainingPastActivityDistanceInvalid);
+      setState(
+        () => _distanceError = _inMeters
+            ? l10n.trainingPastActivityMetersInvalid
+            : l10n.trainingPastActivityDistanceInvalid,
+      );
       return;
     }
     setState(() => _distanceError = null);
@@ -161,6 +181,51 @@ class _PastActivityViewState extends State<_PastActivityView>
         distanceMeters: meters,
       ),
     );
+  }
+
+  /// Aviso al guardar: dice dónde queda según a dónde se vuelve. Si al
+  /// volver no se ve, lleva «Ver» (con el router: la página ya se ha cerrado).
+  void _announceSaved(BuildContext context, int xp) {
+    final l10n = context.localizations;
+    final router = GoRouter.of(context);
+    void withView(String text, String location) => context.showActionSnack(
+      text,
+      actionLabel: l10n.commonView,
+      onAction: () => router.push(location),
+    );
+    if (_routineMode) {
+      final text = xp > 0
+          ? l10n.trainingPastActivityRoutineSavedXp(xp)
+          : l10n.trainingPastActivityRoutineSaved;
+      // Desde el historial ya se está al lado, en su pestaña «Entrenos».
+      widget.from == null
+          ? context.showSnack(text)
+          : withView(text, TrainingPaths.history);
+      return;
+    }
+    switch (widget.from) {
+      // Se vuelve a Correr, que enseña «Tus actividades».
+      case TrainingSection.run:
+        context.showSnack(
+          xp > 0
+              ? l10n.trainingPastActivitySavedRunXp(xp)
+              : l10n.trainingPastActivitySavedRun,
+        );
+      // Se vuelve al historial, a «Actividades y partidos».
+      case null:
+        context.showSnack(
+          xp > 0
+              ? l10n.trainingPastActivitySavedXp(xp)
+              : l10n.trainingPastActivitySaved,
+        );
+      case TrainingSection.gym:
+        withView(
+          xp > 0
+              ? l10n.trainingPastActivitySavedXp(xp)
+              : l10n.trainingPastActivitySaved,
+          TrainingPaths.activities,
+        );
+    }
   }
 
   /// Elegir el día de la rutina en curso (por defecto, el que toca).
@@ -223,16 +288,12 @@ class _PastActivityViewState extends State<_PastActivityView>
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final today = DateUtils.dateOnly(DateTime.now());
-    // Cada sugerencia lleva su clase: con correr, andar, bici o nadar se
-    // pide la distancia para calcular el ritmo.
+    // Nombres rápidos para lo que no tiene tipo propio (partido u otro
+    // deporte); correr, andar, bici y nadar ya se eligen en «Tipo».
     final suggestions = [
       (l10n.trainingPastActivityFootball, ActivityKind.match),
-      (l10n.trainingPastActivityRunning, ActivityKind.run),
-      (l10n.trainingPastActivityWalking, ActivityKind.walk),
-      (l10n.trainingPastActivityGym, ActivityKind.other),
-      (l10n.trainingPastActivityCycling, ActivityKind.bike),
-      (l10n.trainingPastActivitySwimming, ActivityKind.swim),
       (l10n.trainingPastActivityPadel, ActivityKind.match),
+      (l10n.trainingPastActivityGym, ActivityKind.other),
     ];
     return BlocConsumer<PastActivityBloc, PastActivityState>(
       listenWhen: (a, b) =>
@@ -246,11 +307,7 @@ class _PastActivityViewState extends State<_PastActivityView>
               SessionEvent.accountUpdated(account),
             );
           }
-          context.showSnack(
-            xp > 0
-                ? l10n.trainingPastActivitySavedXp(xp)
-                : l10n.trainingPastActivitySaved,
-          );
+          _announceSaved(context, xp);
           context.pop(true);
         }
       },
@@ -290,22 +347,37 @@ class _PastActivityViewState extends State<_PastActivityView>
                 ..._routineSection(context, state)
               else ...[
                 AppSectionHeader(title: l10n.trainingPastActivityWhat),
-                Wrap(
-                  spacing: TokensSpacing.s,
-                  runSpacing: TokensSpacing.s,
-                  children: [
-                    for (final (name, kind) in suggestions)
-                      ChoiceChip(
-                        label: Text(name),
-                        selected: _title.text == name,
-                        onSelected: (_) => setState(() {
-                          _title.text = name;
-                          _kind = kind;
-                        }),
-                      ),
-                  ],
+                AppSegmentedChoice<ActivityKind>(
+                  label: l10n.trainingPastActivityKind,
+                  values: ActivityKind.values,
+                  selected: _kind,
+                  labelOf: (k) => activityKindLabel(l10n, k),
+                  onChanged: (k) => setState(() {
+                    // La distancia escrita era de otra unidad o no aplica.
+                    if (k != _kind) _distance.clear();
+                    _kind = k;
+                    _distanceError = null;
+                  }),
                 ),
                 const SizedBox(height: TokensSpacing.m),
+                if (_kind == ActivityKind.match ||
+                    _kind == ActivityKind.other) ...[
+                  Wrap(
+                    spacing: TokensSpacing.s,
+                    runSpacing: TokensSpacing.s,
+                    children: [
+                      for (final (name, kind) in suggestions)
+                        if (kind == _kind)
+                          ChoiceChip(
+                            label: Text(name),
+                            selected: _title.text == name,
+                            onSelected: (_) =>
+                                setState(() => _title.text = name),
+                          ),
+                    ],
+                  ),
+                  const SizedBox(height: TokensSpacing.s),
+                ],
                 AppTextField(
                   controller: _title,
                   label: l10n.trainingPastActivityName,
@@ -318,24 +390,25 @@ class _PastActivityViewState extends State<_PastActivityView>
                   const SizedBox(height: TokensSpacing.m),
                   AppTextField(
                     controller: _distance,
-                    label: l10n.trainingPastActivityDistance,
+                    label: _inMeters
+                        ? l10n.trainingPastActivityMeters
+                        : l10n.trainingPastActivityDistance,
                     icon: Icons.straighten_rounded,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: !_inMeters,
                     ),
                     textInputAction: TextInputAction.done,
+                    suffixText: _inMeters
+                        ? l10n.trainingPastActivityMetersSuffix
+                        : l10n.trainingPastActivityKmSuffix,
+                    helper: _inMeters
+                        ? l10n.trainingPastActivityMetersHint
+                        : l10n.trainingPastActivityDistanceHint,
+                    // El error va en el propio campo (el lector lo lee con
+                    // él) y sustituye a la ayuda mientras se ve.
+                    errorText: _distanceError,
                     onChanged: (_) => setState(() => _distanceError = null),
                   ),
-                  Text(
-                    l10n.trainingPastActivityDistanceHint,
-                    style: context.textStyles.bodySmall?.copyWith(
-                      color: context.colors.onSurfaceVariant,
-                    ),
-                  ),
-                  if (_distanceError case final message?) ...[
-                    const SizedBox(height: TokensSpacing.s),
-                    AppInlineMessage(message: message),
-                  ],
                 ],
               ],
               const SizedBox(height: TokensSpacing.m),
@@ -390,7 +463,7 @@ class _PastActivityViewState extends State<_PastActivityView>
                 value: _minutes,
                 // Deporte desde 10 min (una carrera corta cuenta); un día de
                 // rutina, desde 30 y como mucho 4 h (lo que admite el servidor).
-                min: _routineMode ? 30 : 10,
+                min: _routineMode ? 30 : SportActivity.minMinutes,
                 max: _routineMode ? 240 : 300,
                 step: 5,
                 display: l10n.trainingPastActivityMinutes,

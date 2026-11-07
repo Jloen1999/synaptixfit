@@ -47,6 +47,14 @@ public class RecordedRunJdbcAdapter implements RecordedRunRepositoryPort {
 
     @Override
     public void save(RecordedRun run) {
+        // Una carrera por evento: si el evento ya tenía una de otra grabación (se desmarcó y se volvió a grabar), la
+        // nueva la sustituye. La de la misma clave no se borra: así dos subidas simultáneas de la misma carrera
+        // chocan con la clave única y el controlador devuelve la que ganó.
+        jdbc.sql("DELETE FROM carreras_gps WHERE bloque_id = :block AND usuario_id = :user AND clave_cliente <> :key")
+                .param("block", run.blockId())
+                .param("user", run.userId())
+                .param("key", run.clientKey())
+                .update();
         jdbc.sql("""
                         INSERT INTO carreras_gps (bloque_id, usuario_id, clave_cliente, clase, iniciada_en, terminada_en,
                             segundos_movimiento, distancia_metros, desnivel_metros, kcal, esfuerzo, tramos, ruta,

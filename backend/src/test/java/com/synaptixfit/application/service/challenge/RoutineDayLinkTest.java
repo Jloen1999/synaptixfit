@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.synaptixfit.domain.exception.challenge.ChallengeLinkNotFoundException;
+import com.synaptixfit.domain.exception.challenge.ChallengeRoutineDayNotLinkableException;
 import com.synaptixfit.domain.model.challenge.ChallengeLink;
 import com.synaptixfit.domain.model.challenge.LinkType;
 import com.synaptixfit.domain.model.challenge.RoutineDayTarget;
@@ -34,11 +35,28 @@ class RoutineDayLinkTest {
         ChallengeReferenceValidator validator = new ChallengeReferenceValidator(f.references);
         UUID mine = UUID.randomUUID();
         f.ownedRefs.add(mine);
+        f.routineDays.add(new RoutineDayTarget(mine, "Fuerza", 1, 1, null, false, true));
 
         assertThatCode(() -> validator.checkLink(UUID.randomUUID(), new ChallengeLink(LinkType.ROUTINE_DAY, mine)))
                 .doesNotThrowAnyException();
         assertThatThrownBy(() -> validator.checkLink(UUID.randomUUID(),
                 new ChallengeLink(LinkType.ROUTINE_DAY, UUID.randomUUID())))
                 .isInstanceOf(ChallengeLinkNotFoundException.class);
+    }
+
+    @Test
+    void aRoutineDayThatIsDoneOrOutsideTheCurrentRoutineCannotBeLinked() {
+        ChallengeReferenceValidator validator = new ChallengeReferenceValidator(f.references);
+        UUID done = UUID.randomUUID();
+        UUID otherRoutine = UUID.randomUUID();
+        f.ownedRefs.add(done);
+        f.ownedRefs.add(otherRoutine);
+        f.routineDays.add(new RoutineDayTarget(done, "Fuerza", 1, 3, null, true, true));
+
+        assertThatThrownBy(() -> validator.checkLink(UUID.randomUUID(), new ChallengeLink(LinkType.ROUTINE_DAY, done)))
+                .isInstanceOf(ChallengeRoutineDayNotLinkableException.class);
+        assertThatThrownBy(() -> validator.checkLink(UUID.randomUUID(),
+                new ChallengeLink(LinkType.ROUTINE_DAY, otherRoutine)))
+                .isInstanceOf(ChallengeRoutineDayNotLinkableException.class);
     }
 }

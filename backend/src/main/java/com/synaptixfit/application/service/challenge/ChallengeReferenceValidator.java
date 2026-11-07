@@ -2,6 +2,7 @@ package com.synaptixfit.application.service.challenge;
 
 import com.synaptixfit.domain.model.challenge.LinkType;
 import com.synaptixfit.domain.exception.challenge.ChallengeLinkNotFoundException;
+import com.synaptixfit.domain.exception.challenge.ChallengeRoutineDayNotLinkableException;
 import com.synaptixfit.domain.exception.challenge.ChallengeSubjectNotFoundException;
 import com.synaptixfit.domain.exception.challenge.MilestoneAttachmentConflictException;
 import com.synaptixfit.domain.exception.challenge.MilestoneAttachmentNotFoundException;
@@ -40,6 +41,11 @@ public class ChallengeReferenceValidator {
                 : references.deadlineBelongsTo(userId, link.entityId());
         if (!owned) {
             throw new ChallengeLinkNotFoundException(link.entityId());
+        }
+        // Mismo criterio que la lista que ofrece el cliente: solo días de la rutina en curso que aún se pueden hacer.
+        if (link.type() == LinkType.ROUTINE_DAY && references.routineDayTargets(userId).stream()
+                .noneMatch(t -> t.dayId().equals(link.entityId()) && t.linkable())) {
+            throw new ChallengeRoutineDayNotLinkableException(link.entityId());
         }
     }
 

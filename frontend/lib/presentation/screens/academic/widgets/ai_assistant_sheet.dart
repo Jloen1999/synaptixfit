@@ -119,7 +119,7 @@ class _AssistantOption extends StatelessWidget {
                     color: context.palette.success,
                     icon: Icons.check_rounded,
                   )
-                : const Icon(Icons.chevron_right_rounded),
+                : const Icon(AppIcons.next),
             onTap: onTap,
           ),
         ),

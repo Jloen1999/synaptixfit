@@ -61,7 +61,7 @@ public final class SubjectDtos {
                                   String teacher, String room, boolean archived, UUID catalogSubjectId, String icsUrl,
                                   Instant lastSyncedAt, Instant createdAt, long noteCount, long fileCount,
                                   Instant nextClassAt, String nextClassPlace, List<Integer> classDays,
-                                  NextDeadlineResponse nextDeadline) {
+                                  NextDeadlineResponse nextDeadline, NextUpResponse nextUp) {
 
         public static SubjectResponse from(SubjectSummary s) {
             return from(s.subject(), s.noteCount(), s.fileCount(), s.agenda());
@@ -77,12 +77,24 @@ public final class SubjectDtos {
                     s.catalogSubjectId(), s.icsUrl(), s.lastSyncedAt(), s.createdAt(), notes, files,
                     a.nextClassAt(), a.nextClassPlace(), a.classDays(),
                     a.nextDeadline() == null ? null : new NextDeadlineResponse(a.nextDeadline().title(),
-                            a.nextDeadline().dueAt(), a.nextDeadline().exam()));
+                            a.nextDeadline().dueAt(), a.nextDeadline().exam()),
+                    a.nextUp() == null ? null : new NextUpResponse(a.nextUp().kind(), a.nextUp().at(),
+                            a.nextUp().place(), a.nextUp().daysLeft(), a.nextUp().urgent()));
         }
     }
 
     /** Próxima entrega o examen sin hacer de la asignatura. */
     public record NextDeadlineResponse(String title, Instant dueAt, boolean exam) {
+    }
+
+    /**
+     * Lo que destaca la tarjeta de la asignatura, ya elegido por el servidor (lo urgente primero): {@code kind}
+     * ({@code DELIVERY}, {@code EXAM}, {@code CLASS} o {@code ASSESSMENT}), cuándo, el aula (solo clases), los días
+     * naturales que faltan en la zona del móvil y si urge (hoy o mañana). El cliente solo lo pinta.
+     */
+    @Schema(name = "AcademicSubjectNextUpResponse")
+    public record NextUpResponse(SubjectAgenda.NextUpKind kind, Instant at, String place, int daysLeft,
+                                 boolean urgent) {
     }
 
     @Schema(name = "AcademicCatalogSubjectResponse")

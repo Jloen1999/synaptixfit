@@ -49,7 +49,11 @@ enum ReminderKind {
 
   /// «¡Feliz cumpleaños, Ana!» la mañana de su cumpleaños (ADR 0036). Si ese
   /// día hay resumen de la mañana, va dentro de él.
-  birthday('BIRTHDAY');
+  birthday('BIRTHDAY'),
+
+  /// «Hoy toca tu entreno de carrera»: el evento de un entreno de carrera
+  /// programado; sustituye al aviso de entreno de ese evento (ADR 0037).
+  runWorkout('RUN_WORKOUT');
 
   const ReminderKind(this.apiValue);
 

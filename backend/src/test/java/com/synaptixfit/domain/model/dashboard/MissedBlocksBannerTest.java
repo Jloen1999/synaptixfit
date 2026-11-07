@@ -3,6 +3,7 @@ package com.synaptixfit.domain.model.dashboard;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.CalendarBlock;
+import com.synaptixfit.domain.model.user.UsageFocus;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -44,5 +45,20 @@ class MissedBlocksBannerTest {
 
         assertThat(described.params()).containsEntry("yesterday", 1).containsEntry("startMinutes", 10 * 60);
         assertThat(described.labels()).containsEntry("title", "Álgebra");
+    }
+
+    @Test
+    void onlyPastUnmarkedStudyOrTrainingOfTheUsedScopeCount() {
+        Instant now = Instant.parse("2026-10-21T18:00:00Z");
+        CalendarBlock study = block("estudio", "2026-10-21T08:00:00Z", "Álgebra", null);
+        CalendarBlock sport = block("deporte", "2026-10-21T10:00:00Z", null, null);
+        CalendarBlock upcoming = block("estudio", "2026-10-21T20:00:00Z", "Física", null);
+        List<CalendarBlock> blocks = List.of(study, sport, upcoming,
+                block("clase", "2026-10-21T09:00:00Z", "Álgebra", null),
+                block("personal", "2026-10-21T11:00:00Z", null, "Dentista"));
+
+        assertThat(SmartBannerRules.missedForBanner(blocks, UsageFocus.BOTH, now)).containsExactly(study, sport);
+        // Solo estudios: el entreno no se le reprocha.
+        assertThat(SmartBannerRules.missedForBanner(blocks, UsageFocus.ACADEMIC, now)).containsExactly(study);
     }
 }

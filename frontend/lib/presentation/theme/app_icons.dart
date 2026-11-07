@@ -43,6 +43,45 @@ abstract final class AppIcons {
   static const IconData markAllRead = Icons.done_all_rounded;
   static const IconData leave = Icons.logout_rounded;
 
+  /// Acción «Marcar como hecho» (botón); el estado ya hecho es [done].
+  static const IconData markDone = Icons.task_alt_rounded;
+
+  /// Estado «Hecho» (casilla marcada, pastilla o insignia de algo terminado).
+  static const IconData done = Icons.check_circle_rounded;
+
+  /// Estado «Por hacer» (casilla sin marcar); se cambia por [done] al marcar.
+  static const IconData todo = Icons.radio_button_unchecked_rounded;
+
+  /// Cerrar la semana del planificador (repasarla y pasar a la siguiente).
+  static const IconData closeWeek = Icons.event_available_outlined;
+
+  /// Prioridad de algo (asignatura, tarea). No es la bandera de Retos.
+  static const IconData priority = Icons.priority_high_rounded;
+
+  // Tipos de evento académico (mismo dibujo en Inicio, planificador y
+  // Académico).
+  static const IconData exam = Icons.quiz_outlined;
+  static const IconData delivery = Icons.assignment_outlined;
+  static const IconData presentation = Icons.slideshow_outlined;
+
+  /// Mostrar la contraseña escrita (ojo abierto).
+  static const IconData showPassword = Icons.visibility_outlined;
+
+  /// Ocultar la contraseña escrita (ojo tachado).
+  static const IconData hidePassword = Icons.visibility_off_outlined;
+
+  /// Ver cómo queda un texto antes de guardarlo (vista previa).
+  static const IconData preview = Icons.preview_outlined;
+
+  /// Algo que se puede ver pero no cambiar (solo lectura).
+  static const IconData readOnly = Icons.lock_outline_rounded;
+
+  /// Algo que no ven los demás o que no se muestra (oculto).
+  static const IconData hidden = Icons.visibility_off_outlined;
+
+  /// Cuánto dura algo (minutos de una sesión, de una actividad).
+  static const IconData duration = Icons.schedule_rounded;
+
   // Ir a otro sitio.
   static const IconData back = Icons.arrow_back_rounded;
   static const IconData previous = Icons.chevron_left_rounded;

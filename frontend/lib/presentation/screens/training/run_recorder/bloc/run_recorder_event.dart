@@ -39,4 +39,9 @@ sealed class RunRecorderEvent with _$RunRecorderEvent {
 
   const factory RunRecorderEvent.gpsFailed(AppError error) =
       RunRecorderGpsFailed;
+
+  /// «Abrir los ajustes de la app» de la ayuda de batería (para quitar el
+  /// ahorro de batería que corta el GPS).
+  const factory RunRecorderEvent.batterySettingsOpened() =
+      RunRecorderBatterySettingsOpened;
 }

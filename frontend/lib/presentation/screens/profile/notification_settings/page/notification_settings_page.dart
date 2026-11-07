@@ -245,7 +245,7 @@ class _Content extends StatelessWidget {
                           child: ListTile(
                             leading: const Icon(Icons.schedule_rounded),
                             title: Text(l10n.profileQuietHoursEdit),
-                            trailing: const Icon(Icons.chevron_right_rounded),
+                            trailing: const Icon(AppIcons.next),
                             onTap: () => _editQuietHours(context),
                           ),
                         ),
@@ -444,7 +444,7 @@ class _WeeklyEmailSection extends StatelessWidget with ErrorsMessageMixin {
                       const SizedBox(height: TokensSpacing.s),
                       AppSecondaryButton(
                         label: l10n.commonRetry,
-                        icon: const Icon(Icons.refresh_rounded),
+                        icon: const Icon(AppIcons.refresh),
                         onPressed: () => context.read<WeeklyEmailBloc>().add(
                           const WeeklyEmailEvent.started(),
                         ),

@@ -21,6 +21,7 @@ class StateSection extends StatelessWidget {
     this.focus = UsageFocus.both,
     required this.onOpenAnalytics,
     this.onStudyNow,
+    this.headerFocusNode,
   });
 
   final HomeCognitiveState cognitive;
@@ -33,6 +34,9 @@ class StateSection extends StatelessWidget {
   /// Botón «Concentrarme» de la franja; sin él (Inicio ya lo tiene en «Tu
   /// día») solo se muestra la pauta.
   final VoidCallback? onStudyNow;
+
+  /// Foco del título, para llevarlo aquí al ocultar la tarjeta de encima.
+  final FocusNode? headerFocusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +111,7 @@ class StateSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppSectionHeader(
+          focusNode: headerFocusNode,
           title: focus == UsageFocus.both
               ? l10n.homeBalanceTitle
               : l10n.homeStateTitle,

@@ -79,6 +79,10 @@ void main() {
         );
         expectRatio('onAccentC', c.onAccentContainer, c.accentContainer, 4.5);
         expectRatio('onErrorC', c.onErrorContainer, c.errorContainer, 4.5);
+        // «Mi ciclo»: día de regla (número y gota) y leyenda.
+        expectRatio('onCycleC', c.onCycleContainer, c.cycleContainer, 4.5);
+        expectRatio('onCycle', c.onCycle, c.cycle, 4.5);
+        expectRatio('cycle', c.cycle, c.surface, 4.5);
         for (final color in [c.success, c.warning, c.secondary, c.tertiary]) {
           expectRatio('estado $color', color, c.surface, 4.5);
         }
@@ -256,6 +260,10 @@ class _Colors {
     required this.outline,
     required this.surfaceContainerLow,
     required this.navigationBar,
+    required this.cycle,
+    required this.onCycle,
+    required this.cycleContainer,
+    required this.onCycleContainer,
   });
 
   static const light = _Colors(
@@ -293,6 +301,10 @@ class _Colors {
     outline: TokensLightColors.outline,
     surfaceContainerLow: TokensLightColors.surfaceContainerLow,
     navigationBar: TokensLightColors.navigationBar,
+    cycle: TokensLightColors.cycle,
+    onCycle: TokensLightColors.onCycle,
+    cycleContainer: TokensLightColors.cycleContainer,
+    onCycleContainer: TokensLightColors.onCycleContainer,
   );
 
   static const dark = _Colors(
@@ -330,6 +342,10 @@ class _Colors {
     outline: TokensDarkColors.outline,
     surfaceContainerLow: TokensDarkColors.surfaceContainerLow,
     navigationBar: TokensDarkColors.navigationBar,
+    cycle: TokensDarkColors.cycle,
+    onCycle: TokensDarkColors.onCycle,
+    cycleContainer: TokensDarkColors.cycleContainer,
+    onCycleContainer: TokensDarkColors.onCycleContainer,
   );
 
   final Color onSurface, onSurfaceVariant, surface, background;
@@ -341,4 +357,5 @@ class _Colors {
   final Color onAccentContainer;
   final Color success, warning, calories, sessions, study, streak, outline;
   final Color surfaceContainerLow, navigationBar;
+  final Color cycle, onCycle, cycleContainer, onCycleContainer;
 }

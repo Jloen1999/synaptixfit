@@ -157,7 +157,7 @@ class _ChallengeTile extends StatelessWidget {
             ],
           );
           final chevron = Icon(
-            Icons.chevron_right_rounded,
+            AppIcons.next,
             color: context.colors.onSurfaceVariant,
           );
           if (!side) {

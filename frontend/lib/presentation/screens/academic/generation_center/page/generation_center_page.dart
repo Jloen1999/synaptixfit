@@ -437,7 +437,7 @@ class _ResultBar extends StatelessWidget {
       ),
       IconButton(
         tooltip: l10n.academicAiRegenerate,
-        icon: const Icon(Icons.refresh_rounded),
+        icon: const Icon(AppIcons.refresh),
         onPressed: () => _keepingEdits(
           context,
           () => bloc.add(const GenerationCenterEvent.generateRequested()),
@@ -613,7 +613,7 @@ class _ArtifactView extends StatelessWidget {
                     ),
                   AppSecondaryButton(
                     label: l10n.academicGenerateRegenerate,
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: const Icon(AppIcons.refresh),
                     onPressed: () => context.read<GenerationCenterBloc>().add(
                       const GenerationCenterEvent.generateRequested(),
                     ),

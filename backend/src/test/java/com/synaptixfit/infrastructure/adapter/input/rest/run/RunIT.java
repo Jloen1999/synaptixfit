@@ -85,10 +85,10 @@ class RunIT {
                 .andReturn().getResponse().getContentAsString();
         String blockId = JsonPath.read(body, "$.run.blockId");
 
-        // La cola del móvil reintenta: misma clave, misma carrera.
+        // La cola del móvil reintenta: misma clave, misma carrera (200: no se ha creado nada nuevo).
         mvc.perform(post("/api/v1/training/runs").header("Authorization", auth)
                         .contentType(MediaType.APPLICATION_JSON).content(run(key, startedAt, 20, "")))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.run.blockId").value(blockId))
                 .andExpect(jsonPath("$.xpDelta").value(0));
 

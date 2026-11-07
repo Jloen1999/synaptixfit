@@ -336,6 +336,7 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     String? routineId,
     String? routineDayId,
     @Default(<HomeTaskMentionDto>[]) List<HomeTaskMentionDto> tasks,
+    @Default(false) bool tracksPhysicalLoad,
   }) = _HomeTodayEventDto;
 
   const HomeTodayEventDto._();
@@ -356,6 +357,7 @@ abstract class HomeTodayEventDto with _$HomeTodayEventDto {
     routineId: routineId,
     routineDayId: routineDayId,
     tasks: tasks.map((t) => t.toDomain()).toList(),
+    tracksPhysicalLoad: tracksPhysicalLoad,
   );
 }
 

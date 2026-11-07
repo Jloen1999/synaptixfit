@@ -55,7 +55,8 @@ class RunMap extends StatelessWidget {
       ),
     );
     if (route.length < 2) return map;
-    // Leyenda: la salida y la llegada no se distinguen solo por el color.
+    // Leyenda: la salida y la llegada no se distinguen solo por el color, y
+    // su forma es la del marcador (bandera sobre el mapa; cuadrado sin él).
     final l10n = context.localizations;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,8 +73,8 @@ class RunMap extends StatelessWidget {
                 label: l10n.runMapStart,
               ),
               _Legend(
-                icon: Icons.flag_rounded,
-                color: context.colors.error,
+                icon: key == null ? Icons.square_rounded : Icons.flag_rounded,
+                color: context.palette.accent,
                 label: l10n.runMapFinish,
               ),
             ],
@@ -164,7 +165,7 @@ class _TiledMap extends StatelessWidget {
               ),
               Marker(
                 point: points.last,
-                child: _Dot(color: colors.error, flag: true),
+                child: _Dot(color: context.palette.accent, flag: true),
               ),
             ],
             if (center != null)
@@ -201,7 +202,7 @@ class _Dot extends StatelessWidget {
     child: flag
         ? Icon(
             Icons.flag_rounded,
-            color: context.colors.onError,
+            color: context.palette.onAccent,
             size: TokensSize.iconXs,
           )
         : const SizedBox.expand(),
@@ -229,7 +230,8 @@ class _PlainRoute extends StatelessWidget {
                   route: route,
                   line: colors.primary,
                   start: colors.primary,
-                  end: colors.error,
+                  // La llegada no es un fallo: naranja de logro, no el error.
+                  end: context.palette.accent,
                 ),
               ),
             )
@@ -339,5 +341,5 @@ class _RoutePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RoutePainter old) =>
-      old.route != route || old.line != line;
+      old.route != route || old.line != line || old.end != end;
 }

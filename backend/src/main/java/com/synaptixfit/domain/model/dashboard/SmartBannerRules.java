@@ -2,6 +2,9 @@ package com.synaptixfit.domain.model.dashboard;
 
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.CalendarBlock;
 import com.synaptixfit.domain.model.planner.ActivityType;
+import com.synaptixfit.domain.model.planner.ItemTimeStatus;
+import com.synaptixfit.domain.model.user.UsageFocus;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Comparator;
@@ -87,6 +90,23 @@ public final class SmartBannerRules {
             return banner(SmartBanner.Type.CHECK_IN_PENDING);
         }
         return banner(SmartBanner.Type.BALANCE);
+    }
+
+    /**
+     * Eventos que cuentan para el aviso «sin hacer»: los del ámbito que usa la persona que ya pasaron sin marcarse
+     * ({@link ItemTimeStatus#MISSED}). Las clases no cuentan: casi siempre vienen del horario importado y pocos las
+     * marcan. Lo personal tampoco: el aviso anima a recuperar estudio o entreno, no a reprochar un recado.
+     */
+    public static List<CalendarBlock> missedForBanner(List<CalendarBlock> blocks, UsageFocus focus, Instant now) {
+        return blocks.stream()
+                .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus))
+                .filter(b -> {
+                    ActivityType type = ActivityType.fromCode(b.activityType());
+                    return type != ActivityType.CLASS && type != ActivityType.PERSONAL
+                            && ItemTimeStatus.ofBlock(type, b.start(), b.end(), b.completed(), now)
+                            == ItemTimeStatus.MISSED;
+                })
+                .toList();
     }
 
     /**

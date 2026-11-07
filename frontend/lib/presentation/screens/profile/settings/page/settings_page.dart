@@ -122,7 +122,7 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                       subtitle: hasPassword
                           ? null
                           : Text(l10n.profilePasswordCreateHint),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(ProfilePaths.changePassword),
                     ),
                   ),
@@ -130,7 +130,7 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                     child: ListTile(
                       leading: const Icon(Icons.manage_accounts_outlined),
                       title: Text(l10n.profileEditAccountTitle),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(ProfilePaths.editAccount),
                     ),
                   ),
@@ -146,7 +146,7 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                       leading: const Icon(AppIcons.notifications),
                       title: Text(l10n.profileNotificationsTitle),
                       subtitle: Text(l10n.profileNotificationsHint),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(ProfilePaths.notifications),
                     ),
                   ),
@@ -160,7 +160,7 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                       leading: const Icon(Icons.verified_user_outlined),
                       title: Text(l10n.profilePermissionsTitle),
                       subtitle: Text(l10n.profilePermissionsHint),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(ProfilePaths.permissions),
                     ),
                   ),
@@ -169,7 +169,7 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                       leading: const Icon(Icons.privacy_tip_outlined),
                       title: Text(l10n.profileLegalPrivacy),
                       subtitle: Text(l10n.profileLegalPrivacyHint),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(
                         ProfilePaths.legal(LegalDocumentKind.privacy),
                       ),
@@ -180,7 +180,7 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                       leading: const Icon(Icons.description_outlined),
                       title: Text(l10n.profileLegalTerms),
                       subtitle: Text(l10n.profileLegalTermsHint),
-                      trailing: const Icon(Icons.chevron_right_rounded),
+                      trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(
                         ProfilePaths.legal(LegalDocumentKind.terms),
                       ),

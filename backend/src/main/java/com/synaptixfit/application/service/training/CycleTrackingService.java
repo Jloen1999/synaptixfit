@@ -54,7 +54,7 @@ public class CycleTrackingService implements GetCycleOverviewUseCase, ChangeCycl
         if (enabled && !current.enabled()) {
             cycles.saveTracking(userId, CycleTracking.enable(consent, clock.instant()), clock.instant());
         } else if (!enabled) {
-            cycles.saveTracking(userId, CycleTracking.OFF, clock.instant());
+            cycles.saveTracking(userId, current.disable(clock.instant()), clock.instant());
             if (deleteHistory) {
                 cycles.deleteAllDays(userId);
             }

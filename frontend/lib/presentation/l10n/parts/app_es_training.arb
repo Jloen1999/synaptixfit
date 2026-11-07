@@ -75,7 +75,7 @@
   "trainingWeekTypeLoad": "Subir peso",
   "trainingWeekTypePeak": "La más dura",
   "trainingWeekTypeDeload": "Semana suave",
-  "trainingProgressPending": "Pendiente",
+  "trainingProgressPending": "Por hacer",
   "trainingProgressInProgress": "En curso",
   "trainingProgressCompleted": "Completado",
   "trainingRecommendationProgression": "Progresión",
@@ -994,10 +994,7 @@
   "trainingPastActivityWhat": "¿Qué hiciste?",
   "trainingPastActivityName": "Actividad",
   "trainingPastActivityFootball": "Fútbol",
-  "trainingPastActivityRunning": "Correr",
   "trainingPastActivityGym": "Gimnasio",
-  "trainingPastActivityCycling": "Bici",
-  "trainingPastActivitySwimming": "Natación",
   "trainingPastActivityPadel": "Pádel",
   "trainingPastActivityWhen": "¿Cuándo?",
   "trainingPastActivityToday": "Hoy",
@@ -2649,10 +2646,13 @@
       }
     }
   },
-  "trainingPastActivityWalking": "Andar",
   "trainingPastActivityDistance": "Distancia (opcional)",
   "trainingPastActivityDistanceHint": "En kilómetros, por ejemplo 5 o 5,5. Con ella calculamos tu ritmo.",
   "trainingPastActivityDistanceInvalid": "Escribe una distancia entre 0,1 y 300 km.",
+  "trainingPastActivityKmSuffix": "km",
+  "@trainingPastActivityKmSuffix": {
+    "description": "Unidad a la derecha del campo de distancia (kilómetros)."
+  },
   "trainingErrorCycleConsentRequired": "Para activarlo, marca la casilla de que aceptas.",
   "trainingErrorCycleTrackingOff": "Activa el seguimiento del ciclo para apuntar días.",
   "trainingErrorCycleDayOutOfRange": "Solo puedes apuntar hoy o días del último año.",
@@ -3162,5 +3162,106 @@
   "runSplitFastest": "Tu kilómetro más rápido",
   "runMapStart": "Salida",
   "runMapFinish": "Llegada",
-  "runBatteryOpenSettings": "Abrir los ajustes de la app"
+  "runBatteryOpenSettings": "Abrir los ajustes de la app",
+  "runPreparing": "Preparando la carrera…",
+  "@runPreparing": {
+    "description": "Grabar carrera: mientras se prepara la pantalla."
+  },
+  "runSavingProgress": "Guardando tu carrera…",
+  "@runSavingProgress": {
+    "description": "Grabar carrera: al guardar (región viva)."
+  },
+  "runSavedProgress": "Carrera guardada. Abriendo el resumen…",
+  "@runSavedProgress": {
+    "description": "Grabar carrera: guardada, se abre su detalle."
+  },
+  "runQueuedProgress": "Guardada en este móvil. Volviendo a Correr…",
+  "@runQueuedProgress": {
+    "description": "Grabar carrera: sin conexión, queda en la cola del móvil."
+  },
+  "runDiscardedProgress": "Carrera descartada. Volviendo a Correr…",
+  "@runDiscardedProgress": {
+    "description": "Grabar carrera: descartada, se vuelve a Correr."
+  },
+  "runRejectedProgress": "No se ha podido guardar la carrera.",
+  "@runRejectedProgress": {
+    "description": "Grabar carrera: el servidor no la admite (se explica en un diálogo)."
+  },
+  "runStartNamed": "Empezar: {name}",
+  "@runStartNamed": {
+    "description": "Lector de pantalla del botón «Empezar» de un entreno de carrera.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runDeleteWorkoutNamed": "Borrar «{name}»",
+  "@runDeleteWorkoutNamed": {
+    "description": "Botón de borrar un entreno de carrera concreto.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runEditWorkoutNamed": "Cambiar «{name}»",
+  "@runEditWorkoutNamed": {
+    "description": "Botón de cambiar un entreno de carrera concreto.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingPastActivityKind": "Tipo",
+  "@trainingPastActivityKind": {
+    "description": "Apuntar actividad: grupo para elegir el tipo de deporte."
+  },
+  "trainingPastActivityMeters": "Distancia en metros (opcional)",
+  "@trainingPastActivityMeters": {
+    "description": "Apuntar actividad: distancia de natación, en metros."
+  },
+  "trainingPastActivityMetersHint": "Por ejemplo, 1500 (60 largos de 25 m). Con ella calculamos tu ritmo cada 100 m.",
+  "@trainingPastActivityMetersHint": {
+    "description": "Apuntar actividad: ayuda de la distancia de natación."
+  },
+  "trainingPastActivityMetersInvalid": "Escribe una distancia entre 100 y 300 000 metros.",
+  "@trainingPastActivityMetersInvalid": {
+    "description": "Apuntar actividad: distancia en metros fuera de rango."
+  },
+  "trainingPastActivityMetersSuffix": "m",
+  "@trainingPastActivityMetersSuffix": {
+    "description": "Unidad a la derecha del campo de distancia al nadar (metros)."
+  },
+  "trainingPastActivitySavedRun": "Actividad apuntada. La tienes en Entreno › Correr › Tus actividades.",
+  "@trainingPastActivitySavedRun": {
+    "description": "Aviso al apuntar una actividad desde Correr (se vuelve allí)."
+  },
+  "trainingPastActivitySavedRunXp": "Actividad apuntada · +{xp} XP. La tienes en Entreno › Correr › Tus actividades.",
+  "@trainingPastActivitySavedRunXp": {
+    "description": "Aviso al apuntar una actividad desde Correr, con la XP ganada.",
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPastActivityRoutineSaved": "Día de la rutina apuntado. Lo tienes en Entreno › Historial › Entrenos.",
+  "@trainingPastActivityRoutineSaved": {
+    "description": "Aviso al apuntar un día de la rutina hecho sin la app."
+  },
+  "trainingPastActivityRoutineSavedXp": "Día de la rutina apuntado · +{xp} XP. Lo tienes en Entreno › Historial › Entrenos.",
+  "@trainingPastActivityRoutineSavedXp": {
+    "description": "Aviso al apuntar un día de la rutina, con la XP ganada.",
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingPlanFinished": "Plan terminado",
+  "@trainingPlanFinished": {
+    "description": "En lugar de «Semana N de M» cuando ya no queda ningún día del plan por hacer."
+  }
 }

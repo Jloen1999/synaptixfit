@@ -70,16 +70,21 @@ public class SubjectController {
         this.removeSemester = removeSemester;
     }
 
-    /** {@code archived}: ausente o false → activas; true → archivadas. */
+    /**
+     * {@code archived}: ausente o false → activas; true → archivadas. {@code zone}: zona del móvil (IANA o desfase
+     * «+01:00») para los días de clase y «en N días»; sin ella, la del servidor.
+     */
     @GetMapping
     public List<SubjectResponse> list(@CurrentUserId UUID userId,
-                                      @RequestParam(defaultValue = "false") boolean archived) {
-        return listSubjects.listSubjects(userId, archived).stream().map(SubjectResponse::from).toList();
+                                      @RequestParam(defaultValue = "false") boolean archived,
+                                      @RequestParam(required = false) String zone) {
+        return listSubjects.listSubjects(userId, archived, zone).stream().map(SubjectResponse::from).toList();
     }
 
     @GetMapping("/{subjectId}")
-    public SubjectResponse get(@CurrentUserId UUID userId, @PathVariable UUID subjectId) {
-        return SubjectResponse.from(getSubject.getSubject(userId, subjectId));
+    public SubjectResponse get(@CurrentUserId UUID userId, @PathVariable UUID subjectId,
+                               @RequestParam(required = false) String zone) {
+        return SubjectResponse.from(getSubject.getSubject(userId, subjectId, zone));
     }
 
     @PostMapping
@@ -92,11 +97,12 @@ public class SubjectController {
 
     @PatchMapping("/{subjectId}")
     public SubjectResponse update(@CurrentUserId UUID userId, @PathVariable UUID subjectId,
-                                  @Valid @RequestBody UpdateSubjectRequest r) {
+                                  @Valid @RequestBody UpdateSubjectRequest r,
+                                  @RequestParam(required = false) String zone) {
         return SubjectResponse.from(updateSubject.updateSubject(new UpdateSubjectUseCase.Command(userId, subjectId,
                 r.name(), r.code(), r.description(), r.credits(), r.perceivedDifficulty(), r.priority(),
                 r.nextAssessmentAt(), Boolean.TRUE.equals(r.clearNextAssessment()), r.teacher(), r.icsUrl(), r.archived(),
-                r.room())));
+                r.room(), zone)));
     }
 
     @DeleteMapping("/{subjectId}")

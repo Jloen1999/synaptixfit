@@ -27,6 +27,10 @@ abstract final class TokensLightColors {
   static const Color onErrorContainer = Color(0xFF7F1D1D);
   static const Color success = Color(0xFF157A3A);
   static const Color warning = Color(0xFFA1520A);
+  static const Color cycle = Color(0xFFA21CAF);
+  static const Color onCycle = Color(0xFFFFFFFF);
+  static const Color cycleContainer = Color(0xFFFAE8FF);
+  static const Color onCycleContainer = Color(0xFF701A75);
   static const Color background = Color(0xFFF5F6F8);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceContainerLow = Color(0xFFF3F4F7);
@@ -67,6 +71,10 @@ abstract final class TokensDarkColors {
   static const Color onErrorContainer = Color(0xFFFECACA);
   static const Color success = Color(0xFF4ADE80);
   static const Color warning = Color(0xFFFBBF24);
+  static const Color cycle = Color(0xFFE879F9);
+  static const Color onCycle = Color(0xFF0B0D12);
+  static const Color cycleContainer = Color(0xFF3B1440);
+  static const Color onCycleContainer = Color(0xFFFAE8FF);
   static const Color background = Color(0xFF0B0D12);
   static const Color surface = Color(0xFF161A23);
   static const Color surfaceContainerLow = Color(0xFF1C212C);
@@ -177,6 +185,11 @@ abstract final class TokensSize {
   static const double emblemBorder = 2;
   static const double chartCompact = 200;
   static const double chartLine = 3;
+  static const double skeletonRow = 96;
+  static const double skeletonCard = 120;
+  static const double skeletonCardTall = 140;
+  static const double skeletonPanel = 320;
+  static const double splitLabel = 64;
 }
 
 abstract final class TokensOpacity {

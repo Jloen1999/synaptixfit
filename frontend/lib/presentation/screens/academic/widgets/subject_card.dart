@@ -13,24 +13,16 @@ import 'academic_visuals.dart';
 /// los recuentos en pequeño. Los días de clase y los créditos van en el
 /// detalle para no cargar la tarjeta.
 class SubjectCard extends StatelessWidget {
-  const SubjectCard({
-    super.key,
-    required this.subject,
-    required this.onTap,
-    this.now,
-  });
+  const SubjectCard({super.key, required this.subject, required this.onTap});
 
   final Subject subject;
   final VoidCallback onTap;
-
-  /// Para los tests; por defecto, ahora.
-  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
     final color = subjectColor(context, subject.id);
     final l10n = context.localizations;
-    final next = SubjectNextUp.of(subject, now ?? DateTime.now());
+    final next = SubjectNextUpView.of(subject);
     final nextColor = next?.urgent ?? false
         ? context.palette.warning
         : context.colors.tertiary;
@@ -140,12 +132,11 @@ class SubjectCard extends StatelessWidget {
   }
 }
 
-/// Lo próximo y accionable de una asignatura para su tarjeta. Una entrega o
-/// examen que vence hoy o mañana va primero (en color de aviso); si no, la
-/// próxima clase; si no hay clases, la entrega más cercana y, por último, la
-/// próxima evaluación que la persona apuntó a mano.
-class SubjectNextUp {
-  const SubjectNextUp._(this.icon, this.urgent, this.text, [this._label]);
+/// Cómo se pinta lo próximo de una asignatura ([Subject.nextUp], que elige el
+/// servidor: lo urgente primero). Aquí solo se decide icono y texto; urgente va
+/// en color de aviso.
+class SubjectNextUpView {
+  const SubjectNextUpView._(this.icon, this.urgent, this.text, [this._label]);
 
   final IconData icon;
   final bool urgent;
@@ -157,58 +148,40 @@ class SubjectNextUp {
   /// Lo que oye el lector de pantalla (la frase entera).
   String label(BuildContext context) => (_label ?? text)(context);
 
-  static SubjectNextUp? of(Subject subject, DateTime now) {
-    final deadline = subject.nextDeadline;
-    final deadlineDays = deadline == null
-        ? null
-        : AppDueDates.daysUntil(deadline.dueAt, now);
-    SubjectNextUp deadlineUp(SubjectDeadline d, int days) => SubjectNextUp._(
-      d.exam ? Icons.quiz_outlined : Icons.assignment_outlined,
-      AppDueDates.isSoon(d.dueAt, now),
-      (context) => d.exam
-          ? context.localizations.academicNextExamIn(days)
-          : context.localizations.academicNextDeliveryIn(days),
-    );
-    if (deadline != null &&
-        deadlineDays != null &&
-        deadlineDays >= 0 &&
-        deadlineDays <= AppDueDates.urgentDays) {
-      return deadlineUp(deadline, deadlineDays);
-    }
-    final classAt = subject.nextClassAt;
-    if (classAt != null && classAt.isAfter(now)) {
-      return SubjectNextUp._(
+  static SubjectNextUpView? of(Subject subject) {
+    final next = subject.nextUp;
+    if (next == null) return null;
+    final days = next.daysLeft;
+    return switch (next.kind) {
+      SubjectNextUpKind.delivery => SubjectNextUpView._(
+        AppIcons.delivery,
+        next.urgent,
+        (context) => context.localizations.academicNextDeliveryIn(days),
+      ),
+      SubjectNextUpKind.exam => SubjectNextUpView._(
+        AppIcons.exam,
+        next.urgent,
+        (context) => context.localizations.academicNextExamIn(days),
+      ),
+      SubjectNextUpKind.classSession => SubjectNextUpView._(
         Icons.co_present_outlined,
-        false,
-        (context) => nextClassText(
-          context,
-          classAt,
-          subject.nextClassPlace,
-          short: true,
-        ),
-        (context) => nextClassText(context, classAt, subject.nextClassPlace),
-      );
-    }
-    if (deadline != null && deadlineDays != null && deadlineDays >= 0) {
-      return deadlineUp(deadline, deadlineDays);
-    }
-    final assessment = subject.nextAssessmentAt;
-    final days = assessment == null
-        ? null
-        : AppDueDates.daysUntil(assessment, now);
-    if (assessment == null || days == null || days < 0) return null;
-    return SubjectNextUp._(
-      Icons.event_rounded,
-      AppDueDates.isSoon(assessment, now),
-      (context) {
-        final l10n = context.localizations;
-        return switch (days) {
-          0 => l10n.academicAssessmentToday,
-          1 => l10n.academicAssessmentTomorrow,
-          <= 6 => l10n.academicAssessmentIn(days),
-          _ => l10n.academicAssessmentOn(DateFormat.MMMd().format(assessment)),
-        };
-      },
-    );
+        next.urgent,
+        (context) => nextClassText(context, next.at, next.place, short: true),
+        (context) => nextClassText(context, next.at, next.place),
+      ),
+      SubjectNextUpKind.assessment => SubjectNextUpView._(
+        AppIcons.calendar,
+        next.urgent,
+        (context) {
+          final l10n = context.localizations;
+          return switch (days) {
+            0 => l10n.academicAssessmentToday,
+            1 => l10n.academicAssessmentTomorrow,
+            <= 6 => l10n.academicAssessmentIn(days),
+            _ => l10n.academicAssessmentOn(DateFormat.MMMd().format(next.at)),
+          };
+        },
+      ),
+    };
   }
 }

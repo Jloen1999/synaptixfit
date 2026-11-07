@@ -87,6 +87,7 @@ abstract final class WellbeingExtraDtos {
         distanceMeters: json['distanceMeters'] as int?,
         effort: json['effort'] as int?,
         paceSecondsPerKm: json['paceSecondsPerKm'] as int?,
+        paceSecondsPer100m: json['paceSecondsPer100m'] as int?,
         speedKmh: (json['speedKmh'] as num?)?.toDouble(),
         source: ActivitySource.fromApi(json['source'] as String?),
         elevationGainMeters: json['elevationGainMeters'] as int?,

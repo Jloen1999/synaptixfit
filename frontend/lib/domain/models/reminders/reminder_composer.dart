@@ -36,7 +36,9 @@ class ReminderComposer {
             body: texts.dueReviewsBody(planned.count ?? 0),
             at: planned.at,
           ),
-          ReminderKind.sportBlock || ReminderKind.studyBlock => Reminder(
+          ReminderKind.sportBlock ||
+          ReminderKind.studyBlock ||
+          ReminderKind.runWorkout => Reminder(
             id: _blockId(planned.refId),
             kind: planned.kind,
             title: texts.blockTitle(planned.kind),

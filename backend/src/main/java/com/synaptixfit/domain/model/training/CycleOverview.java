@@ -139,4 +139,9 @@ public record CycleOverview(CycleTracking tracking, CyclePhase phase, Integer da
     public Instant consentedAt() {
         return tracking.consentedAt();
     }
+
+    /** Cuándo se retiró el consentimiento al desactivarlo; nulo si sigue activo o nunca se dio. */
+    public Instant withdrawnAt() {
+        return tracking.withdrawnAt();
+    }
 }

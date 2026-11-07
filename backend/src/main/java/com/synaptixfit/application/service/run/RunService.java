@@ -91,7 +91,7 @@ public class RunService implements RecordRunUseCase, GetRunUseCase, DeleteRunUse
         Guard.notNull(command.startedAt(), "startedAt");
         Optional<UUID> existing = runs.findBlockByClientKey(command.userId(), command.clientKey());
         if (existing.isPresent()) {
-            return new Result(getRun(command.userId(), existing.get()), 0);
+            return new Result(getRun(command.userId(), existing.get()), 0, false);
         }
         if (command.kind() == null || !GPS_KINDS.contains(command.kind())) {
             throw new FieldValidationException("kind", "NOT_ALLOWED", "GPS runs are RUN, WALK or BIKE");
@@ -129,8 +129,17 @@ public class RunService implements RecordRunUseCase, GetRunUseCase, DeleteRunUse
         if (command.plannedBlockId() != null) {
             Optional<UUID> plannedWorkout = workouts.workoutOfEvent(userId, command.plannedBlockId());
             Optional<CalendarBlock> planned = plannedWorkout.flatMap(w -> findBlock(userId, command.plannedBlockId()));
-            if (planned.isPresent() && !planned.get().completed()) {
-                if (planned.get().start().isAfter(now)) {
+            // Un evento ya marcado como hecho («Ya lo hice») sin carrera la recibe, sin sumar otra vez: no quedan dos
+            // cosas para lo mismo (ADR 0037). Si ya tenía su carrera, la nueva se apunta aparte.
+            // Un evento que ya empezó solo se da por hecho si se corrió ese mismo día: una carrera que sube días
+            // después desde la cola no deja hecho el entreno de hoy; se apunta en su hora real.
+            boolean attachable = planned.isPresent()
+                    && (planned.get().start().isAfter(now)
+                    || zone.localDate(planned.get().start()).equals(zone.localDate(firstPoint)))
+                    && (!planned.get().completed()
+                    || runs.findDetail(userId, planned.get().id(), RunDetail.ROUTE_POINTS).isEmpty());
+            if (attachable) {
+                if (!planned.get().completed() && planned.get().start().isAfter(now)) {
                     deleteBlock.deleteBlock(userId, planned.get().id());
                 } else {
                     SetBlockCompletionUseCase.Result done = completePlanned.completePlannedActivity(
@@ -154,7 +163,7 @@ public class RunService implements RecordRunUseCase, GetRunUseCase, DeleteRunUse
         Double weight = context.bodyWeightKg(userId).orElse(null);
         runs.save(new RecordedRun(blockId, userId, command.clientKey(), command.kind(), firstPoint, end, metrics,
                 RunEnergy.kcal(command.kind(), metrics, weight), effort, workout == null ? null : workout.id(), now));
-        return new Result(getRun(userId, blockId), xpDelta);
+        return new Result(getRun(userId, blockId), xpDelta, true);
     }
 
     private Optional<CalendarBlock> findBlock(UUID userId, UUID blockId) {

@@ -332,6 +332,7 @@
   "academicAddGroupSubject": "Disciplina",
   "academicAddGroupNotes": "Apontamentos",
   "academicSubjectFocus": "Concentrar-me em {name}",
+  "academicSubjectEditNamed": "Editar «{name}»",
   "academicFormatHeading": "Título",
   "academicFormatBold": "Negrito",
   "academicFormatItalic": "Itálico",
@@ -555,5 +556,6 @@
   "academicSubjectDeleteAction": "Eliminar a disciplina",
   "academicFileDeleteAction": "Eliminar o ficheiro",
   "academicSubjectArchivedWhere": "Disciplina arquivada. Encontras em Académico › Arquivadas.",
-  "academicSubjectUnarchivedWhere": "Disciplina restaurada: volta a aparecer em Académico e no planeador."
+  "academicSubjectUnarchivedWhere": "Disciplina restaurada: volta a aparecer em Académico e no planeador.",
+  "academicDeleteNamed": "Eliminar «{title}»"
 }

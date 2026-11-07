@@ -259,8 +259,8 @@ public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
                     return null;
                 })
                 .list();
-        // Días de rutina vinculados (Entrenamiento, ADR 0032): se completan al entrenarlos.
-        String completed = TrainingDbValues.dayStatusToDb(ProgressStatus.COMPLETED);
+        // Días de rutina vinculados (Entrenamiento, ADR 0032): se completan al entrenarlos. El estado se traduce al
+        // del dominio con el mismo mapeo que Entrenamiento, en vez de comparar el texto guardado.
         jdbc.sql("""
                         select d.id, r.usuario_id, r.nombre, d.estado, s.numero_semana, d.numero_dia
                         from dias_rutina d
@@ -272,7 +272,8 @@ public class ChallengePersistenceAdapter implements ChallengeRepositoryPort {
                 .query((rs, n) -> {
                     result.computeIfAbsent(rs.getObject("usuario_id", UUID.class), k -> new HashMap<>())
                             .put(rs.getObject("id", UUID.class), new LinkedDeadline(rs.getString("nombre"), null,
-                                    completed.equals(rs.getString("estado")), rs.getInt("numero_semana"),
+                                    TrainingDbValues.dayStatus(rs.getString("estado")) == ProgressStatus.COMPLETED,
+                                    rs.getInt("numero_semana"),
                                     rs.getInt("numero_dia")));
                     return null;
                 })

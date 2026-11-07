@@ -24,8 +24,11 @@ public interface RecordRunUseCase {
                    List<TrackPoint> points, UUID workoutId, UUID plannedBlockId) {
     }
 
-    /** La carrera guardada y la XP que sumó (0 si ya estaba guardada o si se pasó el tope del día). */
-    record Result(RunDetail run, int xpDelta) {
+    /**
+     * La carrera guardada, la XP que sumó (0 si ya estaba guardada o si se pasó el tope del día) y si se ha guardado
+     * ahora ({@code created}) o ya estaba (un reintento con la misma {@code clientKey}).
+     */
+    record Result(RunDetail run, int xpDelta, boolean created) {
     }
 
     Result recordRun(Command command);

@@ -70,7 +70,7 @@ class _CompletedView extends StatelessWidget {
           body: switch (state.status) {
             CompletedStatus.loading => const AppSkeletonList(
               count: 3,
-              height: 96,
+              height: TokensSize.skeletonRow,
             ),
             CompletedStatus.failure => AppErrorView(
               error: state.error!,

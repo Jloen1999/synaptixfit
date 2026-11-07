@@ -72,7 +72,7 @@ class _SetupChecklistCardState extends State<SetupChecklistCard> {
                 leading: Icon(_icon(task), color: context.colors.primary),
                 title: Text(_title(context, task)),
                 subtitle: Text(_hint(context, task)),
-                trailing: const Icon(Icons.chevron_right_rounded),
+                trailing: const Icon(AppIcons.next),
                 onTap: () => widget.onOpen(task),
               ),
             ),

@@ -169,7 +169,7 @@ class _ExplorerViewState extends State<_ExplorerView> {
                 child: switch (state.status) {
                   ExplorerStatus.loading => const AppSkeletonList(
                     count: 6,
-                    height: 96,
+                    height: TokensSize.skeletonRow,
                   ),
                   ExplorerStatus.failure => AppErrorView(
                     error: state.error!,

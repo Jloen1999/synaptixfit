@@ -40,6 +40,9 @@ import java.util.UUID;
  *       empezados y el resto de tipos (las clases van en {@link WellbeingReminders}; exámenes y entregas, por su
  *       entrega). Lo personal no tiene categoría propia: se avisa si la persona admite alguna
  *       ({@link #admitsAny}), porque son sus citas y no deben callarse en época de exámenes.</li>
+ *   <li>Entreno de carrera programado (ADR 0037): su evento de entreno avisa como {@link ReminderKind#RUN_WORKOUT}
+ *       («Hoy toca tu entreno de carrera») en vez de como entreno genérico: un solo aviso por evento, con la misma
+ *       antelación y categoría. El resumen de la mañana lo cuenta entre los entrenos.</li>
  *   <li>«Tu semana»: el domingo a las {@link #WEEKLY_TIME}, para mirar cómo ha ido y planificar la siguiente
  *       (categoría académica o de hitos, la que esté activa).</li>
  *   <li>Entregas y exámenes pendientes: a las 18:00 de los días antes elegidos
@@ -112,8 +115,13 @@ public final class ReminderPlanner {
      * Bloque del planificador candidato a aviso.
      *
      * @param title temas del bloque o, si no hay, su asignatura; nulo si no tiene ninguno
+     * @param run    el evento es un entreno de carrera programado (su aviso es {@link ReminderKind#RUN_WORKOUT})
      */
-    public record Block(UUID id, ActivityType type, Instant start, String title, boolean completed) {
+    public record Block(UUID id, ActivityType type, Instant start, String title, boolean completed, boolean run) {
+
+        public Block(UUID id, ActivityType type, Instant start, String title, boolean completed) {
+            this(id, type, start, title, completed, false);
+        }
     }
 
     /** Entrega o examen pendiente, candidato a aviso. */
@@ -314,7 +322,7 @@ public final class ReminderPlanner {
     private static String anchorOf(ReminderPlan.Item item) {
         return switch (item.kind()) {
             case EXAM, DEADLINE -> item.targetId();
-            case STUDY, TRAINING, PERSONAL_EVENT, CLASS_SOON -> item.refId();
+            case STUDY, TRAINING, RUN_WORKOUT, PERSONAL_EVENT, CLASS_SOON -> item.refId();
             default -> null;
         };
     }
@@ -497,7 +505,8 @@ public final class ReminderPlanner {
 
     private static void addBlocks(List<ReminderPlan.Item> out, Input input, Instant end) {
         for (Block block : input.blocks()) {
-            ReminderKind kind = kindOf(block.type());
+            ReminderKind kind = block.run() && block.type() == ActivityType.SPORT
+                    ? ReminderKind.RUN_WORKOUT : kindOf(block.type());
             if (kind == null || block.completed() || !allows(block.type(), input.preferences(), input.focus())) {
                 continue;
             }

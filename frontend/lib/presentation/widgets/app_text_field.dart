@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../extensions/context_extensions.dart';
+import '../theme/app_icons.dart';
 
 /// Campo de texto con etiqueta visible, icono, ayuda y modo contraseña (con
 /// botón de mostrar/ocultar anunciado al lector de pantalla).
@@ -112,9 +113,7 @@ class _AppTextFieldState extends State<AppTextField> {
                     ? l10n.fieldShowPassword
                     : l10n.fieldHidePassword,
                 icon: Icon(
-                  _hidden
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
+                  _hidden ? AppIcons.showPassword : AppIcons.hidePassword,
                 ),
                 onPressed: () => setState(() => _hidden = !_hidden),
               )

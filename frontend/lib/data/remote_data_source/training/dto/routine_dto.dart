@@ -171,7 +171,7 @@ abstract class RoutineDto with _$RoutineDto {
     OriginDto? origin,
     DateTime? createdAt,
     List<WeekDto>? weeks,
-    @Default(1) int currentWeek,
+    int? currentWeek,
     @Default(0) int progressPercent,
     String? nextStep,
   }) = _RoutineDto;

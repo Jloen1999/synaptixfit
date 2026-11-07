@@ -50,15 +50,17 @@ public class UserDataExportJdbcAdapter implements UserDataExportPort {
         sections.put("formatVersion", "1");
         sections.put("exportedAt", "CAST(:exportedAt AS timestamptz)");
         sections.put("userId", "CAST(:id AS uuid)");
+        // La fecha de nacimiento solo va en la copia de la persona (ADR 0036), no en la del administrador.
+        String birthDate = includeHealthData ? "'fecha_nacimiento', u.fecha_nacimiento, " : "";
         sections.put("account", """
                 (SELECT jsonb_build_object(
                     'id', u.id, 'email', u.email, 'nombre_completo', u.nombre_completo, 'url_avatar', u.url_avatar,
                     'nivel', u.nivel, 'xp_nivel_actual', u.xp_nivel_actual, 'racha_actual', u.racha_actual,
                     'nivel_privacidad', u.nivel_privacidad, 'rol', u.rol, 'is_shadowbanned', u.is_shadowbanned,
                     'tiene_contrasena', u.password_hash IS NOT NULL, 'google_vinculado', u.google_sub IS NOT NULL,
-                    'enfoque', u.enfoque, 'fecha_nacimiento', u.fecha_nacimiento,
+                    'enfoque', u.enfoque, %s
                     'creado_en', u.creado_en, 'actualizado_en', u.actualizado_en, 'eliminado_en', u.eliminado_en)
-                   FROM usuarios u WHERE u.id = :id)""");
+                   FROM usuarios u WHERE u.id = :id)""".formatted(birthDate));
         // Perfil
         sections.put("wellbeingProfile", single("perfil_bienestar_usuario"));
         sections.put("academicProfile", single("perfil_academico_usuario"));

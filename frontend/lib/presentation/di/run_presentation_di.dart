@@ -21,6 +21,7 @@ void registerRunPresentation(GetIt getIt) {
         deleteWorkout: getIt(),
         scheduleWorkout: getIt(),
         permissionStatus: getIt(),
+        openSettings: getIt(),
         position: getIt(),
         track: getIt(),
         share: getIt(),
@@ -36,6 +37,7 @@ void registerRunPresentation(GetIt getIt) {
         listWorkouts: getIt(),
         serviceEnabled: getIt(),
         track: getIt(),
+        openSettings: getIt(),
       ),
     )
     ..registerFactory(

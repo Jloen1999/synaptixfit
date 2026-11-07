@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../domain/enums/planner_enums.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
+import '../../../theme/app_icons.dart';
 
 /// Color, icono y texto de cada tipo de bloque (nunca solo color: siempre icono).
 extension BlockTypeVisuals on BlockType {
@@ -27,8 +28,8 @@ extension BlockTypeVisuals on BlockType {
     BlockType.rest => Icons.self_improvement_rounded,
     BlockType.meal => Icons.restaurant_rounded,
     BlockType.sleep => Icons.bedtime_rounded,
-    BlockType.exam => Icons.quiz_rounded,
-    BlockType.delivery => Icons.assignment_turned_in_rounded,
+    BlockType.exam => AppIcons.exam,
+    BlockType.delivery => AppIcons.delivery,
     BlockType.review => Icons.replay_rounded,
     BlockType.personal => Icons.person_outline_rounded,
   };
@@ -80,9 +81,9 @@ extension DeadlineTypeVisuals on DeadlineType {
   }
 
   IconData get icon => switch (this) {
-    DeadlineType.exam => Icons.quiz_rounded,
-    DeadlineType.assignment => Icons.assignment_rounded,
-    DeadlineType.presentation => Icons.co_present_rounded,
+    DeadlineType.exam => AppIcons.exam,
+    DeadlineType.assignment => AppIcons.delivery,
+    DeadlineType.presentation => AppIcons.presentation,
     DeadlineType.other => Icons.flag_rounded,
   };
 }

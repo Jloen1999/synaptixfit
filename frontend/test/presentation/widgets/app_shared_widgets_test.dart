@@ -104,6 +104,13 @@ void main() {
   ) async {
     final focus = FocusNode();
     addTearDown(focus.dispose);
+    // Modo teclado: es cuando se ve el anillo.
+    FocusManager.instance.highlightStrategy =
+        FocusHighlightStrategy.alwaysTraditional;
+    addTearDown(
+      () => FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.automatic,
+    );
     await pump(
       tester,
       Center(
@@ -134,6 +141,12 @@ void main() {
     focus.requestFocus();
     await tester.pump();
     expect(border()?.top.width, 2);
+
+    // Con el dedo no queda el recuadro aunque el foco siga dentro.
+    FocusManager.instance.highlightStrategy =
+        FocusHighlightStrategy.alwaysTouch;
+    await tester.pump();
+    expect(border(), isNull);
   });
 
   testWidgets(

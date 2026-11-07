@@ -315,8 +315,9 @@ abstract class Routine with _$Routine {
     @Default(<RoutineWeek>[]) List<RoutineWeek> weeks,
 
     /// Plan por fases (lo calcula el servidor): semana en la que va, avance en
-    /// porcentaje y qué conviene hacer al terminar.
-    @Default(1) int currentWeek,
+    /// porcentaje y qué conviene hacer al terminar. [currentWeek] es nulo
+    /// cuando el plan está terminado.
+    int? currentWeek,
     @Default(0) int progressPercent,
     RoutineNextStep? nextStep,
   }) = _Routine;

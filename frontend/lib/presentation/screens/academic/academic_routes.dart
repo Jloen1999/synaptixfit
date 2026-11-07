@@ -74,6 +74,10 @@ abstract final class AcademicPaths {
 
   static String subject(String subjectId) => '/academic/subjects/$subjectId';
 
+  /// Asignatura abierta en «Apuntes y archivos» (tras mover o guardar allí).
+  static String subjectNotes(String subjectId) =>
+      _withQuery(subject(subjectId), {'tab': SubjectDetailTab.notes.name});
+
   static String editSubject(String subjectId) =>
       '/academic/subjects/$subjectId/edit';
 
@@ -215,8 +219,13 @@ List<RouteBase> academicRoutes() => [
   ),
   GoRoute(
     path: '/academic/subjects/:subjectId',
-    builder: (context, state) =>
-        SubjectDetailPage(subjectId: state.pathParameters['subjectId']!),
+    builder: (context, state) => SubjectDetailPage(
+      subjectId: state.pathParameters['subjectId']!,
+      initialTab:
+          state.uri.queryParameters['tab'] == SubjectDetailTab.notes.name
+          ? SubjectDetailTab.notes
+          : SubjectDetailTab.progress,
+    ),
   ),
   GoRoute(
     path: '/academic/notes/scan',

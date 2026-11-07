@@ -5,6 +5,7 @@ import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChalleng
 import com.synaptixfit.domain.model.insights.CognitiveState;
 import com.synaptixfit.domain.model.insights.CrossRegulationView;
 import com.synaptixfit.domain.model.insights.WellbeingSnapshot;
+import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.training.PendingDay;
 import java.time.Instant;
@@ -89,6 +90,15 @@ public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, Cogni
                           UUID routineDayId) {
             this(kind, id, title, type, start, end, completed, subjectName, status, routineId, routineDayId,
                     List.of());
+        }
+
+        /**
+         * ¿Marcarlo registra carga física? Un deporte que no es el reflejo de un día de rutina: igual que en el
+         * planificador ({@code CalendarBlock#countsAsPhysicalActivity}), así Inicio pide el esfuerzo como él.
+         */
+        public boolean tracksPhysicalLoad() {
+            return kind == Kind.BLOCK && routineDayId == null
+                    && ActivityType.fromCode(type) == ActivityType.SPORT;
         }
 
         /** El mismo evento diciendo qué tareas de reto hace avanzar (ADR 0035). */

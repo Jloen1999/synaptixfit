@@ -18,6 +18,8 @@ String? challengesErrorMessage(AppLocalizations l10n, String code) =>
       'CHALLENGE_LINKED' => l10n.challengesErrorLinked,
       'MILESTONE_LINKED' => l10n.challengesErrorMilestoneLinked,
       'CHALLENGE_LINK_OUTSIDE_PERIOD' => l10n.challengesErrorLinkOutsidePeriod,
+      'CHALLENGE_ROUTINE_DAY_NOT_LINKABLE' =>
+        l10n.challengesErrorRoutineDayNotLinkable,
       'MILESTONE_DEPENDENCY_INVALID' => l10n.challengesErrorDependencyInvalid,
       'MILESTONE_LOCKED' => l10n.challengesErrorMilestoneLocked,
       'MILESTONE_ORDER_INVALID' => l10n.challengesErrorOrderInvalid,

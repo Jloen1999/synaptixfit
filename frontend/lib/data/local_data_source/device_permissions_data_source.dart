@@ -52,14 +52,14 @@ class PluginDevicePermissionsDataSource implements DevicePermissionsDataSource {
   Future<DevicePermissionStatus> status(DevicePermission permission) async {
     final system = _systemPermission(permission);
     if (system == null) return DevicePermissionStatus.notApplicable;
-    return _map(await system.status);
+    return mapStatus(await system.status);
   }
 
   @override
   Future<DevicePermissionStatus> request(DevicePermission permission) async {
     final system = _systemPermission(permission);
     if (system == null) return DevicePermissionStatus.notApplicable;
-    return _map(await system.request());
+    return mapStatus(await system.request());
   }
 
   @override
@@ -82,7 +82,9 @@ class PluginDevicePermissionsDataSource implements DevicePermissionsDataSource {
   @override
   Future<void> markIntroSeen() => _preferences.setBool(_introKey, true);
 
-  static DevicePermissionStatus _map(PermissionStatus status) =>
+  /// Traduce el estado de `permission_handler` al del dominio.
+  @visibleForTesting
+  static DevicePermissionStatus mapStatus(PermissionStatus status) =>
       switch (status) {
         PermissionStatus.granted ||
         PermissionStatus.limited ||

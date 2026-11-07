@@ -162,7 +162,7 @@
   "homeBannerActionTrain": "Entrenar",
   "homeBannerActionCheckIn": "Contar cómo estoy",
   "homeWeekTitle": "Esta semana",
-  "homeWeekSessions": "{count, plural, =1{1 sesión} other{{count} sesiones}}",
+  "homeWeekSessions": "{count, plural, =1{1 entreno} other{{count} entrenos}}",
   "@homeWeekSessions": {
     "placeholders": {
       "count": {
@@ -170,7 +170,7 @@
       }
     }
   },
-  "homeWeekSessionsOfPlanned": "{count} de {planned} sesiones",
+  "homeWeekSessionsOfPlanned": "{count} de {planned} entrenos",
   "@homeWeekSessionsOfPlanned": {
     "placeholders": {
       "count": {

@@ -26,7 +26,7 @@ class AnalyticsSummary extends StatelessWidget {
           label: l10n.progressMetricSessions,
         ),
         AppMetricTile(
-          icon: Icons.timer_outlined,
+          icon: AppIcons.duration,
           color: context.colors.secondary,
           value: ProgressFormat.integer(weekly.totalMinutes),
           label: l10n.progressMetricMinutes,
@@ -95,7 +95,7 @@ class WeeklySummaryCard extends StatelessWidget {
               Tooltip(
                 message: l10n.progressAnalyticsOpen,
                 child: Icon(
-                  Icons.chevron_right_rounded,
+                  AppIcons.next,
                   color: context.colors.onSurfaceVariant,
                 ),
               ),

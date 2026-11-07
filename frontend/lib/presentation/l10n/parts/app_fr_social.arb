@@ -183,5 +183,10 @@
   "socialProfileBadgeSemantics": "{name}, badge {rarity}.",
   "socialProfileBadgeEarnedOn": "Obtenu le {date}",
   "socialProfileBadgeHint": "Voir ce que c'est et quand elle a été obtenue",
-  "socialSearchEmptyHint": "Vérifie l’orthographe ou essaie une autre partie du nom."
+  "socialSearchEmptyHint": "Vérifie l’orthographe ou essaie une autre partie du nom.",
+  "socialEditCommentTooltip": "Modifier ton commentaire",
+  "socialDeleteCommentTooltip": "Supprimer ton commentaire",
+  "socialEditPostTooltip": "Modifier ta publication",
+  "socialDeletePostTooltip": "Supprimer ta publication",
+  "socialRemoveFriendNamed": "Retirer {name} de tes amis"
 }

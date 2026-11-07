@@ -72,7 +72,7 @@ class PendingMilestoneTile extends StatelessWidget {
                         ),
                         onPressed: onComplete,
                         icon: Icon(
-                          Icons.check_box_outline_blank_rounded,
+                          AppIcons.todo,
                           color: context.colors.primary,
                         ),
                       ),

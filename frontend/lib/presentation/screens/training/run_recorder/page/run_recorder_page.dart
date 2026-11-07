@@ -104,7 +104,9 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
       case PermissionRequestResult.granted:
         _bloc.add(const RunRecorderEvent.recordingStarted());
       case PermissionRequestResult.alternative:
-        context.pushReplacement(TrainingPaths.pastActivity);
+        context.pushReplacement(
+          TrainingPaths.logActivity(from: TrainingSection.run),
+        );
       case PermissionRequestResult.notNow:
         break;
     }
@@ -116,7 +118,7 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
       final discard = await showConfirmDialog(
         context,
         title: l10n.runTooShortTitle,
-        message: l10n.runTooShortMessage(RunRecorderBloc.minMinutes),
+        message: l10n.runTooShortMessage(SportActivity.minMinutes),
         confirmLabel: l10n.runDiscard,
         cancelLabel: l10n.runKeepGoing,
       );
@@ -244,7 +246,9 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
     );
     if (!mounted) return;
     if (byHand) {
-      context.pushReplacement(TrainingPaths.pastActivity);
+      context.pushReplacement(
+        TrainingPaths.logActivity(from: TrainingSection.run),
+      );
     } else {
       _toRunHome();
     }
@@ -294,12 +298,18 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
             ),
             body: SafeArea(
               child: switch (state.phase) {
-                RunPhase.loading ||
-                RunPhase.saving ||
-                RunPhase.saved ||
-                RunPhase.queued ||
-                RunPhase.discarded ||
-                RunPhase.rejected => const AppLoadingView(),
+                RunPhase.loading => _PhaseProgress(
+                  l10n.runPreparing,
+                  announce: true,
+                ),
+                RunPhase.saving => _PhaseProgress(
+                  l10n.runSavingProgress,
+                  announce: true,
+                ),
+                RunPhase.saved => _PhaseProgress(l10n.runSavedProgress),
+                RunPhase.queued => _PhaseProgress(l10n.runQueuedProgress),
+                RunPhase.discarded => _PhaseProgress(l10n.runDiscardedProgress),
+                RunPhase.rejected => _PhaseProgress(l10n.runRejectedProgress),
                 RunPhase.unsupported => _Unsupported(),
                 RunPhase.ready => _Ready(state: state, onStart: _start),
                 RunPhase.recording || RunPhase.paused => _Recording(
@@ -315,6 +325,39 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
   }
 }
 
+/// Mientras se prepara, se guarda o se sale: qué está pasando, con texto, no
+/// solo una rueda. Solo preparar y guardar van en región viva ([announce]): al
+/// guardar, dejar en cola, descartar o rechazar ya lo dice el aviso o el
+/// diálogo, y se oiría dos veces.
+class _PhaseProgress extends StatelessWidget {
+  const _PhaseProgress(this.text, {this.announce = false});
+
+  final String text;
+  final bool announce;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(TokensSpacing.l),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ExcludeSemantics(child: CircularProgressIndicator()),
+          const SizedBox(height: TokensSpacing.m),
+          Semantics(
+            liveRegion: announce,
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: context.textStyles.bodyLarge,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _Unsupported extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -326,7 +369,9 @@ class _Unsupported extends StatelessWidget {
       action: AppPrimaryButton(
         label: l10n.runLogByHand,
         icon: Icons.edit_note_rounded,
-        onPressed: () => context.pushReplacement(TrainingPaths.pastActivity),
+        onPressed: () => context.pushReplacement(
+          TrainingPaths.logActivity(from: TrainingSection.run),
+        ),
       ),
     );
   }
@@ -393,7 +438,12 @@ class _Ready extends StatelessWidget {
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: TextButton.icon(
-              onPressed: () => showRunBatterySheet(context),
+              onPressed: () => showRunBatterySheet(
+                context,
+                onOpenSettings: () => context.read<RunRecorderBloc>().add(
+                  const RunRecorderEvent.batterySettingsOpened(),
+                ),
+              ),
               icon: const Icon(Icons.battery_saver_rounded),
               label: Text(l10n.runBatteryHelp),
             ),

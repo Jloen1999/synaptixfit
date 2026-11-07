@@ -21,7 +21,8 @@ Escribe a {{CORREO}} desde el correo de tu cuenta pidiendo que la eliminemos. Te
 
 - Tu cuenta, tu perfil y tu progreso: nivel, insignias, rachas y retos.
 - Tus estudios: asignaturas, horario, entregas, apuntes, archivos subidos y repasos.
-- Tus entrenos, actividades, registro diario y, si lo usabas, «Mi ciclo».
+- Tu fecha de nacimiento, si la diste.
+- Tus entrenos, actividades, carreras con su ruta GPS, registro diario y, si lo usabas, «Mi ciclo».
 - Lo que publicaste en la comunidad y tus amistades.
 
 Se borra al momento de la base de datos. Las copias de seguridad cifradas se renuevan solas y tus datos desaparecen de ellas cuando caducan. Antes de eliminarla, si quieres, descarga tus datos en Perfil › Ajustes › Privacidad y datos › Exportar mis datos.

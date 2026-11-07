@@ -511,7 +511,7 @@ class _EditorViewState extends State<_EditorView>
         if (!block.completed)
           AppSecondaryButton(
             label: l10n.plannerClassWent,
-            icon: const Icon(Icons.check_circle_outline_rounded),
+            icon: const Icon(AppIcons.markDone),
             onPressed: state.submitting
                 ? null
                 : () => close(BlockEditorOutcome.completionRequested(block.id)),
@@ -529,11 +529,7 @@ class _EditorViewState extends State<_EditorView>
           label: block.completed
               ? l10n.plannerMarkPending
               : l10n.plannerMarkCompleted,
-          icon: Icon(
-            block.completed
-                ? AppIcons.undo
-                : Icons.check_circle_outline_rounded,
-          ),
+          icon: Icon(block.completed ? AppIcons.undo : AppIcons.markDone),
           onPressed: state.submitting
               ? null
               : () => close(BlockEditorOutcome.completionRequested(block.id)),

@@ -160,6 +160,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
         : (await _setBlockCompletion(
             event.id,
             completed: event.completed,
+            effort: event.effort,
           )).map((v) => (v.block.completed, v.block.timeStatus, v.xpDelta));
     final busy = {...state.completingIds}..remove(event.id);
     result.fold(

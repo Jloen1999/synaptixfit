@@ -18,6 +18,7 @@ import '../../auth/session/bloc/session_bloc.dart';
 import '../../planner/planner_routes.dart';
 import '../../progress/progress_routes.dart';
 import '../../training/training_routes.dart';
+import '../../training/widgets/training_section_bar.dart';
 import '../bloc/reminders_bloc.dart';
 import 'l10n_reminder_texts.dart';
 
@@ -68,6 +69,9 @@ class _RemindersListener extends StatelessWidget {
         context.go(AcademicPaths.root);
       case ReminderKind.sportBlock || ReminderKind.routineDayMissed:
         context.go(TrainingPaths.root);
+      // El entreno de carrera de hoy está arriba en Correr, con «Empezar».
+      case ReminderKind.runWorkout:
+        context.go(TrainingPaths.section(TrainingSection.run));
       case ReminderKind.studyBlock when opened.start && ref != null:
         unawaited(context.push<void>(PlannerPaths.pomodoroFor(blockId: ref)));
       case ReminderKind.studyBlock:

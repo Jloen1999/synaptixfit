@@ -77,11 +77,18 @@ class _WeeklyLoadViewState extends State<_WeeklyLoadView>
 
   void _onNotice(BuildContext context, WeeklyLoadNotice notice) {
     final l10n = context.localizations;
+    // Guardar termina lo que se vino a hacer: la hoja se cierra y el aviso
+    // queda fuera. «Recalcular» la deja abierta para ver las cifras nuevas,
+    // con el mensaje dentro (región viva: el lector lo lee).
+    if (notice is WeeklyLoadNoticeSaved) {
+      context.showSnack(l10n.plannerWellbeingSaved);
+      Navigator.of(context).pop();
+      return;
+    }
     setState(() {
       switch (notice) {
         case WeeklyLoadNoticeSaved():
-          _message = l10n.plannerWellbeingSaved;
-          _messageIsError = false;
+          break;
         case WeeklyLoadNoticeSynced(:final xpAwarded, :final account):
           if (account != null) {
             context.read<SessionBloc>().add(
@@ -147,9 +154,9 @@ class _WeeklyLoadViewState extends State<_WeeklyLoadView>
           child: ListView(
             padding: const EdgeInsets.all(TokensSpacing.m),
             children: const [
-              AppSkeleton(height: 120),
+              AppSkeleton(height: TokensSize.skeletonCard),
               SizedBox(height: TokensSpacing.m),
-              AppSkeleton(height: 200),
+              AppSkeleton(height: TokensSize.skeletonPanel),
             ],
           ),
         );
@@ -227,17 +234,12 @@ class _WeeklyLoadViewState extends State<_WeeklyLoadView>
               alignment: Alignment.centerLeft,
               child: AppSecondaryButton(
                 label: l10n.plannerSync,
-                icon: state.syncing
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.sync_rounded),
-                onPressed: state.syncing
-                    ? null
-                    : () => context.read<WeeklyLoadBloc>().add(
-                        const WeeklyLoadEvent.syncRequested(),
-                      ),
+                icon: const Icon(Icons.sync_rounded),
+                // El botón del sistema anuncia la carga (región viva).
+                loading: state.syncing,
+                onPressed: () => context.read<WeeklyLoadBloc>().add(
+                  const WeeklyLoadEvent.syncRequested(),
+                ),
               ),
             ),
             const SizedBox(height: TokensSpacing.l),
@@ -289,7 +291,7 @@ class _WeeklyLoadViewState extends State<_WeeklyLoadView>
                 message: _message!,
                 tone: _messageIsError
                     ? AppMessageTone.error
-                    : AppMessageTone.warning,
+                    : AppMessageTone.success,
               ),
               const SizedBox(height: TokensSpacing.s),
             ],

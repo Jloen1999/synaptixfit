@@ -88,7 +88,7 @@ class _AiDocumentView extends StatelessWidget with ErrorsMessageMixin {
               if (doc != null)
                 IconButton(
                   tooltip: l10n.academicAiRegenerate,
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const Icon(AppIcons.refresh),
                   // Se explica antes: la versión actual se sustituye.
                   onPressed: state.regenerating
                       ? null

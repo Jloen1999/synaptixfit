@@ -82,7 +82,7 @@ public class EnrollmentImportService implements ReadEnrollmentUseCase, ApplyEnro
         if (reading.subjects().isEmpty()) {
             throw new EnrollmentNothingFoundException();
         }
-        List<String> existing = mySubjects.listSubjects(userId, false).stream()
+        List<String> existing = mySubjects.listSubjects(userId, false, null).stream()
                 .map(s -> s.subject().name())
                 .toList();
         return EnrollmentProposal.match(reading, universities.listUniversities(null),

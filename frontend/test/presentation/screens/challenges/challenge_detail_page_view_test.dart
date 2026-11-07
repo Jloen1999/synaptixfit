@@ -100,7 +100,7 @@ void main() {
     expect(find.text('Siguiente'), findsOneWidget);
     expect(find.text('1/2 tareas'), findsOneWidget);
 
-    await tester.tap(find.text('Completar siguiente tarea'));
+    await tester.tap(find.text('Marcar como hecha la siguiente tarea'));
     verify(
       () => detail.add(const ChallengeDetailEvent.milestoneToggled('m2')),
     ).called(1);
@@ -114,7 +114,7 @@ void main() {
 
     expect(find.text('Sin tareas todavía'), findsOneWidget);
     expect(find.text('Añadir tareas'), findsOneWidget);
-    expect(find.text('Completar reto'), findsOneWidget);
+    expect(find.text('Marcar como hecho'), findsOneWidget);
     expect(find.text('Registrar progreso'), findsOneWidget);
   });
 
@@ -126,7 +126,7 @@ void main() {
     const hint = 'Se acabó el plazo. Amplía la fecha para seguir.';
     expect(find.text(hint), findsOneWidget);
     expect(find.text('Registrar progreso'), findsNothing);
-    expect(find.text('Completar siguiente tarea'), findsNothing);
+    expect(find.text('Marcar como hecha la siguiente tarea'), findsNothing);
 
     // La tarea pendiente no se puede completar (el servidor lo rechazaría) y
     // su casilla explica por qué.
@@ -170,7 +170,7 @@ void main() {
       show(withTasks);
       await pump(tester, textScale: 2);
 
-      expect(find.text('Completar siguiente tarea'), findsOneWidget);
+      expect(find.text('Marcar como hecha la siguiente tarea'), findsOneWidget);
       // Con tareas no hay «¿Cuánto llevas?»: las tareas son de sí o no.
       expect(find.text('Registrar progreso'), findsNothing);
       expect(tester.takeException(), isNull);

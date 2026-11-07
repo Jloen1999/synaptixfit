@@ -14,7 +14,6 @@ import com.synaptixfit.domain.model.run.RunWeek;
 import com.synaptixfit.domain.model.run.TrackPoint;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -25,7 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -104,16 +105,28 @@ public class RunController {
         this.getWeek = getWeek;
     }
 
+    /**
+     * 201 con la carrera nueva; 200 con la ya guardada si es un reintento con la misma {@code clientKey}. El cuerpo
+     * pasa por {@link RunBodyLimitAdvice} (2 MB, también sin {@code Content-Length}). Si dos subidas con la misma
+     * clave llegan a la vez, la que pierde la carrera por la clave única se repite una vez en otra transacción y
+     * devuelve la que ganó: la persona nunca ve un 409 por reintentar.
+     */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public RunRecordResponse record(@CurrentUserId UUID userId, HttpServletRequest http,
-                                    @Valid @RequestBody RunRecordRequest r) {
-        if (http.getContentLengthLong() > MAX_BODY_BYTES || r.points().size() > RunTrack.MAX_POINTS) {
+    public ResponseEntity<RunRecordResponse> record(@CurrentUserId UUID userId,
+                                                    @Valid @RequestBody RunRecordRequest r) {
+        if (r.points().size() > RunTrack.MAX_POINTS) {
             throw new RunRouteTooLargeException();
         }
-        RecordRunUseCase.Result result = recordRun.recordRun(new RecordRunUseCase.Command(userId, r.clientKey(),
-                r.kind(), r.startedAt(), r.effort(), points(r.points()), r.workoutId(), r.plannedBlockId()));
-        return new RunRecordResponse(RunDetailResponse.from(result.run()), result.xpDelta());
+        RecordRunUseCase.Command command = new RecordRunUseCase.Command(userId, r.clientKey(), r.kind(),
+                r.startedAt(), r.effort(), points(r.points()), r.workoutId(), r.plannedBlockId());
+        RecordRunUseCase.Result result;
+        try {
+            result = recordRun.recordRun(command);
+        } catch (DataIntegrityViolationException concurrentSameKey) {
+            result = recordRun.recordRun(command);
+        }
+        return ResponseEntity.status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)
+                .body(new RunRecordResponse(RunDetailResponse.from(result.run()), result.xpDelta()));
     }
 
     private static List<TrackPoint> points(List<List<Double>> rows) {

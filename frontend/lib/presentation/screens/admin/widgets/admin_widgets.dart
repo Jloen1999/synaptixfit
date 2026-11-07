@@ -96,7 +96,7 @@ class AdminPaginationBar extends StatelessWidget {
           IconButton(
             tooltip: l10n.adminPaginationNext,
             onPressed: page + 1 < pages ? () => onPageSelected(page + 1) : null,
-            icon: const Icon(Icons.chevron_right_rounded),
+            icon: const Icon(AppIcons.next),
           ),
         ],
       ),

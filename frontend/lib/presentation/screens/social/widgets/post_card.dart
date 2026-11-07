@@ -98,13 +98,13 @@ class _PostCardState extends State<PostCard> {
                 if (post.mine) ...[
                   if (widget.onEdit != null)
                     IconButton(
-                      tooltip: l10n.commonEdit,
+                      tooltip: l10n.socialEditPostTooltip,
                       icon: const Icon(AppIcons.edit),
                       onPressed: widget.onEdit,
                     ),
                   if (widget.onDelete != null)
                     IconButton(
-                      tooltip: l10n.commonDelete,
+                      tooltip: l10n.socialDeletePostTooltip,
                       icon: const Icon(AppIcons.delete),
                       onPressed: widget.onDelete,
                     ),
@@ -387,10 +387,7 @@ class _LinkedContent extends StatelessWidget {
             ),
           ),
           if (onTap != null)
-            Icon(
-              Icons.chevron_right_rounded,
-              color: context.colors.onSurfaceVariant,
-            ),
+            Icon(AppIcons.next, color: context.colors.onSurfaceVariant),
         ],
       ),
     );

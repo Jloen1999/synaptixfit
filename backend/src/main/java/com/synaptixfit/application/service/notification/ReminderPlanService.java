@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.notification;
 import com.synaptixfit.application.port.input.challenge.ListMyChallengesUseCase;
 import com.synaptixfit.application.port.input.badge.GetStreakUseCase;
 import com.synaptixfit.application.port.input.notification.GetReminderPlanUseCase;
+import com.synaptixfit.application.port.input.run.ListPlannedRunsUseCase;
 import com.synaptixfit.application.port.input.training.GetPendingTrainingDayUseCase;
 import com.synaptixfit.application.port.input.training.GetTodayCheckInUseCase;
 import com.synaptixfit.application.port.input.training.ListOpenSessionsUseCase;
@@ -20,9 +21,12 @@ import com.synaptixfit.domain.model.badge.StreakStatus;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.DeadlineType;
+import com.synaptixfit.domain.model.run.PlannedRun;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.training.ProgressStatus;
+import com.synaptixfit.domain.model.user.BirthDate;
 import com.synaptixfit.domain.model.user.UsageFocus;
+import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.notification.ExamCalendarPort;
 import com.synaptixfit.domain.port.output.academic.StudyMaterialRepositoryPort;
 import com.synaptixfit.domain.port.output.notification.NotificationPreferencesRepositoryPort;
@@ -30,7 +34,7 @@ import com.synaptixfit.domain.port.output.notification.ReminderOptionsRepository
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
-import com.synaptixfit.domain.port.output.user.BirthdayPort;
+import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import com.synaptixfit.domain.port.output.user.UsageFocusPort;
 import java.time.Clock;
 import java.time.Duration;
@@ -62,70 +66,53 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
     static final int MAX_CHALLENGES = 50;
 
     private final NotificationPreferencesRepositoryPort preferences;
+    private final ReminderOptionsRepositoryPort options;
     private final UsageFocusPort focus;
+    private final UserRepositoryPort users;
     private final StudyMaterialRepositoryPort materials;
     private final CalendarBlockRepositoryPort blocks;
     private final DeadlineRepositoryPort deadlines;
     private final SubjectDirectoryPort subjects;
-    private final ReminderPlanner planner;
     private final ExamCalendarPort exams;
+    private final ReminderPlanner planner;
     private final Clock clock;
     private final ZoneId zone;
-    private final GetPendingTrainingDayUseCase pendingDay;
-    private final ListOpenSessionsUseCase openSessions;
-    private final ListMyChallengesUseCase challenges;
+    private final FollowUpSources followUps;
     private final Wellbeing wellbeing;
 
-    /** Fuentes de los avisos de bienestar y del cumpleaños; nulas: no se avisan. */
-    public record Wellbeing(ReminderOptionsRepositoryPort options, GetStreakUseCase streak,
-                            GetTodayCheckInUseCase checkIn, BirthdayPort birthdays) {
-
-        public Wellbeing(ReminderOptionsRepositoryPort options, GetStreakUseCase streak,
-                         GetTodayCheckInUseCase checkIn) {
-            this(options, streak, checkIn, null);
-        }
+    /** Puertos de salida que lee el plan: preferencias, opciones de avisos, cuenta y lo que se avisa. */
+    public record Stores(NotificationPreferencesRepositoryPort preferences, ReminderOptionsRepositoryPort options,
+                         UsageFocusPort focus, UserRepositoryPort users, StudyMaterialRepositoryPort materials,
+                         CalendarBlockRepositoryPort blocks, DeadlineRepositoryPort deadlines,
+                         SubjectDirectoryPort subjects, ExamCalendarPort exams) {
     }
 
-    public ReminderPlanService(NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
-                               StudyMaterialRepositoryPort materials, CalendarBlockRepositoryPort blocks,
-                               DeadlineRepositoryPort deadlines, SubjectDirectoryPort subjects,
-                               ReminderPlanner planner, ExamCalendarPort exams, Clock clock, ZoneId zone) {
-        this(preferences, focus, materials, blocks, deadlines, subjects, planner, exams, clock, zone, null, null,
-                null);
+    /** Casos de uso de otros módulos para los avisos de seguimiento y de carrera; nulos: no se avisan. */
+    public record FollowUpSources(GetPendingTrainingDayUseCase pendingDay, ListOpenSessionsUseCase openSessions,
+                                  ListMyChallengesUseCase challenges, ListPlannedRunsUseCase plannedRuns) {
+        public static final FollowUpSources NONE = new FollowUpSources(null, null, null, null);
     }
 
-    /** Con las fuentes de los avisos de seguimiento (nulas: no se avisan). */
-    public ReminderPlanService(NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
-                               StudyMaterialRepositoryPort materials, CalendarBlockRepositoryPort blocks,
-                               DeadlineRepositoryPort deadlines, SubjectDirectoryPort subjects,
-                               ReminderPlanner planner, ExamCalendarPort exams, Clock clock, ZoneId zone,
-                               GetPendingTrainingDayUseCase pendingDay, ListOpenSessionsUseCase openSessions,
-                               ListMyChallengesUseCase challenges) {
-        this(preferences, focus, materials, blocks, deadlines, subjects, planner, exams, clock, zone, pendingDay,
-                openSessions, challenges, null);
+    /** Fuentes de los avisos de racha y registro diario; nulo: no se avisan. */
+    public record Wellbeing(GetStreakUseCase streak, GetTodayCheckInUseCase checkIn) {
     }
 
-    /** Con las fuentes de los avisos de bienestar (nulas: no se avisan). */
-    public ReminderPlanService(NotificationPreferencesRepositoryPort preferences, UsageFocusPort focus,
-                               StudyMaterialRepositoryPort materials, CalendarBlockRepositoryPort blocks,
-                               DeadlineRepositoryPort deadlines, SubjectDirectoryPort subjects,
-                               ReminderPlanner planner, ExamCalendarPort exams, Clock clock, ZoneId zone,
-                               GetPendingTrainingDayUseCase pendingDay, ListOpenSessionsUseCase openSessions,
-                               ListMyChallengesUseCase challenges, Wellbeing wellbeing) {
-        this.wellbeing = wellbeing;
-        this.preferences = preferences;
-        this.focus = focus;
-        this.materials = materials;
-        this.blocks = blocks;
-        this.deadlines = deadlines;
-        this.subjects = subjects;
+    public ReminderPlanService(Stores stores, ReminderPlanner planner, Clock clock, ZoneId zone,
+                               FollowUpSources followUps, Wellbeing wellbeing) {
+        this.preferences = stores.preferences();
+        this.options = stores.options();
+        this.focus = stores.focus();
+        this.users = stores.users();
+        this.materials = stores.materials();
+        this.blocks = stores.blocks();
+        this.deadlines = stores.deadlines();
+        this.subjects = stores.subjects();
+        this.exams = stores.exams();
         this.planner = planner;
-        this.exams = exams;
         this.clock = clock;
         this.zone = zone;
-        this.pendingDay = pendingDay;
-        this.openSessions = openSessions;
-        this.challenges = challenges;
+        this.followUps = followUps == null ? FollowUpSources.NONE : followUps;
+        this.wellbeing = wellbeing;
     }
 
     @Override
@@ -151,10 +138,9 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
             return window.get(0);
         };
         List<ReminderPlanner.Block> upcoming = ReminderPlanner.wantsBlocks(prefs, usageFocus)
-                ? toBlocks(userId, blocksInWindow.get()) : List.of();
+                ? toBlocks(userId, blocksInWindow.get(), plannedRunBlocks(userId)) : List.of();
 
-        ReminderOptions options = wellbeing == null ? ReminderOptions.DEFAULTS
-                : wellbeing.options().find(userId).orElse(ReminderOptions.DEFAULTS);
+        ReminderOptions options = this.options.find(userId).orElse(ReminderOptions.DEFAULTS);
         List<ReminderPlanner.Deadline> pending = ReminderPlanner.wantsDeadlines(prefs, usageFocus)
                 ? deadlines.findAll(userId, new DeadlineRepositoryPort.Query(now,
                         ReminderPlanner.deadlineHorizon(now, days), null, true)).stream()
@@ -176,10 +162,9 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
                 day == null ? null : new DatedTask.RoutineDayRef(day.dayId(),
                         day.scheduledDate().atStartOfDay(zone).toInstant()),
                 now);
-        ReminderPlanner.Birthday birthday = wellbeing == null || wellbeing.birthdays() == null ? null
-                : wellbeing.birthdays().birthdayOf(userId).orElse(null);
+        ReminderPlanner.Birthday birthday = birthdayOf(userId);
         return planner.plan(new ReminderPlanner.Input(dueReviews, upcoming, prefs, usageFocus, now, zone, days,
-                pending, true, followUps(userId, day, active), options, tasks, birthday),
+                pending, true, followUpsOf(userId, day, active), options, tasks, birthday),
                 wellbeingReminders(userId, prefs, usageFocus, options, now, end, blocksInWindow));
     }
 
@@ -213,7 +198,7 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
 
     /** Próximo día de rutina sin empezar y con fecha prevista; nulo si no hay. */
     private ReminderPlanner.RoutineDay nextRoutineDay(UUID userId) {
-        return pendingDay == null ? null : pendingDay.pendingDay(userId)
+        return followUps.pendingDay() == null ? null : followUps.pendingDay().pendingDay(userId)
                 .filter(p -> p.status() == ProgressStatus.PENDING && p.scheduledDate() != null)
                 .map(p -> new ReminderPlanner.RoutineDay(p.day().id(), p.routine().name(), p.scheduledDate()))
                 .orElse(null);
@@ -221,7 +206,7 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
 
     /** Retos propios en curso ahora del ámbito que usa la persona (con sus tareas y lo que las completa). */
     private List<Challenge> activeChallenges(UUID userId, UsageFocus usageFocus, Instant now) {
-        return challenges == null ? List.of() : challenges.listMyChallenges(userId,
+        return followUps.challenges() == null ? List.of() : followUps.challenges().listMyChallenges(userId,
                         new ChallengeQuery(ChallengeStatus.ACTIVE, ChallengeType.onlyFor(usageFocus), null, null),
                         new PageRequest(0, MAX_CHALLENGES)).items().stream()
                 .filter(c -> c.status(now) == ChallengeStatus.ACTIVE)
@@ -229,8 +214,9 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
     }
 
     /** Próximo día de rutina, sesiones abiertas aún no abandonadas y retos activos. */
-    private ReminderPlanner.FollowUps followUps(UUID userId, ReminderPlanner.RoutineDay day, List<Challenge> active) {
-        List<ReminderPlanner.OpenSession> open = openSessions == null ? List.of() : openSessions.listOpen(userId)
+    private ReminderPlanner.FollowUps followUpsOf(UUID userId, ReminderPlanner.RoutineDay day, List<Challenge> active) {
+        List<ReminderPlanner.OpenSession> open = followUps.openSessions() == null ? List.of()
+                : followUps.openSessions().listOpen(userId)
                 .stream().filter(o -> !o.stale())
                 .map(o -> new ReminderPlanner.OpenSession(o.session().id(),
                         o.label() == null ? null : o.label().routineName(), o.session().startedAt()))
@@ -241,8 +227,23 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
         return new ReminderPlanner.FollowUps(day, open, due);
     }
 
+    /** Felicitación por el nombre de pila si la cuenta activa tiene fecha de nacimiento (es opcional). */
+    private ReminderPlanner.Birthday birthdayOf(UUID userId) {
+        return users.findById(userId)
+                .filter(User::isActive)
+                .filter(u -> u.birthDate() != null)
+                .map(u -> new ReminderPlanner.Birthday(new BirthDate(u.birthDate()), u.firstName()))
+                .orElse(null);
+    }
+
+    /** Eventos del calendario que son un entreno de carrera programado: su aviso es el de la carrera. */
+    private Set<UUID> plannedRunBlocks(UUID userId) {
+        return followUps.plannedRuns() == null ? Set.of() : followUps.plannedRuns().listPlanned(userId).stream()
+                .map(PlannedRun::blockId).collect(Collectors.toSet());
+    }
+
     /** Título del aviso: los temas del bloque o, si no hay, el nombre de su asignatura. */
-    private List<ReminderPlanner.Block> toBlocks(UUID userId, List<CalendarBlock> found) {
+    private List<ReminderPlanner.Block> toBlocks(UUID userId, List<CalendarBlock> found, Set<UUID> runBlocks) {
         Set<UUID> subjectIds = found.stream()
                 .filter(b -> b.details().topics() == null)
                 .map(CalendarBlock::subjectId).filter(Objects::nonNull).collect(Collectors.toSet());
@@ -250,6 +251,6 @@ public class ReminderPlanService implements GetReminderPlanUseCase {
         return found.stream().map(b -> new ReminderPlanner.Block(b.id(), b.type(), b.start(),
                 b.details().topics() != null ? b.details().topics()
                         : b.subjectId() == null ? null : names.get(b.subjectId()),
-                b.completed())).toList();
+                b.completed(), runBlocks.contains(b.id()))).toList();
     }
 }

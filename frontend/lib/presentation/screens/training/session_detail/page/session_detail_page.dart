@@ -140,7 +140,9 @@ class _DetailView extends StatelessWidget {
             ),
           ),
           body: switch (state.status) {
-            SessionDetailStatus.loading => const AppSkeletonList(height: 120),
+            SessionDetailStatus.loading => const AppSkeletonList(
+              height: TokensSize.skeletonCard,
+            ),
             SessionDetailStatus.failure => AppErrorView(
               error: state.error!,
               onRetry: () => context.read<SessionDetailBloc>().add(

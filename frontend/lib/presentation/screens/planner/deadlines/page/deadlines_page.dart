@@ -31,8 +31,35 @@ class DeadlinesPage extends StatelessWidget {
   }
 }
 
-class _DeadlinesView extends StatelessWidget with ErrorsMessageMixin {
+class _DeadlinesView extends StatefulWidget {
   const _DeadlinesView();
+
+  @override
+  State<_DeadlinesView> createState() => _DeadlinesViewState();
+}
+
+class _DeadlinesViewState extends State<_DeadlinesView>
+    with ErrorsMessageMixin {
+  /// Última entrega marcada o desmarcada aquí: el aviso de completar no dice
+  /// cuál fue y «Deshacer» la necesita.
+  String? _toggledId;
+
+  /// Foco del botón «Marcar como hecho» de cada entrega, estable por id: al
+  /// guardar el botón sigue ahí (desactivado) y el foco no se pierde.
+  final _toggleFocus = <String, FocusNode>{};
+
+  FocusNode _toggleFocusOf(String id) => _toggleFocus.putIfAbsent(
+    id,
+    () => FocusNode(debugLabel: 'deadline-toggle-$id'),
+  );
+
+  @override
+  void dispose() {
+    for (final node in _toggleFocus.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
 
   Future<void> _openForm(BuildContext context, {Deadline? deadline}) async {
     final bloc = context.read<DeadlinesBloc>();
@@ -72,13 +99,30 @@ class _DeadlinesView extends StatelessWidget with ErrorsMessageMixin {
         if (account != null) {
           context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
         }
-        context.showSnack(
-          !completed
-              ? l10n.plannerDeadlinePending
-              : xpDelta > 0
-              ? l10n.plannerDeadlineCompletedXp(xpDelta)
-              : l10n.plannerDeadlineCompleted,
-        );
+        final message = !completed
+            ? l10n.plannerDeadlinePending
+            : xpDelta > 0
+            ? l10n.plannerDeadlineCompletedXp(xpDelta)
+            : l10n.plannerDeadlineCompleted;
+        final bloc = context.read<DeadlinesBloc>();
+        final id = _toggledId;
+        // «Deshacer» vuelve a cambiarla con el mismo caso de uso (y el
+        // servidor devuelve el XP). Con el filtro «Por hacer» la entrega hecha
+        // sale de la lista y ya no se puede cambiar desde aquí.
+        if (id != null && bloc.state.items.any((d) => d.id == id)) {
+          context.showActionSnack(
+            message,
+            actionLabel: l10n.commonUndo,
+            duration: TokensDuration.undoWindow,
+            onAction: () {
+              if (!bloc.isClosed) {
+                bloc.add(DeadlinesEvent.completionToggled(id));
+              }
+            },
+          );
+        } else {
+          context.showSnack(message);
+        }
       case DeadlinesNoticeFailure(:final error):
         context.showSnack(errorMessage(context, error));
     }
@@ -225,8 +269,11 @@ class _DeadlinesView extends StatelessWidget with ErrorsMessageMixin {
                       highlighted: d.id == state.focusId,
                       subjectName: state.subjectName(d.subjectId),
                       busy: state.busyIds.contains(d.id),
-                      onToggle: () =>
-                          bloc.add(DeadlinesEvent.completionToggled(d.id)),
+                      toggleFocus: _toggleFocusOf(d.id),
+                      onToggle: () {
+                        _toggledId = d.id;
+                        bloc.add(DeadlinesEvent.completionToggled(d.id));
+                      },
                       onEdit: () => _openForm(context, deadline: d),
                       onDelete: () {
                         FocusScope.of(context).nextFocus();
@@ -317,6 +364,7 @@ class _DeadlineTile extends StatelessWidget {
     this.highlighted = false,
     required this.subjectName,
     required this.busy,
+    this.toggleFocus,
     required this.onToggle,
     required this.onEdit,
     required this.onDelete,
@@ -328,6 +376,7 @@ class _DeadlineTile extends StatelessWidget {
   final bool highlighted;
   final String? subjectName;
   final bool busy;
+  final FocusNode? toggleFocus;
   final VoidCallback onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -417,32 +466,30 @@ class _DeadlineTile extends StatelessWidget {
         ),
       ],
     );
-    final toggle = busy
-        ? const SizedBox.square(
-            dimension: TokensLayout.minTouchTarget,
-            child: Padding(
-              padding: EdgeInsets.all(TokensSpacing.m),
+    // Mientras se guarda, el botón sigue (desactivado, con el progreso dentro)
+    // para no perder el foco, como la casilla de la agenda de Inicio.
+    final toggle = IconButton(
+      focusNode: toggleFocus,
+      tooltip: d.completed
+          ? l10n.plannerUnmarkNamed(d.title)
+          : l10n.plannerMarkDoneNamed(d.title),
+      onPressed: busy ? null : onToggle,
+      icon: busy
+          ? const SizedBox.square(
+              dimension: TokensSize.iconM,
               child: CircularProgressIndicator(
                 strokeWidth: TokensSize.spinnerStroke,
               ),
-            ),
-          )
-        : IconButton(
-            tooltip: d.completed
-                ? l10n.plannerMarkUndone
-                : l10n.plannerMarkDone,
-            onPressed: onToggle,
-            icon: Icon(
-              d.completed
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked_rounded,
+            )
+          : Icon(
+              d.completed ? AppIcons.done : AppIcons.todo,
               color: d.completed
                   ? context.palette.success
                   : context.colors.onSurfaceVariant,
             ),
-          );
+    );
     final delete = IconButton(
-      tooltip: l10n.commonDelete,
+      tooltip: l10n.plannerDeleteDeadlineNamed(d.title),
       onPressed: busy ? null : onDelete,
       icon: const Icon(AppIcons.delete),
     );

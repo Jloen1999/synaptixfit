@@ -35,9 +35,10 @@ public class RunWorkoutJdbcAdapter implements RunWorkoutRepositoryPort {
     public RunWorkout save(RunWorkout w) {
         int updated = jdbc.sql("""
                         UPDATE entrenos_carrera SET nombre = :name, pasos = CAST(:steps AS jsonb),
-                            actualizado_en = :updatedAt WHERE id = :id
+                            actualizado_en = :updatedAt WHERE id = :id AND usuario_id = :user
                         """)
                 .param("id", w.id())
+                .param("user", w.userId())
                 .param("name", w.name())
                 .param("steps", codec.groups(w.groups()))
                 .param("updatedAt", Timestamp.from(w.updatedAt()))

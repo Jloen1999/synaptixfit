@@ -5,6 +5,8 @@ import 'package:synaptixfit/app/di/app_di.dart';
 import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/models/training/run.dart';
+import 'package:synaptixfit/domain/enums/device_permission.dart';
+import 'package:synaptixfit/domain/use_cases/profile/open_permission_settings_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/discard_run_recording_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/finish_run_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/is_location_service_enabled_use_case.dart';
@@ -31,6 +33,7 @@ void main() {
         listWorkouts: _ListWorkouts(),
         serviceEnabled: _ServiceEnabled(),
         track: _Tracker(),
+        openSettings: _OpenSettings(),
         clock: () => DateTime(2026, 11, 7, 18),
       ),
     );
@@ -170,4 +173,10 @@ class _Tracker implements TrackRunUseCaseContract {
 
   @override
   Future<void> vibrate() async {}
+}
+
+class _OpenSettings implements OpenPermissionSettingsUseCaseContract {
+  @override
+  Future<AppResult<Unit>> call(DevicePermission permission) async =>
+      const Success(unit);
 }

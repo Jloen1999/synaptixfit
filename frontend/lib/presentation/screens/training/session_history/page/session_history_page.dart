@@ -77,7 +77,7 @@ class _HistoryView extends StatelessWidget {
                 switch (state.status) {
                   HistoryStatus.loading => const AppSkeletonList(
                     count: 6,
-                    height: 88,
+                    height: TokensSize.skeletonRow,
                   ),
                   HistoryStatus.failure => AppErrorView(
                     error: state.error!,

@@ -52,4 +52,44 @@ class SubjectAgendaTest {
         assertThat(agenda.nextClassPlace()).isNull();
         assertThat(SubjectAgenda.of(List.of(), List.of(), null, MADRID)).isEqualTo(SubjectAgenda.EMPTY);
     }
+
+    @Test
+    void anUrgentDeadlineGoesBeforeTheNextClass() {
+        Instant now = at(9, 8);
+        SubjectAgenda agenda = SubjectAgenda.of(List.of(new SubjectAgenda.ClassSlot(at(9, 10), "Aula 2.3")),
+                List.of(new SubjectAgenda.Deadline("Práctica 1", at(10, 23), false)), null, null, now, MADRID);
+
+        assertThat(agenda.nextUp()).isEqualTo(new SubjectAgenda.NextUp(SubjectAgenda.NextUpKind.DELIVERY,
+                at(10, 23), null, 1, true));
+    }
+
+    @Test
+    void theNextClassGoesBeforeADistantExamAndTheAssessmentIsTheLastResort() {
+        Instant now = at(9, 8);
+        SubjectAgenda withClass = SubjectAgenda.of(List.of(new SubjectAgenda.ClassSlot(at(11, 10), "Aula 2.3")),
+                List.of(new SubjectAgenda.Deadline("Parcial", at(20, 9), true)), null, null, now, MADRID);
+        assertThat(withClass.nextUp()).isEqualTo(new SubjectAgenda.NextUp(SubjectAgenda.NextUpKind.CLASS,
+                at(11, 10), "Aula 2.3", 2, false));
+
+        SubjectAgenda onlyExam = SubjectAgenda.of(List.of(),
+                List.of(new SubjectAgenda.Deadline("Parcial", at(20, 9), true)), null, null, now, MADRID);
+        assertThat(onlyExam.nextUp().kind()).isEqualTo(SubjectAgenda.NextUpKind.EXAM);
+        assertThat(onlyExam.nextUp().daysLeft()).isEqualTo(11);
+
+        SubjectAgenda onlyAssessment = SubjectAgenda.of(List.of(), List.of(), null, at(10, 9), now, MADRID);
+        assertThat(onlyAssessment.nextUp()).isEqualTo(new SubjectAgenda.NextUp(
+                SubjectAgenda.NextUpKind.ASSESSMENT, at(10, 9), null, 1, true));
+        assertThat(SubjectAgenda.of(List.of(), List.of(), null, at(8, 9), now, MADRID).nextUp()).isNull();
+    }
+
+    @Test
+    void daysAreCountedInTheZoneOfThePhone() {
+        // 23:30 del lunes en Madrid ya es martes en Tokio: la clase del miércoles queda a un día, no a dos.
+        Instant now = at(9, 23).plusSeconds(1800);
+        SubjectAgenda agenda = SubjectAgenda.of(List.of(new SubjectAgenda.ClassSlot(at(11, 10), null)), List.of(),
+                null, null, now, ZoneId.of("Asia/Tokyo"));
+
+        assertThat(agenda.nextUp().daysLeft()).isEqualTo(1);
+        assertThat(agenda.classDays()).containsExactly(3);
+    }
 }

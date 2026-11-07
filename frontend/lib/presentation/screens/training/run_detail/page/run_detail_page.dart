@@ -137,9 +137,7 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
               icon: AppIcons.delete,
               title: l10n.runDeleted,
               message: l10n.runDeletedHint,
-              action: AppSecondaryButton(
-                label: l10n.runUndo,
-                icon: const Icon(AppIcons.undo),
+              action: _UndoButton(
                 onPressed: () => context.read<RunDetailBloc>().add(
                   const RunDetailEvent.deleteUndone(),
                 ),
@@ -152,6 +150,44 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
       },
     );
   }
+}
+
+/// «Deshacer» tras borrar: se lleva el foco al aparecer, porque el botón de
+/// borrar que lo tenía ya no existe y el teclado o el lector quedarían
+/// perdidos (WCAG 2.4.3).
+class _UndoButton extends StatefulWidget {
+  const _UndoButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  State<_UndoButton> createState() => _UndoButtonState();
+}
+
+class _UndoButtonState extends State<_UndoButton> {
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AppSecondaryButton(
+    label: context.localizations.runUndo,
+    icon: const Icon(AppIcons.undo),
+    focusNode: _focus,
+    onPressed: widget.onPressed,
+  );
 }
 
 class _Content extends StatelessWidget {
@@ -305,8 +341,9 @@ class _Splits extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: TokensSpacing.xs),
                 child: Row(
                   children: [
+                    // Crece con la letra: «Km 10» no se corta al 200 %.
                     SizedBox(
-                      width: TokensSize.listTileMin,
+                      width: context.scaled(TokensSize.splitLabel),
                       child: Text(
                         s.distanceMeters < 1000
                             ? RunLabels.km(l10n, s.distanceMeters)

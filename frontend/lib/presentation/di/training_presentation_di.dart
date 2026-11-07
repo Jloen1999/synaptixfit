@@ -136,9 +136,7 @@ void registerTrainingPresentation(GetIt getIt) {
         listChallenges: getIt(),
       ),
     )
-    ..registerFactory(
-      () => RoutineTemplatesBloc(list: getIt(), use: getIt()),
-    )
+    ..registerFactory(() => RoutineTemplatesBloc(list: getIt(), use: getIt()))
     ..registerFactory(() => ExerciseProgressBloc(get: getIt()))
     ..registerFactory(
       () => SessionDetailBloc(

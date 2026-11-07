@@ -207,6 +207,10 @@ abstract class HomeTodayEvent with _$HomeTodayEvent {
     /// Tareas de reto que avanzan al marcar este evento (ADR 0035): se
     /// nombran en la fila para que la tarea no salga dos veces.
     @Default(<HomeTaskMention>[]) List<HomeTaskMention> tasks,
+
+    /// Al marcarlo se pregunta el esfuerzo (registra carga física); lo dice
+    /// el servidor, igual que en el planificador.
+    @Default(false) bool tracksPhysicalLoad,
   }) = _HomeTodayEvent;
 }
 

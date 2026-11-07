@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../extensions/context_extensions.dart';
 import '../theme/tokens.g.dart';
+import 'app_focus_outline.dart';
 
 /// Título de sección (encabezado accesible) con acción opcional a la derecha.
 class AppSectionHeader extends StatelessWidget {
@@ -11,6 +12,7 @@ class AppSectionHeader extends StatelessWidget {
     this.actionLabel,
     this.onAction,
     this.actionExpanded,
+    this.focusNode,
   });
 
   final String title;
@@ -20,6 +22,9 @@ class AppSectionHeader extends StatelessWidget {
   /// Si la acción despliega o pliega contenido («Ver todas» / «Ver menos»),
   /// su estado: el lector de pantalla lo anuncia como desplegado o plegado.
   final bool? actionExpanded;
+
+  /// Para llevar aquí el foco tras quitar lo que había encima (WCAG 2.4.3).
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +37,11 @@ class AppSectionHeader extends StatelessWidget {
           // sección en sección.
           Expanded(
             flex: 3,
-            child: Semantics(
-              header: true,
-              child: Text(title, style: context.textStyles.titleMedium),
+            child: _anchored(
+              Semantics(
+                header: true,
+                child: Text(title, style: context.textStyles.titleMedium),
+              ),
             ),
           ),
           // Hasta 2/5 del ancho y pegada a la derecha: con el texto muy
@@ -58,5 +65,12 @@ class AppSectionHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _anchored(Widget header) {
+    final node = focusNode;
+    return node == null
+        ? header
+        : AppFocusAnchor(focusNode: node, child: header);
   }
 }

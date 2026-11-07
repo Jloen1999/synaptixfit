@@ -108,10 +108,12 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
     /**
      * {@code routineId}/{@code routineDayId}: día de rutina del bloque de deporte («Entrenar» empieza ese).
      * {@code tasks}: tareas de reto que avanzan al marcar este evento o esta entrega (ADR 0035).
+     * {@code tracksPhysicalLoad}: al marcarlo se pide el esfuerzo, como en el planificador.
      */
     public record TodayEventResponse(Dashboard.TodayEvent.Kind kind, UUID id, String title, String type, Instant start,
                                      Instant end, boolean completed, String subjectName, ItemTimeStatus status,
-                                     UUID routineId, UUID routineDayId, List<TaskMentionResponse> tasks) {
+                                     UUID routineId, UUID routineDayId, List<TaskMentionResponse> tasks,
+                                     boolean tracksPhysicalLoad) {
     }
 
     /** Tarea de reto que avanza con un evento; {@code title} nulo: el propio reto (sin tareas, va con su entrega). */
@@ -147,7 +149,8 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                         .map(p -> new PlanDayResponse(p.date(), p.planned(), p.completed(), p.missed())).toList(),
                 d.todayEvents().stream().map(e -> new TodayEventResponse(e.kind(), e.id(), e.title(), code(e.type()),
                         e.start(), e.end(), e.completed(), e.subjectName(), e.status(), e.routineId(),
-                        e.routineDayId(), e.tasks().stream().map(TaskMentionResponse::from).toList())).toList(),
+                        e.routineDayId(), e.tasks().stream().map(TaskMentionResponse::from).toList(),
+                        e.tracksPhysicalLoad())).toList(),
                 new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()));
     }
 }

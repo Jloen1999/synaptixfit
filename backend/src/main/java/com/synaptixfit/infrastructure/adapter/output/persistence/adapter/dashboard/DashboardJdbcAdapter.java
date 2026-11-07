@@ -32,11 +32,23 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
 
     @Override
     public TrainingTotals trainingTotals(UUID userId, Instant from, Instant to) {
+        // Igual que Progreso (AnalyticsJdbcAdapter.completedTrainingSessions): sesiones de gimnasio más las
+        // actividades hechas (carreras GPS, partidos, apuntadas a mano), con sus minutos reales y sus kcal.
         return jdbc.sql("""
-                        SELECT count(*) AS sesiones, coalesce(sum(duracion_minutos), 0) AS minutos,
-                               coalesce(sum(calorias_quemadas), 0) AS calorias
-                        FROM sesiones_registradas
-                        WHERE usuario_id = :u AND completada_en >= :from AND completada_en < :to
+                        SELECT count(*) AS sesiones, coalesce(sum(minutos), 0) AS minutos,
+                               coalesce(sum(calorias), 0) AS calorias
+                        FROM (
+                            SELECT duracion_minutos AS minutos, calorias_quemadas AS calorias
+                            FROM sesiones_registradas
+                            WHERE usuario_id = :u AND completada_en >= :from AND completada_en < :to
+                            UNION ALL
+                            SELECT a.minutos_reales, c.kcal
+                            FROM actividades_apuntadas a
+                            JOIN horarios_academicos b ON b.id = a.bloque_id
+                            LEFT JOIN carreras_gps c ON c.bloque_id = a.bloque_id
+                            WHERE a.usuario_id = :u AND b.completado = true
+                              AND b.hora_fin >= :from AND b.hora_fin < :to
+                        ) hechos
                         """)
                 .param("u", userId).param("from", param(from)).param("to", param(to))
                 .query((rs, n) -> new TrainingTotals(rs.getInt("sesiones"), rs.getInt("minutos"), rs.getDouble("calorias")))
@@ -88,7 +100,15 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
 
     @Override
     public Optional<Instant> lastTrainingSession(UUID userId) {
-        return jdbc.sql("SELECT max(completada_en) AS ultima FROM sesiones_registradas WHERE usuario_id = :u")
+        return jdbc.sql("""
+                        SELECT max(ultima) AS ultima FROM (
+                            SELECT max(completada_en) AS ultima FROM sesiones_registradas WHERE usuario_id = :u
+                            UNION ALL
+                            SELECT max(b.hora_fin) FROM actividades_apuntadas a
+                            JOIN horarios_academicos b ON b.id = a.bloque_id
+                            WHERE a.usuario_id = :u AND b.completado = true
+                        ) u
+                        """)
                 .param("u", userId).query((rs, n) -> instant(rs, "ultima")).list().stream()
                 .filter(java.util.Objects::nonNull).findFirst();
     }

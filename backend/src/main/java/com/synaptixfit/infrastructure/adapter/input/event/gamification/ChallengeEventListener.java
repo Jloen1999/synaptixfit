@@ -7,6 +7,7 @@ import com.synaptixfit.application.port.input.challenge.SyncTrainingSessionChall
 import com.synaptixfit.domain.event.planner.DeadlineCompletionChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockAssignmentChanged;
 import com.synaptixfit.domain.event.planner.StudyBlockCompletionChanged;
+import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
 import com.synaptixfit.domain.event.training.TrainingSessionCompletionChanged;
 import com.synaptixfit.domain.event.user.UserPrivacyChanged;
 import com.synaptixfit.domain.model.shared.Visibility;
@@ -59,6 +60,12 @@ public class ChallengeEventListener {
         if (event.routineDayId() != null) {
             syncLinked.syncLinkedEntity(event.userId(), event.routineDayId(), event.completed());
         }
+    }
+
+    /** Una carrera o actividad de deporte hecha (o desmarcada) también cuenta en los retos de entrenos. */
+    @EventListener
+    public void on(SportBlockCompletionChanged event) {
+        syncTrainingSessions.syncTrainingSessions(event.userId());
     }
 
     @EventListener

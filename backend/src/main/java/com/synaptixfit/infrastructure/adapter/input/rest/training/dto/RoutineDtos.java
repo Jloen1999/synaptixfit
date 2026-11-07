@@ -198,7 +198,7 @@ public final class RoutineDtos {
                                   String description, Visibility visibility, RoutineStatus status, TrainingGoal goal,
                                   LocalDate startDate, int durationWeeks, int exerciseCount, int totalDays,
                                   int completedDays, int skippedDays, OriginResponse origin, Instant createdAt,
-                                  List<WeekResponse> weeks, int currentWeek, int progressPercent,
+                                  List<WeekResponse> weeks, Integer currentWeek, int progressPercent,
                                   RoutinePlan.NextStep nextStep) {
         public static RoutineResponse from(Routine r, String authorName, java.util.UUID viewerId) {
             RoutinePlan plan = RoutinePlan.of(r);

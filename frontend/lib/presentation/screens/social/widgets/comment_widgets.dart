@@ -117,12 +117,12 @@ class CommentTile extends StatelessWidget {
           // papelera, reportar), sin menú de tres puntos.
           if (comment.mine) ...[
             IconButton(
-              tooltip: l10n.commonEdit,
+              tooltip: l10n.socialEditCommentTooltip,
               icon: const Icon(AppIcons.edit),
               onPressed: () => _onAction(context, _CommentAction.edit),
             ),
             IconButton(
-              tooltip: l10n.commonDelete,
+              tooltip: l10n.socialDeleteCommentTooltip,
               icon: const Icon(AppIcons.delete),
               onPressed: () => _onAction(context, _CommentAction.delete),
             ),

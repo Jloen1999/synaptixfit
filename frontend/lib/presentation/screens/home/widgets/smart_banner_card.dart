@@ -420,7 +420,7 @@ class SmartBannerCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (action != null) const Icon(Icons.chevron_right_rounded),
+                  if (action != null) const Icon(AppIcons.next),
                 ],
               )
             : Row(

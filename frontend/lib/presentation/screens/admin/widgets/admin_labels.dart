@@ -13,6 +13,7 @@ import '../../../../domain/enums/admin/admin_user_sort.dart';
 import '../../../../domain/enums/admin/admin_user_status.dart';
 import '../../../../domain/enums/user_role.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
+import '../../../theme/app_icons.dart';
 
 /// Textos e iconos de los enums del módulo admin.
 extension UserRoleAdminLabel on UserRole {
@@ -89,7 +90,7 @@ extension AdminTimelineTypeLabel on AdminTimelineType {
     AdminTimelineType.studyBlockCompleted => Icons.school_outlined,
     AdminTimelineType.deadlineCompleted => Icons.event_available_outlined,
     AdminTimelineType.noteCreated => Icons.sticky_note_2_outlined,
-    AdminTimelineType.focusSession => Icons.timer_outlined,
+    AdminTimelineType.focusSession => AppIcons.focusTimer,
     AdminTimelineType.postPublished => Icons.article_outlined,
     AdminTimelineType.commentPosted => Icons.chat_bubble_outline_rounded,
     AdminTimelineType.adminAction => Icons.admin_panel_settings_outlined,

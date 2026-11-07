@@ -21,7 +21,8 @@ Write to {{CORREO}} from your account's email asking us to delete it. We will re
 
 - Your account, your profile and your progress: level, badges, streaks and challenges.
 - Your studies: subjects, timetable, assignments, notes, uploaded files and reviews.
-- Your workouts, activities, daily check-in and, if you used it, "My cycle".
+- Your date of birth, if you gave it.
+- Your workouts, activities, runs with their GPS route, daily check-in and, if you used it, "My cycle".
 - What you posted in the community and your friendships.
 
 It is removed from the database immediately. Encrypted backups rotate automatically and your data disappears from them when they expire. Before deleting it, you can download your data from Profile › Settings › Privacy and data › Export my data.

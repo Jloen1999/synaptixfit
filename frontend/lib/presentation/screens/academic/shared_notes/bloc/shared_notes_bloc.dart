@@ -27,9 +27,7 @@ class SharedNotesBloc extends Bloc<SharedNotesEvent, SharedNotesState> {
   ) async {
     final search = event.search.trim();
     if (search == state.search) return;
-    emit(
-      state.copyWith(search: search, loading: true, error: null, items: []),
-    );
+    emit(state.copyWith(search: search, loading: true, error: null, items: []));
     await _load(emit);
   }
 

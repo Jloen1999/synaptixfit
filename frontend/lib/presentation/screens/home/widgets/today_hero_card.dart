@@ -24,7 +24,7 @@ enum TodayHeroAction { focus, train, openPlanner }
 /// (estudio, entreno y nivel). Responde de un vistazo a «¿qué hago ahora?». Lo
 /// que ya ha empezado (estudio, repaso o personal) se marca aquí mismo como
 /// hecho, igual que en la agenda (ADR 0035).
-class TodayHeroCard extends StatelessWidget {
+class TodayHeroCard extends StatefulWidget {
   const TodayHeroCard({
     super.key,
     required this.dashboard,
@@ -59,6 +59,62 @@ class TodayHeroCard extends StatelessWidget {
         pending.where((e) => e.status == ItemTimeStatus.upcoming).firstOrNull;
   }
 
+  @override
+  State<TodayHeroCard> createState() => _TodayHeroCardState();
+}
+
+/// Al marcar como hecho lo que toca, el botón pulsado desaparece: el foco pasa
+/// al título de «Tu día» y se anuncia qué se marcó (WCAG 2.4.3 y 4.1.3).
+class _TodayHeroCardState extends State<TodayHeroCard> {
+  final _titleFocus = FocusNode(debugLabel: 'home-today-title');
+
+  /// Evento marcado desde aquí, hasta que llega hecho o falla.
+  HomeTodayEvent? _marking;
+
+  /// Ya se vio guardándose: si deja de estarlo sin quedar hecho, falló.
+  bool _sawBusy = false;
+
+  HomeDashboard get dashboard => widget.dashboard;
+  UsageFocus get focus => widget.focus;
+  bool get starting => widget.starting;
+  Set<String> get completingIds => widget.completingIds;
+  ValueChanged<TodayHeroAction> get onAction => widget.onAction;
+  ValueChanged<HomeTodayEvent>? get onMarkDone =>
+      widget.onMarkDone == null ? null : _markDone;
+
+  void _markDone(HomeTodayEvent event) {
+    _marking = event;
+    _sawBusy = false;
+    widget.onMarkDone!(event);
+  }
+
+  @override
+  void didUpdateWidget(TodayHeroCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final marking = _marking;
+    if (marking == null) return;
+    final done = widget.dashboard.todayEvents.any(
+      (e) => e.id == marking.id && e.completed,
+    );
+    if (done) {
+      _marking = null;
+      // El aviso de abajo ya dice qué se marcó: solo se devuelve el foco
+      // (sin anuncio aparte, que se oiría dos veces).
+      AppFocusAnchor.focusSoon(_titleFocus);
+    } else if (widget.completingIds.contains(marking.id)) {
+      _sawBusy = true;
+    } else if (_sawBusy) {
+      // Falló: el botón sigue ahí y el aviso de error lo explica.
+      _marking = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleFocus.dispose();
+    super.dispose();
+  }
+
   TodayHeroAction _actionFor(HomeTodayEvent? next) => switch (next?.type) {
     HomeEventType.study || HomeEventType.review => TodayHeroAction.focus,
     HomeEventType.sport
@@ -78,7 +134,7 @@ class TodayHeroCard extends StatelessWidget {
     final counted = blocks.where((e) => !isClassEvent(e)).toList();
     final classes = blocks.length - counted.length;
     final done = counted.where((e) => e.completed).length;
-    final next = nextEvent(dashboard.todayEvents);
+    final next = TodayHeroCard.nextEvent(dashboard.todayEvents);
     final action = _actionFor(next);
     final colors = context.colors;
     // Plana y con un toque del color de marca: destaca como tarjeta principal
@@ -102,11 +158,14 @@ class TodayHeroCard extends StatelessWidget {
           // Alineado (no estirado): el nodo del título mide lo que su texto.
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: Semantics(
-              header: true,
-              child: Text(
-                l10n.homeTodayTitle,
-                style: context.textStyles.titleSmall,
+            child: AppFocusAnchor(
+              focusNode: _titleFocus,
+              child: Semantics(
+                header: true,
+                child: Text(
+                  l10n.homeTodayTitle,
+                  style: context.textStyles.titleSmall,
+                ),
               ),
             ),
           ),
@@ -384,7 +443,7 @@ class _MarkDoneButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppPrimaryButton(
     label: context.localizations.homeTodayMarkDone,
-    icon: Icons.task_alt_rounded,
+    icon: AppIcons.markDone,
     loading: busy,
     onPressed: busy ? null : onPressed,
   );

@@ -85,6 +85,49 @@ class _AgendaSectionState extends State<AgendaSection> {
   bool _expanded = false;
   static const _collapsedEvents = 3;
 
+  /// Foco de la acción de cada fila (casilla o «Ya lo hice»), estable por
+  /// evento: al marcar, «Ya lo hice» se cambia por la casilla y el foco
+  /// vuelve a ella en vez de perderse (WCAG 2.4.3).
+  final _actionFocus = <String, FocusNode>{};
+
+  /// Evento marcado desde la agenda cuyo foco hay que devolver al terminar.
+  String? _refocusId;
+  bool _sawBusy = false;
+
+  FocusNode _focusOf(String id) =>
+      _actionFocus.putIfAbsent(id, () => FocusNode(debugLabel: 'agenda-$id'));
+
+  void _setCompleted(HomeTodayEvent event, bool completed) {
+    _refocusId = event.id;
+    _sawBusy = false;
+    widget.onSetCompleted!(event, completed);
+  }
+
+  @override
+  void didUpdateWidget(AgendaSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final id = _refocusId;
+    if (id == null) return;
+    // Mientras se guarda la acción está desactivada y no puede tener el foco;
+    // al acabar (bien o mal) se le devuelve.
+    if (widget.completingIds.contains(id)) {
+      _sawBusy = true;
+      return;
+    }
+    if (!_sawBusy) return;
+    _refocusId = null;
+    final node = _actionFocus[id];
+    if (node != null) AppFocusAnchor.focusSoon(node);
+  }
+
+  @override
+  void dispose() {
+    for (final node in _actionFocus.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
   List<HomeTodayEvent> _eventsOf(DateTime day, int index) {
     if (index == 0) return widget.events;
     return [
@@ -181,14 +224,15 @@ class _AgendaSectionState extends State<AgendaSection> {
                 children: [
                   for (final event in _visibleEvents(context, events))
                     _EventTile(
+                      key: ValueKey(event.id),
                       event: event,
                       isToday: _selected == 0,
                       busy: widget.completingIds.contains(event.id),
+                      actionFocus: _focusOf(event.id),
                       onTap: () => widget.onOpenEvent(event),
                       onSetCompleted: widget.onSetCompleted == null
                           ? null
-                          : (completed) =>
-                                widget.onSetCompleted!(event, completed),
+                          : (completed) => _setCompleted(event, completed),
                       onStartTraining: widget.onStartTraining == null
                           ? null
                           : () => widget.onStartTraining!(event),
@@ -544,10 +588,12 @@ enum _EventAction { none, check, start, didIt }
 
 class _EventTile extends StatelessWidget {
   const _EventTile({
+    super.key,
     required this.event,
     required this.onTap,
     this.isToday = true,
     this.busy = false,
+    this.actionFocus,
     this.onSetCompleted,
     this.onStartTraining,
   });
@@ -556,6 +602,9 @@ class _EventTile extends StatelessWidget {
   final VoidCallback onTap;
   final bool isToday;
   final bool busy;
+
+  /// Foco compartido por la casilla y «Ya lo hice» (el uno sustituye al otro).
+  final FocusNode? actionFocus;
   final ValueChanged<bool>? onSetCompleted;
   final VoidCallback? onStartTraining;
 
@@ -608,6 +657,7 @@ class _EventTile extends StatelessWidget {
           child: SizedBox.square(
             dimension: TokensLayout.minTouchTarget,
             child: Checkbox(
+              focusNode: actionFocus,
               value: event.completed,
               semanticLabel: label,
               onChanged: busy ? null : (v) => _toggle(context, v ?? false),
@@ -634,6 +684,7 @@ class _EventTile extends StatelessWidget {
           enabled: !busy,
           onTap: busy ? null : () => _toggle(context, true),
           child: TextButton(
+            focusNode: actionFocus,
             onPressed: busy ? null : () => _toggle(context, true),
             child: Text(l10n.homeAgendaDidIt),
           ),
@@ -777,7 +828,7 @@ class _EventTile extends StatelessWidget {
             ? Tooltip(
                 message: l10n.homeAgendaCompleted,
                 child: Icon(
-                  Icons.check_circle_rounded,
+                  AppIcons.done,
                   color: context.palette.success,
                   semanticLabel: l10n.homeAgendaCompleted,
                 ),
@@ -818,7 +869,13 @@ class _EventTile extends StatelessWidget {
   static (IconData, Color) visual(BuildContext context, HomeTodayEvent event) {
     final type = event.type;
     if (event.kind == HomeEventKind.deadline) {
-      return (Icons.assignment_late_outlined, context.palette.warning);
+      // Una entrega trae su tipo (examen, presentación; el resto es entrega).
+      final icon = switch (type) {
+        HomeEventType.exam => AppIcons.exam,
+        HomeEventType.presentation => AppIcons.presentation,
+        _ => AppIcons.delivery,
+      };
+      return (icon, context.palette.warning);
     }
     return switch (type) {
       HomeEventType.study => (Icons.menu_book_outlined, context.palette.study),
@@ -837,10 +894,10 @@ class _EventTile extends StatelessWidget {
       ),
       HomeEventType.meal => (Icons.restaurant_outlined, context.colors.primary),
       HomeEventType.sleep => (Icons.bedtime_outlined, context.colors.primary),
-      HomeEventType.exam ||
-      HomeEventType.delivery ||
+      HomeEventType.exam => (AppIcons.exam, context.palette.warning),
+      HomeEventType.delivery => (AppIcons.delivery, context.palette.warning),
       HomeEventType.presentation => (
-        Icons.assignment_late_outlined,
+        AppIcons.presentation,
         context.palette.warning,
       ),
       HomeEventType.personal => (

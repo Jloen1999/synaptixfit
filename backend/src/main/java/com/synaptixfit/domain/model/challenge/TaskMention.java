@@ -58,4 +58,27 @@ public record TaskMention(UUID challengeId, String challengeTitle, UUID mileston
             out.computeIfAbsent(link.entityId(), k -> new ArrayList<>()).add(mention);
         }
     }
+
+    /**
+     * Tareas (o retos sin tareas) que se completan al entrenar un día de rutina, por el id de ese día: la fila del
+     * entreno de Inicio las nombra igual que su aviso (ADR 0035).
+     */
+    public static Map<UUID, List<TaskMention>> byRoutineDay(List<Challenge> challenges) {
+        Map<UUID, List<TaskMention>> out = new HashMap<>();
+        for (Challenge c : challenges) {
+            if (c.milestones().isEmpty()) {
+                addRoutineDay(out, c.link(), of(c, null));
+            }
+            for (Milestone m : c.milestones()) {
+                addRoutineDay(out, m.link(), of(c, m));
+            }
+        }
+        return out;
+    }
+
+    private static void addRoutineDay(Map<UUID, List<TaskMention>> out, ChallengeLink link, TaskMention mention) {
+        if (link != null && link.type() == LinkType.ROUTINE_DAY) {
+            out.computeIfAbsent(link.entityId(), k -> new ArrayList<>()).add(mention);
+        }
+    }
 }

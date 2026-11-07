@@ -66,7 +66,7 @@ class NextBadgeCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded),
+            const Icon(AppIcons.next),
           ],
         ),
       ),

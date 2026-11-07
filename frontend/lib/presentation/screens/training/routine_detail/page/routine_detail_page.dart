@@ -242,7 +242,9 @@ class _DetailViewState extends State<_DetailView> {
                 )
               : null,
           body: switch (state.status) {
-            RoutineDetailStatus.loading => const AppSkeletonList(height: 140),
+            RoutineDetailStatus.loading => const AppSkeletonList(
+              height: TokensSize.skeletonCardTall,
+            ),
             RoutineDetailStatus.failure => AppErrorView(
               error: state.error!,
               onRetry: () =>
@@ -402,10 +404,10 @@ class _Header extends StatelessWidget {
             const SizedBox(height: TokensSpacing.m),
             // «Semana 2 de 8» y «5 de 24 días hechos»: dónde está y cuánto
             // lleva (lo da el servidor); el porcentaje suelto no decía de qué.
-            Text(
-              l10n.trainingPlanWeekOf(r.currentWeek, r.weeks.length),
-              style: context.textStyles.titleSmall,
-            ),
+            Text(switch (r.currentWeek) {
+              final week? => l10n.trainingPlanWeekOf(week, r.weeks.length),
+              null => l10n.trainingPlanFinished,
+            }, style: context.textStyles.titleSmall),
             // Qué toca esta semana, en una frase (vocabulario: «Semana 2 de
             // 8» + su objetivo, nunca «mesociclo»).
             if (r.weeks

@@ -898,11 +898,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
           ),
         );
       case Failure(:final error):
-        emit(
-          state.copyWith(
-            resumePendingAt: _retryable(error) ? at : null,
-          ),
-        );
+        emit(state.copyWith(resumePendingAt: _retryable(error) ? at : null));
     }
   }
 
@@ -992,8 +988,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       emit(
         state.copyWith(
           exercises: [
-            for (final e in state.exercises)
-              e.id == original.id ? original : e,
+            for (final e in state.exercises) e.id == original.id ? original : e,
           ],
           originals: {...state.originals}..remove(original.id),
         ),

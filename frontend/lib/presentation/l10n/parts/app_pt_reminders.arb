@@ -71,5 +71,10 @@
   "remindersQuoted": "«{text}»",
   "remindersBirthdayTitle": "Parabéns, {name}!",
   "remindersBirthdayTitleNoName": "Parabéns!",
-  "remindersBirthdayBody": "Tem um ótimo dia."
+  "remindersBirthdayBody": "Tem um ótimo dia.",
+  "remindersRunWorkoutTitle": "Hoje é dia do teu treino de corrida",
+  "remindersRunWorkoutFallbackName": "O teu treino de corrida",
+  "remindersActionStartRun": "Ir correr",
+  "remindersClassBodySoon": "Começa em breve.",
+  "remindersClassBodySoonPlace": "Começa em breve em {place}."
 }

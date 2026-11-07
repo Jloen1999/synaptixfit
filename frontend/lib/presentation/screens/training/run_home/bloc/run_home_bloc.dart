@@ -10,6 +10,7 @@ import '../../../../../domain/models/result/result.dart';
 import '../../../../../domain/models/training/run.dart';
 import '../../../../../domain/models/training/sport_activity.dart';
 import '../../../../../domain/use_cases/profile/get_device_permission_status_use_case.dart';
+import '../../../../../domain/use_cases/profile/open_permission_settings_use_case.dart';
 import '../../../../../domain/use_cases/progress/share_achievement_image_use_case.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
 import '../../../../../domain/use_cases/training/delete_run_workout_use_case.dart';
@@ -49,6 +50,7 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
     required this._deleteWorkout,
     required this._scheduleWorkout,
     required this._permissionStatus,
+    required this._openSettings,
     required this._position,
     required this._track,
     required this._share,
@@ -104,6 +106,9 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
       );
       if (result case Failure(:final error)) _notify(emit, error: error);
     });
+    on<RunHomeBatterySettingsOpened>((_, _) async {
+      await _openSettings(DevicePermission.location);
+    });
   }
 
   final UploadPendingRunsUseCaseContract _uploadPending;
@@ -117,6 +122,7 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
   final DeleteRunWorkoutUseCaseContract _deleteWorkout;
   final ScheduleRunWorkoutUseCaseContract _scheduleWorkout;
   final GetDevicePermissionStatusUseCaseContract _permissionStatus;
+  final OpenPermissionSettingsUseCaseContract _openSettings;
   final GetCurrentPositionUseCaseContract _position;
   final TrackRunUseCaseContract _track;
   final ShareAchievementImageUseCaseContract _share;

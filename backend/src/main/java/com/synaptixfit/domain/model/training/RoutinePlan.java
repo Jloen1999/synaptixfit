@@ -8,13 +8,15 @@ import java.util.List;
  * las fechas de cada semana y qué conviene hacer al terminarla.
  *
  * <p>Reglas: la semana actual es la del primer día con ejercicios que sigue sin hacer ni saltar (el mismo que
- * propone {@code RoutineSchedule}); si no queda ninguno, la última. El avance cuenta los días hechos o
+ * propone {@code RoutineSchedule}); si no queda ninguno, el plan está terminado y no hay semana actual
+ * ({@code currentWeek} nulo: la app dice «Plan terminado» en vez de «Semana 8 de 8»). Sin días con ejercicios
+ * todavía, la primera. El avance cuenta los días hechos o
  * saltados, como el ciclo. Las fechas solo existen si la rutina tiene fecha de inicio: la semana N empieza
  * {@code 7·(N−1)} días después. Al terminar, un plan corto (menos de {@link #NEW_PLAN_FROM_WEEKS} semanas) se
  * repite subiendo un poco el peso; uno largo pide cambiar de plan, porque repetir lo mismo tanto tiempo deja
  * de hacer progresar.
  */
-public record RoutinePlan(int currentWeek, int totalWeeks, int percentDone, NextStep nextStep,
+public record RoutinePlan(Integer currentWeek, int totalWeeks, int percentDone, NextStep nextStep,
                           List<WeekDates> weeks) {
 
     /** A partir de cuántas semanas se propone cambiar de plan en lugar de repetirlo. */
@@ -38,7 +40,8 @@ public record RoutinePlan(int currentWeek, int totalWeeks, int percentDone, Next
 
     public static RoutinePlan of(Routine routine) {
         int total = routine.weeks().size();
-        int current = total == 0 ? 1 : routine.weeks().getLast().number();
+        boolean anyTrainable = routine.weeks().stream().anyMatch(w -> !w.trainableDays().isEmpty());
+        Integer current = anyTrainable ? null : 1;
         outer:
         for (RoutineWeek week : routine.weeks()) {
             for (RoutineDay day : week.trainableDays()) {

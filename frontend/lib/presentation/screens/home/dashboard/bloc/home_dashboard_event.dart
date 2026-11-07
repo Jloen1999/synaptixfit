@@ -42,6 +42,9 @@ sealed class HomeDashboardEvent with _$HomeDashboardEvent {
     required HomeEventKind kind,
     required bool completed,
     @Default(false) bool undo,
+
+    /// Esfuerzo (1-10) al marcar un deporte que registra carga física.
+    int? effort,
   }) = HomeDashboardCompletionSet;
 
   /// Ctrl+Z en escritorio y web: deshace lo último marcado o desmarcado.

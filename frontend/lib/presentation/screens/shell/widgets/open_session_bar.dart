@@ -86,10 +86,7 @@ class OpenSessionBar extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          color: context.colors.primary,
-                        ),
+                        Icon(AppIcons.next, color: context.colors.primary),
                       ],
                     ),
                   ),

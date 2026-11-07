@@ -87,7 +87,7 @@ class ReminderOptionsView extends StatelessWidget with ErrorsMessageMixin {
               const SizedBox(height: TokensSpacing.s),
               AppSecondaryButton(
                 label: l10n.commonRetry,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(AppIcons.refresh),
                 onPressed: () => context.read<ReminderOptionsBloc>().add(
                   const ReminderOptionsEvent.started(),
                 ),

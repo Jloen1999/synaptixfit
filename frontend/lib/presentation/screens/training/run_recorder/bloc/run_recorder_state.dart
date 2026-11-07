@@ -59,6 +59,7 @@ abstract class RunRecorderState with _$RunRecorderState {
   int? get paceSecondsPerKm =>
       RunLiveStats.paceSecondsPerKm(meters, activeSeconds);
 
-  /// Con menos de [RunRecorderBloc.minMinutes] minutos no contaría.
-  bool get tooShort => activeSeconds < RunRecorderBloc.minMinutes * 60;
+  /// Con menos de [SportActivity.minMinutes] minutos no contaría.
+  bool get tooShort =>
+      activeSeconds < SportActivity.minMinutes * Duration.secondsPerMinute;
 }

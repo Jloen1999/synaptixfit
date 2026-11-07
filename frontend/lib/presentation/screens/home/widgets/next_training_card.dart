@@ -182,7 +182,7 @@ class NextTrainingCard extends StatelessWidget {
                         // Duración prevista (la calcula el servidor).
                         if (next.estimatedMinutes > 0)
                           AppCoverPill(
-                            icon: Icons.timer_outlined,
+                            icon: AppIcons.duration,
                             label: l10n.trainingEstimatedMinutes(
                               next.estimatedMinutes,
                             ),

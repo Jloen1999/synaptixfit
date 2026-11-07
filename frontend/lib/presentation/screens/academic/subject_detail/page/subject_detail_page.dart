@@ -17,11 +17,21 @@ import '../bloc/subject_syllabus_bloc.dart';
 import 'progress_tab.dart';
 import 'syllabus_tab.dart';
 
-/// Detalle de asignatura con dos pestañas planas: Progreso y Temario.
+/// Pestañas del detalle de asignatura; `?tab=notes` abre la segunda.
+enum SubjectDetailTab { progress, notes }
+
+/// Detalle de asignatura con dos pestañas planas: Progreso y «Apuntes y
+/// archivos». [initialTab] la elige quien enlaza (p. ej. el «Ver» de mover un
+/// apunte).
 class SubjectDetailPage extends StatelessWidget {
-  const SubjectDetailPage({super.key, required this.subjectId});
+  const SubjectDetailPage({
+    super.key,
+    required this.subjectId,
+    this.initialTab = SubjectDetailTab.progress,
+  });
 
   final String subjectId;
+  final SubjectDetailTab initialTab;
 
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
@@ -42,12 +52,14 @@ class SubjectDetailPage extends StatelessWidget {
               ..add(SubjectSyllabusEvent.started(subjectId)),
       ),
     ],
-    child: const _SubjectDetailView(),
+    child: _SubjectDetailView(initialTab: initialTab),
   );
 }
 
 class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
-  const _SubjectDetailView();
+  const _SubjectDetailView({required this.initialTab});
+
+  final SubjectDetailTab initialTab;
 
   Future<void> _edit(BuildContext context, Subject subject) async {
     final detail = context.read<SubjectDetailBloc>();
@@ -131,7 +143,8 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
         }
         final color = subjectColor(context, subject.id);
         return DefaultTabController(
-          length: 2,
+          length: SubjectDetailTab.values.length,
+          initialIndex: initialTab.index,
           child: Scaffold(
             appBar: AppPageBar(
               title: Text(
@@ -152,7 +165,7 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
                   ),
                 ),
                 IconButton(
-                  tooltip: l10n.commonEdit,
+                  tooltip: l10n.academicSubjectEditNamed(subject.name),
                   icon: const Icon(AppIcons.edit),
                   onPressed: () => _edit(context, subject),
                 ),
@@ -163,7 +176,9 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
                 ),
               ],
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
+                preferredSize: const Size.fromHeight(
+                  TokensLayout.minTouchTarget,
+                ),
                 child: AcademicBody(
                   child: TabBar(
                     indicatorColor: color,
@@ -249,11 +264,11 @@ class _SubjectHeader extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: TokensSize.emblem,
+            height: TokensSize.emblem,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
+              color: color.withValues(alpha: AppPill.tintAlpha),
               borderRadius: BorderRadius.circular(TokensRadius.m),
             ),
             child: Text(
@@ -283,7 +298,7 @@ class _SubjectHeader extends StatelessWidget {
                     AppPill(
                       label: context.priorityLabel(subject.priority),
                       color: color,
-                      icon: Icons.flag_outlined,
+                      icon: AppIcons.priority,
                     ),
                     for (final (icon, text) in details)
                       AppPill(

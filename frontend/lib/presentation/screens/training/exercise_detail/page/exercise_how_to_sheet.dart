@@ -143,8 +143,10 @@ class _HowToSheet extends StatelessWidget {
                           AppSectionHeader(title: l10n.trainingInstructions),
                           ExerciseInstructions(steps: exercise.instructions),
                         ],
-                        _WorksWith(exercise: exercise),
+                        // Mismo orden que la ficha: primero las claves,
+                        // los errores y tu nota; luego qué trabaja y el material.
                         ExerciseGuideSection(exerciseId: exercise.id),
+                        _WorksWith(exercise: exercise),
                       ],
                     ),
                   },

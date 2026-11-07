@@ -40,5 +40,11 @@ public enum ReminderKind {
      * «¡Feliz cumpleaños, Ana!» la mañana de su cumpleaños (ADR 0036). Si ese día hay resumen de la mañana, va dentro
      * de él ({@link ReminderPlan.DaySummary#birthday()}) en vez de llegar aparte.
      */
-    BIRTHDAY
+    BIRTHDAY,
+    /**
+     * «Hoy toca tu entreno de carrera: 6 × 800 m» con la antelación de los eventos (ADR 0037). Sustituye al aviso
+     * {@link #TRAINING} de su evento: nunca dos avisos por lo mismo. Al tocarlo se abre Correr, con ese entreno
+     * arriba. Las versiones de la app anteriores a la 4b no conocen este tipo y lo descartan (ADR 0037).
+     */
+    RUN_WORKOUT
 }

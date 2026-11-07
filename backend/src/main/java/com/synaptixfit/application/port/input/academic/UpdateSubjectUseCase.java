@@ -10,7 +10,16 @@ public interface UpdateSubjectUseCase {
 
     record Command(UUID userId, UUID subjectId, String name, String code, String description, Integer credits,
                    Integer perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt,
-                   boolean clearNextAssessment, String teacher, String icsUrl, Boolean archived, String room) {
+                   boolean clearNextAssessment, String teacher, String icsUrl, Boolean archived, String room,
+                   String zone) {
+
+        /** Sin zona del móvil: la agenda se cuenta en la del servidor. */
+        public Command(UUID userId, UUID subjectId, String name, String code, String description, Integer credits,
+                       Integer perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt,
+                       boolean clearNextAssessment, String teacher, String icsUrl, Boolean archived, String room) {
+            this(userId, subjectId, name, code, description, credits, perceivedDifficulty, priority,
+                    nextAssessmentAt, clearNextAssessment, teacher, icsUrl, archived, room, null);
+        }
 
         public Command(UUID userId, UUID subjectId, String name, String code, String description, Integer credits,
                        Integer perceivedDifficulty, SubjectPriority priority, Instant nextAssessmentAt,

@@ -9,7 +9,7 @@ Aplicación para estudiantes universitarios que equilibra la carga académica y 
 | Frontend | `frontend/` | `docs/01-architecture/profiles/frontend-flutter-bloc.md` |
 | Backend | `backend/` | `docs/01-architecture/profiles/backend-spring-hexagonal.md` |
 
-Cada carpeta tiene su propio `CLAUDE.md` con lo específico de su stack. Base de datos: PostgreSQL 17 (`docker-compose.yml`). Servicios externos: DeepSeek (IA), Cloudflare R2 (archivos), Google Sign-In; solo el backend los llama.
+Cada carpeta tiene su propio `CLAUDE.md` con lo específico de su stack. Base de datos: PostgreSQL 17 (`docker-compose.yml`). Servicios externos: DeepSeek (IA), Cloudflare R2 (archivos), Google Sign-In; solo el backend los llama. Única excepción: las teselas del mapa de las carreras (MapTiler) las pide el cliente directamente, porque son imágenes públicas que se piden a cada movimiento del mapa y pasarlas por el servidor solo añadiría latencia y tráfico; solo viaja la zona visible, nunca la ruta, y la clave (`MAP_TILES_KEY`) es pública y está restringida por dominio y paquete de Android (ADR 0037).
 
 ## Reglas que nunca se rompen
 

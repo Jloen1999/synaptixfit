@@ -245,9 +245,7 @@ class _NoteEditorViewState extends State<_NoteEditorView>
                   tooltip: _preview
                       ? l10n.academicNoteEditMode
                       : l10n.academicNotePreview,
-                  icon: Icon(
-                    _preview ? AppIcons.edit : Icons.visibility_outlined,
-                  ),
+                  icon: Icon(_preview ? AppIcons.edit : AppIcons.preview),
                   onPressed: () => setState(() => _preview = !_preview),
                 ),
                 Padding(

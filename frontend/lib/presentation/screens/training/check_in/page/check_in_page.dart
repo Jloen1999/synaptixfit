@@ -71,7 +71,10 @@ class _CheckInView extends StatelessWidget {
       builder: (context, state) => Scaffold(
         appBar: AppPageBar.reading(title: Text(l10n.trainingCheckInTitle)),
         body: switch (state.status) {
-          CheckInStatus.loading => const AppSkeletonList(count: 5, height: 96),
+          CheckInStatus.loading => const AppSkeletonList(
+            count: 5,
+            height: TokensSize.skeletonRow,
+          ),
           CheckInStatus.failure => AppErrorView(
             error: state.error!,
             onRetry: () =>
@@ -373,7 +376,11 @@ class _Scale extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 20, color: context.colors.secondary),
+              Icon(
+                icon,
+                size: TokensSize.iconS,
+                color: context.colors.secondary,
+              ),
               const SizedBox(width: TokensSpacing.s),
               Expanded(
                 child: Text(label, style: context.textStyles.titleSmall),

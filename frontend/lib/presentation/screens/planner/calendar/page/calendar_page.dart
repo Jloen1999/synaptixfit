@@ -531,7 +531,7 @@ class _WeekNavigator extends StatelessWidget {
           IconButton(
             tooltip: l10n.plannerNextWeek,
             onPressed: () => onShift(1),
-            icon: const Icon(Icons.chevron_right_rounded),
+            icon: const Icon(AppIcons.next),
           ),
         ],
       ),
@@ -615,13 +615,13 @@ class _SavePlanButton extends StatelessWidget {
     if (compact) {
       return IconButton(
         tooltip: label,
-        icon: const Icon(Icons.task_alt_rounded),
+        icon: const Icon(AppIcons.closeWeek),
         onPressed: enabled ? onSave : null,
       );
     }
     return TextButton.icon(
       onPressed: enabled ? onSave : null,
-      icon: const Icon(Icons.task_alt_rounded),
+      icon: const Icon(AppIcons.closeWeek),
       label: Text(label),
     );
   }
@@ -648,7 +648,7 @@ class _PlannerMenu extends StatelessWidget {
         AppIcons.proposal,
         l10n.plannerMenuSuggestions,
       ),
-      (PlannerPaths.pomodoro, Icons.timer_rounded, l10n.plannerMenuPomodoro),
+      (PlannerPaths.pomodoro, AppIcons.focusTimer, l10n.plannerMenuPomodoro),
       (
         PlannerPaths.pastStudy,
         Icons.history_edu_rounded,

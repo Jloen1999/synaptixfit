@@ -131,7 +131,9 @@ class _TrainingHomeView extends StatelessWidget {
                 )
               : null,
           body: switch (state.status) {
-            HomeStatus.loading => const AppSkeletonList(height: 120),
+            HomeStatus.loading => const AppSkeletonList(
+              height: TokensSize.skeletonCard,
+            ),
             HomeStatus.failure => AppErrorView(
               error: state.error!,
               onRetry: () => context.read<TrainingHomeBloc>().add(
@@ -243,8 +245,10 @@ class _HomeContent extends StatelessWidget {
               AppSecondaryButton(
                 label: l10n.trainingLogActivityButton,
                 icon: const Icon(Icons.sports_soccer_rounded),
-                onPressed: () =>
-                    _TrainingHomeView.open(context, TrainingPaths.pastActivity),
+                onPressed: () => _TrainingHomeView.open(
+                  context,
+                  TrainingPaths.logActivity(from: TrainingSection.gym),
+                ),
               ),
               const SizedBox(height: TokensSpacing.l),
               AppSectionHeader(title: l10n.trainingMyRoutines),

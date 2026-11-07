@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
+import '../api/device_zone.dart';
 import 'dto/subject_dtos.dart';
 
 /// Endpoints de asignaturas (`/api/v1/subjects`) y la línea de tiempo filtrada
@@ -15,13 +16,16 @@ class SubjectsRemoteDataSource {
   Future<List<SubjectDto>> getSubjects({required bool archived}) async {
     final response = await _dio.get<List<dynamic>>(
       _base,
-      queryParameters: {'archived': archived},
+      queryParameters: {'archived': archived, 'zone': deviceZoneOffset()},
     );
     return _list(response.data, SubjectDto.fromJson);
   }
 
   Future<SubjectDto> getSubject(String id) async {
-    final response = await _dio.get<Map<String, dynamic>>('$_base/$id');
+    final response = await _dio.get<Map<String, dynamic>>(
+      '$_base/$id',
+      queryParameters: {'zone': deviceZoneOffset()},
+    );
     return SubjectDto.fromJson(response.data!);
   }
 
@@ -34,6 +38,7 @@ class SubjectsRemoteDataSource {
     final response = await _dio.patch<Map<String, dynamic>>(
       '$_base/$id',
       data: body,
+      queryParameters: {'zone': deviceZoneOffset()},
     );
     return SubjectDto.fromJson(response.data!);
   }

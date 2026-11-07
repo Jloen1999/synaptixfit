@@ -65,6 +65,12 @@ abstract final class TrainingPaths {
   static const templates = '$root/templates';
   static const pastActivity = '$root/past-activity';
 
+  /// «Apuntar actividad» desde un apartado: al guardar, el aviso dice dónde
+  /// queda según a dónde se vuelve (en Correr, «Tus actividades»). Sin
+  /// apartado, se viene del historial.
+  static String logActivity({TrainingSection? from}) =>
+      _withQuery(pastActivity, {'from': ?from?.query});
+
   /// «Mi ciclo» (opcional, ADR 0033).
   static const cycle = '$root/cycle';
 
@@ -177,7 +183,11 @@ List<RouteBase> trainingRoutes() => [
   GoRoute(path: TrainingPaths.checkIn, builder: (_, _) => const CheckInPage()),
   GoRoute(
     path: TrainingPaths.pastActivity,
-    builder: (_, _) => const PastActivityPage(),
+    builder: (_, state) => PastActivityPage(
+      from: TrainingSection.values
+          .where((s) => s.query == state.uri.queryParameters['from'])
+          .firstOrNull,
+    ),
   ),
   GoRoute(path: TrainingPaths.cycle, builder: (_, _) => const CyclePage()),
   // Grabar una carrera, a pantalla completa como la sesión en vivo.

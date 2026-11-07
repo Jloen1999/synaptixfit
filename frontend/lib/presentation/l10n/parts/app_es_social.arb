@@ -368,5 +368,30 @@
     }
   },
   "socialProfileBadgeHint": "Ver qué es y cuándo la consiguió",
-  "socialSearchEmptyHint": "Comprueba que esté bien escrito o prueba con otra parte del nombre."
+  "socialSearchEmptyHint": "Comprueba que esté bien escrito o prueba con otra parte del nombre.",
+  "socialEditCommentTooltip": "Editar tu comentario",
+  "@socialEditCommentTooltip": {
+    "description": "Botón de lápiz en un comentario propio."
+  },
+  "socialDeleteCommentTooltip": "Eliminar tu comentario",
+  "@socialDeleteCommentTooltip": {
+    "description": "Botón de papelera en un comentario propio."
+  },
+  "socialEditPostTooltip": "Editar tu publicación",
+  "@socialEditPostTooltip": {
+    "description": "Botón de lápiz en una publicación propia."
+  },
+  "socialDeletePostTooltip": "Eliminar tu publicación",
+  "@socialDeletePostTooltip": {
+    "description": "Botón de papelera en una publicación propia."
+  },
+  "socialRemoveFriendNamed": "Eliminar a {name} de tus amigos",
+  "@socialRemoveFriendNamed": {
+    "description": "Botón de la fila de un amigo: nombra a quién se quita.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -157,7 +157,8 @@ class AdminFlowIT {
                 .andExpect(jsonPath("$.account.email").value("member-it@example.com"))
                 .andExpect(jsonPath("$.trainingSessions.length()").value(1))
                 .andReturn().getResponse().getContentAsString();
-        assertThat(adminExport).doesNotContain("password_hash").doesNotContain("$2a$");
+        assertThat(adminExport).doesNotContain("password_hash").doesNotContain("$2a$")
+                .doesNotContain("fecha_nacimiento");
         mvc.perform(as(userToken, get("/api/v1/me/export")))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString(".json")))

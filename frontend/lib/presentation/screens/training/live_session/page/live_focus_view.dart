@@ -99,47 +99,15 @@ class LiveSessionHeader extends StatelessWidget {
                     color: context.colors.onSurfaceVariant,
                   ),
                 ),
-              Wrap(
-                spacing: TokensSpacing.s,
-                runSpacing: TokensSpacing.xs,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                alignment: WrapAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.trainingLiveExercisesProgress(
-                      s.finishedExercises,
-                      s.exercises.length,
-                    ),
-                    style: context.textStyles.labelLarge,
+              LiveClockSummary(
+                state: s,
+                leading: Text(
+                  l10n.trainingLiveExercisesProgress(
+                    s.finishedExercises,
+                    s.exercises.length,
                   ),
-                  LiveClockPill(seconds: s.elapsedSeconds, paused: s.paused),
-                ],
-              ),
-              // Qué mide la píldora (también tras «No volver a explicarlo») y lo
-              // que queda según la duración prevista del servidor (gris: es
-              // una estimación).
-              Wrap(
-                spacing: TokensSpacing.s,
-                children: [
-                  // El lector ya lo oye en la píldora.
-                  ExcludeSemantics(
-                    child: Text(
-                      l10n.trainingClockRealHint,
-                      style: context.textStyles.labelMedium?.copyWith(
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  if (s.remainingEstimatedMinutes case final left?
-                      when left > 0)
-                    Text(
-                      l10n.trainingRemainingMinutes(left),
-                      semanticsLabel: l10n.trainingRemainingMinutesSpoken(left),
-                      style: context.textStyles.labelMedium?.copyWith(
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                    ),
-                ],
+                  style: context.textStyles.labelLarge,
+                ),
               ),
               const SizedBox(height: TokensSpacing.xs),
               ClipRRect(
@@ -1260,6 +1228,57 @@ class _SetFocusPulseState extends State<_SetFocusPulse>
           child: child,
         );
       },
+    );
+  }
+}
+
+/// Cronómetro de la sesión, igual en la de rutina ([LiveSessionHeader]) y en
+/// la libre: la píldora, qué mide (también tras «No volver a explicarlo») y lo
+/// que queda según la duración prevista del servidor (gris: es una estimación).
+class LiveClockSummary extends StatelessWidget {
+  const LiveClockSummary({super.key, required this.state, this.leading});
+
+  final LiveSessionState state;
+
+  /// Lo que va a la izquierda de la píldora (en la rutina, el avance).
+  final Widget? leading;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final hintStyle = context.textStyles.labelMedium?.copyWith(
+      color: context.colors.onSurfaceVariant,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Wrap(
+          spacing: TokensSpacing.s,
+          runSpacing: TokensSpacing.xs,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          alignment: WrapAlignment.spaceBetween,
+          children: [
+            ?leading,
+            LiveClockPill(seconds: state.elapsedSeconds, paused: state.paused),
+          ],
+        ),
+        Wrap(
+          spacing: TokensSpacing.s,
+          children: [
+            // El lector ya lo oye en la píldora.
+            ExcludeSemantics(
+              child: Text(l10n.trainingClockRealHint, style: hintStyle),
+            ),
+            if (state.remainingEstimatedMinutes case final left? when left > 0)
+              Text(
+                l10n.trainingRemainingMinutes(left),
+                semanticsLabel: l10n.trainingRemainingMinutesSpoken(left),
+                style: hintStyle,
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

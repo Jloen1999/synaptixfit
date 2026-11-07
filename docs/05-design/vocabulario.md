@@ -41,7 +41,7 @@ Una pieza compartida la cambia solo su dueño; los demás la usan por su contrat
 | Tipos de evento (`ActivityType`), hoja de crear/editar evento, estados Por hacer/Hecho/Sin hacer | Planificador | Inicio, avisos, retos, entreno, carrera |
 | Plan de avisos (`ReminderPlanner`, `ReminderKind`, `ReminderOptions`) y resumen de la mañana | Notificaciones | Todos los módulos aportan datos por sus puertos |
 | Actividades (`PastActivity`) y carreras GPS | Entreno (bienestar/actividades) | Inicio («Esta semana»), Progreso, racha, XP, carga física, retos |
-| Perfil (fecha de nacimiento, modo de uso) | Perfil | Kcal (edad calculada), avisos (cumpleaños, `BirthdayPort`), Inicio (tarjeta de cumpleaños), filtros por modo de uso |
+| Perfil (fecha de nacimiento, modo de uso) | Perfil | Kcal (edad calculada), avisos (cumpleaños, `User.firstName()` por `UserRepositoryPort`), Inicio (tarjeta de cumpleaños), filtros por modo de uso |
 | Buscador común (`AppSearchField`, `AppHighlightedText`, `AppSearchEmpty`) | Diseño | Académico, apuntes compartidos, ejercicios, retos, rutinas de la comunidad |
 | Agenda de la asignatura (`SubjectAgenda`) | Académico (lee clases y entregas del planificador por `SubjectAgendaPort`) | Tarjeta y detalle de la asignatura |
 | Vocabulario (este documento) | Diseño | Todos |

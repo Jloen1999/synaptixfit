@@ -43,7 +43,7 @@ class _PlanView extends StatelessWidget {
         return Scaffold(
           appBar: AppPageBar.reading(title: Text(l10n.trainingWeeklyPlanTitle)),
           body: week == null
-              ? const AppSkeletonList(height: 96)
+              ? const AppSkeletonList(height: TokensSize.skeletonRow)
               : ListView(
                   padding: const EdgeInsets.all(TokensSpacing.m),
                   children: [
@@ -61,7 +61,9 @@ class _PlanView extends StatelessWidget {
                           const SizedBox(height: TokensSpacing.m),
                           switch (state.status) {
                             PlanLoadStatus.loading => const AppSkeletonGroup(
-                              child: AppSkeleton(height: 320),
+                              child: AppSkeleton(
+                                height: TokensSize.skeletonPanel,
+                              ),
                             ),
                             PlanLoadStatus.failure => AppErrorView(
                               error: state.error!,

@@ -17,4 +17,9 @@ sealed class RunHomeEvent with _$RunHomeEvent {
 
   /// «Compartir» la semana: imagen solo con las cifras (nunca el mapa).
   const factory RunHomeEvent.shared(Uint8List png, String text) = RunHomeShared;
+
+  /// «Abrir los ajustes de la app» de la ayuda de batería (para quitar el
+  /// ahorro de batería que corta el GPS).
+  const factory RunHomeEvent.batterySettingsOpened() =
+      RunHomeBatterySettingsOpened;
 }

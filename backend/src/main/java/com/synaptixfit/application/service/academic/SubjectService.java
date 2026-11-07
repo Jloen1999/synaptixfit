@@ -36,6 +36,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import com.synaptixfit.domain.model.insights.TimeZones;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -91,13 +92,13 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
     }
 
     @Override
-    public List<SubjectSummary> listSubjects(UUID userId, Boolean archived) {
-        return summarize(userId, subjects.findByUser(userId, archived));
+    public List<SubjectSummary> listSubjects(UUID userId, Boolean archived, String zone) {
+        return summarize(userId, subjects.findByUser(userId, archived), zone);
     }
 
     @Override
-    public SubjectSummary getSubject(UUID userId, UUID subjectId) {
-        return summarize(userId, List.of(lookups.subject(userId, subjectId))).getFirst();
+    public SubjectSummary getSubject(UUID userId, UUID subjectId, String zone) {
+        return summarize(userId, List.of(lookups.subject(userId, subjectId)), zone).getFirst();
     }
 
     @Override
@@ -161,7 +162,7 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
         } else if (Boolean.FALSE.equals(c.archived())) {
             s.unarchive();
         }
-        return summarize(c.userId(), List.of(subjects.save(s))).getFirst();
+        return summarize(c.userId(), List.of(subjects.save(s)), c.zone()).getFirst();
     }
 
     @Override
@@ -263,13 +264,18 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
         semesters.deleteBySubject(userId, s.id());
     }
 
-    private List<SubjectSummary> summarize(UUID userId, List<Subject> list) {
+    /**
+     * Cuenta el contenido y arma la agenda de cada asignatura. Los días de clase y «en N días» se cuentan en la zona
+     * del móvil ({@code zone}, IANA) como el resto de endpoints que la reciben; sin ella o inválida, la del servidor.
+     */
+    private List<SubjectSummary> summarize(UUID userId, List<Subject> list, String zoneId) {
         if (list.isEmpty()) {
             return List.of();
         }
         List<UUID> ids = list.stream().map(Subject::id).toList();
         Map<UUID, SubjectRepositoryPort.ContentCount> counts = subjects.countContents(userId, ids);
         Instant now = clock.instant();
+        ZoneId userZone = TimeZones.resolve(zoneId, zone);
         // Hasta dónde se miran clases: la próxima puede estar tras unas vacaciones; los días, dos semanas desde ella.
         Map<UUID, List<SubjectAgenda.ClassSlot>> classes = agenda == null ? Map.of()
                 : agenda.upcomingClasses(userId, ids, now, now.plus(Duration.ofDays(CLASS_LOOKAHEAD_DAYS)));
@@ -279,7 +285,7 @@ public class SubjectService implements ListSubjectsUseCase, GetSubjectUseCase, C
             SubjectRepositoryPort.ContentCount c = counts.getOrDefault(s.id(),
                     new SubjectRepositoryPort.ContentCount(0, 0));
             SubjectAgenda next = SubjectAgenda.of(classes.getOrDefault(s.id(), List.of()),
-                    deadlines.getOrDefault(s.id(), List.of()), s.room(), zone);
+                    deadlines.getOrDefault(s.id(), List.of()), s.room(), s.nextAssessmentAt(), now, userZone);
             return new SubjectSummary(s, c.notes(), c.files(), next);
         }).toList();
     }

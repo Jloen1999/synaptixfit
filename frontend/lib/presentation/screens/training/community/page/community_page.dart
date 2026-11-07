@@ -115,7 +115,9 @@ class _CommunityViewState extends State<_CommunityView> {
               ),
               Expanded(
                 child: switch (state.status) {
-                  CommunityStatus.loading => const AppSkeletonList(height: 120),
+                  CommunityStatus.loading => const AppSkeletonList(
+                    height: TokensSize.skeletonCard,
+                  ),
                   CommunityStatus.failure => AppErrorView(
                     error: state.error!,
                     onRetry: () => bloc.add(const CommunityEvent.refreshed()),

@@ -239,7 +239,7 @@ class _MaterialReviewView extends StatelessWidget with ErrorsMessageMixin {
                         title: l10n.academicReviewNoOptions,
                         action: AppSecondaryButton(
                           label: l10n.commonRetry,
-                          icon: const Icon(Icons.refresh_rounded),
+                          icon: const Icon(AppIcons.refresh),
                           onPressed: () =>
                               context.read<MaterialReviewBloc>().add(
                                 MaterialReviewEvent.started(state.materialId),

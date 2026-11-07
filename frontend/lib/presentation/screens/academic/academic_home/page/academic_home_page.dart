@@ -180,7 +180,7 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
                 l10n.academicInboxMoved(subjectName),
                 actionLabel: l10n.commonView,
                 onAction: () =>
-                    _open(context, AcademicPaths.subject(subjectId)),
+                    _open(context, AcademicPaths.subjectNotes(subjectId)),
               );
             case AcademicHomeNoticeFailed(:final error):
               context.showSnack(errorMessage(context, error));

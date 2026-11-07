@@ -473,9 +473,11 @@ class _Month extends StatelessWidget with ErrorsMessageMixin {
         Wrap(
           spacing: TokensSpacing.m,
           children: [
+            // Como el día real: círculo de color con la gota dentro.
             _Legend(
               icon: Icons.water_drop_rounded,
-              color: context.colors.error,
+              color: context.palette.onCycleContainer,
+              background: context.palette.cycleContainer,
               label: l10n.trainingCycleLegendPeriod,
             ),
             _Legend(
@@ -510,11 +512,13 @@ class _DayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final palette = context.palette;
     return Semantics(
       button: onTap != null,
       label: semanticLabel,
       excludeSemantics: true,
       child: AppFocusOutline(
+        borderRadius: BorderRadius.circular(TokensRadius.pill),
         child: InkWell(
           onTap: onTap,
           customBorder: const CircleBorder(),
@@ -526,7 +530,7 @@ class _DayCell extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: period ? colors.errorContainer : null,
+                color: period ? palette.cycleContainer : null,
                 border: today
                     ? Border.all(
                         color: colors.primary,
@@ -542,7 +546,7 @@ class _DayCell extends StatelessWidget {
                     '$day',
                     style: context.textStyles.bodyMedium?.copyWith(
                       color: period
-                          ? colors.onErrorContainer
+                          ? palette.onCycleContainer
                           : onTap == null
                           ? colors.onSurfaceVariant
                           : colors.onSurface,
@@ -553,7 +557,7 @@ class _DayCell extends StatelessWidget {
                     Icon(
                       Icons.water_drop_rounded,
                       size: TokensSize.iconXs,
-                      color: colors.onErrorContainer,
+                      color: palette.onCycleContainer,
                     )
                   else if (logged)
                     Icon(
@@ -571,18 +575,35 @@ class _DayCell extends StatelessWidget {
   }
 }
 
+/// Una entrada de la leyenda del mes; con [background], el icono va en un
+/// círculo de ese color, igual que se pinta el día en la cuadrícula.
 class _Legend extends StatelessWidget {
-  const _Legend({required this.icon, required this.color, required this.label});
+  const _Legend({
+    required this.icon,
+    required this.color,
+    required this.label,
+    this.background,
+  });
 
   final IconData icon;
   final Color color;
   final String label;
+  final Color? background;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Icon(icon, size: TokensSize.iconXs, color: color),
+      if (background case final fill?)
+        DecoratedBox(
+          decoration: BoxDecoration(shape: BoxShape.circle, color: fill),
+          child: Padding(
+            padding: const EdgeInsets.all(TokensSpacing.xxs),
+            child: Icon(icon, size: TokensSize.iconXs, color: color),
+          ),
+        )
+      else
+        Icon(icon, size: TokensSize.iconXs, color: color),
       const SizedBox(width: TokensSpacing.xs),
       Text(label, style: context.textStyles.bodySmall),
     ],

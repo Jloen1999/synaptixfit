@@ -54,7 +54,8 @@ class _EditWellnessView extends StatelessWidget with ErrorsMessageMixin {
         builder: (context, state) => WellnessFormBody(
           state: state,
           // La edad ya no se pide aquí: sale de la fecha de nacimiento.
-          header: context.select((SessionBloc b) => b.account?.birthDate) == null
+          header:
+              context.select((SessionBloc b) => b.account?.birthDate) == null
               ? const _BirthDateSuggestion()
               : null,
         ),

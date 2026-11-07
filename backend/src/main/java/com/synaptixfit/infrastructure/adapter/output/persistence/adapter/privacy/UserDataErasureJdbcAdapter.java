@@ -24,7 +24,6 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
             "DELETE FROM carga_academica_semanal WHERE usuario_id = :id",
             "DELETE FROM registros_carga_fisica WHERE usuario_id = :id",
             "DELETE FROM sesiones_registradas WHERE usuario_id = :id",
-            "DELETE FROM estado_diario_usuario WHERE usuario_id = :id",
             "DELETE FROM estado_regulacion_cruzada WHERE usuario_id = :id");
 
     /**
@@ -33,6 +32,9 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
      */
     private static final List<String> PERSONAL_CONTENT = List.of(
             "DELETE FROM dias_ciclo WHERE usuario_id = :id",
+            // Registro diario (sueño, energía, ánimo, dolor): dato de salud como el ciclo, se borra también al
+            // anonimizar en vez de conservarse como estadística.
+            "DELETE FROM estado_diario_usuario WHERE usuario_id = :id",
             // Rutas GPS (ADR 0037): ubicación exacta, nunca se conserva ligada a un id anonimizado.
             "DELETE FROM carreras_gps WHERE usuario_id = :id",
             "DELETE FROM eventos_entreno_carrera WHERE usuario_id = :id",
@@ -83,7 +85,6 @@ public class UserDataErasureJdbcAdapter implements UserDataErasurePort {
     private static final List<String> SCRUB_STATISTICS = List.of(
             "UPDATE horarios_academicos SET temas = NULL, ubicacion = NULL, ics_uid = NULL WHERE usuario_id = :id",
             "UPDATE carga_academica_semanal SET notas = NULL WHERE usuario_id = :id",
-            "UPDATE estado_diario_usuario SET notas = NULL WHERE usuario_id = :id",
             "UPDATE estado_cognitivo_usuario SET rmr_base = NULL WHERE usuario_id = :id");
 
     /**

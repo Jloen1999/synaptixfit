@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/errors/app_error.dart';
 import '../extensions/context_extensions.dart';
 import '../mixins/errors_message_mixin.dart';
+import '../theme/app_icons.dart';
 import '../theme/tokens.g.dart';
 import 'app_secondary_button.dart';
 
@@ -38,7 +39,7 @@ class AppErrorView extends StatelessWidget with ErrorsMessageMixin {
               const SizedBox(height: TokensSpacing.m),
               AppSecondaryButton(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(AppIcons.refresh),
                 label: context.localizations.commonRetry,
               ),
             ],

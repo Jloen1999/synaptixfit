@@ -151,14 +151,14 @@ class _StepIndicator extends StatelessWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 12,
+                    radius: TokensSize.iconM / 2,
                     backgroundColor: i <= current
                         ? context.colors.secondary
                         : context.colors.surfaceContainerHigh,
                     child: i < current
                         ? Icon(
                             Icons.check_rounded,
-                            size: 14,
+                            size: TokensSize.iconXs,
                             color: context.colors.onSecondary,
                           )
                         : Text(
@@ -605,7 +605,7 @@ class _ProposalBanner extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.chevron_right_rounded,
-                        size: 18,
+                        size: TokensSize.iconS,
                         color: foreground,
                       ),
                       Expanded(

@@ -177,7 +177,7 @@ class _CatalogPickerViewState extends State<_CatalogPickerView> {
                   subtitle: item.type == null && item.region == null
                       ? null
                       : Text([?item.type, ?item.region].join(' · ')),
-                  trailing: const Icon(Icons.chevron_right_rounded),
+                  trailing: const Icon(AppIcons.next),
                   onTap: () {
                     _resetSearch();
                     bloc.add(CatalogPickerEvent.universitySelected(item));

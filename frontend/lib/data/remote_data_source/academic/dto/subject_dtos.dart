@@ -34,6 +34,7 @@ abstract class SubjectDto with _$SubjectDto {
     String? nextClassPlace,
     @Default(<int>[]) List<int> classDays,
     SubjectDeadlineDto? nextDeadline,
+    SubjectNextUpDto? nextUp,
   }) = _SubjectDto;
 
   const SubjectDto._();
@@ -61,7 +62,37 @@ abstract class SubjectDto with _$SubjectDto {
     nextClassPlace: nextClassPlace,
     classDays: classDays,
     nextDeadline: nextDeadline?.toDomain(),
+    nextUp: nextUp?.toDomain(),
   );
+}
+
+/// Lo próximo de la asignatura (`nextUp` de la API); un tipo desconocido se
+/// ignora para que una versión anterior de la app no falle.
+@freezed
+abstract class SubjectNextUpDto with _$SubjectNextUpDto {
+  const factory SubjectNextUpDto({
+    required String kind,
+    required DateTime at,
+    String? place,
+    @Default(0) int daysLeft,
+    @Default(false) bool urgent,
+  }) = _SubjectNextUpDto;
+
+  const SubjectNextUpDto._();
+
+  factory SubjectNextUpDto.fromJson(Map<String, dynamic> json) =>
+      _$SubjectNextUpDtoFromJson(json);
+
+  SubjectNextUp? toDomain() => switch (SubjectNextUpKind.fromApi(kind)) {
+    final k? => SubjectNextUp(
+      kind: k,
+      at: at.toLocal(),
+      place: place,
+      daysLeft: daysLeft,
+      urgent: urgent,
+    ),
+    null => null,
+  };
 }
 
 @freezed

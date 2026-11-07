@@ -90,7 +90,7 @@ class _Intro extends StatelessWidget {
     final bloc = context.read<EnrollmentImportBloc>();
     final privacy = [
       (Icons.check_circle_outline_rounded, l10n.profileEnrollmentPrivacyRead),
-      (Icons.visibility_off_outlined, l10n.profileEnrollmentPrivacyHidden),
+      (AppIcons.hidden, l10n.profileEnrollmentPrivacyHidden),
       (Icons.cloud_outlined, l10n.profileEnrollmentPrivacyAi),
       (AppIcons.delete, l10n.profileEnrollmentPrivacyNotStored),
     ];
@@ -321,7 +321,7 @@ class _Done extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(TokensSpacing.l),
         child: AppEmptyState(
-          icon: Icons.task_alt_rounded,
+          icon: AppIcons.done,
           title: l10n.profileEnrollmentDone(result.subjectsAdded),
           message: result.degreeLinked
               ? l10n.profileEnrollmentDegreeLinked

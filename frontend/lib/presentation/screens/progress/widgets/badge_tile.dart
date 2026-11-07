@@ -81,7 +81,7 @@ class BadgeTile extends StatelessWidget {
                 children: [
                   if (!badge.visible) ...[
                     Icon(
-                      Icons.visibility_off_outlined,
+                      AppIcons.hidden,
                       size: TokensSize.iconXs,
                       color: context.colors.onSurfaceVariant,
                     ),

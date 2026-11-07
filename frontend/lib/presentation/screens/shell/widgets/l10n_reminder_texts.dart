@@ -29,6 +29,7 @@ class L10nReminderTexts implements ReminderTexts {
   @override
   String blockTitle(ReminderKind kind) => switch (kind) {
     ReminderKind.sportBlock => _l10n.remindersSportTitle,
+    ReminderKind.runWorkout => _l10n.remindersRunWorkoutTitle,
     _ => _l10n.remindersStudyTitle,
   };
 
@@ -67,6 +68,7 @@ class L10nReminderTexts implements ReminderTexts {
     if (trimmed != null && trimmed.isNotEmpty) return trimmed;
     return switch (kind) {
       ReminderKind.sportBlock => _l10n.remindersSportFallbackName,
+      ReminderKind.runWorkout => _l10n.remindersRunWorkoutFallbackName,
       ReminderKind.personalEvent => _l10n.remindersPersonalFallbackName,
       ReminderKind.classSoon => _l10n.remindersClassFallbackName,
       ReminderKind.exam => _l10n.remindersExamFallbackName,
@@ -198,6 +200,7 @@ class L10nReminderTexts implements ReminderTexts {
   @override
   String startAction(ReminderKind kind) => switch (kind) {
     ReminderKind.sportBlock => _l10n.remindersActionStartTraining,
+    ReminderKind.runWorkout => _l10n.remindersActionStartRun,
     ReminderKind.personalEvent => _l10n.remindersActionStartPersonal,
     _ => _l10n.remindersActionStartStudy,
   };
@@ -230,12 +233,16 @@ class L10nReminderTexts implements ReminderTexts {
   }) => switch (kind) {
     ReminderKind.streakAtRisk => _l10n.remindersStreakBody(count ?? 1),
     ReminderKind.checkIn => _l10n.remindersCheckInBody,
-    _ =>
-      place?.trim().isNotEmpty ?? false
-          ? _l10n.remindersClassBodyPlace(
-              start == null ? '' : _time.format(start),
-              place!.trim(),
-            )
-          : _l10n.remindersClassBody(start == null ? '' : _time.format(start)),
+    _ => switch ((start, place?.trim())) {
+      (final s?, final p?) when p.isNotEmpty => _l10n.remindersClassBodyPlace(
+        _time.format(s),
+        p,
+      ),
+      (final s?, _) => _l10n.remindersClassBody(_time.format(s)),
+      (null, final p?) when p.isNotEmpty => _l10n.remindersClassBodySoonPlace(
+        p,
+      ),
+      _ => _l10n.remindersClassBodySoon,
+    },
   };
 }

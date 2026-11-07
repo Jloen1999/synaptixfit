@@ -766,6 +766,15 @@
       }
     }
   },
+  "academicSubjectEditNamed": "Editar «{name}»",
+  "@academicSubjectEditNamed": {
+    "description": "Botón de editar del detalle de asignatura: dice cuál se edita.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "academicFormatHeading": "Título",
   "academicFormatBold": "Negrita",
   "academicFormatItalic": "Cursiva",
@@ -1324,5 +1333,14 @@
   "academicSubjectDeleteAction": "Eliminar la asignatura",
   "academicFileDeleteAction": "Eliminar el archivo",
   "academicSubjectArchivedWhere": "Asignatura archivada. La tienes en Académico › Archivadas.",
-  "academicSubjectUnarchivedWhere": "Asignatura restaurada: vuelve a salir en Académico y en el planificador."
+  "academicSubjectUnarchivedWhere": "Asignatura restaurada: vuelve a salir en Académico y en el planificador.",
+  "academicDeleteNamed": "Eliminar «{title}»",
+  "@academicDeleteNamed": {
+    "description": "Botón de papelera de un apunte o archivo en «Apuntes y archivos».",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -18,7 +18,7 @@ class CycleAndWellbeingTest {
 
     private static final Instant NOW = Instant.parse("2026-11-04T10:00:00Z");
     private static final LocalDate TODAY = LocalDate.of(2026, 11, 4);
-    private static final CycleTracking ON = new CycleTracking(true, NOW);
+    private static final CycleTracking ON = new CycleTracking(true, NOW, null);
 
     private static List<CycleDay> period(LocalDate start, int days) {
         List<CycleDay> out = new ArrayList<>();
@@ -31,7 +31,8 @@ class CycleAndWellbeingTest {
     @Test
     void activarExigeConsentimientoExplicito() {
         assertThatThrownBy(() -> CycleTracking.enable(false, NOW)).isInstanceOf(CycleConsentRequiredException.class);
-        assertThat(CycleTracking.enable(true, NOW)).isEqualTo(new CycleTracking(true, NOW));
+        assertThat(CycleTracking.enable(true, NOW)).isEqualTo(new CycleTracking(true, NOW, null));
+        assertThat(ON.disable(NOW.plusSeconds(60))).isEqualTo(new CycleTracking(false, NOW, NOW.plusSeconds(60)));
     }
 
     @Test

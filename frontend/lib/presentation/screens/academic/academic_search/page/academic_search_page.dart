@@ -259,7 +259,7 @@ class _HitTile extends StatelessWidget {
                       : context.colors.onSurfaceVariant,
                 ),
               ),
-        trailing: const Icon(Icons.chevron_right_rounded),
+        trailing: const Icon(AppIcons.next),
         onTap: () => context.push(_path()),
       ),
     );

@@ -1,7 +1,7 @@
 package com.synaptixfit.infrastructure.adapter.input.rest.challenge;
 
 import com.synaptixfit.application.port.input.challenge.ListRoutineDayLinkTargetsUseCase;
-import com.synaptixfit.domain.model.challenge.RoutineDayTarget;
+import com.synaptixfit.infrastructure.adapter.input.rest.challenge.dto.RoutineDayTargetResponse;
 import com.synaptixfit.infrastructure.adapter.input.rest.support.CurrentUserId;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -23,15 +23,6 @@ public class ChallengeLinkTargetController {
 
     public ChallengeLinkTargetController(ListRoutineDayLinkTargetsUseCase targets) {
         this.targets = targets;
-    }
-
-    /** Día vinculable. {@code dayNumber}: día de la semana (1 = lunes); {@code dayName} nulo si no tiene nombre. */
-    public record RoutineDayTargetResponse(UUID dayId, String routineName, int weekNumber, int dayNumber,
-                                           String dayName) {
-        static RoutineDayTargetResponse from(RoutineDayTarget t) {
-            return new RoutineDayTargetResponse(t.dayId(), t.routineName(), t.weekNumber(), t.dayNumber(),
-                    t.dayName());
-        }
     }
 
     @GetMapping

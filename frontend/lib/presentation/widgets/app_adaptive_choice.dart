@@ -83,22 +83,24 @@ class AppAdaptiveChoice<T> extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-    width: double.infinity,
-    child: SegmentedButton<T>(
-      showSelectedIcon: false,
-      segments: [
-        for (final v in values)
-          ButtonSegment<T>(
-            value: v,
-            enabled: _enabled(v),
-            tooltip: _enabled(v) ? null : disabledHint,
-            icon: Icon(iconOf(v)),
-            label: Text(labelOf(v)),
+          width: double.infinity,
+          child: SegmentedButton<T>(
+            showSelectedIcon: false,
+            segments: [
+              for (final v in values)
+                ButtonSegment<T>(
+                  value: v,
+                  enabled: _enabled(v),
+                  tooltip: _enabled(v) ? null : disabledHint,
+                  icon: Icon(iconOf(v)),
+                  label: Text(labelOf(v)),
+                ),
+            ],
+            selected: {selected},
+            onSelectionChanged: onChanged == null
+                ? null
+                : (s) => onChanged!(s.first),
           ),
-      ],
-      selected: {selected},
-      onSelectionChanged: onChanged == null ? null : (s) => onChanged!(s.first),
-    ),
         ),
         for (final note in notes)
           Padding(

@@ -52,7 +52,7 @@ class EnrollmentImportServiceTest {
         ListUniversitiesUseCase universities = mock(ListUniversitiesUseCase.class);
         when(universities.listUniversities(null)).thenReturn(List.of());
         mySubjects = mock(ListSubjectsUseCase.class);
-        when(mySubjects.listSubjects(userId, false)).thenReturn(List.of());
+        when(mySubjects.listSubjects(userId, false, null)).thenReturn(List.of());
         linkDegree = mock(LinkDegreeUseCase.class);
         fromCatalog = mock(CreateSubjectsFromCatalogUseCase.class);
         createSubject = mock(CreateSubjectUseCase.class);

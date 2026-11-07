@@ -3,6 +3,7 @@ package com.synaptixfit.application.service.planner;
 import com.synaptixfit.application.port.input.planner.CompletePlannedActivityUseCase;
 import com.synaptixfit.application.port.input.planner.LogPastActivityUseCase;
 import com.synaptixfit.application.port.input.planner.SetBlockCompletionUseCase;
+import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
 import com.synaptixfit.domain.exception.planner.PlannerSubjectNotFoundException;
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
@@ -11,6 +12,7 @@ import com.synaptixfit.domain.model.planner.PastActivity;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.Priority;
 import com.synaptixfit.domain.model.planner.TimeRange;
+import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
@@ -33,17 +35,17 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
     private final PlannerZone zone;
     private final Clock clock;
     private final LoggedActivityRepositoryPort logged;
+    private final DomainEventPublisherPort events;
 
-    public PastActivityService(CalendarBlockRepositoryPort blocks, SubjectDirectoryPort subjects,
-                               SetBlockCompletionUseCase completion, PlannerZone zone, Clock clock) {
-        this(blocks, subjects, completion, zone, clock, null);
-    }
-
-    /** @param logged donde se guardan la clase, los minutos reales y la distancia del deporte (nulo: no se guardan) */
+    /**
+     * @param logged donde se guardan la clase, los minutos reales y la distancia del deporte
+     * @param events para que la carga física de un evento hecho como actividad cuente sus minutos reales
+     */
     public PastActivityService(CalendarBlockRepositoryPort blocks, SubjectDirectoryPort subjects,
                                SetBlockCompletionUseCase completion, PlannerZone zone, Clock clock,
-                               LoggedActivityRepositoryPort logged) {
+                               LoggedActivityRepositoryPort logged, DomainEventPublisherPort events) {
         this.logged = logged;
+        this.events = events;
         this.blocks = blocks;
         this.subjects = subjects;
         this.completion = completion;
@@ -77,9 +79,10 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
         blocks.save(block);
         SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), block.id(), true,
                 activity.effort());
-        if (logged != null && activity.type() == ActivityType.SPORT) {
+        if (activity.type() == ActivityType.SPORT) {
             logged.save(block.id(), command.userId(), activity.kind(), activity.minutes(), activity.distanceMeters(),
                     activity.source(), now);
+            syncLoadWithRealMinutes(command.userId(), result.block(), activity.effort(), activity.minutes(), now);
         }
         return result;
     }
@@ -89,10 +92,21 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
         int effort = Guard.range(command.effort(), "effort", 1, 10);
         SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), command.blockId(), true,
                 effort);
-        if (logged != null) {
-            logged.save(command.blockId(), command.userId(), command.kind(), command.minutes(),
-                    command.distanceMeters(), command.source(), clock.instant());
-        }
+        Instant now = clock.instant();
+        logged.save(command.blockId(), command.userId(), command.kind(), command.minutes(),
+                command.distanceMeters(), command.source(), now);
+        syncLoadWithRealMinutes(command.userId(), result.block(), effort, command.minutes(), now);
         return result;
+    }
+
+    /**
+     * La carga física cuenta los minutos hechos, no los que ocupa el evento en el calendario (mínimo 30; ADR 0037):
+     * se vuelve a sincronizar con ellos (el oyente de carga es idempotente y actualiza el registro del evento).
+     */
+    private void syncLoadWithRealMinutes(UUID userId, CalendarBlock block, Integer effort, int minutes, Instant now) {
+        if (minutes != block.range().minutes()) {
+            events.publish(new SportBlockCompletionChanged(userId, block.id(), zone.localDate(block.start()), effort,
+                    minutes, true, now));
+        }
     }
 }

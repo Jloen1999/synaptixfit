@@ -150,13 +150,13 @@ class SportActivityTile extends StatelessWidget {
         (l10n.trainingActivityDistance(number.format(m / 1000)), null),
       if (kind == ActivityKind.bike && activity.speedKmh != null)
         (l10n.trainingActivitySpeed(number.format(activity.speedKmh)), null)
-      else if (kind == ActivityKind.swim && pace != null)
+      else if (kind == ActivityKind.swim && activity.paceSecondsPer100m != null)
         (
-          l10n.trainingActivityPacePer100(_clock((pace / 10).round())),
+          l10n.trainingActivityPacePer100(_clock(activity.paceSecondsPer100m!)),
           l10n.trainingActivityPacePer100Spoken(
             l10n.trainingActivityPaceSpoken(
-              (pace / 10).round() ~/ 60,
-              (pace / 10).round() % 60,
+              activity.paceSecondsPer100m! ~/ 60,
+              activity.paceSecondsPer100m! % 60,
             ),
           ),
         )
@@ -176,11 +176,13 @@ class SportActivityTile extends StatelessWidget {
     final date = toBeginningOfSentenceCase(
       DateFormat.MMMEd(l10n.localeName).add_Hm().format(activity.start),
     );
-    return AppCard(
-      onTap: gps
-          ? () => context.push(TrainingPaths.run(activity.blockId))
-          : null,
-      child: MergeSemantics(
+    // La fusión va por fuera de la tarjeta: si se puede tocar (carrera con
+    // GPS), el botón lleva su texto y no queda un «botón» sin nombre.
+    return MergeSemantics(
+      child: AppCard(
+        onTap: gps
+            ? () => context.push(TrainingPaths.run(activity.blockId))
+            : null,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

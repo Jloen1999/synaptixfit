@@ -45,7 +45,7 @@ class _XpGuideSheet extends StatelessWidget {
         l10n.xpGuideBlocksDetail,
       ),
       (
-        Icons.timer_outlined,
+        AppIcons.focusTimer,
         palette.study,
         l10n.xpGuidePomodoro,
         l10n.xpGuidePomodoroDetail,
