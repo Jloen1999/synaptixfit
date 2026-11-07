@@ -27,6 +27,7 @@ import '../../widgets/set_fields.dart';
 import '../../../../../domain/models/training/live_session_draft.dart';
 import '../../exercise_alternatives/page/exercise_alternatives_sheet.dart';
 import '../bloc/live_session_bloc.dart';
+import 'clock_intro_sheet.dart';
 import 'live_focus_view.dart';
 import 'set_record_sheet.dart';
 
@@ -160,16 +161,11 @@ class _LiveViewState extends State<_LiveView> {
   /// Sesión recién empezada: se explica que el cronómetro ya corre, que cada
   /// serie tiene el suyo (opcional) y que las pausas no cuentan.
   Future<void> _explainClock(LiveSessionState state) async {
-    final result = await showModalBottomSheet<(bool, bool)>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      isDismissible: false,
-      builder: (_) =>
-          _ClockIntroSheet(minutes: state.remainingEstimatedMinutes),
+    final (start, hide) = await showClockIntroSheet(
+      context,
+      minutes: state.remainingEstimatedMinutes,
     );
     if (!mounted) return;
-    final (start, hide) = result ?? (true, false);
     _bloc.add(LiveSessionEvent.clockExplained(hideNextTime: hide));
     // «Ahora no»: no se pierde nada, se pausa y se sale (descartarla sigue en
     // la hoja de salir).
@@ -937,7 +933,9 @@ class _BottomBarState extends State<_BottomBar> {
       label: timed ? l10n.trainingSetDoneShort : l10n.trainingFreeLogSet(next),
       icon: Icons.check_rounded,
       focusNode: _doneFocus,
-      onPressed: state.saving || next > 50 ? null : () => widget.onFreeLog(next),
+      onPressed: state.saving || next > 50
+          ? null
+          : () => widget.onFreeLog(next),
     );
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1929,92 +1927,3 @@ class _LeaveSheet extends StatelessWidget {
   }
 }
 
-/// Explicación del cronómetro al empezar: devuelve (empezar, no volver a
-/// explicarlo).
-class _ClockIntroSheet extends StatefulWidget {
-  const _ClockIntroSheet({required this.minutes});
-
-  final int? minutes;
-
-  @override
-  State<_ClockIntroSheet> createState() => _ClockIntroSheetState();
-}
-
-class _ClockIntroSheetState extends State<_ClockIntroSheet> {
-  bool _hide = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    Widget point(int n, String text) => Padding(
-      padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppStepBadge(number: n),
-          const SizedBox(width: TokensSpacing.s),
-          Expanded(child: Text(text)),
-        ],
-      ),
-    );
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          TokensSpacing.l,
-          0,
-          TokensSpacing.l,
-          TokensSpacing.l,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Semantics(
-              header: true,
-              child: Text(
-                l10n.trainingClockIntroTitle,
-                style: context.textStyles.titleLarge,
-              ),
-            ),
-            if (widget.minutes case final m? when m > 0) ...[
-              const SizedBox(height: TokensSpacing.s),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                // Neutra: es una estimación (el naranja es el tiempo real).
-                child: AppPill(
-                  label: l10n.trainingClockIntroEstimate(m),
-                  icon: Icons.schedule_rounded,
-                ),
-              ),
-            ],
-            const SizedBox(height: TokensSpacing.m),
-            point(1, l10n.trainingClockIntroPoint1),
-            point(2, l10n.trainingClockIntroPoint2),
-            point(3, l10n.trainingClockIntroPoint3),
-            AppFocusOutline(
-              child: CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                value: _hide,
-                onChanged: (v) => setState(() => _hide = v ?? false),
-                title: Text(l10n.trainingClockIntroHide),
-              ),
-            ),
-            const SizedBox(height: TokensSpacing.s),
-            AppPrimaryButton(
-              label: l10n.trainingClockIntroStart,
-              // El cronómetro ya corre: el botón confirma, no arranca nada.
-              icon: Icons.check_rounded,
-              onPressed: () => Navigator.of(context).pop((true, _hide)),
-            ),
-            const SizedBox(height: TokensSpacing.xs),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop((false, _hide)),
-              child: Text(l10n.trainingClockIntroNotYet),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
