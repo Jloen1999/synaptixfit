@@ -11,6 +11,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../quick_check_in/page/quick_check_in_card.dart';
 import '../../training_routes.dart';
+import '../../widgets/continue_session_target.dart';
 import '../../widgets/exercise_thumbnail.dart';
 import '../../widgets/open_session_card.dart';
 import '../../widgets/recommendation_card.dart';
@@ -123,13 +124,6 @@ class _TrainingHomeView extends StatelessWidget {
               ),
             ],
           ),
-          floatingActionButton: state.status == HomeStatus.ready
-              ? FloatingActionButton.extended(
-                  onPressed: () => _newRoutine(context),
-                  icon: const Icon(AppIcons.add),
-                  label: Text(l10n.trainingNewRoutine),
-                )
-              : null,
           body: switch (state.status) {
             HomeStatus.loading => const AppSkeletonList(
               height: TokensSize.skeletonCard,
@@ -146,7 +140,10 @@ class _TrainingHomeView extends StatelessWidget {
                   ..add(const TrainingHomeEvent.refreshed());
                 await bloc.stream.firstWhere((s) => !s.refreshing);
               },
-              child: _HomeContent(state: state),
+              child: _HomeContent(
+                state: state,
+                onNewRoutine: () => _newRoutine(context),
+              ),
             ),
           },
         );
@@ -155,10 +152,14 @@ class _TrainingHomeView extends StatelessWidget {
   }
 }
 
+/// Lo que se ve en Gimnasio, de arriba abajo: el próximo entreno, «¿Qué tal
+/// estás hoy?» plegado, tus rutinas (con «Nueva rutina» en su cabecera, no
+/// flotando sobre los botones) y, plegadas, las sugerencias (ADR 0039).
 class _HomeContent extends StatelessWidget {
-  const _HomeContent({required this.state});
+  const _HomeContent({required this.state, required this.onNewRoutine});
 
   final TrainingHomeState state;
+  final VoidCallback onNewRoutine;
 
   @override
   Widget build(BuildContext context) {
@@ -178,13 +179,18 @@ class _HomeContent extends StatelessWidget {
         TokensSpacing.m,
         TokensSpacing.s,
         TokensSpacing.m,
-        TokensSpacing.xxl * 2,
+        TokensSpacing.xxl,
       ),
       children: [
         TrainingContent(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _ContinueTargetSync(
+                dayId: state.pendingDay?.dayStatus == ProgressStatus.inProgress
+                    ? state.pendingDay?.dayId
+                    : null,
+              ),
               for (final stale in state.staleSessions) ...[
                 OpenSessionCard(
                   open: stale,
@@ -237,21 +243,18 @@ class _HomeContent extends StatelessWidget {
                     _TrainingHomeView.open(context, TrainingPaths.routine(id)),
               ),
               const SizedBox(height: TokensSpacing.m),
-              // Tres toques y el porqué de la adaptación de hoy (ADR 0033).
+              // Tres toques y el porqué de la adaptación de hoy (ADR 0033),
+              // plegado en una línea hasta que se abre. Los partidos y otras
+              // actividades se apuntan en Correr (ADR 0039).
               const QuickCheckInCard(),
-              const SizedBox(height: TokensSpacing.s),
-              // Un partido o una carrera fuera de la app también cuenta: antes
-              // solo se llegaba desde un icono de la barra superior.
-              AppSecondaryButton(
-                label: l10n.trainingLogActivityButton,
-                icon: const Icon(Icons.sports_soccer_rounded),
-                onPressed: () => _TrainingHomeView.open(
-                  context,
-                  TrainingPaths.logActivity(from: TrainingSection.gym),
-                ),
-              ),
               const SizedBox(height: TokensSpacing.l),
-              AppSectionHeader(title: l10n.trainingMyRoutines),
+              AppSectionHeader(
+                title: l10n.trainingMyRoutines,
+                actionLabel: state.routines.isEmpty
+                    ? null
+                    : l10n.trainingNewRoutine,
+                onAction: state.routines.isEmpty ? null : onNewRoutine,
+              ),
               if (state.routines.isEmpty)
                 AppCard(
                   child: AppEmptyState.compact(
@@ -642,38 +645,35 @@ class _Recommendations extends StatefulWidget {
 }
 
 class _RecommendationsState extends State<_Recommendations> {
+  /// Plegadas de entrada: son ideas, no lo que toca hoy.
   bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final all = widget.recommendations;
-    final visible = _expanded ? all : all.take(1);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppSectionHeader(
           title: l10n.trainingRecommendationsCount(all.length),
-          actionLabel: all.length > 1
-              ? (_expanded
-                    ? l10n.trainingRecommendationsLess
-                    : l10n.trainingRecommendationsAll)
-              : null,
-          onAction: all.length > 1
-              ? () => setState(() => _expanded = !_expanded)
-              : null,
-          actionExpanded: all.length > 1 ? _expanded : null,
+          actionLabel: _expanded
+              ? l10n.trainingRecommendationsLess
+              : l10n.trainingRecommendationsShow,
+          onAction: () => setState(() => _expanded = !_expanded),
+          actionExpanded: _expanded,
         ),
-        for (final r in visible)
-          Padding(
-            padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-            child: RecommendationCard(
-              recommendation: r,
-              busy: widget.busyIds.contains(r.id),
-              onApply: () => widget.onApply(r.id),
-              onDiscard: () => widget.onDiscard(r.id),
+        if (_expanded)
+          for (final r in all)
+            Padding(
+              padding: const EdgeInsets.only(bottom: TokensSpacing.s),
+              child: RecommendationCard(
+                recommendation: r,
+                busy: widget.busyIds.contains(r.id),
+                onApply: () => widget.onApply(r.id),
+                onDiscard: () => widget.onDiscard(r.id),
+              ),
             ),
-          ),
       ],
     );
   }
@@ -730,4 +730,48 @@ class _QuickAccess extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Dice a la barra de la sesión abierta qué día retoma ya «Continuar» en esta
+/// tarjeta, para que no haya dos caminos a la misma sesión (ADR 0039). Al
+/// salir de Gimnasio lo borra y la barra vuelve a salir.
+class _ContinueTargetSync extends StatefulWidget {
+  const _ContinueTargetSync({required this.dayId});
+
+  final String? dayId;
+
+  @override
+  State<_ContinueTargetSync> createState() => _ContinueTargetSyncState();
+}
+
+class _ContinueTargetSyncState extends State<_ContinueTargetSync> {
+  final _target = getIt<ContinueSessionTarget>();
+
+  @override
+  void initState() {
+    super.initState();
+    _publish(widget.dayId);
+  }
+
+  @override
+  void didUpdateWidget(_ContinueTargetSync oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.dayId != widget.dayId) _publish(widget.dayId);
+  }
+
+  /// Tras el fotograma: avisar a la barra durante la construcción la
+  /// reconstruiría a mitad de otro build.
+  void _publish(String? dayId) => WidgetsBinding.instance.addPostFrameCallback(
+    (_) => _target.value = dayId,
+  );
+
+  @override
+  void dispose() {
+    final target = _target;
+    WidgetsBinding.instance.addPostFrameCallback((_) => target.value = null);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

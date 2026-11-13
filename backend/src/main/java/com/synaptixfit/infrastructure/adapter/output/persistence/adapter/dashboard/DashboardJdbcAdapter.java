@@ -8,6 +8,7 @@ import com.synaptixfit.domain.model.dashboard.DashboardReadModels.CalendarBlock;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.TrainingTotals;
 import com.synaptixfit.domain.port.output.dashboard.DashboardReadPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.planner.PlannerPersistenceMapper;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -94,7 +95,8 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
                         """)
                 .param("u", userId).param("from", param(from)).param("to", param(to))
                 .query((rs, n) -> new Deadline(uuid(rs, "id"), rs.getString("titulo"), rs.getString("tipo"),
-                        instant(rs, "fecha_limite"), rs.getBoolean("esta_completado"), rs.getString("asignatura")))
+                        instant(rs, "fecha_limite"), rs.getBoolean("esta_completado"), rs.getString("asignatura"),
+                        PlannerPersistenceMapper.deadlineTypeToDomain(rs.getString("tipo"))))
                 .list();
     }
 

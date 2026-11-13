@@ -21,6 +21,7 @@ import 'package:synaptixfit/domain/use_cases/training/submit_quick_check_in_use_
 import 'package:synaptixfit/presentation/screens/training/quick_check_in/bloc/quick_check_in_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_home/bloc/training_home_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_home/page/training_home_page.dart';
+import 'package:synaptixfit/presentation/screens/training/widgets/continue_session_target.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
 import 'training_fixtures.dart';
@@ -93,19 +94,21 @@ void main() {
       ..registerFactory<TrainingHomeBloc>(() => bloc)
       // La tarjeta del registro rápido: hoy ya está hecho y sin adaptar.
       ..registerFactory<QuickCheckInBloc>(
-        () =>
-            QuickCheckInBloc(
-              getAdaptation: _DoneToday(),
-              submit: _NoSubmit(),
-              watchDataChanges: _NoDataChanges(),
-            ),
+        () => QuickCheckInBloc(
+          getAdaptation: _DoneToday(),
+          submit: _NoSubmit(),
+          watchDataChanges: _NoDataChanges(),
+        ),
       );
   });
+
+  setUp(() => getIt.registerLazySingleton(ContinueSessionTarget.new));
 
   tearDown(() {
     getIt
       ..unregister<TrainingHomeBloc>()
-      ..unregister<QuickCheckInBloc>();
+      ..unregister<QuickCheckInBloc>()
+      ..unregister<ContinueSessionTarget>();
   });
 
   Future<void> pump(
@@ -139,9 +142,18 @@ void main() {
     await tester.pump();
   }
 
+  /// Las sugerencias van plegadas en «Ver sugerencias» (ADR 0039).
+  Future<void> showSuggestions(WidgetTester tester) async {
+    await tester.tap(find.widgetWithText(TextButton, 'Ver sugerencias'));
+    // Sin pumpAndSettle: una tarjeta en carga tiene un indicador que no para.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+  }
+
   testWidgets('la sugerencia se despliega y anuncia su estado', (tester) async {
     final semantics = tester.ensureSemantics();
     await pump(tester);
+    await showSuggestions(tester);
 
     // Plegada: sin el porqué y con el resto de ejercicios resumido.
     expect(
@@ -180,17 +192,18 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('«Ver todas» anuncia si la lista está desplegada', (
+  testWidgets('las sugerencias van plegadas y «Ver sugerencias» lo anuncia', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
     await pump(tester);
 
-    final seeAll = find.widgetWithText(TextButton, 'Ver todas');
+    final seeAll = find.widgetWithText(TextButton, 'Ver sugerencias');
     expect(
       tester.getSemantics(seeAll).flagsCollection.isExpanded,
       Tristate.isFalse,
     );
+    expect(find.text('Sube la carga'), findsNothing);
     expect(find.text('Semana de descarga'), findsNothing);
 
     await tester.tap(seeAll);
@@ -217,6 +230,7 @@ void main() {
     );
     final semantics = tester.ensureSemantics();
     await pump(tester);
+    await showSuggestions(tester);
 
     expect(find.bySemanticsLabel('Aplicar, Cargando'), findsOneWidget);
     semantics.dispose();
@@ -241,6 +255,7 @@ void main() {
       tester,
     ) async {
       await pump(tester, textScale: 2);
+      await showSuggestions(tester);
       await tester.tap(find.widgetWithText(TextButton, 'Ver detalle'));
       await tester.pumpAndSettle();
 

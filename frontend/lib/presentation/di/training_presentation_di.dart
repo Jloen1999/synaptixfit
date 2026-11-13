@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 
+import '../screens/training/widgets/continue_session_target.dart';
 import '../screens/training/past_activity/bloc/past_activity_bloc.dart';
 import '../screens/training/exercise_alternatives/bloc/exercise_alternatives_bloc.dart';
 import '../screens/training/check_in/bloc/check_in_bloc.dart';
@@ -96,6 +97,7 @@ void registerTrainingPresentation(GetIt getIt) {
         saveNote: getIt(),
       ),
     )
+    ..registerLazySingleton(ContinueSessionTarget.new)
     ..registerFactory(
       () => OpenSessionBarBloc(
         getOpenSessions: getIt(),

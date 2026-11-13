@@ -11,6 +11,7 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../health_consent/page/health_consent_sheet.dart';
 import '../../training_routes.dart';
+import '../../widgets/check_in_questions.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_effect_handler.dart';
 import '../bloc/check_in_bloc.dart';
@@ -45,21 +46,29 @@ String _painZoneLabel(AppLocalizations l10n, String zone) => switch (zone) {
   _ => zone,
 };
 
-/// Check-in diario de bienestar.
+/// «¿Qué tal estás hoy?»: el registro diario, uno solo en toda la app
+/// (ADR 0039). Arriba, las tres preguntas de un toque (las mismas que la
+/// tarjeta de Entreno); con la tercera se guarda. Debajo, plegado, «Añadir
+/// detalles»: estrés, zonas con dolor, si estás para entrenar y notas. Con
+/// [details] (desde «Añadir detalles») se abre ya desplegado.
 class CheckInPage extends StatelessWidget {
-  const CheckInPage({super.key});
+  const CheckInPage({super.key, this.details = false});
+
+  final bool details;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => getIt<CheckInBloc>()..add(const CheckInEvent.started()),
-      child: const _CheckInView(),
+      child: _CheckInView(details: details),
     );
   }
 }
 
 class _CheckInView extends StatelessWidget {
-  const _CheckInView();
+  const _CheckInView({required this.details});
+
+  final bool details;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +89,7 @@ class _CheckInView extends StatelessWidget {
             onRetry: () =>
                 context.read<CheckInBloc>().add(const CheckInEvent.started()),
           ),
-          CheckInStatus.ready => _Form(state: state),
+          CheckInStatus.ready => _Form(state: state, details: details),
         },
       ),
     );
@@ -88,9 +97,10 @@ class _CheckInView extends StatelessWidget {
 }
 
 class _Form extends StatefulWidget {
-  const _Form({required this.state});
+  const _Form({required this.state, required this.details});
 
   final CheckInState state;
+  final bool details;
 
   @override
   State<_Form> createState() => _FormState();
@@ -101,6 +111,22 @@ class _FormState extends State<_Form> {
     text: widget.state.input.notes ?? '',
   );
 
+  /// Preguntas ya contestadas. Sin registro hoy, ninguna: el valor por
+  /// defecto del formulario (3) no cuenta como respuesta.
+  late final Set<_Quick> _answered = widget.state.today == null
+      ? <_Quick>{}
+      : _Quick.values.toSet();
+
+  /// «Añadir detalles» desplegado: si se pidió o si hoy ya hay alguno.
+  late bool _details = widget.details || _hasDetails(widget.state.today);
+
+  static bool _hasDetails(CheckIn? c) =>
+      c != null &&
+      (c.painZones.isNotEmpty ||
+          (c.notes?.isNotEmpty ?? false) ||
+          !c.readyToTrain ||
+          c.stress != CheckInQuestions.mid);
+
   @override
   void dispose() {
     _notes.dispose();
@@ -109,6 +135,29 @@ class _FormState extends State<_Form> {
 
   void _update(CheckInInput input) =>
       context.read<CheckInBloc>().add(CheckInEvent.inputChanged(input));
+
+  Future<void> _save() async {
+    // Datos de salud: antes, el permiso expreso (ADR 0034).
+    final bloc = context.read<CheckInBloc>();
+    if (await ensureHealthConsent(context)) {
+      bloc.add(const CheckInEvent.submitted());
+    }
+  }
+
+  /// La primera vez del día y sin detalles abiertos, la tercera respuesta
+  /// guarda (tres toques; se avisa encima de las preguntas). Al cambiar un
+  /// registro ya hecho o con los detalles abiertos, se guarda con «Guardar».
+  bool get _autoSave => widget.state.today == null && !_details;
+
+  void _quick(_Quick question, CheckInInput input) {
+    _update(input);
+    setState(() => _answered.add(question));
+    if (_answered.length == _Quick.values.length && _autoSave) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _save();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,105 +195,75 @@ class _FormState extends State<_Form> {
                   ),
                 ),
               if (state.today != null) _TodaySummary(checkIn: state.today!),
-              Text(
-                state.today == null
-                    ? l10n.trainingCheckInIntro
-                    : l10n.trainingCheckInUpdate,
-                style: context.textStyles.bodyMedium?.copyWith(
-                  color: context.colors.onSurfaceVariant,
+              if (_autoSave) ...[
+                Text(
+                  l10n.trainingCheckInAutoSaveHint,
+                  style: context.textStyles.bodyMedium?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
                 ),
+                const SizedBox(height: TokensSpacing.s),
+              ],
+              CheckInQuestions(
+                sleep: _answered.contains(_Quick.sleep)
+                    ? input.sleepQuality
+                    : null,
+                energy: _answered.contains(_Quick.energy) ? input.energy : null,
+                soreness: _answered.contains(_Quick.soreness)
+                    ? input.soreness
+                    : null,
+                onSleep: (v) =>
+                    _quick(_Quick.sleep, input.copyWith(sleepQuality: v)),
+                onEnergy: (v) =>
+                    _quick(_Quick.energy, input.copyWith(energy: v)),
+                onSoreness: (v) =>
+                    _quick(_Quick.soreness, input.copyWith(soreness: v)),
               ),
-              const SizedBox(height: TokensSpacing.m),
-              _Scale(
-                icon: Icons.bedtime_rounded,
-                label: l10n.trainingSleepQuality,
-                value: input.sleepQuality,
-                low: l10n.trainingScaleBad,
-                high: l10n.trainingScaleGreat,
-                onChanged: (v) => _update(input.copyWith(sleepQuality: v)),
-              ),
-              _Scale(
-                icon: Icons.psychology_alt_rounded,
-                label: l10n.trainingStress,
-                value: input.stress,
-                low: l10n.trainingScaleLow,
-                high: l10n.trainingScaleHigh,
-                onChanged: (v) => _update(input.copyWith(stress: v)),
-              ),
-              _Scale(
-                icon: Icons.bolt_rounded,
-                label: l10n.trainingEnergy,
-                value: input.energy,
-                low: l10n.trainingScaleLow,
-                high: l10n.trainingScaleHigh,
-                onChanged: (v) => _update(input.copyWith(energy: v)),
-              ),
-              _Scale(
-                icon: Icons.healing_rounded,
-                label: l10n.trainingSoreness,
-                value: input.soreness,
-                low: l10n.trainingScaleNone,
-                high: l10n.trainingScaleHigh,
-                onChanged: (v) => _update(input.copyWith(soreness: v)),
-              ),
-              const SizedBox(height: TokensSpacing.s),
-              Text(
-                l10n.trainingPainZones,
-                style: context.textStyles.titleSmall,
-              ),
-              const SizedBox(height: TokensSpacing.xs),
-              Wrap(
-                spacing: TokensSpacing.xs,
-                runSpacing: TokensSpacing.xs,
-                children: [
-                  for (final zone in {..._painZones, ...input.painZones})
-                    FilterChip(
-                      label: Text(_painZoneLabel(l10n, zone)),
-                      selected: input.painZones.contains(zone),
-                      onSelected: (on) {
-                        final zones = [...input.painZones];
-                        if (on) {
-                          if (zones.length >= CheckInInput.maxPainZones) return;
-                          zones.add(zone);
-                        } else {
-                          zones.remove(zone);
-                        }
-                        _update(input.copyWith(painZones: zones));
-                      },
+              if (state.submitting && _autoSave)
+                const LinearProgressIndicator(),
+              MergeSemantics(
+                child: Semantics(
+                  expanded: _details,
+                  child: AppFocusOutline(
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.playlist_add_rounded),
+                      title: Text(
+                        l10n.trainingQuickFull,
+                        style: context.textStyles.titleMedium,
+                      ),
+                      subtitle: Text(l10n.trainingCheckInDetailsHint),
+                      trailing: Icon(
+                        _details
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                      ),
+                      onTap: () => setState(() => _details = !_details),
                     ),
-                ],
-              ),
-              const SizedBox(height: TokensSpacing.s),
-              AppFocusOutline(
-                child: SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.trainingReadyToTrain),
-                  value: input.readyToTrain,
-                  onChanged: (v) => _update(input.copyWith(readyToTrain: v)),
+                  ),
                 ),
               ),
-              TextField(
-                controller: _notes,
-                maxLength: 1000,
-                minLines: 2,
-                maxLines: 4,
-                decoration: InputDecoration(labelText: l10n.trainingNotes),
-                onChanged: (v) => _update(input.copyWith(notes: v)),
-              ),
-              const SizedBox(height: TokensSpacing.m),
-              AppPrimaryButton(
-                label: state.today == null
-                    ? l10n.trainingCheckInSave
-                    : l10n.trainingCheckInUpdateAction,
-                loading: state.submitting,
-                onPressed: () async {
-                  // Datos de salud: antes, el permiso expreso (ADR 0034).
-                  final bloc = context.read<CheckInBloc>();
-                  if (await ensureHealthConsent(context)) {
-                    bloc.add(const CheckInEvent.submitted());
-                  }
-                },
-              ),
+              if (_details) ..._detailFields(context, input),
+              if (!_autoSave) ...[
+                if (_answered.length < _Quick.values.length) ...[
+                  Text(
+                    l10n.trainingCheckInAnswerFirst,
+                    style: context.textStyles.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: TokensSpacing.s),
+                ],
+                AppPrimaryButton(
+                  label: state.today == null
+                      ? l10n.trainingCheckInSave
+                      : l10n.trainingCheckInUpdateAction,
+                  loading: state.submitting,
+                  onPressed: _answered.length == _Quick.values.length
+                      ? _save
+                      : null,
+                ),
+              ],
               const SizedBox(height: TokensSpacing.m),
               // Opcional y para quien quiera: no se da por hecho por el género.
               AppCard(
@@ -286,6 +305,114 @@ class _FormState extends State<_Form> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Los detalles opcionales (se guardan con «Guardar», junto a las tres
+  /// preguntas).
+  List<Widget> _detailFields(BuildContext context, CheckInInput input) {
+    final l10n = context.localizations;
+    return [
+      const SizedBox(height: TokensSpacing.s),
+      _StressQuestion(
+        value: input.stress,
+        onChanged: (v) => _update(input.copyWith(stress: v)),
+      ),
+      Text(l10n.trainingPainZones, style: context.textStyles.titleSmall),
+      const SizedBox(height: TokensSpacing.xs),
+      Wrap(
+        spacing: TokensSpacing.xs,
+        runSpacing: TokensSpacing.xs,
+        children: [
+          for (final zone in {..._painZones, ...input.painZones})
+            FilterChip(
+              label: Text(_painZoneLabel(l10n, zone)),
+              selected: input.painZones.contains(zone),
+              onSelected: (on) {
+                final zones = [...input.painZones];
+                if (on) {
+                  if (zones.length >= CheckInInput.maxPainZones) return;
+                  zones.add(zone);
+                } else {
+                  zones.remove(zone);
+                }
+                _update(input.copyWith(painZones: zones));
+              },
+            ),
+        ],
+      ),
+      const SizedBox(height: TokensSpacing.s),
+      AppFocusOutline(
+        child: SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.trainingReadyToTrain),
+          value: input.readyToTrain,
+          onChanged: (v) => _update(input.copyWith(readyToTrain: v)),
+        ),
+      ),
+      TextField(
+        controller: _notes,
+        maxLength: 1000,
+        minLines: 2,
+        maxLines: 4,
+        decoration: InputDecoration(labelText: l10n.trainingNotes),
+        onChanged: (v) => _update(input.copyWith(notes: v)),
+      ),
+    ];
+  }
+}
+
+/// Las tres preguntas rápidas, para saber cuáles se han contestado.
+enum _Quick { sleep, energy, soreness }
+
+/// Estrés, en el mismo sentido que el resto: a la derecha, lo mejor (menos
+/// estrés). Se guarda en la escala 1-5 de siempre (5 = mucho estrés).
+class _StressQuestion extends StatelessWidget {
+  const _StressQuestion({required this.value, required this.onChanged});
+
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final options = [
+      (5, l10n.trainingStressLot),
+      (4, l10n.trainingStressQuite),
+      (3, l10n.trainingStressSome),
+      (2, l10n.trainingStressLittle),
+      (1, l10n.trainingStressNone),
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TokensSpacing.m),
+      child: Semantics(
+        container: true,
+        label: l10n.trainingStressQuestion,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ExcludeSemantics(
+              child: Text(
+                l10n.trainingStressQuestion,
+                style: context.textStyles.titleSmall,
+              ),
+            ),
+            const SizedBox(height: TokensSpacing.xs),
+            Wrap(
+              spacing: TokensSpacing.s,
+              runSpacing: TokensSpacing.s,
+              children: [
+                for (final (score, text) in options)
+                  ChoiceChip(
+                    label: Text(text),
+                    selected: value == score,
+                    onSelected: (_) => onChanged(score),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -349,78 +476,6 @@ class _TodaySummary extends StatelessWidget {
   }
 }
 
-class _Scale extends StatelessWidget {
-  const _Scale({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.low,
-    required this.high,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String label;
-  final int value;
-  final String low;
-  final String high;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: TokensSpacing.m),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                size: TokensSize.iconS,
-                color: context.colors.secondary,
-              ),
-              const SizedBox(width: TokensSpacing.s),
-              Expanded(
-                child: Text(label, style: context.textStyles.titleSmall),
-              ),
-              Text(
-                l10n.trainingScaleValue(value),
-                style: context.textStyles.labelLarge,
-              ),
-            ],
-          ),
-          const SizedBox(height: TokensSpacing.xs),
-          SegmentedButton<int>(
-            showSelectedIcon: false,
-            segments: [
-              for (var i = 1; i <= 5; i++)
-                ButtonSegment(
-                  value: i,
-                  label: Text('$i'),
-                  tooltip: l10n.trainingScaleSemantics(label, i),
-                ),
-            ],
-            selected: {value},
-            onSelectionChanged: (s) => onChanged(s.first),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: TokensSpacing.xxs),
-            child: Row(
-              children: [
-                Text(low, style: context.textStyles.labelSmall),
-                const Spacer(),
-                Text(high, style: context.textStyles.labelSmall),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _HistoryTile extends StatelessWidget {
   const _HistoryTile({required this.checkIn});
 
@@ -441,12 +496,22 @@ class _HistoryTile extends StatelessWidget {
         color: color,
       ),
       title: Text(DateFormat.yMMMEd().format(checkIn.date)),
+      // En palabras, como se contestó: los números mezclaban sentidos
+      // (en sueño 5 es bueno; en agujetas, malo).
       subtitle: Text(
-        l10n.trainingCheckInHistoryLine(
-          checkIn.sleepQuality,
-          checkIn.stress,
-          checkIn.energy,
-          checkIn.soreness,
+        l10n.trainingCheckInHistoryWords(
+          CheckInQuestions.answer(
+            CheckInQuestions.sleepOptions(l10n),
+            checkIn.sleepQuality,
+          ),
+          CheckInQuestions.answer(
+            CheckInQuestions.energyOptions(l10n),
+            checkIn.energy,
+          ),
+          CheckInQuestions.answer(
+            CheckInQuestions.sorenessOptions(l10n),
+            checkIn.soreness,
+          ),
         ),
       ),
       trailing: Text(

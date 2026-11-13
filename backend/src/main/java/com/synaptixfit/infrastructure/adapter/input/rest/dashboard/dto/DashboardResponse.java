@@ -5,6 +5,7 @@ import static com.synaptixfit.infrastructure.adapter.input.rest.insights.dto.Ins
 import com.synaptixfit.domain.model.challenge.TaskMention;
 import com.synaptixfit.domain.model.dashboard.Dashboard;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChallenge;
+import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
 import com.synaptixfit.domain.model.dashboard.SmartBanner;
 import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.training.ExerciseRef;
@@ -26,7 +27,8 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                                 CognitiveStateResponse cognitive, CrossRegulationResponse crossRegulation,
                                 WellbeingResponse wellbeing, NextTrainingDayResponse nextTrainingDay,
                                 List<ChallengeResponse> activeChallenges, List<PlanDayResponse> planWeek,
-                                List<TodayEventResponse> todayEvents, BannerResponse banner) {
+                                List<TodayEventResponse> todayEvents, BannerResponse banner,
+                                NextDeadlineResponse nextDeadline) {
 
     private static final Map<String, String> CODES = Map.ofEntries(
             // tipo_actividad de horarios_academicos
@@ -124,6 +126,20 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
         }
     }
 
+    /**
+     * Cuenta atrás de «Tu día»: el próximo examen pendiente o, si no hay, la próxima entrega (la regla es del
+     * servidor, ADR 0039). {@code type}: EXAM, ASSIGNMENT, PRESENTATION u OTHER.
+     */
+    @Schema(name = "DashboardNextDeadlineResponse")
+    public record NextDeadlineResponse(UUID id, String title, String type, Instant dueAt, String subjectName) {
+
+        static NextDeadlineResponse from(Deadline d) {
+            // El mismo vocabulario que la API de entregas (DeadlineType), no el de los bloques.
+            return d == null ? null
+                    : new NextDeadlineResponse(d.id(), d.title(), d.kind().name(), d.dueAt(), d.subjectName());
+        }
+    }
+
     /** {@code labels}: textos del usuario que el aviso cita (p. ej. el bloque sin hacer). */
     public record BannerResponse(SmartBanner.Type type, Map<String, Number> params, Map<String, String> labels) {
     }
@@ -151,6 +167,7 @@ public record DashboardResponse(GreetingResponse greeting, TodayResponse today, 
                         e.start(), e.end(), e.completed(), e.subjectName(), e.status(), e.routineId(),
                         e.routineDayId(), e.tasks().stream().map(TaskMentionResponse::from).toList(),
                         e.tracksPhysicalLoad())).toList(),
-                new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()));
+                new BannerResponse(d.banner().type(), d.banner().params(), d.banner().labels()),
+                NextDeadlineResponse.from(d.nextDeadline()));
     }
 }

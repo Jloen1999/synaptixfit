@@ -2,6 +2,7 @@ package com.synaptixfit.infrastructure.adapter.input.rest.insights.dto;
 
 import com.synaptixfit.domain.model.insights.AcademicAdherence;
 import com.synaptixfit.domain.model.insights.AcwrZone;
+import com.synaptixfit.domain.model.insights.CognitiveLevel;
 import com.synaptixfit.domain.model.insights.CognitiveState;
 import com.synaptixfit.domain.model.insights.CrossRegulationView;
 import com.synaptixfit.domain.model.insights.EnergyScore;
@@ -64,12 +65,18 @@ public final class InsightsResponses {
     }
 
     /** Estado cognitivo: carga 0-1, capacidad atencional 0-1, último bloque y último descanso. */
+    /**
+     * {@code loadLevel} (LOW, MODERATE, HIGH, CRITICAL) y {@code attentionLevel} (LOW, MODERATE, HIGH): el nivel en
+     * palabras de la carga y la atención, con los umbrales del servidor ({@link CognitiveLevel}, ADR 0039).
+     */
     public record CognitiveStateResponse(double cognitiveLoad, double attentionCapacity, int lastBlockMinutes,
-                                         Instant lastRestAt, Double restingMetabolicRate, Instant updatedAt) {
+                                         Instant lastRestAt, Double restingMetabolicRate, Instant updatedAt,
+                                         CognitiveLevel loadLevel, CognitiveLevel attentionLevel) {
 
         public static CognitiveStateResponse from(CognitiveState s) {
             return new CognitiveStateResponse(round(s.cognitiveLoad(), 4), round(s.attentionCapacity(), 3),
-                    s.lastBlockMinutes(), s.lastRestAt(), round(s.rmrBase(), 2), s.updatedAt());
+                    s.lastBlockMinutes(), s.lastRestAt(), round(s.rmrBase(), 2), s.updatedAt(),
+                    CognitiveLevel.ofLoad(s.cognitiveLoad()), CognitiveLevel.ofAttention(s.attentionCapacity()));
         }
     }
 

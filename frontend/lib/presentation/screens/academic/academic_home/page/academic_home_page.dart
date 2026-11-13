@@ -143,16 +143,7 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return Scaffold(
-      appBar: AppPageBar(
-        title: Text(l10n.tabAcademic),
-        actions: [
-          IconButton(
-            tooltip: l10n.academicSharedNotesTitle,
-            icon: const Icon(AppIcons.sharedNotes),
-            onPressed: () => context.push(AcademicPaths.sharedNotes),
-          ),
-        ],
-      ),
+      appBar: AppPageBar(title: Text(l10n.tabAcademic)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSheet(context),
         icon: const Icon(AppIcons.add),
@@ -208,6 +199,20 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
                       onTap: () => context.push(AcademicPaths.search),
                     ),
                   ),
+                  // Lo de cada día, a un toque: apuntar una entrega y ponerse
+                  // a estudiar (ADR 0039; antes, en el ⋮ del calendario).
+                  if (!state.showArchived)
+                    SliverToBoxAdapter(
+                      child: _QuickActions(
+                        onNewDeadline: () =>
+                            _open(context, AcademicPaths.newDeadline()),
+                        onFocus: () => context.push(AcademicPaths.focus),
+                        // Con texto: el icono de personas solo parecía
+                        // «Amigos», y en la barra recortaba el título.
+                        onSharedNotes: () =>
+                            context.push(AcademicPaths.sharedNotes),
+                      ),
+                    ),
                   if (state.due.isNotEmpty && !state.showArchived)
                     SliverToBoxAdapter(
                       child: _DueReviews(
@@ -344,6 +349,54 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// «Nueva entrega», «Concentrarme» y «Apuntes compartidos», a la vista bajo
+/// el buscador.
+class _QuickActions extends StatelessWidget {
+  const _QuickActions({
+    required this.onNewDeadline,
+    required this.onFocus,
+    required this.onSharedNotes,
+  });
+
+  final VoidCallback onNewDeadline;
+  final VoidCallback onFocus;
+  final VoidCallback onSharedNotes;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        TokensSpacing.m,
+        TokensSpacing.s,
+        TokensSpacing.m,
+        0,
+      ),
+      child: Wrap(
+        spacing: TokensSpacing.s,
+        runSpacing: TokensSpacing.xs,
+        children: [
+          AppSecondaryButton(
+            label: l10n.academicNewDeadline,
+            icon: const Icon(AppIcons.add),
+            onPressed: onNewDeadline,
+          ),
+          AppSecondaryButton(
+            label: l10n.academicFocus,
+            icon: const Icon(AppIcons.focusTimer),
+            onPressed: onFocus,
+          ),
+          AppSecondaryButton(
+            label: l10n.academicSharedNotesTitle,
+            icon: const Icon(AppIcons.sharedNotes),
+            onPressed: onSharedNotes,
+          ),
+        ],
       ),
     );
   }

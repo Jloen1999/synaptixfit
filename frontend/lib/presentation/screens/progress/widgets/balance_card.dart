@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../domain/enums/cognitive_level.dart';
 import '../../../../domain/enums/home_acwr_zone.dart';
 import '../../../../domain/enums/usage_focus.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
@@ -48,23 +49,22 @@ class BalanceCard extends StatelessWidget {
     final bad = context.colors.error;
     final muted = context.colors.onSurfaceVariant;
 
-    // Carga cognitiva: más alta es peor.
+    // Carga cognitiva (más alta es peor) y atención (más alta es mejor): el
+    // nivel lo decide el servidor (ADR 0039); aquí solo el texto y el color.
     final load = cognitive.cognitiveLoad;
-    final (loadLevel, loadColor) = load < 0.3
-        ? (l10n.homeLevelLow, good)
-        : load < 0.6
-        ? (l10n.homeLevelModerate, mid)
-        : load < 0.8
-        ? (l10n.homeLevelHigh, mid)
-        : (l10n.homeLevelCritical, bad);
-
-    // Atención: más alta es mejor.
-    final attention = cognitive.attentionCapacity;
-    final attentionLevel = attention >= 0.7
-        ? l10n.homeLevelHigh
-        : attention >= 0.4
-        ? l10n.homeLevelModerate
-        : l10n.homeLevelLow;
+    final (loadLevel, loadColor) = switch (cognitive.loadLevel) {
+      CognitiveLevel.low => (l10n.homeLevelLow, good),
+      CognitiveLevel.moderate => (l10n.homeLevelModerate, mid),
+      CognitiveLevel.high => (l10n.homeLevelHigh, mid),
+      CognitiveLevel.critical => (l10n.homeLevelCritical, bad),
+      CognitiveLevel.unknown => (null, muted),
+    };
+    final attentionLevel = switch (cognitive.attentionLevel) {
+      CognitiveLevel.low => l10n.homeLevelLow,
+      CognitiveLevel.moderate => l10n.homeLevelModerate,
+      CognitiveLevel.high || CognitiveLevel.critical => l10n.homeLevelHigh,
+      CognitiveLevel.unknown => null,
+    };
 
     // Carga física: se muestra la zona en palabras; el ratio queda en la
     // analítica para quien lo quiera (aquí sería jerga).
@@ -88,7 +88,9 @@ class BalanceCard extends StatelessWidget {
       level: loadLevel,
       levelColor: loadColor,
       progress: load,
-      detail: l10n.homeBalanceAttention(attentionLevel),
+      detail: attentionLevel == null
+          ? null
+          : l10n.homeBalanceAttention(attentionLevel),
       hint: '${l10n.homeGaugeCognitiveLoadHint} ${l10n.homeGaugeAttentionHint}',
     );
     final body = _Metric(
@@ -199,13 +201,13 @@ class _Metric extends StatelessWidget {
 
   /// 0-1; nulo sin datos (la barra queda vacía).
   final double? progress;
-  final String detail;
+  final String? detail;
   final String hint;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final summary = [?level, detail].join(' · ');
+    final summary = [?level, ?detail].join(' · ');
     // El lector ya lee la explicación como pista: el tooltip no la repite.
     return Tooltip(
       message: hint,
@@ -214,7 +216,7 @@ class _Metric extends StatelessWidget {
         label: l10n.homeGaugeSemantics(
           title,
           value,
-          [?level, detail].join(', '),
+          [?level, ?detail].join(', '),
         ),
         hint: hint,
         excludeSemantics: true,

@@ -160,6 +160,14 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   }
 
   Future<void> _openEditor({CalendarBlock? block, DateTime? start}) async {
+    // Un examen o una entrega del calendario son la entrega misma (ADR 0039):
+    // se abre esa entrega, no un evento aparte.
+    final deadlineId = block?.deadlineId;
+    if (block != null && block.type.createsDeadline && deadlineId != null) {
+      await context.push<void>(PlannerPaths.deadline(deadlineId));
+      _bloc.add(const CalendarEvent.refreshed());
+      return;
+    }
     final outcome = await BlockEditorSheet.show(
       context,
       block: block,
@@ -217,6 +225,14 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         return;
       case BlockEditorDistributed(:final count):
         context.showSnack(l10n.plannerRoutineDistributed(count));
+      case BlockEditorDeadlineRequested(
+        :final exam,
+        :final due,
+        :final subjectId,
+      ):
+        await context.push<void>(
+          PlannerPaths.newDeadline(subjectId: subjectId, exam: exam, due: due),
+        );
     }
     _bloc.add(const CalendarEvent.refreshed());
   }
@@ -382,6 +398,12 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
                   weekStart: state.weekStart,
                   onShift: (o) => _bloc.add(CalendarEvent.weekShifted(o)),
                 ),
+                _Shortcuts(
+                  onOpen: (path) async {
+                    await context.push(path);
+                    _bloc.add(const CalendarEvent.refreshed());
+                  },
+                ),
                 Expanded(child: _body(context, state)),
               ],
             ),
@@ -525,7 +547,49 @@ class _WeekNavigator extends StatelessWidget {
   }
 }
 
-/// Accesos a las demás pantallas del planificador.
+/// Accesos a la vista de lo que se usa a diario desde el calendario:
+/// «Entregas y exámenes» y «Concentrarme» (Pomodoro). Antes estaban en el ⋮.
+class _Shortcuts extends StatelessWidget {
+  const _Shortcuts({required this.onOpen});
+
+  final ValueChanged<String> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        TokensSpacing.m,
+        0,
+        TokensSpacing.m,
+        TokensSpacing.s,
+      ),
+      // Una sola fila que se desliza: con el texto grande no roba alto a la
+      // cuadrícula de la semana.
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            ActionChip(
+              avatar: const Icon(AppIcons.delivery),
+              label: Text(l10n.plannerMenuDeadlines),
+              onPressed: () => onOpen(PlannerPaths.deadlines),
+            ),
+            const SizedBox(width: TokensSpacing.s),
+            ActionChip(
+              avatar: const Icon(AppIcons.focusTimer),
+              label: Text(l10n.plannerFocusOnBlock),
+              onPressed: () => onOpen(PlannerPaths.pomodoro),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Lo ocasional del calendario (sugerir un plan, estudio ya hecho, importar
+/// o sincronizar), en el ⋮.
 class _PlannerMenu extends StatelessWidget {
   const _PlannerMenu({required this.onReturn});
 
@@ -535,18 +599,14 @@ class _PlannerMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    // Entregas y Pomodoro no van aquí: se usan a diario y están a la vista
+    // (`_Shortcuts`, ADR 0039). Aquí queda lo ocasional.
     final items = [
-      (
-        PlannerPaths.deadlines,
-        Icons.event_note_rounded,
-        l10n.plannerMenuDeadlines,
-      ),
       (
         PlannerPaths.suggestions,
         AppIcons.proposal,
         l10n.plannerMenuSuggestions,
       ),
-      (PlannerPaths.pomodoro, AppIcons.focusTimer, l10n.plannerMenuPomodoro),
       (
         PlannerPaths.pastStudy,
         Icons.history_edu_rounded,

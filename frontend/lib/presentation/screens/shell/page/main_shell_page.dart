@@ -20,9 +20,13 @@ import '../widgets/achievements_host.dart';
 /// y el índice de rama. Los logros ([AchievementsHost]) se celebran aquí para
 /// que se vean desde cualquier pestaña.
 class MainShellPage extends StatelessWidget {
-  const MainShellPage({super.key, required this.shell});
+  const MainShellPage({super.key, required this.shell, this.onGym = false});
 
   final StatefulNavigationShell shell;
+
+  /// Se está en Entreno › Gimnasio: la barra de la sesión abierta no sale
+  /// para la de una rutina, porque la tarjeta del día ya dice «Continuar».
+  final bool onGym;
 
   /// Índices de rama, en orden: inicio, calendario, académico, entreno,
   /// progreso.
@@ -108,7 +112,7 @@ class MainShellPage extends StatelessWidget {
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const OpenSessionBar(),
+            OpenSessionBar(hideRoutineSessions: onGym),
             const FocusTimerBar(),
             DecoratedBox(
               decoration: BoxDecoration(
@@ -174,10 +178,10 @@ class MainShellPage extends StatelessWidget {
               children: [
                 Expanded(child: AppFocusGroup(child: shell)),
                 // Abajo, como en el móvil: lejos de la barra de estado.
-                const SafeArea(
+                SafeArea(
                   top: false,
                   left: false,
-                  child: OpenSessionBar(),
+                  child: OpenSessionBar(hideRoutineSessions: onGym),
                 ),
                 const SafeArea(top: false, left: false, child: FocusTimerBar()),
               ],

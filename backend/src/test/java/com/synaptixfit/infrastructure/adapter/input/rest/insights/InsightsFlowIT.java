@@ -66,7 +66,10 @@ class InsightsFlowIT {
         mvc.perform(get("/api/v1/insights/cognitive-state").header("Authorization", bearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cognitiveLoad").value(0.0))
-                .andExpect(jsonPath("$.attentionCapacity").value(1.0));
+                .andExpect(jsonPath("$.attentionCapacity").value(1.0))
+                // El nivel en palabras lo decide el servidor (ADR 0039).
+                .andExpect(jsonPath("$.loadLevel").value("LOW"))
+                .andExpect(jsonPath("$.attentionLevel").value("HIGH"));
 
         // Historial: cargas hace 20 y 10 días (210 AU cada una, en dos semanas distintas) dan línea base
         // al ACWR; sin ella, la primera semana no tiene ACWR (zona NO_DATA) para no alarmar a un usuario nuevo.

@@ -9,23 +9,54 @@ import '../../../widgets/widgets.dart';
 import 'planner_form_fields.dart';
 import 'planner_visuals.dart';
 
-/// Formulario de entrega/examen. Devuelve el [DeadlineDraft] al guardar.
+/// Formulario corto de entrega o examen: el único sitio donde se apuntan
+/// (ADR 0039), se abra desde Académico, la asignatura, el calendario o la
+/// lista. Al crear, el título lleva el foco y la fecha tiene atajos, así se
+/// guarda en dos o tres toques. Devuelve el [DeadlineDraft] al guardar.
 class DeadlineFormSheet extends StatefulWidget {
-  const DeadlineFormSheet({super.key, this.deadline, required this.subjects});
+  const DeadlineFormSheet({
+    super.key,
+    this.deadline,
+    required this.subjects,
+    this.initialType,
+    this.initialSubjectId,
+    this.initialDue,
+    this.onDelete,
+  });
 
   final Deadline? deadline;
   final List<SubjectOption> subjects;
+
+  /// Al crear: tipo, asignatura y fecha que ya se saben por dónde se abrió
+  /// (el «Examen» del calendario, la asignatura abierta, el hueco tocado).
+  final DeadlineType? initialType;
+  final String? initialSubjectId;
+  final DateTime? initialDue;
+
+  /// Al editar: «Eliminar» (con «Deshacer» en la lista).
+  final VoidCallback? onDelete;
 
   static Future<DeadlineDraft?> show(
     BuildContext context, {
     Deadline? deadline,
     required List<SubjectOption> subjects,
+    DeadlineType? initialType,
+    String? initialSubjectId,
+    DateTime? initialDue,
+    VoidCallback? onDelete,
   }) => showModalBottomSheet<DeadlineDraft>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (_) => DeadlineFormSheet(deadline: deadline, subjects: subjects),
+    builder: (_) => DeadlineFormSheet(
+      deadline: deadline,
+      subjects: subjects,
+      initialType: initialType,
+      initialSubjectId: initialSubjectId,
+      initialDue: initialDue,
+      onDelete: onDelete,
+    ),
   );
 
   @override
@@ -36,6 +67,7 @@ class _DeadlineFormSheetState extends State<DeadlineFormSheet> {
   final _formKey = GlobalKey<FormState>();
   final _title = TextEditingController();
   final _description = TextEditingController();
+  final _titleFocus = FocusNode();
   late DeadlineType _type;
   late PlannerPriority _difficulty;
   late DateTime _day;
@@ -48,22 +80,37 @@ class _DeadlineFormSheetState extends State<DeadlineFormSheet> {
     final d = widget.deadline;
     final due =
         d?.dueAt ??
+        widget.initialDue ??
         DateTime.now()
-            .add(const Duration(days: 7))
+            .add(const Duration(days: _defaultDays))
             .copyWith(hour: 23, minute: 59);
     _title.text = d?.title ?? '';
     _description.text = d?.description ?? '';
-    _type = d?.type ?? DeadlineType.assignment;
+    _type = d?.type ?? widget.initialType ?? DeadlineType.assignment;
     _difficulty = d?.difficulty ?? PlannerPriority.medium;
     _day = DateTime(due.year, due.month, due.day);
     _time = due.hour * 60 + due.minute;
-    _subjectId = d?.subjectId;
+    _subjectId = d?.subjectId ?? widget.initialSubjectId;
+    // Al crear se escribe directamente el título: un toque menos.
+    if (d == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _titleFocus.requestFocus();
+      });
+    }
   }
+
+  /// Días hasta la fecha propuesta al crear (la entrega típica: una semana).
+  static const _defaultDays = 7;
+
+  /// Atajos de fecha: mañana y dentro de una semana (el resto, con el
+  /// calendario del campo).
+  static const _quickDays = [1, _defaultDays];
 
   @override
   void dispose() {
     _title.dispose();
     _description.dispose();
+    _titleFocus.dispose();
     super.dispose();
   }
 
@@ -114,6 +161,11 @@ class _DeadlineFormSheetState extends State<DeadlineFormSheet> {
             AppTextField(
               label: l10n.plannerFieldTitle,
               controller: _title,
+              focusNode: _titleFocus,
+              textCapitalization: TextCapitalization.sentences,
+              // «Hecho» del teclado guarda: «Guardar» puede quedar debajo.
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(),
               icon: Icons.title_rounded,
               validator: (v) => (v == null || v.trim().isEmpty)
                   ? l10n.validationRequired
@@ -166,6 +218,12 @@ class _DeadlineFormSheetState extends State<DeadlineFormSheet> {
                 ),
               ],
             ),
+            const SizedBox(height: TokensSpacing.xs),
+            _QuickDates(
+              days: _quickDays,
+              selected: _day,
+              onSelected: (day) => setState(() => _day = day),
+            ),
             const SizedBox(height: TokensSpacing.m),
             DropdownButtonFormField<String?>(
               initialValue: _subjectId,
@@ -209,9 +267,65 @@ class _DeadlineFormSheetState extends State<DeadlineFormSheet> {
             ),
             const SizedBox(height: TokensSpacing.l),
             AppPrimaryButton(label: l10n.commonSave, onPressed: _submit),
+            if (widget.deadline != null && widget.onDelete != null) ...[
+              const SizedBox(height: TokensSpacing.s),
+              Center(
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: context.colors.error,
+                  ),
+                  icon: const Icon(AppIcons.delete),
+                  label: Text(l10n.plannerDeleteDeadline),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    widget.onDelete!();
+                  },
+                ),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Atajos de fecha («Mañana», «En una semana»): elegir uno es un toque, sin
+/// abrir el calendario. Marca el que coincide con la fecha elegida.
+class _QuickDates extends StatelessWidget {
+  const _QuickDates({
+    required this.days,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<int> days;
+  final DateTime selected;
+  final ValueChanged<DateTime> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return Wrap(
+      spacing: TokensSpacing.s,
+      runSpacing: TokensSpacing.xs,
+      children: [
+        for (final n in days)
+          Builder(
+            builder: (context) {
+              final day = today.add(Duration(days: n));
+              return ChoiceChip(
+                label: Text(
+                  n == 1 ? l10n.plannerDueTomorrow : l10n.plannerDueInAWeek,
+                ),
+                selected: DateUtils.isSameDay(day, selected),
+                onSelected: (_) => onSelected(day),
+              );
+            },
+          ),
+      ],
     );
   }
 }

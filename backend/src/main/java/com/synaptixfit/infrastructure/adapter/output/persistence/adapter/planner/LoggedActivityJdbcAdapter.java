@@ -59,11 +59,19 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort {
                 .update();
     }
 
+    /**
+     * Bloques de deporte que no reflejan un día de rutina: la misma definición que
+     * {@code CalendarBlock.mirrorsTrackedActivity} (con rutina pero sin día es deporte libre y sí cuenta).
+     */
+    private static final String OUTSIDE_ROUTINES = " AND b.dia_rutina_id IS NULL";
+
     @Override
     public PageResult<LoggedSportActivity> findSportActivities(UUID userId, PageRequest page) {
         String sport = ActivityType.SPORT.code();
+        // Solo lo hecho fuera de las rutinas: el entreno de una rutina es una sesión de gimnasio y ya sale en su
+        // historial; en «Tus actividades» de Correr parecería una carrera (ADR 0039).
         long total = jdbc.sql("SELECT COUNT(*) FROM horarios_academicos b WHERE b.usuario_id = :user"
-                        + " AND b.tipo_actividad = :sport AND b.completado = true")
+                        + " AND b.tipo_actividad = :sport AND b.completado = true" + OUTSIDE_ROUTINES)
                 .param("user", userId)
                 .param("sport", sport)
                 .query(Long.class)
@@ -74,6 +82,7 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort {
                         + " LEFT JOIN carreras_gps c ON c.bloque_id = b.id"
                         + " LEFT JOIN registros_carga_fisica r ON r.bloque_id = b.id"
                         + " WHERE b.usuario_id = :user AND b.tipo_actividad = :sport AND b.completado = true"
+                        + OUTSIDE_ROUTINES
                         + " ORDER BY b.hora_inicio DESC LIMIT :size OFFSET :offset")
                 .param("user", userId)
                 .param("sport", sport)

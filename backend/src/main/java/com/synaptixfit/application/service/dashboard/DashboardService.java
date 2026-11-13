@@ -226,7 +226,11 @@ public class DashboardService implements GetDashboardUseCase {
                         .filter(b -> ActivityType.visibleCodeFor(b.activityType(), focus)).toList(), zone, now),
                 withTasks(todayEvents(todayBlocks, deadlines, todayStart, tomorrowStart, now), todayBlocks,
                         active.stream().filter(c -> c.status(now) == ChallengeStatus.ACTIVE).toList()),
-                banner);
+                banner,
+                focus.includesAcademic()
+                        ? Dashboard.countdownOf(reads.deadlines(userId, now,
+                                now.plus(Duration.ofDays(Dashboard.COUNTDOWN_HORIZON_DAYS))), now)
+                        : null);
     }
 
     /**

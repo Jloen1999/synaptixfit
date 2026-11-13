@@ -117,7 +117,7 @@
   "xpGuideIntro": "L'XP récompense la régularité : tu en gagnes en faisant ce que tu as prévu. Les plafonds empêchent de la gonfler.",
   "xpGuideTraining": "S'entraîner",
   "xpGuideTrainingDetail": "Chaque séance terminée donne 50 XP, plus 1 par minute (jusqu'à 90) et 5 par point d'effort. Les séances de moins de 10 minutes ne comptent pas et seules les 2 premières de la journée donnent de l'XP.",
-  "xpGuideCheckIn": "Bilan du jour",
+  "xpGuideCheckIn": "Comment ça va aujourd'hui ?",
   "xpGuideCheckInDetail": "20 XP pour le premier bilan de chaque jour.",
   "xpGuideBlocks": "Événements du calendrier",
   "xpGuideBlocksDetail": "10 XP par demi-heure d'événement fait (jusqu'à 4 heures par événement) ; au maximum 200 XP par jour pour les événements. Un événement ne peut pas être marqué comme fait avant de commencer.",

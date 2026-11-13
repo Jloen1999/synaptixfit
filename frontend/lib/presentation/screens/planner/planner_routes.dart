@@ -22,6 +22,23 @@ abstract final class PlannerPaths {
   /// Entregas con [id] destacada arriba (desde su aviso).
   static String deadline(String id) =>
       Uri(path: deadlines, queryParameters: {'focus': id}).toString();
+
+  /// Entregas con el formulario de una nueva ya abierto (ADR 0039): «+ Entrega»
+  /// de Académico y de la asignatura ([subjectId]) y «Entrega»/«Examen» de la
+  /// hoja del calendario ([exam] y la hora tocada en [due]).
+  static String newDeadline({
+    String? subjectId,
+    bool exam = false,
+    DateTime? due,
+  }) => Uri(
+    path: deadlines,
+    queryParameters: {
+      'new': '1',
+      'subject': ?subjectId,
+      if (exam) 'type': 'exam',
+      'due': ?due?.toIso8601String(),
+    },
+  ).toString();
   static const pomodoro = '/planner/pomodoro';
 
   /// Pomodoro que empieza por una pausa corta («Descanso guiado»).
@@ -91,8 +108,19 @@ List<RouteBase> plannerBranchRoutes() => [
 List<RouteBase> plannerRoutes() => [
   GoRoute(
     path: PlannerPaths.deadlines,
-    builder: (context, state) =>
-        DeadlinesPage(focusId: state.uri.queryParameters['focus']),
+    builder: (context, state) {
+      final q = state.uri.queryParameters;
+      return DeadlinesPage(
+        focusId: q['focus'],
+        create: q.containsKey('new')
+            ? DeadlineCreateRequest(
+                subjectId: q['subject'],
+                exam: q['type'] == 'exam',
+                due: DateTime.tryParse(q['due'] ?? ''),
+              )
+            : null,
+      );
+    },
   ),
   GoRoute(
     path: PlannerPaths.pomodoro,

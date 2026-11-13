@@ -697,7 +697,7 @@
     }
   },
   "profileHealthConsentGivenNoDate": "Permiso dado",
-  "profileHealthConsentNotGiven": "Sin permiso: tu registro diario no se guarda",
+  "profileHealthConsentNotGiven": "Sin permiso: «¿Qué tal estás hoy?» no se guarda",
   "profileHealthConsentGive": "Dar permiso",
   "profileHealthConsentWithdraw": "Retirar",
   "profileHealthConsentWithdrawTitle": "¿Retirar tu permiso?",

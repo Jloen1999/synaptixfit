@@ -2,27 +2,51 @@ package com.synaptixfit.domain.model.dashboard;
 
 import com.synaptixfit.domain.model.challenge.TaskMention;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.ActiveChallenge;
+import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
 import com.synaptixfit.domain.model.insights.CognitiveState;
 import com.synaptixfit.domain.model.insights.CrossRegulationView;
 import com.synaptixfit.domain.model.insights.WellbeingSnapshot;
 import com.synaptixfit.domain.model.planner.ActivityType;
+import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.planner.ItemTimeStatus;
 import com.synaptixfit.domain.model.training.PendingDay;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/** Resumen del inicio en una sola lectura. */
+/**
+ * Resumen del inicio en una sola lectura. {@code nextDeadline}: la cuenta atrás de «Tu día» (ver
+ * {@link #countdownOf}); nula si no hay nada pendiente.
+ */
 public record Dashboard(Greeting greeting, TodayKpis today, WeekKpis week, CognitiveState cognitive,
                         CrossRegulationView crossRegulation, WellbeingSnapshot wellbeing,
                         PendingDay nextTrainingDay, List<ActiveChallenge> activeChallenges,
-                        List<PlanDay> planWeek, List<TodayEvent> todayEvents, SmartBanner banner) {
+                        List<PlanDay> planWeek, List<TodayEvent> todayEvents, SmartBanner banner,
+                        Deadline nextDeadline) {
+
+    /** Hasta dónde se busca la cuenta atrás: un curso entero, para que no tenga límite de días en la práctica. */
+    public static final int COUNTDOWN_HORIZON_DAYS = 366;
 
     public Dashboard {
         activeChallenges = List.copyOf(activeChallenges);
         planWeek = List.copyOf(planWeek);
         todayEvents = List.copyOf(todayEvents);
+    }
+
+    /**
+     * La cuenta atrás de «Tu día» (ADR 0038, regla en el servidor desde el ADR 0039): el próximo examen pendiente y,
+     * si no hay ninguno, la próxima entrega pendiente. Un examen manda aunque haya entregas antes porque es lo que más
+     * se prepara; lo vencido o hecho no cuenta.
+     */
+    public static Deadline countdownOf(List<Deadline> deadlines, Instant now) {
+        List<Deadline> pending = deadlines.stream()
+                .filter(d -> !d.completed() && !d.dueAt().isBefore(now))
+                .sorted(Comparator.comparing(Deadline::dueAt))
+                .toList();
+        return pending.stream().filter(d -> d.kind() == DeadlineType.EXAM).findFirst()
+                .orElse(pending.isEmpty() ? null : pending.getFirst());
     }
 
     /**

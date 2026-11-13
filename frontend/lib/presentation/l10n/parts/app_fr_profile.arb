@@ -401,7 +401,7 @@
   "profileHealthConsentTitle": "Données sur ton état",
   "profileHealthConsentGiven": "Autorisation donnée le {date}",
   "profileHealthConsentGivenNoDate": "Autorisation donnée",
-  "profileHealthConsentNotGiven": "Sans autorisation : ton suivi quotidien n'est pas enregistré",
+  "profileHealthConsentNotGiven": "Sans autorisation : « Comment ça va aujourd'hui ? » n'est pas enregistré",
   "profileHealthConsentGive": "Autoriser",
   "profileHealthConsentWithdraw": "Retirer",
   "profileHealthConsentWithdrawTitle": "Retirer ton autorisation ?",

@@ -31,6 +31,7 @@ import com.synaptixfit.domain.model.insights.CrossRegulationView;
 import com.synaptixfit.domain.model.insights.PhysicalLoadSummary;
 import com.synaptixfit.domain.model.insights.StudyCaloriesSummary;
 import com.synaptixfit.domain.model.insights.WellbeingSnapshot;
+import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.user.Role;
 import com.synaptixfit.domain.model.user.User;
@@ -111,8 +112,10 @@ class DashboardServiceTest {
                 new CalendarBlock(UUID.randomUUID(), "estudio", todayStudy, todayStudy.plusSeconds(5400), false, "Física", "Ondas"),
                 new CalendarBlock(UUID.randomUUID(), "examen", todayStudy.plusSeconds(18000), todayStudy.plusSeconds(21600), false, "Física", null)));
         when(reads.deadlines(eq(USER), any(), any())).thenReturn(List.of(
-                new Deadline(UUID.randomUUID(), "Examen Física", "examen", Instant.parse("2026-10-14T14:00:00Z"), false, "Física"),
-                new Deadline(UUID.randomUUID(), "Práctica", "entrega", Instant.parse("2026-10-17T23:00:00Z"), false, null)));
+                new Deadline(UUID.randomUUID(), "Examen Física", "examen", Instant.parse("2026-10-14T14:00:00Z"), false, "Física",
+                        DeadlineType.EXAM),
+                new Deadline(UUID.randomUUID(), "Práctica", "entrega", Instant.parse("2026-10-17T23:00:00Z"), false, null,
+                        DeadlineType.ASSIGNMENT)));
 
         Dashboard d = service.getDashboard(USER, null);
 

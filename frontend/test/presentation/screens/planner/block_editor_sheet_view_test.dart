@@ -212,17 +212,52 @@ void main() {
     expect(draft.start, slot);
   });
 
-  testWidgets('una entrega pide solo su hora límite', (tester) async {
+  testWidgets('al crear, «Entrega» abre el formulario de entrega (ADR 0039)', (
+    tester,
+  ) async {
     show();
-    await pump(tester);
+    BlockEditorOutcome? outcome;
+    tester.view.physicalSize = const Size(390, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      BlocProvider<SessionBloc>.value(
+        value: session,
+        child: MaterialApp(
+          theme: AppTheme.light,
+          locale: const Locale('es'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () async =>
+                    outcome = await BlockEditorSheet.show(context, start: slot),
+                child: const Text('Abrir'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Abrir'));
+    await tester.pumpAndSettle();
 
     await tapVisible(tester, find.text('Más tipos'));
-    await tapVisible(tester, find.text('Entrega'));
-    expect(find.text('Hora de entrega'), findsOneWidget);
-    expect(find.text('Inicio'), findsNothing);
-    // Las entregas no se repiten: el paso 3 es solo el aviso.
-    expect(find.text('Repetir cada semana'), findsNothing);
-    expect(find.text('Aviso'), findsOneWidget);
+    await tapVisible(tester, find.text('Examen'));
+
+    // Un solo concepto: no se crea un evento, se apunta la entrega con la
+    // hora del hueco tocado (un examen empieza a esa hora).
+    expect(find.text('Hora de entrega'), findsNothing);
+    expect(
+      outcome,
+      BlockEditorOutcome.deadlineRequested(exam: true, due: slot),
+    );
   });
 
   testWidgets('«Más opciones» solo trae lo que aplica a cada tipo', (
@@ -303,14 +338,8 @@ void main() {
       final semantics = tester.ensureSemantics();
       await pump(tester);
 
-      expect(
-        find.bySemanticsLabel('Paso 1 de 3: ¿Qué es?'),
-        findsOneWidget,
-      );
-      expect(
-        find.bySemanticsLabel('Paso 2 de 3: ¿Cuándo?'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel('Paso 1 de 3: ¿Qué es?'), findsOneWidget);
+      expect(find.bySemanticsLabel('Paso 2 de 3: ¿Cuándo?'), findsOneWidget);
       semantics.dispose();
     });
 

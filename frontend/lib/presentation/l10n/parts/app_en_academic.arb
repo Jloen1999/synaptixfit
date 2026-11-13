@@ -329,8 +329,6 @@
   "academicGuideReimportConfirm": "Import",
   "academicAddGroupSubject": "Subject",
   "academicAddGroupNotes": "Notes",
-  "academicSubjectFocus": "Focus on {name}",
-  "academicSubjectEditNamed": "Edit “{name}”",
   "academicFormatHeading": "Heading",
   "academicFormatBold": "Bold",
   "academicFormatItalic": "Italic",
@@ -555,5 +553,9 @@
   "academicFileDeleteAction": "Delete file",
   "academicSubjectArchivedWhere": "Subject archived. Find it in Academic › Archived.",
   "academicSubjectUnarchivedWhere": "Subject restored: it shows again in Academic and in the calendar.",
-  "academicDeleteNamed": "Delete “{title}”"
+  "academicDeleteNamed": "Delete “{title}”",
+  "academicFocus": "Focus",
+  "academicSubjectMoreActions": "More actions for “{name}”",
+  "academicNewDeadline": "New deadline",
+  "academicSubjectFocusHere": "Focus on this subject"
 }

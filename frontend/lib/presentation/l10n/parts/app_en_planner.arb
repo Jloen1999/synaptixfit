@@ -20,7 +20,6 @@
   "plannerDeadlinesThisWeek": "Deadlines this week",
   "plannerMenuDeadlines": "Deadlines and exams",
   "plannerMenuSuggestions": "Suggest a plan",
-  "plannerMenuPomodoro": "Pomodoro",
   "plannerMenuScheduleImport": "Import or export timetable",
   "plannerMoreOptions": "More options",
   "plannerReminderLine": "{type, select, STUDY{We'll remind you before it starts, as early as you chose in “More reminders”.} REVIEW{We'll remind you before it starts, as early as you chose in “More reminders”.} SPORT{We'll remind you before it starts, as early as you chose in “More reminders”.} PERSONAL{We'll remind you before it starts, as early as you chose in “More reminders”.} CLASS{If the class reminder is on in “More reminders”, we'll remind you shortly before it starts.} EXAM{We'll remind you about the exam the days before you chose in “More reminders”.} DELIVERY{We'll remind you about the deadline the days before you chose in “More reminders”.} other{This type of event has no reminder.}}",
@@ -387,5 +386,9 @@
   "plannerDeadlineGone": "That deadline no longer exists: it was deleted. If you need it, create it again with “New deadline”.",
   "plannerDeleteDeadlineNamed": "Delete “{title}”",
   "plannerMarkDoneNamed": "Mark “{title}” as done",
-  "plannerUnmarkNamed": "Unmark “{title}”"
+  "plannerUnmarkNamed": "Unmark “{title}”",
+  "plannerDueTomorrow": "Tomorrow",
+  "plannerDueInAWeek": "In a week",
+  "plannerDeleteDeadline": "Delete",
+  "plannerOpensDeadlineForm": "Opens the deadline form"
 }

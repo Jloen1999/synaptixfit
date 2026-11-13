@@ -83,4 +83,13 @@ sealed class BlockEditorOutcome with _$BlockEditorOutcome {
   /// lo marca la sesión, no la persona).
   const factory BlockEditorOutcome.trainingRequested(String routineId) =
       BlockEditorTrainingRequested;
+
+  /// Al crear se eligió «Examen» o «Entrega»: no es un evento aparte, sino
+  /// una entrega (un solo concepto, ADR 0039). El calendario abre su
+  /// formulario corto con el día y la hora tocados y la asignatura elegida.
+  const factory BlockEditorOutcome.deadlineRequested({
+    required bool exam,
+    required DateTime due,
+    String? subjectId,
+  }) = BlockEditorDeadlineRequested;
 }

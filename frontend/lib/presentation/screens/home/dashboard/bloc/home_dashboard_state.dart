@@ -18,9 +18,6 @@ abstract class HomeDashboardState with _$HomeDashboardState {
     /// Bloques y entregas de los próximos días (sin hoy), en orden.
     @Default(<HomeTodayEvent>[]) List<HomeTodayEvent> upcoming,
 
-    /// Próximo examen (o entrega) pendiente, para la cuenta atrás de «Tu día»;
-    /// nulo si no hay ninguno.
-    Deadline? nextDeadline,
     @Default(0) int unreadNotifications,
 
     /// Configuración pendiente (aviso discreto); nulo si no se pudo leer.

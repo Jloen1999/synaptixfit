@@ -15,6 +15,7 @@ import 'presentation/screens/splash/page/splash_page.dart';
 import 'presentation/screens/home/home_routes.dart';
 import 'presentation/screens/academic/academic_routes.dart';
 import 'presentation/screens/training/training_routes.dart';
+import 'presentation/screens/training/widgets/training_section_bar.dart';
 import 'presentation/screens/challenges/challenges_routes.dart';
 import 'presentation/screens/progress/progress_routes.dart';
 import 'presentation/screens/profile/legal/bloc/legal_acceptance_bloc.dart';
@@ -80,7 +81,15 @@ GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
             ResetPasswordPage(token: state.uri.queryParameters['token'] ?? ''),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => MainShellPage(shell: shell),
+        builder: (context, state, shell) => MainShellPage(
+          shell: shell,
+          // En Entreno › Gimnasio, la tarjeta del día ya lleva «Continuar»: un
+          // solo camino a la sesión abierta de una rutina (ADR 0039).
+          onGym:
+              state.uri.path == TrainingPaths.root &&
+              TrainingSection.fromQuery(state.uri.queryParameters['section']) ==
+                  TrainingSection.gym,
+        ),
         // Mismo orden que la barra: Inicio · Calendario · Académico · Entreno
         // · Progreso (ADR 0038). Los retos viven dentro de Progreso.
         branches: [

@@ -14,8 +14,6 @@
   "trainingFreeSession": "Sesión libre",
   "trainingStart": "Empezar",
   "trainingTrain": "Entrenar",
-  "trainingCheckInCtaTitle": "¿Cómo te encuentras hoy?",
-  "trainingCheckInToday": "Cómo estás hoy",
   "trainingFatigueScore": "Fatiga {score}/100",
   "@trainingFatigueScore": {
     "placeholders": {
@@ -36,7 +34,6 @@
       }
     }
   },
-  "trainingRecommendationsAll": "Ver todas",
   "trainingRecommendationsLess": "Ver menos",
   "trainingRecommendationDetail": "Ver detalle",
   "trainingRecommendationMoreExercises": "{count, plural, =1{y 1 ejercicio más} other{y {count} ejercicios más}}",
@@ -507,37 +504,7 @@
       }
     }
   },
-  "trainingCheckInTitle": "¿Cómo estás hoy?",
-  "trainingCheckInIntro": "Cuatro preguntas rápidas (sueño, estrés, energía y agujetas) para adaptar tu entrenamiento a cómo te encuentras.",
-  "trainingCheckInUpdate": "Ya nos has contado cómo estás hoy. Puedes cambiarlo.",
-  "trainingSleepQuality": "Calidad del sueño",
-  "trainingStress": "Estrés",
-  "trainingEnergy": "Energía",
-  "trainingSoreness": "Agujetas",
-  "trainingScaleBad": "Muy mala",
-  "trainingScaleGreat": "Excelente",
-  "trainingScaleLow": "Bajo",
-  "trainingScaleHigh": "Alto",
-  "trainingScaleNone": "Nada",
-  "trainingScaleValue": "{value}/5",
-  "@trainingScaleValue": {
-    "placeholders": {
-      "value": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingScaleSemantics": "{label}: {value} de 5",
-  "@trainingScaleSemantics": {
-    "placeholders": {
-      "label": {
-        "type": "String"
-      },
-      "value": {
-        "type": "int"
-      }
-    }
-  },
+  "trainingCheckInTitle": "¿Qué tal estás hoy?",
   "trainingPainZones": "Zonas con dolor",
   "trainingPainNeck": "Cuello",
   "trainingPainShoulders": "Hombros",
@@ -555,23 +522,6 @@
   "trainingCheckInSave": "Guardar",
   "trainingCheckInUpdateAction": "Guardar cambios",
   "trainingCheckInHistory": "Días anteriores",
-  "trainingCheckInHistoryLine": "Sueño {sleep} · Estrés {stress} · Energía {energy} · Agujetas {soreness}",
-  "@trainingCheckInHistoryLine": {
-    "placeholders": {
-      "sleep": {
-        "type": "int"
-      },
-      "stress": {
-        "type": "int"
-      },
-      "energy": {
-        "type": "int"
-      },
-      "soreness": {
-        "type": "int"
-      }
-    }
-  },
   "trainingPreviousWeek": "Semana anterior",
   "trainingNextWeek": "Semana siguiente",
   "trainingWeekRange": "{start} – {end}",
@@ -2388,10 +2338,10 @@
   "trainingCycleDeleteAllMessage": "Se borran todos los días del ciclo. No se puede deshacer.",
   "trainingCycleDeleteAllConfirm": "Borrar todo",
   "trainingCycleHistoryDeleted": "Lo apuntado se ha borrado",
-  "trainingCycleDisabled": "Seguimiento desactivado. Para activarlo de nuevo: en Entreno › Gimnasio, abre el registro diario y entra en «Mi ciclo».",
+  "trainingCycleDisabled": "Seguimiento desactivado. Para activarlo de nuevo: en Entreno › Gimnasio, abre «¿Qué tal estás hoy?» y entra en «Mi ciclo».",
   "trainingAdaptedCycle": "Molestias o poca energía que apuntaste hoy",
   "trainingQuickCheckInTitle": "¿Qué tal estás hoy?",
-  "trainingQuickCheckInHint": "Tres toques y ajustamos el entreno a cómo estás.",
+  "trainingQuickCheckInHint": "Tres toques: se guarda al contestar la tercera.",
   "trainingQuickSleep": "¿Cómo dormiste?",
   "trainingQuickEnergy": "¿Cómo va tu energía?",
   "trainingQuickSoreness": "¿Agujetas o molestias?",
@@ -2404,9 +2354,8 @@
   "trainingQuickSoreNone": "Nada",
   "trainingQuickSoreSome": "Algo",
   "trainingQuickSoreLot": "Muchas",
-  "trainingQuickSave": "Listo",
   "trainingQuickChange": "Cambiar",
-  "trainingQuickFull": "Registro completo",
+  "trainingQuickFull": "Añadir detalles",
   "trainingQuickAllGood": "Hoy entrenas normal. ¡A por ello!",
   "trainingQuickAdapted": "Hoy harás menos series: un {percent} % de lo previsto.",
   "@trainingQuickAdapted": {
@@ -3161,5 +3110,30 @@
   "trainingCheckInThanks": "¡Gracias por contarnos cómo estás!",
   "@trainingCheckInThanks": {
     "description": "Tarjeta tras el registro diario (sin la XP: se ve en Progreso)."
-  }
+  },
+  "trainingCheckInDetailsHint": "Estrés, dolores y notas. Opcional.",
+  "trainingCheckInAnswerFirst": "Contesta antes las tres preguntas de arriba.",
+  "trainingStressQuestion": "¿Cuánto estrés tienes?",
+  "trainingStressLot": "Mucho",
+  "trainingStressQuite": "Bastante",
+  "trainingStressSome": "Algo",
+  "trainingStressLittle": "Poco",
+  "trainingStressNone": "Nada",
+  "trainingCheckInHistoryWords": "Sueño: {sleep} · Energía: {energy} · Agujetas: {soreness}",
+  "@trainingCheckInHistoryWords": {
+    "placeholders": {
+      "sleep": {
+        "type": "String"
+      },
+      "energy": {
+        "type": "String"
+      },
+      "soreness": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingRecommendationsShow": "Ver sugerencias",
+  "trainingCheckInAutoSaveHint": "Se guarda al contestar la tercera pregunta.",
+  "trainingCheckInChangeHint": "Cambia lo que quieras y pulsa «Guardar cambios»."
 }

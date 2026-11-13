@@ -16,7 +16,17 @@ class BlockTypePicker extends StatefulWidget {
     required this.types,
     required this.selected,
     required this.onChanged,
+    this.formTypes = const {},
+    this.formHint,
   });
+
+  /// Tipos que no se eligen aquí sino que abren otro formulario (al crear,
+  /// «Examen» y «Entrega» abren el de entrega, ADR 0039). Se ven y se
+  /// anuncian como botones que llevan a otro sitio, no como opciones.
+  final Set<BlockType> formTypes;
+
+  /// Pista de esos botones para el lector («Abre el formulario de entrega»).
+  final String? formHint;
 
   /// Tipos que se ven sin desplegar nada, en este orden.
   static const primary = [
@@ -60,6 +70,8 @@ class _BlockTypePickerState extends State<BlockTypePicker> {
       iconColor: t.color(context),
       label: t.label(context),
       selected: widget.selected == t,
+      opensForm: widget.formTypes.contains(t),
+      hint: widget.formTypes.contains(t) ? widget.formHint : null,
       onTap: () => widget.onChanged(t),
     );
     return Semantics(
@@ -106,7 +118,13 @@ class _ChoiceTile extends StatelessWidget {
     required this.onTap,
     this.selected = false,
     this.expanded,
+    this.opensForm = false,
+    this.hint,
   });
+
+  /// Lleva a otro formulario: botón con flecha, nunca «elegido».
+  final bool opensForm;
+  final String? hint;
 
   final IconData icon;
   final Color iconColor;
@@ -122,11 +140,13 @@ class _ChoiceTile extends StatelessWidget {
     final foreground = selected
         ? colors.onSecondaryContainer
         : colors.onSurface;
+    final option = expanded == null && !opensForm;
     return Semantics(
       button: true,
-      selected: expanded == null ? selected : null,
-      inMutuallyExclusiveGroup: expanded == null ? true : null,
+      selected: option ? selected : null,
+      inMutuallyExclusiveGroup: option ? true : null,
       expanded: expanded,
+      hint: hint,
       child: AppFocusOutline(
         borderRadius: radius,
         child: Material(
@@ -146,7 +166,19 @@ class _ChoiceTile extends StatelessWidget {
             child: Stack(
               fit: StackFit.passthrough,
               children: [
-                if (selected)
+                if (opensForm)
+                  PositionedDirectional(
+                    top: TokensSpacing.xs,
+                    end: TokensSpacing.xs,
+                    child: ExcludeSemantics(
+                      child: Icon(
+                        AppIcons.next,
+                        size: TokensSize.iconXs,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                if (selected && !opensForm)
                   PositionedDirectional(
                     top: TokensSpacing.xs,
                     end: TokensSpacing.xs,

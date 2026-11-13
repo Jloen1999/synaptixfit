@@ -68,6 +68,14 @@ abstract final class AcademicPaths {
   static String deadline(String id) =>
       Uri(path: deadlines, queryParameters: {'focus': id}).toString();
 
+  /// Pomodoro (módulo planner) sin asignatura: «Concentrarme» de Académico.
+  static const focus = '/planner/pomodoro';
+
+  /// Entregas con el formulario de una nueva abierto y la asignatura puesta
+  /// («Nueva entrega», ADR 0039). Mismo formato que `PlannerPaths.newDeadline`.
+  static String newDeadline({String? subjectId}) =>
+      _withQuery(deadlines, {'new': '1', 'subject': ?subjectId});
+
   /// Pomodoro (módulo planner) vinculado a una asignatura.
   static String pomodoro({required String subjectId, required String title}) =>
       _withQuery('/planner/pomodoro', {'subjectId': subjectId, 'title': title});

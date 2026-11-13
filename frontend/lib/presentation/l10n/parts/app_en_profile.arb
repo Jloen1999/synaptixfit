@@ -401,7 +401,7 @@
   "profileHealthConsentTitle": "How you feel data",
   "profileHealthConsentGiven": "Permission given on {date}",
   "profileHealthConsentGivenNoDate": "Permission given",
-  "profileHealthConsentNotGiven": "No permission: your daily check-in isn't saved",
+  "profileHealthConsentNotGiven": "No permission: “How are you today?” isn’t saved",
   "profileHealthConsentGive": "Give permission",
   "profileHealthConsentWithdraw": "Withdraw",
   "profileHealthConsentWithdrawTitle": "Withdraw your permission?",

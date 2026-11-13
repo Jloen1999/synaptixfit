@@ -1,10 +1,12 @@
 import '../../enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../enums/cognitive_level.dart';
 import '../../enums/home_acwr_zone.dart';
 import '../../enums/home_banner_type.dart';
 import '../../enums/home_event_kind.dart';
 import '../../enums/home_event_type.dart';
+import '../../enums/planner_enums.dart';
 import '../../enums/training_enums.dart';
 
 part 'home_dashboard.freezed.dart';
@@ -24,7 +26,23 @@ abstract class HomeDashboard with _$HomeDashboard {
     @Default(<HomePlanDay>[]) List<HomePlanDay> planWeek,
     @Default(<HomeTodayEvent>[]) List<HomeTodayEvent> todayEvents,
     required HomeSmartBanner banner,
+
+    /// Cuenta atrás de «Tu día»: el próximo examen o, si no hay, la próxima
+    /// entrega pendiente. La elige el servidor (ADR 0039).
+    HomeNextDeadline? nextDeadline,
   }) = _HomeDashboard;
+}
+
+/// Entrega o examen de la cuenta atrás de «Tu día».
+@freezed
+abstract class HomeNextDeadline with _$HomeNextDeadline {
+  const factory HomeNextDeadline({
+    required String id,
+    required String title,
+    required DeadlineType type,
+    required DateTime dueAt,
+    String? subjectName,
+  }) = _HomeNextDeadline;
 }
 
 /// Cabecera: nombre, avatar, nivel y racha.
@@ -85,6 +103,10 @@ abstract class HomeCognitiveState with _$HomeCognitiveState {
     required double cognitiveLoad,
     required double attentionCapacity,
     required int lastBlockMinutes,
+
+    /// Nivel en palabras de la carga y de la atención (umbrales del servidor).
+    @Default(CognitiveLevel.unknown) CognitiveLevel loadLevel,
+    @Default(CognitiveLevel.unknown) CognitiveLevel attentionLevel,
   }) = _HomeCognitiveState;
 }
 

@@ -20,7 +20,6 @@
   "plannerDeadlinesThisWeek": "Rendus de la semaine",
   "plannerMenuDeadlines": "Rendus et examens",
   "plannerMenuSuggestions": "Suggérer un plan",
-  "plannerMenuPomodoro": "Pomodoro",
   "plannerMenuScheduleImport": "Importer ou exporter l’emploi du temps",
   "plannerMoreOptions": "Plus d’options",
   "plannerReminderLine": "{type, select, STUDY{On te préviendra avant le début, avec l’avance choisie dans « Autres rappels ».} REVIEW{On te préviendra avant le début, avec l’avance choisie dans « Autres rappels ».} SPORT{On te préviendra avant le début, avec l’avance choisie dans « Autres rappels ».} PERSONAL{On te préviendra avant le début, avec l’avance choisie dans « Autres rappels ».} CLASS{Si le rappel des cours est activé dans « Autres rappels », on te préviendra peu avant le début.} EXAM{On te préviendra de l’examen les jours avant choisis dans « Autres rappels ».} DELIVERY{On te préviendra du rendu les jours avant choisis dans « Autres rappels ».} other{Ce type d’événement n’a pas de rappel.}}",
@@ -387,5 +386,9 @@
   "plannerDeadlineGone": "Ce rendu n’existe plus : il a été supprimé. Si tu en as besoin, recrée-le avec « Nouveau rendu ».",
   "plannerDeleteDeadlineNamed": "Supprimer « {title} »",
   "plannerMarkDoneNamed": "Marquer « {title} » comme fait",
-  "plannerUnmarkNamed": "Décocher « {title} »"
+  "plannerUnmarkNamed": "Décocher « {title} »",
+  "plannerDueTomorrow": "Demain",
+  "plannerDueInAWeek": "Dans une semaine",
+  "plannerDeleteDeadline": "Supprimer",
+  "plannerOpensDeadlineForm": "Ouvre le formulaire de rendu"
 }

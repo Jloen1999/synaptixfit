@@ -749,23 +749,6 @@
   "academicGuideReimportConfirm": "Importar",
   "academicAddGroupSubject": "Asignatura",
   "academicAddGroupNotes": "Apuntes",
-  "academicSubjectFocus": "Concentrarme en {name}",
-  "@academicSubjectFocus": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "academicSubjectEditNamed": "Editar «{name}»",
-  "@academicSubjectEditNamed": {
-    "description": "Botón de editar del detalle de asignatura: dice cuál se edita.",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "academicFormatHeading": "Título",
   "academicFormatBold": "Negrita",
   "academicFormatItalic": "Cursiva",
@@ -1333,5 +1316,16 @@
         "type": "String"
       }
     }
-  }
+  },
+  "academicFocus": "Concentrarme",
+  "academicSubjectMoreActions": "Más acciones de «{name}»",
+  "@academicSubjectMoreActions": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "academicNewDeadline": "Nueva entrega",
+  "academicSubjectFocusHere": "Concentrarme en esta asignatura"
 }

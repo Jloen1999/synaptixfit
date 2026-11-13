@@ -14,6 +14,7 @@ import com.synaptixfit.domain.model.dashboard.Dashboard;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels;
 import com.synaptixfit.domain.model.notification.WeeklyEmailSubscription;
 import com.synaptixfit.domain.model.notification.WeeklySummary;
+import com.synaptixfit.domain.model.planner.DeadlineType;
 import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.dashboard.DashboardReadPort;
 import com.synaptixfit.domain.port.output.notification.WeeklyEmailMailerPort;
@@ -92,7 +93,7 @@ class WeeklyEmailServiceTest {
                 Clock.fixed(SUNDAY, ZoneOffset.UTC));
         when(reads.deadlines(any(), any(), any())).thenReturn(List.of(
                 new DashboardReadModels.Deadline(UUID.randomUUID(), "Parcial", "examen",
-                        SUNDAY.plusSeconds(86_400), false, "Cálculo")));
+                        SUNDAY.plusSeconds(86_400), false, "Cálculo", DeadlineType.EXAM)));
         Dashboard d = mock(Dashboard.class);
         when(d.week()).thenReturn(new Dashboard.WeekKpis(MONDAY, 2, 3, 1, 90, 400, 150));
         when(d.planWeek()).thenReturn(List.of(new Dashboard.PlanDay(MONDAY, 4, 3)));

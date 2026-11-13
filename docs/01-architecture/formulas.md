@@ -47,7 +47,7 @@ Capacidad atencional    A(t) = e^(−β·t)                      t = minutos de 
 | 4 h seguidas | 0,80 | Crítica |
 | 1 h de una asignatura difícil (× 1,8) | 0,52 | Moderada |
 
-Zonas de la interfaz: baja < 0,3 ≤ moderada < 0,6 ≤ alta < 0,8 ≤ crítica.
+Zonas de la interfaz: baja < 0,3 ≤ moderada < 0,6 ≤ alta < 0,8 ≤ crítica. Las decide el servidor (`CognitiveLevel.ofLoad`, `cognitive.loadLevel` en la API, ADR 0039); la atención: baja < 0,4 ≤ moderada < 0,7 ≤ alta (`CognitiveLevel.ofAttention`, `attentionLevel`). El cliente solo pone el texto y el color.
 
 ### Qué cuenta como actividad
 
@@ -179,7 +179,7 @@ La usan: el gasto del estudio (fórmula 1, `PlannerDirectoryJdbcAdapter.findMeta
 
 - **Estimación del ciclo (`CycleOverview`):** un ciclo empieza el primer día con regla tras un día sin ella. Duración = media de los últimos 6 ciclos completos entre 21 y 45 días, acotada a 21-40 (28 si no hay). Regla = media de los periodos apuntados, acotada a 2-8 (5 si no hay). Con la ovulación estimada 14 días antes de la próxima regla (`duración − 14`): días 1…regla → «Con la regla»; hasta 3 días antes de la ovulación → «Después de la regla»; ±2 días → «Mitad del ciclo»; después → «Días antes de la regla». Próxima regla = último inicio + duración. Sin inicio en los últimos 60 días no se estima. Es orientativo, no médico: la app lo dice.
 - **Ajuste suave por el ciclo (`SessionAdaptation`):** con el seguimiento activo y hoy energía baja o alguna molestia, factor de series 0,9 (motivo `CYCLE_DISCOMFORT`). Como el resto de motivos, se aplica el más restrictivo, no se multiplican.
-- **Causa de la fatiga (`DailyCheckIn.mainCause`):** el término que más suma en la fórmula del registro diario ((6−sueño)·5, (dolor−1)·7, (6−energía)·4, (estrés−1)·5); con empate, sueño > agujetas > energía > estrés. Solo explica, no cambia la puntuación. El registro rápido no pregunta el estrés: se conserva el de hoy o el neutro (3), que no suma.
+- **Causa de la fatiga (`DailyCheckIn.mainCause`):** el término que más suma en la fórmula del registro diario ((6−sueño)·5, (dolor−1)·7, (6−energía)·4, (estrés−1)·5); con empate, sueño > agujetas > energía > estrés. Solo explica, no cambia la puntuación. El registro rápido no pregunta el estrés: se conserva el de hoy o el neutro (3), que no suma. **Sentido de las escalas (ADR 0039):** la app enseña todas las respuestas con lo mejor a la derecha («Muchas · Algo · Nada» en agujetas, «Mucho … Nada» en estrés), pero se guardan igual que siempre (sueño y energía: 5 = bien; estrés y agujetas: 5 = mucho). Por eso estas fórmulas, `EnergyScore` y la adaptación no cambian.
 - **Ritmo (`ActivityPace`):** s/km = minutos·60 ÷ km (redondeado); km/h = km ÷ (minutos ÷ 60), a una décima. Nadando, s/100 m = minutos·60 ÷ (metros ÷ 100), redondeado; lo manda el servidor (`paceSecondsPer100m`) y el cliente solo lo pinta. Se usan los minutos reales apuntados, no los del bloque.
 
 ## Carreras con GPS (ADR 0037)

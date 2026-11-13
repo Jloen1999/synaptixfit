@@ -82,3 +82,10 @@ Decisión del propietario: «la aplicación debe ir al grano, facilitar al usuar
 - **Inicio:** «Tu día» manda con lo siguiente y **un solo botón** («Concentrarme», «Empezar», «Marcar como hecho» o, sin nada, «Añadir al calendario») y la cuenta atrás del próximo examen o entrega. Debajo, la agenda, el próximo entreno (botones secundarios), «Retos activos» (solo si hay), «Tu semana» en una fila y, al final, «Termina de preparar tu app». Sin XP, kcal, carga ni porcentajes técnicos.
 - **Un camino por destino.** Una misma función no aparece con nombres o iconos distintos en varios sitios de la misma pantalla.
 - **Pocos pasos en lo diario.** Empezar el entreno de hoy, marcar algo hecho o empezar un Pomodoro: 1 toque desde Inicio. Apuntar una entrega: ≤ 4. Terminar una sesión: 2.
+- **Cada cosa donde se busca (fase 3, ADR 0039):**
+  - **Entregas y exámenes son un solo concepto:** la entrega. «Examen» o «Entrega» en la hoja del calendario abre el mismo formulario corto que «Nueva entrega» (Académico y cada asignatura, con la asignatura puesta). En el calendario, «Entregas y exámenes» y «Concentrarme» están a la vista; el ⋮ es para lo ocasional.
+  - **Un solo registro diario: «¿Qué tal estás hoy?»** (ese nombre en toda la app y en los avisos). Tres preguntas de un toque; la tercera guarda. «Añadir detalles» (estrés, dolores, notas) es opcional y va plegado.
+  - **Escalas en el mismo sentido: a la derecha, lo mejor** («Mal · Regular · Bien», «Muchas · Algo · Nada»). Se dice en palabras, no en números del 1 al 5.
+  - **Borrar no ocupa sitio en cada fila:** se desliza con «Deshacer» o se hace desde el detalle (con su acción para el lector de pantalla). Marcar hecho sigue a un toque.
+  - **Nada flotante tapa botones:** «Nueva rutina» va en la cabecera de «Mis rutinas».
+  - **Lo ocasional de una pantalla, en su ⋮** (editar, archivar, eliminar una asignatura); la barra no recorta el título con iconos.

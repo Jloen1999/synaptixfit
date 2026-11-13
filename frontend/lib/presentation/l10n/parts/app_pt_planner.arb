@@ -20,7 +20,6 @@
   "plannerDeadlinesThisWeek": "Entregas da semana",
   "plannerMenuDeadlines": "Entregas e exames",
   "plannerMenuSuggestions": "Sugerir um plano",
-  "plannerMenuPomodoro": "Pomodoro",
   "plannerMenuScheduleImport": "Importar ou exportar horário",
   "plannerMoreOptions": "Mais opções",
   "plannerReminderLine": "{type, select, STUDY{Vamos avisar-te antes de começar, com a antecedência que escolheste em «Mais lembretes».} REVIEW{Vamos avisar-te antes de começar, com a antecedência que escolheste em «Mais lembretes».} SPORT{Vamos avisar-te antes de começar, com a antecedência que escolheste em «Mais lembretes».} PERSONAL{Vamos avisar-te antes de começar, com a antecedência que escolheste em «Mais lembretes».} CLASS{Se tiveres o aviso de aulas ativo em «Mais lembretes», vamos avisar-te pouco antes de começar.} EXAM{Vamos avisar-te do exame nos dias antes que escolheste em «Mais lembretes».} DELIVERY{Vamos avisar-te da entrega nos dias antes que escolheste em «Mais lembretes».} other{Este tipo de evento não tem aviso.}}",
@@ -387,5 +386,9 @@
   "plannerDeadlineGone": "Essa entrega já não existe: foi apagada. Se precisares dela, cria-a de novo com «Nova entrega».",
   "plannerDeleteDeadlineNamed": "Eliminar «{title}»",
   "plannerMarkDoneNamed": "Marcar «{title}» como feito",
-  "plannerUnmarkNamed": "Desmarcar «{title}»"
+  "plannerUnmarkNamed": "Desmarcar «{title}»",
+  "plannerDueTomorrow": "Amanhã",
+  "plannerDueInAWeek": "Daqui a uma semana",
+  "plannerDeleteDeadline": "Eliminar",
+  "plannerOpensDeadlineForm": "Abre o formulário de entrega"
 }

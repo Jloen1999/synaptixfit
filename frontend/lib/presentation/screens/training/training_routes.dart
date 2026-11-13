@@ -58,6 +58,9 @@ abstract final class TrainingPaths {
 
   static const history = '$root/history';
   static const checkIn = '$root/check-in';
+
+  /// «¿Qué tal estás hoy?» con «Añadir detalles» ya desplegado.
+  static const checkInDetails = '$checkIn?details=1';
   static const weeklyPlan = '$root/weekly-plan';
   static const community = '$root/community';
 
@@ -180,7 +183,11 @@ List<RouteBase> trainingBranchRoutes() => [
 List<RouteBase> trainingRoutes() => [
   // El check-in se abre desde Inicio y desde Entreno: a pantalla completa
   // vuelve siempre a quien lo abrió.
-  GoRoute(path: TrainingPaths.checkIn, builder: (_, _) => const CheckInPage()),
+  GoRoute(
+    path: TrainingPaths.checkIn,
+    builder: (_, state) =>
+        CheckInPage(details: state.uri.queryParameters['details'] == '1'),
+  ),
   GoRoute(
     path: TrainingPaths.pastActivity,
     builder: (_, state) => PastActivityPage(

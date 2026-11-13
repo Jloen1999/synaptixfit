@@ -164,7 +164,7 @@ class _EditorViewState extends State<_EditorView>
     _location.text = b?.location ?? '';
     _moreOptions =
         b != null &&
-        (b.subjectId != null ||
+        ((b.subjectId != null && !b.type.isStudy) ||
             _topics.text.isNotEmpty ||
             _location.text.isNotEmpty ||
             b.priority != null ||
@@ -196,6 +196,18 @@ class _EditorViewState extends State<_EditorView>
   /// Al cambiar de tipo se proponen sus horas: duración típica si la actual
   /// no es una de las suyas; una entrega conserva su hora de fin como límite.
   void _changeType(BlockType t) {
+    // Al crear, «Examen» y «Entrega» abren el formulario de entrega: es lo
+    // mismo que apuntarla desde Académico (un solo concepto, ADR 0039).
+    if (!_editing && t.createsDeadline) {
+      Navigator.of(context).pop(
+        BlockEditorOutcome.deadlineRequested(
+          exam: t == BlockType.exam,
+          due: _at(t == BlockType.exam ? _startMin : _endMin),
+          subjectId: _subjectId,
+        ),
+      );
+      return;
+    }
     setState(() {
       _type = t;
       if (t.timeInput == BlockTimeInput.duration &&
@@ -606,8 +618,19 @@ class _EditorViewState extends State<_EditorView>
           ],
           selected: _type,
           onChanged: _changeType,
+          // Al crear, «Examen» y «Entrega» abren el formulario de entrega.
+          formTypes: _editing
+              ? const {}
+              : {
+                  for (final t in BlockType.values)
+                    if (t.createsDeadline) t,
+                },
+          formHint: l10n.plannerOpensDeadlineForm,
         ),
         if (_type.requiresName) ...[gap, ..._nameField(context, state)],
+        // Estudio y repaso son de una asignatura: se elige aquí, sin abrir
+        // «Más opciones».
+        if (_subjectFirst) ...[gap, _subjectField(context, state)],
         stepGap,
         _StepHeader(number: 2, total: steps, title: l10n.plannerStepWhen),
         small,
@@ -763,7 +786,7 @@ class _EditorViewState extends State<_EditorView>
     final l10n = context.localizations;
     final t = _type;
     return [
-      if (t.usesSubject) l10n.plannerFieldSubject,
+      if (t.usesSubject && !_subjectFirst) l10n.plannerFieldSubject,
       if (t.usesTopics && !t.requiresName) l10n.plannerFieldTopics,
       if (t.usesLocation) l10n.plannerFieldLocation,
       if (t.usesPriority) l10n.plannerFieldPriority,
@@ -801,6 +824,44 @@ class _EditorViewState extends State<_EditorView>
     );
   }
 
+  /// La asignatura va en el paso 1 en estudio y repaso (lo que más se apunta);
+  /// en el resto de tipos sigue en «Más opciones».
+  bool get _subjectFirst => _type.isStudy && _type.usesSubject;
+
+  Widget _subjectField(BuildContext context, BlockEditorState state) {
+    final l10n = context.localizations;
+    return DropdownButtonFormField<String?>(
+      key: ValueKey('subject-$_subjectFirst'),
+      initialValue: _subjectId,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: l10n.plannerFieldSubject,
+        prefixIcon: const Icon(Icons.class_rounded),
+      ),
+      items: [
+        DropdownMenuItem(value: null, child: Text(l10n.plannerNoSubject)),
+        for (final s in state.subjects)
+          DropdownMenuItem(value: s.id, child: Text(s.name)),
+        if (_subjectId != null &&
+            !state.subjects.any((s) => s.id == _subjectId))
+          DropdownMenuItem(
+            value: _subjectId,
+            child: Text(l10n.plannerFieldSubject),
+          ),
+      ],
+      onChanged: (v) => setState(() {
+        _subjectId = v;
+        if (_deadlineId != null &&
+            v != null &&
+            !state.deadlines.any(
+              (d) => d.id == _deadlineId && d.subjectId == v,
+            )) {
+          _deadlineId = null;
+        }
+      }),
+    );
+  }
+
   /// Lo avanzado, solo lo que aplica a este tipo.
   List<Widget> _advancedFields(BuildContext context, BlockEditorState state) {
     final l10n = context.localizations;
@@ -813,36 +874,8 @@ class _EditorViewState extends State<_EditorView>
     const small = SizedBox(height: TokensSpacing.s);
     const gap = SizedBox(height: TokensSpacing.m);
     return [
-      if (_type.usesSubject) ...[
-        DropdownButtonFormField<String?>(
-          initialValue: _subjectId,
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: l10n.plannerFieldSubject,
-            prefixIcon: const Icon(Icons.class_rounded),
-          ),
-          items: [
-            DropdownMenuItem(value: null, child: Text(l10n.plannerNoSubject)),
-            for (final s in state.subjects)
-              DropdownMenuItem(value: s.id, child: Text(s.name)),
-            if (_subjectId != null &&
-                !state.subjects.any((s) => s.id == _subjectId))
-              DropdownMenuItem(
-                value: _subjectId,
-                child: Text(l10n.plannerFieldSubject),
-              ),
-          ],
-          onChanged: (v) => setState(() {
-            _subjectId = v;
-            if (_deadlineId != null &&
-                v != null &&
-                !state.deadlines.any(
-                  (d) => d.id == _deadlineId && d.subjectId == v,
-                )) {
-              _deadlineId = null;
-            }
-          }),
-        ),
+      if (_type.usesSubject && !_subjectFirst) ...[
+        _subjectField(context, state),
         small,
       ],
       if (_type.usesTopics && !_type.requiresName) ...[

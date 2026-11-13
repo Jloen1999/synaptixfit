@@ -106,7 +106,7 @@ void main() {
     expect(find.text('Tu día'), findsOneWidget);
     expect(find.text('Tema 3: Límites'), findsOneWidget);
     expect(find.text('Fuerza base'), findsOneWidget);
-    expect(find.text('Contar cómo estoy'), findsOneWidget);
+    expect(find.text('¿Qué tal estás hoy?'), findsOneWidget);
     expect(find.text('Estudiar 10 horas'), findsOneWidget);
     // «Tu día» manda con un solo botón destacado: concentrarse en lo que toca.
     expect(find.text('Concentrarme'), findsOneWidget);

@@ -32,7 +32,8 @@ class ProgressOverviewBloc
 
   /// Resumen de hoy (carga cognitiva, carga física y energía), el mismo que
   /// el de Inicio: «Tu equilibrio» se ve aquí (ADR 0038). Es opcional: si
-  /// falla, la tarjeta no se enseña.
+  /// falla, el resto de Progreso se ve y la tarjeta dice el error con
+  /// «Reintentar» (`todayError`, ADR 0039).
   final GetHomeDashboardUseCaseContract _getToday;
   final WatchDataChangesUseCaseContract _watchChanges;
 
@@ -69,10 +70,15 @@ class ProgressOverviewBloc
     emit(current.copyWith(refreshing: true, refreshError: null));
     final todayF = _getToday();
     final result = await _getOverview();
-    final today = (await todayF).valueOrNull ?? current.today;
+    final todayResult = await todayF;
+    final today = todayResult.valueOrNull ?? current.today;
     emit(
       result.fold(
-        (overview) => ProgressOverviewState.loaded(overview, today: today),
+        (overview) => ProgressOverviewState.loaded(
+          overview,
+          today: today,
+          todayError: today == null ? todayResult.errorOrNull : null,
+        ),
         (error) => current.copyWith(refreshing: false, refreshError: error),
       ),
     );
@@ -81,10 +87,14 @@ class ProgressOverviewBloc
   Future<void> _load(Emitter<ProgressOverviewState> emit) async {
     final todayF = _getToday();
     final result = await _getOverview();
-    final today = (await todayF).valueOrNull;
+    final todayResult = await todayF;
     emit(
       result.fold(
-        (overview) => ProgressOverviewState.loaded(overview, today: today),
+        (overview) => ProgressOverviewState.loaded(
+          overview,
+          today: todayResult.valueOrNull,
+          todayError: todayResult.errorOrNull,
+        ),
         ProgressOverviewState.failure,
       ),
     );

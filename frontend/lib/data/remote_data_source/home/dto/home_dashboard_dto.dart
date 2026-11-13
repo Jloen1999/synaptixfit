@@ -1,10 +1,12 @@
 import '../../../../domain/enums/item_time_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../../domain/enums/cognitive_level.dart';
 import '../../../../domain/enums/home_acwr_zone.dart';
 import '../../../../domain/enums/home_banner_type.dart';
 import '../../../../domain/enums/home_event_kind.dart';
 import '../../../../domain/enums/home_event_type.dart';
+import '../../../../domain/enums/planner_enums.dart';
 import '../../../../domain/enums/training_enums.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
 
@@ -29,6 +31,7 @@ abstract class HomeDashboardDto with _$HomeDashboardDto {
     @Default(<HomePlanDayDto>[]) List<HomePlanDayDto> planWeek,
     @Default(<HomeTodayEventDto>[]) List<HomeTodayEventDto> todayEvents,
     HomeBannerDto? banner,
+    HomeNextDeadlineDto? nextDeadline,
   }) = _HomeDashboardDto;
 
   const HomeDashboardDto._();
@@ -49,6 +52,32 @@ abstract class HomeDashboardDto with _$HomeDashboardDto {
     planWeek: planWeek.map((d) => d.toDomain()).toList(),
     todayEvents: todayEvents.map((e) => e.toDomain()).toList(),
     banner: (banner ?? const HomeBannerDto()).toDomain(),
+    nextDeadline: nextDeadline?.toDomain(),
+  );
+}
+
+/// Cuenta atrás de «Tu día» (`nextDeadline`, ADR 0039).
+@freezed
+abstract class HomeNextDeadlineDto with _$HomeNextDeadlineDto {
+  const factory HomeNextDeadlineDto({
+    required String id,
+    @Default('') String title,
+    String? type,
+    required String dueAt,
+    String? subjectName,
+  }) = _HomeNextDeadlineDto;
+
+  const HomeNextDeadlineDto._();
+
+  factory HomeNextDeadlineDto.fromJson(Map<String, dynamic> json) =>
+      _$HomeNextDeadlineDtoFromJson(json);
+
+  HomeNextDeadline toDomain() => HomeNextDeadline(
+    id: id,
+    title: title,
+    type: DeadlineType.fromApi(type),
+    dueAt: DateTime.parse(dueAt).toLocal(),
+    subjectName: subjectName,
   );
 }
 
@@ -138,6 +167,8 @@ abstract class HomeCognitiveDto with _$HomeCognitiveDto {
     @Default(0) double cognitiveLoad,
     @Default(1) double attentionCapacity,
     @Default(0) int lastBlockMinutes,
+    String? loadLevel,
+    String? attentionLevel,
   }) = _HomeCognitiveDto;
 
   const HomeCognitiveDto._();
@@ -149,6 +180,8 @@ abstract class HomeCognitiveDto with _$HomeCognitiveDto {
     cognitiveLoad: cognitiveLoad.clamp(0, 1).toDouble(),
     attentionCapacity: attentionCapacity.clamp(0, 1).toDouble(),
     lastBlockMinutes: lastBlockMinutes,
+    loadLevel: CognitiveLevel.fromApi(loadLevel),
+    attentionLevel: CognitiveLevel.fromApi(attentionLevel),
   );
 }
 

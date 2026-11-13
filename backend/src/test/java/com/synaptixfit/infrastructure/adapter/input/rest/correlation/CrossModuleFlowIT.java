@@ -216,6 +216,10 @@ class CrossModuleFlowIT {
         String deadline = body(post("/api/v1/planner/deadlines").content("""
                 {"title":"Práctica final","type":"ASSIGNMENT","dueAt":"%s"}""".formatted(due)), token, 201);
         String deadlineId = JsonPath.read(deadline, "$.id");
+        // La cuenta atrás de «Tu día» la elige el servidor (ADR 0039).
+        String dashboard = body(get("/api/v1/dashboard"), token, 200);
+        assertThat((String) JsonPath.read(dashboard, "$.nextDeadline.id")).isEqualTo(deadlineId);
+        assertThat((String) JsonPath.read(dashboard, "$.nextDeadline.type")).isEqualTo("ASSIGNMENT");
         String challenge = body(post("/api/v1/challenges").content("""
                 {"title":"Entregar la práctica","endAt":"%s","linkedEntityType":"DELIVERY","linkedEntityId":"%s"}"""
                 .formatted(due.plus(1, ChronoUnit.DAYS), deadlineId)), token, 201);

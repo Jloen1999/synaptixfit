@@ -7,7 +7,6 @@ import '../../../../domain/enums/item_time_status.dart';
 import '../../../../domain/enums/usage_focus.dart';
 import '../../../../domain/enums/planner_enums.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
-import '../../../../domain/models/planner/deadline.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
@@ -41,7 +40,7 @@ class TodayHeroCard extends StatefulWidget {
   });
 
   /// Próximo examen o entrega pendiente: cuenta atrás siempre a la vista.
-  final Deadline? nextDeadline;
+  final HomeNextDeadline? nextDeadline;
   final VoidCallback? onOpenDeadline;
   final DateTime? now;
 
@@ -428,7 +427,7 @@ class _ActionButton extends StatelessWidget {
 class _Countdown extends StatelessWidget {
   const _Countdown({required this.deadline, required this.now, this.onOpen});
 
-  final Deadline deadline;
+  final HomeNextDeadline deadline;
   final DateTime now;
   final VoidCallback? onOpen;
 

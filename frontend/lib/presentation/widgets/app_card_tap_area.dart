@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../theme/tokens.g.dart';
 import 'app_focus_outline.dart';
@@ -17,6 +18,7 @@ class AppCardTapArea extends StatelessWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(TokensRadius.m)),
     this.semanticLabel,
     this.semanticHint,
+    this.semanticActions,
   });
 
   final Widget child;
@@ -31,6 +33,10 @@ class AppCardTapArea extends StatelessWidget {
   /// contenido no lo dice.
   final String? semanticHint;
 
+  /// Acciones extra para el lector en el mismo nodo de la zona (p. ej.
+  /// «Eliminar» de una fila que se borra deslizando).
+  final Map<CustomSemanticsAction, VoidCallback>? semanticActions;
+
   @override
   Widget build(BuildContext context) {
     // Con etiqueta propia se excluye solo el contenido (no el InkWell): así se
@@ -43,6 +49,7 @@ class AppCardTapArea extends StatelessWidget {
         button: onTap != null,
         label: semanticLabel,
         hint: semanticHint,
+        customSemanticsActions: semanticActions,
         child: AppFocusOutline(
           borderRadius: borderRadius,
           child: InkWell(

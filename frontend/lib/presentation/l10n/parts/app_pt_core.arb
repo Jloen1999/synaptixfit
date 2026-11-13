@@ -117,7 +117,7 @@
   "xpGuideIntro": "A XP premeia a constância: ganhas ao fazer o que planeaste. Os limites impedem que seja inflacionada.",
   "xpGuideTraining": "Treinar",
   "xpGuideTrainingDetail": "Cada sessão terminada dá 50 XP, mais 1 por minuto (até 90) e 5 por ponto de esforço. As de menos de 10 minutos não contam e só as 2 primeiras do dia dão XP.",
-  "xpGuideCheckIn": "Registo diário",
+  "xpGuideCheckIn": "Como estás hoje?",
   "xpGuideCheckInDetail": "20 XP pelo primeiro registo de cada dia.",
   "xpGuideBlocks": "Eventos do calendário",
   "xpGuideBlocksDetail": "10 XP por cada meia hora de evento feito (até 4 horas por evento); no máximo 200 XP por dia em eventos. Um evento não se pode marcar como feito antes de começar.",

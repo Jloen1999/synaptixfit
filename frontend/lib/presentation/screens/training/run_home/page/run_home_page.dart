@@ -289,29 +289,51 @@ class _Content extends StatelessWidget {
                 ),
                 const SizedBox(height: TokensSpacing.m),
               ],
-              RunMap(
-                here: state.here,
-                semanticLabel: state.here == null
-                    ? l10n.runMapNoHereSpoken
-                    : l10n.runMapHereSpoken,
-              ),
-              if (state.here != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: TokensSpacing.xs),
-                  child: Text(
-                    l10n.runYouAreHere,
-                    style: context.textStyles.labelMedium?.copyWith(
-                      color: context.colors.onSurfaceVariant,
+              // Sin GPS (web, escritorio) no hay mapa: un mapa vacío de España
+              // no dice nada. Se apunta a mano y se ve la lista (ADR 0039).
+              if (state.supported) ...[
+                RunMap(
+                  here: state.here,
+                  semanticLabel: state.here == null
+                      ? l10n.runMapNoHereSpoken
+                      : l10n.runMapHereSpoken,
+                ),
+                if (state.here != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: TokensSpacing.xs),
+                    child: Text(
+                      l10n.runYouAreHere,
+                      style: context.textStyles.labelMedium?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                ),
-              const SizedBox(height: TokensSpacing.m),
-              if (state.supported) ...[
-                AppPrimaryButton(
-                  label: l10n.runStart,
-                  icon: Icons.directions_run_rounded,
-                  onPressed: () =>
-                      _RunHomeView.open(context, TrainingPaths.recordRun()),
+                const SizedBox(height: TokensSpacing.m),
+                // Con una carrera a medias, lo principal es seguirla.
+                if (unfinished == null)
+                  AppPrimaryButton(
+                    label: l10n.runStart,
+                    icon: Icons.directions_run_rounded,
+                    onPressed: () =>
+                        _RunHomeView.open(context, TrainingPaths.recordRun()),
+                  )
+                else
+                  AppSecondaryButton(
+                    label: l10n.runStart,
+                    icon: const Icon(Icons.directions_run_rounded),
+                    onPressed: () =>
+                        _RunHomeView.open(context, TrainingPaths.recordRun()),
+                  ),
+                const SizedBox(height: TokensSpacing.s),
+                // Un partido o una actividad sin GPS también cuenta (antes
+                // estaba en Gimnasio).
+                AppSecondaryButton(
+                  label: l10n.trainingLogActivityButton,
+                  icon: const Icon(Icons.sports_soccer_rounded),
+                  onPressed: () => _RunHomeView.open(
+                    context,
+                    TrainingPaths.logActivity(from: TrainingSection.run),
+                  ),
                 ),
               ] else ...[
                 AppInlineMessage(
@@ -320,7 +342,7 @@ class _Content extends StatelessWidget {
                 ),
                 const SizedBox(height: TokensSpacing.s),
                 AppPrimaryButton(
-                  label: l10n.runLogByHand,
+                  label: l10n.trainingLogActivityButton,
                   icon: Icons.edit_note_rounded,
                   onPressed: () => _RunHomeView.open(
                     context,
@@ -368,14 +390,8 @@ class _Content extends StatelessWidget {
                   icon: Icons.directions_run_rounded,
                   title: l10n.runActivitiesEmptyTitle,
                   message: l10n.runActivitiesEmptyMessage,
-                  action: TextButton.icon(
-                    onPressed: () => _RunHomeView.open(
-                      context,
-                      TrainingPaths.logActivity(from: TrainingSection.run),
-                    ),
-                    icon: const Icon(Icons.edit_note_rounded),
-                    label: Text(l10n.runLogByHand),
-                  ),
+                  // Sin botón propio: «Apuntar…» ya está arriba (un camino
+                  // por destino).
                 )
               else
                 for (final a in state.activities) ...[

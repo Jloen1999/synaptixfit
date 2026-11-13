@@ -329,8 +329,6 @@
   "academicGuideReimportConfirm": "Importer",
   "academicAddGroupSubject": "Matière",
   "academicAddGroupNotes": "Notes",
-  "academicSubjectFocus": "Me concentrer sur {name}",
-  "academicSubjectEditNamed": "Modifier « {name} »",
   "academicFormatHeading": "Titre",
   "academicFormatBold": "Gras",
   "academicFormatItalic": "Italique",
@@ -555,5 +553,9 @@
   "academicFileDeleteAction": "Supprimer le fichier",
   "academicSubjectArchivedWhere": "Matière archivée. Retrouve-la dans Études › Archivées.",
   "academicSubjectUnarchivedWhere": "Matière restaurée : elle réapparaît dans Études et dans le calendrier.",
-  "academicDeleteNamed": "Supprimer « {title} »"
+  "academicDeleteNamed": "Supprimer « {title} »",
+  "academicFocus": "Me concentrer",
+  "academicSubjectMoreActions": "Plus d’actions pour « {name} »",
+  "academicNewDeadline": "Nouveau rendu",
+  "academicSubjectFocusHere": "Me concentrer sur cette matière"
 }

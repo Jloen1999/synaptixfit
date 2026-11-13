@@ -118,7 +118,7 @@
       }
     }
   },
-  "homeBannerCheckInPendingTitle": "¿Cómo te encuentras hoy?",
+  "homeBannerCheckInPendingTitle": "¿Qué tal estás hoy?",
   "homeBannerCheckInPendingMessage": "Así ajustamos tus recomendaciones.",
   "homeBannerBalanceTitle": "Mantén el equilibrio",
   "homeBannerBalanceMessage": "Alterna estudio, movimiento y descanso.",
@@ -127,7 +127,7 @@
   "homeBannerActionPlan": "Ver en el calendario",
   "homeBannerActionPomodoro": "Descanso guiado",
   "homeBannerActionTrain": "Entrenar",
-  "homeBannerActionCheckIn": "Contar cómo estoy",
+  "homeBannerActionCheckIn": "¿Qué tal estás hoy?",
   "homeWeekTitle": "Esta semana",
   "homeWeekSessions": "{count, plural, =1{1 entreno} other{{count} entrenos}}",
   "@homeWeekSessions": {
@@ -297,7 +297,7 @@
   "homeTrainingInProgress": "En curso",
   "homeTrainingStart": "Empezar",
   "homeTrainingContinue": "Continuar",
-  "homeTrainingCheckIn": "Contar cómo estoy",
+  "homeTrainingCheckIn": "¿Qué tal estás hoy?",
   "homeTrainingCheckInDone": "Ya nos has contado cómo estás",
   "homeTrainingEmptyTitle": "Sin rutina activa",
   "homeTrainingEmptyMessage": "Crea una rutina adaptada a tu carga académica.",

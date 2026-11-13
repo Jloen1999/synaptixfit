@@ -152,27 +152,16 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              // Solo el ⋮: el título no se recorta por los iconos y lo
+              // ocasional (editar, archivar, eliminar) no compite con el
+              // estudio (ADR 0039).
               actions: [
-                // Pomodoro con el tiempo contando para esta asignatura.
-                IconButton(
-                  tooltip: l10n.academicSubjectFocus(subject.name),
-                  icon: const Icon(AppIcons.focusTimer),
-                  onPressed: () => context.push(
-                    AcademicPaths.pomodoro(
-                      subjectId: subject.id,
-                      title: subject.name,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: l10n.academicSubjectEditNamed(subject.name),
-                  icon: const Icon(AppIcons.edit),
-                  onPressed: () => _edit(context, subject),
-                ),
-                IconButton(
-                  tooltip: l10n.academicSubjectDeleteAction,
-                  icon: Icon(AppIcons.delete, color: context.colors.error),
-                  onPressed: () => _delete(context, subject),
+                _SubjectMenu(
+                  subject: subject,
+                  busy: state.busy,
+                  onEdit: () => _edit(context, subject),
+                  onArchiveToggled: () => _toggleArchived(context, subject),
+                  onDelete: () => _delete(context, subject),
                 ),
               ],
               bottom: PreferredSize(
@@ -192,22 +181,32 @@ class _SubjectDetailView extends StatelessWidget with ErrorsMessageMixin {
                 ),
               ),
             ),
-            body: Column(
-              children: [
-                if (state.busy) const LinearProgressIndicator(),
-                AcademicBody(
-                  child: _SubjectHeader(
-                    subject: subject,
-                    semester: state.semester,
-                    color: color,
-                    busy: state.busy,
-                    onArchiveToggled: () => _toggleArchived(context, subject),
+            // La cabecera se desplaza con el contenido: con el texto al 200 %
+            // (o en horizontal) no deja las pestañas sin sitio.
+            body: NestedScrollView(
+              headerSliverBuilder: (context, _) => [
+                if (state.busy)
+                  const SliverToBoxAdapter(child: LinearProgressIndicator()),
+                SliverToBoxAdapter(
+                  child: AcademicBody(
+                    child: _SubjectHeader(
+                      subject: subject,
+                      semester: state.semester,
+                      color: color,
+                      onFocus: () => context.push(
+                        AcademicPaths.pomodoro(
+                          subjectId: subject.id,
+                          title: subject.name,
+                        ),
+                      ),
+                      onNewDeadline: () => context.push(
+                        AcademicPaths.newDeadline(subjectId: subject.id),
+                      ),
+                    ),
                   ),
                 ),
-                const Expanded(
-                  child: TabBarView(children: [ProgressTab(), SyllabusTab()]),
-                ),
               ],
+              body: const TabBarView(children: [ProgressTab(), SyllabusTab()]),
             ),
           ),
         );
@@ -221,15 +220,19 @@ class _SubjectHeader extends StatelessWidget {
     required this.subject,
     required this.semester,
     required this.color,
-    required this.busy,
-    required this.onArchiveToggled,
+    required this.onFocus,
+    required this.onNewDeadline,
   });
 
   final Subject subject;
   final SubjectSemester? semester;
   final Color color;
-  final bool busy;
-  final VoidCallback onArchiveToggled;
+
+  /// «Concentrarme en esta asignatura» (Pomodoro que cuenta para ella).
+  final VoidCallback onFocus;
+
+  /// «+ Entrega» con la asignatura ya puesta.
+  final VoidCallback onNewDeadline;
 
   @override
   Widget build(BuildContext context) {
@@ -308,23 +311,94 @@ class _SubjectHeader extends StatelessWidget {
                       ),
                   ],
                 ),
-                // Acción con texto (antes escondida en un menú de tres puntos).
-                TextButton.icon(
-                  onPressed: busy ? null : onArchiveToggled,
-                  icon: Icon(
-                    subject.archived ? AppIcons.unarchive : AppIcons.archive,
+                const SizedBox(height: TokensSpacing.s),
+                // Lo que más se hace con una asignatura, a la vista y con
+                // texto: estudiarla y apuntar una entrega (ADR 0039). Una
+                // archivada no los lleva, como en Académico.
+                if (!subject.archived)
+                  Wrap(
+                    spacing: TokensSpacing.s,
+                    runSpacing: TokensSpacing.xs,
+                    children: [
+                      AppSecondaryButton(
+                        label: l10n.academicSubjectFocusHere,
+                        icon: const Icon(AppIcons.focusTimer),
+                        onPressed: onFocus,
+                      ),
+                      AppSecondaryButton(
+                        label: l10n.academicNewDeadline,
+                        icon: const Icon(AppIcons.add),
+                        onPressed: onNewDeadline,
+                      ),
+                    ],
                   ),
-                  label: Text(
-                    subject.archived
-                        ? l10n.academicSubjectUnarchive
-                        : l10n.academicSubjectArchive,
-                  ),
-                ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// ⋮ de la asignatura: editar, archivar (o restaurar) y eliminar, con texto.
+class _SubjectMenu extends StatelessWidget {
+  const _SubjectMenu({
+    required this.subject,
+    required this.busy,
+    required this.onEdit,
+    required this.onArchiveToggled,
+    required this.onDelete,
+  });
+
+  final Subject subject;
+  final bool busy;
+  final VoidCallback onEdit;
+  final VoidCallback onArchiveToggled;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return PopupMenuButton<VoidCallback>(
+      tooltip: l10n.academicSubjectMoreActions(subject.name),
+      icon: const Icon(Icons.more_vert_rounded),
+      enabled: !busy,
+      onSelected: (action) => action(),
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: onEdit,
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(AppIcons.edit),
+            title: Text(l10n.commonEdit),
+          ),
+        ),
+        PopupMenuItem(
+          value: onArchiveToggled,
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              subject.archived ? AppIcons.unarchive : AppIcons.archive,
+            ),
+            title: Text(
+              subject.archived
+                  ? l10n.academicSubjectUnarchive
+                  : l10n.academicSubjectArchive,
+            ),
+          ),
+        ),
+        PopupMenuItem(
+          value: onDelete,
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            iconColor: context.colors.error,
+            textColor: context.colors.error,
+            leading: const Icon(AppIcons.delete),
+            title: Text(l10n.academicSubjectDeleteAction),
+          ),
+        ),
+      ],
     );
   }
 }

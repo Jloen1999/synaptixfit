@@ -26,7 +26,7 @@ void main() {
     getOverview = _MockGetOverview();
     changes = FakeDataChanges();
     getToday = _MockGetToday();
-    // Sin resumen de hoy, «Tu equilibrio» no se enseña.
+    // Sin resumen de hoy, «Tu equilibrio» dice el error y deja reintentar.
     when(
       () => getToday(),
     ).thenAnswer((_) async => const Failure(AppError.network()));
@@ -57,7 +57,7 @@ void main() {
   );
 
   blocTest<ProgressOverviewBloc, ProgressOverviewState>(
-    'carga los datos de la pestaña',
+    'carga los datos de la pestaña; si «Tu equilibrio» falla, guarda el error',
     setUp: () => when(
       () => getOverview(),
     ).thenAnswer((_) async => Success(testOverview)),
@@ -65,7 +65,10 @@ void main() {
     act: (bloc) => bloc.add(const ProgressOverviewEvent.started()),
     expect: () => [
       const ProgressOverviewState.loading(),
-      ProgressOverviewState.loaded(testOverview),
+      ProgressOverviewState.loaded(
+        testOverview,
+        todayError: const AppError.network(),
+      ),
     ],
   );
 
@@ -113,9 +116,19 @@ void main() {
     },
     expect: () => [
       const ProgressOverviewState.loading(),
-      ProgressOverviewState.loaded(testOverview),
-      ProgressOverviewState.loaded(testOverview, refreshing: true),
-      ProgressOverviewState.loaded(testOverview),
+      ProgressOverviewState.loaded(
+        testOverview,
+        todayError: const AppError.network(),
+      ),
+      ProgressOverviewState.loaded(
+        testOverview,
+        todayError: const AppError.network(),
+        refreshing: true,
+      ),
+      ProgressOverviewState.loaded(
+        testOverview,
+        todayError: const AppError.network(),
+      ),
     ],
   );
 

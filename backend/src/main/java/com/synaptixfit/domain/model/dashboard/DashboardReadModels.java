@@ -3,6 +3,7 @@ package com.synaptixfit.domain.model.dashboard;
 import com.synaptixfit.domain.model.challenge.Challenge;
 import com.synaptixfit.domain.model.challenge.ChallengeType;
 import com.synaptixfit.domain.model.challenge.Difficulty;
+import com.synaptixfit.domain.model.planner.DeadlineType;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -39,8 +40,12 @@ public final class DashboardReadModels {
         }
     }
 
-    /** Entrega o examen. {@code type} en la BD: 'examen', 'entrega', 'presentacion', 'otro'. */
-    public record Deadline(UUID id, String title, String type, Instant dueAt, boolean completed, String subjectName) {
+    /**
+     * Entrega o examen. {@code type} en la BD: 'examen', 'entrega', 'presentacion', 'otro' (los eventos de hoy lo
+     * exponen así); {@code kind} es el mismo tipo en el dominio, para las reglas (cuenta atrás) y la API.
+     */
+    public record Deadline(UUID id, String title, String type, Instant dueAt, boolean completed, String subjectName,
+                           DeadlineType kind) {
     }
 
     /**

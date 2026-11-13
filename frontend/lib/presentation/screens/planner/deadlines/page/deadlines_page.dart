@@ -1,9 +1,14 @@
-import '../../../../../domain/enums/item_time_status.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/di/app_di.dart';
+import '../../../../../domain/enums/item_time_status.dart';
+import '../../../../../domain/enums/planner_enums.dart';
 import '../../../../../domain/models/planner/deadline.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
@@ -14,25 +19,39 @@ import '../../widgets/deadline_form_sheet.dart';
 import '../../widgets/planner_visuals.dart';
 import '../bloc/deadlines_bloc.dart';
 
+/// Qué se sabe ya de la entrega que se va a apuntar al abrir la pantalla con
+/// el formulario abierto (`?new=1`, ver `PlannerPaths.newDeadline`).
+class DeadlineCreateRequest {
+  const DeadlineCreateRequest({this.subjectId, this.exam = false, this.due});
+
+  final String? subjectId;
+  final bool exam;
+  final DateTime? due;
+}
+
 /// Entregas y exámenes (`/planner/deadlines`). Con [focusId] (desde su
-/// aviso), esa entrega sale la primera y destacada.
+/// aviso), esa entrega sale la primera y destacada. Con [create], el
+/// formulario de una nueva se abre nada más cargar.
 class DeadlinesPage extends StatelessWidget {
-  const DeadlinesPage({super.key, this.focusId});
+  const DeadlinesPage({super.key, this.focusId, this.create});
 
   final String? focusId;
+  final DeadlineCreateRequest? create;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) =>
           getIt<DeadlinesBloc>()..add(DeadlinesEvent.started(focusId: focusId)),
-      child: const _DeadlinesView(),
+      child: _DeadlinesView(create: create),
     );
   }
 }
 
 class _DeadlinesView extends StatefulWidget {
-  const _DeadlinesView();
+  const _DeadlinesView({this.create});
+
+  final DeadlineCreateRequest? create;
 
   @override
   State<_DeadlinesView> createState() => _DeadlinesViewState();
@@ -43,6 +62,12 @@ class _DeadlinesViewState extends State<_DeadlinesView>
   /// Última entrega marcada o desmarcada aquí: el aviso de completar no dice
   /// cuál fue y «Deshacer» la necesita.
   String? _toggledId;
+
+  /// El formulario pedido al abrir ya se abrió (solo una vez).
+  bool _createOpened = false;
+
+  /// Último aviso mostrado: el oyente también salta al cambiar el estado.
+  int _lastNoticeId = 0;
 
   /// Foco del botón «Marcar como hecho» de cada entrega, estable por id: al
   /// guardar el botón sigue ahí (desactivado) y el foco no se pierde.
@@ -61,16 +86,47 @@ class _DeadlinesViewState extends State<_DeadlinesView>
     super.dispose();
   }
 
-  Future<void> _openForm(BuildContext context, {Deadline? deadline}) async {
+  Future<void> _openForm(
+    BuildContext context, {
+    Deadline? deadline,
+    DeadlineCreateRequest? preset,
+  }) async {
     final bloc = context.read<DeadlinesBloc>();
     final draft = await DeadlineFormSheet.show(
       context,
       deadline: deadline,
       subjects: bloc.state.subjects,
+      initialType: preset?.exam ?? false ? DeadlineType.exam : null,
+      initialSubjectId: preset?.subjectId,
+      initialDue: preset?.due,
+      onDelete: deadline == null ? null : () => _delete(context, deadline.id),
     );
     if (draft != null) {
       bloc.add(DeadlinesEvent.saved(id: deadline?.id, draft: draft));
+    } else if (preset != null && context.mounted) {
+      // Se vino a apuntar una entrega y se canceló: se vuelve a donde se
+      // estaba, no a una lista que no se pidió.
+      context.pop();
     }
+  }
+
+  /// Borrar (deslizando la fila o desde el formulario): desaparece ya y el
+  /// aviso ofrece «Deshacer».
+  void _delete(BuildContext context, String id) {
+    FocusScope.of(context).nextFocus();
+    context.read<DeadlinesBloc>().add(DeadlinesEvent.deleted(id));
+  }
+
+  /// Abre el formulario pedido al entrar, cuando ya están las asignaturas.
+  void _openPendingCreate(BuildContext context, DeadlinesState state) {
+    final create = widget.create;
+    if (create == null || _createOpened) return;
+    // Sin cargar (o con error) no se abre: la pantalla enseña el motivo.
+    if (state.status != DeadlinesStatus.ready) return;
+    _createOpened = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_openForm(this.context, preset: create));
+    });
   }
 
   void _onNotice(BuildContext context, DeadlinesNotice notice) {
@@ -137,17 +193,30 @@ class _DeadlinesViewState extends State<_DeadlinesView>
   Widget _content(BuildContext context) {
     final l10n = context.localizations;
     return BlocConsumer<DeadlinesBloc, DeadlinesState>(
-      listenWhen: (a, b) => a.noticeId != b.noticeId && b.notice != null,
-      listener: (context, state) => _onNotice(context, state.notice!),
+      listenWhen: (a, b) =>
+          (a.noticeId != b.noticeId && b.notice != null) ||
+          (a.status != b.status && !_createOpened),
+      listener: (context, state) {
+        _openPendingCreate(context, state);
+        if (state.notice != null && state.noticeId > _lastNoticeId) {
+          _lastNoticeId = state.noticeId;
+          _onNotice(context, state.notice!);
+        }
+      },
       builder: (context, state) {
         return Scaffold(
           appBar: AppPageBar.reading(title: Text(l10n.plannerDeadlinesTitle)),
-          floatingActionButton: FloatingActionButton.extended(
-            heroTag: 'planner-add-deadline',
-            onPressed: state.saving ? null : () => _openForm(context),
-            icon: const Icon(AppIcons.add),
-            label: Text(l10n.plannerNewDeadline),
-          ),
+          // Con la lista vacía el estado vacío ya lleva «Nueva entrega».
+          floatingActionButton:
+              state.status == DeadlinesStatus.ready &&
+                  state.visibleItems.isEmpty
+              ? null
+              : FloatingActionButton.extended(
+                  heroTag: 'planner-add-deadline',
+                  onPressed: state.saving ? null : () => _openForm(context),
+                  icon: const Icon(AppIcons.add),
+                  label: Text(l10n.plannerNewDeadline),
+                ),
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -269,10 +338,7 @@ class _DeadlinesViewState extends State<_DeadlinesView>
                         bloc.add(DeadlinesEvent.completionToggled(d.id));
                       },
                       onEdit: () => _openForm(context, deadline: d),
-                      onDelete: () {
-                        FocusScope.of(context).nextFocus();
-                        bloc.add(DeadlinesEvent.deleted(d.id));
-                      },
+                      onDelete: () => _delete(context, d.id),
                     );
                   },
                 ),
@@ -349,9 +415,11 @@ class _Filters extends StatelessWidget {
 /// cuándo (bloque de fecha a la izquierda y «Vence mañana · 23:59», en aviso si
 /// es hoy o mañana y en error si venció sin hacerse), qué (título) y de qué
 /// (tipo, asignatura, dificultad, en pastillas). La zona de texto abre la
-/// edición; marcar como hecha y borrar son botones aparte (sin toques
-/// anidados). Con el texto grande o poco ancho, la fecha va encima y los
-/// botones debajo.
+/// edición; marcar como hecha es un botón aparte (sin toques anidados).
+/// Borrar no ocupa sitio en cada fila (ADR 0039): se desliza hacia la
+/// izquierda (con «Deshacer»), está en el formulario y, para el lector de
+/// pantalla, es una acción de la fila. Con el texto grande o poco ancho, la
+/// fecha va encima y el botón debajo.
 class _DeadlineTile extends StatelessWidget {
   const _DeadlineTile({
     required this.deadline,
@@ -482,11 +550,14 @@ class _DeadlineTile extends StatelessWidget {
                   : context.colors.onSurfaceVariant,
             ),
     );
-    final delete = IconButton(
-      tooltip: l10n.plannerDeleteDeadlineNamed(d.title),
-      onPressed: busy ? null : onDelete,
-      icon: const Icon(AppIcons.delete),
-    );
+    // «Eliminar» para el lector, en el mismo nodo que recibe el foco.
+    final actions = busy
+        ? null
+        : {
+            CustomSemanticsAction(
+              label: l10n.plannerDeleteDeadlineNamed(d.title),
+            ): onDelete,
+          };
     final card = AppCard(
       padding: const EdgeInsets.all(TokensSpacing.xs),
       child: LayoutBuilder(
@@ -508,6 +579,7 @@ class _DeadlineTile extends StatelessWidget {
                   child: AppCardTapArea(
                     onTap: onEdit,
                     semanticHint: l10n.plannerEditDeadline,
+                    semanticActions: actions,
                     padding: const EdgeInsets.all(TokensSpacing.s),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -519,7 +591,7 @@ class _DeadlineTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                Column(children: [toggle, delete]),
+                toggle,
               ],
             );
           }
@@ -529,6 +601,7 @@ class _DeadlineTile extends StatelessWidget {
               AppCardTapArea(
                 onTap: onEdit,
                 semanticHint: l10n.plannerEditDeadline,
+                semanticActions: actions,
                 padding: const EdgeInsets.all(TokensSpacing.s),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -539,26 +612,63 @@ class _DeadlineTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [toggle, delete],
-              ),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [toggle]),
             ],
           );
         },
       ),
     );
-    if (!highlighted) return card;
     // Borde de color además de la marca con texto: no solo color (1.4.1).
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: context.colors.primary,
-          width: TokensSize.focusRing,
-        ),
-        borderRadius: BorderRadius.circular(TokensRadius.l),
-      ),
-      child: card,
+    final framed = !highlighted
+        ? card
+        : DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: context.colors.primary,
+                width: TokensSize.focusRing,
+              ),
+              borderRadius: BorderRadius.circular(TokensRadius.l),
+            ),
+            child: card,
+          );
+    return Dismissible(
+      key: ValueKey('deadline-${d.id}'),
+      direction: busy ? DismissDirection.none : DismissDirection.endToStart,
+      onDismissed: (_) => onDelete(),
+      background: _DeleteBackground(label: l10n.plannerDeleteDeadline),
+      child: framed,
     );
   }
+}
+
+/// Fondo que asoma al deslizar una entrega para borrarla: icono y verbo, no
+/// solo color.
+class _DeleteBackground extends StatelessWidget {
+  const _DeleteBackground({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: context.colors.errorContainer,
+      borderRadius: BorderRadius.circular(TokensRadius.l),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.l),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            label,
+            style: context.textStyles.labelLarge?.copyWith(
+              color: context.colors.onErrorContainer,
+            ),
+          ),
+          const SizedBox(width: TokensSpacing.s),
+          Icon(AppIcons.delete, color: context.colors.onErrorContainer),
+        ],
+      ),
+    ),
+  );
 }

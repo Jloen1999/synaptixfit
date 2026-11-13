@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:synaptixfit/domain/enums/cognitive_level.dart';
+import 'package:synaptixfit/domain/enums/planner_enums.dart';
 import 'package:synaptixfit/data/remote_data_source/home/dto/home_dashboard_dto.dart';
 import 'package:synaptixfit/data/remote_data_source/home/dto/home_due_review_dto.dart';
 import 'package:synaptixfit/domain/enums/home_acwr_zone.dart';
@@ -41,6 +43,8 @@ void main() {
       'attentionCapacity': 0.81,
       'lastBlockMinutes': 50,
       'lastRestAt': null,
+      'loadLevel': 'CRITICAL',
+      'attentionLevel': 'HIGH',
     },
     'crossRegulation': {
       'acwr': 1.62,
@@ -106,6 +110,13 @@ void main() {
       'type': 'PHYSICAL_OVERLOAD',
       'params': {'acwr': 1.62, 'maxStudyMinutes': 180},
     },
+    'nextDeadline': {
+      'id': 'parcial',
+      'title': 'Parcial',
+      'type': 'EXAM',
+      'dueAt': '2026-11-20T08:00:00Z',
+      'subjectName': 'Histología',
+    },
   };
 
   test('mapea el resumen del inicio al dominio', () {
@@ -142,6 +153,12 @@ void main() {
     expect(dashboard.banner.type, HomeBannerType.physicalOverload);
     expect(dashboard.banner.param('maxStudyMinutes'), 180);
     expect(dashboard.banner.param('missing'), 0);
+
+    // Niveles y cuenta atrás los decide el servidor (ADR 0039).
+    expect(dashboard.cognitive.loadLevel, CognitiveLevel.critical);
+    expect(dashboard.cognitive.attentionLevel, CognitiveLevel.high);
+    expect(dashboard.nextDeadline!.type, DeadlineType.exam);
+    expect(dashboard.nextDeadline!.dueAt.isUtc, isFalse);
   });
 
   test('tolera bloques ausentes y tipos desconocidos', () {

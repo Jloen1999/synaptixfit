@@ -12,11 +12,15 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../health_consent/page/health_consent_sheet.dart';
 import '../../training_routes.dart';
+import '../../widgets/check_in_questions.dart';
 import '../bloc/quick_check_in_bloc.dart';
 
-/// Tarjeta «¿Qué tal estás hoy?» de Rutinas: tres preguntas de un toque y,
-/// después, cómo se adapta hoy el entreno y por qué («Hoy harás menos series
-/// porque dormiste mal»). El registro completo sigue a un toque.
+/// «¿Qué tal estás hoy?» en Entreno › Gimnasio: el único registro diario
+/// (ADR 0039). Plegado en una línea mientras no se contesta, para no ocupar
+/// la pantalla; al abrirlo, tres preguntas de un toque y se guarda solo con la
+/// tercera. Después dice cómo se adapta hoy el entreno y por qué («Hoy harás
+/// menos series porque dormiste mal»). «Añadir detalles» (estrés, dolores,
+/// notas) abre la pantalla del registro.
 class QuickCheckInCard extends StatelessWidget {
   const QuickCheckInCard({super.key});
 
@@ -28,8 +32,16 @@ class QuickCheckInCard extends StatelessWidget {
   );
 }
 
-class _QuickCheckInView extends StatelessWidget {
+class _QuickCheckInView extends StatefulWidget {
   const _QuickCheckInView();
+
+  @override
+  State<_QuickCheckInView> createState() => _QuickCheckInViewState();
+}
+
+class _QuickCheckInViewState extends State<_QuickCheckInView> {
+  /// Preguntas desplegadas (de entrada, plegadas en una línea).
+  bool _open = false;
 
   @override
   Widget build(BuildContext context) =>
@@ -37,18 +49,45 @@ class _QuickCheckInView extends StatelessWidget {
         builder: (context, state) {
           if (state.loading) {
             return const AppSkeletonGroup(
-              child: AppSkeleton(height: TokensSize.guideSkeleton),
+              child: AppSkeleton(height: TokensSize.skeletonRow),
             );
           }
+          final open = _open || state.editing;
           return AppCard(
+            padding: EdgeInsets.zero,
             child: AnimatedSize(
               duration: context.motion(TokensDuration.normal),
               alignment: Alignment.topCenter,
-              child: state.asking
-                  ? _Questions(state: state)
-                  : _Explanation(
-                      adaptation: state.adaptation!,
-                      announce: state.justSent,
+              child: !state.asking
+                  ? Padding(
+                      padding: const EdgeInsets.all(TokensSpacing.m),
+                      child: _Explanation(
+                        adaptation: state.adaptation!,
+                        announce: state.justSent,
+                      ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // La fila sigue ahí al abrir: pliega y despliega, y
+                        // el foco no se pierde.
+                        _Header(
+                          open: open,
+                          onToggle: state.editing
+                              ? null
+                              : () => setState(() => _open = !_open),
+                        ),
+                        if (open)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              TokensSpacing.m,
+                              0,
+                              TokensSpacing.m,
+                              TokensSpacing.m,
+                            ),
+                            child: _Questions(state: state),
+                          ),
+                      ],
                     ),
             ),
           );
@@ -56,7 +95,53 @@ class _QuickCheckInView extends StatelessWidget {
       );
 }
 
-/// Las tres preguntas: cómo dormiste, la energía y las agujetas.
+/// Fila «¿Qué tal estás hoy?» que pliega y despliega las preguntas.
+class _Header extends StatelessWidget {
+  const _Header({required this.open, required this.onToggle});
+
+  final bool open;
+
+  /// Nulo al cambiar un registro ya hecho (se cierra con «Cancelar»).
+  final VoidCallback? onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    return MergeSemantics(
+      child: Semantics(
+        header: true,
+        expanded: onToggle == null ? null : open,
+        child: AppFocusOutline(
+          child: ListTile(
+            leading: Icon(Icons.mood_rounded, color: context.colors.secondary),
+            title: Text(
+              l10n.trainingQuickCheckInTitle,
+              style: context.textStyles.titleMedium,
+            ),
+            // Se avisa antes de que la tercera respuesta guarda (WCAG 3.2.2).
+            subtitle: Text(
+              onToggle == null
+                  ? l10n.trainingCheckInChangeHint
+                  : l10n.trainingQuickCheckInHint,
+            ),
+            trailing: onToggle == null
+                ? null
+                : Icon(
+                    open
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                  ),
+            onTap: onToggle,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Las tres preguntas. La primera vez del día, la tercera respuesta guarda
+/// (tres toques, avisado en la fila de arriba). Al cambiar un registro ya
+/// hecho, las tres vienen contestadas: se guarda con «Guardar».
 class _Questions extends StatefulWidget {
   const _Questions({required this.state});
 
@@ -81,105 +166,74 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
     _soreness = answers?.soreness;
   }
 
+  bool get _complete => _sleep != null && _energy != null && _soreness != null;
+
+  Future<void> _save() async {
+    if (!_complete) return;
+    final bloc = context.read<QuickCheckInBloc>();
+    if (bloc.state.sending) return;
+    final input = QuickCheckIn(
+      sleepQuality: _sleep!,
+      energy: _energy!,
+      soreness: _soreness!,
+    );
+    // Datos de salud: antes, el permiso expreso (ADR 0034).
+    if (await ensureHealthConsent(context)) {
+      bloc.add(QuickCheckInEvent.submitted(input));
+    }
+  }
+
+  /// La primera vez del día, con las tres contestadas se guarda solo.
+  void _answered() {
+    if (!widget.state.editing) _save();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final ready = _sleep != null && _energy != null && _soreness != null;
-    // Escalas 1-5 del registro diario: bien/alta/nada son los extremos buenos.
+    final editing = widget.state.editing;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: context.colors.secondaryContainer,
-              child: Icon(
-                Icons.mood_rounded,
-                color: context.colors.onSecondaryContainer,
-              ),
-            ),
-            const SizedBox(width: TokensSpacing.m),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      l10n.trainingQuickCheckInTitle,
-                      style: context.textStyles.titleMedium,
-                    ),
-                  ),
-                  Text(
-                    l10n.trainingQuickCheckInHint,
-                    style: context.textStyles.bodySmall?.copyWith(
-                      color: context.colors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        CheckInQuestions(
+          sleep: _sleep,
+          energy: _energy,
+          soreness: _soreness,
+          onSleep: (v) {
+            setState(() => _sleep = v);
+            _answered();
+          },
+          onEnergy: (v) {
+            setState(() => _energy = v);
+            _answered();
+          },
+          onSoreness: (v) {
+            setState(() => _soreness = v);
+            _answered();
+          },
         ),
-        const SizedBox(height: TokensSpacing.m),
-        _Question(
-          label: l10n.trainingQuickSleep,
-          options: [
-            (5, l10n.trainingQuickGood),
-            (3, l10n.trainingQuickSoSo),
-            (1, l10n.trainingQuickBad),
-          ],
-          value: _sleep,
-          onChanged: (v) => setState(() => _sleep = v),
-        ),
-        _Question(
-          label: l10n.trainingQuickEnergy,
-          options: [
-            (5, l10n.trainingQuickHigh),
-            (3, l10n.trainingQuickMid),
-            (1, l10n.trainingQuickLow),
-          ],
-          value: _energy,
-          onChanged: (v) => setState(() => _energy = v),
-        ),
-        _Question(
-          label: l10n.trainingQuickSoreness,
-          options: [
-            (1, l10n.trainingQuickSoreNone),
-            (3, l10n.trainingQuickSoreSome),
-            (5, l10n.trainingQuickSoreLot),
-          ],
-          value: _soreness,
-          onChanged: (v) => setState(() => _soreness = v),
-        ),
+        if (widget.state.sending && !editing) const LinearProgressIndicator(),
         if (widget.state.error case final error?) ...[
           AppInlineMessage(message: errorMessage(context, error)),
           const SizedBox(height: TokensSpacing.s),
+          if (!editing)
+            AppSecondaryButton(
+              label: l10n.commonRetry,
+              icon: const Icon(AppIcons.refresh),
+              onPressed: _complete ? _save : null,
+            ),
         ],
-        AppPrimaryButton(
-          label: l10n.trainingQuickSave,
-          icon: Icons.check_rounded,
-          loading: widget.state.sending,
-          onPressed: ready
-              ? () async {
-                  final bloc = context.read<QuickCheckInBloc>();
-                  final input = QuickCheckIn(
-                    sleepQuality: _sleep!,
-                    energy: _energy!,
-                    soreness: _soreness!,
-                  );
-                  // Datos de salud: antes, el permiso expreso (ADR 0034).
-                  if (await ensureHealthConsent(context)) {
-                    bloc.add(QuickCheckInEvent.submitted(input));
-                  }
-                }
-              : null,
-        ),
+        if (editing)
+          AppPrimaryButton(
+            label: l10n.trainingCheckInUpdateAction,
+            loading: widget.state.sending,
+            onPressed: _complete ? _save : null,
+          ),
         Wrap(
           alignment: WrapAlignment.end,
           spacing: TokensSpacing.s,
           children: [
-            if (widget.state.editing)
+            if (editing)
               TextButton(
                 onPressed: () => context.read<QuickCheckInBloc>().add(
                   const QuickCheckInEvent.editCancelled(),
@@ -187,7 +241,7 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
                 child: Text(l10n.commonCancel),
               ),
             TextButton(
-              onPressed: () => context.push<void>(TrainingPaths.checkIn),
+              onPressed: () => context.push<void>(TrainingPaths.checkInDetails),
               child: Text(l10n.trainingQuickFull),
             ),
           ],
@@ -197,58 +251,39 @@ class _QuestionsState extends State<_Questions> with ErrorsMessageMixin {
   }
 }
 
-class _Question extends StatelessWidget {
-  const _Question({
-    required this.label,
-    required this.options,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final String label;
-  final List<(int, String)> options;
-  final int? value;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: TokensSpacing.m),
-    child: Semantics(
-      container: true,
-      label: label,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ExcludeSemantics(
-            child: Text(label, style: context.textStyles.titleSmall),
-          ),
-          const SizedBox(height: TokensSpacing.xs),
-          Wrap(
-            spacing: TokensSpacing.s,
-            runSpacing: TokensSpacing.s,
-            children: [
-              for (final (score, text) in options)
-                ChoiceChip(
-                  label: Text(text),
-                  selected: value == score,
-                  onSelected: (_) => onChanged(score),
-                ),
-            ],
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
 /// Después de registrar: entreno normal o cuánto se recorta y por qué.
-class _Explanation extends StatelessWidget {
+class _Explanation extends StatefulWidget {
   const _Explanation({required this.adaptation, required this.announce});
 
   final TodayAdaptation adaptation;
 
   /// Anunciar al lector (solo justo después de enviar).
   final bool announce;
+
+  @override
+  State<_Explanation> createState() => _ExplanationState();
+}
+
+class _ExplanationState extends State<_Explanation> {
+  /// Al guardar, las preguntas desaparecen: el foco pasa a «Cambiar» para no
+  /// perderse (WCAG 2.4.3).
+  final _changeFocus = FocusNode(debugLabel: 'check-in-change');
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.announce) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _changeFocus.requestFocus();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _changeFocus.dispose();
+    super.dispose();
+  }
 
   /// Sin causa del servidor no se inventa una: frase neutra.
   static String _fatigueReason(AppLocalizations l10n, FatigueCause? cause) =>
@@ -271,10 +306,11 @@ class _Explanation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    final adaptation = widget.adaptation;
     final adapted = adaptation.adapted;
     final color = adapted ? context.palette.warning : context.palette.success;
     return Semantics(
-      liveRegion: announce,
+      liveRegion: widget.announce,
       container: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -318,10 +354,12 @@ class _Explanation extends StatelessWidget {
             spacing: TokensSpacing.s,
             children: [
               TextButton(
-                onPressed: () => context.push<void>(TrainingPaths.checkIn),
+                onPressed: () =>
+                    context.push<void>(TrainingPaths.checkInDetails),
                 child: Text(l10n.trainingQuickFull),
               ),
               TextButton.icon(
+                focusNode: _changeFocus,
                 onPressed: () => context.read<QuickCheckInBloc>().add(
                   const QuickCheckInEvent.editRequested(),
                 ),

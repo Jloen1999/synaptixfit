@@ -383,7 +383,7 @@ class _HomeContentState extends State<_HomeContent> {
     }
 
     // «Tu día»: lo primero que se ve, con lo que toca ahora y su único botón.
-    final nextDeadline = state.nextDeadline;
+    final nextDeadline = dashboard.nextDeadline;
     final hero = TodayHeroCard(
       dashboard: dashboard,
       focus: focus,

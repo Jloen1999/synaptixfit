@@ -401,7 +401,7 @@
   "profileHealthConsentTitle": "Dados de como te sentes",
   "profileHealthConsentGiven": "Permissão dada a {date}",
   "profileHealthConsentGivenNoDate": "Permissão dada",
-  "profileHealthConsentNotGiven": "Sem permissão: o teu registo diário não é guardado",
+  "profileHealthConsentNotGiven": "Sem permissão: «Como estás hoje?» não é guardado",
   "profileHealthConsentGive": "Dar permissão",
   "profileHealthConsentWithdraw": "Retirar",
   "profileHealthConsentWithdrawTitle": "Retirar a tua permissão?",

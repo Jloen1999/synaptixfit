@@ -61,7 +61,6 @@
   "plannerDeadlinesThisWeek": "Entregas de la semana",
   "plannerMenuDeadlines": "Entregas y exámenes",
   "plannerMenuSuggestions": "Sugerir un plan",
-  "plannerMenuPomodoro": "Pomodoro",
   "plannerMenuScheduleImport": "Importar o exportar horario",
   "plannerMoreOptions": "Más opciones",
   "plannerReminderLine": "{type, select, STUDY{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} REVIEW{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} SPORT{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} PERSONAL{Te avisaremos antes de que empiece, con la antelación que elegiste en «Más avisos».} CLASS{Si tienes activado el aviso de clases en «Más avisos», te avisaremos poco antes de empezar.} EXAM{Te avisaremos del examen los días antes que elegiste en «Más avisos».} DELIVERY{Te avisaremos de la entrega los días antes que elegiste en «Más avisos».} other{Este tipo de evento no lleva aviso.}}",
@@ -850,5 +849,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "plannerDueTomorrow": "Mañana",
+  "plannerDueInAWeek": "En una semana",
+  "plannerDeleteDeadline": "Eliminar",
+  "plannerOpensDeadlineForm": "Abre el formulario de entrega"
 }
