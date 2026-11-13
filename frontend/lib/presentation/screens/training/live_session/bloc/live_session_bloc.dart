@@ -28,8 +28,6 @@ import '../../../../../domain/use_cases/training/get_session_use_case.dart';
 import '../../../../../domain/use_cases/training/pause_session_use_case.dart';
 import '../../../../../domain/use_cases/training/record_set_use_case.dart';
 import '../../../../../domain/use_cases/training/resume_session_use_case.dart';
-import '../../../../../domain/use_cases/training/get_session_clock_intro_hidden_use_case.dart';
-import '../../../../../domain/use_cases/training/hide_session_clock_intro_use_case.dart';
 import '../../../../../domain/models/training/live_session_draft.dart';
 import '../../../../../domain/use_cases/training/load_live_session_draft_use_case.dart';
 import '../../../../../domain/use_cases/training/save_live_session_draft_use_case.dart';
@@ -58,8 +56,6 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     required this._savePending,
     required this._pauseSession,
     required this._resumeSession,
-    required this._getClockIntroHidden,
-    required this._hideClockIntro,
     required this._loadDraft,
     required this._saveDraft,
     DateTime Function()? clock,
@@ -82,16 +78,6 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         ),
       );
     });
-    on<LiveSessionLoadSuggestionToggled>((e, emit) {
-      if (!state.loadSuggestions.containsKey(e.plannedExerciseId)) return;
-      emit(
-        state.copyWith(
-          acceptedLoad: e.accepted
-              ? {...state.acceptedLoad, e.plannedExerciseId}
-              : ({...state.acceptedLoad}..remove(e.plannedExerciseId)),
-        ),
-      );
-    });
     on<LiveSessionTicked>((_, emit) => _recalculate(emit));
     on<LiveSessionResumed>((_, emit) => _recalculate(emit, resumed: true));
     on<LiveSessionExerciseSelected>(
@@ -100,7 +86,9 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     on<LiveSessionSetRecorded>(_onSetRecorded);
     on<LiveSessionSetDeleted>(_onSetDeleted);
     on<LiveSessionRestStarted>(
-      (e, emit) => emit(_withRest(state, e.seconds, from: _clock())),
+      (e, emit) => emit(
+        _withRest(state, e.seconds, from: _clock()).copyWith(restForSet: null),
+      ),
     );
     on<LiveSessionRestAdjusted>((e, emit) {
       final endsAt = state.restEndsAt;
@@ -130,11 +118,6 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     on<LiveSessionPauseRequested>(_onPause);
     on<LiveSessionResumeRequested>(_onResume);
     on<LiveSessionExerciseSwapped>(_onExerciseSwapped);
-    on<LiveSessionClockExplained>((e, emit) async {
-      emit(state.copyWith(explainClock: false));
-      // Si no se puede guardar, la próxima vez se vuelve a explicar: no es grave.
-      if (e.hideNextTime) await _hideClockIntro();
-    });
   }
 
   final GetSessionUseCaseContract _getSession;
@@ -152,21 +135,19 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
   final SavePendingSetsUseCaseContract _savePending;
   final PauseSessionUseCaseContract _pauseSession;
   final ResumeSessionUseCaseContract _resumeSession;
-  final GetSessionClockIntroHiddenUseCaseContract _getClockIntroHidden;
-  final HideSessionClockIntroUseCaseContract _hideClockIntro;
   final LoadLiveSessionDraftUseCaseContract _loadDraft;
   final SaveLiveSessionDraftUseCaseContract _saveDraft;
   final DateTime Function() _clock;
-
-  /// Una sesión que lleva menos de esto abierta y sin series se acaba de
-  /// empezar: es cuando se explica el cronómetro.
-  static const _introSeconds = 120;
 
   /// Cada cuántos segundos se reintenta subir las series pendientes.
   static const _retrySeconds = 15;
 
   /// Prefijo del id de las series que solo están en el teléfono.
   static const pendingPrefix = 'pending-';
+
+  /// Clave de una serie de trabajo para saber de quién es el descanso.
+  static String restKey(String? plannedExerciseId, int setNumber) =>
+      '${plannedExerciseId ?? ''}/$setNumber';
 
   static const _maxExerciseSeconds = 14400;
   static const _maxSessionSeconds = 86400;
@@ -268,13 +249,6 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       emit,
       (await _loadDraft(session.id)).valueOrNull ?? const LiveSessionDraft(),
     );
-    if (session.sets.isEmpty &&
-        pending.isEmpty &&
-        elapsed < _introSeconds &&
-        // Si no se puede leer la preferencia, se explica.
-        !((await _getClockIntroHidden()).valueOrNull ?? false)) {
-      emit(state.copyWith(explainClock: true));
-    }
     // Ayudas que no bloquean la sesión: si fallan, simplemente no se muestran.
     final (last, bookends, loads) = await (
       _getLastPerformance(),
@@ -445,7 +419,12 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         .where((e) => e.id == record.plannedExerciseId)
         .firstOrNull;
     final rest = startRest ? planned?.parameters.restSeconds : null;
-    final next = rest == null ? s : _withRest(s, rest, from: at);
+    // El descanso es de esta serie: desmarcarla lo para (como en Hevy o Strong).
+    final next = rest == null
+        ? s
+        : _withRest(s, rest, from: at).copyWith(
+            restForSet: restKey(record.plannedExerciseId, record.setNumber),
+          );
     final session = next.session;
     if (session == null) return next;
     return next.copyWith(
@@ -498,20 +477,27 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     if (state.paused) await _resumeNow(emit);
     // Mientras se guarda o se sube otra, esta espera en la cola en vez de perderse.
     if (state.saving) {
-      await _queue(emit, id, record, tappedAt, keepSaving: true);
+      await _queue(
+        emit,
+        id,
+        record,
+        tappedAt,
+        keepSaving: true,
+        startRest: event.startRest,
+      );
       return;
     }
     emit(state.copyWith(saving: true));
     // Con series pendientes, esta va detrás de ellas para no desordenarlas.
     if (state.pendingSets.isNotEmpty) {
-      await _queue(emit, id, record, tappedAt);
+      await _queue(emit, id, record, tappedAt, startRest: event.startRest);
       return;
     }
     final result = await _recordSet(id, record);
     switch (result) {
       // Sin conexión: la serie se guarda en el teléfono y se sube después.
       case Failure(error: NetworkError()):
-        await _queue(emit, id, record, tappedAt);
+        await _queue(emit, id, record, tappedAt, startRest: event.startRest);
         return;
       case Success(value: final session):
         emit(
@@ -523,7 +509,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
             record,
             tappedAt,
             // Si mientras tanto se apuntó otra, su descanso es el que vale.
-            startRest: state.pendingSets.isEmpty,
+            startRest: event.startRest && state.pendingSets.isEmpty,
           ),
         );
         // Si otra serie esperó en la cola mientras esta se guardaba, se sube ya.
@@ -537,14 +523,16 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
   }
 
   /// Guarda [record] como pendiente (también en el teléfono) y lo muestra; el
-  /// descanso arranca igual que si se hubiera subido. Con [keepSaving] no toca
-  /// `saving`: otra operación en curso lo apagará.
+  /// descanso arranca igual que si se hubiera subido (salvo con [startRest]
+  /// falso). Con [keepSaving] no toca `saving`: otra operación en curso lo
+  /// apagará.
   Future<void> _queue(
     Emitter<LiveSessionState> emit,
     String sessionId,
     SetRecord record,
     DateTime tappedAt, {
     bool keepSaving = false,
+    bool startRest = true,
   }) async {
     // Se publica antes de guardar en el teléfono: dos series apuntadas a la
     // vez (sin conexión) leen la cola ya actualizada y ninguna pisa a la otra.
@@ -559,6 +547,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         ),
         record,
         tappedAt,
+        startRest: startRest,
       ),
     );
     await _savePending(sessionId, state.pendingSets);
@@ -580,7 +569,7 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       repsDone: r.repsDone,
       weightKg: r.weightKg,
       completed: r.completed,
-      failedReps: r.failedReps,
+      failedReps: r.failedReps ?? 0,
       durationSeconds: r.durationSeconds,
       distanceMeters: r.distanceMeters,
       activeSeconds: r.activeSeconds,
@@ -663,12 +652,37 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
     _ => false,
   };
 
+  /// Desmarcar una serie: deja de contar al momento, para su descanso (si es
+  /// el que corre) y vuelve a ser la que toca de su ejercicio. La página
+  /// ofrece «Deshacer» (la vuelve a apuntar tal cual).
   Future<void> _onSetDeleted(
     LiveSessionSetDeleted event,
     Emitter<LiveSessionState> emit,
   ) async {
+    // Mientras se guarda otra serie el toque no se pierde: espera a que acabe.
+    if (state.saving) await stream.firstWhere((s) => !s.saving);
     final id = state.sessionId;
     if (id == null || state.saving || state.completed) return;
+    final target = [
+      ...?state.session?.sets,
+      ...?state.session?.warmupSets,
+    ].where((s) => s.id == event.setId).firstOrNull;
+    if (target != null && !target.warmup) {
+      final plannedId = target.plannedExerciseId;
+      final ownsRest =
+          state.restEndsAt != null &&
+          state.restForSet == restKey(plannedId, target.setNumber);
+      emit(
+        state.copyWith(
+          restRemaining: ownsRest ? null : state.restRemaining,
+          restEndsAt: ownsRest ? null : state.restEndsAt,
+          restForSet: ownsRest ? null : state.restForSet,
+          activeExerciseId: state.exercises.any((e) => e.id == plannedId)
+              ? plannedId
+              : state.activeExerciseId,
+        ),
+      );
+    }
     // Una serie que aún no subió se borra solo del teléfono.
     if (event.setId.startsWith(pendingPrefix)) {
       final session = state.session;
@@ -1031,7 +1045,6 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
       ],
       originals: {...s.originals, plannedId: original},
       loadSuggestions: {...s.loadSuggestions}..remove(plannedId),
-      acceptedLoad: {...s.acceptedLoad}..remove(plannedId),
     );
   }
 

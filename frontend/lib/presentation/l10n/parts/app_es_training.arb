@@ -380,9 +380,6 @@
       }
     }
   },
-  "trainingAbandon": "Abandonar",
-  "trainingAbandonTitle": "¿Abandonar la sesión?",
-  "trainingAbandonMessage": "Se descartarán las series registradas y no recibirás experiencia.",
   "trainingRest": "Descanso",
   "trainingRestSemantics": "Descanso: quedan {seconds} segundos",
   "@trainingRestSemantics": {
@@ -394,7 +391,6 @@
   },
   "trainingRestLess": "Quitar 15 segundos",
   "trainingRestMore": "Añadir 15 segundos",
-  "trainingSkip": "Saltar",
   "trainingSetsProgress": "{done}/{total} series",
   "@trainingSetsProgress": {
     "placeholders": {
@@ -464,9 +460,8 @@
   },
   "trainingSetNotCompleted": "No completada",
   "trainingRepsDone": "Repeticiones hechas",
-  "trainingDeleteSet": "Borrar serie",
-  "trainingSessionAlreadyCompleted": "Esta sesión ya está finalizada.",
-  "trainingFinishAction": "Finalizar",
+  "trainingSessionAlreadyCompleted": "Esta sesión ya está terminada.",
+  "trainingFinishAction": "Terminar",
   "trainingRpeLabel": "Esfuerzo percibido (1-10)",
   "trainingRpeValue": "Esfuerzo {value}/10",
   "@trainingRpeValue": {
@@ -497,30 +492,6 @@
       }
     }
   },
-  "trainingXpGained": "+{xp} XP",
-  "@trainingXpGained": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingLevelUp": "¡Subes al nivel {level}!",
-  "@trainingLevelUp": {
-    "placeholders": {
-      "level": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingLevelXp": "{xp} XP en el nivel",
-  "@trainingLevelXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "trainingBackToRoutines": "Volver a rutinas",
   "trainingNoSessionsTitle": "Sin sesiones todavía",
   "trainingNoSessionsMessage": "Cuando entrenes, verás aquí tus sesiones.",
@@ -528,16 +499,6 @@
   "trainingSessionRoutine": "Sesión de rutina",
   "trainingSessionWeekly": "Sesión del plan semanal",
   "trainingInProgress": "En curso",
-  "trainingUnmark": "Desmarcar",
-  "trainingUnmarkTitle": "¿Desmarcar la sesión?",
-  "trainingUnmarkMessage": "El día volverá a estar pendiente y se restarán {xp} XP.",
-  "@trainingUnmarkMessage": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "trainingSetsCount": "{count, plural, =1{1 serie} other{{count} series}}",
   "@trainingSetsCount": {
     "placeholders": {
@@ -684,7 +645,7 @@
   "trainingMsgPlanSaved": "Plan semanal guardado",
   "trainingMsgPlanDeleted": "Plan semanal eliminado",
   "trainingMsgSessionUnmarked": "Sesión desmarcada",
-  "trainingMsgSessionAbandoned": "Sesión abandonada",
+  "trainingMsgSessionAbandoned": "Sesión descartada",
   "trainingMsgSetSaved": "Serie registrada",
   "trainingErrorExerciseNotFound": "Ese ejercicio no existe.",
   "trainingErrorExerciseInactive": "Ese ejercicio ya no está disponible.",
@@ -699,8 +660,8 @@
   "trainingErrorRoutineReorderMismatch": "El nuevo orden no coincide con los ejercicios del día.",
   "trainingErrorSessionNotFound": "No encontramos esa sesión.",
   "trainingErrorSessionSetNotFound": "Esa serie no existe.",
-  "trainingErrorSessionAlreadyCompleted": "Esta sesión ya está finalizada.",
-  "trainingErrorSessionNotCompleted": "Esta sesión no está finalizada.",
+  "trainingErrorSessionAlreadyCompleted": "Esta sesión ya está terminada.",
+  "trainingErrorSessionNotCompleted": "Esta sesión no está terminada.",
   "trainingErrorSessionDayMismatch": "Ese día no pertenece a la rutina.",
   "trainingErrorTrainingProfileRequired": "Completa tu perfil de bienestar para generar una rutina.",
   "trainingErrorTrainingNoCompatibleExercises": "No hay ejercicios compatibles con tu equipamiento y nivel.",
@@ -868,15 +829,6 @@
   "trainingRepeatDayMessage": "Ya lo terminaste. Si lo repites, cuenta como una sesión nueva.",
   "trainingContinueDay": "Continuar",
   "trainingNextDay": "Siguiente",
-  "trainingFinishEarlyTitle": "¿Terminar ya la sesión?",
-  "trainingFinishEarlyMessage": "{count, plural, =1{Te falta 1 serie.} other{Te faltan {count} series.}} Se guardará lo que has hecho.",
-  "@trainingFinishEarlyMessage": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "trainingAllSetsDone": "¡Todas las series hechas!",
   "trainingSetLogged": "Serie {n} registrada",
   "@trainingSetLogged": {
@@ -1097,8 +1049,6 @@
     }
   },
   "trainingHowToEmpty": "Aún no hay instrucciones escritas para este ejercicio: guíate por la demostración.",
-  "trainingMissedReps": "¿Te faltaron repeticiones?",
-  "trainingMissedRepsHint": "Déjalo en 0 si hiciste la serie entera.",
   "trainingChipSetsRepsLabel": "{sets, plural, =1{1 serie} other{{sets} series}} × {reps} reps",
   "@trainingChipSetsRepsLabel": {
     "placeholders": {
@@ -1202,7 +1152,7 @@
       }
     }
   },
-  "trainingSkipDay": "Saltar",
+  "trainingSkipDay": "Saltar este día",
   "trainingSkipDayTitle": "¿Saltar este día?",
   "trainingSkipDayMessage": "La rutina pasa al día siguiente y el calendario quita este entreno. Para recuperarlo: abre la rutina, toca ese día y pulsa «Recuperar».",
   "trainingUnskipDay": "Recuperar",
@@ -1210,10 +1160,9 @@
   "trainingDayUnskipped": "Día recuperado",
   "trainingSkipEarlierTitle": "¿Entrenar este día?",
   "trainingSkipEarlierMessage": "Aún quedan días anteriores por hacer. Al terminar este, se darán por saltados. Para recuperarlos: en la rutina, toca cada día y pulsa «Recuperar».",
-  "trainingFinishWithLogged": "Terminar con lo registrado",
-  "trainingDiscardSession": "Descartar",
+  "trainingDiscardSession": "Descartar sesión",
   "trainingDiscardSessionTitle": "¿Descartar la sesión?",
-  "trainingDiscardSessionMessage": "Se borrarán las series que registraste en esa sesión.",
+  "trainingDiscardSessionMessage": "Se borran las series que has marcado. No se puede deshacer.",
   "trainingSessionSavedOnItsDay": "Sesión guardada en su día",
   "trainingSessionDiscarded": "Sesión descartada",
   "trainingSessionFiguresTitle": "¿Cómo fue la sesión?",
@@ -1222,14 +1171,7 @@
   "trainingSessionCorrected": "Sesión corregida",
   "trainingDeleteSession": "Eliminar",
   "trainingDeleteSessionTitle": "¿Eliminar la sesión?",
-  "trainingDeleteSessionMessage": "Se restarán {xp} XP y dejará de contar para tu carga, tus retos y el calendario. El día de la rutina volverá a estar pendiente.",
-  "@trainingDeleteSessionMessage": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
+  "trainingDeleteSessionMessage": "Se borra para siempre con sus series. El día de la rutina vuelve a quedar por hacer.",
   "trainingSessionDeleted": "Sesión eliminada",
   "trainingUnfinishedTitle": "Sin terminar",
   "trainingHistoryWeekOf": "Semana del {date}",
@@ -1270,10 +1212,10 @@
   "trainingPastActivityRoutineDay": "Qué día de la rutina",
   "trainingPastActivityNoRoutine": "No tienes una rutina en curso. Empieza una para apuntar sus días.",
   "trainingErrorRoutineDayNotSkippable": "Ese día ya está hecho: no se puede saltar.",
-  "trainingErrorSessionStaleOpen": "Tienes una sesión de ese día sin terminar. Termínala con lo registrado o descártala antes.",
-  "trainingErrorSessionUnmarkExpired": "Solo se desmarca el mismo día. Puedes corregirla o eliminarla.",
+  "trainingErrorSessionStaleOpen": "Tienes una sesión de ese día sin terminar. Termínala o descártala antes.",
+  "trainingErrorSessionUnmarkExpired": "Solo se puede reabrir el mismo día. Puedes corregirla o eliminarla.",
   "trainingErrorSessionPastDateInvalid": "Elige hoy o uno de los 7 días anteriores.",
-  "trainingStaleSessionHint": "Lleva más de 6 h abierta: termínala con lo registrado o descártala.",
+  "trainingStaleSessionHint": "Lleva más de 6 h abierta: termínala o descártala.",
   "trainingSetColSet": "Serie",
   "trainingSetColTarget": "Objetivo",
   "trainingSetColReps": "Reps",
@@ -1311,7 +1253,7 @@
       }
     }
   },
-  "trainingRemoveSetNamed": "Quitar la serie {set} de {name}",
+  "trainingRemoveSetNamed": "Quitar del plan la serie {set} de {name}",
   "@trainingRemoveSetNamed": {
     "placeholders": {
       "set": {
@@ -1466,14 +1408,6 @@
       }
     }
   },
-  "trainingSetDoneEdit": "Serie {set} hecha. Corregir o desmarcar",
-  "@trainingSetDoneEdit": {
-    "placeholders": {
-      "set": {
-        "type": "int"
-      }
-    }
-  },
   "trainingLiveSetDone": "Marcar serie {set}",
   "@trainingLiveSetDone": {
     "placeholders": {
@@ -1514,22 +1448,12 @@
   },
   "trainingRestMinus15": "−15 s",
   "trainingRestPlus15": "+15 s",
-  "trainingUnmarkSetTitle": "¿Desmarcar la serie {set}?",
-  "@trainingUnmarkSetTitle": {
-    "placeholders": {
-      "set": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingUnmarkSetMessage": "Se borra lo apuntado en esta serie.",
   "trainingSessionDetailTitle": "Sesión",
   "trainingSessionDetailDuration": "Duración",
   "trainingSessionDetailEffort": "Esfuerzo",
   "trainingSessionDetailSets": "Series hechas",
   "trainingSessionDetailVolume": "Volumen",
   "trainingSessionDetailCalories": "Calorías",
-  "trainingSessionDetailXp": "Experiencia",
   "trainingSessionDetailExercises": "Ejercicios",
   "trainingSessionDetailNoSets": "Sin series apuntadas",
   "trainingLivePrevious": "Ejercicio anterior",
@@ -1574,17 +1498,6 @@
       }
     }
   },
-  "trainingLiveNow": "Ahora: {set} · {target}",
-  "@trainingLiveNow": {
-    "placeholders": {
-      "set": {
-        "type": "String"
-      },
-      "target": {
-        "type": "String"
-      }
-    }
-  },
   "trainingValueRange": "{from}–{to}",
   "@trainingValueRange": {
     "placeholders": {
@@ -1625,8 +1538,6 @@
     }
   },
   "trainingExerciseNoLongerInRoutine": "Ejercicio que ya no está en la rutina",
-  "trainingXpWithheldShort": "Sin XP: la sesión fue demasiado corta para contar como entreno.",
-  "trainingXpWithheldDaily": "Sin XP: hoy ya sumaste la XP de entreno que se puede ganar en un día.",
   "trainingLogActivityButton": "Apuntar un partido u otra actividad",
   "trainingNotNow": "Ahora no",
   "trainingRecommendationScope": "Cuándo: se guarda en tu rutina y lo verás desde la próxima vez que hagas este día.",
@@ -1781,7 +1692,6 @@
       }
     }
   },
-  "trainingDurationIsReal": "La duración es el tiempo real de la sesión (desde que empiezas hasta que terminas) y es la que cuenta para tu carga de entrenamiento.",
   "trainingEstimatedMinutesSpoken": "Unos {minutes} minutos",
   "@trainingEstimatedMinutesSpoken": {
     "placeholders": {
@@ -1800,7 +1710,7 @@
   },
   "trainingAdaptedDeclineTitle": "¿Hacer la sesión completa?",
   "trainingAdaptedDeclineMessage": "Hoy se recortaron series para cuidarte. Si la haces completa, entrenarás con todas las series planificadas.",
-  "trainingLoadUp": "Siguiente paso: prueba {value}",
+  "trainingLoadUp": "Hoy prueba {value}",
   "@trainingLoadUp": {
     "placeholders": {
       "value": {
@@ -1808,7 +1718,7 @@
       }
     }
   },
-  "trainingLoadDown": "Siguiente paso: baja a {value}",
+  "trainingLoadDown": "Hoy baja a {value}",
   "@trainingLoadDown": {
     "placeholders": {
       "value": {
@@ -1816,7 +1726,7 @@
       }
     }
   },
-  "trainingLoadUpPercent": "Siguiente paso: prueba {value} (+{percent} %)",
+  "trainingLoadUpPercent": "Hoy prueba {value} (+{percent} %)",
   "@trainingLoadUpPercent": {
     "placeholders": {
       "value": {
@@ -1827,7 +1737,7 @@
       }
     }
   },
-  "trainingLoadDownPercent": "Siguiente paso: baja a {value} (−{percent} %)",
+  "trainingLoadDownPercent": "Hoy baja a {value} (−{percent} %)",
   "@trainingLoadDownPercent": {
     "placeholders": {
       "value": {
@@ -1838,7 +1748,7 @@
       }
     }
   },
-  "trainingLoadUpSpoken": "Siguiente paso: prueba {value}, un {percent} por ciento más.",
+  "trainingLoadUpSpoken": "Hoy prueba {value}, un {percent} por ciento más.",
   "@trainingLoadUpSpoken": {
     "placeholders": {
       "value": {
@@ -1849,7 +1759,7 @@
       }
     }
   },
-  "trainingLoadDownSpoken": "Siguiente paso: baja a {value}, un {percent} por ciento menos.",
+  "trainingLoadDownSpoken": "Hoy baja a {value}, un {percent} por ciento menos.",
   "@trainingLoadDownSpoken": {
     "placeholders": {
       "value": {
@@ -1953,10 +1863,7 @@
       }
     }
   },
-  "trainingLoadScope": "Solo cambia las series que te faltan hoy; tu rutina sigue igual.",
-  "trainingLoadAccept": "Usar en las series que faltan",
-  "trainingLoadAccepted": "Listo: lo usarás en las series que te faltan.",
-  "trainingLoadUndo": "Deshacer",
+  "trainingLoadScope": "Ya va en las series que te faltan hoy; tu rutina sigue igual.",
   "trainingLoadSeconds": "{seconds} s",
   "@@trainingLoadSeconds": {
     "placeholders": {
@@ -1965,21 +1872,6 @@
       }
     }
   },
-  "trainingClockIntroTitle": "El cronómetro ya está en marcha",
-  "trainingClockIntroEstimate": "Calculamos unos {minutes} min para hoy",
-  "@trainingClockIntroEstimate": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingClockIntroPoint1": "El tiempo de la sesión ya corre: lo ves arriba en naranja.",
-  "trainingClockIntroPoint2": "Cada serie tiene su propio cronómetro: lo empiezas y lo pausas tú. Es opcional: puedes marcar una serie sin usarlo.",
-  "trainingClockIntroPoint3": "Las pausas no cuentan: el tiempo real sirve para tu carga física y tus calorías.",
-  "trainingClockIntroHide": "No volver a explicarlo",
-  "trainingClockIntroStart": "Entendido, a entrenar",
-  "trainingClockIntroNotYet": "Ahora no: pausar y salir",
   "trainingLiveExercisesProgress": "{done} de {total} ejercicios",
   "@trainingLiveExercisesProgress": {
     "placeholders": {
@@ -2010,7 +1902,7 @@
   "trainingPausedBanner": "Sesión en pausa: el tiempo no corre",
   "trainingPause": "Pausar",
   "trainingResume": "Reanudar",
-  "trainingSetTimerStart": "Cronometrar",
+  "trainingSetTimerStart": "Cronometrar la serie",
   "trainingSetTimerRunning": "Serie {set} en curso",
   "@trainingSetTimerRunning": {
     "placeholders": {
@@ -2039,12 +1931,9 @@
   "trainingLeaveTitle": "¿Salir sin terminar?",
   "trainingLeaveMessage": "{count, plural, =0{Aún no has marcado ninguna serie.} =1{No pierdes nada: la serie que has marcado ya está guardada.} other{No pierdes nada: las {count} series que has marcado ya están guardadas.}}",
   "trainingLeavePause": "Pausar y salir",
-  "trainingLeavePauseHint": "El tiempo se para. Para volver, toca «Volver» en la barra de abajo o en Entreno › Gimnasio.",
-  "trainingLeaveFinish": "Terminar ahora",
+  "trainingLeavePauseHint": "El tiempo se para.",
   "trainingLeaveFinishHint": "Se guarda con lo que has hecho",
   "trainingLeaveStay": "Seguir entrenando",
-  "trainingLeaveStale": "Si la dejas abierta más de 6 horas, al volver te preguntaremos si la terminas con lo hecho o la descartas.",
-  "trainingLeaveDiscard": "Descartar la sesión",
   "trainingOpenSessionPaused": "Sesión en pausa · {time}",
   "@trainingOpenSessionPaused": {
     "placeholders": {
@@ -2063,7 +1952,6 @@
       }
     }
   },
-  "trainingLeaveExitTooltip": "Salir de la sesión",
   "trainingClockRealHint": "Tiempo real, sin contar pausas",
   "@trainingLeaveMessage": {
     "placeholders": {
@@ -2192,22 +2080,6 @@
   "@trainingFreeSetsCount": {
     "placeholders": {
       "count": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingSetDeleted": "Serie {n} borrada",
-  "@trainingSetDeleted": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "trainingWarmupSetDeleted": "Serie de calentamiento {n} borrada",
-  "@trainingWarmupSetDeleted": {
-    "placeholders": {
-      "n": {
         "type": "int"
       }
     }
@@ -3263,5 +3135,69 @@
   "trainingPlanFinished": "Plan terminado",
   "@trainingPlanFinished": {
     "description": "En lugar de «Semana N de M» cuando ya no queda ningún día del plan por hacer."
+  },
+  "trainingSkipRest": "Saltar descanso",
+  "trainingUnmarkSet": "Desmarcar serie",
+  "trainingUnmarkSetNumber": "Desmarcar la serie {set}",
+  "@trainingUnmarkSetNumber": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetFix": "Corregir la serie {set}",
+  "@trainingSetFix": {
+    "placeholders": {
+      "set": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingSetUnmarked": "Serie {n} desmarcada",
+  "@trainingSetUnmarked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingWarmupSetUnmarked": "Serie de calentamiento {n} desmarcada",
+  "@trainingWarmupSetUnmarked": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingFinishMissing": "{count, plural, =1{Te falta 1 serie: se guarda lo que has hecho.} other{Te faltan {count} series: se guarda lo que has hecho.}}",
+  "@trainingFinishMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trainingFinishEmpty": "Aún no has marcado ninguna serie; se guarda igual.",
+  "trainingLoadWhyTooltip": "Por qué esta propuesta",
+  "trainingLiveNowValues": "Ahora: {values}",
+  "@trainingLiveNowValues": {
+    "placeholders": {
+      "values": {
+        "type": "String"
+      }
+    }
+  },
+  "trainingRemoveFromPlan": "Quitar del plan",
+  "trainingSheetSeconds": "Segundos",
+  "trainingSheetMinutes": "Minutos",
+  "trainingReopenSession": "Reabrir y seguir",
+  "trainingUndoSet": "Deshacer serie {n}",
+  "@trainingUndoSet": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   }
 }

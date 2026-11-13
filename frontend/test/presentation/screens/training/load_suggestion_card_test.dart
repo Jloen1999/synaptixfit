@@ -7,8 +7,8 @@ import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/page/live_focus_view.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
 
-/// «Siguiente paso: prueba 42,5 kg»: la propuesta dice la cifra, el porqué y que solo
-/// cambia las series que faltan; se acepta y se deshace con un toque.
+/// «Hoy prueba 42,5 kg (+6 %)»: una línea con la propuesta, que ya va en las
+/// cifras de las series; el porqué, en un «?» opcional.
 void main() {
   const up = LoadSuggestion(
     plannedExerciseId: 'p1',
@@ -23,9 +23,7 @@ void main() {
   Future<void> pump(
     WidgetTester tester,
     LoadSuggestion s, {
-    bool accepted = false,
     double scale = 1,
-    ValueChanged<bool>? onToggled,
   }) async {
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;
@@ -49,46 +47,31 @@ void main() {
         ),
         home: Scaffold(
           body: SingleChildScrollView(
-            child: LoadSuggestionCard(
-              suggestion: s,
-              accepted: accepted,
-              onToggled: onToggled ?? (_) {},
-            ),
+            child: LoadSuggestionLine(suggestion: s),
           ),
         ),
       ),
     );
   }
 
-  testWidgets('dice la cifra, el porqué y que la rutina no cambia', (
+  testWidgets('una línea con la cifra; el porqué solo al tocar «?»', (
     tester,
   ) async {
-    bool? toggled;
-    await pump(tester, up, onToggled: (v) => toggled = v);
+    await pump(tester, up);
 
-    expect(find.text('Siguiente paso: prueba 42,5 kg (+6 %)'), findsOneWidget);
-    expect(find.textContaining('la última vez hiciste 40 kg'), findsOneWidget);
-    expect(find.textContaining('te costó 6 de 10, sin llegar al fallo'), findsOneWidget);
-    expect(find.textContaining('tu rutina sigue igual'), findsOneWidget);
+    expect(find.text('Hoy prueba 42,5 kg (+6 %)'), findsOneWidget);
     expect(
       find.bySemanticsLabel(RegExp('un 6 por ciento más')),
       findsOneWidget,
     );
+    // Nada que aceptar ni explicaciones a la vista.
+    expect(find.textContaining('la última vez hiciste 40 kg'), findsNothing);
+    expect(find.byType(FilledButton), findsNothing);
 
-    await tester.tap(find.text('Usar en las series que faltan'));
-    expect(toggled, isTrue);
-  });
-
-  testWidgets('aceptada, se puede deshacer', (tester) async {
-    bool? toggled;
-    await pump(tester, up, accepted: true, onToggled: (v) => toggled = v);
-
-    expect(
-      find.text('Listo: lo usarás en las series que te faltan.'),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Deshacer'));
-    expect(toggled, isFalse);
+    await tester.tap(find.byTooltip('Por qué esta propuesta'));
+    await tester.pump();
+    expect(find.textContaining('la última vez hiciste 40 kg'), findsOneWidget);
+    expect(find.textContaining('tu rutina sigue igual'), findsOneWidget);
   });
 
   testWidgets('tras fallos propone bajar; en repeticiones no da porcentaje', (
@@ -106,8 +89,7 @@ void main() {
         lastRpe: 8,
       ),
     );
-    expect(find.text('Siguiente paso: baja a 36 kg (−10 %)'), findsOneWidget);
-    expect(find.textContaining('no completaste todas las repeticiones'), findsOneWidget);
+    expect(find.text('Hoy baja a 36 kg (−10 %)'), findsOneWidget);
 
     await pump(
       tester,
@@ -121,11 +103,13 @@ void main() {
         lastRpe: 7,
       ),
     );
-    expect(find.text('Siguiente paso: prueba 11 repeticiones'), findsOneWidget);
+    expect(find.text('Hoy prueba 11 repeticiones'), findsOneWidget);
   });
 
   testWidgets('cabe con el texto al 200 % en 320 dp', (tester) async {
     await pump(tester, up, scale: 2);
+    await tester.tap(find.byTooltip('Por qué esta propuesta'));
+    await tester.pump();
     expect(tester.takeException(), isNull);
   });
 }

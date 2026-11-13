@@ -55,7 +55,7 @@ class PendingSetsStorage {
     repsDone: j['repsDone'] as int?,
     weightKg: (j['weightKg'] as num?)?.toDouble(),
     completed: j['completed'] as bool? ?? true,
-    failedReps: j['failedReps'] as int? ?? 0,
+    failedReps: j['failedReps'] as int?,
     durationSeconds: j['durationSeconds'] as int?,
     distanceMeters: j['distanceMeters'] as int?,
     activeSeconds: j['activeSeconds'] as int?,

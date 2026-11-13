@@ -139,5 +139,6 @@
   "commonSearchClear": "Clear search",
   "commonSearchNoResults": "No results for “{query}”",
   "commonSearchResultsCount": "{count, plural, =1{1 result} other{{count} results}}",
-  "commonView": "View"
+  "commonView": "View",
+  "commonHelpAbout": "What “{topic}” means"
 }

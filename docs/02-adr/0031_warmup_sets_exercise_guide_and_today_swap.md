@@ -41,3 +41,19 @@ Migraciones: `V1032` (columnas y tablas) y `V1033` (consejos de unas 1600 varian
   la app no enseña la sección (nunca un hueco vacío).
 - La asignación por nombre depende de que el nombre en español siga el patrón de la familia; las
   exclusiones evitan variantes donde los consejos no valdrían (p. ej. «Remo al mentón»).
+
+## Revisión (noviembre 2026): hoja de la serie más corta
+
+- La hoja de la serie pide solo lo que se hizo, con los campos de cómo se mide el ejercicio (repeticiones y
+  kilos, segundos, minutos y metros). **«¿Te faltaron repeticiones?» desaparece:** si la app no manda
+  `failedReps`, el servidor las calcula (`PlannedExercise.missedReps`: objetivo de esa serie − hechas, nunca
+  negativo; 0 en series extra, de aguante o de cardio) y la serie queda como no completa si faltó alguna. Una
+  app anterior que aún manda `failedReps` se respeta tal cual. Lo usan, como antes, `ProgressionCalculator`
+  (bajar la carga tras fallos) y `SessionFeedback`. Sin migración.
+- «Hasta no poder más» es una casilla de una línea con un «?» opcional (`AppHelpToggle`) que enseña la
+  explicación; lo mismo la ayuda de las series de calentamiento.
+- «Borrar serie» pasa a «Desmarcar serie», gris y sin papelera (desmarcar se puede deshacer).
+- **Una sola cifra de partida:** la propuesta de carga de hoy ya va en las series que faltan (no hay que
+  aceptarla) y se dice en una línea: «Hoy prueba 42,5 kg (+5 %)», con el porqué en un «?». La cabecera y la
+  columna «Objetivo» no repiten los kilos de la rutina, y «Ahora: …» y «Después del descanso: …» usan las
+  mismas cifras que la fila.

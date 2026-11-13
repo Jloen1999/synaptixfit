@@ -123,8 +123,8 @@ extension SessionSetFields on SessionSet {
 }
 
 /// Serie para registrar la [set] de [exercise] con los [values] de cada campo.
-/// Una serie ya apuntada ([existing]) conserva si fue completa y sus
-/// repeticiones fallidas.
+/// Las repeticiones que faltaron las calcula el servidor con lo que se apunta;
+/// una serie ya apuntada ([existing]) conserva «hasta no poder más».
 SetRecord setRecordFor(
   PlannedExercise exercise,
   int set,
@@ -141,6 +141,5 @@ SetRecord setRecordFor(
       ? null
       : (values[SetField.duration]! * 60).round(),
   distanceMeters: values[SetField.distance]?.toInt(),
-  completed: existing?.completed ?? true,
-  failedReps: existing?.failedReps ?? 0,
+  toFailure: existing?.toFailure ?? false,
 );

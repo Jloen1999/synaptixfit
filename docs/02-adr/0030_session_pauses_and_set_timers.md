@@ -29,3 +29,29 @@ Migración: `V1031` (`sesiones_registradas.pausada_en`, `segundos_en_pausa`; `se
 
 - Un APK anterior no pausa: su duración se sigue acotando al tiempo de reloj (no hay pausas que restar).
 - El cliente muestra el tiempo activo con la misma regla (`startedAt`, `pausedAt`, `pausedSeconds` del servidor).
+
+## Revisión (noviembre 2026): sesión más clara
+
+Decisión del propietario (vocabulario, sección 4: ir al grano y pocos pasos):
+
+- **Empezar es un toque.** Se quita la hoja «El cronómetro ya está en marcha» y su preferencia «No volver a
+  explicarlo» (caso de uso, repositorio y almacenamiento locales). El tiempo real ya se ve en la píldora con la
+  línea «Tiempo real, sin contar pausas».
+- **Terminar son dos toques:** «Terminar» abre una hoja con el esfuerzo y «Guardar». Si faltan series o no hay
+  ninguna, la propia hoja lo dice en una frase; ya no hay diálogo previo ni rojo.
+- **Un verbo por acción:** «Terminar» (antes «Finalizar», «Terminar ahora», «Terminar con lo registrado»);
+  «Descartar sesión» (antes «Abandonar»), confirmado con el mismo verbo; «Saltar descanso». La hoja de salir
+  dice solo «El tiempo se para.» y el único camino de salida es la flecha (se quita el icono ⇥).
+- **Desmarcar como en Hevy o Strong:** volver a tocar el ✓ de una serie hecha la desmarca al momento, con
+  «Deshacer» y sin diálogo; tocar la fila (fuera del ✓) abre la hoja para corregirla. Desmarcar para el
+  descanso **de esa serie** (`LiveSessionState.restForSet`); corregir una serie o deshacer un desmarcar no
+  arranca otro descanso (`LiveSessionEvent.setRecorded(startRest: false)`). Igual en la vista de rutina y en la
+  de lista.
+- **«Deshacer» siempre a la vista:** mientras corre el descanso de la serie recién marcada, «Serie N registrada
+  · Deshacer» va dentro del panel del descanso (el aviso flotante quedaba tapado); sin descanso, en el aviso.
+- **Una acción destacada:** «Marcar serie N» es el botón principal; el cronómetro de la serie es un botón
+  cuadrado con icono y su nombre en la descripción («Cronometrar la serie»).
+- **Detalle de una sesión terminada:** «Desmarcar» y «Eliminar» se parecían. El servidor sí distingue:
+  `unmark` (solo el mismo día) la vuelve a abrir con sus series y `delete` la borra. La etiqueta lo dice:
+  «Reabrir y seguir» (sin diálogo, entra en la sesión) y «Eliminar» (confirmado). Los diálogos ya no hablan de
+  XP; el resumen y el historial de entrenos tampoco la enseñan (se ve en Progreso y al subir de nivel).

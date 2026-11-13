@@ -18,6 +18,7 @@ export 'app_empty_state.dart';
 export 'app_error_view.dart';
 export 'app_focus_group.dart';
 export 'app_focus_outline.dart';
+export 'app_help_toggle.dart';
 export 'app_inline_message.dart';
 export 'app_load_more.dart';
 export 'app_loading_view.dart';

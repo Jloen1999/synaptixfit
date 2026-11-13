@@ -258,5 +258,13 @@
       }
     }
   },
-  "commonView": "Ver"
+  "commonView": "Ver",
+  "commonHelpAbout": "Qué es «{topic}»",
+  "@commonHelpAbout": {
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  }
 }

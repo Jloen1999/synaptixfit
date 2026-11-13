@@ -42,7 +42,6 @@ import '../use_cases/training/get_recommendations_use_case.dart';
 import '../use_cases/training/get_routine_use_case.dart';
 import '../use_cases/training/get_session_adaptation_use_case.dart';
 import '../use_cases/training/get_session_bookends_use_case.dart';
-import '../use_cases/training/get_session_clock_intro_hidden_use_case.dart';
 import '../use_cases/training/get_session_highlights_use_case.dart';
 import '../use_cases/training/get_session_history_use_case.dart';
 import '../use_cases/training/get_session_use_case.dart';
@@ -50,7 +49,6 @@ import '../use_cases/training/get_sessions_use_case.dart';
 import '../use_cases/training/get_today_check_in_use_case.dart';
 import '../use_cases/training/get_weekly_plan_use_case.dart';
 import '../use_cases/training/get_weekly_plans_use_case.dart';
-import '../use_cases/training/hide_session_clock_intro_use_case.dart';
 import '../use_cases/training/load_pending_sets_use_case.dart';
 import '../use_cases/training/log_past_session_use_case.dart';
 import '../use_cases/training/record_set_use_case.dart';
@@ -221,12 +219,6 @@ void registerTrainingDomain(GetIt getIt) {
     )
     ..registerLazySingleton<RecordSetUseCaseContract>(
       () => RecordSetUseCase(getIt()),
-    )
-    ..registerLazySingleton<GetSessionClockIntroHiddenUseCaseContract>(
-      () => GetSessionClockIntroHiddenUseCase(getIt()),
-    )
-    ..registerLazySingleton<HideSessionClockIntroUseCaseContract>(
-      () => HideSessionClockIntroUseCase(getIt()),
     )
     ..registerLazySingleton<PauseSessionUseCaseContract>(
       () => PauseSessionUseCase(getIt()),

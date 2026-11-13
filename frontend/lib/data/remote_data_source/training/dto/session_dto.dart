@@ -104,7 +104,9 @@ abstract class RecordSetRequestDto with _$RecordSetRequestDto {
     int? repsDone,
     double? weightKg,
     required bool completed,
-    required int failedReps,
+
+    /// Sin ella (nula) el servidor la calcula: objetivo − hechas.
+    int? failedReps,
     int? durationSeconds,
     int? distanceMeters,
     int? activeSeconds,

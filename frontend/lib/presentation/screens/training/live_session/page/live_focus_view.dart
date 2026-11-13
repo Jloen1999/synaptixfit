@@ -21,7 +21,6 @@ import '../../widgets/set_fields.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_labels.dart';
 import '../bloc/live_session_bloc.dart';
-import 'set_record_sheet.dart';
 
 /// Borradores de la serie que aún no se ha marcado (clave:
 /// [LiveSessionState.draftKey]). Es estado de formulario de la pantalla: no
@@ -33,20 +32,34 @@ bool liveCompact(BuildContext context) =>
     MediaQuery.sizeOf(context).height < TokensLayout.compactHeight ||
     context.largeText;
 
-/// Lo previsto de una serie en texto corto: «10 reps · 40 kg», «30 s», «25 min».
-String targetLabel(BuildContext context, PlannedExercise e, int set) {
+/// Una serie en texto corto: «10 reps · 40 kg», «30 s», «25 min». Sin
+/// [values], lo previsto en la rutina; con ellos, las cifras de partida de hoy
+/// (las mismas que trae la fila, para que no haya dos números que compitan).
+/// Con [withWeight] falso solo va la cifra principal (la columna «Objetivo»
+/// de la fila, que ya tiene su casilla de kilos al lado).
+String targetLabel(
+  BuildContext context,
+  PlannedExercise e,
+  int set, {
+  Map<SetField, num?>? values,
+  bool withWeight = true,
+}) {
   final l10n = context.localizations;
   final p = e.parameters;
   final fields = SetFields.of(e);
   if (fields.isCardio) {
     return plannedSummary(l10n, p.copyWith(sets: 1), fields);
   }
-  final weight = p.weightForSet(set);
+  final num? weight = values != null
+      ? values[SetField.weight]
+      : p.weightForSet(set);
+  final hold = values?[SetField.hold] ?? p.holdForSet(set) ?? 0;
+  final reps = values?[SetField.reps] ?? p.repsForSet(set);
   final main = fields.isHold
-      ? l10n.trainingSecondsUnit('${p.holdForSet(set) ?? 0}')
-      : l10n.trainingSetReps(p.repsForSet(set));
-  return weight != null && weight > 0
-      ? l10n.trainingTargetWithWeight(main, formatNumber(weight))
+      ? l10n.trainingSecondsUnit(formatNumber(hold.toDouble()))
+      : l10n.trainingSetReps(reps.toInt());
+  return withWeight && weight != null && weight > 0
+      ? l10n.trainingTargetWithWeight(main, formatNumber(weight.toDouble()))
       : main;
 }
 
@@ -267,9 +280,9 @@ class LiveExerciseView extends StatelessWidget {
     required this.onDraft,
     required this.onValidity,
     required this.onLog,
-    required this.onLoggedTap,
+    required this.onUnmark,
+    required this.onCorrect,
     required this.onExtraSet,
-    this.onLoadToggled,
     this.onSwap,
     this.onUnswap,
     this.onWarmup,
@@ -291,12 +304,12 @@ class LiveExerciseView extends StatelessWidget {
   final void Function(PlannedExercise e, int set, Map<SetField, num?> values)
   onLog;
 
-  /// Toque en el check de una serie ya hecha (corregir o borrar).
-  final void Function(PlannedExercise e, SessionSet set) onLoggedTap;
-  final void Function(PlannedExercise e, int set) onExtraSet;
+  /// ✓ de una serie ya hecha: la desmarca al momento (con «Deshacer»).
+  final void Function(PlannedExercise e, SessionSet set) onUnmark;
 
-  /// Acepta o deshace la propuesta de carga de hoy de un ejercicio.
-  final void Function(PlannedExercise e, bool accepted)? onLoadToggled;
+  /// Toque en la fila de una serie hecha (fuera del ✓): corregirla.
+  final void Function(PlannedExercise e, SessionSet set) onCorrect;
+  final void Function(PlannedExercise e, int set) onExtraSet;
 
   /// «Cambiar solo hoy» y «Volver al de la rutina» (ADR 0031).
   final void Function(PlannedExercise e)? onSwap;
@@ -369,11 +382,21 @@ class LiveExerciseView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: TokensSpacing.xxs),
+              // Sin kilos: la cifra de partida va en la fila (y la propuesta,
+              // debajo); el peso de la rutina no compite con ella.
               Text(
-                plannedSummary(l10n, e.parameters, fields),
+                plannedSummary(
+                  l10n,
+                  e.parameters.copyWith(weightKg: null, weightsKg: null),
+                  fields,
+                ),
                 style: context.textStyles.titleMedium,
               ),
-              if (last != null)
+              // La propuesta de hoy ya sale de la última vez: si la hay, va
+              // ella sola.
+              if (load != null)
+                LoadSuggestionLine(suggestion: load)
+              else if (last != null)
                 // El lector leería «×» como «multiplicado por».
                 Semantics(
                   label: last.weightKg == null
@@ -395,14 +418,6 @@ class LiveExerciseView extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (load != null && onLoadToggled != null) ...[
-                const SizedBox(height: TokensSpacing.s),
-                LoadSuggestionCard(
-                  suggestion: load,
-                  accepted: s.acceptedLoad.contains(e.id),
-                  onToggled: (accepted) => onLoadToggled!(e, accepted),
-                ),
-              ],
               if (original != null) ...[
                 const SizedBox(height: TokensSpacing.s),
                 _SwappedNote(
@@ -469,7 +484,8 @@ class LiveExerciseView extends StatelessWidget {
                           onDraft: onDraft,
                           onValidity: onValidity,
                           onLog: onLog,
-                          onLoggedTap: onLoggedTap,
+                          onUnmark: onUnmark,
+                          onCorrect: onCorrect,
                         ),
                     ],
                   );
@@ -566,17 +582,15 @@ class _WarmupSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Semantics(
-            header: true,
-            child: Text(
-              l10n.trainingWarmupSetsTitle,
-              style: context.textStyles.titleSmall,
-            ),
-          ),
-          Text(
-            l10n.trainingWarmupSetsHint,
-            style: context.textStyles.bodySmall?.copyWith(
-              color: context.colors.onSurfaceVariant,
+          AppHelpToggle(
+            tooltip: l10n.commonHelpAbout(l10n.trainingWarmupSetsTitle),
+            help: l10n.trainingWarmupSetsHint,
+            child: Semantics(
+              header: true,
+              child: Text(
+                l10n.trainingWarmupSetsTitle,
+                style: context.textStyles.titleSmall,
+              ),
             ),
           ),
           for (final w in sets)
@@ -644,20 +658,13 @@ class _WarmupSection extends StatelessWidget {
   }
 }
 
-/// «Hoy prueba 42 kg (+5 %)»: propuesta de carga del servidor para el
-/// ejercicio que se mira, con el porqué y un toque para usarla en las series
-/// que faltan (se puede deshacer). No toca la rutina.
-class LoadSuggestionCard extends StatelessWidget {
-  const LoadSuggestionCard({
-    super.key,
-    required this.suggestion,
-    required this.accepted,
-    required this.onToggled,
-  });
+/// «Hoy prueba 42,5 kg (+5 %)»: una línea con la propuesta de carga del
+/// servidor, que ya va en las cifras de partida de las series que faltan (no
+/// hay que aceptarla). El porqué, en un «?» opcional. No toca la rutina.
+class LoadSuggestionLine extends StatelessWidget {
+  const LoadSuggestionLine({super.key, required this.suggestion});
 
   final LoadSuggestion suggestion;
-  final bool accepted;
-  final ValueChanged<bool> onToggled;
 
   @override
   Widget build(BuildContext context) {
@@ -697,67 +704,28 @@ class LoadSuggestionCard extends StatelessWidget {
       ),
       _ => l10n.trainingLoadWhyOther(previous, l.lastRpe),
     };
-    final onColor = context.colors.onSecondaryContainer;
-    final body = context.textStyles.bodyMedium?.copyWith(color: onColor);
-    return Semantics(
-      container: true,
-      child: AppCard(
-        color: context.colors.secondaryContainer,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  l.increases
-                      ? Icons.trending_up_rounded
-                      : Icons.trending_down_rounded,
-                  color: onColor,
-                ),
-                const SizedBox(width: TokensSpacing.s),
-                Expanded(
-                  child: Semantics(
-                    label: spoken,
-                    excludeSemantics: true,
-                    child: Text(
-                      title,
-                      style: context.textStyles.titleMedium?.copyWith(
-                        color: onColor,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+    final color = context.colors.onSurfaceVariant;
+    return AppHelpToggle(
+      tooltip: l10n.trainingLoadWhyTooltip,
+      help: '$why ${l10n.trainingLoadScope}',
+      child: Row(
+        children: [
+          Icon(
+            l.increases
+                ? Icons.trending_up_rounded
+                : Icons.trending_down_rounded,
+            size: TokensSize.iconXs,
+            color: color,
+          ),
+          const SizedBox(width: TokensSpacing.xs),
+          Flexible(
+            child: Text(
+              title,
+              semanticsLabel: spoken,
+              style: context.textStyles.bodyMedium?.copyWith(color: color),
             ),
-            const SizedBox(height: TokensSpacing.xs),
-            Text(why, style: body),
-            Text(
-              l10n.trainingLoadScope,
-              style: context.textStyles.bodySmall?.copyWith(color: onColor),
-            ),
-            if (accepted) ...[
-              const SizedBox(height: TokensSpacing.xs),
-              Semantics(
-                liveRegion: true,
-                child: Text(l10n.trainingLoadAccepted, style: body),
-              ),
-            ],
-            const SizedBox(height: TokensSpacing.s),
-            // Un solo botón que cambia de texto: al usar o deshacer, el foco
-            // sigue en él (dos botones distintos lo perderían).
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: FilledButton(
-                key: const ValueKey('load-suggestion-toggle'),
-                onPressed: () => onToggled(!accepted),
-                child: Text(
-                  accepted ? l10n.trainingLoadUndo : l10n.trainingLoadAccept,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -834,7 +802,8 @@ class _LiveSetRow extends StatelessWidget {
     required this.onDraft,
     required this.onValidity,
     required this.onLog,
-    required this.onLoggedTap,
+    required this.onUnmark,
+    required this.onCorrect,
   });
 
   final LiveSessionState state;
@@ -857,7 +826,8 @@ class _LiveSetRow extends StatelessWidget {
   onValidity;
   final void Function(PlannedExercise e, int set, Map<SetField, num?> values)
   onLog;
-  final void Function(PlannedExercise e, SessionSet set) onLoggedTap;
+  final void Function(PlannedExercise e, SessionSet set) onUnmark;
+  final void Function(PlannedExercise e, SessionSet set) onCorrect;
 
   (num, num) _range(SetField f) => f == SetField.reps ? (0, 1000) : f.range;
 
@@ -875,7 +845,11 @@ class _LiveSetRow extends StatelessWidget {
       for (final f in fields.fields)
         if (invalid.contains(LiveSessionState.draftKey(e.id, n, f))) f,
     ];
-    final target = planned ? targetLabel(context, e, n) : l10n.trainingExtraSet;
+    // La columna «Objetivo» lleva solo la cifra principal: los kilos de partida
+    // ya están en su casilla (un solo número, sin competir).
+    final target = planned
+        ? targetLabel(context, e, n, withWeight: !fields.has(SetField.weight))
+        : l10n.trainingExtraSet;
 
     Widget cell(SetField f) {
       final (min, max) = _range(f);
@@ -903,14 +877,26 @@ class _LiveSetRow extends StatelessWidget {
     }
 
     // Un solo botón que cambia de aspecto (no de widget) para no perder el
-    // foco al marcar la serie (WCAG 2.4.3).
+    // foco al marcar la serie (WCAG 2.4.3). En una serie hecha, volver a
+    // tocarlo la desmarca al momento (con «Deshacer», como Hevy o Strong).
     final check = IconButton(
       tooltip: done == null
           ? l10n.trainingMarkSetDone(n)
-          : l10n.trainingSetDoneEdit(n),
+          : l10n.trainingUnmarkSetNumber(n),
       style: done == null
           ? IconButton.styleFrom(
               side: BorderSide(color: context.colors.outline),
+            ).copyWith(
+              side: WidgetStateProperty.resolveWith(
+                (states) => BorderSide(
+                  color: states.contains(WidgetState.focused)
+                      ? context.colors.onSurface
+                      : context.colors.outline,
+                  width: states.contains(WidgetState.focused)
+                      ? TokensSize.focusRing
+                      : TokensSize.focusRing / 2,
+                ),
+              ),
             )
           : IconButton.styleFrom(
               backgroundColor: done.completed
@@ -919,17 +905,10 @@ class _LiveSetRow extends StatelessWidget {
               foregroundColor: context.colors.onPrimary,
             ),
       onPressed: done != null
-          ? () => onLoggedTap(e, done)
+          ? () => onUnmark(e, done)
           : state.saving || badInRow.isNotEmpty
           ? null
-          : () {
-              SemanticsService.sendAnnouncement(
-                View.of(context),
-                l10n.trainingSetLogged(n),
-                Directionality.of(context),
-              );
-              onLog(e, n, values);
-            },
+          : () => onLog(e, n, values),
       icon: Icon(
         done == null || done.completed
             ? Icons.check_rounded
@@ -1087,7 +1066,23 @@ class _LiveSetRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ?status,
-                body,
+                // Serie hecha: tocar la fila (fuera del ✓ y de las cifras)
+                // abre la hoja para corregirla.
+                if (done == null)
+                  body
+                else
+                  Semantics(
+                    button: true,
+                    hint: l10n.trainingSetFix(n),
+                    child: AppFocusOutline(
+                      borderRadius: BorderRadius.circular(TokensRadius.s),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(TokensRadius.s),
+                        onTap: () => onCorrect(e, done),
+                        child: body,
+                      ),
+                    ),
+                  ),
                 if (done?.toFailure ?? false)
                   Padding(
                     padding: const EdgeInsets.only(top: TokensSpacing.xxs),
@@ -1437,13 +1432,17 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
   final _actionFocus = FocusNode();
   final _skipFocus = FocusNode();
 
+  /// Agrupa todo lo de la barra: si el foco estaba en cualquiera de sus
+  /// botones (también «Deshacer» o −15 s), pasa a la acción del panel nuevo.
+  final _barFocus = FocusNode(skipTraversal: true, canRequestFocus: false);
+
   @override
   void didUpdateWidget(LiveSessionBottomBar old) {
     super.didUpdateWidget(old);
     final wasResting = old.state.restRemaining != null;
     final resting = widget.state.restRemaining != null;
     if (wasResting == resting) return;
-    final hadFocus = wasResting ? _skipFocus.hasFocus : _actionFocus.hasFocus;
+    final hadFocus = _barFocus.hasFocus;
     if (!hadFocus) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) (resting ? _skipFocus : _actionFocus).requestFocus();
@@ -1454,6 +1453,7 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
   void dispose() {
     _actionFocus.dispose();
     _skipFocus.dispose();
+    _barFocus.dispose();
     super.dispose();
   }
 
@@ -1481,16 +1481,23 @@ class _LiveSessionBottomBarState extends State<LiveSessionBottomBar> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(TokensSpacing.m),
             child: TrainingContent(
-              child: resting
-                  ? _RestPanel(state: s, skipFocus: _skipFocus)
-                  : _NextPanel(
-                      state: s,
-                      drafts: widget.drafts,
-                      invalid: widget.invalid,
-                      onLog: widget.onLog,
-                      onFinish: widget.onFinish,
-                      focus: _actionFocus,
-                    ),
+              child: Focus(
+                focusNode: _barFocus,
+                child: resting
+                    ? _RestPanel(
+                        state: s,
+                        drafts: widget.drafts,
+                        skipFocus: _skipFocus,
+                      )
+                    : _NextPanel(
+                        state: s,
+                        drafts: widget.drafts,
+                        invalid: widget.invalid,
+                        onLog: widget.onLog,
+                        onFinish: widget.onFinish,
+                        focus: _actionFocus,
+                      ),
+              ),
             ),
           ),
         ),
@@ -1550,20 +1557,26 @@ class _NextPanel extends StatelessWidget {
           ? l10n.trainingSetDoneShort
           : l10n.trainingLiveSetDone(set);
       void resume() => bloc.add(const LiveSessionEvent.resumeRequested());
-      // En pausa lo principal es reanudar; «Serie hecha» sigue a mano (el
-      // cronómetro ayuda, nunca obliga: marcarla también reanuda).
-      final Widget done = s.paused
-          ? AppSecondaryButton(
-              label: doneLabel,
-              icon: const Icon(Icons.check_rounded),
-              onPressed: canLog ? log : null,
-            )
-          : AppPrimaryButton(
-              label: doneLabel,
-              icon: Icons.check_rounded,
-              focusNode: focus,
-              onPressed: canLog ? log : null,
-            );
+      // Marcar la serie que toca es la acción principal (el ✓ de la fila hace
+      // lo mismo, a mano de quien mira la tabla). En pausa manda reanudar;
+      // marcarla también reanuda (el cronómetro ayuda, nunca obliga).
+      final Widget done = AppPrimaryButton(
+        label: doneLabel,
+        icon: Icons.check_rounded,
+        focusNode: focus,
+        onPressed: canLog ? log : null,
+      );
+      // El cronómetro de la serie es opcional: un botón cuadrado con icono y
+      // su nombre en la descripción (el texto «Cronometrar» no cabía).
+      Widget iconAction(String tooltip, IconData icon, VoidCallback? onTap) =>
+          IconButton.outlined(
+            tooltip: tooltip,
+            style: IconButton.styleFrom(
+              minimumSize: const Size.square(TokensSize.controlHeight),
+            ),
+            onPressed: onTap,
+            icon: Icon(icon),
+          );
       final Widget secondary = s.paused
           ? AppPrimaryButton(
               label: l10n.trainingResume,
@@ -1572,42 +1585,33 @@ class _NextPanel extends StatelessWidget {
               onPressed: resume,
             )
           : !timed
-          ? AppSecondaryButton(
-              label: l10n.trainingSetTimerStart,
-              icon: const Icon(Icons.play_arrow_rounded),
-              onPressed: () =>
-                  bloc.add(LiveSessionEvent.setTimerStarted(viewed.id, set)),
+          ? iconAction(
+              l10n.trainingSetTimerStart,
+              Icons.timer_outlined,
+              () => bloc.add(LiveSessionEvent.setTimerStarted(viewed.id, set)),
             )
           : running
-          ? AppSecondaryButton(
-              label: l10n.trainingPause,
-              icon: const Icon(Icons.pause_rounded),
-              onPressed: () =>
-                  bloc.add(const LiveSessionEvent.pauseRequested()),
+          ? iconAction(
+              l10n.trainingPause,
+              Icons.pause_rounded,
+              () => bloc.add(const LiveSessionEvent.pauseRequested()),
             )
-          : AppSecondaryButton(
-              label: l10n.trainingResume,
-              icon: const Icon(Icons.play_arrow_rounded),
-              onPressed: resume,
-            );
-      // El principal, ancho y al lado del pulgar (al final de la fila).
-      final (primary, other) = s.paused ? (secondary, done) : (done, secondary);
-      action = context.largeText
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                primary,
-                const SizedBox(height: TokensSpacing.s),
-                other,
-              ],
+          : iconAction(l10n.trainingResume, Icons.play_arrow_rounded, resume);
+      // Un solo botón destacado, ancho y al lado del pulgar; el otro, un
+      // icono. En pausa manda «Reanudar» y marcar queda como icono.
+      final (primary, other) = s.paused
+          ? (
+              secondary,
+              iconAction(doneLabel, Icons.check_rounded, canLog ? log : null),
             )
-          : Row(
-              children: [
-                Expanded(child: other),
-                const SizedBox(width: TokensSpacing.s),
-                Expanded(flex: 2, child: primary),
-              ],
-            );
+          : (done, secondary);
+      action = Row(
+        children: [
+          other,
+          const SizedBox(width: TokensSpacing.s),
+          Expanded(child: primary),
+        ],
+      );
       if (timed) {
         final color = running
             ? context.colors.primary
@@ -1678,21 +1682,29 @@ class _NextPanel extends StatelessWidget {
                   style: context.textStyles.titleSmall,
                 ),
               ),
-              TextButton(
-                onPressed: () =>
-                    bloc.add(const LiveSessionEvent.resumeRequested()),
-                child: Text(l10n.trainingResume),
-              ),
+              // Con una serie por hacer, «Reanudar» ya es el botón principal.
+              if (set == null)
+                TextButton(
+                  onPressed: () =>
+                      bloc.add(const LiveSessionEvent.resumeRequested()),
+                  child: Text(l10n.trainingResume),
+                ),
             ],
           ),
           const SizedBox(height: TokensSpacing.xs),
         ],
         if (timer != null) ...[timer, const SizedBox(height: TokensSpacing.xs)],
+        // Las cifras con las que se marcará (las de la fila): la serie ya la
+        // dice el botón.
         if (set != null)
           Text(
-            l10n.trainingLiveNow(
-              l10n.trainingUpNextSet(set, viewed.parameters.sets),
-              targetLabel(context, viewed, set),
+            l10n.trainingLiveNowValues(
+              targetLabel(
+                context,
+                viewed,
+                set,
+                values: s.valuesFor(viewed, set, drafts),
+              ),
             ),
             style: context.textStyles.titleSmall,
           )
@@ -1717,10 +1729,18 @@ class _NextPanel extends StatelessWidget {
   }
 }
 
+/// Descanso en grande. Arriba, «Serie N registrada · Deshacer» de la serie
+/// que lo abrió: dentro del panel siempre se ve (un aviso flotante quedaba
+/// tapado). Deshacer la desmarca y para el descanso.
 class _RestPanel extends StatelessWidget {
-  const _RestPanel({required this.state, required this.skipFocus});
+  const _RestPanel({
+    required this.state,
+    required this.drafts,
+    required this.skipFocus,
+  });
 
   final LiveSessionState state;
+  final SetDrafts drafts;
   final FocusNode skipFocus;
 
   @override
@@ -1733,10 +1753,51 @@ class _RestPanel extends StatelessWidget {
     final onColor = context.colors.onSecondaryContainer;
     final up = s.upNext ?? s.viewed;
     final next = s.nextSetOf(up);
+    final owner = [...?s.session?.sets]
+        .where(
+          (x) =>
+              LiveSessionBloc.restKey(x.plannedExerciseId, x.setNumber) ==
+              s.restForSet,
+        )
+        .firstOrNull;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (owner != null)
+          Row(
+            children: [
+              Icon(
+                Icons.check_circle_rounded,
+                color: onColor,
+                size: TokensSize.iconS,
+              ),
+              const SizedBox(width: TokensSpacing.xs),
+              Expanded(
+                child: Text(
+                  l10n.trainingSetLogged(owner.setNumber),
+                  style: context.textStyles.titleSmall?.copyWith(
+                    color: onColor,
+                  ),
+                ),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: onColor),
+                onPressed: () {
+                  bloc.add(LiveSessionEvent.setDeleted(owner.id));
+                  SemanticsService.sendAnnouncement(
+                    View.of(context),
+                    l10n.trainingSetUnmarked(owner.setNumber),
+                    Directionality.of(context),
+                  );
+                },
+                child: Text(
+                  l10n.commonUndo,
+                  semanticsLabel: l10n.trainingUndoSet(owner.setNumber),
+                ),
+              ),
+            ],
+          ),
         Row(
           children: [
             ExcludeSemantics(
@@ -1785,7 +1846,12 @@ class _RestPanel extends StatelessWidget {
             l10n.trainingLiveAfterRest(
               up.exerciseName,
               next,
-              targetLabel(context, up, next),
+              targetLabel(
+                context,
+                up,
+                next,
+                values: s.valuesFor(up, next, drafts),
+              ),
             ),
             style: context.textStyles.bodyMedium?.copyWith(color: onColor),
           ),
@@ -1817,55 +1883,11 @@ class _RestPanel extends StatelessWidget {
             FilledButton(
               focusNode: skipFocus,
               onPressed: () => bloc.add(const LiveSessionEvent.restSkipped()),
-              child: Text(l10n.trainingSkip),
+              child: Text(l10n.trainingSkipRest),
             ),
           ],
         ),
       ],
     );
   }
-}
-
-/// Toque en una serie ya hecha. En ejercicios de repeticiones abre la hoja
-/// (corregir, repeticiones fallidas o borrar); en los de tiempo o distancia,
-/// las cifras ya se corrigen en la fila y solo queda desmarcarla.
-Future<void> onLoggedSetTap(
-  BuildContext context,
-  PlannedExercise e,
-  SessionSet set,
-) async {
-  final bloc = context.read<LiveSessionBloc>();
-  final l10n = context.localizations;
-  final fields = SetFields.of(e);
-  if (fields.has(SetField.reps)) {
-    final result = await showSetRecordSheet(
-      context,
-      title: e.exerciseName,
-      existingSetId: set.id,
-      initial: SetRecord(
-        plannedExerciseId: e.id,
-        setNumber: set.setNumber,
-        repsDone: set.repsDone,
-        weightKg: set.weightKg,
-        completed: set.completed,
-        failedReps: set.failedReps,
-        toFailure: set.toFailure,
-      ),
-    );
-    if (result == null || bloc.isClosed) return;
-    switch (result) {
-      case SetSheetSave(:final record):
-        bloc.add(LiveSessionEvent.setRecorded(record));
-      case SetSheetDelete(:final setId):
-        bloc.add(LiveSessionEvent.setDeleted(setId));
-    }
-    return;
-  }
-  final ok = await showConfirmDialog(
-    context,
-    title: l10n.trainingUnmarkSetTitle(set.setNumber),
-    message: l10n.trainingUnmarkSetMessage,
-    confirmLabel: l10n.trainingDeleteSet,
-  );
-  if (ok && !bloc.isClosed) bloc.add(LiveSessionEvent.setDeleted(set.id));
 }

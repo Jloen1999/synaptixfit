@@ -270,12 +270,17 @@ void main() {
           // El tiempo real va aparte, en su píldora (con su propio color).
           expect(find.byType(LiveClockPill), findsOneWidget);
           expect(find.text('10:00'), findsOneWidget);
-          // El cronómetro de la serie es opcional: «Marcar» sigue a mano.
-          expect(find.text('Cronometrar'), findsOneWidget);
+          // El cronómetro de la serie es opcional: un icono con su nombre;
+          // «Marcar serie N» es la única acción destacada.
+          expect(find.byTooltip('Cronometrar la serie'), findsOneWidget);
           expect(find.text('Press banca'), findsWidgets);
           expect(find.text('Marcar serie 2'), findsOneWidget);
           expect(find.text('Después: Plancha'), findsOneWidget);
-          expect(find.text('Finalizar'), findsOneWidget);
+          // Una sola cifra de partida: la de la fila (pirámide: 10 × 35 kg).
+          expect(find.text('Ahora: 10 reps · 35 kg'), findsOneWidget);
+          expect(find.text('Terminar'), findsOneWidget);
+          // Un solo camino de salida: la flecha de volver.
+          expect(find.byTooltip('Salir de la sesión'), findsNothing);
           // Con letra grande, «Ejercicio 1 de 3» con anterior y siguiente.
           if (scale > 1) {
             expect(find.byTooltip('Ejercicio siguiente'), findsOneWidget);
@@ -290,7 +295,8 @@ void main() {
     ) async {
       when(() => bloc.state).thenReturn(ready());
       await pump(tester, const LiveSessionPage(sessionId: 's1'));
-      await tester.tap(find.byTooltip('Salir de la sesión'));
+      // «Atrás» (la flecha o el gesto del sistema) es el único camino.
+      await tester.binding.handlePopRoute();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
       expect(find.text('¿Salir sin terminar?'), findsOneWidget);
@@ -302,8 +308,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Pausar y salir'), findsOneWidget);
-      expect(find.text('El tiempo se para. Para volver, toca «Volver» en la barra de abajo o en Entreno › Gimnasio.'), findsOneWidget);
-      expect(find.text('Terminar ahora'), findsOneWidget);
+      expect(find.text('El tiempo se para.'), findsOneWidget);
+      // «Terminar» (la de la barra y la de la hoja) y «Descartar sesión».
+      expect(find.text('Terminar'), findsNWidgets(2));
+      expect(find.text('Descartar sesión'), findsOneWidget);
+      expect(find.textContaining('6 horas'), findsNothing);
       expect(
         find.textContaining('Se guarda con lo que has hecho (1 de'),
         findsOneWidget,
@@ -376,7 +385,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('el descanso se ve en grande con −15 s, +15 s y Saltar', (
+    testWidgets('el descanso se ve en grande con −15 s, +15 s y Saltar descanso', (
       tester,
     ) async {
       when(() => bloc.state).thenReturn(ready(rest: 75));
@@ -390,7 +399,70 @@ void main() {
       expect(find.text('1:15'), findsOneWidget);
       expect(find.text('−15 s'), findsOneWidget);
       expect(find.text('+15 s'), findsOneWidget);
-      expect(find.text('Saltar'), findsOneWidget);
+      expect(find.text('Saltar descanso'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('«Deshacer» va en el panel del descanso y desmarca esa serie', (
+      tester,
+    ) async {
+      when(
+        () => bloc.state,
+      ).thenReturn(ready(rest: 75).copyWith(restForSet: 'p1/1'));
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      expect(find.text('Serie 1 registrada'), findsOneWidget);
+      await tester.tap(find.text('Deshacer'));
+      await tester.pump();
+      verify(
+        () => bloc.add(const LiveSessionEvent.setDeleted('x1')),
+      ).called(1);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('el ✓ de una serie hecha la desmarca al momento, sin diálogo', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(ready());
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      final check = find.byTooltip('Desmarcar la serie 1');
+      await tester.ensureVisible(check);
+      await tester.tap(check);
+      await tester.pump();
+      verify(
+        () => bloc.add(const LiveSessionEvent.setDeleted('x1')),
+      ).called(1);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Serie 1 desmarcada'), findsOneWidget);
+      expect(find.text('Deshacer'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('tocar la fila de una serie hecha abre una hoja corta', (
+      tester,
+    ) async {
+      when(() => bloc.state).thenReturn(ready());
+      await pump(tester, const LiveSessionPage(sessionId: 's1'));
+      // Fuera del ✓ y de las cifras: en la columna «Objetivo».
+      final row = find.ancestor(
+        of: find.text('12 reps'),
+        matching: find.byType(InkWell),
+      );
+      tester.widget<InkWell>(row.first).onTap!();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('Repeticiones hechas'), findsOneWidget);
+      expect(find.text('Peso (kg)'), findsOneWidget);
+      // Lo que se puede calcular no se pregunta.
+      expect(find.textContaining('faltaron'), findsNothing);
+      // «Hasta no poder más» en una línea; su explicación, solo con «?».
+      expect(find.text('Hasta no poder más'), findsOneWidget);
+      expect(find.textContaining('ni una repetición más'), findsNothing);
+      await tester.tap(find.byTooltip('Qué es «Hasta no poder más»'));
+      await tester.pump();
+      expect(find.textContaining('ni una repetición más'), findsOneWidget);
+      // «Desmarcar serie»: gris, sin papelera.
+      expect(find.text('Desmarcar serie'), findsOneWidget);
+      expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);
       await tester.pumpWidget(const SizedBox());
     });
   });

@@ -460,6 +460,14 @@ class TrainingFlowIT {
         assertThat((List<Object>) JsonPath.read(withWork, "$.warmupSets")).hasSize(1);
         assertThat((Double) JsonPath.read(withWork, "$.warmupSets[0].weightKg")).isEqualTo(20.0);
         assertThat((Boolean) JsonPath.read(withWork, "$.sets[0].toFailure")).isTrue();
+        // Sin «failedReps» las calcula el servidor (10 previstas − 8 hechas); una app anterior que las manda
+        // («no me faltó ninguna») se respeta.
+        assertThat((Integer) JsonPath.read(withWork, "$.sets[0].failedReps")).isEqualTo(2);
+        assertThat((Boolean) JsonPath.read(withWork, "$.sets[0].completed")).isFalse();
+        String older = body(post(sets).content("{\"plannedExerciseId\":\"" + planned
+                + "\",\"setNumber\":3,\"repsDone\":8,\"weightKg\":40,\"completed\":true,\"failedReps\":0}"), token, 200);
+        assertThat((List<Integer>) JsonPath.read(older, "$.sets[?(@.setNumber == 3)].failedReps")).containsExactly(0);
+        assertThat((List<Boolean>) JsonPath.read(older, "$.sets[?(@.setNumber == 3)].completed")).containsExactly(true);
         // «Usar hoy»: la serie guarda el ejercicio elegido; la rutina no cambia.
         assertThat((String) JsonPath.read(withWork, "$.sets[0].exerciseId")).isEqualTo(other);
         assertThat((String) JsonPath.read(body(get("/api/v1/routines/" + routineId), token, 200),

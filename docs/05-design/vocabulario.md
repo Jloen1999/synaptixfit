@@ -15,11 +15,11 @@ Regla general: palabras cotidianas, verbos en los botones, una acción útil sig
 | Actividad hecha fuera del plan (`PastActivity`, carrera, partido…) | **actividad** («Apuntar una actividad», «Tus actividades») | — | «Actividad» se reserva para lo ya hecho/registrado |
 | Carrera grabada con GPS | «Carrera» (o «Paseo», «Bici» según el tipo); origen: «GPS de la app» / «Apuntada a mano» / «Marcada en el calendario» | «workout», «run» en español | Es una **actividad**. Un entreno de carrera planificado que se graba deja su evento del calendario como **Hecho** (lo marca el planificador, su dueño) |
 | Entreno de carrera por pasos | «Entreno de carrera»: pasos «Calentar», «Correr», «Recuperar», «Enfriar»; series «6 × 800 m» | «intervalos» sin explicar | Se pone en el calendario como evento de tipo Entreno |
-| Sesión de gimnasio (`TrainingSession`) | «Sesión» / «Entreno» | — | |
+| Sesión de gimnasio (`TrainingSession`) | «Sesión» / «Entreno». Acciones: «Terminar» (hoja con el esfuerzo y «Guardar»), «Descartar sesión», «Pausar y salir», «Saltar descanso»; en una serie, «Desmarcar serie»; una terminada hoy, «Reabrir y seguir» | «Finalizar», «Abandonar», «Terminar ahora», «Terminar con lo registrado», «Borrar serie» | Reabrir conserva las series y vuelve a la sesión; «Eliminar» la borra para siempre (ADR 0030) |
 | Estados de lo planificado | **Por hacer** (aún no ha llegado o es hoy), **Hecho**, **Sin hacer** (ya pasó y no se hizo) | «Planificado», «pendiente» a secas, «completado» mezclado con «hecho» | Mismos tres estados en Inicio, planificador, avisos y Progreso |
 | Marcar / desmarcar | «Marcar como hecho» / «Desmarcar» + «Deshacer» en el aviso | «Retirar», «revertir» | Desmarcar devuelve exactamente el XP dado (anti-farmeo existente) |
 | Propuestas generadas por el sistema (IA o reglas) | «Te proponemos…», «Te sugerimos…», «Mejorar la propuesta», «Proponer la siguiente», indicando **en qué datos** se basa («Según tu perfil, tu material y tu carga de estudio») | «IA», «inteligencia artificial», «generado/refinado con IA», «motor de reglas», el icono de chispas (`auto_awesome`) | Se ven igual vengan de la IA o de las reglas (icono `lightbulb_outline`). Excepciones: textos legales/privacidad (obligatorio informar del proveedor) y panel de administración. Avisos de error: «Revisa que esté bien antes de guardarlo» |
-| Progresión de cargas | «Siguiente paso: prueba 42,5 kg» + porqué con lo que hiciste («Hiciste 3 × 10 con 40 kg sin llegar al fallo») | «progresión» sin explicar, «RIR», «1RM» sin explicar | |
+| Progresión de cargas | En la sesión: «Hoy prueba 42,5 kg (+5 %)», ya puesto en las series, con el porqué en un «?» («Hiciste 3 × 10 con 40 kg sin llegar al fallo»). Tras la sesión: «Siguiente paso: prueba 42,5 kg» | «progresión» sin explicar, «RIR», «1RM» sin explicar, dos cifras de partida que compitan | Un solo valor de partida por serie (ADR 0031) |
 | Plan por fases | «Semana 2 de 8» + qué toca esta semana en una frase | «mesociclo» | |
 | Pestaña de entrenamiento | **Entreno**, con apartados «Gimnasio» y «Correr» (y en el futuro «CrossFit») | «Rutinas» como nombre de pestaña | «Rutinas» sigue siendo el nombre de las rutinas dentro de Gimnasio |
 | Fecha de nacimiento | «Fecha de nacimiento (opcional)»; la edad se calcula | pedir «edad» | Nunca en el perfil público. Se pide en el primer paso del onboarding y en «Editar cuenta»; quien ya dio su edad recibe la sugerencia «Pon tu fecha de nacimiento…», sin bloquearle (ADR 0036) |
@@ -55,3 +55,25 @@ Una pieza compartida la cambia solo su dueño; los demás la usan por su contrat
 - El modo de uso (estudio / deporte / ambos) filtra lo que se ve, pero «Personal» se ve siempre. Cualquier cambio del perfil (nombre, foto, privacidad, modo de uso, fecha de nacimiento) se ve en todas las pantallas al guardar, sin reiniciar (`SessionBloc` + `DataChangeInterceptor`).
 - Lo que se busca se encuentra igual con o sin tildes y mayúsculas, y cada resultado abre la misma pantalla que abriría desde su lista.
 - Todo dato personal nuevo (fecha de nacimiento, rutas GPS) se borra al borrar la cuenta, sale en la exportación de la persona, no sale en la exportación del administrador si es de salud o ubicación, y figura en la política de privacidad y en `docs/06-ops/google-play.md`.
+
+## 4. Claridad y carga cognitiva (noviembre 2026)
+
+Decisión del propietario: «la aplicación debe ir al grano, facilitar al usuario; el usuario debe poder realizar acciones con pocos pasos». Se basa en el estudio de Hevy, Strong, Strava, Todoist, Google Calendar y Duolingo, y en las pautas de NN/g, Material 3 y Apple HIG.
+
+- **Una acción principal por pantalla.** Como mucho, un botón destacado; el resto, secundario o en «Más».
+- **Lo reversible no pregunta:** se hace y aparece «Deshacer». Solo se confirma lo que no tiene vuelta atrás, con el verbo exacto («Descartar sesión», no «Sí»).
+- **Un verbo por acción, en toda la app:**
+  - **Desmarcar**: quita lo apuntado y se puede deshacer; nunca es rojo ni lleva papelera.
+  - **Quitar del plan**: elimina algo de la rutina o del calendario.
+  - **Eliminar**: borra para siempre.
+  - **Terminar**: guarda; nunca es rojo.
+  - **Descartar**: no guarda; separado de Terminar y confirmado.
+  - **Saltar descanso** y **Saltar este día**: nunca «Saltar» a secas.
+- **Sin explicaciones que interrumpan.** Nada de hojas o diálogos de «cómo funciona». Si hace falta, una línea o un «?» opcional que se abre al tocarlo.
+- **Rellenar por la persona:** lo de la última vez, la hora siguiente libre, la asignatura del contexto. Lo que se puede calcular no se pregunta (p. ej. las repeticiones que faltaron = objetivo − hechas).
+- **Cifras técnicas solo donde aportan.**
+  - El **XP** se ve en Progreso (nivel y barra) y en los momentos de celebración (subir de nivel, insignia nueva). No aparece en botones, avisos de «hecho», tarjetas de Inicio ni diálogos.
+  - Lo mismo para kcal, carga, ACWR, minutos ponderados y porcentajes: en Progreso o en el detalle, no en el día a día.
+- **Navegación:** Inicio · Calendario · Académico · Entreno · Progreso. Los retos, el XP, las rachas y las insignias viven en Progreso.
+- **Un camino por destino.** Una misma función no aparece con nombres o iconos distintos en varios sitios de la misma pantalla.
+- **Pocos pasos en lo diario.** Empezar el entreno de hoy, marcar algo hecho o empezar un Pomodoro: 1 toque desde Inicio. Apuntar una entrega: ≤ 4. Terminar una sesión: 2.

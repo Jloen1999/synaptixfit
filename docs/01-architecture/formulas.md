@@ -99,6 +99,10 @@ Solo orienta («≈ 45 min» en el próximo día y el detalle del día; «quedan
 - Por día: suma de sus ejercicios, en minutos redondeados hacia arriba. Va en `estimatedMinutes` del día de rutina, del próximo día (`/training/...pending`) y del próximo entreno de Inicio; cada ejercicio planificado lleva `estimatedSeconds`.
 - «Quedan»: la app suma `estimatedSeconds × series sin apuntar / series` de cada ejercicio (proporción de lo que manda el servidor; no hay regla en el cliente).
 
+## Repeticiones que faltaron (ADR 0031)
+
+No se preguntan: `failedReps = max(0, objetivo de la serie − hechas)` (`PlannedExercise.missedReps`), solo en las series previstas de un ejercicio de repeticiones (una serie extra, de aguante o de cardio da 0). Si falta alguna, la serie queda como no completa. El servidor lo calcula cuando la app no lo manda; lo que manda una app anterior se respeta. Alimenta la bajada de carga por fallos de abajo.
+
 ## «Hasta no poder más» (ADR 0031)
 
 Si alguna serie de trabajo de un ejercicio se marcó «hasta no poder más» (`al_fallo`), `ProgressionCalculator` **mantiene la carga** de ese ejercicio en vez de subirla, aunque el esfuerzo de la sesión fuera bajo (RPE ≤ 7): ya llegó al límite. Las repeticiones fallidas (bajar 5 % por fallo, entre 70 % y 95 %) y el esfuerzo máximo (RPE ≥ 9,5 → −15 %) siguen mandando antes. Vale igual para la propuesta de carga en la sesión y para las sugerencias tras la sesión.
@@ -116,7 +120,7 @@ Cada ajuste de una sugerencia (`ExerciseAdjustment`) lleva los parámetros nuevo
 - **Cifra que se propone (`metric`):** la que mueve el motivo: `WEIGHT`, `REPS`, `HOLD_SECONDS`, `DURATION_SECONDS` o `DISTANCE_METERS`. Los recortes al rango del objetivo no se proponen. Solo cambia la carga de hoy; las series no.
 - **Sin propuesta** si no hubo RPE, si la última vez fue hace más de 14 días (manda la descarga por inactividad), o si la rutina ya pide esa cifra (la sugerencia de después de la sesión ya se aplicó).
 - **Por serie (`perSet`):** el servidor da la cifra de cada serie planificada: en una pirámide, el peso y el aguante se mueven en la misma proporción (peso a 0,5 kg) y las repeticiones en la misma diferencia; si no, la cifra propuesta.
-- **En la app:** aceptarla («Usar en las series que faltan») rellena con `perSet` las series que faltan de ese ejercicio. No toca la rutina ni las series ya apuntadas.
+- **En la app:** es la cifra de partida de las series que faltan de ese ejercicio (con `perSet`), sin tener que aceptarla, salvo que la serie anterior de hoy ya tenga una cifra real (manda lo real). Se dice en una línea («Hoy prueba 42,5 kg (+5 %)») con el porqué en un «?». No toca la rutina ni las series ya apuntadas.
 
 ## Edad (ADR 0036)
 

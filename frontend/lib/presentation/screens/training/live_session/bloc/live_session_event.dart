@@ -19,9 +19,14 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
   const factory LiveSessionEvent.exerciseSelected(String? plannedExerciseId) =
       LiveSessionExerciseSelected;
 
-  const factory LiveSessionEvent.setRecorded(SetRecord record) =
-      LiveSessionSetRecorded;
+  /// Apunta (o corrige) una serie. Con [startRest] falso no arranca su
+  /// descanso: al corregirla o al deshacer un «Desmarcar».
+  const factory LiveSessionEvent.setRecorded(
+    SetRecord record, {
+    @Default(true) bool startRest,
+  }) = LiveSessionSetRecorded;
 
+  /// Desmarca una serie (la quita de la sesión; se puede deshacer).
   const factory LiveSessionEvent.setDeleted(String setId) =
       LiveSessionSetDeleted;
 
@@ -32,13 +37,6 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
       LiveSessionRestAdjusted;
 
   const factory LiveSessionEvent.restSkipped() = LiveSessionRestSkipped;
-
-  /// Acepta (o deshace) la propuesta de carga de un ejercicio: rellena sus
-  /// series pendientes con la cifra propuesta.
-  const factory LiveSessionEvent.loadSuggestionToggled(
-    String plannedExerciseId, {
-    required bool accepted,
-  }) = LiveSessionLoadSuggestionToggled;
 
   /// «Hacerla completa»: hoy se entrena con las series planificadas en vez de
   /// las adaptadas (la decisión es de la persona; el servidor no la impide).
@@ -65,11 +63,6 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
 
   /// Reanuda la sesión (y el cronómetro de la serie, si había uno).
   const factory LiveSessionEvent.resumeRequested() = LiveSessionResumeRequested;
-
-  /// Se cerró la explicación del cronómetro; con [hideNextTime] no se vuelve
-  /// a mostrar en este teléfono.
-  const factory LiveSessionEvent.clockExplained({required bool hideNextTime}) =
-      LiveSessionClockExplained;
 
   /// «Usar hoy»: hace [swap] en lugar del ejercicio del hueco solo en esta
   /// sesión; nulo, vuelve al de la rutina.

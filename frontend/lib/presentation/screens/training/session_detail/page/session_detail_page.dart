@@ -32,19 +32,22 @@ final class SessionDetailCorrect extends SessionDetailAction {
   final int rpe;
 }
 
-/// Desmarcar (solo la terminada hoy).
+/// «Reabrir y seguir» (solo la terminada hoy): vuelve a abrirla con sus
+/// series para seguir o corregir; el servidor la desmarca.
 final class SessionDetailUnmark extends SessionDetailAction {
   const SessionDetailUnmark();
 }
 
-/// Eliminar (resta su XP y su carga).
+/// Eliminar: la borra para siempre con sus series.
 final class SessionDetailDelete extends SessionDetailAction {
   const SessionDetailDelete();
 }
 
 /// Detalle de solo lectura de una sesión terminada (tocarla en el historial
 /// ya no reabre la sesión en vivo): cifras, récords y series por ejercicio, con
-/// «Corregir» (o «Desmarcar» si es de hoy) y «Eliminar».
+/// «Corregir» (o «Reabrir y seguir» si es de hoy) y «Eliminar». Son dos cosas
+/// distintas y la etiqueta lo dice: reabrir conserva las series y vuelve a la
+/// sesión; eliminar la borra para siempre.
 class SessionDetailPage extends StatelessWidget {
   const SessionDetailPage({super.key, required this.sessionId, this.entry});
 
@@ -95,17 +98,10 @@ class _DetailView extends StatelessWidget {
     );
   }
 
-  Future<void> _unmark(BuildContext context, SessionHistoryEntry e) async {
-    final l10n = context.localizations;
-    final navigator = Navigator.of(context);
-    final ok = await showConfirmDialog(
-      context,
-      title: l10n.trainingUnmarkTitle,
-      message: l10n.trainingUnmarkMessage(e.session.xpAwarded),
-      confirmLabel: l10n.trainingUnmark,
-    );
-    if (ok) navigator.pop(const SessionDetailUnmark());
-  }
+  /// Reabrir no pierde nada (terminarla otra vez la vuelve a contar): no
+  /// pregunta.
+  void _reopen(BuildContext context) =>
+      Navigator.of(context).pop(const SessionDetailUnmark());
 
   Future<void> _delete(BuildContext context, SessionHistoryEntry e) async {
     final l10n = context.localizations;
@@ -113,7 +109,7 @@ class _DetailView extends StatelessWidget {
     final ok = await showConfirmDialog(
       context,
       title: l10n.trainingDeleteSessionTitle,
-      message: l10n.trainingDeleteSessionMessage(e.session.xpAwarded),
+      message: l10n.trainingDeleteSessionMessage,
       confirmLabel: l10n.trainingDeleteSession,
     );
     if (ok) navigator.pop(const SessionDetailDelete());
@@ -160,36 +156,33 @@ class _DetailView extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(TokensSpacing.m),
                     child: TrainingContent(
-                      child: Row(
+                      // Uno al lado del otro; si no caben (letra grande o
+                      // 320 dp), uno debajo del otro.
+                      child: OverflowBar(
+                        spacing: TokensSpacing.s,
+                        overflowSpacing: TokensSpacing.s,
+                        alignment: MainAxisAlignment.end,
+                        overflowAlignment: OverflowBarAlignment.end,
                         children: [
-                          Expanded(
-                            child: entry.unmarkable
-                                ? AppSecondaryButton(
-                                    label: l10n.trainingUnmark,
-                                    icon: const Icon(AppIcons.undo),
-                                    onPressed: () => _unmark(context, entry),
-                                  )
-                                : AppSecondaryButton(
-                                    label: l10n.trainingCorrectSession,
-                                    icon: const Icon(AppIcons.edit),
-                                    onPressed: () => _correct(context, entry),
-                                  ),
-                          ),
-                          const SizedBox(width: TokensSpacing.s),
-                          // Misma pieza que «Corregir», en tono de borrar.
-                          Expanded(
-                            child: Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: context.colors.copyWith(
-                                  primary: context.colors.error,
+                          entry.unmarkable
+                              ? AppSecondaryButton(
+                                  label: l10n.trainingReopenSession,
+                                  icon: const Icon(Icons.play_arrow_rounded),
+                                  onPressed: () => _reopen(context),
+                                )
+                              : AppSecondaryButton(
+                                  label: l10n.trainingCorrectSession,
+                                  icon: const Icon(AppIcons.edit),
+                                  onPressed: () => _correct(context, entry),
                                 ),
-                              ),
-                              child: AppSecondaryButton(
-                                label: l10n.trainingDeleteSession,
-                                icon: const Icon(AppIcons.delete),
-                                onPressed: () => _delete(context, entry),
-                              ),
+                          // Eliminar borra para siempre: en tono de error.
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: context.colors.error,
                             ),
+                            onPressed: () => _delete(context, entry),
+                            icon: const Icon(AppIcons.delete),
+                            label: Text(l10n.trainingDeleteSession),
                           ),
                         ],
                       ),
@@ -285,13 +278,6 @@ class _Content extends StatelessWidget {
                       color: context.palette.calories,
                       value: l10n.trainingChipKcal(session.calories!.round()),
                       label: l10n.trainingSessionDetailCalories,
-                    ),
-                  if (session.xpAwarded > 0)
-                    AppMetricTile(
-                      icon: Icons.star_rounded,
-                      color: context.palette.accent,
-                      value: l10n.trainingXpGained(session.xpAwarded),
-                      label: l10n.trainingSessionDetailXp,
                     ),
                 ],
               ),

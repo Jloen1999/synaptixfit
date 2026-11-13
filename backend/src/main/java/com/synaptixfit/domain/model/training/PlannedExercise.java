@@ -56,6 +56,19 @@ public final class PlannedExercise {
         return exercise.trackingKind();
     }
 
+    /**
+     * Repeticiones que faltaron en la serie {@code setNumber}: objetivo − hechas (nunca negativo). Solo hay
+     * objetivo en las series previstas de un ejercicio de repeticiones; una serie extra, de aguante o de cardio
+     * no tiene y da 0. Así la persona no tiene que contarlas: se deduce de lo que apunta.
+     */
+    public int missedReps(int setNumber, Integer repsDone) {
+        if (repsDone == null || setNumber < 1 || setNumber > parameters.sets()
+                || trackingKind() != TrackingKind.REPETITIONS) {
+            return 0;
+        }
+        return Math.max(0, parameters.repsForSet(setNumber) - repsDone);
+    }
+
     public UUID id() { return id; }
     public ExerciseRef exercise() { return exercise; }
     public UUID exerciseId() { return exercise.id(); }

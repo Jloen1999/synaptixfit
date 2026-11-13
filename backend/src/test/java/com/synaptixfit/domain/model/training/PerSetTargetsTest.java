@@ -34,6 +34,21 @@ class PerSetTargetsTest {
     }
 
     @Test
+    void missedRepsAreTheTargetMinusTheDoneOnesOnlyInPlannedRepetitionSets() {
+        PlannedExercise bench = new PlannedExercise(UUID.randomUUID(), BENCH, perSet(List.of(12, 10)), 1, null);
+
+        assertThat(bench.missedReps(1, 9)).isEqualTo(3);
+        assertThat(bench.missedReps(2, 10)).isZero();
+        assertThat(bench.missedReps(3, 12)).isZero();
+        assertThat(bench.missedReps(1, null)).isZero();
+        // Serie extra: no tiene objetivo.
+        assertThat(bench.missedReps(4, 1)).isZero();
+        PlannedExercise plank = new PlannedExercise(UUID.randomUUID(), PLANK,
+                new ExerciseParameters(3, 1, 60, null, null, null, null, 30), 1, null);
+        assertThat(plank.missedReps(1, 0)).isZero();
+    }
+
+    @Test
     void eachSetUsesItsOwnValueAndFallsBackToTheCommonOne() {
         ExerciseParameters p = perSet(List.of(12, 10));
 

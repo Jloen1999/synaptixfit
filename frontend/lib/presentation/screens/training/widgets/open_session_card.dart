@@ -107,13 +107,13 @@ class OpenSessionCard extends StatelessWidget {
                       : () async {
                           final figures = await showSessionFiguresDialog(
                             context,
-                            confirmLabel: l10n.trainingFinishWithLogged,
+                            confirmLabel: l10n.trainingFinishAction,
                             subtitle: title,
                           );
                           if (figures != null) onFinish(figures);
                         },
                   icon: const Icon(Icons.check_rounded),
-                  label: Text(l10n.trainingFinishWithLogged),
+                  label: Text(l10n.trainingFinishAction),
                 )
               else
                 FilledButton(

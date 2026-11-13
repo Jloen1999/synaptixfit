@@ -99,7 +99,10 @@ abstract class SetRecord with _$SetRecord {
     int? repsDone,
     double? weightKg,
     @Default(true) bool completed,
-    @Default(0) int failedReps,
+
+    /// Repeticiones que faltaron. Nulo: las calcula el servidor (objetivo −
+    /// hechas); solo se manda al restaurar una serie tal como estaba.
+    int? failedReps,
     int? durationSeconds,
     int? distanceMeters,
 

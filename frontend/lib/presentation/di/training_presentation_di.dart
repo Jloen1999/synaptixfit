@@ -119,8 +119,6 @@ void registerTrainingPresentation(GetIt getIt) {
         savePending: getIt(),
         pauseSession: getIt(),
         resumeSession: getIt(),
-        getClockIntroHidden: getIt(),
-        hideClockIntro: getIt(),
         loadDraft: getIt(),
         saveDraft: getIt(),
       ),

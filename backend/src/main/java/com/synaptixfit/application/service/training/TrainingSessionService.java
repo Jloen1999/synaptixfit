@@ -383,8 +383,13 @@ public class TrainingSessionService implements StartTrainingSessionUseCase, Reco
                     c.durationSeconds(), c.distanceMeters(), c.activeSeconds());
             return;
         }
-        session.recordSet(plannedId, exerciseId, c.setNumber(), c.repsDone(), c.weightKg(), c.completed(),
-                c.failedReps(), c.durationSeconds(), c.distanceMeters(), c.activeSeconds(), c.toFailure());
+        // Sin la cifra (apps actuales) se deduce del objetivo: hechas de menos = serie no completa. Lo que manda
+        // una app anterior se respeta tal cual.
+        boolean computed = c.failedReps() == null;
+        int failed = computed ? planned.map(p -> p.missedReps(c.setNumber(), c.repsDone())).orElse(0) : c.failedReps();
+        boolean completed = computed ? c.completed() && failed == 0 : c.completed();
+        session.recordSet(plannedId, exerciseId, c.setNumber(), c.repsDone(), c.weightKg(), completed,
+                failed, c.durationSeconds(), c.distanceMeters(), c.activeSeconds(), c.toFailure());
     }
 
     /**

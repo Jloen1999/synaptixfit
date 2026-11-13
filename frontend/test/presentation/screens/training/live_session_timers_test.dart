@@ -20,8 +20,6 @@ import 'package:synaptixfit/domain/use_cases/training/pause_session_use_case.dar
 import 'package:synaptixfit/domain/use_cases/training/record_set_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/resume_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/save_pending_sets_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/training/get_session_clock_intro_hidden_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/training/hide_session_clock_intro_use_case.dart';
 import 'package:synaptixfit/domain/models/training/live_session_draft.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/bloc/live_session_bloc.dart';
 
@@ -59,11 +57,6 @@ class _Pause extends Mock implements PauseSessionUseCaseContract {}
 
 class _Resume extends Mock implements ResumeSessionUseCaseContract {}
 
-class _IntroHidden extends Mock
-    implements GetSessionClockIntroHiddenUseCaseContract {}
-
-class _HideIntro extends Mock implements HideSessionClockIntroUseCaseContract {}
-
 /// Cronómetro por serie y pausas (ADR 0030) con escenarios reales: el
 /// cronómetro ayuda pero nunca obliga.
 void main() {
@@ -74,8 +67,6 @@ void main() {
   late _GetRoutine getRoutine;
   late _Pause pause;
   late _Resume resume;
-  late _IntroHidden introHidden;
-  late _HideIntro hideIntro;
   late _Finish finish;
   late DateTime current;
 
@@ -93,8 +84,6 @@ void main() {
     getRoutine = _GetRoutine();
     pause = _Pause();
     resume = _Resume();
-    introHidden = _IntroHidden();
-    hideIntro = _HideIntro();
     finish = _Finish();
     when(() => recordSet(any(), any())).thenAnswer(
       (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
@@ -148,8 +137,6 @@ void main() {
       savePending: savePending,
       pauseSession: pause,
       resumeSession: resume,
-      getClockIntroHidden: introHidden,
-      hideClockIntro: hideIntro,
       loadDraft: FakeLoadDraft(drafts),
       saveDraft: FakeSaveDraft(drafts),
       clock: () => current,
@@ -356,51 +343,19 @@ void main() {
     );
   });
 
-  group('explicación del cronómetro', () {
-    setUp(() {
-      current = startedAt.add(const Duration(seconds: 20));
-      when(() => getSession('s1')).thenAnswer(
-        (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
-      );
-      when(() => getRoutine(any())).thenAnswer((_) async => Success(routine));
-    });
-
-    test(
-      'al empezar una sesión se explica que el cronómetro ya corre',
-      () async {
-        when(() => introHidden()).thenAnswer((_) async => const Success(false));
-        when(() => hideIntro()).thenAnswer((_) async => const Success(unit));
-        final bloc = build()..add(const LiveSessionEvent.started('s1'));
-        await settle();
-        await settle();
-        expect(bloc.state.explainClock, isTrue);
-        bloc.add(const LiveSessionEvent.clockExplained(hideNextTime: true));
-        await settle();
-        expect(bloc.state.explainClock, isFalse);
-        verify(() => hideIntro()).called(1);
-        await bloc.close();
-      },
+  test('empezar es un toque: no hay explicación que interrumpa', () async {
+    current = startedAt.add(const Duration(seconds: 20));
+    when(() => getSession('s1')).thenAnswer(
+      (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
     );
-
-    test('si no se puede leer la preferencia, se explica', () async {
-      when(
-        () => introHidden(),
-      ).thenAnswer((_) async => const Failure(AppError.unknown()));
-      final bloc = build()..add(const LiveSessionEvent.started('s1'));
-      await settle();
-      await settle();
-      expect(bloc.state.explainClock, isTrue);
-      await bloc.close();
-    });
-
-    test('con «No volver a explicarlo» ya no se explica', () async {
-      when(() => introHidden()).thenAnswer((_) async => const Success(true));
-      final bloc = build()..add(const LiveSessionEvent.started('s1'));
-      await settle();
-      await settle();
-      expect(bloc.state.explainClock, isFalse);
-      await bloc.close();
-    });
+    when(() => getRoutine(any())).thenAnswer((_) async => Success(routine));
+    final bloc = build()..add(const LiveSessionEvent.started('s1'));
+    await settle();
+    await settle();
+    expect(bloc.state.status, LiveStatus.ready);
+    // El tiempo ya corre desde el inicio de la sesión.
+    expect(bloc.state.elapsedSeconds, 20);
+    await bloc.close();
   });
 
   group('Tanda 1: lo que no se pierde y libertad al entrenar', () {
@@ -409,7 +364,6 @@ void main() {
         (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
       );
       when(() => getRoutine(any())).thenAnswer((_) async => Success(routine));
-      when(() => introHidden()).thenAnswer((_) async => const Success(true));
     });
 
     test(

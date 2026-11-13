@@ -20,8 +20,6 @@ import 'package:synaptixfit/domain/use_cases/training/get_session_use_case.dart'
 import 'package:synaptixfit/domain/use_cases/training/record_set_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/pause_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/resume_session_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/training/get_session_clock_intro_hidden_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/training/hide_session_clock_intro_use_case.dart';
 import 'package:synaptixfit/presentation/screens/training/live_session/bloc/live_session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/training_effect.dart';
 import 'package:synaptixfit/domain/models/training/session_adaptation.dart';
@@ -38,12 +36,6 @@ class _MockGetSession extends Mock implements GetSessionUseCaseContract {}
 class _MockPause extends Mock implements PauseSessionUseCaseContract {}
 
 class _MockResume extends Mock implements ResumeSessionUseCaseContract {}
-
-class _MockIntroHidden extends Mock
-    implements GetSessionClockIntroHiddenUseCaseContract {}
-
-class _MockHideIntro extends Mock
-    implements HideSessionClockIntroUseCaseContract {}
 
 class _MockGetLoads extends Mock implements GetLoadSuggestionsUseCaseContract {}
 
@@ -86,7 +78,6 @@ void main() {
   late _MockGetLoads getLoads;
   late _MockLoadPending loadPending;
   late _MockSavePending savePending;
-  late _MockIntroHidden introHidden;
 
   final startedAt = DateTime(2026, 10, 18, 10);
   final now = startedAt.add(const Duration(minutes: 5));
@@ -116,9 +107,6 @@ void main() {
     savePending = _MockSavePending();
     // Sin series pendientes guardadas en el teléfono salvo en su test.
     when(() => loadPending(any())).thenAnswer((_) async => const Success([]));
-    introHidden = _MockIntroHidden();
-    // En estas pruebas no se explica el cronómetro (lo cubre live_session_timers_test).
-    when(() => introHidden()).thenAnswer((_) async => const Success(true));
     when(
       () => savePending(any(), any()),
     ).thenAnswer((_) async => const Success(unit));
@@ -149,8 +137,6 @@ void main() {
     savePending: savePending,
     pauseSession: _MockPause(),
     resumeSession: _MockResume(),
-    getClockIntroHidden: introHidden,
-    hideClockIntro: _MockHideIntro(),
     loadDraft: FakeLoadDraft(drafts),
     saveDraft: FakeSaveDraft(drafts),
     clock: clock ?? () => now,
@@ -250,18 +236,34 @@ void main() {
       ],
     );
 
-    test(
-      'aceptarla rellena las series que faltan; deshacerla vuelve a lo de antes',
-      () {
-        final base = ready().copyWith(loadSuggestions: {'p1': load});
-        final e = exercises.first;
-        expect(base.proposedValue(e, 2, SetField.weight), isNot(42));
-        final accepted = base.copyWith(acceptedLoad: {'p1'});
-        expect(accepted.proposedValue(e, 2, SetField.weight), 42);
-        // Solo cambia la cifra propuesta (el peso); las repeticiones siguen.
-        expect(accepted.proposedValue(e, 2, SetField.reps), 10);
-      },
-    );
+    test('ya va en la cifra de partida de las series, sin aceptarla', () {
+      final s = ready().copyWith(loadSuggestions: {'p1': load});
+      final e = exercises.first;
+      expect(s.proposedValue(e, 1, SetField.weight), 42);
+      expect(s.proposedValue(e, 2, SetField.weight), 42);
+      // Solo cambia la cifra propuesta (el peso); las repeticiones siguen.
+      expect(s.proposedValue(e, 2, SetField.reps), 10);
+    });
+
+    test('si la serie anterior de hoy tiene cifra real, manda lo real', () {
+      final e = exercises.first;
+      final s = ready(
+        session: TrainingFixtures.session(
+          startedAt: startedAt,
+          sets: const [
+            SessionSet(
+              id: 'p1-1',
+              plannedExerciseId: 'p1',
+              setNumber: 1,
+              repsDone: 10,
+              weightKg: 45,
+              completed: true,
+            ),
+          ],
+        ),
+      ).copyWith(loadSuggestions: {'p1': load});
+      expect(s.proposedValue(e, 2, SetField.weight), 45);
+    });
 
     test('cada serie toma la cifra que reparte el servidor', () {
       final e = exercises.first;
@@ -269,36 +271,11 @@ void main() {
         loadSuggestions: {
           'p1': load.copyWith(perSet: const [21, 31.5, 42]),
         },
-        acceptedLoad: {'p1'},
       );
       expect(s.proposedValue(e, 1, SetField.weight), 21);
       expect(s.proposedValue(e, 2, SetField.weight), 31.5);
       expect(s.proposedValue(e, 3, SetField.weight), 42);
     });
-
-    blocTest<LiveSessionBloc, LiveSessionState>(
-      'aceptar y deshacer solo cambia qué ejercicios la usan',
-      build: build,
-      seed: () => ready().copyWith(loadSuggestions: {'p1': load}),
-      act: (bloc) => bloc
-        ..add(
-          const LiveSessionEvent.loadSuggestionToggled('p1', accepted: true),
-        )
-        ..add(
-          const LiveSessionEvent.loadSuggestionToggled('p2', accepted: true),
-        )
-        ..add(
-          const LiveSessionEvent.loadSuggestionToggled('p1', accepted: false),
-        ),
-      expect: () => [
-        isA<LiveSessionState>().having((s) => s.acceptedLoad, 'usa', {'p1'}),
-        isA<LiveSessionState>().having(
-          (s) => s.acceptedLoad,
-          'usa',
-          <String>{},
-        ),
-      ],
-    );
   });
 
   blocTest<LiveSessionBloc, LiveSessionState>(
@@ -629,6 +606,88 @@ void main() {
       expect(s.completedSets, 1);
     },
   );
+
+  group('desmarcar', () {
+    final withSet = TrainingFixtures.session(
+      startedAt: startedAt,
+      sets: [done('p1', 1)],
+    );
+    final without = TrainingFixtures.session(startedAt: startedAt);
+    LiveSessionState resting(String forSet) => ready(
+      session: withSet,
+      active: 'p2',
+    ).copyWith(
+      restRemaining: 60,
+      restEndsAt: now.add(const Duration(seconds: 60)),
+      restTotal: 90,
+      restForSet: forSet,
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'la serie cuyo descanso corre lo para y vuelve a ser la que toca',
+      setUp: () => when(
+        () => deleteSet('s1', 'p1-1'),
+      ).thenAnswer((_) async => Success(without)),
+      build: build,
+      seed: () => resting('p1/1'),
+      act: (bloc) => bloc.add(const LiveSessionEvent.setDeleted('p1-1')),
+      verify: (bloc) {
+        final s = bloc.state;
+        expect(s.restRemaining, isNull);
+        expect(s.restEndsAt, isNull);
+        expect(s.activeExerciseId, 'p1');
+        expect(s.nextSetOf(exercises.first), 1);
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'otra serie no para el descanso que corre',
+      setUp: () => when(
+        () => deleteSet('s1', 'p1-1'),
+      ).thenAnswer((_) async => Success(without)),
+      build: build,
+      seed: () => resting('p1/2'),
+      act: (bloc) => bloc.add(const LiveSessionEvent.setDeleted('p1-1')),
+      verify: (bloc) => expect(bloc.state.restRemaining, 60),
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'el descanso que se arranca al marcar es de esa serie',
+      setUp: () => when(
+        () => recordSet('s1', any()),
+      ).thenAnswer((_) async => Success(withSet)),
+      build: build,
+      seed: () => ready(),
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.setRecorded(
+          SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 10),
+        ),
+      ),
+      verify: (bloc) {
+        expect(bloc.state.restRemaining, 90);
+        expect(bloc.state.restForSet, 'p1/1');
+      },
+    );
+
+    blocTest<LiveSessionBloc, LiveSessionState>(
+      'corregir una serie o deshacer un desmarcar no arranca otro descanso',
+      setUp: () => when(
+        () => recordSet('s1', any()),
+      ).thenAnswer((_) async => Success(withSet)),
+      build: build,
+      seed: () => ready(),
+      act: (bloc) => bloc.add(
+        const LiveSessionEvent.setRecorded(
+          SetRecord(plannedExerciseId: 'p1', setNumber: 1, repsDone: 8),
+          startRest: false,
+        ),
+      ),
+      verify: (bloc) {
+        expect(bloc.state.restRemaining, isNull);
+        expect(bloc.state.session!.sets, hasLength(1));
+      },
+    );
+  });
 
   blocTest<LiveSessionBloc, LiveSessionState>(
     'al completar las series de un ejercicio se pasa solo al siguiente',

@@ -360,7 +360,7 @@ class _SessionCard extends StatelessWidget {
                   ),
                 )
               else
-                // Corregir, desmarcar y eliminar están en el detalle (sin
+                // Corregir, reabrir y eliminar están en el detalle (sin
                 // menú de tres puntos dentro de una tarjeta pulsable).
                 Icon(
                   Icons.chevron_right_rounded,
@@ -381,12 +381,6 @@ class _SessionCard extends StatelessWidget {
                 AppPill(
                   icon: Icons.speed_rounded,
                   label: l10n.trainingRpeValue(s.rpe!),
-                ),
-              if (s.xpAwarded > 0)
-                AppPill(
-                  icon: Icons.star_rounded,
-                  color: context.palette.accent,
-                  label: l10n.trainingXpGained(s.xpAwarded),
                 ),
             ],
           ),

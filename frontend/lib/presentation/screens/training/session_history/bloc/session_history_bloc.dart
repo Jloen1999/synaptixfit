@@ -183,10 +183,9 @@ class SessionHistoryBloc
             ],
           ),
         );
-        _effect(
-          emit,
-          const TrainingEffect.message(TrainingMessage.sessionUnmarked),
-        );
+        // «Reabrir y seguir»: la sesión vuelve a estar abierta y se entra en
+        // ella para seguir o corregir.
+        _effect(emit, TrainingEffect.openSession(id));
         // Sin esa sesión los récords pueden cambiar.
         final records = (await _getRecords()).valueOrNull;
         if (records != null) emit(state.copyWith(records: records));

@@ -216,12 +216,11 @@ class _PlannedExerciseCardState extends State<PlannedExerciseCard> {
                       label: l10n.trainingRemoveExerciseNamed(name),
                       excludeSemantics: true,
                       onTap: widget.onRemove,
+                      // «Quitar del plan»: mismo icono que quitar una
+                      // serie y sin rojo (no borra nada para siempre).
                       child: TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: context.colors.error,
-                        ),
                         onPressed: widget.onRemove,
-                        icon: const Icon(AppIcons.delete),
+                        icon: const Icon(AppIcons.remove),
                         label: Text(l10n.trainingRemoveShort),
                       ),
                     ),
@@ -435,13 +434,28 @@ class _PlannedSetsTableState extends State<PlannedSetsTable> {
         child: Text('$n', style: context.textStyles.titleMedium),
       ),
     );
-    Widget removeButton(int n) => IconButton(
-      tooltip: l10n.trainingRemoveSetNamed(n, widget.exerciseName),
-      onPressed: !widget.enabled || p.sets <= ExerciseParameters.minSets
+    // «Quitar del plan» (vocabulario §4): borra la serie de la rutina, no lo
+    // apuntado. El lector oye cuál: «Quitar del plan la serie 2 de Press».
+    Widget removeButton(int n) {
+      final onTap = !widget.enabled || p.sets <= ExerciseParameters.minSets
           ? null
-          : () => _removeSet(n),
-      icon: const Icon(AppIcons.remove),
-    );
+          : () => _removeSet(n);
+      return Tooltip(
+        message: l10n.trainingRemoveFromPlan,
+        excludeFromSemantics: true,
+        child: Semantics(
+          button: true,
+          enabled: onTap != null,
+          label: l10n.trainingRemoveSetNamed(n, widget.exerciseName),
+          excludeSemantics: true,
+          onTap: onTap,
+          child: IconButton(
+            onPressed: onTap,
+            icon: const Icon(AppIcons.remove),
+          ),
+        ),
+      );
+    }
 
     final table = LayoutBuilder(
       builder: (context, constraints) {

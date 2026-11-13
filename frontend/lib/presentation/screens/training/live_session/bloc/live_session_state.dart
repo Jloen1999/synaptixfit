@@ -36,6 +36,10 @@ abstract class LiveSessionState with _$LiveSessionState {
     /// Cuándo acaba el descanso en curso; [restRemaining] se calcula desde aquí.
     DateTime? restEndsAt,
 
+    /// Serie de la que es el descanso en curso ([LiveSessionBloc.restKey]);
+    /// nula si se puso a mano. Desmarcar esa serie lo para.
+    String? restForSet,
+
     /// Adaptación de hoy (examen, carga alta o fatiga); sin motivos si no hay.
     @Default(SessionAdaptation()) SessionAdaptation adaptation,
 
@@ -58,12 +62,9 @@ abstract class LiveSessionState with _$LiveSessionState {
     Map<String, PersonalRecord> lastPerformance,
 
     /// Propuesta de carga de hoy por id de ejercicio planificado (servidor).
+    /// Ya va en las cifras de partida de sus series: no hay que aceptarla.
     @Default(<String, LoadSuggestion>{})
     Map<String, LoadSuggestion> loadSuggestions,
-
-    /// Ejercicios cuya propuesta de carga se ha aceptado: sus series sin
-    /// apuntar toman la cifra propuesta.
-    @Default(<String>{}) Set<String> acceptedLoad,
 
     /// Calentamiento y vuelta a la calma sugeridos para los ejercicios del día.
     SessionBookends? bookends,
@@ -82,10 +83,6 @@ abstract class LiveSessionState with _$LiveSessionState {
 
     /// Segundos que marca el cronómetro de la serie (para pintar).
     @Default(0) int timerSeconds,
-
-    /// Sesión recién empezada: se explica que el cronómetro está en marcha
-    /// (salvo que se pidiera no volver a explicarlo).
-    @Default(false) bool explainClock,
 
     /// Cuándo se reanudó sin que el servidor lo supiera (sin conexión). Se
     /// reintenta con esta hora y, mientras no llegue, no se puede terminar.
@@ -157,14 +154,32 @@ abstract class LiveSessionState with _$LiveSessionState {
   static String draftKey(String exerciseId, int set, SetField field) =>
       '$exerciseId/$set/${field.name}';
 
-  /// Lo que se propone para la serie [set] de [e] en el campo [f].
+  /// Cifra de partida de la serie [set] de [e] en el campo [f]: una sola, sin
+  /// cifras que compitan (la fila, la barra y el descanso enseñan esta).
   ///
   /// Si la rutina detalla esa serie (pirámide de repeticiones o de pesos)
   /// manda el plan; si no, lo que se hizo en la serie anterior de hoy (lo
-  /// real), la última vez (solo el peso) y, por último, lo previsto.
+  /// real). Después, la propuesta de carga del servidor, que ya sale de la
+  /// última vez; sin ella, la última vez (solo el peso) y, por último, lo
+  /// previsto.
   num? proposedValue(PlannedExercise e, int set, SetField f) {
-    final load = acceptedLoad.contains(e.id) ? loadSuggestions[e.id] : null;
-    if (load != null && load.metric.field == f) {
+    final p = e.parameters;
+    final previous = session
+        ?.setsFor(e.id)
+        .where((x) => x.setNumber == set - 1)
+        .firstOrNull;
+    final load = loadSuggestions[e.id];
+    final planPerSet = switch (f) {
+      SetField.reps => p.repsPerSet != null,
+      SetField.weight => p.weightsKg != null,
+      SetField.hold => p.isometricSecondsPerSet != null,
+      _ => false,
+    };
+    // La propuesta reparte también las pirámides; si la serie anterior de hoy
+    // ya tiene cifra real, manda lo real.
+    if (load != null &&
+        load.metric.field == f &&
+        (planPerSet || previous?.valueOf(f) == null)) {
       final value = load.forSet(set);
       // El campo de duración va en minutos; los demás, tal cual.
       return switch (load.metric) {
@@ -173,11 +188,6 @@ abstract class LiveSessionState with _$LiveSessionState {
         _ => value.round(),
       };
     }
-    final p = e.parameters;
-    final previous = session
-        ?.setsFor(e.id)
-        .where((x) => x.setNumber == set - 1)
-        .firstOrNull;
     return switch (f) {
       SetField.reps =>
         p.repsPerSet != null

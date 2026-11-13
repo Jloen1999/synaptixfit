@@ -58,7 +58,7 @@ public final class SessionDtos {
                                    Boolean warmup, Boolean toFailure, UUID exerciseId) {
         public RecordSessionSetUseCase.Command toCommand(UUID userId, UUID sessionId) {
             return new RecordSessionSetUseCase.Command(userId, sessionId, plannedExerciseId, setNumber, repsDone,
-                    weightKg, completed == null || completed, failedReps == null ? 0 : failedReps, durationSeconds,
+                    weightKg, completed == null || completed, failedReps, durationSeconds,
                     distanceMeters, activeSeconds, Boolean.TRUE.equals(warmup), Boolean.TRUE.equals(toFailure),
                     exerciseId);
         }

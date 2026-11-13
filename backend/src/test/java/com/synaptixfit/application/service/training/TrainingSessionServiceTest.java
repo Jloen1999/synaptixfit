@@ -370,6 +370,42 @@ class TrainingSessionServiceTest {
     }
 
     @Test
+    void missedRepsAreComputedWhenTheAppDoesNotSendThem() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        UUID bench = planned(day1).id();
+
+        TrainingSession short1 = service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(), bench, 1, 7,
+                50.0, true, null, null, null));
+        assertThat(short1.sets()).singleElement().satisfies(x -> {
+            assertThat(x.failedReps()).isEqualTo(3);
+            assertThat(x.completed()).isFalse();
+        });
+        TrainingSession full = service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(), bench, 1, 10,
+                50.0, true, null, null, null));
+        assertThat(full.sets()).singleElement().satisfies(x -> {
+            assertThat(x.failedReps()).isZero();
+            assertThat(x.completed()).isTrue();
+        });
+        // Serie extra (más allá de las 3 previstas): sin objetivo, cuenta como completa.
+        TrainingSession extra = service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(), bench, 4, 5,
+                50.0, true, null, null, null));
+        assertThat(extra.sets()).filteredOn(x -> x.setNumber() == 4).singleElement()
+                .satisfies(x -> assertThat(x.completed()).isTrue());
+    }
+
+    @Test
+    void anOlderAppKeepsTheMissedRepsItSends() {
+        TrainingSession s = service.start(USER, routine.id(), day1.id());
+        // «Hice 7 y no me faltó ninguna»: lo que dice la app anterior se respeta.
+        TrainingSession saved = service.recordSet(new RecordSessionSetUseCase.Command(USER, s.id(),
+                planned(day1).id(), 1, 7, 50.0, true, 0));
+        assertThat(saved.sets()).singleElement().satisfies(x -> {
+            assertThat(x.failedReps()).isZero();
+            assertThat(x.completed()).isTrue();
+        });
+    }
+
+    @Test
     void freeSessionUsesDefaultMetAndDefaultWeight() {
         weight = null;
         TrainingSession s = service.start(USER, null, null);

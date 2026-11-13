@@ -9,7 +9,8 @@ sealed class SessionHistoryEvent with _$SessionHistoryEvent {
   const factory SessionHistoryEvent.moreRequested() =
       SessionHistoryMoreRequested;
 
-  /// Deshace la finalización (solo el mismo día; resta la experiencia).
+  /// «Reabrir y seguir» (solo el mismo día): vuelve a abrir la sesión con
+  /// sus series y entra en ella; terminarla otra vez la cuenta de nuevo.
   const factory SessionHistoryEvent.unmarkRequested(String sessionId) =
       SessionHistoryUnmarkRequested;
 
