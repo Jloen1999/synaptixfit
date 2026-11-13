@@ -13,6 +13,7 @@ import 'package:synaptixfit/domain/use_cases/progress/share_badge_use_case.dart'
 import 'package:synaptixfit/presentation/screens/progress/badges/bloc/badges_bloc.dart';
 
 import '../../../progress_fixtures.dart';
+import '../data_changes_fake.dart';
 
 class _MockCatalog extends Mock implements GetBadgeCatalogUseCaseContract {}
 
@@ -54,6 +55,7 @@ void main() {
     changeVisibility: visibility,
     shareBadge: share,
     shareImage: shareImage,
+    watchChanges: FakeDataChanges().useCase,
   );
 
   final loaded = BadgesState(

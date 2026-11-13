@@ -59,7 +59,7 @@ extension PostLinkStyle on PostLink {
   String? get route => switch (kind) {
     PostLinkKind.routine when id != null => '/training/routines/$id',
     PostLinkKind.challenge when id != null => '/challenges/$id',
-    PostLinkKind.badge => '/progress/badges',
+    PostLinkKind.badge => '/progress?tab=badges',
     _ => null,
   };
 }

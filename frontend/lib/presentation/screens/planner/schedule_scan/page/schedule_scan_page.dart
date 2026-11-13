@@ -308,9 +308,8 @@ class _ScheduleScanViewState extends State<_ScheduleScanView>
                 child: AppSecondaryButton(
                   label: l10n.plannerScanOpenCalendar,
                   icon: const Icon(AppIcons.calendar),
-                  onPressed: () => context.canPop()
-                      ? context.pop()
-                      : unawaited(context.push<void>(PlannerPaths.root)),
+                  // El calendario es una pestaña: `go` cierra esta pantalla.
+                  onPressed: () => context.go(PlannerPaths.root),
                 ),
               ),
             ] else ...[
@@ -520,10 +519,8 @@ class _ScanResultView extends StatelessWidget {
               child: AppSecondaryButton(
                 label: l10n.plannerScanOpenCalendar,
                 icon: const Icon(AppIcons.calendar),
-                // Se suele llegar desde el calendario: se vuelve a él; si no, se abre.
-                onPressed: () => context.canPop()
-                    ? context.pop()
-                    : unawaited(context.push<void>(PlannerPaths.root)),
+                // El calendario es una pestaña: `go` cierra esta pantalla.
+                onPressed: () => context.go(PlannerPaths.root),
               ),
             ),
         ],

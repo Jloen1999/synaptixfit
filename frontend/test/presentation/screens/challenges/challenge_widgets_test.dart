@@ -125,13 +125,16 @@ void main() {
       );
     });
 
-    testWidgets('completado: celebra la XP ganada', (tester) async {
+    testWidgets('completado: lo celebra sin cifras de XP (ADR 0038)', (
+      tester,
+    ) async {
       await pumpCard(
         tester,
         ChallengesFixtures.challenge(completed: true, xpAwarded: 40),
       );
       expect(find.text('Completado'), findsOneWidget);
-      expect(find.text('¡Conseguido! Has ganado 40 XP'), findsOneWidget);
+      expect(find.text('¡Conseguido!'), findsOneWidget);
+      expect(find.textContaining('XP'), findsNothing);
     });
 
     testWidgets('vencido: explica cómo seguir', (tester) async {

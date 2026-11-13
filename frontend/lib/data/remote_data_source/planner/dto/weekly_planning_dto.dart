@@ -7,37 +7,6 @@ import 'planner_json.dart';
 part 'weekly_planning_dto.freezed.dart';
 part 'weekly_planning_dto.g.dart';
 
-@freezed
-abstract class StudyPlanDto with _$StudyPlanDto {
-  const factory StudyPlanDto({required String id, @Default('') String name}) =
-      _StudyPlanDto;
-
-  factory StudyPlanDto.fromJson(Map<String, dynamic> json) =>
-      _$StudyPlanDtoFromJson(json);
-}
-
-@freezed
-abstract class SavePlanResponseDto with _$SavePlanResponseDto {
-  const factory SavePlanResponseDto({
-    required StudyPlanDto plan,
-    @Default(0) int blockCount,
-    @Default(0) int deadlineCount,
-    @Default(0) int xpAwarded,
-  }) = _SavePlanResponseDto;
-
-  const SavePlanResponseDto._();
-
-  factory SavePlanResponseDto.fromJson(Map<String, dynamic> json) =>
-      _$SavePlanResponseDtoFromJson(json);
-
-  SavedPlan toDomain() => SavedPlan(
-    planId: plan.id,
-    name: plan.name,
-    blockCount: blockCount,
-    deadlineCount: deadlineCount,
-    xpAwarded: xpAwarded,
-  );
-}
 
 @freezed
 abstract class WeeklyLoadDto with _$WeeklyLoadDto {

@@ -42,6 +42,18 @@ public class StudyPlanPersistenceAdapter implements StudyPlanRepositoryPort {
     }
 
     @Override
+    public StudyPlan saveIfAbsent(StudyPlan plan) {
+        repository.insertIfAbsent(plan.id(), plan.userId(), plan.name(), plan.weekStart(), plan.weekEnd(),
+                VisibilityDbMapper.toDb(plan.visibility()), clock.instant());
+        return findByUserAndWeek(plan.userId(), plan.weekStart()).orElseThrow();
+    }
+
+    @Override
+    public boolean markExperienceAwarded(UUID planId, int points) {
+        return repository.markExperienceAwarded(planId, Math.max(0, points), clock.instant()) == 1;
+    }
+
+    @Override
     public Optional<StudyPlan> findById(UUID id) {
         return repository.findById(id).map(PlannerPersistenceMapper::toDomain);
     }

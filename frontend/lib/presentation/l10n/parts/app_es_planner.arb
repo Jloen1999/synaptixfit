@@ -1,6 +1,6 @@
 {
   "@@locale": "es",
-  "plannerTitle": "Planificador",
+  "plannerTitle": "Calendario",
   "plannerCalendarTitle": "Calendario semanal",
   "plannerPrevWeek": "Semana anterior",
   "plannerNextWeek": "Semana siguiente",
@@ -24,41 +24,8 @@
       }
     }
   },
-  "plannerSavePlan": "Cerrar semana",
-  "plannerPlanSaved": "{count, plural, =0{Semana cerrada} =1{Semana cerrada con 1 evento} other{Semana cerrada con {count} eventos}}",
-  "@plannerPlanSaved": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "plannerPlanSavedXp": "Semana cerrada · +{xp} XP",
-  "@plannerPlanSavedXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "plannerBlockCompleted": "Marcado como hecho",
-  "plannerBlockCompletedXp": "Marcado como hecho · +{xp} XP",
-  "@plannerBlockCompletedXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "plannerBlockUncompleted": "Desmarcado",
-  "plannerBlockUncompletedXp": "Desmarcado · −{xp} XP",
-  "@plannerBlockUncompletedXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "plannerOverlapWarning": "{count, plural, =1{Ojo: a esta hora ya tienes otro evento} other{Ojo: a esta hora ya tienes {count} eventos}}",
   "@plannerOverlapWarning": {
     "placeholders": {
@@ -204,14 +171,6 @@
   "plannerWellbeingSaved": "Datos de la semana guardados",
   "plannerSync": "Recalcular carga",
   "plannerSynced": "Carga recalculada",
-  "plannerSyncedXp": "Carga recalculada · +{xp} XP",
-  "@plannerSyncedXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "plannerNoLoadYet": "Aún no hay carga registrada para esta semana. Recalcúlala para generarla.",
   "plannerNewBlockTitle": "Nuevo evento",
   "plannerEditBlockTitle": "{type, select, STUDY{Editar estudio} SPORT{Editar entreno} CLASS{Editar clase} REST{Editar descanso} MEAL{Editar comida} SLEEP{Editar sueño} EXAM{Editar examen} DELIVERY{Editar entrega} REVIEW{Editar repaso} PERSONAL{Editar evento personal} other{Editar evento}}",
@@ -241,7 +200,7 @@
   "plannerFewerTypes": "Menos tipos",
   "plannerFieldName": "Nombre",
   "plannerFieldNameHint": "Por ejemplo, Dentista o Trabajo",
-  "plannerFieldNameHelper": "Trabajo, médico, recados, quedadas… No cuenta como estudio ni da XP.",
+  "plannerFieldNameHelper": "Trabajo, médico, recados, quedadas… No cuenta como estudio.",
   "plannerIssueNameMissing": "Escribe un nombre, por ejemplo «Dentista».",
   "plannerFieldSubject": "Asignatura",
   "plannerNoSubject": "Sin asignatura",
@@ -328,14 +287,6 @@
   "plannerDeadlineUpdated": "Entrega actualizada",
   "plannerDeadlineDeleted": "Entrega eliminada",
   "plannerDeadlineCompleted": "Entrega hecha",
-  "plannerDeadlineCompletedXp": "Entrega hecha · +{xp} XP",
-  "@plannerDeadlineCompletedXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "plannerDeadlinePending": "Entrega desmarcada",
   "plannerDueOn": "Vence el {date}",
   "@plannerDueOn": {
@@ -489,15 +440,7 @@
   "plannerPomodoroFocusDone": "¡Buen trabajo! Toca descansar.",
   "plannerPomodoroBreakDone": "Descanso terminado. ¡A por la siguiente concentración!",
   "plannerPomodoroRecordFailed": "No se ha podido guardar la sesión.",
-  "plannerPomodoroXpEarned": "¡Buen trabajo! +{xp} XP por tu concentración",
-  "@plannerPomodoroXpEarned": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
-  "plannerPomodoroXpLimitReached": "¡Buen trabajo! Ya has ganado hoy toda la XP de concentración; el Pomodoro sigue contando en tus estadísticas.",
+  "plannerPomodoroXpLimitReached": "¡Buen trabajo! Hoy ya sumaste todo lo que da la concentración; el Pomodoro sigue contando en tus estadísticas.",
   "plannerStatsToday": "Hoy",
   "plannerStatsWeek": "Esta semana",
   "plannerFocusMinutesLabel": "Min. de foco",
@@ -624,7 +567,7 @@
   "plannerMenuCalendarSync": "Sincronizar calendarios",
   "plannerSyncTitle": "Sincronizar calendarios",
   "plannerSyncFeedTitle": "Tu plan en otro calendario",
-  "plannerSyncFeedIntro": "Añade tu planificador a Google Calendar, Apple Calendar u Outlook con un enlace secreto, sin contraseña. Se actualiza solo (Google puede tardar hasta un día en traer los cambios).",
+  "plannerSyncFeedIntro": "Añade tu calendario a Google Calendar, Apple Calendar u Outlook con un enlace secreto, sin contraseña. Se actualiza solo (Google puede tardar hasta un día en traer los cambios).",
   "plannerSyncActiveSince": "Enlace activo desde el {date}",
   "@plannerSyncActiveSince": {
     "placeholders": {
@@ -640,7 +583,7 @@
   "plannerSyncNewLinkMessage": "El enlace anterior dejará de funcionar: añade el nuevo en tu calendario y quita el antiguo.",
   "plannerSyncRevoke": "Desactivar enlace",
   "plannerSyncRevokeTitle": "¿Desactivar el enlace?",
-  "plannerSyncRevokeMessage": "Tu calendario externo dejará de recibir el planificador. Quítalo también de Google Calendar para que desaparezca lo que ya se ve.",
+  "plannerSyncRevokeMessage": "Tu calendario externo dejará de recibir el calendario. Quítalo también de Google Calendar para que desaparezca lo que ya se ve.",
   "plannerSyncSaveLinkWarning": "Guárdalo ahora: no podrás volver a verlo. Funciona como una contraseña: quien tenga el enlace puede ver tus eventos, exámenes y entregas (no cambiarlos). No lo compartas; si crees que alguien lo tiene, crea uno nuevo.",
   "plannerSyncCopy": "Copiar enlace",
   "plannerSyncCopied": "Enlace copiado",
@@ -788,8 +731,6 @@
   "plannerDeadlineDoneCaption": "Hecha",
   "plannerPomodoroSubjectLabel": "¿Qué estudias?",
   "plannerPomodoroNoSubject": "Sin asignatura",
-  "plannerClosePlanTitle": "¿Cerrar la semana?",
-  "plannerClosePlanMessage": "Das por planificada esta semana y, la primera vez, sumas XP por cada evento que has planificado. No hace falta para guardar: los eventos se guardan solos y puedes seguir cambiándolos.",
   "plannerPomodoroBlockQuestion": "¿Terminaste lo que tenías planeado?",
   "plannerPomodoroBlockQuestionNamed": "¿Terminaste «{name}»?",
   "@plannerPomodoroBlockQuestionNamed": {
@@ -803,18 +744,10 @@
   "plannerPomodoroBlockYes": "Sí, está hecho",
   "plannerPomodoroBlockNotYet": "Aún no",
   "plannerPomodoroBlockMarked": "Marcado como hecho.",
-  "plannerPomodoroBlockMarkedXp": "Marcado como hecho · +{xp} XP",
-  "@plannerPomodoroBlockMarkedXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "plannerErrorPastActivityType": "Solo puedes apuntar después deporte o estudio.",
   "plannerMenuPastStudy": "Apuntar estudio hecho",
   "plannerPastStudyTitle": "Apuntar estudio hecho",
-  "plannerPastStudyIntro": "¿Estudiaste sin la app? Apúntalo aquí (de hoy o de los 6 días anteriores): queda en tu calendario como estudio hecho y cuenta para tu semana, tu XP y tu carga de estudio.",
+  "plannerPastStudyIntro": "¿Estudiaste sin la app? Apúntalo aquí (de hoy o de los 6 días anteriores): queda en tu calendario como estudio hecho y cuenta para tu semana.",
   "plannerPastStudySubject": "Asignatura",
   "plannerPastStudyNoSubject": "Sin asignatura",
   "plannerPastStudyWhat": "Qué estudiaste (opcional)",
@@ -834,37 +767,18 @@
   "plannerPastStudyNotFinished": "Ese rato de estudio aún no ha terminado: elige una hora anterior o una duración menor.",
   "plannerPastStudySave": "Guardar como hecho",
   "plannerPastStudySaved": "Estudio apuntado.",
-  "plannerPastStudySavedXp": "Estudio apuntado · +{xp} XP",
-  "@plannerPastStudySavedXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "plannerClassAttendsByItself": "Al terminar, la clase cuenta como asistida sola. Si no fuiste, márcalo con «No fui».",
   "plannerClassAttended": "Cuenta como asistida.",
   "plannerClassMarkedAbsent": "Marcaste que no fuiste a esta clase.",
   "plannerClassWent": "Sí fui",
   "plannerClassDidNotGo": "No fui",
   "plannerClassAbsent": "Apuntado: no fuiste a esta clase.",
-  "plannerClassAbsentXp": "Apuntado: no fuiste a esta clase (−{xp} XP).",
-  "@plannerClassAbsentXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "plannerClassAttendsLater": "Al terminar, contará como asistida sola. Si no vas, podrás marcar «No fui» cuando empiece.",
   "plannerPastStudySubjectsFailed": "No se pudieron cargar tus asignaturas; puedes apuntarlo sin asignatura.",
   "plannerPastStudyRetry": "Reintentar",
-  "plannerWeekClosed": "Semana planificada",
-  "plannerWeekClosedHint": "Ya planificaste esta semana. Los eventos nuevos se guardan solos: no hace falta volver a hacerlo.",
   "plannerDeadlineFromReminder": "Te avisamos de esta entrega",
   "plannerPomodoroResetTitle": "¿Empezar de cero?",
   "plannerPomodoroResetMessage": "Se pierde el tiempo que llevas contado. Si solo necesitas un respiro, mejor pausa.",
-  "plannerWeekClosedWhat": "Explica qué significa",
   "plannerPomodoroResetKeep": "Seguir",
   "@plannerEditBlockTitle": {
     "description": "Título de la hoja al editar; type es el código del tipo de evento (STUDY, SPORT, PERSONAL…).",

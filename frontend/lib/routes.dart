@@ -81,11 +81,13 @@ GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => MainShellPage(shell: shell),
+        // Mismo orden que la barra: Inicio · Calendario · Académico · Entreno
+        // · Progreso (ADR 0038). Los retos viven dentro de Progreso.
         branches: [
           StatefulShellBranch(routes: homeBranchRoutes()),
+          StatefulShellBranch(routes: plannerBranchRoutes()),
           StatefulShellBranch(routes: academicBranchRoutes()),
           StatefulShellBranch(routes: trainingBranchRoutes()),
-          StatefulShellBranch(routes: challengesBranchRoutes()),
           StatefulShellBranch(routes: progressBranchRoutes()),
         ],
       ),
@@ -103,7 +105,7 @@ GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
 }
 
 /// Rutas del ámbito que la persona no usa: con solo deporte, lo académico;
-/// con solo estudios, las rutinas. El planificador sigue abierto a todos (también
+/// con solo estudios, las rutinas. El calendario sigue abierto a todos (también
 /// planifica entrenamientos y descansos).
 bool _hiddenByFocus(String location, UsageFocus focus) =>
     (!focus.includesAcademic && location.startsWith('/academic')) ||

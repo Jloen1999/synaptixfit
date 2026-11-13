@@ -151,11 +151,6 @@ class _AcademicHomeView extends StatelessWidget with ErrorsMessageMixin {
             icon: const Icon(AppIcons.sharedNotes),
             onPressed: () => context.push(AcademicPaths.sharedNotes),
           ),
-          IconButton(
-            tooltip: l10n.academicOpenPlanner,
-            icon: const Icon(AppIcons.calendar),
-            onPressed: () => context.push(AcademicPaths.planner),
-          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

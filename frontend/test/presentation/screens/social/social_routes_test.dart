@@ -7,6 +7,7 @@ void main() {
     () {
       expect(SocialExternalPaths.isTabRoot('/training'), isTrue);
       expect(SocialExternalPaths.isTabRoot('/progress'), isTrue);
+      expect(SocialExternalPaths.isTabRoot('/planner?block=b1'), isTrue);
       expect(SocialExternalPaths.isTabRoot('/challenges'), isTrue);
       expect(
         SocialExternalPaths.isTabRoot('/challenges?tab=community'),
@@ -25,7 +26,9 @@ void main() {
       expect(SocialExternalPaths.opensInTab('/training/routines/r1'), isTrue);
       expect(SocialExternalPaths.opensInTab('/training/exercises/e1'), isTrue);
       expect(SocialExternalPaths.opensInTab('/challenges/c1'), isFalse);
-      expect(SocialExternalPaths.opensInTab('/progress/badges'), isFalse);
+      // Las insignias son un apartado de la pestaña Progreso (ADR 0038).
+      expect(SocialExternalPaths.opensInTab('/progress/badges'), isTrue);
+      expect(SocialExternalPaths.opensInTab('/progress?tab=badges'), isTrue);
     },
   );
 }

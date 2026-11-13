@@ -8,7 +8,11 @@ import '../screens/progress/overview/bloc/progress_overview_bloc.dart';
 void registerProgressPresentation(GetIt getIt) {
   getIt
     ..registerFactory(
-      () => ProgressOverviewBloc(getOverview: getIt(), watchChanges: getIt()),
+      () => ProgressOverviewBloc(
+        getOverview: getIt(),
+        getToday: getIt(),
+        watchChanges: getIt(),
+      ),
     )
     ..registerFactory(
       () => BadgesBloc(
@@ -16,6 +20,7 @@ void registerProgressPresentation(GetIt getIt) {
         changeVisibility: getIt(),
         shareBadge: getIt(),
         shareImage: getIt(),
+        watchChanges: getIt(),
       ),
     )
     ..registerFactory(

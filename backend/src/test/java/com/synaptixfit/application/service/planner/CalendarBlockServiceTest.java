@@ -36,7 +36,7 @@ class CalendarBlockServiceTest {
         f = new PlannerFakes();
         WeeklyLoadService loads = f.weeklyLoadService();
         service = new CalendarBlockService(f.blocks, f.deadlines, f.directory, f.directory, f.directory, f.xp,
-                f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK);
+                f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK, f.studyPlanService());
         completion = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp, f.publisher, loads,
                 PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK);
     }
@@ -48,6 +48,39 @@ class CalendarBlockServiceTest {
 
     private BlockChange create(Instant start, Instant end, ActivityType type) {
         return service.createBlock(new CreateCalendarBlockUseCase.Command(f.user, start, end, false, details(type)));
+    }
+
+    @Test
+    void planningTheWeekGivesItsExperienceAloneOnceAndDeletingEventsDoesNotTakeItBack() {
+        create(at(1, 10, 0), at(1, 11, 0), ActivityType.STUDY);
+        CalendarBlock second = create(at(2, 10, 0), at(2, 11, 0), ActivityType.SPORT).block();
+        assertThat(f.xp.of(f.user)).isZero();
+
+        CalendarBlock third = create(at(3, 10, 0), at(3, 11, 0), ActivityType.PERSONAL).block();
+        assertThat(f.xp.of(f.user)).isEqualTo(115);
+
+        // Ni se da dos veces al seguir añadiendo, ni se pierde al borrar y volver a crear.
+        create(at(4, 10, 0), at(4, 11, 0), ActivityType.STUDY);
+        service.deleteBlock(f.user, second.id());
+        service.deleteBlock(f.user, third.id());
+        create(at(5, 10, 0), at(5, 11, 0), ActivityType.STUDY);
+        create(at(6, 10, 0), at(6, 11, 0), ActivityType.STUDY);
+        assertThat(f.xp.of(f.user)).isEqualTo(115);
+        assertThat(f.plans.store).hasSize(1);
+    }
+
+    @Test
+    void aRepeatedEventCountsForTheNextWeekToo() {
+        service.createBlock(new CreateCalendarBlockUseCase.Command(f.user, at(1, 10, 0), at(1, 11, 0), false,
+                details(ActivityType.STUDY), 3));
+        create(at(2, 10, 0), at(2, 11, 0), ActivityType.STUDY);
+        create(at(3, 10, 0), at(3, 11, 0), ActivityType.STUDY);
+        create(at(9, 10, 0), at(9, 11, 0), ActivityType.STUDY);
+        create(at(10, 10, 0), at(10, 11, 0), ActivityType.STUDY);
+
+        // Esta semana (3 eventos) y la siguiente (copia + 2); la copia de dentro de dos semanas, no.
+        assertThat(f.xp.of(f.user)).isEqualTo(230);
+        assertThat(f.plans.store).hasSize(2);
     }
 
     @Test

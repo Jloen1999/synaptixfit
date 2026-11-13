@@ -19,7 +19,6 @@
   "progressBadgesEarnedCount": "{count, plural, =0{No badges yet} =1{1 earned} other{{count} earned}}",
   "progressBadgesEmptyTitle": "No badges yet",
   "progressBadgesEmptyMessage": "Complete challenges and keep your streak going to unlock them.",
-  "progressBadgesExplore": "See catalog",
   "progressAnalyticsTitle": "Analytics",
   "progressAnalyticsLastWeeks": "Last {weeks} weeks",
   "progressAnalyticsOpen": "See analytics",
@@ -195,5 +194,6 @@
   "progressBySubjectWeak": "review it more often",
   "progressNextBadgeTitle": "Next badge",
   "progressNextBadgeAmount": "{current} of {target} · {remaining} to go",
-  "progressNextBadgeHint": "Opens your badges"
+  "progressNextBadgeHint": "Opens your badges",
+  "progressTabSummary": "Summary"
 }

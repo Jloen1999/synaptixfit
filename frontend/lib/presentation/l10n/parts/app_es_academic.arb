@@ -423,7 +423,7 @@
   "academicExamAnswered": "Respuesta enviada",
   "academicExamAbandon": "Abandonar",
   "academicExamAbandonTitle": "¿Abandonar el simulacro?",
-  "academicExamAbandonMessage": "Se cerrará sin nota y no obtendrás XP.",
+  "academicExamAbandonMessage": "Se cerrará sin nota.",
   "academicExamAbandoned": "Simulacro abandonado",
   "academicExamFinishTitle": "¿Terminar el simulacro?",
   "academicExamFinishPending": "{count, plural, =1{Te queda 1 pregunta sin responder.} other{Te quedan {count} preguntas sin responder.}}",
@@ -503,15 +503,6 @@
       }
     }
   },
-  "academicXpEarned": "+{xp} XP",
-  "@academicXpEarned": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
-  "academicXpNone": "Sin XP esta vez",
   "academicErrorSubjectNotFound": "No encontramos esa asignatura.",
   "academicErrorSubjectCatalogNotFound": "Esa asignatura del plan de estudios no existe.",
   "academicErrorSubjectSemesterNotFound": "Esta asignatura no tiene curso ni semestre asignados.",
@@ -994,7 +985,7 @@
   "academicAiRegenerateTitle": "¿Escribirlo de nuevo?",
   "academicAiRegenerateMessage": "Te propondremos otra versión, que sustituirá a la que ves ahora. La de ahora no se podrá recuperar.",
   "academicSubjectArchiveTitle": "¿Archivar la asignatura?",
-  "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el planificador. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras en Académico › Archivadas.",
+  "academicSubjectArchiveMessage": "Dejará de salir en tus listas y en el calendario. Sus apuntes y entregas se guardan, y puedes recuperarla cuando quieras en Académico › Archivadas.",
   "academicScanEntry": "Desde una foto",
   "academicScanEntryLong": "Fotografiar apuntes en papel",
   "academicScanEntryHint": "Haz fotos de tus hojas y las pasamos a un apunte",
@@ -1333,7 +1324,7 @@
   "academicSubjectDeleteAction": "Eliminar la asignatura",
   "academicFileDeleteAction": "Eliminar el archivo",
   "academicSubjectArchivedWhere": "Asignatura archivada. La tienes en Académico › Archivadas.",
-  "academicSubjectUnarchivedWhere": "Asignatura restaurada: vuelve a salir en Académico y en el planificador.",
+  "academicSubjectUnarchivedWhere": "Asignatura restaurada: vuelve a salir en Académico y en el calendario.",
   "academicDeleteNamed": "Eliminar «{title}»",
   "@academicDeleteNamed": {
     "description": "Botón de papelera de un apunte o archivo en «Apuntes y archivos».",

@@ -13,7 +13,18 @@ abstract final class HomeExternalPaths {
   static const community = '/social';
   static const admin = '/admin';
 
+  /// Pestaña Calendario (`go`).
   static const planner = '/planner';
+
+  /// Calendario con la hoja de «Añadir al calendario» abierta en el próximo
+  /// hueco (botón de «Tu día» sin nada pendiente). La marca de tiempo hace
+  /// que cada toque la abra aunque la pestaña ya estuviera en esa dirección.
+  static String addEvent([DateTime? now]) => Uri(
+    path: planner,
+    queryParameters: {
+      'new': '${(now ?? DateTime.now()).millisecondsSinceEpoch}',
+    },
+  ).toString();
   static const deadlines = '/planner/deadlines';
 
   /// Entregas con [id] la primera y destacada (aunque esté en otra página).
@@ -60,12 +71,12 @@ abstract final class HomeExternalPaths {
   static String session(String sessionId) => '/training/sessions/$sessionId';
   static const progress = '/progress';
 
-  static const challenges = '/challenges';
+  /// Progreso › Retos (pestaña).
+  static const challenges = '/progress?tab=challenges';
   static const newChallenge = '/challenges/new';
   static String challenge(String id) => '/challenges/$id';
 
   static const analytics = '/progress/analytics';
-  static const badges = '/progress/badges';
 
   /// Repaso de un material; [queue], los que vienen después («Repasar todos»).
   static String materialReview(
@@ -90,11 +101,14 @@ abstract final class HomeExternalPaths {
     HomeSetupTask.academicProfile => academicProfile,
   };
 
-  /// Rutas que pertenecen a otra pestaña de la barra inferior.
-  static bool isTabRoute(String path) =>
-      path == training ||
-      path.startsWith('$training/routines') ||
-      path == challenges ||
-      path == progress ||
-      path == '/academic';
+  /// Rutas que pertenecen a otra pestaña de la barra inferior (sin contar la
+  /// consulta): se abren con `go`, nunca apiladas.
+  static bool isTabRoute(String location) {
+    final path = Uri.parse(location).path;
+    return path == planner ||
+        path == training ||
+        path.startsWith('$training/routines') ||
+        path == progress ||
+        path == '/academic';
+  }
 }

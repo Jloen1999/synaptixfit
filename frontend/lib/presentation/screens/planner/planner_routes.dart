@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'calendar/page/calendar_page.dart';
@@ -8,9 +9,11 @@ import 'pomodoro/page/pomodoro_page.dart';
 import 'schedule_scan/page/schedule_scan_page.dart';
 import 'suggestions/page/suggestions_page.dart';
 
-/// Rutas del módulo planner (todas a pantalla completa, sin barra inferior).
+/// Rutas del módulo planner: la pestaña Calendario y sus pantallas completas.
 abstract final class PlannerPaths {
-  /// Calendario semanal. Acepta `?week=yyyy-MM-dd` (cualquier día de la semana),
+  /// Pestaña Calendario (se abre con `go`). Acepta `?new=<marca>` (abre la
+  /// hoja «Añadir al calendario» en el próximo hueco; la marca cambia en cada
+  /// toque para que la pestaña la vuelva a abrir), `?week=yyyy-MM-dd` (cualquier día de la semana),
   /// `&block=<id>` para abrir ese evento (desde la agenda o un aviso) y
   /// `&day=yyyy-MM-dd` para colocarse en ese día (desde «Tu semana»).
   static const root = '/planner';
@@ -66,46 +69,54 @@ abstract final class PlannerExternalPaths {
   static const notificationSettings = '/profile/settings/notifications';
 }
 
-/// Rutas a pantalla completa (sin barra inferior).
-List<RouteBase> plannerRoutes() => [
+/// Pestaña Calendario (conserva la barra inferior). Se abre con `go`. La
+/// clave por consulta recrea la pantalla cuando un enlace pide otra semana,
+/// día o evento; volver a la pestaña con la barra conserva lo que había.
+List<RouteBase> plannerBranchRoutes() => [
   GoRoute(
     path: PlannerPaths.root,
     builder: (context, state) => CalendarPage(
+      key: ValueKey(state.uri.query),
       initialWeek: PlannerPaths.parseWeek(state.uri.queryParameters['week']),
       initialBlockId: state.uri.queryParameters['block'],
       initialDay: PlannerPaths.parseWeek(state.uri.queryParameters['day']),
+      initialCreate: state.uri.queryParameters.containsKey('new'),
     ),
-    routes: [
-      GoRoute(
-        path: 'deadlines',
-        builder: (context, state) =>
-            DeadlinesPage(focusId: state.uri.queryParameters['focus']),
-      ),
-      GoRoute(
-        path: 'pomodoro',
-        builder: (context, state) => PomodoroPage(
-          subjectId: state.uri.queryParameters['subjectId'],
-          blockId: state.uri.queryParameters['blockId'],
-          title: state.uri.queryParameters['title'],
-          startWithBreak: state.uri.queryParameters['phase'] == 'break',
-        ),
-      ),
-      GoRoute(
-        path: 'past-study',
-        builder: (context, state) => const PastStudyPage(),
-      ),
-      GoRoute(
-        path: 'suggestions',
-        builder: (context, state) => const SuggestionsPage(),
-      ),
-      GoRoute(
-        path: 'calendar-sync',
-        builder: (context, state) => const CalendarSyncPage(),
-      ),
-      GoRoute(
-        path: 'schedule-scan',
-        builder: (context, state) => const ScheduleScanPage(),
-      ),
-    ],
+  ),
+];
+
+/// Rutas a pantalla completa (sin barra inferior), encima de cualquier
+/// pestaña con `push`. Van sueltas, no colgando de `/planner`: si colgaran de
+/// la pestaña, abrirlas desde otra pantalla completa duplicaría el armazón.
+List<RouteBase> plannerRoutes() => [
+  GoRoute(
+    path: PlannerPaths.deadlines,
+    builder: (context, state) =>
+        DeadlinesPage(focusId: state.uri.queryParameters['focus']),
+  ),
+  GoRoute(
+    path: PlannerPaths.pomodoro,
+    builder: (context, state) => PomodoroPage(
+      subjectId: state.uri.queryParameters['subjectId'],
+      blockId: state.uri.queryParameters['blockId'],
+      title: state.uri.queryParameters['title'],
+      startWithBreak: state.uri.queryParameters['phase'] == 'break',
+    ),
+  ),
+  GoRoute(
+    path: PlannerPaths.pastStudy,
+    builder: (context, state) => const PastStudyPage(),
+  ),
+  GoRoute(
+    path: PlannerPaths.suggestions,
+    builder: (context, state) => const SuggestionsPage(),
+  ),
+  GoRoute(
+    path: PlannerPaths.calendarSync,
+    builder: (context, state) => const CalendarSyncPage(),
+  ),
+  GoRoute(
+    path: PlannerPaths.scheduleScan,
+    builder: (context, state) => const ScheduleScanPage(),
   ),
 ];

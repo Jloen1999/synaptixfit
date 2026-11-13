@@ -15,7 +15,8 @@ import '../../widgets/badge_tile.dart';
 import '../../widgets/progress_labels.dart';
 import '../bloc/badges_bloc.dart';
 
-/// Catálogo de insignias con filtro por categoría.
+/// Progreso › Insignias: cuántas llevas y el catálogo con filtro por
+/// categoría. Es un apartado de la pestaña, sin barra propia.
 class BadgesPage extends StatelessWidget {
   const BadgesPage({super.key});
 
@@ -63,55 +64,30 @@ class _BadgesView extends StatelessWidget with ErrorsMessageMixin {
         if (message != null) context.showSnack(message);
       },
       builder: (context, state) {
-        return Scaffold(
-          appBar: AppPageBar(
-            title: Text(l10n.progressBadgesPageTitle),
-            bottom:
-                state.status == BadgesStatus.loaded && state.badges.isNotEmpty
-                ? PreferredSize(
-                    preferredSize: Size.fromHeight(
-                      context.scaled(20) + TokensSpacing.s,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: TokensSpacing.s),
-                      child: Text(
-                        l10n.progressBadgeSummary(
-                          state.earnedCount,
-                          state.badges.length,
-                        ),
-                        style: context.textStyles.labelLarge?.copyWith(
-                          color: context.palette.accent,
-                        ),
+        return switch (state.status) {
+          BadgesStatus.loading => const _GridSkeleton(),
+          BadgesStatus.failure => AppErrorView(
+            error: state.error ?? const AppError.unknown(),
+            onRetry: () =>
+                context.read<BadgesBloc>().add(const BadgesEvent.started()),
+          ),
+          BadgesStatus.loaded =>
+            state.badges.isEmpty
+                ? AppEmptyState(
+                    icon: Icons.military_tech_outlined,
+                    title: l10n.progressBadgeCatalogEmpty,
+                    action: AppSecondaryButton(
+                      label: l10n.commonRetry,
+                      onPressed: () => context.read<BadgesBloc>().add(
+                        const BadgesEvent.started(),
                       ),
                     ),
                   )
-                : null,
-          ),
-          body: switch (state.status) {
-            BadgesStatus.loading => const _GridSkeleton(),
-            BadgesStatus.failure => AppErrorView(
-              error: state.error ?? const AppError.unknown(),
-              onRetry: () =>
-                  context.read<BadgesBloc>().add(const BadgesEvent.started()),
-            ),
-            BadgesStatus.loaded =>
-              state.badges.isEmpty
-                  ? AppEmptyState(
-                      icon: Icons.military_tech_outlined,
-                      title: l10n.progressBadgeCatalogEmpty,
-                      action: AppSecondaryButton(
-                        label: l10n.commonRetry,
-                        onPressed: () => context.read<BadgesBloc>().add(
-                          const BadgesEvent.started(),
-                        ),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () => _refresh(context),
-                      child: _BadgesContent(state: state),
-                    ),
-          },
-        );
+                : RefreshIndicator(
+                    onRefresh: () => _refresh(context),
+                    child: _BadgesContent(state: state),
+                  ),
+        };
       },
     );
   }
@@ -140,6 +116,25 @@ class _BadgesContent extends StatelessWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  TokensSpacing.m,
+                  TokensSpacing.m,
+                  TokensSpacing.m,
+                  0,
+                ),
+                child: Text(
+                  l10n.progressBadgeSummary(
+                    state.earnedCount,
+                    state.badges.length,
+                  ),
+                  style: context.textStyles.labelLarge?.copyWith(
+                    color: context.palette.accent,
+                  ),
+                ),
+              ),
+            ),
             SliverToBoxAdapter(
               child: SizedBox(
                 height: context.scaled(64),

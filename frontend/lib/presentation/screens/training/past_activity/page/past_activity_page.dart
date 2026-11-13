@@ -194,9 +194,7 @@ class _PastActivityViewState extends State<_PastActivityView>
       onAction: () => router.push(location),
     );
     if (_routineMode) {
-      final text = xp > 0
-          ? l10n.trainingPastActivityRoutineSavedXp(xp)
-          : l10n.trainingPastActivityRoutineSaved;
+      final text = l10n.trainingPastActivityRoutineSaved;
       // Desde el historial ya se está al lado, en su pestaña «Entrenos».
       widget.from == null
           ? context.showSnack(text)
@@ -206,25 +204,12 @@ class _PastActivityViewState extends State<_PastActivityView>
     switch (widget.from) {
       // Se vuelve a Correr, que enseña «Tus actividades».
       case TrainingSection.run:
-        context.showSnack(
-          xp > 0
-              ? l10n.trainingPastActivitySavedRunXp(xp)
-              : l10n.trainingPastActivitySavedRun,
-        );
+        context.showSnack(l10n.trainingPastActivitySavedRun);
       // Se vuelve al historial, a «Actividades y partidos».
       case null:
-        context.showSnack(
-          xp > 0
-              ? l10n.trainingPastActivitySavedXp(xp)
-              : l10n.trainingPastActivitySaved,
-        );
+        context.showSnack(l10n.trainingPastActivitySaved);
       case TrainingSection.gym:
-        withView(
-          xp > 0
-              ? l10n.trainingPastActivitySavedXp(xp)
-              : l10n.trainingPastActivitySaved,
-          TrainingPaths.activities,
-        );
+        withView(l10n.trainingPastActivitySaved, TrainingPaths.activities);
     }
   }
 

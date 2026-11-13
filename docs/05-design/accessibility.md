@@ -4,6 +4,7 @@ Lo marcado está resuelto en los componentes base o el tema y comprobado por tes
 
 - [x] Contraste ≥ 4,5:1 para texto y ≥ 3:1 para iconos, bordes de campos y gráficos, en los temas claro y oscuro. Test: `test/presentation/theme/contrast_test.dart`.
 - [x] Objetivos táctiles de al menos 48×48 dp en todas las plataformas (`materialTapTargetSize: padded`, `TokensLayout.minTouchTarget`).
+  - Excepción (ADR 0038): los siete días de «Tu semana» van siempre en una fila. Llegan a 48 dp desde 390 dp de ancho; en móviles de 360 o 320 dp miden unos 47 y 41 dp, por encima del mínimo de WCAG 2.5.8 (24 px). Partirlos en dos filas dejaba un hueco grande.
 - [x] Todos los botones de icono tienen `tooltip`; el de mostrar/ocultar contraseña también.
 - [x] El color nunca es la única señal: estados con icono o texto; preguntas respondidas del simulacro anunciadas como «respondida».
 - [x] Encabezados reales: `AppSectionHeader` marca `Semantics(header: true)`; también el título de acceso y registro (`AuthHeader`) y el saludo de Inicio.

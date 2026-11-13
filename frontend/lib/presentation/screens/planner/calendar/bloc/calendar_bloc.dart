@@ -18,17 +18,21 @@ import '../../../../../domain/use_cases/planner/get_week_balance_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_week_blocks_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_week_conflicts_use_case.dart';
 import '../../../../../domain/use_cases/planner/reschedule_block_use_case.dart';
-import '../../../../../domain/use_cases/planner/get_week_closed_use_case.dart';
-import '../../../../../domain/use_cases/planner/save_week_plan_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
+import '../../../../../domain/enums/data_topic.dart';
+import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
+import '../../../../mixins/data_change_refresh_mixin.dart';
 
 part 'calendar_bloc.freezed.dart';
 part 'calendar_event.dart';
 part 'calendar_state.dart';
 
-/// Calendario semanal: carga la semana, mueve/redimensiona bloques, marca
-/// completados y guarda el plan.
-class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
+/// Pestaña Calendario: carga la semana, mueve/redimensiona eventos y los marca.
+/// Vive mientras la pestaña existe, así que se refresca solo con los cambios
+/// del planificador, el entreno y lo académico hechos en otras pantallas. La
+/// XP de planificar la semana la da el servidor sin botón (ADR 0038).
+class CalendarBloc extends Bloc<CalendarEvent, CalendarState>
+    with DataChangeRefreshMixin<CalendarEvent, CalendarState> {
   CalendarBloc({
     required this._getBlocks,
     required this._getConflicts,
@@ -36,11 +40,10 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     required this._getBalance,
     required this._reschedule,
     required this._setCompletion,
-    required this._savePlan,
-    required this._getWeekClosed,
     required this._getAccount,
     required this._deleteBlock,
     required this._rescheduleNext,
+    required this._watchChanges,
     DateTime Function()? now,
   }) : _now = now ?? DateTime.now,
        super(
@@ -56,7 +59,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     on<CalendarBlockRescheduled>(_onRescheduled);
     on<CalendarLockedBlockTouched>(_onLockedTouched);
     on<CalendarCompletionToggled>(_onCompletionToggled);
-    on<CalendarPlanSaveRequested>(_onSavePlan);
     on<CalendarBlockDeleteRequested>(_onDeleteRequested);
     on<CalendarRescheduleNextRequested>(_onRescheduleNext);
     on<CalendarBlockDeleteUndone>(_onDeleteUndone);
@@ -138,8 +140,7 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   final GetWeekBalanceUseCaseContract _getBalance;
   final RescheduleBlockUseCaseContract _reschedule;
   final SetBlockCompletionUseCaseContract _setCompletion;
-  final SaveWeekPlanUseCaseContract _savePlan;
-  final GetWeekClosedUseCaseContract _getWeekClosed;
+  final WatchDataChangesUseCaseContract _watchChanges;
   final GetAccountUseCaseContract _getAccount;
   final DeleteBlockUseCaseContract _deleteBlock;
   final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleNext;
@@ -174,8 +175,18 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
   CalendarState _withNotice(CalendarNotice notice) =>
       state.copyWith(notice: notice, noticeId: state.noticeId + 1);
 
-  Future<void> _onStarted(CalendarStarted event, Emitter<CalendarState> emit) =>
-      _load(emit, PlannerWeek.mondayOf(event.week ?? _now()), silent: false);
+  Future<void> _onStarted(CalendarStarted event, Emitter<CalendarState> emit) {
+    watchDataChanges(
+      _watchChanges,
+      topics: const {DataTopic.planner, DataTopic.training, DataTopic.academic},
+      onChanged: const CalendarEvent.refreshed(),
+    );
+    return _load(
+      emit,
+      PlannerWeek.mondayOf(event.week ?? _now()),
+      silent: false,
+    );
+  }
 
   Future<void> _onWeekShifted(
     CalendarWeekShifted event,
@@ -217,7 +228,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
           conflicts: weekChanged ? const [] : state.conflicts,
           deadlines: weekChanged ? const [] : state.deadlines,
           balance: weekChanged ? null : state.balance,
-          weekClosed: weekChanged ? null : state.weekClosed,
         ),
       );
     }
@@ -226,12 +236,10 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
     final conflictsF = _getConflicts(weekStart);
     final timelineF = _getTimeline(from: weekStart, to: weekEnd);
     final balanceF = _getBalance(weekStart);
-    final closedF = _getWeekClosed(weekStart);
     final blocks = await blocksF;
     final conflicts = await conflictsF;
     final timeline = await timelineF;
     final balance = await balanceF;
-    final closed = await closedF;
 
     // Si el usuario ya ha cambiado de semana, se descarta este resultado.
     if (state.weekStart != weekStart) return;
@@ -265,7 +273,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
                         t.id: (t.subjectName ?? t.title)!,
                   },
             balance: balance.valueOrNull ?? state.balance,
-            weekClosed: closed.valueOrNull ?? state.weekClosed,
           ),
         );
     }
@@ -415,40 +422,6 @@ class CalendarBloc extends Bloc<CalendarEvent, CalendarState> {
               ),
         );
         await _refreshConflicts(emit);
-    }
-  }
-
-  Future<void> _onSavePlan(
-    CalendarPlanSaveRequested event,
-    Emitter<CalendarState> emit,
-  ) async {
-    if (state.savingPlan) return;
-    emit(state.copyWith(savingPlan: true));
-    final result = await _savePlan(state.weekStart);
-    switch (result) {
-      case Failure(:final error):
-        emit(
-          state
-              .copyWith(savingPlan: false)
-              .copyWith(
-                notice: CalendarNotice.failure(error),
-                noticeId: state.noticeId + 1,
-              ),
-        );
-      case Success(:final value):
-        final account = await _refreshAccount(value.xpAwarded);
-        emit(
-          state
-              .copyWith(savingPlan: false, weekClosed: true)
-              .copyWith(
-                notice: CalendarNotice.planSaved(
-                  xpAwarded: value.xpAwarded,
-                  blockCount: value.blockCount,
-                  account: account,
-                ),
-                noticeId: state.noticeId + 1,
-              ),
-        );
     }
   }
 }

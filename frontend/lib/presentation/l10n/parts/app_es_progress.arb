@@ -81,7 +81,6 @@
   },
   "progressBadgesEmptyTitle": "Sin insignias todavía",
   "progressBadgesEmptyMessage": "Completa retos y mantén tu racha para desbloquearlas.",
-  "progressBadgesExplore": "Ver catálogo",
   "progressAnalyticsTitle": "Analítica",
   "progressAnalyticsLastWeeks": "Últimas {weeks} semanas",
   "@progressAnalyticsLastWeeks": {
@@ -749,5 +748,9 @@
       }
     }
   },
-  "progressNextBadgeHint": "Abre tus insignias"
+  "progressNextBadgeHint": "Abre tus insignias",
+  "progressTabSummary": "Resumen",
+  "@progressTabSummary": {
+    "description": "Apartado «Resumen» de la pestaña Progreso (junto a Retos e Insignias)."
+  }
 }

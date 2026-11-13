@@ -29,11 +29,10 @@ void registerPlannerPresentation(GetIt getIt) {
         getBalance: getIt(),
         reschedule: getIt(),
         setCompletion: getIt(),
-        savePlan: getIt(),
-        getWeekClosed: getIt(),
         getAccount: getIt(),
         deleteBlock: getIt(),
         rescheduleNext: getIt(),
+        watchChanges: getIt(),
       ),
     )
     // El bloque en edición (o `null` al crear) llega como parámetro.

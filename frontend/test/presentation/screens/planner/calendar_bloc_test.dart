@@ -14,13 +14,12 @@ import 'package:synaptixfit/domain/use_cases/planner/get_week_balance_use_case.d
 import 'package:synaptixfit/domain/use_cases/planner/get_week_blocks_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_week_conflicts_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_use_case.dart';
-import 'package:synaptixfit/domain/use_cases/planner/save_week_plan_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/set_block_completion_use_case.dart';
 import 'package:synaptixfit/presentation/screens/planner/calendar/bloc/calendar_bloc.dart';
 
 import 'planner_fixtures.dart';
-import 'package:synaptixfit/domain/use_cases/planner/get_week_closed_use_case.dart';
-import 'package:synaptixfit/domain/models/result/app_result.dart';
+import '../data_changes_fake.dart';
+import 'package:synaptixfit/domain/enums/data_topic.dart';
 
 class _Blocks extends Mock implements GetWeekBlocksUseCaseContract {}
 
@@ -33,8 +32,6 @@ class _Balance extends Mock implements GetWeekBalanceUseCaseContract {}
 class _Reschedule extends Mock implements RescheduleBlockUseCaseContract {}
 
 class _Completion extends Mock implements SetBlockCompletionUseCaseContract {}
-
-class _SavePlan extends Mock implements SaveWeekPlanUseCaseContract {}
 
 class _Account extends Mock implements GetAccountUseCaseContract {}
 
@@ -52,7 +49,7 @@ void main() {
   late _Balance getBalance;
   late _Reschedule reschedule;
   late _Completion setCompletion;
-  late _SavePlan savePlan;
+  late FakeDataChanges changes;
   late _Account getAccount;
   late _DeleteBlock deleteBlock;
   late _RescheduleNext rescheduleNext;
@@ -78,11 +75,10 @@ void main() {
     getBalance: getBalance,
     reschedule: reschedule,
     setCompletion: setCompletion,
-    savePlan: savePlan,
-    getWeekClosed: _WeekOpen(),
     getAccount: getAccount,
     deleteBlock: deleteBlock,
     rescheduleNext: rescheduleNext,
+    watchChanges: changes.useCase,
     now: () => testNow,
   );
 
@@ -100,7 +96,7 @@ void main() {
     getBalance = _Balance();
     reschedule = _Reschedule();
     setCompletion = _Completion();
-    savePlan = _SavePlan();
+    changes = FakeDataChanges();
     getAccount = _Account();
     deleteBlock = _DeleteBlock();
     rescheduleNext = _RescheduleNext();
@@ -374,32 +370,17 @@ void main() {
   );
 
   blocTest<CalendarBloc, CalendarState>(
-    'guardar el plan informa de la XP y no pide la cuenta si es 0',
-    setUp: () => when(() => savePlan(testMonday)).thenAnswer(
-      (_) async => const Success(
-        SavedPlan(
-          planId: 'p1',
-          name: 'Plan',
-          blockCount: 4,
-          deadlineCount: 1,
-          xpAwarded: 0,
-        ),
-      ),
-    ),
+    'es una pestaña: se recarga sola cuando otra pantalla cambia el planificador',
     build: build,
-    seed: ready,
-    act: (bloc) => bloc.add(const CalendarEvent.planSaveRequested()),
-    expect: () => [
-      isA<CalendarState>().having((s) => s.savingPlan, 'saving', isTrue),
-      isA<CalendarState>()
-          .having((s) => s.savingPlan, 'saving', isFalse)
-          .having(
-            (s) => s.notice,
-            'notice',
-            const CalendarNotice.planSaved(xpAwarded: 0, blockCount: 4),
-          ),
-    ],
-    verify: (_) => verifyNever(() => getAccount()),
+    act: (bloc) async {
+      bloc.add(const CalendarEvent.started());
+      await pump();
+      await pump();
+      changes.emit({DataTopic.planner});
+      await pump();
+      await pump();
+    },
+    verify: (_) => verify(() => getBlocks(testMonday)).called(2),
   );
 
   group('borrar con deshacer', () {
@@ -508,10 +489,4 @@ void main() {
       const CalendarNotice.failure(AppError.business('BLOCK_NO_FREE_SLOT')),
     ),
   );
-}
-
-/// La semana aún no está cerrada (el botón «Cerrar semana» se ve).
-class _WeekOpen implements GetWeekClosedUseCaseContract {
-  @override
-  Future<AppResult<bool>> call(DateTime weekStart) async => const Success(false);
 }

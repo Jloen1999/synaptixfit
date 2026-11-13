@@ -7,19 +7,19 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
-/// «Tu equilibrio» en formato compacto: una fila por la mente (carga
+/// «Tu equilibrio» (Progreso › Resumen): una fila por la mente (carga
 /// cognitiva) y otra por el cuerpo (carga física), cada una con su valor, una
 /// barra y el nivel en palabras; debajo, la pauta de estudio con su acción.
-/// Es pequeña a propósito: lo primero que se ve en Inicio es la agenda.
-/// Con un solo enfoque («Tu estado») se muestra solo su fila.
-class StateSection extends StatelessWidget {
-  const StateSection({
+/// Vivía en Inicio; sus porcentajes son cifras técnicas y desde el ADR 0038
+/// se ven aquí. Con un solo enfoque («Tu estado») se muestra solo su fila.
+class BalanceCard extends StatelessWidget {
+  const BalanceCard({
     super.key,
     required this.cognitive,
     required this.crossRegulation,
     required this.wellbeing,
     this.focus = UsageFocus.both,
-    required this.onOpenAnalytics,
+    this.onOpenAnalytics,
     this.onStudyNow,
     this.headerFocusNode,
   });
@@ -28,7 +28,9 @@ class StateSection extends StatelessWidget {
   final HomeCrossRegulation crossRegulation;
   final HomeWellbeing wellbeing;
   final UsageFocus focus;
-  final VoidCallback onOpenAnalytics;
+
+  /// «Ver análisis»; sin él no hay enlace (Progreso ya lo abre desde su tarjeta).
+  final VoidCallback? onOpenAnalytics;
 
   /// Abre el Pomodoro: la recomendación termina en algo que hacer.
   /// Botón «Concentrarme» de la franja; sin él (Inicio ya lo tiene en «Tu
@@ -116,7 +118,7 @@ class StateSection extends StatelessWidget {
               ? l10n.homeBalanceTitle
               : l10n.homeStateTitle,
           // La analítica es de entrenamiento: con solo estudios no hay enlace.
-          actionLabel: focus.includesFitness
+          actionLabel: focus.includesFitness && onOpenAnalytics != null
               ? l10n.homeBalanceSeeAnalysis
               : null,
           onAction: focus.includesFitness ? onOpenAnalytics : null,

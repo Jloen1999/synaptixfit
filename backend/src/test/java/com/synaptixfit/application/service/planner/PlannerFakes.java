@@ -82,6 +82,11 @@ final class PlannerFakes {
         return new WeeklyLoadService(loads, blocks, focus, deadlines, directory, xp, xp, ZONE);
     }
 
+    /** Plan semanal con el reloj de {@link #NOW} (lunes de la semana de prueba). */
+    StudyPlanService studyPlanService() {
+        return new StudyPlanService(plans, blocks, deadlines, xp, xp, ZONE, CLOCK);
+    }
+
     /** Minutos máximos de estudio por bloque que devuelve la regulación cruzada simulada. */
     int crossRegulationMaxStudyMinutes = 90;
 
@@ -223,6 +228,19 @@ final class PlannerFakes {
 
         public Optional<StudyPlan> findById(UUID id) {
             return Optional.ofNullable(store.get(id));
+        }
+
+        public StudyPlan saveIfAbsent(StudyPlan p) {
+            return findByUserAndWeek(p.userId(), p.weekStart()).orElseGet(() -> save(p));
+        }
+
+        public boolean markExperienceAwarded(UUID id, int points) {
+            StudyPlan plan = store.get(id);
+            if (plan == null || plan.xpAwarded()) {
+                return false;
+            }
+            plan.markExperienceAwarded(points);
+            return true;
         }
 
         public Optional<StudyPlan> findByUserAndWeek(UUID userId, LocalDate weekStart) {

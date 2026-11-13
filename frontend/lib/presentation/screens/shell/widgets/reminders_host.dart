@@ -56,9 +56,9 @@ class _RemindersListener extends StatelessWidget {
 
   final Widget child;
 
-  /// Abre lo que anuncia el aviso. Repasos, entrenar y retos son pestañas
-  /// (`go`); el planificador y la sesión en vivo, pantallas completas (`push`,
-  /// para no destruir las pestañas). Con referencia se abre ese bloque, sesión,
+  /// Abre lo que anuncia el aviso. Calendario, repasos, entrenar y la lista de
+  /// retos son pestañas (`go`); un reto, una entrega y la sesión en vivo,
+  /// pantallas completas (`push`, para no destruir las pestañas). Con referencia se abre ese bloque, sesión,
   /// reto o entrega; sin ella (avisos de una versión anterior), su pantalla.
   /// El resumen de la mañana abre Inicio («Tu día»).
   /// «Empezar» en un bloque de estudio abre el Pomodoro de ese bloque.
@@ -75,26 +75,21 @@ class _RemindersListener extends StatelessWidget {
       case ReminderKind.studyBlock when opened.start && ref != null:
         unawaited(context.push<void>(PlannerPaths.pomodoroFor(blockId: ref)));
       case ReminderKind.studyBlock:
-        unawaited(
-          context.push<void>(
-            ref == null
-                ? PlannerPaths.root
-                : Uri(
-                    path: PlannerPaths.root,
-                    queryParameters: {'block': ref},
-                  ).toString(),
-          ),
-        );
+        context.go(_calendar(ref));
       case ReminderKind.openSession:
         if (ref == null) {
           context.go(TrainingPaths.root);
         } else {
           unawaited(context.push<void>(TrainingPaths.session(ref)));
         }
+      // La lista de retos es Progreso › Retos (pestaña); un reto, pantalla
+      // completa encima.
       case ReminderKind.challengeDue || ReminderKind.challengeTask:
-        context.go(
-          ref == null ? ChallengesPaths.root : ChallengesPaths.detail(ref),
-        );
+        if (ref == null) {
+          context.go(ChallengesPaths.list);
+        } else {
+          unawaited(context.push<void>(ChallengesPaths.detail(ref)));
+        }
       case ReminderKind.exam || ReminderKind.deadline:
         unawaited(
           context.push<void>(
@@ -109,18 +104,17 @@ class _RemindersListener extends StatelessWidget {
         context.go(HomePaths.root);
       // «Empezar» en un evento personal solo abre la app: también el evento.
       case ReminderKind.classSoon || ReminderKind.personalEvent:
-        unawaited(
-          context.push<void>(
-            ref == null
-                ? PlannerPaths.root
-                : Uri(
-                    path: PlannerPaths.root,
-                    queryParameters: {'block': ref},
-                  ).toString(),
-          ),
-        );
+        context.go(_calendar(ref));
     }
   }
+
+  /// Pestaña Calendario, con el evento [ref] abierto si lo hay.
+  static String _calendar(String? ref) => ref == null
+      ? PlannerPaths.root
+      : Uri(
+          path: PlannerPaths.root,
+          queryParameters: {'block': ref},
+        ).toString();
 
   @override
   Widget build(BuildContext context) {

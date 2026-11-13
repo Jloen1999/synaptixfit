@@ -10,20 +10,28 @@ import '../../../../../domain/use_cases/progress/change_badge_visibility_use_cas
 import '../../../../../domain/use_cases/progress/get_badge_catalog_use_case.dart';
 import '../../../../../domain/use_cases/progress/share_achievement_image_use_case.dart';
 import '../../../../../domain/use_cases/progress/share_badge_use_case.dart';
+import '../../../../../domain/enums/data_topic.dart';
+import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
+import '../../../../mixins/data_change_refresh_mixin.dart';
 
 part 'badges_bloc.freezed.dart';
 part 'badges_event.dart';
 part 'badges_state.dart';
 
-/// Catálogo de insignias: filtro por categoría, visibilidad y compartir.
-class BadgesBloc extends Bloc<BadgesEvent, BadgesState> {
+/// Catálogo de insignias (Progreso › Insignias): filtro por categoría,
+/// visibilidad y compartir. Vive con la pestaña, así que se refresca solo,
+/// sin esqueleto, cuando otra pantalla puede haber dado una insignia.
+class BadgesBloc extends Bloc<BadgesEvent, BadgesState>
+    with DataChangeRefreshMixin<BadgesEvent, BadgesState> {
   BadgesBloc({
     required this._getCatalog,
     required this._changeVisibility,
     required this._shareBadge,
     required this._shareImage,
+    required this._watchChanges,
   }) : super(const BadgesState()) {
     on<BadgesStarted>(_onStarted);
+    on<BadgesRefreshed>(_onRefreshed);
     on<BadgesCategorySelected>(_onCategorySelected);
     on<BadgesVisibilityToggled>(_onVisibilityToggled);
     on<BadgesShareRequested>(_onShareRequested);
@@ -34,6 +42,15 @@ class BadgesBloc extends Bloc<BadgesEvent, BadgesState> {
   final ChangeBadgeVisibilityUseCaseContract _changeVisibility;
   final ShareBadgeUseCaseContract _shareBadge;
   final ShareAchievementImageUseCaseContract _shareImage;
+  final WatchDataChangesUseCaseContract _watchChanges;
+
+  Future<void> _onRefreshed(
+    BadgesRefreshed event,
+    Emitter<BadgesState> emit,
+  ) async {
+    final badges = (await _getCatalog()).valueOrNull;
+    if (badges != null) emit(state.copyWith(badges: badges));
+  }
 
   /// El menú del sistema ya es la respuesta: solo se avisa si falla.
   Future<void> _onImageShareRequested(
@@ -55,6 +72,17 @@ class BadgesBloc extends Bloc<BadgesEvent, BadgesState> {
     BadgesStarted event,
     Emitter<BadgesState> emit,
   ) async {
+    watchDataChanges(
+      _watchChanges,
+      topics: const {
+        DataTopic.gamification,
+        DataTopic.challenges,
+        DataTopic.training,
+        DataTopic.academic,
+        DataTopic.planner,
+      },
+      onChanged: const BadgesEvent.refreshed(),
+    );
     emit(state.copyWith(status: BadgesStatus.loading, error: null));
     final result = await _getCatalog();
     emit(

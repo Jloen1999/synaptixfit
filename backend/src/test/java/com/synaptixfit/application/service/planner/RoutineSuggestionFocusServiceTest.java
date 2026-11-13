@@ -13,6 +13,7 @@ import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.FocusSession;
 import com.synaptixfit.domain.model.planner.FocusStats;
 import com.synaptixfit.domain.model.planner.RoutineRef;
+import com.synaptixfit.domain.model.planner.StudyPlan;
 import com.synaptixfit.domain.model.planner.SuggestedBlock;
 import com.synaptixfit.domain.model.planner.SubjectRef;
 import com.synaptixfit.domain.model.planner.TimeRange;
@@ -99,6 +100,20 @@ class RoutineSuggestionFocusServiceTest {
     }
 
     @Test
+    void distributingTheRoutineCountsAsPlanningTheWeekOnlyOnce() {
+        RoutineDistributionService service = distribution();
+        service.distribute(new DistributeRoutineUseCase.Command(f.user, routine.id(), Set.of(1, 3, 5),
+                PlannerFakes.MONDAY, LocalTime.of(18, 0), 60));
+        int afterFirst = f.xp.of(f.user);
+        // Repartir de nuevo retira y vuelve a crear los eventos: la XP de la semana no se repite.
+        service.distribute(new DistributeRoutineUseCase.Command(f.user, routine.id(), Set.of(1, 3, 5),
+                PlannerFakes.MONDAY, LocalTime.of(18, 0), 60));
+
+        assertThat(afterFirst).isEqualTo(StudyPlan.experienceFor(StudyPlan.MIN_PLANNED_EVENTS));
+        assertThat(f.xp.of(f.user)).isEqualTo(afterFirst);
+    }
+
+    @Test
     void sportSuggestionsAreLinkedToTheNextRoutineDaysInOrder() {
         PlanningSuggestionService service = new PlanningSuggestionService((inbox, zone) -> {
             throw new AiUnavailableException("down");
@@ -120,7 +135,7 @@ class RoutineSuggestionFocusServiceTest {
         return new RoutineDistributionService(f.blocks, f.directory, f.weeklyLoadService(),
                 c -> f.blocks.store.values().removeIf(b -> c.routineId().equals(b.details().routineId())
                         && !b.completed() && b.start().isAfter(PlannerFakes.NOW)),
-                PlannerFakes.ZONE, PlannerFakes.CLOCK);
+                PlannerFakes.ZONE, PlannerFakes.CLOCK, f.studyPlanService());
     }
 
     @Test

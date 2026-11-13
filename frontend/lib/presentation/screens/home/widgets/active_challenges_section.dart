@@ -5,14 +5,14 @@ import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
-/// Retos activos (máximo 3) con su progreso.
+/// Retos en marcha (máximo 3) con su avance. Inicio solo la enseña si hay
+/// alguno: crear retos y verlos todos es de Progreso › Retos.
 class ActiveChallengesSection extends StatelessWidget {
   const ActiveChallengesSection({
     super.key,
     required this.challenges,
     required this.onOpen,
     required this.onSeeAll,
-    required this.onCreate,
     this.now,
   });
 
@@ -21,7 +21,6 @@ class ActiveChallengesSection extends StatelessWidget {
   final List<HomeChallenge> challenges;
   final ValueChanged<HomeChallenge> onOpen;
   final VoidCallback onSeeAll;
-  final VoidCallback onCreate;
   final DateTime? now;
 
   @override
@@ -36,33 +35,19 @@ class ActiveChallengesSection extends StatelessWidget {
           actionLabel: challenges.isEmpty ? null : l10n.commonSeeAll,
           onAction: onSeeAll,
         ),
-        if (visible.isEmpty)
-          AppCard(
-            child: AppEmptyState.compact(
-              icon: Icons.flag_outlined,
-              title: l10n.homeChallengesEmptyTitle,
-              message: l10n.homeChallengesEmptyMessage,
-              action: AppSecondaryButton(
-                label: l10n.homeChallengesCreate,
-                icon: const Icon(AppIcons.add),
-                onPressed: onCreate,
-              ),
-            ),
-          )
-        else
-          AppCard(
-            padding: const EdgeInsets.symmetric(vertical: TokensSpacing.xs),
-            child: Column(
-              children: [
-                for (final challenge in visible)
-                  _ChallengeTile(
-                    challenge: challenge,
-                    now: now ?? DateTime.now(),
-                    onTap: () => onOpen(challenge),
-                  ),
-              ],
-            ),
+        AppCard(
+          padding: const EdgeInsets.symmetric(vertical: TokensSpacing.xs),
+          child: Column(
+            children: [
+              for (final challenge in visible)
+                _ChallengeTile(
+                  challenge: challenge,
+                  now: now ?? DateTime.now(),
+                  onTap: () => onOpen(challenge),
+                ),
+            ],
           ),
+        ),
       ],
     );
   }

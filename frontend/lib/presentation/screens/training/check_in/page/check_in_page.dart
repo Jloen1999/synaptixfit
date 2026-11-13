@@ -135,7 +135,7 @@ class _FormState extends State<_Form> {
                         const SizedBox(width: TokensSpacing.s),
                         Expanded(
                           child: Text(
-                            l10n.trainingCheckInXp(result.xpAwarded),
+                            l10n.trainingCheckInThanks,
                             style: context.textStyles.titleSmall?.copyWith(
                               color: context.palette.onAccentContainer,
                             ),

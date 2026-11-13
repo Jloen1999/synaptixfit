@@ -11,6 +11,7 @@ import com.synaptixfit.application.port.input.planner.GetCalendarBlocksUseCase;
 import com.synaptixfit.application.port.input.planner.GetScheduleConflictsUseCase;
 import com.synaptixfit.application.port.input.planner.RescheduleBlockToNextFreeSlotUseCase;
 import com.synaptixfit.application.port.input.planner.RescheduleCalendarBlockUseCase;
+import com.synaptixfit.application.port.input.planner.RewardWeekPlanningUseCase;
 import com.synaptixfit.application.port.input.planner.UpdateCalendarBlockUseCase;
 import com.synaptixfit.application.port.input.planner.WithdrawRoutineBlocksUseCase;
 import com.synaptixfit.domain.event.planner.SportBlockCompletionChanged;
@@ -44,7 +45,8 @@ import java.util.UUID;
 /**
  * Bloques del calendario: consulta, alta, edición, cambio de horario, borrado y conflictos. También
  * borra los bloques que dejan de tener sentido por otros módulos (asignatura eliminada, días de rutina
- * saltados o quitados, rutina que deja de estar en curso).
+ * saltados o quitados, rutina que deja de estar en curso). Al añadir eventos pide a
+ * {@link RewardWeekPlanningUseCase} la experiencia de planificar la semana (ADR 0038).
  */
 public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalendarBlockUseCase,
         RescheduleBlockToNextFreeSlotUseCase,
@@ -61,12 +63,13 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
     private final Clock clock;
     private final BlockDetailsResolver resolver;
     private final ConflictFlagger conflicts;
+    private final RewardWeekPlanningUseCase planningReward;
 
     public CalendarBlockService(CalendarBlockRepositoryPort blocks, DeadlineRepositoryPort deadlines,
                                 SubjectDirectoryPort subjects, RoutineDirectoryPort routines,
                                 ChallengeDirectoryPort challenges, RevokeExperienceUseCase revoke,
                                 DomainEventPublisherPort events, WeeklyLoadService weeklyLoads,
-                                PlannerZone zone, Clock clock) {
+                                PlannerZone zone, Clock clock, RewardWeekPlanningUseCase planningReward) {
         this.blocks = blocks;
         this.deadlines = deadlines;
         this.revoke = revoke;
@@ -76,6 +79,7 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         this.clock = clock;
         this.resolver = new BlockDetailsResolver(subjects, routines, challenges, deadlines, zone);
         this.conflicts = new ConflictFlagger(blocks);
+        this.planningReward = planningReward;
     }
 
     @Override
@@ -118,6 +122,7 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
         int copies = type.canRepeatWeekly()
                 ? Math.max(0, Math.min(command.repeatWeeks(), CalendarBlock.MAX_WEEKLY_REPEATS)) : 0;
         int made = 0;
+        Set<LocalDate> weeks = new HashSet<>(Set.of(zone.localDate(saved.start())));
         for (int week = 1; week <= copies; week++) {
             CalendarBlock next = weeklyCopy(saved, week, now);
             // Las copias de un bloque de reto se quedan dentro del periodo del reto.
@@ -126,10 +131,17 @@ public class CalendarBlockService implements GetCalendarBlocksUseCase, GetCalend
             }
             CalendarBlock copy = blocks.save(next);
             conflicts.refresh(command.userId(), List.of(copy), conflicts.neighboursOf(copy));
+            weeks.add(zone.localDate(copy.start()));
             made++;
         }
         publishAssignment(command.userId(), null, saved.details().milestoneId());
+        rewardPlanning(command.userId(), weeks);
         return new BlockChange(saved, neighbours, made);
+    }
+
+    /** Pide la experiencia de planificar de cada semana tocada (la regla y el «una vez» los pone el plan). */
+    private void rewardPlanning(UUID userId, Set<LocalDate> days) {
+        days.stream().map(PlannerZone::mondayOf).distinct().forEach(monday -> planningReward.rewardWeek(userId, monday));
     }
 
     /** Copia de {@code original} {@code week} semanas después, a la misma hora local. */

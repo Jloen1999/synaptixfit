@@ -5,6 +5,9 @@ sealed class BadgesEvent with _$BadgesEvent {
   /// Carga (o recarga) el catálogo.
   const factory BadgesEvent.started() = BadgesStarted;
 
+  /// Recarga en silencio (cambió algo que puede dar una insignia).
+  const factory BadgesEvent.refreshed() = BadgesRefreshed;
+
   /// Filtra por categoría; `null` muestra todas.
   const factory BadgesEvent.categorySelected(BadgeCategory? category) =
       BadgesCategorySelected;

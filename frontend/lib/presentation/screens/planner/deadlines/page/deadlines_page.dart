@@ -91,19 +91,13 @@ class _DeadlinesViewState extends State<_DeadlinesView>
             if (!bloc.isClosed) bloc.add(DeadlinesEvent.deleteCommitted(id));
           },
         );
-      case DeadlinesNoticeCompletion(
-        :final completed,
-        :final xpDelta,
-        :final account,
-      ):
+      case DeadlinesNoticeCompletion(:final completed, :final account):
         if (account != null) {
           context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
         }
-        final message = !completed
-            ? l10n.plannerDeadlinePending
-            : xpDelta > 0
-            ? l10n.plannerDeadlineCompletedXp(xpDelta)
-            : l10n.plannerDeadlineCompleted;
+        final message = completed
+            ? l10n.plannerDeadlineCompleted
+            : l10n.plannerDeadlinePending;
         final bloc = context.read<DeadlinesBloc>();
         final id = _toggledId;
         // «Deshacer» vuelve a cambiarla con el mismo caso de uso (y el

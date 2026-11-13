@@ -6,9 +6,11 @@ import '../../../widgets/routine_day_labels.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
 
-/// Próximo día de entrenamiento con botón para empezar y CTA de check-in.
-/// Misma información y jerarquía que la tarjeta de la pestaña Rutinas: foto
-/// del ejercicio principal de fondo, cuándo toca, retraso y avance del ciclo.
+/// Próximo día de entrenamiento con «Empezar» (1 toque) y el registro diario.
+/// Misma información que la tarjeta de Entreno › Gimnasio: foto del ejercicio
+/// principal de fondo, cuándo toca, retraso y avance del ciclo. Sus botones son
+/// secundarios: el destacado de Inicio es el de «Tu día». Grabar una carrera
+/// vive en Entreno › Correr (ADR 0038).
 class NextTrainingCard extends StatelessWidget {
   const NextTrainingCard({
     super.key,
@@ -17,8 +19,8 @@ class NextTrainingCard extends StatelessWidget {
     required this.onStart,
     required this.onCheckIn,
     this.onOpenRoutine,
-    this.onRun,
     this.starting = false,
+    this.showStart = true,
   });
 
   final HomeNextTrainingDay? day;
@@ -31,8 +33,8 @@ class NextTrainingCard extends StatelessWidget {
   /// Abre la rutina sin empezar (ver ejercicios antes).
   final VoidCallback? onOpenRoutine;
 
-  /// «Empezar a correr» (ADR 0037): graba una carrera con el GPS.
-  final VoidCallback? onRun;
+  /// `false` si «Tu día» ya ofrece «Empezar» (un camino por destino).
+  final bool showStart;
 
   /// Creando la sesión: el botón muestra que está trabajando.
   final bool starting;
@@ -57,9 +59,9 @@ class NextTrainingCard extends StatelessWidget {
               icon: Icons.fitness_center_rounded,
               title: l10n.homeTrainingEmptyTitle,
               message: l10n.homeTrainingEmptyMessage,
-              action: AppPrimaryButton(
+              action: AppSecondaryButton(
                 label: l10n.homeTrainingCreate,
-                icon: AppIcons.add,
+                icon: const Icon(AppIcons.add),
                 onPressed: onStart,
               ),
             ),
@@ -87,25 +89,20 @@ class NextTrainingCard extends StatelessWidget {
                   spacing: TokensSpacing.s,
                   runSpacing: TokensSpacing.s,
                   children: [
-                    AppPrimaryButton(
-                      label: next.inProgress
-                          ? l10n.homeTrainingContinue
-                          : l10n.homeTrainingStart,
-                      icon: Icons.play_arrow_rounded,
-                      loading: starting,
-                      onPressed: onStart,
-                    ),
+                    if (showStart)
+                      AppSecondaryButton(
+                        label: next.inProgress
+                            ? l10n.homeTrainingContinue
+                            : l10n.homeTrainingStart,
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        loading: starting,
+                        onPressed: onStart,
+                      ),
                     if (!checkInDone)
                       AppSecondaryButton(
                         label: l10n.homeTrainingCheckIn,
                         icon: const Icon(Icons.fact_check_outlined),
                         onPressed: starting ? null : onCheckIn,
-                      ),
-                    if (onRun case final run?)
-                      AppSecondaryButton(
-                        label: l10n.homeStartRun,
-                        icon: const Icon(Icons.directions_run_rounded),
-                        onPressed: starting ? null : run,
                       ),
                   ],
                 ),
@@ -196,25 +193,15 @@ class NextTrainingCard extends StatelessWidget {
               ],
             ),
           ),
-        if (next == null && (!checkInDone || onRun != null)) ...[
+        if (next == null && !checkInDone) ...[
           const SizedBox(height: TokensSpacing.s),
-          Wrap(
-            spacing: TokensSpacing.s,
-            runSpacing: TokensSpacing.s,
-            children: [
-              if (!checkInDone)
-                AppSecondaryButton(
-                  label: l10n.homeTrainingCheckIn,
-                  icon: const Icon(Icons.fact_check_outlined),
-                  onPressed: onCheckIn,
-                ),
-              if (onRun case final run?)
-                AppSecondaryButton(
-                  label: l10n.homeStartRun,
-                  icon: const Icon(Icons.directions_run_rounded),
-                  onPressed: run,
-                ),
-            ],
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AppSecondaryButton(
+              label: l10n.homeTrainingCheckIn,
+              icon: const Icon(Icons.fact_check_outlined),
+              onPressed: onCheckIn,
+            ),
           ),
         ],
       ],

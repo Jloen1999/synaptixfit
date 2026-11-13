@@ -22,7 +22,6 @@
   "tabHome": "Início",
   "tabAcademic": "Académico",
   "tabTraining": "Treino",
-  "tabChallenges": "Desafios",
   "tabProgress": "Progresso",
   "fieldEmail": "Email",
   "fieldPassword": "Palavra-passe",
@@ -132,7 +131,7 @@
   "xpGuideDeadlinesDetail": "Marcar uma entrega como feita dá XP; no máximo 5 a cada 24 horas.",
   "xpGuideChallenges": "Desafios",
   "xpGuideChallengesDetail": "Cada tarefa dá XP conforme a sua dificuldade; no máximo 140 XP por desafio.",
-  "xpGuideFooter": "Se algo não somar, a app diz-te porquê.",
+  "xpGuideFooter": "O que ganhas soma ao teu nível aqui, em Progresso.",
   "commonArrowSpoken": " para ",
   "registerLegalRequired": "Marca a caixa para criar a tua conta.",
   "commonListAnd": "{items} e {last}",
@@ -140,5 +139,11 @@
   "commonSearchNoResults": "Sem resultados para «{query}»",
   "commonSearchResultsCount": "{count, plural, =1{1 resultado} other{{count} resultados}}",
   "commonView": "Ver",
-  "commonHelpAbout": "O que é «{topic}»"
+  "commonHelpAbout": "O que é «{topic}»",
+  "tabCalendar": "Calendário",
+  "commonCountdownToday": "hoje",
+  "commonCountdownTomorrow": "amanhã",
+  "commonCountdownDays": "{days, plural, =1{daqui a 1 dia} other{daqui a {days} dias}}",
+  "xpGuidePlanning": "Planear a semana",
+  "xpGuidePlanningDetail": "Com 3 eventos planeados nesta semana ou na seguinte, 100 XP mais 5 por evento. Uma vez por semana; chega sozinho."
 }

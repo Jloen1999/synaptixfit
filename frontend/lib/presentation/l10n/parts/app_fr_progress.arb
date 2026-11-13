@@ -19,7 +19,6 @@
   "progressBadgesEarnedCount": "{count, plural, =0{Pas encore de badges} =1{1 obtenu} other{{count} obtenus}}",
   "progressBadgesEmptyTitle": "Pas encore de badges",
   "progressBadgesEmptyMessage": "Réussis des défis et garde ta série pour les débloquer.",
-  "progressBadgesExplore": "Voir le catalogue",
   "progressAnalyticsTitle": "Statistiques",
   "progressAnalyticsLastWeeks": "{weeks} dernières semaines",
   "progressAnalyticsOpen": "Voir les statistiques",
@@ -195,5 +194,6 @@
   "progressBySubjectWeak": "révise-la plus souvent",
   "progressNextBadgeTitle": "Prochain badge",
   "progressNextBadgeAmount": "{current} sur {target} · encore {remaining}",
-  "progressNextBadgeHint": "Ouvre tes badges"
+  "progressNextBadgeHint": "Ouvre tes badges",
+  "progressTabSummary": "Résumé"
 }

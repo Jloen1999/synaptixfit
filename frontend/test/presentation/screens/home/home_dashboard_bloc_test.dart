@@ -18,6 +18,7 @@ import 'package:synaptixfit/domain/use_cases/home/get_home_setup_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/snooze_home_setup_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/get_home_unread_count_use_case.dart';
 import 'package:synaptixfit/domain/models/planner/calendar_block.dart';
+import 'package:synaptixfit/domain/use_cases/planner/get_deadlines_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/get_timeline_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/is_permissions_intro_pending_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
@@ -62,6 +63,8 @@ class _MockReschedule extends Mock
 class _MockPermissionsIntro extends Mock
     implements IsPermissionsIntroPendingUseCaseContract {}
 
+class _MockDeadlines extends Mock implements GetDeadlinesUseCaseContract {}
+
 void main() {
   late _MockDashboard getDashboard;
   late _MockReviews getReviews;
@@ -77,6 +80,7 @@ void main() {
   late _MockCompleteDeadline completeDeadline;
   late _MockReschedule reschedule;
   late _MockPermissionsIntro permissionsIntro;
+  late _MockDeadlines getDeadlines;
 
   HomeDashboardBloc build() => HomeDashboardBloc(
     getDashboard: getDashboard,
@@ -93,6 +97,7 @@ void main() {
     rescheduleToNextSlot: reschedule,
     setDeadlineCompletion: completeDeadline,
     permissionsIntroPending: permissionsIntro,
+    getDeadlines: getDeadlines,
     clock: () => DateTime(2026, 10, 20, 9),
   );
 
@@ -112,6 +117,11 @@ void main() {
     completeDeadline = _MockCompleteDeadline();
     reschedule = _MockReschedule();
     permissionsIntro = _MockPermissionsIntro();
+    getDeadlines = _MockDeadlines();
+    when(() => getDeadlines(upcoming: true)).thenAnswer(
+      (_) async =>
+          const Success(DeadlinePage(items: [], page: 0, totalPages: 1)),
+    );
     when(
       () => permissionsIntro(),
     ).thenAnswer((_) async => const Success(false));
@@ -611,6 +621,48 @@ void main() {
           ),
         ),
       ],
+    );
+  });
+
+  group('cuenta atrás de «Tu día»', () {
+    Deadline deadline(String id, DeadlineType type, int day) => Deadline(
+      id: id,
+      title: id,
+      type: type,
+      dueAt: DateTime(2026, 11, day, 9),
+      difficulty: PlannerPriority.medium,
+    );
+
+    test('elige el próximo examen aunque haya entregas antes', () {
+      final picked = HomeDashboardBloc.countdownOf([
+        deadline('practica', DeadlineType.assignment, 3),
+        deadline('parcial', DeadlineType.exam, 20),
+      ]);
+      expect(picked?.id, 'parcial');
+    });
+
+    test('sin exámenes, la próxima entrega pendiente', () {
+      final picked = HomeDashboardBloc.countdownOf([
+        deadline('hecha', DeadlineType.assignment, 2).copyWith(completed: true),
+        deadline('memoria', DeadlineType.assignment, 9),
+      ]);
+      expect(picked?.id, 'memoria');
+    });
+
+    blocTest<HomeDashboardBloc, HomeDashboardState>(
+      'se carga con el resto de Inicio',
+      setUp: () => when(() => getDeadlines(upcoming: true)).thenAnswer(
+        (_) async => Success(
+          DeadlinePage(
+            items: [deadline('parcial', DeadlineType.exam, 25)],
+            page: 0,
+            totalPages: 1,
+          ),
+        ),
+      ),
+      build: build,
+      act: (bloc) => bloc.add(const HomeDashboardEvent.refreshed()),
+      verify: (bloc) => expect(bloc.state.nextDeadline?.id, 'parcial'),
     );
   });
 }

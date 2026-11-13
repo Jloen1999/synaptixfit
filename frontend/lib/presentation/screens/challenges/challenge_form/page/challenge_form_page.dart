@@ -93,11 +93,7 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
   void _onEffect(BuildContext context, ChallengeFormState state) {
     final l10n = context.localizations;
     switch (state.effect!) {
-      case ChallengeFormSaved(
-        :final challengeId,
-        :final xpDelta,
-        :final account,
-      ):
+      case ChallengeFormSaved(:final challengeId, :final account):
         if (account != null) {
           context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
         }
@@ -108,7 +104,6 @@ class _FormViewState extends State<_FormView> with ErrorsMessageMixin {
             base: editing
                 ? l10n.challengesFormTasksSaved
                 : l10n.challengesCreated,
-            xpDelta: xpDelta,
           ),
         );
         if (context.canPop()) {

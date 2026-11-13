@@ -64,7 +64,7 @@ class _RunHomeView extends StatelessWidget with ErrorsMessageMixin {
         context.showActionSnack(
           l10n.runScheduledWhere,
           actionLabel: l10n.runSeeCalendar,
-          onAction: () => context.push(PlannerPaths.root),
+          onAction: () => context.go(PlannerPaths.root),
         );
       case RunHomeNotice.uploaded:
         context.showSnack(l10n.runPendingUploaded);

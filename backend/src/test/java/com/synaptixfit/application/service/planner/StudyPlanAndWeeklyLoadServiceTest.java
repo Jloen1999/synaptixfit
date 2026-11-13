@@ -10,6 +10,7 @@ import com.synaptixfit.application.port.input.planner.UpdateWeeklyWellbeingUseCa
 import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.PlannerProfile;
+import com.synaptixfit.domain.model.planner.StudyPlan;
 import com.synaptixfit.domain.model.planner.TimeRange;
 import com.synaptixfit.domain.model.planner.WeekBalance;
 import com.synaptixfit.domain.model.planner.WeeklyAcademicLoad;
@@ -29,7 +30,7 @@ class StudyPlanAndWeeklyLoadServiceTest {
     void setUp() {
         f = new PlannerFakes();
         loads = f.weeklyLoadService();
-        plans = new StudyPlanService(f.plans, f.blocks, f.deadlines, f.xp, f.xp, PlannerFakes.ZONE);
+        plans = f.studyPlanService();
     }
 
     private CalendarBlock block(ActivityType type, Instant start, int minutes, boolean completed, String icsUid) {
@@ -38,9 +39,10 @@ class StudyPlanAndWeeklyLoadServiceTest {
     }
 
     @Test
-    void savingThePlanGrantsExperienceOnceAndReusesTheWeekPlan() {
+    void savingThePlanFromAnOldAppFollowsTheSameRuleAndReusesTheWeekPlan() {
         block(ActivityType.STUDY, at(1, 16, 0), 60, false, null);
         block(ActivityType.SPORT, at(2, 18, 0), 60, false, null);
+        block(ActivityType.REVIEW, at(4, 18, 0), 60, false, null);
         block(ActivityType.CLASS, at(3, 9, 0), 120, false, "ai-x-20261022-0900");
         block(ActivityType.STUDY, at(8, 16, 0), 60, false, null);
 
@@ -51,8 +53,8 @@ class StudyPlanAndWeeklyLoadServiceTest {
         SaveWeeklyPlanUseCase.Result second = plans.savePlan(
                 new SaveWeeklyPlanUseCase.Command(f.user, PlannerFakes.MONDAY, "Semana dura", null));
 
-        assertThat(first.xpAwarded()).isEqualTo(110);
-        assertThat(first.blockCount()).isEqualTo(3);
+        assertThat(first.xpAwarded()).isEqualTo(115);
+        assertThat(first.blockCount()).isEqualTo(4);
         assertThat(firstName).isEqualTo("Plan 19/10");
         assertThat(first.plan().weekStart()).isEqualTo(PlannerFakes.MONDAY);
         assertThat(second.xpAwarded()).isZero();
@@ -60,12 +62,12 @@ class StudyPlanAndWeeklyLoadServiceTest {
         assertThat(second.plan().name()).isEqualTo("Semana dura");
         assertThat(second.plan().visibility()).isEqualTo(Visibility.FRIENDS);
         assertThat(f.plans.store).hasSize(1);
-        assertThat(f.xp.of(f.user)).isEqualTo(110);
-        assertThat(f.blocks.store.values()).filteredOn(b -> first.plan().id().equals(b.studyPlanId())).hasSize(3);
+        assertThat(f.xp.of(f.user)).isEqualTo(115);
+        assertThat(f.blocks.store.values()).filteredOn(b -> first.plan().id().equals(b.studyPlanId())).hasSize(4);
     }
 
     @Test
-    void weekStatusSaysWhetherTheWeekIsAlreadyClosed() {
+    void savingAWeekWithTooFewEventsGivesNoExperienceYet() {
         block(ActivityType.STUDY, at(1, 16, 0), 60, false, null);
         assertThat(plans.status(f.user, PlannerFakes.MONDAY.plusDays(3)))
                 .isEqualTo(new GetWeekPlanStatusUseCase.Status(PlannerFakes.MONDAY, false, 0));
@@ -74,18 +76,67 @@ class StudyPlanAndWeeklyLoadServiceTest {
 
         GetWeekPlanStatusUseCase.Status closed = plans.status(f.user, PlannerFakes.MONDAY.plusDays(6));
         assertThat(closed.closed()).isTrue();
-        assertThat(closed.xpAwarded()).isEqualTo(105);
+        assertThat(closed.xpAwarded()).isZero();
         assertThat(plans.status(f.otherUser, PlannerFakes.MONDAY).closed()).isFalse();
+
+        // El plan ya existe sin experiencia: al llegar al tercer evento se da igual.
+        block(ActivityType.STUDY, at(2, 16, 0), 60, false, null);
+        block(ActivityType.REVIEW, at(3, 16, 0), 60, false, null);
+        assertThat(plans.rewardWeek(f.user, PlannerFakes.MONDAY)).isEqualTo(115);
+        assertThat(plans.status(f.user, PlannerFakes.MONDAY).xpAwarded()).isEqualTo(115);
     }
 
     @Test
     void deletingThePlanRevokesTheExactExperienceSoItCannotBeFarmed() {
         block(ActivityType.STUDY, at(1, 16, 0), 60, false, null);
+        block(ActivityType.STUDY, at(2, 16, 0), 60, false, null);
+        block(ActivityType.SPORT, at(3, 18, 0), 60, false, null);
         var result = plans.savePlan(new SaveWeeklyPlanUseCase.Command(f.user, PlannerFakes.MONDAY, null, null));
+        assertThat(f.xp.of(f.user)).isEqualTo(115);
         plans.deletePlan(f.user, result.plan().id());
         assertThat(f.xp.of(f.user)).isZero();
         assertThatThrownBy(() -> plans.deletePlan(f.otherUser, result.plan().id()))
                 .extracting("code").isEqualTo("PLAN_NOT_FOUND");
+    }
+
+    @Test
+    void aWeekThatAlreadyGaveItsExperienceNeverGivesItAgain() {
+        f.plans.save(new StudyPlan(UUID.randomUUID(), f.user, "Plan", PlannerFakes.MONDAY, null, true, 115));
+        for (int day = 0; day < 4; day++) {
+            block(ActivityType.STUDY, at(day, 18, 0), 60, false, null);
+        }
+        assertThat(plans.rewardWeek(f.user, PlannerFakes.MONDAY)).isZero();
+        assertThat(plans.savePlan(new SaveWeeklyPlanUseCase.Command(f.user, PlannerFakes.MONDAY, null, null))
+                .xpAwarded()).isZero();
+        assertThat(f.xp.of(f.user)).isZero();
+    }
+
+    @Test
+    void onlyEventsThePersonPlannedCountTowardsThePlanningExperience() {
+        // Clase fija, importada, repaso creado por el repaso espaciado y sueño: ninguno es planificar.
+        f.blocks.save(CalendarBlock.builder().id(UUID.randomUUID()).userId(f.user)
+                .range(TimeRange.ofMinutes(at(1, 9, 0), 60)).type(ActivityType.CLASS).fixed(true).build());
+        block(ActivityType.CLASS, at(2, 9, 0), 60, false, "ics-1");
+        f.blocks.save(CalendarBlock.builder().id(UUID.randomUUID()).userId(f.user)
+                .range(TimeRange.ofMinutes(at(3, 9, 0), 60)).type(ActivityType.REVIEW)
+                .studyMaterialId(UUID.randomUUID()).build());
+        block(ActivityType.SLEEP, at(4, 0, 0), 420, false, null);
+
+        assertThat(plans.rewardWeek(f.user, PlannerFakes.MONDAY)).isZero();
+        assertThat(f.plans.store).isEmpty();
+    }
+
+    @Test
+    void onlyThisWeekAndTheNextOneGiveThePlanningExperience() {
+        for (int week : new int[] {1, 2}) {
+            for (int day = 0; day < 3; day++) {
+                block(ActivityType.STUDY, at(7 * week + day, 10, 0), 60, false, null);
+            }
+        }
+        // La semana siguiente sí; la de dentro de dos, no (no se puede ganar 52 veces por adelantado).
+        assertThat(plans.rewardWeek(f.user, PlannerFakes.MONDAY.plusWeeks(1))).isEqualTo(115);
+        assertThat(plans.rewardWeek(f.user, PlannerFakes.MONDAY.plusWeeks(2))).isZero();
+        assertThat(StudyPlan.rewardable(3, PlannerFakes.MONDAY.minusWeeks(1), PlannerFakes.MONDAY)).isFalse();
     }
 
     @Test

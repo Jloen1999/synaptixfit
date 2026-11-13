@@ -23,6 +23,7 @@ void registerHomePresentation(GetIt getIt) {
         rescheduleToNextSlot: getIt(),
         setDeadlineCompletion: getIt(),
         permissionsIntroPending: getIt(),
+        getDeadlines: getIt(),
       ),
     );
 }

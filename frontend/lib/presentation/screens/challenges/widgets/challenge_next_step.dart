@@ -49,10 +49,7 @@ String? challengeNextStepText(BuildContext context, Challenge challenge) {
   final l10n = context.localizations;
   switch (challenge.status) {
     case ChallengeStatus.completed:
-      final xp = challenge.totalXpAwarded;
-      return xp > 0
-          ? l10n.challengesCompletedReward(xp)
-          : l10n.challengesCompletedNoXp;
+      return l10n.challengesCompletedNoXp;
     case ChallengeStatus.expired:
       return l10n.challengesExpiredHint;
     case ChallengeStatus.upcoming:

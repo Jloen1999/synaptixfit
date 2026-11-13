@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/app/di/app_di.dart';
@@ -14,6 +15,7 @@ import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/auth/session/bloc/session_bloc.dart';
 import 'package:synaptixfit/presentation/screens/challenges/challenges_list/bloc/challenges_list_bloc.dart';
 import 'package:synaptixfit/presentation/screens/challenges/challenges_list/page/challenges_page.dart';
+import 'package:synaptixfit/presentation/screens/challenges/challenges_routes.dart';
 import 'package:synaptixfit/presentation/screens/challenges/community_challenges/bloc/community_challenges_bloc.dart';
 import 'package:synaptixfit/presentation/screens/challenges/widgets/pending_milestone_tile.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
@@ -81,7 +83,17 @@ void main() {
     await tester.pumpWidget(
       BlocProvider<SessionBloc>.value(
         value: session,
-        child: MaterialApp(
+        child: MaterialApp.router(
+          // Los retos de la comunidad se abren aparte (ADR 0038).
+          routerConfig: GoRouter(
+            routes: [
+              GoRoute(path: '/', builder: (_, _) => const ChallengesPage()),
+              GoRoute(
+                path: ChallengesPaths.community,
+                builder: (_, _) => const Scaffold(body: Text('comunidad')),
+              ),
+            ],
+          ),
           theme: theme ?? AppTheme.light,
           locale: const Locale('es'),
           supportedLocales: AppLocalizations.supportedLocales,
@@ -97,7 +109,6 @@ void main() {
             ).copyWith(textScaler: TextScaler.linear(textScale)),
             child: child!,
           ),
-          home: const ChallengesPage(),
         ),
       ),
     );
@@ -174,18 +185,8 @@ void main() {
     expect(find.text('Tus retos'), findsNothing);
 
     await tester.tap(find.text('Ver retos de la comunidad'));
-    // Un fotograma para empezar el cambio de pestaña, otro al terminar y el
-    // último para pintar la página nueva.
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump();
-    expect(
-      find.text(
-        'Inspírate en los retos que comparten otros estudiantes y añádelos '
-        'a los tuyos.',
-      ),
-      findsOneWidget,
-    );
+    await tester.pumpAndSettle();
+    expect(find.text('comunidad'), findsOneWidget);
   });
 
   testWidgets('las tareas pendientes se resumen en tres con «Ver todas»', (

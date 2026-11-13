@@ -3,16 +3,18 @@ package com.synaptixfit.domain.model.planner;
 import com.synaptixfit.domain.model.shared.Guard;
 import com.synaptixfit.domain.model.shared.Visibility;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 /**
  * Plan semanal (de lunes a domingo) que agrupa los bloques y entregas de esa semana.
  *
- * <p>Guardarlo da {@code 100 + 5 × nº de bloques} puntos una sola vez por plan
- * ({@code xp_planificacion_otorgado}). Hay como mucho un plan por usuario y semana: guardar de nuevo
- * reutiliza el existente. Se guarda cuánta experiencia se dio para restarla exactamente si se borra
- * el plan (si no, borrar y volver a guardar permitiría ganarla de nuevo).
+ * <p>Planificar la semana da {@code 100 + 5 × nº de eventos planificados} puntos una sola vez por
+ * semana ({@code xp_planificacion_otorgado}), sin botón: el planificador lo concede al llegar a
+ * {@link #MIN_PLANNED_EVENTS} eventos planificados en la semana actual o la siguiente (ADR 0038). Hay
+ * como mucho un plan por usuario y semana (índice único). Se guarda cuánta experiencia se dio para
+ * restarla exactamente si se borra el plan; borrar eventos después no la quita.
  */
 public final class StudyPlan {
 
@@ -38,8 +40,31 @@ public final class StudyPlan {
         this.xpPoints = Math.max(0, xpPoints);
     }
 
+    /**
+     * Eventos planificados (no fijos ni importados, de los que cuentan en el plan) que hacen falta para
+     * dar la experiencia. Uno solo no es planificar la semana y, con 3, crear y borrar eventos sueltos
+     * no la da antes de tiempo.
+     */
+    public static final int MIN_PLANNED_EVENTS = 3;
+
+    /** Eventos de la semana que planificó la persona ({@link CalendarBlock#plannedByPerson()}). */
+    public static int plannedEvents(List<CalendarBlock> weekBlocks) {
+        return (int) weekBlocks.stream().filter(CalendarBlock::plannedByPerson).count();
+    }
+
     public static int experienceFor(int blockCount) {
         return BASE_EXPERIENCE + EXPERIENCE_PER_BLOCK * Math.max(0, blockCount);
+    }
+
+    /**
+     * ¿Se puede dar ya la experiencia de planificar la semana del lunes {@code monday}? Solo la semana de
+     * {@code today} y la siguiente: planificar meses vacíos por adelantado no es planificar y, sin ese
+     * límite, bastarían 3 eventos por semana futura para ganarla 52 veces seguidas.
+     */
+    public static boolean rewardable(int plannedEvents, LocalDate monday, LocalDate today) {
+        LocalDate current = PlannerZone.mondayOf(today);
+        LocalDate week = PlannerZone.mondayOf(monday);
+        return plannedEvents >= MIN_PLANNED_EVENTS && !week.isBefore(current) && !week.isAfter(current.plusWeeks(1));
     }
 
     public void rename(String newName) {

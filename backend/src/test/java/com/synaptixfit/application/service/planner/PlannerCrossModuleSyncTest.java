@@ -49,7 +49,7 @@ class PlannerCrossModuleSyncTest {
         completion = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp, f.publisher, loads,
                 PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK);
         calendar = new CalendarBlockService(f.blocks, f.deadlines, f.directory, f.directory, f.directory, f.xp,
-                f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK);
+                f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK, f.studyPlanService());
     }
 
     private CalendarBlock block(ActivityType type, Instant start, int minutes, UUID subjectId, UUID routineDayId,
@@ -241,7 +241,7 @@ class PlannerCrossModuleSyncTest {
 
     @Test
     void privatizingStudyPlansIsIdempotent() {
-        StudyPlanService plans = new StudyPlanService(f.plans, f.blocks, f.deadlines, f.xp, f.xp, PlannerFakes.ZONE);
+        StudyPlanService plans = f.studyPlanService();
         f.plans.save(new StudyPlan(UUID.randomUUID(), f.user, "Plan", PlannerFakes.MONDAY, Visibility.PUBLIC, false, 0));
         f.plans.save(new StudyPlan(UUID.randomUUID(), f.user, "Plan 2", PlannerFakes.MONDAY.plusDays(7),
                 Visibility.PRIVATE, false, 0));

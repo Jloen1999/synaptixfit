@@ -23,9 +23,17 @@ void main() {
   final monday = DateTime(2026, 10, 19);
   final days = [
     HomePlanDay(date: monday, planned: 4, completed: 2, missed: 1),
-    HomePlanDay(date: monday.add(const Duration(days: 1)), planned: 3, completed: 0),
+    HomePlanDay(
+      date: monday.add(const Duration(days: 1)),
+      planned: 3,
+      completed: 0,
+    ),
     for (var i = 2; i < 7; i++)
-      HomePlanDay(date: monday.add(Duration(days: i)), planned: 0, completed: 0),
+      HomePlanDay(
+        date: monday.add(Duration(days: i)),
+        planned: 0,
+        completed: 0,
+      ),
   ];
   const week = HomeWeekKpis(
     sessions: 1,
@@ -72,12 +80,7 @@ void main() {
     ) async {
       await pump(
         tester,
-        PlanWeekBar(
-          days: days,
-          week: week,
-          onOpenDay: (_) {},
-          now: monday,
-        ),
+        PlanWeekBar(days: days, week: week, onOpenDay: (_) {}, now: monday),
       );
 
       expect(find.text('2 de 7 hechos esta semana'), findsOneWidget);
@@ -106,8 +109,14 @@ void main() {
       final label = find.bySemanticsLabel(
         'Hoy, lunes: 2 de 4 hechos, 1 por hacer, 1 sin hacer',
       );
-      expect(find.bySemanticsLabel('martes: 0 de 3 hechos, 3 por hacer'), findsOneWidget);
-      expect(find.bySemanticsLabel('miércoles: nada planificado'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('martes: 0 de 3 hechos, 3 por hacer'),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel('miércoles: nada planificado'),
+        findsOneWidget,
+      );
       expect(label, findsOneWidget);
       expect(find.text('2/4'), findsOneWidget);
       await tester.tap(label);
@@ -165,7 +174,6 @@ void main() {
           events: events,
           upcoming: const [],
           reviews: const [],
-          onOpenPlanner: () {},
           onOpenEvent: (_) {},
           onOpenReview: (_) {},
           onSetCompleted: (e, completed) => calls.add((e.id, completed)),
@@ -184,7 +192,11 @@ void main() {
       final calls = await showAgenda(tester, [
         event(id: 'a', type: HomeEventType.personal),
         event(id: 'b', type: HomeEventType.study, completed: true),
-        event(id: 'c', type: HomeEventType.delivery, kind: HomeEventKind.deadline),
+        event(
+          id: 'c',
+          type: HomeEventType.delivery,
+          kind: HomeEventKind.deadline,
+        ),
       ]);
 
       await tester.tap(find.byTooltip('Marcar «Evento a» como hecho'));
@@ -221,7 +233,11 @@ void main() {
       final started = <String>[];
       final calls = await showAgenda(tester, [
         event(id: 'r', type: HomeEventType.sport, routineDayId: 'd1'),
-        event(id: 's', type: HomeEventType.sport, status: ItemTimeStatus.missed),
+        event(
+          id: 's',
+          type: HomeEventType.sport,
+          status: ItemTimeStatus.missed,
+        ),
         event(id: 'k', type: HomeEventType.classSession),
       ], started: started);
 
@@ -249,7 +265,9 @@ void main() {
       ]);
 
       expect(
-        find.text('Cuenta para la tarea «Repasar tema 3» del reto Aprobar Física'),
+        find.text(
+          'Cuenta para la tarea «Repasar tema 3» del reto Aprobar Física',
+        ),
         findsOneWidget,
       );
     });
@@ -259,7 +277,11 @@ void main() {
     ) async {
       final handle = tester.ensureSemantics();
       await showAgenda(tester, [
-        event(id: 'a', type: HomeEventType.personal, status: ItemTimeStatus.missed),
+        event(
+          id: 'a',
+          type: HomeEventType.personal,
+          status: ItemTimeStatus.missed,
+        ),
         event(id: 'b', type: HomeEventType.study, completed: true),
       ]);
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
@@ -267,9 +289,18 @@ void main() {
       await expectLater(tester, meetsGuideline(textContrastGuideline));
       handle.dispose();
 
-      await showAgenda(tester, [
-        event(id: 'a', type: HomeEventType.personal, status: ItemTimeStatus.missed),
-      ], textScale: 2, width: 320);
+      await showAgenda(
+        tester,
+        [
+          event(
+            id: 'a',
+            type: HomeEventType.personal,
+            status: ItemTimeStatus.missed,
+          ),
+        ],
+        textScale: 2,
+        width: 320,
+      );
       expect(tester.takeException(), isNull);
     });
   });

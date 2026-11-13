@@ -6,8 +6,9 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Guarda el plan de la semana: reutiliza el plan existente de esa semana (o lo crea), le asocia los
- * bloques y entregas de la semana y, la primera vez, da {@code 100 + 5 × nº de bloques} de experiencia.
+ * Guarda el plan de la semana (ruta de las apps anteriores al ADR 0038): reutiliza el plan de esa semana (o lo
+ * crea) y le asocia sus bloques y entregas. La experiencia sigue la misma regla que sin botón
+ * ({@code StudyPlan.rewardable}): una vez por semana y con suficientes eventos planificados.
  */
 public interface SaveWeeklyPlanUseCase {
 

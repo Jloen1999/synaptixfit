@@ -28,8 +28,8 @@ class AgendaSection extends StatefulWidget {
     required this.upcoming,
     this.focus = UsageFocus.both,
     required this.reviews,
-    required this.onOpenPlanner,
     required this.onOpenEvent,
+    this.headerFocusNode,
     required this.onOpenReview,
     this.onReviewAll,
     this.onSetCompleted,
@@ -48,7 +48,9 @@ class AgendaSection extends StatefulWidget {
   /// filtrado del servidor).
   final UsageFocus focus;
   final List<HomeDueReview> reviews;
-  final VoidCallback onOpenPlanner;
+
+  /// Foco del título (al ocultar la tarjeta de configurar, que va después).
+  final FocusNode? headerFocusNode;
 
   /// Toque en un evento: abre ese día y ese bloque (o las entregas).
   final ValueChanged<HomeTodayEvent> onOpenEvent;
@@ -173,8 +175,7 @@ class _AgendaSectionState extends State<AgendaSection> {
       children: [
         AppSectionHeader(
           title: l10n.homeAgendaTitle,
-          actionLabel: l10n.homeAgendaOpenPlanner,
-          onAction: widget.onOpenPlanner,
+          focusNode: widget.headerFocusNode,
         ),
         _DayStrip(
           days: days,
@@ -200,7 +201,7 @@ class _AgendaSectionState extends State<AgendaSection> {
                   color: context.colors.onSurfaceVariant,
                 ),
                 const SizedBox(width: TokensSpacing.m),
-                // Sin botón propio: «Abrir planificador» ya está en el encabezado.
+                // Sin botón: el calendario es su pestaña (un camino por destino).
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(

@@ -88,8 +88,8 @@ class HomeHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // El nivel y su XP están en «Tu día»: aquí solo la fecha, en una
-              // línea.
+              // El nivel y su XP están en Progreso (ADR 0038): aquí solo la
+              // fecha, en una línea.
               Text(
                 toBeginningOfSentenceCase(date),
                 maxLines: 1,

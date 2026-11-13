@@ -17,11 +17,6 @@ abstract class CalendarState with _$CalendarState {
     @Default(<String, String>{}) Map<String, String> blockTitles,
     WeekBalance? balance,
     AppError? error,
-    @Default(false) bool savingPlan,
-
-    /// La semana ya se cerró: en vez del botón se enseña «Semana cerrada».
-    /// Nulo mientras no se sabe (o si no se pudo saber: el botón sigue).
-    bool? weekClosed,
     @Default(<String>{}) Set<String> busyBlockIds,
 
     /// Aviso puntual para la página; [noticeId] cambia en cada aviso nuevo.
@@ -54,12 +49,6 @@ sealed class CalendarNotice with _$CalendarNotice {
     Account? account,
     @Default(false) bool absent,
   }) = CalendarNoticeBlockXp;
-
-  const factory CalendarNotice.planSaved({
-    required int xpAwarded,
-    required int blockCount,
-    Account? account,
-  }) = CalendarNoticePlanSaved;
 
   /// El bloque movido se solapa con otros.
   const factory CalendarNotice.overlaps(int count) = CalendarNoticeOverlaps;

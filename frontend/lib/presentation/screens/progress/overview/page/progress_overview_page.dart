@@ -11,35 +11,119 @@ import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
+import '../../../challenges/challenges_list/page/challenges_page.dart';
+import '../../badges/page/badges_page.dart';
 import '../../progress_routes.dart';
 import '../../widgets/study_by_subject_card.dart';
 import '../../widgets/study_week_card.dart';
 import '../../widgets/analytics_summary.dart';
+import '../../widgets/balance_card.dart';
 import '../../widgets/community_preview_card.dart';
-import '../../widgets/earned_badges_preview.dart';
 import '../../widgets/level_card.dart';
 import '../../widgets/next_badge_card.dart';
 import '../../widgets/physical_load_card.dart';
 import '../../widgets/streak_card.dart';
 import '../bloc/progress_overview_bloc.dart';
 
-/// Pestaña Progreso.
-class ProgressOverviewPage extends StatelessWidget {
-  const ProgressOverviewPage({super.key});
+/// Pestaña Progreso: «Resumen» (nivel, racha y cifras), «Retos» e
+/// «Insignias». Aquí viven el XP, las rachas, las insignias y los retos
+/// (vocabulario.md §4); el resto de la app no enseña cifras de XP. El apartado
+/// llega con `?tab=` (avisos, Inicio, celebraciones).
+class ProgressOverviewPage extends StatefulWidget {
+  const ProgressOverviewPage({super.key, this.tab = ProgressTab.summary});
+
+  final ProgressTab tab;
+
+  @override
+  State<ProgressOverviewPage> createState() => _ProgressOverviewPageState();
+}
+
+class _ProgressOverviewPageState extends State<ProgressOverviewPage>
+    with SingleTickerProviderStateMixin {
+  late final _tabs = TabController(
+    length: ProgressTab.values.length,
+    vsync: this,
+    initialIndex: widget.tab.index,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs.addListener(_syncLocation);
+  }
+
+  /// La dirección sigue al apartado elegido a mano: así un enlace posterior a
+  /// ese mismo apartado (`go('/progress?tab=…')`) vuelve a llevar a él.
+  void _syncLocation() {
+    if (_tabs.indexIsChanging || !mounted) return;
+    final tab = ProgressTab.values[_tabs.index];
+    if (tab == widget.tab) return;
+    context.go(switch (tab) {
+      ProgressTab.summary => ProgressPaths.root,
+      ProgressTab.challenges => ProgressPaths.challenges,
+      ProgressTab.badges => ProgressPaths.badgesTab,
+    });
+  }
+
+  @override
+  void didUpdateWidget(ProgressOverviewPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Un enlace nuevo (`go('/progress?tab=…')`) cambia de apartado.
+    if (widget.tab != oldWidget.tab) _show(widget.tab);
+  }
+
+  void _show(ProgressTab tab) => _tabs.animateTo(
+    tab.index,
+    duration: context.motion(TokensDuration.normal),
+  );
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) =>
-          getIt<ProgressOverviewBloc>()
-            ..add(const ProgressOverviewEvent.started()),
-      child: const _ProgressOverviewView(),
+    final l10n = context.localizations;
+    return Scaffold(
+      appBar: AppPageBar(
+        title: Text(l10n.progressTitle),
+        bottom: TabBar(
+          controller: _tabs,
+          tabs: [
+            Tab(text: l10n.progressTabSummary),
+            Tab(text: l10n.challengesTitle),
+            Tab(text: l10n.progressBadgesPageTitle),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabs,
+        children: [
+          AppKeepAlive(
+            child: BlocProvider(
+              create: (_) =>
+                  getIt<ProgressOverviewBloc>()
+                    ..add(const ProgressOverviewEvent.started()),
+              child: _ProgressOverviewView(
+                onOpenBadges: () => _show(ProgressTab.badges),
+              ),
+            ),
+          ),
+          const AppKeepAlive(child: ChallengesPage()),
+          const AppKeepAlive(child: BadgesPage()),
+        ],
+      ),
     );
   }
 }
 
 class _ProgressOverviewView extends StatefulWidget {
-  const _ProgressOverviewView();
+  const _ProgressOverviewView({required this.onOpenBadges});
+
+  /// Lleva al apartado «Insignias» de la misma pestaña.
+  final VoidCallback onOpenBadges;
 
   @override
   State<_ProgressOverviewView> createState() => _ProgressOverviewViewState();
@@ -74,7 +158,6 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.localizations;
     return BlocConsumer<ProgressOverviewBloc, ProgressOverviewState>(
       listenWhen: (previous, current) =>
           current is ProgressOverviewLoaded && previous != current,
@@ -82,70 +165,71 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
         if (state is ProgressOverviewLoaded) unawaited(_onLoaded(state));
       },
       builder: (context, state) {
-        return Scaffold(
-          appBar: AppPageBar(title: Text(l10n.progressTitle)),
-          body: switch (state) {
-            ProgressOverviewLoading() => const _OverviewSkeleton(),
-            ProgressOverviewFailure(:final error) => AppErrorView(
-              error: error,
-              onRetry: () => context.read<ProgressOverviewBloc>().add(
-                const ProgressOverviewEvent.started(),
-              ),
+        return switch (state) {
+          ProgressOverviewLoading() => const _OverviewSkeleton(),
+          ProgressOverviewFailure(:final error) => AppErrorView(
+            error: error,
+            onRetry: () => context.read<ProgressOverviewBloc>().add(
+              const ProgressOverviewEvent.started(),
             ),
-            ProgressOverviewLoaded(:final overview) => _focusAware(
-              context,
-              (focus) => RefreshIndicator(
-                onRefresh: _refresh,
-                child: _Constrained(
-                  children: [
-                    LevelCard(account: overview.account),
-                    StreakCard(streak: overview.streak),
-                    if (overview.nextBadge case final next?)
-                      NextBadgeCard(
-                        badge: next,
-                        onOpen: () => _open(ProgressPaths.badges),
-                      ),
-                    EarnedBadgesPreview(
-                      badges: overview.earnedBadges,
-                      onOpen: () => _open(ProgressPaths.badges),
+          ),
+          ProgressOverviewLoaded(:final overview, :final today) => _focusAware(
+            context,
+            (focus) => RefreshIndicator(
+              onRefresh: _refresh,
+              child: _Constrained(
+                children: [
+                  LevelCard(account: overview.account),
+                  StreakCard(streak: overview.streak),
+                  // Carga cognitiva, carga física y energía de hoy: cifras
+                  // técnicas que salieron de Inicio (ADR 0038).
+                  if (today != null)
+                    BalanceCard(
+                      cognitive: today.cognitive,
+                      crossRegulation: today.crossRegulation,
+                      wellbeing: today.wellbeing,
+                      focus: focus,
+                      // Sin enlaces propios: el análisis y el Pomodoro ya se
+                      // abren desde sus tarjetas (un camino por destino).
                     ),
-                    // Cifras de estudio: solo si la persona estudia.
-                    if (focus.includesAcademic)
-                      StudyWeekCard(
-                        week: overview.studyWeek,
-                        onFocus: () =>
-                            context.push(ProgressExternalPaths.pomodoro),
-                        // Los repasos pendientes están en la pestaña Académico.
-                        onReview: () =>
-                            context.go(ProgressExternalPaths.academic),
-                        onRetry: () => context.read<ProgressOverviewBloc>().add(
-                          const ProgressOverviewEvent.refreshed(),
-                        ),
-                      ),
-                    if (focus.includesAcademic)
-                      StudyBySubjectCard(report: overview.studyBySubject),
-                    // Cifras de entrenamiento: solo si la persona hace deporte.
-                    if (focus.includesFitness) ...[
-                      WeeklySummaryCard(
-                        weekly: overview.weekly,
-                        onOpen: () => _open(ProgressPaths.analytics),
-                      ),
-                      PhysicalLoadCard(load: overview.physicalLoad),
-                    ],
-                    CommunityPreviewCard(
-                      posts: overview.communityPosts,
-                      onOpenWall: () =>
-                          context.push(ProgressExternalPaths.socialWall),
-                      onOpenPost: (post) => context.push(
-                        ProgressExternalPaths.socialPost(post.id),
+                  // Las ganadas están en «Insignias»: aquí solo la siguiente.
+                  if (overview.nextBadge case final next?)
+                    NextBadgeCard(badge: next, onOpen: widget.onOpenBadges),
+                  // Cifras de estudio: solo si la persona estudia.
+                  if (focus.includesAcademic)
+                    StudyWeekCard(
+                      week: overview.studyWeek,
+                      onFocus: () =>
+                          context.push(ProgressExternalPaths.pomodoro),
+                      // Los repasos pendientes están en la pestaña Académico.
+                      onReview: () =>
+                          context.go(ProgressExternalPaths.academic),
+                      onRetry: () => context.read<ProgressOverviewBloc>().add(
+                        const ProgressOverviewEvent.refreshed(),
                       ),
                     ),
+                  if (focus.includesAcademic)
+                    StudyBySubjectCard(report: overview.studyBySubject),
+                  // Cifras de entrenamiento: solo si la persona hace deporte.
+                  if (focus.includesFitness) ...[
+                    WeeklySummaryCard(
+                      weekly: overview.weekly,
+                      onOpen: () => _open(ProgressPaths.analytics),
+                    ),
+                    PhysicalLoadCard(load: overview.physicalLoad),
                   ],
-                ),
+                  CommunityPreviewCard(
+                    posts: overview.communityPosts,
+                    onOpenWall: () =>
+                        context.push(ProgressExternalPaths.socialWall),
+                    onOpenPost: (post) =>
+                        context.push(ProgressExternalPaths.socialPost(post.id)),
+                  ),
+                ],
               ),
             ),
-          },
-        );
+          ),
+        };
       },
     );
   }

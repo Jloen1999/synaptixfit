@@ -3,7 +3,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../../domain/enums/data_topic.dart';
 import '../../../../../domain/errors/app_error.dart';
+import '../../../../../domain/models/home/home_dashboard.dart';
 import '../../../../../domain/models/progress/progress_overview.dart';
+import '../../../../../domain/use_cases/home/get_home_dashboard_use_case.dart';
 import '../../../../../domain/use_cases/progress/get_progress_overview_use_case.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
 import '../../../../mixins/data_change_refresh_mixin.dart';
@@ -19,6 +21,7 @@ class ProgressOverviewBloc
     with DataChangeRefreshMixin<ProgressOverviewEvent, ProgressOverviewState> {
   ProgressOverviewBloc({
     required this._getOverview,
+    required this._getToday,
     required this._watchChanges,
   }) : super(const ProgressOverviewState.loading()) {
     on<ProgressOverviewStarted>(_onStarted);
@@ -26,6 +29,11 @@ class ProgressOverviewBloc
   }
 
   final GetProgressOverviewUseCaseContract _getOverview;
+
+  /// Resumen de hoy (carga cognitiva, carga física y energía), el mismo que
+  /// el de Inicio: «Tu equilibrio» se ve aquí (ADR 0038). Es opcional: si
+  /// falla, la tarjeta no se enseña.
+  final GetHomeDashboardUseCaseContract _getToday;
   final WatchDataChangesUseCaseContract _watchChanges;
 
   Future<void> _onStarted(
@@ -59,19 +67,26 @@ class ProgressOverviewBloc
       return _load(emit);
     }
     emit(current.copyWith(refreshing: true, refreshError: null));
+    final todayF = _getToday();
     final result = await _getOverview();
+    final today = (await todayF).valueOrNull ?? current.today;
     emit(
       result.fold(
-        ProgressOverviewState.loaded,
+        (overview) => ProgressOverviewState.loaded(overview, today: today),
         (error) => current.copyWith(refreshing: false, refreshError: error),
       ),
     );
   }
 
   Future<void> _load(Emitter<ProgressOverviewState> emit) async {
+    final todayF = _getToday();
     final result = await _getOverview();
+    final today = (await todayF).valueOrNull;
     emit(
-      result.fold(ProgressOverviewState.loaded, ProgressOverviewState.failure),
+      result.fold(
+        (overview) => ProgressOverviewState.loaded(overview, today: today),
+        ProgressOverviewState.failure,
+      ),
     );
   }
 }

@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * ¿Está cerrada la semana? «Cerrar semana» se hace una vez: después, la app enseña «Semana cerrada» en lugar
- * del botón (los bloques nuevos se guardan solos). Cualquier día de la semana sirve como {@code weekStart}.
+ * ¿Tiene ya plan la semana? Solo lo usan las apps anteriores al ADR 0038, que enseñaban «Cerrar semana»; la
+ * actual ya no tiene ese botón (la experiencia de planificar llega sola). Cualquier día sirve como {@code weekStart}.
  */
 public interface GetWeekPlanStatusUseCase {
 

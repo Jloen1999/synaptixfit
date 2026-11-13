@@ -56,7 +56,6 @@ void main() {
               ],
               onOpen: (_) {},
               onSeeAll: () {},
-              onCreate: () {},
             ),
           ),
         ),

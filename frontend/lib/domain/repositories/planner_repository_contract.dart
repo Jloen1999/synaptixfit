@@ -67,10 +67,7 @@ abstract interface class PlannerRepositoryContract {
   Future<AppResult<List<BlockConflict>>> getConflicts(DateTime weekStart);
 
   // ------------------------------------------------------------ planificación
-  Future<AppResult<SavedPlan>> savePlan(DateTime weekStart);
-
-  /// ¿Ya se cerró («Cerrar semana») la semana de [weekStart]?
-  Future<AppResult<bool>> isWeekClosed(DateTime weekStart);
+  // La experiencia de planificar la semana la da el servidor sola (ADR 0038).
 
   /// Carga guardada de la semana; `null` si aún no existe.
   Future<AppResult<WeeklyLoad?>> getWeeklyLoad(DateTime weekStart);

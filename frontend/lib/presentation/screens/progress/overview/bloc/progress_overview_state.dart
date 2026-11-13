@@ -6,6 +6,9 @@ sealed class ProgressOverviewState with _$ProgressOverviewState {
 
   const factory ProgressOverviewState.loaded(
     ProgressOverview overview, {
+
+    /// Resumen de hoy para «Tu equilibrio»; nulo si no se pudo leer.
+    HomeDashboard? today,
     @Default(false) bool refreshing,
 
     /// Error de una recarga: se conservan los datos anteriores.

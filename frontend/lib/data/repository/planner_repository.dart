@@ -171,19 +171,6 @@ class PlannerRepository implements PlannerRepositoryContract {
       );
 
   @override
-  Future<AppResult<SavedPlan>> savePlan(DateTime weekStart) =>
-      RepositoryErrorHandler.guard(
-        () async =>
-            (await _remote.savePlan(PlannerJson.toDate(weekStart))).toDomain(),
-      );
-
-  @override
-  Future<AppResult<bool>> isWeekClosed(DateTime weekStart) =>
-      RepositoryErrorHandler.guard(
-        () => _remote.isWeekClosed(PlannerJson.toDate(weekStart)),
-      );
-
-  @override
   Future<AppResult<WeeklyLoad?>> getWeeklyLoad(DateTime weekStart) =>
       RepositoryErrorHandler.guard(() async {
         final date = PlannerJson.toDate(weekStart);

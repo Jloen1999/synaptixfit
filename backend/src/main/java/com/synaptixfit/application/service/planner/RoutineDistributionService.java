@@ -1,6 +1,7 @@
 package com.synaptixfit.application.service.planner;
 
 import com.synaptixfit.application.port.input.planner.DistributeRoutineUseCase;
+import com.synaptixfit.application.port.input.planner.RewardWeekPlanningUseCase;
 import com.synaptixfit.application.port.input.planner.WithdrawRoutineBlocksUseCase;
 import com.synaptixfit.domain.exception.planner.PlannerRoutineNotFoundException;
 import com.synaptixfit.domain.model.planner.CalendarBlock;
@@ -20,7 +21,8 @@ import java.util.UUID;
 
 /**
  * Distribución de una rutina en el calendario (bloques de deporte vinculados a sus días). Volver a
- * repartir sustituye los bloques futuros pendientes de esa rutina, en lugar de duplicarlos.
+ * repartir sustituye los bloques futuros pendientes de esa rutina, en lugar de duplicarlos. Repartirla cuenta
+ * como planificar: pide a {@link RewardWeekPlanningUseCase} la experiencia de cada semana tocada (ADR 0038).
  */
 public class RoutineDistributionService implements DistributeRoutineUseCase {
 
@@ -34,16 +36,18 @@ public class RoutineDistributionService implements DistributeRoutineUseCase {
     private final WithdrawRoutineBlocksUseCase withdraw;
     private final PlannerZone zone;
     private final Clock clock;
+    private final RewardWeekPlanningUseCase planningReward;
 
     public RoutineDistributionService(CalendarBlockRepositoryPort blocks, RoutineDirectoryPort routines,
                                       WeeklyLoadService weeklyLoads, WithdrawRoutineBlocksUseCase withdraw,
-                                      PlannerZone zone, Clock clock) {
+                                      PlannerZone zone, Clock clock, RewardWeekPlanningUseCase planningReward) {
         this.blocks = blocks;
         this.routines = routines;
         this.weeklyLoads = weeklyLoads;
         this.withdraw = withdraw;
         this.zone = zone;
         this.clock = clock;
+        this.planningReward = planningReward;
     }
 
     @Override
@@ -64,7 +68,10 @@ public class RoutineDistributionService implements DistributeRoutineUseCase {
                 command.durationMinutes(), existing, zone, now, UUID::randomUUID);
         List<CalendarBlock> saved = blocks.saveAll(created);
         saved.stream().map(b -> PlannerZone.mondayOf(zone.localDate(b.start()))).distinct()
-                .forEach(monday -> weeklyLoads.refresh(command.userId(), monday));
+                .forEach(monday -> {
+                    weeklyLoads.refresh(command.userId(), monday);
+                    planningReward.rewardWeek(command.userId(), monday);
+                });
         return saved;
     }
 }

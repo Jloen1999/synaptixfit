@@ -152,22 +152,19 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
               ? l10n.plannerPomodoroFocusDone
               : l10n.plannerPomodoroBreakDone,
         );
-      // Sustituye al aviso de fase terminada: el texto ya felicita.
-      case PomodoroNoticeXpEarned(:final xp, :final account):
+      // La regla del servidor (`xpStatus`) se conserva, pero sin cifras: la XP
+      // se ve en Progreso (ADR 0038).
+      case PomodoroNoticeXpEarned(:final account):
         if (account != null) {
           context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
         }
-        context.showSnack(l10n.plannerPomodoroXpEarned(xp));
+        context.showSnack(l10n.plannerPomodoroFocusDone);
       case PomodoroNoticeDailyXpLimitReached():
         context.showSnack(l10n.plannerPomodoroXpLimitReached);
       case PomodoroNoticeRecordFailed():
         context.showSnack(l10n.plannerPomodoroRecordFailed);
-      case PomodoroNoticeBlockMarked(:final xp):
-        context.showSnack(
-          xp > 0
-              ? l10n.plannerPomodoroBlockMarkedXp(xp)
-              : l10n.plannerPomodoroBlockMarked,
-        );
+      case PomodoroNoticeBlockMarked():
+        context.showSnack(l10n.plannerPomodoroBlockMarked);
       case PomodoroNoticeBlockMarkFailed(:final error):
         context.showSnack(errorMessage(context, error));
     }

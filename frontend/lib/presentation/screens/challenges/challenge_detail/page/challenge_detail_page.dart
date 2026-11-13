@@ -94,25 +94,20 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
           challengeFeedbackMessage(
             context,
             base: base,
-            xpDelta: xpDelta,
             unlockedTitles: unlockedTitles,
           ),
         );
-      case ChallengeDetailDeleted(:final xpLost, :final account):
+      case ChallengeDetailDeleted(:final account):
         if (account != null) {
           context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
         }
         context.showSnack(
-          challengeFeedbackMessage(
-            context,
-            base: l10n.challengesDeleted,
-            xpDelta: -xpLost,
-          ),
+          challengeFeedbackMessage(context, base: l10n.challengesDeleted),
         );
         if (context.canPop()) {
           context.pop();
         } else {
-          context.go(ChallengesPaths.root);
+          context.go(ChallengesPaths.list);
         }
       case ChallengeDetailCloned(:final challengeId):
         context.showSnack(l10n.challengesCloned);
@@ -160,10 +155,7 @@ class _DetailView extends StatelessWidget with ErrorsMessageMixin {
           bloc.add(ChallengeDetailEvent.visibilityChanged(visibility));
         }
       case _MenuAction.delete:
-        final confirmed = await showDeleteChallengeDialog(
-          context,
-          challenge.totalXpAwarded,
-        );
+        final confirmed = await showDeleteChallengeDialog(context);
         if (confirmed) bloc.add(const ChallengeDetailEvent.deleteRequested());
     }
   }
@@ -660,21 +652,6 @@ class _SummaryCard extends StatelessWidget {
                   value: l10n.challengesDetailDaysValue(challenge.bestStreak),
                 ),
               ],
-              // Con tareas, la XP la reparte el servidor con un tope por reto:
-              // la ganada y la que puede dar en total (ya con el tope).
-              _Stat(
-                icon: Icons.bolt_rounded,
-                color: context.palette.accent,
-                label: challenge.hasMilestones
-                    ? l10n.challengesDetailXpEarned
-                    : l10n.challengesDetailReward,
-                value: challenge.hasMilestones
-                    ? l10n.challengesXpOfTotal(
-                        challenge.totalXpAwarded,
-                        challenge.xpReward,
-                      )
-                    : l10n.challengesXpGain(challenge.xpReward),
-              ),
             ],
           ),
           if (challenge.owned &&

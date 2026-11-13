@@ -16,8 +16,8 @@ import 'reminders_host.dart';
 class AchievementsHost extends StatelessWidget {
   const AchievementsHost({super.key, required this.child});
 
-  /// Pantalla de insignias (módulo de progreso).
-  static const badgesPath = '/progress/badges';
+  /// Progreso › Insignias (módulo de progreso). Es una pestaña: con `go`.
+  static const badgesPath = '/progress?tab=badges';
 
   final Widget child;
 
@@ -70,7 +70,7 @@ class _AchievementsListenerState extends State<_AchievementsListener> {
       ),
     );
     if (result == AchievementDialogResult.seeBadges && mounted) {
-      unawaited(context.push<void>(AchievementsHost.badgesPath));
+      context.go(AchievementsHost.badgesPath);
     }
   }
 

@@ -52,9 +52,6 @@ abstract final class AppIcons {
   /// Estado «Por hacer» (casilla sin marcar); se cambia por [done] al marcar.
   static const IconData todo = Icons.radio_button_unchecked_rounded;
 
-  /// Cerrar la semana del planificador (repasarla y pasar a la siguiente).
-  static const IconData closeWeek = Icons.event_available_outlined;
-
   /// Prioridad de algo (asignatura, tarea). No es la bandera de Retos.
   static const IconData priority = Icons.priority_high_rounded;
 
@@ -104,12 +101,12 @@ abstract final class AppIcons {
   // Pestañas (contorno sin elegir, relleno elegida).
   static const IconData tabHome = Icons.home_outlined;
   static const IconData tabHomeSelected = Icons.home_rounded;
+  static const IconData tabCalendar = Icons.calendar_month_outlined;
+  static const IconData tabCalendarSelected = Icons.calendar_month_rounded;
   static const IconData tabAcademic = Icons.school_outlined;
   static const IconData tabAcademicSelected = Icons.school_rounded;
   static const IconData tabTraining = Icons.fitness_center_outlined;
   static const IconData tabTrainingSelected = Icons.fitness_center_rounded;
-  static const IconData tabChallenges = Icons.flag_outlined;
-  static const IconData tabChallengesSelected = Icons.flag_rounded;
   static const IconData tabProgress = Icons.insights_outlined;
   static const IconData tabProgressSelected = Icons.insights_rounded;
 }

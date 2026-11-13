@@ -186,4 +186,15 @@ abstract final class AppDueDates {
     if (days <= 6) return l10n.commonDueIn(days);
     return l10n.commonDueOn(DateFormat.MMMEd().format(due));
   }
+
+  /// Cuenta atrás sin límite de días: «hoy», «mañana», «en 12 días». Para la
+  /// cuenta atrás de Inicio, que debe verse aunque falten semanas (las listas
+  /// siguen usando [text], que pasa a la fecha a partir de una semana).
+  static String countdown(BuildContext context, DateTime due, DateTime now) {
+    final l10n = context.localizations;
+    final days = daysUntil(due, now);
+    if (days <= 0) return l10n.commonCountdownToday;
+    if (days == 1) return l10n.commonCountdownTomorrow;
+    return l10n.commonCountdownDays(days);
+  }
 }

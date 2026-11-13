@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
-import '../../../widgets/widgets.dart';
 
 /// Resumen de un resultado: aciertos, porcentaje y XP ganada.
 class ResultSummary extends StatelessWidget {
@@ -67,13 +66,8 @@ class ResultSummary extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: TokensSpacing.l),
-        AppPill(
-          label: xp > 0 ? l10n.academicXpEarned(xp) : l10n.academicXpNone,
-          color: context.palette.accent,
-          icon: Icons.bolt_rounded,
-        ),
-        if (extra != null) ...[const SizedBox(height: TokensSpacing.m), extra!],
+        // La XP del test se ve en Progreso, no aquí (ADR 0038).
+        if (extra != null) ...[const SizedBox(height: TokensSpacing.l), extra!],
       ],
     );
   }

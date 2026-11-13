@@ -4,18 +4,6 @@ import '../../enums/planner_enums.dart';
 
 part 'weekly_planning.freezed.dart';
 
-/// Resultado de guardar el plan de la semana.
-@freezed
-abstract class SavedPlan with _$SavedPlan {
-  const factory SavedPlan({
-    required String planId,
-    required String name,
-    required int blockCount,
-    required int deadlineCount,
-    required int xpAwarded,
-  }) = _SavedPlan;
-}
-
 /// Carga académica de una semana.
 @freezed
 abstract class WeeklyLoad with _$WeeklyLoad {

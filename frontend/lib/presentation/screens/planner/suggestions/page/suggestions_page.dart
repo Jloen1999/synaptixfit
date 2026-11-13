@@ -410,12 +410,7 @@ class _SuggestedBlockTile extends StatelessWidget {
   }
 }
 
-/// Vuelve al calendario. Se llega aquí desde él, así que basta con volver (y
-/// el calendario se refresca); `go` destruiría las pestañas de la app.
-void _openCalendar(BuildContext context, DateTime week) {
-  if (context.canPop()) {
-    context.pop();
-  } else {
-    context.pushReplacement(PlannerPaths.week(week));
-  }
-}
+/// Abre la pestaña Calendario en [week] (con `go`: es una pestaña; cierra
+/// esta pantalla y el calendario se refresca solo con los cambios).
+void _openCalendar(BuildContext context, DateTime week) =>
+    context.go(PlannerPaths.week(week));

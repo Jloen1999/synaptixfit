@@ -30,13 +30,16 @@ abstract final class SocialPaths {
 /// Se escriben como texto para no depender de los ficheros de otros módulos.
 abstract final class SocialExternalPaths {
   /// Raíces de las pestañas de la barra inferior: se abren cambiando de
-  /// pestaña (`go`), porque apilarlas encima duplicaría la barra.
+  /// pestaña (`go`), porque apilarlas encima duplicaría la barra. `/challenges`
+  /// y `/progress/badges` son direcciones antiguas que redirigen a Progreso.
   static const tabRoots = {
     '/home',
+    '/planner',
     '/academic',
     '/training',
-    '/challenges',
     '/progress',
+    '/challenges',
+    '/progress/badges',
   };
 
   /// Apunte compartido (módulo academic).
@@ -56,7 +59,8 @@ abstract final class SocialExternalPaths {
   /// apilarla duplicaría el armazón y la pantalla quedaría en negro.
   static bool opensInTab(String url) {
     final path = Uri.parse(url).path;
-    return path.startsWith('/training/routines/') ||
+    return isTabRoot(url) ||
+        path.startsWith('/training/routines/') ||
         path.startsWith('/training/exercises/');
   }
 }

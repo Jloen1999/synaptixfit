@@ -26,12 +26,9 @@ import '../../widgets/next_training_card.dart';
 import '../../widgets/plan_week_bar.dart';
 import '../../widgets/setup_checklist_card.dart';
 import '../../widgets/smart_banner_card.dart';
-import '../../widgets/state_section.dart';
 import '../../widgets/today_hero_card.dart';
 import '../bloc/home_dashboard_bloc.dart';
 
-/// Pestaña Inicio: lo importante ahora (aviso), cómo estás (equilibrio), qué
-/// toca hoy y, al lado, tus retos y tu semana. El resto vive en su pestaña.
 /// Avisos que van arriba del todo, antes de «Tu día».
 const _urgentBanners = {
   HomeBannerType.overdueDeadlines,
@@ -39,6 +36,11 @@ const _urgentBanners = {
   HomeBannerType.highFatigue,
 };
 
+/// Pestaña Inicio, al grano (vocabulario.md §4, ADR 0038): «Tu día» manda con
+/// lo siguiente y un solo botón directo, la agenda de los próximos días, el
+/// próximo entreno, los retos en marcha y tu semana en una fila. Sin XP ni
+/// cifras técnicas (están en Progreso) y un solo camino al calendario: su
+/// pestaña. Lo de configurar la app va al final.
 class HomeDashboardPage extends StatelessWidget {
   const HomeDashboardPage({super.key});
 
@@ -82,14 +84,12 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
     }
   }
 
-  /// Resultado de «Hecho» o «Al próximo hueco» del aviso.
+  /// Resultado de «Hecho» o «Al próximo hueco» del aviso (sin XP: se ve en
+  /// Progreso).
   void _showBannerNotice(BuildContext context, HomeBannerNotice notice) {
     final l10n = context.localizations;
     context.showSnack(switch (notice) {
-      HomeBannerNoticeCompleted(:final xpDelta) =>
-        xpDelta > 0
-            ? l10n.plannerBlockCompletedXp(xpDelta)
-            : l10n.plannerBlockCompleted,
+      HomeBannerNoticeCompleted() => l10n.plannerBlockCompleted,
       HomeBannerNoticeRescheduled(:final start) => l10n.plannerRescheduledTo(
         DateFormat.MMMEd().add_Hm().format(start),
       ),
@@ -105,20 +105,10 @@ class HomeDashboardView extends StatelessWidget with ErrorsMessageMixin {
   ) {
     final l10n = context.localizations;
     switch (notice) {
-      case HomeCompletionNoticeDone(
-        :final id,
-        :final kind,
-        :final completed,
-        :final xpDelta,
-      ):
-        final xp = xpDelta.abs();
+      case HomeCompletionNoticeDone(:final id, :final kind, :final completed):
         final status = completed
-            ? (xp > 0
-                  ? l10n.plannerBlockCompletedXp(xp)
-                  : l10n.plannerBlockCompleted)
-            : (xp > 0
-                  ? l10n.plannerBlockUncompletedXp(xp)
-                  : l10n.plannerBlockUncompleted);
+            ? l10n.plannerBlockCompleted
+            : l10n.plannerBlockUncompleted;
         // Se nombra lo marcado: el aviso se lee sin mirar la lista.
         final state = context.read<HomeDashboardBloc>().state;
         final event = [
@@ -303,8 +293,8 @@ class _HomeContent extends StatefulWidget {
 class _HomeContentState extends State<_HomeContent> {
   static const _gap = SizedBox(height: TokensSpacing.l);
 
-  /// Título de «Tu equilibrio»: recibe el foco al ocultar «Primeros pasos»
-  /// con «Ahora no» (el botón desaparece; WCAG 2.4.3).
+  /// Título de «Tu semana» (o de la agenda, si no hay semana): recibe el foco
+  /// al ocultar «Termina de preparar tu app» con «Ahora no» (WCAG 2.4.3).
   final _afterSetupFocus = FocusNode(debugLabel: 'home-after-setup');
 
   HomeDashboard get dashboard => widget.dashboard;
@@ -350,9 +340,8 @@ class _HomeContentState extends State<_HomeContent> {
       onCompleteBlock: (id) =>
           bloc.add(HomeDashboardEvent.bannerBlockCompleted(id)),
     );
-    // Columna principal: primero lo que hay que hacer (agenda de hoy y los
-    // próximos días y el próximo entreno), que es lo que el estudiante busca al
-    // abrir la app; después, en una tarjeta compacta, cómo está para hacerlo.
+    // Columna principal: lo que hay que hacer (agenda de hoy y de los próximos
+    // días y el próximo entreno), que es lo que se busca al abrir la app.
     void startTraining() => next == null
         ? onNavigate(HomeExternalPaths.newRoutine)
         : context.read<HomeDashboardBloc>().add(
@@ -393,27 +382,48 @@ class _HomeContentState extends State<_HomeContent> {
       );
     }
 
-    // «Tu día»: lo primero que se ve, con lo que toca ahora y su botón.
+    // «Tu día»: lo primero que se ve, con lo que toca ahora y su único botón.
+    final nextDeadline = state.nextDeadline;
     final hero = TodayHeroCard(
       dashboard: dashboard,
       focus: focus,
       starting: state.startingTraining,
       completingIds: state.completingIds,
+      nextDeadline: nextDeadline,
+      onOpenDeadline: nextDeadline == null
+          ? null
+          : () => onNavigate(HomeExternalPaths.deadline(nextDeadline.id)),
       onMarkDone: (event) => _setCompleted(context, event, completed: true),
-      onAction: (action) => switch (action) {
-        TodayHeroAction.focus => focusOnNext(),
-        TodayHeroAction.train => trainTodayBlock(),
-        TodayHeroAction.openPlanner => onNavigate(HomeExternalPaths.planner),
+      onAction: (action) {
+        switch (action) {
+          case TodayHeroAction.focus:
+            focusOnNext();
+          case TodayHeroAction.train:
+            trainTodayBlock();
+          // Lo marca `onMarkDone` (devuelve el foco al título).
+          case TodayHeroAction.markDone:
+            break;
+          case TodayHeroAction.addEvent:
+            onNavigate(HomeExternalPaths.addEvent());
+        }
       },
     );
+    // Si «Tu día» ya ofrece «Empezar», la tarjeta del entreno no lo repite.
+    final heroTrains =
+        TodayHeroCard.actionFor(
+          TodayHeroCard.nextEvent(dashboard.todayEvents),
+          dashboard,
+        ) ==
+        TodayHeroAction.train;
     final setup = state.setup;
     final main = <Widget>[
       AgendaSection(
+        // Sin «Tu semana», «Ahora no» devuelve el foco aquí (WCAG 2.4.3).
+        headerFocusNode: dashboard.planWeek.isEmpty ? _afterSetupFocus : null,
         events: dashboard.todayEvents,
         upcoming: state.upcoming,
         focus: focus,
         reviews: state.dueReviews,
-        onOpenPlanner: () => onNavigate(HomeExternalPaths.planner),
         completingIds: state.completingIds,
         onSetCompleted: (event, completed) =>
             _setCompleted(context, event, completed: completed),
@@ -445,57 +455,51 @@ class _HomeContentState extends State<_HomeContent> {
           day: next,
           checkInDone: dashboard.wellbeing.checkInDone,
           starting: state.startingTraining,
+          showStart: !heroTrains,
           // Igual que en Rutinas: empieza (o reanuda) la sesión directamente.
           onStart: startTraining,
           onOpenRoutine: next == null
               ? null
               : () => onNavigate(HomeExternalPaths.routine(next.routineId)),
           onCheckIn: () => onNavigate(HomeExternalPaths.checkIn),
-          onRun: () => onNavigate(HomeExternalPaths.recordRun),
-        ),
-      if (setup != null && setup.visibleAt(DateTime.now()))
-        SetupChecklistCard(
-          setup: setup,
-          onOpen: (task) => onNavigate(HomeExternalPaths.setupTask(task)),
-          onLater: () {
-            context.read<HomeDashboardBloc>().add(
-              const HomeDashboardEvent.setupSnoozed(),
-            );
-            // Dice cuándo y dónde vuelve (vocabulario.md).
-            context.showSnack(context.localizations.homeSetupSnoozedWhere);
-            AppFocusAnchor.focusSoon(_afterSetupFocus);
-          },
         ),
       // Un aviso informativo va después del próximo entreno: no lo tapa.
       if (!urgent) banner,
-      // Sin «Concentrarme»: ya está en «Tu día» (una parada por destino).
-      StateSection(
-        cognitive: dashboard.cognitive,
-        crossRegulation: dashboard.crossRegulation,
-        wellbeing: dashboard.wellbeing,
-        focus: focus,
-        onOpenAnalytics: () => onNavigate(HomeExternalPaths.analytics),
-        headerFocusNode: _afterSetupFocus,
-      ),
     ];
-    // Columna secundaria: metas y semana. Las cifras detalladas están en la
-    // analítica y los atajos en su pestaña, para no repetir lo que ya hay.
+    // Columna secundaria: retos en marcha (solo si hay) y la semana. Las
+    // cifras de carga, energía y XP viven en Progreso.
     final side = <Widget>[
-      ActiveChallengesSection(
-        challenges: dashboard.activeChallenges,
-        onOpen: (challenge) =>
-            onNavigate(HomeExternalPaths.challenge(challenge.id)),
-        onSeeAll: () => onNavigate(HomeExternalPaths.challenges),
-        onCreate: () => onNavigate(HomeExternalPaths.newChallenge),
-      ),
+      if (dashboard.activeChallenges.isNotEmpty)
+        ActiveChallengesSection(
+          challenges: dashboard.activeChallenges,
+          onOpen: (challenge) =>
+              onNavigate(HomeExternalPaths.challenge(challenge.id)),
+          onSeeAll: () => onNavigate(HomeExternalPaths.challenges),
+        ),
       if (dashboard.planWeek.isNotEmpty)
         PlanWeekBar(
           days: dashboard.planWeek,
           week: dashboard.week,
           focus: focus,
+          headerFocusNode: _afterSetupFocus,
           onOpenDay: (day) => onNavigate(HomeExternalPaths.plannerAt(day)),
         ),
     ];
+    // Terminar de preparar la app va al final: no compite con lo de hoy.
+    final setupCard = setup != null && setup.visibleAt(DateTime.now())
+        ? SetupChecklistCard(
+            setup: setup,
+            onOpen: (task) => onNavigate(HomeExternalPaths.setupTask(task)),
+            onLater: () {
+              context.read<HomeDashboardBloc>().add(
+                const HomeDashboardEvent.setupSnoozed(),
+              );
+              // Dice cuándo y dónde vuelve (vocabulario.md).
+              context.showSnack(context.localizations.homeSetupSnoozedWhere);
+              AppFocusAnchor.focusSoon(_afterSetupFocus);
+            },
+          )
+        : null;
 
     List<Widget> spaced(List<Widget> items) => [
       for (final (i, item) in items.indexed) ...[if (i > 0) _gap, item],
@@ -547,6 +551,7 @@ class _HomeContentState extends State<_HomeContent> {
               )
             else
               ...spaced([...main, ...side]),
+            if (setupCard != null) ...[_gap, setupCard],
             const SizedBox(height: TokensSpacing.l),
           ],
         );

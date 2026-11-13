@@ -4,14 +4,13 @@ import '../../../domain/enums/challenge_difficulty.dart';
 import '../../../domain/enums/challenge_type.dart';
 import 'challenge_detail/page/challenge_detail_page.dart';
 import 'challenge_form/page/challenge_form_page.dart';
-import 'challenges_list/page/challenges_page.dart';
 import 'community_challenges/page/community_challenges_page.dart';
 
 /// Rutas del módulo challenges.
 ///
 /// | Ruta | Pantalla | Parámetros |
 /// |---|---|---|
-/// | `/challenges` | Pestaña Retos (Mis retos / Comunidad) | — |
+/// | `/challenges` | Dirección antigua: lleva a Progreso › Retos | — |
 /// | `/challenges/new` | Nuevo reto completo | `extra` opcional: `Map` con `prefilledTitle`, `subjectId`, `subjectName` (y `type`, `difficulty`, `endAt`, `sessionTarget`) |
 /// | `/challenges/community` | Retos de la comunidad | — |
 /// | `/challenges/:challengeId` | Detalle del reto | — |
@@ -19,7 +18,12 @@ import 'community_challenges/page/community_challenges_page.dart';
 ///
 /// `/challenges/new` devuelve con `pop` el id del reto creado.
 abstract final class ChallengesPaths {
+  /// Dirección antigua de la pestaña Retos (avisos de versiones anteriores,
+  /// enlaces): redirige a [list].
   static const root = '/challenges';
+
+  /// Tus retos: Progreso › Retos. Es una pestaña: se abre con `go`.
+  static const list = '/progress?tab=challenges';
   static const create = '/challenges/new';
   static const community = '/challenges/community';
 
@@ -90,16 +94,11 @@ class ChallengeFormArgs {
   final int? sessionTarget;
 }
 
-/// Rutas dentro de la pestaña (conservan la barra inferior).
-List<RouteBase> challengesBranchRoutes() => [
-  GoRoute(
-    path: ChallengesPaths.root,
-    builder: (context, state) => const ChallengesPage(),
-  ),
-];
-
-/// Rutas a pantalla completa (sin barra inferior).
+/// Rutas a pantalla completa (sin barra inferior). La lista de retos vive en
+/// Progreso (`ChallengesPage` dentro de `ProgressOverviewPage`, ADR 0038);
+/// `/challenges` solo redirige allí.
 List<RouteBase> challengesRoutes() => [
+  GoRoute(path: ChallengesPaths.root, redirect: (_, _) => ChallengesPaths.list),
   GoRoute(
     path: ChallengesPaths.create,
     builder: (context, state) =>

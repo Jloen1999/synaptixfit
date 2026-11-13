@@ -48,7 +48,7 @@ abstract final class AcademicPaths {
   static String importGuide({String? subjectId}) =>
       _withQuery('/academic/import-guide', {'subjectId': subjectId});
 
-  /// Calendario semanal (módulo planner).
+  /// Pestaña Calendario (módulo planner): se abre con `go`.
   static const planner = '/planner';
 
   /// Calendario abierto en el día de [start] con el bloque [blockId] abierto.

@@ -851,7 +851,8 @@ class _TimelineSection extends StatelessWidget {
         AppSectionHeader(
           title: l10n.academicTimelineTitle,
           actionLabel: l10n.academicOpenPlanner,
-          onAction: () => context.push(AcademicPaths.planner),
+          // El calendario es una pestaña: se cambia a ella (no se apila).
+          onAction: () => context.go(AcademicPaths.planner),
         ),
         AppCard(
           padding: EdgeInsets.zero,
@@ -907,14 +908,16 @@ class _TimelineSection extends StatelessWidget {
                           ),
                           // Abre lo mismo que la agenda de Inicio: el bloque en
                           // su día del calendario o la lista de entregas.
-                          onTap: () => context.push(
-                            item.isDeadline
-                                ? AcademicPaths.deadline(item.id)
-                                : AcademicPaths.plannerBlock(
+                          // Una entrega es pantalla completa (`push`); el
+                          // evento vive en la pestaña Calendario (`go`).
+                          onTap: () => item.isDeadline
+                              ? context.push(AcademicPaths.deadline(item.id))
+                              : context.go(
+                                  AcademicPaths.plannerBlock(
                                     item.id,
                                     item.start,
                                   ),
-                          ),
+                                ),
                         ),
                       ),
                   ],

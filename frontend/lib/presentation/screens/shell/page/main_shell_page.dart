@@ -13,30 +13,33 @@ import '../widgets/open_session_bar.dart';
 import '../widgets/achievements_host.dart';
 
 /// Estructura principal con las pestañas de [StatefulNavigationShell]:
-/// barra inferior en móvil y riel lateral en pantallas anchas. Según el
-/// enfoque de uso se ocultan Académico (solo deporte) o Rutinas (solo
-/// estudios); las ramas del router no cambian, así que se traduce entre la
-/// posición visible y el índice de rama. Los logros
-/// ([AchievementsHost]) se celebran aquí para que se vean desde cualquier
-/// pestaña.
+/// Inicio · Calendario · Académico · Entreno · Progreso (ADR 0038), en barra
+/// inferior en móvil y riel lateral en pantallas anchas. Según el enfoque de
+/// uso se ocultan Académico (solo deporte) o Entreno (solo estudios); las
+/// ramas del router no cambian, así que se traduce entre la posición visible
+/// y el índice de rama. Los logros ([AchievementsHost]) se celebran aquí para
+/// que se vean desde cualquier pestaña.
 class MainShellPage extends StatelessWidget {
   const MainShellPage({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
-  /// Índices de rama, en orden: inicio, académico, rutinas, retos, progreso.
-  static const _academicBranch = 1;
-  static const _trainingBranch = 2;
+  /// Índices de rama, en orden: inicio, calendario, académico, entreno,
+  /// progreso.
+  static const _calendarBranch = 1;
+  static const _academicBranch = 2;
+  static const _trainingBranch = 3;
+  static const _progressBranch = 4;
 
   void _select(int branch) =>
       shell.goBranch(branch, initialLocation: branch == shell.currentIndex);
 
   static List<int> _visibleBranches(UsageFocus focus) => [
     0,
+    _calendarBranch,
     if (focus.includesAcademic) _academicBranch,
     if (focus.includesFitness) _trainingBranch,
-    3,
-    4,
+    _progressBranch,
   ];
 
   List<({IconData icon, IconData selected, String label})> _destinations(
@@ -50,6 +53,11 @@ class MainShellPage extends StatelessWidget {
         label: l10n.tabHome,
       ),
       (
+        icon: AppIcons.tabCalendar,
+        selected: AppIcons.tabCalendarSelected,
+        label: l10n.tabCalendar,
+      ),
+      (
         icon: AppIcons.tabAcademic,
         selected: AppIcons.tabAcademicSelected,
         label: l10n.tabAcademic,
@@ -58,11 +66,6 @@ class MainShellPage extends StatelessWidget {
         icon: AppIcons.tabTraining,
         selected: AppIcons.tabTrainingSelected,
         label: l10n.tabTraining,
-      ),
-      (
-        icon: AppIcons.tabChallenges,
-        selected: AppIcons.tabChallengesSelected,
-        label: l10n.tabChallenges,
       ),
       (
         icon: AppIcons.tabProgress,

@@ -107,7 +107,7 @@ void main() {
       ChallengesFixtures.challenge(milestones: [task]),
     );
 
-    await tester.tap(find.text('Ver en el planificador').first);
+    await tester.tap(find.text('Ver en el calendario').first);
     await tester.pumpAndSettle();
 
     expect(opened?.queryParameters['focus'], 'd42');
@@ -127,7 +127,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Ver en el planificador').first);
+    await tester.tap(find.text('Ver en el calendario').first);
     await tester.pumpAndSettle();
 
     expect(opened?.queryParameters['focus'], 'e7');

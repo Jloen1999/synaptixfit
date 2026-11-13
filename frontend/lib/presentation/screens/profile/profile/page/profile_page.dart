@@ -375,13 +375,8 @@ class _AccountHeader extends StatelessWidget {
               ),
             ],
           ),
+          // Nivel y XP se ven en Progreso (ADR 0038); aquí, solo la racha.
           const SizedBox(height: TokensSpacing.m),
-          XpProgressBar(
-            level: account.level,
-            levelXp: account.levelXp,
-            levelThreshold: account.levelThreshold,
-          ),
-          const SizedBox(height: TokensSpacing.s),
           Row(
             children: [
               Icon(

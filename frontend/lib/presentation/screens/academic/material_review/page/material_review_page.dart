@@ -664,14 +664,6 @@ class _OutcomeCard extends StatelessWidget {
                   : l10n.academicNextReview(longDate(material.nextReviewAt!)),
               textAlign: TextAlign.center,
             ),
-            if (xpAwarded > 0) ...[
-              const SizedBox(height: TokensSpacing.m),
-              AppPill(
-                label: l10n.academicXpEarned(xpAwarded),
-                color: context.palette.accent,
-                icon: Icons.bolt_rounded,
-              ),
-            ],
             const SizedBox(height: TokensSpacing.m),
             if (queue.isNotEmpty) ...[
               AppPrimaryButton(

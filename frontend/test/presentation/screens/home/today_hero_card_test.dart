@@ -20,6 +20,7 @@ HomeTodayEvent _block(
   ItemTimeStatus status, {
   bool completed = false,
   int hour = 10,
+  String? routineDayId,
 }) => HomeTodayEvent(
   id: id,
   kind: HomeEventKind.block,
@@ -29,6 +30,8 @@ HomeTodayEvent _block(
   end: DateTime(2026, 10, 31, hour + 1),
   completed: completed,
   status: status,
+  routineId: routineDayId == null ? null : 'r1',
+  routineDayId: routineDayId,
 );
 
 void main() {
@@ -107,7 +110,7 @@ void main() {
     expect(actions, [TodayHeroAction.focus]);
   });
 
-  testWidgets('sin nada planificado invita a planificar el día', (
+  testWidgets('sin nada planificado, «Añadir al calendario» en un toque', (
     tester,
   ) async {
     final actions = await pump(tester, const []);
@@ -116,8 +119,44 @@ void main() {
       find.text('Aún no tienes nada planificado para hoy.'),
       findsOneWidget,
     );
-    await tester.tap(find.text('Planificar el día'));
-    expect(actions, [TodayHeroAction.openPlanner]);
+    await tester.tap(find.text('Añadir al calendario'));
+    expect(actions, [TodayHeroAction.addEvent]);
+  });
+
+  testWidgets('un solo botón: el entreno de hoy empieza con «Empezar»', (
+    tester,
+  ) async {
+    final actions = await pump(tester, [
+      _block(
+        '1',
+        HomeEventType.sport,
+        ItemTimeStatus.upcoming,
+        hour: 18,
+        routineDayId: 'd1',
+      ),
+    ]);
+
+    expect(find.byWidgetPredicate((w) => w is FilledButton), findsOneWidget);
+    await tester.tap(find.text('Empezar'));
+    expect(actions, [TodayHeroAction.train]);
+  });
+
+  testWidgets('un partido suelto no arranca otra rutina: sin botón', (
+    tester,
+  ) async {
+    await pump(tester, [
+      _block('1', HomeEventType.sport, ItemTimeStatus.upcoming, hour: 18),
+    ]);
+
+    expect(find.byWidgetPredicate((w) => w is FilledButton), findsNothing);
+  });
+
+  testWidgets('una clase no lleva botón: se ve en la agenda', (tester) async {
+    await pump(tester, [
+      _block('1', HomeEventType.classSession, ItemTimeStatus.upcoming),
+    ]);
+
+    expect(find.byWidgetPredicate((w) => w is FilledButton), findsNothing);
   });
 
   testWidgets('con todo hecho lo celebra', (tester) async {
@@ -128,7 +167,7 @@ void main() {
     expect(find.textContaining('Has terminado lo de hoy'), findsOneWidget);
   });
 
-  testWidgets('con el texto al 200 % el anillo y las cifras caben', (
+  testWidgets('con el texto al 200 % el anillo y el botón caben, sin XP', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(360, 1600);
@@ -147,8 +186,8 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('10/12'), findsOneWidget);
-    // Lo que falta para subir, no «120 de 300».
-    expect(find.text('180 XP para el nivel 4'), findsOneWidget);
+    // La XP se ve en Progreso, no en Inicio (ADR 0038).
+    expect(find.textContaining('XP'), findsNothing);
   });
 
   test('los títulos en mayúsculas se leen como texto normal', () {

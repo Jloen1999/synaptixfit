@@ -47,7 +47,6 @@
   "tabHome": "Inicio",
   "tabAcademic": "Académico",
   "tabTraining": "Entreno",
-  "tabChallenges": "Retos",
   "tabProgress": "Progreso",
   "fieldEmail": "Email",
   "fieldPassword": "Contraseña",
@@ -227,7 +226,7 @@
   "xpGuideDeadlinesDetail": "Marcar una entrega como hecha da XP; como mucho 5 cada 24 horas.",
   "xpGuideChallenges": "Retos",
   "xpGuideChallengesDetail": "Cada tarea da XP según su dificultad; como mucho 140 XP por reto.",
-  "xpGuideFooter": "Si algo no suma, la app te dice por qué.",
+  "xpGuideFooter": "Lo que ganas se suma a tu nivel aquí, en Progreso.",
   "commonArrowSpoken": " a ",
   "registerLegalRequired": "Marca la casilla para crear tu cuenta.",
   "commonListAnd": "{items} y {last}",
@@ -266,5 +265,34 @@
         "type": "String"
       }
     }
+  },
+  "tabCalendar": "Calendario",
+  "@tabCalendar": {
+    "description": "Pestaña Calendario de la barra de navegación."
+  },
+  "commonCountdownToday": "hoy",
+  "@commonCountdownToday": {
+    "description": "Cuenta atrás: vence hoy (en minúscula, va tras «·»)."
+  },
+  "commonCountdownTomorrow": "mañana",
+  "@commonCountdownTomorrow": {
+    "description": "Cuenta atrás: vence mañana (en minúscula, va tras «·»)."
+  },
+  "commonCountdownDays": "{days, plural, =1{en 1 día} other{en {days} días}}",
+  "@commonCountdownDays": {
+    "description": "Cuenta atrás sin límite de días («en 12 días»).",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "xpGuidePlanning": "Planificar la semana",
+  "xpGuidePlanningDetail": "Con 3 eventos planificados en esta semana o la siguiente, 100 XP más 5 por evento. Una vez por semana; llega sola.",
+  "@xpGuidePlanning": {
+    "description": "Guía de XP: planificar la semana (ADR 0038)."
+  },
+  "@xpGuidePlanningDetail": {
+    "description": "Guía de XP: regla de la XP de planificar la semana, sin botón."
   }
 }

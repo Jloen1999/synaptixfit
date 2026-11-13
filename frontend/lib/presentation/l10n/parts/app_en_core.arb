@@ -22,7 +22,6 @@
   "tabHome": "Home",
   "tabAcademic": "Academic",
   "tabTraining": "Training",
-  "tabChallenges": "Challenges",
   "tabProgress": "Progress",
   "fieldEmail": "Email",
   "fieldPassword": "Password",
@@ -132,7 +131,7 @@
   "xpGuideDeadlinesDetail": "Marking a deadline as done gives XP; at most 5 every 24 hours.",
   "xpGuideChallenges": "Challenges",
   "xpGuideChallengesDetail": "Each task gives XP according to its difficulty; at most 140 XP per challenge.",
-  "xpGuideFooter": "If something doesn’t add up, the app tells you why.",
+  "xpGuideFooter": "What you earn adds up to your level here, in Progress.",
   "commonArrowSpoken": " to ",
   "registerLegalRequired": "Tick the box to create your account.",
   "commonListAnd": "{items} and {last}",
@@ -140,5 +139,11 @@
   "commonSearchNoResults": "No results for “{query}”",
   "commonSearchResultsCount": "{count, plural, =1{1 result} other{{count} results}}",
   "commonView": "View",
-  "commonHelpAbout": "What “{topic}” means"
+  "commonHelpAbout": "What “{topic}” means",
+  "tabCalendar": "Calendar",
+  "commonCountdownToday": "today",
+  "commonCountdownTomorrow": "tomorrow",
+  "commonCountdownDays": "{days, plural, =1{in 1 day} other{in {days} days}}",
+  "xpGuidePlanning": "Planning the week",
+  "xpGuidePlanningDetail": "With 3 events planned this week or next, 100 XP plus 5 per event. Once a week; it arrives on its own."
 }

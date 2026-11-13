@@ -231,13 +231,17 @@ class PlannerFlowIT {
                 .andExpect(jsonPath("$[0].type").value("REVIEW"))
                 .andExpect(jsonPath("$[0].studyMaterialId").value(materialId.toString()));
 
-        // «Cerrar semana» solo una vez: el servidor dice si ya está cerrada.
-        mvc.perform(auth(get("/api/v1/planner/plans/week/" + day))).andExpect(jsonPath("$.closed").value(false));
-        String saved = json(put("/api/v1/planner/plans/" + day), "{\"name\":\"Semana IT\",\"visibility\":\"FRIENDS\"}", 200);
+        // La experiencia de planificar llega sola al tener la semana 3 eventos planificados (ADR 0038); la
+        // ruta antigua de «Cerrar semana» sigue respondiendo a las apps viejas y no la da otra vez.
+        for (int i = 0; i < 3; i++) {
+            Instant at = tomorrow.plus(Duration.ofHours(6 + i));
+            json(post("/api/v1/planner/blocks"), """
+                    {"start":"%s","end":"%s","type":"STUDY","topics":"Plan %d"}
+                    """.formatted(at, at.plus(Duration.ofMinutes(45)), i), 201);
+        }
         mvc.perform(auth(get("/api/v1/planner/plans/week/" + day))).andExpect(jsonPath("$.closed").value(true))
-                .andExpect(jsonPath("$.xpAwarded").value(JsonPath.<Integer>read(saved, "$.xpAwarded")));
-        assertThat((Integer) JsonPath.read(saved, "$.xpAwarded")).isGreaterThanOrEqualTo(100);
-        String again = json(put("/api/v1/planner/plans/" + day), "{}", 200);
+                .andExpect(jsonPath("$.xpAwarded").value(Matchers.greaterThanOrEqualTo(115)));
+        String again = json(put("/api/v1/planner/plans/" + day), "{\"name\":\"Semana IT\",\"visibility\":\"FRIENDS\"}", 200);
         assertThat((Integer) JsonPath.read(again, "$.xpAwarded")).isZero();
         mvc.perform(auth(get("/api/v1/planner/plans"))).andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.items[0].visibility").value("FRIENDS"));

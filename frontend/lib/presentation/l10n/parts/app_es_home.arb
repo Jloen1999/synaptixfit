@@ -77,50 +77,20 @@
     }
   },
   "homeBannerHighFatigueTitle": "Acumulas fatiga",
-  "homeBannerHighFatigueMessage": "Fatiga media {score}/100: hoy, sesión suave o descanso.",
-  "@homeBannerHighFatigueMessage": {
-    "placeholders": {
-      "score": {
-        "type": "int"
-      }
-    }
-  },
+  "homeBannerHighFatigueMessage": "Vas cansado: hoy, sesión suave o descanso.",
+  "@homeBannerHighFatigueMessage": {},
   "homeBannerLowAdherenceTitle": "Tu plan de estudio se queda corto",
-  "homeBannerLowAdherenceMessage": "Vas al {adherence} % esta semana. Ajusta tu plan.",
-  "@homeBannerLowAdherenceMessage": {
-    "placeholders": {
-      "adherence": {
-        "type": "int"
-      }
-    }
-  },
+  "homeBannerLowAdherenceMessage": "Vas por detrás de lo planificado esta semana.",
+  "@homeBannerLowAdherenceMessage": {},
   "homeBannerLowEnergyTitle": "Energía baja hoy",
-  "homeBannerLowEnergyMessage": "Energía {energy}/100: elige tareas ligeras.",
-  "@homeBannerLowEnergyMessage": {
-    "placeholders": {
-      "energy": {
-        "type": "int"
-      }
-    }
-  },
+  "homeBannerLowEnergyMessage": "Hoy tienes poca energía: elige tareas ligeras.",
+  "@homeBannerLowEnergyMessage": {},
   "homeBannerAttentionDepletedTitle": "Tu atención necesita una pausa",
-  "homeBannerAttentionDepletedMessage": "Atención al {attention} %: descansa antes de seguir estudiando.",
-  "@homeBannerAttentionDepletedMessage": {
-    "placeholders": {
-      "attention": {
-        "type": "int"
-      }
-    }
-  },
+  "homeBannerAttentionDepletedMessage": "Tu atención está agotada: descansa antes de seguir estudiando.",
+  "@homeBannerAttentionDepletedMessage": {},
   "homeBannerPeakDayTitle": "Día ideal para rendir",
-  "homeBannerPeakDayMessage": "Energía {energy}/100: ataca lo más difícil.",
-  "@homeBannerPeakDayMessage": {
-    "placeholders": {
-      "energy": {
-        "type": "int"
-      }
-    }
-  },
+  "homeBannerPeakDayMessage": "Hoy tienes mucha energía: ataca lo más difícil.",
+  "@homeBannerPeakDayMessage": {},
   "homeBannerStudyStreakTitle": "{days, plural, =1{1 día seguido estudiando} other{{days} días seguidos estudiando}}",
   "@homeBannerStudyStreakTitle": {
     "placeholders": {
@@ -140,13 +110,10 @@
   },
   "homeBannerTrainingStreakMessage": "No rompas la cadena.",
   "homeBannerComebackTitle": "¡Qué bien verte de nuevo!",
-  "homeBannerComebackMessage": "{days, plural, =1{1 día sin entrenar: vuelve al {percent} % de tu carga.} other{{days} días sin entrenar: vuelve al {percent} % de tu carga.}}",
+  "homeBannerComebackMessage": "{days, plural, =1{1 día sin entrenar: vuelve con una sesión más suave de lo habitual.} other{{days} días sin entrenar: vuelve con una sesión más suave de lo habitual.}}",
   "@homeBannerComebackMessage": {
     "placeholders": {
       "days": {
-        "type": "int"
-      },
-      "percent": {
         "type": "int"
       }
     }
@@ -157,7 +124,7 @@
   "homeBannerBalanceMessage": "Alterna estudio, movimiento y descanso.",
   "homeBannerActionAnalytics": "Ver análisis",
   "homeBannerActionDeadlines": "Ver entregas",
-  "homeBannerActionPlan": "Planificar",
+  "homeBannerActionPlan": "Ver en el calendario",
   "homeBannerActionPomodoro": "Descanso guiado",
   "homeBannerActionTrain": "Entrenar",
   "homeBannerActionCheckIn": "Contar cómo estoy",
@@ -186,14 +153,6 @@
     "placeholders": {
       "minutes": {
         "type": "int"
-      }
-    }
-  },
-  "homeWeekCalories": "{calories} kcal entrenando",
-  "@homeWeekCalories": {
-    "placeholders": {
-      "calories": {
-        "type": "String"
       }
     }
   },
@@ -236,7 +195,6 @@
   "homeZoneDanger": "En riesgo",
   "homeZoneOvertraining": "Sobrecarga",
   "homeAgendaTitle": "Agenda",
-  "homeAgendaOpenPlanner": "Calendario",
   "homeAgendaEmptyTitle": "Día libre",
   "homeAgendaToday": "Hoy",
   "homeAgendaDaySemantics": "{day}: {count, plural, =0{sin eventos} =1{1 evento} other{{count} eventos}}",
@@ -345,9 +303,6 @@
   "homeTrainingEmptyMessage": "Crea una rutina adaptada a tu carga académica.",
   "homeTrainingCreate": "Crear rutina",
   "homeChallengesTitle": "Retos activos",
-  "homeChallengesEmptyTitle": "No tienes retos activos",
-  "homeChallengesEmptyMessage": "Ponte un objetivo y gana XP al completarlo.",
-  "homeChallengesCreate": "Crear reto",
   "homeChallengeProgress": "{value} %",
   "@homeChallengeProgress": {
     "placeholders": {
@@ -389,7 +344,6 @@
     }
   },
   "homePlanWeekEmpty": "Aún no has planificado esta semana.",
-  "homePlanWeekPlan": "Planificar la semana",
   "homePlanDaySemantics": "{day}: {done} de {planned} hechos",
   "@homePlanDaySemantics": {
     "description": "Lectura de un día de «Tu semana», igual que el «2/3» visible; luego van por hacer y sin hacer si los hay.",
@@ -433,7 +387,7 @@
       }
     }
   },
-  "homePlanDayOpen": "Abrir este día en el planificador",
+  "homePlanDayOpen": "Abrir este día en el calendario",
   "homeRefreshFailed": "No se ha podido actualizar el inicio.",
   "homeErrorInvalidTimeZone": "La zona horaria indicada no es válida.",
   "homeBalanceTitle": "Tu equilibrio",
@@ -505,7 +459,7 @@
       }
     }
   },
-  "homeBannerActionReschedule": "Revisar en el calendario",
+  "homeBannerActionReschedule": "Ver en el calendario",
   "@homeBannerOverdueDeadlinesMessage": {
     "placeholders": {
       "count": {
@@ -532,8 +486,8 @@
   "homeSetupWellnessHint": "Peso, altura y actividad para calcular tus calorías y tu carga.",
   "homeSetupRoutine": "Elige o crea una rutina",
   "homeSetupRoutineHint": "Así sabrás qué toca entrenar cada día.",
-  "homeSetupWeekPlan": "Planifica tus próximos días",
-  "homeSetupWeekPlanHint": "Añade clases, estudio o entrenos al calendario.",
+  "homeSetupWeekPlan": "Importa tu horario",
+  "homeSetupWeekPlanHint": "Tus clases en el calendario de una vez.",
   "homeSetupAcademic": "Indica tu universidad y tu grado",
   "homeSetupAcademicHint": "Te proponemos las asignaturas de tu carrera.",
   "homeBannerWhenToday": "hoy a las {time}",
@@ -599,16 +553,9 @@
   "homeTodayNow": "Ahora",
   "homeTodayNext": "A continuación",
   "homeTodayFocus": "Concentrarme",
-  "homeTodayTrain": "Empezar entreno",
-  "homeTodayPlanDay": "Planificar el día",
-  "homeTodayOpenCalendar": "Ver calendario",
+  "homeTodayTrain": "Empezar",
   "homeTodayAllDone": "Has terminado lo de hoy. ¡Buen trabajo!",
   "homeTodayEmpty": "Aún no tienes nada planificado para hoy.",
-  "homeTodayStudy": "estudio hoy",
-  "homeTodayTraining": "entreno hoy",
-  "homeTodayStudyOf": "{done} de {planned} min",
-  "homeTodayMinutes": "{minutes} min",
-  "homeTodayXp": "{remaining} XP para el nivel {next}",
   "homePlanWeekLegendDone": "Hecho",
   "homePlanWeekLegendPending": "Por hacer",
   "homePlanWeekLegendMissed": "Sin hacer",
@@ -622,38 +569,9 @@
       }
     }
   },
-  "@homeTodayStudyOf": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "planned": {
-        "type": "int"
-      }
-    }
-  },
-  "@homeTodayMinutes": {
-    "placeholders": {
-      "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "@homeTodayXp": {
-    "description": "Lo que falta para subir de nivel.",
-    "placeholders": {
-      "remaining": {
-        "type": "int",
-        "format": "decimalPattern"
-      },
-      "next": {
-        "type": "int"
-      }
-    }
-  },
   "homeReviewAll": "Repasar todos",
   "homeCommunity": "Muro de la comunidad",
-  "homeTodayClassesNote": "{count, plural, =1{Además, 1 clase (no cuenta para el progreso de hoy)} other{Además, {count} clases (no cuentan para el progreso de hoy)}}",
+  "homeTodayClassesNote": "{count, plural, =1{Y 1 clase} other{Y {count} clases}}",
   "@homeTodayClassesNote": {
     "placeholders": {
       "count": {
@@ -665,7 +583,6 @@
   "homeBannerActionNextSlot": "Al próximo hueco",
   "homeBannerActionDone": "Hecho",
   "homeBannerActionMarkInCalendar": "Marcar en el calendario",
-  "homeStartRun": "Empezar a correr",
   "homeBirthdayTitle": "¡Feliz cumpleaños, {name}!",
   "@homeBirthdayTitle": {
     "placeholders": {
@@ -676,5 +593,29 @@
   },
   "homeBirthdayTitleNoName": "¡Feliz cumpleaños!",
   "homeBirthdayMessage": "Que tengas un gran día. Tu plan te espera cuando quieras.",
-  "homeSetupSnoozedWhere": "Lo ocultamos 7 días. Después volverá a salir aquí, en Inicio."
+  "homeSetupSnoozedWhere": "Lo ocultamos 7 días. Después volverá a salir aquí, en Inicio.",
+  "homeCountdownExam": "Examen: {title} · {when}",
+  "@homeCountdownExam": {
+    "description": "Cuenta atrás del próximo examen en «Tu día». when = «en 12 días», «mañana»…",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCountdownDelivery": "Entrega: {title} · {when}",
+  "@homeCountdownDelivery": {
+    "description": "Cuenta atrás de la próxima entrega en «Tu día».",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  }
 }

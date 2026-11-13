@@ -33,7 +33,6 @@ class SmartBannerContent {
   factory SmartBannerContent.of(BuildContext context, HomeSmartBanner banner) {
     final l10n = context.localizations;
     int asInt(String key) => banner.param(key).round();
-    int asPercent(String key) => (banner.param(key) * 100).round();
 
     return switch (banner.type) {
       HomeBannerType.physicalOverload => SmartBannerContent(
@@ -77,7 +76,7 @@ class SmartBannerContent {
       HomeBannerType.highFatigue => SmartBannerContent(
         icon: Icons.battery_alert_outlined,
         title: l10n.homeBannerHighFatigueTitle,
-        message: l10n.homeBannerHighFatigueMessage(asInt('fatigueScore')),
+        message: l10n.homeBannerHighFatigueMessage,
         tone: SmartBannerTone.warning,
         actionLabel: l10n.homeBannerActionTrainingToday,
         actionPath: HomeExternalPaths.training,
@@ -85,7 +84,7 @@ class SmartBannerContent {
       HomeBannerType.lowAdherence => SmartBannerContent(
         icon: Icons.trending_down_rounded,
         title: l10n.homeBannerLowAdherenceTitle,
-        message: l10n.homeBannerLowAdherenceMessage(asInt('adherence')),
+        message: l10n.homeBannerLowAdherenceMessage,
         tone: SmartBannerTone.warning,
         actionLabel: l10n.homeBannerActionPlan,
         actionPath: HomeExternalPaths.planner,
@@ -93,7 +92,7 @@ class SmartBannerContent {
       HomeBannerType.lowEnergy => SmartBannerContent(
         icon: Icons.battery_2_bar_rounded,
         title: l10n.homeBannerLowEnergyTitle,
-        message: l10n.homeBannerLowEnergyMessage(asInt('energy')),
+        message: l10n.homeBannerLowEnergyMessage,
         tone: SmartBannerTone.warning,
         actionLabel: l10n.homeBannerActionTrainingToday,
         actionPath: HomeExternalPaths.training,
@@ -101,9 +100,7 @@ class SmartBannerContent {
       HomeBannerType.attentionDepleted => SmartBannerContent(
         icon: Icons.psychology_alt_outlined,
         title: l10n.homeBannerAttentionDepletedTitle,
-        message: l10n.homeBannerAttentionDepletedMessage(
-          asPercent('attentionCapacity'),
-        ),
+        message: l10n.homeBannerAttentionDepletedMessage,
         tone: SmartBannerTone.warning,
         actionLabel: l10n.homeBannerActionPomodoro,
         actionPath: HomeExternalPaths.pomodoroBreak,
@@ -111,7 +108,7 @@ class SmartBannerContent {
       HomeBannerType.peakDay => SmartBannerContent(
         icon: Icons.bolt_rounded,
         title: l10n.homeBannerPeakDayTitle,
-        message: l10n.homeBannerPeakDayMessage(asInt('energy')),
+        message: l10n.homeBannerPeakDayMessage,
         tone: SmartBannerTone.positive,
         actionLabel: l10n.homeBannerActionTrain,
         actionPath: HomeExternalPaths.training,
@@ -131,10 +128,7 @@ class SmartBannerContent {
       HomeBannerType.comeback => SmartBannerContent(
         icon: Icons.waving_hand_outlined,
         title: l10n.homeBannerComebackTitle,
-        message: l10n.homeBannerComebackMessage(
-          asInt('daysInactive'),
-          asPercent('loadFactor'),
-        ),
+        message: l10n.homeBannerComebackMessage(asInt('daysInactive')),
         tone: SmartBannerTone.positive,
         actionLabel: l10n.homeBannerActionTrain,
         actionPath: HomeExternalPaths.training,

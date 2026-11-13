@@ -98,7 +98,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.byIcon(Icons.chevron_right_rounded), findsWidgets);
-    expect(find.text('Carga cognitiva'), findsOneWidget);
+    // Carga, energía y XP viven en Progreso (ADR 0038).
+    expect(find.text('Carga cognitiva'), findsNothing);
+    expect(find.textContaining('XP'), findsNothing);
     // En la agenda y en «Tu día» (es el bloque que toca a continuación).
     expect(find.text('Cálculo'), findsNWidgets(2));
     expect(find.text('Tu día'), findsOneWidget);
@@ -106,11 +108,13 @@ void main() {
     expect(find.text('Fuerza base'), findsOneWidget);
     expect(find.text('Contar cómo estoy'), findsOneWidget);
     expect(find.text('Estudiar 10 horas'), findsOneWidget);
-    // La recomendación termina en una acción: empezar a estudiar.
-    // Solo en «Tu día»: «Tu equilibrio» ya no lo repite.
+    // «Tu día» manda con un solo botón destacado: concentrarse en lo que toca.
     expect(find.text('Concentrarme'), findsOneWidget);
-    // La regulación cruzada termina en una recomendación de una línea.
-    expect(find.textContaining('concentración de 52 min'), findsOneWidget);
+    expect(find.byWidgetPredicate((w) => w is FilledButton), findsOneWidget);
+    // Un solo camino al calendario: su pestaña (sin enlaces ni «Planificar»).
+    expect(find.text('Calendario'), findsNothing);
+    expect(find.text('Planificar la semana'), findsNothing);
+    expect(find.text('Empezar a correr'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -124,7 +128,7 @@ void main() {
 
     await pump(tester, theme: AppTheme.dark);
 
-    expect(find.text('Tu equilibrio'), findsOneWidget);
+    expect(find.text('Tu día'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -193,7 +197,10 @@ void main() {
         // La pastilla de la agenda (la leyenda de «Tu semana» también dice
         // «Sin hacer»).
         final pill = find
-            .descendant(of: find.byType(ListTile), matching: find.text('Sin hacer'))
+            .descendant(
+              of: find.byType(ListTile),
+              matching: find.text('Sin hacer'),
+            )
             .first;
         expect(pill, findsOneWidget);
         // Debajo del título, no a su derecha.
@@ -225,7 +232,7 @@ void main() {
     ) async {
       await pump(tester, textScale: 2);
 
-      expect(find.text('Tu equilibrio'), findsOneWidget);
+      expect(find.text('Tu semana'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

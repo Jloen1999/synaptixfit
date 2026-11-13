@@ -7,11 +7,8 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../widgets/challenge_labels.dart';
 
-/// Confirmación de borrado avisando de la XP que se restará.
-Future<bool> showDeleteChallengeDialog(
-  BuildContext context,
-  int xpAwarded,
-) async {
+/// Confirmación de borrado (borra para siempre: se confirma).
+Future<bool> showDeleteChallengeDialog(BuildContext context) async {
   final l10n = context.localizations;
   final confirmed = await showDialog<bool>(
     context: context,
@@ -22,16 +19,8 @@ Future<bool> showDeleteChallengeDialog(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Sin «se restarán N XP»: la XP solo se ve en Progreso (ADR 0038).
           Text(l10n.challengesDeleteMessage),
-          if (xpAwarded > 0) ...[
-            const SizedBox(height: TokensSpacing.s),
-            Text(
-              l10n.challengesDeleteXpWarning(xpAwarded),
-              style: context.textStyles.bodyMedium?.copyWith(
-                color: context.colors.error,
-              ),
-            ),
-          ],
         ],
       ),
       actions: [
@@ -55,7 +44,7 @@ Future<bool> showDeleteChallengeDialog(
   return confirmed ?? false;
 }
 
-/// Confirmación antes de descompletar un reto (resta su XP).
+/// Confirmación antes de descompletar un reto.
 Future<bool> showUncompleteDialog(BuildContext context) async {
   final l10n = context.localizations;
   final confirmed = await showDialog<bool>(

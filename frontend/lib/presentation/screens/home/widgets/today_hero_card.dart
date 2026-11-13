@@ -5,7 +5,9 @@ import '../../../../domain/enums/home_event_kind.dart';
 import '../../../../domain/enums/home_event_type.dart';
 import '../../../../domain/enums/item_time_status.dart';
 import '../../../../domain/enums/usage_focus.dart';
+import '../../../../domain/enums/planner_enums.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
+import '../../../../domain/models/planner/deadline.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
@@ -16,14 +18,14 @@ import 'agenda_section.dart';
 bool isClassEvent(HomeTodayEvent e) =>
     e.kind == HomeEventKind.block && e.type == HomeEventType.classSession;
 
-/// Qué hace la persona al pulsar el botón principal de «Tu día».
-enum TodayHeroAction { focus, train, openPlanner }
+/// El único botón de «Tu día»: concentrarse (Pomodoro del evento), empezar el
+/// entreno, marcar como hecho o, sin nada pendiente, añadir al calendario.
+enum TodayHeroAction { focus, train, markDone, addEvent }
 
-/// «Tu día», lo primero de Inicio: cuánto llevas de hoy (anillo con los eventos
-/// hechos), qué toca ahora o a continuación con su botón directo, y tres cifras
-/// (estudio, entreno y nivel). Responde de un vistazo a «¿qué hago ahora?». Lo
-/// que ya ha empezado (estudio, repaso o personal) se marca aquí mismo como
-/// hecho, igual que en la agenda (ADR 0035).
+/// «Tu día», lo primero de Inicio y su acción principal (vocabulario.md §4):
+/// cuánto llevas de hoy (anillo), qué toca ahora o a continuación con **un
+/// solo** botón directo y la cuenta atrás del próximo examen o entrega. Sin
+/// cifras de XP ni de carga: esas viven en Progreso (ADR 0038).
 class TodayHeroCard extends StatefulWidget {
   const TodayHeroCard({
     super.key,
@@ -33,7 +35,15 @@ class TodayHeroCard extends StatefulWidget {
     this.starting = false,
     this.onMarkDone,
     this.completingIds = const {},
+    this.nextDeadline,
+    this.onOpenDeadline,
+    this.now,
   });
+
+  /// Próximo examen o entrega pendiente: cuenta atrás siempre a la vista.
+  final Deadline? nextDeadline;
+  final VoidCallback? onOpenDeadline;
+  final DateTime? now;
 
   /// Eventos que se están marcando (el botón se desactiva mientras).
   final Set<String> completingIds;
@@ -47,6 +57,23 @@ class TodayHeroCard extends StatefulWidget {
 
   /// Marca como hecho el evento que toca ahora; sin él no se ofrece.
   final ValueChanged<HomeTodayEvent>? onMarkDone;
+
+  /// Acción del botón para lo que toca ([next]); nula si no hay ninguna
+  /// directa (una clase, una comida: se ven en la agenda).
+  static TodayHeroAction? actionFor(
+    HomeTodayEvent? next,
+    HomeDashboard dashboard,
+  ) => switch (next?.type) {
+    null => TodayHeroAction.addEvent,
+    HomeEventType.study || HomeEventType.review => TodayHeroAction.focus,
+    // Solo con día de rutina: un partido o una carrera sueltos no deben
+    // arrancar otra rutina (se marcan en la agenda con «Ya lo hice»).
+    HomeEventType.sport when next?.routineDayId != null =>
+      TodayHeroAction.train,
+    HomeEventType.personal when next!.status == ItemTimeStatus.inProgress =>
+      TodayHeroAction.markDone,
+    _ => null,
+  };
 
   /// Bloque en curso o, si no hay, el siguiente que aún no ha empezado.
   static HomeTodayEvent? nextEvent(List<HomeTodayEvent> events) {
@@ -79,8 +106,6 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
   bool get starting => widget.starting;
   Set<String> get completingIds => widget.completingIds;
   ValueChanged<TodayHeroAction> get onAction => widget.onAction;
-  ValueChanged<HomeTodayEvent>? get onMarkDone =>
-      widget.onMarkDone == null ? null : _markDone;
 
   void _markDone(HomeTodayEvent event) {
     _marking = event;
@@ -115,14 +140,6 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
     super.dispose();
   }
 
-  TodayHeroAction _actionFor(HomeTodayEvent? next) => switch (next?.type) {
-    HomeEventType.study || HomeEventType.review => TodayHeroAction.focus,
-    HomeEventType.sport
-        when next?.routineDayId != null || dashboard.nextTrainingDay != null =>
-      TodayHeroAction.train,
-    _ => TodayHeroAction.openPlanner,
-  };
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -135,8 +152,26 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
     final classes = blocks.length - counted.length;
     final done = counted.where((e) => e.completed).length;
     final next = TodayHeroCard.nextEvent(dashboard.todayEvents);
-    final action = _actionFor(next);
+    final action = TodayHeroCard.actionFor(next, dashboard);
     final colors = context.colors;
+    final deadline = focus.includesAcademic ? widget.nextDeadline : null;
+    void act() {
+      if (action == TodayHeroAction.markDone && widget.onMarkDone != null) {
+        _markDone(next!);
+      } else if (action != null) {
+        onAction(action);
+      }
+    }
+
+    final button = action == null
+        ? null
+        : _ActionButton(
+            action: action,
+            busy: action == TodayHeroAction.markDone
+                ? completingIds.contains(next?.id)
+                : starting && action == TodayHeroAction.train,
+            onPressed: act,
+          );
     // Plana y con un toque del color de marca: destaca como tarjeta principal
     // sin degradados (principio 1 del sistema de diseño). No es un AppCard
     // porque Card agruparía en un solo nodo lo que el lector lee por partes.
@@ -170,73 +205,42 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
             ),
           ),
           const SizedBox(height: TokensSpacing.s),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final markable = next != null && canMarkNow(next, onMarkDone);
-              final wide =
-                  constraints.maxWidth >= TokensLayout.twoColumnBreakpoint;
-              final summary = Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _ProgressRing(done: done, total: counted.length),
-                  const SizedBox(width: TokensSpacing.m),
-                  Expanded(
-                    child: _NextUp(
-                      onMarkDone: onMarkDone,
-                      completingIds: completingIds,
-                      next: next,
-                      hasBlocks: blocks.isNotEmpty,
-                      action: action,
-                      starting: starting,
-                      onAction: () => onAction(action),
-                      showButton: wide,
-                      classes: classes,
-                    ),
-                  ),
-                ],
-              );
-              // En pantallas anchas, las cifras a la derecha: la tarjeta no
-              // deja media fila vacía.
-              if (wide) {
-                final stats = _Stats(dashboard: dashboard, focus: focus);
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(flex: 3, child: summary),
-                    const SizedBox(width: TokensSpacing.l),
-                    Expanded(flex: 2, child: stats),
-                  ],
-                );
-              }
-              // En móvil, compacta: el botón a lo ancho bajo lo que toca y las
-              // cifras en una línea fina, para que la agenda se vea sin
-              // desplazar.
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  summary,
-                  const SizedBox(height: TokensSpacing.s),
-                  if (markable) ...[
-                    _MarkDoneButton(
-                      busy: completingIds.contains(next.id),
-                      onPressed: () => onMarkDone!(next),
-                    ),
-                    const SizedBox(height: TokensSpacing.s),
-                  ],
-                  _ActionButton(
-                    action: action,
-                    hasEvent: next != null,
-                    hasBlocks: blocks.isNotEmpty,
-                    starting: starting,
-                    secondary: markable,
-                    onPressed: () => onAction(action),
-                  ),
-                  const SizedBox(height: TokensSpacing.s),
-                  _StatsLine(dashboard: dashboard, focus: focus),
-                ],
-              );
-            },
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _ProgressRing(done: done, total: counted.length),
+              const SizedBox(width: TokensSpacing.m),
+              Expanded(
+                child: _NextUp(
+                  next: next,
+                  hasBlocks: blocks.isNotEmpty,
+                  classes: classes,
+                ),
+              ),
+            ],
           ),
+          if (button != null) ...[
+            const SizedBox(height: TokensSpacing.m),
+            // En pantallas anchas el botón mide lo que su texto; en móvil, a
+            // lo ancho de la tarjeta.
+            LayoutBuilder(
+              builder: (context, constraints) =>
+                  constraints.maxWidth >= TokensLayout.twoColumnBreakpoint
+                  ? Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: button,
+                    )
+                  : button,
+            ),
+          ],
+          if (deadline != null) ...[
+            const SizedBox(height: TokensSpacing.s),
+            _Countdown(
+              deadline: deadline,
+              now: widget.now ?? DateTime.now(),
+              onOpen: widget.onOpenDeadline,
+            ),
+          ],
         ],
       ),
     );
@@ -302,30 +306,16 @@ class _ProgressRing extends StatelessWidget {
 
 class _NextUp extends StatelessWidget {
   const _NextUp({
-    this.onMarkDone,
-    this.completingIds = const {},
     required this.next,
     required this.hasBlocks,
-    required this.action,
-    required this.starting,
-    required this.onAction,
-    this.showButton = true,
     this.classes = 0,
   });
 
   final HomeTodayEvent? next;
-  final ValueChanged<HomeTodayEvent>? onMarkDone;
-  final Set<String> completingIds;
 
   /// Clases de hoy, que van fuera del anillo: se dicen en una línea aparte.
   final int classes;
   final bool hasBlocks;
-  final TodayHeroAction action;
-  final bool starting;
-  final VoidCallback onAction;
-
-  /// En móvil el botón va aparte, a lo ancho de la tarjeta.
-  final bool showButton;
 
   @override
   Widget build(BuildContext context) {
@@ -333,14 +323,6 @@ class _NextUp extends StatelessWidget {
     final event = next;
     final muted = context.textStyles.bodyMedium?.copyWith(
       color: context.colors.onSurfaceVariant,
-    );
-    final button = _ActionButton(
-      action: action,
-      hasEvent: event != null,
-      hasBlocks: hasBlocks,
-      starting: starting,
-      secondary: event != null && canMarkNow(event, onMarkDone),
-      onPressed: onAction,
     );
     final classesNote = classes == 0
         ? null
@@ -359,7 +341,6 @@ class _NextUp extends StatelessWidget {
             style: context.textStyles.titleSmall,
           ),
           ?classesNote,
-          if (showButton) ...[const SizedBox(height: TokensSpacing.s), button],
         ],
       );
     }
@@ -405,69 +386,22 @@ class _NextUp extends StatelessWidget {
         ),
         if (when != null) Text(when, style: muted),
         ?classesNote,
-        // Ya empezado: «Marcar como hecho» es lo principal y lo demás pasa a
-        // secundario (en móvil lo pinta la tarjeta, a lo ancho).
-        if (showButton && canMarkNow(event, onMarkDone)) ...[
-          const SizedBox(height: TokensSpacing.s),
-          _MarkDoneButton(
-            busy: completingIds.contains(event.id),
-            onPressed: () => onMarkDone!(event),
-          ),
-        ],
-        if (showButton) ...[const SizedBox(height: TokensSpacing.s), button],
       ],
     );
   }
 }
 
-/// Lo que ya ha empezado y se marca desde aquí (estudio, repaso y personal):
-/// entonces «Marcar como hecho» es el botón principal de «Tu día».
-bool canMarkNow(
-  HomeTodayEvent event,
-  ValueChanged<HomeTodayEvent>? onMarkDone,
-) =>
-    onMarkDone != null &&
-    !event.completed &&
-    event.status == ItemTimeStatus.inProgress &&
-    (event.type == HomeEventType.study ||
-        event.type == HomeEventType.review ||
-        event.type == HomeEventType.personal);
-
-/// «Marcar como hecho» a lo ancho, como acción principal de «Tu día».
-class _MarkDoneButton extends StatelessWidget {
-  const _MarkDoneButton({required this.busy, required this.onPressed});
-
-  final bool busy;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => AppPrimaryButton(
-    label: context.localizations.homeTodayMarkDone,
-    icon: AppIcons.markDone,
-    loading: busy,
-    onPressed: busy ? null : onPressed,
-  );
-}
-
-/// Botón principal de «Tu día»: concentrarse, entrenar o abrir el calendario.
+/// El único botón de «Tu día», siempre el destacado de Inicio.
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.action,
-    required this.hasEvent,
-    required this.hasBlocks,
-    required this.starting,
+    required this.busy,
     required this.onPressed,
-    this.secondary = false,
   });
 
   final TodayHeroAction action;
-  final bool hasEvent;
-  final bool hasBlocks;
-  final bool starting;
+  final bool busy;
   final VoidCallback onPressed;
-
-  /// Pasa a secundario cuando lo principal es «Marcar como hecho».
-  final bool secondary;
 
   @override
   Widget build(BuildContext context) {
@@ -475,241 +409,83 @@ class _ActionButton extends StatelessWidget {
     final (label, icon) = switch (action) {
       TodayHeroAction.focus => (l10n.homeTodayFocus, AppIcons.focusTimer),
       TodayHeroAction.train => (l10n.homeTodayTrain, Icons.play_arrow_rounded),
-      TodayHeroAction.openPlanner => (
-        !hasEvent && !hasBlocks
-            ? l10n.homeTodayPlanDay
-            : l10n.homeTodayOpenCalendar,
-        AppIcons.calendar,
-      ),
+      TodayHeroAction.markDone => (l10n.homeTodayMarkDone, AppIcons.markDone),
+      TodayHeroAction.addEvent => (l10n.plannerAddBlock, AppIcons.add),
     };
-    // Sin nada planificado, planificar es lo principal de la pantalla.
-    return secondary ||
-            (action == TodayHeroAction.openPlanner && (hasEvent || hasBlocks))
-        ? AppSecondaryButton(
-            label: label,
-            icon: Icon(icon),
-            onPressed: onPressed,
-          )
-        : AppPrimaryButton(
-            label: label,
-            icon: icon,
-            loading: starting && action != TodayHeroAction.openPlanner,
-            onPressed: onPressed,
-          );
+    return AppPrimaryButton(
+      label: label,
+      icon: icon,
+      loading: busy,
+      onPressed: busy ? null : onPressed,
+    );
   }
 }
 
-/// Cifras de hoy en una sola línea (móvil): estudio, entreno y lo que falta
-/// para subir de nivel. Cada cifra se lee como una frase.
-class _StatsLine extends StatelessWidget {
-  const _StatsLine({required this.dashboard, required this.focus});
+/// Cuenta atrás del próximo examen o entrega («Examen: Bioquímica · en 12
+/// días»), siempre a la vista; al tocarla se abre esa entrega. Como los días
+/// de «Tu semana»: la etiqueta va en el nodo del botón y solo se excluye el
+/// contenido, para que el lector y el teclado conserven el toque y el foco.
+class _Countdown extends StatelessWidget {
+  const _Countdown({required this.deadline, required this.now, this.onOpen});
 
-  final HomeDashboard dashboard;
-  final UsageFocus focus;
+  final Deadline deadline;
+  final DateTime now;
+  final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    final today = dashboard.today;
-    final greeting = dashboard.greeting;
-    final remaining = greeting.levelThreshold - greeting.levelXp;
-    final items = <(IconData, Color, String, String)>[
-      if (focus.includesAcademic)
-        (
-          Icons.menu_book_outlined,
-          context.palette.study,
-          today.studyMinutesPlanned > 0
-              ? l10n.homeTodayStudyOf(
-                  today.studyMinutesCompleted,
-                  today.studyMinutesPlanned,
-                )
-              : l10n.homeTodayMinutes(today.studyMinutesCompleted),
-          l10n.homeTodayStudy,
-        ),
-      if (focus.includesFitness)
-        (
-          Icons.fitness_center_rounded,
-          context.palette.sessions,
-          l10n.homeTodayMinutes(today.trainingMinutes),
-          l10n.homeTodayTraining,
-        ),
-      (
-        Icons.workspace_premium_outlined,
-        context.palette.accent,
-        l10n.homeTodayXp(remaining < 0 ? 0 : remaining, greeting.level + 1),
-        l10n.commonLevel(greeting.level),
-      ),
-    ];
-    final muted = context.textStyles.labelMedium?.copyWith(
-      color: context.colors.onSurfaceVariant,
-    );
-    return Wrap(
-      spacing: TokensSpacing.m,
-      runSpacing: TokensSpacing.xs,
-      children: [
-        for (final (icon, color, value, label) in items)
-          Semantics(
-            label: '$value, $label',
-            excludeSemantics: true,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color, size: TokensSize.iconXs),
-                const SizedBox(width: TokensSpacing.xxs),
-                // Con el texto grande se parte en vez de desbordar.
-                Flexible(child: Text(value, style: muted)),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// Cifras de hoy: estudio y entreno (según el enfoque de uso) y el nivel con su
-/// barra de XP.
-class _Stats extends StatelessWidget {
-  const _Stats({required this.dashboard, required this.focus});
-
-  final HomeDashboard dashboard;
-  final UsageFocus focus;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.localizations;
-    final today = dashboard.today;
-    final greeting = dashboard.greeting;
-    final xp = greeting.levelThreshold <= 0
-        ? 0.0
-        : (greeting.levelXp / greeting.levelThreshold).clamp(0.0, 1.0);
-    // Lo que falta para el siguiente nivel motiva más que «935 de 1100».
-    final remaining = greeting.levelThreshold - greeting.levelXp;
-    final tiles = <Widget>[
-      if (focus.includesAcademic)
-        _Stat(
-          icon: Icons.menu_book_outlined,
-          color: context.palette.study,
-          value: today.studyMinutesPlanned > 0
-              ? l10n.homeTodayStudyOf(
-                  today.studyMinutesCompleted,
-                  today.studyMinutesPlanned,
-                )
-              : l10n.homeTodayMinutes(today.studyMinutesCompleted),
-          label: l10n.homeTodayStudy,
-        ),
-      if (focus.includesFitness)
-        _Stat(
-          icon: Icons.fitness_center_rounded,
-          color: context.palette.sessions,
-          value: l10n.homeTodayMinutes(today.trainingMinutes),
-          label: l10n.homeTodayTraining,
-        ),
-      _Stat(
-        icon: Icons.workspace_premium_outlined,
-        color: context.palette.accent,
-        value: l10n.commonLevel(greeting.level),
-        label: l10n.homeTodayXp(
-          remaining < 0 ? 0 : remaining,
-          greeting.level + 1,
-        ),
-        progress: xp,
-      ),
-    ];
-    // Columnas iguales si caben; con texto grande o poco ancho, una debajo de
-    // otra a lo ancho.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final fits =
-            constraints.maxWidth / tiles.length >=
-            context.scaled(TokensSize.heroStat);
-        if (!fits) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, tile) in tiles.indexed) ...[
-                if (i > 0) const SizedBox(height: TokensSpacing.s),
-                tile,
-              ],
-            ],
-          );
-        }
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (i, tile) in tiles.indexed) ...[
-                if (i > 0) const SizedBox(width: TokensSpacing.s),
-                Expanded(child: tile),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.icon,
-    required this.color,
-    required this.value,
-    required this.label,
-    this.progress,
-  });
-
-  final IconData icon;
-  final Color color;
-  final String value;
-  final String label;
-
-  /// Barra fina bajo la cifra (p. ej. la XP del nivel), de 0 a 1.
-  final double? progress;
-
-  @override
-  Widget build(BuildContext context) {
+    final days = AppDueDates.daysUntil(deadline.dueAt, now);
+    final exam = deadline.type == DeadlineType.exam;
+    final when = AppDueDates.countdown(context, deadline.dueAt, now);
+    final text = exam
+        ? l10n.homeCountdownExam(deadline.title, when)
+        : l10n.homeCountdownDelivery(deadline.title, when);
+    final color = days <= AppDueDates.urgentDays
+        ? context.palette.warning
+        : context.colors.onSurfaceVariant;
     return Semantics(
-      label: '$value, $label',
-      excludeSemantics: true,
-      child: Container(
-        padding: const EdgeInsets.all(TokensSpacing.s),
-        decoration: BoxDecoration(
-          color: context.colors.surfaceContainerHigh,
+      button: onOpen != null,
+      label: text,
+      child: AppFocusOutline(
+        borderRadius: BorderRadius.circular(TokensRadius.m),
+        child: InkWell(
+          onTap: onOpen,
           borderRadius: BorderRadius.circular(TokensRadius.m),
-        ),
-        // Icono y etiqueta arriba, el valor debajo: todas las cifras con el
-        // mismo tamaño y, si no caben, se parten en dos líneas.
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: TokensSize.iconS),
-                const SizedBox(width: TokensSpacing.xs),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: context.textStyles.labelSmall?.copyWith(
-                      color: context.colors.onSurfaceVariant,
+          child: ExcludeSemantics(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: TokensLayout.minTouchTarget,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    // Los mismos iconos que la agenda (un concepto, un icono).
+                    exam ? AppIcons.exam : AppIcons.delivery,
+                    size: TokensSize.iconS,
+                    color: color,
+                  ),
+                  const SizedBox(width: TokensSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      text,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.textStyles.labelLarge?.copyWith(
+                        color: color,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: TokensSpacing.xxs),
-            Text(value, style: context.textStyles.titleSmall),
-            if (progress != null) ...[
-              const SizedBox(height: TokensSpacing.xs),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(TokensRadius.pill),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  color: color,
-                  backgroundColor: context.colors.outlineVariant,
-                ),
+                  if (onOpen != null)
+                    Icon(
+                      AppIcons.next,
+                      size: TokensSize.iconS,
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                ],
               ),
-            ],
-          ],
+            ),
+          ),
         ),
       ),
     );

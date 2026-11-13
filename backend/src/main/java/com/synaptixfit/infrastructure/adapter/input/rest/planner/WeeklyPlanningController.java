@@ -73,7 +73,7 @@ public class WeeklyPlanningController {
 
     // ---------------------------------------------------------------- plan semanal
 
-    /** Guarda (crea o reutiliza) el plan de la semana. */
+    /** Guarda (crea o reutiliza) el plan de la semana. Solo para apps anteriores al ADR 0038 («Cerrar semana»). */
     @PutMapping("/plans/{weekStart}")
     public SavePlanResponse savePlan(@CurrentUserId UUID userId,
                                      @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart,
@@ -85,8 +85,8 @@ public class WeeklyPlanningController {
     }
 
     /**
-     * ¿Se cerró ya esta semana? («Cerrar semana» se hace una vez; después se enseña «Semana cerrada»).
-     * Va en {@code /plans/week/...} porque {@code /plans/{planId}} ya es la ruta de un plan por su id.
+     * ¿Tiene ya plan esta semana? Para apps anteriores al ADR 0038. Va en {@code /plans/week/...} porque
+     * {@code /plans/{planId}} ya es la ruta de un plan por su id.
      */
     @GetMapping("/plans/week/{weekStart}")
     public WeekPlanStatusResponse planStatus(@CurrentUserId UUID userId,

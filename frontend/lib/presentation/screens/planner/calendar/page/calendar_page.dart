@@ -22,14 +22,21 @@ import '../../widgets/week_canvas.dart';
 import '../../widgets/week_overview.dart';
 import '../bloc/calendar_bloc.dart';
 
-/// Calendario semanal (`/planner`).
+/// Pestaña Calendario (`/planner`): la semana con sus eventos. Los parámetros
+/// llegan del enlace (avisos, Inicio, «Tu semana»); la ruta la recrea con una
+/// clave por consulta, así que un enlace nuevo vuelve a abrir lo pedido.
 class CalendarPage extends StatelessWidget {
   const CalendarPage({
     super.key,
     this.initialWeek,
     this.initialBlockId,
     this.initialDay,
+    this.initialCreate = false,
   });
+
+  /// Abre «Añadir al calendario» en el próximo hueco al cargar (un toque desde
+  /// «Tu día» de Inicio).
+  final bool initialCreate;
 
   /// Cualquier día de la semana que se abre (la actual si es nulo).
   final DateTime? initialWeek;
@@ -49,16 +56,22 @@ class CalendarPage extends StatelessWidget {
       child: _CalendarView(
         initialBlockId: initialBlockId,
         initialDay: initialDay,
+        initialCreate: initialCreate,
       ),
     );
   }
 }
 
 class _CalendarView extends StatefulWidget {
-  const _CalendarView({this.initialBlockId, this.initialDay});
+  const _CalendarView({
+    this.initialBlockId,
+    this.initialDay,
+    this.initialCreate = false,
+  });
 
   final String? initialBlockId;
   final DateTime? initialDay;
+  final bool initialCreate;
 
   @override
   State<_CalendarView> createState() => _CalendarViewState();
@@ -98,9 +111,20 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   /// Bloque pedido al abrir que aún no se ha enseñado (una sola vez).
   late String? _pendingBlockId = widget.initialBlockId;
 
+  /// «Añadir al calendario» pedido al abrir y aún no mostrado (una vez).
+  late bool _pendingCreate = widget.initialCreate;
+
   /// Al cargar la semana por primera vez, abre la ficha del bloque pedido (si
-  /// sigue existiendo); el lienzo ya se ha centrado en su hora.
+  /// sigue existiendo; el lienzo ya se ha centrado en su hora) o la hoja de
+  /// crear un evento en el próximo hueco.
   void _showPendingBlock(CalendarState state) {
+    if (_pendingCreate && state.status == CalendarStatus.ready) {
+      _pendingCreate = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_openEditor(start: _nextSlot(state.weekStart)));
+      });
+      return;
+    }
     final id = _pendingBlockId;
     if (id == null || state.status != CalendarStatus.ready) return;
     _pendingBlockId = null;
@@ -172,8 +196,8 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
         _bloc.add(CalendarEvent.completionToggled(blockId, completed: false));
         return;
       case BlockEditorTrainingRequested(:final routineId):
-        // La rutina vive en la pestaña Entreno: se cambia de pestaña (apilarla
-        // sobre esta pantalla completa duplica el armazón y queda en negro).
+        // La rutina vive en la pestaña Entreno: se cambia de pestaña (nunca se
+        // apila una ruta de pestaña).
         context.go(PlannerExternalPaths.routine(routineId));
         return;
       case BlockEditorCreated(:final overlaps, :final weeklyCopies):
@@ -231,36 +255,19 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   void _onNotice(BuildContext context, CalendarNotice notice) {
     final l10n = context.localizations;
     switch (notice) {
+      // Sin «+N XP»: la XP se ve en Progreso (ADR 0038).
       case CalendarNoticeBlockXp(
         :final completed,
-        :final xpDelta,
         :final account,
         :final absent,
       ):
         _updateAccount(account);
         context.showSnack(
           absent
-              ? (xpDelta < 0
-                    ? l10n.plannerClassAbsentXp(-xpDelta)
-                    : l10n.plannerClassAbsent)
+              ? l10n.plannerClassAbsent
               : completed
-              ? (xpDelta > 0
-                    ? l10n.plannerBlockCompletedXp(xpDelta)
-                    : l10n.plannerBlockCompleted)
-              : (xpDelta < 0
-                    ? l10n.plannerBlockUncompletedXp(-xpDelta)
-                    : l10n.plannerBlockUncompleted),
-        );
-      case CalendarNoticePlanSaved(
-        :final xpAwarded,
-        :final blockCount,
-        :final account,
-      ):
-        _updateAccount(account);
-        context.showSnack(
-          xpAwarded > 0
-              ? l10n.plannerPlanSavedXp(xpAwarded)
-              : l10n.plannerPlanSaved(blockCount),
+              ? l10n.plannerBlockCompleted
+              : l10n.plannerBlockUncompleted,
         );
       case CalendarNoticeOverlaps(:final count):
         context.showSnack(l10n.plannerOverlapWarning(count));
@@ -324,20 +331,6 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
   /// Hora en que se coloca el lienzo al abrir un día sin bloque concreto.
   static const _dayFocusHour = 8;
 
-  /// «Cerrar semana» no guarda cambios (los bloques se guardan solos): da por
-  /// planificada la semana y, la primera vez, suma XP. Se explica antes.
-  Future<void> _savePlan() async {
-    final l10n = context.localizations;
-    final ok = await showConfirmDialog(
-      context,
-      title: l10n.plannerClosePlanTitle,
-      message: l10n.plannerClosePlanMessage,
-      confirmLabel: l10n.plannerSavePlan,
-      destructive: false,
-    );
-    if (ok && mounted) _bloc.add(const CalendarEvent.planSaveRequested());
-  }
-
   @override
   Widget build(BuildContext context) =>
       AppUndoShortcut(onUndo: _undoLastDelete, child: _content(context));
@@ -347,7 +340,7 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
     return BlocConsumer<CalendarBloc, CalendarState>(
       listenWhen: (a, b) =>
           (a.noticeId != b.noticeId && b.notice != null) ||
-          (_pendingBlockId != null && a.status != b.status),
+          ((_pendingBlockId != null || _pendingCreate) && a.status != b.status),
       listener: (context, state) {
         _showPendingBlock(state);
         final notice = state.notice;
@@ -371,13 +364,6 @@ class _CalendarViewState extends State<_CalendarView> with ErrorsMessageMixin {
                 )
               else
                 TextButton(onPressed: _goToday, child: Text(l10n.plannerToday)),
-              _SavePlanButton(
-                saving: state.savingPlan,
-                closed: state.weekClosed ?? false,
-                enabled: state.status == CalendarStatus.ready,
-                compact: _compactBar(context),
-                onSave: _savePlan,
-              ),
               _PlannerMenu(
                 onReturn: () => _bloc.add(const CalendarEvent.refreshed()),
               ),
@@ -535,94 +521,6 @@ class _WeekNavigator extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// «Cerrar semana» en la barra superior: da por planificada la semana (y da
-/// XP) sin competir con «Nuevo bloque», que es la acción principal de abajo.
-class _SavePlanButton extends StatelessWidget {
-  const _SavePlanButton({
-    required this.saving,
-    required this.closed,
-    required this.enabled,
-    required this.compact,
-    required this.onSave,
-  });
-
-  final bool saving;
-
-  /// Ya se cerró esta semana: se enseña «Semana cerrada» (sin botón) y, al
-  /// tocarlo, qué significa. Los bloques nuevos se guardan solos igual.
-  final bool closed;
-  final bool enabled;
-
-  /// Con poco ancho, solo el icono (con su nombre como tooltip), como «Hoy».
-  final bool compact;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = context.localizations.plannerSavePlan;
-    if (saving) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.m),
-        // Lo provoca la persona (a veces desde el menú): se anuncia aunque el
-        // foco esté en otro sitio.
-        child: Semantics(
-          liveRegion: true,
-          label: '$label, ${context.localizations.commonLoading}',
-          child: const ExcludeSemantics(
-            child: SizedBox.square(
-              dimension: TokensSize.iconS,
-              child: CircularProgressIndicator(
-                strokeWidth: TokensSize.spinnerStroke,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    if (closed) {
-      final l10n = context.localizations;
-      void explain() => context.showSnack(l10n.plannerWeekClosedHint);
-      // Icono propio (no solo otro color) y el lector sabe qué hace al tocarlo.
-      if (compact) {
-        return Semantics(
-          hint: l10n.plannerWeekClosedWhat,
-          child: IconButton(
-            tooltip: l10n.plannerWeekClosed,
-            icon: Icon(
-              Icons.event_available_rounded,
-              color: context.palette.success,
-            ),
-            onPressed: explain,
-          ),
-        );
-      }
-      return Semantics(
-        hint: l10n.plannerWeekClosedWhat,
-        child: TextButton.icon(
-          onPressed: explain,
-          icon: Icon(
-            Icons.event_available_rounded,
-            color: context.palette.success,
-          ),
-          label: Text(l10n.plannerWeekClosed),
-        ),
-      );
-    }
-    if (compact) {
-      return IconButton(
-        tooltip: label,
-        icon: const Icon(AppIcons.closeWeek),
-        onPressed: enabled ? onSave : null,
-      );
-    }
-    return TextButton.icon(
-      onPressed: enabled ? onSave : null,
-      icon: const Icon(AppIcons.closeWeek),
-      label: Text(label),
     );
   }
 }

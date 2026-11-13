@@ -510,14 +510,6 @@
   "trainingCheckInTitle": "¿Cómo estás hoy?",
   "trainingCheckInIntro": "Cuatro preguntas rápidas (sueño, estrés, energía y agujetas) para adaptar tu entrenamiento a cómo te encuentras.",
   "trainingCheckInUpdate": "Ya nos has contado cómo estás hoy. Puedes cambiarlo.",
-  "trainingCheckInXp": "¡Gracias por contarnos cómo estás! +{xp} XP",
-  "@trainingCheckInXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "trainingSleepQuality": "Calidad del sueño",
   "trainingStress": "Estrés",
   "trainingEnergy": "Energía",
@@ -956,18 +948,10 @@
   "trainingPastActivityMinutes": "{minutes} min",
   "trainingPastActivitySave": "Guardar actividad",
   "trainingPastActivitySaved": "Actividad apuntada. La ves en Entreno › Historial › Actividades y partidos.",
-  "trainingPastActivitySavedXp": "Actividad apuntada · +{xp} XP. La ves en Entreno › Historial › Actividades y partidos.",
   "trainingPastActivityNotFinished": "Esa actividad aún no ha terminado: elige una hora anterior o una duración menor.",
   "@trainingPastActivityMinutes": {
     "placeholders": {
       "minutes": {
-        "type": "int"
-      }
-    }
-  },
-  "@trainingPastActivitySavedXp": {
-    "placeholders": {
-      "xp": {
         "type": "int"
       }
     }
@@ -2943,14 +2927,6 @@
   "runLeavePauseWhere": "Queda guardada. La sigues en Entreno › Correr, con «Seguir con la carrera».",
   "runPausedWhere": "Carrera en pausa. Síguela en Entreno › Correr con «Seguir con la carrera».",
   "runSavedWhere": "Carrera guardada. La tienes en Entreno › Correr › Tus actividades.",
-  "runSavedXp": "Carrera guardada · +{xp} XP. La tienes en Entreno › Correr › Tus actividades.",
-  "@runSavedXp": {
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "runQueuedWhere": "Sin conexión: la carrera está guardada en este móvil y se subirá sola. La verás en Entreno › Correr.",
   "runRejectedTitle": "No se ha podido guardar",
   "runBackToRun": "Volver a Correr",
@@ -3000,7 +2976,7 @@
   },
   "runDelete": "Borrar carrera",
   "runDeleted": "Carrera borrada",
-  "runDeletedHint": "Se le resta su XP y deja de contar en tu semana. Pulsa «Deshacer» si fue sin querer.",
+  "runDeletedHint": "Deja de contar en tu semana. Pulsa «Deshacer» si fue sin querer.",
   "runUndo": "Deshacer",
   "runWorkoutName": "Nombre del entreno",
   "runEditorIntro": "Cada serie de pasos se repite las veces que digas. Ejemplo: 6 veces «Correr 800 m» y «Recuperar 2 min».",
@@ -3110,27 +3086,9 @@
   "@trainingPastActivitySavedRun": {
     "description": "Aviso al apuntar una actividad desde Correr (se vuelve allí)."
   },
-  "trainingPastActivitySavedRunXp": "Actividad apuntada · +{xp} XP. La tienes en Entreno › Correr › Tus actividades.",
-  "@trainingPastActivitySavedRunXp": {
-    "description": "Aviso al apuntar una actividad desde Correr, con la XP ganada.",
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
-  },
   "trainingPastActivityRoutineSaved": "Día de la rutina apuntado. Lo tienes en Entreno › Historial › Entrenos.",
   "@trainingPastActivityRoutineSaved": {
     "description": "Aviso al apuntar un día de la rutina hecho sin la app."
-  },
-  "trainingPastActivityRoutineSavedXp": "Día de la rutina apuntado · +{xp} XP. Lo tienes en Entreno › Historial › Entrenos.",
-  "@trainingPastActivityRoutineSavedXp": {
-    "description": "Aviso al apuntar un día de la rutina, con la XP ganada.",
-    "placeholders": {
-      "xp": {
-        "type": "int"
-      }
-    }
   },
   "trainingPlanFinished": "Plan terminado",
   "@trainingPlanFinished": {
@@ -3199,5 +3157,9 @@
         "type": "int"
       }
     }
+  },
+  "trainingCheckInThanks": "¡Gracias por contarnos cómo estás!",
+  "@trainingCheckInThanks": {
+    "description": "Tarjeta tras el registro diario (sin la XP: se ve en Progreso)."
   }
 }

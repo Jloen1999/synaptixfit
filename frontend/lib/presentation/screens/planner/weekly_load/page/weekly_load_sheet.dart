@@ -89,15 +89,13 @@ class _WeeklyLoadViewState extends State<_WeeklyLoadView>
       switch (notice) {
         case WeeklyLoadNoticeSaved():
           break;
-        case WeeklyLoadNoticeSynced(:final xpAwarded, :final account):
+        case WeeklyLoadNoticeSynced(:final account):
           if (account != null) {
             context.read<SessionBloc>().add(
               SessionEvent.accountUpdated(account),
             );
           }
-          _message = xpAwarded > 0
-              ? l10n.plannerSyncedXp(xpAwarded)
-              : l10n.plannerSynced;
+          _message = l10n.plannerSynced;
           _messageIsError = false;
         case WeeklyLoadNoticeFailure(:final error):
           _message = errorMessage(context, error);

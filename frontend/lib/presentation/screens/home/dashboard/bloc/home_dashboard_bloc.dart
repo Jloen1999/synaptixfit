@@ -17,6 +17,8 @@ import '../../../../../domain/use_cases/home/get_home_due_reviews_use_case.dart'
 import '../../../../../domain/use_cases/home/get_home_onboarding_status_use_case.dart';
 import '../../../../../domain/use_cases/profile/is_permissions_intro_pending_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_unread_count_use_case.dart';
+import '../../../../../domain/models/planner/deadline.dart';
+import '../../../../../domain/use_cases/planner/get_deadlines_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_timeline_use_case.dart';
 import '../../../../../domain/use_cases/planner/reschedule_block_to_next_free_slot_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_block_completion_use_case.dart';
@@ -31,7 +33,7 @@ part 'home_dashboard_event.dart';
 part 'home_dashboard_state.dart';
 
 /// Pestaña Inicio: resumen del día, agenda de los próximos días (planificador),
-/// repasos, campana y onboarding. Se refresca sola con cualquier cambio de
+/// cuenta atrás de la próxima entrega o examen, repasos, campana y onboarding. Se refresca sola con cualquier cambio de
 /// datos; las insignias y el nivel se celebran en el armazón (`AchievementsBloc`).
 class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     with DataChangeRefreshMixin<HomeDashboardEvent, HomeDashboardState> {
@@ -50,6 +52,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
     required this._rescheduleToNextSlot,
     required this._setDeadlineCompletion,
     required this._permissionsIntroPending,
+    required this._getDeadlines,
     this._clock = DateTime.now,
   }) : super(const HomeDashboardState()) {
     on<HomeDashboardStarted>(_onStarted);
@@ -119,6 +122,7 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
   final RescheduleBlockToNextFreeSlotUseCaseContract _rescheduleToNextSlot;
   final SetDeadlineCompletionUseCaseContract _setDeadlineCompletion;
   final IsPermissionsIntroPendingUseCaseContract _permissionsIntroPending;
+  final GetDeadlinesUseCaseContract _getDeadlines;
 
   /// La XP y el hueco los decide el servidor; Inicio se refresca solo con el
   /// cambio de datos del planificador.
@@ -312,11 +316,13 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
       from: tomorrow,
       to: DateTime(now.year, now.month, now.day + agendaDays),
     );
+    final deadlinesFuture = _getDeadlines(upcoming: true);
     final dashboard = await dashboardFuture;
     final reviews = await reviewsFuture;
     final unread = await unreadFuture;
     final upcoming = await upcomingFuture;
     final setup = await setupFuture;
+    final deadlines = await deadlinesFuture;
 
     return dashboard.fold(
       (value) {
@@ -332,6 +338,9 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
             upcoming:
                 upcoming.valueOrNull?.map(_toEvent).toList() ?? state.upcoming,
             setup: setup.valueOrNull ?? state.setup,
+            nextDeadline: deadlines.isSuccess
+                ? countdownOf(deadlines.valueOrNull?.items ?? const [])
+                : state.nextDeadline,
           ),
         );
         return true;
@@ -349,6 +358,14 @@ class HomeDashboardBloc extends Bloc<HomeDashboardEvent, HomeDashboardState>
         return false;
       },
     );
+  }
+
+  /// La cuenta atrás de «Tu día»: el próximo examen y, si no hay ninguno, la
+  /// próxima entrega pendiente (la lista llega ordenada por fecha).
+  static Deadline? countdownOf(List<Deadline> upcoming) {
+    final pending = upcoming.where((d) => !d.completed).toList();
+    return pending.where((d) => d.type == DeadlineType.exam).firstOrNull ??
+        pending.firstOrNull;
   }
 
   /// La agenda pinta bloques y entregas igual que los eventos de hoy.

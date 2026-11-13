@@ -10,8 +10,7 @@ import '../../../widgets/widgets.dart';
 import 'challenge_labels.dart';
 import 'challenge_progress_bar.dart';
 
-/// Tarea de un reto en el detalle: estado, XP real (con el tope del reto),
-/// qué la completa si no es un toque (su entrega o sus bloques), dependencias,
+/// Tarea de un reto en el detalle: estado, qué la completa si no es un toque (su entrega o sus bloques), dependencias,
 /// adjuntos y casilla para completarla. Solo muestra lo que aporta:
 /// «Disponible» se da por hecho.
 class MilestoneTile extends StatelessWidget {
@@ -127,14 +126,6 @@ class MilestoneTile extends StatelessWidget {
                         icon: status.icon,
                         label: status.label(context),
                         color: status.color(context),
-                      ),
-                    // XP real: con el tope del reto puede ser 0; entonces no se
-                    // promete nada.
-                    if (milestone.xpReward > 0)
-                      AppPill(
-                        icon: Icons.bolt_rounded,
-                        label: l10n.challengesXpGain(milestone.xpReward),
-                        color: context.palette.accent,
                       ),
                   ],
                 ),

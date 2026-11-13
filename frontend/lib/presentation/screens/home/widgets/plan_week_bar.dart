@@ -13,7 +13,8 @@ import '../../../widgets/widgets.dart';
 /// «Tu semana»: lo planificado de cada día con los tres estados del
 /// vocabulario (Hecho, Por hacer, Sin hacer), un título que se entiende solo
 /// («12 de 18 hechos esta semana») y, en una línea, lo hecho en la semana
-/// (sesiones, estudio y kcal). Tocar un día lo abre en el planificador.
+/// (entrenos y estudio; las kcal viven en Progreso). Los siete días van
+/// siempre en una fila compacta. Tocar un día lo abre en el calendario.
 ///
 /// Por hacer = planificado − hecho − sin hacer (el servidor manda los otros
 /// tres números; descanso, comida y sueño no cuentan).
@@ -25,7 +26,11 @@ class PlanWeekBar extends StatelessWidget {
     this.focus = UsageFocus.both,
     required this.onOpenDay,
     this.now,
+    this.headerFocusNode,
   });
+
+  /// Foco del título (al ocultar la tarjeta de configurar, que va después).
+  final FocusNode? headerFocusNode;
 
   final List<HomePlanDay> days;
   final HomeWeekKpis week;
@@ -68,7 +73,6 @@ class PlanWeekBar extends StatelessWidget {
     final current = now ?? DateTime.now();
     const weekdays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     final longDay = DateFormat.EEEE();
-    final number = NumberFormat.decimalPattern();
     final weekParts = [
       if (focus.includesFitness)
         week.plannedSessions != null && week.plannedSessions! > 0
@@ -79,8 +83,6 @@ class PlanWeekBar extends StatelessWidget {
             : l10n.homeWeekSessions(week.sessions),
       if (focus.includesAcademic)
         l10n.homeWeekStudyMinutes(week.studyMinutesCompleted),
-      if (focus.includesFitness)
-        l10n.homeWeekCalories(number.format(week.trainingCalories.round())),
     ];
     final breakdown = [
       if (pending > 0) l10n.homePlanWeekPending(pending),
@@ -93,39 +95,49 @@ class PlanWeekBar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppSectionHeader(title: l10n.homePlanWeekTitle),
+        AppSectionHeader(
+          title: l10n.homePlanWeekTitle,
+          focusNode: headerFocusNode,
+        ),
+        // Sin relleno lateral en la tarjeta: la fila de días usa todo el ancho
+        // y cada día llega a 48 px en un móvil de 390 (los textos llevan el
+        // suyo).
         AppCard(
+          padding: const EdgeInsets.symmetric(vertical: TokensSpacing.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                planned == 0
-                    ? l10n.homePlanWeekEmpty
-                    : l10n.homePlanWeekSummary(completed, planned),
-                style: context.textStyles.titleMedium,
-              ),
-              // Semana vacía: la siguiente acción útil es planificarla.
-              if (planned == 0)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton.icon(
-                    onPressed: () => onOpenDay(current),
-                    icon: const Icon(Icons.edit_calendar_outlined),
-                    label: Text(l10n.homePlanWeekPlan),
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TokensSpacing.m,
                 ),
-              if (breakdown.isNotEmpty)
-                Text(breakdown.join(' · '), style: secondary),
-              Text(weekParts.join(' · '), style: secondary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      planned == 0
+                          ? l10n.homePlanWeekEmpty
+                          : l10n.homePlanWeekSummary(completed, planned),
+                      style: context.textStyles.titleMedium,
+                    ),
+                    if (breakdown.isNotEmpty)
+                      Text(breakdown.join(' · '), style: secondary),
+                    Text(weekParts.join(' · '), style: secondary),
+                  ],
+                ),
+              ),
               const SizedBox(height: TokensSpacing.m),
-              // Siete días en fila si cada uno cabe con su área táctil
-              // completa; si no (móvil estrecho), en dos filas de 4 y 3.
+              // Siempre en una fila: en dos (4 + 3) dejaba un hueco grande.
+              // Cada día mide al menos 24 px de ancho (WCAG 2.5.8) incluso en
+              // el móvil más estrecho. Sin nada planificado, barras bajas.
               LayoutBuilder(
                 builder: (context, constraints) {
                   Widget dayButton(HomePlanDay day) => _DayButton(
                     day: day,
                     maxValue: maxValue,
-                    height: TokensSize.weekBarHeight,
+                    height: planned == 0
+                        ? TokensSize.iconS
+                        : TokensSize.weekBarHeight,
                     label: l10n.commonWeekdayInitial(
                       weekdays[day.date.weekday - 1],
                     ),
@@ -138,26 +150,10 @@ class PlanWeekBar extends StatelessWidget {
                     isToday: DateUtils.isSameDay(day.date, current),
                     onTap: () => onOpenDay(day.date),
                   );
-                  if (constraints.maxWidth / days.length >=
-                      TokensLayout.minTouchTarget) {
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        for (final day in days) Expanded(child: dayButton(day)),
-                      ],
-                    );
-                  }
-                  const perRow = 4;
-                  final width =
-                      (constraints.maxWidth - TokensSpacing.xs * (perRow - 1)) /
-                      perRow;
-                  return Wrap(
-                    spacing: TokensSpacing.xs,
-                    runSpacing: TokensSpacing.s,
-                    crossAxisAlignment: WrapCrossAlignment.end,
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      for (final day in days)
-                        SizedBox(width: width, child: dayButton(day)),
+                      for (final day in days) Expanded(child: dayButton(day)),
                     ],
                   );
                 },
@@ -165,24 +161,29 @@ class PlanWeekBar extends StatelessWidget {
               const SizedBox(height: TokensSpacing.s),
               // Leyenda con las mismas formas que las barras: se distinguen
               // por la forma y no solo por el color (WCAG 1.4.1 y 1.4.11).
-              ExcludeSemantics(
-                child: Wrap(
-                  spacing: TokensSpacing.m,
-                  runSpacing: TokensSpacing.xs,
-                  children: [
-                    _Legend(
-                      kind: _Segment.done,
-                      label: l10n.homePlanWeekLegendDone,
-                    ),
-                    _Legend(
-                      kind: _Segment.missed,
-                      label: l10n.homePlanWeekLegendMissed,
-                    ),
-                    _Legend(
-                      kind: _Segment.pending,
-                      label: l10n.homePlanWeekLegendPending,
-                    ),
-                  ],
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TokensSpacing.m,
+                ),
+                child: ExcludeSemantics(
+                  child: Wrap(
+                    spacing: TokensSpacing.m,
+                    runSpacing: TokensSpacing.xs,
+                    children: [
+                      _Legend(
+                        kind: _Segment.done,
+                        label: l10n.homePlanWeekLegendDone,
+                      ),
+                      _Legend(
+                        kind: _Segment.missed,
+                        label: l10n.homePlanWeekLegendMissed,
+                      ),
+                      _Legend(
+                        kind: _Segment.pending,
+                        label: l10n.homePlanWeekLegendPending,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

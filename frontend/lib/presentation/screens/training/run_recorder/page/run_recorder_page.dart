@@ -215,11 +215,7 @@ class _RecorderViewState extends State<_RecorderView> with ErrorsMessageMixin {
     switch (state.phase) {
       case RunPhase.saved:
         final saved = state.saved!;
-        context.showSnack(
-          saved.xpDelta > 0
-              ? l10n.runSavedXp(saved.xpDelta)
-              : l10n.runSavedWhere,
-        );
+        context.showSnack(l10n.runSavedWhere);
         context.go(TrainingPaths.run(saved.run.blockId));
       case RunPhase.queued:
         context.showSnack(l10n.runQueuedWhere);

@@ -356,6 +356,15 @@ public final class CalendarBlock {
     public Instant start() { return range.start(); }
     public Instant end() { return range.end(); }
     public int dayOfWeek() { return dayOfWeek; }
+    /**
+     * Evento que puso la persona al planificar: cuenta para la experiencia de planificar la semana (ADR 0038).
+     * No lo es uno fijo ni uno importado (horario escaneado, calendarios externos), ni el repaso que crea solo el
+     * repaso espaciado, ni descanso, comida o sueño ({@link ActivityType#countsInWeekPlan()}).
+     */
+    public boolean plannedByPerson() {
+        return !fixed && icsUid == null && studyMaterialId == null && type.countsInWeekPlan();
+    }
+
     public ActivityType type() { return type; }
     public Details details() { return details; }
     public UUID subjectId() { return details.subjectId(); }

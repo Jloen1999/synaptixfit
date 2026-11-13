@@ -17,8 +17,6 @@ import '../../../../theme/tokens.g.dart';
 import '../../../../widgets/widgets.dart';
 import '../../../auth/session/bloc/session_bloc.dart';
 import '../../challenges_routes.dart';
-import '../../community_challenges/bloc/community_challenges_bloc.dart';
-import '../../community_challenges/page/community_challenges_page.dart';
 import '../../quick_challenge/page/quick_challenge_sheet.dart';
 import '../../widgets/challenge_card.dart';
 import '../../widgets/challenge_content_width.dart';
@@ -28,25 +26,17 @@ import '../../widgets/challenge_labels.dart';
 import '../../widgets/pending_milestone_tile.dart';
 import '../bloc/challenges_list_bloc.dart';
 
-/// Pestaña Retos: «Mis retos» y «Comunidad», con FAB «Nuevo reto».
+/// Progreso › Retos: tus retos con el botón «Nuevo reto». Los de la comunidad
+/// se abren aparte (`/challenges/community`) en vez de con otra fila de
+/// pestañas dentro de la pestaña.
 class ChallengesPage extends StatelessWidget {
   const ChallengesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (_) =>
-              getIt<ChallengesListBloc>()
-                ..add(const ChallengesListEvent.started()),
-        ),
-        BlocProvider(
-          create: (_) =>
-              getIt<CommunityChallengesBloc>()
-                ..add(const CommunityChallengesEvent.started()),
-        ),
-      ],
+    return BlocProvider(
+      create: (_) =>
+          getIt<ChallengesListBloc>()..add(const ChallengesListEvent.started()),
       child: const _ChallengesView(),
     );
   }
@@ -66,27 +56,14 @@ class _ChallengesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppPageBar(
-          title: Text(l10n.challengesTitle),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: l10n.challengesTabMine),
-              Tab(text: l10n.challengesTabCommunity),
-            ],
-          ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _create(context),
-          icon: const Icon(AppIcons.add),
-          label: Text(l10n.challengesNew),
-        ),
-        body: const TabBarView(
-          children: [_MineTab(), CommunityChallengesView()],
-        ),
+    return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'challenges-new',
+        onPressed: () => _create(context),
+        icon: const Icon(AppIcons.add),
+        label: Text(l10n.challengesNew),
       ),
+      body: const _MineTab(),
     );
   }
 }
@@ -139,7 +116,6 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
     final l10n = context.localizations;
     switch (effect) {
       case ChallengesListMilestoneCompleted(
-        :final xpDelta,
         :final unlockedCount,
         :final challengeCompleted,
         :final account,
@@ -153,7 +129,6 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
             base: challengeCompleted
                 ? l10n.challengesChallengeDone
                 : l10n.challengesMilestoneDone,
-            xpDelta: xpDelta,
             unlockedCount: unlockedCount,
           ),
         );
@@ -354,11 +329,7 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
               : AppSecondaryButton(
                   label: l10n.challengesEmptyCommunityAction,
                   icon: const Icon(Icons.groups_outlined),
-                  onPressed: () =>
-                      DefaultTabController.maybeOf(context)?.animateTo(
-                        1,
-                        duration: context.motion(TokensDuration.normal),
-                      ),
+                  onPressed: () => context.push(ChallengesPaths.community),
                 ),
         ),
       ];
@@ -391,6 +362,15 @@ class _MineTabState extends State<_MineTab> with ErrorsMessageMixin {
           padding: EdgeInsets.all(TokensSpacing.m),
           child: AppLoadingView(),
         ),
+      // Inspirarse en otros: un solo enlace, al final de lo propio.
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          onPressed: () => context.push(ChallengesPaths.community),
+          icon: const Icon(Icons.groups_outlined),
+          label: Text(l10n.challengesEmptyCommunityAction),
+        ),
+      ),
     ];
   }
 }

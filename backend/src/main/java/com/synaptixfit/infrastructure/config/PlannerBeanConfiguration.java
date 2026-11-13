@@ -175,7 +175,7 @@ public class PlannerBeanConfiguration {
     @Bean(autowireCandidate = false)
     CalendarBlockService calendarBlockService() {
         return new CalendarBlockService(blocks, deadlines, subjects, routines, challenges, revoke, events,
-                weeklyLoadService(), zone, clock);
+                weeklyLoadService(), zone, clock, studyPlanService());
     }
 
     @Bean
@@ -262,7 +262,7 @@ public class PlannerBeanConfiguration {
     @Bean(autowireCandidate = false)
     RoutineDistributionService routineDistributionService() {
         return new RoutineDistributionService(blocks, routines, weeklyLoadService(), calendarBlockService(), zone,
-                clock);
+                clock, studyPlanService());
     }
 
     @Bean
@@ -331,7 +331,7 @@ public class PlannerBeanConfiguration {
 
     @Bean(autowireCandidate = false)
     StudyPlanService studyPlanService() {
-        return new StudyPlanService(plans, blocks, deadlines, award, revoke, zone);
+        return new StudyPlanService(plans, blocks, deadlines, award, revoke, zone, clock);
     }
 
     @Bean

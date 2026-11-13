@@ -19,7 +19,6 @@
   "progressBadgesEarnedCount": "{count, plural, =0{Ainda sem insígnias} =1{1 obtida} other{{count} obtidas}}",
   "progressBadgesEmptyTitle": "Ainda sem insígnias",
   "progressBadgesEmptyMessage": "Conclui desafios e mantém a tua sequência para as desbloqueares.",
-  "progressBadgesExplore": "Ver catálogo",
   "progressAnalyticsTitle": "Análise",
   "progressAnalyticsLastWeeks": "Últimas {weeks} semanas",
   "progressAnalyticsOpen": "Ver análise",
@@ -195,5 +194,6 @@
   "progressBySubjectWeak": "revê-a mais vezes",
   "progressNextBadgeTitle": "Próxima insígnia",
   "progressNextBadgeAmount": "{current} de {target} · faltam {remaining}",
-  "progressNextBadgeHint": "Abre as tuas insígnias"
+  "progressNextBadgeHint": "Abre as tuas insígnias",
+  "progressTabSummary": "Resumo"
 }

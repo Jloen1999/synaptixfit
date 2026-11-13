@@ -36,8 +36,6 @@ sealed class CalendarEvent with _$CalendarEvent {
     bool? completed,
   }) = CalendarCompletionToggled;
 
-  const factory CalendarEvent.planSaveRequested() = CalendarPlanSaveRequested;
-
   /// Borra el bloque: desaparece ya y se borra de verdad al cerrarse el aviso
   /// sin deshacer (o al salir de la pantalla).
   const factory CalendarEvent.blockDeleteRequested(CalendarBlock block) =

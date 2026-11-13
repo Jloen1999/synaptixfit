@@ -103,12 +103,7 @@ class _PastStudyViewState extends State<PastStudyView> with ErrorsMessageMixin {
         if (state.updatedAccount case final account?) {
           context.read<SessionBloc>().add(SessionEvent.accountUpdated(account));
         }
-        final xp = state.savedXp ?? 0;
-        context.showSnack(
-          xp > 0
-              ? l10n.plannerPastStudySavedXp(xp)
-              : l10n.plannerPastStudySaved,
-        );
+        context.showSnack(l10n.plannerPastStudySaved);
         if (context.canPop()) context.pop(true);
       },
       builder: (context, state) => Scaffold(
