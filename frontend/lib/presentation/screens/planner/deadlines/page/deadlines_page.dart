@@ -665,40 +665,8 @@ class _DeadlineTile extends StatelessWidget {
       key: ValueKey('deadline-${d.id}'),
       direction: busy ? DismissDirection.none : DismissDirection.endToStart,
       onDismissed: (_) => onDelete(),
-      background: _DeleteBackground(label: l10n.plannerDeleteDeadline),
+      background: AppDeleteSwipeBackground(label: l10n.plannerDeleteDeadline),
       child: framed,
     );
   }
-}
-
-/// Fondo que asoma al deslizar una entrega para borrarla: icono y verbo, no
-/// solo color.
-class _DeleteBackground extends StatelessWidget {
-  const _DeleteBackground({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: context.colors.errorContainer,
-      borderRadius: BorderRadius.circular(TokensRadius.l),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: TokensSpacing.l),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(
-            label,
-            style: context.textStyles.labelLarge?.copyWith(
-              color: context.colors.onErrorContainer,
-            ),
-          ),
-          const SizedBox(width: TokensSpacing.s),
-          Icon(AppIcons.delete, color: context.colors.onErrorContainer),
-        ],
-      ),
-    ),
-  );
 }

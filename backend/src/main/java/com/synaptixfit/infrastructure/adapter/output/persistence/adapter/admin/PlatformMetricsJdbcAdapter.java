@@ -4,6 +4,7 @@ import com.synaptixfit.domain.model.admin.AdminActivityAggregation.UserActivity;
 import com.synaptixfit.domain.model.admin.AdminActivityAggregation.UserFocus;
 import com.synaptixfit.domain.model.admin.PlatformCounts;
 import com.synaptixfit.domain.port.output.admin.PlatformMetricsQueryPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.CompletedWorkoutsSql;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -53,16 +54,11 @@ public class PlatformMetricsJdbcAdapter implements PlatformMetricsQueryPort {
 
     @Override
     public List<UserActivity> completedTrainingSessions(Instant from, Instant to) {
-        // Una carrera o actividad hecha cuenta como un entreno (vocabulario.md §3), con las mismas filas que
-        // Inicio y Progreso (DashboardJdbcAdapter.trainingTotals): actividades apuntadas de eventos hechos.
+        // Entrenos hechos con la definición única (CompletedWorkoutsSql), la misma que Inicio y Progreso.
         return jdbc.sql("""
-                        SELECT usuario_id, completada_en FROM sesiones_registradas
-                        WHERE completada_en >= :fromTs AND completada_en < :toTs
-                        UNION ALL
-                        SELECT a.usuario_id, b.hora_fin FROM actividades_apuntadas a
-                        JOIN horarios_academicos b ON b.id = a.bloque_id
-                        WHERE b.completado = true AND b.hora_fin >= :fromTs AND b.hora_fin < :toTs
-                        """)
+                        SELECT e.usuario_id, e.terminado_en AS completada_en FROM %s e
+                        WHERE e.terminado_en >= :fromTs AND e.terminado_en < :toTs
+                        """.formatted(CompletedWorkoutsSql.TABLE))
                 .param("fromTs", JdbcValues.param(from)).param("toTs", JdbcValues.param(to))
                 .query((rs, n) -> new UserActivity(JdbcValues.uuid(rs, "usuario_id"), JdbcValues.instant(rs, "completada_en")))
                 .list();

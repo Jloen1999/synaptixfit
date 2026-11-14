@@ -9,6 +9,7 @@ import com.synaptixfit.application.port.input.auth.RefreshSessionUseCase;
 import com.synaptixfit.application.port.input.auth.RegisterUserUseCase;
 import com.synaptixfit.application.port.input.gamification.AwardExperienceUseCase;
 import com.synaptixfit.application.port.input.gamification.RevokeExperienceUseCase;
+import com.synaptixfit.application.port.input.user.GetAgeTodayUseCase;
 import com.synaptixfit.application.port.input.user.GetCurrentUserUseCase;
 import com.synaptixfit.application.port.input.user.UpdateAccountUseCase;
 import com.synaptixfit.application.service.auth.AuthService;
@@ -22,6 +23,8 @@ import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.platform.PlatformSettingsPort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import java.time.Clock;
+import java.time.ZoneId;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -51,12 +54,15 @@ public class BeanConfiguration {
     private final LegalAcceptanceRepositoryPort legalAcceptances;
     private final Clock clock;
     private final AppProperties properties;
+    private final ZoneId zone;
 
     public BeanConfiguration(TransactionalUseCaseFactory tx, UserRepositoryPort users,
                              PasswordHasherPort passwordHasher, AccessTokenIssuerPort accessTokens,
                              RefreshTokenRepositoryPort refreshTokens, GoogleIdentityVerifierPort googleVerifier,
                              PlatformSettingsPort platformSettings, DomainEventPublisherPort events,
-                             LegalAcceptanceRepositoryPort legalAcceptances, Clock clock, AppProperties properties) {
+                             LegalAcceptanceRepositoryPort legalAcceptances, Clock clock, AppProperties properties,
+                             @Value("${synaptixfit.insights.default-zone:Europe/Madrid}") String zone) {
+        this.zone = ZoneId.of(zone);
         this.legalAcceptances = legalAcceptances;
         this.tx = tx;
         this.users = users;
@@ -112,7 +118,7 @@ public class BeanConfiguration {
 
     @Bean(autowireCandidate = false)
     AccountService accountService() {
-        return new AccountService(users, events, clock);
+        return new AccountService(users, events, clock, zone);
     }
 
     @Bean
@@ -123,6 +129,11 @@ public class BeanConfiguration {
     @Bean
     UpdateAccountUseCase updateAccountUseCase() {
         return tx.wrap(UpdateAccountUseCase.class, accountService());
+    }
+
+    @Bean
+    GetAgeTodayUseCase getAgeTodayUseCase() {
+        return tx.wrap(GetAgeTodayUseCase.class, accountService());
     }
 
     // ---------------------------------------------------------------- experiencia

@@ -74,7 +74,7 @@ class _BadgesView extends StatelessWidget with ErrorsMessageMixin {
           BadgesStatus.loaded =>
             state.badges.isEmpty
                 ? AppEmptyState(
-                    icon: Icons.military_tech_outlined,
+                    icon: AppIcons.badge,
                     title: l10n.progressBadgeCatalogEmpty,
                     action: AppSecondaryButton(
                       label: l10n.commonRetry,

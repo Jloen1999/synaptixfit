@@ -26,6 +26,7 @@ import '../../../../../domain/use_cases/training/schedule_run_workout_use_case.d
 import '../../../../../domain/use_cases/training/track_run_use_case.dart';
 import '../../../../../domain/use_cases/training/upload_pending_runs_use_case.dart';
 import '../../../../mixins/data_change_refresh_mixin.dart';
+import '../../../../mixins/deferred_commit_mixin.dart';
 
 part 'run_home_bloc.freezed.dart';
 part 'run_home_event.dart';
@@ -37,7 +38,9 @@ part 'run_home_state.dart';
 /// posición para «Estás aquí» solo si el permiso ya está dado: el permiso se
 /// pide justo antes de la primera carrera, nunca al entrar.
 class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
-    with DataChangeRefreshMixin {
+    with
+        DataChangeRefreshMixin<RunHomeEvent, RunHomeState>,
+        DeferredCommitMixin<RunHomeState> {
   RunHomeBloc({
     required this._uploadPending,
     required this._getWeek,
@@ -72,20 +75,27 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
       await _locate(emit);
     });
     on<RunHomeRefreshed>((_, emit) => _load(emit));
-    on<RunHomeWorkoutDeleted>((e, emit) async {
+    on<RunHomeWorkoutDeleted>((e, emit) {
+      final index = state.workouts.indexWhere((w) => w.id == e.workoutId);
+      if (index < 0 || !defer(e.workoutId)) return;
+      _removed[e.workoutId] = (index, state.workouts[index]);
+      emit(state.copyWith(workouts: _visible(state.workouts)));
+    });
+    on<RunHomeWorkoutDeleteUndone>((e, emit) {
+      final removed = _removed.remove(e.workoutId);
+      if (!release(e.workoutId) || removed == null) return;
+      emit(state.copyWith(workouts: _restore(removed)));
+    });
+    on<RunHomeWorkoutDeleteCommitted>((e, emit) async {
+      if (!release(e.workoutId)) return;
+      final removed = _removed.remove(e.workoutId);
       final result = await _deleteWorkout(e.workoutId);
-      switch (result) {
-        case Success():
-          emit(
-            state.copyWith(
-              workouts: [
-                for (final w in state.workouts)
-                  if (w.id != e.workoutId) w,
-              ],
-            ),
-          );
-        case Failure(:final error):
-          _notify(emit, error: error);
+      if (result case Failure(:final error) when error is! NotFoundError) {
+        // No se pudo eliminar: vuelve a su sitio y se avisa.
+        if (removed != null) {
+          emit(state.copyWith(workouts: _restore(removed)));
+        }
+        _notify(emit, error: error);
       }
     });
     on<RunHomeWorkoutScheduled>((e, emit) async {
@@ -128,6 +138,25 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
   final ShareAchievementImageUseCaseContract _share;
   final WatchDataChangesUseCaseContract _watchDataChanges;
 
+  /// Entrenos deslizados con su aviso de «Deshacer» abierto, con su sitio en
+  /// la lista para volver a él.
+  final Map<String, (int, RunWorkout)> _removed = {};
+
+  List<RunWorkout> _restore((int, RunWorkout) removed) {
+    final (index, workout) = removed;
+    return [...state.workouts]
+      ..insert(index.clamp(0, state.workouts.length), workout);
+  }
+
+  /// Lo deslizado no vuelve con una recarga mientras su aviso siga abierto.
+  List<RunWorkout> _visible(List<RunWorkout> workouts) => [
+    for (final w in workouts)
+      if (w.id == null || !isDeferred(w.id!)) w,
+  ];
+
+  @override
+  Future<void> commitDeferred(String id) => _deleteWorkout(id);
+
   /// «Tus actividades» enseña las últimas; el resto, en «Ver todas».
   static const recentActivities = 3;
 
@@ -163,7 +192,7 @@ class RunHomeBloc extends Bloc<RunHomeEvent, RunHomeState>
         activities: activities.valueOrNull?.items ?? state.activities,
         totalActivities:
             activities.valueOrNull?.totalItems ?? state.totalActivities,
-        workouts: workouts.valueOrNull ?? state.workouts,
+        workouts: _visible(workouts.valueOrNull ?? state.workouts),
         templates: templates.valueOrNull ?? state.templates,
         planned: planned.valueOrNull ?? state.planned,
         pendingUploads: pending.valueOrNull?.length ?? 0,

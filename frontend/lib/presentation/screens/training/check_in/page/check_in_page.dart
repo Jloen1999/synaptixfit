@@ -192,10 +192,15 @@ class _FormState extends State<_Form> {
                 ),
               if (state.today != null) _TodaySummary(checkIn: state.today!),
               if (_autoSave) ...[
-                Text(
-                  l10n.trainingCheckInAutoSaveHint,
-                  style: context.textStyles.bodyMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
+                // Nodo propio: sin él, el lector juntaba esta línea con la
+                // cabecera «Días anteriores» del final.
+                Semantics(
+                  container: true,
+                  child: Text(
+                    l10n.trainingCheckInAutoSaveHint,
+                    style: context.textStyles.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 const SizedBox(height: TokensSpacing.s),
@@ -287,7 +292,10 @@ class _FormState extends State<_Form> {
               ),
               if (state.history.isNotEmpty) ...[
                 const SizedBox(height: TokensSpacing.xl),
-                AppSectionHeader(title: l10n.trainingCheckInHistory),
+                Semantics(
+                  container: true,
+                  child: AppSectionHeader(title: l10n.trainingCheckInHistory),
+                ),
                 for (final c in state.history) _HistoryTile(checkIn: c),
               ],
             ],

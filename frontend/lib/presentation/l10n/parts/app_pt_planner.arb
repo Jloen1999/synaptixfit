@@ -119,7 +119,7 @@
   "plannerOptionsError": "Não foi possível carregar todas as opções.",
   "plannerBlockCreated": "Adicionado ao calendário",
   "plannerBlockUpdated": "Alterações guardadas",
-  "plannerBlockDeleted": "Apagado do calendário",
+  "plannerBlockDeleted": "Retirado do calendário",
   "plannerRoutineDistributed": "{count, plural, =0{Não foi adicionada nenhuma sessão} =1{1 sessão adicionada ao calendário} other{{count} sessões adicionadas ao calendário}}",
   "plannerDistributeIntro": "Põe os dias de uma rotina no calendário a partir da data que escolheres.",
   "plannerFieldWeekdays": "Dias de treino",
@@ -331,8 +331,6 @@
   "plannerPomodoroNoSubject": "Sem disciplina",
   "plannerPomodoroBlockQuestion": "Terminaste o que tinhas planeado?",
   "plannerPomodoroBlockQuestionNamed": "Terminaste «{name}»?",
-  "plannerPomodoroBlockHint": "Se já está, marca-o como feito no calendário.",
-  "plannerPomodoroBlockYes": "Sim, está feito",
   "plannerPomodoroBlockNotYet": "Ainda não",
   "plannerPomodoroBlockMarked": "Marcado como feito.",
   "plannerErrorPastActivityType": "Só podes registar depois desporto ou estudo.",
@@ -382,5 +380,5 @@
   "plannerDeleteDeadline": "Eliminar",
   "plannerOpensDeadlineForm": "Abre o formulário de entrega",
   "plannerSubjectArchived": "Disciplina arquivada",
-  "plannerDeadlinesSwipeHint": "Desliza uma entrega para a esquerda para a apagar."
+  "plannerDeadlinesSwipeHint": "Desliza uma entrega para a esquerda para a eliminar."
 }

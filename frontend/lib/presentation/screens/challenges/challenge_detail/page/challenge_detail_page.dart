@@ -500,7 +500,7 @@ class _DetailContent extends StatelessWidget {
                         for (final e in state.history)
                           ListTile(
                             leading: Icon(
-                              Icons.trending_up_rounded,
+                              AppIcons.trendUp,
                               color: context.palette.success,
                             ),
                             title: Text(
@@ -646,7 +646,7 @@ class _SummaryCard extends StatelessWidget {
                   ),
                 ),
                 _Stat(
-                  icon: Icons.military_tech_outlined,
+                  icon: AppIcons.badge,
                   color: context.palette.streak,
                   label: l10n.challengesDetailBestStreak,
                   value: l10n.challengesDetailDaysValue(challenge.bestStreak),

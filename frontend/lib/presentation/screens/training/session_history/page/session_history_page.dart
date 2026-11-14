@@ -379,7 +379,7 @@ class _SessionCard extends StatelessWidget {
               ),
               if (s.rpe != null)
                 AppPill(
-                  icon: Icons.speed_rounded,
+                  icon: AppIcons.effort,
                   label: l10n.trainingRpeValue(s.rpe!),
                 ),
             ],

@@ -329,6 +329,66 @@ void main() {
   );
 
   blocTest<LiveSessionBloc, LiveSessionState>(
+    '«Deshacer» de «Hacerla completa» vuelve a las series adaptadas',
+    setUp: () {
+      when(() => getSession('s1')).thenAnswer(
+        (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+      );
+      when(() => getRoutine('r1')).thenAnswer((_) async => Success(routine));
+      when(() => getAdaptation('s1')).thenAnswer(
+        (_) async => Success(
+          SessionAdaptation(
+            volumeFactor: 0.7,
+            reasons: const [SessionAdaptationReason.examSoon],
+            sets: {for (final e in exercises) e.id: 1},
+          ),
+        ),
+      );
+    },
+    build: build,
+    act: (bloc) async {
+      bloc.add(const LiveSessionEvent.started('s1'));
+      await Future<void>.delayed(Duration.zero);
+      final adaptation = bloc.state.adaptation;
+      bloc.add(const LiveSessionEvent.adaptationDeclined());
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(LiveSessionEvent.adaptationRestored(adaptation));
+      // Un segundo «Deshacer» no cambia nada: ya está adaptada.
+      bloc.add(LiveSessionEvent.adaptationRestored(adaptation));
+    },
+    verify: (bloc) {
+      expect(bloc.state.adaptation.adapted, isTrue);
+      expect(
+        bloc.state.exercises.map((e) => e.parameters.sets),
+        everyElement(1),
+      );
+    },
+  );
+
+  blocTest<LiveSessionBloc, LiveSessionState>(
+    '«Deshacer» sin adaptación previa no toca las series',
+    setUp: () {
+      when(() => getSession('s1')).thenAnswer(
+        (_) async => Success(TrainingFixtures.session(startedAt: startedAt)),
+      );
+      when(() => getRoutine('r1')).thenAnswer((_) async => Success(routine));
+    },
+    build: build,
+    act: (bloc) async {
+      bloc.add(const LiveSessionEvent.started('s1'));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const LiveSessionEvent.adaptationRestored(SessionAdaptation()));
+    },
+    verify: (bloc) {
+      expect(bloc.state.adaptation.adapted, isFalse);
+      expect(
+        bloc.state.exercises.map((e) => e.parameters.sets),
+        exercises.map((e) => e.parameters.sets),
+      );
+    },
+  );
+
+  blocTest<LiveSessionBloc, LiveSessionState>(
     'con examen cerca aplica las series adaptadas por el servidor',
     setUp: () {
       when(() => getSession('s1')).thenAnswer(
@@ -613,15 +673,13 @@ void main() {
       sets: [done('p1', 1)],
     );
     final without = TrainingFixtures.session(startedAt: startedAt);
-    LiveSessionState resting(String forSet) => ready(
-      session: withSet,
-      active: 'p2',
-    ).copyWith(
-      restRemaining: 60,
-      restEndsAt: now.add(const Duration(seconds: 60)),
-      restTotal: 90,
-      restForSet: forSet,
-    );
+    LiveSessionState resting(String forSet) =>
+        ready(session: withSet, active: 'p2').copyWith(
+          restRemaining: 60,
+          restEndsAt: now.add(const Duration(seconds: 60)),
+          restTotal: 90,
+          restForSet: forSet,
+        );
 
     blocTest<LiveSessionBloc, LiveSessionState>(
       'la serie cuyo descanso corre lo para y vuelve a ser la que toca',

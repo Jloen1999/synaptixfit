@@ -165,8 +165,8 @@ void main() {
           ),
         ),
       );
-      final increase = find.byTooltip('Aumentar Semanas');
-      final decrease = find.byTooltip('Reducir Semanas');
+      final increase = find.byTooltip('Aumentar semanas');
+      final decrease = find.byTooltip('Reducir semanas');
       Focus.of(tester.element(find.byIcon(Icons.add_rounded))).requestFocus();
       await tester.pump();
       await tester.tap(increase);

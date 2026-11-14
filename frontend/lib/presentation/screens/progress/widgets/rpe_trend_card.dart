@@ -122,7 +122,7 @@ class _DirectionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     // Subir o bajar el RPE no es bueno ni malo por sí solo: color neutro.
     final (icon, color) = switch (direction) {
-      TrendDirection.up => (Icons.trending_up_rounded, context.colors.primary),
+      TrendDirection.up => (AppIcons.trendUp, context.colors.primary),
       TrendDirection.down => (
         Icons.trending_down_rounded,
         context.colors.primary,

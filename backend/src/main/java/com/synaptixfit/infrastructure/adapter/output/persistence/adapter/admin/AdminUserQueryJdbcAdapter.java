@@ -17,6 +17,7 @@ import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
 import com.synaptixfit.domain.model.user.Role;
 import com.synaptixfit.domain.port.output.admin.AdminUserQueryPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.CompletedWorkoutsSql;
 import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.SqlLike;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -48,20 +49,11 @@ public class AdminUserQueryJdbcAdapter implements AdminUserQueryPort {
     /** Recuentos y sumas simples; las reglas (adherencia, minutos de estudio) se calculan en el dominio. */
     private static final String STATS = """
             SELECT
-              (SELECT count(*) FROM (
-                  SELECT 1 FROM sesiones_registradas WHERE usuario_id = :id AND completada_en IS NOT NULL
-                  UNION ALL SELECT 1 FROM actividades_apuntadas a JOIN horarios_academicos b ON b.id = a.bloque_id
-                   WHERE a.usuario_id = :id AND b.completado = true) e) AS training_sessions,
-              (SELECT COALESCE(sum(m), 0) FROM (
-                  SELECT duracion_minutos AS m FROM sesiones_registradas WHERE usuario_id = :id AND completada_en IS NOT NULL
-                  UNION ALL SELECT a.minutos_reales FROM actividades_apuntadas a JOIN horarios_academicos b ON b.id = a.bloque_id
-                   WHERE a.usuario_id = :id AND b.completado = true) e) AS training_minutes,
-              (SELECT COALESCE(round(sum(k)), 0) FROM (
-                  SELECT calorias_quemadas AS k FROM sesiones_registradas WHERE usuario_id = :id AND completada_en IS NOT NULL
-                  UNION ALL SELECT c.kcal FROM actividades_apuntadas a JOIN horarios_academicos b ON b.id = a.bloque_id
-                   JOIN carreras_gps c ON c.bloque_id = a.bloque_id
-                   WHERE a.usuario_id = :id AND b.completado = true) e) AS calories,
-              (SELECT round(avg(rpe), 1) FROM sesiones_registradas WHERE usuario_id = :id AND completada_en IS NOT NULL) AS average_rpe,
+              (SELECT count(*) FROM {WORKOUTS} e WHERE e.usuario_id = :id) AS training_sessions,
+              (SELECT COALESCE(sum(e.minutos), 0) FROM {WORKOUTS} e WHERE e.usuario_id = :id) AS training_minutes,
+              (SELECT COALESCE(round(sum(e.kcal)), 0) FROM {WORKOUTS} e WHERE e.usuario_id = :id) AS calories,
+              (SELECT round(avg(e.rpe), 1) FROM {WORKOUTS} e
+                WHERE e.usuario_id = :id AND e.tipo_entreno = :session) AS average_rpe,
               (SELECT count(*) FROM rutinas WHERE usuario_id = :id AND eliminado_en IS NULL) AS routines,
               (SELECT count(*) FROM rutinas WHERE usuario_id = :id AND eliminado_en IS NULL AND estado = 'activo') AS active_routines,
               (SELECT count(*) FROM retos WHERE usuario_id = :id) AS challenges,
@@ -86,7 +78,7 @@ public class AdminUserQueryJdbcAdapter implements AdminUserQueryPort {
                   SELECT max(completada_en) AS t FROM sesiones_registradas WHERE usuario_id = :id
                   UNION ALL SELECT max(hora_fin) FROM horarios_academicos WHERE usuario_id = :id AND completado = true
                   UNION ALL SELECT max(creado_en) FROM sesiones_focus WHERE usuario_id = :id) x) AS last_activity
-            """;
+            """.replace("{WORKOUTS}", CompletedWorkoutsSql.TABLE);
 
     /**
      * Actividad visible en la línea de tiempo. La duración de los bloques se calcula en Java con
@@ -267,6 +259,7 @@ public class AdminUserQueryJdbcAdapter implements AdminUserQueryPort {
     public AdminUserCounts counts(UUID userId) {
         return jdbc.sql(STATS)
                 .param("id", userId)
+                .param("session", CompletedWorkoutsSql.FROM_SESSION)
                 .param("studyTypes", STUDY_TYPES)
                 .query((rs, n) -> new AdminUserCounts(
                         rs.getLong("training_sessions"),
@@ -295,17 +288,15 @@ public class AdminUserQueryJdbcAdapter implements AdminUserQueryPort {
 
     @Override
     public List<CompletedSession> completedTrainingSessions(UUID userId, Instant from, Instant to) {
-        // Carreras y actividades hechas cuentan como entrenos (vocabulario.md §3); no tienen esfuerzo (RPE).
+        // Entrenos hechos con la definición única (CompletedWorkoutsSql). El panel solo enseña el esfuerzo (RPE) de las
+        // sesiones de gimnasio, como antes de unificarla.
         return jdbc.sql("""
-                        SELECT completada_en, duracion_minutos, calorias_quemadas, rpe FROM sesiones_registradas
-                         WHERE usuario_id = :id AND completada_en >= :fromTs AND completada_en < :toTs
-                        UNION ALL
-                        SELECT b.hora_fin, a.minutos_reales, c.kcal, CAST(NULL AS INTEGER) FROM actividades_apuntadas a
-                          JOIN horarios_academicos b ON b.id = a.bloque_id
-                          LEFT JOIN carreras_gps c ON c.bloque_id = a.bloque_id
-                         WHERE a.usuario_id = :id AND b.completado = true
-                           AND b.hora_fin >= :fromTs AND b.hora_fin < :toTs
-                        """)
+                        SELECT e.terminado_en AS completada_en, e.minutos AS duracion_minutos, e.kcal AS calorias_quemadas,
+                               CASE WHEN e.tipo_entreno = :session THEN e.rpe END AS rpe
+                          FROM %s e
+                         WHERE e.usuario_id = :id AND e.terminado_en >= :fromTs AND e.terminado_en < :toTs
+                        """.formatted(CompletedWorkoutsSql.TABLE))
+                .param("session", CompletedWorkoutsSql.FROM_SESSION)
                 .param("id", userId).param("fromTs", JdbcValues.param(from)).param("toTs", JdbcValues.param(to))
                 .query((rs, n) -> new CompletedSession(JdbcValues.instant(rs, "completada_en"),
                         rs.getInt("duracion_minutos"), JdbcValues.nullableDouble(rs, "calorias_quemadas"),

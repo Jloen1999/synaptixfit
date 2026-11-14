@@ -5,7 +5,6 @@ import 'package:synaptixfit/domain/enums/test_session_status.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/academic/quiz.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
-import 'package:synaptixfit/domain/use_cases/academic/abandon_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/answer_in_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/answer_question_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/complete_practice_use_case.dart';
@@ -51,8 +50,6 @@ class _AnswerInSession extends Mock
     implements AnswerInTestSessionUseCaseContract {}
 
 class _Complete extends Mock implements CompleteTestSessionUseCaseContract {}
-
-class _Abandon extends Mock implements AbandonTestSessionUseCaseContract {}
 
 class _GetAccount extends Mock implements GetAccountUseCaseContract {}
 
@@ -305,14 +302,12 @@ void main() {
     late _Start start;
     late _AnswerInSession answerInSession;
     late _Complete complete;
-    late _Abandon abandon;
 
     setUp(() {
       getActive = _GetActive();
       start = _Start();
       answerInSession = _AnswerInSession();
       complete = _Complete();
-      abandon = _Abandon();
     });
 
     MockExamBloc build() => MockExamBloc(
@@ -320,7 +315,6 @@ void main() {
       start: start,
       answer: answerInSession,
       complete: complete,
-      abandon: abandon,
       getAccount: getAccount,
     );
 
@@ -415,18 +409,6 @@ void main() {
         expect(bloc.state.closedSessionId, 't1');
         expect(bloc.state.updatedAccount, account);
       },
-    );
-
-    blocTest<MockExamBloc, MockExamState>(
-      'abandonar marca la sesión como abandonada',
-      setUp: () => when(() => abandon('t1')).thenAnswer(
-        (_) async =>
-            Success(session.copyWith(status: TestSessionStatus.abandoned)),
-      ),
-      build: build,
-      seed: () => MockExamState(loading: false, session: session),
-      act: (bloc) => bloc.add(const MockExamEvent.abandoned()),
-      verify: (bloc) => expect(bloc.state.abandoned, isTrue),
     );
   });
 }

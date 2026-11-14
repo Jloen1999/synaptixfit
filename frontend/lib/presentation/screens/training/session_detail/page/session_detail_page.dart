@@ -251,7 +251,7 @@ class _Content extends StatelessWidget {
                   ),
                   if (session.rpe != null)
                     AppMetricTile(
-                      icon: Icons.speed_rounded,
+                      icon: AppIcons.effort,
                       color: context.colors.tertiary,
                       value: l10n.trainingRpeShort(session.rpe!),
                       label: l10n.trainingSessionDetailEffort,

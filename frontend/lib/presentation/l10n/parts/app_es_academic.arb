@@ -413,10 +413,6 @@
   },
   "academicExamAnswer": "Responder",
   "academicExamAnswered": "Respuesta enviada",
-  "academicExamAbandon": "Abandonar",
-  "academicExamAbandonTitle": "¿Abandonar el simulacro?",
-  "academicExamAbandonMessage": "Se cerrará sin nota.",
-  "academicExamAbandoned": "Simulacro abandonado",
   "academicExamFinishTitle": "¿Terminar el simulacro?",
   "academicExamFinishPending": "{count, plural, =1{Te queda 1 pregunta sin responder.} other{Te quedan {count} preguntas sin responder.}}",
   "@academicExamFinishPending": {
@@ -1315,5 +1311,6 @@
     }
   },
   "academicNewDeadline": "Nueva entrega",
-  "academicSubjectFocusHere": "Concentrarme en esta asignatura"
+  "academicSubjectFocusHere": "Concentrarme en esta asignatura",
+  "academicExamResumeLater": "El simulacro sigue en curso: al volver a abrirlo, sigues donde lo dejaste."
 }

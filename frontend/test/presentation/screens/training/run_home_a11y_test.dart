@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -11,13 +12,14 @@ import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/training/run_home/bloc/run_home_bloc.dart';
 import 'package:synaptixfit/presentation/screens/training/run_home/page/run_home_page.dart';
 import 'package:synaptixfit/presentation/theme/app_theme.dart';
+import 'package:synaptixfit/presentation/widgets/widgets.dart';
 
 class _MockRunHomeBloc extends MockBloc<RunHomeEvent, RunHomeState>
     implements RunHomeBloc {}
 
 /// Pantalla «Correr» (ADR 0037) con datos y en vacío: objetivos táctiles,
 /// etiquetas, contraste, texto al 200 % y botones que dicen de qué entreno
-/// son (no «Borrar entreno» repetido).
+/// son (no «Eliminar entreno» repetido).
 void main() {
   late _MockRunHomeBloc bloc;
 
@@ -126,7 +128,17 @@ void main() {
   testWidgets('los botones de cada entreno dicen de cuál son', (tester) async {
     final handle = tester.ensureSemantics();
     await pump(tester, full);
-    expect(find.byTooltip('Borrar «Series 6 × 800 m»'), findsOneWidget);
+    // Eliminar no ocupa sitio en la fila: se desliza (con «Deshacer») y el
+    // lector tiene la misma acción con el nombre del entreno (§4).
+    expect(find.byTooltip('Eliminar «Series 6 × 800 m»'), findsNothing);
+    expect(
+      tester.getSemantics(find.byType(AppSwipeToDelete).first),
+      isSemantics(
+        customActions: const [
+          CustomSemanticsAction(label: 'Eliminar «Series 6 × 800 m»'),
+        ],
+      ),
+    );
     expect(find.byTooltip('Cambiar «Series 6 × 800 m»'), findsOneWidget);
     // «Empezar» del evento del calendario y del entreno: con su nombre.
     expect(

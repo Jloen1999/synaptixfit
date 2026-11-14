@@ -88,7 +88,7 @@ class _KpiGrid extends StatelessWidget {
         l10n.adminKpiTotalUsers,
       ),
       (
-        Icons.bolt_rounded,
+        AppIcons.activeUsers,
         palette.success,
         metrics.activeUsersToday,
         l10n.adminKpiActiveToday,

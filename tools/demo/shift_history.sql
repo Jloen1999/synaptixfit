@@ -32,10 +32,12 @@ WHERE email LIKE '%@demo.synaptixfit.test'
 
 -- Bloques de repaso SM-2 pendientes que la ronda creó o movió: siguen a la fecha del material
 -- (el evento ReviewScheduled los colocó en la siguiente fecha SM-2 calculada con la hora real).
+-- Retroceden días enteros: así conservan la hora que eligió el backend (media hora en punto, desde las 08:00)
+-- en vez de quedar a la hora suelta que da `shift` (p. ej. 00:33).
 UPDATE horarios_academicos h
-SET hora_inicio = h.hora_inicio + :'shift'::interval,
-    hora_fin = h.hora_fin + :'shift'::interval,
-    dia_semana = extract(isodow FROM h.hora_inicio + :'shift'::interval)::int
+SET hora_inicio = h.hora_inicio - :days * interval '1 day',
+    hora_fin = h.hora_fin - :days * interval '1 day',
+    dia_semana = extract(isodow FROM h.hora_inicio - :days * interval '1 day')::int
 FROM materiales_estudio m
 WHERE h.material_estudio_id = m.id
   AND h.usuario_id IN (SELECT id FROM demo_u)

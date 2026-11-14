@@ -496,7 +496,7 @@ class _PendingDayCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.bolt_rounded,
+                AppIcons.upNext,
                 color: context.colors.primary,
                 size: TokensSize.iconS,
               ),

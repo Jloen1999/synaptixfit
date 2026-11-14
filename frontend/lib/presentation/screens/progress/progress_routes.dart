@@ -45,7 +45,6 @@ abstract final class ProgressExternalPaths {
   static String socialPost(String postId) => '/social/posts/$postId';
   static const training = '/training';
   static const pomodoro = '/planner/pomodoro';
-  static const academic = '/academic';
 
   /// Repaso de [first] seguido de [rest] (la cola de «Repasar todos»).
   static String review(String first, Iterable<String> rest) =>

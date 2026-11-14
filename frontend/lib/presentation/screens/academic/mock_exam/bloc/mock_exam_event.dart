@@ -21,6 +21,4 @@ sealed class MockExamEvent with _$MockExamEvent {
   const factory MockExamEvent.answerSubmitted() = MockExamAnswerSubmitted;
 
   const factory MockExamEvent.completed() = MockExamCompleted;
-
-  const factory MockExamEvent.abandoned() = MockExamAbandoned;
 }

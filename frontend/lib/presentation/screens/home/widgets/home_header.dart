@@ -53,80 +53,108 @@ class HomeHeader extends StatelessWidget {
     final l10n = context.localizations;
     final current = now ?? DateTime.now();
     final date = DateFormat.MMMMEEEEd().format(current);
-    return Row(
-      children: [
-        Tooltip(
-          message: l10n.homeOpenProfile,
-          child: AppFocusOutline(
-            borderRadius: BorderRadius.circular(TokensRadius.pill),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onProfile,
-              child: Padding(
-                padding: const EdgeInsets.all(TokensSpacing.xxs),
-                child: AppAvatar(
-                  name: greeting.fullName,
-                  imageUrl: greeting.avatarUrl,
-                  radius: TokensSize.thumbnailS / 2,
-                ),
-              ),
+    // Con texto grande (200 %) el saludo y la fecha bajan a su propia línea a
+    // todo el ancho: al lado del avatar y los botones se cortaban («Buenas
+    // noch…») o partían la palabra («Bonsoir / , Lucía») (WCAG 1.4.4).
+    final large = context.largeText;
+    final greetingText = Semantics(
+      header: true,
+      child: Text(
+        _salutation(context, current),
+        style: context.textStyles.titleLarge,
+        maxLines: large ? 3 : 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+    // El nivel y su XP están en Progreso (ADR 0038): aquí solo la fecha.
+    final dateText = Text(
+      toBeginningOfSentenceCase(date),
+      maxLines: large ? 2 : 1,
+      overflow: TextOverflow.ellipsis,
+      style: context.textStyles.bodyMedium?.copyWith(
+        color: context.colors.onSurfaceVariant,
+      ),
+    );
+    final avatar = Tooltip(
+      message: l10n.homeOpenProfile,
+      child: AppFocusOutline(
+        borderRadius: BorderRadius.circular(TokensRadius.pill),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onProfile,
+          child: Padding(
+            padding: const EdgeInsets.all(TokensSpacing.xxs),
+            child: AppAvatar(
+              name: greeting.fullName,
+              imageUrl: greeting.avatarUrl,
+              radius: TokensSize.thumbnailS / 2,
             ),
           ),
         ),
-        const SizedBox(width: TokensSpacing.m),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+    );
+    final actions = <Widget>[
+      _StreakChip(days: greeting.streak, onTap: onProgress),
+      // En el móvil no cabe sin cortar el saludo: allí el muro se abre desde
+      // Perfil («Amigos y comunidad»); con riel lateral sí hay sitio.
+      if (MediaQuery.sizeOf(context).width >= TokensLayout.railBreakpoint)
+        IconButton(
+          tooltip: l10n.homeCommunity,
+          onPressed: onCommunity,
+          icon: const Icon(AppIcons.community),
+        ),
+      IconButton(
+        tooltip: l10n.homeNotificationsUnread(unreadNotifications),
+        onPressed: onNotifications,
+        icon: Badge(
+          isLabelVisible: unreadNotifications > 0,
+          label: Text(
+            unreadNotifications > 99 ? '99+' : '$unreadNotifications',
+          ),
+          child: const Icon(AppIcons.notifications),
+        ),
+      ),
+      if (isAdmin)
+        IconButton(
+          tooltip: l10n.homeAdminPanel,
+          onPressed: onAdmin,
+          icon: const Icon(Icons.admin_panel_settings_outlined),
+        ),
+    ];
+    if (large) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Los botones bajan de línea si no caben (320 dp, racha larga).
+          Row(
             children: [
-              // El saludo hace de título de la página.
-              Semantics(
-                header: true,
-                child: Text(
-                  _salutation(context, current),
-                  style: context.textStyles.titleLarge,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // El nivel y su XP están en Progreso (ADR 0038): aquí solo la
-              // fecha, en una línea.
-              Text(
-                toBeginningOfSentenceCase(date),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.textStyles.bodyMedium?.copyWith(
-                  color: context.colors.onSurfaceVariant,
+              avatar,
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: actions,
                 ),
               ),
             ],
           ),
-        ),
-        _StreakChip(days: greeting.streak, onTap: onProgress),
-        // En el móvil no cabe sin cortar el saludo: allí el muro se abre desde
-        // Perfil («Amigos y comunidad»); con riel lateral sí hay sitio.
-        if (MediaQuery.sizeOf(context).width >= TokensLayout.railBreakpoint)
-          IconButton(
-            tooltip: l10n.homeCommunity,
-            onPressed: onCommunity,
-            icon: const Icon(AppIcons.community),
-          ),
-        IconButton(
-          tooltip: l10n.homeNotificationsUnread(unreadNotifications),
-          onPressed: onNotifications,
-          icon: Badge(
-            isLabelVisible: unreadNotifications > 0,
-            label: Text(
-              unreadNotifications > 99 ? '99+' : '$unreadNotifications',
-            ),
-            child: const Icon(AppIcons.notifications),
+          const SizedBox(height: TokensSpacing.s),
+          greetingText,
+          dateText,
+        ],
+      );
+    }
+    return Row(
+      children: [
+        avatar,
+        const SizedBox(width: TokensSpacing.m),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [greetingText, dateText],
           ),
         ),
-        if (isAdmin)
-          IconButton(
-            tooltip: l10n.homeAdminPanel,
-            onPressed: onAdmin,
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-          ),
+        ...actions,
       ],
     );
   }

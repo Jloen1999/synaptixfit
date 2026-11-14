@@ -81,7 +81,7 @@ class _ProgressCard extends StatelessWidget {
                 ),
                 if (state.change > 0)
                   AppPill(
-                    icon: Icons.trending_up_rounded,
+                    icon: AppIcons.trendUp,
                     label: l10n.trainingProgressUp(kg(state.change)),
                     color: context.palette.success,
                   ),

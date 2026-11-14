@@ -206,10 +206,6 @@
   "academicExamScore": "{score} de {total} certas",
   "academicExamAnswer": "Responder",
   "academicExamAnswered": "Resposta enviada",
-  "academicExamAbandon": "Abandonar",
-  "academicExamAbandonTitle": "Abandonar o teste simulado?",
-  "academicExamAbandonMessage": "Será fechado sem nota.",
-  "academicExamAbandoned": "Teste simulado abandonado",
   "academicExamFinishTitle": "Terminar o teste simulado?",
   "academicExamFinishPending": "{count, plural, =0{Faltam-te {count} perguntas por responder.} =1{Falta-te 1 pergunta por responder.} other{Faltam-te {count} perguntas por responder.}}",
   "academicExamElapsed": "Tempo decorrido: {time}",
@@ -552,5 +548,6 @@
   "academicFocus": "Concentrar-me",
   "academicSubjectMoreActions": "Mais ações de «{name}»",
   "academicNewDeadline": "Nova entrega",
-  "academicSubjectFocusHere": "Concentrar-me nesta disciplina"
+  "academicSubjectFocusHere": "Concentrar-me nesta disciplina",
+  "academicExamResumeLater": "O teste simulado continua em curso: ao voltar a abri-lo, continuas onde o deixaste."
 }

@@ -26,6 +26,9 @@ class RunWorkoutEditorPage extends StatelessWidget {
   final RunWorkout? workout;
   final String? templateCode;
 
+  /// Resultado al cerrar con «Eliminar»: Correr lo elimina con «Deshacer».
+  static const deleted = 'deleted';
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
@@ -144,6 +147,23 @@ class _EditorViewState extends State<_EditorView> with ErrorsMessageMixin {
                             const RunWorkoutEditorEvent.saveRequested(),
                           ),
                   ),
+                  // Eliminar también desde el detalle, no solo deslizando
+                  // (teclado y quien no puede arrastrar; WCAG 2.5.7).
+                  if (state.workoutId != null) ...[
+                    const SizedBox(height: TokensSpacing.m),
+                    Center(
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: context.colors.error,
+                        ),
+                        onPressed: state.saving
+                            ? null
+                            : () => context.pop(RunWorkoutEditorPage.deleted),
+                        icon: const Icon(AppIcons.delete),
+                        label: Text(l10n.runDeleteWorkout),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

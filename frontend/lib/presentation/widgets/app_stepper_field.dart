@@ -32,6 +32,16 @@ class AppStepperField extends StatefulWidget {
 
   @override
   State<AppStepperField> createState() => _AppStepperFieldState();
+
+  /// La etiqueta dentro de una frase: «Reducir descanso», no «Reducir
+  /// Descanso». Las siglas («RIR») se quedan como están.
+  static String inSentence(String label) {
+    if (label.length < 2) return label;
+    final second = label[1];
+    final isWord =
+        second.toLowerCase() == second && second.toUpperCase() != second;
+    return isWord ? label[0].toLowerCase() + label.substring(1) : label;
+  }
 }
 
 class _AppStepperFieldState extends State<AppStepperField> {
@@ -73,11 +83,11 @@ class _AppStepperFieldState extends State<AppStepperField> {
           Expanded(child: Text(w.label, style: context.textStyles.bodyLarge)),
           IconButton.outlined(
             focusNode: _decrease,
-            tooltip: l10n.commonDecrease(w.label),
+            tooltip: l10n.commonDecrease(AppStepperField.inSentence(w.label)),
             onPressed: _canDecrease
                 ? () => w.onChanged(_clamped(w.value - w.step))
                 : null,
-            icon: const Icon(Icons.remove_rounded),
+            icon: const Icon(AppIcons.decrease),
           ),
           SizedBox(
             width: context.scaled(TokensSize.stepperValue),
@@ -95,11 +105,11 @@ class _AppStepperFieldState extends State<AppStepperField> {
           ),
           IconButton.outlined(
             focusNode: _increase,
-            tooltip: l10n.commonIncrease(w.label),
+            tooltip: l10n.commonIncrease(AppStepperField.inSentence(w.label)),
             onPressed: _canIncrease
                 ? () => w.onChanged(_clamped(w.value + w.step))
                 : null,
-            icon: const Icon(AppIcons.add),
+            icon: const Icon(AppIcons.increase),
           ),
         ],
       ),

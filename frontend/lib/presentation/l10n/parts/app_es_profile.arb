@@ -687,7 +687,7 @@
   "profileHealthConsentWithdrawTitle": "¿Retirar tu permiso?",
   "profileHealthConsentWithdrawMessage": "Dejaremos de adaptar tu entreno y se borrará el registro de hoy. ¿Y los anteriores?",
   "profileHealthConsentWithdrawKeep": "Retirar y guardar los anteriores",
-  "profileHealthConsentWithdrawDelete": "Retirar y borrarlos todos",
+  "profileHealthConsentWithdrawDelete": "Retirar y eliminarlos todos",
   "profileHealthConsentWithdrawn": "Permiso retirado",
   "profileLegalCheckboxRequired": "Marca la casilla para seguir.",
   "profilePermissionLocationTitle": "Ubicación",

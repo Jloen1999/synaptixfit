@@ -20,6 +20,7 @@ import '../../../../../domain/models/challenges/challenge_query.dart';
 import '../../../../../domain/models/progress/streak.dart';
 import '../../../../../domain/use_cases/challenges/list_my_challenges_use_case.dart';
 import '../../../../../domain/use_cases/progress/get_streak_use_case.dart';
+import '../../../../mixins/deferred_commit_mixin.dart';
 
 part 'session_completed_bloc.freezed.dart';
 part 'session_completed_event.dart';
@@ -27,7 +28,8 @@ part 'session_completed_state.dart';
 
 /// Resumen de una sesión finalizada: calorías, experiencia y sugerencias.
 class SessionCompletedBloc
-    extends Bloc<SessionCompletedEvent, SessionCompletedState> {
+    extends Bloc<SessionCompletedEvent, SessionCompletedState>
+    with DeferredCommitMixin<SessionCompletedState> {
   SessionCompletedBloc({
     required this._getSession,
     required this._apply,
@@ -42,7 +44,7 @@ class SessionCompletedBloc
     on<SessionCompletedRecommendationApplied>(_onApply);
     on<SessionCompletedRecommendationDiscarded>(_onDiscard);
     on<SessionCompletedRecommendationRestored>((e, emit) {
-      _pendingDiscards.remove(e.recommendation.id);
+      release(e.recommendation.id);
       emit(
         state.copyWith(
           recommendations: [...state.recommendations, e.recommendation],
@@ -51,10 +53,6 @@ class SessionCompletedBloc
     });
     on<SessionCompletedRecommendationDiscardConfirmed>(_onDiscardConfirmed);
   }
-
-  /// Sugerencias quitadas con el aviso de «Deshacer» aún abierto; si la
-  /// pantalla se cierra antes, se descartan igual.
-  final Set<String> _pendingDiscards = {};
 
   final GetSessionUseCaseContract _getSession;
   final ApplyRecommendationUseCaseContract _apply;
@@ -182,7 +180,7 @@ class SessionCompletedBloc
         .where((r) => r.id == id)
         .firstOrNull;
     if (recommendation == null) return;
-    _pendingDiscards.add(id);
+    defer(id);
     emit(
       state.copyWith(
         recommendations: state.recommendations
@@ -197,19 +195,15 @@ class SessionCompletedBloc
     SessionCompletedRecommendationDiscardConfirmed event,
     Emitter<SessionCompletedState> emit,
   ) async {
-    if (!_pendingDiscards.remove(event.recommendationId)) return;
+    if (!release(event.recommendationId)) return;
     final error = (await _discard(event.recommendationId)).errorOrNull;
     if (error != null) _effect(emit, TrainingEffect.error(error));
   }
 
+  /// Sugerencia quitada con su aviso de «Deshacer» abierto: se descarta al
+  /// cerrarse el aviso o, si la pantalla se cierra antes, al cerrarse el bloc.
   @override
-  Future<void> close() {
-    for (final id in _pendingDiscards) {
-      _discard(id).ignore();
-    }
-    _pendingDiscards.clear();
-    return super.close();
-  }
+  Future<void> commitDeferred(String id) => _discard(id);
 
   void _effect(Emitter<SessionCompletedState> emit, TrainingEffect effect) {
     emit(state.copyWith(effect: effect));

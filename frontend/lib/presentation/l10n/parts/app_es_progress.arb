@@ -85,7 +85,7 @@
   "progressMetricAverageRpe": "Esfuerzo medio",
   "progressLoadTitle": "Cuánto has entrenado · últimos 28 días",
   "progressLoadSubtitle": "Cuanto más alta la barra, más duro fue el día.",
-  "progressLoadSummary": "Hoy {today} · máximo {max} · media {average}",
+  "progressLoadSummary": "Puntos de carga: hoy {today} · máximo {max} · media {average}",
   "@progressLoadSummary": {
     "placeholders": {
       "today": {
@@ -100,7 +100,7 @@
     }
   },
   "progressLoadEmpty": "Aún no hay carga registrada en los últimos 28 días.",
-  "progressLoadSemantics": "Gráfica de carga física de los últimos 28 días. Carga de hoy {today}, máximo diario {max}, media {average}.",
+  "progressLoadSemantics": "Gráfica de carga física de los últimos 28 días. Hoy {today} puntos de carga, máximo diario {max}, media {average}.",
   "@progressLoadSemantics": {
     "placeholders": {
       "today": {
@@ -772,5 +772,15 @@
       }
     }
   },
-  "progressShowMore": "Ver más cifras"
+  "progressShowMore": "Ver más cifras",
+  "progressReviewsAllDone": "Ya no te queda ningún repaso por hacer.",
+  "progressLoadPoints": "{value} puntos",
+  "@progressLoadPoints": {
+    "description": "Carga física de un día en la gráfica (minutos × esfuerzo).",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -26,9 +26,9 @@
   "progressMetricAverageRpe": "Esforço médio",
   "progressLoadTitle": "Quanto treinaste · últimos 28 dias",
   "progressLoadSubtitle": "Quanto mais alta a barra, mais duro foi o dia.",
-  "progressLoadSummary": "Hoje {today} · máximo {max} · média {average}",
+  "progressLoadSummary": "Pontos de carga: hoje {today} · máximo {max} · média {average}",
   "progressLoadEmpty": "Ainda não há carga registada nos últimos 28 dias.",
-  "progressLoadSemantics": "Gráfico da carga física dos últimos 28 dias. Carga de hoje {today}, máximo diário {max}, média {average}.",
+  "progressLoadSemantics": "Gráfico da carga física dos últimos 28 dias. Hoje {today} pontos de carga, máximo diário {max}, média {average}.",
   "progressCommunityTitle": "Comunidade",
   "progressCommunityEmpty": "Ainda não há publicações. Sê o primeiro a partilhar!",
   "progressCommunityLikes": "{count, plural, =0{{count} gostos} =1{1 gosto} other{{count} gostos}}",
@@ -201,5 +201,7 @@
   "progressStreakFreezesAbout": "Dias livres",
   "progressHeadlineStart": "Adicionar ao calendário",
   "progressHeadlineStreakOnly": "{days, plural, =0{Sem sequência} =1{Sequência: 1 dia} other{Sequência: {days} dias}}",
-  "progressShowMore": "Mais números"
+  "progressShowMore": "Mais números",
+  "progressReviewsAllDone": "Já não tens nenhuma revisão por fazer.",
+  "progressLoadPoints": "{value} pontos"
 }

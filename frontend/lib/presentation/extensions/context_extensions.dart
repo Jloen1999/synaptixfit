@@ -72,8 +72,24 @@ extension AppContext on BuildContext {
       onAction: onUndo,
       duration: TokensDuration.undoWindow,
     );
+    // Al salir de la pantalla el aviso se cierra (y confirma): un «Deshacer»
+    // que sobreviviera a su pantalla ya no podría deshacer nada.
+    final animation = ModalRoute.of(this)?.animation;
+    var open = true;
+    void leaving(AnimationStatus status) {
+      if (open &&
+          (status == AnimationStatus.reverse ||
+              status == AnimationStatus.dismissed)) {
+        open = false;
+        controller.close();
+      }
+    }
+
+    animation?.addStatusListener(leaving);
     unawaited(
       controller.closed.then((reason) {
+        open = false;
+        animation?.removeStatusListener(leaving);
         if (reason != SnackBarClosedReason.action) onCommit();
       }),
     );

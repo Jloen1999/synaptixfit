@@ -8,6 +8,7 @@ import com.synaptixfit.domain.model.planner.FocusRewards;
 import com.synaptixfit.domain.model.planner.FocusSession;
 import com.synaptixfit.domain.model.training.TrainingRewards;
 import com.synaptixfit.domain.port.output.badge.UserActivityPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.CompletedWorkoutsSql;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.academic.AcademicDbCodes;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.planner.PlannerPersistenceMapper;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.social.SocialPersistenceMapper;
@@ -23,8 +24,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 /**
- * Lee la actividad del usuario en tablas de otros módulos: Entrenamiento
- * ({@code sesiones_registradas}), Bienestar ({@code estado_diario_usuario}), Planificador
+ * Lee la actividad del usuario en tablas de otros módulos: Entrenamiento (los entrenos hechos de
+ * {@link CompletedWorkoutsSql}: sesiones, actividades apuntadas, carreras y su carga), Bienestar ({@code estado_diario_usuario}), Planificador
  * ({@code horarios_academicos}, {@code planes_estudio}, {@code carga_academica_semanal}, {@code sesiones_focus}),
  * Académico ({@code apuntes}) y Social ({@code actividades_sociales}, {@code interacciones_sociales}).
  */
@@ -44,7 +45,7 @@ public class UserActivityPersistenceAdapter implements UserActivityPort {
      */
     @Override
     public Set<LocalDate> activeDays(UUID userId, ZoneId zone) {
-        Set<LocalDate> days = new HashSet<>(sessionDays(userId, zone));
+        Set<LocalDate> days = new HashSet<>(workoutDays(userId, zone));
         days.addAll(checkInDays(userId));
         days.addAll(focusDays(userId));
         days.addAll(studyDays(userId, zone));
@@ -54,13 +55,16 @@ public class UserActivityPersistenceAdapter implements UserActivityPort {
     @Override
     public BadgeActivitySnapshot snapshot(UUID userId, ZoneId zone) {
         // El umbral de RPE y los tipos de publicación excluidos son reglas del dominio: llegan como parámetros.
+        // Entrenos hechos con la definición única (CompletedWorkoutsSql), la misma que Inicio, Progreso y los retos: una
+        // carrera o actividad suma al total y a los días de entreno; el esfuerzo alto solo cuenta en las sesiones.
         int[] sessions = jdbc.sql("""
                         select count(*) as total,
-                               coalesce(sum(case when rpe >= :highRpe then 1 else 0 end), 0) as high_rpe
-                        from sesiones_registradas where usuario_id = :user and completada_en is not null
-                          and duracion_minutos >= :minMinutes
-                        """)
+                               coalesce(sum(case when e.tipo_entreno = :session and e.rpe >= :highRpe then 1 else 0 end), 0)
+                                   as high_rpe
+                        from %s e where e.usuario_id = :user and %s
+                        """.formatted(CompletedWorkoutsSql.TABLE, CompletedWorkoutsSql.counted("e")))
                 .param("user", userId)
+                .param("session", CompletedWorkoutsSql.FROM_SESSION)
                 .param("minMinutes", TrainingRewards.MIN_COUNTED_MINUTES)
                 .param("highRpe", BadgeActivitySnapshot.HIGH_RPE_MIN)
                 .query((rs, n) -> new int[]{rs.getInt("total"), rs.getInt("high_rpe")})
@@ -75,13 +79,9 @@ public class UserActivityPersistenceAdapter implements UserActivityPort {
                 .query((rs, n) -> new WeeklyStudyLoad(rs.getObject("semana_inicio", LocalDate.class),
                         rs.getInt("horas_estudio_planeadas"), rs.getInt("horas_estudio_reales")))
                 .list();
-        // Una carrera o actividad hecha cuenta como un entreno más (vocabulario.md §3): suma al total y a los
-        // días de entreno, con las mismas filas que Inicio, Progreso y los retos. No tiene esfuerzo (RPE).
-        List<OffsetDateTime> activities = loggedActivityEnds(userId);
-        Set<LocalDate> trainingDays = new HashSet<>(sessionDays(userId, zone));
-        activities.forEach(t -> trainingDays.add(t.atZoneSameInstant(zone).toLocalDate()));
+        Set<LocalDate> trainingDays = workoutDays(userId, zone);
         return new BadgeActivitySnapshot(
-                sessions[0] + activities.size(),
+                sessions[0],
                 sessions[1],
                 trainingDays,
                 checkInDays(userId),
@@ -105,32 +105,16 @@ public class UserActivityPersistenceAdapter implements UserActivityPort {
                 weeks);
     }
 
-    private Set<LocalDate> sessionDays(UUID userId, ZoneId zone) {
-        // Las sesiones demasiado cortas no cuentan (TrainingRewards.countsAsWorkout).
-        return jdbc.sql("select completada_en from sesiones_registradas where usuario_id = :user"
-                        + " and completada_en is not null and duracion_minutos >= :minMinutes")
+    /** Días con algún entreno que cuenta, en la zona de la app (las sesiones demasiado cortas no cuentan). */
+    private Set<LocalDate> workoutDays(UUID userId, ZoneId zone) {
+        return jdbc.sql("select e.terminado_en from %s e where e.usuario_id = :user and %s"
+                        .formatted(CompletedWorkoutsSql.TABLE, CompletedWorkoutsSql.counted("e")))
                 .param("user", userId)
                 .param("minMinutes", TrainingRewards.MIN_COUNTED_MINUTES)
-                .query((rs, n) -> rs.getObject("completada_en", OffsetDateTime.class))
+                .query((rs, n) -> rs.getObject("terminado_en", OffsetDateTime.class))
                 .list().stream()
                 .map(t -> t.atZoneSameInstant(zone).toLocalDate())
                 .collect(Collectors.toSet());
-    }
-
-    /**
-     * Fin de cada actividad hecha (carrera GPS, a mano o al hacer un entreno de carrera): eventos de deporte
-     * completados con su actividad apuntada y, como las sesiones, de al menos
-     * {@value TrainingRewards#MIN_COUNTED_MINUTES} minutos reales.
-     */
-    private List<OffsetDateTime> loggedActivityEnds(UUID userId) {
-        return jdbc.sql("select b.hora_fin from actividades_apuntadas a"
-                        + " join horarios_academicos b on b.id = a.bloque_id"
-                        + " where a.usuario_id = :user and b.completado = true"
-                        + " and a.minutos_reales >= :minMinutes")
-                .param("user", userId)
-                .param("minMinutes", TrainingRewards.MIN_COUNTED_MINUTES)
-                .query((rs, n) -> rs.getObject("hora_fin", OffsetDateTime.class))
-                .list();
     }
 
     private Set<LocalDate> checkInDays(UUID userId) {

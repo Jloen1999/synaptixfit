@@ -75,7 +75,7 @@ class _LoadBars extends StatelessWidget {
             getTooltipColor: (_) => context.colors.inverseSurface,
             getTooltipItem: (group, _, rod, _) => BarTooltipItem(
               '${ProgressFormat.week(days[group.x].date)}\n'
-              '${ProgressFormat.integer(rod.toY)}',
+              '${context.localizations.progressLoadPoints(ProgressFormat.integer(rod.toY))}',
               context.textStyles.labelSmall!.copyWith(
                 color: context.colors.onInverseSurface,
               ),

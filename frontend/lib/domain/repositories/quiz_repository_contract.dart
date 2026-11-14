@@ -50,6 +50,4 @@ abstract interface class QuizRepositoryContract {
   });
 
   Future<AppResult<TestSession>> completeTestSession(String sessionId);
-
-  Future<AppResult<TestSession>> abandonTestSession(String sessionId);
 }

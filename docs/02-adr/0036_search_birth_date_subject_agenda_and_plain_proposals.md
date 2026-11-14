@@ -30,5 +30,5 @@
 - `translate` no es SQL estándar: queda listado en la portabilidad (MySQL compara sin tildes por su intercalación).
 - Un APK anterior sigue funcionando: campos nuevos opcionales, `BIRTHDAY` ignorado por las versiones que no lo conocen y el perfil físico sigue aceptando `age`.
 - Migraciones `V1050` y `V1051`: este cambio tenía reservado ese hueco, pero `V1055` (ADR 0037) ya está en `master`. Producción va por `V1044`, así que allí se aplican en orden. Una base de datos local que ya tenga `V1055` necesita arrancar una vez con `spring.flyway.out-of-order=true` (o recrearse), igual que en ADR 0028.
-- La zona de los días de clase y de «hoy» para la fecha de nacimiento es la de la app (`Europe/Madrid`) o UTC, no la del móvil: basta para un día de diferencia como mucho; si hace falta, se pasará la zona de la persona como en Inicio.
+- La zona de los días de clase y de «hoy» para la fecha de nacimiento es la de la app (`Europe/Madrid`) o UTC, no la del móvil: basta para un día de diferencia como mucho; si hace falta, se pasará la zona de la persona como en Inicio. **Resuelto:** los días de clase usan la zona del móvil desde la tanda 4b y la edad de `GET`/`PATCH /me` también (parámetro `zone`, ADR 0041, «Inventario a cero»).
 - `docs/03-api/openapi.yaml` queda pendiente de regenerar (buscador, cuenta, asignatura, perfil físico, Inicio y plan de avisos).

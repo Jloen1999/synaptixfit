@@ -95,3 +95,9 @@ Decisión del propietario: «la aplicación debe ir al grano, facilitar al usuar
   - **Progreso abre con un titular** («Esta semana: 4 h de estudio · 3 entrenos»), el nivel y la racha en una línea, lo que sigue («Ver 3 repasos pendientes», la próxima insignia) y el resto en «Ver más cifras».
   - **Palabras de todos los días:** «días libres» (no «comodines»), «Estudios del calendario: 6 de 8 hechos» (no «Sin plan»), la fatiga en palabras y la carga física sin fórmulas.
   - **Saltar un día de rutina** no pregunta: «Día saltado» + «Deshacer».
+- **Inventario a cero (ADR 0041):**
+  - **Simulacro:** «Terminar» (con nota); la flecha lo deja en curso para seguirlo. No hay «Abandonar»: lo respondido ya cuenta.
+  - **Repasos:** «Necesita repaso» es lo mismo que «Ver N repasos pendientes»: su fecha ya pasó.
+  - **Eliminar** en los botones (nunca «Borrar»); quitar un evento del calendario es «Quitado del calendario».
+  - **Correr:** un solo «Empezar» destacado (el del entreno de hoy o «Empezar a correr»); los entrenos se eliminan deslizando o desde su editor, con «Deshacer».
+  - **Iconos:** un significado cada uno (`AppIcons`): llama = racha, rayo = kcal, velocímetro = esfuerzo, cronómetro con aguja = ritmo, avance rápido = tramo más rápido, medalla = insignia, flecha al alza = tendencia.

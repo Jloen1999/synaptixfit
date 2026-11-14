@@ -39,6 +39,7 @@ export 'app_step_badge.dart';
 export 'app_stepper_field.dart';
 export 'app_text_field.dart';
 export 'app_tile_grid.dart';
+export 'app_swipe_to_delete.dart';
 export 'app_undo_shortcut.dart';
 export 'app_working_view.dart';
 export 'xp_guide_sheet.dart';

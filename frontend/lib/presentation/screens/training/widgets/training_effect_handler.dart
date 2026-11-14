@@ -56,7 +56,7 @@ class TrainingEffectHandler with ErrorsMessageMixin {
         // Reversible: aviso con «Deshacer» durante la ventana de deshacer.
         if (onUnskipDay != null) {
           context.showActionSnack(
-            l10n.trainingDaySkippedHere,
+            l10n.trainingDaySkipped,
             actionLabel: l10n.commonUndo,
             onAction: () => onUnskipDay(routineId, dayId),
             duration: TokensDuration.undoWindow,

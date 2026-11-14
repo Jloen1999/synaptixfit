@@ -190,6 +190,9 @@ class _EditorViewState extends State<_EditorView>
   DateTime _at(int minutes) =>
       DateTime(_day.year, _day.month, _day.day, minutes ~/ 60, minutes % 60);
 
+  /// 23:59: hora límite por defecto de una entrega.
+  static const _lastMinuteOfDay = 24 * 60 - 1;
+
   /// Inicio real: una entrega ocupa la media hora anterior a su hora límite.
   int get _effectiveStartMin => _type.startMinuteFor(_startMin, _endMin);
 
@@ -202,7 +205,9 @@ class _EditorViewState extends State<_EditorView>
       Navigator.of(context).pop(
         BlockEditorOutcome.deadlineRequested(
           exam: t == BlockType.exam,
-          due: _at(t == BlockType.exam ? _startMin : _endMin),
+          // Un examen empieza a su hora; una entrega vence al final del día
+          // (23:59), igual que «Nueva entrega» de Académico.
+          due: t == BlockType.exam ? _at(_startMin) : _at(_lastMinuteOfDay),
           subjectId: _subjectId,
         ),
       );
@@ -212,7 +217,10 @@ class _EditorViewState extends State<_EditorView>
       _type = t;
       if (t.timeInput == BlockTimeInput.duration &&
           !t.durationOptions.contains(_endMin - _startMin)) {
-        _endMin = (_startMin + t.defaultDuration).clamp(_startMin, 24 * 60 - 1);
+        _endMin = (_startMin + t.defaultDuration).clamp(
+          _startMin,
+          _lastMinuteOfDay,
+        );
       }
     });
   }
@@ -595,7 +603,13 @@ class _EditorViewState extends State<_EditorView>
     final showStep3 = canRepeat || hasReminder;
     final steps = showStep3 ? 3 : 2;
     return ListView(
-      padding: const EdgeInsets.all(TokensSpacing.m),
+      // Más aire al final: lo último no queda pegado al botón fijo del pie.
+      padding: const EdgeInsets.fromLTRB(
+        TokensSpacing.m,
+        TokensSpacing.m,
+        TokensSpacing.m,
+        TokensSpacing.xl,
+      ),
       children: [
         // Acciones del evento arriba del formulario: el pie fijo solo lleva
         // el botón principal (con texto grande no se come la pantalla).
@@ -811,7 +825,13 @@ class _EditorViewState extends State<_EditorView>
               l10n.plannerMoreOptions,
               style: context.textStyles.titleMedium,
             ),
-            subtitle: Text(_advancedLabels(context).join(' · ')),
+            // Una línea: es solo una pista de lo que hay dentro; con dos, el
+            // ListTile no le da alto y la última quedaba cortada.
+            subtitle: Text(
+              _advancedLabels(context).join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             trailing: Icon(
               _moreOptions
                   ? Icons.expand_less_rounded

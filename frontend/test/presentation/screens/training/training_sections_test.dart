@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:synaptixfit/presentation/extensions/context_extensions.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/training/training_routes.dart';
 import 'package:synaptixfit/presentation/screens/training/widgets/training_section_bar.dart';
@@ -64,9 +65,26 @@ void main() {
     expect(find.text('section:gym'), findsOneWidget);
     expect(find.text('Gimnasio'), findsOneWidget);
 
+    // Un aviso con «Deshacer» del apartado que se deja: se cierra y confirma
+    // (su bloc se cierra al cambiar y su «Deshacer» ya no podría deshacer).
+    var undone = false;
+    var committed = false;
+    tester
+        .element(find.text('section:gym'))
+        .showUndoSnack(
+          'Sugerencia descartada',
+          onUndo: () => undone = true,
+          onCommit: () => committed = true,
+        );
+    await tester.pump();
+    expect(find.text('Sugerencia descartada'), findsOneWidget);
+
     await tester.tap(find.text('Correr'));
     await tester.pumpAndSettle();
     expect(find.text('section:run'), findsOneWidget);
+    expect(find.text('Sugerencia descartada'), findsNothing);
+    expect(committed, isTrue);
+    expect(undone, isFalse);
     expect(
       router.routeInformationProvider.value.uri.toString(),
       '/training?section=run',

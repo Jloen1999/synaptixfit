@@ -127,7 +127,7 @@ class _SaveStatus extends StatelessWidget {
         ? (l10n.profileReminderSaving, Icons.sync_rounded)
         : state.saved
         ? (l10n.profileReminderSaved, Icons.check_rounded)
-        : (l10n.remindersAppliesNow, Icons.bolt_rounded);
+        : (l10n.remindersAppliesNow, AppIcons.appliesNow);
     return Semantics(
       liveRegion: true,
       child: AppPill(label: label, icon: icon),

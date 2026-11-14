@@ -14,13 +14,15 @@ import '../../../../../domain/use_cases/planner/get_deadlines_use_case.dart';
 import '../../../../../domain/use_cases/planner/get_planner_subjects_use_case.dart';
 import '../../../../../domain/use_cases/planner/set_deadline_completion_use_case.dart';
 import '../../../../../domain/use_cases/planner/update_deadline_use_case.dart';
+import '../../../../mixins/deferred_commit_mixin.dart';
 
 part 'deadlines_bloc.freezed.dart';
 part 'deadlines_event.dart';
 part 'deadlines_state.dart';
 
 /// Lista de entregas y exámenes con filtros, alta/edición, borrado y completado.
-class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
+class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState>
+    with DeferredCommitMixin<DeadlinesState> {
   DeadlinesBloc({
     required this._getDeadlines,
     required this._getDeadline,
@@ -51,9 +53,6 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
   final DeleteDeadlineUseCaseContract _deleteDeadline;
   final SetDeadlineCompletionUseCaseContract _setCompletion;
   final GetAccountUseCaseContract _getAccount;
-
-  /// Borrados que aún se pueden deshacer, en orden (el último es el de Ctrl+Z).
-  final Set<String> _pendingDeletes = {};
 
   /// Entregas marcadas como hechas que el filtro «Por hacer» sacó de la lista:
   /// «Deshacer» las desmarca aunque ya no se vean, y vuelven a su sitio.
@@ -215,7 +214,7 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
   }
 
   void _onDeleted(DeadlinesDeleted event, Emitter<DeadlinesState> emit) {
-    if (!_pendingDeletes.add(event.id)) return;
+    if (!defer(event.id)) return;
     emit(
       _notice(
         state.copyWith(
@@ -230,7 +229,7 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
     DeadlinesDeleteUndone event,
     Emitter<DeadlinesState> emit,
   ) {
-    if (!_pendingDeletes.remove(event.id)) return;
+    if (!release(event.id)) return;
     emit(
       state.copyWith(
         pendingDeletionIds: {...state.pendingDeletionIds}..remove(event.id),
@@ -242,7 +241,7 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
     DeadlinesDeleteCommitted event,
     Emitter<DeadlinesState> emit,
   ) async {
-    if (!_pendingDeletes.remove(event.id)) return;
+    if (!release(event.id)) return;
     final result = await _deleteDeadline(event.id);
     final pending = {...state.pendingDeletionIds}..remove(event.id);
     switch (result) {
@@ -268,12 +267,7 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
   /// Al salir de la pantalla, lo pendiente se borra ya. Si la app se cierra
   /// antes, no se borra nada: es la dirección segura.
   @override
-  Future<void> close() async {
-    final pending = [..._pendingDeletes];
-    _pendingDeletes.clear();
-    await Future.wait(pending.map((id) => _deleteDeadline(id)));
-    return super.close();
-  }
+  Future<void> commitDeferred(String id) => _deleteDeadline(id);
 
   Future<void> _onCompletion(
     DeadlinesCompletionToggled event,

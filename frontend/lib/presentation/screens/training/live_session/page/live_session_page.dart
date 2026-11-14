@@ -1684,6 +1684,9 @@ class _LeaveSheet extends StatelessWidget {
       );
       return primary
           ? FilledButton(
+              // Foco inicial en la acción principal (relleno: su anillo no
+              // crea un segundo botón destacado).
+              autofocus: true,
               onPressed: () => Navigator.of(context).pop(choice),
               child: child,
             )
@@ -1731,12 +1734,14 @@ class _LeaveSheet extends StatelessWidget {
               primary: false,
             ),
             const SizedBox(height: TokensSpacing.xs),
+            // Sin foco inicial: su anillo lo hacía parecer otro botón destacado
+            // junto a «Pausar y salir» (§4). Cerrar la hoja también sigue.
             TextButton(
-              autofocus: true,
               onPressed: () => Navigator.of(context).pop(_LeaveChoice.stay),
               child: Text(l10n.trainingLeaveStay),
             ),
-            const SizedBox(height: TokensSpacing.xs),
+            // Lo que no guarda, apartado del resto.
+            const SizedBox(height: TokensSpacing.m),
             // Descartar no guarda: aparte de «Terminar» y confirmado.
             TextButton(
               style: TextButton.styleFrom(

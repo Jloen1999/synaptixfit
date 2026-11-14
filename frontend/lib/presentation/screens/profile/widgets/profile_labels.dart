@@ -8,6 +8,7 @@ import '../../../../domain/enums/profile/sex.dart';
 import '../../../../domain/enums/profile/study_modality.dart';
 import '../../../../domain/enums/visibility.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
+import '../../../theme/app_icons.dart';
 
 /// Textos e iconos de los enums del módulo profile.
 extension SexLabel on Sex {
@@ -49,7 +50,7 @@ extension FitnessGoalLabel on FitnessGoal {
   IconData get icon => switch (this) {
     FitnessGoal.hypertrophy => Icons.fitness_center_rounded,
     FitnessGoal.maxStrength => Icons.sports_gymnastics_rounded,
-    FitnessGoal.power => Icons.bolt_rounded,
+    FitnessGoal.power => AppIcons.explosive,
     FitnessGoal.strengthEndurance => Icons.repeat_rounded,
     FitnessGoal.mobility => Icons.self_improvement_rounded,
     FitnessGoal.stability => Icons.balance_rounded,

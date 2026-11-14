@@ -4,7 +4,6 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/academic/quiz.dart';
 import '../../../../../domain/models/account/account.dart';
-import '../../../../../domain/use_cases/academic/abandon_test_session_use_case.dart';
 import '../../../../../domain/use_cases/academic/answer_in_test_session_use_case.dart';
 import '../../../../../domain/use_cases/academic/complete_test_session_use_case.dart';
 import '../../../../../domain/use_cases/academic/get_active_test_session_use_case.dart';
@@ -16,14 +15,14 @@ part 'mock_exam_event.dart';
 part 'mock_exam_state.dart';
 
 /// Simulacro con sesión persistente en el servidor: se puede reanudar,
-/// responder pregunta a pregunta, terminar o abandonar.
+/// responder pregunta a pregunta y terminar. Salir con la flecha lo deja en
+/// curso para seguir luego (no hay «Abandonar»: lo respondido ya cuenta).
 class MockExamBloc extends Bloc<MockExamEvent, MockExamState> {
   MockExamBloc({
     required this._getActive,
     required this._start,
     required this._answer,
     required this._complete,
-    required this._abandon,
     required this._getAccount,
   }) : super(const MockExamState()) {
     on<MockExamStarted>(_onStarted);
@@ -35,14 +34,12 @@ class MockExamBloc extends Bloc<MockExamEvent, MockExamState> {
     );
     on<MockExamAnswerSubmitted>(_onAnswer);
     on<MockExamCompleted>(_onComplete);
-    on<MockExamAbandoned>(_onAbandon);
   }
 
   final GetActiveTestSessionUseCaseContract _getActive;
   final StartTestSessionUseCaseContract _start;
   final AnswerInTestSessionUseCaseContract _answer;
   final CompleteTestSessionUseCaseContract _complete;
-  final AbandonTestSessionUseCaseContract _abandon;
   final GetAccountUseCaseContract _getAccount;
 
   Future<void> _onStarted(
@@ -152,22 +149,6 @@ class MockExamBloc extends Bloc<MockExamEvent, MockExamState> {
         session: completed,
         updatedAccount: account,
         closedSessionId: completed.id,
-      ),
-    );
-  }
-
-  Future<void> _onAbandon(
-    MockExamAbandoned event,
-    Emitter<MockExamState> emit,
-  ) async {
-    final session = state.session;
-    if (session == null) return;
-    emit(state.copyWith(finishing: true, actionError: null));
-    final result = await _abandon(session.id);
-    emit(
-      result.fold(
-        (s) => state.copyWith(finishing: false, session: s, abandoned: true),
-        (error) => state.copyWith(finishing: false, actionError: error),
       ),
     );
   }

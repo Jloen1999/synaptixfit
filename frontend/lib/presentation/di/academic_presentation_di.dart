@@ -177,7 +177,6 @@ void registerAcademicPresentation(GetIt getIt) {
         start: getIt(),
         answer: getIt(),
         complete: getIt(),
-        abandon: getIt(),
         getAccount: getIt(),
       ),
     )

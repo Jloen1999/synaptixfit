@@ -711,9 +711,7 @@ class LoadSuggestionLine extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            l.increases
-                ? Icons.trending_up_rounded
-                : Icons.trending_down_rounded,
+            l.increases ? AppIcons.trendUp : Icons.trending_down_rounded,
             size: TokensSize.iconXs,
             color: color,
           ),

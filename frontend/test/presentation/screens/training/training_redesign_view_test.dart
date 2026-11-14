@@ -277,7 +277,8 @@ void main() {
           expect(find.text('Marcar serie 2'), findsOneWidget);
           expect(find.text('Después: Plancha'), findsOneWidget);
           // Una sola cifra de partida: la de la fila (pirámide: 10 × 35 kg).
-          expect(find.text('Ahora: 10 reps · 35 kg'), findsOneWidget);
+          // Peso y unidad con espacio fijo: «35 kg» no se parte en dos líneas.
+          expect(find.text('Ahora: 10 reps · 35 kg'), findsOneWidget);
           expect(find.text('Terminar'), findsOneWidget);
           // Un solo camino de salida: la flecha de volver.
           expect(find.byTooltip('Salir de la sesión'), findsNothing);

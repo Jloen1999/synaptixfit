@@ -72,7 +72,7 @@ extension ExerciseCategoryLabel on ExerciseCategory {
     ExerciseCategory.stretching => Icons.self_improvement_rounded,
     ExerciseCategory.mobility => Icons.threesixty_rounded,
     ExerciseCategory.cardio => Icons.directions_run_rounded,
-    ExerciseCategory.plyometrics => Icons.bolt_rounded,
+    ExerciseCategory.plyometrics => AppIcons.explosive,
     ExerciseCategory.yoga => Icons.spa_rounded,
     ExerciseCategory.pilates => Icons.waves_rounded,
     ExerciseCategory.isometric => Icons.pause_circle_outline_rounded,
@@ -153,7 +153,7 @@ extension RecommendationTypeLabel on RecommendationType {
   };
 
   IconData get icon => switch (this) {
-    RecommendationType.progression => Icons.trending_up_rounded,
+    RecommendationType.progression => AppIcons.trendUp,
     RecommendationType.degradation => Icons.trending_down_rounded,
     RecommendationType.deload => Icons.battery_charging_full_rounded,
     RecommendationType.variant => Icons.swap_horiz_rounded,

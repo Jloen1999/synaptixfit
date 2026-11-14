@@ -297,45 +297,16 @@ class _MilestoneEditorState extends State<_MilestoneEditor> {
                   ),
                   if (_item.condition == MilestoneCondition.xOfY) ...[
                     const SizedBox(height: TokensSpacing.s),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.challengesTaskConditionN,
-                            style: context.textStyles.bodyMedium,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: l10n.commonDecrease(
-                            l10n.challengesTaskConditionN,
-                          ),
-                          onPressed: _item.conditionN > 1
-                              ? () => setState(
-                                  () => _item = _item.copyWith(
-                                    conditionN: _item.conditionN - 1,
-                                  ),
-                                )
-                              : null,
-                          icon: const Icon(Icons.remove_rounded),
-                        ),
-                        Text(
-                          l10n.challengesConditionXOfY(_item.conditionN, deps),
-                          style: context.textStyles.titleMedium,
-                        ),
-                        IconButton(
-                          tooltip: l10n.commonIncrease(
-                            l10n.challengesTaskConditionN,
-                          ),
-                          onPressed: _item.conditionN < deps
-                              ? () => setState(
-                                  () => _item = _item.copyWith(
-                                    conditionN: _item.conditionN + 1,
-                                  ),
-                                )
-                              : null,
-                          icon: const Icon(AppIcons.add),
-                        ),
-                      ],
+                    // El selector común: conserva el foco en los límites y
+                    // anuncia «2 de 3» al cambiar.
+                    AppStepperField(
+                      label: l10n.challengesTaskConditionN,
+                      value: _item.conditionN,
+                      min: 1,
+                      max: deps,
+                      display: (n) => l10n.challengesConditionXOfY(n, deps),
+                      onChanged: (n) =>
+                          setState(() => _item = _item.copyWith(conditionN: n)),
                     ),
                   ],
                 ],

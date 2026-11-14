@@ -23,9 +23,14 @@ public record AccountResponse(UUID id, String email, String fullName, String ava
     }
 
     public static AccountResponse from(User u, Clock clock) {
+        return from(u, u.ageOn(LocalDate.now(clock)));
+    }
+
+    /** Con la edad que calcula {@code GetAgeTodayUseCase} en el día de la persona. */
+    public static AccountResponse from(User u, Integer age) {
         return new AccountResponse(u.id(), u.email(), u.fullName(), u.avatarUrl(), u.level(), u.levelXp(),
                 u.levelThreshold(), u.streak(), u.privacy(), u.role().name(), u.hasPassword(),
                 u.googleSubject() != null, u.effectiveFocus(), u.focusChosen(), u.birthDate(),
-                u.ageOn(LocalDate.now(clock)), u.createdAt());
+                age, u.createdAt());
     }
 }

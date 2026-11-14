@@ -172,6 +172,26 @@ abstract class PlannedRun with _$PlannedRun {
   }) = _PlannedRun;
 }
 
+/// El entreno de carrera que toca hoy: el primero del calendario de hoy que
+/// aún no ha terminado. Su «Empezar» es el único destacado de Correr
+/// (vocabulario §4: una acción principal por pantalla).
+extension PlannedRunsToday on List<PlannedRun> {
+  PlannedRun? dueToday(DateTime now) {
+    final sorted = [...this]..sort((a, b) => a.start.compareTo(b.start));
+    final local = now.toLocal();
+    for (final p in sorted) {
+      final day = p.start.toLocal();
+      if (day.year == local.year &&
+          day.month == local.month &&
+          day.day == local.day &&
+          p.end.isAfter(now)) {
+        return p;
+      }
+    }
+    return null;
+  }
+}
+
 /// Carrera en curso o terminada pendiente de subir, guardada en el teléfono:
 /// así no se pierde nada si se cierra la app o se reinicia el móvil.
 @freezed

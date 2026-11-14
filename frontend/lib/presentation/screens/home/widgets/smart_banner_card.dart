@@ -106,7 +106,7 @@ class SmartBannerContent {
         actionPath: HomeExternalPaths.pomodoroBreak,
       ),
       HomeBannerType.peakDay => SmartBannerContent(
-        icon: Icons.bolt_rounded,
+        icon: AppIcons.upNext,
         title: l10n.homeBannerPeakDayTitle,
         message: l10n.homeBannerPeakDayMessage,
         tone: SmartBannerTone.positive,

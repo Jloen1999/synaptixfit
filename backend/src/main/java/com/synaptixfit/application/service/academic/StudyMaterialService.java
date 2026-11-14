@@ -156,7 +156,7 @@ public class StudyMaterialService implements RegisterStudyMaterialUseCase, ListS
     @Override
     public RetentionMetrics retention(UUID userId, UUID subjectId) {
         Subject s = lookups.subject(userId, subjectId);
-        return RetentionMetrics.of(materials.findByUser(userId, s.id()));
+        return RetentionMetrics.of(materials.findByUser(userId, s.id()), clock.instant());
     }
 
     @Override

@@ -80,11 +80,14 @@ class OpenSessionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: TokensSpacing.s),
-          OverflowBar(
-            alignment: MainAxisAlignment.end,
-            overflowAlignment: OverflowBarAlignment.end,
-            spacing: TokensSpacing.xs,
-            overflowSpacing: TokensSpacing.xs,
+          // Descartar (no guarda) a un lado y Terminar o Continuar al otro:
+          // separados para no pulsar uno por otro (vocabulario §4). Con texto
+          // grande pasan a dos líneas en el mismo orden.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: TokensSpacing.l,
+            runSpacing: TokensSpacing.xs,
             children: [
               // Descartar no guarda: en rojo, como en la hoja de salir de la
               // sesión (un color por verbo, vocabulario §4).
@@ -113,7 +116,7 @@ class OpenSessionCard extends StatelessWidget {
                       : () async {
                           final figures = await showSessionFiguresDialog(
                             context,
-                            confirmLabel: l10n.trainingFinishAction,
+                            confirmLabel: l10n.commonSave,
                             subtitle: title,
                           );
                           if (figures != null) onFinish(figures);

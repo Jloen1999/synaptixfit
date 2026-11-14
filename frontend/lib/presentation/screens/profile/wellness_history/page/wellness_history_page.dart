@@ -66,7 +66,7 @@ class _WellnessHistoryView extends StatelessWidget {
                     AppSectionHeader(title: l10n.profileWeightHistoryTitle),
                     if (state.weights.isEmpty)
                       AppEmptyState(
-                        icon: Icons.monitor_weight_outlined,
+                        icon: AppIcons.bodyWeight,
                         title: l10n.profileWeightHistoryEmpty,
                         message: l10n.profileWeightHistoryEmptyHint,
                       )

@@ -108,10 +108,4 @@ class QuizRepository implements QuizRepositoryContract {
       RepositoryErrorHandler.guard(
         () async => (await _remote.complete(sessionId)).toDomain(),
       );
-
-  @override
-  Future<AppResult<TestSession>> abandonTestSession(String sessionId) =>
-      RepositoryErrorHandler.guard(
-        () async => (await _remote.abandon(sessionId)).toDomain(),
-      );
 }

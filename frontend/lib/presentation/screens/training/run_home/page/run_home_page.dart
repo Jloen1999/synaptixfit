@@ -19,6 +19,7 @@ import '../../widgets/run_labels.dart';
 import '../../widgets/run_map.dart';
 import '../../widgets/training_content.dart';
 import '../../widgets/training_section_bar.dart';
+import '../../run_workout_editor/page/run_workout_editor_page.dart';
 import '../bloc/run_home_bloc.dart';
 import 'run_battery_sheet.dart';
 
@@ -43,15 +44,16 @@ class _RunHomeView extends StatelessWidget with ErrorsMessageMixin {
   /// Tope de espera de «tirar para recargar» si el bloc no emite nada nuevo.
   static const _refreshWait = Duration(seconds: 10);
 
-  /// Abre una pantalla y recarga al volver.
-  static Future<void> open(
+  /// Abre una pantalla y recarga al volver; devuelve lo que diga al cerrarse.
+  static Future<Object?> open(
     BuildContext context,
     String location, {
     Object? extra,
   }) async {
     final bloc = context.read<RunHomeBloc>();
-    await context.push(location, extra: extra);
+    final result = await context.push<Object?>(location, extra: extra);
     if (!bloc.isClosed) bloc.add(const RunHomeEvent.refreshed());
+    return result;
   }
 
   void _listen(BuildContext context, RunHomeState state) {
@@ -223,23 +225,32 @@ class _Content extends StatelessWidget {
     bloc.add(RunHomeEvent.workoutScheduled(workout.id!, start));
   }
 
-  Future<void> _delete(BuildContext context, RunWorkout workout) async {
-    final l10n = context.localizations;
-    final ok = await showConfirmDialog(
-      context,
-      title: l10n.runDeleteWorkoutTitle,
-      message: l10n.runDeleteWorkoutMessage,
-      confirmLabel: l10n.runDeleteWorkout,
+  /// Eliminar es reversible un rato: sin confirmar, con «Deshacer» (§4). Las
+  /// carreras grabadas y los eventos del calendario no se tocan.
+  void _delete(BuildContext context, RunWorkout workout) {
+    final bloc = context.read<RunHomeBloc>();
+    final id = workout.id!;
+    bloc.add(RunHomeEvent.workoutDeleted(id));
+    context.showUndoSnack(
+      context.localizations.runWorkoutDeleted,
+      onUndo: () {
+        if (!bloc.isClosed) bloc.add(RunHomeEvent.workoutDeleteUndone(id));
+      },
+      onCommit: () {
+        if (!bloc.isClosed) bloc.add(RunHomeEvent.workoutDeleteCommitted(id));
+      },
     );
-    if (ok && context.mounted) {
-      context.read<RunHomeBloc>().add(RunHomeEvent.workoutDeleted(workout.id!));
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final unfinished = state.unfinished;
+    // Un solo «Empezar» destacado: el de la carrera a medias, si no el del
+    // entreno de hoy y, si no hay, «Empezar a correr» (vocabulario §4).
+    final today = unfinished == null
+        ? state.planned.dueToday(DateTime.now())
+        : null;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
@@ -309,8 +320,23 @@ class _Content extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: TokensSpacing.m),
-                // Con una carrera a medias, lo principal es seguirla.
-                if (unfinished == null)
+                // Con un entreno para hoy, su «Empezar» va arriba y es el
+                // único destacado; con una carrera a medias, lo es seguirla.
+                if (today != null) ...[
+                  AppPrimaryButton(
+                    label: l10n.runStartNamed(today.workoutName),
+                    icon: Icons.play_arrow_rounded,
+                    onPressed: () => _RunHomeView.open(
+                      context,
+                      TrainingPaths.recordRun(
+                        workoutId: today.workoutId,
+                        eventId: today.blockId,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: TokensSpacing.s),
+                ],
+                if (unfinished == null && today == null)
                   AppPrimaryButton(
                     label: l10n.runStart,
                     icon: Icons.directions_run_rounded,
@@ -369,7 +395,12 @@ class _Content extends StatelessWidget {
                 AppSectionHeader(title: l10n.runPlannedTitle),
                 const SizedBox(height: TokensSpacing.s),
                 for (final p in state.planned) ...[
-                  _PlannedTile(planned: p, supported: state.supported),
+                  _PlannedTile(
+                    planned: p,
+                    supported: state.supported,
+                    // El de hoy ya está arriba, destacado.
+                    highlighted: false,
+                  ),
                   const SizedBox(height: TokensSpacing.s),
                 ],
               ],
@@ -412,16 +443,28 @@ class _Content extends StatelessWidget {
                 )
               else
                 for (final w in state.workouts) ...[
-                  _WorkoutTile(
-                    workout: w,
-                    supported: state.supported,
-                    onSchedule: () => _schedule(context, w),
-                    onEdit: () => _RunHomeView.open(
-                      context,
-                      TrainingPaths.runWorkout(w.id!),
-                      extra: w,
-                    ),
+                  AppSwipeToDelete(
+                    itemKey: ValueKey('run-workout-${w.id}'),
+                    label: l10n.runDeleteWorkout,
+                    semanticLabel: l10n.runDeleteWorkoutNamed(w.name),
+                    enabled: w.id != null,
                     onDelete: () => _delete(context, w),
+                    child: _WorkoutTile(
+                      workout: w,
+                      supported: state.supported,
+                      onSchedule: () => _schedule(context, w),
+                      onEdit: () async {
+                        final result = await _RunHomeView.open(
+                          context,
+                          TrainingPaths.runWorkout(w.id!),
+                          extra: w,
+                        );
+                        if (result == RunWorkoutEditorPage.deleted &&
+                            context.mounted) {
+                          _delete(context, w);
+                        }
+                      },
+                    ),
                   ),
                   const SizedBox(height: TokensSpacing.s),
                 ],
@@ -450,10 +493,17 @@ class _Content extends StatelessWidget {
 }
 
 class _PlannedTile extends StatelessWidget {
-  const _PlannedTile({required this.planned, required this.supported});
+  const _PlannedTile({
+    required this.planned,
+    required this.supported,
+    required this.highlighted,
+  });
 
   final PlannedRun planned;
   final bool supported;
+
+  /// El entreno de hoy: su «Empezar» es la acción principal de Correr.
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -480,8 +530,11 @@ class _PlannedTile extends StatelessWidget {
               ],
             ),
           ),
-          if (supported)
-            FilledButton.tonal(
+          if (supported) ...[
+            const SizedBox(width: TokensSpacing.s),
+            _StartButton(
+              highlighted: highlighted,
+              name: planned.workoutName,
               onPressed: () => _RunHomeView.open(
                 context,
                 TrainingPaths.recordRun(
@@ -489,11 +542,8 @@ class _PlannedTile extends StatelessWidget {
                   eventId: planned.blockId,
                 ),
               ),
-              child: Text(
-                l10n.runStartShort,
-                semanticsLabel: l10n.runStartNamed(planned.workoutName),
-              ),
             ),
+          ],
         ],
       ),
     );
@@ -506,14 +556,12 @@ class _WorkoutTile extends StatelessWidget {
     required this.supported,
     required this.onSchedule,
     required this.onEdit,
-    required this.onDelete,
   });
 
   final RunWorkout workout;
   final bool supported;
   final VoidCallback onSchedule;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -543,13 +591,7 @@ class _WorkoutTile extends StatelessWidget {
             overflowAlignment: OverflowBarAlignment.end,
             spacing: TokensSpacing.xs,
             children: [
-              // Con el nombre: en la lista hay varios entrenos y el lector
-              // no debe oír «Borrar entreno» repetido sin saber cuál.
-              IconButton(
-                tooltip: l10n.runDeleteWorkoutNamed(workout.name),
-                onPressed: onDelete,
-                icon: const Icon(AppIcons.delete),
-              ),
+              // Eliminar: deslizando la tarjeta, con «Deshacer» (§4).
               IconButton(
                 tooltip: l10n.runEditWorkoutNamed(workout.name),
                 onPressed: onEdit,
@@ -561,15 +603,12 @@ class _WorkoutTile extends StatelessWidget {
                 label: Text(l10n.runPutInCalendar),
               ),
               if (supported)
-                FilledButton.icon(
+                _StartButton(
+                  highlighted: false,
+                  name: workout.name,
                   onPressed: () => _RunHomeView.open(
                     context,
                     TrainingPaths.recordRun(workoutId: workout.id),
-                  ),
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: Text(
-                    l10n.runStartShort,
-                    semanticsLabel: l10n.runStartNamed(workout.name),
                   ),
                 ),
             ],
@@ -577,6 +616,33 @@ class _WorkoutTile extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// «Empezar» de un entreno: relleno solo el que toca hoy; el resto, con borde.
+/// Lleva el nombre para el lector (en la lista hay varios).
+class _StartButton extends StatelessWidget {
+  const _StartButton({
+    required this.highlighted,
+    required this.name,
+    required this.onPressed,
+  });
+
+  final bool highlighted;
+  final String name;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.localizations;
+    final label = Text(
+      l10n.runStartShort,
+      semanticsLabel: l10n.runStartNamed(name),
+    );
+    const icon = Icon(Icons.play_arrow_rounded);
+    return highlighted
+        ? FilledButton.icon(onPressed: onPressed, icon: icon, label: label)
+        : OutlinedButton.icon(onPressed: onPressed, icon: icon, label: label);
   }
 }
 

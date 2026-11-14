@@ -5,7 +5,9 @@ import 'package:synaptixfit/domain/enums/post_type.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/result/app_result.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/enums/training_enums.dart';
 import 'package:synaptixfit/domain/models/social/post.dart';
+import 'package:synaptixfit/domain/models/training/recommendation.dart';
 import 'package:synaptixfit/domain/models/training/session_history.dart';
 import 'package:synaptixfit/domain/use_cases/social/create_post_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/training/apply_recommendation_use_case.dart';
@@ -37,6 +39,14 @@ void main() {
   late _GetSession getSession;
   late _Highlights getHighlights;
   late _CreatePost createPost;
+  late _Discard discard;
+
+  const recommendation = Recommendation(
+    id: 'r1',
+    type: RecommendationType.progression,
+    title: 'Sube el peso',
+    applied: false,
+  );
 
   const highlights = SessionHighlights(
     volumeKg: 1040,
@@ -51,6 +61,8 @@ void main() {
     getSession = _GetSession();
     getHighlights = _Highlights();
     createPost = _CreatePost();
+    discard = _Discard();
+    when(() => discard(any())).thenAnswer((_) async => const Success(unit));
     when(() => getSession('s1')).thenAnswer(
       (_) async => Success(
         TrainingFixtures.session(startedAt: DateTime(2026, 10, 25, 10)),
@@ -71,12 +83,65 @@ void main() {
   SessionCompletedBloc build() => SessionCompletedBloc(
     getSession: getSession,
     apply: _Apply(),
-    discard: _Discard(),
+    discard: discard,
     getHighlights: getHighlights,
     createPost: createPost,
     getStreak: _Streak(),
     listChallenges: _Challenges(),
   );
+
+  group('descarte diferido de una sugerencia', () {
+    blocTest<SessionCompletedBloc, SessionCompletedState>(
+      'se quita al momento y se descarta al cerrarse el aviso',
+      build: build,
+      seed: () =>
+          const SessionCompletedState(recommendations: [recommendation]),
+      act: (bloc) async {
+        bloc.add(const SessionCompletedEvent.recommendationDiscarded('r1'));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.recommendations, isEmpty);
+        verifyNever(() => discard(any()));
+        bloc.add(
+          const SessionCompletedEvent.recommendationDiscardConfirmed('r1'),
+        );
+      },
+      verify: (_) => verify(() => discard('r1')).called(1),
+    );
+
+    blocTest<SessionCompletedBloc, SessionCompletedState>(
+      '«Deshacer» la devuelve y no se descarta nunca',
+      build: build,
+      seed: () =>
+          const SessionCompletedState(recommendations: [recommendation]),
+      act: (bloc) async {
+        bloc.add(const SessionCompletedEvent.recommendationDiscarded('r1'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(
+          const SessionCompletedEvent.recommendationRestored(recommendation),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // El aviso se cierra después por «Deshacer»: no confirma nada.
+        bloc.add(
+          const SessionCompletedEvent.recommendationDiscardConfirmed('r1'),
+        );
+      },
+      verify: (bloc) {
+        expect(bloc.state.recommendations, [recommendation]);
+        verifyNever(() => discard(any()));
+      },
+    );
+
+    // blocTest cierra el bloc después de `act`: `verify` ve lo que hizo close.
+    blocTest<SessionCompletedBloc, SessionCompletedState>(
+      'si la pantalla se cierra con el aviso abierto, se descarta igual',
+      build: build,
+      seed: () =>
+          const SessionCompletedState(recommendations: [recommendation]),
+      act: (bloc) =>
+          bloc.add(const SessionCompletedEvent.recommendationDiscarded('r1')),
+      verify: (_) => verify(() => discard('r1')).called(1),
+    );
+  });
 
   blocTest<SessionCompletedBloc, SessionCompletedState>(
     'carga lo destacado de la sesión después de mostrarla',

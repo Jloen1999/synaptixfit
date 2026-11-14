@@ -40,6 +40,16 @@ class _PomodoroPageState extends State<PomodoroPage> {
   final _bloc = getIt<PomodoroBloc>();
   bool _started = false;
 
+  /// Botón principal del reloj: recibe el foco al responder «¿Terminaste este
+  /// bloque?», que desaparece (WCAG 2.4.3).
+  final _mainControl = FocusNode();
+
+  @override
+  void dispose() {
+    _mainControl.dispose();
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -60,7 +70,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
   @override
   Widget build(BuildContext context) => BlocProvider.value(
     value: _bloc,
-    child: _PomodoroView(title: widget.title),
+    child: _PomodoroView(title: widget.title, mainControl: _mainControl),
   );
 }
 
@@ -86,9 +96,10 @@ PomodoroAlertTexts pomodoroAlertTexts(BuildContext context) {
 }
 
 class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
-  const _PomodoroView({this.title});
+  const _PomodoroView({this.title, required this.mainControl});
 
   final String? title;
+  final FocusNode mainControl;
 
   static String _phaseLabel(BuildContext context, FocusPhase phase) {
     final l10n = context.localizations;
@@ -204,6 +215,7 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                   if (state.blockCheck == BlockCheck.asking ||
                       state.blockCheck == BlockCheck.saving) ...[
                     _BlockDoneCard(
+                      mainControl: mainControl,
                       title: title,
                       saving: state.blockCheck == BlockCheck.saving,
                     ),
@@ -279,7 +291,7 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
                     ),
                   ],
                   const SizedBox(height: TokensSpacing.l),
-                  _Controls(state: state),
+                  _Controls(state: state, mainControl: mainControl),
                   // Con una fase en marcha, salir no la para: se dice para que
                   // nadie se quede en esta pantalla «por si acaso».
                   if (state.status == PomodoroStatus.running) ...[
@@ -305,10 +317,16 @@ class _PomodoroView extends StatelessWidget with ErrorsMessageMixin {
 }
 
 /// «¿Terminaste este bloque?» tras una concentración ligada a un bloque:
-/// «Sí, está hecho» lo marca en el calendario (da su XP); «Aún no» la cierra
+/// «Marcar como hecho» lo marca en el calendario (da su XP); «Aún no» la cierra
 /// y se sigue con el Pomodoro.
 class _BlockDoneCard extends StatelessWidget {
-  const _BlockDoneCard({required this.title, required this.saving});
+  const _BlockDoneCard({
+    required this.title,
+    required this.saving,
+    required this.mainControl,
+  });
+
+  final FocusNode mainControl;
 
   final String? title;
   final bool saving;
@@ -319,11 +337,13 @@ class _BlockDoneCard extends StatelessWidget {
     final bloc = context.read<PomodoroBloc>();
     final onColor = context.colors.onPrimaryContainer;
     final name = title;
-    // La tarjeta desaparece al responder: el foco pasa al siguiente control
-    // (el selector o «Empezar») en lugar de perderse.
+    // La tarjeta desaparece al responder: el foco pasa al botón principal del
+    // reloj en lugar de perderse (WCAG 2.4.3).
     void answer(bool done) {
-      FocusScope.of(context).nextFocus();
       bloc.add(PomodoroEvent.blockDoneAnswered(done: done));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mainControl.context != null) mainControl.requestFocus();
+      });
     }
 
     return Semantics(
@@ -342,11 +362,6 @@ class _BlockDoneCard extends StatelessWidget {
                 style: context.textStyles.titleMedium?.copyWith(color: onColor),
               ),
             ),
-            const SizedBox(height: TokensSpacing.xxs),
-            Text(
-              l10n.plannerPomodoroBlockHint,
-              style: context.textStyles.bodyMedium?.copyWith(color: onColor),
-            ),
             const SizedBox(height: TokensSpacing.s),
             Wrap(
               spacing: TokensSpacing.s,
@@ -354,9 +369,9 @@ class _BlockDoneCard extends StatelessWidget {
               children: [
                 AppPrimaryButton(
                   loading: saving,
-                  icon: Icons.check_rounded,
+                  icon: AppIcons.markDone,
                   onPressed: () => answer(true),
-                  label: l10n.plannerPomodoroBlockYes,
+                  label: l10n.plannerMarkCompleted,
                 ),
                 TextButton(
                   onPressed: saving ? null : () => answer(false),
@@ -420,9 +435,10 @@ class _SubjectPicker extends StatelessWidget {
 }
 
 class _Controls extends StatelessWidget {
-  const _Controls({required this.state});
+  const _Controls({required this.state, required this.mainControl});
 
   final PomodoroState state;
+  final FocusNode mainControl;
 
   @override
   Widget build(BuildContext context) {
@@ -449,14 +465,28 @@ class _Controls extends StatelessWidget {
     // Cada botón dice lo que hace (antes, iconos sueltos de «siguiente» y
     // «reiniciar»): el principal, en grande; cambiar de fase y empezar de
     // cero, debajo y con texto (vocabulario, «Pomodoro»).
+    // Mientras se pregunta si el bloque está hecho, esa respuesta es la acción
+    // principal (vocabulario §4: un solo botón destacado).
+    final asking =
+        state.blockCheck == BlockCheck.asking ||
+        state.blockCheck == BlockCheck.saving;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppPrimaryButton(
-          label: label,
-          icon: icon,
-          onPressed: () => bloc.add(event),
-        ),
+        if (asking)
+          AppSecondaryButton(
+            label: label,
+            icon: Icon(icon),
+            focusNode: mainControl,
+            onPressed: () => bloc.add(event),
+          )
+        else
+          AppPrimaryButton(
+            label: label,
+            icon: icon,
+            focusNode: mainControl,
+            onPressed: () => bloc.add(event),
+          ),
         // Antes de empezar, solo «Empezar a concentrarme» (una acción).
         if (!state.untouched) ...[
           const SizedBox(height: TokensSpacing.s),

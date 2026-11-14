@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
+import '../api/device_zone.dart';
 import 'dto/account_dto.dart';
 import 'dto/auth_response_dto.dart';
 
@@ -49,14 +50,20 @@ class AuthRemoteDataSource {
     data: {'refreshToken': refreshToken},
   );
 
+  // La zona del móvil hace que la edad cambie el mismo día que la tarjeta de
+  // cumpleaños de Inicio (ADR 0036).
   Future<AccountDto> me() async {
-    final response = await _dio.get<Map<String, dynamic>>('/api/v1/me');
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/me',
+      queryParameters: {'zone': deviceZoneOffset()},
+    );
     return AccountDto.fromJson(response.data!);
   }
 
   Future<AccountDto> updateMe(Map<String, dynamic> changes) async {
     final response = await _dio.patch<Map<String, dynamic>>(
       '/api/v1/me',
+      queryParameters: {'zone': deviceZoneOffset()},
       data: changes,
     );
     return AccountDto.fromJson(response.data!);

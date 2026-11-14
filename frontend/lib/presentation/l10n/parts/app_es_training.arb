@@ -1335,7 +1335,7 @@
   "trainingSessionDetailNoSets": "Sin series apuntadas",
   "trainingLivePrevious": "Ejercicio anterior",
   "trainingLiveNext": "Ejercicio siguiente",
-  "trainingTargetWithWeight": "{main} · {weight} kg",
+  "trainingTargetWithWeight": "{main} · {weight} kg",
   "@trainingTargetWithWeight": {
     "placeholders": {
       "main": {
@@ -1894,9 +1894,9 @@
   "trainingNoteFieldLabel": "Tu nota sobre este ejercicio",
   "trainingNoteFieldHint": "Ej.: asiento en el 4, agarre ancho",
   "trainingNoteSave": "Guardar nota",
-  "trainingNoteDelete": "Borrar nota",
+  "trainingNoteDelete": "Eliminar nota",
   "trainingNoteSaved": "Nota guardada",
-  "trainingNoteDeleted": "Nota borrada",
+  "trainingNoteDeleted": "Nota eliminada",
   "trainingNoteLoadError": "No se pudo cargar tu nota.",
   "trainingWorksLabel": "Músculos",
   "trainingEquipmentLabel": "Material",
@@ -2188,7 +2188,7 @@
   "trainingCycleEntryHint": "Opcional: apunta tu regla y ajustamos el entreno.",
   "trainingCycleIntroTitle": "Entrena según cómo te sientes",
   "trainingCycleIntro": "Apunta la regla, tu energía y las molestias. Los días flojos, el entreno será más suave.",
-  "trainingCyclePrivacy": "Datos de salud: solo los ves tú. Bórralos con «Borrar todo lo apuntado».",
+  "trainingCyclePrivacy": "Datos de salud: solo los ves tú. Puedes quitarlos con «Eliminar todo lo apuntado».",
   "trainingCycleConsent": "Acepto que SynaptixFit guarde estos datos para ajustar mi entreno",
   "trainingCycleEnable": "Activar",
   "trainingCycleDayOf": "Día {day} del ciclo",
@@ -2228,8 +2228,8 @@
   "trainingCycleNote": "Nota (opcional)",
   "trainingCycleSave": "Guardar el día",
   "trainingCycleSaved": "Día guardado",
-  "trainingCycleDeleteDay": "Borrar este día",
-  "trainingCycleDayDeleted": "Día borrado",
+  "trainingCycleDeleteDay": "Eliminar este día",
+  "trainingCycleDayDeleted": "Día eliminado",
   "trainingCycleDaySheetTitle": "Apuntar {date}",
   "@trainingCycleDaySheetTitle": {
     "placeholders": {
@@ -2272,12 +2272,12 @@
   "trainingCycleDisableTitle": "¿Desactivar el seguimiento?",
   "trainingCycleDisableMessage": "El entreno dejará de tenerlo en cuenta. ¿Quieres guardar lo que has apuntado o borrarlo?",
   "trainingCycleDisableKeep": "Desactivar y guardar",
-  "trainingCycleDisableDelete": "Desactivar y borrar todo",
-  "trainingCycleDeleteAll": "Borrar todo lo apuntado",
-  "trainingCycleDeleteAllTitle": "¿Borrar todo lo apuntado?",
+  "trainingCycleDisableDelete": "Desactivar y eliminar todo",
+  "trainingCycleDeleteAll": "Eliminar todo lo apuntado",
+  "trainingCycleDeleteAllTitle": "¿Eliminar todo lo apuntado?",
   "trainingCycleDeleteAllMessage": "Se borran todos los días del ciclo. No se puede deshacer.",
-  "trainingCycleDeleteAllConfirm": "Borrar todo",
-  "trainingCycleHistoryDeleted": "Lo apuntado se ha borrado",
+  "trainingCycleDeleteAllConfirm": "Eliminar todo",
+  "trainingCycleHistoryDeleted": "Lo apuntado se ha eliminado",
   "trainingCycleDisabled": "Desactivado. Para volver a activarlo: «¿Qué tal estás hoy?» › «Mi ciclo».",
   "trainingAdaptedCycle": "Molestias o poca energía que apuntaste hoy",
   "trainingQuickCheckInTitle": "¿Qué tal estás hoy?",
@@ -2466,7 +2466,6 @@
   "trainingErrorHealthConsentRequired": "Antes de apuntar cómo te encuentras, danos tu permiso para guardarlo.",
   "trainingSectionGym": "Gimnasio",
   "trainingSectionRun": "Correr",
-  "trainingDaySkippedHere": "Día saltado.",
   "trainingPlanThisWeek": "Esta semana: {type}. {why}",
   "@trainingPlanThisWeek": {
     "placeholders": {
@@ -2720,9 +2719,7 @@
   "runWorkoutsEmptyTitle": "Aún no tienes entrenos de carrera",
   "runWorkoutsEmptyMessage": "Un entreno te guía paso a paso mientras corres.",
   "runEditWorkout": "Cambiar entreno",
-  "runDeleteWorkout": "Borrar entreno",
-  "runDeleteWorkoutTitle": "¿Borrar este entreno?",
-  "runDeleteWorkoutMessage": "Las carreras que ya grabaste y los eventos del calendario se quedan como están.",
+  "runDeleteWorkout": "Eliminar",
   "runBatteryHelp": "¿Se corta el GPS con la pantalla apagada?",
   "runBatteryTitle": "Que no se corte el GPS",
   "runBatteryIntro": "Si la ruta sale con saltos o se para, haz esto una vez:",
@@ -2855,8 +2852,8 @@
       }
     }
   },
-  "runDelete": "Borrar carrera",
-  "runDeleted": "Carrera borrada",
+  "runDelete": "Eliminar carrera",
+  "runDeleted": "Carrera eliminada",
   "runDeletedHint": "Ya no cuenta en tu semana.",
   "runUndo": "Deshacer",
   "runWorkoutName": "Nombre del entreno",
@@ -2925,9 +2922,9 @@
       }
     }
   },
-  "runDeleteWorkoutNamed": "Borrar «{name}»",
+  "runDeleteWorkoutNamed": "Eliminar «{name}»",
   "@runDeleteWorkoutNamed": {
-    "description": "Botón de borrar un entreno de carrera concreto.",
+    "description": "Acción para el lector y el deslizar de un entreno de carrera concreto.",
     "placeholders": {
       "name": {
         "type": "String"
@@ -3068,5 +3065,6 @@
   "trainingRecommendationsShow": "Ver sugerencias",
   "trainingCheckInAutoSaveHint": "Se guarda al contestar la tercera pregunta.",
   "trainingCheckInChangeHint": "Cambia lo que quieras y toca «Guardar cambios».",
-  "trainingAdaptedDeclined": "Hoy harás todas las series."
+  "trainingAdaptedDeclined": "Hoy harás todas las series.",
+  "runWorkoutDeleted": "Entreno eliminado"
 }

@@ -8,6 +8,7 @@ import com.synaptixfit.domain.model.dashboard.DashboardReadModels.CalendarBlock;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.Deadline;
 import com.synaptixfit.domain.model.dashboard.DashboardReadModels.TrainingTotals;
 import com.synaptixfit.domain.port.output.dashboard.DashboardReadPort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.CompletedWorkoutsSql;
 import com.synaptixfit.infrastructure.adapter.output.persistence.mapper.planner.PlannerPersistenceMapper;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,8 +19,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 /**
- * Lecturas con {@link JdbcClient} para el inicio: {@code sesiones_registradas},
- * {@code plan_entrenamiento_semanal} (entrenamiento), {@code horarios_academicos}, {@code entregas_examenes} (planificador),
+ * Lecturas con {@link JdbcClient} para el inicio: los entrenos hechos ({@link CompletedWorkoutsSql}: sesiones,
+ * actividades apuntadas, carreras y su carga), {@code plan_entrenamiento_semanal} (entrenamiento), {@code horarios_academicos}, {@code entregas_examenes} (planificador),
  * {@code asignaturas} (académico). Solo acceso a datos: los retos y su progreso los da el módulo de retos.
  */
 @Repository
@@ -33,24 +34,14 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
 
     @Override
     public TrainingTotals trainingTotals(UUID userId, Instant from, Instant to) {
-        // Igual que Progreso (AnalyticsJdbcAdapter.completedTrainingSessions): sesiones de gimnasio más las
+        // Entrenos hechos con la definición única (CompletedWorkoutsSql), igual que Progreso: sesiones de gimnasio y
         // actividades hechas (carreras GPS, partidos, apuntadas a mano), con sus minutos reales y sus kcal.
         return jdbc.sql("""
-                        SELECT count(*) AS sesiones, coalesce(sum(minutos), 0) AS minutos,
-                               coalesce(sum(calorias), 0) AS calorias
-                        FROM (
-                            SELECT duracion_minutos AS minutos, calorias_quemadas AS calorias
-                            FROM sesiones_registradas
-                            WHERE usuario_id = :u AND completada_en >= :from AND completada_en < :to
-                            UNION ALL
-                            SELECT a.minutos_reales, c.kcal
-                            FROM actividades_apuntadas a
-                            JOIN horarios_academicos b ON b.id = a.bloque_id
-                            LEFT JOIN carreras_gps c ON c.bloque_id = a.bloque_id
-                            WHERE a.usuario_id = :u AND b.completado = true
-                              AND b.hora_fin >= :from AND b.hora_fin < :to
-                        ) hechos
-                        """)
+                        SELECT count(*) AS sesiones, coalesce(sum(e.minutos), 0) AS minutos,
+                               coalesce(sum(e.kcal), 0) AS calorias
+                        FROM %s e
+                        WHERE e.usuario_id = :u AND e.terminado_en >= :from AND e.terminado_en < :to
+                        """.formatted(CompletedWorkoutsSql.TABLE))
                 .param("u", userId).param("from", param(from)).param("to", param(to))
                 .query((rs, n) -> new TrainingTotals(rs.getInt("sesiones"), rs.getInt("minutos"), rs.getDouble("calorias")))
                 .single();
@@ -103,14 +94,8 @@ public class DashboardJdbcAdapter implements DashboardReadPort {
     @Override
     public Optional<Instant> lastTrainingSession(UUID userId) {
         return jdbc.sql("""
-                        SELECT max(ultima) AS ultima FROM (
-                            SELECT max(completada_en) AS ultima FROM sesiones_registradas WHERE usuario_id = :u
-                            UNION ALL
-                            SELECT max(b.hora_fin) FROM actividades_apuntadas a
-                            JOIN horarios_academicos b ON b.id = a.bloque_id
-                            WHERE a.usuario_id = :u AND b.completado = true
-                        ) u
-                        """)
+                        SELECT max(e.terminado_en) AS ultima FROM %s e WHERE e.usuario_id = :u
+                        """.formatted(CompletedWorkoutsSql.TABLE))
                 .param("u", userId).query((rs, n) -> instant(rs, "ultima")).list().stream()
                 .filter(java.util.Objects::nonNull).findFirst();
     }

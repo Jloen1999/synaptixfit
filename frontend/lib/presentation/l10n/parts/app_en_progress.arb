@@ -26,9 +26,9 @@
   "progressMetricAverageRpe": "Average effort",
   "progressLoadTitle": "How much you trained · last 28 days",
   "progressLoadSubtitle": "The taller the bar, the harder the day.",
-  "progressLoadSummary": "Today {today} · max {max} · average {average}",
+  "progressLoadSummary": "Load points: today {today} · peak {max} · average {average}",
   "progressLoadEmpty": "No load logged in the last 28 days yet.",
-  "progressLoadSemantics": "Chart of physical load over the last 28 days. Today's load {today}, daily max {max}, average {average}.",
+  "progressLoadSemantics": "Chart of physical load over the last 28 days. Today {today} load points, daily peak {max}, average {average}.",
   "progressCommunityTitle": "Community",
   "progressCommunityEmpty": "No posts yet. Be the first to share!",
   "progressCommunityLikes": "{count, plural, =1{1 like} other{{count} likes}}",
@@ -201,5 +201,7 @@
   "progressStreakFreezesAbout": "Free days",
   "progressHeadlineStart": "Add to calendar",
   "progressHeadlineStreakOnly": "{days, plural, =0{No streak} =1{Streak: 1 day} other{Streak: {days} days}}",
-  "progressShowMore": "More stats"
+  "progressShowMore": "More stats",
+  "progressReviewsAllDone": "You have no reviews left to do.",
+  "progressLoadPoints": "{value} points"
 }

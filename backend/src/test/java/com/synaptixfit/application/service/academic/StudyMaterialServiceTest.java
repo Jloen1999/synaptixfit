@@ -219,11 +219,17 @@ class StudyMaterialServiceTest {
                 ZoneOffset.UTC, f.banks, f.attempts);
         assertThat(later.listDue(user, 10)).extracting(StudyMaterial::id).containsExactly(due.id());
 
+        // «Necesita repaso» es lo mismo que la cola: fallado pero con la fecha aún por llegar, va «en progreso»;
+        // cuando la fecha pasa, cuenta en «Necesita repaso» igual que en listDue.
         var metrics = service.retention(user, s.id());
         assertThat(metrics.total()).isEqualTo(2);
-        assertThat(metrics.needsReview()).isEqualTo(1);
+        assertThat(metrics.needsReview()).isZero();
+        assertThat(metrics.inProgress()).isEqualTo(1);
         assertThat(metrics.notEvaluated()).isEqualTo(1);
         assertThat(fresh.masteryState()).isEqualTo(MasteryState.NOT_EVALUATED);
+        var laterMetrics = later.retention(user, s.id());
+        assertThat(laterMetrics.needsReview()).isEqualTo(later.listDue(user, 10).size()).isEqualTo(1);
+        assertThat(laterMetrics.inProgress()).isZero();
     }
 
     @Test

@@ -216,6 +216,17 @@ void main() {
           Color.alphaBlend(c.primary.withValues(alpha: 0.12), c.navigationBar),
           3,
         );
+        // Segmento elegido (AppSegmentedChoice): no lleva marca, así que el
+        // relleno primary tiene que distinguirse del resto (WCAG 1.4.11). En
+        // chips, el elegido lleva además la marca de verificación.
+        expectRatio(
+          'segmento elegido/no elegido',
+          c.primary,
+          c.surfaceContainerLow,
+          3,
+        );
+        expectRatio('segmento elegido/fondo', c.primary, c.background, 3);
+        expectRatio('chip elegido/borde', c.primary, c.surfaceContainerLow, 3);
         // Chip «Filtros» con filtros activos: etiqueta sobre primaryContainer.
         expectRatio('onSurface/primaryC', c.onSurface, c.primaryContainer, 4.5);
       });

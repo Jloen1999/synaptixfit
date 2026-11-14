@@ -229,7 +229,7 @@
   "plannerOptionsError": "No se han podido cargar todas las opciones.",
   "plannerBlockCreated": "Añadido al calendario",
   "plannerBlockUpdated": "Cambios guardados",
-  "plannerBlockDeleted": "Borrado del calendario",
+  "plannerBlockDeleted": "Quitado del calendario",
   "plannerRoutineDistributed": "{count, plural, =0{No se ha añadido ninguna sesión} =1{1 sesión añadida al calendario} other{{count} sesiones añadidas al calendario}}",
   "@plannerRoutineDistributed": {
     "placeholders": {
@@ -722,8 +722,6 @@
       }
     }
   },
-  "plannerPomodoroBlockHint": "Si ya está, márcalo como hecho en el calendario.",
-  "plannerPomodoroBlockYes": "Sí, está hecho",
   "plannerPomodoroBlockNotYet": "Aún no",
   "plannerPomodoroBlockMarked": "Marcado como hecho.",
   "plannerErrorPastActivityType": "Solo puedes apuntar después deporte o estudio.",
@@ -838,5 +836,5 @@
   "plannerDeleteDeadline": "Eliminar",
   "plannerOpensDeadlineForm": "Abre el formulario de entrega",
   "plannerSubjectArchived": "Asignatura archivada",
-  "plannerDeadlinesSwipeHint": "Desliza una entrega a la izquierda para borrarla."
+  "plannerDeadlinesSwipeHint": "Desliza una entrega a la izquierda para eliminarla."
 }

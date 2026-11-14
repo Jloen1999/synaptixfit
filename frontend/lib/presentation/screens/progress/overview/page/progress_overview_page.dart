@@ -169,7 +169,7 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
       s.copyWith(openingReview: false, reviewQueue: null, reviewError: null);
 
   /// Abre la cola de repaso que pidió el bloc (en un toque, ADR 0041). Si ya
-  /// no queda ninguno, Académico enseña el estado real.
+  /// no queda ninguno, lo avisa y recarga.
   void _onReview(ProgressOverviewLoaded state) {
     final bloc = context.read<ProgressOverviewBloc>();
     if (state.reviewError case final error?) {
@@ -181,7 +181,10 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
     if (queue == null) return;
     bloc.add(const ProgressOverviewEvent.reviewHandled());
     if (queue.isEmpty) {
-      context.go(ProgressExternalPaths.academic);
+      // Ya no queda ninguno (se repasaron en otro sitio): se dice aquí y la
+      // cifra se pone al día, en vez de saltar a Académico sin explicación.
+      context.showSnack(context.localizations.progressReviewsAllDone);
+      bloc.add(const ProgressOverviewEvent.refreshed());
     } else {
       unawaited(
         _open(ProgressExternalPaths.review(queue.first, queue.skip(1))),

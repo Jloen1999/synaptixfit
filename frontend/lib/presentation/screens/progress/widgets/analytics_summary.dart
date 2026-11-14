@@ -38,7 +38,7 @@ class AnalyticsSummary extends StatelessWidget {
           label: l10n.progressMetricCalories,
         ),
         AppMetricTile(
-          icon: Icons.speed_rounded,
+          icon: AppIcons.effort,
           color: context.colors.tertiary,
           value: rpe == null
               ? l10n.progressNoValue

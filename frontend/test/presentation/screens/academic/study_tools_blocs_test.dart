@@ -10,7 +10,6 @@ import 'package:synaptixfit/domain/models/academic/mock_exam_options.dart';
 import 'package:synaptixfit/domain/models/academic/note_scan.dart';
 import 'package:synaptixfit/domain/models/academic/study_artifact.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
-import 'package:synaptixfit/domain/use_cases/academic/abandon_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/answer_in_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/complete_test_session_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/academic/create_note_use_case.dart';
@@ -48,8 +47,6 @@ class _Start extends Mock implements StartTestSessionUseCaseContract {}
 class _Answer extends Mock implements AnswerInTestSessionUseCaseContract {}
 
 class _Complete extends Mock implements CompleteTestSessionUseCaseContract {}
-
-class _Abandon extends Mock implements AbandonTestSessionUseCaseContract {}
 
 class _GetAccount extends Mock implements GetAccountUseCaseContract {}
 
@@ -163,7 +160,6 @@ void main() {
           start: start,
           answer: _Answer(),
           complete: _Complete(),
-          abandon: _Abandon(),
           getAccount: _GetAccount(),
         );
       },

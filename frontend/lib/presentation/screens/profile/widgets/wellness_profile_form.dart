@@ -169,7 +169,7 @@ class _WellnessProfileFormState extends State<WellnessProfileForm> {
                       child: AppTextField(
                         label: l10n.profileFieldWeight,
                         controller: _weight,
-                        icon: Icons.monitor_weight_outlined,
+                        icon: AppIcons.bodyWeight,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -496,7 +496,7 @@ class _BmiPreview extends StatelessWidget {
       color: context.colors.surfaceContainerLow,
       child: Row(
         children: [
-          Icon(Icons.speed_rounded, color: context.palette.sessions),
+          Icon(AppIcons.bmi, color: context.palette.sessions),
           const SizedBox(width: TokensSpacing.s),
           Expanded(
             child: Column(

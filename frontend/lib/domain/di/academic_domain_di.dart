@@ -1,7 +1,6 @@
 import 'package:get_it/get_it.dart';
 
 import '../use_cases/academic/search_academic_use_case.dart';
-import '../use_cases/academic/abandon_test_session_use_case.dart';
 import '../use_cases/academic/get_mock_exam_options_use_case.dart';
 import '../use_cases/academic/read_note_photos_use_case.dart';
 import '../use_cases/academic/answer_in_test_session_use_case.dart';
@@ -72,9 +71,6 @@ import '../use_cases/academic/upload_subject_file_use_case.dart';
 /// Casos de uso del módulo academic.
 void registerAcademicDomain(GetIt getIt) {
   getIt
-    ..registerLazySingleton<AbandonTestSessionUseCaseContract>(
-      () => AbandonTestSessionUseCase(getIt()),
-    )
     ..registerLazySingleton<AnswerInTestSessionUseCaseContract>(
       () => AnswerInTestSessionUseCase(getIt()),
     )

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Mapa central de iconos de la app: la misma acción lleva el mismo icono en
-/// todas las pantallas. Se usan iconos de significado común (papelera = borrar,
+/// todas las pantallas. Se usan iconos de significado común (papelera = eliminar,
 /// lápiz = editar, más = añadir, campana = avisos) y todo botón que solo lleve
 /// icono va con `tooltip` (que también es lo que oye el lector de pantalla).
 abstract final class AppIcons {
@@ -9,7 +9,7 @@ abstract final class AppIcons {
   static const IconData add = Icons.add_rounded;
   static const IconData edit = Icons.edit_outlined;
 
-  /// Borrar algo guardado (con confirmación o «Deshacer»).
+  /// Eliminar algo guardado (con confirmación o «Deshacer»).
   static const IconData delete = Icons.delete_outline_rounded;
 
   /// Quitar una fila de una lista que se está editando (serie, paso, tarea).
@@ -108,7 +108,41 @@ abstract final class AppIcons {
   static const IconData kcal = Icons.bolt_rounded;
 
   /// Tramo más rápido de una carrera.
-  static const IconData fastest = Icons.speed_rounded;
+  static const IconData fastest = Icons.fast_forward_rounded;
+
+  /// Insignia (la medalla, solo para insignias).
+  static const IconData badge = Icons.military_tech_outlined;
+
+  /// Algo que va a más (tendencia al alza, progresión de cargas).
+  static const IconData trendUp = Icons.trending_up_rounded;
+
+  /// Restar y sumar en un selector − / +.
+  static const IconData decrease = Icons.remove_rounded;
+  static const IconData increase = Icons.add_rounded;
+
+  /// Esfuerzo percibido (RPE) de una sesión o actividad.
+  static const IconData effort = Icons.speed_rounded;
+
+  /// Ritmo de una carrera (minutos por kilómetro).
+  static const IconData pace = Icons.av_timer_rounded;
+
+  /// Peso corporal.
+  static const IconData bodyWeight = Icons.monitor_weight_outlined;
+
+  /// Índice de masa corporal.
+  static const IconData bmi = Icons.balance_rounded;
+
+  /// Ejercicio o meta explosiva (potencia, pliometría).
+  static const IconData explosive = Icons.rocket_launch_outlined;
+
+  /// Lo siguiente que toca (próximo entreno, día fuerte).
+  static const IconData upNext = Icons.upcoming_outlined;
+
+  /// Un cambio que se aplica al momento, sin pulsar «Guardar».
+  static const IconData appliesNow = Icons.published_with_changes_rounded;
+
+  /// Personas activas (panel de administración).
+  static const IconData activeUsers = Icons.how_to_reg_outlined;
 
   // Pestañas (contorno sin elegir, relleno elegida).
   static const IconData tabHome = Icons.home_outlined;

@@ -381,7 +381,7 @@ class _DeviceRemindersSectionState extends State<_DeviceRemindersSection>
     title: l10n.remindersDeviceSectionTitle,
     trailing: AppPill(
       label: l10n.remindersAppliesNow,
-      icon: Icons.bolt_rounded,
+      icon: AppIcons.appliesNow,
     ),
     child: AppCard(
       padding: EdgeInsets.zero,
@@ -469,7 +469,7 @@ class _WeeklyEmailSection extends StatelessWidget with ErrorsMessageMixin {
                 )
               : AppPill(
                   label: l10n.remindersAppliesNow,
-                  icon: Icons.bolt_rounded,
+                  icon: AppIcons.appliesNow,
                 ),
           child: AppCard(
             padding: EdgeInsets.zero,

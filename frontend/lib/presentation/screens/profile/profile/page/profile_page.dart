@@ -413,7 +413,7 @@ class _WellnessSummary extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _Metric(
-                        icon: Icons.speed_rounded,
+                        icon: AppIcons.bmi,
                         color: context.palette.sessions,
                         value: p.bmi == null ? '—' : number.format(p.bmi),
                         label: l10n.profileBmiLabel,
@@ -421,7 +421,7 @@ class _WellnessSummary extends StatelessWidget {
                     ),
                     Expanded(
                       child: _Metric(
-                        icon: Icons.monitor_weight_outlined,
+                        icon: AppIcons.bodyWeight,
                         color: context.colors.secondary,
                         value: p.weightKg == null
                             ? '—'

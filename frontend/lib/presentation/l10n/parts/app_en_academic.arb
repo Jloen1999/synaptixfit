@@ -206,10 +206,6 @@
   "academicExamScore": "{score} of {total} correct",
   "academicExamAnswer": "Answer",
   "academicExamAnswered": "Answer sent",
-  "academicExamAbandon": "Quit",
-  "academicExamAbandonTitle": "Quit the practice exam?",
-  "academicExamAbandonMessage": "It'll close without a grade.",
-  "academicExamAbandoned": "Practice exam abandoned",
   "academicExamFinishTitle": "Finish the practice exam?",
   "academicExamFinishPending": "{count, plural, =1{You have 1 question left unanswered.} other{You have {count} questions left unanswered.}}",
   "academicExamElapsed": "Time elapsed: {time}",
@@ -552,5 +548,6 @@
   "academicFocus": "Focus",
   "academicSubjectMoreActions": "More actions for “{name}”",
   "academicNewDeadline": "New deadline",
-  "academicSubjectFocusHere": "Focus on this subject"
+  "academicSubjectFocusHere": "Focus on this subject",
+  "academicExamResumeLater": "The practice exam is still in progress: open it again to carry on where you left off."
 }

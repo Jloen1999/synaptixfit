@@ -1,27 +1,42 @@
 package com.synaptixfit.application.service.user;
 
+import com.synaptixfit.application.port.input.user.GetAgeTodayUseCase;
 import com.synaptixfit.application.port.input.user.GetCurrentUserUseCase;
 import com.synaptixfit.application.port.input.user.UpdateAccountUseCase;
 import com.synaptixfit.domain.event.user.UserPrivacyChanged;
 import com.synaptixfit.domain.exception.user.UserNotFoundException;
+import com.synaptixfit.domain.model.insights.TimeZones;
 import com.synaptixfit.domain.model.user.User;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.user.UserRepositoryPort;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.UUID;
 
 /** Consulta y edición de la cuenta propia (nombre, foto, privacidad, modo de uso y fecha de nacimiento). */
-public class AccountService implements GetCurrentUserUseCase, UpdateAccountUseCase {
+public class AccountService implements GetCurrentUserUseCase, UpdateAccountUseCase, GetAgeTodayUseCase {
 
     private final UserRepositoryPort users;
     private final DomainEventPublisherPort events;
     private final Clock clock;
+    private final ZoneId zone;
 
     public AccountService(UserRepositoryPort users, DomainEventPublisherPort events, Clock clock) {
+        this(users, events, clock, clock.getZone());
+    }
+
+    /** {@code zone}: la de la app, para «hoy» cuando el móvil no manda la suya. */
+    public AccountService(UserRepositoryPort users, DomainEventPublisherPort events, Clock clock, ZoneId zone) {
         this.users = users;
         this.events = events;
         this.clock = clock;
+        this.zone = zone;
+    }
+
+    @Override
+    public Integer ageToday(User user, String zone) {
+        return user.ageOn(LocalDate.now(clock.withZone(TimeZones.resolve(zone, this.zone))));
     }
 
     @Override

@@ -15,7 +15,6 @@ abstract class MockExamState with _$MockExamState {
 
     /// Sesión terminada: se abren sus resultados.
     String? closedSessionId,
-    @Default(false) bool abandoned,
   }) = _MockExamState;
 
   const MockExamState._();

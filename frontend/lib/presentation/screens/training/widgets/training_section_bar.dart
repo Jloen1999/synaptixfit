@@ -63,7 +63,12 @@ class TrainingSectionBar extends StatelessWidget
           selected: {current},
           onSelectionChanged: (selected) {
             final next = selected.first;
-            if (next != current) context.go(TrainingPaths.section(next));
+            if (next == current) return;
+            // Cambiar de apartado no cambia de ruta (solo `?section=`): se
+            // cierra a mano el aviso con «Deshacer» del apartado que se deja,
+            // que así se confirma antes de que su bloc se cierre.
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            context.go(TrainingPaths.section(next));
           },
         ),
       ),

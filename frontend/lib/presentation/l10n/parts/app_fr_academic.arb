@@ -206,10 +206,6 @@
   "academicExamScore": "{score} bonnes réponses sur {total}",
   "academicExamAnswer": "Répondre",
   "academicExamAnswered": "Réponse envoyée",
-  "academicExamAbandon": "Abandonner",
-  "academicExamAbandonTitle": "Abandonner l’examen blanc ?",
-  "academicExamAbandonMessage": "Il sera fermé sans note.",
-  "academicExamAbandoned": "Examen blanc abandonné",
   "academicExamFinishTitle": "Terminer l’examen blanc ?",
   "academicExamFinishPending": "{count, plural, =0{Il te reste {count} questions sans réponse.} =1{Il te reste 1 question sans réponse.} other{Il te reste {count} questions sans réponse.}}",
   "academicExamElapsed": "Temps écoulé : {time}",
@@ -552,5 +548,6 @@
   "academicFocus": "Me concentrer",
   "academicSubjectMoreActions": "Plus d’actions pour « {name} »",
   "academicNewDeadline": "Nouveau rendu",
-  "academicSubjectFocusHere": "Me concentrer sur cette matière"
+  "academicSubjectFocusHere": "Me concentrer sur cette matière",
+  "academicExamResumeLater": "L’examen blanc est toujours en cours : rouvre-le pour reprendre là où tu t’es arrêté."
 }

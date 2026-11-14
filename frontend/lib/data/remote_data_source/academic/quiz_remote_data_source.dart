@@ -128,11 +128,4 @@ class QuizRemoteDataSource {
     );
     return TestSessionDto.fromJson(response.data!);
   }
-
-  Future<TestSessionDto> abandon(String sessionId) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '$_sessions/$sessionId/abandon',
-    );
-    return TestSessionDto.fromJson(response.data!);
-  }
 }

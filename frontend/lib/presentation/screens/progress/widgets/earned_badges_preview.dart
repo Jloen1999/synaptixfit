@@ -50,11 +50,7 @@ class EarnedBadgesPreview extends StatelessWidget {
           if (badges.isEmpty)
             Row(
               children: [
-                Icon(
-                  Icons.military_tech_outlined,
-                  color: context.palette.accent,
-                  size: 32,
-                ),
+                Icon(AppIcons.badge, color: context.palette.accent, size: 32),
                 const SizedBox(width: TokensSpacing.m),
                 Expanded(
                   child: Column(

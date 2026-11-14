@@ -10,7 +10,11 @@ import com.synaptixfit.domain.model.shared.Visibility;
 import com.synaptixfit.domain.model.user.Role;
 import com.synaptixfit.domain.model.user.UsageFocus;
 import com.synaptixfit.domain.model.user.User;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +30,18 @@ class AccountServiceTest {
     void setUp() {
         service = new AccountService(users, events, AdminTestFixtures.CLOCK);
         ana = users.add(AdminTestFixtures.user("ana@example.com", Role.USER));
+    }
+
+    @Test
+    void ageCountsTodayInThePhoneZone() {
+        // 23:30 en UTC del 14 de noviembre: en el móvil (+02:00) ya es el 15, su cumpleaños.
+        Clock lateNight = Clock.fixed(Instant.parse("2026-11-14T23:30:00Z"), ZoneOffset.UTC);
+        AccountService nightService = new AccountService(users, events, lateNight, ZoneId.of("UTC"));
+        ana.changeBirthDate(LocalDate.of(2004, 11, 15), LocalDate.of(2026, 11, 14));
+
+        assertThat(nightService.ageToday(ana, "+02:00")).isEqualTo(22);
+        assertThat(nightService.ageToday(ana, null)).isEqualTo(21);
+        assertThat(nightService.ageToday(ana, " ")).isEqualTo(21);
     }
 
     @Test

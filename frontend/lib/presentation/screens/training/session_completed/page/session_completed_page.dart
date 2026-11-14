@@ -221,7 +221,7 @@ class _Metrics extends StatelessWidget {
       ),
       if (s.rpe != null)
         AppMetricTile(
-          icon: Icons.speed_rounded,
+          icon: AppIcons.effort,
           color: context.palette.warning,
           value: '${s.rpe}/10',
           label: l10n.trainingRpeLabel,

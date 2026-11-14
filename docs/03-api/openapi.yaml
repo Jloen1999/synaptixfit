@@ -4435,6 +4435,12 @@ paths:
       tags:
       - Account
       operationId: me
+      parameters:
+      - name: zone
+        in: query
+        required: false
+        schema:
+          type: string
       responses:
         "200":
           description: OK
@@ -4458,6 +4464,12 @@ paths:
       tags:
       - Account
       operationId: update_9
+      parameters:
+      - name: zone
+        in: query
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:

@@ -227,7 +227,7 @@ class _Content extends StatelessWidget {
                 label: l10n.runDistance,
               ),
               AppMetricTile(
-                icon: Icons.speed_rounded,
+                icon: AppIcons.pace,
                 color: context.colors.primary,
                 value: RunLabels.pace(run.paceSecondsPerKm),
                 label: l10n.runPaceUnit,

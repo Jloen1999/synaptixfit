@@ -25,6 +25,7 @@ import '../../../../../domain/use_cases/training/start_session_use_case.dart';
 import '../../training_effect.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
 import '../../../../mixins/data_change_refresh_mixin.dart';
+import '../../../../mixins/deferred_commit_mixin.dart';
 
 part 'training_home_bloc.freezed.dart';
 part 'training_home_event.dart';
@@ -37,7 +38,9 @@ part 'training_home_state.dart';
 /// Qué día toca, cuándo y si una sesión está abandonada lo decide el servidor:
 /// aquí solo se muestra y se piden las acciones.
 class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
-    with DataChangeRefreshMixin<TrainingHomeEvent, TrainingHomeState> {
+    with
+        DataChangeRefreshMixin<TrainingHomeEvent, TrainingHomeState>,
+        DeferredCommitMixin<TrainingHomeState> {
   TrainingHomeBloc({
     required this._getPendingDay,
     required this._getMyRoutines,
@@ -59,7 +62,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     on<TrainingHomeRecommendationApplied>(_onApply);
     on<TrainingHomeRecommendationDiscarded>(_onDiscard);
     on<TrainingHomeRecommendationRestored>((e, emit) {
-      _pendingDiscards.remove(e.recommendation.id);
+      release(e.recommendation.id);
       emit(
         state.copyWith(
           recommendations: [e.recommendation, ...state.recommendations],
@@ -184,7 +187,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
         todayCheckIn: checkIn.valueOrNull,
         recommendations: [
           for (final r in recommendations.valueOrNull?.items ?? const [])
-            if (!_pendingDiscards.contains(r.id)) r,
+            if (!isDeferred(r.id)) r,
         ],
         // Un extra: si falla, la pestaña se muestra igual.
         staleSessions: [
@@ -248,10 +251,6 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     }
   }
 
-  /// Sugerencias quitadas cuyo aviso con «Deshacer» sigue abierto: no
-  /// vuelven con una recarga y, si la pantalla se cierra antes, se descartan.
-  final Set<String> _pendingDiscards = {};
-
   void _onDiscard(
     TrainingHomeRecommendationDiscarded event,
     Emitter<TrainingHomeState> emit,
@@ -261,7 +260,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
         .where((r) => r.id == id)
         .firstOrNull;
     if (recommendation == null) return;
-    _pendingDiscards.add(id);
+    defer(id);
     emit(
       state.copyWith(
         recommendations: state.recommendations
@@ -276,7 +275,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     TrainingHomeRecommendationDiscardConfirmed event,
     Emitter<TrainingHomeState> emit,
   ) async {
-    if (!_pendingDiscards.remove(event.recommendationId)) return;
+    if (!release(event.recommendationId)) return;
     final result = await _discardRecommendation(event.recommendationId);
     if (result case Failure(:final error)) {
       _effect(emit, TrainingEffect.error(error));
@@ -284,15 +283,11 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     }
   }
 
+  /// Sugerencia quitada con su aviso de «Deshacer» abierto: no vuelve con una
+  /// recarga y se descarta al cerrarse el aviso o, si antes se cierra el bloc,
+  /// al cerrarse.
   @override
-  Future<void> close() {
-    // El aviso sigue abierto pero la pantalla se va: se descarta igual.
-    for (final id in _pendingDiscards) {
-      _discardRecommendation(id).ignore();
-    }
-    _pendingDiscards.clear();
-    return super.close();
-  }
+  Future<void> commitDeferred(String id) => _discardRecommendation(id);
 
   Future<void> _onStartSession(
     TrainingHomeSessionStarted event,

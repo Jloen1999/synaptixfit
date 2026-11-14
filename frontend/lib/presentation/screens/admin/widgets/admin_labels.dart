@@ -86,7 +86,7 @@ extension AdminTimelineTypeLabel on AdminTimelineType {
     AdminTimelineType.routineCreated => Icons.list_alt_rounded,
     AdminTimelineType.challengeCreated => Icons.flag_outlined,
     AdminTimelineType.challengeCompleted => Icons.flag_rounded,
-    AdminTimelineType.badgeEarned => Icons.military_tech_outlined,
+    AdminTimelineType.badgeEarned => AppIcons.badge,
     AdminTimelineType.studyBlockCompleted => Icons.school_outlined,
     AdminTimelineType.deadlineCompleted => Icons.event_available_outlined,
     AdminTimelineType.noteCreated => Icons.sticky_note_2_outlined,

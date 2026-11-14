@@ -6,9 +6,9 @@ import com.synaptixfit.domain.model.training.RoutineStatus;
 import com.synaptixfit.domain.model.training.ProgressStatus;
 import com.synaptixfit.domain.model.challenge.RoutineDayTarget;
 import com.synaptixfit.domain.model.challenge.StudyBlockProgress;
-import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.training.TrainingRewards;
 import com.synaptixfit.domain.port.output.challenge.ChallengeReferencePort;
+import com.synaptixfit.infrastructure.adapter.output.persistence.adapter.CompletedWorkoutsSql;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -102,44 +102,18 @@ public class ChallengeReferencePersistenceAdapter implements ChallengeReferenceP
 
     @Override
     public int completedTrainingSessions(UUID userId, Instant from, Instant to) {
-        int sessions = jdbc.sql("""
-                        select count(*) from sesiones_registradas
-                        where usuario_id = :user and completada_en is not null
-                          and completada_en >= :from and completada_en <= :to
-                          and duracion_minutos >= :minMinutes
-                        """)
+        // Entrenos hechos con la definición única (CompletedWorkoutsSql), la misma que Inicio y Progreso, con el mínimo
+        // de minutos de TrainingRewards (ADR 0009) como parámetro.
+        return jdbc.sql("""
+                        select count(*) from %s e
+                        where e.usuario_id = :user and e.terminado_en >= :from and e.terminado_en <= :to
+                          and %s
+                        """.formatted(CompletedWorkoutsSql.TABLE, CompletedWorkoutsSql.counted("e")))
                 .param("user", userId)
                 .param("minMinutes", TrainingRewards.MIN_COUNTED_MINUTES)
                 .param("from", OffsetDateTime.ofInstant(from, ZoneOffset.UTC))
                 .param("to", OffsetDateTime.ofInstant(to, ZoneOffset.UTC))
                 .query(Long.class).single().intValue();
-        // Una carrera o actividad hecha cuenta como un entreno más (vocabulario.md §3), con las mismas filas que Inicio
-        // y Progreso (DashboardJdbcAdapter, AnalyticsJdbcAdapter): eventos de deporte hechos con su actividad apuntada
-        // (GPS, a mano o al hacer un entreno de carrera), con sus minutos reales. El umbral de minutos se aplica aquí
-        // en Java (ADR 0012: el SQL solo trae datos).
-        String sport = ActivityType.SPORT.code();
-        long activities = jdbc.sql("""
-                        select b.hora_inicio, b.hora_fin, a.minutos_reales
-                        from horarios_academicos b
-                        join actividades_apuntadas a on a.bloque_id = b.id
-                        where b.usuario_id = :user and b.tipo_actividad = :sport and b.completado = true
-                          and b.rutina_id is null and b.dia_rutina_id is null
-                          and b.hora_fin >= :from and b.hora_fin <= :to
-                        """)
-                .param("user", userId)
-                .param("sport", sport)
-                .param("from", OffsetDateTime.ofInstant(from, ZoneOffset.UTC))
-                .param("to", OffsetDateTime.ofInstant(to, ZoneOffset.UTC))
-                .query((rs, n) -> {
-                    Integer real = (Integer) rs.getObject("minutos_reales");
-                    if (real != null) {
-                        return real;
-                    }
-                    return (int) java.time.Duration.between(rs.getTimestamp("hora_inicio").toInstant(),
-                            rs.getTimestamp("hora_fin").toInstant()).toMinutes();
-                })
-                .list().stream().filter(m -> m >= TrainingRewards.MIN_COUNTED_MINUTES).count();
-        return sessions + (int) activities;
     }
 
     /** {@code table} es siempre una constante de esta clase, nunca un dato de entrada. */
