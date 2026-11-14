@@ -9,7 +9,7 @@
   "trainingNoRoutinesTitle": "Aún no tienes rutinas",
   "trainingNoRoutinesMessage": "Crea tu primera rutina: te proponemos una o la montas tú.",
   "trainingNextWorkout": "Próximo entrenamiento",
-  "trainingNoPendingDay": "No tienes días pendientes",
+  "trainingNoPendingDay": "No te queda ningún día por hacer",
   "trainingNoPendingDayHint": "Activa una rutina o haz una sesión libre.",
   "trainingFreeSession": "Sesión libre",
   "trainingStart": "Empezar",
@@ -1039,7 +1039,7 @@
       }
     }
   },
-  "trainingOverdueSince": "Atrasado: tocaba el {date}",
+  "trainingOverdueSince": "Tocaba el {date}",
   "@trainingOverdueSince": {
     "placeholders": {
       "date": {
@@ -1051,8 +1051,6 @@
   "trainingUnskipDay": "Recuperar",
   "trainingDaySkipped": "Día saltado",
   "trainingDayUnskipped": "Día recuperado",
-  "trainingSkipEarlierTitle": "¿Entrenar este día?",
-  "trainingSkipEarlierMessage": "Los días anteriores sin hacer se darán por saltados. Puedes recuperarlos desde la rutina.",
   "trainingDiscardSession": "Descartar sesión",
   "trainingDiscardSessionTitle": "¿Descartar la sesión?",
   "trainingDiscardSessionMessage": "Se borran las series que has marcado. No se puede deshacer.",
@@ -1587,8 +1585,6 @@
       }
     }
   },
-  "trainingAdaptedDeclineTitle": "¿Hacer la sesión completa?",
-  "trainingAdaptedDeclineMessage": "Hoy tocaban menos series para cuidarte. Si la haces completa, harás todas.",
   "trainingLoadUp": "Hoy prueba {value}",
   "@trainingLoadUp": {
     "placeholders": {
@@ -3071,5 +3067,6 @@
   },
   "trainingRecommendationsShow": "Ver sugerencias",
   "trainingCheckInAutoSaveHint": "Se guarda al contestar la tercera pregunta.",
-  "trainingCheckInChangeHint": "Cambia lo que quieras y toca «Guardar cambios»."
+  "trainingCheckInChangeHint": "Cambia lo que quieras y toca «Guardar cambios».",
+  "trainingAdaptedDeclined": "Hoy harás todas las series."
 }

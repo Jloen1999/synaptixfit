@@ -183,7 +183,7 @@ class _StreakChip extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.local_fire_department_rounded,
+                      AppIcons.streak,
                       size: TokensSize.iconS,
                       color: active ? context.palette.accent : color,
                     ),

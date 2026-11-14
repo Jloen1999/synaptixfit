@@ -68,3 +68,27 @@ Saltar un día de rutina (en Gimnasio y en la rutina) ya no se confirma: aviso �
 - La regla del registro diario y el sentido de las escalas están en un solo sitio y tienen test.
 - Sin migraciones ni cambios de API. `openapi.yaml` lo regenera el propietario.
 - Pendientes: un test de integración de la consulta de «Planificador nato» con un plan sin XP; «Repasar» desde Progreso abre Académico, no la cola de repasos (haría falta que el resumen trajera los ids).
+
+## Tanda de cierre (14 nov 2026, antes del APK)
+
+Repaso de todo lo pendiente de los ADR 0030–0041, de los planes de claridad y de una revisión visual en producción. Sin migraciones (V1059–V1062 siguen libres) ni campos nuevos en la API.
+
+- **«Ver N repasos pendientes» abre la cola en un toque.** El resumen solo trae cuántos hay; al tocar, `ProgressOverviewBloc` pide los materiales con repaso (`GetDueStudyMaterialsUseCase`) y abre el primero con el resto en `?queue=` (la misma cola que «Repasar todos»). Si ya no queda ninguno, Académico.
+- **Lo reversible no pregunta, también aquí:**
+  - «Hacerla completa» (sesión adaptada): se hace y el aviso lleva «Deshacer», que vuelve a las series adaptadas.
+  - Adelantarse a un día de la rutina: sin diálogo. Los días anteriores solo se saltan al terminar la sesión y quedan con «Recuperar» en la rutina; descartar la sesión no salta nada.
+  - «Cerrar sesión»: solo confirma si hay en el teléfono algo que el servidor no tiene (series sin conexión, una carrera en curso o en cola), porque cerrar sesión lo borra (`HasUnsentDataUseCase`). Si no, cierra al momento.
+  - Descartar una sugerencia de entreno: desaparece con «Deshacer» y se descarta en el servidor al cerrarse el aviso o al salir de la pantalla. Aplicarla lleva «Ver» a la rutina.
+- **Las carreras y actividades cuentan en todas partes (vocabulario §3).** Las insignias (entrenos y días de entreno) y el panel de administración (plataforma y ficha de cada persona) suman las actividades hechas, con las mismas filas que Inicio, Progreso y los retos. Correr un entreno planificado antes de su hora pasa su reto y su tarea a la actividad nueva, que la sigue haciendo avanzar. Volver a marcar desde el calendario un evento con actividad usa sus minutos reales para la carga física (`ActivityMinutesPort`).
+- **Reglas fuera de la interfaz:** el botón de «Tu día» y lo que toca ahora (`TodayAction.of`, `nextUp`) y el ciclo terminado (`finishedCycle`) en el dominio del cliente; el nivel cognitivo lo dice `CognitiveState` en el servidor, no el DTO.
+- **Detalles:** «Deshacer» de una entrega funciona aunque el filtro «Por hacer» la haya sacado de la lista; el foco vuelve a la cabecera del día al saltarlo; el registro diario usa `AppSegmentedChoice`; racha (llama), kcal (rayo) y tramo más rápido tienen iconos propios en `AppIcons`; la entrega de tipo «otro» deja la bandera a las tareas de reto; «Descartar sesión» es rojo en la tarjeta y en la hoja; «pendiente» a secas pasa a «por hacer».
+- **Barra de pestañas:** `ShellNavigationBar`, con un test en los 4 idiomas a 360 px y texto al 200 %.
+- **Revisión visual en producción** (390 px en español, 360 px en francés y texto al 200 %):
+  - Plurales en francés y portugués: su regla de plural mete el 0 en «one» y con 0 salía el texto de 1 («1 entraînement»). Cada plural con `=1{…}` sin el número lleva su `=0{…}`; un test lo comprueba.
+  - Una dirección desconocida abre `NotFoundPage` («Ir a Inicio») en vez de la página de error de go_router en inglés.
+  - Al volver a marcar una serie se cierra el aviso «Serie desmarcada · Deshacer» (dos «Deshacer» contradictorios).
+  - Texto grande: la barra de pestañas ajusta sus etiquetas al hueco (token `largeTextScale`, el mismo umbral que `largeText`), las pestañas de Progreso se desplazan y el eje de horas y la cabecera del calendario crecen con el texto.
+  - Retos con un solo estado («Hecho», «Vencido») en los 4 idiomas y sin repetirlo en la tarjeta; un solo «Crear entreno» en Correr; el Pomodoro sin empezar solo enseña «Empezar a concentrarme»; «Tocaba el lun 3 nov» en vez de un chip cortado; kilos con la coma del idioma; repaso vencido dicho como «Tocaba el …».
+- **Reto heredado solo dentro de su periodo:** la actividad que sustituye a un evento planificado hereda su reto y su tarea solo si cae dentro del periodo del reto (como cualquier bloque de reto); si no, se apunta sin reto en vez de fallar la subida. La actividad se guarda antes de completar el evento, así la carga física sale ya con los minutos reales.
+- Siguen fuera (funciones nuevas): CrossFit/WOD, Strava, Health Connect, nutrición y la publicación en Google Play.
+

@@ -69,16 +69,25 @@ class ChallengeCard extends StatelessWidget {
       final content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Lo primero que se lee es cuándo toca, en palabras.
-          Text(
-            challenge.whenText(context, now),
-            style: context.textStyles.labelLarge?.copyWith(
-              color: urgent
-                  ? context.palette.warning
-                  : context.colors.onSurfaceVariant,
+          // Lo primero que se lee es cuándo toca, en palabras. Hecho o
+          // vencido ya lo dice el bloque de fecha: no se repite.
+          if (status == ChallengeStatus.active ||
+              status == ChallengeStatus.upcoming) ...[
+            Text(
+              challenge.whenText(context, now),
+              style: context.textStyles.labelLarge?.copyWith(
+                color: urgent
+                    ? context.palette.warning
+                    : context.colors.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: TokensSpacing.xxs),
+            const SizedBox(height: TokensSpacing.xxs),
+          ] else
+            // El bloque de fecha no se lee en voz alta: el estado, sí.
+            Semantics(
+              label: challenge.whenText(context, now),
+              child: const SizedBox.shrink(),
+            ),
           Text(
             challenge.title,
             maxLines: 2,
@@ -139,7 +148,7 @@ class ChallengeCard extends StatelessWidget {
                 ),
               if (challenge.currentStreak > 0)
                 AppPill(
-                  icon: Icons.local_fire_department_rounded,
+                  icon: AppIcons.streak,
                   label: l10n.challengesStreakDays(challenge.currentStreak),
                   color: context.palette.streak,
                 ),

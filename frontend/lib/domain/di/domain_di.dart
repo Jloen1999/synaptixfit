@@ -4,6 +4,7 @@ import '../use_cases/auth/login_use_case.dart';
 import '../use_cases/auth/register_use_case.dart';
 import '../use_cases/auth/login_with_google_use_case.dart';
 import '../use_cases/auth/logout_use_case.dart';
+import '../use_cases/auth/has_unsent_data_use_case.dart';
 import '../use_cases/auth/restore_session_use_case.dart';
 import '../use_cases/auth/watch_session_expired_use_case.dart';
 import '../use_cases/auth/request_password_reset_use_case.dart';
@@ -36,6 +37,9 @@ void registerDomain(GetIt getIt) {
       () => LoginWithGoogleUseCase(getIt()),
     )
     ..registerLazySingleton<LogoutUseCaseContract>(() => LogoutUseCase(getIt()))
+    ..registerLazySingleton<HasUnsentDataUseCaseContract>(
+      () => HasUnsentDataUseCase(getIt()),
+    )
     ..registerLazySingleton<RequestPasswordResetUseCaseContract>(
       () => RequestPasswordResetUseCase(getIt()),
     )

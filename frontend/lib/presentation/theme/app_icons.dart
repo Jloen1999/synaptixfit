@@ -61,6 +61,9 @@ abstract final class AppIcons {
   static const IconData delivery = Icons.assignment_outlined;
   static const IconData presentation = Icons.slideshow_outlined;
 
+  /// Entrega de tipo «otro»: la bandera ya marca las tareas de reto.
+  static const IconData deadlineOther = Icons.event_note_outlined;
+
   /// Mostrar la contraseña escrita (ojo abierto).
   static const IconData showPassword = Icons.visibility_outlined;
 
@@ -97,6 +100,15 @@ abstract final class AppIcons {
 
   /// Lo que propone la app (IA o reglas, se ven igual: vocabulario).
   static const IconData proposal = Icons.lightbulb_outline_rounded;
+
+  /// Racha (días seguidos): la llama, solo para la racha.
+  static const IconData streak = Icons.local_fire_department_rounded;
+
+  /// Kilocalorías gastadas: energía, distinta de la llama de la racha.
+  static const IconData kcal = Icons.bolt_rounded;
+
+  /// Tramo más rápido de una carrera.
+  static const IconData fastest = Icons.speed_rounded;
 
   // Pestañas (contorno sin elegir, relleno elegida).
   static const IconData tabHome = Icons.home_outlined;

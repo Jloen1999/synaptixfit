@@ -14,6 +14,7 @@ import com.synaptixfit.domain.model.planner.Priority;
 import com.synaptixfit.domain.model.planner.TimeRange;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.ChallengeDirectoryPort;
 import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import java.time.Clock;
@@ -36,14 +37,18 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
     private final Clock clock;
     private final LoggedActivityRepositoryPort logged;
     private final DomainEventPublisherPort events;
+    private final ChallengeDirectoryPort challenges;
 
     /**
      * @param logged donde se guardan la clase, los minutos reales y la distancia del deporte
      * @param events para que la carga física de un evento hecho como actividad cuente sus minutos reales
+     * @param challenges para que el reto heredado de un evento solo pase si la actividad cae en su periodo
      */
     public PastActivityService(CalendarBlockRepositoryPort blocks, SubjectDirectoryPort subjects,
                                SetBlockCompletionUseCase completion, PlannerZone zone, Clock clock,
-                               LoggedActivityRepositoryPort logged, DomainEventPublisherPort events) {
+                               LoggedActivityRepositoryPort logged, DomainEventPublisherPort events,
+                               ChallengeDirectoryPort challenges) {
+        this.challenges = challenges;
         this.logged = logged;
         this.events = events;
         this.blocks = blocks;
@@ -64,8 +69,17 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
             throw new PlannerSubjectNotFoundException(activity.subjectId());
         }
         TimeRange range = activity.range();
+        // La tarea de reto del evento planificado al que sustituye (una carrera hecha antes de su hora) pasa a la
+        // actividad: al completarse, la tarea avanza igual que lo habría hecho el evento (ADR 0037). Solo si la
+        // actividad cae dentro del periodo del reto, como cualquier bloque de reto (BlockDetailsResolver); si no,
+        // la actividad se apunta sin reto en vez de fallar la subida.
+        boolean keepsChallenge = command.challengeId() != null && challenges
+                .findOwnedChallenge(command.userId(), command.challengeId())
+                .filter(c -> c.covers(range.start(), zone))
+                .isPresent();
         CalendarBlock.Details details = new CalendarBlock.Details(activity.subjectId(), activity.title(), null,
-                Priority.MEDIUM, false, null, null, null, null, null, null, null);
+                Priority.MEDIUM, false, null, null, null, null, keepsChallenge ? command.challengeId() : null,
+                keepsChallenge ? command.milestoneId() : null, null);
         CalendarBlock block = CalendarBlock.builder()
                 .id(UUID.randomUUID())
                 .userId(command.userId())
@@ -77,11 +91,15 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
                 .createdAt(now)
                 .build();
         blocks.save(block);
-        SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), block.id(), true,
-                activity.effort());
+        // La actividad se guarda antes de completar: así la carga física sale ya con sus minutos reales
+        // (BlockCompletionService los lee con ActivityMinutesPort).
         if (activity.type() == ActivityType.SPORT) {
             logged.save(block.id(), command.userId(), activity.kind(), activity.minutes(), activity.distanceMeters(),
                     activity.source(), now);
+        }
+        SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), block.id(), true,
+                activity.effort());
+        if (activity.type() == ActivityType.SPORT) {
             syncLoadWithRealMinutes(command.userId(), result.block(), activity.effort(), activity.minutes(), now);
         }
         return result;
@@ -90,11 +108,12 @@ public class PastActivityService implements LogPastActivityUseCase, CompletePlan
     @Override
     public SetBlockCompletionUseCase.Result completePlannedActivity(CompletePlannedActivityUseCase.Command command) {
         int effort = Guard.range(command.effort(), "effort", 1, 10);
-        SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), command.blockId(), true,
-                effort);
         Instant now = clock.instant();
+        // Primero la actividad y después completar: la carga física lee ya los minutos nuevos.
         logged.save(command.blockId(), command.userId(), command.kind(), command.minutes(),
                 command.distanceMeters(), command.source(), now);
+        SetBlockCompletionUseCase.Result result = completion.setCompletion(command.userId(), command.blockId(), true,
+                effort);
         syncLoadWithRealMinutes(command.userId(), result.block(), effort, command.minutes(), now);
         return result;
     }

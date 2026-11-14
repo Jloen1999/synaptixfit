@@ -638,7 +638,7 @@ class _SummaryCard extends StatelessWidget {
             children: [
               if (challenge.owned) ...[
                 _Stat(
-                  icon: Icons.local_fire_department_rounded,
+                  icon: AppIcons.streak,
                   color: context.palette.streak,
                   label: l10n.challengesDetailStreak,
                   value: l10n.challengesDetailDaysValue(
@@ -958,7 +958,7 @@ class _BottomActions extends StatelessWidget {
             if (next != null) {
               primary = AppPrimaryButton(
                 label: l10n.challengesDetailCompleteNext,
-                icon: Icons.check_rounded,
+                icon: AppIcons.markDone,
                 loading: busy,
                 onPressed: () =>
                     bloc.add(ChallengeDetailEvent.milestoneToggled(next.id)),
@@ -967,7 +967,7 @@ class _BottomActions extends StatelessWidget {
           } else {
             primary = AppPrimaryButton(
               label: l10n.challengesDetailComplete,
-              icon: Icons.check_rounded,
+              icon: AppIcons.markDone,
               loading: busy,
               onPressed: () => _toggleCompletion(context),
             );

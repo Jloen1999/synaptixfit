@@ -187,7 +187,7 @@ class _Options extends StatelessWidget {
                 ),
               const Divider(height: 1),
               _Switch(
-                icon: Icons.local_fire_department_outlined,
+                icon: AppIcons.streak,
                 title: l10n.profileReminderStreak,
                 hint: l10n.profileReminderStreakHint,
                 value: options.streak,

@@ -239,7 +239,6 @@ String spokenClock(AppLocalizations l10n, int totalSeconds) {
   return l10n.trainingDurationSpokenSec(seconds);
 }
 
-/// Número decimal sin ceros sobrantes (`20`, `22.5`).
-String formatNumber(double value) => value == value.roundToDouble()
-    ? value.toInt().toString()
-    : value.toStringAsFixed(1);
+/// Número decimal sin ceros sobrantes, con la coma o el punto del idioma de la
+/// app (`20`, `22,5` en español, `22.5` en inglés). Los campos aceptan los dos.
+String formatNumber(double value) => NumberFormat('0.##').format(value);

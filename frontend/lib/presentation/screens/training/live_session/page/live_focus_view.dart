@@ -1231,7 +1231,7 @@ class _SetFocusPulseState extends State<_SetFocusPulse>
 }
 
 /// Cronómetro de la sesión, igual en la de rutina ([LiveSessionHeader]) y en
-/// la libre: la píldora, qué mide (también tras «No volver a explicarlo») y lo
+/// la libre: la píldora, qué mide («Tiempo real, sin contar pausas») y lo
 /// que queda según la duración prevista del servidor (gris: es una estimación).
 class LiveClockSummary extends StatelessWidget {
   const LiveClockSummary({super.key, required this.state, this.leading});
@@ -1407,7 +1407,7 @@ class _LiveClockPillState extends State<LiveClockPill>
 }
 
 /// Barra inferior de la sesión. Descansando: cuenta atrás grande con −15 s,
-/// +15 s y «Saltar». Si no: qué toca ahora y el siguiente ejercicio, con la
+/// +15 s y «Saltar descanso». Si no: qué toca ahora y el siguiente ejercicio, con la
 /// acción principal al alcance del pulgar (marcar la serie, ir al siguiente o
 /// terminar). Al cambiar de una a otra el foco pasa a la acción nueva.
 class LiveSessionBottomBar extends StatefulWidget {

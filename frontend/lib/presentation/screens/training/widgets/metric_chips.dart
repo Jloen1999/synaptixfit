@@ -93,7 +93,7 @@ class ExerciseParameterChips extends StatelessWidget {
           ),
         if (metValue != null && metValue > 0)
           AppPill(
-            icon: Icons.local_fire_department_rounded,
+            icon: AppIcons.kcal,
             color: context.palette.calories,
             label: l10n.trainingChipKcal(
               p

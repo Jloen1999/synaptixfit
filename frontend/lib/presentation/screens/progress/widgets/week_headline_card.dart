@@ -150,10 +150,7 @@ class _StreakLine extends StatelessWidget {
         Row(
           children: [
             ExcludeSemantics(
-              child: Icon(
-                Icons.local_fire_department_rounded,
-                color: context.palette.streak,
-              ),
+              child: Icon(AppIcons.streak, color: context.palette.streak),
             ),
             const SizedBox(width: TokensSpacing.s),
             Expanded(child: Text(text, style: context.textStyles.bodyMedium)),

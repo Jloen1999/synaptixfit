@@ -43,6 +43,14 @@ abstract class PomodoroState with _$PomodoroState {
   /// Se puede elegir asignatura: sin bloque y sin nada en marcha.
   bool get canPickSubject => blockId == null && status == PomodoroStatus.idle;
 
+  /// Aún no se ha empezado nada (primera concentración, sin tocar el reloj):
+  /// «Pasar al descanso» y «Empezar de cero» no tienen sentido todavía.
+  bool get untouched =>
+      status == PomodoroStatus.idle &&
+      phase == FocusPhase.focus &&
+      completedFocusCycles == 0 &&
+      remainingSeconds == totalSeconds;
+
   /// Se puede cambiar la duración: concentración sin empezar.
   bool get canAdjust =>
       status == PomodoroStatus.idle &&

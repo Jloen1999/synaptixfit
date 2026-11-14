@@ -50,8 +50,21 @@ class _CompletedView extends StatelessWidget {
     final l10n = context.localizations;
     return BlocConsumer<SessionCompletedBloc, SessionCompletedState>(
       listenWhen: (p, c) => c.effect != null && p.effect != c.effect,
-      listener: (context, state) =>
-          const TrainingEffectHandler().handle(context, state.effect!),
+      listener: (context, state) {
+        final bloc = context.read<SessionCompletedBloc>();
+        void send(SessionCompletedEvent event) {
+          if (!bloc.isClosed) bloc.add(event);
+        }
+
+        const TrainingEffectHandler().handle(
+          context,
+          state.effect!,
+          onRestoreRecommendation: (r) =>
+              send(SessionCompletedEvent.recommendationRestored(r)),
+          onConfirmDiscard: (id) =>
+              send(SessionCompletedEvent.recommendationDiscardConfirmed(id)),
+        );
+      },
       builder: (context, state) {
         final bloc = context.read<SessionCompletedBloc>();
         return Scaffold(
@@ -193,7 +206,7 @@ class _Metrics extends StatelessWidget {
         label: l10n.trainingDuration,
       ),
       AppMetricTile(
-        icon: Icons.local_fire_department_rounded,
+        icon: AppIcons.kcal,
         color: context.palette.calories,
         value: s.calories == null
             ? '—'
@@ -369,10 +382,7 @@ class _AdvanceCard extends StatelessWidget {
             const SizedBox(height: TokensSpacing.s),
             Row(
               children: [
-                Icon(
-                  Icons.local_fire_department_rounded,
-                  color: context.palette.streak,
-                ),
+                Icon(AppIcons.streak, color: context.palette.streak),
                 const SizedBox(width: TokensSpacing.s),
                 Expanded(
                   child: Column(

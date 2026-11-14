@@ -4,6 +4,7 @@ import '../../../../domain/models/training/check_in_answers.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../theme/tokens.g.dart';
+import '../../../widgets/widgets.dart';
 
 /// Las tres preguntas de «¿Qué tal estás hoy?» (sueño, energía y agujetas),
 /// un toque cada una. Es el único registro diario de la app (ADR 0039): lo
@@ -83,6 +84,9 @@ class CheckInQuestions extends StatelessWidget {
   }
 }
 
+/// Una pregunta con sus tres respuestas cortas: el mismo control que el resto
+/// de opciones cortas de la app ([AppSegmentedChoice]), que pasa a chips con
+/// el texto grande o en pantallas estrechas.
 class _Question extends StatelessWidget {
   const _Question({
     required this.label,
@@ -99,30 +103,15 @@ class _Question extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: TokensSpacing.m),
-    child: Semantics(
-      container: true,
+    child: AppSegmentedChoice<int>(
       label: label,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ExcludeSemantics(
-            child: Text(label, style: context.textStyles.titleSmall),
-          ),
-          const SizedBox(height: TokensSpacing.xs),
-          Wrap(
-            spacing: TokensSpacing.s,
-            runSpacing: TokensSpacing.s,
-            children: [
-              for (final (score, text) in options)
-                ChoiceChip(
-                  label: Text(text),
-                  selected: value == score,
-                  onSelected: (_) => onChanged(score),
-                ),
-            ],
-          ),
-        ],
-      ),
+      values: [for (final (score, _) in options) score],
+      selected: value,
+      labelOf: (score) => options.firstWhere((o) => o.$1 == score).$2,
+      // Sin «vacío»: tocar la ya elegida no la quita (la respuesta sigue).
+      onChanged: (score) {
+        if (score != null) onChanged(score);
+      },
     ),
   );
 }

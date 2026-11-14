@@ -174,6 +174,35 @@ void main() {
   );
 
   blocTest<DeadlinesBloc, DeadlinesState>(
+    '«Deshacer» desmarca la entrega que el filtro sacó y vuelve a la lista',
+    setUp: () {
+      when(() => setCompletion('d1', completed: true)).thenAnswer(
+        (_) async => Success(
+          DeadlineCompletion(
+            deadline: d1.copyWith(completed: true),
+            xpDelta: 30,
+          ),
+        ),
+      );
+      when(() => setCompletion('d1', completed: false)).thenAnswer(
+        (_) async => Success(DeadlineCompletion(deadline: d1, xpDelta: -30)),
+      );
+    },
+    build: build,
+    seed: ready,
+    act: (bloc) async {
+      bloc.add(const DeadlinesEvent.completionToggled('d1'));
+      await bloc.stream.firstWhere((s) => s.busyIds.isEmpty);
+      expect(bloc.state.items, [d2]);
+      bloc.add(const DeadlinesEvent.completionToggled('d1'));
+    },
+    verify: (bloc) {
+      verify(() => setCompletion('d1', completed: false)).called(1);
+      expect(bloc.state.items.map((d) => d.id), containsAll(['d1', 'd2']));
+    },
+  );
+
+  blocTest<DeadlinesBloc, DeadlinesState>(
     'borrar la quita ya y la borra cuando el aviso se cierra sin deshacer',
     setUp: () =>
         when(() => delete('d2')).thenAnswer((_) async => const Success(unit)),

@@ -64,8 +64,8 @@ public final class InsightsResponses {
         }
     }
 
-    /** Estado cognitivo: carga 0-1, capacidad atencional 0-1, último bloque y último descanso. */
     /**
+     * Estado cognitivo: carga 0-1, capacidad atencional 0-1, último bloque y último descanso.
      * {@code loadLevel} (LOW, MODERATE, HIGH, CRITICAL) y {@code attentionLevel} (LOW, MODERATE, HIGH): el nivel en
      * palabras de la carga y la atención, con los umbrales del servidor ({@link CognitiveLevel}, ADR 0039).
      */
@@ -76,7 +76,7 @@ public final class InsightsResponses {
         public static CognitiveStateResponse from(CognitiveState s) {
             return new CognitiveStateResponse(round(s.cognitiveLoad(), 4), round(s.attentionCapacity(), 3),
                     s.lastBlockMinutes(), s.lastRestAt(), round(s.rmrBase(), 2), s.updatedAt(),
-                    CognitiveLevel.ofLoad(s.cognitiveLoad()), CognitiveLevel.ofAttention(s.attentionCapacity()));
+                    s.loadLevel(), s.attentionLevel());
         }
     }
 

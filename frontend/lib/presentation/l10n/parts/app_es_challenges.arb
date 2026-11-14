@@ -4,9 +4,9 @@
   "challengesTabCommunity": "Comunidad",
   "challengesNew": "Nuevo reto",
   "challengesSummaryActive": "Activos",
-  "challengesSummaryCompleted": "Completados",
+  "challengesSummaryCompleted": "Hechos",
   "challengesSummaryExpired": "Vencidos",
-  "challengesPendingTitle": "Tareas pendientes",
+  "challengesPendingTitle": "Tareas por hacer",
   "challengesPendingComplete": "Marcar «{title}» como hecha",
   "@challengesPendingComplete": {
     "placeholders": {
@@ -34,7 +34,7 @@
   "challengesFilterClear": "Quitar filtros",
   "challengesFilters": "Filtros",
   "challengesStatusActive": "Activo",
-  "challengesStatusCompleted": "Completado",
+  "challengesStatusCompleted": "Hecho",
   "challengesStatusExpired": "Vencido",
   "challengesTypeAcademic": "Académico",
   "challengesTypeFitness": "Físico",
@@ -409,7 +409,7 @@
   "challengesDurationMonth": "1 mes",
   "challengesStatusUpcoming": "Por empezar",
   "challengesSummaryUpcoming": "Por empezar",
-  "challengesWhenDone": "Completado",
+  "challengesWhenDone": "Hecho",
   "challengesWhenExpiredOn": "Venció el {date}",
   "@challengesWhenExpiredOn": {
     "placeholders": {
@@ -455,7 +455,7 @@
   "challengesGroupLater": "Más adelante",
   "challengesGroupUpcoming": "Por empezar",
   "challengesGroupExpired": "Vencidos",
-  "challengesGroupCompleted": "Completados",
+  "challengesGroupCompleted": "Hechos",
   "challengesUpcomingHint": "Aún no ha empezado: podrás avanzar desde el {date}.",
   "@challengesUpcomingHint": {
     "placeholders": {
@@ -525,7 +525,7 @@
     }
   },
   "challengesLinkOpenRoutine": "Ver en tu rutina",
-  "challengesLinkEmptyWithRoutine": "No hay entregas en las fechas del reto ni días pendientes de tu rutina.",
+  "challengesLinkEmptyWithRoutine": "No hay entregas en las fechas del reto ni días por hacer de tu rutina.",
   "challengesCompletedByRoutineDay": "Se completa al entrenar el {day} de la semana {week} de «{routine}»",
   "challengesCompletedByRoutineDayGeneric": "Se completa al entrenar ese día de tu rutina",
   "@challengesCompletedByRoutineDay": {

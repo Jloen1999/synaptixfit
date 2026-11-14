@@ -32,7 +32,7 @@ class AnalyticsSummary extends StatelessWidget {
           label: l10n.progressMetricMinutes,
         ),
         AppMetricTile(
-          icon: Icons.local_fire_department_outlined,
+          icon: AppIcons.kcal,
           color: context.palette.calories,
           value: ProgressFormat.integer(weekly.totalCalories),
           label: l10n.progressMetricCalories,

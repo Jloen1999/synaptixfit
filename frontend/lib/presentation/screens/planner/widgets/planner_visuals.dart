@@ -84,7 +84,7 @@ extension DeadlineTypeVisuals on DeadlineType {
     DeadlineType.exam => AppIcons.exam,
     DeadlineType.assignment => AppIcons.delivery,
     DeadlineType.presentation => AppIcons.presentation,
-    DeadlineType.other => Icons.flag_rounded,
+    DeadlineType.other => AppIcons.deadlineOther,
   };
 }
 

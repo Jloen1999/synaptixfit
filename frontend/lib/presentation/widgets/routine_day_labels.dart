@@ -43,8 +43,9 @@ String nextDayHeadline(
   ].join(' · ');
 }
 
-/// Aviso de retraso: «Atrasado: tocaba el lunes 3 nov».
+/// Aviso de retraso, corto para que quepa en su chip (que ya va en color de
+/// aviso): «Tocaba el lun 3 nov».
 String overdueSinceLabel(AppLocalizations l10n, DateTime date) =>
     l10n.trainingOverdueSince(
-      DateFormat('EEEE d MMM', l10n.localeName).format(date),
+      DateFormat('EEE d MMM', l10n.localeName).format(date),
     );

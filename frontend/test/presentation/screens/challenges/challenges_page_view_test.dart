@@ -168,7 +168,7 @@ void main() {
   testWidgets('los estados sin retos no ocupan sitio', (tester) async {
     await pump(tester);
 
-    expect(find.text('Completados (0)'), findsNothing);
+    expect(find.text('Hechos (0)'), findsNothing);
     expect(find.text('Vencidos (0)'), findsNothing);
   });
 

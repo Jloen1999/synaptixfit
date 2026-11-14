@@ -43,6 +43,11 @@ sealed class LiveSessionEvent with _$LiveSessionEvent {
   const factory LiveSessionEvent.adaptationDeclined() =
       LiveSessionAdaptationDeclined;
 
+  /// «Deshacer» de «Hacerla completa»: vuelve a las series adaptadas de hoy.
+  const factory LiveSessionEvent.adaptationRestored(
+    SessionAdaptation adaptation,
+  ) = LiveSessionAdaptationRestored;
+
   /// Finaliza con el esfuerzo percibido (RPE 1-10).
   const factory LiveSessionEvent.finishRequested(int rpe) =
       LiveSessionFinishRequested;

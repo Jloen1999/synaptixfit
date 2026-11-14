@@ -7,6 +7,7 @@ import 'package:synaptixfit/domain/enums/home_event_type.dart';
 import 'package:synaptixfit/domain/enums/item_time_status.dart';
 import 'package:synaptixfit/domain/enums/usage_focus.dart';
 import 'package:synaptixfit/domain/models/home/home_dashboard.dart';
+import 'package:synaptixfit/domain/models/home/today_next.dart';
 import 'package:synaptixfit/presentation/l10n/gen_l10n/app_localizations.dart';
 import 'package:synaptixfit/presentation/screens/home/widgets/agenda_section.dart';
 import 'package:synaptixfit/presentation/screens/home/widgets/today_hero_card.dart';
@@ -37,12 +38,12 @@ HomeTodayEvent _block(
 void main() {
   setUpAll(() => initializeDateFormatting('es'));
 
-  Future<List<TodayHeroAction>> pump(
+  Future<List<TodayAction>> pump(
     WidgetTester tester,
     List<HomeTodayEvent> events, {
     double textScale = 1,
   }) async {
-    final actions = <TodayHeroAction>[];
+    final actions = <TodayAction>[];
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.dark,
@@ -76,18 +77,16 @@ void main() {
   }
 
   test('lo siguiente es lo que está en curso; si no, lo próximo sin hacer', () {
-    final next = TodayHeroCard.nextEvent([
+    final next = [
       _block('1', HomeEventType.study, ItemTimeStatus.done, completed: true),
       _block('2', HomeEventType.study, ItemTimeStatus.missed, hour: 11),
       _block('3', HomeEventType.sport, ItemTimeStatus.upcoming, hour: 18),
       _block('4', HomeEventType.study, ItemTimeStatus.inProgress, hour: 12),
-    ]);
+    ].nextUp;
 
     expect(next?.id, '4');
     expect(
-      TodayHeroCard.nextEvent([
-        _block('5', HomeEventType.study, ItemTimeStatus.missed),
-      ]),
+      [_block('5', HomeEventType.study, ItemTimeStatus.missed)].nextUp,
       isNull,
     );
   });
@@ -107,7 +106,7 @@ void main() {
       findsOneWidget,
     );
     await tester.tap(find.text('Concentrarme'));
-    expect(actions, [TodayHeroAction.focus]);
+    expect(actions, [TodayAction.focus]);
   });
 
   testWidgets('sin nada planificado, «Añadir al calendario» en un toque', (
@@ -120,7 +119,7 @@ void main() {
       findsOneWidget,
     );
     await tester.tap(find.text('Añadir al calendario'));
-    expect(actions, [TodayHeroAction.addEvent]);
+    expect(actions, [TodayAction.addEvent]);
   });
 
   testWidgets('un solo botón: el entreno de hoy empieza con «Empezar»', (
@@ -138,7 +137,7 @@ void main() {
 
     expect(find.byWidgetPredicate((w) => w is FilledButton), findsOneWidget);
     await tester.tap(find.text('Empezar'));
-    expect(actions, [TodayHeroAction.train]);
+    expect(actions, [TodayAction.train]);
   });
 
   testWidgets('un partido suelto no arranca otra rutina: sin botón', (

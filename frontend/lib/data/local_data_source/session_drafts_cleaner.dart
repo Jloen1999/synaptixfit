@@ -17,6 +17,19 @@ class SessionDraftsCleaner {
     'run_pending_',
   ];
 
+  /// Lo que aún no tiene el servidor: series sin conexión y carreras (la del
+  /// cronómetro de la sesión no cuenta: se rehace sola).
+  static const _unsentPrefixes = [
+    'pending_sets_',
+    'run_recording',
+    'run_pending_',
+  ];
+
+  Future<bool> hasUnsent() async {
+    final keys = await _preferences.getKeys();
+    return keys.any((key) => _unsentPrefixes.any(key.startsWith));
+  }
+
   Future<void> clear() async {
     final keys = await _preferences.getKeys();
     for (final key in keys) {

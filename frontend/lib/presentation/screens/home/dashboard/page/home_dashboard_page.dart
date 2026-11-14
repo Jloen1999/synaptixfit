@@ -10,6 +10,7 @@ import '../../../../../domain/enums/home_banner_type.dart';
 import '../../../../../domain/enums/home_event_kind.dart';
 import '../../../../../domain/enums/usage_focus.dart';
 import '../../../../../domain/models/home/home_dashboard.dart';
+import '../../../../../domain/models/home/today_next.dart';
 import '../../../../extensions/context_extensions.dart';
 import '../../../../mixins/errors_message_mixin.dart';
 import '../../../../theme/tokens.g.dart';
@@ -353,7 +354,7 @@ class _HomeContentState extends State<_HomeContent> {
     // «Entrenar» de «Tu día» empieza el día de rutina del bloque que toca
     // ahora (lo que dice el calendario); sin enlace, el próximo de la rutina.
     void trainTodayBlock() {
-      final event = TodayHeroCard.nextEvent(dashboard.todayEvents);
+      final event = dashboard.todayEvents.nextUp;
       final routineId = event?.routineId;
       final dayId = event?.routineDayId;
       if (routineId != null && dayId != null) {
@@ -371,7 +372,7 @@ class _HomeContentState extends State<_HomeContent> {
     // «Concentrarme» se liga al bloque que toca: sus fases cuentan para él y
     // para su asignatura.
     void focusOnNext() {
-      final event = TodayHeroCard.nextEvent(dashboard.todayEvents);
+      final event = dashboard.todayEvents.nextUp;
       onNavigate(
         event == null
             ? HomeExternalPaths.pomodoro
@@ -396,25 +397,21 @@ class _HomeContentState extends State<_HomeContent> {
       onMarkDone: (event) => _setCompleted(context, event, completed: true),
       onAction: (action) {
         switch (action) {
-          case TodayHeroAction.focus:
+          case TodayAction.focus:
             focusOnNext();
-          case TodayHeroAction.train:
+          case TodayAction.train:
             trainTodayBlock();
           // Lo marca `onMarkDone` (devuelve el foco al título).
-          case TodayHeroAction.markDone:
+          case TodayAction.markDone:
             break;
-          case TodayHeroAction.addEvent:
+          case TodayAction.addEvent:
             onNavigate(HomeExternalPaths.addEvent());
         }
       },
     );
     // Si «Tu día» ya ofrece «Empezar», la tarjeta del entreno no lo repite.
     final heroTrains =
-        TodayHeroCard.actionFor(
-          TodayHeroCard.nextEvent(dashboard.todayEvents),
-          dashboard,
-        ) ==
-        TodayHeroAction.train;
+        TodayAction.of(dashboard.todayEvents.nextUp) == TodayAction.train;
     final setup = state.setup;
     final main = <Widget>[
       AgendaSection(

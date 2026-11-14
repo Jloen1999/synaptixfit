@@ -9,6 +9,7 @@ import com.synaptixfit.application.service.planner.SportActivityHistoryService;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
+import com.synaptixfit.domain.port.output.planner.ChallengeDirectoryPort;
 import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
 import java.time.Clock;
@@ -31,12 +32,14 @@ public class PastActivityBeanConfiguration {
     private final DomainEventPublisherPort events;
     private final PlannerZone zone;
     private final Clock clock;
+    private final ChallengeDirectoryPort challenges;
 
     public PastActivityBeanConfiguration(TransactionalUseCaseFactory tx, CalendarBlockRepositoryPort blocks,
                                          SubjectDirectoryPort subjects, SetBlockCompletionUseCase completion,
                                          LoggedActivityRepositoryPort logged, DomainEventPublisherPort events,
                                          @Value("${synaptixfit.planner.zone:Europe/Madrid}") String zoneId,
-                                         Clock clock) {
+                                         Clock clock, ChallengeDirectoryPort challenges) {
+        this.challenges = challenges;
         this.tx = tx;
         this.blocks = blocks;
         this.subjects = subjects;
@@ -50,7 +53,7 @@ public class PastActivityBeanConfiguration {
     /** Una sola instancia para los dos contratos; cada uno se expone envuelto en su transacción. */
     @Bean(autowireCandidate = false)
     PastActivityService pastActivityService() {
-        return new PastActivityService(blocks, subjects, completion, zone, clock, logged, events);
+        return new PastActivityService(blocks, subjects, completion, zone, clock, logged, events, challenges);
     }
 
     @Bean

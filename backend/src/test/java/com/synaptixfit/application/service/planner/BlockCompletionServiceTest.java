@@ -31,7 +31,7 @@ class BlockCompletionServiceTest {
     void setUp() {
         f = new PlannerFakes();
         service = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp, f.publisher,
-                f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK);
+                f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK, (u, b) -> java.util.Optional.empty());
     }
 
     private CalendarBlock block(ActivityType type, Instant start, int minutes, UUID subjectId) {
@@ -100,6 +100,24 @@ class BlockCompletionServiceTest {
                             assertThat(done.durationMinutes()).isEqualTo(90);
                         },
                         undone -> assertThat(undone.completed()).isFalse());
+    }
+
+    @Test
+    void remarkingAnEventWithItsLoggedActivityUsesTheRealMinutes() {
+        CalendarBlock run = block(ActivityType.SPORT, at(0, 16, 0), 60, null);
+        BlockCompletionService withActivity = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp,
+                f.xp, f.publisher, f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK,
+                (u, b) -> b.equals(run.id()) ? java.util.Optional.of(35) : java.util.Optional.empty());
+
+        withActivity.setCompletion(f.user, run.id(), false, null);
+        withActivity.setCompletion(f.user, run.id(), true, 6);
+
+        // La carrera duró 35 min aunque el evento ocupe 60: la carga física cuenta lo hecho (ADR 0037).
+        assertThat(f.events).filteredOn(SportBlockCompletionChanged.class::isInstance)
+                .map(SportBlockCompletionChanged.class::cast)
+                .filteredOn(SportBlockCompletionChanged::completed)
+                .singleElement()
+                .satisfies(done -> assertThat(done.durationMinutes()).isEqualTo(35));
     }
 
     @Test
@@ -181,7 +199,7 @@ class BlockCompletionServiceTest {
     @Test
     void aBlockCannotBeCompletedBeforeItStartsButAMissedOneCan() {
         BlockCompletionService early = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp,
-                f.publisher, f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.CLOCK);
+                f.publisher, f.weeklyLoadService(), PlannerFakes.ZONE, PlannerFakes.CLOCK, (u, b) -> java.util.Optional.empty());
         CalendarBlock future = block(ActivityType.STUDY, at(0, 16, 0), 60, null);
         assertThatThrownBy(() -> early.setCompletion(f.user, future.id(), true))
                 .extracting("code").isEqualTo("BLOCK_IN_FUTURE");

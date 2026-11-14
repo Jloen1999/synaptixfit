@@ -134,7 +134,18 @@ class _WeekCanvasState extends State<WeekCanvas> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final available = constraints.maxWidth - WeekCanvas.axisWidth;
+        // Con el texto grande, las horas («10:00») y los días («dom 16»)
+        // necesitan más sitio: el eje y la cabecera crecen con el texto
+        // (hasta el doble) en vez de cortarlos.
+        final axisWidth = math.min(
+          context.scaled(WeekCanvas.axisWidth),
+          WeekCanvas.axisWidth * 2,
+        );
+        final headerHeight = math.min(
+          context.scaled(WeekCanvas.headerHeight),
+          WeekCanvas.headerHeight * 2,
+        );
+        final available = constraints.maxWidth - axisWidth;
         final geometry = WeekGridGeometry(
           dayWidth: math.max(available / 7, WeekCanvas.minDayWidth),
           hourHeight: WeekCanvas.hourHeight,
@@ -143,10 +154,10 @@ class _WeekCanvasState extends State<WeekCanvas> {
         return Column(
           children: [
             SizedBox(
-              height: WeekCanvas.headerHeight,
+              height: headerHeight,
               child: Row(
                 children: [
-                  const SizedBox(width: WeekCanvas.axisWidth),
+                  SizedBox(width: axisWidth),
                   Expanded(
                     child: SingleChildScrollView(
                       controller: _header,
@@ -168,7 +179,7 @@ class _WeekCanvasState extends State<WeekCanvas> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: WeekCanvas.axisWidth,
+                    width: axisWidth,
                     child: SingleChildScrollView(
                       controller: _axis,
                       physics: const NeverScrollableScrollPhysics(),

@@ -126,6 +126,9 @@ public class RunService implements RecordRunUseCase, GetRunUseCase, DeleteRunUse
 
         UUID blockId = null;
         int xpDelta = 0;
+        // Reto y tarea del evento planificado que se borra al correr antes de su hora: pasan a la actividad.
+        UUID challengeId = null;
+        UUID milestoneId = null;
         if (command.plannedBlockId() != null) {
             Optional<UUID> plannedWorkout = workouts.workoutOfEvent(userId, command.plannedBlockId());
             Optional<CalendarBlock> planned = plannedWorkout.flatMap(w -> findBlock(userId, command.plannedBlockId()));
@@ -140,6 +143,8 @@ public class RunService implements RecordRunUseCase, GetRunUseCase, DeleteRunUse
                     || runs.findDetail(userId, planned.get().id(), RunDetail.ROUTE_POINTS).isEmpty());
             if (attachable) {
                 if (!planned.get().completed() && planned.get().start().isAfter(now)) {
+                    challengeId = planned.get().details().challengeId();
+                    milestoneId = planned.get().details().milestoneId();
                     deleteBlock.deleteBlock(userId, planned.get().id());
                 } else {
                     SetBlockCompletionUseCase.Result done = completePlanned.completePlannedActivity(
@@ -156,7 +161,8 @@ public class RunService implements RecordRunUseCase, GetRunUseCase, DeleteRunUse
         if (blockId == null) {
             SetBlockCompletionUseCase.Result result = logActivity.logPastActivity(new LogPastActivityUseCase.Command(
                     userId, end.minus(Duration.ofMinutes(minutes)), minutes, workout == null ? null : workout.name(),
-                    effort, ActivityType.SPORT, null, command.kind(), distance, ActivitySource.GPS));
+                    effort, ActivityType.SPORT, null, command.kind(), distance, ActivitySource.GPS, challengeId,
+                    milestoneId));
             blockId = result.block().id();
             xpDelta = result.xpDelta();
         }

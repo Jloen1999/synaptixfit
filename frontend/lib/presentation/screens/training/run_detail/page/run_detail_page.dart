@@ -249,7 +249,7 @@ class _Content extends StatelessWidget {
               ),
               if (run.kcal case final kcal?)
                 AppMetricTile(
-                  icon: Icons.local_fire_department_rounded,
+                  icon: AppIcons.kcal,
                   color: context.colors.primary,
                   value: l10n.runKcal(kcal),
                   label: l10n.runKcalLabel,
@@ -294,7 +294,7 @@ class _Content extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.bolt_rounded,
+                    AppIcons.fastest,
                     color: context.colors.primary,
                     size: TokensSize.iconS,
                   ),
@@ -385,7 +385,7 @@ class _Splits extends StatelessWidget {
                     const SizedBox(width: TokensSpacing.s),
                     if (s.paceSecondsPerKm == fastest && splits.length > 1)
                       Icon(
-                        Icons.bolt_rounded,
+                        AppIcons.fastest,
                         color: context.colors.primary,
                         size: TokensSize.iconS,
                       ),

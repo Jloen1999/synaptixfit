@@ -131,6 +131,7 @@ abstract final class TokensLayout {
   static const double coverPhotoShare = 0.4;
   static const double coverPhotoFade = 0.4;
   static const double bottomBarMaxShare = 0.45;
+  static const double largeTextScale = 1.3;
   static const double segmentMinWidth = 112;
   static const double fabClearance = 96;
   static const double filterMaxWidth = 280;

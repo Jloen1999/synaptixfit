@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -56,27 +58,17 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
     );
   }
 
-  Future<void> _logout(BuildContext context) async {
+  /// Solo pregunta si hay datos sin subir: cerrar sesión los borraría.
+  Future<void> _confirmLogout(BuildContext context) async {
     final l10n = context.localizations;
     final session = context.read<SessionBloc>();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.profileLogoutTitle),
-        content: Text(l10n.profileLogoutMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.profileLogoutAction),
-          ),
-        ],
-      ),
+    final ok = await showConfirmDialog(
+      context,
+      title: l10n.profileLogoutTitle,
+      message: l10n.profileLogoutUnsentMessage,
+      confirmLabel: l10n.profileLogoutAction,
     );
-    if (ok ?? false) session.add(const SessionEvent.logoutRequested());
+    if (ok) session.add(const SessionEvent.logoutRequested());
   }
 
   @override
@@ -100,6 +92,12 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
               context.showSnack(l10n.profileExportCancelled);
             case SettingsOutcome.deleted:
               context.showSnack(l10n.profileDeleteDone);
+              context.read<SessionBloc>().add(
+                const SessionEvent.logoutRequested(),
+              );
+            case SettingsOutcome.confirmLogout:
+              unawaited(_confirmLogout(context));
+            case SettingsOutcome.loggedOut:
               context.read<SessionBloc>().add(
                 const SessionEvent.logoutRequested(),
               );
@@ -163,7 +161,9 @@ class _SettingsView extends StatelessWidget with ErrorsMessageMixin {
                     child: ListTile(
                       leading: const Icon(AppIcons.leave),
                       title: Text(l10n.profileLogoutAction),
-                      onTap: () => _logout(context),
+                      onTap: () => context.read<SettingsBloc>().add(
+                        const SettingsEvent.logoutRequested(),
+                      ),
                     ),
                   ),
                 ],

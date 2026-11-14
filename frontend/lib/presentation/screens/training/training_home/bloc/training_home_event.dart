@@ -11,9 +11,20 @@ sealed class TrainingHomeEvent with _$TrainingHomeEvent {
     String recommendationId,
   ) = TrainingHomeRecommendationApplied;
 
+  /// Quita la sugerencia de la lista; el aviso lleva «Deshacer».
   const factory TrainingHomeEvent.recommendationDiscarded(
     String recommendationId,
   ) = TrainingHomeRecommendationDiscarded;
+
+  /// «Deshacer» del aviso: la sugerencia vuelve a la lista.
+  const factory TrainingHomeEvent.recommendationRestored(
+    Recommendation recommendation,
+  ) = TrainingHomeRecommendationRestored;
+
+  /// El aviso se cerró sin deshacer: se descarta en el servidor.
+  const factory TrainingHomeEvent.recommendationDiscardConfirmed(
+    String recommendationId,
+  ) = TrainingHomeRecommendationDiscardConfirmed;
 
   /// Empezar una sesión de un día (o libre si ambos son nulos).
   const factory TrainingHomeEvent.sessionStarted({

@@ -240,7 +240,7 @@ class _ProfileHeader extends StatelessWidget {
             children: [
               Expanded(
                 child: AppMetricTile(
-                  icon: Icons.local_fire_department_rounded,
+                  icon: AppIcons.streak,
                   color: context.palette.streak,
                   value: '${profile.streak ?? 0}',
                   label: l10n.socialProfileStreak,

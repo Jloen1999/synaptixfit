@@ -194,6 +194,7 @@ class _LiveViewState extends State<_LiveView> {
     if (!mounted || result == null) return;
     switch (result) {
       case SetSheetSave(:final record):
+        _closeUnmarkNotice();
         // Corregir una serie no vuelve a empezar su descanso.
         _bloc.add(
           LiveSessionEvent.setRecorded(record, startRest: existing == null),
@@ -219,11 +220,13 @@ class _LiveViewState extends State<_LiveView> {
   void _unmarkWithUndo(SessionSet before) {
     final bloc = _bloc..add(LiveSessionEvent.setDeleted(before.id));
     final l10n = context.localizations;
+    _unmarkNoticeOpen = true;
     context.showUndoSnack(
       before.warmup
           ? l10n.trainingWarmupSetUnmarked(before.setNumber)
           : l10n.trainingSetUnmarked(before.setNumber),
       onUndo: () {
+        _unmarkNoticeOpen = false;
         if (bloc.isClosed) return;
         bloc.add(
           LiveSessionEvent.setRecorded(
@@ -245,8 +248,19 @@ class _LiveViewState extends State<_LiveView> {
           ),
         );
       },
-      onCommit: () {},
+      onCommit: () => _unmarkNoticeOpen = false,
     );
+  }
+
+  /// Aviso «Serie N desmarcada · Deshacer» a la vista.
+  bool _unmarkNoticeOpen = false;
+
+  /// Al volver a apuntar una serie, el aviso de desmarcar ya no vale: su
+  /// «Deshacer» la apuntaría otra vez y competiría con el de la serie nueva.
+  void _closeUnmarkNotice() {
+    if (!_unmarkNoticeOpen) return;
+    _unmarkNoticeOpen = false;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
   }
 
   /// Toque en la fila de una serie hecha (fuera del ✓): la hoja para
@@ -272,6 +286,7 @@ class _LiveViewState extends State<_LiveView> {
     if (!mounted || result == null) return;
     switch (result) {
       case SetSheetSave(:final record):
+        _closeUnmarkNotice();
         _bloc.add(LiveSessionEvent.setRecorded(record, startRest: false));
       case SetSheetUnmark():
         _unmarkWithUndo(set);
@@ -321,6 +336,7 @@ class _LiveViewState extends State<_LiveView> {
         ?.setsFor(e.id)
         .where((s) => s.setNumber == set)
         .firstOrNull;
+    _closeUnmarkNotice();
     if (existing == null) _offerUndo(e, set);
     setState(
       () => _drafts.removeWhere((k, _) => k.startsWith('${e.id}/$set/')),
@@ -409,6 +425,7 @@ class _LiveViewState extends State<_LiveView> {
     if (!mounted || result == null) return;
     switch (result) {
       case SetSheetSave(:final record):
+        _closeUnmarkNotice();
         _bloc.add(LiveSessionEvent.setRecorded(record));
         if (existing == null) _offerWarmupUndo(e, set);
       case SetSheetUnmark():
@@ -1525,18 +1542,23 @@ class _AdaptationCard extends StatelessWidget {
   final List<PlannedExercise> exercises;
   final Map<String, int> plannedSets;
 
-  /// La adaptación cuida de la fatiga o la carga: deshacerla se confirma.
-  Future<void> _decline(BuildContext context) async {
-    final l10n = context.localizations;
+  /// Se puede deshacer, así que no pregunta (vocabulario §4): se hace y el
+  /// aviso lleva «Deshacer», que vuelve a las series adaptadas.
+  void _decline(BuildContext context) {
     final bloc = context.read<LiveSessionBloc>();
-    final ok = await showConfirmDialog(
-      context,
-      title: l10n.trainingAdaptedDeclineTitle,
-      message: l10n.trainingAdaptedDeclineMessage,
-      confirmLabel: l10n.trainingAdaptedDecline,
-      destructive: false,
+    // La tarjeta (y su botón, que tiene el foco) desaparece: el foco pasa a
+    // lo siguiente en vez de volver al principio (WCAG 2.4.3).
+    FocusScope.of(context).nextFocus();
+    bloc.add(const LiveSessionEvent.adaptationDeclined());
+    context.showUndoSnack(
+      context.localizations.trainingAdaptedDeclined,
+      onUndo: () {
+        if (!bloc.isClosed) {
+          bloc.add(LiveSessionEvent.adaptationRestored(adaptation));
+        }
+      },
+      onCommit: () {},
     );
-    if (ok) bloc.add(const LiveSessionEvent.adaptationDeclined());
   }
 
   @override

@@ -108,7 +108,11 @@ void registerProfilePresentation(GetIt getIt) {
       ),
     )
     ..registerFactory(
-      () => SettingsBloc(exportMyData: getIt(), deleteMyAccount: getIt()),
+      () => SettingsBloc(
+        exportMyData: getIt(),
+        deleteMyAccount: getIt(),
+        hasUnsentData: getIt(),
+      ),
     )
     ..registerFactory(
       () => ChangePasswordBloc(changePassword: getIt(), getAccount: getIt()),

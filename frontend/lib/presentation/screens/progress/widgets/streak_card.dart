@@ -31,7 +31,7 @@ class StreakCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(TokensRadius.m),
                 ),
                 child: Icon(
-                  Icons.local_fire_department_rounded,
+                  AppIcons.streak,
                   color: color,
                   size: TokensSize.iconM,
                 ),

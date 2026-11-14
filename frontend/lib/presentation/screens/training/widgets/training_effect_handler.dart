@@ -6,6 +6,7 @@ import '../../../extensions/context_extensions.dart';
 import '../../../l10n/gen_l10n/app_localizations.dart';
 import '../../../mixins/errors_message_mixin.dart';
 import '../../../theme/tokens.g.dart';
+import '../../../../domain/models/training/recommendation.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../training_effect.dart';
 import '../training_routes.dart';
@@ -16,10 +17,14 @@ class TrainingEffectHandler with ErrorsMessageMixin {
 
   /// [onUnskipDay]: «Deshacer» del aviso de día saltado (saltar no se
   /// confirma: es reversible). Sin él, el aviso dice dónde recuperarlo.
+  /// [onRestoreRecommendation] y [onConfirmDiscard]: «Deshacer» de una
+  /// sugerencia descartada y el descarte de verdad al cerrarse el aviso.
   void handle(
     BuildContext context,
     TrainingEffect effect, {
     void Function(String routineId, String dayId)? onUnskipDay,
+    void Function(Recommendation recommendation)? onRestoreRecommendation,
+    void Function(String recommendationId)? onConfirmDiscard,
   }) {
     final l10n = context.localizations;
     switch (effect) {
@@ -59,6 +64,28 @@ class TrainingEffectHandler with ErrorsMessageMixin {
         } else {
           context.showSnack(l10n.trainingDaySkipped);
         }
+      case TrainingEffectRecommendationApplied(:final routineId):
+        // Dice dónde queda el cambio y lleva allí (la rutina vive en la
+        // pestaña: `go`, también desde el resumen a pantalla completa).
+        if (routineId == null) {
+          context.showSnack(l10n.trainingMsgRecommendationApplied);
+        } else {
+          context.showActionSnack(
+            l10n.trainingMsgRecommendationApplied,
+            actionLabel: l10n.commonView,
+            onAction: () => context.go(TrainingPaths.routine(routineId)),
+          );
+        }
+      case TrainingEffectRecommendationDiscarded(:final recommendation):
+        if (onRestoreRecommendation == null || onConfirmDiscard == null) {
+          context.showSnack(l10n.trainingMsgRecommendationDiscarded);
+        } else {
+          context.showUndoSnack(
+            l10n.trainingMsgRecommendationDiscarded,
+            onUndo: () => onRestoreRecommendation(recommendation),
+            onCommit: () => onConfirmDiscard(recommendation.id),
+          );
+        }
       case TrainingEffectClose():
         if (context.canPop()) {
           context.pop();
@@ -74,10 +101,6 @@ class TrainingEffectHandler with ErrorsMessageMixin {
     AppLocalizations l10n,
     TrainingMessage m,
   ) => switch (m) {
-    TrainingMessage.recommendationApplied =>
-      l10n.trainingMsgRecommendationApplied,
-    TrainingMessage.recommendationDiscarded =>
-      l10n.trainingMsgRecommendationDiscarded,
     TrainingMessage.routineSaved => l10n.trainingMsgRoutineSaved,
     TrainingMessage.routineDeleted => l10n.trainingMsgRoutineDeleted,
     TrainingMessage.routineUpdated => l10n.commonSaved,

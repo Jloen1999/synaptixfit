@@ -53,9 +53,15 @@ public class PlatformMetricsJdbcAdapter implements PlatformMetricsQueryPort {
 
     @Override
     public List<UserActivity> completedTrainingSessions(Instant from, Instant to) {
+        // Una carrera o actividad hecha cuenta como un entreno (vocabulario.md §3), con las mismas filas que
+        // Inicio y Progreso (DashboardJdbcAdapter.trainingTotals): actividades apuntadas de eventos hechos.
         return jdbc.sql("""
                         SELECT usuario_id, completada_en FROM sesiones_registradas
                         WHERE completada_en >= :fromTs AND completada_en < :toTs
+                        UNION ALL
+                        SELECT a.usuario_id, b.hora_fin FROM actividades_apuntadas a
+                        JOIN horarios_academicos b ON b.id = a.bloque_id
+                        WHERE b.completado = true AND b.hora_fin >= :fromTs AND b.hora_fin < :toTs
                         """)
                 .param("fromTs", JdbcValues.param(from)).param("toTs", JdbcValues.param(to))
                 .query((rs, n) -> new UserActivity(JdbcValues.uuid(rs, "usuario_id"), JdbcValues.instant(rs, "completada_en")))

@@ -274,7 +274,7 @@ class _Content extends StatelessWidget {
                     ),
                   if ((session.calories ?? 0) > 0)
                     AppMetricTile(
-                      icon: Icons.local_fire_department_rounded,
+                      icon: AppIcons.kcal,
                       color: context.palette.calories,
                       value: l10n.trainingChipKcal(session.calories!.round()),
                       label: l10n.trainingSessionDetailCalories,

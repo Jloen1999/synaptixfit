@@ -168,25 +168,50 @@ void main() {
   );
 
   blocTest<TrainingHomeBloc, TrainingHomeState>(
-    'descartar una sugerencia la quita de la lista',
+    'descartar una sugerencia la quita al momento y avisa con «Deshacer»; '
+    'el servidor la descarta al cerrarse el aviso',
     setUp: () => when(
       () => discard('rec1'),
     ).thenAnswer((_) async => const Success(unit)),
     build: build,
     seed: () => ready,
-    act: (bloc) =>
-        bloc.add(const TrainingHomeEvent.recommendationDiscarded('rec1')),
+    act: (bloc) async {
+      bloc.add(const TrainingHomeEvent.recommendationDiscarded('rec1'));
+      await Future<void>.delayed(Duration.zero);
+      verifyNever(() => discard(any()));
+      bloc.add(const TrainingHomeEvent.recommendationDiscardConfirmed('rec1'));
+    },
     expect: () => [
-      ready.copyWith(busyIds: {'rec1'}),
       ready.copyWith(recommendations: []),
       ready.copyWith(
         recommendations: [],
-        effect: const TrainingEffect.message(
-          TrainingMessage.recommendationDiscarded,
+        effect: TrainingEffect.recommendationDiscarded(
+          ready.recommendations.single,
         ),
       ),
       ready.copyWith(recommendations: []),
     ],
+    verify: (_) => verify(() => discard('rec1')).called(1),
+  );
+
+  blocTest<TrainingHomeBloc, TrainingHomeState>(
+    '«Deshacer» devuelve la sugerencia y no se descarta en el servidor',
+    build: build,
+    seed: () => ready,
+    act: (bloc) async {
+      bloc.add(const TrainingHomeEvent.recommendationDiscarded('rec1'));
+      await Future<void>.delayed(Duration.zero);
+      bloc
+        ..add(
+          TrainingHomeEvent.recommendationRestored(
+            ready.recommendations.single,
+          ),
+        )
+        ..add(const TrainingHomeEvent.recommendationDiscardConfirmed('rec1'));
+    },
+    skip: 3,
+    expect: () => [ready],
+    verify: (_) => verifyNever(() => discard(any())),
   );
 
   blocTest<TrainingHomeBloc, TrainingHomeState>(

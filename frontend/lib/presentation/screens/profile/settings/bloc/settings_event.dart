@@ -4,6 +4,9 @@ part of 'settings_bloc.dart';
 sealed class SettingsEvent with _$SettingsEvent {
   const factory SettingsEvent.exportRequested() = SettingsExportRequested;
 
+  /// «Cerrar sesión»: el bloc mira si hay datos sin subir antes.
+  const factory SettingsEvent.logoutRequested() = SettingsLogoutRequested;
+
   /// Baja de la cuenta: contraseña si la tiene, o confirmación explícita si es
   /// solo de Google.
   const factory SettingsEvent.deleteRequested({

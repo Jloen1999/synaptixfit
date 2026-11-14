@@ -93,6 +93,10 @@ class _ProgressOverviewPageState extends State<ProgressOverviewPage>
         title: Text(l10n.progressTitle),
         bottom: TabBar(
           controller: _tabs,
+          // Con el texto grande, los apartados se desplazan en vez de cortarse
+          // («Résum…»).
+          isScrollable: context.largeText,
+          tabAlignment: context.largeText ? TabAlignment.start : null,
           tabs: [
             Tab(text: l10n.progressTabSummary),
             Tab(text: l10n.challengesTitle),
@@ -161,14 +165,48 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
     if (error != null) context.showSnack(errorMessage(context, error));
   }
 
+  static ProgressOverviewLoaded _withoutReview(ProgressOverviewLoaded s) =>
+      s.copyWith(openingReview: false, reviewQueue: null, reviewError: null);
+
+  /// Abre la cola de repaso que pidió el bloc (en un toque, ADR 0041). Si ya
+  /// no queda ninguno, Académico enseña el estado real.
+  void _onReview(ProgressOverviewLoaded state) {
+    final bloc = context.read<ProgressOverviewBloc>();
+    if (state.reviewError case final error?) {
+      bloc.add(const ProgressOverviewEvent.reviewHandled());
+      context.showSnack(errorMessage(context, error));
+      return;
+    }
+    final queue = state.reviewQueue;
+    if (queue == null) return;
+    bloc.add(const ProgressOverviewEvent.reviewHandled());
+    if (queue.isEmpty) {
+      context.go(ProgressExternalPaths.academic);
+    } else {
+      unawaited(
+        _open(ProgressExternalPaths.review(queue.first, queue.skip(1))),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     return BlocConsumer<ProgressOverviewBloc, ProgressOverviewState>(
+      // Pedir y abrir la cola de repaso no vuelve a avisar de la recarga.
       listenWhen: (previous, current) =>
-          current is ProgressOverviewLoaded && previous != current,
+          current is ProgressOverviewLoaded &&
+          previous != current &&
+          (current.reviewQueue != null ||
+              current.reviewError != null ||
+              previous is! ProgressOverviewLoaded ||
+              _withoutReview(previous) != _withoutReview(current)),
       listener: (context, state) {
-        if (state is ProgressOverviewLoaded) unawaited(_onLoaded(state));
+        if (state is! ProgressOverviewLoaded) return;
+        if (state.reviewQueue != null || state.reviewError != null) {
+          return _onReview(state);
+        }
+        unawaited(_onLoaded(state));
       },
       builder: (context, state) {
         return switch (state) {
@@ -183,6 +221,7 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
             :final overview,
             :final today,
             :final todayError,
+            :final openingReview,
           ) =>
             _focusAware(
               context,
@@ -212,9 +251,11 @@ class _ProgressOverviewViewState extends State<_ProgressOverviewView>
                           overview.studyWeek!.reviewsDue,
                         ),
                         icon: Icons.replay_rounded,
-                        // Los repasos pendientes están en la pestaña Académico.
-                        onPressed: () =>
-                            context.go(ProgressExternalPaths.academic),
+                        loading: openingReview,
+                        // Un toque: abre la cola de repaso, no Académico.
+                        onPressed: () => context
+                            .read<ProgressOverviewBloc>()
+                            .add(const ProgressOverviewEvent.reviewRequested()),
                       ),
                     // Las ganadas están en «Insignias»: aquí solo la siguiente.
                     if (overview.nextBadge case final next?)

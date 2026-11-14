@@ -557,6 +557,19 @@ class _Shortcuts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.localizations;
+    List<Widget> chips(double gap) => [
+      ActionChip(
+        avatar: const Icon(AppIcons.delivery),
+        label: Text(l10n.plannerMenuDeadlines),
+        onPressed: () => onOpen(PlannerPaths.deadlines),
+      ),
+      if (gap > 0) SizedBox(width: gap),
+      ActionChip(
+        avatar: const Icon(AppIcons.focusTimer),
+        label: Text(l10n.plannerFocusOnBlock),
+        onPressed: () => onOpen(PlannerPaths.pomodoro),
+      ),
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         TokensSpacing.m,
@@ -564,26 +577,19 @@ class _Shortcuts extends StatelessWidget {
         TokensSpacing.m,
         TokensSpacing.s,
       ),
-      // Una sola fila que se desliza: con el texto grande no roba alto a la
-      // cuadrícula de la semana.
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            ActionChip(
-              avatar: const Icon(AppIcons.delivery),
-              label: Text(l10n.plannerMenuDeadlines),
-              onPressed: () => onOpen(PlannerPaths.deadlines),
+      // Con el texto normal los dos atajos se ven enteros (bajan de fila si
+      // no caben); con el texto grande, una sola fila que se desliza para no
+      // robar alto a la cuadrícula de la semana.
+      child: context.largeText
+          ? SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: chips(TokensSpacing.s)),
+            )
+          : Wrap(
+              spacing: TokensSpacing.s,
+              runSpacing: TokensSpacing.xs,
+              children: chips(0),
             ),
-            const SizedBox(width: TokensSpacing.s),
-            ActionChip(
-              avatar: const Icon(AppIcons.focusTimer),
-              label: Text(l10n.plannerFocusOnBlock),
-              onPressed: () => onOpen(PlannerPaths.pomodoro),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

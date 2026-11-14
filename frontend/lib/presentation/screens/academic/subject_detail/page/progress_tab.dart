@@ -819,11 +819,16 @@ class _RetentionSection extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: Text(
-                        m.nextReviewAt == null
-                            ? context.masteryLabel(m.masteryState)
-                            : '${context.masteryLabel(m.masteryState)} · ${l10n.academicNextReview(shortDate(m.nextReviewAt!))}',
-                      ),
+                      // Un repaso que ya tocaba se dice así («Tocaba el 30
+                      // oct · repásalo hoy»), no «Dominado · Próximo repaso»
+                      // con una fecha pasada.
+                      subtitle: Text(switch (m.nextReviewAt) {
+                        null => context.masteryLabel(m.masteryState),
+                        final next when next.isBefore(DateTime.now()) =>
+                          l10n.academicReviewOverdue(shortDate(next)),
+                        final next =>
+                          '${context.masteryLabel(m.masteryState)} · ${l10n.academicNextReview(shortDate(next))}',
+                      }),
                       trailing: const Icon(AppIcons.next),
                       onTap: () => context.push(AcademicPaths.review(m.id)),
                     ),

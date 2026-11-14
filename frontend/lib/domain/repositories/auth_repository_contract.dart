@@ -23,6 +23,10 @@ abstract interface class AuthRepositoryContract {
 
   Future<AppResult<Unit>> logout();
 
+  /// Hay en el teléfono algo que el servidor aún no tiene (series apuntadas
+  /// sin conexión, una carrera en curso o por subir): cerrar sesión lo borra.
+  Future<AppResult<bool>> hasUnsentData();
+
   /// Envía el correo para restablecer la contraseña (siempre éxito si el
   /// servidor responde: no revela si la cuenta existe).
   Future<AppResult<Unit>> requestPasswordReset({required String email});

@@ -451,3 +451,14 @@ enum RoutineNextStep {
     _ => null,
   };
 }
+
+/// Reglas sobre la lista de rutinas de la persona.
+extension RoutineSummaries on Iterable<RoutineSummary> {
+  /// Rutina cuyo ciclo acaba de terminar (para ofrecer repetirla o preparar
+  /// otra): solo si no queda ningún día por hacer ([hasPendingDay]) ni otra
+  /// rutina en curso.
+  RoutineSummary? finishedCycle({required bool hasPendingDay}) =>
+      hasPendingDay || any((r) => r.status == RoutineStatus.active)
+      ? null
+      : where((r) => r.status == RoutineStatus.completed).firstOrNull;
+}

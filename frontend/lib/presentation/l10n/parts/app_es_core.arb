@@ -292,5 +292,6 @@
   "@xpGuidePlanningDetail": {
     "description": "Guía de XP: regla de la XP de planificar la semana, sin botón."
   },
-  "commonShowLess": "Ver menos"
+  "commonShowLess": "Ver menos",
+  "commonGoHome": "Ir a Inicio"
 }

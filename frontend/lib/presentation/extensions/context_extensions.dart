@@ -22,7 +22,7 @@ extension AppContext on BuildContext {
 
   /// Texto por encima del 130 %: las tarjetas pasan a su forma apilada
   /// (bloque de fecha encima, acciones debajo). Un solo umbral para todas.
-  bool get largeText => scaled(1) > 1.3;
+  bool get largeText => scaled(1) > TokensLayout.largeTextScale;
 
   /// El usuario ha pedido reducir el movimiento en su sistema.
   bool get reduceMotion => MediaQuery.disableAnimationsOf(this);

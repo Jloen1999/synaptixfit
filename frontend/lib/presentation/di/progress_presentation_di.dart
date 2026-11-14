@@ -11,6 +11,7 @@ void registerProgressPresentation(GetIt getIt) {
       () => ProgressOverviewBloc(
         getOverview: getIt(),
         getToday: getIt(),
+        getDueMaterials: getIt(),
         watchChanges: getIt(),
       ),
     )

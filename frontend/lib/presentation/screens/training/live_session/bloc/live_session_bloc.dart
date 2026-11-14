@@ -78,6 +78,22 @@ class LiveSessionBloc extends Bloc<LiveSessionEvent, LiveSessionState> {
         ),
       );
     });
+    on<LiveSessionAdaptationRestored>((e, emit) {
+      if (state.adaptation.adapted || !e.adaptation.adapted) return;
+      emit(
+        state.copyWith(
+          exercises: [
+            for (final x in state.exercises)
+              x.copyWith(
+                parameters: x.parameters.copyWith(
+                  sets: e.adaptation.sets[x.id] ?? x.parameters.sets,
+                ),
+              ),
+          ],
+          adaptation: e.adaptation,
+        ),
+      );
+    });
     on<LiveSessionTicked>((_, emit) => _recalculate(emit));
     on<LiveSessionResumed>((_, emit) => _recalculate(emit, resumed: true));
     on<LiveSessionExerciseSelected>(

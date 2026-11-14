@@ -120,7 +120,7 @@ class SmartBannerContent {
         tone: SmartBannerTone.positive,
       ),
       HomeBannerType.trainingStreak => SmartBannerContent(
-        icon: Icons.local_fire_department_outlined,
+        icon: AppIcons.streak,
         title: l10n.homeBannerTrainingStreakTitle(asInt('days')),
         message: l10n.homeBannerTrainingStreakMessage,
         tone: SmartBannerTone.positive,

@@ -106,6 +106,13 @@ public final class CognitiveState {
     public UUID userId() { return userId; }
     public double cognitiveLoad() { return cognitiveLoad; }
     public double attentionCapacity() { return attentionCapacity; }
+
+    /** Nivel en palabras de la carga, con los umbrales del dominio ({@link CognitiveLevel}, ADR 0039). */
+    public CognitiveLevel loadLevel() { return CognitiveLevel.ofLoad(cognitiveLoad); }
+
+    /** Nivel en palabras de la capacidad de atención ({@link CognitiveLevel}). */
+    public CognitiveLevel attentionLevel() { return CognitiveLevel.ofAttention(attentionCapacity); }
+
     public int lastBlockMinutes() { return lastBlockMinutes; }
     public Instant lastRestAt() { return lastRestAt; }
     public Double rmrBase() { return rmrBase; }

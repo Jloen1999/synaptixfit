@@ -48,7 +48,7 @@ void main() {
   }
 
   double x(WidgetTester tester, String label) =>
-      tester.getCenter(find.widgetWithText(ChoiceChip, label)).dx;
+      tester.getCenter(find.text(label)).dx;
 
   testWidgets('lo mejor va siempre a la derecha', (tester) async {
     await pump(tester);
@@ -78,11 +78,23 @@ void main() {
   ) async {
     await pump(tester, sleep: 4, energy: 2, soreness: 3);
 
-    ChoiceChip chip(String label) =>
-        tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label));
-    expect(chip('Bien').selected, isTrue);
-    expect(chip('Baja').selected, isTrue);
-    expect(chip('Algo').selected, isTrue);
+    // Con sitio, las respuestas son botones segmentados (AppSegmentedChoice).
+    bool selected(String label) {
+      final button = tester.widget<SegmentedButton<int>>(
+        find.ancestor(
+          of: find.text(label),
+          matching: find.byType(SegmentedButton<int>),
+        ),
+      );
+      final segment = button.segments.firstWhere(
+        (s) => (s.label! as Text).data == label,
+      );
+      return button.selected.contains(segment.value);
+    }
+
+    expect(selected('Bien'), isTrue);
+    expect(selected('Baja'), isTrue);
+    expect(selected('Algo'), isTrue);
   });
 
   test('el historial dice la respuesta en palabras', () async {

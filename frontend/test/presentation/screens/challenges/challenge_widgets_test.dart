@@ -132,7 +132,9 @@ void main() {
         tester,
         ChallengesFixtures.challenge(completed: true, xpAwarded: 40),
       );
-      expect(find.text('Completado'), findsOneWidget);
+      // Un solo estado, «Hecho», en el bloque de fecha (vocabulario §1).
+      expect(find.text('Hecho'), findsOneWidget);
+      expect(find.text('Completado'), findsNothing);
       expect(find.text('¡Conseguido!'), findsOneWidget);
       expect(find.textContaining('XP'), findsNothing);
     });
@@ -144,8 +146,8 @@ void main() {
           status: ChallengeStatus.expired,
         ),
       );
-      // Frase y bloque de fecha: «Venció el 30 oct» y «Venció · 30 · oct».
-      expect(find.textContaining('Venció el 30'), findsOneWidget);
+      // Solo el bloque de fecha («Venció · 30 · oct»): la frase no lo repite.
+      expect(find.textContaining('Venció el 30'), findsNothing);
       expect(find.text('Venció'), findsOneWidget);
       expect(
         find.text('Se acabó el plazo. Amplía la fecha para seguir.'),

@@ -86,7 +86,12 @@ class OpenSessionCard extends StatelessWidget {
             spacing: TokensSpacing.xs,
             overflowSpacing: TokensSpacing.xs,
             children: [
+              // Descartar no guarda: en rojo, como en la hoja de salir de la
+              // sesión (un color por verbo, vocabulario §4).
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: context.colors.error,
+                ),
                 onPressed: busy
                     ? null
                     : () async {

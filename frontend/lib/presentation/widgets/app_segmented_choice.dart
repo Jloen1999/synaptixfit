@@ -70,7 +70,9 @@ class AppSegmentedChoice<T extends Object> extends StatelessWidget {
         width: double.infinity,
         child: SegmentedButton<T>(
           showSelectedIcon: false,
-          emptySelectionAllowed: allowEmpty,
+          // Sin nada elegido aún (p. ej. una pregunta sin contestar) también
+          // vale: SegmentedButton lo exige para un conjunto vacío.
+          emptySelectionAllowed: allowEmpty || selected == null,
           segments: [
             for (final v in values)
               ButtonSegment<T>(value: v, label: Text(labelOf(v))),

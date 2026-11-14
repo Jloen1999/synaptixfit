@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
   "profileTitle": "Profile",
-  "profileStreakDays": "{days, plural, =0{No active streak} =1{1-day streak} other{{days}-day streak}}",
+  "profileStreakDays": "{days, plural, =0{No streak} =1{1-day streak} other{{days}-day streak}}",
   "profileOnboardingBannerTitle": "Complete your profile",
   "profileOnboardingBannerMessage": "You still have steps left to personalize your plans.",
   "profileWellnessSection": "Fitness profile",
@@ -230,7 +230,6 @@
   "profileDeleteAction": "Delete permanently",
   "profileDeleteDone": "Your account has been deleted",
   "profileLogoutTitle": "Sign out?",
-  "profileLogoutMessage": "You'll need to sign in again to use the app.",
   "profileLogoutAction": "Sign out",
   "profileAppVersion": "SynaptixFit · version {version}",
   "profileErrorWellnessNotFound": "You haven't completed your fitness profile yet.",
@@ -405,5 +404,6 @@
   "profileBirthDateSuggestion": "Add your date of birth and we’ll wish you a happy birthday.",
   "profileBirthDateAdd": "Add",
   "profileErrorInvalidBirthDate": "Check your date of birth: it can't be in the future and your age must be between 14 and 100.",
-  "profileEnrollmentShort": "Import enrolment"
+  "profileEnrollmentShort": "Import enrolment",
+  "profileLogoutUnsentMessage": "You have sets or a run that haven't been uploaded. If you sign out now, they'll be lost."
 }

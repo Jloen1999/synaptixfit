@@ -457,40 +457,45 @@ class _Controls extends StatelessWidget {
           icon: icon,
           onPressed: () => bloc.add(event),
         ),
-        const SizedBox(height: TokensSpacing.s),
-        Tooltip(
-          message: focus
-              ? l10n.plannerPomodoroToBreakHint
-              : l10n.plannerPomodoroToFocusHint,
-          child: OutlinedButton.icon(
-            onPressed: () => bloc.add(const PomodoroEvent.skipPressed()),
-            icon: Icon(
-              focus ? Icons.free_breakfast_rounded : Icons.psychology_rounded,
-            ),
-            label: Text(
-              focus ? l10n.plannerPomodoroToBreak : l10n.plannerPomodoroToFocus,
+        // Antes de empezar, solo «Empezar a concentrarme» (una acción).
+        if (!state.untouched) ...[
+          const SizedBox(height: TokensSpacing.s),
+          Tooltip(
+            message: focus
+                ? l10n.plannerPomodoroToBreakHint
+                : l10n.plannerPomodoroToFocusHint,
+            child: OutlinedButton.icon(
+              onPressed: () => bloc.add(const PomodoroEvent.skipPressed()),
+              icon: Icon(
+                focus ? Icons.free_breakfast_rounded : Icons.psychology_rounded,
+              ),
+              label: Text(
+                focus
+                    ? l10n.plannerPomodoroToBreak
+                    : l10n.plannerPomodoroToFocus,
+              ),
             ),
           ),
-        ),
-        TextButton.icon(
-          // Con el reloj en marcha o en pausa, empezar de cero pierde lo que
-          // se lleva: se pregunta antes.
-          onPressed: () async {
-            if (state.status != PomodoroStatus.idle) {
-              final ok = await showConfirmDialog(
-                context,
-                title: l10n.plannerPomodoroResetTitle,
-                message: l10n.plannerPomodoroResetMessage,
-                confirmLabel: l10n.plannerPomodoroReset,
-                cancelLabel: l10n.plannerPomodoroResetKeep,
-              );
-              if (!ok || bloc.isClosed) return;
-            }
-            bloc.add(const PomodoroEvent.resetPressed());
-          },
-          icon: const Icon(Icons.restart_alt_rounded),
-          label: Text(l10n.plannerPomodoroReset),
-        ),
+          TextButton.icon(
+            // Con el reloj en marcha o en pausa, empezar de cero pierde lo que
+            // se lleva: se pregunta antes.
+            onPressed: () async {
+              if (state.status != PomodoroStatus.idle) {
+                final ok = await showConfirmDialog(
+                  context,
+                  title: l10n.plannerPomodoroResetTitle,
+                  message: l10n.plannerPomodoroResetMessage,
+                  confirmLabel: l10n.plannerPomodoroReset,
+                  cancelLabel: l10n.plannerPomodoroResetKeep,
+                );
+                if (!ok || bloc.isClosed) return;
+              }
+              bloc.add(const PomodoroEvent.resetPressed());
+            },
+            icon: const Icon(Icons.restart_alt_rounded),
+            label: Text(l10n.plannerPomodoroReset),
+          ),
+        ],
       ],
     );
   }

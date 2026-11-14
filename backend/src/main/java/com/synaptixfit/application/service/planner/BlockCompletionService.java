@@ -19,6 +19,7 @@ import com.synaptixfit.domain.model.planner.CalendarBlock;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.model.planner.SubjectRef;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
+import com.synaptixfit.domain.port.output.planner.ActivityMinutesPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.PlannerProfilePort;
 import com.synaptixfit.domain.port.output.planner.SubjectDirectoryPort;
@@ -60,11 +61,14 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
     private final WeeklyLoadService weeklyLoads;
     private final PlannerZone zone;
     private final Clock clock;
+    private final ActivityMinutesPort activityMinutes;
 
     public BlockCompletionService(CalendarBlockRepositoryPort blocks, SubjectDirectoryPort subjects,
                                   PlannerProfilePort profiles, AwardExperienceUseCase award,
                                   RevokeExperienceUseCase revoke, DomainEventPublisherPort events,
-                                  WeeklyLoadService weeklyLoads, PlannerZone zone, Clock clock) {
+                                  WeeklyLoadService weeklyLoads, PlannerZone zone, Clock clock,
+                                  ActivityMinutesPort activityMinutes) {
+        this.activityMinutes = activityMinutes;
         this.blocks = blocks;
         this.subjects = subjects;
         this.profiles = profiles;
@@ -178,8 +182,12 @@ public class BlockCompletionService implements SetBlockCompletionUseCase, SyncSp
         events.publish(new StudyBlockCompletionChanged(userId, saved.id(), saved.type().code(), saved.subjectId(),
                 saved.details().milestoneId(), saved.start(), saved.end(), saved.completed(), now));
         if (saved.countsAsPhysicalActivity()) {
+            // Con actividad apuntada (carrera, a mano), la carga cuenta sus minutos reales también al volver a
+            // marcarla desde el calendario; si no, los del evento (ADR 0037).
+            int minutes = activityMinutes.realMinutes(userId, saved.id())
+                    .orElse((int) saved.range().minutes());
             events.publish(new SportBlockCompletionChanged(userId, saved.id(), zone.localDate(saved.start()), effort,
-                    (int) saved.range().minutes(), saved.completed(), now));
+                    minutes, saved.completed(), now));
         }
         return new Result(saved, xpDelta);
     }

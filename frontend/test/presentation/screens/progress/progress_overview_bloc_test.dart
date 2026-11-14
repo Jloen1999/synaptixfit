@@ -4,12 +4,14 @@ import 'package:mocktail/mocktail.dart';
 import 'package:synaptixfit/domain/enums/data_topic.dart';
 import 'package:synaptixfit/domain/errors/app_error.dart';
 import 'package:synaptixfit/domain/models/result/result.dart';
+import 'package:synaptixfit/domain/use_cases/academic/get_due_study_materials_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/home/get_home_dashboard_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/progress/get_progress_overview_use_case.dart';
 import 'package:synaptixfit/presentation/screens/progress/overview/bloc/progress_overview_bloc.dart';
 
 import '../../../progress_fixtures.dart';
 import '../data_changes_fake.dart';
+import '../academic/academic_fixtures.dart';
 import '../home/home_fixtures.dart';
 
 class _MockGetOverview extends Mock
@@ -17,15 +19,19 @@ class _MockGetOverview extends Mock
 
 class _MockGetToday extends Mock implements GetHomeDashboardUseCaseContract {}
 
+class _MockGetDue extends Mock implements GetDueStudyMaterialsUseCaseContract {}
+
 void main() {
   late _MockGetOverview getOverview;
   late FakeDataChanges changes;
   late _MockGetToday getToday;
+  late _MockGetDue getDue;
 
   setUp(() {
     getOverview = _MockGetOverview();
     changes = FakeDataChanges();
     getToday = _MockGetToday();
+    getDue = _MockGetDue();
     // Sin resumen de hoy, «Tu equilibrio» dice el error y deja reintentar.
     when(
       () => getToday(),
@@ -37,6 +43,7 @@ void main() {
   ProgressOverviewBloc build() => ProgressOverviewBloc(
     getOverview: getOverview,
     getToday: getToday,
+    getDueMaterials: getDue,
     watchChanges: changes.useCase,
   );
 
@@ -147,5 +154,41 @@ void main() {
       await pump();
     },
     verify: (_) => verify(() => getOverview()).called(2),
+  );
+
+  blocTest<ProgressOverviewBloc, ProgressOverviewState>(
+    '«Ver N repasos pendientes» trae la cola para abrirla en un toque',
+    setUp: () => when(
+      () => getDue(),
+    ).thenAnswer((_) async => Success([material, material.copyWith(id: 'm2')])),
+    build: build,
+    seed: () => ProgressOverviewState.loaded(testOverview),
+    act: (bloc) => bloc.add(const ProgressOverviewEvent.reviewRequested()),
+    expect: () => [
+      ProgressOverviewState.loaded(testOverview, openingReview: true),
+      ProgressOverviewState.loaded(testOverview, reviewQueue: ['m1', 'm2']),
+    ],
+  );
+
+  blocTest<ProgressOverviewBloc, ProgressOverviewState>(
+    'si no se puede leer la cola, lo dice y luego lo olvida',
+    setUp: () => when(
+      () => getDue(),
+    ).thenAnswer((_) async => const Failure(AppError.network())),
+    build: build,
+    seed: () => ProgressOverviewState.loaded(testOverview),
+    act: (bloc) async {
+      bloc.add(const ProgressOverviewEvent.reviewRequested());
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const ProgressOverviewEvent.reviewHandled());
+    },
+    expect: () => [
+      ProgressOverviewState.loaded(testOverview, openingReview: true),
+      ProgressOverviewState.loaded(
+        testOverview,
+        reviewError: const AppError.network(),
+      ),
+      ProgressOverviewState.loaded(testOverview),
+    ],
   );
 }

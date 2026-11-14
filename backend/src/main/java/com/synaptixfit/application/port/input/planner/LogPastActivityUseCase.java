@@ -20,9 +20,17 @@ public interface LogPastActivityUseCase {
      * @param kind      clase de deporte (opcional; por defecto «otro»)
      * @param distanceMeters distancia en metros (opcional; correr, andar, bici o nadar)
      * @param source  a mano (por defecto) o grabada con el GPS de la app (ADR 0037)
+     * @param challengeId reto del evento planificado que sustituye (opcional; nunca llega del cliente)
+     * @param milestoneId tarea de reto de ese evento: así sigue avanzando con la actividad (opcional)
      */
     record Command(UUID userId, Instant start, int minutes, String title, Integer effort, ActivityType type,
-                   UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source) {
+                   UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source,
+                   UUID challengeId, UUID milestoneId) {
+
+        public Command(UUID userId, Instant start, int minutes, String title, Integer effort, ActivityType type,
+                       UUID subjectId, ActivityKind kind, Integer distanceMeters, ActivitySource source) {
+            this(userId, start, minutes, title, effort, type, subjectId, kind, distanceMeters, source, null, null);
+        }
 
         public Command(UUID userId, Instant start, int minutes, String title, Integer effort, ActivityType type,
                        UUID subjectId, ActivityKind kind, Integer distanceMeters) {

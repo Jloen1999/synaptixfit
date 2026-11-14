@@ -264,7 +264,7 @@
   "plannerDeadlinesEmptyMessage": "Añade tus entregas y exámenes.",
   "plannerFieldTitle": "Título",
   "plannerFieldDueDate": "Fecha límite",
-  "plannerFieldDueTime": "Hora de entrega",
+  "plannerFieldDueTime": "Hora",
   "plannerDueTimeHint": "En el calendario ocupa los {minutes} minutos anteriores.",
   "@plannerDueTimeHint": {
     "placeholders": {
@@ -704,7 +704,7 @@
   "plannerOpenRoutine": "Abrir en la rutina",
   "plannerDistributeRoutineWeekdays": "Usar los días de la rutina",
   "plannerDistributeRoutineWeekdaysHint": "Cada día va a su día de la semana; los ya hechos o saltados no se añaden.",
-  "plannerDistributeReplaces": "Se sustituirán los entrenamientos pendientes que esta rutina ya tenga en el calendario.",
+  "plannerDistributeReplaces": "Se sustituirán los entrenamientos por hacer que esta rutina ya tenga en el calendario.",
   "plannerErrorBlockRoutineLinked": "Este entreno va con su sesión de la rutina: hazlo o apúntalo desde la rutina.",
   "plannerFieldChallengeTask": "Tarea del reto",
   "plannerFieldChallengeTaskHint": "Cada evento hecho en las fechas del reto la hace avanzar.",

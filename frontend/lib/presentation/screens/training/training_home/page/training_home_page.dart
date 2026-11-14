@@ -109,13 +109,26 @@ class _TrainingHomeView extends StatelessWidget {
     final l10n = context.localizations;
     return BlocConsumer<TrainingHomeBloc, TrainingHomeState>(
       listenWhen: (p, c) => c.effect != null && p.effect != c.effect,
-      listener: (context, state) => const TrainingEffectHandler().handle(
-        context,
-        state.effect!,
-        onUnskipDay: (routineId, dayId) => context.read<TrainingHomeBloc>().add(
-          TrainingHomeEvent.dayUnskipped(routineId: routineId, dayId: dayId),
-        ),
-      ),
+      listener: (context, state) {
+        // El aviso puede cerrarse con la pantalla ya cerrada: se guarda el
+        // bloc y solo se le habla si sigue abierto.
+        final bloc = context.read<TrainingHomeBloc>();
+        void send(TrainingHomeEvent event) {
+          if (!bloc.isClosed) bloc.add(event);
+        }
+
+        const TrainingEffectHandler().handle(
+          context,
+          state.effect!,
+          onUnskipDay: (routineId, dayId) => send(
+            TrainingHomeEvent.dayUnskipped(routineId: routineId, dayId: dayId),
+          ),
+          onRestoreRecommendation: (r) =>
+              send(TrainingHomeEvent.recommendationRestored(r)),
+          onConfirmDiscard: (id) =>
+              send(TrainingHomeEvent.recommendationDiscardConfirmed(id)),
+        );
+      },
       builder: (context, state) {
         return Scaffold(
           appBar: AppPageBar(
@@ -171,13 +184,9 @@ class _HomeContent extends StatelessWidget {
     final l10n = context.localizations;
     final bloc = context.read<TrainingHomeBloc>();
     // Ciclo terminado: no queda día que hacer y no hay otra rutina en curso.
-    final finished =
-        state.pendingDay == null &&
-            !state.routines.any((r) => r.status == RoutineStatus.active)
-        ? state.routines
-              .where((r) => r.status == RoutineStatus.completed)
-              .firstOrNull
-        : null;
+    final finished = state.routines.finishedCycle(
+      hasPendingDay: state.pendingDay != null,
+    );
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(

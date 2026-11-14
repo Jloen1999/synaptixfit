@@ -47,7 +47,7 @@ class PlannerCrossModuleSyncTest {
         f = new PlannerFakes();
         loads = f.weeklyLoadService();
         completion = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp, f.publisher, loads,
-                PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK);
+                PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK, (u, b) -> java.util.Optional.empty());
         calendar = new CalendarBlockService(f.blocks, f.deadlines, f.directory, f.directory, f.directory, f.xp,
                 f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK, f.studyPlanService());
     }
@@ -102,7 +102,7 @@ class PlannerCrossModuleSyncTest {
         CalendarBlock future = block(ActivityType.REVIEW, at(3, 17, 0), 30, null, null, material);
         // «Hoy» es el lunes de PlannerFakes.NOW (el repaso se hace hoy).
         BlockCompletionService completion = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp,
-                f.xp, f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK);
+                f.xp, f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK, (u, b) -> java.util.Optional.empty());
 
         completion.completeReviewBlock(f.user, material);
 

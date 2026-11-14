@@ -11,6 +11,7 @@ import 'presentation/screens/auth/register/page/register_page.dart';
 import 'presentation/screens/auth/reset_password/page/reset_password_page.dart';
 import 'presentation/screens/auth/session/bloc/session_bloc.dart';
 import 'presentation/screens/shell/page/main_shell_page.dart';
+import 'presentation/screens/not_found/page/not_found_page.dart';
 import 'presentation/screens/splash/page/splash_page.dart';
 import 'presentation/screens/home/home_routes.dart';
 import 'presentation/screens/academic/academic_routes.dart';
@@ -34,6 +35,8 @@ GoRouter buildRouter(SessionBloc session, LegalAcceptanceBloc legal) {
   };
   return GoRouter(
     initialLocation: SplashPage.path,
+    // Una dirección desconocida no enseña la página de error de go_router.
+    errorBuilder: (_, _) => const NotFoundPage(),
     refreshListenable: Listenable.merge([
       _StreamListenable(session.stream),
       _StreamListenable(legal.stream),

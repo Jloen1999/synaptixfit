@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../../domain/errors/app_error.dart';
+import '../../../../../domain/use_cases/auth/has_unsent_data_use_case.dart';
 import '../../../../../domain/use_cases/profile/delete_my_account_use_case.dart';
 import '../../../../../domain/use_cases/profile/export_my_data_use_case.dart';
 
@@ -9,16 +10,43 @@ part 'settings_bloc.freezed.dart';
 part 'settings_event.dart';
 part 'settings_state.dart';
 
-/// Ajustes: exportar mis datos y eliminar la cuenta.
+/// Ajustes: exportar mis datos, eliminar la cuenta y decidir si «Cerrar
+/// sesión» se confirma (solo si se perdería algo sin subir).
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
-  SettingsBloc({required this._exportMyData, required this._deleteMyAccount})
-    : super(const SettingsState()) {
+  SettingsBloc({
+    required this._exportMyData,
+    required this._deleteMyAccount,
+    required this._hasUnsentData,
+  }) : super(const SettingsState()) {
     on<SettingsExportRequested>(_onExport);
     on<SettingsDeleteRequested>(_onDelete);
+    on<SettingsLogoutRequested>(_onLogout);
   }
 
   final ExportMyDataUseCaseContract _exportMyData;
   final DeleteMyAccountUseCaseContract _deleteMyAccount;
+  final HasUnsentDataUseCaseContract _hasUnsentData;
+
+  /// Cerrar sesión es reversible (se vuelve a entrar), así que no pregunta;
+  /// solo si hay datos sin subir, que se borrarían, se confirma. Si no se puede
+  /// comprobar, se confirma por si acaso.
+  Future<void> _onLogout(
+    SettingsLogoutRequested event,
+    Emitter<SettingsState> emit,
+  ) async {
+    // Se limpia el resultado anterior para que un segundo toque vuelva a avisar.
+    if (state.outcome != null || state.error != null) {
+      emit(state.copyWith(outcome: null, error: null));
+    }
+    final unsent = (await _hasUnsentData()).valueOrNull ?? true;
+    emit(
+      state.copyWith(
+        outcome: unsent
+            ? SettingsOutcome.confirmLogout
+            : SettingsOutcome.loggedOut,
+      ),
+    );
+  }
 
   Future<void> _onExport(
     SettingsExportRequested event,

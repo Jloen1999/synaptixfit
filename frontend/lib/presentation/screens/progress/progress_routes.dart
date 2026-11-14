@@ -47,6 +47,11 @@ abstract final class ProgressExternalPaths {
   static const pomodoro = '/planner/pomodoro';
   static const academic = '/academic';
 
+  /// Repaso de [first] seguido de [rest] (la cola de «Repasar todos»).
+  static String review(String first, Iterable<String> rest) =>
+      '/academic/materials/$first/review'
+      '${rest.isEmpty ? '' : '?queue=${rest.join(',')}'}';
+
   /// Calendario con «Añadir al calendario» abierto en el próximo hueco.
   static String addEvent([DateTime? now]) => Uri(
     path: '/planner',

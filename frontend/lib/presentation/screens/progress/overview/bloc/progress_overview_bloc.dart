@@ -5,6 +5,7 @@ import '../../../../../domain/enums/data_topic.dart';
 import '../../../../../domain/errors/app_error.dart';
 import '../../../../../domain/models/home/home_dashboard.dart';
 import '../../../../../domain/models/progress/progress_overview.dart';
+import '../../../../../domain/use_cases/academic/get_due_study_materials_use_case.dart';
 import '../../../../../domain/use_cases/home/get_home_dashboard_use_case.dart';
 import '../../../../../domain/use_cases/progress/get_progress_overview_use_case.dart';
 import '../../../../../domain/use_cases/sync/watch_data_changes_use_case.dart';
@@ -22,10 +23,13 @@ class ProgressOverviewBloc
   ProgressOverviewBloc({
     required this._getOverview,
     required this._getToday,
+    required this._getDueMaterials,
     required this._watchChanges,
   }) : super(const ProgressOverviewState.loading()) {
     on<ProgressOverviewStarted>(_onStarted);
     on<ProgressOverviewRefreshed>(_onRefreshed);
+    on<ProgressOverviewReviewRequested>(_onReviewRequested);
+    on<ProgressOverviewReviewHandled>(_onReviewHandled);
   }
 
   final GetProgressOverviewUseCaseContract _getOverview;
@@ -35,7 +39,41 @@ class ProgressOverviewBloc
   /// falla, el resto de Progreso se ve y la tarjeta dice el error con
   /// «Reintentar» (`todayError`, ADR 0039).
   final GetHomeDashboardUseCaseContract _getToday;
+
+  /// Cola de repaso: el resumen solo trae cuántos hay, así que los ids se
+  /// piden al tocar «Ver N repasos pendientes» (y no en cada carga).
+  final GetDueStudyMaterialsUseCaseContract _getDueMaterials;
   final WatchDataChangesUseCaseContract _watchChanges;
+
+  Future<void> _onReviewRequested(
+    ProgressOverviewReviewRequested event,
+    Emitter<ProgressOverviewState> emit,
+  ) async {
+    final current = state;
+    if (current is! ProgressOverviewLoaded || current.openingReview) return;
+    emit(current.copyWith(openingReview: true, reviewError: null));
+    final result = await _getDueMaterials();
+    final latest = state;
+    if (latest is! ProgressOverviewLoaded) return;
+    emit(
+      result.fold(
+        (materials) => latest.copyWith(
+          openingReview: false,
+          reviewQueue: [for (final m in materials) m.id],
+        ),
+        (error) => latest.copyWith(openingReview: false, reviewError: error),
+      ),
+    );
+  }
+
+  void _onReviewHandled(
+    ProgressOverviewReviewHandled event,
+    Emitter<ProgressOverviewState> emit,
+  ) {
+    final current = state;
+    if (current is! ProgressOverviewLoaded) return;
+    emit(current.copyWith(reviewQueue: null, reviewError: null));
+  }
 
   Future<void> _onStarted(
     ProgressOverviewStarted event,

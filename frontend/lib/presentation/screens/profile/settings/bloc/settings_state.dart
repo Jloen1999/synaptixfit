@@ -1,6 +1,14 @@
 part of 'settings_bloc.dart';
 
-enum SettingsOutcome { exported, exportCancelled, deleted }
+/// [confirmLogout]: hay datos sin subir y la página pregunta antes de cerrar
+/// sesión; [loggedOut]: se cierra sin preguntar.
+enum SettingsOutcome {
+  exported,
+  exportCancelled,
+  deleted,
+  confirmLogout,
+  loggedOut,
+}
 
 @freezed
 abstract class SettingsState with _$SettingsState {

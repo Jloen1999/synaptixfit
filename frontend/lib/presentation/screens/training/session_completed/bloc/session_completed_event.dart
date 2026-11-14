@@ -11,9 +11,20 @@ sealed class SessionCompletedEvent with _$SessionCompletedEvent {
     String recommendationId,
   ) = SessionCompletedRecommendationApplied;
 
+  /// Quita la sugerencia de la lista; el aviso lleva «Deshacer».
   const factory SessionCompletedEvent.recommendationDiscarded(
     String recommendationId,
   ) = SessionCompletedRecommendationDiscarded;
+
+  /// «Deshacer» del aviso: la sugerencia vuelve a la lista.
+  const factory SessionCompletedEvent.recommendationRestored(
+    Recommendation recommendation,
+  ) = SessionCompletedRecommendationRestored;
+
+  /// El aviso se cerró sin deshacer: se descarta en el servidor.
+  const factory SessionCompletedEvent.recommendationDiscardConfirmed(
+    String recommendationId,
+  ) = SessionCompletedRecommendationDiscardConfirmed;
 
   /// Publica el resumen en el muro con el texto ya redactado por la página.
   const factory SessionCompletedEvent.shareRequested(String description) =

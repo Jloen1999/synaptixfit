@@ -6,7 +6,7 @@ import 'app_effort_slider.dart';
 
 /// Pide el esfuerzo percibido (1-10) de un entrenamiento o de un bloque de
 /// deporte; devuelve `null` si se cancela. [confirmLabel] es la acción que
-/// cierra (p. ej. «Finalizar» o «Marcar como hecho») y [subtitle], qué se
+/// cierra (p. ej. «Guardar» o «Marcar como hecho») y [subtitle], qué se
 /// valora (p. ej. el título del bloque).
 Future<int?> showEffortDialog(
   BuildContext context, {

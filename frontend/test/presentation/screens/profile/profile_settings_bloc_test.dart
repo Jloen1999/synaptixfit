@@ -9,6 +9,7 @@ import 'package:synaptixfit/domain/models/profile/notification_preferences.dart'
 import 'package:synaptixfit/domain/models/result/result.dart';
 import 'package:synaptixfit/domain/use_cases/account/change_password_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/account/get_account_use_case.dart';
+import 'package:synaptixfit/domain/use_cases/auth/has_unsent_data_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/add_subjects_from_catalog_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/delete_my_account_use_case.dart';
 import 'package:synaptixfit/domain/use_cases/profile/export_my_data_use_case.dart';
@@ -25,6 +26,8 @@ import 'profile_fixtures.dart';
 class _MockExport extends Mock implements ExportMyDataUseCaseContract {}
 
 class _MockDelete extends Mock implements DeleteMyAccountUseCaseContract {}
+
+class _MockUnsent extends Mock implements HasUnsentDataUseCaseContract {}
 
 class _MockChangePassword extends Mock
     implements ChangePasswordUseCaseContract {}
@@ -47,17 +50,52 @@ void main() {
   group('SettingsBloc', () {
     late _MockExport export;
     late _MockDelete delete;
+    late _MockUnsent unsent;
 
     setUp(() {
       export = _MockExport();
       delete = _MockDelete();
+      unsent = _MockUnsent();
     });
+
+    blocTest<SettingsBloc, SettingsState>(
+      'cerrar sesión sin nada por subir cierra sin preguntar',
+      setUp: () =>
+          when(() => unsent()).thenAnswer((_) async => const Success(false)),
+      build: () => SettingsBloc(
+        exportMyData: export,
+        deleteMyAccount: delete,
+        hasUnsentData: unsent,
+      ),
+      act: (bloc) => bloc.add(const SettingsEvent.logoutRequested()),
+      expect: () => const [SettingsState(outcome: SettingsOutcome.loggedOut)],
+    );
+
+    blocTest<SettingsBloc, SettingsState>(
+      'con series o una carrera sin subir (o sin poder comprobarlo) pregunta',
+      setUp: () => when(
+        () => unsent(),
+      ).thenAnswer((_) async => const Failure(AppError.unknown())),
+      build: () => SettingsBloc(
+        exportMyData: export,
+        deleteMyAccount: delete,
+        hasUnsentData: unsent,
+      ),
+      act: (bloc) => bloc.add(const SettingsEvent.logoutRequested()),
+      expect: () => const [
+        SettingsState(outcome: SettingsOutcome.confirmLogout),
+      ],
+    );
 
     blocTest<SettingsBloc, SettingsState>(
       'exporta los datos',
       setUp: () =>
           when(() => export()).thenAnswer((_) async => const Success(true)),
-      build: () => SettingsBloc(exportMyData: export, deleteMyAccount: delete),
+      build: () => SettingsBloc(
+        exportMyData: export,
+        deleteMyAccount: delete,
+        hasUnsentData: unsent,
+      ),
       act: (bloc) => bloc.add(const SettingsEvent.exportRequested()),
       expect: () => const [
         SettingsState(exporting: true),
@@ -69,7 +107,11 @@ void main() {
       'cancelar el guardado no es un error',
       setUp: () =>
           when(() => export()).thenAnswer((_) async => const Success(false)),
-      build: () => SettingsBloc(exportMyData: export, deleteMyAccount: delete),
+      build: () => SettingsBloc(
+        exportMyData: export,
+        deleteMyAccount: delete,
+        hasUnsentData: unsent,
+      ),
       act: (bloc) => bloc.add(const SettingsEvent.exportRequested()),
       expect: () => const [
         SettingsState(exporting: true),
@@ -82,7 +124,11 @@ void main() {
       setUp: () => when(
         () => delete(password: 'secreta1', confirm: true),
       ).thenAnswer((_) async => const Success(unit)),
-      build: () => SettingsBloc(exportMyData: export, deleteMyAccount: delete),
+      build: () => SettingsBloc(
+        exportMyData: export,
+        deleteMyAccount: delete,
+        hasUnsentData: unsent,
+      ),
       act: (bloc) => bloc.add(
         const SettingsEvent.deleteRequested(
           password: 'secreta1',
@@ -100,7 +146,11 @@ void main() {
       setUp: () => when(
         () => delete(password: null, confirm: true),
       ).thenAnswer((_) async => const Success(unit)),
-      build: () => SettingsBloc(exportMyData: export, deleteMyAccount: delete),
+      build: () => SettingsBloc(
+        exportMyData: export,
+        deleteMyAccount: delete,
+        hasUnsentData: unsent,
+      ),
       act: (bloc) => bloc.add(
         const SettingsEvent.deleteRequested(password: '  ', confirm: true),
       ),
@@ -120,7 +170,11 @@ void main() {
             (_) async =>
                 const Failure(AppError.business('GDPR_PASSWORD_MISMATCH')),
           ),
-      build: () => SettingsBloc(exportMyData: export, deleteMyAccount: delete),
+      build: () => SettingsBloc(
+        exportMyData: export,
+        deleteMyAccount: delete,
+        hasUnsentData: unsent,
+      ),
       act: (bloc) => bloc.add(
         const SettingsEvent.deleteRequested(password: 'mala', confirm: true),
       ),

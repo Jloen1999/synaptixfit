@@ -58,6 +58,15 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     on<TrainingHomeRefreshed>(_onLoad);
     on<TrainingHomeRecommendationApplied>(_onApply);
     on<TrainingHomeRecommendationDiscarded>(_onDiscard);
+    on<TrainingHomeRecommendationRestored>((e, emit) {
+      _pendingDiscards.remove(e.recommendation.id);
+      emit(
+        state.copyWith(
+          recommendations: [e.recommendation, ...state.recommendations],
+        ),
+      );
+    });
+    on<TrainingHomeRecommendationDiscardConfirmed>(_onDiscardConfirmed);
     on<TrainingHomeSessionStarted>(_onStartSession);
     on<TrainingHomeDaySkipped>(
       (e, emit) => _act(
@@ -173,7 +182,10 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
         pendingDay: pending.valueOrNull,
         routines: routines.valueOrNull?.items ?? const [],
         todayCheckIn: checkIn.valueOrNull,
-        recommendations: recommendations.valueOrNull?.items ?? const [],
+        recommendations: [
+          for (final r in recommendations.valueOrNull?.items ?? const [])
+            if (!_pendingDiscards.contains(r.id)) r,
+        ],
         // Un extra: si falla, la pestaña se muestra igual.
         staleSessions: [
           for (final s in open.valueOrNull ?? const <OpenSession>[])
@@ -208,6 +220,9 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     TrainingHomeRecommendationApplied event,
     Emitter<TrainingHomeState> emit,
   ) async {
+    final applied = state.recommendations
+        .where((r) => r.id == event.recommendationId)
+        .firstOrNull;
     emit(state.copyWith(busyIds: {...state.busyIds, event.recommendationId}));
     final result = await _applyRecommendation(event.recommendationId);
     final busy = {...state.busyIds}..remove(event.recommendationId);
@@ -223,7 +238,7 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
         );
         _effect(
           emit,
-          const TrainingEffect.message(TrainingMessage.recommendationApplied),
+          TrainingEffect.recommendationApplied(routineId: applied?.routineId),
         );
         // Los parámetros de la rutina han cambiado: se recarga el día pendiente.
         add(const TrainingHomeEvent.refreshed());
@@ -233,31 +248,50 @@ class TrainingHomeBloc extends Bloc<TrainingHomeEvent, TrainingHomeState>
     }
   }
 
-  Future<void> _onDiscard(
+  /// Sugerencias quitadas cuyo aviso con «Deshacer» sigue abierto: no
+  /// vuelven con una recarga y, si la pantalla se cierra antes, se descartan.
+  final Set<String> _pendingDiscards = {};
+
+  void _onDiscard(
     TrainingHomeRecommendationDiscarded event,
     Emitter<TrainingHomeState> emit,
+  ) {
+    final id = event.recommendationId;
+    final recommendation = state.recommendations
+        .where((r) => r.id == id)
+        .firstOrNull;
+    if (recommendation == null) return;
+    _pendingDiscards.add(id);
+    emit(
+      state.copyWith(
+        recommendations: state.recommendations
+            .where((r) => r.id != id)
+            .toList(),
+      ),
+    );
+    _effect(emit, TrainingEffect.recommendationDiscarded(recommendation));
+  }
+
+  Future<void> _onDiscardConfirmed(
+    TrainingHomeRecommendationDiscardConfirmed event,
+    Emitter<TrainingHomeState> emit,
   ) async {
-    emit(state.copyWith(busyIds: {...state.busyIds, event.recommendationId}));
+    if (!_pendingDiscards.remove(event.recommendationId)) return;
     final result = await _discardRecommendation(event.recommendationId);
-    final busy = {...state.busyIds}..remove(event.recommendationId);
-    switch (result) {
-      case Success():
-        emit(
-          state.copyWith(
-            busyIds: busy,
-            recommendations: state.recommendations
-                .where((r) => r.id != event.recommendationId)
-                .toList(),
-          ),
-        );
-        _effect(
-          emit,
-          const TrainingEffect.message(TrainingMessage.recommendationDiscarded),
-        );
-      case Failure(:final error):
-        emit(state.copyWith(busyIds: busy));
-        _effect(emit, TrainingEffect.error(error));
+    if (result case Failure(:final error)) {
+      _effect(emit, TrainingEffect.error(error));
+      add(const TrainingHomeEvent.refreshed());
     }
+  }
+
+  @override
+  Future<void> close() {
+    // El aviso sigue abierto pero la pantalla se va: se descarta igual.
+    for (final id in _pendingDiscards) {
+      _discardRecommendation(id).ignore();
+    }
+    _pendingDiscards.clear();
+    return super.close();
   }
 
   Future<void> _onStartSession(

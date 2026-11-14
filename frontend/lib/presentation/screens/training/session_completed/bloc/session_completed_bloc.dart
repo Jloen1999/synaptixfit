@@ -39,13 +39,22 @@ class SessionCompletedBloc
   }) : super(const SessionCompletedState()) {
     on<SessionCompletedStarted>(_onStarted);
     on<SessionCompletedShareRequested>(_onShare);
-    on<SessionCompletedRecommendationApplied>(
-      (e, emit) => _act(emit, e.recommendationId, apply: true),
-    );
-    on<SessionCompletedRecommendationDiscarded>(
-      (e, emit) => _act(emit, e.recommendationId, apply: false),
-    );
+    on<SessionCompletedRecommendationApplied>(_onApply);
+    on<SessionCompletedRecommendationDiscarded>(_onDiscard);
+    on<SessionCompletedRecommendationRestored>((e, emit) {
+      _pendingDiscards.remove(e.recommendation.id);
+      emit(
+        state.copyWith(
+          recommendations: [...state.recommendations, e.recommendation],
+        ),
+      );
+    });
+    on<SessionCompletedRecommendationDiscardConfirmed>(_onDiscardConfirmed);
   }
+
+  /// Sugerencias quitadas con el aviso de «Deshacer» aún abierto; si la
+  /// pantalla se cierra antes, se descartan igual.
+  final Set<String> _pendingDiscards = {};
 
   final GetSessionUseCaseContract _getSession;
   final ApplyRecommendationUseCaseContract _apply;
@@ -135,15 +144,14 @@ class SessionCompletedBloc
     });
   }
 
-  Future<void> _act(
+  Future<void> _onApply(
+    SessionCompletedRecommendationApplied event,
     Emitter<SessionCompletedState> emit,
-    String id, {
-    required bool apply,
-  }) async {
+  ) async {
+    final id = event.recommendationId;
+    final applied = state.recommendations.where((r) => r.id == id).firstOrNull;
     emit(state.copyWith(busyIds: {...state.busyIds, id}));
-    final AppError? error = apply
-        ? (await _apply(id)).errorOrNull
-        : (await _discard(id)).errorOrNull;
+    final AppError? error = (await _apply(id)).errorOrNull;
     final busy = {...state.busyIds}..remove(id);
     if (error != null) {
       emit(state.copyWith(busyIds: busy));
@@ -153,22 +161,54 @@ class SessionCompletedBloc
     emit(
       state.copyWith(
         busyIds: busy,
-        recommendations: apply
-            ? [
-                for (final r in state.recommendations)
-                  r.id == id ? r.copyWith(applied: true) : r,
-              ]
-            : state.recommendations.where((r) => r.id != id).toList(),
+        recommendations: [
+          for (final r in state.recommendations)
+            r.id == id ? r.copyWith(applied: true) : r,
+        ],
       ),
     );
     _effect(
       emit,
-      TrainingEffect.message(
-        apply
-            ? TrainingMessage.recommendationApplied
-            : TrainingMessage.recommendationDiscarded,
+      TrainingEffect.recommendationApplied(routineId: applied?.routineId),
+    );
+  }
+
+  void _onDiscard(
+    SessionCompletedRecommendationDiscarded event,
+    Emitter<SessionCompletedState> emit,
+  ) {
+    final id = event.recommendationId;
+    final recommendation = state.recommendations
+        .where((r) => r.id == id)
+        .firstOrNull;
+    if (recommendation == null) return;
+    _pendingDiscards.add(id);
+    emit(
+      state.copyWith(
+        recommendations: state.recommendations
+            .where((r) => r.id != id)
+            .toList(),
       ),
     );
+    _effect(emit, TrainingEffect.recommendationDiscarded(recommendation));
+  }
+
+  Future<void> _onDiscardConfirmed(
+    SessionCompletedRecommendationDiscardConfirmed event,
+    Emitter<SessionCompletedState> emit,
+  ) async {
+    if (!_pendingDiscards.remove(event.recommendationId)) return;
+    final error = (await _discard(event.recommendationId)).errorOrNull;
+    if (error != null) _effect(emit, TrainingEffect.error(error));
+  }
+
+  @override
+  Future<void> close() {
+    for (final id in _pendingDiscards) {
+      _discard(id).ignore();
+    }
+    _pendingDiscards.clear();
+    return super.close();
   }
 
   void _effect(Emitter<SessionCompletedState> emit, TrainingEffect effect) {

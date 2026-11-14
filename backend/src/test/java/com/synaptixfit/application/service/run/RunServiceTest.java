@@ -252,6 +252,29 @@ class RunServiceTest {
     }
 
     @Test
+    void runningBeforeTheEventTimeKeepsItsChallengeTask() {
+        RunWorkout workout = new RunWorkout(UUID.randomUUID(), user, "Rodaje suave", "EASY_30",
+                List.of(RunWorkout.Group.once(RunStep.time(RunStep.Type.RUN, 1800))), NOW, NOW);
+        workouts.put(workout.id(), workout);
+        UUID challenge = UUID.randomUUID();
+        UUID task = UUID.randomUUID();
+        CalendarBlock later = CalendarBlock.builder().id(UUID.randomUUID()).userId(user)
+                .range(TimeRange.ofMinutes(NOW.plus(Duration.ofHours(2)), 40)).type(ActivityType.SPORT)
+                .details(new CalendarBlock.Details(null, "Rodaje", null, Priority.MEDIUM, false, null, null, null,
+                        null, challenge, task, null))
+                .build();
+        blocks.put(later.id(), later);
+        eventWorkouts.put(later.id(), workout.id());
+
+        service.recordRun(command(UUID.randomUUID(), NOW.minus(Duration.ofMinutes(40)), 30, null, later.id()));
+
+        // La tarea del reto sigue avanzando con la carrera, aunque el evento se borre (ADR 0037).
+        assertThat(deleted).containsExactly(later.id());
+        assertThat(logged.getFirst().challengeId()).isEqualTo(challenge);
+        assertThat(logged.getFirst().milestoneId()).isEqualTo(task);
+    }
+
+    @Test
     void weekStartsOnMonday() {
         assertThat(service.getWeek(user, LocalDate.parse("2026-11-07")).weekStart())
                 .isEqualTo(LocalDate.parse("2026-11-02"));

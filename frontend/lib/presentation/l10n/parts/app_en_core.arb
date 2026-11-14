@@ -143,5 +143,6 @@
   "commonCountdownDays": "{days, plural, =1{in 1 day} other{in {days} days}}",
   "xpGuidePlanning": "Planning the week",
   "xpGuidePlanningDetail": "3 events planned in the week: 100 XP + 5 per event. Once a week.",
-  "commonShowLess": "Show less"
+  "commonShowLess": "Show less",
+  "commonGoHome": "Go to Home"
 }

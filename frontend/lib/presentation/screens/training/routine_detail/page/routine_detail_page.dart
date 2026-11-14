@@ -624,17 +624,6 @@ String? _nextDayId(Routine routine) {
   return null;
 }
 
-/// Hay días anteriores a [dayId] que siguen por hacer: entrenarlo los saltará.
-bool _skipsEarlierDays(Routine routine, String dayId) {
-  for (final week in routine.weeks) {
-    for (final day in week.days) {
-      if (day.id == dayId) return false;
-      if (!day.status.isClosed && day.exercises.isNotEmpty) return true;
-    }
-  }
-  return false;
-}
-
 /// Día de la rutina. Los ya hechos aparecen plegados (cabecera y resumen)
 /// para que se vea a la primera lo que queda; se despliegan con un toque.
 class _DayCard extends StatefulWidget {
@@ -662,13 +651,33 @@ class _DayCard extends StatefulWidget {
 class _DayCardState extends State<_DayCard> {
   late bool _expanded = !widget.day.status.isClosed;
 
+  /// Cabecera del día: al saltarlo, el botón que tenía el foco desaparece con
+  /// la tarjeta plegada y el foco pasa aquí (WCAG 2.4.3), no al principio.
+  final _headerFocus = FocusNode();
+  bool _skipping = false;
+
   @override
   void didUpdateWidget(_DayCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Al terminarse o saltarse el día se pliega solo; si se reabre, se despliega.
     if (oldWidget.day.status != widget.day.status) {
       _expanded = !widget.day.status.isClosed;
+      if (_skipping) {
+        _skipping = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _headerFocus.requestFocus();
+        });
+      }
+    } else if (oldWidget.busy && !widget.busy) {
+      // Saltar falló (el aviso lo dice): el foco no se mueve más tarde.
+      _skipping = false;
     }
+  }
+
+  @override
+  void dispose() {
+    _headerFocus.dispose();
+    super.dispose();
   }
 
   RoutineDay get day => widget.day;
@@ -676,8 +685,9 @@ class _DayCardState extends State<_DayCard> {
   double? get bodyWeightKg => widget.bodyWeightKg;
   bool get busy => widget.busy;
 
-  /// Repetir un día hecho cuenta como una sesión nueva, y adelantarse salta
-  /// los días anteriores: los dos casos se confirman antes.
+  /// Repetir un día hecho cuenta como una sesión nueva: se confirma. Adelantarse
+  /// no pregunta (vocabulario §4): los días anteriores solo se saltan al
+  /// terminar, y quedan en la rutina con «Recuperar».
   Future<void> _train(BuildContext context) async {
     final bloc = context.read<RoutineDetailBloc>();
     final l10n = context.localizations;
@@ -689,23 +699,17 @@ class _DayCardState extends State<_DayCard> {
         confirmLabel: l10n.trainingRepeatDay,
       );
       if (!ok) return;
-    } else if (_skipsEarlierDays(routine, day.id)) {
-      final ok = await showConfirmDialog(
-        context,
-        title: l10n.trainingSkipEarlierTitle,
-        message: l10n.trainingSkipEarlierMessage,
-        confirmLabel: l10n.trainingTrain,
-        destructive: false,
-      );
-      if (!ok) return;
     }
     bloc.add(RoutineDetailEvent.sessionStarted(day.id));
   }
 
   /// Saltar es reversible: sin confirmar, con «Deshacer» en el aviso.
-  void _skip(BuildContext context) => context.read<RoutineDetailBloc>().add(
-    RoutineDetailEvent.daySkipped(day.id),
-  );
+  void _skip(BuildContext context) {
+    _skipping = true;
+    context.read<RoutineDetailBloc>().add(
+      RoutineDetailEvent.daySkipped(day.id),
+    );
+  }
 
   Widget _trainButton(BuildContext context) {
     final l10n = context.localizations;
@@ -810,6 +814,7 @@ class _DayCardState extends State<_DayCard> {
         button: true,
         expanded: _expanded,
         child: InkWell(
+          focusNode: _headerFocus,
           borderRadius: BorderRadius.circular(TokensRadius.m),
           onTap: () => setState(() => _expanded = !_expanded),
           child: ConstrainedBox(
@@ -923,7 +928,7 @@ class _DayCardState extends State<_DayCard> {
                         ),
                       ),
                     AppPill(
-                      icon: Icons.local_fire_department_rounded,
+                      icon: AppIcons.kcal,
                       color: context.palette.calories,
                       label: l10n.trainingChipKcal(kcal.round()),
                     ),

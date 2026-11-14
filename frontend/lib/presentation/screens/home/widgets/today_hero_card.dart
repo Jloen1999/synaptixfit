@@ -7,6 +7,7 @@ import '../../../../domain/enums/item_time_status.dart';
 import '../../../../domain/enums/usage_focus.dart';
 import '../../../../domain/enums/planner_enums.dart';
 import '../../../../domain/models/home/home_dashboard.dart';
+import '../../../../domain/models/home/today_next.dart';
 import '../../../extensions/context_extensions.dart';
 import '../../../theme/tokens.g.dart';
 import '../../../widgets/widgets.dart';
@@ -16,10 +17,6 @@ import 'agenda_section.dart';
 /// hechos (todavía no se dan por asistidas solas).
 bool isClassEvent(HomeTodayEvent e) =>
     e.kind == HomeEventKind.block && e.type == HomeEventType.classSession;
-
-/// El único botón de «Tu día»: concentrarse (Pomodoro del evento), empezar el
-/// entreno, marcar como hecho o, sin nada pendiente, añadir al calendario.
-enum TodayHeroAction { focus, train, markDone, addEvent }
 
 /// «Tu día», lo primero de Inicio y su acción principal (vocabulario.md §4):
 /// cuánto llevas de hoy (anillo), qué toca ahora o a continuación con **un
@@ -49,41 +46,13 @@ class TodayHeroCard extends StatefulWidget {
 
   final HomeDashboard dashboard;
   final UsageFocus focus;
-  final ValueChanged<TodayHeroAction> onAction;
+  final ValueChanged<TodayAction> onAction;
 
   /// Se está abriendo la sesión de entrenamiento.
   final bool starting;
 
   /// Marca como hecho el evento que toca ahora; sin él no se ofrece.
   final ValueChanged<HomeTodayEvent>? onMarkDone;
-
-  /// Acción del botón para lo que toca ([next]); nula si no hay ninguna
-  /// directa (una clase, una comida: se ven en la agenda).
-  static TodayHeroAction? actionFor(
-    HomeTodayEvent? next,
-    HomeDashboard dashboard,
-  ) => switch (next?.type) {
-    null => TodayHeroAction.addEvent,
-    HomeEventType.study || HomeEventType.review => TodayHeroAction.focus,
-    // Solo con día de rutina: un partido o una carrera sueltos no deben
-    // arrancar otra rutina (se marcan en la agenda con «Ya lo hice»).
-    HomeEventType.sport when next?.routineDayId != null =>
-      TodayHeroAction.train,
-    HomeEventType.personal when next!.status == ItemTimeStatus.inProgress =>
-      TodayHeroAction.markDone,
-    _ => null,
-  };
-
-  /// Bloque en curso o, si no hay, el siguiente que aún no ha empezado.
-  static HomeTodayEvent? nextEvent(List<HomeTodayEvent> events) {
-    final pending = events
-        .where((e) => e.kind == HomeEventKind.block && !e.completed)
-        .toList();
-    return pending
-            .where((e) => e.status == ItemTimeStatus.inProgress)
-            .firstOrNull ??
-        pending.where((e) => e.status == ItemTimeStatus.upcoming).firstOrNull;
-  }
 
   @override
   State<TodayHeroCard> createState() => _TodayHeroCardState();
@@ -104,7 +73,7 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
   UsageFocus get focus => widget.focus;
   bool get starting => widget.starting;
   Set<String> get completingIds => widget.completingIds;
-  ValueChanged<TodayHeroAction> get onAction => widget.onAction;
+  ValueChanged<TodayAction> get onAction => widget.onAction;
 
   void _markDone(HomeTodayEvent event) {
     _marking = event;
@@ -150,12 +119,12 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
     final counted = blocks.where((e) => !isClassEvent(e)).toList();
     final classes = blocks.length - counted.length;
     final done = counted.where((e) => e.completed).length;
-    final next = TodayHeroCard.nextEvent(dashboard.todayEvents);
-    final action = TodayHeroCard.actionFor(next, dashboard);
+    final next = dashboard.todayEvents.nextUp;
+    final action = TodayAction.of(next);
     final colors = context.colors;
     final deadline = focus.includesAcademic ? widget.nextDeadline : null;
     void act() {
-      if (action == TodayHeroAction.markDone && widget.onMarkDone != null) {
+      if (action == TodayAction.markDone && widget.onMarkDone != null) {
         _markDone(next!);
       } else if (action != null) {
         onAction(action);
@@ -166,9 +135,9 @@ class _TodayHeroCardState extends State<TodayHeroCard> {
         ? null
         : _ActionButton(
             action: action,
-            busy: action == TodayHeroAction.markDone
+            busy: action == TodayAction.markDone
                 ? completingIds.contains(next?.id)
-                : starting && action == TodayHeroAction.train,
+                : starting && action == TodayAction.train,
             onPressed: act,
           );
     // Plana y con un toque del color de marca: destaca como tarjeta principal
@@ -398,7 +367,7 @@ class _ActionButton extends StatelessWidget {
     required this.onPressed,
   });
 
-  final TodayHeroAction action;
+  final TodayAction action;
   final bool busy;
   final VoidCallback onPressed;
 
@@ -406,10 +375,10 @@ class _ActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.localizations;
     final (label, icon) = switch (action) {
-      TodayHeroAction.focus => (l10n.homeTodayFocus, AppIcons.focusTimer),
-      TodayHeroAction.train => (l10n.homeTodayTrain, Icons.play_arrow_rounded),
-      TodayHeroAction.markDone => (l10n.homeTodayMarkDone, AppIcons.markDone),
-      TodayHeroAction.addEvent => (l10n.plannerAddBlock, AppIcons.add),
+      TodayAction.focus => (l10n.homeTodayFocus, AppIcons.focusTimer),
+      TodayAction.train => (l10n.homeTodayTrain, Icons.play_arrow_rounded),
+      TodayAction.markDone => (l10n.homeTodayMarkDone, AppIcons.markDone),
+      TodayAction.addEvent => (l10n.plannerAddBlock, AppIcons.add),
     };
     return AppPrimaryButton(
       label: label,

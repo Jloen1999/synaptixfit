@@ -75,10 +75,15 @@ public class UserActivityPersistenceAdapter implements UserActivityPort {
                 .query((rs, n) -> new WeeklyStudyLoad(rs.getObject("semana_inicio", LocalDate.class),
                         rs.getInt("horas_estudio_planeadas"), rs.getInt("horas_estudio_reales")))
                 .list();
+        // Una carrera o actividad hecha cuenta como un entreno más (vocabulario.md §3): suma al total y a los
+        // días de entreno, con las mismas filas que Inicio, Progreso y los retos. No tiene esfuerzo (RPE).
+        List<OffsetDateTime> activities = loggedActivityEnds(userId);
+        Set<LocalDate> trainingDays = new HashSet<>(sessionDays(userId, zone));
+        activities.forEach(t -> trainingDays.add(t.atZoneSameInstant(zone).toLocalDate()));
         return new BadgeActivitySnapshot(
-                sessions[0],
+                sessions[0] + activities.size(),
                 sessions[1],
-                sessionDays(userId, zone),
+                trainingDays,
                 checkInDays(userId),
                 countStudyBlocks(userId),
                 // Solo las semanas que dieron la XP de planificar (ADR 0038): un plan guardado
@@ -110,6 +115,22 @@ public class UserActivityPersistenceAdapter implements UserActivityPort {
                 .list().stream()
                 .map(t -> t.atZoneSameInstant(zone).toLocalDate())
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * Fin de cada actividad hecha (carrera GPS, a mano o al hacer un entreno de carrera): eventos de deporte
+     * completados con su actividad apuntada y, como las sesiones, de al menos
+     * {@value TrainingRewards#MIN_COUNTED_MINUTES} minutos reales.
+     */
+    private List<OffsetDateTime> loggedActivityEnds(UUID userId) {
+        return jdbc.sql("select b.hora_fin from actividades_apuntadas a"
+                        + " join horarios_academicos b on b.id = a.bloque_id"
+                        + " where a.usuario_id = :user and b.completado = true"
+                        + " and a.minutos_reales >= :minMinutes")
+                .param("user", userId)
+                .param("minMinutes", TrainingRewards.MIN_COUNTED_MINUTES)
+                .query((rs, n) -> rs.getObject("hora_fin", OffsetDateTime.class))
+                .list();
     }
 
     private Set<LocalDate> checkInDays(UUID userId) {

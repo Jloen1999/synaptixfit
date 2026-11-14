@@ -61,6 +61,7 @@ import com.synaptixfit.application.service.planner.TimelineService;
 import com.synaptixfit.application.service.planner.WeeklyLoadService;
 import com.synaptixfit.domain.model.planner.PlannerZone;
 import com.synaptixfit.domain.port.output.event.DomainEventPublisherPort;
+import com.synaptixfit.domain.port.output.planner.ActivityMinutesPort;
 import com.synaptixfit.domain.port.output.planner.CalendarBlockRepositoryPort;
 import com.synaptixfit.domain.port.output.planner.ChallengeDirectoryPort;
 import com.synaptixfit.domain.port.output.planner.DeadlineRepositoryPort;
@@ -109,6 +110,7 @@ public class PlannerBeanConfiguration {
     private final Clock clock;
     private final PlannerZone zone;
     private final UsageFocusPort focus;
+    private final ActivityMinutesPort activityMinutes;
 
     public PlannerBeanConfiguration(TransactionalUseCaseFactory tx, CalendarBlockRepositoryPort blocks,
                                     DeadlineRepositoryPort deadlines, StudyPlanRepositoryPort plans,
@@ -120,8 +122,9 @@ public class PlannerBeanConfiguration {
                                     RevokeExperienceUseCase revoke, DomainEventPublisherPort events,
                                     GetCrossRegulationUseCase crossRegulation, Clock clock,
                                     @Value("${synaptixfit.planner.zone:Europe/Madrid}") String zoneId,
-                                    UsageFocusPort focus) {
+                                    UsageFocusPort focus, ActivityMinutesPort activityMinutes) {
         this.focus = focus;
+        this.activityMinutes = activityMinutes;
         this.tx = tx;
         this.blocks = blocks;
         this.deadlines = deadlines;
@@ -231,7 +234,7 @@ public class PlannerBeanConfiguration {
     @Bean(autowireCandidate = false)
     BlockCompletionService blockCompletionService() {
         return new BlockCompletionService(blocks, subjects, profiles, award, revoke, events, weeklyLoadService(),
-                zone, clock);
+                zone, clock, activityMinutes);
     }
 
     @Bean

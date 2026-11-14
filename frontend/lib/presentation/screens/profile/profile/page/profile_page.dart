@@ -361,7 +361,7 @@ class _AccountHeader extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.local_fire_department_rounded,
+                AppIcons.streak,
                 size: TokensSize.iconS,
                 color: context.palette.streak,
               ),

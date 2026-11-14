@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../domain/errors/app_error.dart';
 import '../../../domain/models/account/account.dart';
+import '../../../domain/models/training/recommendation.dart';
 import '../../../domain/models/training/session.dart';
 
 part 'training_effect.freezed.dart';
@@ -37,6 +38,16 @@ sealed class TrainingEffect with _$TrainingEffect {
     required String dayId,
   }) = TrainingEffectDaySkipped;
 
+  /// Sugerencia aplicada: el aviso lleva «Ver» a la rutina que cambió.
+  const factory TrainingEffect.recommendationApplied({String? routineId}) =
+      TrainingEffectRecommendationApplied;
+
+  /// Sugerencia quitada de la lista: el aviso lleva «Deshacer» y, si se
+  /// cierra sin deshacer, se descarta en el servidor (vocabulario §4).
+  const factory TrainingEffect.recommendationDiscarded(
+    Recommendation recommendation,
+  ) = TrainingEffectRecommendationDiscarded;
+
   /// Cerrar la pantalla (p. ej. tras borrar o abandonar).
   const factory TrainingEffect.close() = TrainingEffectClose;
 
@@ -47,8 +58,6 @@ sealed class TrainingEffect with _$TrainingEffect {
 
 /// Avisos de éxito del módulo.
 enum TrainingMessage {
-  recommendationApplied,
-  recommendationDiscarded,
   routineSaved,
   routineDeleted,
   routineUpdated,

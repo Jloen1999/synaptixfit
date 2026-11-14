@@ -72,6 +72,11 @@ class AuthRepository implements AuthRepositoryContract {
   });
 
   @override
+  Future<AppResult<bool>> hasUnsentData() => RepositoryErrorHandler.guard(
+    () async => await _drafts?.hasUnsent() ?? false,
+  );
+
+  @override
   Future<AppResult<Unit>> requestPasswordReset({required String email}) =>
       RepositoryErrorHandler.guard(() async {
         await _remote.requestPasswordReset(email);

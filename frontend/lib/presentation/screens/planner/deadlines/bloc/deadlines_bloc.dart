@@ -55,6 +55,10 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
   /// Borrados que aún se pueden deshacer, en orden (el último es el de Ctrl+Z).
   final Set<String> _pendingDeletes = {};
 
+  /// Entregas marcadas como hechas que el filtro «Por hacer» sacó de la lista:
+  /// «Deshacer» las desmarca aunque ya no se vean, y vuelven a su sitio.
+  final Map<String, Deadline> _hiddenByFilter = {};
+
   DeadlinesState _notice(DeadlinesState next, DeadlinesNotice notice) =>
       next.copyWith(notice: notice, noticeId: state.noticeId + 1);
 
@@ -275,7 +279,9 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
     DeadlinesCompletionToggled event,
     Emitter<DeadlinesState> emit,
   ) async {
-    final current = state.items.where((d) => d.id == event.id).firstOrNull;
+    final current =
+        state.items.where((d) => d.id == event.id).firstOrNull ??
+        _hiddenByFilter[event.id];
     if (current == null || state.busyIds.contains(event.id)) return;
     emit(state.copyWith(busyIds: {...state.busyIds, event.id}));
     final result = await _setCompletion(
@@ -297,9 +303,20 @@ class DeadlinesBloc extends Bloc<DeadlinesEvent, DeadlinesState> {
             : (await _getAccount()).valueOrNull;
         final updated = value.deadline;
         // Con el filtro «pendientes», una entrega completada sale de la lista.
-        final items = state.pendingOnly && updated.completed
+        final hidden = state.pendingOnly && updated.completed;
+        if (hidden) {
+          _hiddenByFilter[updated.id] = updated;
+        } else {
+          _hiddenByFilter.remove(updated.id);
+        }
+        final shown = state.items.any((d) => d.id == updated.id);
+        final items = hidden
             ? state.items.where((d) => d.id != updated.id).toList()
-            : [for (final d in state.items) d.id == updated.id ? updated : d];
+            : shown
+            ? [for (final d in state.items) d.id == updated.id ? updated : d]
+            // Deshecha con el filtro puesto: vuelve en su orden (por fecha).
+            : ([...state.items, updated]
+                ..sort((a, b) => a.dueAt.compareTo(b.dueAt)));
         emit(
           _notice(
             state.copyWith(busyIds: busy, items: items),

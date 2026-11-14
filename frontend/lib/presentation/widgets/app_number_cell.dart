@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 
@@ -64,7 +65,11 @@ class _AppNumberCellState extends State<AppNumberCell> {
 
   static String _format(num? v) {
     if (v == null) return '';
-    return v == v.roundToDouble() ? v.round().toString() : v.toString();
+    // Con la coma o el punto del idioma («52,5» en español); al leer se
+    // aceptan los dos.
+    return v == v.roundToDouble()
+        ? v.round().toString()
+        : NumberFormat('0.##').format(v);
   }
 
   @override

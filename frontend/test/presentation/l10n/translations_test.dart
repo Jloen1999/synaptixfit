@@ -37,4 +37,36 @@ void main() {
       }
     });
   }
+
+  // En francés y en el portugués genérico la regla de plural mete el 0 en
+  // «one»: un =1{1 entraînement} sin el número se pintaría con 0 («1
+  // entraînement» con 0 entrenos). Esas ramas llevan su =0 propio.
+  String branch(String text, int open) {
+    var depth = 0;
+    for (var i = open; i < text.length; i++) {
+      if (text[i] == '{') depth++;
+      if (text[i] == '}' && --depth == 0) return text.substring(open, i + 1);
+    }
+    return text.substring(open);
+  }
+
+  for (final language in ['fr', 'pt']) {
+    test('$language: con 0 nunca sale el texto de 1', () {
+      for (final MapEntry(:key, :value) in load(language).entries) {
+        for (final m in icu.allMatches(value)) {
+          if (m.group(2) != 'plural') continue;
+          final plural = branch(value, m.start);
+          final one = plural.indexOf('=1{');
+          if (one < 0) continue;
+          final oneText = branch(plural, one + 2);
+          if (oneText.contains('{${m.group(1)}}')) continue;
+          expect(
+            plural.contains('=0{') || plural.contains('zero{'),
+            isTrue,
+            reason: key,
+          );
+        }
+      }
+    });
+  }
 }

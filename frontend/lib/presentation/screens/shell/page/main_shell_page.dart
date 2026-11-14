@@ -10,6 +10,7 @@ import '../../../widgets/widgets.dart';
 import '../../auth/session/bloc/session_bloc.dart';
 import '../widgets/focus_timer_bar.dart';
 import '../widgets/open_session_bar.dart';
+import '../widgets/shell_navigation_bar.dart';
 import '../widgets/achievements_host.dart';
 
 /// Estructura principal con las pestañas de [StatefulNavigationShell]:
@@ -46,9 +47,7 @@ class MainShellPage extends StatelessWidget {
     _progressBranch,
   ];
 
-  List<({IconData icon, IconData selected, String label})> _destinations(
-    BuildContext context,
-  ) {
+  List<ShellDestination> _destinations(BuildContext context) {
     final l10n = context.localizations;
     return [
       (
@@ -114,35 +113,10 @@ class MainShellPage extends StatelessWidget {
           children: [
             OpenSessionBar(hideRoutineSessions: onGym),
             const FocusTimerBar(),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: context.colors.outlineVariant),
-                ),
-              ),
-              // Cinco pestañas en un móvil estrecho: las etiquetas crecen con
-              // el texto hasta 1,3×; más allá se cortarían (el tooltip lo
-              // compensa al mantener pulsado).
-              child: AppFocusGroup(
-                child: MediaQuery.withClampedTextScaling(
-                  maxScaleFactor: 1.3,
-                  child: NavigationBar(
-                    selectedIndex: selected < 0 ? 0 : selected,
-                    onDestinationSelected: onSelected,
-                    destinations: [
-                      for (final d in destinations)
-                        NavigationDestination(
-                          icon: AppNavFocusRing(child: Icon(d.icon)),
-                          selectedIcon: AppNavFocusRing(
-                            child: Icon(d.selected),
-                          ),
-                          label: d.label,
-                          tooltip: d.label,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+            ShellNavigationBar(
+              destinations: destinations,
+              selectedIndex: selected < 0 ? 0 : selected,
+              onSelected: onSelected,
             ),
           ],
         ),

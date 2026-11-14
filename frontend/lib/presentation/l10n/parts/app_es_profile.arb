@@ -1,7 +1,7 @@
 {
   "@@locale": "es",
   "profileTitle": "Perfil",
-  "profileStreakDays": "{days, plural, =0{Sin racha activa} =1{Racha de 1 día} other{Racha de {days} días}}",
+  "profileStreakDays": "{days, plural, =0{Sin racha} =1{Racha de 1 día} other{Racha de {days} días}}",
   "@profileStreakDays": {
     "placeholders": {
       "days": {
@@ -433,7 +433,6 @@
   "profileDeleteAction": "Eliminar definitivamente",
   "profileDeleteDone": "Tu cuenta se ha eliminado",
   "profileLogoutTitle": "¿Cerrar sesión?",
-  "profileLogoutMessage": "Tendrás que volver a iniciar sesión para usar la app.",
   "profileLogoutAction": "Cerrar sesión",
   "profileAppVersion": "SynaptixFit · versión {version}",
   "@profileAppVersion": {
@@ -701,5 +700,6 @@
   "profileBirthDateSuggestion": "Añade tu fecha de nacimiento y te felicitaremos.",
   "profileBirthDateAdd": "Añadir",
   "profileErrorInvalidBirthDate": "Revisa la fecha de nacimiento: no puede ser futura y la edad debe estar entre 14 y 100 años.",
-  "profileEnrollmentShort": "Importar matrícula"
+  "profileEnrollmentShort": "Importar matrícula",
+  "profileLogoutUnsentMessage": "Tienes series o una carrera sin subir. Si cierras sesión ahora, se perderán."
 }

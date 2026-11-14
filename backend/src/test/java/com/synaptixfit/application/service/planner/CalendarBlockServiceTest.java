@@ -38,7 +38,7 @@ class CalendarBlockServiceTest {
         service = new CalendarBlockService(f.blocks, f.deadlines, f.directory, f.directory, f.directory, f.xp,
                 f.publisher, loads, PlannerFakes.ZONE, PlannerFakes.CLOCK, f.studyPlanService());
         completion = new BlockCompletionService(f.blocks, f.directory, f.directory, f.xp, f.xp, f.publisher, loads,
-                PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK);
+                PlannerFakes.ZONE, PlannerFakes.END_OF_WEEK, (u, b) -> java.util.Optional.empty());
     }
 
     private static BlockDetailsInput details(ActivityType type) {

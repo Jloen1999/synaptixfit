@@ -407,11 +407,8 @@ class _Content extends StatelessWidget {
                   icon: Icons.format_list_numbered_rounded,
                   title: l10n.runWorkoutsEmptyTitle,
                   message: l10n.runWorkoutsEmptyMessage,
-                  action: TextButton.icon(
-                    onPressed: () => _createWorkout(context),
-                    icon: const Icon(AppIcons.add),
-                    label: Text(l10n.runCreateWorkout),
-                  ),
+                  // Sin botón propio: «Crear entreno» ya está arriba (un
+                  // camino por destino).
                 )
               else
                 for (final w in state.workouts) ...[

@@ -6,10 +6,12 @@ import com.synaptixfit.domain.model.planner.ActivityType;
 import com.synaptixfit.domain.model.planner.LoggedSportActivity;
 import com.synaptixfit.domain.model.shared.PageRequest;
 import com.synaptixfit.domain.model.shared.PageResult;
+import com.synaptixfit.domain.port.output.planner.ActivityMinutesPort;
 import com.synaptixfit.domain.port.output.planner.LoggedActivityRepositoryPort;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
@@ -20,7 +22,7 @@ import org.springframework.stereotype.Component;
  * ({@code registros_carga_fisica.bloque_id}). Los minutos del bloque se calculan en Java (SQL estándar).
  */
 @Component
-public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort {
+public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort, ActivityMinutesPort {
 
     private final JdbcClient jdbc;
 
@@ -64,6 +66,15 @@ public class LoggedActivityJdbcAdapter implements LoggedActivityRepositoryPort {
      * {@code CalendarBlock.mirrorsTrackedActivity} (con rutina pero sin día es deporte libre y sí cuenta).
      */
     private static final String OUTSIDE_ROUTINES = " AND b.dia_rutina_id IS NULL";
+
+    @Override
+    public Optional<Integer> realMinutes(UUID userId, UUID blockId) {
+        return jdbc.sql("SELECT minutos_reales FROM actividades_apuntadas WHERE bloque_id = :block AND usuario_id = :user")
+                .param("block", blockId)
+                .param("user", userId)
+                .query(Integer.class)
+                .optional();
+    }
 
     @Override
     public PageResult<LoggedSportActivity> findSportActivities(UUID userId, PageRequest page) {
